@@ -1,0 +1,2 @@
+import seamless
+seamless.init()

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+  <docstring>
+    Variant of Coordinate that ensures a length of 1
+  </docstring>
+  <validation>
+    <block>
+      assert abs(x**2+y**2+z**2 - 1) < 0.001
+    </block>
+  </validation>
+  <errors>
+    <error>
+      <code>
+        assert abs(x**2+y**2+z**2 - 1) < 0.001
+      </code>
+      <message>
+        The size of the vector must be 1
+      </message>
+    </error>
+  </errors>
+</xml>
