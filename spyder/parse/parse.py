@@ -1,24 +1,11 @@
+# Copyright 2007-2016, Sjoerd de Vries
+
 import sys, re, os
-
-reservedtypes = (
- "Spyder",
- "Type",
- "Object",
- "Delete",
- "Include",
- "Exception",
- "None",
- "True",
- "False"
-)
-reserved_membernames = (
-  "type","typename","length","name",
-  "convert","cast","validate",
-  "data","str","repr","dict","fromfile","tofile",
-  "listen","block","unblock","buttons","form",
-  "invalid",
-)
-
+from lxml import etree
+from lxml.builder import E
+from .. import is_valid_spydertype, is_valid_spydertype2
+from .macros import get_macros
+from typedef import typedefparse
 
 #Regular expressions for:
 #    quotes ( "...", '...' )
@@ -38,26 +25,19 @@ masksign_triplequote = "&"
 masksign_quote = "*"
 masksign_curly = "!"
 
-
 def parse(spytext):
     """
     Converts spytext to a dictionary
      with key = the name of the Spyder type
-     and value = the
+     and value = the lxml tree
     """
+    global macros
+    macros = get_macros()
+
     ret = {}
     blocks = divide_blocks(spytext)
-    print blocks
     for b in blocks:
-        print "###"
-        print b[:70]
-        print "..."
-        print b[-70:]
-        print "###"
-    print len(blocks)
-    blocks = blocks[:5]
-    for b in blocks:
-        blocktype,blockhead,block,blockdocstring = parse_block(b)
+        blocktype,blockhead,block,blockdocstring_dummy = parse_block(b)
         if blocktype is None: continue
         if block is None:
             raise Exception(\
@@ -65,16 +45,19 @@ def parse(spytext):
             )
         if blocktype != "Type":
             raise Exception(\
-"{}-blocks other than Type are not understood: '%s'" % blocktype
+"Top-level {}-blocks other than Type are not understood: '%s'" % blocktype
             )
-
-        print "!!!"
-        print blocktype
-        print blockhead
-        print str(block)
-        print blockdocstring[:70]
-        print "!!!"
+        blockheadwords = blockhead.split(":")
+        if len(blockheadwords) > 2:
+            raise Exception("Type header '%s' can contain only one ':'" % blockhead)
+        typename = blockheadwords[0]
+        bases = []
+        if len(blockheadwords) == 2:
+            bases = [b.strip() for b in blockheadwords[1].split(",")]
+        ret[typename] = typedefparse(typename, bases, block)
     return ret
+
+
 
 def divide_blocks(spytext):
     """
@@ -133,7 +116,7 @@ def divide_blocks(spytext):
     pos = 0
     for l in lines0:
         pos2 = pos + len(l)
-        block = spytext[pos:pos2].strip()
+        block = spytext[pos:pos2]
         if len(block):
             lines.append(block)
         pos = pos2 + len("\n")
@@ -215,6 +198,13 @@ def parse_block(blocktext):
         pp = triplequotematch.search(currblock)
         if pp is not None and pp.start() == 0:
             blockdocstring += currblock[pp.start()+len('"""'):pp.end()-len('"""')]
+    else:
+        pp = triplequotematch.search(blocktext)
+        if pp is not None and pp.start() == 0:
+            match0, match1 = pp.start()+len('"""') , pp.end()-len('"""')
+            blockdocstring = blocktext[match0:match1]
+            preblock = blocktext[:pp.start()]
+
 
     blocktype = None
     blockhead = None

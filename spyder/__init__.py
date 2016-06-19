@@ -118,7 +118,62 @@ TODO:
 
 """
 
-from . import manager, parser
+reserved_types = (
+  "Spyder",
+  "Type",
+  "Object",
+  "Delete",
+  "Include",
+  "None",
+  "True",
+  "False",
+)
+
+reserved_endings = (
+  "Error",
+  "Exit",
+  "Exception",
+)
+
+reserved_membernames = (
+  "type","typename","length","name",
+  "convert","cast","validate",
+  "data","str","repr","dict","fromfile","tofile",
+  "listen","block","unblock","buttons","form",
+  "invalid",
+)
+
+def is_valid_spydertype(s):
+    """
+    Tests if a string is a valid Spyder type
+    """
+    if s.replace("_", "x").isalnum() == False:
+        return False
+    if s[0].isupper() == False:
+        return False
+    if len(s) > 1 and s == s.upper():
+        return False
+    if s.endswith("Array") or s in reserved_types:
+        return False
+    for ending in reserved_endings:
+        if s.endswith(ending):
+            return False
+    return True
+
+def is_valid_spydertype2(s):
+    """
+    Tests if a string is a valid Spyder type
+    endings with Array are also allowed
+    """
+    arraycount = 0
+    while s.endswith("Array"):
+        s = s[:-len("Array")]
+        arraycount += 1
+    if arraycount >= 3:
+        return False
+    return is_valid_spydertype(s)
+
+from . import manager, parse
 import sys
 
 def init():
