@@ -1,6 +1,7 @@
 # Copyright 2007-2016, Sjoerd de Vries
 
 import sys, re, os
+from collections import namedtuple
 from lxml import etree
 from lxml.builder import E
 
@@ -12,9 +13,10 @@ from .typedef import typedef_parse
 #    quotes ( "...", '...' )
 #    triple quotes ( """...""", '''...''' )
 #    curly braces ( {...} )
-quotematch = re.compile(r'(([\"\']).*?\2)')
-triplequotematch = re.compile(r'(\"\"\"[\w\Wn]*?\"\"\")')
-curlymatch = re.compile(r'{[^{}]*?}')
+single_quote_match = re.compile(r'(([\"\']).*?\2)')
+triple_quote_match = re.compile(r'(\"\"\"[\w\Wn]*?\"\"\")')
+curly_brace_match = re.compile(r'{[^{}]*?}')
+
 
 """
 Mask signs to mark out masked-out regions
@@ -22,106 +24,117 @@ These mask signs are assumed to be not present in the text
 TODO: replace them with rarely-used ASCII codes
        (check that this works with Py3 also)
 """
-masksign_triplequote = "&"
-masksign_quote = "*"
-masksign_curly = "!"
+mask_sign_triple_quote = "&"
+mask_sign_single_quote = "*"
+mask_sign_curly = "!"
+
+
+macros = None
+
+
+BlockParseResult = namedtuple("BlockParseResult", "block_type block_head block block_docstring")
 
 
 def parse(spytext):
-    """
-    Converts spytext to a dictionary
-     with key = the name of the Spyder type
-     and value = the lxml tree
-    """
+    """Converts spytext to a dictionary  with key (the name of the Spyder type) -> value (the lxml tree)"""
     global macros
     macros = get_macros()
 
-    ret = {}
+    result = {}
     blocks = divide_blocks(spytext)
-    for b in blocks:
-        blocktype,blockhead,block,blockdocstring_dummy = parse_block(b)
-        if blocktype is None: continue
+    for block in blocks:
+        block_type, block_head, block, block_docstring_dummy = parse_block(block)
+
+        if block_type is None:
+            continue
+
         if block is None:
-            raise Exception(\
-"Non-comment text outside Type definitions is not understood: '%s'" % b
-            )
-        if blocktype != "Type":
-            raise Exception(\
-"Top-level {}-blocks other than Type are not understood: '%s'" % blocktype
-            )
-        blockheadwords = blockhead.split(":")
-        if len(blockheadwords) > 2:
-            raise Exception("Type header '%s' can contain only one ':'" % blockhead)
-        typename = blockheadwords[0]
+            raise Exception("Non-comment text outside Type definitions is not understood: '%s'" % block)
+
+        if block_type != "Type":
+            raise Exception("Top-level {}-blocks other than Type are not understood: '%s'" % block_type)
+
+        block_head_words = block_head.split(":")
+        if len(block_head_words) > 2:
+            raise Exception("Type header '%s' can contain only one ':'" % block_head)
+
+        typename = block_head_words[0]
         bases = []
-        if len(blockheadwords) == 2:
-            bases = [b.strip() for b in blockheadwords[1].split(",")]
-        ret[typename] = typedef_parse(typename, bases, block)
-    return ret
+
+        if len(block_head_words) == 2:
+            bases = [b.strip() for b in block_head_words[1].split(",")]
+
+        result[typename] = typedef_parse(typename, bases, block)
+
+    return result
+
+
+def mask_characters(expression, search_text, target_text, mask_char):
+    """Mask characters found by a regular expression with mask character. Mask characters will equal length of masked
+    string.
+    A different target text to search text may be used, but the developer must ensure that they are compatible.
+    This feature may be used to handle combinations of N mask_char(s) differently
+
+    :param expression: regex expression
+    :param search_text: text to search for matches
+    :param target_text: text to apply mask to
+    :param mask_char: character to replace masked characters
+    """
+    pos = 0
+    masked_text = ""
+    for match in expression.finditer(search_text):
+        masked_text += target_text[pos:match.start()] + mask_char * (match.end() - match.start())
+        pos = match.end()
+
+    masked_text += target_text[pos:]
+    return masked_text, pos
 
 
 def divide_blocks(spytext):
-    """
-    Divides spytext into blocks
-    A block is either a curly-brace block structure preceeded by a block type and a block head,
-     or it is a single line of text that is outside such a block structure
-    Triple-quoted strings outside blocks are automatically removed
-    divide_blocks should be invoked
+    """Divides spytext into blocks.
+
+    A block is either a curly-brace block structure preceeded by a block type and a block head, or it is a single
+    line of text that is outside such a block structure.
+
+    Triple-quoted strings outside blocks are automatically removed.
+
+    Divide_blocks should be invoked
     - first on the entire text,
     - then on the contents of a block                   (Type blocks)
     - then on the contents of a block-inside-a-block    (form blocks, validate blocks, ...)
     """
 
-    #First, take spytext and mask out all triple quote text into s0
-    pos = 0
-    s0 = ""
-    for pp in triplequotematch.finditer(spytext):
-        s0 += spytext[pos:pp.start()] + masksign_triplequote * (pp.end()-pp.start())
-        pos = pp.end()
-    s0 += spytext[pos:]
+    # First, take spytext and mask out all triple quote text into s0
+    masked_triple_quote, _ = mask_characters(triple_quote_match, spytext, spytext, mask_sign_triple_quote)
+    # Then, take spytext and mask out all quoted text into masked_single_quote
+    # To prevent that we also mask out triple quotes, look for quotes only in masked_triple_quote
+    masked_single_quote, _ = mask_characters(single_quote_match, masked_triple_quote, spytext, mask_sign_single_quote)
+    # Now, look for curly braces in masked_single_quote, and mask them out iteratively (modifying masked_single_quote)
+    while True:
+        masked_curly_brace, pos = mask_characters(curly_brace_match, masked_single_quote, masked_single_quote,
+                                                  mask_sign_curly)
+        if pos == 0:
+            break
 
-    #Then, take spytext and mask out all quoted text into mask0
-    #To prevent that we also mask out triple quotes, look for quotes only in s0
-    p = quotematch.finditer(s0)
-    pos = 0
-    mask0 = ""
-    for pp in p:
-        mask0 += spytext[pos:pp.start()] + masksign_quote * (pp.end()-pp.start())
-        pos = pp.end()
-    mask0 += spytext[pos:]
+        masked_single_quote = masked_curly_brace
 
-    #Now, look for curly braces in mask0, and mask them out iteratively (modifying mask0)
-    while 1:
-        p = curlymatch.finditer(mask0)
-        pos = 0
-        mask00 = ""
-        for pp in p:
-            mask00 += mask0[pos:pp.start()] + masksign_curly * (pp.end()-pp.start())
-            pos = pp.end()
-        mask00 += mask0[pos:]
-        if pos == 0: break
-        mask0 = mask00
-
-    #Finally, look for triple quote regions in mask00, and mask them out
-    pos = 0
-    mask = ""
-    for pp in triplequotematch.finditer(mask0):
-        mask += mask0[pos:pp.start()] + masksign_triplequote  * (pp.end()-pp.start())
-        pos = pp.end()
-    mask += mask00[pos:]
-
-    #now we split the mask into newlines
-    #newlines inside curly blocks will have been masked out
-    lines0 = mask.split("\n")
+    # Todo is this correct? - in original, mask00 (masked_curly_brace) is modified as `mask += mask00[pos:]`, not mask0
+    # Finally, look for triple quote regions in masked_single_quote, and mask them out
+    mask, _ = mask_characters(triple_quote_match, masked_single_quote, masked_single_quote, mask_sign_triple_quote)
+    # Now split the mask into newlines. Newlines inside curly blocks will have been masked out
     lines = []
     pos = 0
-    for l in lines0:
-        pos2 = pos + len(l)
-        block = spytext[pos:pos2]
-        if len(block):
+    for line in mask.split("\n"):
+        end_pos = pos + len(line)
+        block = spytext[pos:end_pos]
+
+        if block:
             lines.append(block)
-        pos = pos2 + len("\n")
+
+        pos = end_pos + len("\n")
+
     return lines
+
 
 def parse_block(blocktext):
     """
@@ -129,88 +142,86 @@ def parse_block(blocktext):
     - Block type: the first word
     - Block head: the first line after the block type, before the curly braces
     - Block: content between curly braces (None if no curly braces)
-    - Blockdocstring: commented content right after the start of the block
+    - Block docstring: commented content right after the start of the block
     """
-    pos = 0
-    s0 = ""
-    for pp in triplequotematch.finditer(blocktext):
-        s0 += blocktext[pos:pp.start()] + masksign_triplequote * (pp.end()-pp.start())
-        pos = pp.end()
-    s0 += blocktext[pos:]
+    masked_triple_quote, _ = mask_characters(triple_quote_match, blocktext, blocktext, mask_sign_triple_quote)
+    masked_single_quote, _ = mask_characters(single_quote_match, masked_triple_quote, blocktext, mask_sign_single_quote)
 
-    p = quotematch.finditer(s0)
-    pos = 0
-    mask0 = ""
-    for pp in p:
-        mask0 += blocktext[pos:pp.start()] + masksign_quote * (pp.end()-pp.start())
-        pos = pp.end()
-    mask0 += blocktext[pos:]
-
-    preblock = blocktext
-    postblock = ""
+    pre_block = blocktext
+    post_block = ""
     blocks = []
-    while 1:
-        p = curlymatch.finditer(mask0)
+
+    while True:
         pos = 0
-        mask = ""
-        blocks0 = []
-        for pp in p:
-            blocks0.append(blocktext[pp.start():pp.end()])
-            preblock = blocktext[pos:pp.start()]
-            mask += preblock + masksign_curly * (pp.end()-pp.start())
-            pos = pp.end()
-        mask += mask0[pos:]
+        masked_curly_braces = ""
+        block_contents = []
+        for match in curly_brace_match.finditer(masked_single_quote):
+            block_contents.append(blocktext[match.start():match.end()])
+            pre_block = blocktext[pos:match.start()]
+            masked_curly_braces += pre_block + mask_sign_curly * (match.end() - match.start())
+            pos = match.end()
+
+        masked_curly_braces += masked_single_quote[pos:]
+
         if pos == 0:
             break
+
         else:
-            postblock = blocktext[pos:]
-        blocks = blocks0
-        mask0 = mask
-    block = None
-    if len(blocks) == 1:
-        block = blocks[0][1:-1]
+            post_block = blocktext[pos:]
+
+        blocks = block_contents
+        masked_single_quote = masked_curly_braces
+
     if len(blocks) > 1:
         raise Exception("compile error: invalid statement\n%s\nStatement must contain a single {} block" % blocktext)
-        if len(postblock.strip()) != 0:
+
+        if post_block.strip():
             raise Exception("compile error: invalid statement\n%s\nStatement must be empty after {} block" % blocktext)
-    preblock = preblock.strip()
 
-    blockdocstring = ""
+    elif blocks:
+        block = blocks[0][1:-1]
 
-    p = quotematch.finditer(preblock)
-    pos = 0
-    mask = ""
-    for pp in p:
-        mask += preblock[pos:pp.start()] + masksign_quote * (pp.end()-pp.start())
-        pos = pp.end()
-    mask += preblock[pos:]
-    comment = mask.find("#")
-    if comment > -1:
-        blockdocstring = preblock[comment+1:].strip('\n') + '\n'
-        preblock = preblock[:comment]
+    else:
+        block = None
+
+    pre_block = pre_block.strip()
+    pre_block_masked_single_quote, _ = mask_characters(single_quote_match, pre_block, pre_block, mask_sign_single_quote)
+
+    # Find docstring
+    comment_start = pre_block_masked_single_quote.find("#")
+    if comment_start > -1:
+        block_docstring = pre_block[comment_start+1:].strip('\n') + '\n'
+        pre_block = pre_block[:comment_start]
+
+    else:
+        block_docstring = ""
 
     if block is not None:
-        currblock = block
-        while 1:
-            len0 = len(currblock)
-            currblock = currblock.lstrip().lstrip("\n")
-            if len(currblock) == len0: break
+        current_block = block
 
-        pp = triplequotematch.search(currblock)
-        if pp is not None and pp.start() == 0:
-            blockdocstring += currblock[pp.start()+len('"""'):pp.end()-len('"""')]
+        while True:
+            original_length = len(current_block)
+            current_block = current_block.lstrip().lstrip("\n")
+
+            if len(current_block) == original_length:
+                break
+
+        match = triple_quote_match.search(current_block)
+        if match is not None and match.start() == 0:
+            block_docstring += current_block[match.start()+len('"""'):match.end()-len('"""')]
+
     else:
-        pp = triplequotematch.search(blocktext)
-        if pp is not None and pp.start() == 0:
-            match0, match1 = pp.start()+len('"""') , pp.end()-len('"""')
-            blockdocstring = blocktext[match0:match1]
-            preblock = blocktext[:pp.start()]
+        match = triple_quote_match.search(blocktext)
+        if match is not None and match.start() == 0:
+            match0, match1 = match.start() + len('"""'), match.end()-len('"""')
+            block_docstring = blocktext[match0:match1]
+            pre_block = blocktext[:match.start()]
 
+    block_type = None
+    block_head = None
 
-    blocktype = None
-    blockhead = None
-    if len(preblock) > 0:
-        blocktype = preblock.split()[0]
-        blockhead = preblock[len(blocktype):].strip()
+    if pre_block:
+        block_type = pre_block.split()[0]
+        block_head = pre_block[len(block_type):].strip()
 
-    return blocktype,blockhead,block,blockdocstring
+    return BlockParseResult(block_type, block_head, block, block_docstring)

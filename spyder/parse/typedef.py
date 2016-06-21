@@ -1,12 +1,12 @@
 from lxml import etree
 from lxml.builder import E
-from .. import is_valid_spydertype
+from ..validate import is_valid_spydertype
 
 
 def define_error(tree, block):
-    from .parse import quotematch
+    from .parse import single_quote_match
     currpos = 0
-    matches = quotematch.finditer(block)
+    matches = single_quote_match.finditer(block)
     node = E.errorblock()
     tree.append(node)
 
@@ -25,7 +25,6 @@ def define_error(tree, block):
 
 
 def typedef_block(tree, name, block):
-    from .parse import divide_blocks, parse_block
     if name == "error":
         define_error(tree, block)
         return
@@ -61,25 +60,6 @@ def add_doc(last_member, docstring, newdoc):
         mdoc.text += newdoc
 
 
-def _parse_block(tree, name, block):
-    spaces = None
-
-    block_lines = block.split('\n')
-    reformatted_block_lines = []
-    for line in block_lines:
-        if not line.strip() == 0:
-            continue
-
-        # Find indentation
-        if spaces is None:
-            spaces = len(line) - len(line.lstrip())
-
-        reformatted_block_lines.append(line.rstrip('\n')[spaces:])
-
-    reformatted_block = "\n    " + "\n    ".join(reformatted_block_lines) + "\n  "
-    typedef_block(tree, name, reformatted_block)
-
-
 def typedef_parse(typename, bases, block):
     from .parse import divide_blocks, parse_block, macros
     if not is_valid_spydertype(typename):
@@ -97,6 +77,7 @@ def typedef_parse(typename, bases, block):
     )
     for base in bases:
         tree.append(E.base(base))
+
     docstring = E.docstring("")
     tree.append(docstring)
     lines = divide_blocks(block)
@@ -162,7 +143,22 @@ def typedef_parse(typename, bases, block):
             if title != "" and title is not None:
                 raise Exception("Malformed block statement, must be <name> {...}\n%s" % (line))
 
-            _parse_block(tree, name, block)
+            spaces = None
+
+            block_lines = block.split('\n')
+            reformatted_block_lines = []
+
+            for line in block_lines:
+                if not line.strip():
+                    continue
+
+                # Find indentation
+                if spaces is None:
+                    spaces = len(line) - len(line.lstrip())
+
+                reformatted_block_lines.append(line.rstrip('\n')[spaces:])
+            reformatted_block = "\n    " + "\n    ".join(reformatted_block_lines) + "\n  "
+            typedef_block(tree, name, reformatted_block)
 
         elif block_comment and not name:
             add_doc(last_member, docstring, block_comment)

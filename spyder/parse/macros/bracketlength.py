@@ -2,19 +2,28 @@
 
 from . import register_macro
 
-def macro_bracketlength(name,content):
-    content0 = content
+
+def macro_bracketlength(name, content):
+    original_content = content
     default = ""
-    p = content0.find("=")
-    if p > -1:
-        content0 = content[:p].rstrip()
-        default = content[p:]
-    if not content0.endswith("]"): return
-    p = content0.rfind("[")
-    ret = name + " " + content0[:p] + default
-    l = content0[p+1:-1]
-    v = content0[:p]
-    ret += "\nvalidate {\n  assert %s is None or len(%s) == %s\n}\nform {\n  %s.length = %s\n  %s.form = \"hard\"\n}\n" % (v,v, l,v,l,v)
-    return ret
+    assign_index_start = original_content.find("=")
+
+    if assign_index_start > -1:
+        original_content = content[:assign_index_start].rstrip()
+        default = content[assign_index_start:]
+
+    if not original_content.endswith("]"):
+        return
+
+    assign_index_start = original_content.rfind("[")
+    result = name + " " + original_content[:assign_index_start] + default
+    length = original_content[assign_index_start+1:-1]
+    attrib_name = original_content[:assign_index_start]
+
+    result += "\nvalidate {\n  assert %s is None or len(%s) == %s\n}" % (attrib_name, attrib_name, length)
+    result += "\nform {\n  %s.length = %s\n  %s.form = \"hard\"\n}\n" % (attrib_name, length, attrib_name)
+
+    return result
+
 
 register_macro(macro_bracketlength)
