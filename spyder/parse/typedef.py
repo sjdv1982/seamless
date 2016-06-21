@@ -5,7 +5,6 @@ from ..validate import is_valid_spydertype
 
 def define_error(tree, block):
     from .parse import single_quote_match
-    currpos = 0
     matches = single_quote_match.finditer(block)
     node = E.errorblock()
     tree.append(node)
@@ -30,34 +29,34 @@ def typedef_block(tree, name, block):
         return
 
     elif name == "optional":
-        nodename = "optional"
+        node_name = "optional"
         block = "".join([l.strip() for l in block.splitlines()])
 
     elif name == "validate":
-        nodename = "validationblock"
+        node_name = "validationblock"
 
     elif name == "form":
-        nodename = "formblock"
+        node_name = "formblock"
 
     else:
         raise ValueError(name)
 
-    tree.append(getattr(E, nodename)(block))
+    tree.append(getattr(E, node_name)(block))
 
 
-def add_doc(last_member, docstring, newdoc):
+def add_doc(last_member, docstring, new_docstring):
     if last_member is None:
-        docstring.text += newdoc
+        docstring.text += new_docstring
 
     else:
         try:
-            mdoc = last_member.find("docstring")
+            element = last_member.find("docstring")
 
         except:
-            mdoc = E.docstring(newdoc)
-            last_member.append(mdoc)
+            element = E.docstring(new_docstring)
+            last_member.append(element)
 
-        mdoc.text += newdoc
+        element.text += new_docstring
 
 
 def typedef_parse(typename, bases, block):
