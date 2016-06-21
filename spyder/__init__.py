@@ -118,6 +118,9 @@ TODO:
 
 """
 
+max_array_depth = 2
+
+
 reserved_types = (
   "Spyder",
   "Type",
@@ -136,45 +139,52 @@ reserved_endings = (
 )
 
 reserved_membernames = (
-  "type","typename","length","name",
-  "convert","cast","validate",
-  "data","str","repr","dict","fromfile","tofile",
-  "listen","block","unblock","buttons","form",
+  "type", "typename", "length", "name",
+  "convert", "cast", "validate",
+  "data", "str", "repr", "dict", "fromfile", "tofile",
+  "listen", "block", "unblock", "buttons", "form",
   "invalid",
 )
 
-def is_valid_spydertype(s):
-    """
-    Tests if a string is a valid Spyder type
-    """
-    if s.replace("_", "x").isalnum() == False:
+
+def is_valid_spydertype(type_name):
+    """Tests if a string is a valid Spyder type"""
+    if not type_name.replace("_", "x").isalnum():
         return False
-    if s[0].isupper() == False:
+
+    if not type_name[0].isupper():
         return False
-    if len(s) > 1 and s == s.upper():
+
+    if len(type_name) > 1 and type_name == type_name.upper():
         return False
-    if s.endswith("Array") or s in reserved_types:
+
+    if type_name.endswith("Array") or type_name in reserved_types:
         return False
+
     for ending in reserved_endings:
-        if s.endswith(ending):
+        if type_name.endswith(ending):
             return False
     return True
 
-def is_valid_spydertype2(s):
+
+def is_valid_spydertype2(type_name):
+    """Tests if a string is a valid Spyder type. Endings with Array are also allowed
     """
-    Tests if a string is a valid Spyder type
-    endings with Array are also allowed
-    """
-    arraycount = 0
-    while s.endswith("Array"):
-        s = s[:-len("Array")]
-        arraycount += 1
-    if arraycount >= 3:
+    array_depth = 0
+
+    while type_name.endswith("Array"):
+        type_name = type_name[:-len("Array")]
+        array_depth += 1
+
+    if array_depth > max_array_depth: # Why 3?
         return False
-    return is_valid_spydertype(s)
+
+    return is_valid_spydertype(type_name)
+
 
 from . import manager, parse
 import sys
+
 
 def init():
     pass
