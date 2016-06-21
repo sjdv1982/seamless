@@ -8,4 +8,4 @@ spydict = parse(spytext)
 first = True
 for k, v in spydict.items():
     if not first: print("")
-    print(etree.tostring(v, pretty_print=True, xml_declaration=True, encoding="UTF-8"))
+    print(etree.tostring(v, pretty_print=True, xml_declaration=True, encoding="UTF-8").decode())
