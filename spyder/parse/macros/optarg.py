@@ -2,14 +2,18 @@
 
 from . import register_macro
 
+
 def macro_optarg(name, content):
-    if name[0] != "*": return
-    content0 = content
-    for n in range(len(content)):
-        if content[n].isalnum() == False and content[n] != "_":
-            content = content[:n]
+    if name[0] != "*":
+        return
+
+    original_content = content
+    for i, char in enumerate(content):
+        if char.isalnum() == False and char != "_":
+            content = char
             break
-    ret = name[1:] + " " + content0 + "\noptional {\n  " + content + "\n}\n"
-    return ret
+
+    return name[1:] + " " + original_content + "\noptional {\n  " + content + "\n}\n"
+
 
 register_macro(macro_optarg)

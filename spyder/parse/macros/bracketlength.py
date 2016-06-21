@@ -3,7 +3,7 @@
 from . import register_macro
 
 
-def macro_bracketlength(name, content):
+def macro_bracket_length(name, content):
     original_content = content
     default = ""
     assign_index_start = original_content.find("=")
@@ -26,4 +26,4 @@ def macro_bracketlength(name, content):
     return result
 
 
-register_macro(macro_bracketlength)
+register_macro(macro_bracket_length)
