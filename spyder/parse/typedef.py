@@ -2,57 +2,96 @@ from lxml import etree
 from lxml.builder import E
 from .. import is_valid_spydertype
 
-def define_error(tree, block):
-  from .parse import quotematch
-  pq = list(quotematch.finditer(block) )
-  currpos = 0
-  node = E.errorblock()
-  tree.append(node)
-  for pnr in range(0, len(pq), 2):
-      p1, p2 = pq[pnr], pq[pnr+1]
-      mid = block[p1.end():p2.start()].strip().replace("\n","")
-      s1, s2 = p1.group(0).strip(), p2.group(0).strip()
-      ss1, ss2 = ["\n        " + s[1:-1] +"\n      " for s in s1,s2]
-      if mid != "=>":
-          raise ValueError("Malformed error statement: \n %s\n    %s\n %s\n'%s' should be '=>'" % (s1,mid, s2,mid))
-      node.append(E.error(E.code(ss1), E.message(ss2)))
 
-def typedefblock(tree, name, block):
+def define_error(tree, block):
+    from .parse import quotematch
+    currpos = 0
+    matches = quotematch.finditer(block)
+    node = E.errorblock()
+    tree.append(node)
+
+    for p1, p2 in zip(matches, matches):
+        mid = block[p1.end():p2.start()].strip().replace("\n","")
+
+        s1 = p1.group(0).strip()
+        s2 = p2.group(0).strip()
+
+        ss1, ss2 = ["\n        " + s[1:-1] + "\n      " for s in (s1, s2)]
+
+        if mid != "=>":
+            raise ValueError("Malformed error statement: \n %s\n    %s\n %s\n'%s' should be '=>'" % (s1, mid, s2, mid))
+
+        node.append(E.error(E.code(ss1), E.message(ss2)))
+
+
+def typedef_block(tree, name, block):
     from .parse import divide_blocks, parse_block
-    assert name in ("optional", "form", "validate", "error"), name
     if name == "error":
         define_error(tree, block)
         return
+
     elif name == "optional":
         nodename = "optional"
         block = "".join([l.strip() for l in block.splitlines()])
+
     elif name == "validate":
         nodename = "validationblock"
+
     elif name == "form":
         nodename = "formblock"
-    tree.append( getattr(E, nodename)(block))
+
+    else:
+        raise ValueError(name)
+
+    tree.append(getattr(E, nodename)(block))
+
 
 def add_doc(last_member, docstring, newdoc):
     if last_member is None:
         docstring.text += newdoc
+
     else:
         try:
             mdoc = last_member.find("docstring")
+
         except:
             mdoc = E.docstring(newdoc)
             last_member.append(mdoc)
+
         mdoc.text += newdoc
 
-def typedefparse(typename, bases, block):
+
+def _parse_block(tree, name, block):
+    spaces = None
+
+    block_lines = block.split('\n')
+    reformatted_block_lines = []
+    for line in block_lines:
+        if not line.strip() == 0:
+            continue
+
+        # Find indentation
+        if spaces is None:
+            spaces = len(line) - len(line.lstrip())
+
+        reformatted_block_lines.append(line.rstrip('\n')[spaces:])
+
+    reformatted_block = "\n    " + "\n    ".join(reformatted_block_lines) + "\n  "
+    typedef_block(tree, name, reformatted_block)
+
+
+def typedef_parse(typename, bases, block):
     from .parse import divide_blocks, parse_block, macros
     if not is_valid_spydertype(typename):
         raise Exception("Invalid Spyder type definition: invalid type name: ''%s'" % typename)
+
     for base in bases:
         if not is_valid_spydertype(base, permit_array=True):
             raise Exception("Invalid Spyder type definition: cannot inherit from non-Spyder type '%s'" % base)
+
     block_filtered = ""
 
-    methodblock = None
+    method_block = None
     tree = E.spyder(
       E.typename(typename),
     )
@@ -62,105 +101,122 @@ def typedefparse(typename, bases, block):
     tree.append(docstring)
     lines = divide_blocks(block)
     inside_def = False
-    inside_methodblock = False
+    inside_method_block = False
     curr_indent = 0
     last_member = None
-    while len(lines) > 0:
-        l = lines[0].strip()
-        l2 = lines[0].replace('\t', "  ")
+
+    while lines:
+        line = lines[0].strip()
+        line_tabs_as_spaces = lines[0].replace('\t', "  ")
         lines = lines[1:]
-        if len(l) == 0:
+
+        if not line:
             continue
 
-        if l.startswith("##"):
-            l = l[2:].lstrip()
-            ll = l.split()
-            name = ll[0]
-            typedefblock(tree, name, l[len(name)+1:])
+        if line.startswith("##"):
+            line = line[2:].lstrip()
+            name = line[:line.find('.')]
+            typedef_block(tree, name, line[len(name) + 1:])
             continue
-        if l.find("#") == 0:
+
+        if line.find("#") == 0:
             continue
-        if not inside_def and l.startswith('"""'):
-            l = l[3:]
-            l = '\n' + l[:l.index('"""')]
-            newdoc = l[len('\n'):]
-            add_doc(last_member, docstring, newdoc)
+
+        if not inside_def and line.startswith('"""'):
+            line = line[3:]
+            end_quotes_index = line.index('"""')
+            between_quotes = line[:end_quotes_index]
+            add_doc(last_member, docstring, between_quotes)
             continue
+
         if inside_def:
-            indent = len(l2) - len(l2.lstrip())
+            indent = len(line_tabs_as_spaces) - len(line_tabs_as_spaces.lstrip())
             if indent == curr_indent:
                 inside_def = False
+
         if not inside_def:
-            if l2.lstrip().startswith("def "):
-                curr_indent = len(l2) - len(l2.lstrip())
+            if line_tabs_as_spaces.lstrip().startswith("def "):
+                curr_indent = len(line_tabs_as_spaces) - len(line_tabs_as_spaces.lstrip())
                 inside_def = True
-        if inside_def or l2.lstrip().startswith("@"):
-            if not inside_methodblock:
-                methodblock = E.methodblock("")
-                tree.append(methodblock)
-                inside_methodblock = True
-            methodblock.text += "\n  " + "\n  ".join(l2.split("\n"))
+
+        if inside_def or line_tabs_as_spaces.lstrip().startswith("@"):
+            if not inside_method_block:
+                method_block = E.method_block("")
+                tree.append(method_block)
+                inside_method_block = True
+                
+            method_block.text += "\n  " + "\n  ".join(line_tabs_as_spaces.split("\n"))
             continue
+
         else:
-            if inside_methodblock:
-                methodblock.text += "\n  "
-            inside_methodblock = False
+            if inside_method_block:
+                method_block.text += "\n  "
+            inside_method_block = False
 
-        assert not inside_methodblock and not inside_def #bugcheck
+        assert not inside_method_block and not inside_def #bugcheck
 
-        name,title,block,blockcomment = parse_block(l)
+        name, title, block, block_comment = parse_block(line)
 
         last_member = None
         if block is not None:
             if title != "" and title is not None:
-                raise Exception("Malformed block statement, must be <name> {...}\n%s" % (l))
-            bb = block.split('\n')
-            spaces = -1
-            bb2 = []
-            for l in bb:
-                if len(l.strip()) == 0: continue
-                if spaces == -1:
-                    spaces = len(l) - len(l.lstrip())
-                bb2.append(l.rstrip('\n')[spaces:] )
-            block2 = "\n    " + "\n    ".join(bb2) + "\n  "
-            typedefblock(tree, name, block2)
-        elif len(blockcomment) and not name:
-            add_doc(last_member, docstring, blockcomment)
+                raise Exception("Malformed block statement, must be <name> {...}\n%s" % (line))
+
+            _parse_block(tree, name, block)
+
+        elif block_comment and not name:
+            add_doc(last_member, docstring, block_comment)
+
         else:
-            if not len(title):
-                raise Exception("Malformed %s statement: no title" % (name, l))
-            tsplit = title.split()
+            if not title:
+                raise Exception("Malformed %s statement: no title" % (name, line))
+
+            split_title = title.split()
+
             if name == "Delete":
-                if len(tsplit) != 1:
-                    raise Exception("Malformed Delete statement: %s" % l)
+                if len(split_title) != 1:
+                    raise Exception("Malformed Delete statement: %s" % line)
+
                 tree.append(E.delete(title))
+
             elif name in "Include":
-                if len(tsplit) != 1:
-                    raise Exception("Malformed Include statement: %s" % l)
+                if len(split_title) != 1:
+                    raise Exception("Malformed Include statement: %s" % line)
                 tree.append(E.include(title))
+
             else:
                 newlines = None
                 for macro in macros:
-                    newblock = macro(name, title)
-                    if not newblock: continue
-                    newlines = divide_blocks(newblock)
+                    new_block = macro(name, title)
+                    if not new_block:
+                        continue
+
+                    newlines = divide_blocks(new_block)
                     break
+
                 if newlines is not None:
                     lines[:] = newlines + lines
                     continue
-                init = None
-                if len(tsplit) > 1:
-                    if tsplit[1] != "=":
-                        raise Exception("Malformed member statement: %s" % l)
-                    title = tsplit[0]
-                    init = " ".join(tsplit[2:])
+
+                init_statement = None
+                if len(split_title) > 1:
+                    if split_title[1] != "=":
+                        raise Exception("Malformed member statement: %s" % line)
+
+                    title = split_title[0]
+                    init_statement = " ".join(split_title[2:])
+
                 if not is_valid_spydertype(name, permit_array=True):
                     raise TypeError("Invalid member name '%s'" % name)
-                member = E.member(E.name(title),E.type(name))
-                if init is not None:
-                    member.append(E.init(init))
+
+                member = E.member(E.name(title), E.type(name))
+                if init_statement is not None:
+                    member.append(E.init(init_statement))
+
                 tree.append(member)
                 last_member = member
-    if inside_methodblock:
-        methodblock.text += "\n  "
+
+    if inside_method_block:
+        method_block.text += "\n  "
+
     return tree

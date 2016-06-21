@@ -3,9 +3,10 @@
 import sys, re, os
 from lxml import etree
 from lxml.builder import E
-from .. import is_valid_spydertype
+
+from ..validate import is_valid_spydertype
 from .macros import get_macros
-from typedef import typedefparse
+from .typedef import typedef_parse
 
 #Regular expressions for:
 #    quotes ( "...", '...' )
@@ -24,6 +25,7 @@ TODO: replace them with rarely-used ASCII codes
 masksign_triplequote = "&"
 masksign_quote = "*"
 masksign_curly = "!"
+
 
 def parse(spytext):
     """
@@ -54,9 +56,8 @@ def parse(spytext):
         bases = []
         if len(blockheadwords) == 2:
             bases = [b.strip() for b in blockheadwords[1].split(",")]
-        ret[typename] = typedefparse(typename, bases, block)
+        ret[typename] = typedef_parse(typename, bases, block)
     return ret
-
 
 
 def divide_blocks(spytext):
