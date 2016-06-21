@@ -3,7 +3,7 @@
 import sys, re, os
 from lxml import etree
 from lxml.builder import E
-from .. import is_valid_spydertype, is_valid_spydertype2
+from .. import is_valid_spydertype
 from .macros import get_macros
 from typedef import typedefparse
 

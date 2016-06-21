@@ -1,6 +1,6 @@
 from lxml import etree
 from lxml.builder import E
-from .. import is_valid_spydertype, is_valid_spydertype2
+from .. import is_valid_spydertype
 
 def define_error(tree, block):
   from .parse import quotematch
@@ -48,7 +48,7 @@ def typedefparse(typename, bases, block):
     if not is_valid_spydertype(typename):
         raise Exception("Invalid Spyder type definition: invalid type name: ''%s'" % typename)
     for base in bases:
-        if not is_valid_spydertype2(base):
+        if not is_valid_spydertype(base, permit_array=True):
             raise Exception("Invalid Spyder type definition: cannot inherit from non-Spyder type '%s'" % base)
     block_filtered = ""
 
@@ -154,7 +154,7 @@ def typedefparse(typename, bases, block):
                         raise Exception("Malformed member statement: %s" % l)
                     title = tsplit[0]
                     init = " ".join(tsplit[2:])
-                if not is_valid_spydertype2(name):
+                if not is_valid_spydertype(name, permit_array=True):
                     raise TypeError("Invalid member name '%s'" % name)
                 member = E.member(E.name(title),E.type(name))
                 if init is not None:
