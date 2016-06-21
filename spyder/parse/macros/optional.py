@@ -1,9 +1,7 @@
 # Copyright 2007-2016, Sjoerd de Vries
 
-from . import register_macro
 
-
-def macro_optarg(name, content):
+def macro_optional(name, content):
     if name[0] != "*":
         return
 
@@ -14,6 +12,3 @@ def macro_optarg(name, content):
             break
 
     return name[1:] + " " + original_content + "\noptional {\n  " + content + "\n}\n"
-
-
-register_macro(macro_optarg)

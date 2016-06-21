@@ -1,7 +1,5 @@
 # Copyright 2007-2016, Sjoerd de Vries
 
-from . import register_macro
-
 
 def macro_bracket_length(name, content):
     original_content = content
@@ -24,6 +22,3 @@ def macro_bracket_length(name, content):
     result += "\nform {\n  %s.length = %s\n  %s.form = \"hard\"\n}\n" % (attrib_name, length, attrib_name)
 
     return result
-
-
-register_macro(macro_bracket_length)

@@ -1,5 +1,7 @@
 from lxml import etree
 from lxml.builder import E
+
+from .exceptions import SpyderParseError
 from ..validate import is_valid_spydertype
 
 
@@ -60,13 +62,17 @@ def add_doc(last_member, docstring, new_docstring):
 
 
 def typedef_parse(typename, bases, block):
-    from .parse import divide_blocks, parse_block, macros
+    from .parse import divide_blocks, parse_block
+    from .macros import get_macros
+
+    macros = get_macros()
+
     if not is_valid_spydertype(typename):
-        raise Exception("Invalid Spyder type definition: invalid type name: ''%s'" % typename)
+        raise SpyderParseError("Invalid Spyder type definition: invalid type name: ''%s'" % typename)
 
     for base in bases:
         if not is_valid_spydertype(base, permit_array=True):
-            raise Exception("Invalid Spyder type definition: cannot inherit from non-Spyder type '%s'" % base)
+            raise SpyderParseError("Invalid Spyder type definition: cannot inherit from non-Spyder type '%s'" % base)
 
     block_filtered = ""
 
@@ -140,7 +146,7 @@ def typedef_parse(typename, bases, block):
         last_member = None
         if block is not None:
             if title != "" and title is not None:
-                raise Exception("Malformed block statement, must be <name> {...}\n%s" % (line))
+                raise SpyderParseError("Malformed block statement, must be <name> {...}\n%s" % (line))
 
             spaces = None
 
@@ -164,19 +170,19 @@ def typedef_parse(typename, bases, block):
 
         else:
             if not title:
-                raise Exception("Malformed %s statement: no title" % (name, line))
+                raise SpyderParseError("Malformed %s statement: no title" % (name, line))
 
             split_title = title.split()
 
             if name == "Delete":
                 if len(split_title) != 1:
-                    raise Exception("Malformed Delete statement: %s" % line)
+                    raise SpyderParseError("Malformed Delete statement: %s" % line)
 
                 tree.append(E.delete(title))
 
             elif name in "Include":
                 if len(split_title) != 1:
-                    raise Exception("Malformed Include statement: %s" % line)
+                    raise SpyderParseError("Malformed Include statement: %s" % line)
                 tree.append(E.include(title))
 
             else:
@@ -196,7 +202,7 @@ def typedef_parse(typename, bases, block):
                 init_statement = None
                 if len(split_title) > 1:
                     if split_title[1] != "=":
-                        raise Exception("Malformed member statement: %s" % line)
+                        raise SpyderParseError("Malformed member statement: %s" % line)
 
                     title = split_title[0]
                     init_statement = " ".join(split_title[2:])

@@ -2,17 +2,20 @@
 
 import sys, re, os
 from collections import namedtuple
-from lxml import etree
-from lxml.builder import E
+# from lxml import etree
+# from lxml.builder import E
 
-from ..validate import is_valid_spydertype
 from .macros import get_macros
 from .typedef import typedef_parse
+from .exceptions import SpyderParseError
 
-#Regular expressions for:
-#    quotes ( "...", '...' )
-#    triple quotes ( """...""", '''...''' )
-#    curly braces ( {...} )
+
+# from ..validate import is_valid_spydertype
+
+# Regular expressions
+# quotes ( "...", '...' )
+# triple quotes ( """...""", '''...''' )
+# curly braces ( {...} )
 single_quote_match = re.compile(r'(([\"\']).*?\2)')
 triple_quote_match = re.compile(r'(\"\"\"[\w\Wn]*?\"\"\")')
 curly_brace_match = re.compile(r'{[^{}]*?}')
@@ -28,16 +31,11 @@ mask_sign_triple_quote = "&"
 mask_sign_single_quote = "*"
 mask_sign_curly = "!"
 
-
-macros = None
-
-
 BlockParseResult = namedtuple("BlockParseResult", "block_type block_head block block_docstring")
 
 
 def parse(spytext):
     """Converts spytext to a dictionary  with key (the name of the Spyder type) -> value (the lxml tree)"""
-    global macros
     macros = get_macros()
 
     result = {}
@@ -49,14 +47,14 @@ def parse(spytext):
             continue
 
         if block is None:
-            raise Exception("Non-comment text outside Type definitions is not understood: '%s'" % block)
+            raise SpyderParseError("Non-comment text outside Type definitions is not understood: '%s'" % block)
 
         if block_type != "Type":
-            raise Exception("Top-level {}-blocks other than Type are not understood: '%s'" % block_type)
+            raise SpyderParseError("Top-level {}-blocks other than Type are not understood: '%s'" % block_type)
 
         block_head_words = block_head.split(":")
         if len(block_head_words) > 2:
-            raise Exception("Type header '%s' can contain only one ':'" % block_head)
+            raise SpyderParseError("Type header '%s' can contain only one ':'" % block_head)
 
         typename = block_head_words[0]
         bases = []
@@ -173,10 +171,10 @@ def parse_block(blocktext):
         masked_single_quote = masked_curly_braces
 
     if len(blocks) > 1:
-        raise Exception("compile error: invalid statement\n%s\nStatement must contain a single {} block" % blocktext)
+        raise SpyderParseError("compile error: invalid statement\n%s\nStatement must contain a single {} block" % blocktext)
 
         if post_block.strip():
-            raise Exception("compile error: invalid statement\n%s\nStatement must be empty after {} block" % blocktext)
+            raise SpyderParseError("compile error: invalid statement\n%s\nStatement must be empty after {} block" % blocktext)
 
     elif blocks:
         block = blocks[0][1:-1]

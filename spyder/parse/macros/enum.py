@@ -1,7 +1,5 @@
 # Copyright 2007-2016, Sjoerd de Vries
 
-from . import register_macro
-
 
 def macro_enum(name, content):
     if not name.startswith("Enum"):
@@ -46,5 +44,3 @@ def macro_enum(name, content):
               (name, name, args_string, name, args_string[1:-1])
     return result
 
-
-register_macro(macro_enum)
