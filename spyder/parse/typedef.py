@@ -1,6 +1,6 @@
 from lxml.builder import E
 
-from .exceptions import SpyderParseError
+from ..exceptions import SpyderParseError
 from ..validate import is_valid_spydertype
 
 
