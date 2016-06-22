@@ -1,16 +1,19 @@
 import os
 import sys
 
-dir_containing_seamless = os.path.normpath(os.path.join(os.path.dirname(__file__), '../../'))
-sys.path.append(dir_containing_seamless)
 
-import seamless
-seamless.init()
+# Test schema XML->JSON of Coordinate
+if __name__ == "__main__":
+    dir_containing_seamless = os.path.normpath(os.path.join(os.path.dirname(__file__), '../../'))
+    sys.path.append(dir_containing_seamless)
 
-xml_path = os.path.normpath(os.path.join(os.path.dirname(__file__), '../spyder/example/coordinate.spyderschema.xml'))
+    import seamless
+    seamless.init()
 
-with open(xml_path) as f:
-    xml = f.read().encode('utf-8')
+    xml_path = os.path.normpath(os.path.join(os.path.dirname(__file__), '../spyder/example/coordinate.spyderschema.xml'))
 
-result = seamless.spyder.transform.schema2json(xml)
-print(result)
+    with open(xml_path) as f:
+        xml = f.read().encode('utf-8')
+
+    result = seamless.spyder.transform.schema2json(xml)
+    print(result)
