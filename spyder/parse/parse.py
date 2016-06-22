@@ -7,7 +7,7 @@ from collections import namedtuple
 
 from .macros import get_macros
 from .typedef import typedef_parse
-from .exceptions import SpyderParseError
+from ..exceptions import SpyderParseError
 
 
 # from ..validate import is_valid_spydertype

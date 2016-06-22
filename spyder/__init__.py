@@ -120,7 +120,7 @@ TODO:
 
 import sys
 
-from . import manager, parse
+from . import manager, parse, transform
 from .validate import is_valid_spydertype, reserved_endings, reserved_membernames, reserved_types
 
 
