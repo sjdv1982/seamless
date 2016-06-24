@@ -1,4 +1,3 @@
-from lxml import etree
 from lxml.builder import E
 
 from .exceptions import SpyderParseError
@@ -130,7 +129,7 @@ def typedef_parse(typename, bases, block):
                 method_block = E.method_block("")
                 tree.append(method_block)
                 inside_method_block = True
-                
+
             method_block.text += "\n  " + "\n  ".join(line_tabs_as_spaces.split("\n"))
             continue
 

@@ -2,8 +2,6 @@
 
 import sys, re, os
 from collections import namedtuple
-# from lxml import etree
-# from lxml.builder import E
 
 from .macros import get_macros
 from .typedef import typedef_parse

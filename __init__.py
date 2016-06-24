@@ -129,7 +129,7 @@ For now, three values for are allowed:
 _init = False
 
 #The modules cannot yet access the seamless state variables
-from . import atc, spyder, gui, process, sf, cellmanagers, transformers, datatypes
+from . import atc, spyder, gui, process, sf, cell, transformers, datatypes
 
 def init():
     global _init
@@ -177,7 +177,7 @@ def init():
     spyder.init()
     gui.init()
     process.init()
-    cellmanagers.init()
+    cell.init()
 
     def master():
         return _master
