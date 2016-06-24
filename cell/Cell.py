@@ -84,7 +84,7 @@ class PythonCell(Cell):
     Mismatch between the two is not a problem, unless:
           Connected controllers have conflicting requirements
         OR
-            A function is required
+            A function is required (typically, true for transformers)
           AND
             The cell contains a code block
           AND
