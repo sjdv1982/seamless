@@ -29,8 +29,8 @@ class Empty:
     pass
 
 
-def schema2json(xml, namespace=None, spyder_space=default_spyder_space):
-    """Converts spyderschema XML to JSON schema"""
+def schema_to_json(xml, namespace=None, spyder_space=default_spyder_space):
+    """Converts spyder-schema XML to JSON schema"""
     container = Empty()
     container.__dict__.update(
       {

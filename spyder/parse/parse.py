@@ -7,6 +7,7 @@ from .macros import get_macros
 from .typedef import typedef_parse
 from ..exceptions import SpyderParseError
 
+from tokenize import generate_tokens,
 
 # from ..validate import is_valid_spydertype
 
@@ -32,10 +33,75 @@ mask_sign_curly = "!"
 BlockParseResult = namedtuple("BlockParseResult", "block_type block_head block block_docstring")
 
 
+class Token:
+
+    def __init__(self, character=None):
+        self.character = character
+
+    def __repr__(self):
+        return "{}({})".format(self.__class__.__name__, self.character)
+
+
+class Word(Token):
+    pass
+
+
+class BlockStart(Token):
+    pass
+
+
+class BlockEnd(Token):
+    pass
+
+
+class StringType:
+    NONE, MULTI, SINGLE = range(3)
+
+
+def _split_blocks(string):
+    block_depth = 0
+    for char in string:
+        if char == '{':
+            block_depth += 1
+
+        elif char == '}':
+            block_depth -= 1
+
+
+def _tokenize_first_pass(string):
+    tokens = []
+
+    is_escaped = False
+    in_string = False
+
+    stack = []
+
+    current_string = []
+    current_string_char = None
+
+    for char in string:
+        if char == '"':
+            in_string = True
+
+            if stack[-1] == 1:pass
+
+        if char == '{':
+            tokens.append()
+
+        stack.append(char)
+
+
+
+def tokenise(string):
+    tokens = []
+
+    for char in string:
+        if char in {'{', '}'}:
+            tokens.append()
+
+
 def parse(spytext):
     """Converts spytext to a dictionary  with key (the name of the Spyder type) -> value (the lxml tree)"""
-    macros = get_macros()
-
     result = {}
     blocks = divide_blocks(spytext)
     for block in blocks:
@@ -80,6 +146,7 @@ def mask_characters(expression, search_text, target_text, mask_char):
     masked_text = ""
     for match in expression.finditer(search_text):
         masked_text += target_text[pos:match.start()] + mask_char * (match.end() - match.start())
+        print(masked_text)
         pos = match.end()
 
     masked_text += target_text[pos:]

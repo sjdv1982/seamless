@@ -1,1 +1,1 @@
-from .schema2json import schema2json
+from .schema_to_json import schema_to_json
