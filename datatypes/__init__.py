@@ -32,7 +32,7 @@ def construct(datatype, value):
     except:
         raise ConstructionError
 
-def parse(datatype, value):
+def parse(datatype, value, trusted):
     try:
         return _parsers[datatype](value)
     except:
@@ -46,3 +46,5 @@ class ParseError(Exception):
 
 class ConstructionError(Exception):
     pass
+
+from .objects import datatype_to_dataobject

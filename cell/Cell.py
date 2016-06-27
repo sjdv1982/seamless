@@ -1,13 +1,14 @@
 from .. import datatypes
 import traceback, inspect, ast
+from . import manager
 
 class Cell:
     _datatype = None
     _data = None #data, always in text format
-    _status = "uninitialized" #TODO: more sophisticated than a simple string
-    _exception = None         #TODO: more sophisticated than a simple string
+    _status = "uninitialized"
+    _exception = None
 
-    _name = None
+    _name = "cell"
     @property
     def name(self):
         return self._name
@@ -18,26 +19,30 @@ class Cell:
     def __init__(self, datatype):
         assert datatypes.check_registered(datatype)
         self._datatype = datatype
+
     def set(self, text_or_object):
         """This method is used to update cell data from Python code
         in the main thread"""
         if isinstance(text_or_object, (str, bytes)):
-            self._text_set(text_or_object, from_update = False)
+            self._text_set(text_or_object, trusted = False)
         else:
-            self._object_set(text_or_object, from_update = False)
-    def _text_set(self, data, from_update):
+            self._object_set(text_or_object, trusted = False)
+    def _text_set(self, data, trusted):
         try:
             """Check if we can parse the text"""
-            datatypes.parse(self._datatype, data, from_update=from_update)
+            datatypes.parse(self._datatype, data, trusted=trusted)
         except datatypes.ParseError:
             self._status = "error"
             self._exception = traceback.format_exc()
-            if not from_update:
+            if not trusted:
                 raise
         else:
             self._data = data
             self._status = "OK"
-    def _object_set(self, object_, from_update):
+            if not trusted:
+                manager.manager.update_from_code(self)
+
+    def _object_set(self, object_, trusted):
         try:
             """
             Construct the object:
@@ -50,15 +55,22 @@ class Cell:
         except datatypes.ConstructionError:
             self._status = "error"
             self._exception = traceback.format_exc()
-            if not from_update:
+            if not trusted:
                 raise
         else:
             data = datatypes.serialize(self._datatype, object_) #Normally no error here...
             self._data = data
             self._status = "OK"
+            if not trusted:
+                manager.manager.update_from_code(self)
+
     def _update(self, data):
         """This method is invoked when cell data is updated by controllers"""
-        self._text_set(data, from_update = True)
+        self._text_set(data, trusted = True)
+
+    def connect(self, target):
+        manager.connect(self, target)
+
     @property
     def datatype(self):
         return self._datatype
@@ -94,12 +106,12 @@ class PythonCell(Cell):
     _requires_function = None
     _is_function = None
     _connections = 0
-    def _text_set(self, data, from_update):
+    def _text_set(self, data, trusted):
         try:
             """Check if the code is valid Python syntax"""
             astree = compile(data, self._name, "exec", ast.PyCF_ONLY_AST)
         except SyntaxError:
-            if not from_update:
+            if not trusted:
                 raise
             else:
                 self._status = "error"
@@ -111,7 +123,7 @@ class PythonCell(Cell):
              then the code block must contain return statement(s)
             """
             is_function  = (len(astree.body) == 1 and \
-              isinstance(a.body[0], ast.FunctionDef))
+              isinstance(astree.body[0], ast.FunctionDef))
             ok = True
             if not is_function and self._requires_function:
                 ok = False
@@ -124,15 +136,17 @@ class PythonCell(Cell):
                 self._is_function = is_function
                 self._data = data
                 self._status = "OK"
+                if not trusted:
+                    manager.manager.update_from_code(self)
             else:
                 exc = SyntaxError("Block must contain return statement(s)")
-                if not from_update:
+                if not trusted:
                     raise exc
                 else:
                     self._status = "error"
                     self._exception = exc
 
-    def _object_set(self, object_, from_update):
+    def _object_set(self, object_, trusted):
         try:
             """
             Try to retrieve the source code
@@ -144,12 +158,14 @@ class PythonCell(Cell):
         except:
             self._status = "error"
             self._exception = traceback.format_exc()
-            if not from_update:
+            if not trusted:
                 raise
         else:
             self._is_function = True
             self._data = code
             self._status = "OK"
+            if not trusted:
+                manager.manager.update_from_code(self)
 
     def _on_connect(self, controller):
         if self._requires_function == False and \
