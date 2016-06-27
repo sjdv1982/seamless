@@ -169,7 +169,7 @@ def typedef_parse(typename, bases, block):
 
         else:
             if not title:
-                raise SpyderParseError("Malformed %s statement: no_func_required title" % (name, line))
+                raise SpyderParseError("Malformed %s statement: NOT_REQUIRED title" % (name, line))
 
             split_title = title.split()
 

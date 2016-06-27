@@ -290,7 +290,7 @@ Examples:
     .gzip = True
     .verbose = False
     => tar --create --gzip --file /tmp/backup.tgz /home/user
-       #no_func_required --verbose since it was specified as False; no_func_required specification gives an error
+       #NOT_REQUIRED --verbose since it was specified as False; NOT_REQUIRED specification gives an error
   "-ai" => program parameters input
     .program = "tar"
     .output = w.Directory(os.getcwd())
@@ -313,7 +313,7 @@ Parameter group:
    '--$parname' if isinstance(parametervalue, bool) and parameter == True
    '--parname $parametervalue' otherwise
 -p: same as above, but -$parname is used instead of --$parname
-p: same as above, but no_func_required - is added, meaning that $parname must start with at least one - (validated)
+p: same as above, but NOT_REQUIRED - is added, meaning that $parname must start with at least one - (validated)
 
 Output group:
 .output can be understood as .log_output, but only one can be defined

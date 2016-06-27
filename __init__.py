@@ -121,7 +121,7 @@ _allowed_visual = [False, "qt", "remote"]
 """
 Can we deal with cell visualization requests?
 For now, three values for are allowed:
-    False: no_func_required cell visualization of any kind, silently ignore all requests
+    False: NOT_REQUIRED cell visualization of any kind, silently ignore all requests
     "qt": create a Qt visualizer
     "remote": forward all visualization
 """

@@ -204,7 +204,7 @@ def parse_block(blocktext):
     Parses the content of a block into four parts
     - Block type: the first word
     - Block head: the first line after the block type, before the curly braces
-    - Block: content between curly braces (None if no_func_required curly braces)
+    - Block: content between curly braces (None if NOT_REQUIRED curly braces)
     - Block docstring: commented content right after the start of the block
     """
     masked_triple_quote, _ = mask_characters(triple_quote_match, blocktext, blocktext, mask_sign_triple_quote)

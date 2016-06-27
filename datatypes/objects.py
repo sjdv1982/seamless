@@ -1,6 +1,7 @@
 from . import parse, serialize
-import os
 import ast
+
+from abc import ABCMeta, abstractmethod
 
 
 class DataObject:
@@ -23,7 +24,7 @@ class DataObject:
         pass
 
 
-class PythonCodeObject(DataObject):
+class PythonCodeObject(DataObject, metaclass=ABCMeta):
     code = None
     ast = None
 
@@ -34,19 +35,21 @@ class PythonCodeObject(DataObject):
     def serialize(self):
         return self.data
 
+    @abstractmethod
+    def validate(self):
+        pass
+
 
 class PythonExpressionObject(PythonCodeObject):
 
     def validate(self):
-        src = self.data
-        self.code = compile(src, self.name, "eval")
+        self.code = compile(self.data, self.name, "eval")
 
 
 class PythonBlockObject(PythonCodeObject):
 
     def validate(self):
-        src = self.data
-        self.code = compile(src, self.name, "exec")
+        self.code = compile(self.data, self.name, "exec")
 
 
 class PythonTransformerObject(PythonCodeObject):
@@ -60,17 +63,13 @@ class PythonTransformerObject(PythonCodeObject):
             self.func_name = self.ast.body[0].name
 
         else:
-            ok = False
             try:
-                compile(self.ast, self.name, "exec")
-            except SyntaxError as exc:
-                if exc.args[0] == "'return' outside function":
-                    ok = True
+                return_node = next(n for n in self.ast.body if isinstance(n, ast.Return))
 
-            if not ok:
+            except StopIteration:
                 raise SyntaxError("Block must contain return statement(s)")
-            patched_src = "def transform(input):\n    " + \
-                          self.data.replace("\n", "\n    ").rstrip()
+
+            patched_src = "def transform(value):\n    " + self.data.replace("\n", "\n    ").rstrip()
 
             self.code = compile(patched_src, self.name, "exec")
             self.func_name = "transform"

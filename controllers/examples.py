@@ -16,14 +16,12 @@ class ExampleTransformer(Controller):
 
     def __init__(self, input_type, output_type):
         self.state = {}
-        self.input = InputPin(self, "input")
+        self.value = InputPin(self, "value")
         self.code = InputPin(self, "code")
         self.output = OutputPin()
 
-        thread_inputs = {
-          "input": input_type,
-        }
-        self._io_attrs = ("input", "code", "output")
+        thread_inputs = {"value": input_type}
+        self._io_attrs = ("value", "code", "output")
         """Output listener thread
         - It must have the same memory space as the main thread
         - It must run async from the main thread
@@ -39,22 +37,17 @@ class ExampleTransformer(Controller):
         """Transformer thread
         For now, it is implemented as a thread
          However, it could as well be implemented as process
-        - It shares no_func_required memory space with the main thread
+        - It shares NOT_REQUIRED memory space with the main thread
           (other than the deques and semaphores, which could as well be
            implemented using network sockets)
         - It must run async from the main thread
         """
-        self.transformer = Transformer(
-         thread_inputs,
-         self.output_queue,
-         self.output_semaphore
-        )
-        thread = threading.Thread(target=self.transformer.run, daemon=True)
-        self.transformer_thread = thread
+        self.transformer = Transformer(thread_inputs, self.output_queue, self.output_semaphore)
+        self.transformer_thread = threading.Thread(target=self.transformer.run, daemon=True)
         self.transformer_thread.start()
 
     def receive_update(self, input_pin, value):
-        self.transformer.queue.append((input_pin, value))
+        self.transformer.input_queue.append((input_pin, value))
         self.transformer.semaphore.release()
 
     def listen_output(self):

@@ -20,9 +20,10 @@ if __name__ == "__main__":
     from seamless.controllers.examples import ExampleTransformer
 
     cont = ExampleTransformer("int", "int")
-    c_data.connect(cont.input)
+    c_data.connect(cont.value)
+
     c_code.connect(cont.code)
-    c_code.set("return input*2")
+    c_code.set("return value*2")
 
     print(c_data.data, "'" + c_code.data + "'", c_output.data)
     cont.output.connect(c_output)
@@ -32,6 +33,6 @@ if __name__ == "__main__":
     print(c_data.data, "'" + c_code.data + "'", c_output.data)
 
     c_data.set(5)
-    c_code.set("return input*3")
+    c_code.set("return value*3")
     cont.destroy()  # this will sync the controller I/O threads before killing them
     print(c_data.data, "'" + c_code.data + "'", c_output.data)

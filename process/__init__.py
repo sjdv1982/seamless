@@ -1,3 +1,4 @@
+from abc import ABCMeta, abstractmethod
 from collections import deque
 import threading
 
@@ -17,9 +18,6 @@ class QueueItem:
     def __eq__(self, other):
         return self.name == other.name
 
-    def __ne__(self, other):
-        return self.name != other.name
-
     def __getitem__(self, index):
         if index == 0:
             return self.name
@@ -31,62 +29,67 @@ class QueueItem:
             return IndexError
 
 
-class Process:
+class Process(metaclass=ABCMeta):
+    """Base class for seamless Process"""
     name = "process"
 
-    def __init__(self, inputs):
+    def __init__(self, inputs, event_cls=threading.Event, semaphore_cls=threading.Semaphore):
         self.inputs = inputs
-        self.queue = deque()
-        self.semaphore = threading.Semaphore(0)
-        self.finish = threading.Event()     # command to finish
-        self.finished = threading.Event()   # report that we have finished
-        self.value = {name:None for name in inputs.keys()}
-        self.missing = len(inputs.keys())
+        self.input_queue = deque()
+        self.semaphore = semaphore_cls(0)
+        self.finish = event_cls()     # command to finish
+        self.finished = event_cls()   # report that we have finished
+        self.values = {name: None for name in inputs.keys()}
         self.exception = None
         self.updated = set()
 
+        self._pending_inputs = {name for name in inputs.keys()}
+
     def run(self):
         try:
-            while 1:
+            while True:
                 self.semaphore.acquire()
-                if self.finish.is_set():
-                    if not self.queue: # Todo check empty method instead (is this process safe?)
+
+                # Consume queue and break when asked to finish
+                if self.finish.is_set() and not self.input_queue:
+                    break
+
+                name, data = self.input_queue.popleft()# QueueItem instance
+
+                # It's cheaper to look-ahead for updates and wait until we process them instead
+                for new_name, new_update in list(self.input_queue):
+                    if new_name == name:
                         break
 
-                name, data = self.queue.popleft()# QueueItem instance
+                else:
+                    data_object = self.inputs[name]
+                    # instance of datatypes.objects.DataObject
 
-                """
-                check if there are newer updates to the same item
-                if so, skip the current update
-                """
-                for new_name, new_update in list(self.queue):
-                    if new_name == name:
+                    try:
+                        data_object.parse(data)
+                        data_object.validate()
+
+                    except Exception as exc:
+                        self.exception = exc
+                        import traceback
+                        traceback.print_exc()
                         continue
 
-                data_object = self.inputs[name]
-                # instance of datatypes.objects.DataObject
+                    # If we have missing values, and this input is currently default, it's no longer missing
+                    if self._pending_inputs and self.values[name] is None:
+                        self._pending_inputs.remove(name)
 
-                try:
-                    data_object.parse(data)
-                    data_object.validate()
+                    self.values[name] = data_object
+                    self.updated.add(name)
 
-                except Exception as exc:
-                    self.exception = exc
-                    import traceback
-                    traceback.print_exc()
-                    continue
+                    # With all inputs now present, we can issue updates
+                    if not self._pending_inputs:
+                        self.update(self.updated)
+                        self.updated = set()
 
-                if self.missing and self.value[name] is None:
-                    self.missing -= 1
-
-                self.value[name] = data_object
-                self.updated.add(name)
-
-                if not self.missing:
-                    self.update(self.updated)
-                    self.updated = set()
         finally:
             self.finished.set()
 
+    @abstractmethod
     def update(self, updated):
         pass
