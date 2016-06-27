@@ -23,28 +23,36 @@ _constructors = {
 
 _parsers = _constructors
 
-def check_registered(datatype):
-    return datatype in _known_types
 
-def construct(datatype, value):
+def check_registered(data_type):
+    return data_type in _known_types
+
+
+def construct(data_type, value):
     try:
-        return _constructors[datatype](value)
+        return _constructors[data_type](value)
+
     except:
         raise ConstructionError
 
-def parse(datatype, value, trusted):
+
+def parse(data_type, value, trusted):
     try:
-        return _parsers[datatype](value)
+        return _parsers[data_type](value)
     except:
         raise ParseError
 
-def serialize(datatype, value):
+
+def serialize(data_type, value):
     return str(value)
+
 
 class ParseError(Exception):
     pass
 
+
 class ConstructionError(Exception):
     pass
 
-from .objects import datatype_to_dataobject
+
+from .objects import data_type_to_data_object

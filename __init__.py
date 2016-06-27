@@ -34,7 +34,7 @@ Cells can be managed authoritatively, meaning that their state is stored.
 Cell-cell connections can be input and/or output (read and/or write)
 
 A special manager is the incremental cell manager. It is always contains three connections.
-All three connections have the same datatype X for both input and output.
+All three connections have the same data_type X for both input and output.
 One connection is the source (R+W), the second is the increment (R+W), and the third is the output (R).
 The incremental manager contains two private, authoritative cell, the replica and the output cell.
 In the non-error state, the output cell is equal to the increment
@@ -121,7 +121,7 @@ _allowed_visual = [False, "qt", "remote"]
 """
 Can we deal with cell visualization requests?
 For now, three values for are allowed:
-    False: no cell visualization of any kind, silently ignore all requests
+    False: no_func_required cell visualization of any kind, silently ignore all requests
     "qt": create a Qt visualizer
     "remote": forward all visualization
 """

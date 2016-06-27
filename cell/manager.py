@@ -2,108 +2,134 @@
 import weakref
 from weakref import WeakValueDictionary, WeakKeyDictionary
 
+
 class Manager:
+
     def __init__(self):
         self.listeners = {}
-        self.rev_listeners = {}
+        self.pin_to_cells = {}
         self.cells = WeakValueDictionary()
 
-    def add_listener(self, cell, inputpin):
-        cellid = self.get_cellid(cell)
-        ipref = weakref.ref(inputpin)
-        try:
-            listeners = self.listeners[cellid]
-            assert inputpin not in listeners
-            #TODO: tolerate (silently ignore) a connection that exists already?
-            listeners.append(ipref)
-        except KeyError:
-             self.listeners[cellid] = [ipref]
-        try:
-            rev_listeners = self.rev_listeners[id(inputpin)]
-            assert cellid not in rev_listeners
-            #TODO: tolerate (append) multiple inputs?
-            rev_listeners.append(cellid)
-        except KeyError:
-            self.rev_listeners[id(inputpin)] = [cellid]
+    def add_listener(self, cell, input_pin):
+        cell_id = self.get_cell_id(cell)
+        pin_ref = weakref.ref(input_pin)
 
-    def remove_listener(self, inputpin):
-        cellids = self.rev_listeners.pop(id(inputpin), [])
-        for cellid in cellids:
-            l = self.listeners[cellid]
-            l[:] = [ref for ref in l if id(ref()) != id(inputpin) ]
+        try:
+            listeners = self.listeners[cell_id]
+            assert input_pin not in listeners
+            # TODO: tolerate (silently ignore) a connection that exists already?
+            listeners.append(pin_ref)
+
+        except KeyError:
+             self.listeners[cell_id] = [pin_ref]
+
+        try:
+            pin_to_cells = self.pin_to_cells[id(input_pin)]
+            assert cell_id not in pin_to_cells
+            # TODO: tolerate (append) multiple inputs?
+            pin_to_cells.append(cell_id)
+
+        except KeyError:
+            self.pin_to_cells[id(input_pin)] = [cell_id]
+
+    def remove_listener(self, input_pin):
+        cellids = self.pin_to_cells.pop(id(input_pin), [])
+        for cell_id in cellids:
+            l = self.listeners[cell_id]
+            l[:] = [ref for ref in l if id(ref()) != id(input_pin)]
             if not len(l):
-                self.listeners.pop(cellid)
+                self.listeners.pop(cell_id)
 
-    def _update(self, cellid, value):
-        listeners = self.listeners.get(cellid, [])
-        for inputpin_ref in listeners:
-            inputpin = inputpin_ref()
-            if inputpin is None: continue #TODO: error?
-            inputpin.update(value)
+    def _update(self, cell_id, value):
+        listeners = self.listeners.get(cell_id, [])
+        for input_pin_ref in listeners:
+            input_pin = input_pin_ref()
+
+            if input_pin is None:
+                continue #TODO: error?
+
+            input_pin.update(value)
 
     def update_from_code(self, cell):
         value = cell._data
-        cellid = self.get_cellid(cell)
-        self._update(cellid, value)
+        cell_id = self.get_cell_id(cell)
+        self._update(cell_id, value)
 
-    def update_from_controller(self, cellid, value):
-        cell = self.cells.get(cellid, None)
+    def update_from_controller(self, cell_id, value):
+        cell = self.cells.get(cell_id, None)
         if cell is None:
             return #cell has died...
+
         cell._update(value)
-        self._update(cellid, value)
+        self._update(cell_id, value)
 
     @classmethod
-    def get_cellid(cls, cell):
+    def get_cell_id(cls, cell):
         return id(cell)
 
     def connect(self, source, target):
-        from .Cell import Cell
+        from .cell import Cell
         if isinstance(source, Cell):
             assert isinstance(target, InputPin)
             self.add_listener(source, target)
-            controller = target.controller()
+            controller = target.controller_ref()
             assert controller is not None #weakref may not be dead
             source._on_connect(controller)
+
             if source.status == "OK":
                 self.update_from_code(source)
+
         elif isinstance(source, OutputPin):
             assert isinstance(target, Cell)
-            cellid = self.get_cellid(target)
-            if cellid not in self.cells:
-                self.cells[cellid] = target
-            assert source.cellid is None #TODO: support multiple connections
-            source.cellid = cellid
+            cell_id = self.get_cell_id(target)
+            if cell_id not in self.cells:
+                self.cells[cell_id] = target
+
+            assert source.cell_id is None #TODO: support multiple connections
+            source.cell_id = cell_id
 
 manager = Manager()
 
+
 #TODO: declare types!
 class InputPin:
+
     def __init__(self, controller, identifier):
-        self.controller = weakref.ref(controller)
+        self.controller_ref = weakref.ref(controller)
         self.identifier = identifier
+
     def update(self, value):
-        controller = self.controller()
-        if controller is None: return #Process has died...
+        controller = self.controller_ref()
+        if controller is None:
+            return #Process has died...
+
         controller.receive_update(self.identifier, value)
+
     def __del__(self):
         try:
             manager.remove_listener(self)
+
         except:
             pass
 
+
 class OutputPin:
-    _cellid = None
+    _cell_id = None
+
     @property
-    def cellid(self):
-        return self._cellid
-    @cellid.setter
-    def cellid(self, value):
-        self._cellid = value
+    def cell_id(self):
+        return self._cell_id
+
+    @cell_id.setter
+    def cell_id(self, value):
+        self._cell_id = value
+
     def update(self, value):
-        manager.update_from_controller(self._cellid, value)
+        manager.update_from_controller(self._cell_id, value)
+
     def connect(self, target):
         manager.connect(self, target)
+
 
 def connect(source, target):
     manager.connect(source, target)

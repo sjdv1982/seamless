@@ -143,7 +143,7 @@ Validates that for every node, every attribute in its schema has been defined, e
      - Transformation
 Transforms a scene graphs into a topology graph. Topology graphs, after allocation and binding, will be traversed by renderers.
      - Allocator
-Allocates all hard values as (CPU) buffers. Inside the rendergraphs, all hard values are replaced by offsets into these buffers. There will be one buffer per datatype/vertextype. The same for dynamic attributes, they go in separate buffers though. In addition, appropriate binderstructs are created, that describe the buffer names.
+Allocates all hard values as (CPU) buffers. Inside the rendergraphs, all hard values are replaced by offsets into these buffers. There will be one buffer per data_type/vertextype. The same for dynamic attributes, they go in separate buffers though. In addition, appropriate binderstructs are created, that describe the buffer names.
 In case of topology regeneration, a full re-allocation may not be necessary, existing buffers may be reused.
 There is only one allocator. It must know how to deal with all elements in the rendergraph.
 The allocator is the last stage that generates a human-readable / debuggable node tree.

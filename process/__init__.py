@@ -1,36 +1,45 @@
-def init():
-    pass
-
 from collections import deque
 import threading
 
+
+def init():
+    pass
+
+
 class QueueItem:
+
     def __init__(self, name, data, **kwargs):
         self.name = name
         self.data = data
-        for attr, value in kwargs.items():
-            setattr(self, attr, value)
+
+        self.__dict__.update(kwargs)
+
     def __eq__(self, other):
         return self.name == other.name
+
     def __ne__(self, other):
         return self.name != other.name
+
     def __getitem__(self, index):
         if index == 0:
             return self.name
+
         elif index == 1:
             return self.data
+
         else:
             return IndexError
 
 
 class Process:
     name = "process"
+
     def __init__(self, inputs):
         self.inputs = inputs
         self.queue = deque()
         self.semaphore = threading.Semaphore(0)
-        self.finish = threading.Event()     #command to finish
-        self.finished = threading.Event()   #report that we have finished
+        self.finish = threading.Event()     # command to finish
+        self.finished = threading.Event()   # report that we have finished
         self.value = {name:None for name in inputs.keys()}
         self.missing = len(inputs.keys())
         self.exception = None
@@ -41,11 +50,10 @@ class Process:
             while 1:
                 self.semaphore.acquire()
                 if self.finish.is_set():
-                    if not len(self.queue):
+                    if not self.queue: # Todo check empty method instead (is this process safe?)
                         break
 
-                queueitem = self.queue.popleft()
-                name, data = queueitem
+                name, data = self.queue.popleft()# QueueItem instance
 
                 """
                 check if there are newer updates to the same item
@@ -55,12 +63,13 @@ class Process:
                     if new_name == name:
                         continue
 
-                dataobject = self.inputs[name]
-                #instance of datatypes.objects.DataObject
+                data_object = self.inputs[name]
+                # instance of datatypes.objects.DataObject
 
                 try:
-                    dataobject.parse(data)
-                    dataobject.validate()
+                    data_object.parse(data)
+                    data_object.validate()
+
                 except Exception as exc:
                     self.exception = exc
                     import traceback
@@ -69,8 +78,10 @@ class Process:
 
                 if self.missing and self.value[name] is None:
                     self.missing -= 1
-                self.value[name] = dataobject
+
+                self.value[name] = data_object
                 self.updated.add(name)
+
                 if not self.missing:
                     self.update(self.updated)
                     self.updated = set()
