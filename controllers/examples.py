@@ -1,5 +1,6 @@
 from . import Controller
 from ..cell.manager import InputPin, OutputPin
+from ..cell.cell import PythonCell
 from ..process.transformer import Transformer
 
 from collections import deque
@@ -11,8 +12,7 @@ class ExampleTransformer(Controller):
     """
     This is the main-thread part of the controller_ref
     """
-    _requires_function = True
-    thread = None
+    _required_code_type = PythonCell.CodeTypes.FUNCTION
 
     def __init__(self, input_type, output_type):
         self.state = {}
@@ -51,6 +51,9 @@ class ExampleTransformer(Controller):
         self.transformer.semaphore.release()
 
     def listen_output(self):
+        # TODO logging
+        # TODO requires_function cleanup
+
         while True:
             try:
                 self.output_semaphore.acquire()

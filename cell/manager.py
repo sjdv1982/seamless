@@ -21,7 +21,7 @@ class Manager:
             listeners.append(pin_ref)
 
         except KeyError:
-             self.listeners[cell_id] = [pin_ref]
+            self.listeners[cell_id] = [pin_ref]
 
         try:
             pin_to_cells = self.pin_to_cells[id(input_pin)]
@@ -76,7 +76,7 @@ class Manager:
             assert controller is not None #weakref may not be dead
             source._on_connect(controller)
 
-            if source.status == "OK":
+            if source.status == Cell.StatusFlags.OK:
                 self.update_from_code(source)
 
         elif isinstance(source, OutputPin):
