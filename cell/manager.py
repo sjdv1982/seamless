@@ -33,8 +33,8 @@ class Manager:
             self.pin_to_cells[id(input_pin)] = [cell_id]
 
     def remove_listener(self, input_pin):
-        cellids = self.pin_to_cells.pop(id(input_pin), [])
-        for cell_id in cellids:
+        cell_ids = self.pin_to_cells.pop(id(input_pin), [])
+        for cell_id in cell_ids:
             l = self.listeners[cell_id]
             l[:] = [ref for ref in l if id(ref()) != id(input_pin)]
             if not len(l):
