@@ -73,7 +73,7 @@ NOTE: whenever a Spyder type is updated, all of its dependencies are regenerated
 
 
 TODO:
-- eliminate string parsing, simplify File (only file and format, no more modes)
+- eliminate string parsing, simplify File (only file and format, NOT_REQUIRED more modes)
 - get rid of ObjectList
     Do make a little convenience function to load and save a Python list/dict of Spyder objects. No nesting.
 - don't forget Resource and Array
@@ -120,7 +120,7 @@ TODO:
 
 import sys
 
-from . import manager, parse
+from . import manager, parse, transform
 from .validate import is_valid_spydertype, reserved_endings, reserved_membernames, reserved_types
 
 

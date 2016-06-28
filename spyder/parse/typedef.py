@@ -1,6 +1,6 @@
 from lxml.builder import E
 
-from .exceptions import SpyderParseError
+from ..exceptions import SpyderParseError
 from ..validate import is_valid_spydertype
 
 
@@ -169,7 +169,7 @@ def typedef_parse(typename, bases, block):
 
         else:
             if not title:
-                raise SpyderParseError("Malformed %s statement: no title" % (name, line))
+                raise SpyderParseError("Malformed %s statement: NOT_REQUIRED title" % (name, line))
 
             split_title = title.split()
 
