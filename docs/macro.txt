@@ -1,0 +1,92 @@
+Macros are a way to modularize cell graphs. Instead of populating the context with many cells and processes, a macro creates a single subcontext.
+It is important to understand that a macro code itself is stored as a code cell, *not* as a Python callable.
+
+Definition
+==========
+
+The three forms of macro definition are:
+my_macro = macro(python_code)
+my_macro = macro(argtypedict, python_code)
+my_macro = macro(argtype, python_code)
+For convenience, python_code may be a Python function of which the source code will be extracted. macro can then be used as a decorator:
+@macro
+def my_macro(subctx, a, b):
+   ...
+Supplying a Python method or partial will not work.
+
+This creates an object my_macro, with:
+- name as "$name.mymacro", where $name = sys._getframe(1).f_globals["__name__"]
+- argtype or argtypedict (see below)
+- code as pythoncell(python_code, "codefunction")
+
+The first parameter to the macro function will always be a seamless.context object
+argtypedict is a dictionary containing the types of all the other parameters to the macro function. For example:
+@macro
+def my_macro(subctx, a:int, b:int):
+   ...
+Here, an appropriate argtype could be:
+my_argtypedict = {
+  "a": "int",
+  "b": "int",
+}
+@macro(my_argtypedict)
+def my_macro(subctx, a:int, b:int):
+   ...
+
+This is in fact a simplified JSON schema called "typeschema".
+The corresponding celltype is ("json", "typeschema").
+
+Alternatively, you can provide argtype, which is a celltype that has been previously registered:
+my_argtype = ("json", "my_argtype")
+types.register(my_argtype, my_argtypedict)
+@macro(my_argtype)
+def my_macro(subctx, a:int, b:int):
+   ...
+
+Usage
+=====
+
+There are two ways to use my_macro:
+
+1: By providing parameter values:
+ctx.processes.new_process( my_macro(1, 2) )
+
+This will create a new context object that is a subcontext of ctx. The new context is stored as ctx.processes.new_process. Then the macro will be just evaluated, providing the context as subctx to the macro. The macro will modify the context.
+
+2a: By providing a cell of argtype:
+mycell = ctx.cells.mycell(("json", "my_argtype")).set({a:1,b:2})
+ctx.processes.define(my_macro(mycell))
+
+2b: By providing parameter values that include cells
+mycell = ctx.cells.mycell("int").set(1)
+ctx.processes.define(my_macro(mycell, 2))
+
+In case 2), the following happens:
+
+subctx._params is set to the following:
+In case 2a): {
+  "value": "!mycell",
+  "cells": ["self"],
+}
+In case 2b):
+{
+  "value": {
+    "a" : "!mycell",
+    "b" : 2
+  }
+  "cells": ["a"]
+}
+subctx._macro is set to the following: "!__main__.my_macro"
+(or whatever the value of my_macro.name is)
+
+The dict ctx._macro is updated with:
+{
+  "__main__.my_macro": ...
+}
+where "..."" is my_macro.code.
+If  "__main__.my_macro" already exists, it is checked that the value is the same.
+
+Then, my_macro.code is executed with the my_cell value filled in.
+Whenever my_cell changes its value, the macro is re-executed.
+
+When the context is saved to disk, the macro code is saved with it, so that no import of the macro is necessary for loading or re-evaluation of the context (the context is completely self-contained). However, this does mean that changes to the macro code do not affect existing instances of the macro code inside the context. Therefore, macros have a .update_code() attribute that tries to locate the newest version of the code based on the name attribute of the macro code cell.

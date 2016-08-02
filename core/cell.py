@@ -2,8 +2,8 @@ import traceback
 import inspect
 import ast
 
-from .. import datatypes
-from ..utils import find_return_in_scope
+from .. import dtypes
+from .utils import find_return_in_scope
 from . import manager
 
 
@@ -26,7 +26,7 @@ class Cell:
     _outgoing_connections = 0
 
     def __init__(self, data_type):
-        assert datatypes.check_registered(data_type)
+        assert dtypes.check_registered(data_type)
         self._data_type = data_type
 
     @property
@@ -56,9 +56,9 @@ class Cell:
     def _text_set(self, data, trusted):
         try:
             """Check if we can parse the text"""
-            datatypes.parse(self._data_type, data, trusted=trusted)
+            dtypes.parse(self._data_type, data, trusted=trusted)
 
-        except datatypes.ParseError:
+        except dtypes.ParseError:
             self._set_error_state(traceback.format_exc())
 
             if not trusted:
@@ -76,18 +76,18 @@ class Cell:
             Construct the object:
              If the object is already of the correct type,
                then constructed_object is object_
-             Some datatypes (i.e. Spyder) can construct the object from
+             Some datatypes (i.e. silk) can construct the object from
               heterogenous input
             """
-            constructed_object = datatypes.construct(self._data_type, object_)
+            constructed_object = dtypes.construct(self._data_type, object_)
 
-        except datatypes.ConstructionError:
+        except dtypes.ConstructionError:
             self._set_error_state(traceback.format_exc())
 
             if not trusted:
                 raise
         else:
-            data = datatypes.serialize(self._data_type, object_) #Normally NOT_REQUIRED error here...
+            data = dtypes.serialize(self._data_type, object_) #Normally NOT_REQUIRED error here...
             self._data = data
             self._status = self.__class__.StatusFlags.OK
 
@@ -274,5 +274,5 @@ def cell(data_type, text_or_object=None):
     return newcell
 
 
-def python_cell(text_or_object=None):
+def pythoncell(text_or_object=None):
     return cell(("text", "code", "python"), text_or_object)

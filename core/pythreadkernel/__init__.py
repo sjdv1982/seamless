@@ -93,3 +93,6 @@ class Process(metaclass=ABCMeta):
     @abstractmethod
     def update(self, updated):
         pass
+
+
+from .transformer import Transformer

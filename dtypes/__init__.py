@@ -54,5 +54,7 @@ class ParseError(Exception):
 class ConstructionError(Exception):
     pass
 
-
+def register(*args, **kwargs):
+    pass
+    
 from .objects import data_type_to_data_object

@@ -1,7 +1,6 @@
 from . import Process
-from ..datatypes.objects import PythonTransformerObject
-from ..datatypes import data_type_to_data_object
-
+from ...dtypes.objects import PythonTransformerCodeObject
+from ...dtypes import data_type_to_data_object
 
 class Transformer(Process):
     name = "transformer"
@@ -18,7 +17,7 @@ class Transformer(Process):
         self.expression = None
 
         inputs = {name: data_type_to_data_object(value)(name, value) for name, value in input_data_types.items()}
-        inputs["code"] = PythonTransformerObject("code", ("text", "code", "python"))
+        inputs["code"] = PythonTransformerCodeObject("code", ("text", "code", "python"))
 
         super(Transformer, self).__init__(inputs, **kwargs)
 

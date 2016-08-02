@@ -1,0 +1,22 @@
+Type TransformerParam  {
+  Enum pin("inputpin", "outputpin", "bufferpin")
+  *Enum type_("codefunction", "codeblock", "volatile", "read", "write", "modify")
+  *Integer order
+  *String celltype
+  form {
+    celltype.subtype = "celltype"
+  }
+  validate {
+    if type_ is not None:
+        if pin == "inputpin":
+            assert type_ in ("codefunction", "codeblock", "volatile"), type
+        elif pin == "bufferpin":
+            assert type_ in ("read", "write", "modify")
+        elif pin == "outputpin":
+            assert type == "volatile"
+  }
+  validate {
+    if order is not None:
+        assert pin == "inputpin" and type_ == "codeblock"
+  }
+}

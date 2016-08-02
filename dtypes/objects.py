@@ -1,7 +1,7 @@
 from ast import PyCF_ONLY_AST, FunctionDef
 from abc import ABCMeta, abstractmethod
 
-from ..utils import find_return_in_scope
+from ..core.utils import find_return_in_scope
 from . import parse, serialize
 
 
@@ -53,7 +53,7 @@ class PythonBlockObject(PythonCodeObject):
         self.code = compile(self.data, self.name, "exec")
 
 
-class PythonTransformerObject(PythonCodeObject):
+class PythonTransformerCodeObject(PythonCodeObject):
     """Python code object used for transformers (accepts one argument)"""
     func_name = "transform"
 

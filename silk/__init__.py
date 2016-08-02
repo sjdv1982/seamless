@@ -123,6 +123,5 @@ import sys
 from . import manager, parse, transform
 from .validate import is_valid_spydertype, reserved_endings, reserved_membernames, reserved_types
 
-
-def init():
+def register(*args, **kwargs):
     pass
