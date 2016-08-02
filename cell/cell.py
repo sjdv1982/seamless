@@ -11,6 +11,7 @@ class Cell:
 
     class StatusFlags:
         UNINITIALISED, ERROR, OK = range(3)
+    StatusFlagNames = ["UNINITIALISED", "ERROR", "OK"]
 
     _data_type = None
     _data = None #data, always in text format
@@ -19,6 +20,10 @@ class Cell:
     _status = StatusFlags.UNINITIALISED
 
     _name = "cell"
+    _dependent = False
+
+    _incoming_connections = 0
+    _outgoing_connections = 0
 
     def __init__(self, data_type):
         assert datatypes.check_registered(data_type)
@@ -28,6 +33,12 @@ class Cell:
     def name(self):
         return self._name
 
+    @property
+    def dependent(self):
+        """Property is true if the cell has a hard incoming connection,
+         e.g. the output of a process"""
+        return self._dependent
+
     @name.setter
     def name(self, value):
         self._name = value
@@ -35,6 +46,7 @@ class Cell:
     def set(self, text_or_object):
         """This method is used to update cell data from Python code
         in the main thread"""
+        #TODO: support for liquid (lset)
         if isinstance(text_or_object, (str, bytes)):
             self._text_set(text_or_object, trusted=False)
 
@@ -99,17 +111,28 @@ class Cell:
 
     @property
     def status(self):
-        return self._status
+        return self.StatusFlagNames[self._status]
 
     @property
     def exception(self):
         return self._exception
 
-    def _on_connect(self, controller):
-        pass
+    def _on_connect(self, pin, controller, incoming):
+        #TODO: support for liquid connections: check pin!
+        if incoming:
+            if self._dependent:
+                raise Exception("Cell is already the output of another controller")
+            self._dependent = True
+            self._incoming_connections += 1
+        else:
+            self._outgoing_connections += 1
 
     def _on_disconnect(self, controller):
-        pass
+        if incoming:
+            self._dependent = False
+            self._incoming_connections -= 1
+        else:
+            self._outgoing_connections -= 1
 
     def _set_error_state(self, error_message=None):
         self._error_message = error_message
@@ -122,19 +145,18 @@ class PythonCell(Cell):
     Controllers that are connected to it may require either a code block or a
      function
     Mismatch between the two is not a problem, unless:
-          Connected controllers have conflicting requirements
+          Connected controllers have conflicting block/function requirements
         OR
             A function is required (typically, true for transformers)
           AND
             The cell contains a code block
           AND
-            The code block contains NOT_REQUIRED return statement
+            The code block contains no return statement
     """
 
     class CodeTypes:
         ANY, FUNCTION, BLOCK = range(3)
 
-    _connections = 0
     _data_type = ("text", "python")
 
     _code_type = CodeTypes.ANY
@@ -165,14 +187,17 @@ class PythonCell(Cell):
                     exception = SyntaxError("Block must contain return statement(s)")
 
                     if trusted:
-                        self._set_error_state("{}: {}".format(exception.__class__.__name__, exception.msg))
+                        self._set_error_state("{}: {}".format(
+                         exception.__class__.__name__, exception.msg)
+                        )
                         return
 
                     else:
                         raise exception
 
             self._data = data
-            self._code_type = self.CodeTypes.FUNCTION if is_function else self.CodeTypes.BLOCK
+            self._code_type = self.CodeTypes.FUNCTION if is_function \
+             else self.CodeTypes.BLOCK
             self._status = self.StatusFlags.OK
 
             if not trusted:
@@ -203,24 +228,32 @@ class PythonCell(Cell):
             if not trusted:
                 manager.manager.update_from_code(self)
 
-    def _on_connect(self, controller):
-        if self._code_type == self.CodeTypes.BLOCK and controller._required_code_type == self.CodeTypes.FUNCTION:
-            raise Exception(
-                """Cannot connect to %s: controller_ref requires a code function
-                 whereas other connected controllers require a code block""" % type(controller)
-            )
-        elif self._code_type == self.CodeTypes.FUNCTION and controller._required_code_type == self.CodeTypes.BLOCK:
-            raise Exception(
-                """Cannot connect to %s: controller_ref requires a code block
-                 whereas other connected controllers require a function""" % type(controller)
-            )
+    def _on_connect(self, pin, controller, incoming):
+        if not incoming:
+            if self._required_code_type == self.CodeTypes.BLOCK and \
+             controller._required_code_type == self.CodeTypes.FUNCTION:
+                raise Exception(
+                    """Cannot connect to %s: controller_ref requires a code function
+                     whereas other connected controllers require a code block""" % \
+                      type(controller)
+                )
+            elif self._required_code_type == self.CodeTypes.FUNCTION and \
+             controller._required_code_type == self.CodeTypes.BLOCK:
+                raise Exception(
+                    """Cannot connect to %s: controller_ref requires a code block
+                     whereas other connected controllers require a function""" % \
+                      type(controller)
+                )
 
-        self._required_code_type = controller._required_code_type
-        self._connections += 1
+        Cell._on_connect(self, pin, controller, incoming)
+        if not incoming:
+            self._required_code_type = controller._required_code_type
 
-    def _on_disconnect(self, controller):
-        self._connections -= 1
-        if self._connections == 0:
+
+
+    def _on_disconnect(self, pin, controller, incoming):
+        Cell._on_disconnect(self, pin, controller, incoming)
+        if self._outgoing_connections == 0:
             self._required_code_type = self.CodeTypes.ANY
 
 
@@ -243,4 +276,3 @@ def cell(data_type, text_or_object=None):
 
 def python_cell(text_or_object=None):
     return cell(("text", "code", "python"), text_or_object)
-

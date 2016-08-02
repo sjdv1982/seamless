@@ -71,16 +71,19 @@ class Manager:
         from .cell import Cell
         if isinstance(source, Cell):
             assert isinstance(target, InputPin)
-            self.add_listener(source, target)
             controller = target.controller_ref()
             assert controller is not None #weakref may not be dead
-            source._on_connect(controller)
+            source._on_connect(target, controller, incoming = False)
+            self.add_listener(source, target)
 
-            if source.status == Cell.StatusFlags.OK:
+            if source._status == Cell.StatusFlags.OK:
                 self.update_from_code(source)
 
         elif isinstance(source, OutputPin):
             assert isinstance(target, Cell)
+            controller = source.controller_ref()
+            assert controller is not None #weakref may not be dead
+            target._on_connect(source, controller, incoming = True)
             cell_id = self.get_cell_id(target)
             if cell_id not in self.cells:
                 self.cells[cell_id] = target
@@ -115,6 +118,10 @@ class InputPin:
 
 class OutputPin:
     _cell_id = None
+
+    def __init__(self, controller, identifier):
+        self.controller_ref = weakref.ref(controller)
+        self.identifier = identifier
 
     @property
     def cell_id(self):

@@ -82,7 +82,7 @@ minschema (string, optional)
 maxschema (string, optional)
   Only if dtype is a prototype. After node collapse, the prototype's schema must be a subset of maxschema. I.e., all attributes in the prototype's schema (with the same dtype, shape, etc.) must be defined in maxschema.
 inline (string, optional)
-  Upon construction, the construction value must be a dict (or, if "shape" is defined, the construction valie of the current element must be a dict), or else this attribute is ignored
+  Upon construction, the construction value must be a dict (or, if "shape" is defined, the construction value of the current element must be a dict), or else this attribute is ignored
   There are two possibilities.
   1) The value of "inline" is "conditional":
      An ad-hoc conditional is constructed from the contents of the dict ("name" does not need to be defined, but "expression" and attributes for expression values do).
@@ -90,6 +90,8 @@ inline (string, optional)
     In this case, dtype must be a prototype
     The construction value dict is combined with the schema or partial to construct an ad-hoc prototype. As usual, minschema and maxschema rules are applied.
 dynamic (bool, optional, default False)
+TODO: "dynamic" is NOT indicated in the type schema, but instead in the scene itself (prototype/class definition), by using $signal, where "signal" is the name of the dynamic signal (no other RAE expression)
+TODO: no instant/context buffer interface, just a single one where you ask for .data() and don't hold on to it for too long (there is a thread lock on it, and potentially triple-buffering behind it)
   Indicates that the attribute is dynamic. A dynamic attribute may have client attributes: attributes that depend, through a DAE, upon it. Client attributes cannot be dynamic themselves.
   Dynamic attributes may be topological or non-topological. Topological dynamic property can only be updated by the message system, and any update causes a topology regeneration.
   Non-topological dynamic updates can be updated through the buffer context interface (and sometimes, the instant buffer interface). If they have topological client attributes, their update causes a topology regeneration.
@@ -97,7 +99,7 @@ dynamic (bool, optional, default False)
 allowed_values (array, optional)
   If a list of allowed_values is defined, the attribute's value must be among them
 topological (bool, optional)
-  By default, floats, ints and bools are considered non-topological attributes, meaning that they can be changed dynamically without triggering a topology update. All other attributes are considered topological. With this attribute, this can be controlled manually. This is especially useful for implementing enums that are controlled through integers, or to set up attributes that are just read by the renderer, not sent to the GPU.
+  By default, floats, ints and bools are considered non-topological attributes, meaning that they can be changed dynamically without triggering a topology update. Names and extended names are considered topological. With this attribute, this can be controlled manually. This is especially useful for implementing enums that are controlled through integers, or to set up attributes that are just read by the renderer, not sent to the GPU.
 Attribute specifiers are specified within schema definitions (not *declared*, that happens within type schema definitions). DAEs for attribute specifiers are allowed. However, attribute specifiers cannot be dynamic, nor can they be dynamic client attributes. However, for all dynamic arrays, a messaging system is in place (append, delete, insert, etc.), which can change its dtype at runtime. This always leads to a topology regeneration.
 
 

@@ -86,7 +86,7 @@ pp_hhsuite1.input = f_fasta
 # in our case, it is a DirectoryDList
 pp_hhsuite1.output = fd_hhsuite
 
-f_hhsuite1_result = w.List(w.FileDList) #better than [], because workflow can now infer that f is called "f_hhsuite1_result[<it>]"
+f_hhsuite1_result = w.List(type=w.FileDList)() #better than [], because workflow can now infer that f is called "f_hhsuite1_result[<it>]"
 for it in range(4):
     f = fd_hhsuite.filename("%%s/hhblits-it_%d.a3m" % (it+1), if_exist=True) #w.FileDList
     #only generate those files that exist
@@ -95,7 +95,7 @@ for it in range(4):
 
 #5: run HHSUITE2 (hhsearch) to identify PDB templates
 #for now, run it on all iterations (last one would be sufficient)
-f_hhsuite2_result = w.List(w.DirectoryDList) #better than [], because workflow can now infer that f is called "f_hhsuite1_result[<it>]"
+f_hhsuite2_result = w.List(type=w.DirectoryDList)() #better than [], because workflow can now infer that f is called "f_hhsuite1_result[<it>]"
 for it in range(4):
     p_hhsuite2 = w.Bash()
     p_hhsuite2.script = w.File(HHSUITE2)

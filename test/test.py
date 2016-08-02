@@ -34,5 +34,17 @@ if __name__ == "__main__":
 
     c_data.set(5)
     c_code.set("return value*3")
+
+    c_output2 = cell("int")
+    cont2 = ExampleTransformer("int", "int")
+    c_code.connect(cont2.code)
+    c_data.connect(cont2.value)
+    cont2.output.connect(c_output2)
+
+    c_output3 = cell("int")
+    cont2.output.connect(c_output3)
+
     cont.destroy()  # this will sync the controller I/O threads before killing them
+    cont2.destroy()  # this will sync the controller I/O threads before killing them
     print(c_data.data, "'" + c_code.data + "'", c_output.data)
+    print(c_output2.data)

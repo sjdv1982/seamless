@@ -18,7 +18,7 @@ class ExampleTransformer(Controller):
         self.state = {}
         self.value = InputPin(self, "value")
         self.code = InputPin(self, "code")
-        self.output = OutputPin()
+        self.output = OutputPin(self, "output")
 
         thread_inputs = {"value": input_type}
         self._io_attrs = ("value", "code", "output")

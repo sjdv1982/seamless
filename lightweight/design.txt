@@ -3,7 +3,7 @@ PARTIALLY OUTDATED
 "primitive schema"
 A primitive schema has the following attributes:
 -  Value of the primitive command: points, lines or triangles. No strip, fan or loop.
--  "Data access pattern (DAP)" of the "primitive command classifier" 
+-  "Data access pattern (DAP)" of the "primitive command classifier"
 -  DAP of the "vertex length"
 - "Data schema" of all "attributes"
 - "Name" of the "shader program class"
@@ -16,7 +16,7 @@ String. Primitives with different primitive command classifiers will never be re
 "primitive prototype"
 A primitive prototype is a primitive schema where part (but not all) of the "attributes" have their "Data access pattern (DAP)" specified.
 A primitive prototype has the following attributes
-- "Extended name" of the "primitive schema" (schema::) or primitive prototype (primclass::) from which this prototype derives
+- "Extended name" of the "primitive schema" (schema::) or primitive prototype (prototype::) from which this prototype derives
 - "Data access pattern (DAP)" of one or more "attributes"
 A primitive prototype is always defined under a primitive prototype "name", and is stored in the 'prototype::' "namespace"
 
@@ -24,21 +24,21 @@ A primitive prototype is always defined under a primitive prototype "name", and 
 A primitive class is a primitive schema where all of the "attributes" have their "Data access pattern (DAP)" specified.
 A primitive class has the following attributes
 - "Extended name" of the "primitive schema" (schema::) or primitive prototype (prototype::) from which this primitive class derives
-- "batched": True or 'class' or False. 
+- "batched": True or 'class' or False.
    If True, all "co-batchable" primitives of this class (and other classes) are batched into a single "rendering"
    If "class", primitives are not co-batchable with primitives of other primitive classes
    If False, every primitive gets its own rendering
 
 "primitive"
 An instance of a "primitive class" in the "scene". Since primitive classes have all their attributes defined, they are constructed by
-specifying their "name" inside the 'children' list attribute of a "scene node" 
-   
+specifying their "name" inside the 'children' list attribute of a "scene node"
+
 
 "attributes"
 For every attribute, the GPU binding can be defined
   None means no GPU binding (i.e. it is for giving special info to the "renderfunc")
-   
-"rendering". 
+
+"rendering".
 A rendering is essentially the drawing of one or more "primitives" on screen. Each rendering corresponds to a VBA + an OpenGL render command. "Co-batchable" primitives end up in the same rendering.
 
 "batched" / "co-batchable"
@@ -49,8 +49,8 @@ Primitives are co-batchable if they have:
 - the same shaders. All primitives of the same shader program class use the same shader program. If EITHER that shader program doesn't use "DAP" OR for each shader, all DAP resolves identically, then the primitives are co-batchable
 - the same textures (OR: use texture arrays / bindless textures !) / texture buffers / uniform buffers
   (NOTE: uniform buffers don't like random-access; without glInstanceID they are probably not so useful)
-- the same vertex length (OR: use (Multi)DrawArraysIndirect!) 
-Two primitives do not necessarily have the same primitive class to be co-batchable. However, primitives with batched='class' are not co-batchable 
+- the same vertex length (OR: use (Multi)DrawArraysIndirect!)
+Two primitives do not necessarily have the same primitive class to be co-batchable. However, primitives with batched='class' are not co-batchable
 NOTE: Vertex data does NOT have to be the same. They can be concatenated and then rendered using e.g. glDrawElementsBaseVertex​
 
 
@@ -70,25 +70,25 @@ Extended renderable names are extended names of primitives, primswitches and nod
 **********
 
 Batched and non-batched primitives are rendered differently
-Even so, user-defined shaders should be the same for each, regardless how the primitive was declared. Shaders should never use glInstanceID. Lightweight will add shader code that will retrieve the relevant attribute, as a single-element variable. 
+Even so, user-defined shaders should be the same for each, regardless how the primitive was declared. Shaders should never use glInstanceID. Lightweight will add shader code that will retrieve the relevant attribute, as a single-element variable.
 
 Primitives may have non-GPU-mapped attributes (for READ-ONLY use in the renderfunc)
 
 For batched primitives, all primitives become a single rendering if they are *co-batchable*
 For those renderings:
   Per-primitive scalar attributes are bound as uniforms
-  For per-primitive attributes:  
-  - The DAP is resolved in (target, access) pairs. "target" is a buffer name, and "access" is one or more numerical indices  
+  For per-primitive attributes:
+  - The DAP is resolved in (target, access) pairs. "target" is a buffer name, and "access" is one or more numerical indices
   - If the pairs are identical for all instances, the attribute coalesces
     * For non-GPU-mapped attributes, a simple numerical value is created. Syntactic sugar: any array access to this variable returns the variable
     * For GPU-mapped attributes, a uniform is constructed and provided to the shader
   - If the attribute does not coalesce, determine the access value for each pair. Different indices may still map to the same value. If it then coalesces, see above
-  - If it still does not coalesce:    
+  - If it still does not coalesce:
     * For non-GPU-mapped attributes, construct a full per-primitive array
     * For GPU-mapped attributes, the data will be fetched with some shader glue code involving glInstanceID.
       Data that goes into VBOs will be bound with attribute divisor = 1
       If we ever run out of vertex attributes, use instead texture buffers (preference can be configured)
-      Assess the following conditions: 
+      Assess the following conditions:
       'small' means n * dsize < GL_MAX_UNIFORM_BLOCK_SIZE
       - condition 1: The total space of the attribute is small (n=number of primitives, dsize=attribute data type)
       - condition 2: The space of the different access values is small (n=number of pairs, dsize=attribute data type)
@@ -108,22 +108,22 @@ For those renderings:
       - 5. Data in texture buffer
       The preferences for each of these types can be indicated
   Per-vertex attributes:
-  - Data could be either interleaved or separate. Interleaved data apparently have higher performance, but would they be incompatible with per-primitive VBOs (storage patterns 2-5)? Or can these things be mixed? 
+  - Data could be either interleaved or separate. Interleaved data apparently have higher performance, but would they be incompatible with per-primitive VBOs (storage patterns 2-5)? Or can these things be mixed?
   - In case of too many VBO bindings, per-vertex attributes have priority over per-primitive attributes. If there are somehow too many per-vertex attributes on their own, some of them could be bound as texture buffers instead. For small numbers of vertices (and many instances), even consider uniform buffers?
 
 NO!! out of date...
-http://www.yosoygames.com.ar/wp/2015/01/uniform-buffers-vs-texture-buffers-the-2015-edition/  
+http://www.yosoygames.com.ar/wp/2015/01/uniform-buffers-vs-texture-buffers-the-2015-edition/
 http://www.gamedev.net/topic/674379-solved-uniform-buffer-actually-viable/
 http://www.ogre3d.org/forums/viewtopic.php?f=25&t=81060
-  
-*Advanced stuff*  
+
+*Advanced stuff*
 In case of interleaved data, alignment is necessary
-Check data alignment, https://www.opengl.org/wiki/Vertex_Specification_Best_Practices    
+Check data alignment, https://www.opengl.org/wiki/Vertex_Specification_Best_Practices
 For per-vertex attributes, it is also possible to define their OpenGL data type (e.g. normalized int) in addition to their client-side dtype. However, this will it harder to update via persistent mapping.
 
-In general, all buffer objects will be updatable via persistent mapped streaming 
+In general, all buffer objects will be updatable via persistent mapped streaming
 In addition, interleaving may interfere with persistent mapping. Numpy arrays can use strides, but probably flushing the buffer updates gets harder?
-  
+
 "texture buffers": there is a big difference between real textures (i.e. samplers with linear interpolation) and image textures (essentially ndarrays)
 http://stackoverflow.com/questions/37136813/what-is-the-difference-between-glbindimagetexture-and-glbindtexture
 
@@ -134,28 +134,28 @@ Watch out, they call mat4 in GLSL "column-major", but is just the same as C
 
 
 
-**********  
-  
+**********
+
 NOTES:
 - globals can be bound as uniforms to shader
 - shader may add an additional "variable declaration section", i.e. to declare unbound uniforms that must be set in the renderfunc.
-- shaders re-compiled because of a topology update will be re-compiled in a different thread 
+- shaders re-compiled because of a topology update will be re-compiled in a different thread
   Therefore, you need to initialize lightweight3d with two contexts, a primary (for rendering) and a secondary (for shader compiling). Test what happens if the contexts are the same
 
-**********  
-  
+**********
+
 np array update contexts (only first dimension!)
 Something in the lines of:
 with x.get_update_context(...)[10:22]:
   #we have a 12-length numpy array, modify as we want
   ...
-when the context closes, we will know that [10:22] is dirty and we know its new value  
-persistent mapping!!  
+when the context closes, we will know that [10:22] is dirty and we know its new value
+persistent mapping!!
 
 **********
 
 
-def renderfunc(renderinglist): 
+def renderfunc(renderinglist):
   for rendering in self.renderinglist:
     #rendering.primclass is available, but may be None for renderings from multiple primclasses
     #rendering.scene_access returns a list of tuples (node,node,node,...,primitive)
@@ -166,8 +166,8 @@ def renderfunc(renderinglist):
     else:
       glDrawElements(prim, rendering.nr_vertices, rendering.indextype, None)
 
-#TODO above: collate all vertexbuffers into one and add baseindex 
-      
+#TODO above: collate all vertexbuffers into one and add baseindex
+
 PYTHON:
 import numpy as np
 import math
@@ -175,10 +175,10 @@ def quatmult(q1, q2):
   ...
 def posemult(p1, p2):
   ...
-ordinals = {"first":1}   
+ordinals = {"first":1}
 
 lightweight.set_namespace(globals())
-  
+
 define_python //for DAP; no builtins!
 [
   "np": {
@@ -192,11 +192,11 @@ define_python //for DAP; no builtins!
   "dict" : {
     "type" : "class",
     "expression" : "dict"
-  },  
+  },
   "ordinals" : {
     "type" : "object",
     "expression" : "ordinals"
-  }  
+  }
 ]
 
 define_types
@@ -204,12 +204,12 @@ define_types
   "vec3": {
     "dtype" : ("float", "float", "float"),
     "names" : ("x", "y", "z")
-    
+
   },
   "quaternion": {
     "dtype" : ("float", "float", "float", "float"),
     "names" : ("w", "x", "y", "z")
-  },  
+  },
   "pose": {
     "dtype" : ("quaternion", "vec3"),
     "names" : ("rotation", "translation")
@@ -221,48 +221,48 @@ define_types
 ]
 
 //Built-in types: str, int, float, byte, name, extended_name, extended_name_renderable
-      
+
 set_global_schema
 [
   "camera" : {
     "dtype" :"pose",
     "shape" : "none",
-  },  
+  },
   "lights" : {
     "dtype" :"light",
     "shape" : ["none"],
   }
-] 
+]
 
 
 set_pipeline
 {
   "_order": ["render"], //required; all values must be keys as well
-  "render": renderfunc  
+  "render": renderfunc
 }
 
-define_node_schema 
+define_node_schema
 {
   "name" : "mynode",
   "value" : {
-    
-    //required: _is_primitive and children 
+
+    //required: _is_primitive and children
     // _is_primitive can be "false" or "true"; if "true", primitive is batched unless _is_batched = "false"
     //children must have dtype "extended_name", "extended_name_renderable" or "name"
-    // if dtype is "name", then "namespace" must be defined also 
-    "_is_primitive" : "false", 
-    "children" : { 
+    // if dtype is "name", then "namespace" must be defined also
+    "_is_primitive" : "false",
+    "children" : {
       "dtype" : "extended_name_renderable",
       "shape" : ["none"]
     },
-    
+
     "pose" : "pose",
-    "_pose" : "@posemult(parent._pose, self.pose)" 
-    
+    "_pose" : "@posemult(parent._pose, self.pose)"
+
   }
 }
 
-define_primswitch_schema 
+define_primswitch_schema
 {
   "name" : "render_switch",
   "value" : {
@@ -297,4 +297,3 @@ add_primswitch
     "false": "none"
   }
 }
-
