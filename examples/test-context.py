@@ -19,21 +19,17 @@ if __name__ == "__main__":
     )
     sys.path.append(dir_containing_seamless)
 
-    from seamless import cell, pythoncell, transformer, context
+    from seamless import context, transformer
     ctx = context()
 
-    c_data = cell("int").set_context(ctx).set(4)
-    c_output = cell("int").set_context(ctx)
-    c_code = pythoncell()
-
-    cont = transformer(tparams).set_context(ctx)
-    c_data.connect(cont.value)
-
-    c_code.connect(cont.code)
-    c_code.set("return value*2")
+    cont = ctx.processes.cont(transformer(tparams))
+    c_data = cont.value.cell()
+    c_data.set(4)
+    c_code = cont.code.cell()
+    c_output = cont.output.cell()
 
     print(c_data.data, "'" + c_code.data + "'", c_output.data)
-    cont.output.connect(c_output)
+    c_code.set("return value*2")
 
     time.sleep(0.001)
     # 1 ms is usually enough to print "8", try 0.0001 for a random chance
@@ -42,11 +38,10 @@ if __name__ == "__main__":
     c_data.set(5)
     c_code.set("return value*3")
 
-    c_output2 = cell("int")
-    cont2 = transformer(tparams).set_context(ctx)
+    cont2 = ctx.processes.cont2(transformer(tparams))
     c_code.connect(cont2.code)
     c_data.connect(cont2.value)
-    cont2.output.connect(c_output2)
+    c_output2 = cont2.output.cell()
 
     # c_output3 = cell("int")
     # cont2.output.connect(c_output3)

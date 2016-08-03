@@ -1,3 +1,3 @@
 from .cell import cell, pythoncell
-from .manager import connect
+from .process import connect
 from .macro import macro

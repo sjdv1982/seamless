@@ -2,6 +2,9 @@
 import weakref
 from weakref import WeakValueDictionary, WeakKeyDictionary
 
+class Process:
+    """Base class for all processes."""
+    pass
 
 class Manager:
 

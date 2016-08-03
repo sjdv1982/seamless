@@ -1,20 +1,25 @@
+"""Module containing the Cell class."""
+
 import traceback
 import inspect
 import ast
 
 from .. import dtypes
 from .utils import find_return_in_scope
-from . import manager
-
+from . import manager, context
 
 class Cell:
+    """Default class for cells.
+
+    Cells contain all the state in text form
+    """
 
     class StatusFlags:
         UNINITIALISED, ERROR, OK = range(3)
     StatusFlagNames = ["UNINITIALISED", "ERROR", "OK"]
 
-    _data_type = None
-    _data = None #data, always in text format
+    _dtype = None
+    _data = None  # data, always in text format
 
     _error_message = None
     _status = StatusFlags.UNINITIALISED
@@ -25,18 +30,23 @@ class Cell:
     _incoming_connections = 0
     _outgoing_connections = 0
 
-    def __init__(self, data_type):
-        assert dtypes.check_registered(data_type)
-        self._data_type = data_type
+    def __init__(self, dtype):
+        """TODO: docstring."""
+        assert dtypes.check_registered(dtype)
+        self._dtype = dtype
 
     @property
     def name(self):
+        """TODO: docstring."""
         return self._name
 
     @property
     def dependent(self):
-        """Property is true if the cell has a hard incoming connection,
-         e.g. the output of a process"""
+        """Indicate if the cell is dependent.
+
+        Property is true if the cell has a hard incoming connection,
+        e.g. the output of a process.
+        """
         return self._dependent
 
     @name.setter
@@ -44,19 +54,18 @@ class Cell:
         self._name = value
 
     def set(self, text_or_object):
-        """This method is used to update cell data from Python code
-        in the main thread"""
-        #TODO: support for liquid (lset)
+        """Update cell data from Python code in the main thread."""
+        # TODO: support for liquid (lset)
         if isinstance(text_or_object, (str, bytes)):
             self._text_set(text_or_object, trusted=False)
-
         else:
             self._object_set(text_or_object, trusted=False)
+        return self
 
     def _text_set(self, data, trusted):
         try:
             """Check if we can parse the text"""
-            dtypes.parse(self._data_type, data, trusted=trusted)
+            dtypes.parse(self._dtype, data, trusted=trusted)
 
         except dtypes.ParseError:
             self._set_error_state(traceback.format_exc())
@@ -79,7 +88,7 @@ class Cell:
              Some datatypes (i.e. silk) can construct the object from
               heterogenous input
             """
-            constructed_object = dtypes.construct(self._data_type, object_)
+            dtypes.construct(self._dtype, object_)
 
         except dtypes.ConstructionError:
             self._set_error_state(traceback.format_exc())
@@ -87,7 +96,8 @@ class Cell:
             if not trusted:
                 raise
         else:
-            data = dtypes.serialize(self._data_type, object_) #Normally NOT_REQUIRED error here...
+            data = dtypes.serialize(self._dtype, object_)
+            # Normally no error here...
             self._data = data
             self._status = self.__class__.StatusFlags.OK
 
@@ -95,39 +105,49 @@ class Cell:
                 manager.manager.update_from_code(self)
 
     def _update(self, data):
-        """This method is invoked when cell data is updated by controllers"""
+        """Invoked when cell data is updated by a process."""
         self._text_set(data, trusted=True)
 
     def connect(self, target):
+        """Connect the cell to a process's input pin."""
         manager.connect(self, target)
 
     @property
-    def data_type(self):
-        return self._data_type
+    def dtype(self):
+        """The cell's data type."""
+        return self._dtype
 
     @property
     def data(self):
+        """The cell's data in text format."""
         return self._data
 
     @property
     def status(self):
+        """The cell's current status."""
         return self.StatusFlagNames[self._status]
 
     @property
     def exception(self):
+        """The cell's current exception.
+
+        Returns None is there is no exception
+        """
         return self._exception
 
-    def _on_connect(self, pin, controller, incoming):
-        #TODO: support for liquid connections: check pin!
+    def _on_connect(self, pin, process, incoming):
+        # TODO: support for liquid connections: check pin!
         if incoming:
             if self._dependent:
-                raise Exception("Cell is already the output of another controller")
+                raise Exception(
+                 "Cell is already the output of another process"
+                )
             self._dependent = True
             self._incoming_connections += 1
         else:
             self._outgoing_connections += 1
 
-    def _on_disconnect(self, controller):
+    def _on_disconnect(self, pin, process, incoming):
         if incoming:
             self._dependent = False
             self._incoming_connections -= 1
@@ -141,11 +161,13 @@ class Cell:
 
 class PythonCell(Cell):
     """
+    A cell containing Python code.
+
     Python cells may contain either a code block or a function
-    Controllers that are connected to it may require either a code block or a
+    Processes that are connected to it may require either a code block or a
      function
     Mismatch between the two is not a problem, unless:
-          Connected controllers have conflicting block/function requirements
+          Connected processes have conflicting block/function requirements
         OR
             A function is required (typically, true for transformers)
           AND
@@ -157,7 +179,7 @@ class PythonCell(Cell):
     class CodeTypes:
         ANY, FUNCTION, BLOCK = range(3)
 
-    _data_type = ("text", "python")
+    _dtype = ("text", "python")
 
     _code_type = CodeTypes.ANY
     _required_code_type = CodeTypes.ANY
@@ -175,16 +197,22 @@ class PythonCell(Cell):
                 self._set_error_state(traceback.format_exc())
 
         else:
-            is_function = (len(ast_tree.body) == 1 and isinstance(ast_tree.body[0], ast.FunctionDef))
+            is_function = (
+             len(ast_tree.body) == 1 and
+             isinstance(ast_tree.body[0], ast.FunctionDef)
+            )
 
-            # If this cell requires a function, but wasn't provided with a def block
-            if not is_function and self._required_code_type == self.CodeTypes.FUNCTION:
+            # If this cell requires a function, but wasn't provided
+            #  with a def block
+            if not is_function and \
+                    self._required_code_type == self.CodeTypes.FUNCTION:
                 # Look for return node in AST
                 try:
-                    return_node = find_return_in_scope(ast_tree)
-
+                    find_return_in_scope(ast_tree)
                 except ValueError:
-                    exception = SyntaxError("Block must contain return statement(s)")
+                    exception = SyntaxError(
+                     "Block must contain return statement(s)"
+                    )
 
                     if trusted:
                         self._set_error_state("{}: {}".format(
@@ -196,8 +224,8 @@ class PythonCell(Cell):
                         raise exception
 
             self._data = data
-            self._code_type = self.CodeTypes.FUNCTION if is_function \
-             else self.CodeTypes.BLOCK
+            self._code_type = self.CodeTypes.FUNCTION if is_function else \
+                self.CodeTypes.BLOCK
             self._status = self.StatusFlags.OK
 
             if not trusted:
@@ -228,31 +256,26 @@ class PythonCell(Cell):
             if not trusted:
                 manager.manager.update_from_code(self)
 
-    def _on_connect(self, pin, controller, incoming):
+    def _on_connect(self, pin, process, incoming):
+        exc1 = """Cannot connect to %s: process requires a code function
+        whereas other connected processes require a code block"""
+        exc2 = """Cannot connect to %s: process requires a code block
+        whereas other connected processes require a code function"""
+
         if not incoming:
             if self._required_code_type == self.CodeTypes.BLOCK and \
-             controller._required_code_type == self.CodeTypes.FUNCTION:
-                raise Exception(
-                    """Cannot connect to %s: controller_ref requires a code function
-                     whereas other connected controllers require a code block""" % \
-                      type(controller)
-                )
+                    process._required_code_type == self.CodeTypes.FUNCTION:
+                raise Exception(exc1 % type(process))
             elif self._required_code_type == self.CodeTypes.FUNCTION and \
-             controller._required_code_type == self.CodeTypes.BLOCK:
-                raise Exception(
-                    """Cannot connect to %s: controller_ref requires a code block
-                     whereas other connected controllers require a function""" % \
-                      type(controller)
-                )
+                    process._required_code_type == self.CodeTypes.BLOCK:
+                raise Exception(exc2 % type(process))
 
-        Cell._on_connect(self, pin, controller, incoming)
+        Cell._on_connect(self, pin, process, incoming)
         if not incoming:
-            self._required_code_type = controller._required_code_type
+            self._required_code_type = process._required_code_type
 
-
-
-    def _on_disconnect(self, pin, controller, incoming):
-        Cell._on_disconnect(self, pin, controller, incoming)
+    def _on_disconnect(self, pin, process, incoming):
+        Cell._on_disconnect(self, pin, process, incoming)
         if self._outgoing_connections == 0:
             self._required_code_type = self.CodeTypes.ANY
 
@@ -262,17 +285,16 @@ _handlers = {
 }
 
 
-def cell(data_type, text_or_object=None):
+def cell(dtype):
+    """Factory function for a Cell object."""
     cell_cls = Cell
-    if data_type in _handlers:
-        cell_cls = _handlers[data_type]
+    if dtype in _handlers:
+        cell_cls = _handlers[dtype]
 
-    newcell = cell_cls(data_type)
-    if text_or_object is not None:
-        newcell.set(text_or_object)
-
+    newcell = cell_cls(dtype)
     return newcell
 
 
-def pythoncell(text_or_object=None):
-    return cell(("text", "code", "python"), text_or_object)
+def pythoncell():
+    """Factory function for a PythonCell object."""
+    return cell(("text", "code", "python"))

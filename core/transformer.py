@@ -3,7 +3,7 @@ import threading
 import traceback
 
 from . import macro
-from .manager import InputPin, OutputPin
+from .Process import Process, InputPin, OutputPin
 from .cell import Cell, PythonCell
 from .pythreadkernel import Transformer as KernelTransformer
 
@@ -71,7 +71,7 @@ linear stack to a dependency tree of sub-checkpoints that are merged.
   doc = "Transformer parameters"
 )
 
-class Transformer:
+class Transformer(Process):
     """
     This is the main-thread part of the controller_ref
     """

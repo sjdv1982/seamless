@@ -19,14 +19,13 @@ if __name__ == "__main__":
     )
     sys.path.append(dir_containing_seamless)
 
-    from seamless import cell, pythoncell, transformer, context
-    ctx = context()
+    from seamless import cell, pythoncell, transformer
 
-    c_data = cell("int").set_context(ctx).set(4)
-    c_output = cell("int").set_context(ctx)
+    c_data = cell("int").set(4)
+    c_output = cell("int")
     c_code = pythoncell()
 
-    cont = transformer(tparams).set_context(ctx)
+    cont = transformer(tparams)
     c_data.connect(cont.value)
 
     c_code.connect(cont.code)
@@ -43,7 +42,7 @@ if __name__ == "__main__":
     c_code.set("return value*3")
 
     c_output2 = cell("int")
-    cont2 = transformer(tparams).set_context(ctx)
+    cont2 = transformer(tparams)
     c_code.connect(cont2.code)
     c_data.connect(cont2.value)
     cont2.output.connect(c_output2)
