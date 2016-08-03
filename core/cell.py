@@ -6,9 +6,9 @@ import ast
 
 from .. import dtypes
 from .utils import find_return_in_scope
-from . import manager, context
+from .process import Managed
 
-class Cell:
+class Cell(Managed):
     """Default class for cells.
 
     Cells contain all the state in text form
@@ -76,8 +76,9 @@ class Cell:
             self._data = data
             self._status = self.__class__.StatusFlags.OK
 
-            if not trusted:
-                manager.manager.update_from_code(self)
+            if not trusted and self._context is not None:
+                manager = self._get_manager()
+                manager.update_from_code(self)
 
     def _object_set(self, object_, trusted):
         try:
@@ -101,8 +102,9 @@ class Cell:
             self._data = data
             self._status = self.__class__.StatusFlags.OK
 
-            if not trusted:
-                manager.manager.update_from_code(self)
+            if not trusted and self._context is not None:
+                manager = self._get_manager()
+                manager.update_from_code(self)
 
     def _update(self, data):
         """Invoked when cell data is updated by a process."""
@@ -110,6 +112,7 @@ class Cell:
 
     def connect(self, target):
         """Connect the cell to a process's input pin."""
+        manager = self._get_manager()
         manager.connect(self, target)
 
     @property
@@ -157,7 +160,6 @@ class Cell:
     def _set_error_state(self, error_message=None):
         self._error_message = error_message
         self._status = self.StatusFlags.ERROR
-
 
 class PythonCell(Cell):
     """
@@ -228,8 +230,9 @@ class PythonCell(Cell):
                 self.CodeTypes.BLOCK
             self._status = self.StatusFlags.OK
 
-            if not trusted:
-                manager.manager.update_from_code(self)
+            if not trusted and self._context is not None:
+                manager = self._get_manager()
+                manager.update_from_code(self)
 
     def _object_set(self, object_, trusted):
         try:
@@ -253,8 +256,9 @@ class PythonCell(Cell):
             self._data = code
             self._status = self.__class__.StatusFlags.OK
 
-            if not trusted:
-                manager.manager.update_from_code(self)
+            if not trusted and self._context is not None:
+                manager = self._get_manager()
+                manager.update_from_code(self)
 
     def _on_connect(self, pin, process, incoming):
         exc1 = """Cannot connect to %s: process requires a code function
@@ -298,3 +302,5 @@ def cell(dtype):
 def pythoncell():
     """Factory function for a PythonCell object."""
     return cell(("text", "code", "python"))
+
+from .context import Context

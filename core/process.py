@@ -2,10 +2,6 @@
 import weakref
 from weakref import WeakValueDictionary, WeakKeyDictionary
 
-class Process:
-    """Base class for all processes."""
-    pass
-
 class Manager:
 
     def __init__(self):
@@ -27,10 +23,10 @@ class Manager:
             self.listeners[cell_id] = [pin_ref]
 
         try:
-            pin_to_cells = self.pin_to_cells[id(input_pin)]
-            assert cell_id not in pin_to_cells
+            curr_pin_to_cells = self.pin_to_cells[id(input_pin)]
+            assert cell_id not in curr_pin_to_cells
             # TODO: tolerate (append) multiple inputs?
-            pin_to_cells.append(cell_id)
+            curr_pin_to_cells.append(cell_id)
 
         except KeyError:
             self.pin_to_cells[id(input_pin)] = [cell_id]
@@ -58,7 +54,7 @@ class Manager:
         cell_id = self.get_cell_id(cell)
         self._update(cell_id, value)
 
-    def update_from_controller(self, cell_id, value):
+    def update_from_process(self, cell_id, value):
         cell = self.cells.get(cell_id, None)
         if cell is None:
             return #cell has died...
@@ -74,9 +70,14 @@ class Manager:
         from .cell import Cell
         if isinstance(source, Cell):
             assert isinstance(target, InputPin)
-            controller = target.controller_ref()
-            assert controller is not None #weakref may not be dead
-            source._on_connect(target, controller, incoming = False)
+            assert source._context is not None and \
+                source._context._manager is self
+            assert target._context is not None and \
+                target._context._manager is self
+
+            process = target.process_ref()
+            assert process is not None #weakref may not be dead
+            source._on_connect(target, process, incoming = False)
             self.add_listener(source, target)
 
             if source._status == Cell.StatusFlags.OK:
@@ -84,62 +85,122 @@ class Manager:
 
         elif isinstance(source, OutputPin):
             assert isinstance(target, Cell)
-            controller = source.controller_ref()
-            assert controller is not None #weakref may not be dead
-            target._on_connect(source, controller, incoming = True)
+            process = source.process_ref()
+            assert process is not None #weakref may not be dead
+            target._on_connect(source, process, incoming = True)
             cell_id = self.get_cell_id(target)
             if cell_id not in self.cells:
                 self.cells[cell_id] = target
 
-            assert source.cell_id is None #TODO: support multiple connections
-            source.cell_id = cell_id
+            if cell_id not in source._cell_ids:
+                source._cell_ids.append(cell_id)
 
-manager = Manager()
+class Managed:
+    _context = None
+    def set_context(self, context):
+        assert isinstance(context, Context)
+        self._context = context
+        return self
 
+    def _get_context(self):
+        if self._context is None:
+            raise Exception(
+             "Cannot carry out requested operation without a context"
+            )
+        return self._context
 
-#TODO: declare types!
-class InputPin:
+    def _get_manager(self):
+        context = self._get_context()
+        return context._manager
 
-    def __init__(self, controller, identifier):
-        self.controller_ref = weakref.ref(controller)
+class Process(Managed):
+    """Base class for all processes."""
+    pass
+
+class InputPin(Managed):
+
+    def __init__(self, process, identifier, dtype):
+        self.process_ref = weakref.ref(process)
         self.identifier = identifier
+        self.dtype = dtype
+
+    def cell(self):
+        manager = self._get_manager()
+        context = self._get_context()
+        curr_pin_to_cells = manager.pin_to_cells.get(id(self), [])
+        l = len(curr_pin_to_cells)
+        if l == 0:
+            if self.dtype is None:
+                raise ValueError(
+                 "Cannot construct cell() for pin with dtype=None"
+                )
+            process = self.process_ref()
+            if process is None:
+                raise ValueError("Process has died")
+            cell = context.root().cells.define(self.dtype)
+            cell.connect(self)
+        elif l == 1:
+            cell = context.cells[curr_pin_to_cells[0]]
+        elif l > 1:
+            raise TypeError("cell() is ambiguous, multiple cells are connected")
+        return cell
+
 
     def update(self, value):
-        controller = self.controller_ref()
-        if controller is None:
+        process = self.process_ref()
+        if process is None:
             return #Process has died...
 
-        controller.receive_update(self.identifier, value)
+        process.receive_update(self.identifier, value)
 
     def __del__(self):
         try:
+            manager = self._get_manager()
             manager.remove_listener(self)
-
         except:
             pass
 
 
-class OutputPin:
-    _cell_id = None
-
-    def __init__(self, controller, identifier):
-        self.controller_ref = weakref.ref(controller)
+class OutputPin(Managed):
+    def __init__(self, process, identifier, dtype):
+        self.process_ref = weakref.ref(process)
         self.identifier = identifier
-
-    @property
-    def cell_id(self):
-        return self._cell_id
-
-    @cell_id.setter
-    def cell_id(self, value):
-        self._cell_id = value
+        self.dtype = dtype
+        self._cell_ids = []
 
     def update(self, value):
-        manager.update_from_controller(self._cell_id, value)
+        manager = self._get_manager()
+        for cell_id in self._cell_ids:
+            manager.update_from_process(cell_id, value)
 
     def connect(self, target):
+        manager = self._get_manager()
         manager.connect(self, target)
 
+    def cell(self):
+        context = self._get_context()
+        l = len(self._cell_ids)
+        if l == 0:
+            if self.dtype is None:
+                raise ValueError(
+                 "Cannot construct cell() for pin with dtype=None"
+                )
+            process = self.process_ref()
+            if process is None:
+                raise ValueError("Process has died")
+            cell = context.root().cells.define(self.dtype)
+            self.connect(cell)
+        elif l == 1:
+            context = self._get_context()
+            cell = context.cells[self._cell_ids[0]]
+        elif l > 1:
+            raise TypeError("cell() is ambiguous, multiple cells are connected")
+        return cell
 
-def connect(source, target):
-    manager.connect(source, target)
+    def cells(self):
+        context = self._get_context()
+        cells = [context.cells[c] for c in self._cell_ids]
+        cells = [c for c in cells if c is not None]
+        return cells
+
+from .context import Context

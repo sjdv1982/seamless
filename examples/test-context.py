@@ -27,8 +27,6 @@ if __name__ == "__main__":
     c_data.set(4)
     c_code = cont.code.cell()
     c_output = cont.output.cell()
-
-    print(c_data.data, "'" + c_code.data + "'", c_output.data)
     c_code.set("return value*2")
 
     time.sleep(0.001)

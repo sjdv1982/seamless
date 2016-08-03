@@ -24,11 +24,12 @@ if __name__ == "__main__":
 
     c_data = cell("int").set_context(ctx).set(4)
     c_output = cell("int").set_context(ctx)
-    c_code = pythoncell()
+    c_code = pythoncell().set_context(ctx)
 
     cont = transformer(tparams).set_context(ctx)
     c_data.connect(cont.value)
 
+    print(c_code._context, cont._context, cont.code._context)
     c_code.connect(cont.code)
     c_code.set("return value*2")
 

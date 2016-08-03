@@ -2,8 +2,8 @@ from collections import deque
 import threading
 import traceback
 
-from . import macro
-from .Process import Process, InputPin, OutputPin
+from .macro import macro
+from .process import Process, InputPin, OutputPin
 from .cell import Cell, PythonCell
 from .pythreadkernel import Transformer as KernelTransformer
 
@@ -12,7 +12,7 @@ from .. import silk
 
 transformer_param_docson = {
   "pin": "Required. Can be \"inputpin\", \"outputpin\", \"bufferpin\"",
-  "dtype": """Optional for inputpin, used to indicate a code inputpin
+  "pinclass": """Optional for inputpin, used to indicate a code inputpin
    or a volatile inputpin.
 Required for bufferpin, used to indicate the kind of bufferpin
 For inputpin:
@@ -30,7 +30,7 @@ get executed first; order must be a positive integer)
 Necessary if there are multiple codeblock inputpins.
 Changing a codeblock re-executes the codeblock and all codeblocks with a higher
 order (unless checkpoint dependencies are defined)""",
-  "celltype": "Optional, must be registered with types if defined"
+  "dtype": "Optional, must be registered with types if defined"
 }
 silk.register(
   ###Cell.fromfile("transformer_param.silk"), #TODO
@@ -73,23 +73,24 @@ linear stack to a dependency tree of sub-checkpoints that are merged.
 
 class Transformer(Process):
     """
-    This is the main-thread part of the controller_ref
+    This is the main-thread part of the controller
     """
     _required_code_type = PythonCell.CodeTypes.FUNCTION
 
     def __init__(self, transformer_params):
         self.state = {}
-        self.code = InputPin(self, "code")
+        self.code = InputPin(self, "code", ("text", "code", "python"))
         thread_inputs = {}
         self._io_attrs = ["code"]
+        self._pins = {"code":self.code}
         for p in transformer_params:
             param = transformer_params[p]
             if param["pin"] == "input":
-                pin = InputPin(self, p)
+                pin = InputPin(self, p, param["dtype"])
                 thread_inputs[p] = param["dtype"]
             elif param["pin"] == "output":
-                pin = OutputPin(self, p)
-            setattr(self, p, pin)
+                pin = OutputPin(self, p, param["dtype"])
+            self._pins[p] = pin
 
         self._io_attrs = ("value", "code", "output")
         """Output listener thread
@@ -115,6 +116,18 @@ class Transformer(Process):
         self.transformer = KernelTransformer(thread_inputs, self.output_queue, self.output_semaphore)
         self.transformer_thread = threading.Thread(target=self.transformer.run, daemon=True)
         self.transformer_thread.start()
+
+    def __getattr__(self, attr):
+        if attr not in self._pins:
+            raise AttributeError(attr)
+        else:
+            return self._pins[attr]
+
+    def set_context(self, context):
+        Process.set_context(self, context)
+        for p in self._pins:
+            self._pins[p].set_context(context)
+        return self
 
     def receive_update(self, input_pin, value):
         self.transformer.input_queue.append((input_pin, value))
@@ -177,3 +190,5 @@ class Transformer(Process):
 def transformer(kwargs):
     #TODO: remapping, e.g. output_finish, destroy, ...
     return Transformer(kwargs)
+
+from .context import Context
