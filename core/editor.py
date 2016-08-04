@@ -1,11 +1,17 @@
+# TODO: copy-pasted from transformer.py:
+#  - common base class in process.py ??
+#  - make *both* a front-end to process.py?
+# decide after implementing effector.py!!
+
 from collections import deque
+from queue import Queue
 import threading
 import traceback
 
 from .macro import macro
-from .process import Process, InputPin, OutputPin
+from .process import Process, InputPin, EditorOutputPin
 from .cell import Cell, PythonCell
-from .pythreadkernel import Transformer as KernelTransformer
+from .pythreadkernel import Editor as KernelEditor
 
 from .. import dtypes
 from .. import silk
@@ -71,28 +77,33 @@ linear stack to a dependency tree of sub-checkpoints that are merged.
   doc = "Transformer parameters"
 )
 
-class Transformer(Process):
+class Editor(Process):
     """
-    This is the main-thread part of the controller
+    This is the main-thread part of the process
     """
-    _required_code_type = PythonCell.CodeTypes.FUNCTION
+    _required_code_type = PythonCell.CodeTypes.BLOCK
 
-    def __init__(self, transformer_params):
+    def __init__(self, editor_params):
         self.state = {}
-        self.code = InputPin(self, "code", ("text", "code", "python"))
+        self.output_names = []
+        self.code_start = InputPin(self, "code_start", ("text", "code", "python"))
+        self.code_update = InputPin(self, "code_update", ("text", "code", "python"))
+        self.code_stop = InputPin(self, "code_stop", ("text", "code", "python"))
         thread_inputs = {}
-        self._io_attrs = ["code"]
-        self._pins = {"code":self.code}
-        self._output_name = None
-        for p in transformer_params:
-            param = transformer_params[p]
+        self._io_attrs = ["code_start", "code_update", "code_stop"]
+        self._pins = {
+                        "code_start": self.code_start,
+                        "code_update": self.code_update,
+                        "code_stop": self.code_stop,
+                     }
+        for p in editor_params:
+            param = editor_params[p]
             if param["pin"] == "input":
                 pin = InputPin(self, p, param["dtype"])
                 thread_inputs[p] = param["dtype"]
             elif param["pin"] == "output":
-                pin = OutputPin(self, p, param["dtype"])
-                assert self._output_name is None  # can have only one output
-                self._output_name = p
+                pin = EditorOutputPin(self, p, param["dtype"])
+                self.output_names.append(p)
             self._io_attrs.append(p)
             self._pins[p] = pin
 
@@ -102,13 +113,14 @@ class Transformer(Process):
         => This will always be a thread, regardless of implementation
         """
         self.output_finish = threading.Event()
+        self.gui_queue = Queue()
         self.output_queue = deque()
         self.output_semaphore = threading.Semaphore(0)
         thread = threading.Thread(target=self.listen_output, daemon=True)
         self.output_thread = thread
         self.output_thread.start()
 
-        """Transformer thread
+        """Editor thread
         For now, it is implemented as a thread
          However, it could as well be implemented as process
         - It shares no memory space with the main thread
@@ -116,9 +128,12 @@ class Transformer(Process):
            implemented using network sockets)
         - It must run async from the main thread
         """
-        self.transformer = KernelTransformer(thread_inputs, self._output_name, self.output_queue, self.output_semaphore)
-        self.transformer_thread = threading.Thread(target=self.transformer.run, daemon=True)
-        self.transformer_thread.start()
+        self.editor = KernelEditor(thread_inputs,
+            self.output_names, self.output_queue, self.output_semaphore,
+            self.gui_queue,
+        )
+        self.editor_thread = threading.Thread(target=self.editor.run, daemon=True)
+        self.editor_thread.start()
 
     def __getattr__(self, attr):
         if attr not in self._pins:
@@ -133,8 +148,8 @@ class Transformer(Process):
         return self
 
     def receive_update(self, input_pin, value):
-        self.transformer.input_queue.append((input_pin, value))
-        self.transformer.semaphore.release()
+        self.editor.input_queue.append((input_pin, value))
+        self.editor.semaphore.release()
 
     def listen_output(self):
         # TODO logging
@@ -143,6 +158,10 @@ class Transformer(Process):
         while True:
             try:
                 self.output_semaphore.acquire()
+                if not self.gui_queue.empty():
+                    gui_block = self.gui_queue.get()
+                    
+                    self.output_semaphore.release()
                 if self.output_finish.is_set():
                     if not self.output_queue:
                         break
@@ -151,13 +170,13 @@ class Transformer(Process):
                 self._pins[output_name].update(output_value)
 
             except:
-                traceback.print_exc() #TODO: store it?
+                traceback.print_exc()  # TODO: store it?
 
     def destroy(self):
         # gracefully terminate the transformer thread
-        if self.transformer_thread is not None:
+        if self.editor_thread is not None:
             self.transformer.finish.set()
-            self.transformer.semaphore.release() # to unblock the .finish event
+            self.transformer.semaphore.release()  # to unblock the .finish event
             self.transformer.finished.wait()
             self.transformer_thread.join()
             del self.transformer_thread
@@ -190,8 +209,8 @@ class Transformer(Process):
 
 # @macro takes nothing, a type, or a dict of types
 @macro(("json", "seamless", "transformerparams"))
-def transformer(kwargs):
+def editor(kwargs):
     #TODO: remapping, e.g. output_finish, destroy, ...
-    return Transformer(kwargs)
+    return Editor(kwargs)
 
 from .context import Context

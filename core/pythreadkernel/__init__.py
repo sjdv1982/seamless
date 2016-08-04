@@ -37,6 +37,8 @@ class Process(metaclass=ABCMeta):
         self.inputs = inputs
         self.input_queue = deque()
         self.semaphore = semaphore_cls(0)
+        self.flush = event_cls()
+        self.flushed = event_cls()
         self.finish = event_cls()     # command to finish
         self.finished = event_cls()   # report that we have finished
         self.values = {name: None for name in inputs.keys()}
@@ -45,6 +47,9 @@ class Process(metaclass=ABCMeta):
 
         self._pending_inputs = {name for name in inputs.keys()}
 
+    def _cleanup(self):
+        pass
+
     def run(self):
         try:
             while True:
@@ -52,9 +57,12 @@ class Process(metaclass=ABCMeta):
 
                 # Consume queue and break when asked to finish
                 if self.finish.is_set() and not self.input_queue:
-                    break
+                    try:
+                        self._cleanup()
+                    finally:
+                        break
 
-                name, data = self.input_queue.popleft()# QueueItem instance
+                name, data = self.input_queue.popleft()  # QueueItem instance
 
                 # It's cheaper to look-ahead for updates and wait until we process them instead
                 for new_name, new_update in list(self.input_queue):
@@ -96,3 +104,4 @@ class Process(metaclass=ABCMeta):
 
 
 from .transformer import Transformer
+from .editor import Editor

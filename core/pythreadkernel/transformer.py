@@ -5,11 +5,12 @@ from ...dtypes import data_type_to_data_object
 class Transformer(Process):
     name = "transformer"
 
-    def __init__(self, input_data_types, output_queue, output_semaphore, **kwargs):
+    def __init__(self, input_data_types, output_name, output_queue, output_semaphore, **kwargs):
         assert "code" not in input_data_types
 
         self.namespace = {}
         self.input_data_types = input_data_types
+        self.output_name = output_name
         self.output_queue = output_queue
         self.output_semaphore = output_semaphore
 
@@ -41,5 +42,5 @@ class Transformer(Process):
 
         # Place result in output
         result = eval(self.expression, self.namespace)
-        self.output_queue.append(result)
+        self.output_queue.append((self.output_name, result))
         self.output_semaphore.release()

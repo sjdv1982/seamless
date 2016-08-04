@@ -29,7 +29,6 @@ if __name__ == "__main__":
     cont = transformer(tparams).set_context(ctx)
     c_data.connect(cont.value)
 
-    print(c_code._context, cont._context, cont.code._context)
     c_code.connect(cont.code)
     c_code.set("return value*2")
 

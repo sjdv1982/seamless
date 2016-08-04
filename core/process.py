@@ -203,4 +203,22 @@ class OutputPin(Managed):
         cells = [c for c in cells if c is not None]
         return cells
 
+class EditorOutputPin(Managed):
+    def __init__(self, process, identifier, dtype):
+        self.solid = OutputPin(process, identifier, dtype)
+        self.liquid = OutputPin(process, identifier, dtype)
+
+    def update(self, value):
+        self.solid.update(value)
+        self.liquid.update(value)
+
+    def connect(self, target):
+        raise TypeError("Cannot connect EditorOutputPin, select .solid or .liquid")
+
+    def cell(self):
+        raise TypeError("Cannot obtain .cell for EditorOutputPin, select .solid or .liquid")
+
+    def cells(self):
+        raise TypeError("Cannot obtain .cells for EditorOutputPin, select .solid or .liquid")
+
 from .context import Context
