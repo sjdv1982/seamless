@@ -1,18 +1,21 @@
-#totally synchronous, for GUI
-#TODO: make an async version too (see editor-OLD)
+# TODO: copy-pasted from transformer.py:
+#  - common base class in process.py ??
+#  - make *both* a front-end to process.py?
+# decide after implementing effector.py!!
 
+from collections import deque
+from queue import Queue
+import threading
 import traceback
-from functools import partial
 
 from .macro import macro
 from .process import Process, InputPin, EditorOutputPin
 from .cell import Cell, PythonCell
-from .pysynckernel import Editor as KernelEditor
+from .pythreadkernel import Editor as KernelEditor
 from ..dtypes.objects import PythonBlockObject
 
 from .. import dtypes
 from .. import silk
-import seamless
 
 transformer_param_docson = {
   "pin": "Required. Can be \"inputpin\", \"outputpin\", \"bufferpin\"",
@@ -83,11 +86,14 @@ class Editor(Process):
 
     def __init__(self, editor_params):
         self.state = {}
+        self.namespace = {}
         self.output_names = []
         self.code_start = InputPin(self, "code_start", ("text", "code", "python"))
         self.code_update = InputPin(self, "code_update", ("text", "code", "python"))
         self.code_stop = InputPin(self, "code_stop", ("text", "code", "python"))
-        kernel_inputs = {}
+        self.code_start_block = None
+        self.code_stop_block = None
+        thread_inputs = {}
         self._io_attrs = ["code_start", "code_update", "code_stop"]
         self._pins = {
                         "code_start": self.code_start,
@@ -98,28 +104,65 @@ class Editor(Process):
             param = editor_params[p]
             if param["pin"] == "input":
                 pin = InputPin(self, p, param["dtype"])
-                kernel_inputs[p] = param["dtype"]
+                thread_inputs[p] = param["dtype"]
             elif param["pin"] == "output":
                 pin = EditorOutputPin(self, p, param["dtype"])
                 self.output_names.append(p)
             self._io_attrs.append(p)
             self._pins[p] = pin
 
+        """Output listener thread
+        - It must have the same memory space as the main thread
+        - It must run async from the main thread
+        => This will always be a thread, regardless of implementation
+        """
+        self._active = False
+        self.output_finish = threading.Event()
+        self.kernel_lock = threading.Lock()
+        self.output_queue = deque()
+        self.output_semaphore = threading.Semaphore(0)
+        thread = threading.Thread(target=self.listen_output, daemon=True)
+        self.output_thread = thread
+        self.output_thread.start()
 
+        """Editor thread
+        For now, it is implemented as a thread
+         However, it could as well be implemented as process
+        - It shares no memory space with the main thread
+          (other than the deques and semaphores, which could as well be
+           implemented using network sockets)
+        - It must run async from the main thread
+        """
+        self.kernel_inputs = {}
+        inputs = self.kernel_inputs
+        inputs["code_start"] = PythonBlockObject("code_start", ("text", "code", "python"))
+        inputs["code_stop"] = PythonBlockObject("code_stop", ("text", "code", "python"))
+        self.namespace.clear()
+        self.namespace["_cache"] = {}
         self.editor = KernelEditor(
-            self,
-            kernel_inputs,
-            self.output_names,
+            self.namespace, thread_inputs,
+            self.output_names, self.output_queue, self.output_semaphore,
+            self.kernel_lock
         )
-
-    def output_update(self, name, value):
-        self._pins[name].update(value)
+        self.editor_thread = threading.Thread(target=self.editor.run, daemon=True)
+        self.editor_thread.start()
 
     def __getattr__(self, attr):
         if attr not in self._pins:
             raise AttributeError(attr)
         else:
             return self._pins[attr]
+
+    def _code_stop(self):
+        if self._active:
+            exec(self.code_stop_block, self.namespace)
+            self._active = False
+            self.editor._set_namespace()
+
+    def _code_start(self):
+        assert not self._active
+        exec(self.code_start_block, self.namespace)
+        self._active = True
 
     def set_context(self, context):
         Process.set_context(self, context)
@@ -128,13 +171,67 @@ class Editor(Process):
         return self
 
     def receive_update(self, input_pin, value):
-        f = self.editor.process_input
-        work = partial(f, input_pin, value)
-        seamless.add_work(work)
+        with self.kernel_lock:
+            try:
+                # If any code object is updated, recompile
+                if input_pin in ("code_start", "code_stop"):
+                    data_object = self.kernel_inputs[input_pin]
+                    data_object.parse(value)
+                    data_object.validate()
 
+                if input_pin == "code_stop":
+                    self.code_stop_block = compile(value, self.editor.name + "_stop", "exec")
+                    if self.code_start_block is not None and not self._active:
+                        self._code_start()
 
+                if input_pin == "code_start":
+                    self.code_start_block = compile(value, self.editor.name + "_start", "exec")
+                    if self.code_stop_block is not None:
+                        self._code_stop()
+                        self._code_start()
+
+            except Exception as e:
+                import traceback
+                traceback.print_exc()
+                return
+        self.editor.input_queue.append((input_pin, value))
+        self.editor.semaphore.release()
+
+    def listen_output(self):
+        # TODO logging
+        # TODO requires_function cleanup
+
+        while True:
+            try:
+                self.output_semaphore.acquire()
+                if self.output_finish.is_set():
+                    if not self.output_queue:
+                        break
+
+                output_name, output_value = self.output_queue.popleft()
+                self._pins[output_name].update(output_value)
+
+            except:
+                traceback.print_exc()  # TODO: store it?
 
     def destroy(self):
+        # gracefully terminate the transformer thread
+        if self.editor_thread is not None:
+            self.editor.finish.set()
+            self.editor.semaphore.release()  # to unblock the .finish event
+            self.editor.finished.wait()
+            self.editor_thread.join()
+            del self.editor_thread
+            self.editor_thread = None
+
+        # gracefully terminate the output thread
+        if self.output_thread is not None:
+            self.output_finish.set()
+            self.output_semaphore.release() # to unblock for the output_finish
+            self.output_thread.join()
+            del self.output_thread
+            self.output_thread = None
+
         self._code_stop()
 
         # free all input and output pins

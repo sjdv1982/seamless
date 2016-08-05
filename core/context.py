@@ -1,4 +1,7 @@
 """Module for Context class."""
+#TODO: capturing!??
+
+from weakref import WeakValueDictionary
 
 class Context:
     """Context class. Organizes your cells and processes hierchically.
@@ -111,6 +114,7 @@ attribute must be an instance of %s" %""" % (self.name, self.parent._name,
         self._capturing_class = capturing_class
         self._subcontexts = {}
         self._children = {}
+        self._childids = WeakValueDictionary()
         if parent is not None:
             self._manager = parent._manager
         else:
@@ -133,8 +137,9 @@ attribute must be an instance of %s" %""" % (self.name, self.parent._name,
                 subcontext._add_child(childname, child)
         else:
             self._children[childname] = child
+            self.root()._childids[id(child)] = child
             child.set_context(self)
-            
+
     def __setattr__(self, attr, value):
         if attr.startswith("_"):
             return object.__setattr__(self, attr, value)
@@ -228,7 +233,6 @@ register_subcontext(
   capturing_class=None,
   constructor=pythoncell,
 )
-
 
 def context():
     """Return a new Context object."""

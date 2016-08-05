@@ -37,8 +37,6 @@ class Process(metaclass=ABCMeta):
         self.inputs = inputs
         self.input_queue = deque()
         self.semaphore = semaphore_cls(0)
-        self.flush = event_cls()
-        self.flushed = event_cls()
         self.finish = event_cls()     # command to finish
         self.finished = event_cls()   # report that we have finished
         self.values = {name: None for name in inputs.keys()}
@@ -104,4 +102,4 @@ class Process(metaclass=ABCMeta):
 
 
 from .transformer import Transformer
-from .editor import Editor
+#from .editor import Editor

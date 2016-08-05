@@ -9,7 +9,24 @@ from .core.cell import cell, pythoncell
 from .core.transformer import transformer
 from .core.editor import editor
 
+__all__ = (macro, context, cell, pythoncell, transformer, editor)
+
+import time
+from collections import deque
+_work = deque()
+def add_work(work):
+    _work.append(work)
+def run_work():
+    count = len(_work)
+    for n in range(count):
+        work = _work.popleft()
+        try:
+            work()
+        except:
+            traceback.print_tb()
+
 import sys
+import traceback
 qt_error = None
 
 class SeamlessMock:
@@ -74,6 +91,11 @@ if qt_error is None:
         if _m.startswith("PyQt5"):
             _m2 = _m.replace("PyQt5", "seamless.qt")
             sys.modules[_m2] = sys.modules[_m]
+
+    from PyQt5.QtCore import QTimer
+    timer = QTimer()
+    timer.timeout.connect(run_work)
+    timer.start(10)
 else:
     sys.stderr.write("    " + qt_error + "\n")
     sys.stderr.write("    All GUI in seamless.qt has been disabled\n")

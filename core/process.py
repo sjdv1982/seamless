@@ -59,8 +59,9 @@ class Manager:
         if cell is None:
             return #cell has died...
 
-        cell._update(value)
-        self._update(cell_id, value)
+        changed = cell._update(value)
+        if changed:
+            self._update(cell_id, value)
 
     @classmethod
     def get_cell_id(cls, cell):
@@ -140,7 +141,7 @@ class InputPin(Managed):
             cell = context.root().cells.define(self.dtype)
             cell.connect(self)
         elif l == 1:
-            cell = context.cells[curr_pin_to_cells[0]]
+            cell = context.root()._childids[curr_pin_to_cells[0]]
         elif l > 1:
             raise TypeError("cell() is ambiguous, multiple cells are connected")
         return cell
@@ -191,8 +192,7 @@ class OutputPin(Managed):
             cell = context.root().cells.define(self.dtype)
             self.connect(cell)
         elif l == 1:
-            context = self._get_context()
-            cell = context.cells[self._cell_ids[0]]
+            cell = context.root()._childids[self._cell_ids[0]]
         elif l > 1:
             raise TypeError("cell() is ambiguous, multiple cells are connected")
         return cell
@@ -220,5 +220,10 @@ class EditorOutputPin(Managed):
 
     def cells(self):
         raise TypeError("Cannot obtain .cells for EditorOutputPin, select .solid or .liquid")
+
+    def set_context(self, context):
+        Managed.set_context(self, context)
+        self.solid.set_context(context)
+        self.liquid.set_context(context)
 
 from .context import Context

@@ -20,6 +20,7 @@ class Cell(Managed):
 
     _dtype = None
     _data = None  # data, always in text format
+    _data_last = None
 
     _error_message = None
     _status = StatusFlags.UNINITIALISED
@@ -34,6 +35,7 @@ class Cell(Managed):
         """TODO: docstring."""
         assert dtypes.check_registered(dtype)
         self._dtype = dtype
+        self._last_object = None
 
     @property
     def name(self):
@@ -63,6 +65,9 @@ class Cell(Managed):
         return self
 
     def _text_set(self, data, trusted):
+        if self._status == self.__class__.StatusFlags.OK \
+                and (data == self._data or data == self._data_last):
+            return False
         try:
             """Check if we can parse the text"""
             dtypes.parse(self._dtype, data, trusted=trusted)
@@ -73,14 +78,21 @@ class Cell(Managed):
             if not trusted:
                 raise
         else:
+            self._data_last = data
             self._data = data
             self._status = self.__class__.StatusFlags.OK
 
             if not trusted and self._context is not None:
                 manager = self._get_manager()
                 manager.update_from_code(self)
+        return True
 
     def _object_set(self, object_, trusted):
+        if self._status == self.__class__.StatusFlags.OK \
+                and (object_ == self._last_object or
+                     object_ == self._last_object2):
+            return False
+        print("_object_set", object_)
         try:
             """
             Construct the object:
@@ -101,14 +113,17 @@ class Cell(Managed):
             # Normally no error here...
             self._data = data
             self._status = self.__class__.StatusFlags.OK
+            self._last_object2 = self._last_object
+            self._last_object = object_
 
             if not trusted and self._context is not None:
                 manager = self._get_manager()
                 manager.update_from_code(self)
+        return True
 
     def _update(self, data):
         """Invoked when cell data is updated by a process."""
-        self._text_set(data, trusted=True)
+        return self._text_set(data, trusted=True)
 
     def connect(self, target):
         """Connect the cell to a process's input pin."""
@@ -187,6 +202,8 @@ class PythonCell(Cell):
     _required_code_type = CodeTypes.ANY
 
     def _text_set(self, data, trusted):
+        if data == self._data:
+            return False
         try:
             """Check if the code is valid Python syntax"""
             ast_tree = compile(data, self._name, "exec", ast.PyCF_ONLY_AST)
@@ -233,6 +250,7 @@ class PythonCell(Cell):
             if not trusted and self._context is not None:
                 manager = self._get_manager()
                 manager.update_from_code(self)
+            return True
 
     def _object_set(self, object_, trusted):
         try:
@@ -253,12 +271,14 @@ class PythonCell(Cell):
 
         else:
             self._code_type = self.CodeTypes.FUNCTION
+            oldcode = self._data
             self._data = code
             self._status = self.__class__.StatusFlags.OK
 
             if not trusted and self._context is not None:
                 manager = self._get_manager()
                 manager.update_from_code(self)
+            return code != oldcode
 
     def _on_connect(self, pin, process, incoming):
         exc1 = """Cannot connect to %s: process requires a code function
