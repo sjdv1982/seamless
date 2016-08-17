@@ -121,6 +121,12 @@ attribute must be an instance of %s" %""" % (self.name, self.parent._name,
             from .process import Manager
             self._manager = Manager()
 
+    _dir = ["root", "define"]
+
+    def __dir__(self):
+        return list(self._subcontexts.keys()) + list(self._children.keys()) \
+         + self._dir
+
     def _add_subcontext(self, subcontext_name, subcontext):
         assert subcontext_name not in self._subcontexts, subcontext_name
         self._subcontexts[subcontext_name] = subcontext
