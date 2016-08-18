@@ -2,18 +2,42 @@ import numpy as np
 import weakref
 from collections import OrderedDict
 
-_primitives = {
- "String": str,
- "Integer": int,
- "Float": float,
- "Bool": bool,
-}
 
+def _get_primitive_type_float(schema_prop):
+    float_precision = schema_prop.get("precision", "double")
+    primitive_data_type = float
+
+    if float_precision == "double":
+        pass
+
+    elif float_precision == "single":
+        primitive_data_type = np.float32
+
+    else:
+        raise ValueError(float_precision)
+
+    return primitive_data_type
+
+
+def _get_primitive_type_str(schema_prop):
+    prop_length = schema_prop.get("length", 1)
+    primitive_data_type = "|S{0}".format(prop_length)
+    return primitive_data_type
+
+
+_primitive_type_info = {
+ "String": (str, _get_primitive_type_str),
+ "Integer": (int, lambda schema_prop: int),
+ "Float": (float, _get_primitive_type_float),
+ "Bool": (bool, lambda schema_prop: bool),
+}
 _minischemas = {}
 _typeclasses = {}
 
+
 def todo(*args, **kwargs):
     raise NotImplementedError
+
 
 def register_minischema(minischema):
     name = minischema["type"]
@@ -21,139 +45,171 @@ def register_minischema(minischema):
     base = minischema.get("base", None)
     if base is not None:
         raise NotImplementedError
-    dtype = []
+
+    data_types = []
     order = minischema["order"]
-    allprops = list(minischema["properties"].keys())
-    assert sorted(order) == sorted(allprops), (order, allprops)
+    minischema_properties = minischema["properties"]
+    all_prop_names = list(minischema_properties.keys())
+    assert sorted(order) == sorted(all_prop_names), (order, all_prop_names)
+
     props = {}
-    for pname in order:
+    for prop_name in order:
         prop = {}
-        p = minischema["properties"][pname]
-        if isinstance(p, str):
-            ptype = p
-            p = {"type": p}
+        schema_prop = minischema_properties[prop_name]
+
+        # If schema property is a single string, reconstruct the formal dict {'type': ...}
+        if isinstance(schema_prop, str):
+            prop_type = schema_prop
+            schema_prop = {"type": schema_prop}
+
         else:
-            ptype = p["type"]
-        prop["optional"] = p.get("optional", False)
-        if ptype in _primitives:
+            prop_type = schema_prop["type"]
+
+        prop["optional"] = schema_prop.get("optional", False)
+
+        if prop_type in _primitive_type_info:
             prop["elementary"] = True
-            ptypeclass = _primitives[ptype]
-            prop["typeclass"] = ptypeclass
-            pdtype = ptypeclass
-            if pdtype is float:
-                pprecision = p.get("precision", "double")
-                if pprecision == "double":
-                    pass
-                elif pprecision == "single":
-                    pdtype = np.float32
-                else:
-                    raise ValueError(pprecision)
-            if pdtype is str:
-                plength = p.get("length", 1)
-                pdtype = "|S{0}".format(plength)
+            primitive_class, primitive_data_type_getter = _primitive_type_info[prop_type]
+            prop["typeclass"] = primitive_class
+            primitive_data_type = primitive_data_type_getter(schema_prop)
+
         else:
             prop["elementary"] = False
-            prop["typeclass"] = _typeclasses[ptype]
-            subschema = _minischemas[ptype]
-            pdtype = subschema["dtype"]
-        dtype.append((pname, pdtype))
-        props[pname] = prop
+            prop["typeclass"] = _typeclasses[prop_type]
+            subschema = _minischemas[prop_type]
+            primitive_data_type = subschema["dtype"]
+
+        data_types.append((prop_name, primitive_data_type))
+        props[prop_name] = prop
 
     _minischemas[name] = {
         "minischema": minischema,
         "properties": props,
-        "dtype": dtype,
+        "dtype": data_types,
         "base": base,
     }
     _typeclasses[name] = todo
+
 
 #TODO: Numpy implementation for XArray and String
 # no auto-resizing on overflow (a[10] gives an error for |S10) but resize can be requested
 
 class BaseClass:
     __slots__ = "_parent", "_storage", "_data", "_children"
+
     def __dir__(self):
         return list(self._props)
+
     def __getattr__(self, attr):
         try:
-            ele = self._props[attr]["elementary"]
+            prop = self._props[attr]
+
         except KeyError:
             raise AttributeError(attr)
-        if ele:
+
+        is_elementary = ["elementary"]
+
+        if is_elementary:
             return self._data[attr]
+
         else:
             return self._children[attr]
 
     def __setattr__(self, attr, value):
         if attr.startswith("_"):
             object.__setattr__(self, attr, value)
+
         else:
             try:
-                ele = self._props[attr]["elementary"]
+                prop = self._props[attr]
+
             except KeyError:
                 raise AttributeError(attr)
-            if ele:
+
+            is_elementary = ["elementary"]
+            if is_elementary:
                 self._data[attr] = value
+
             else:
                 self._children[attr]._set(value)
 
 class NumpyClass:
     _npclassname = "NumpyClass"
+
     def __init__(self, parent, data):
         classname = self._npclassname
+
         if parent is not None:
             self._parent = weakref.ref(parent)
+
         else:
             self._parent = lambda: None
+
         self._data = data
         self._children = {}
-        for pname, p in self._props.items():
-            if p["elementary"]:
+
+        for name, prop in self._props.items():
+            if prop["elementary"]:
                 continue
-            t = p["typeclass"]
-            tt = getattr(t, classname)
-            self._children[pname] = tt(self, data[pname])
+
+            some_obj = prop["typeclass"]
+            data_type_class = getattr(some_obj, classname)
+            self._children[name] = data_type_class(self, data[name])
+
 
 class NumpyMaskClass(NumpyClass):
     _npclassname = "NumpyMaskClass"
+
     def __getattr__(self, attr):
-        d = super(NumpyMaskClass, self).__getattr__(attr)
-        if d is np.ma.masked:
+        value = super(NumpyMaskClass, self).__getattr__(attr)
+        if value is np.ma.masked:
             return None
-        else:
-            return d
+
+        return value
+
     def __setattr__(self, attr, value):
         if attr.startswith("_"):
             object.__setattr__(self, attr, value)
+
         else:
             try:
-                ele = self._props[attr]["elementary"]
+                prop = self._props[attr]
+
             except KeyError:
                 raise AttributeError(attr)
-            if ele:
+
+            is_elementary = prop["elementary"]
+            if is_elementary:
                 if value is None:
                     value = np.ma.masked
+
                 self._data[attr] = value
+
             else:
                 self._children[attr]._set(value)
+
 
 def make_baseclass(name, silk_definition):
     dtype = silk_definition["dtype"]
     ms = silk_definition["minischema"]
     props = OrderedDict()
     order = ms["order"]
-    for p in order:
-        sdprop = silk_definition["properties"][p]
-        prop = {}
-        prop["optional"] = sdprop["optional"]
-        prop["elementary"] = sdprop["elementary"]
-        prop["typeclass"] = sdprop["typeclass"]
-        props[p] = prop
-    d = {
+
+    for prop_name in order:
+        silk_prop = silk_definition["properties"][prop_name]
+        prop = {"optional": silk_prop["optional"],
+                "elementary": silk_prop["elementary"],
+                "typeclass": silk_prop["typeclass"]
+                }
+
+        props[prop_name] = prop
+
+    cls_dict = {
      "_props": props,
      "_dtype": dtype,
     }
-    return type(name, (BaseClass,), d)
+
+    return type(name, (BaseClass,), cls_dict)
 
 """
 class SilkMetaBase(type):
