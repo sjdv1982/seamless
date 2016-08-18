@@ -1,25 +1,36 @@
 import json
+
+from os import getcwd, path
+pth = path.abspath(path.join(getcwd(), "../../../"))
+import sys;sys.path.append(pth)
+
 from seamless.silk.minischemas import _minischemas, register_minischema, make_baseclass, NumpyClass, NumpyMaskClass
-f1 = json.load(open("silk/example/coordinate.minischema.json"))
-f2 = json.load(open("silk/example/axissystem.minischema.json"))
-register_minischema(f1)
-register_minischema(f2)
+
+schema_files = "coordinate.minischema.json", "axissystem.minischema.json"
+
+for filepath in schema_files:
+    with open(path.join(getcwd(), filepath)) as f:
+        data = json.load(f)
+
+    register_minischema(data)
+
+
 import numpy as np
 dtype = _minischemas["AxisSystem"]["dtype"]
-print(dtype)
-a = np.zeros(shape=(1,),dtype=dtype)
-aa = a[0].view(np.recarray)
-aa.origin.x = 10
-print(aa)
+dummy_array = np.zeros(shape=(1,), dtype=dtype)
+axis_struct = dummy_array[0].view(np.recarray)
+axis_struct.origin.x = 10
+print(axis_struct)
 
-c = make_baseclass("Coordinate", _minischemas["Coordinate"])
-npc = type("npCoordinate", (c,NumpyClass), {} )
-npcc = npc(None, a[0]["origin"])
+CoordBaseClass = make_baseclass("Coordinate", _minischemas["Coordinate"])
+NumpyCoord = type("npCoordinate", (CoordBaseClass, NumpyClass), {})
+numpy_coord = NumpyCoord(None, dummy_array[0]["origin"])
+print(dummy_array[0]["origin"])
 
-print(npcc.x)
-npcc.x = 20
-print(npcc.x)
-print(a)
+print(numpy_coord.x)
+numpy_coord.x = 20
+print(numpy_coord.x)
+print(dummy_array)
 
 
 """
