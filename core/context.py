@@ -48,6 +48,7 @@ class Context:
     """
 
     class ContextConstructor:
+
         def __init__(self, parent, name):
             self.parent = parent
             self.name = name
@@ -105,18 +106,23 @@ attribute must be an instance of %s" %""" % (self.name, self.parent._name,
         n = name
         if parent is not None and parent._name is not None:
             n = parent._name + "." + str(n)
+
         self._name = name
         self._parent = parent
         self._default_naming_pattern = default_naming_pattern
         self._constructor = constructor
+
         if capturing_class is None and parent is not None:
             capturing_class = parent._capturing_class
+
         self._capturing_class = capturing_class
         self._subcontexts = {}
         self._children = {}
         self._childids = WeakValueDictionary()
+
         if parent is not None:
             self._manager = parent._manager
+
         else:
             from .process import Manager
             self._manager = Manager()
@@ -158,8 +164,10 @@ attribute must be an instance of %s" %""" % (self.name, self.parent._name,
     def __getattr__(self, attr):
         if attr in self._subcontexts:
             return self._subcontexts[attr]
+
         elif attr in self._children:
             return self._children[attr]
+
         else:
             return self.ContextConstructor(self, attr)
 
@@ -188,15 +196,11 @@ subcontext has no constructor""" % self._name
         self._add_child(childname, cell)
         return cell
 
+
 _registered_subcontexts = {}
 
 
-def register_subcontext(
- subcontext_name,
- default_naming_pattern,
- constructor=None,
- capturing_class=None,
-):
+def register_subcontext(subcontext_name, default_naming_pattern, constructor=None, capturing_class=None):
     """Register a new subcontext.
 
     After invoking this function, a corresponding subcontext will
@@ -221,24 +225,29 @@ def register_subcontext(
     _registered_subcontexts[subcontext_name] = \
         (default_naming_pattern, constructor, capturing_class)
 
+
 from .cell import Cell, cell, pythoncell
 from .process import Process
+
 
 register_subcontext(
   "processes", "process",
   capturing_class=Process,
   constructor=None,
 )
+
 register_subcontext(
   "cells", "cell",
   capturing_class=Cell,
   constructor=cell,
 )
+
 register_subcontext(
   "cells.python", "pythoncell",
   capturing_class=None,
   constructor=pythoncell,
 )
+
 
 def context():
     """Return a new Context object."""

@@ -2,6 +2,8 @@ import os
 import sys
 import time
 
+from contextlib import contextmanager
+
 tparams = {
   "value": {
     "pin": "input",
@@ -72,47 +74,43 @@ print("VALUE", c_data.data, "'" + c_code.data + "'", c_output.data)
 c_data.set(5)
 c_code.set("return value*3")
 
-editor_pycell =  os.path.join(
-  os.path.dirname(__file__), "test-editor_pycell.py"
-)
-editor_pycell2 =  os.path.join(
-  os.path.dirname(__file__), "test-editor_pycell2.py"
-)
 
-def make_editor(ed):
-    ed.code_start.cell().set(open(editor_pycell).read())
-    ed.code_stop.cell().set('_cache["w"].destroy()')
-    ed.code_update.cell().set("""
-b, w = _cache["b"], _cache["w"]
-b.setValue(value)
-w.setWindowTitle(title)
-""")
+@contextmanager
+def open_relative(filename, mode='r'):
+    with open(os.path.join(os.path.dirname(__file__), filename), mode) as f:
+        yield f
 
-def make_text_editor(ed):
-    ed.code_start.cell().set(open(editor_pycell2).read())
-    ed.code_stop.cell().set('_cache["w"].destroy()')
-    ed.code_update.cell().set("""
-b, w = _cache["b"], _cache["w"]
-if value != b.toPlainText():
-    b.setText(value)
-""")
 
-ed1 = ctx.processes.ed1(editor(eparams))
-ed2 = ctx.processes.ed2(editor(eparams))
-ed1.title.cell().set("Editor #1")
-ed2.title.cell().set("Editor #2")
-make_editor(ed1)
-make_editor(ed2)
-c_data.connect(ed1.value)
-ed1.output.solid.connect(c_data)
-c_output.connect(ed2.value)
+def make_editor(ed, directory):
+    with open_relative("{}/start.py".format(directory)) as f_start, \
+            open_relative("{}/update.py".format(directory)) as f_update, \
+            open_relative("{}/stop.py".format(directory)) as f_stop:
 
-#ted1 = ctx.processes.ted1(editor(teparams))
-ted1 = ctx.processes.ted1(editor(teparams2))
-make_text_editor(ted1)
-#c = ed1.title.cell()
+        ed.code_start.cell().set(f_start.read())
+        ed.code_stop.cell().set(f_stop.read())
+        ed.code_update.cell().set(f_update.read())
+
+editor_1 = ctx.processes.editor1(editor(eparams))
+editor_2 = ctx.processes.editor2(editor(eparams))
+
+editor_1.title.cell().set("Editor #1")
+editor_2.title.cell().set("Editor #2")
+
+make_editor(editor_1, "editor_spin")
+make_editor(editor_2, "editor_spin")
+
+c_data.connect(editor_1.value)
+editor_1.output.solid.connect(c_data)
+c_output.connect(editor_2.value)
+
+# text_editor_1 = ctx.processes.text_editor_1(editor(teparams))
+text_editor_1 = ctx.processes.text_editor1(editor(teparams2))
+make_editor(text_editor_1, "editor_text")
+# c = editor_1.title.cell()
 c = c_code
-v = ted1.value.cell()
-#v.set("Test!!")
-c.connect(ted1.value)
-ted1.output.solid.connect(c)
+v = text_editor_1.value.cell()
+# v.set("Test!!")
+
+print(c_code, text_editor_1)
+# c.connect(text_editor_1.value)
+# text_editor_1.output.solid.connect(c)

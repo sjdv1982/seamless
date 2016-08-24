@@ -3,23 +3,24 @@ import weakref
 from ...dtypes.objects import PythonBlockObject
 from ...dtypes import data_type_to_data_object
 
+# DUPLICATE
 class Editor:
     name = "editor"
 
     class EditorOutput:
+
         def __init__(self, parent, name):
             self._parent = weakref.ref(parent)
             self._name = name
-        def set(self, value):
-            p = self._parent()
-            if p is None:
-                return
-            p.parent().output_update(self._name, value)
 
-    def __init__(self,
-        parent,
-        input_data_types,output_names
-    ):
+        def set(self, value):
+            parent = self._parent()
+            if parent is None:
+                return
+
+            parent.parent().output_update(self._name, value)
+
+    def __init__(self, parent, input_data_types, output_names):
         assert "code_start" not in input_data_types
         assert "code_stop" not in input_data_types
         assert "code_update" not in input_data_types
@@ -29,11 +30,11 @@ class Editor:
         self.input_data_types = input_data_types
         self.output_names = output_names
 
-
         inputs = {name: data_type_to_data_object(value)(name, value) for name, value in input_data_types.items()}
         inputs["code_start"] = PythonBlockObject("code_start", ("text", "code", "python"))
         inputs["code_stop"] = PythonBlockObject("code_stop", ("text", "code", "python"))
         inputs["code_update"] = PythonBlockObject("code_update", ("text", "code", "python"))
+
         self.inputs = inputs
         self._pending_inputs = {name for name in inputs.keys()}
         self.values = {name: None for name in inputs.keys()}
@@ -79,13 +80,12 @@ class Editor:
         exec(self.code_start_block, self.namespace)
         self._active = True
 
-
     def _set_namespace(self):
         self.namespace.clear()
         self.namespace["_cache"] = {}
-        for o in self.output_names:
-            self.namespace[o] = self.EditorOutput(self, o)
 
+        for name in self.output_names:
+            self.namespace[name] = self.EditorOutput(self, name)
 
     def update(self, updated):
         # If any code object is updated, recompile
@@ -112,5 +112,6 @@ class Editor:
             if name in updated:
                 self.namespace[name] = self.values[name].data
                 do_update = True
+
         if do_update:
             exec(self.code_update_block, self.namespace)
