@@ -2,6 +2,7 @@ from . import Process
 from ...dtypes.objects import PythonTransformerCodeObject
 from ...dtypes import data_type_to_data_object
 
+
 class Transformer(Process):
     name = "transformer"
 

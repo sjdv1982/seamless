@@ -71,6 +71,8 @@ linear stack to a dependency tree of sub-checkpoints that are merged.
   doc = "Transformer parameters"
 )
 
+
+# DUPLICATE
 class Transformer(Process):
     """
     This is the main-thread part of the controller
@@ -78,23 +80,14 @@ class Transformer(Process):
     _required_code_type = PythonCell.CodeTypes.FUNCTION
 
     def __init__(self, transformer_params):
-        self.state = {}
-        self.code = InputPin(self, "code", ("text", "code", "python"))
-        thread_inputs = {}
-        self._io_attrs = ["code"]
-        self._pins = {"code":self.code}
         self._output_name = None
-        for p in transformer_params:
-            param = transformer_params[p]
-            if param["pin"] == "input":
-                pin = InputPin(self, p, param["dtype"])
-                thread_inputs[p] = param["dtype"]
-            elif param["pin"] == "output":
-                pin = OutputPin(self, p, param["dtype"])
-                assert self._output_name is None  # can have only one output
-                self._output_name = p
-            self._io_attrs.append(p)
-            self._pins[p] = pin
+
+        all_params = transformer_params.copy()
+        all_params['code'] = {"pin": "input", "dtype": ("text", "code", "python")}
+
+        super().__init__(all_params)
+
+        self.state = {}
 
         """Output listener thread
         - It must have the same memory space as the main thread
@@ -116,21 +109,16 @@ class Transformer(Process):
            implemented using network sockets)
         - It must run async from the main thread
         """
+        thread_inputs = {name: param['dtype'] for name, param in transformer_params.items() if param["pin"] == "input"}
         self.transformer = KernelTransformer(thread_inputs, self._output_name, self.output_queue, self.output_semaphore)
+
         self.transformer_thread = threading.Thread(target=self.transformer.run, daemon=True)
         self.transformer_thread.start()
 
-    def __getattr__(self, attr):
-        if attr not in self._pins:
-            raise AttributeError(attr)
-        else:
-            return self._pins[attr]
-
-    def set_context(self, context):
-        Process.set_context(self, context)
-        for p in self._pins:
-            self._pins[p].set_context(context)
-        return self
+    def _create_output_pin(self, name, dtype):
+        assert self._output_name is None  # can have only one output
+        self._output_name = name
+        return OutputPin(self, name, dtype)
 
     def receive_update(self, input_pin, value):
         self.transformer.input_queue.append((input_pin, value))
@@ -171,27 +159,13 @@ class Transformer(Process):
             del self.output_thread
             self.output_thread = None
 
-        # free all input and output pins
-        for attr in self._io_attrs:
-            value = getattr(self, attr)
-            if value is None:
-                continue
+        super(Transformer, self).destroy()
 
-            setattr(self, attr, None)
-            del value
-
-    def __del__(self):
-        try:
-            self.destroy()
-
-        except Exception as err:
-            print(err)
-            pass
 
 # @macro takes nothing, a type, or a dict of types
 @macro(("json", "seamless", "transformerparams"))
 def transformer(kwargs):
-    #TODO: remapping, e.g. output_finish, destroy, ...
+    # TODO: remapping, e.g. output_finish, destroy, ...
     return Transformer(kwargs)
 
 from .context import Context

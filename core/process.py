@@ -1,6 +1,8 @@
 #stub, TODO: refactor, document
 import weakref
 from weakref import WeakValueDictionary, WeakKeyDictionary
+from abc import ABCMeta, abstractmethod
+
 
 class Manager:
 
@@ -69,6 +71,7 @@ class Manager:
 
     def connect(self, source, target):
         from .cell import Cell
+
         if isinstance(source, Cell):
             assert isinstance(target, InputPin)
             assert source._context is not None and \
@@ -96,8 +99,10 @@ class Manager:
             if cell_id not in source._cell_ids:
                 source._cell_ids.append(cell_id)
 
+
 class Managed:
     _context = None
+
     def set_context(self, context):
         assert isinstance(context, Context)
         self._context = context
@@ -105,18 +110,66 @@ class Managed:
 
     def _get_context(self):
         if self._context is None:
-            raise Exception(
-             "Cannot carry out requested operation without a context"
-            )
+            raise Exception("Cannot carry out requested operation without a context")
         return self._context
 
     def _get_manager(self):
         context = self._get_context()
         return context._manager
 
+
 class Process(Managed):
     """Base class for all processes."""
-    pass
+
+    def __init__(self, params):
+        self._pins = {}
+        self.output_names = set()
+
+        for param_name in params:
+            param = params[param_name]
+
+            if param["pin"] == "input":
+                pin = self._create_input_pin(param_name, param["dtype"])
+
+            else:
+                assert param["pin"] == "output"
+                pin = self._create_output_pin(param_name, param["dtype"])
+                self.output_names.add(param_name)
+
+            self._pins[param_name] = pin
+
+    def __getattr__(self, attr):
+        if attr not in self._pins:
+            raise AttributeError(attr)
+
+        else:
+            return self._pins[attr]
+
+    def __del__(self):
+        try:
+            self.destroy()
+
+        except Exception as err:
+            print(err)
+            pass
+
+    def destroy(self):
+        self.__dict__.update({n: None for n in self._pins})
+
+    def set_context(self, context):
+        super(Process, self).set_context(context)
+
+        for pin in self._pins.values():
+            pin.set_context(context)
+
+        return self
+
+    def _create_input_pin(self, name, dtype):
+        return InputPin(self, name, dtype)
+
+    def _create_output_pin(self, name, dtype):
+        return OutputPin(self, name, dtype)
+
 
 class InputPin(Managed):
 
@@ -129,23 +182,26 @@ class InputPin(Managed):
         manager = self._get_manager()
         context = self._get_context()
         curr_pin_to_cells = manager.pin_to_cells.get(id(self), [])
-        l = len(curr_pin_to_cells)
-        if l == 0:
+        number_connected_cells = len(curr_pin_to_cells)
+
+        if number_connected_cells == 1:
+            cell = context.root()._childids[curr_pin_to_cells[0]]
+
+        elif number_connected_cells == 0:
             if self.dtype is None:
-                raise ValueError(
-                 "Cannot construct cell() for pin with dtype=None"
-                )
+                raise ValueError("Cannot construct cell() for pin with dtype=None")
+
             process = self.process_ref()
             if process is None:
                 raise ValueError("Process has died")
+
             cell = context.root().cells.define(self.dtype)
             cell.connect(self)
-        elif l == 1:
-            cell = context.root()._childids[curr_pin_to_cells[0]]
-        elif l > 1:
-            raise TypeError("cell() is ambiguous, multiple cells are connected")
-        return cell
 
+        elif number_connected_cells > 1:
+            raise TypeError("cell() is ambiguous, multiple cells are connected")
+
+        return cell
 
     def update(self, value):
         process = self.process_ref()
@@ -158,11 +214,13 @@ class InputPin(Managed):
         try:
             manager = self._get_manager()
             manager.remove_listener(self)
+
         except:
-            pass
+            pass #TDO
 
 
 class OutputPin(Managed):
+
     def __init__(self, process, identifier, dtype):
         self.process_ref = weakref.ref(process)
         self.identifier = identifier
@@ -180,8 +238,9 @@ class OutputPin(Managed):
 
     def cell(self):
         context = self._get_context()
-        l = len(self._cell_ids)
-        if l == 0:
+        number_connected_cells = len(self._cell_ids)
+
+        if number_connected_cells == 0:
             if self.dtype is None:
                 raise ValueError(
                  "Cannot construct cell() for pin with dtype=None"
@@ -191,10 +250,13 @@ class OutputPin(Managed):
                 raise ValueError("Process has died")
             cell = context.root().cells.define(self.dtype)
             self.connect(cell)
-        elif l == 1:
+
+        elif number_connected_cells == 1:
             cell = context.root()._childids[self._cell_ids[0]]
-        elif l > 1:
+
+        elif number_connected_cells > 1:
             raise TypeError("cell() is ambiguous, multiple cells are connected")
+
         return cell
 
     def cells(self):
@@ -203,7 +265,9 @@ class OutputPin(Managed):
         cells = [c for c in cells if c is not None]
         return cells
 
+
 class EditorOutputPin(Managed):
+
     def __init__(self, process, identifier, dtype):
         self.solid = OutputPin(process, identifier, dtype)
         self.liquid = OutputPin(process, identifier, dtype)
@@ -225,5 +289,6 @@ class EditorOutputPin(Managed):
         Managed.set_context(self, context)
         self.solid.set_context(context)
         self.liquid.set_context(context)
+
 
 from .context import Context
