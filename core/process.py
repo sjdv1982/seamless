@@ -1,7 +1,8 @@
 #stub, TODO: refactor, document
 import weakref
 from weakref import WeakValueDictionary, WeakKeyDictionary
-from abc import ABCMeta, abstractmethod
+
+from . import logger
 
 
 class Manager:
@@ -92,6 +93,7 @@ class Manager:
             process = source.process_ref()
             assert process is not None #weakref may not be dead
             target._on_connect(source, process, incoming = True)
+
             cell_id = self.get_cell_id(target)
             if cell_id not in self.cells:
                 self.cells[cell_id] = target
@@ -138,20 +140,19 @@ class Process(Managed):
 
             self._pins[param_name] = pin
 
-    def __getattr__(self, attr):
-        if attr not in self._pins:
-            raise AttributeError(attr)
-
-        else:
-            return self._pins[attr]
-
     def __del__(self):
         try:
             self.destroy()
 
-        except Exception as err:
-            print(err)
-            pass
+        except:
+            logger.exception('Error calling Process.destroy()')
+
+    def __getattr__(self, name):
+        try:
+            return self._name_to_pin[name]
+
+        except KeyError:
+            raise AttributeError(name)
 
     def destroy(self):
         self.__dict__.update({n: None for n in self._pins})
@@ -216,7 +217,7 @@ class InputPin(Managed):
             manager.remove_listener(self)
 
         except:
-            pass #TDO
+            logger.exception("Error in destruction of InputPin")
 
 
 class OutputPin(Managed):
@@ -242,12 +243,12 @@ class OutputPin(Managed):
 
         if number_connected_cells == 0:
             if self.dtype is None:
-                raise ValueError(
-                 "Cannot construct cell() for pin with dtype=None"
-                )
+                raise ValueError("Cannot construct cell() for pin with dtype=None")
+
             process = self.process_ref()
             if process is None:
                 raise ValueError("Process has died")
+
             cell = context.root().cells.define(self.dtype)
             self.connect(cell)
 

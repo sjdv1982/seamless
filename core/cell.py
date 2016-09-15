@@ -1,12 +1,14 @@
 """Module containing the Cell class."""
 
-import traceback
-import inspect
 import ast
+from enum import Enum
+import inspect
+import traceback
 
 from .. import dtypes
 from .utils import find_return_in_scope
 from .process import Managed
+
 
 class Cell(Managed):
     """Default class for cells.
@@ -14,9 +16,7 @@ class Cell(Managed):
     Cells contain all the state in text form
     """
 
-    class StatusFlags:
-        UNINITIALISED, ERROR, OK = range(3)
-    StatusFlagNames = ["UNINITIALISED", "ERROR", "OK"]
+    StatusFlags = Enum('StatusFlags', 'UNINITIALISED ERROR OK')
 
     _dtype = None
     _data = None  # data, always in text format
@@ -65,7 +65,7 @@ class Cell(Managed):
         return self
 
     def _text_set(self, data, trusted):
-        if self._status == self.__class__.StatusFlags.OK \
+        if self._status == self.StatusFlags.OK \
                 and (data == self._data or data == self._data_last):
             return False
         try:
@@ -80,15 +80,16 @@ class Cell(Managed):
         else:
             self._data_last = data
             self._data = data
-            self._status = self.__class__.StatusFlags.OK
+            self._status = self.StatusFlags.OK
 
             if not trusted and self._context is not None:
                 manager = self._get_manager()
                 manager.update_from_code(self)
+
         return True
 
     def _object_set(self, object_, trusted):
-        if self._status == self.__class__.StatusFlags.OK \
+        if self._status == self.StatusFlags.OK \
                 and (object_ == self._last_object or
                      object_ == self._last_object2):
             return False
@@ -112,7 +113,7 @@ class Cell(Managed):
             data = dtypes.serialize(self._dtype, object_)
             # Normally no error here...
             self._data = data
-            self._status = self.__class__.StatusFlags.OK
+            self._status = self.StatusFlags.OK
             self._last_object2 = self._last_object
             self._last_object = object_
 
@@ -143,7 +144,7 @@ class Cell(Managed):
     @property
     def status(self):
         """The cell's current status."""
-        return self.StatusFlagNames[self._status]
+        return self._status
 
     @property
     def exception(self):
@@ -273,7 +274,7 @@ class PythonCell(Cell):
             self._code_type = self.CodeTypes.FUNCTION
             oldcode = self._data
             self._data = code
-            self._status = self.__class__.StatusFlags.OK
+            self._status = self.StatusFlags.OK
 
             if not trusted and self._context is not None:
                 manager = self._get_manager()
