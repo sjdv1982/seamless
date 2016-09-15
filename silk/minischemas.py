@@ -133,6 +133,7 @@ class BaseClass:
             else:
                 self._children[attr]._set(value)
 
+
 class NumpyClass:
     _npclassname = "NumpyClass"
 

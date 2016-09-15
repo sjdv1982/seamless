@@ -5,6 +5,8 @@ Copyright 2016, Sjoerd de Vries
 from collections import deque
 import sys
 import traceback
+import logging
+
 
 from .core.macro import macro
 from .core.context import context
@@ -14,6 +16,11 @@ from .core.editor import editor
 
 
 __all__ = ('macro', 'context', 'cell', 'pythoncell', 'transformer', 'editor')
+
+
+# Setup logger
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
 
 
 _work = deque()

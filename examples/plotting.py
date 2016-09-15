@@ -1,4 +1,4 @@
-from seamless.cell import transformer, pythoncell, macro, composite
+from seamless.core import transformer, pythoncell, macro, composite
 
 @macro("__main__.plotter")
 def plotter(arraynames,plotformat="svg"):
