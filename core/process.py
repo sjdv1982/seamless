@@ -106,6 +106,8 @@ class Manager:
 
 
 class Managed:
+    """Mixin providing context and manager API"""
+
     _context = None
 
     def set_context(self, context):

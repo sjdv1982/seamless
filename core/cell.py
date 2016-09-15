@@ -282,26 +282,28 @@ class PythonCell(Cell):
             return code != oldcode
 
     def _on_connect(self, pin, process, incoming):
-        exc1 = """Cannot connect to %s: process requires a code function
-        whereas other connected processes require a code block"""
-        exc2 = """Cannot connect to %s: process requires a code block
-        whereas other connected processes require a code function"""
+        exc1 = """Cannot connect to %s: process requires a code function whereas other connected processes """ \
+               """requires a code block"""
+        exc2 = """Cannot connect to %s: process requires a code block whereas other connected processes requires"""\
+               """a code function"""
 
         if not incoming:
             if self._required_code_type == self.CodeTypes.BLOCK and \
                     process._required_code_type == self.CodeTypes.FUNCTION:
                 raise Exception(exc1 % type(process))
+
             elif self._required_code_type == self.CodeTypes.FUNCTION and \
                     process._required_code_type == self.CodeTypes.BLOCK:
                 raise Exception(exc2 % type(process))
 
-        Cell._on_connect(self, pin, process, incoming)
+        super(PythonCell, self)._on_connect(pin, process, incoming)
         if not incoming:
             self._required_code_type = process._required_code_type
 
     def _on_disconnect(self, pin, process, incoming):
-        Cell._on_disconnect(self, pin, process, incoming)
-        if self._outgoing_connections == 0:
+        super(PythonCell, self)._on_disconnect(pin, process, incoming)
+
+        if not self._outgoing_connections:
             self._required_code_type = self.CodeTypes.ANY
 
 
@@ -316,12 +318,13 @@ def cell(dtype):
     if dtype in _handlers:
         cell_cls = _handlers[dtype]
 
-    newcell = cell_cls(dtype)
-    return newcell
+    new_cell = cell_cls(dtype)
+    return new_cell
 
 
 def pythoncell():
     """Factory function for a PythonCell object."""
     return cell(("text", "code", "python"))
+
 
 from .context import Context
