@@ -136,7 +136,7 @@ class Transformer(Process):
                         break
 
                 output_name, output_value = self.output_queue.popleft()
-                self._pins[output_name].update(output_value)
+                self._name_to_pin[output_name].update(output_value)
 
             except:
                 traceback.print_exc() #TODO: store it?

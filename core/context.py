@@ -1,7 +1,22 @@
 """Module for Context class."""
 #TODO: capturing!??
 
+
+from collections import Mapping
 from weakref import WeakValueDictionary
+from itertools import chain
+
+from . import logger
+
+
+class DictView(Mapping):
+
+    def __init__(self, dict_):
+        self._dict = dict_
+
+    def __iter__(self):
+        return iter(self._dict)
+
 
 class Context:
     """Context class. Organizes your cells and processes hierchically.
@@ -60,34 +75,23 @@ class Context:
             constructor = self.parent._constructor
             if constructor is None:
                 if len(args) != 1 or len(kwargs) > 0:
-                    raise TypeError("""
-Cannot construct attribute '%s' of subcontext '%s':
-subcontext has no constructor""" %      (self.name, self.parent._name)
-                                    )
+                    raise TypeError("""Cannot construct attribute '{}' of subcontext '{}': subcontext has no """
+                                    """constructor""" .format(self.name, self.parent._name))
                 else:
                     cell_or_process = args[0]
                     capturing_class = self.parent._capturing_class
-                    if not isinstance(
-                        cell_or_process, (capturing_class, Context)
-                    ):
-                        raise TypeError("""
-Cannot construct attribute '%s' of subcontext '%s': \
-attribute must be an instance of %s" %""" % (self.name, self.parent._name,
-                                             capturing_class.__name__)
-                                        )
+
+                    if not isinstance(cell_or_process, (capturing_class, Context)):
+                        raise TypeError("""Cannot construct attribute '{}' of subcontext '{}': attribute must be an """
+                                        """instance of {}""" .format(self.name, self.parent._name,
+                                                                     capturing_class.__name__))
             else:
                 cell_or_process = constructor(*args, **kwargs)
+
             self.parent._add_child(self.name, cell_or_process)
             return cell_or_process
 
-    def __init__(
-        self,
-        name=None,
-        parent=None,
-        default_naming_pattern=None,
-        constructor=None,
-        capturing_class=None
-    ):
+    def __init__(self, name=None, parent=None, default_naming_pattern=None, constructor=None, capturing_class=None):
         """Construct a new context.
 
         Args:
@@ -103,11 +107,11 @@ attribute must be an instance of %s" %""" % (self.name, self.parent._name,
                 and stores them here
 
         """
-        n = name
+        resolved_name = name
         if parent is not None and parent._name is not None:
-            n = parent._name + "." + str(n)
+            resolved_name = parent._name + "." + name
 
-        self._name = name
+        self._name = resolved_name
         self._parent = parent
         self._default_naming_pattern = default_naming_pattern
         self._constructor = constructor
@@ -118,7 +122,7 @@ attribute must be an instance of %s" %""" % (self.name, self.parent._name,
         self._capturing_class = capturing_class
         self._subcontexts = {}
         self._children = {}
-        self._childids = WeakValueDictionary()
+        self._child_to_id = WeakValueDictionary()
 
         if parent is not None:
             self._manager = parent._manager
@@ -130,70 +134,87 @@ attribute must be an instance of %s" %""" % (self.name, self.parent._name,
     _dir = ["root", "define"]
 
     def __dir__(self):
-        return list(self._subcontexts.keys()) + list(self._children.keys()) \
-         + self._dir
-
-    def _add_subcontext(self, subcontext_name, subcontext):
-        assert subcontext_name not in self._subcontexts, subcontext_name
-        self._subcontexts[subcontext_name] = subcontext
-
-    def _add_child(self, childname, child):
-        if childname in self._subcontexts:
-            raise AttributeError(
-             "Cannot assign to subcontext ''%s'" % childname
-            )
-        for subcontext in self._subcontexts.values():
-            if subcontext._capturing_class == self._capturing_class:
-                continue
-            if isinstance(child, subcontext._capturing_class):
-                subcontext._add_child(childname, child)
-        else:
-            self._children[childname] = child
-            self.root()._childids[id(child)] = child
-            child.set_context(self)
+        return list(chain(self._subcontexts, self._children, self._dir))
 
     def __setattr__(self, attr, value):
         if attr.startswith("_"):
             return object.__setattr__(self, attr, value)
+
         if attr in self._subcontexts:
-            raise AttributeError(
-             "Cannot assign to subcontext ''%s'" % attr
-            )
+            raise AttributeError("Cannot assign to subcontext '{}'".format(attr))
+
         self._children[attr] = value
 
     def __getattr__(self, attr):
-        if attr in self._subcontexts:
+        in_subcontexts = attr in self._subcontexts
+        in_children = attr in self._children
+
+        if in_subcontexts and in_children:
+            raise AttributeError("'{}' corresponds to both a subcontext and a child".format(attr))
+
+        if in_subcontexts:
             return self._subcontexts[attr]
 
-        elif attr in self._children:
+        elif in_children:
             return self._children[attr]
 
         else:
             return self.ContextConstructor(self, attr)
 
+    @property
+    def subcontexts(self):
+        return DictView(self._subcontexts)
+
+    @property
+    def children(self):
+        return DictView(self._children)
+
+    def _add_subcontext(self, subcontext_name, subcontext):
+        assert subcontext_name not in self._subcontexts, subcontext_name
+        self._subcontexts[subcontext_name] = subcontext
+
+    def _add_child(self, name, child):
+        if name in self._subcontexts:
+            logger.warn("Assigning child with same name as subcontext: '{}'".format(name))
+
+        for subcontext in self._subcontexts.values():
+            capture_class = subcontext._capturing_class
+
+            if capture_class is self._capturing_class:
+                continue
+
+            if isinstance(child, capture_class):
+                subcontext._add_child(name, child)
+
+        else:
+            self._children[name] = child
+            self.root()._child_to_id[id(child)] = child
+            child.set_context(self)
+
     def root(self):
         if self._parent is None:
             return self
+
         else:
             return self._parent.root()
 
     def define(self, *args, **kwargs):
         if self._constructor is None:
-            raise TypeError("""
-Cannot define new attribute of subcontext '%s':
-subcontext has no constructor""" % self._name
-                            )
-        cell = self._constructor(*args, **kwargs)
-
+            raise TypeError("""Cannot define new attribute of subcontext '{}': subcontext has no constructor""".format(self._name))
 
         assert self._default_naming_pattern is not None
+
+        cell = self._constructor(*args, **kwargs)
+
         n = 0
         while 1:
             n += 1
-            childname = self._default_naming_pattern + str(n)
+            childname = self._default_naming_pattern.format(n)
             if childname not in self._children:
                 break
+
         self._add_child(childname, cell)
+
         return cell
 
 
@@ -216,14 +237,14 @@ def register_subcontext(subcontext_name, default_naming_pattern, constructor=Non
     # In that case, check if the parents exists
     # (parents of parents exist by necessity,unless something has been removed)
     pos = subcontext_name.rfind(".")
+
     if pos > -1:
         parent_ctx_name = subcontext_name[:pos]
         assert parent_ctx_name in _registered_subcontexts, parent_ctx_name
 
     assert isinstance(default_naming_pattern, str), default_naming_pattern
     assert constructor is None or callable(constructor)
-    _registered_subcontexts[subcontext_name] = \
-        (default_naming_pattern, constructor, capturing_class)
+    _registered_subcontexts[subcontext_name] = default_naming_pattern, constructor, capturing_class
 
 
 from .cell import Cell, cell, pythoncell
@@ -231,19 +252,19 @@ from .process import Process
 
 
 register_subcontext(
-  "processes", "process",
+  "processes", "process{}",
   capturing_class=Process,
   constructor=None,
 )
 
 register_subcontext(
-  "cells", "cell",
+  "cells", "cell{}",
   capturing_class=Cell,
   constructor=cell,
 )
 
 register_subcontext(
-  "cells.python", "pythoncell",
+  "cells.python", "pythoncell{}",
   capturing_class=None,
   constructor=pythoncell,
 )
