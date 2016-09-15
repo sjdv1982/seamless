@@ -1,4 +1,5 @@
 #stub, TODO: refactor, document
+# TODO: can we have cell() ... as properties?
 import weakref
 from weakref import WeakValueDictionary, WeakKeyDictionary
 
