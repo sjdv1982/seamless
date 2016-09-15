@@ -20,4 +20,4 @@ def find_return_in_scope(node):
 
         todo.extend(iter_child_nodes(node))
 
-    raise ValueError("Return not found")
+    raise ValueError("Return AST node not found for the given node or its children: '{}'".format(node))

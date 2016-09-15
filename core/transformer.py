@@ -9,6 +9,7 @@ from .pythreadkernel import Transformer as KernelTransformer
 
 from .. import dtypes
 from .. import silk
+from . import logger
 
 transformer_param_docson = {
   "pin": "Required. Can be \"inputpin\", \"outputpin\", \"bufferpin\"",
@@ -139,7 +140,7 @@ class Transformer(Process):
                 self._name_to_pin[output_name].update(output_value)
 
             except:
-                traceback.print_exc() #TODO: store it?
+                logger.exception("An error occurred whilst waiting for an output value")
 
     def destroy(self):
         # gracefully terminate the transformer thread
