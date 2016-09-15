@@ -93,6 +93,7 @@ class Cell(Managed):
                 and (object_ == self._last_object or
                      object_ == self._last_object2):
             return False
+
         print("_object_set", object_)
         try:
             """
@@ -195,8 +196,7 @@ class PythonCell(Cell):
             The code block contains no return statement
     """
 
-    class CodeTypes:
-        ANY, FUNCTION, BLOCK = range(3)
+    CodeTypes = Enum("CodeTypes", "ANY, FUNCTION, BLOCK")
 
     _dtype = ("text", "python")
 
@@ -245,8 +245,7 @@ class PythonCell(Cell):
                         raise exception
 
             self._data = data
-            self._code_type = self.CodeTypes.FUNCTION if is_function else \
-                self.CodeTypes.BLOCK
+            self._code_type = self.CodeTypes.FUNCTION if is_function else self.CodeTypes.BLOCK
             self._status = self.StatusFlags.OK
 
             if not trusted and self._context is not None:
