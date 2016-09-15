@@ -83,7 +83,7 @@ class Cell(Managed):
             self._status = self.StatusFlags.OK
 
             if not trusted and self._context is not None:
-                manager = self._get_manager()
+                manager = self.get_manager()
                 manager.update_from_code(self)
 
         return True
@@ -118,7 +118,7 @@ class Cell(Managed):
             self._last_object = object_
 
             if not trusted and self._context is not None:
-                manager = self._get_manager()
+                manager = self.get_manager()
                 manager.update_from_code(self)
         return True
 
@@ -128,7 +128,7 @@ class Cell(Managed):
 
     def connect(self, target):
         """Connect the cell to a process's input pin."""
-        manager = self._get_manager()
+        manager = self.get_manager()
         manager.connect(self, target)
 
     @property
@@ -176,6 +176,7 @@ class Cell(Managed):
     def _set_error_state(self, error_message=None):
         self._error_message = error_message
         self._status = self.StatusFlags.ERROR
+
 
 class PythonCell(Cell):
     """
@@ -249,7 +250,7 @@ class PythonCell(Cell):
             self._status = self.StatusFlags.OK
 
             if not trusted and self._context is not None:
-                manager = self._get_manager()
+                manager = self.get_manager()
                 manager.update_from_code(self)
             return True
 
@@ -277,7 +278,7 @@ class PythonCell(Cell):
             self._status = self.StatusFlags.OK
 
             if not trusted and self._context is not None:
-                manager = self._get_manager()
+                manager = self.get_manager()
                 manager.update_from_code(self)
             return code != oldcode
 

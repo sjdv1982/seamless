@@ -3,6 +3,7 @@ import weakref
 from weakref import WeakValueDictionary, WeakKeyDictionary
 
 from . import logger
+from .exceptions import InvalidContextException
 
 
 class Manager:
@@ -60,9 +61,11 @@ class Manager:
     def update_from_process(self, cell_id, value):
         cell = self.cells.get(cell_id, None)
         if cell is None:
-            return #cell has died...
+            logger.warn("Unable to update cell '{}' , cell has died".format(cell_id))
+            return
 
         changed = cell._update(value)
+
         if changed:
             self._update(cell_id, value)
 
@@ -75,24 +78,23 @@ class Manager:
 
         if isinstance(source, Cell):
             assert isinstance(target, InputPin)
-            assert source._context is not None and \
-                source._context._manager is self
-            assert target._context is not None and \
-                target._context._manager is self
+            assert source._context is not None and source._context._manager is self
+            assert target._context is not None and target._context._manager is self
 
             process = target.process_ref()
-            assert process is not None #weakref may not be dead
-            source._on_connect(target, process, incoming = False)
+            assert process is not None # weakref may not be dead
+
+            source._on_connect(target, process, incoming=False)
             self.add_listener(source, target)
 
-            if source._status == Cell.StatusFlags.OK:
+            if source.status == Cell.StatusFlags.OK:
                 self.update_from_code(source)
 
         elif isinstance(source, OutputPin):
             assert isinstance(target, Cell)
             process = source.process_ref()
             assert process is not None #weakref may not be dead
-            target._on_connect(source, process, incoming = True)
+            target._on_connect(source, process, incoming=True)
 
             cell_id = self.get_cell_id(target)
             if cell_id not in self.cells:
@@ -110,13 +112,14 @@ class Managed:
         self._context = context
         return self
 
-    def _get_context(self):
+    def get_context(self):
         if self._context is None:
-            raise Exception("Cannot carry out requested operation without a context")
+            raise InvalidContextException("No valid context exists to perform required operation")
+
         return self._context
 
-    def _get_manager(self):
-        context = self._get_context()
+    def get_manager(self):
+        context = self.get_context()
         return context._manager
 
 
@@ -180,8 +183,8 @@ class InputPin(Managed):
         self.dtype = dtype
 
     def cell(self):
-        manager = self._get_manager()
-        context = self._get_context()
+        manager = self.get_manager()
+        context = self.get_context()
         curr_pin_to_cells = manager.pin_to_cells.get(id(self), [])
         number_connected_cells = len(curr_pin_to_cells)
 
@@ -207,13 +210,14 @@ class InputPin(Managed):
     def update(self, value):
         process = self.process_ref()
         if process is None:
-            return #Process has died...
+            logger.warn("Unable to update input pin, process has died")
+            return
 
         process.receive_update(self.identifier, value)
 
     def __del__(self):
         try:
-            manager = self._get_manager()
+            manager = self.get_manager()
             manager.remove_listener(self)
 
         except:
@@ -229,16 +233,16 @@ class OutputPin(Managed):
         self._cell_ids = []
 
     def update(self, value):
-        manager = self._get_manager()
+        manager = self.get_manager()
         for cell_id in self._cell_ids:
             manager.update_from_process(cell_id, value)
 
     def connect(self, target):
-        manager = self._get_manager()
+        manager = self.get_manager()
         manager.connect(self, target)
 
     def cell(self):
-        context = self._get_context()
+        context = self.get_context()
         number_connected_cells = len(self._cell_ids)
 
         if number_connected_cells == 0:
@@ -261,9 +265,8 @@ class OutputPin(Managed):
         return cell
 
     def cells(self):
-        context = self._get_context()
-        cells = [context.cells[c] for c in self._cell_ids]
-        cells = [c for c in cells if c is not None]
+        context = self.get_context()
+        cells = [c for c in (context.cells[c] for c in self._cell_ids) if c is not None]
         return cells
 
 
