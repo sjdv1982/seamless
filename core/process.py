@@ -127,7 +127,7 @@ class Process(Managed):
     """Base class for all processes."""
 
     def __init__(self, params):
-        self._pins = {}
+        self._name_to_pin = {}
         self.output_names = set()
 
         for param_name in params:
@@ -141,7 +141,7 @@ class Process(Managed):
                 pin = self._create_output_pin(param_name, param["dtype"])
                 self.output_names.add(param_name)
 
-            self._pins[param_name] = pin
+            self._name_to_pin[param_name] = pin
 
     def __del__(self):
         try:
@@ -158,12 +158,12 @@ class Process(Managed):
             raise AttributeError(name)
 
     def destroy(self):
-        self.__dict__.update({n: None for n in self._pins})
+        self.__dict__.update({n: None for n in self._name_to_pin})
 
     def set_context(self, context):
         super(Process, self).set_context(context)
 
-        for pin in self._pins.values():
+        for pin in self._name_to_pin.values():
             pin.set_context(context)
 
         return self
@@ -181,6 +181,14 @@ class InputPin(Managed):
         self.process_ref = weakref.ref(process)
         self.identifier = identifier
         self.dtype = dtype
+
+    def __del__(self):
+        try:
+            manager = self.get_manager()
+            manager.remove_listener(self)
+
+        except:
+            logger.exception("Error in destruction of InputPin")
 
     def cell(self):
         manager = self.get_manager()
@@ -214,14 +222,6 @@ class InputPin(Managed):
             return
 
         process.receive_update(self.identifier, value)
-
-    def __del__(self):
-        try:
-            manager = self.get_manager()
-            manager.remove_listener(self)
-
-        except:
-            logger.exception("Error in destruction of InputPin")
 
 
 class OutputPin(Managed):

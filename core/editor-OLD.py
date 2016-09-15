@@ -95,7 +95,7 @@ class Editor(Process):
         self.code_stop_block = None
         thread_inputs = {}
         self._io_attrs = ["code_start", "code_update", "code_stop"]
-        self._pins = {
+        self._name_to_pin = {
                         "code_start": self.code_start,
                         "code_update": self.code_update,
                         "code_stop": self.code_stop,
@@ -109,7 +109,7 @@ class Editor(Process):
                 pin = EditorOutputPin(self, p, param["dtype"])
                 self.output_names.append(p)
             self._io_attrs.append(p)
-            self._pins[p] = pin
+            self._name_to_pin[p] = pin
 
         """Output listener thread
         - It must have the same memory space as the main thread
@@ -148,10 +148,10 @@ class Editor(Process):
         self.editor_thread.start()
 
     def __getattr__(self, attr):
-        if attr not in self._pins:
+        if attr not in self._name_to_pin:
             raise AttributeError(attr)
         else:
-            return self._pins[attr]
+            return self._name_to_pin[attr]
 
     def _code_stop(self):
         if self._active:
@@ -166,8 +166,8 @@ class Editor(Process):
 
     def set_context(self, context):
         Process.set_context(self, context)
-        for p in self._pins:
-            self._pins[p].set_context(context)
+        for p in self._name_to_pin:
+            self._name_to_pin[p].set_context(context)
         return self
 
     def receive_update(self, input_pin, value):
@@ -209,7 +209,7 @@ class Editor(Process):
                         break
 
                 output_name, output_value = self.output_queue.popleft()
-                self._pins[output_name].update(output_value)
+                self._name_to_pin[output_name].update(output_value)
 
             except:
                 traceback.print_exc()  # TODO: store it?

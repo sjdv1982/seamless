@@ -100,7 +100,7 @@ class Editor(Process):
         return EditorOutputPin(self, name, dtype)
 
     def output_update(self, name, value):
-        self._pins[name].update(value)
+        self._name_to_pin[name].update(value)
 
     def receive_update(self, input_pin, value):
         f = self.editor.process_input
