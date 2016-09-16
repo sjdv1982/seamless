@@ -10,47 +10,51 @@ from .exceptions import InvalidContextException
 class Manager:
 
     def __init__(self):
-        self.listeners = {}
-        self.pin_to_cells = {}
+        self.pin_to_cell_ids = WeakKeyDictionary()
         self.cells = WeakValueDictionary()
+        self.cell_to_listener_pin_refs = {}
 
     def add_listener(self, cell, input_pin):
         cell_id = self.get_cell_id(cell)
         pin_ref = weakref.ref(input_pin)
 
         try:
-            listeners = self.listeners[cell_id]
-            assert input_pin not in listeners
+            listeners = self.cell_to_listener_pin_refs[cell_id]
+            assert pin_ref not in listeners
             # TODO: tolerate (silently ignore) a connection that exists already?
             listeners.append(pin_ref)
 
         except KeyError:
-            self.listeners[cell_id] = [pin_ref]
+            self.cell_to_listener_pin_refs[cell_id] = [pin_ref]
 
         try:
-            curr_pin_to_cells = self.pin_to_cells[id(input_pin)]
-            assert cell_id not in curr_pin_to_cells
             # TODO: tolerate (append) multiple inputs?
-            curr_pin_to_cells.append(cell_id)
+            curr_pin_cell_ids = self.pin_to_cell_ids[input_pin]
 
         except KeyError:
-            self.pin_to_cells[id(input_pin)] = [cell_id]
+            curr_pin_cell_ids = self.pin_to_cell_ids[input_pin] = []
+
+        assert cell_id not in curr_pin_cell_ids
+        curr_pin_cell_ids.append(cell_id)
 
     def remove_listener(self, input_pin):
-        cell_ids = self.pin_to_cells.pop(id(input_pin), [])
+        cell_ids = self.pin_to_cell_ids.pop(input_pin, [])
+
         for cell_id in cell_ids:
-            l = self.listeners[cell_id]
-            l[:] = [ref for ref in l if id(ref()) != id(input_pin)]
-            if not len(l):
-                self.listeners.pop(cell_id)
+            listener_pins = self.cell_to_listener_pin_refs[cell_id]
+            listener_pins[:] = [ref for ref in listener_pins if ref() is not input_pin]
+
+            if not listener_pins:
+                self.cell_to_listener_pin_refs.pop(cell_id)
 
     def _update(self, cell_id, value):
-        listeners = self.listeners.get(cell_id, [])
+        listeners = self.cell_to_listener_pin_refs.get(cell_id, [])
+
         for input_pin_ref in listeners:
             input_pin = input_pin_ref()
 
             if input_pin is None:
-                continue #TODO: error?
+                continue # TODO: error?
 
             input_pin.update(value)
 
@@ -61,6 +65,7 @@ class Manager:
 
     def update_from_process(self, cell_id, value):
         cell = self.cells.get(cell_id, None)
+
         if cell is None:
             logger.warn("Unable to update cell '{}' , cell has died".format(cell_id))
             return
@@ -131,13 +136,16 @@ class Process(Managed):
 
     def __init__(self, params):
         self._name_to_pin = {}
+
         self.output_names = set()
+        self.input_names = set()
 
         for param_name in params:
             param = params[param_name]
 
             if param["pin"] == "input":
                 pin = self._create_input_pin(param_name, param["dtype"])
+                self.input_names.add(param_name)
 
             else:
                 assert param["pin"] == "output"
@@ -196,11 +204,12 @@ class InputPin(Managed):
     def cell(self):
         manager = self.get_manager()
         context = self.get_context()
-        curr_pin_to_cells = manager.pin_to_cells.get(id(self), [])
-        number_connected_cells = len(curr_pin_to_cells)
+
+        curr_pin_cell_ids = manager.pin_to_cell_ids.get(self, [])
+        number_connected_cells = len(curr_pin_cell_ids)
 
         if number_connected_cells == 1:
-            cell = context.root()._childids[curr_pin_to_cells[0]]
+            cell = context.root()._id_to_child[curr_pin_cell_ids[0]]
 
         elif number_connected_cells == 0:
             if self.dtype is None:
@@ -260,7 +269,7 @@ class OutputPin(Managed):
             self.connect(cell)
 
         elif number_connected_cells == 1:
-            cell = context.root()._childids[self._cell_ids[0]]
+            cell = context.root()._id_to_child[self._cell_ids[0]]
 
         elif number_connected_cells > 1:
             raise TypeError("cell() is ambiguous, multiple cells are connected")

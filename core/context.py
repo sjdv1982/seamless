@@ -122,7 +122,7 @@ class Context:
         self._capturing_class = capturing_class
         self._subcontexts = {}
         self._children = {}
-        self._child_to_id = WeakValueDictionary()
+        self._id_to_child = WeakValueDictionary()
 
         if parent is not None:
             self._manager = parent._manager
@@ -188,7 +188,7 @@ class Context:
 
         else:
             self._children[name] = child
-            self.root()._child_to_id[id(child)] = child
+            self.root()._id_to_child[id(child)] = child
             child.set_context(self)
 
     def root(self):
@@ -200,7 +200,8 @@ class Context:
 
     def define(self, *args, **kwargs):
         if self._constructor is None:
-            raise TypeError("""Cannot define new attribute of subcontext '{}': subcontext has no constructor""".format(self._name))
+            raise TypeError("""Cannot define new attribute of subcontext '{}': subcontext has no constructor"""
+                            .format(self._name))
 
         assert self._default_naming_pattern is not None
 
@@ -209,11 +210,11 @@ class Context:
         n = 0
         while 1:
             n += 1
-            childname = self._default_naming_pattern.format(n)
-            if childname not in self._children:
+            child_name = self._default_naming_pattern.format(n)
+            if child_name not in self._children:
                 break
 
-        self._add_child(childname, cell)
+        self._add_child(child_name, cell)
 
         return cell
 
@@ -275,27 +276,26 @@ def context():
     ctx = Context()
 
     # Get a list of sorted subcontexts
-    def sorter(subcontext):
-        name = subcontext[0]
+    def sorter(item):
+        name, context = item
         if name is None:
-            return 0
-        return name.count(".") + 1
-    subcontexts = sorted(list(_registered_subcontexts.items()), key=sorter)
+            return -1
+
+        return name.count(".")
+
+    subcontexts = sorted(_registered_subcontexts.items(), key=sorter)
 
     subconts = {}
     for name, (naming_pattern, constructor, class_) in subcontexts:
         parent = ctx
         pos = name.rfind(".")
-        if pos > -1:
+
+        if pos != -1:
             parent = subconts[name[:pos]]
-        subctx = Context(
-            parent=parent,
-            name=name,
-            default_naming_pattern=naming_pattern,
-            constructor=constructor,
-            capturing_class=class_
-        )
-        ctx._add_subcontext(name, subctx)
-        subconts[name] = subctx
+
+        sub_context = Context(parent=parent, name=name, default_naming_pattern=naming_pattern, constructor=constructor,
+                              capturing_class=class_)
+        ctx._add_subcontext(name, sub_context)
+        subconts[name] = sub_context
 
     return ctx

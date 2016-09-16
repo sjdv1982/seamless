@@ -82,13 +82,13 @@ def open_relative(filename, mode='r'):
 
 
 def make_editor(ed, directory):
-    with open_relative("{}/start.py".format(directory)) as f_start, \
-            open_relative("{}/update.py".format(directory)) as f_update, \
-            open_relative("{}/stop.py".format(directory)) as f_stop:
+  with open_relative("{}/start.py".format(directory)) as f_start, \
+          open_relative("{}/update.py".format(directory)) as f_update, \
+          open_relative("{}/stop.py".format(directory)) as f_stop:
 
-        ed.code_start.cell().set(f_start.read())
-        ed.code_stop.cell().set(f_stop.read())
-        ed.code_update.cell().set(f_update.read())
+    ed.code_start.cell().set(f_start.read())
+    ed.code_stop.cell().set(f_stop.read())
+    ed.code_update.cell().set(f_update.read())
 
 editor_1 = ctx.processes.editor1(editor(eparams))
 editor_2 = ctx.processes.editor2(editor(eparams))

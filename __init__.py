@@ -36,6 +36,7 @@ def run_work():
         work = _work.popleft()
         try:
             work()
+
         except:
             traceback.print_tb()
 
@@ -52,7 +53,7 @@ class SeamlessMock:
         return self
 
     def __getattr__(self, attr):
-        if attr in ("__cached__"):
+        if attr in ("__cached__",):
             raise AttributeError
         return self
 
@@ -103,6 +104,7 @@ else:
         qt_error = "Seamless was not imported inside IPython"
 
     else:
+
         try:
             ipython.enable_gui("qt5")
 
@@ -127,6 +129,7 @@ if qt_error is None:
     timer = QTimer()
     timer.timeout.connect(run_work)
     timer.start(10)
+
 
 else:
     sys.stderr.write("    " + qt_error + "\n")
