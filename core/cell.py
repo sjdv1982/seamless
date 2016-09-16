@@ -60,8 +60,10 @@ class Cell(Managed):
         # TODO: support for liquid (lset)
         if isinstance(text_or_object, (str, bytes)):
             self._text_set(text_or_object, trusted=False)
+
         else:
             self._object_set(text_or_object, trusted=False)
+
         return self
 
     def _text_set(self, data, trusted):
@@ -206,6 +208,7 @@ class PythonCell(Cell):
     def _text_set(self, data, trusted):
         if data == self._data:
             return False
+
         try:
             """Check if the code is valid Python syntax"""
             ast_tree = compile(data, self._name, "exec", ast.PyCF_ONLY_AST)
@@ -218,27 +221,20 @@ class PythonCell(Cell):
                 self._set_error_state(traceback.format_exc())
 
         else:
-            is_function = (
-             len(ast_tree.body) == 1 and
-             isinstance(ast_tree.body[0], ast.FunctionDef)
-            )
+            is_function = len(ast_tree.body) == 1 and (ast_tree.body[0], ast.FunctionDef)
 
             # If this cell requires a function, but wasn't provided
-            #  with a def block
-            if not is_function and \
-                    self._required_code_type == self.CodeTypes.FUNCTION:
+            # with a def block
+            if not is_function and self._required_code_type == self.CodeTypes.FUNCTION:
                 # Look for return node in AST
                 try:
                     find_return_in_scope(ast_tree)
+
                 except ValueError:
-                    exception = SyntaxError(
-                     "Block must contain return statement(s)"
-                    )
+                    exception = SyntaxError("Block must contain return statement(s)")
 
                     if trusted:
-                        self._set_error_state("{}: {}".format(
-                         exception.__class__.__name__, exception.msg)
-                        )
+                        self._set_error_state("{}: {}".format(exception.__class__.__name__, exception.msg))
                         return
 
                     else:
@@ -251,6 +247,7 @@ class PythonCell(Cell):
             if not trusted and self._context is not None:
                 manager = self.get_manager()
                 manager.update_from_code(self)
+
             return True
 
     def _object_set(self, object_, trusted):
