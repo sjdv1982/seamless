@@ -1,6 +1,6 @@
 from collections import deque
 import threading
-import traceback
+from logging import getLogger
 
 from .macro import macro
 from .process import Process, InputPin, OutputPin
@@ -9,7 +9,9 @@ from .pythreadkernel import Transformer as KernelTransformer
 
 from .. import dtypes
 from .. import silk
-from . import logger
+
+logger = getLogger(__name__)
+
 
 transformer_param_docson = {
   "pin": "Required. Can be \"inputpin\", \"outputpin\", \"bufferpin\"",
@@ -81,8 +83,6 @@ class Transformer(Process):
     _required_code_type = PythonCell.CodeTypes.FUNCTION
 
     def __init__(self, transformer_params):
-        self._output_name = None
-
         all_params = transformer_params.copy()
         all_params['code'] = {"pin": "input", "dtype": ("text", "code", "python")}
 
@@ -111,14 +111,14 @@ class Transformer(Process):
         - It must run async from the main thread
         """
         thread_inputs = {name: param['dtype'] for name, param in transformer_params.items() if param["pin"] == "input"}
-        self.transformer = KernelTransformer(thread_inputs, self._output_name, self.output_queue, self.output_semaphore)
+        output_name = next(iter(self.output_names))
+        self.transformer = KernelTransformer(thread_inputs, output_name, self.output_queue, self.output_semaphore)
 
         self.transformer_thread = threading.Thread(target=self.transformer.run, daemon=True)
         self.transformer_thread.start()
 
     def _create_output_pin(self, name, dtype):
-        assert self._output_name is None  # can have only one output
-        self._output_name = name
+        assert not self.output_names # can have only one output
         return OutputPin(self, name, dtype)
 
     def receive_update(self, input_pin, value):
@@ -168,5 +168,3 @@ class Transformer(Process):
 def transformer(kwargs):
     # TODO: remapping, e.g. output_finish, destroy, ...
     return Transformer(kwargs)
-
-from .context import Context
