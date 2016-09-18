@@ -1,10 +1,14 @@
-#stub, TODO: refactor, document
+# stub, TODO: refactor, document
 # TODO: can we have cell() ... as properties?
-import weakref
-from weakref import WeakValueDictionary, WeakKeyDictionary
 
-from . import logger
+from weakref import WeakValueDictionary, WeakKeyDictionary, ref
+from logging import getLogger
+
+from .context import Context
 from .exceptions import InvalidContextException
+
+
+logger = getLogger(__name__)
 
 
 class Manager:
@@ -16,7 +20,7 @@ class Manager:
 
     def add_listener(self, cell, input_pin):
         cell_id = self.get_cell_id(cell)
-        pin_ref = weakref.ref(input_pin)
+        pin_ref = ref(input_pin)
 
         try:
             listeners = self.cell_to_listener_pin_refs[cell_id]
@@ -189,7 +193,7 @@ class Process(Managed):
 class InputPin(Managed):
 
     def __init__(self, process, identifier, dtype):
-        self.process_ref = weakref.ref(process)
+        self.process_ref = ref(process)
         self.identifier = identifier
         self.dtype = dtype
 
@@ -239,7 +243,7 @@ class InputPin(Managed):
 class OutputPin(Managed):
 
     def __init__(self, process, identifier, dtype):
-        self.process_ref = weakref.ref(process)
+        self.process_ref = ref(process)
         self.identifier = identifier
         self.dtype = dtype
         self._cell_ids = []
@@ -305,6 +309,3 @@ class EditorOutputPin(Managed):
         Managed.set_context(self, context)
         self.solid.set_context(context)
         self.liquid.set_context(context)
-
-
-from .context import Context

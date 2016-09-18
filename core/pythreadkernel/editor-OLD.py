@@ -19,12 +19,7 @@ class Editor(Process):
             p.output_queue.append((self._name, value))
             p.output_semaphore.release()
 
-    def __init__(self,
-        namespace, input_data_types,
-        output_names, output_queue, output_semaphore,
-        lock,
-        **kwargs
-    ):
+    def __init__(self, namespace, input_data_types, output_names, output_queue, output_semaphore, lock, **kwargs):
         assert "code_start" not in input_data_types
         assert "code_stop" not in input_data_types
         assert "code_update" not in input_data_types
@@ -49,7 +44,6 @@ class Editor(Process):
         self.namespace["_cache"] = {}
         for o in self.output_names:
             self.namespace[o] = self.EditorOutput(self, o)
-
 
     def update(self, updated):
         with self.lock:

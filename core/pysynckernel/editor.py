@@ -3,6 +3,7 @@ import weakref
 from ...dtypes.objects import PythonBlockObject
 from ...dtypes import data_type_to_data_object
 
+
 # DUPLICATE
 class Editor:
     name = "editor"

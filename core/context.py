@@ -1,18 +1,27 @@
 """Module for Context class."""
-#TODO: capturing!??
 
-
+# TODO: capturing!??
 from collections import Mapping
 from weakref import WeakValueDictionary
 from itertools import chain
+from logging import getLogger
 
-from . import logger
+from .utils import infinite_range
+
+logger = getLogger(__name__)
 
 
 class DictView(Mapping):
+    """Immutable view to dictionary object"""
 
     def __init__(self, dict_):
         self._dict = dict_
+
+    def __len__(self):
+        return len(self._dict)
+
+    def __getitem__(self, index):
+        return self._dict[index]
 
     def __iter__(self):
         return iter(self._dict)
@@ -73,6 +82,7 @@ class Context:
 
         def __call__(self, *args, **kwargs):
             constructor = self.parent._constructor
+
             if constructor is None:
                 if len(args) != 1 or len(kwargs) > 0:
                     raise TypeError("""Cannot construct attribute '{}' of subcontext '{}': subcontext has no """
@@ -169,9 +179,9 @@ class Context:
     def children(self):
         return DictView(self._children)
 
-    def _add_subcontext(self, subcontext_name, subcontext):
-        assert subcontext_name not in self._subcontexts, subcontext_name
-        self._subcontexts[subcontext_name] = subcontext
+    def _add_subcontext(self, name, subcontext):
+        assert name not in self._subcontexts, name
+        self._subcontexts[name] = subcontext
 
     def _add_child(self, name, child):
         if name in self._subcontexts:
@@ -207,10 +217,9 @@ class Context:
 
         cell = self._constructor(*args, **kwargs)
 
-        n = 0
-        while 1:
-            n += 1
-            child_name = self._default_naming_pattern.format(n)
+        child_name = None
+        for i in infinite_range():
+            child_name = self._default_naming_pattern.format(i)
             if child_name not in self._children:
                 break
 
@@ -222,7 +231,7 @@ class Context:
 _registered_subcontexts = {}
 
 
-def register_subcontext(subcontext_name, default_naming_pattern, constructor=None, capturing_class=None):
+def register_subcontext_factory(subcontext_name, default_naming_pattern, constructor=None, capturing_class=None):
     """Register a new subcontext.
 
     After invoking this function, a corresponding subcontext will
@@ -248,54 +257,32 @@ def register_subcontext(subcontext_name, default_naming_pattern, constructor=Non
     _registered_subcontexts[subcontext_name] = default_naming_pattern, constructor, capturing_class
 
 
-from .cell import Cell, cell, pythoncell
-from .process import Process
+def _sort_context_items_key(item):
+    name, context = item
+    if name is None:
+        return -1
 
-
-register_subcontext(
-  "processes", "process{}",
-  capturing_class=Process,
-  constructor=None,
-)
-
-register_subcontext(
-  "cells", "cell{}",
-  capturing_class=Cell,
-  constructor=cell,
-)
-
-register_subcontext(
-  "cells.python", "pythoncell{}",
-  capturing_class=None,
-  constructor=pythoncell,
-)
+    return name.count(".")
 
 
 def context():
     """Return a new Context object."""
-    ctx = Context()
+    context = Context()
 
     # Get a list of sorted subcontexts
-    def sorter(item):
-        name, context = item
-        if name is None:
-            return -1
+    subcontext_factories = sorted(_registered_subcontexts.items(), key=_sort_context_items_key)
+    subcontexts = {}
 
-        return name.count(".")
-
-    subcontexts = sorted(_registered_subcontexts.items(), key=sorter)
-
-    subconts = {}
-    for name, (naming_pattern, constructor, class_) in subcontexts:
-        parent = ctx
+    for name, (naming_pattern, constructor, class_) in subcontext_factories:
+        parent = context
         pos = name.rfind(".")
 
         if pos != -1:
-            parent = subconts[name[:pos]]
+            parent = subcontexts[name[:pos]]
 
         sub_context = Context(parent=parent, name=name, default_naming_pattern=naming_pattern, constructor=constructor,
                               capturing_class=class_)
-        ctx._add_subcontext(name, sub_context)
-        subconts[name] = sub_context
+        context._add_subcontext(name, sub_context)
+        subcontexts[name] = sub_context
 
-    return ctx
+    return context
