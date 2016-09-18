@@ -1,6 +1,6 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<silkspace>
-<silk typename="Coordinate">
+<spyder>
+  <typename>Coordinate</typename>
   <docstring>Class for 3D (x,y,z) coordinates</docstring>
   <member>
     <name>x</name>
@@ -107,5 +107,5 @@
         self = type(self)(self - a)
         return self
   </methodblock>
-</silk>
-</silkspace>
+</spyder>
+

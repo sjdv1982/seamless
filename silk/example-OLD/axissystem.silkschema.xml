@@ -1,6 +1,6 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<silkspace>
-<silk typename="AxisSystem">
+<spyder>
+  <typename>AxisSystem</typename>
   <docstring>Implementation of a coordinate system
    consisting of an origin and x,y and z axes
   </docstring>
@@ -57,5 +57,5 @@
   <formblock>
     self.subtype = "column"
   </formblock>
-</silk>
-</silkspace>
+</spyder>
+

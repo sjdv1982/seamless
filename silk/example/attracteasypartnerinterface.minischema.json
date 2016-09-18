@@ -1,0 +1,41 @@
+
+[
+{
+	"type": "HaddockResidueList",
+	"base": "IntegerArray"
+},
+{
+	"type": "Data_PDB",
+	"base": "Data"
+},
+{
+	"type": "Data_CNS_Restraints",
+	"base": "Data"
+},
+{
+	"type": "HaddockRestraintsInterface",
+	"properties": {
+		"activereslist": "HaddockResidueList",
+		"passivereslist": "HaddockResidueList",
+		"auto_passive": "Bool"
+	},
+	"required": [],
+	"order": ["activereslist", "passivereslist", "auto_passive"]
+},
+{
+	"type": "AttractEasyPartnerInterface",
+	"properties": {
+		"pdbfile": "ResourceData_PDB",
+		"moleculetype": { "Enum": ["Protein", "Peptide","DNA", "RNA"] },
+		"has_hydrogens": "Bool",
+    "haddock_restraints": "HaddockRestraintsInterface",
+    "ensemble_size": "Integer",
+    "generate_modes": "Bool",
+    "nr_modes": "Integer",
+    "use_rmsd": "Bool",
+    "rmsd_pdb": "ResourceData_PDB",
+	},
+	"required": ["pdbfile"],
+	"order": ["pdbfile", "moleculetype", "has_hydrogens", "haddock_restraints", "ensemble_size", "generate_modes", "nr_modes", "use_rmsd", "rmsd_pdb"]
+}
+]

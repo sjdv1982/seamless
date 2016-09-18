@@ -1,0 +1,281 @@
+
+Type AttractEasyPartnerInterface {
+  ## form pdbfile.type = "file"
+  ## form pdbfile.name = "Structure file"
+  ResourceData_PDB pdbfile
+  Enum moleculetype("Protein", "Peptide","DNA", "RNA") = "Protein"
+  ## form moleculetype.name = "What kind of molecule are you docking?"
+  Bool has_hydrogens = False
+  ## form has_hydrogens.name = "The PDB file contains all necessary atoms, including polar hydrogens"
+
+  *HaddockRestraintsInterface haddock_restraints
+  ## form haddock_restraints.name = "Definition of residues for HADDOCK-type distance restraints (optional)"
+  ## form haddock_restraints.auto_passive.type = None #TODO: disabled for now
+
+  Integer ensemble_size = 0
+  ## form ensemble_size.name = "If the PDB is a multi-model ensemble, specify the number of conformers"
+  ## validate if ensemble_size != 0: assert ensemble_size >= 1
+
+  Bool generate_modes = False
+  Integer nr_modes = 5
+  form {
+    use_rmsd.name = "Perform RMSD analysis"
+    generate_modes.name = "Generate harmonic modes"
+    nr_modes.name = "Number of harmonic modes to select"
+    nr_modes.type = "option"
+    nr_modes.options = list(range(0,10+1))
+    nr_modes.optiontitles = ["No modes"] + [str(v) for v in nr_modes.options[1:]]
+  }
+
+  ## validate if generate_modes: assert nr_modes >= 1 and nr_modes <= 10
+
+  Bool use_rmsd = False
+  *ResourceData_PDB rmsd_pdb
+  ## form rmsd_pdb.add_header("You can specify a PDB file to use as reference in RMSD calculations")
+  ## form rmsd_pdb.name = "RMSD PDB file"
+  ## form rmsd_pdb.type = "file"
+  validate {
+    if ensemble_size > 1: assert generate_modes == False
+    if not use_rmsd:
+      assert rmsd_pdb is None
+    else:
+      assert rmsd_pdb is not None
+  }
+  error {
+    'if ensemble_size != 0: assert ensemble_size >= 1'
+    =>
+    'If you define an ensemble size, it must at least 1, not {ensemble_size}'
+
+    'assert rmsd_pdb is None'
+    =>
+    'You defined a PDB for RMSD calculation, which you disabled'
+
+    'if generate_modes: assert nr_modes >= 1 and nr_modes <= 10'
+    =>
+    'Number of harmonic modes must be between 1 and 10'
+
+    'assert rmsd_pdb is not None'
+    =>
+    'You need to define a PDB for RMSD calculation, or disable it'
+
+    'if ensemble_size > 1: assert generate_modes == False'
+    =>
+    'You can upload an ensemble of conformations, or generate harmonic modes, but not both'
+  }
+}
+
+
+Type AttractEasyModel {
+  String runname = "attract"
+  form {
+    runname.add_header("Please supply a name for your docking run (one word)")
+    runname.name = "Name of the docking run"
+  }
+  AttractEasyPartnerInterfaceArray partners[2]
+  form {
+    partners.name = "Docking partners"
+    partners[0].name = "Receptor"
+    partners[1].name = "Ligand"
+    partners[0].moleculetype.options = ("Protein",)
+    partners[0].moleculetype.optiontitles = ("Protein",)
+  }
+  validate {
+    has_haddock = any([p.haddock_restraints for p in partners])
+    nr_has_haddock = len([1 for p in partners if p.haddock_restraints])
+    if has_haddock: assert nr_has_haddock == 2
+    has_active = any([p.haddock_restraints.activereslist for p in partners if p.haddock_restraints])
+    if has_haddock: assert has_active
+  }
+  error {
+    'if has_haddock: assert has_active'
+    =>
+    'If you define HADDOCK restraints, you must define active residues for at least one partner'
+
+    'if has_haddock: assert nr_has_haddock == 2'
+    =>
+    'If you define HADDOCK restraints, you must do so for both two partners'
+  }
+
+  #***Custom distance restraints***
+  *ResourceData_CNS_Restraints harmonic_restraints_file
+  ## form harmonic_restraints_file.type = "file"
+  *ResourceData_CNS_Restraints position_restraints_file
+  ## form position_restraints_file.type = "file"
+  form {
+    harmonic_restraints_file.group = "Custom distance restraints"
+    position_restraints_file.group = "Custom distance restraints"
+
+    harmonic_restraints_file.name = "Harmonic distance restraints file (CNS/HADDOCK .tbl format)"
+    position_restraints_file.name = "Position restraints file (CNS/HADDOCK .tbl format)"
+
+  }
+
+  #***Energy and interaction parameters***
+  Bool use_grids = True
+  ## form use_grids.name = "Perform grid-accelerated docking"
+  Bool rescore_step = False
+  ## form rescore_step.name = "Rescore the docking solutions by the @-scoring step potential"
+  Bool use_iattract = True
+  ## form use_iattract.name = "Perform iATTRACT refinement after the docking"
+  Enum forcefield("ATTRACT", "OPLSX") = "ATTRACT"
+  ## form forcefield.add_header("Which forcefield is to be used?")
+  ## form forcefield.name = "Forcefield"
+  Enum completion_tool("whatif", "pdb2pqr_whatif", "amber", "cns") = "pdb2pqr_whatif"
+  form {
+    completion_tool.add_header("External tool for PDB completion and hydrogens")
+    completion_tool.add_header("NOTE: PDB2PQR, AMBER and CNS require a local installation")
+    completion_tool.add_header("NOTE: PDB2PQR only completes proteins; WHATIF is used for nucleic acids")
+    completion_tool.name = "PDB completion method"
+    completion_tool.optiontitles = (
+      "WHATIF web server",
+      "PDB2PQR",
+      "AMBER",
+      "CNS",
+    )
+  }
+  form {
+    _g = "Energy and interaction parameters"
+    use_grids.group = _g
+    rescore_step.group = _g
+    use_iattract.group = _g
+    forcefield.group = _g
+    completion_tool.group = _g
+  }
+
+
+  #***Analysis***
+  Bool calc_lrmsd = False
+  Bool calc_irmsd = False
+  Bool calc_fnat = False
+  Integer nr_collect = 50
+  form {
+
+    calc_lrmsd.group = "Analysis"
+    calc_irmsd.group = "Analysis"
+    calc_fnat.group = "Analysis"
+    nr_collect.group = "Analysis"
+
+    calc_lrmsd.name = "Calculate ligand RMSD after docking"
+    calc_irmsd.name = "Calculate interface RMSD after docking"
+    calc_fnat.name = "Calculate fraction of native contacts after docking"
+
+    nr_collect.name = "Number of structures to collect as PDB file"
+  }
+  #***
+
+  #***Computing and parallelization parameters***
+  Enum use_gpu("never","if_available",  "always") = "never"
+  form {
+    use_gpu.group = "Computing and parallelization parameters"
+    use_gpu.name = "Use GPU acceleration (experimental!)"
+    use_gpu.optiontitles = (
+      "Never",
+      "If available",
+      "Always",
+    )
+  }
+  validate {
+    if use_gpu != "never":
+      assert use_grids #gpu
+      assert len(partners) == 2 #gpu
+      assert harmonic_restraints_file is None #gpu
+      assert position_restraints_file is None #gpu
+      for p in partners:
+        assert not p.generate_modes #gpu
+        assert p.haddock_restraints is None #gpu
+      assert partners[0].ensemble_size in (0,1) #gpu
+  }
+  error {
+    'assert use_grids #gpu'
+    =>
+    'GPU acceleration must be combined with grids'
+
+    'assert len(partners) == 2 #gpu'
+    =>
+    'GPU acceleration is not compatible with multi-body docking'
+
+    'assert not p.generate_modes #gpu'
+    =>
+    'GPU acceleration is not compatible with harmonic modes'
+
+    'assert p.haddock_restraints is None #gpu'
+    =>
+    'GPU acceleration is not compatible with HADDOCK restraints'
+
+    'assert harmonic_restraints_file is None #gpu'
+    =>
+    'GPU acceleration is not compatible with a harmonic restraints file'
+
+    'assert position_restraints_file is None #gpu'
+    =>
+    'GPU acceleration is not compatible with a position restraints file'
+
+    'assert partners[0].ensemble_size in (0,1) #gpu'
+    =>
+    'GPU acceleration is not compatible with receptor ensemble docking'
+
+  }
+
+
+  Integer np = 4
+  ## form np.group = "Computing and parallelization parameters"
+  ## form np.name = "Number of processor cores"
+
+
+  #***
+  validate {
+    assert nr_collect > 0
+    assert np > 0
+
+    p1, p2 = partners
+    assert p1.use_rmsd == p2.use_rmsd
+    if p1.use_rmsd:
+      assert calc_lrmsd or calc_irmsd or calc_fnat
+    else:
+      assert not calc_lrmsd
+      assert not calc_irmsd
+      assert not calc_fnat
+  }
+  error {
+    'assert not calc_irmsd'
+    =>
+    'You are trying to calculate IRMSD but did not enable RMSD calculation in the partners section. Please upload PDB files for RMSD calculation for both partners.'
+
+    'assert partners == None or len(partners) == 2'
+    =>
+    'Please specify 2 protein partners for docking.'
+
+    'assert calc_lrmsd or calc_irmsd or calc_fnat'
+    =>
+    'You specified PDBs for RMSD calculations but you are calculating neither ligand RMSD nor interface RMSD nor fraction of native contacts. Please specify one of these in the Analysis section or disable RMSD calculation.'
+
+    'assert nr_collect > 0'
+    =>
+    'Please specify a number of structures you want to collect as a PDB file from the docking results. It is not permitted to set this number to zero.'
+
+    'assert not calc_fnat'
+    =>
+    'You are trying to calculate fnat but did not enable RMSD calculation in the partners section. Please upload PDB files for RMSD calculation for both partners.'
+
+    'assert p1.use_rmsd == p2.use_rmsd'
+    =>
+    'Please enable RMSD calculation for both partners or for neither one'
+
+    'assert not calc_lrmsd'
+    =>
+    'You are trying to calculate ligand RMSD but did not enable RMSD calculation in the partners section. Please upload PDB files for RMSD calculation for both partners.'
+
+    'assert np > 0'
+    =>
+    'Please use at least one core (np=1)for running the docking.'
+
+    'if forcefield is not None: assert forcefield in ("ATTRACT", "OPLSX")'
+    =>
+    ''
+
+    'if completion_tool is not None: assert completion_tool in ("whatif", "pdb2pqr_whatif", "amber", "cns")'
+    =>
+    ''
+  }
+
+}

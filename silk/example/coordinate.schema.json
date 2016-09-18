@@ -2,10 +2,14 @@
 	"$schema": "http://json-schema.org/schema#",
 	"title": "Coordinate",
 	"type": "object",
+  "definitions": {
+    "Float": {"type": "number"}
+  },
 	"properties": {
-		"x": {"type":"number"},
-		"y": {"type":"number"},
-		"z": {"type":"number"}
+		"x": { "$ref": "#/definitions/Float" },
+		"y": { "$ref": "#/definitions/Float" },
+		"z": { "$ref": "#/definitions/Float" }
 	},
-	"required": ["x", "y", "z"]
+	"required": ["x", "y", "z"],
+  "order": ["x", "y", "z"]
 }

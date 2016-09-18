@@ -1,0 +1,86 @@
+{
+	"$schema": "http://json-schema.org/schema#",
+	"title": "AttractEasyModel",
+	"type": "object",
+  "definitions": {
+    "Bool": {"type": "boolean"},
+    "Float": {"type": "number"},
+    "Integer": {"type": "number"},
+    "IntegerArray": {
+      "type" : "array",
+      "items": {
+        "$ref": "#/definitions/Integer",
+      }
+    },
+    "HaddockResidueList":{"$ref": "#/definitions/IntegerArray"},
+    "String": {"type": "string"},
+    "Filename": {"$ref": "#/definitions/String"},
+    "Data": {"type": "string"},
+    "Data_PDB": {"$ref": "#/definitions/Data"},
+    "Data_CNS_Restraints": {"$ref": "#/definitions/Data"},
+    "ResourceData_PDB": {
+      "oneOf": [
+        {"$ref": "#/definitions/Filename"},
+        {"$ref": "#/definitions/Data_PDB"}
+      ]
+    },
+    "HaddockRestraintsInterface": {
+			"type": "object",
+      "properties": {
+    		"activereslist": { "$ref": "#/definitions/HaddockResidueList" },
+        "passivereslist": { "$ref": "#/definitions/HaddockResidueList" },
+        "auto_passive": { "$ref": "#/definitions/Bool" }
+      },
+			"required": [],
+			"order": ["activereslist", "passivereslist", "auto_passive"]
+    },
+		"AttractEasyPartnerInterface": {
+			"type": "object",
+			"properties": {
+				"pdbfile": { "$ref": "#/definitions/ResourceData_PDB" },
+				"moleculetype": { "enum": ["Protein", "Peptide","DNA", "RNA"] },
+				"has_hydrogens": { "$ref": "#/definitions/Bool" },
+		    "haddock_restraints": { "$ref": "#/definitions/HaddockRestraintsInterface" },
+		    "ensemble_size": { "$ref": "#/definitions/Integer" },
+		    "generate_modes": { "$ref": "#/definitions/Bool" },
+		    "nr_modes": { "$ref": "#/definitions/Integer" },
+		    "use_rmsd": { "$ref": "#/definitions/Bool" },
+		    "rmsd_pdb": { "$ref": "#/definitions/ResourceData_PDB" }
+			},
+			"AttractEasyPartnerInterfaceArray": {
+	      "type" : "array",
+	      "items": {
+	        "$ref": "#/definitions/AttractEasyPartnerInterface",
+	      }
+	    },
+			"required": ["pdbfile"],
+		  "order": ["pdbfile", "moleculetype", "has_hydrogens", "haddock_restraints", "ensemble_size", "generate_modes", "nr_modes", "use_rmsd", "rmsd_pdb"]
+		}
+  },
+	"properties": {
+		"runname": { "$ref": "#/definitions/String" },
+		"partners": { "$ref": "#/definitions/AttractEasyPartnerInterfaceArray" },
+		"harmonic_restraints_file": { "$ref": "#/definitions/ResourceData_CNS_Restraints" },
+		"position_restraints_file": { "$ref": "#/definitions/ResourceData_CNS_Restraints" },
+		"use_grids": { "$ref": "#/definitions/Bool" },
+		"rescore_step": { "$ref": "#/definitions/Bool" },
+		"use_iattract": { "$ref": "#/definitions/Bool" },
+		"forcefield": { "enum": ["ATTRACT", "OPLSX"] },
+		"completion_tool": { "enum": ["whatif", "pdb2pqr_whatif", "amber", "cns"] },
+		"has_hydrogens": { "$ref": "#/definitions/Bool" },
+    "haddock_restraints": { "$ref": "#/definitions/HaddockRestraintsInterface" },
+    "ensemble_size": { "$ref": "#/definitions/Integer" },
+    "generate_modes": { "$ref": "#/definitions/Bool" },
+    "nr_modes": { "$ref": "#/definitions/Integer" },
+    "use_rmsd": { "$ref": "#/definitions/Bool" },
+    "rmsd_pdb": { "$ref": "#/definitions/ResourceData_PDB" },
+		"calc_lrmsd": { "$ref": "#/definitions/Bool" },
+		"calc_irmsd": { "$ref": "#/definitions/Bool" },
+		"calc_fnat": { "$ref": "#/definitions/Bool" },
+		"nr_collect": { "$ref": "#/definitions/Integer" },
+    "use_gpu": { "enum": ["never","if_available",  "always"] },
+		"np": { "$ref": "#/definitions/Integer" },
+	},
+	"required": ["partners"],
+  "order": ["runname", "partners","harmonic_restraints_file","position_restraints_file", "use_grids", "rescore_step", "use_iattract", "forcefield", "completion_tool", "calc_lrmsd", "calc_irmsd", "calc_fnat", "nr_collect", "use_gpu", "np"]
+}

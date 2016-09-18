@@ -1,0 +1,9 @@
+.silk => .silkschema.xml                                  (self-contained)
+.silkschema.xml => .schema.json                           (needs previous .silkschemas)
+.schema.json => .minischema.json                          (self-contained)
+.minischema.json + (optional) .silkschema.xml  => pyclass (needs previous silk pyclasses)
+
+JSON schema parser ignores definitions, default, id, description, $schema, pattern
+It chokes on anyOf, oneOf, not
+$ref must be in the right place: #/definitions/Capital gets ignored, everything else it chokes on (for now)
+allOf must be in the right place, too, and only have 2 in the list (no multiple inheritance)

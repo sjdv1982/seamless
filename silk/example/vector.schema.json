@@ -2,10 +2,24 @@
 	"$schema": "http://json-schema.org/schema#",
 	"title": "Vector",
 	"type": "object",
-	"properties": {
-		"x": {"type":"number"},
-		"y": {"type":"number"},
-		"z": {"type":"number"}
-	},
-	"required": ["x", "y", "z"]
+  "definitions": {
+    "Float": {"type": "number"},
+    "Coordinate": {
+    	"type": "object",
+    	"properties": {
+    		"x": { "$ref": "#/definitions/Float" },
+    		"y": { "$ref": "#/definitions/Float" },
+    		"z": { "$ref": "#/definitions/Float" }
+    	},
+			"required": ["x", "y", "z"],
+      "order": ["x", "y", "z"]
+    }
+  },
+  "allOf": [
+    { "$ref": "#/definitions/Coordinate" },
+    {
+      "required": ["x", "y", "z"],
+      "order": ["x", "y", "z"]
+    }
+  ]
 }
