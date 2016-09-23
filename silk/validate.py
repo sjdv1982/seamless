@@ -57,4 +57,5 @@ def is_valid_spydertype(type_name, permit_array=False):
     for ending in reserved_endings:
         if type_name.endswith(ending):
             return False
+
     return True

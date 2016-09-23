@@ -33,7 +33,7 @@ class Cell(Managed):
 
     def __init__(self, dtype):
         """TODO: docstring."""
-        assert dtypes.check_registered(dtype)
+        assert dtypes.is_registered(dtype)
         self._dtype = dtype
         self._last_object = None
 
