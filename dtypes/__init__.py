@@ -14,17 +14,17 @@ _known_types = [
 ]
 
 _constructors = {
-    "int" : int,
-    "float" : float,
-    "bool" : bool,
-    "str" : str,
-    "text" : str,
+    "int": int,
+    "float": float,
+    "bool": bool,
+    "str": str,
+    "text": str,
 }
 
 _parsers = _constructors
 
 
-def check_registered(data_type):
+def is_registered(data_type):
     return data_type in _known_types
 
 
@@ -39,6 +39,7 @@ def construct(data_type, value):
 def parse(data_type, value, trusted):
     try:
         return _parsers[data_type](value)
+
     except:
         raise ParseError
 
@@ -54,7 +55,9 @@ class ParseError(Exception):
 class ConstructionError(Exception):
     pass
 
+
 def register(*args, **kwargs):
     pass
-    
+
+
 from .objects import data_type_to_data_object
