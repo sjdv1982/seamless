@@ -2,66 +2,23 @@
 	"$schema": "http://json-schema.org/schema#",
 	"title": "AxisSystem",
 	"type": "object",
-	"properties": {
-		"origin": {
-			"title": "Coordinate",
-			"type": "object",
-			"default": {
-				"x": 0,
-				"y": 0,
-				"z": 0
-			},
-			"properties": {
-				"x": {"type":"number"},
-				"y": {"type":"number"},
-				"z": {"type":"number"}
-			},
-			"required": ["x", "y", "z"]
-		},
-		"x": {
-			"title": "Coordinate",
-			"default": {
-				"x": 1,
-				"y": 0,
-				"z": 0
-			},
+  "definitions": {
+    "Float": {"type": "number"},
+		"Coordinate": {
 			"type": "object",
 			"properties": {
-				"x": {"type":"number"},
-				"y": {"type":"number"},
-				"z": {"type":"number"}
+				"x": { "$ref": "#/definitions/Float" },
+				"y": { "$ref": "#/definitions/Float" },
+				"z": { "$ref": "#/definitions/Float" }
 			},
-			"required": ["x", "y", "z"]
-		},
-		"y": {
-			"title": "Coordinate",
-			"type": "object",
-			"default": {
-				"x": 0,
-				"y": 1,
-				"z": 0
-			},
-			"properties": {
-				"x": {"type":"number"},
-				"y": {"type":"number"},
-				"z": {"type":"number"}
-			},
-			"required": ["x", "y", "z"]
-		},
-		"z": {
-			"title": "Coordinate",
-			"type": "object",
-			"default": {
-				"x": 0,
-				"y": 0,
-				"z": 1
-			},
-			"properties": {
-				"x": {"type":"number"},
-				"y": {"type":"number"},
-				"z": {"type":"number"}
-			},
-			"required": ["x", "y", "z"]
 		}
-	}
+  },
+	"properties": {
+		"origin": { "$ref": "#/definitions/Coordinate" },
+		"x": { "$ref": "#/definitions/Coordinate" },
+		"y": { "$ref": "#/definitions/Coordinate" },
+		"z": { "$ref": "#/definitions/Coordinate" }
+	},
+	"required": [],
+  "order": ["origin", "x", "y", "z"]
 }

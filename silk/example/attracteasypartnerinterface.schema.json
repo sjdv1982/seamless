@@ -1,0 +1,51 @@
+{
+	"$schema": "http://json-schema.org/schema#",
+	"title": "AttractEasyPartnerInterface",
+	"type": "object",
+  "definitions": {
+    "Bool": {"type": "boolean"},
+    "Float": {"type": "number"},
+    "Integer": {"type": "number"},
+    "IntegerArray": {
+      "type" : "array",
+      "items": {
+        "$ref": "#/definitions/Integer",
+      }
+    },
+    "String": {"type": "string"},
+    "Filename": {"$ref": "#/definitions/String"},
+    "Data": {"type": "string"},
+		"HaddockResidueList":{"$ref": "#/definitions/IntegerArray"},
+		"Data_PDB": {"$ref": "#/definitions/Data"},
+    "Data_CNS_Restraints": {"$ref": "#/definitions/Data"},
+    "ResourceData_PDB": {
+      "oneOf": [
+        {"$ref": "#/definitions/Filename"},
+        {"$ref": "#/definitions/Data_PDB"}
+      ]
+    },
+    "HaddockRestraintsInterface": {
+			"type": "object",
+      "properties": {
+    		"activereslist": { "$ref": "#/definitions/HaddockResidueList" },
+        "passivereslist": { "$ref": "#/definitions/HaddockResidueList" },
+        "auto_passive": { "$ref": "#/definitions/Bool" }
+      },
+      "required": [],
+			"order": ["activereslist", "passivereslist", "auto_passive"]
+    }
+  },
+	"properties": {
+		"pdbfile": { "$ref": "#/definitions/ResourceData_PDB" },
+		"moleculetype": { "enum": ["Protein", "Peptide","DNA", "RNA"] },
+		"has_hydrogens": { "$ref": "#/definitions/Bool" },
+    "haddock_restraints": { "$ref": "#/definitions/HaddockRestraintsInterface" },
+    "ensemble_size": { "$ref": "#/definitions/Integer" },
+    "generate_modes": { "$ref": "#/definitions/Bool" },
+    "nr_modes": { "$ref": "#/definitions/Integer" },
+    "use_rmsd": { "$ref": "#/definitions/Bool" },
+    "rmsd_pdb": { "$ref": "#/definitions/ResourceData_PDB" }
+	},
+	"required": ["pdbfile"],
+  "order": ["pdbfile", "moleculetype", "has_hydrogens", "haddock_restraints", "ensemble_size", "generate_modes", "nr_modes", "use_rmsd", "rmsd_pdb"]
+}

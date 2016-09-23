@@ -1,38 +1,11 @@
 {
 	"type": "AxisSystem",
 	"properties": {
-		"origin": {
-			"type": "Coordinate",
-			"default": {
-				"x": 0,
-				"y": 0,
-				"z": 0
-			}
-		},
-		"x": {
-      "type": "Coordinate",
-			"default": {
-				"x": 1,
-				"y": 0,
-				"z": 0
-			}
-		},
-    "y": {
-      "type": "Coordinate",
-			"default": {
-				"x": 0,
-				"y": 1,
-				"z": 0
-			}
-		},
-    "z": {
-      "type": "Coordinate",
-			"default": {
-				"x": 0,
-				"y": 0,
-				"z": 1
-			}
-		}
-  },
+		"origin": "Coordinate",
+		"x": "Coordinate",
+		"y": "Coordinate",
+		"z": "Coordinate"
+	},
+	"required": [],
 	"order": ["origin", "x", "y", "z"]
 }

@@ -1,4 +1,4 @@
 {
 	"type": "Vector",
-  "base": "Coordinate",
+  "base": "Coordinate"
 }

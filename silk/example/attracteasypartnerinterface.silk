@@ -1,0 +1,125 @@
+Type HaddockResidueList:IntegerArray {
+  """List of residues for HADDOCK"""
+  def _validate(self):
+      for v in range(len(self)):
+          try:
+               Integer(self[v])
+          except:
+               raise ValueError("Invalid residue number '%s'. Please specify your residues as comma-separated numbers, e.g. 1,2,3." % self[v])
+      IntegerArray._validate__(self)
+  def _parse(self, s):
+      return silk.parse(s, IntegerArray)
+  def __repr__(self, *args, **kargs):
+      return "'" + self.__str__(*args, **kargs) + "'"
+  def __str__(self, *args, **kargs):
+      return ",".join([str(v) for v in self])
+  def __print__(self, *args, **kargs):
+      return self.__repr__(*args,**kargs)
+  def __eq__(self, other):
+      if isinstance(other, str):
+          return other == str(self)
+      return IntegerArray.__eq__(self, other)
+}
+
+Type Data_PDB:Data {
+  form {
+    self.data_format = "Protein Data Bank (PDB) format"
+    self.file_extensions = [".pdb"]
+  }
+}
+
+Type Data_CNS_Restraints:Data {
+  form {
+    self.data_format = "CNS restraints format"
+    self.file_extensions = [".tbl"]
+  }
+}
+
+Type HaddockRestraintsInterface {
+  """
+  Definition of HADDOCK Ambiguous Interaction Restraints (AIRs)
+  Lists of active and passive residues must be provided
+  """
+  ## form activereslist.add_header("Please supply residues as comma-separated lists of residue numbers")
+  ## form activereslist.name = "Active residues (directly involved in the interaction)"
+  ## form passivereslist.name = "Passive residues (surrounding surface residues)"
+  ## form auto_passive.name = "Define passive residues automatically around the active residues"
+  ## form activereslist.type = "text"
+  ## form passivereslist.type = "text"
+  HaddockResidueList activereslist = []
+  HaddockResidueList passivereslist = []
+  Bool auto_passive = False
+  validate {
+    assert not (auto_passive and len(passivereslist))
+  }
+  error {
+    'assert not (auto_passive and len(passivereslist))'
+    =>
+    'You manually defined passive residues, but also that they should be determined automatically'
+  }
+}
+
+Type AttractEasyPartnerInterface {
+  ## form pdbfile.type = "file"
+  ## form pdbfile.name = "Structure file"
+  ResourceData_PDB pdbfile
+  Enum moleculetype("Protein", "Peptide","DNA", "RNA") = "Protein"
+  ## form moleculetype.name = "What kind of molecule are you docking?"
+  Bool has_hydrogens = False
+  ## form has_hydrogens.name = "The PDB file contains all necessary atoms, including polar hydrogens"
+
+  *HaddockRestraintsInterface haddock_restraints
+  ## form haddock_restraints.name = "Definition of residues for HADDOCK-type distance restraints (optional)"
+  ## form haddock_restraints.auto_passive.type = None #TODO: disabled for now
+
+  Integer ensemble_size = 0
+  ## form ensemble_size.name = "If the PDB is a multi-model ensemble, specify the number of conformers"
+  ## validate if ensemble_size != 0: assert ensemble_size >= 1
+
+  Bool generate_modes = False
+  Integer nr_modes = 5
+  form {
+    use_rmsd.name = "Perform RMSD analysis"
+    generate_modes.name = "Generate harmonic modes"
+    nr_modes.name = "Number of harmonic modes to select"
+    nr_modes.type = "option"
+    nr_modes.options = list(range(0,10+1))
+    nr_modes.optiontitles = ["No modes"] + [str(v) for v in nr_modes.options[1:]]
+  }
+
+  ## validate if generate_modes: assert nr_modes >= 1 and nr_modes <= 10
+
+  Bool use_rmsd = False
+  *ResourceData_PDB rmsd_pdb
+  ## form rmsd_pdb.add_header("You can specify a PDB file to use as reference in RMSD calculations")
+  ## form rmsd_pdb.name = "RMSD PDB file"
+  ## form rmsd_pdb.type = "file"
+  validate {
+    if ensemble_size > 1: assert generate_modes == False
+    if not use_rmsd:
+      assert rmsd_pdb is None
+    else:
+      assert rmsd_pdb is not None
+  }
+  error {
+    'if ensemble_size != 0: assert ensemble_size >= 1'
+    =>
+    'If you define an ensemble size, it must at least 1, not {ensemble_size}'
+
+    'assert rmsd_pdb is None'
+    =>
+    'You defined a PDB for RMSD calculation, which you disabled'
+
+    'if generate_modes: assert nr_modes >= 1 and nr_modes <= 10'
+    =>
+    'Number of harmonic modes must be between 1 and 10'
+
+    'assert rmsd_pdb is not None'
+    =>
+    'You need to define a PDB for RMSD calculation, or disable it'
+
+    'if ensemble_size > 1: assert generate_modes == False'
+    =>
+    'You can upload an ensemble of conformations, or generate harmonic modes, but not both'
+  }
+}
