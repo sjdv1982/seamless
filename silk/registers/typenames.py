@@ -1,8 +1,9 @@
 import numpy as np
-import weakref
 from collections import OrderedDict
 from ..classes import primitives as _prim
 from ..validate import is_valid_silktype
+from .. import exceptions
+from .blockmixin import validation_mixin, method_mixin
 
 _primitives = {}
 for name in _prim.__dict__:
@@ -18,14 +19,45 @@ for name in _prim.__dict__:
 
 _typenames = {}
 _typenames.update(_primitives)
+_silk_types = _typenames.copy() # TODO: primitive arrays
+for name in dir(exceptions):
+    c = getattr(exceptions, name)
+    try:
+        if issubclass(c, exceptions.SilkError):
+            _silk_types[name] = c
+    except TypeError:
+        pass
 
 from ..classes.silk import Silk
 from .minischemas import _minischemas
 
-def register(extended_minischema, init_tree=None, validationblocks=None, errorblocks=None):
+_counter = 0
+def register(extended_minischema, init_tree=None, \
+  validation_blocks=None, error_blocks=None, method_blocks=None):
+    global _counter
+    _counter += 1
     typename = extended_minischema.get("typename", None)
-    if validationblocks is not None: raise NotImplementedError
-    if errorblocks is not None: raise NotImplementedError
+    ms_props = extended_minischema["properties"]
+    typename2 = "<Anonymous Silk class %d>" % (_counter)
+    if typename is not None:
+        typename2 = typename
+    validation_class = None
+    if validation_blocks:
+        validation_class = validation_mixin(
+            typename2,
+            validation_blocks,
+            error_blocks,
+            ms_props,
+            _silk_types
+        )
+    method_class = None
+    if method_blocks:
+        method_class = method_mixin(
+            typename2,
+            method_blocks,
+            _silk_types
+        )
+
     dtype = extended_minischema["dtype"]
     ms = extended_minischema["minischema"]
     all_props = OrderedDict()
@@ -60,10 +92,10 @@ def register(extended_minischema, init_tree=None, validationblocks=None, errorbl
      "_dtype": dtype,
      "_positional_args": positional_args,
     }
-    typename2 = "<Anonymous Silk class>"
-    if typename is not None:
-        typename2 = typename
-    ret = type(typename2, (Silk,), d)
+    bases = [method_class, validation_class, Silk]
+    bases = [b for b in bases if b is not None]
+    ret = type(typename2, tuple(bases), d)
     if typename is not None:
         _typenames[typename] = ret
+        _silk_types[typename] = ret # TODO: arrays
     return ret

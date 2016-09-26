@@ -1,5 +1,7 @@
 
 """
+OUTDATED!
+
 Spyder consists of three parts:
 - A schema format (.spy) to define rich data models (validation, inline formatting definitions)
 - A toolchain to convert a data model defined in .spy into a Python class,
@@ -117,11 +119,8 @@ TODO:
     - make the Spyder model numpy-only; i.e. after standard construction, return self.type.fromnumpy(self.tonumpy())
 
 """
-
-import sys
-
-from . import manager, parse, transform
-from .validate import is_valid_spydertype, reserved_endings, reserved_membernames, reserved_types
+from . import typeparse, transform
+from .validate import is_valid_silktype, reserved_endings, reserved_membernames, reserved_types
 
 def register(*args, **kwargs):
     pass

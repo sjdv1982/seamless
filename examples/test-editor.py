@@ -33,6 +33,10 @@ teparams = {
     "pin": "input",
     "dtype": "str"
   },
+  "title": {
+    "pin": "input",
+    "dtype": "str"
+  },
   "output": {
     "pin": "output",
     "dtype": "str"
@@ -112,7 +116,15 @@ ted1 = ctx.processes.ted1(editor(teparams2))
 make_text_editor(ted1)
 #c = ed1.title.cell()
 c = c_code
-v = ted1.value.cell()
+#v = ted1.value.cell()
 #v.set("Test!!")
 c.connect(ted1.value)
 ted1.output.solid.connect(c)
+
+meta_ted = ctx.processes.meta_ted(editor(teparams2))
+make_text_editor(meta_ted)
+c = ted1.code_start.cell()
+#v = meta_ted1.value.cell()
+#v.set("Test!!")
+c.connect(meta_ted.value)
+meta_ted.output.solid.connect(c)

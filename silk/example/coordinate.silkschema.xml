@@ -79,7 +79,7 @@
         else: v = (1,0,0)
         return Vector(v)
     def crossproduct(self, v):
-      """Returns a Coordinate perpendicular both to this one and to v"""
+        """Returns a Coordinate perpendicular both to this one and to v"""
         v = Coordinate(v)
         x = self.y * v.z - self.z * v.y
         y = self.z * v.x - self.x * v.z

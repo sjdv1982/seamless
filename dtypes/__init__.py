@@ -10,7 +10,7 @@ _known_types = [
   ("text", "code", "spyder"),
   ("text", "data", "json"),
   ("text", "data", "xml"),
-  ("text", "data", "spyder"),
+  ("text", "data", "silk"),
 ]
 
 _constructors = {
@@ -37,10 +37,24 @@ def construct(data_type, value):
 
 
 def parse(data_type, value, trusted):
+    parser = None
+    if isinstance(data_type, str):
+        parser = _parsers.get(data_type, None)
+    elif isinstance(data_type, tuple) and len(data_type):
+        data_type0 = data_type
+        while len(data_type0) > 1:
+            data_type0 = data_type0[:-1]
+            parser = _parsers.get(data_type0, None)
+            if parser is not None:
+                break
+        if parser is None:
+            parser = _parsers.get(data_type[0], None)
+    if parser is None:
+        return TypeError(data_type)
     try:
-        return _parsers[data_type](value)
+        return parser(value)
     except:
-        raise ParseError
+        raise ParseError(value)
 
 
 def serialize(data_type, value):
@@ -56,5 +70,5 @@ class ConstructionError(Exception):
 
 def register(*args, **kwargs):
     pass
-    
+
 from .objects import data_type_to_data_object

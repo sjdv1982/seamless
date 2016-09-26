@@ -1,5 +1,6 @@
 import json
 from pprint import pprint
+from seamless.silk.typeparse.xmlschemaparse import xmlschemaparse, get_blocks
 from seamless.silk.registers.minischemas import _minischemas, register_minischema
 from seamless.silk.registers.typenames import register
 f1 = json.load(open("../example/coordinate.minischema.json"))
@@ -16,13 +17,28 @@ aa = a[0].view(np.recarray)
 aa.origin.x = 10
 print(aa)
 
-Coordinate = register(_minischemas["Coordinate"])
-Vector = register(_minischemas["Vector"])
+s = open("../example/coordinate.silkschema.xml").read()
+schema_Coordinate = xmlschemaparse(s)
+blocks_Coordinate = get_blocks(schema_Coordinate)["Coordinate"]
+Coordinate = register(
+    _minischemas["Coordinate"],
+    validation_blocks=blocks_Coordinate["validationblocks"],
+    error_blocks=blocks_Coordinate["errorblocks"],
+    method_blocks=blocks_Coordinate["methodblocks"],
+)
+s = open("../example/vector.silkschema.xml").read()
+schema_Vector = xmlschemaparse(s)
+blocks_Vector = get_blocks(schema_Vector)["Vector"]
+Vector = register(
+    _minischemas["Vector"],
+    validation_blocks=blocks_Vector["validationblocks"],
+    error_blocks=blocks_Vector["errorblocks"],
+)
 AxisSystem = register(_minischemas["AxisSystem"])
 
-cc = Coordinate(x=1,y=2,z=3)
+cc = Coordinate(x=1, y=2, z=3)
 cc = Coordinate(cc)
-cc = Coordinate("1,2,3")
+#cc = Coordinate("1,2,3")
 pprint(cc._data)
 v = Vector(1,2,z=3)
 pprint(v)

@@ -79,7 +79,7 @@ class Editor(Process):
     """
     This is the main-thread part of the process
     """
-    _required_code_type = PythonCell.CodeTypes.BLOCK
+    _required_code_type = PythonCell.CodeTypes.ANY
 
     def __init__(self, editor_params):
         self.state = {}

@@ -1,2 +1,3 @@
-class SilkObject:pass
+class SilkObject:
+    pass
 from . import primitives

@@ -42,7 +42,7 @@ class Editor:
         self._active = False
         self._set_namespace()
 
-    def process_input(self, name, data):        
+    def process_input(self, name, data):
         data_object = self.inputs[name]
         # instance of datatypes.objects.DataObject
 
@@ -72,7 +72,7 @@ class Editor:
         if self._active:
             exec(self.code_stop_block, self.namespace)
             self._active = False
-            self.editor._set_namespace()
+            self._set_namespace()
 
     def _code_start(self):
         assert not self._active
@@ -83,6 +83,10 @@ class Editor:
     def _set_namespace(self):
         self.namespace.clear()
         self.namespace["_cache"] = {}
+        for name in self.values:
+            v = self.values[name]
+            if v is not None:
+                self.namespace[name] = self.values[name].data
         for o in self.output_names:
             self.namespace[o] = self.EditorOutput(self, o)
 

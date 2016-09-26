@@ -49,6 +49,8 @@ class Process(metaclass=ABCMeta):
         pass
 
     def run(self):
+        # TODO: add a mechanism to redirect exception messages (to a cell!)
+        # instead of printing them to stderr
         try:
             while True:
                 self.semaphore.acquire()
@@ -90,8 +92,15 @@ class Process(metaclass=ABCMeta):
 
                     # With all inputs now present, we can issue updates
                     if not self._pending_inputs:
-                        self.update(self.updated)
-                        self.updated = set()
+                        try:
+                            self.update(self.updated)
+                            self.updated = set()
+
+                        except Exception as exc:
+                            self.exception = exc
+                            import traceback
+                            traceback.print_exc()
+
 
         finally:
             self.finished.set()

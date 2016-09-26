@@ -1,8 +1,6 @@
 max_array_depth = 2
 
-
 reserved_types = (
-  "Spyder",
   "Type",
   "Object",
   "Delete",
@@ -19,17 +17,13 @@ reserved_endings = (
 )
 
 reserved_membernames = (
-  "type", "typename", "length", "name",
-  "convert", "cast", "validate",
-  "data", "str", "repr", "dict", "fromfile", "tofile",
-  "listen", "block", "unblock", "buttons", "form",
-  "invalid",
+  "validate", "data", "dict", "fromfile", "tofile",
+  "set", "make_numpy"
 )
 
 
-# Todo - memoize
-def is_valid_spydertype(type_name, permit_array=False):
-    """Tests if a string is a valid Spyder type"""
+def is_valid_silktype(type_name, permit_array=False):
+    """Tests if a string is a valid silk type"""
     if not type_name.replace("_", "x").isalnum():
         return False
 

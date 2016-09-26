@@ -146,12 +146,12 @@ class Cell(Managed):
         return self.StatusFlagNames[self._status]
 
     @property
-    def exception(self):
-        """The cell's current exception.
+    def error_message(self):
+        """The cell's current error message.
 
-        Returns None is there is no exception
+        Returns None is there is no error
         """
-        return self._exception
+        return self._error_message
 
     def _on_connect(self, pin, process, incoming):
         # TODO: support for liquid connections: check pin!
@@ -174,7 +174,8 @@ class Cell(Managed):
 
     def _set_error_state(self, error_message=None):
         self._error_message = error_message
-        self._status = self.StatusFlags.ERROR
+        if error_message is not None:
+            self._status = self.StatusFlags.ERROR
 
 class PythonCell(Cell):
     """
@@ -245,6 +246,7 @@ class PythonCell(Cell):
             self._data = data
             self._code_type = self.CodeTypes.FUNCTION if is_function else \
                 self.CodeTypes.BLOCK
+            self._set_error_state(None)
             self._status = self.StatusFlags.OK
 
             if not trusted and self._context is not None:

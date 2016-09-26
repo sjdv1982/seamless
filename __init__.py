@@ -23,7 +23,7 @@ def run_work():
         try:
             work()
         except:
-            traceback.print_tb()
+            traceback.print_exc()
 
 import sys
 import traceback

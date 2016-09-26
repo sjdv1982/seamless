@@ -1,14 +1,15 @@
 # Copyright 2007-2016, Sjoerd de Vries
 
 import sys, re, os
-from collections import namedtuple
+from collections import namedtuple, OrderedDict
 
 from .macros import get_macros
 from .typedef import typedef_parse
-from ..exceptions import SpyderParseError
+from ..exceptions import SilkSyntaxError
+from lxml.builder import E
 
 
-# from ..validate import is_valid_spydertype
+# from ..validate import is_valid_silktype
 
 # Regular expressions
 # quotes ( "...", '...' )
@@ -17,7 +18,6 @@ from ..exceptions import SpyderParseError
 single_quote_match = re.compile(r'(([\"\']).*?\2)')
 triple_quote_match = re.compile(r'(\"\"\"[\w\Wn]*?\"\"\")')
 curly_brace_match = re.compile(r'{[^{}]*?}')
-
 
 """
 Mask signs to mark out masked-out regions
@@ -32,27 +32,27 @@ mask_sign_curly = "!"
 BlockParseResult = namedtuple("BlockParseResult", "block_type block_head block block_docstring")
 
 
-def parse(spytext):
-    """Converts spytext to a dictionary  with key (the name of the Spyder type) -> value (the lxml tree)"""
+def parse(silktext):
+    """Converts silktext to a dictionary  with key (the name of the silk type) -> value (the lxml tree)"""
     macros = get_macros()
 
-    result = {}
-    blocks = divide_blocks(spytext)
+    result = E.silkspace()
+    blocks = divide_blocks(silktext)
     for block in blocks:
-        block_type, block_head, block, block_docstring_dummy = parse_block(block)
+        block_type, block_head, bblock, block_docstring_dummy = parse_block(block)
 
         if block_type is None:
             continue
 
-        if block is None:
-            raise SpyderParseError("Non-comment text outside Type definitions is not understood: '%s'" % block)
+        if bblock is None:
+            raise SilkSyntaxError("Non-comment text outside Type definitions is not understood: '%s'" % block)
 
         if block_type != "Type":
-            raise SpyderParseError("Top-level {}-blocks other than Type are not understood: '%s'" % block_type)
+            raise SilkSyntaxError("Top-level {}-blocks other than Type are not understood: '%s'" % block_type)
 
         block_head_words = block_head.split(":")
         if len(block_head_words) > 2:
-            raise SpyderParseError("Type header '%s' can contain only one ':'" % block_head)
+            raise SilkSyntaxError("Type header '%s' can contain only one ':'" % block_head)
 
         typename = block_head_words[0]
         bases = []
@@ -60,7 +60,8 @@ def parse(spytext):
         if len(block_head_words) == 2:
             bases = [b.strip() for b in block_head_words[1].split(",")]
 
-        result[typename] = typedef_parse(typename, bases, block)
+        res = typedef_parse(typename, bases, bblock)
+        result.append(res)
 
     return result
 
@@ -86,8 +87,8 @@ def mask_characters(expression, search_text, target_text, mask_char):
     return masked_text, pos
 
 
-def divide_blocks(spytext):
-    """Divides spytext into blocks.
+def divide_blocks(silktext):
+    """Divides silktext into blocks.
 
     A block is either a curly-brace block structure preceeded by a block type and a block head, or it is a single
     line of text that is outside such a block structure.
@@ -100,11 +101,11 @@ def divide_blocks(spytext):
     - then on the contents of a block-inside-a-block    (form blocks, validate blocks, ...)
     """
 
-    # First, take spytext and mask out all triple quote text into s0
-    masked_triple_quote, _ = mask_characters(triple_quote_match, spytext, spytext, mask_sign_triple_quote)
-    # Then, take spytext and mask out all quoted text into masked_single_quote
+    # First, take silktext and mask out all triple quote text into s0
+    masked_triple_quote, _ = mask_characters(triple_quote_match, silktext, silktext, mask_sign_triple_quote)
+    # Then, take silktext and mask out all quoted text into masked_single_quote
     # To prevent that we also mask out triple quotes, look for quotes only in masked_triple_quote
-    masked_single_quote, _ = mask_characters(single_quote_match, masked_triple_quote, spytext, mask_sign_single_quote)
+    masked_single_quote, _ = mask_characters(single_quote_match, masked_triple_quote, silktext, mask_sign_single_quote)
     # Now, look for curly braces in masked_single_quote, and mask them out iteratively (modifying masked_single_quote)
     while True:
         masked_curly_brace, pos = mask_characters(curly_brace_match, masked_single_quote, masked_single_quote,
@@ -122,7 +123,7 @@ def divide_blocks(spytext):
     pos = 0
     for line in mask.split("\n"):
         end_pos = pos + len(line)
-        block = spytext[pos:end_pos]
+        block = silktext[pos:end_pos]
 
         if block:
             lines.append(block)
@@ -169,10 +170,10 @@ def parse_block(blocktext):
         masked_single_quote = masked_curly_braces
 
     if len(blocks) > 1:
-        raise SpyderParseError("compile error: invalid statement\n%s\nStatement must contain a single {} block" % blocktext)
+        raise SilkSyntaxError("compile error: invalid statement\n%s\nStatement must contain a single {} block" % blocktext)
 
         if post_block.strip():
-            raise SpyderParseError("compile error: invalid statement\n%s\nStatement must be empty after {} block" % blocktext)
+            raise SilkSyntaxError("compile error: invalid statement\n%s\nStatement must be empty after {} block" % blocktext)
 
     elif blocks:
         block = blocks[0][1:-1]

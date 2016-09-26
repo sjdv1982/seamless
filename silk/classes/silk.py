@@ -71,6 +71,7 @@ class Silk(SilkObject):
         self._data = data
 
     def set(self, *args, **kwargs):
+        #TODO: make a nice composite exception that stores all exceptions
         try:
             self._construct(*args, **kwargs)
         except:
@@ -86,12 +87,18 @@ class Silk(SilkObject):
                     elif isinstance(a, SilkObject):
                         d = {prop:getattr(a, prop) for prop in dir(a)}
                         self._construct(**d)
-                    else:
+                    elif hasattr(a, "__dict__"):
                         self._construct(**a.__dict__)
+                    else:
+                        raise TypeError(a)
                 except:
                     raise
             else:
                 raise
+        self._validate()
+
+    def _validate(self):
+        pass
 
     def dict(self):
         d = OrderedDict()
