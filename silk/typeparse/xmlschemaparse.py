@@ -34,3 +34,19 @@ def get_blocks(schema):
                 errors.append({"code": code, "message": message})
             cc["errorblocks"].append(errors)
     return ret
+
+def get_init_tree(schema):
+    ret = OrderedDict()
+    classes = schema.findall("silk")
+    for c in classes:
+        typename = c.attrib["typename"]
+        cc = {}
+        ret[typename] = cc
+        for member in c.findall("member"):
+            name = member.find("name")
+            init = member.find("init")
+            if init is not None:
+                cc[name.text] = init.text
+        if not len(cc):
+            ret[typename] = None
+    return ret

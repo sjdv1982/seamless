@@ -4,6 +4,7 @@ from ..classes import primitives as _prim
 from ..validate import is_valid_silktype
 from .. import exceptions
 from .blockmixin import validation_mixin, method_mixin
+from ..stringparse import stringparse
 
 _primitives = {}
 for name in _prim.__dict__:
@@ -61,20 +62,34 @@ def register(extended_minischema, init_tree=None, \
     dtype = extended_minischema["dtype"]
     ms = extended_minischema["minischema"]
     all_props = OrderedDict()
+    props_init = {}
     def fill_props(props, order, msprops):
         for p in order:
             msprop = msprops[p]
-            prop = {}
+            prop = OrderedDict()
+            props[p] = prop
+            initstr = None
+            if init_tree is not None and p in init_tree:
+                initstr = init_tree[p]
             if msprop["composite"]:
-                props[p] = OrderedDict()
-                p_order = prop["order"]
+                p_order = msprop["order"]
                 sub_msprops = msprops[p]
-                fill_props(props[p], p_order, sub_msprops)
+                fill_props(prop, p_order, sub_msprops)
+                if initstr is not None:
+                    init = stringparse(initstr, typeless=True )
+                    props_init[p] = init
             else:
-                prop["optional"] = msprop["optional"]
                 prop["elementary"] = msprop["elementary"]
-                prop["typename"] = msprop["typename"]
-                props[p] = prop
+                typename = msprop["typename"]
+                typeclass = _typenames[typename]
+                prop["typename"] = typename
+                if initstr is not None:
+                    init = stringparse(initstr, typeless=False)
+                    if not isinstance(init, typeclass):
+                        init = typeclass(init)
+                    props_init[p] = init
+            prop["optional"] = msprop["optional"]
+
     fill_props(all_props, extended_minischema["order"], extended_minischema["properties"])
     positional_args = []
     first_optional_arg = False
@@ -89,6 +104,7 @@ def register(extended_minischema, init_tree=None, \
         positional_args.append(p)
     d = {
      "_props": all_props,
+     "_props_init": props_init,
      "_dtype": dtype,
      "_positional_args": positional_args,
     }

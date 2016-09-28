@@ -1,13 +1,20 @@
-import re, traceback, sys, inspect
+import re, traceback, sys
+
 
 class SilkError(Exception):
     """Generic silk error"""
 
 
+class SilkParseError(SilkError):
+    """Silk parsing error"""
+
+
 class SilkSyntaxError(SilkError, SyntaxError):
-    pass
+    """Silk syntax error"""
 
 curly_brace_match = re.compile(r'{[^{}]*?}')
+
+
 class SilkValidationError(SilkError):
     def __str__(self):
         message, glob, loc = self.args
@@ -19,7 +26,11 @@ class SilkValidationError(SilkError):
             try:
                 expr_result = str(eval(expr, glob, loc))
             except:
-                expr_result = "{" + "".join(traceback.format_exception_only(*sys.exc_info()[:2])).replace("\n","") + "}"
+                expr_result = "{" + "".join(
+                    traceback.format_exception_only(
+                        *sys.exc_info()[:2]
+                    )
+                ).replace("\n", "") + "}"
             message_expr += expr_result
             curpos = p.end()
         message_expr += message[curpos:]
