@@ -126,9 +126,6 @@ class Transformer(Process):
         self.transformer.semaphore.release()
 
     def listen_output(self):
-        # TODO logging
-        # TODO requires_function cleanup
-
         while True:
             try:
                 self.output_semaphore.acquire()
