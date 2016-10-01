@@ -3,7 +3,7 @@ from lxml.builder import E
 from lxml import objectify
 import json
 
-from ..exceptions import SpyderError
+from ..exceptions import SilkError
 
 
 _type_map = {
@@ -17,7 +17,7 @@ _type_map = {
   "str": "string"
 }
 
-default_spyder_space = {
+default_silk_space = {
   "Float": float,
   "Bool": bool,
   "String": str,
@@ -29,8 +29,8 @@ class Empty:
     pass
 
 
-def schema_to_json(xml, namespace=None, spyder_space=default_spyder_space):
-    """Converts spyder-schema XML to JSON schema"""
+def schema_to_json(xml, namespace=None, silk_space=default_silk_space):
+    """Converts silk-schema XML to JSON schema"""
     container = Empty()
     container.__dict__.update(
       {
@@ -57,7 +57,7 @@ def schema_to_json(xml, namespace=None, spyder_space=default_spyder_space):
 
     for optional in optionals:
         if optional not in member_names:
-            raise SpyderError("Unknown optional: {0}".format(optional))
+            raise SilkError("Unknown optional: {0}".format(optional))
 
     for member in obj_from_xml.member:
         try:
@@ -68,9 +68,9 @@ def schema_to_json(xml, namespace=None, spyder_space=default_spyder_space):
                 json_type = getattr(namespace, member.type)
 
             else:
-                raise SpyderError("Unknown type: {0}".format(member.type))
+                raise SilkError("Unknown type: {0}".format(member.type))
 
-        spyder_space_type = spyder_space[str(member.type)]
+        silk_space_type = silk_space[str(member.type)]
 
         container.properties[str(member.name)] = {"type": json_type}
 
@@ -78,4 +78,3 @@ def schema_to_json(xml, namespace=None, spyder_space=default_spyder_space):
             container.required.append(str(member.name))
 
     return json.dumps(container.__dict__, sort_keys=True, indent=2)
-

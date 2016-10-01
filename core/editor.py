@@ -80,7 +80,7 @@ class Editor(Process):
     """
     This is the main-thread part of the process
     """
-    _required_code_type = PythonCell.CodeTypes.BLOCK
+    _required_code_type = PythonCell.CodeTypes.ANY
 
     def __init__(self, editor_params):
         code_input_names = "code_start", "code_update", "code_stop"

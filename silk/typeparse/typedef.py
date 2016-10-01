@@ -1,7 +1,7 @@
 from lxml.builder import E
 
-from ..exceptions import SpyderParseError
-from ..validate import is_valid_spydertype
+from ..exceptions import SilkSyntaxError
+from ..validate import is_valid_silktype
 
 
 def define_error(tree, block):
@@ -11,7 +11,7 @@ def define_error(tree, block):
     tree.append(node)
 
     for p1, p2 in zip(matches, matches):
-        mid = block[p1.end():p2.start()].strip().replace("\n","")
+        mid = block[p1.end():p2.start()].strip().replace("\n", "")
 
         s1 = p1.group(0).strip()
         s2 = p2.group(0).strip()
@@ -23,15 +23,23 @@ def define_error(tree, block):
 
         node.append(E.error(E.code(ss1), E.message(ss2)))
 
+def typedef_memberblock(tree, name, block):
+    if name == "optional":
+        node_name = "optional"
+        block = "1"
+        is_attr = True
+    elif name == "enum":
+        node_name = "enum"
+        block = "".join([l.strip() for l in block.splitlines()])
+        is_attr = False
+    else:
+        return None
+    return node_name, block, is_attr
 
 def typedef_block(tree, name, block):
     if name == "error":
         define_error(tree, block)
         return
-
-    elif name == "optional":
-        node_name = "optional"
-        block = "".join([l.strip() for l in block.splitlines()])
 
     elif name == "validate":
         node_name = "validationblock"
@@ -66,18 +74,16 @@ def typedef_parse(typename, bases, block):
 
     macros = get_macros()
 
-    if not is_valid_spydertype(typename):
-        raise SpyderParseError("Invalid Spyder type definition: invalid type name: ''%s'" % typename)
+    if not is_valid_silktype(typename):
+        raise SilkSyntaxError("Invalid silk type definition: invalid type name: ''%s'" % typename)
 
     for base in bases:
-        if not is_valid_spydertype(base, permit_array=True):
-            raise SpyderParseError("Invalid Spyder type definition: cannot inherit from non-Spyder type '%s'" % base)
+        if not is_valid_silktype(base, permit_array=True):
+            raise SilkSyntaxError("Invalid silk type definition: cannot inherit from non-silk type '%s'" % base)
 
-    block_filtered = ""
-
-    method_block = None
-    tree = E.spyder(
-      E.typename(typename),
+    methodblock = None
+    tree = E.silk(
+      typename=typename,
     )
     for base in bases:
         tree.append(E.base(base))
@@ -86,7 +92,7 @@ def typedef_parse(typename, bases, block):
     tree.append(docstring)
     lines = divide_blocks(block)
     inside_def = False
-    inside_method_block = False
+    inside_methodblock = False
     curr_indent = 0
     last_member = None
 
@@ -100,7 +106,9 @@ def typedef_parse(typename, bases, block):
 
         if line.startswith("##"):
             line = line[2:].lstrip()
-            name = line[:line.find('.')]
+            if len(line.split()) < 2:
+                raise SilkSyntaxError(line)
+            name = line.split()[0]
             typedef_block(tree, name, line[len(name) + 1:])
             continue
 
@@ -125,27 +133,26 @@ def typedef_parse(typename, bases, block):
                 inside_def = True
 
         if inside_def or line_tabs_as_spaces.lstrip().startswith("@"):
-            if not inside_method_block:
-                method_block = E.method_block("")
-                tree.append(method_block)
-                inside_method_block = True
+            if not inside_methodblock:
+                methodblock = E.methodblock("")
+                tree.append(methodblock)
+                inside_methodblock = True
 
-            method_block.text += "\n  " + "\n  ".join(line_tabs_as_spaces.split("\n"))
+            methodblock.text += "\n  " + "\n  ".join(line_tabs_as_spaces.split("\n"))
             continue
 
         else:
-            if inside_method_block:
-                method_block.text += "\n  "
-            inside_method_block = False
+            if inside_methodblock:
+                methodblock.text += "\n  "
+            inside_methodblock = False
 
-        assert not inside_method_block and not inside_def #bugcheck
+        assert not inside_methodblock and not inside_def #bugcheck
 
         name, title, block, block_comment = parse_block(line)
 
-        last_member = None
         if block is not None:
             if title != "" and title is not None:
-                raise SpyderParseError("Malformed block statement, must be <name> {...}\n%s" % (line))
+                raise SilkSyntaxError("Malformed block statement, must be <name> {...}\n%s" % (line))
 
             spaces = None
 
@@ -162,26 +169,37 @@ def typedef_parse(typename, bases, block):
 
                 reformatted_block_lines.append(line.rstrip('\n')[spaces:])
             reformatted_block = "\n    " + "\n    ".join(reformatted_block_lines) + "\n  "
-            typedef_block(tree, name, reformatted_block)
+
+            memberblock = None
+            if last_member is not None:
+                memberblock = typedef_memberblock(tree, name, reformatted_block)
+                if memberblock is not None:
+                    if memberblock[2]:
+                        last_member.attrib[memberblock[0]] = memberblock[1]
+                    else:
+                        last_member.append(getattr(E, memberblock[0])(memberblock[1]))
+            if memberblock is None:
+                typedef_block(tree, name, reformatted_block)
+                last_member = None
 
         elif block_comment and not name:
             add_doc(last_member, docstring, block_comment)
 
         else:
             if not title:
-                raise SpyderParseError("Malformed %s statement: NOT_REQUIRED title" % (name, line))
+                raise SilkSyntaxError("Malformed %s statement: NOT_REQUIRED title" % (name, line))
 
             split_title = title.split()
 
             if name == "Delete":
                 if len(split_title) != 1:
-                    raise SpyderParseError("Malformed Delete statement: %s" % line)
+                    raise SilkSyntaxError("Malformed Delete statement: %s" % line)
 
                 tree.append(E.delete(title))
 
             elif name in "Include":
                 if len(split_title) != 1:
-                    raise SpyderParseError("Malformed Include statement: %s" % line)
+                    raise SilkSyntaxError("Malformed Include statement: %s" % line)
                 tree.append(E.include(title))
 
             else:
@@ -201,12 +219,12 @@ def typedef_parse(typename, bases, block):
                 init_statement = None
                 if len(split_title) > 1:
                     if split_title[1] != "=":
-                        raise SpyderParseError("Malformed member statement: %s" % line)
+                        raise SilkSyntaxError("Malformed member statement: %s" % line)
 
                     title = split_title[0]
                     init_statement = " ".join(split_title[2:])
 
-                if not is_valid_spydertype(name, permit_array=True):
+                if not is_valid_silktype(name, permit_array=True):
                     raise TypeError("Invalid member name '%s'" % name)
 
                 member = E.member(E.name(title), E.type(name))
@@ -216,7 +234,9 @@ def typedef_parse(typename, bases, block):
                 tree.append(member)
                 last_member = member
 
-    if inside_method_block:
-        method_block.text += "\n  "
+    if inside_methodblock:
+        methodblock.text += "\n  "
 
+    if not len(docstring.text):
+        tree.remove(docstring)
     return tree

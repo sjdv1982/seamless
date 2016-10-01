@@ -4,7 +4,7 @@ from seamless.core import transformer, pythoncell, macro, composite
 @macro("__main__.plotter")
 def plotter(arraynames,plotformat="svg"):
     assert plotformat in ("png", "pdf", "ps", "eps", "svg"), plotformat
-    ret = composite()
+    ret = context()
 
     f = ("markup", "svg") if plotformat == "svg" else plotformat
     transformer_params = {

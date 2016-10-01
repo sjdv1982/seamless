@@ -38,7 +38,7 @@ def run_work():
             work()
 
         except:
-            traceback.print_tb()
+            traceback.print_exc()
 
 qt_error = None
 

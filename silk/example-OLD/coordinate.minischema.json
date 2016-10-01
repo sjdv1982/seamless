@@ -1,9 +1,0 @@
-{
-	"type": "Coordinate",
-	"properties": {
-		"x": "Float",
-		"y": "Float",
-		"z": "Float"
-	},
-	"order": ["x", "y", "z"]
-}

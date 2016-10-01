@@ -24,7 +24,7 @@
         assert abs(x**2+y**2+z**2 - 1) &lt; 0.001
       </code>
         <message>
-        The size of the vector must be 1
+        The size of the vector must be 1, not {'%.3f' % abs(x**2+y**2+z**2)}
       </message>
       </error>
     </errorblock>

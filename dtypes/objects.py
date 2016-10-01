@@ -3,7 +3,7 @@ from abc import ABCMeta, abstractmethod
 
 from ..core.utils import find_return_in_scope
 from . import parse, serialize
-
+from ..core.cached_compile import cached_compile
 
 class DataObject:
 
@@ -31,7 +31,8 @@ class PythonCodeObject(DataObject, metaclass=ABCMeta):
 
     def parse(self, data):
         self.data = data
-        self.ast = compile(data, self.name, "exec", PyCF_ONLY_AST)
+        self.ast = cached_compile(data, self.name + "-%d" % id(self),
+                                  "exec", PyCF_ONLY_AST)
 
     def serialize(self):
         return self.data
@@ -44,13 +45,15 @@ class PythonCodeObject(DataObject, metaclass=ABCMeta):
 class PythonExpressionObject(PythonCodeObject):
 
     def validate(self):
-        self.code = compile(self.data, self.name, "eval")
+        self.code = cached_compile(self.data, self.name + "-%d" % id(self),
+                                   "eval")
 
 
 class PythonBlockObject(PythonCodeObject):
 
     def validate(self):
-        self.code = compile(self.data, self.name, "exec")
+        self.code = cached_compile(self.data, self.name + "-%d" % id(self),
+                                   "exec")
 
 
 class PythonTransformerCodeObject(PythonCodeObject):
@@ -58,10 +61,12 @@ class PythonTransformerCodeObject(PythonCodeObject):
     func_name = "transform"
 
     def validate(self):
-        is_function = (len(self.ast.body) == 1 and isinstance(self.ast.body[0], FunctionDef))
+        is_function = (len(self.ast.body) == 1 and
+                       isinstance(self.ast.body[0], FunctionDef))
 
         if is_function:
-            self.code = compile(self.ast, self.name, "exec")
+            self.code = cached_compile(self.ast, self.name + "-%d" % id(self),
+                                       "exec")
             self.func_name = self.ast.body[0].name
 
         else:
@@ -73,7 +78,8 @@ class PythonTransformerCodeObject(PythonCodeObject):
 
             patched_src = "def transform(value):\n    " + self.data.replace("\n", "\n    ").rstrip()
 
-            self.code = compile(patched_src, self.name, "exec")
+            self.code = cached_compile(patched_src,
+                                       self.name + "-%d" % id(self), "exec")
             self.func_name = "transform"
 
 
