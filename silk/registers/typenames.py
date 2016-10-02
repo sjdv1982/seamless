@@ -18,7 +18,7 @@ for name in _prim.__dict__:
 #TODO: Numpy implementation for XArray and String
 # no auto-resizing on overflow (a[10] gives an error for |S10) but resize can be requested
 
-_typenames = {}
+_typenames = {} # TODO RENAME!!!
 _typenames.update(_primitives)
 _silk_types = _typenames.copy() # TODO: primitive arrays
 for name in dir(exceptions):
