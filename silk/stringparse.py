@@ -345,7 +345,7 @@ def functionparse(name, s, mask, namespace, typeless):
 def stringparse(s, typeless=False, namespace=None):
     from .registers import typenames
     if namespace is None:
-        namespace = typenames._typenames
+        namespace = typenames._silk_types
     if hasattr(s, "decode"):
         s = s.decode()
     try:

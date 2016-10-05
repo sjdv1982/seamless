@@ -1,13 +1,18 @@
 import numpy as np
-from collections import OrderedDict
 import weakref
+import copy
 
 # TODO
-# - .json() returns SilkOrderedDict: ordered but prints as normal dict
-#   derivative class of OrderedDict
+# - test builtin arrays
+# - mixed storage
+# - make_json / make_numpy, from_json / from_numpy without copy, also for silkarray
 # - composite exception for constructor
+# - stringarray numpy
+# - (re)alloc numpy
+# - resources
+# elsewhere: xml/json conversion, depsgraph/namespace
 
-from ..registers.typenames import _typenames
+from ..registers import typenames
 from . import SilkObject
 
 
@@ -33,7 +38,7 @@ class Silk(SilkObject):
             self._init(
                 kwargs["parent"],
                 kwargs["storage"],
-                kwargs["data"],
+                kwargs["data_store"],
             )
         else:
             self._init(None, "json", None)
@@ -41,32 +46,37 @@ class Silk(SilkObject):
                 self.set(*args, **kwargs)
             elif _mode == "empty":
                 pass
-            elif _mode == "fromjson":
+            elif _mode == "from_json":
                 self.set(*args, prop_setter=_prop_setter_json, **kwargs)
             else:
                 raise NotImplementedError
 
-    def _init(self, parent, storage, data):
+    def _init(self, parent, storage, data_store):
+        from .silkarray import SilkArray
         if parent is not None:
             self._parent = weakref.ref(parent)
         else:
             self._parent = lambda: None
         self._storage = storage
         if storage == "json":
-            if data is None:
-                data = {}
+            if data_store is None:
+                data_store = {}
         else:
-            assert data is not None
+            assert data_store is not None
+            assert data_store.dtype == self._dtype
 
         self._children = {}
         for pname, p in self._props.items():
             if p["elementary"]:
                 continue
             typename = p["typename"]
-            t = _typenames[typename]
+            t = typenames._silk_types[typename]
             if self._storage == "json":
-                if pname not in data:
-                    data[pname] = {}
+                if pname not in data_store:
+                    if issubclass(t, SilkArray):
+                        data_store[pname] = []
+                    else:
+                        data_store[pname] = {}
             elif self._storage == "numpy":
                 pass
             else:
@@ -75,13 +85,32 @@ class Silk(SilkObject):
               _mode="parent",
               storage=self._storage,
               parent=self,
-              data=data[pname]
+              data_store=data_store[pname]
             )
-        self._data = data
+        self._data = data_store
+
+    def copy(self, storage="json"):
+        """Returns a copy with the storage in the specified format"""
+        if storage == "json":
+            json = self.json()
+            return cls.from_json(json, copy=False)
+        elif storage == "numpy":
+            numpydata = self.numpy()
+            return cls.from_numpy(numpydata, copy=False)
+        else:
+            raise ValueError(storage)
 
     @classmethod
-    def fromjson(cls, data):
-        return cls(data, _mode="fromjson")
+    def from_json(cls, data, copy=True):
+        if not copy:
+            raise NotImplementedError
+        return cls(data, _mode="from_json")
+
+    @classmethod
+    def from_numpy(cls, data, copy=True):
+        if not copy:
+            raise NotImplementedError
+        return cls(data, _mode="from_numpy")
 
     @classmethod
     def empty(cls):
@@ -112,13 +141,16 @@ class Silk(SilkObject):
                     raise
             else:
                 raise
-        self._validate()
+        self.validate()
 
-    def _validate(self):
+    def validate(self):
         pass
 
     def json(self):
-        d = OrderedDict()
+        if self._storage == "json":
+            return copy.deepcopy(self._data)
+
+        d = {}
         empty = True
         for attr in self._props:
             ele = self._props[attr]["elementary"]
@@ -136,12 +168,10 @@ class Silk(SilkObject):
         else:
             return d
 
-    def make_numpy(self, data=None):
+    def make_numpy(self):
         if self._storage == "numpy":
-            if data is not None:
-                self._data[:] = data
-            return
-        old_data = self.json()
+            return self._data
+        old_data = copy.deepcopy(self._data)
         data = np.zeros(dtype=self._dtype, shape=(1,))
         self._init(self._parent(), "numpy", data[0])
         self._storage_enum = self._storage_names.index("numpy")
@@ -202,7 +232,7 @@ class Silk(SilkObject):
     def _parse(self, s):
         raise NotImplementedError
 
-    _storage_names = ("numpy", "json", "mixed")
+    _storage_names = ("numpy", "json")
 
     @property
     def _storage(self):
@@ -235,7 +265,7 @@ class Silk(SilkObject):
             else:
                 typename = \
                   self._props[prop]["typename"]
-                t = _typenames[typename]
+                t = typenames._silk_types[typename]
                 value = t(value)
             self._data[prop] = value
         else:

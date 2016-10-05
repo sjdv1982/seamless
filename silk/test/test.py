@@ -2,7 +2,7 @@ import json, sys
 from pprint import pprint
 from seamless.silk.typeparse.xmlschemaparse import xmlschemaparse, get_blocks, get_init_tree
 from seamless.silk.registers.minischemas import _minischemas, register_minischema
-from seamless.silk.registers.typenames import register
+from seamless.silk.registers.typenames import register, _silk_types
 from seamless.silk.stringparse import stringparse
 
 f1 = json.load(open("../example/coordinate.minischema.json"))
@@ -44,6 +44,7 @@ AxisSystem = register(
     _minischemas["AxisSystem"],
     init_tree=init_tree_AxisSystem
 )
+"""
 cc = Coordinate(x=1, y=2, z=3)
 cc = Coordinate(cc)
 #cc = Coordinate("1,2,3")
@@ -81,3 +82,11 @@ print(ax._data)
 print(ax)
 #f4 = json.load(open("../example/test.minischema.json"))
 #minischema = register_minischema(f4)
+"""
+classes = "Coordinate", "AxisSystem", "Vector"
+for c in classes:
+    for arity in 1,2,3:
+        cc = c + "Array"
+        globals()[cc] = _silk_types[cc]
+c = CoordinateArray((1,2,3))
+c.append((10,20,30))

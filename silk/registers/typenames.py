@@ -30,6 +30,7 @@ for name in dir(exceptions):
         pass
 
 from ..classes.silk import Silk
+from ..classes.silkarray import SilkArray
 from .minischemas import _minischemas
 
 _counter = 0
@@ -113,5 +114,35 @@ def register(extended_minischema, init_tree=None, \
     ret = type(typename2, tuple(bases), d)
     if typename is not None:
         _typenames[typename] = ret
-        _silk_types[typename] = ret # TODO: arrays
+        _silk_types[typename] = ret
+        typename_array = typename + "Array"
+        d = {
+          "_element": ret,
+          "_dtype": dtype,
+          "_elementary": False,
+          "_arity": 1,
+        }
+        arr = type(typename_array, (SilkArray,), d)
+        _silk_types[typename_array] = arr
+
+        typename_array2 = typename + "ArrayArray"
+        d = {
+          "_element": arr,
+          "_dtype": dtype,
+          "_elementary": False,
+          "_arity": 2,
+        }
+        arr2 = type(typename_array2, (SilkArray,), d)
+        _silk_types[typename_array2] = arr2
+
+        typename_array3 = typename + "ArrayArrayArray"
+        d = {
+          "_element": arr2,
+          "_dtype": dtype,
+          "_elementary": False,
+          "_arity": 3,
+        }
+        arr3 = type(typename_array3, (SilkArray,), d)
+        _silk_types[typename_array3] = arr3
+
     return ret
