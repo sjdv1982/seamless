@@ -3,11 +3,15 @@
 # TODO: primitive arrays
 
 import ast
-from . import SilkObject
+import numpy as np
+from . import SilkObject, SilkStringLike
 
 
 class Float(float, SilkObject):
-    """Wrapper class around a Python float"""
+    """Wrapper class around a Python float
+    Uses float32 as numpy representation"""
+    _dtype = np.float32
+
     def json(self):
         return self
 
@@ -19,8 +23,10 @@ class Float(float, SilkObject):
 
 
 class Integer(int, SilkObject):
-    """Wrapper class around a Python int"""
+    """Wrapper class around a Python int
+    Uses int32 as numpy representation"""
 
+    _dtype = np.int32
     def json(self):
         return self
 
@@ -30,10 +36,10 @@ class Integer(int, SilkObject):
     def _print(self, spaces):
         return str(self)
 
-
-class String(str, SilkObject):
-    """Wrapper class around a Python str"""
-
+class String(str, SilkStringLike):
+    """Wrapper class around a Python string
+    Numpy representation is an UTF-8-encoded 255-length byte string"""
+    _dtype = '|S255'
     def __new__(self, s):
         if s is None:
             raise ValueError
@@ -58,7 +64,7 @@ class String(str, SilkObject):
         return self
 
     def __eq__(self, other):
-        return str(self) == other
+        return str.__eq__(self, other)
 
     def __hash__(self):
         return str.__hash__(self)
@@ -69,9 +75,9 @@ class String(str, SilkObject):
 
 class Bool(int, SilkObject):
     """Class that emulates a Python bool
-    Unlike bool,
-    "True" is equivalent to True
+    Unlike bool, "True" is equivalent to True
     and "False" is equivalent to False"""
+    _dtype = np.bool
     def __new__(self, b):
         if b == "True" or b == "\'True\'" or b == "\"True\"":
             return int.__new__(self, True)
@@ -97,3 +103,15 @@ class Bool(int, SilkObject):
 
     def _print(self, spaces):
         return str(self)
+
+
+class Double(Float):
+    """Wrapper class around a Python float
+    Uses float64 as binary representation"""
+    _dtype = np.float64
+
+
+class Long(Integer):
+    """Wrapper class around a Python integer
+    Uses int64 as binary representation"""
+    _dtype = np.int64

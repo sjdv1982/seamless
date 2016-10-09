@@ -56,8 +56,6 @@ def validation_mixin(silkclassname, validation_blocks, error_blocks, properties,
             for e in eblock:
                 code = strip(e["code"])
                 message = strip(e["message"])
-                print("MESSAGE", message, "/message")
-                print("CODE", code, "/code")
                 eblocks.append((code,message))
 
     myclassname = silkclassname + "_validation_mixin"
@@ -99,6 +97,6 @@ def method_mixin(silkclassname, method_blocks, namespace):
     code_obj = cached_compile(method_code, myclassname)
     exec(code_obj, namespace)
     method_classes = [namespace[v] for v in method_class_names]
-    ret = type(myclassname, tuple(method_classes), namespace)
+    ret = type(myclassname, tuple(method_classes), {})
     namespace[myclassname] = ret
     return ret

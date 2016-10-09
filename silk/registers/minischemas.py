@@ -2,13 +2,8 @@ import numpy as np
 import weakref
 from collections import OrderedDict
 
-_elementaries = {
- "String": str,
- "Integer": int,
- "Float": float,
- "Bool": bool,
-}
-
+from .typenames import _primitives
+_elementaries = "float", "int", "str", "bool"
 _minischemas = {}
 
 def register_minischema(minischema):
@@ -46,12 +41,14 @@ def register_minischema(minischema):
             raise NotImplementedError #composite
         else:
             ptype = p["type"]
-        prop["optional"] = (pname in required)
+        prop["optional"] = (pname not in required)
         prop["typename"] = ptype
-        if ptype in _elementaries:
+        if ptype in _primitives:
             prop["elementary"] = True
-            pdtype = _elementaries[ptype]
-            if pdtype is float:
+            pdtype = _primitives[ptype]._dtype
+        elif ptype in _elementaries:
+            prop["elementary"] = True
+            if pdtype == "float":
                 pprecision = p.get("precision", "double")
                 if pprecision == "double":
                     pass
@@ -59,8 +56,8 @@ def register_minischema(minischema):
                     pdtype = np.float32
                 else:
                     raise ValueError(pprecision)
-            if pdtype is str:
-                plength = p.get("length", 1)
+            if pdtype == "str":
+                plength = p.get("length", 255)
                 pdtype = "|S{0}".format(plength)
         else:
             prop["elementary"] = False

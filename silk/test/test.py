@@ -44,20 +44,19 @@ AxisSystem = register(
     _minischemas["AxisSystem"],
     init_tree=init_tree_AxisSystem
 )
-"""
+
 cc = Coordinate(x=1, y=2, z=3)
 cc = Coordinate(cc)
-#cc = Coordinate("1,2,3")
 pprint(cc._data)
-#v = Vector(1,2,z=3)
-#pprint(v)
+v = Vector(0.6,0.8,0)
+pprint(v)
 
-cc.make_numpy(aa.origin)
+cc.make_numpy()
 pprint(cc._data)
 cc.z = 20
 pprint(cc._data)
 
-#ax = AxisSystem((-1,-2,-3),cc,(4,5,6),(7,8,9))
+ax = AxisSystem((-1,-2,-3),cc,(4,5,6),(7,8,9))
 ax = AxisSystem()
 ax.x = cc
 print(ax._data)
@@ -80,13 +79,23 @@ ax.origin._data[0] = 999
 print(ax._data)
 
 print(ax)
-#f4 = json.load(open("../example/test.minischema.json"))
+f4 = json.load(open("../example/test.minischema.json"))
 #minischema = register_minischema(f4)
-"""
-classes = "Coordinate", "AxisSystem", "Vector"
+
+classes = "Integer", "Float", "Bool", "String", "Coordinate", "AxisSystem", "Vector"
 for c in classes:
     for arity in 1,2,3:
-        cc = c + "Array"
+        cc = c + "Array" * arity
         globals()[cc] = _silk_types[cc]
 c = CoordinateArray((1,2,3))
 c.append((10,20,30))
+
+z = IntegerArrayArrayArray(((1,2,3),(4,5,6)), ((10,20,30),(40,50,60)))
+
+a0 = AxisSystemArray (AxisSystem((10,2,3)), AxisSystem((10,2,3)))
+a1 = AxisSystemArray (AxisSystem((210,22,23)),)
+a = AxisSystemArrayArray(a0,a1)
+a.make_numpy()
+ax = AxisSystem(z=(9,9,9))
+a[1].append(ax)
+a[1].pop(1)
