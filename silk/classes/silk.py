@@ -5,10 +5,9 @@ import collections
 
 # TODO
 # - composite exception for constructor
-# - (re)alloc numpy; only if parent is json/mixed (or option "force")!!
-# - enum
-# - composite
-# - resources
+# - (re)alloc numpy; only if parent is json/mixed (use numpy_shatter before)!!
+# - enum (different primitive)
+# - resources (factory function in _silk_types['ResourceX'], where X is name of Silk class)
 # elsewhere: xml/json conversion, depsgraph/namespace
 # finally: registrar, cell depsgraph
 
@@ -19,12 +18,13 @@ from .helpers import _prop_setter_any, _prop_setter_json, _set_numpy_ele_prop,\
  _get_numpy_ele_prop
 
 class Silk(SilkObject):
-    _props = None
-    _dtype = None
-    _positional_args = None
+    _anonymous = None           # bool
+    _props = None               # list
+    _dtype = None               # list
+    _positional_args = None     # list
     __slots__ = (
         "_parent", "_storage_enum", "_storage_nonjson_children",
-        "_data", "_children",
+        "_data", "_children", "_is_none"
     )
 
     def __init__(self, *args, _mode="any", **kwargs):
@@ -37,12 +37,16 @@ class Silk(SilkObject):
                 kwargs["data_store"],
             )
         elif _mode == "ref":
+            assert "parent" not in kwargs
             self._init(
                 None,
                 kwargs["storage"],
                 kwargs["data_store"],
             )
         else:
+            assert "parent" not in kwargs
+            assert "storage" not in kwargs
+            assert "data_store" not in kwargs
             self._init(None, "json", None)
             if _mode == "any":
                 self.set(*args, **kwargs)
@@ -65,18 +69,22 @@ class Silk(SilkObject):
                 data_store = {}
         elif storage == "numpy":
             assert data_store is not None
-            assert data_store.dtype == self._dtype
+            assert data_store.dtype == np.dtype(self._dtype, align=True)
             assert data_store.shape == ()
         else:
             raise ValueError(storage)
 
         self._children = {}
+        self._is_none = False
         self._storage_nonjson_children.clear()
         for pname, p in self._props.items():
             if p["elementary"]:
                 continue
-            typename = p["typename"]
-            t = typenames._silk_types[typename]
+            if "typeclass" in p:
+                t = p["typeclass"]
+            else:
+                typename = p["typename"]
+                t = typenames._silk_types[typename]
             if self.storage == "json":
                 if pname not in data_store:
                     if issubclass(t, SilkArray):
@@ -97,14 +105,26 @@ class Silk(SilkObject):
 
     def copy(self, storage="json"):
         """Returns a copy with the storage in the specified format"""
+        cls = type(self)
         if storage == "json":
             json = self.json()
-            return cls.from_json(json, copy=False)
+            ret = cls.from_json(json, copy=False)
+            for prop in self._props:
+                if not self._props[prop]["elementary"]:
+                    child = self._children[prop]
+                    is_none = child._is_none
+                    ret._children[prop]._is_none = is_none
         elif storage == "numpy":
             numpydata = self.numpy()
-            return cls.from_numpy(numpydata, copy=False)
+            ret = cls.from_numpy(numpydata, copy=False)
+            for prop, value in self._data.items():
+                if prop in self._children:
+                    child = ret._children[prop]
+                    is_none = child._is_none
+                    ret._children[prop]._is_none = is_none
         else:
             raise ValueError(storage)
+        return ret
 
     @classmethod
     def from_json(cls, data, copy=True):
@@ -144,6 +164,13 @@ class Silk(SilkObject):
         return cls(_mode="empty")
 
     def set(self, *args, prop_setter=_prop_setter_any, **kwargs):
+        if len(args) == 1 and len(kwargs) == 0:
+            if args[0] is None:
+                self._is_none = True
+                if self.storage == "numpy":
+                    self._data.fill(np.zeros_like(self._data))
+                return
+
         # TODO: make a nice composite exception that stores all exceptions
         try:
             self._construct(prop_setter, *args, **kwargs)
@@ -151,78 +178,110 @@ class Silk(SilkObject):
             if len(args) == 1 and len(kwargs) == 0:
                 try:
                     a = args[0]
-                    if isinstance(a, dict):
-                        self._construct(prop_setter, **a)
-                    elif isinstance(a, str):
-                        self._parse(a)
-                    elif isinstance(a, collections.Iterable) or isinstance(a, np.void):
-                        self._construct(prop_setter, *a)
-                    elif isinstance(a, SilkObject):
-                        d = {prop: getattr(a, prop) for prop in dir(a)}
-                        self._construct(prop_setter, **d)
-                    elif hasattr(a, "__dict__"):
-                        self._construct(prop_setter, **a.__dict__)
-                    else:
-                        raise TypeError(a)
+                    try:
+                        if isinstance(a, np.void):
+                            d = {}
+                            for name in a.dtype.names:
+                                if name.startswith("HAS_"):
+                                    continue
+                                name2 = "HAS_" + name
+                                if name2 in a.dtype.names and not a[name2]:
+                                    continue
+                                d[name] = a[name]
+                            self._construct(prop_setter, **d)
+                        else:
+                            raise TypeError
+                    except:
+                        if isinstance(a, dict):
+                            self._construct(prop_setter, **a)
+                        elif isinstance(a, str):
+                            self._parse(a)
+                        elif isinstance(a, collections.Iterable) or isinstance(a, np.void):
+                            self._construct(prop_setter, *a)
+                        elif isinstance(a, SilkObject):
+                            d = {prop: getattr(a, prop) for prop in dir(a)}
+                            self._construct(prop_setter, **d)
+                        elif hasattr(a, "__dict__"):
+                            self._construct(prop_setter, **a.__dict__)
+                        else:
+                            raise TypeError(a)
                 except:
                     raise
             else:
                 raise
         self.validate()
+        self._is_none = False
 
     def validate(self):
         pass  # overridden during registration
 
     def json(self):
+        """Returns a JSON representation of the Silk object
+        NOTE: for optional members,
+        the entire storage buffer is returned,
+         including (zeroed/empty) elements beyond the defined data!
+        """
         if self.storage == "json":
             return copy.deepcopy(self._data)
 
         d = {}
-        empty = True
         for attr in self._props:
             ele = self._props[attr]["elementary"]
             if ele:
-                ret = self._data[attr]
-                if ret is np.ma.masked:
-                    ret = None
+                if self.storage == "numpy":
+                    value = _get_numpy_ele_prop(self, attr)
+                else:
+                    value = self._data[attr]
+                if value is not None:
+                    typename = self._props[attr]["typename"]
+                    t = typenames._silk_types[typename]
+                    value = t(value)
             else:
-                ret = self._children[attr].json()
-            if ret is not None:
-                d[attr] = ret
-                empty = False
-        if empty:
-            return None
-        else:
-            return d
+                value = self._children[attr].json()
+            if value is not None:
+                d[attr] = value
+        return d
 
     def numpy(self):
         """Returns a numpy representation of the Silk object
-        NOTE: for Silk array members, the entire storage buffer is returned,
-         including (zeroed) elements beyond the current length!
+        NOTE: for optional and Silk array members,
+        the entire storage buffer is returned,
+         including (zeroed) elements beyond the defined data!
         """
         cls = type(self)
         if self.storage == "numpy":
-            new_data = self._data.copy()
-        else:
-            prop_setter = _prop_setter_any
-            if self.storage == "json":
-                prop_setter = _prop_setter_json
-            my_data = copy.deepcopy(self._data)
-            new_data = np.zeros(dtype=self._dtype, shape=(1,))
-            new_obj = cls(mode="parent",
-                          parent=None, storage="numpy", data_store=new_data[0]
-                          )
-            for prop, value in my_data.items():
-                new_obj._set_prop(prop, value, prop_setter)
+            return self._data.copy()
+
+        prop_setter = _prop_setter_any
+        if self.storage == "json":
+            prop_setter = _prop_setter_json
+        my_data = copy.deepcopy(self._data)
+        dtype = np.dtype(self._dtype, align=True)
+        new_data = np.zeros(dtype=dtype, shape=(1,))
+        new_obj = cls(_mode="ref",
+                      storage="numpy", data_store=new_data[0]
+                      )
+        for prop, value in my_data.items():
+            if prop in self._children and self._children[prop]._is_none:
+                continue
+            new_obj._set_prop(prop, value, prop_setter)
         return new_obj._data
 
     def make_json(self):
         if self.storage == "json":
             return self._data
         elif self.storage == "numpy":
+            old_children = self._children
             json = self.json()
             parent = self._parent()
+            if parent is not None:
+                parent.numpy_shatter()
             self._init(parent, "json", json)
+            for prop in self._props:
+                if not self._props[prop]["elementary"]:
+                    child = old_children[prop]
+                    is_none = child._is_none
+                    self._children[prop]._is_none = is_none
             if parent is not None:
                 parent._remove_nonjson_child(self)
             return json
@@ -245,13 +304,21 @@ class Silk(SilkObject):
         if self.storage == "json":
             prop_setter = _prop_setter_json
         old_data = copy.deepcopy(self._data)
-        data = np.zeros(dtype=self._dtype, shape=(1,))
+        old_children = self._children
+        dtype = np.dtype(self._dtype, align=True)
+        data = np.zeros(dtype=dtype, shape=(1,))
         self._init(self._parent(), "numpy", data[0])
         for prop, value in old_data.items():
+            if prop in old_children:
+                child = old_children[prop]
+                is_none = child._is_none
+                self._children[prop]._is_none = is_none
+                if is_none:
+                    continue
             self._set_prop(prop, value, prop_setter)
         parent = self._parent()
         if parent is not None:
-            parent()._add_nonjson_child(self)
+            parent._add_nonjson_child(self)
         return self._data
 
     def _add_nonjson_child(self, child):
@@ -278,6 +345,34 @@ class Silk(SilkObject):
                 parent = self._parent()
                 if parent is not None:
                     parent()._remove_nonjson_child(self)
+
+
+    def numpy_shatter(self):
+        """
+        Breaks up a unified numpy storage into one numpy storage per child
+        """
+        assert self.storage == "numpy"
+        parent = self._parent()
+        if parent is not None and parent.storage == "numpy":
+            parent.numpy_shatter()
+        data = {}
+        for prop in self._props:
+            if self._props[prop]["elementary"]:
+                value = getattr(self, prop)
+                if value is not None:
+                    typename = \
+                      self._props[prop]["typename"]
+                    t = typenames._silk_types[typename]
+                    value = t(value)
+                data[prop] = value
+            else:
+                child = self._children[prop]
+                d = child._data.copy()
+                data[prop] = d
+                child._data = d
+        self._data = data
+        self._storage_nonjson_children = set([p for p in self._children])
+        self.storage = "mixed"
 
     def _get_lengths(self):
         ret = {}
@@ -382,20 +477,28 @@ but {2} were given".format(
 
     def _set_prop(self, prop, value, child_prop_setter):
         try:
-            ele = self._props[prop]["elementary"]
+            p = self._props[prop]
         except KeyError:
             raise AttributeError(prop)
+        if value is None and not p["optional"]:
+            raise TypeError("'%s' cannot be None" % prop)
+        ele = p["elementary"]
         if ele:
             if self.storage == "numpy":
                 _set_numpy_ele_prop(self, prop, value)
             else:
-                typename = \
-                  self._props[prop]["typename"]
-                t = typenames._silk_types[typename]
-                value = t(value)
+                if value is not None:
+                    typename = \
+                      self._props[prop]["typename"]
+                    t = typenames._silk_types[typename]
+                    value = t(value)
                 self._data[prop] = value
         else:
-            child_prop_setter(self._children[prop], value)
+            child = self._children[prop]
+            child_prop_setter(child, value)
+            if self.storage == "numpy" and p["optional"]:
+                self._data["HAS_"+prop] = (value is not None)
+
 
     def __getattribute__(self, attr):
         value = object.__getattribute__(self, attr)
@@ -415,17 +518,20 @@ but {2} were given".format(
             if self.storage == "numpy":
                 ret = _get_numpy_ele_prop(self, attr)
             else:
-                ret = self._data[attr]
+                ret = self._data.get(attr, None)
+                if ret is None:
+                    assert self._props[attr]["optional"]
         else:
             ret = self._children[attr]
-
-        if ret is np.ma.masked:
-            return None
-        else:
-            return ret
+            if ret._is_none:
+                ret = None
+        return ret
 
     def _print(self, spaces):
-        ret = "{0} (\n".format(self.__class__.__name__)
+        name = ""
+        if not self._anonymous:
+            name = self.__class__.__name__ + " "
+        ret = "{0}(\n".format(name)
         for propname in self._props:
             prop = self._props[propname]
             value = getattr(self, propname)
@@ -433,8 +539,9 @@ but {2} were given".format(
                 if value is None:
                     continue
             if self.storage == "numpy" and prop["elementary"]:
-                if value.dtype.kind == 'S':
-                    substr = '"' + value.decode() + '"'
+                substr = value
+                if self._data[propname].dtype.kind == 'S':
+                    substr = '"' + value + '"'
                 else:
                     substr = str(value)
             else:

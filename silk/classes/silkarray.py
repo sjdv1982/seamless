@@ -34,12 +34,14 @@ class _ArrayInsertContext:
         else:
             ele = {}
         if self.arr.storage == "numpy":
-            ele = np.zeros(shape=(1,), dtype=self.arr._dtype)
+            dtype = np.dtype(self.arr._dtype, align=True)
+            ele = np.zeros(shape=(1,), dtype=dtype)
             l = self.arr._len
             d = self.arr._data
             ind = self.index
             d[ind+1:l+1] = d[ind:l]
-            d[ind] = ele
+            print(d, ele[0])
+            d[ind] = ele[0]
         else:
             self.arr._data.insert(self.index, ele)
 
@@ -61,10 +63,9 @@ class SilkArray(SilkObject):
     _dtype = None
     _elementary = None
     _arity = None
-    _has_optional = None
     __slots__ = (
         "_parent", "_storage_enum", "_storage_nonjson_children"
-        "_data", "_children", "_len"
+        "_data", "_children", "_len", "_is_none"
     )
 
     def __init__(self, *args, _mode="any", **kwargs):
@@ -119,6 +120,7 @@ class SilkArray(SilkObject):
 
         self._data = data_store
         self._children = []
+        self._is_none = False
         for n in range(len(self._data)):
             if self.storage == "json":
                 if n > len(data_store):
@@ -187,6 +189,13 @@ class SilkArray(SilkObject):
         return cls(_mode="empty")
 
     def set(self, *args, prop_setter=_prop_setter_any):
+        if len(args) == 1:
+            if args[0] is None:
+                self._is_none = True
+                self._len = 0
+                if self.storage == "numpy":
+                    self._data[:] = np.zeros_like(self._data)
+                return
         # TODO: make a nice composite exception that stores all exceptions
         try:
             if self.storage == "numpy" and \
@@ -215,6 +224,7 @@ class SilkArray(SilkObject):
                 except:
                     raise
         self.validate()
+        self._is_none = False
 
     def validate(self):
         pass
@@ -238,7 +248,7 @@ class SilkArray(SilkObject):
     def numpy(self):
         """Returns a numpy representation of the Silk array
         NOTE: for Silk arrays, the entire storage buffer is returned,
-         including (zeroed) elements beyond the current length!
+         including (zeroed) elements beyond the defined data!
         """
         if self.storage == "numpy":
             return self._data.copy()
@@ -260,6 +270,8 @@ class SilkArray(SilkObject):
         elif self.storage == "numpy":
             json = self.json()
             parent = self._parent()
+            if parent is not None:
+                parent.numpy_shatter()
             self._init(parent, "json", json)
             if parent is not None:
                 parent._remove_nonjson_child(self)
@@ -299,7 +311,8 @@ class SilkArray(SilkObject):
                     d2.append(ddd)
             d = d2
         try:
-            data = np.zeros(dtype=self._dtype, shape=shape)
+            dtype = np.dtype(self._dtype, align=True)
+            data = np.zeros(dtype=dtype, shape=shape)
             assert len(data) == len(old_data), old_data
             self._init(self._parent(), "numpy", data)
             self._set_lengths(lengths)
@@ -351,6 +364,28 @@ class SilkArray(SilkObject):
                 parent = self._parent()
                 if parent is not None:
                     parent()._remove_nonjson_child(self)
+
+
+
+    def numpy_shatter(self):
+        """
+        Breaks up a unified numpy storage into one numpy storage per child
+        """
+        assert self.storage == "numpy"
+        assert not self._elementary
+        parent = self._parent()
+        if parent is not None and parent.storage == "numpy":
+            parent.numpy_shatter()
+        data = {}
+        for prop in self._props:
+            child = self._children[prop]
+            d = child._data.copy()
+            data[prop] = d
+            child._data = d
+        self._data = data
+        self._storage_nonjson_children = set([p for p in self._children])
+        self.storage = "mixed"
+
 
     def _get_lengths(self):
         if self._elementary:
@@ -568,6 +603,8 @@ a sequence of length %d"
             msg = "{0} indices must be integers or slices, not {1}"
             raise TypeError(msg.format(self.__class__.__name__,
                                        item.__class__.__name__))
+        if item < 0:
+            item = self._len + item
         if self.storage == "numpy":
             ret_data = self._data[:self._len][item].copy()
             ret = self._element(

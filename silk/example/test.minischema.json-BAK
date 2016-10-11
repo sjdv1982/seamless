@@ -2,14 +2,14 @@
 	"properties": {
 		"x": {
 			"properties": {
-					"b": "Float",
-					"a": "Float"
+					"b":"Float",
+					"a":"Float"
 			},
 			"order": ["b", "a"]
 		},
 		"y": {
 			"properties": {
-					"c": "String",
+					"c": {"Enum": ["one","two","three"]},
 					"d": "Bool"
 			},
 			"order": ["c", "d"]

@@ -45,6 +45,8 @@ class String(str, SilkStringLike):
             raise ValueError
         if isinstance(s, String):
             return str.__new__(self, s)
+        if isinstance(s, bytes):
+            return str.__new__(self, s.decode())
         s = str(s)
         if len(s) and s[0] == s[-1]:
             if s[0] in ("'", '"'):
@@ -70,7 +72,7 @@ class String(str, SilkStringLike):
         return str.__hash__(self)
 
     def _print(self, spaces):
-        return str.__repr__(self)
+        return '"' + str.__str__(self) + '"'
 
 
 class Bool(int, SilkObject):

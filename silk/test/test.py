@@ -80,7 +80,8 @@ print(ax._data)
 
 print(ax)
 f4 = json.load(open("../example/test.minischema.json"))
-#minischema = register_minischema(f4)
+minischema = register_minischema(f4)
+Test = register(minischema, typename="Test")
 
 classes = "Integer", "Float", "Bool", "String", "Coordinate", "AxisSystem", "Vector"
 for c in classes:
@@ -92,10 +93,18 @@ c.append((10,20,30))
 
 z = IntegerArrayArrayArray(((1,2,3),(4,5,6)), ((10,20,30),(40,50,60)))
 
-a0 = AxisSystemArray (AxisSystem((10,2,3)), AxisSystem((10,2,3)))
+a0 = AxisSystemArray (AxisSystem((10,2,3)), AxisSystem((910,92,93)))
 a1 = AxisSystemArray (AxisSystem((210,22,23)),)
 a = AxisSystemArrayArray(a0,a1)
+
 a.make_numpy()
 ax = AxisSystem(z=(9,9,9))
 a[1].append(ax)
 a[1].pop(1)
+t = Test(x=(1,2),y=("bla", False),q=(8,9,10))
+ax.make_numpy()
+t.ax = ax
+t.make_numpy()
+t.ax = None
+t2 = t.copy()
+#print(t2.numpy())

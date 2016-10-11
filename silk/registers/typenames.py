@@ -12,13 +12,6 @@ for name in _prim.__dict__:
         _primitives[name] = getattr(_prim, name)
 
 
-#TODO:
-# - array (1 for 1-dimensional array, 2 for array-array)
-# - primitive arrays (in ../classes/primitives.py)
-
-#TODO: Numpy implementation for XArray and String
-# no auto-resizing on overflow (a[10] gives an error for |S1) but resize can be requested
-
 _typenames = {}
 _typenames.update(_primitives)
 _silk_types = _typenames.copy()
@@ -39,7 +32,6 @@ def _make_array(typename, typeclass, elementary=False):
     d = {
       "_element": typeclass,
       "_dtype": typeclass._dtype,
-      "_has_optional": typeclass._has_optional,
       "_elementary": elementary,
       "_arity": 1,
     }
@@ -50,7 +42,6 @@ def _make_array(typename, typeclass, elementary=False):
     d = {
       "_element": arr,
       "_dtype": typeclass._dtype,
-      "_has_optional": typeclass._has_optional,
       "_elementary": False,
       "_arity": 2,
     }
@@ -61,7 +52,6 @@ def _make_array(typename, typeclass, elementary=False):
     d = {
       "_element": arr2,
       "_dtype": typeclass._dtype,
-      "_has_optional": typeclass._has_optional,
       "_elementary": False,
       "_arity": 3,
     }
@@ -75,14 +65,19 @@ for name in _primitives:
 
 _counter = 0
 def register(extended_minischema, init_tree=None,
-             validation_blocks=None, error_blocks=None, method_blocks=None):
+             validation_blocks=None, error_blocks=None, method_blocks=None,
+             typename=None):
     from ..classes.silk import Silk
     silk_builtin = [p for p in Silk.__dict__.keys() if p not in
                     object.__dict__.keys() and p != "__module__"]
 
     global _counter
     _counter += 1
-    typename = extended_minischema.get("typename", None)
+    anonymous = False
+    if typename is None:
+        typename = extended_minischema.get("typename", None)
+    else:
+        anonymous = True
     ms_props = extended_minischema["properties"]
     for p in ms_props:
         msg = "Property '%s' is a builtin Silk attribute/method"
@@ -91,6 +86,8 @@ def register(extended_minischema, init_tree=None,
     typename2 = "<Anonymous Silk class %d>" % (_counter)
     if typename is not None:
         typename2 = typename
+    else:
+        anonymous = True
     validation_class = None
     if validation_blocks:
         validation_class = validation_mixin(
@@ -114,10 +111,10 @@ def register(extended_minischema, init_tree=None,
                 raise TypeError(msg % p)
 
     dtype = extended_minischema["dtype"]
-    ms = extended_minischema["minischema"]
     all_props = OrderedDict()
     props_init = {}
     typedict = {}
+
     def fill_props(props, order, msprops, typedict):
         for p in order:
             msprop = msprops[p]
@@ -127,13 +124,17 @@ def register(extended_minischema, init_tree=None,
             if init_tree is not None and p in init_tree:
                 initstr = init_tree[p]
             if msprop["composite"]:
-                p_order = msprop["order"]
                 sub_msprops = msprops[p]
-                fill_props(prop, p_order, sub_msprops)
-                if initstr is not None:
+                prop["elementary"] = False
+                if initstr is not None:  # currently not used
                     init = stringparse(initstr, typeless=True)
                     props_init[p] = init
-                typedict[p] = Silk
+                sub_typename = None
+                if typename is not None:
+                    sub_typename = typename + "." + p
+                ptypeclass = register(sub_msprops, typename=sub_typename)
+                prop["typeclass"] = ptypeclass
+                typedict[p] = ptypeclass
             else:
                 prop["elementary"] = msprop["elementary"]
                 ptypename = msprop["typename"]
@@ -161,6 +162,7 @@ def register(extended_minischema, init_tree=None,
                 break
         positional_args.append(p)
     d = {
+     "_anonymous": anonymous,
      "_props": all_props,
      "_props_init": props_init,
      "_dtype": dtype,
@@ -170,7 +172,7 @@ def register(extended_minischema, init_tree=None,
     bases = [method_class, validation_class, Silk]
     bases = [b for b in bases if b is not None]
     ret = type(typename2, tuple(bases), d)
-    if typename is not None:
+    if not anonymous:
         _typenames[typename] = ret
         _silk_types[typename] = ret
         _make_array(typename, ret)

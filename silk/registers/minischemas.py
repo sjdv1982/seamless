@@ -28,43 +28,75 @@ def register_minischema(minischema):
     allprops = list(props.keys())
     assert sorted(order) == sorted(allprops), (order, allprops)
     newprops = {}
-    for pname in order:
-        prop = {}
+
+    def _register(pname, prop, p, dtype):
         prop["composite"] = False
-        p = props[pname]
         if isinstance(p, str):
             ptype = p
             p = {"type": p}
         elif "Enum" in p:
             raise NotImplementedError #enum
         elif "properties" in p:
-            raise NotImplementedError #composite
+            sub_props = p["properties"]
+            sub_order = p.get("order", None)
+            if sub_order is None:
+                sub_order = sorted(list(sub_order.keys))
+            sub_required = p.get("required", None)
+            prop["composite"] = True
+            prop["order"] = sub_order
+
+            prop["properties"] = {}
+            pdtype = []
+            sub_optionals = []
+            for sub_pname in sub_order:
+                sub_prop = {}
+                sub_p = sub_props[sub_pname]
+                _register(sub_pname, sub_prop, sub_p, pdtype)
+                optional = \
+                  sub_required is not None and \
+                  sub_pname not in sub_required
+                sub_prop["optional"] = optional
+                if optional:
+                    sub_optionals.append(("HAS_"+sub_pname, np.bool))
+                prop["properties"][sub_pname] = sub_prop
+            prop["dtype"] = pdtype + sub_optionals
         else:
             ptype = p["type"]
-        prop["optional"] = (pname not in required)
-        prop["typename"] = ptype
-        if ptype in _primitives:
-            prop["elementary"] = True
-            pdtype = _primitives[ptype]._dtype
-        elif ptype in _elementaries:
-            prop["elementary"] = True
-            if pdtype == "float":
-                pprecision = p.get("precision", "double")
-                if pprecision == "double":
-                    pass
-                elif pprecision == "single":
-                    pdtype = np.float32
-                else:
-                    raise ValueError(pprecision)
-            if pdtype == "str":
-                plength = p.get("length", 255)
-                pdtype = "|S{0}".format(plength)
-        else:
-            prop["elementary"] = False
-            subschema = _minischemas[ptype]
-            pdtype = subschema["dtype"]
+        if not prop["composite"]:
+            prop["typename"] = ptype
+            if ptype in _primitives:
+                prop["elementary"] = True
+                pdtype = _primitives[ptype]._dtype
+            elif ptype in _elementaries:
+                prop["elementary"] = True
+                if pdtype == "float":
+                    pprecision = p.get("precision", "double")
+                    if pprecision == "double":
+                        pass
+                    elif pprecision == "single":
+                        pdtype = np.float32
+                    else:
+                        raise ValueError(pprecision)
+                if pdtype == "str":
+                    plength = p.get("length", 255)
+                    pdtype = "|S{0}".format(plength)
+            else:
+                prop["elementary"] = False
+                subschema = _minischemas[ptype]
+                pdtype = subschema["dtype"]
         dtype.append((pname, pdtype))
+
+    optionals = []
+    for pname in order:
+        prop = {}
+        p = props[pname]
+        _register(pname, prop, p, dtype)
+        optional = (pname not in required)
+        if optional:
+            optionals.append(("HAS_"+pname, np.bool))
+        prop["optional"] = optional
         newprops[pname] = prop
+    dtype += optionals
 
     extended_minischema = {
         "typename": typename,
@@ -76,5 +108,4 @@ def register_minischema(minischema):
     }
     if typename is not None:
         _minischemas[typename] = extended_minischema
-    else:
-        return extended_minischema
+    return extended_minischema
