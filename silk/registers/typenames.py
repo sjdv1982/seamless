@@ -1,6 +1,7 @@
 import numpy as np
 from collections import OrderedDict
 from ..classes import primitives as _prim
+from ..classes.enum import make_enum
 from ..validate import is_valid_silktype
 from .. import exceptions
 from .blockmixin import validation_mixin, method_mixin
@@ -34,6 +35,7 @@ def _make_array(typename, typeclass, elementary=False):
       "_dtype": typeclass._dtype,
       "_elementary": elementary,
       "_arity": 1,
+      "__slots__": [],
     }
     arr = type(typename_array, (SilkArray,), d)
     _silk_types[typename_array] = arr
@@ -44,6 +46,7 @@ def _make_array(typename, typeclass, elementary=False):
       "_dtype": typeclass._dtype,
       "_elementary": False,
       "_arity": 2,
+      "__slots__": [],
     }
     arr2 = type(typename_array2, (SilkArray,), d)
     _silk_types[typename_array2] = arr2
@@ -54,6 +57,7 @@ def _make_array(typename, typeclass, elementary=False):
       "_dtype": typeclass._dtype,
       "_elementary": False,
       "_arity": 3,
+      "__slots__": [],
     }
     arr3 = type(typename_array3, (SilkArray,), d)
     _silk_types[typename_array3] = arr3
@@ -69,7 +73,7 @@ def register(extended_minischema, init_tree=None,
              typename=None):
     from ..classes.silk import Silk
     silk_builtin = [p for p in Silk.__dict__.keys() if p not in
-                    object.__dict__.keys() and p != "__module__"]
+                    object.__dict__.keys() and p not in ("__module__", "__slots__")]
 
     global _counter
     _counter += 1
@@ -138,8 +142,13 @@ def register(extended_minischema, init_tree=None,
             else:
                 prop["elementary"] = msprop["elementary"]
                 ptypename = msprop["typename"]
-                ptypeclass = _typenames[ptypename]
-                prop["typename"] = ptypename
+                if ptypename == "enum":
+                    enum = msprop["enum"]
+                    ptypeclass = make_enum(enum)
+                    prop["typeclass"] = ptypeclass
+                else:
+                    ptypeclass = _silk_types[ptypename]
+                    prop["typename"] = ptypename
                 if initstr is not None:
                     init = stringparse(initstr, typeless=False)
                     if not isinstance(init, ptypeclass):
@@ -147,6 +156,8 @@ def register(extended_minischema, init_tree=None,
                     props_init[p] = init
                 typedict[p] = ptypeclass
             prop["optional"] = msprop["optional"]
+            if "var_array" in msprop:
+                prop["var_array"] = msprop["var_array"]
 
     fill_props(all_props, extended_minischema["order"],
                extended_minischema["properties"], typedict)
@@ -167,6 +178,7 @@ def register(extended_minischema, init_tree=None,
      "_props_init": props_init,
      "_dtype": dtype,
      "_positional_args": positional_args,
+     "__slots__": [],
     }
     d.update(typedict)
     bases = [method_class, validation_class, Silk]

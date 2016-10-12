@@ -75,13 +75,16 @@ print(AxisSystem(d))
 ax.make_numpy()
 print(ax.json())
 print(ax._data["origin"].data == ax.origin._data.data)
-ax.origin._data[0] = 999
+ax.origin._data["x"] = 999
 print(ax._data)
 
 print(ax)
 f4 = json.load(open("../example/test.minischema.json"))
 minischema = register_minischema(f4)
-Test = register(minischema, typename="Test")
+Test = register(minischema)
+f5 = json.load(open("../example/test2.minischema.json"))
+minischema = register_minischema(f5)
+Test2 = register(minischema, typename="Test2")
 
 classes = "Integer", "Float", "Bool", "String", "Coordinate", "AxisSystem", "Vector"
 for c in classes:
@@ -101,10 +104,31 @@ a.make_numpy()
 ax = AxisSystem(z=(9,9,9))
 a[1].append(ax)
 a[1].pop(1)
-t = Test(x=(1,2),y=("bla", False),q=(8,9,10))
-ax.make_numpy()
+t = Test(x=(1,2),y=("three", False),q=c)
 t.ax = ax
+t.ax.make_numpy()
+"""
 t.make_numpy()
 t.ax = None
 t2 = t.copy()
 #print(t2.numpy())
+"""
+qq = t.q[0]
+t.q.insert(0,qq*-20)
+t.make_numpy()
+t.ax=None
+test2=Test2(test=t)
+print('START')
+test2.make_numpy()
+test2.make_json()
+k=test2.test[0].copy()
+k.x.a = -1
+k.x.b = -2
+test2.test.append(k)
+test2.make_numpy()
+print(test2)
+print(test2._data["test"][1])
+print(test2.test[1]._data)
+k2 = test2.test.pop(1)
+print(k2._data)
+#print(k2)

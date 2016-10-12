@@ -3,7 +3,7 @@ import weakref
 from collections import OrderedDict
 
 from .typenames import _primitives
-_elementaries = "float", "int", "str", "bool"
+_elementaries = "float", "int", "str", "bool", "enum"
 _minischemas = {}
 
 def register_minischema(minischema):
@@ -31,11 +31,14 @@ def register_minischema(minischema):
 
     def _register(pname, prop, p, dtype):
         prop["composite"] = False
+        standard_dtype = True
         if isinstance(p, str):
             ptype = p
             p = {"type": p}
         elif "Enum" in p:
-            raise NotImplementedError #enum
+            prop["enum"] = tuple(p["Enum"])
+            ptype = "enum"
+            pdtype = "str"
         elif "properties" in p:
             sub_props = p["properties"]
             sub_order = p.get("order", None)
@@ -77,14 +80,39 @@ def register_minischema(minischema):
                         pdtype = np.float32
                     else:
                         raise ValueError(pprecision)
-                if pdtype == "str":
+                if pdtype in ("str", "enum"):
                     plength = p.get("length", 255)
                     pdtype = "|S{0}".format(plength)
             else:
                 prop["elementary"] = False
-                subschema = _minischemas[ptype]
-                pdtype = subschema["dtype"]
-        dtype.append((pname, pdtype))
+                if ptype.endswith("Array"):
+                    if "maxshape" in prop:
+                        arity = 0
+                        while ptype.endswith("Array"):
+                            arity += 1
+                            ptype = ptype[:-len("Array")]
+                        if arity == 1:
+                            maxshape = int(prop["maxshape"])
+                        else:
+                            maxshape = np.array(prop["maxshape"], dtype=int)
+                            assert len(maxshape.shape) == arity
+                            maxshape = tuple(maxshape)
+                        subschema = _minischemas[ptype]
+                        pdtype = subschema["dtype"]
+                        dtype.append((pname, pdtype, maxshape))
+                        length_shape = np.array(maxshape).shape
+                        dtype.append(("LEN_"+pname, int, length_shape))
+                        standard_dtype = False
+                    else:
+                        prop["var_array"] = True
+                        dtype.append((pname, np.object))
+                        dtype.append(("PTR_"+pname, np.uintp))
+                        standard_dtype = False
+                else:
+                    subschema = _minischemas[ptype]
+                    pdtype = subschema["dtype"]
+        if standard_dtype:
+            dtype.append((pname, pdtype))
 
     optionals = []
     for pname in order:

@@ -1,9 +1,9 @@
 class SilkObject:
-    _has_optional = False
+    __slots__ = []
     def __ne__(self, other):
         return not self.__eq__(other)
 
 class SilkStringLike(SilkObject):
-    pass
+    __slots__ = []
 
 from . import primitives

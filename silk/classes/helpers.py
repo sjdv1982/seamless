@@ -8,12 +8,14 @@ def _prop_setter_json(child, value):
     return child.set(value, prop_setter=_prop_setter_json)
 
 
-def _set_numpy_ele_prop(silkobj, prop, value):
+def _set_numpy_ele_prop(silkobj, prop, value, data=None):
+    if data is None:
+        data = silkobj._data
     if value is None: #  and optional, has been checked
-        silkobj._data["HAS_" + prop] = False
+        data["HAS_" + prop] = False
         return
     else:
-        pdtype = silkobj._data.dtype
+        pdtype = data.dtype
         if not isinstance(prop, int):
             pdtype = pdtype[prop]
         if pdtype.kind in ('S', 'U'):
@@ -34,11 +36,11 @@ def _set_numpy_ele_prop(silkobj, prop, value):
     numpy representation is %d"
                 raise ValueError(msg % (len(value), maxlen))
     if silkobj._props[prop]["optional"]:
-        silkobj._data["HAS_" + prop] = True
-    silkobj._data[prop] = value
+        data["HAS_" + prop] = True
+    data[prop] = value
 
 
-def _set_numpy_ele_range(silkobj, start, end, value):
+def _set_numpy_ele_range(silkobj, start, end, value, arity, data=None):
     assert end-start == len(value)
     p = silkobj._data
     backup_data = p[start:end]
@@ -46,7 +48,10 @@ def _set_numpy_ele_range(silkobj, start, end, value):
     try:
         if p.dtype.kind in ('S', 'U'):
             for n in range(len(value)):
-                _set_numpy_ele_prop(silkobj, start+n, value[n])
+                if arity == 1:
+                    _set_numpy_ele_prop(silkobj, start+n, value[n], data)
+                else:
+                    _set_numpy_ele_range(silkobj, 0, len(value[n]), value[n], arity-1, data)
         else:
             p[start:end] = value
         ok = True
@@ -61,7 +66,7 @@ def _get_numpy_ele_prop(silkobj, prop, length=None):
         d = d[:length]
     value = d[prop]
     if silkobj._props[prop]["optional"]:
-        if not silkobj._data["HAS_" + prop]:
+        if not d["HAS_" + prop]:
             return None
 
     if value.dtype.kind == "S":
@@ -70,3 +75,39 @@ def _get_numpy_ele_prop(silkobj, prop, length=None):
         return str(value)
     else:
         return value
+
+def _filter_json(json, obj=None):
+    if getattr(obj, "_is_none", False):
+        return None
+    if isinstance(json, dict):
+        ret = {}
+        for k in json:
+            try:
+                sub_obj = getattr(obj, k)
+                if sub_obj is None:
+                    continue
+            except:
+                sub_obj = None
+            v = _filter_json(json[k], sub_obj)
+            if v is not None:
+                ret[k] = v
+        if not len(ret):
+            return None
+        return ret
+    elif isinstance(json, list):
+        ret = []
+        for knr,k in enumerate(json):
+            try:
+                sub_obj = obj[knr]
+                if sub_obj is None:
+                    continue
+            except:
+                sub_obj = None
+            v = _filter_json(k, sub_obj)
+            if v is not None:
+                ret.append(v)
+        if not len(ret):
+            return None
+        return ret
+    else:
+        return json
