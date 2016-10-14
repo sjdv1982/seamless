@@ -1,6 +1,5 @@
 from seamless.qt.QtWidgets import QSpinBox, QWidget, QVBoxLayout
 from seamless.qt.QtCore import Qt
-
 w = QWidget()
 w.setWindowFlags(Qt.WindowStaysOnTopHint)
 vbox = QVBoxLayout()

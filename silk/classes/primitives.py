@@ -36,27 +36,32 @@ class Integer(int, SilkObject):
     def _print(self, spaces):
         return str(self)
 
+
 class String(str, SilkStringLike):
     """Wrapper class around a Python string
     Numpy representation is an UTF-8-encoded 255-length byte string"""
     _dtype = '|S255'
-    def __new__(self, s):
-        if s is None:
+    def __new__(self, value):
+        if value is None:
             raise ValueError
-        if isinstance(s, String):
-            return str.__new__(self, s)
-        if isinstance(s, bytes):
-            return str.__new__(self, s.decode())
-        s = str(s)
-        if len(s) and s[0] == s[-1]:
-            if s[0] in ("'", '"'):
+
+        if isinstance(value, String):
+            return str.__new__(self, value)
+        if isinstance(value, bytes):
+            return str.__new__(self, value.decode())
+            value = str(value)
+        if len(value) and value[0] == value[-1]:
+            if value[0] in ("'", '"'):
                 try:
-                    astree = ast.parse(s)
-                    s = list(ast.iter_fields(astree))[0][1][0].value.s
+                    astree = ast.parse(value)
+                    value = list(ast.iter_fields(astree))[0][1][0].value.s
+
                 except:
                     pass
-        ret = str.__new__(self, s)
+
+        ret = str.__new__(self, value)
         ret._validate()
+
         return ret
 
     def _validate(self):
@@ -80,28 +85,24 @@ class Bool(int, SilkObject):
     Unlike bool, "True" is equivalent to True
     and "False" is equivalent to False"""
     _dtype = np.bool
-    def __new__(self, b):
-        if b == "True" or b == "\'True\'" or b == "\"True\"":
+
+    def __new__(self, value):
+        if value == "True" or value == "\'True\'" or value == "\"True\"":
             return int.__new__(self, True)
-        elif b == "False" or b == "\'False\'" or b == "\"False\"":
+
+        elif value == "False" or value == "\'False\'" or value == "\"False\"":
             return int.__new__(self, False)
+
         else:
-            return int.__new__(self, bool(b))
+            return int.__new__(self, bool(value))
 
     def __str__(self):
-        if self is False:
-            return "False"
-        else:
+        if self:
             return "True"
+        return "False"
 
     def json(self):
-        if self:
-            return True
-        else:
-            return False
-
-    def __eq__(self, other):
-        return bool(self) == other
+        return bool(self)
 
     def _print(self, spaces):
         return str(self)

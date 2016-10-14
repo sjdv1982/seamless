@@ -13,7 +13,7 @@ for name in _prim.__dict__:
         _primitives[name] = getattr(_prim, name)
 
 
-_typenames = {}
+_typenames = {} # TODO RENAME!!!
 _typenames.update(_primitives)
 _silk_types = _typenames.copy()
 

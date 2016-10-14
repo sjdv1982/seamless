@@ -1,12 +1,14 @@
 """Module containing the Cell class."""
 
-import traceback
-import inspect
 import ast
+from enum import Enum
+import inspect
+import traceback
 
 from .. import dtypes
 from .utils import find_return_in_scope
 from .process import Managed
+
 
 class Cell(Managed):
     """Default class for cells.
@@ -14,9 +16,7 @@ class Cell(Managed):
     Cells contain all the state in text form
     """
 
-    class StatusFlags:
-        UNINITIALISED, ERROR, OK = range(3)
-    StatusFlagNames = ["UNINITIALISED", "ERROR", "OK"]
+    StatusFlags = Enum('StatusFlags', 'UNINITIALISED ERROR OK')
 
     _dtype = None
     _data = None  # data, always in text format
@@ -33,7 +33,7 @@ class Cell(Managed):
 
     def __init__(self, dtype):
         """TODO: docstring."""
-        assert dtypes.check_registered(dtype)
+        assert dtypes.is_registered(dtype)
         self._dtype = dtype
         self._last_object = None
 
@@ -60,12 +60,14 @@ class Cell(Managed):
         # TODO: support for liquid (lset)
         if isinstance(text_or_object, (str, bytes)):
             self._text_set(text_or_object, trusted=False)
+
         else:
             self._object_set(text_or_object, trusted=False)
+
         return self
 
     def _text_set(self, data, trusted):
-        if self._status == self.__class__.StatusFlags.OK \
+        if self._status == self.StatusFlags.OK \
                 and (data == self._data or data == self._data_last):
             return False
         try:
@@ -80,18 +82,20 @@ class Cell(Managed):
         else:
             self._data_last = data
             self._data = data
-            self._status = self.__class__.StatusFlags.OK
+            self._status = self.StatusFlags.OK
 
             if not trusted and self._context is not None:
-                manager = self._get_manager()
+                manager = self.get_manager()
                 manager.update_from_code(self)
+
         return True
 
     def _object_set(self, object_, trusted):
-        if self._status == self.__class__.StatusFlags.OK \
+        if self._status == self.StatusFlags.OK \
                 and (object_ == self._last_object or
                      object_ == self._last_object2):
             return False
+
         print("_object_set", object_)
         try:
             """
@@ -112,12 +116,12 @@ class Cell(Managed):
             data = dtypes.serialize(self._dtype, object_)
             # Normally no error here...
             self._data = data
-            self._status = self.__class__.StatusFlags.OK
+            self._status = self.StatusFlags.OK
             self._last_object2 = self._last_object
             self._last_object = object_
 
             if not trusted and self._context is not None:
-                manager = self._get_manager()
+                manager = self.get_manager()
                 manager.update_from_code(self)
         return True
 
@@ -127,7 +131,7 @@ class Cell(Managed):
 
     def connect(self, target):
         """Connect the cell to a process's input pin."""
-        manager = self._get_manager()
+        manager = self.get_manager()
         manager.connect(self, target)
 
     @property
@@ -143,7 +147,7 @@ class Cell(Managed):
     @property
     def status(self):
         """The cell's current status."""
-        return self.StatusFlagNames[self._status]
+        return self._status
 
     @property
     def error_message(self):
@@ -177,6 +181,7 @@ class Cell(Managed):
         if error_message is not None:
             self._status = self.StatusFlags.ERROR
 
+
 class PythonCell(Cell):
     """
     A cell containing Python code.
@@ -194,8 +199,7 @@ class PythonCell(Cell):
             The code block contains no return statement
     """
 
-    class CodeTypes:
-        ANY, FUNCTION, BLOCK = range(3)
+    CodeTypes = Enum("CodeTypes", "ANY, FUNCTION, BLOCK")
 
     _dtype = ("text", "python")
 
@@ -205,6 +209,7 @@ class PythonCell(Cell):
     def _text_set(self, data, trusted):
         if data == self._data:
             return False
+
         try:
             """Check if the code is valid Python syntax"""
             ast_tree = compile(data, self._name, "exec", ast.PyCF_ONLY_AST)
@@ -217,41 +222,36 @@ class PythonCell(Cell):
                 self._set_error_state(traceback.format_exc())
 
         else:
-            is_function = (
-             len(ast_tree.body) == 1 and
-             isinstance(ast_tree.body[0], ast.FunctionDef)
-            )
+            is_function = len(ast_tree.body) == 1 and (ast_tree.body[0], ast.FunctionDef)
 
             # If this cell requires a function, but wasn't provided
-            #  with a def block
-            if not is_function and \
-                    self._required_code_type == self.CodeTypes.FUNCTION:
+            # with a def block
+            if not is_function and self._required_code_type == self.CodeTypes.FUNCTION:
                 # Look for return node in AST
                 try:
                     find_return_in_scope(ast_tree)
+
                 except ValueError:
-                    exception = SyntaxError(
-                     "Block must contain return statement(s)"
-                    )
+                    exception = SyntaxError("Block must contain return statement(s)")
 
                     if trusted:
-                        self._set_error_state("{}: {}".format(
-                         exception.__class__.__name__, exception.msg)
-                        )
+                        self._set_error_state("{}: {}".format(exception.__class__.__name__, exception.msg))
                         return
 
                     else:
                         raise exception
 
             self._data = data
+            self._code_type = self.CodeTypes.FUNCTION if is_function else self.CodeTypes.BLOCK
             self._code_type = self.CodeTypes.FUNCTION if is_function else \
                 self.CodeTypes.BLOCK
             self._set_error_state(None)
             self._status = self.StatusFlags.OK
 
             if not trusted and self._context is not None:
-                manager = self._get_manager()
+                manager = self.get_manager()
                 manager.update_from_code(self)
+
             return True
 
     def _object_set(self, object_, trusted):
@@ -275,34 +275,36 @@ class PythonCell(Cell):
             self._code_type = self.CodeTypes.FUNCTION
             oldcode = self._data
             self._data = code
-            self._status = self.__class__.StatusFlags.OK
+            self._status = self.StatusFlags.OK
 
             if not trusted and self._context is not None:
-                manager = self._get_manager()
+                manager = self.get_manager()
                 manager.update_from_code(self)
             return code != oldcode
 
     def _on_connect(self, pin, process, incoming):
-        exc1 = """Cannot connect to %s: process requires a code function
-        whereas other connected processes require a code block"""
-        exc2 = """Cannot connect to %s: process requires a code block
-        whereas other connected processes require a code function"""
+        exc1 = """Cannot connect to %s: process requires a code function whereas other connected processes """ \
+               """requires a code block"""
+        exc2 = """Cannot connect to %s: process requires a code block whereas other connected processes requires"""\
+               """a code function"""
 
         if not incoming:
             if self._required_code_type == self.CodeTypes.BLOCK and \
                     process._required_code_type == self.CodeTypes.FUNCTION:
                 raise Exception(exc1 % type(process))
+
             elif self._required_code_type == self.CodeTypes.FUNCTION and \
                     process._required_code_type == self.CodeTypes.BLOCK:
                 raise Exception(exc2 % type(process))
 
-        Cell._on_connect(self, pin, process, incoming)
+        super(PythonCell, self)._on_connect(pin, process, incoming)
         if not incoming:
             self._required_code_type = process._required_code_type
 
     def _on_disconnect(self, pin, process, incoming):
-        Cell._on_disconnect(self, pin, process, incoming)
-        if self._outgoing_connections == 0:
+        super(PythonCell, self)._on_disconnect(pin, process, incoming)
+
+        if not self._outgoing_connections:
             self._required_code_type = self.CodeTypes.ANY
 
 
@@ -317,12 +319,13 @@ def cell(dtype):
     if dtype in _handlers:
         cell_cls = _handlers[dtype]
 
-    newcell = cell_cls(dtype)
-    return newcell
+    new_cell = cell_cls(dtype)
+    return new_cell
 
 
 def pythoncell():
     """Factory function for a PythonCell object."""
     return cell(("text", "code", "python"))
+
 
 from .context import Context

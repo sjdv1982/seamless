@@ -1,3 +1,4 @@
+
 HHSUITE1 = "hhblits-local.sh" #or w.Invariant("hhblits-local.sh"); changing this shouldn't influence the result
 HHSUITE2 = "hhsearch-local.sh"
 BANKDIR1 = w.Variable("/home/sjoerd/uniprot20") #changing this DOES change the result

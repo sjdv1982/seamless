@@ -1,5 +1,6 @@
-#STUB
-def macro(*args):
-    if len(args) == 1 and callable(args[0]):
-        return args[0]
-    return macro ###
+# TODO: This is a stub
+def macro(first_arg, *remaining_args):
+    if not remaining_args and callable(first_arg):
+        return first_arg
+
+    return macro

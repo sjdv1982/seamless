@@ -72,8 +72,9 @@ Defining _codeblock_deps also changes the codeblock checkpoints from a
 linear stack to a dependency tree of sub-checkpoints that are merged.
 """
   },
-  doc = "Transformer parameters"
+  doc="Transformer parameters"
 )
+
 
 class Editor(Process):
     """
@@ -82,82 +83,40 @@ class Editor(Process):
     _required_code_type = PythonCell.CodeTypes.ANY
 
     def __init__(self, editor_params):
+        code_input_names = "code_start", "code_update", "code_stop"
+        mandatory_params = dict((name, {"pin": "input", "dtype": ("text", "code", "python")})
+                                for name in code_input_names)
+        all_params = editor_params.copy()
+        all_params.update(mandatory_params)
+
+        super().__init__(all_params)
+
         self.state = {}
-        self.output_names = []
-        self.code_start = InputPin(self, "code_start", ("text", "code", "python"))
-        self.code_update = InputPin(self, "code_update", ("text", "code", "python"))
-        self.code_stop = InputPin(self, "code_stop", ("text", "code", "python"))
-        kernel_inputs = {}
-        self._io_attrs = ["code_start", "code_update", "code_stop"]
-        self._pins = {
-                        "code_start": self.code_start,
-                        "code_update": self.code_update,
-                        "code_stop": self.code_stop,
-                     }
-        for p in editor_params:
-            param = editor_params[p]
-            if param["pin"] == "input":
-                pin = InputPin(self, p, param["dtype"])
-                kernel_inputs[p] = param["dtype"]
-            elif param["pin"] == "output":
-                pin = EditorOutputPin(self, p, param["dtype"])
-                self.output_names.append(p)
-            self._io_attrs.append(p)
-            self._pins[p] = pin
 
+        kernel_inputs = {name: param['dtype'] for name, param in editor_params.items() if param["pin"] == "input"}
+        self.editor = KernelEditor(self, kernel_inputs, self.output_names)
 
-        self.editor = KernelEditor(
-            self,
-            kernel_inputs,
-            self.output_names,
-        )
+    def _create_output_pin(self, name, dtype):
+        return EditorOutputPin(self, name, dtype)
 
     def output_update(self, name, value):
-        self._pins[name].update(value)
-
-    def __getattr__(self, attr):
-        if attr not in self._pins:
-            raise AttributeError(attr)
-        else:
-            return self._pins[attr]
-
-    def set_context(self, context):
-        Process.set_context(self, context)
-        for p in self._pins:
-            self._pins[p].set_context(context)
-        return self
+        self._name_to_pin[name].update(value)
 
     def receive_update(self, input_pin, value):
         f = self.editor.process_input
         work = partial(f, input_pin, value)
         seamless.add_work(work)
 
-
-
     def destroy(self):
         self._code_stop()
 
-        # free all input and output pins
-        for attr in self._io_attrs:
-            value = getattr(self, attr)
-            if value is None:
-                continue
+        super(Editor, self).destroy()
 
-            setattr(self, attr, None)
-            del value
-
-    def __del__(self):
-        try:
-            self.destroy()
-
-        except Exception as err:
-            print(err)
-            pass
 
 # @macro takes nothing, a type, or a dict of types
 @macro(("json", "seamless", "transformerparams"))
 def editor(kwargs):
-    #TODO: remapping, e.g. output_finish, destroy, ...
+    # TODO: remapping, e.g. output_finish, destroy, ...
     return Editor(kwargs)
 
 from .context import Context

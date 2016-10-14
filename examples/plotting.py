@@ -1,4 +1,5 @@
-from seamless.cell import transformer, pythoncell, macro, context
+from seamless.core import transformer, pythoncell, macro, composite
+
 
 @macro("__main__.plotter")
 def plotter(arraynames,plotformat="svg"):
@@ -52,8 +53,8 @@ return f
     ret.declare_pins(t) #declare all unconnected pins of t as pins of ret
     return ret
 
-if __name__ == "__main__":
 
+if __name__ == "__main__":
     import numpy as np
     t = np.arange(0.0, 2.0, 0.01)
     s = np.sin(2*np.pi*t)
@@ -70,11 +71,11 @@ plt.grid(True)
     from seamless.cell import cell, pythoncell, buffercell
     from seamless.gui import svg_renderer
 
-    c_t = buffercell(value = t)
-    c_s = buffercell(value = s)
-    c_plotcode = pythoncell(value = plotcode)
+    c_t = buffercell(value=t)
+    c_s = buffercell(value=s)
+    c_plotcode = pythoncell(value=plotcode)
 
-    my_plotter = plotter(arraynames = ["t", "s"])
+    my_plotter = plotter(arraynames=["t", "s"])
     c_t.connect(my_plotter.t)
     c_s.connect(my_plotter.s)
     c_plotcode.connect(my_plotter.code)
