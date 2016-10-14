@@ -57,6 +57,7 @@ Type Coordinate {
       return self * (1/a)
   def size(self):
       """The scalar length of the Coordinate"""
+      from math import sqrt
       return sqrt(self.x**2+self.y**2+self.z**2)
   def normalize(self):
       """Re-scale the Coordinate length to 1

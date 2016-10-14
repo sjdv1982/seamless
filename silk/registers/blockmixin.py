@@ -56,8 +56,6 @@ def validation_mixin(silkclassname, validation_blocks, error_blocks, properties,
             for e in eblock:
                 code = strip(e["code"])
                 message = strip(e["message"])
-                print("MESSAGE", message, "/message")
-                print("CODE", code, "/code")
                 eblocks.append((code,message))
 
     myclassname = silkclassname + "_validation_mixin"
@@ -80,7 +78,7 @@ def validation_mixin(silkclassname, validation_blocks, error_blocks, properties,
         print(validation_code)
     code_obj = cached_compile(validation_code, myclassname)
     exec(code_obj, namespace)
-    ret = type(myclassname, (), namespace)
+    ret = type(myclassname, (), {"__slots__":[]})
     namespace[myclassname] = ret
     return ret
 
@@ -92,13 +90,20 @@ def method_mixin(silkclassname, method_blocks, namespace):
         lines = block.split("\n")
         method_class_name = "_%s_method_block_%s" % (silkclassname, blocknr+1)
         method_lines.append("class %s:" % method_class_name)
+        space = "    "
+        for l in lines:
+            if len(l.strip()):
+                space = "    " + (len(l)-len(l.lstrip())) * " "
+                break
+        method_lines.append("%s__slots__ = []" % space)
         for l in lines:
             method_lines.append("    " + l)
         method_class_names.append(method_class_name)
     method_code = "\n".join(method_lines)
+    print(method_code[:200])
     code_obj = cached_compile(method_code, myclassname)
     exec(code_obj, namespace)
     method_classes = [namespace[v] for v in method_class_names]
-    ret = type(myclassname, tuple(method_classes), namespace)
+    ret = type(myclassname, tuple(method_classes), {"__slots__":[]})
     namespace[myclassname] = ret
     return ret

@@ -10,10 +10,10 @@ Type HaddockResidueList:IntegerArray {
   def _parse(self, s):
       return silk.parse(s, IntegerArray)
   def __repr__(self, *args, **kargs):
-      return "'" + self.__str__(*args, **kargs) + "'"
+      return '"' + self.__str__(*args, **kargs) + '"'
   def __str__(self, *args, **kargs):
       return ",".join([str(v) for v in self])
-  def __print__(self, *args, **kargs):
+  def _print(self, *args, **kargs):
       return self.__repr__(*args,**kargs)
   def __eq__(self, other):
       if isinstance(other, str):

@@ -1,0 +1,7 @@
+{
+	"properties": {
+		"test": "TestArray"
+	},
+	"required": ["test"],
+	"order": ["test"]
+}

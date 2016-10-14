@@ -1,4 +1,5 @@
 {
+	"type": "Test",
 	"properties": {
 		"x": {
 			"properties": {
@@ -15,7 +16,7 @@
 			"order": ["c", "d"]
 		},
 		"z": "String",
-		"q": "Coordinate",
+		"q": "CoordinateArray",
 		"ax": "AxisSystem"
 	},
 	"required": ["x", "y", "q"],
