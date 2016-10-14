@@ -86,11 +86,11 @@ def register_minischema(minischema):
             else:
                 prop["elementary"] = False
                 if ptype.endswith("Array"):
+                    arity = 0
+                    while ptype.endswith("Array"):
+                        arity += 1
+                        ptype = ptype[:-len("Array")]
                     if "maxshape" in prop:
-                        arity = 0
-                        while ptype.endswith("Array"):
-                            arity += 1
-                            ptype = ptype[:-len("Array")]
                         if arity == 1:
                             maxshape = int(prop["maxshape"])
                         else:
@@ -100,14 +100,21 @@ def register_minischema(minischema):
                         subschema = _minischemas[ptype]
                         pdtype = subschema["dtype"]
                         dtype.append((pname, pdtype, maxshape))
-                        length_shape = np.array(maxshape).shape
-                        dtype.append(("LEN_"+pname, int, length_shape))
-                        standard_dtype = False
                     else:
                         prop["var_array"] = True
                         dtype.append((pname, np.object))
                         dtype.append(("PTR_"+pname, np.uintp))
-                        standard_dtype = False
+                    if arity == 1:
+                        dtype.append(("LEN_"+pname, np.uint16, (1,)))
+                    else:
+                        if "maxshape" in prop:
+                            dtype.append((
+                                "LEN_"+pname, np.bool, maxshape
+                            ))
+                        else:
+                            dtype.append(("LEN_"+pname, np.object))
+                            dtype.append(("PTR_LEN_"+pname, np.uintp))
+                    standard_dtype = False
                 else:
                     subschema = _minischemas[ptype]
                     pdtype = subschema["dtype"]

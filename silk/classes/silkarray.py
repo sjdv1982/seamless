@@ -3,12 +3,12 @@ from collections import OrderedDict
 import weakref
 import copy
 import collections
+from .helpers import _get_lenarray_full, _get_lenarray_empty, _get_lenarray_size, _lenarray_copypad
 
 from . import SilkObject, SilkStringLike
 from .helpers import _prop_setter_any, _prop_setter_json, \
     _set_numpy_ele_prop, _set_numpy_ele_range, _get_numpy_ele_prop, \
-    _filter_json
-
+    _filter_json, datacopy
 
 class _ArrayConstructContext:
     def __init__(self, arr):
@@ -69,7 +69,7 @@ class SilkArray(SilkObject):
     _arity = None
     __slots__ = [
         "_parent", "_storage_enum", "_storage_nonjson_children",
-        "_data", "_children", "_len", "_is_none", "__weakref__"
+        "_data", "_children", "_Len", "_is_none", "__weakref__"
     ]
 
     def __init__(self, *args, _mode="any", **kwargs):
@@ -80,15 +80,21 @@ class SilkArray(SilkObject):
                 kwargs["parent"],
                 kwargs["storage"],
                 kwargs["data_store"],
+                kwargs["len_data_store"],
+                rebind=False
             )
         elif _mode == "ref":
             self._init(
                 None,
                 kwargs["storage"],
                 kwargs["data_store"],
+                kwargs["len_data_store"],
+                rebind=False
             )
+            for child in self._children:
+                child._fix_numpy_ref()
         else:
-            self._init(None, "json", None)
+            self._init(None, "json", None, None, rebind=False)
             if _mode == "any":
                 self.set(*args)
             elif _mode == "empty":
@@ -98,28 +104,19 @@ class SilkArray(SilkObject):
             else:
                 raise ValueError(_mode)
 
-    def _numpy_bind(self, data_store):
-        self.storage = "numpy"
-        assert data_store.dtype == np.dtype(self._dtype, align=True)
-        assert len(data_store.shape) == self._arity
-        self._data = data_store
-        for childnr, child in enumerate(self._children):
-            child._numpy_bind(data_store[childnr])
-        parent = self._parent()
-        if parent is not None:
-            if parent.storage != "numpy":
-                parent._add_nonjson_child(self)
-            else:
-                myname = parent._find_child(id(self))
-                if not isinstance(parent, SilkArray) and \
-                  parent._props[myname].get("var_array", False):
-                    parent._data[myname] = self._data
-                    parent._data["PTR_"+myname] = self._data.ctypes.data
+    @property
+    def _len(self):
+        return int(self._Len[0])
 
+    @_len.setter
+    def _len(self, value):
+        self._Len[0] = value
 
-    def _init(self, parent, storage, data_store):
-        self._len = 0
-        self._storage_nonjson_children.clear()
+    def _fix_numpy_ref(self):
+        for child in self._children:
+            child._fix_numpy_ref()
+
+    def _init(self, parent, storage, data_store, len_data_store, rebind):
         if parent is not None:
             self._parent = weakref.ref(parent)
         else:
@@ -131,36 +128,43 @@ class SilkArray(SilkObject):
         elif storage == "numpy":
             self.storage = "numpy"
             assert data_store is not None
+            assert len_data_store is not None
+            assert len(len_data_store), len_data_store
             dtype = np.dtype(self._dtype, align=True)
             assert data_store.dtype == dtype
             self._data = data_store
-            # data does NOT define the length of the array,
-            #  only the maximum length!!
-            # this has to be done later with a _set_lengths call
-            self._len = 0
-            self._children = []
+            self._Len = len_data_store
+            if not rebind:
+                self._construct_numpy_children()
+            else:
+                for childnr, child in enumerate(self._children):
+                    child._data = self._data[childnr]
+                    if self._arity > 1:
+                        child._Len = self._get_child_lengths(childnr)
             return
         else:
             raise ValueError(storage)
 
+        assert self.storage == "json"
+        assert not rebind
         self._data = data_store
         self._children = []
+        self._Len = [0]
+        self._storage_nonjson_children.clear()
         self._is_none = False
         for n in range(len(self._data)):
-            if self.storage == "json":
-                if n > len(data_store):
-                    if issubclass(self._element, SilkArray):
-                        self._data.append([])
-                    else:
-                        self._data.append({})
-            else:
-                raise ValueError(self.storage)
+            if n > len(data_store):
+                if issubclass(self._element, SilkArray):
+                    self._data.append([])
+                else:
+                    self._data.append({})
             if not self._elementary:
                 child = self._element(
                   _mode="parent",
                   storage=self.storage,
                   parent=self,
-                  data_store=self._data[n]
+                  data_store=self._data[n],
+                  len_data_store=None,
                 )
                 self._children.append(child)
         self._len = len(self._data)
@@ -170,42 +174,56 @@ class SilkArray(SilkObject):
         cls = type(self)
         if storage == "json":
             json = self.json()
-            return cls.from_json(json, copy=False)
+            return cls.from_json(json)
         elif storage == "numpy":
-            numpydata = self.numpy()
-            return cls.from_numpy(numpydata, copy=False, copy_len=self)
+            numpydata, lengths = self.numpy()
+            return cls.from_numpy(numpydata, lengths, copy=False)
         else:
             raise ValueError(storage)
 
     @classmethod
-    def from_json(cls, data, copy=True):
-        if not copy:
-            return cls(_mode="ref", storage="json", data_store=data)
-        else:
-            data = _filter_json(data)
-            return cls(data, _mode="from_json")
+    def from_json(cls, data):
+        data = _filter_json(data)
+        return cls(data, _mode="from_json")
 
     @classmethod
-    def from_numpy(cls, arr, copy=True, lengths=None, validate=True):
+    def _check_numpy_args(cls, arr, lengths, length_can_be_none, self_data):
+        if self_data is not None:
+            d = self_data
+            if len(arr.shape) != len(d.shape) or arr.dtype != d.dtype:
+                err = TypeError((len(arr.shape), len(d.shape), arr.dtype, d.dtype))
+                raise err
+        if len(arr.shape) != cls._arity:
+            raise TypeError("Array must be %d-dimensional" % cls._arity)
+        if arr.dtype != np.dtype(cls._dtype,align=True):
+            raise TypeError("Array has the wrong dtype")
+        if lengths is None and length_can_be_none:
+            return
+        assert lengths.dtype == np.uint16
+        lenarray_shape = (_get_lenarray_size(arr.shape),)
+        if lengths.shape != lenarray_shape:
+            err = TypeError((lengths.shape, lenarray_shape, arr.shape))
+            raise err
+
+    @classmethod
+    def from_numpy(cls, arr, lengths=None, *, copy=True, validate=True):
         """Constructs from a numpy array "arr"
         "lengths": The lengths of the array elements
-          If specified, "lengths" must either be a SilkArray of type "cls",
-            or a nested tuple returned by a SilkArray._get_lengths() call
           If not specified, it is assumed that "arr" is unpadded,
             i.e. that all elements have a valid value
         """
-        if len(arr.shape) != self._arity:
-            raise TypeError("arr must be %d-dimensional" % self._arity)
-        if arr.dtype != self._dtype:
-            raise TypeError("arr has the wrong dtype")
+        if isinstance(arr, tuple) and len(arr) == 2 and \
+          isinstance(arr[0], np.ndarray) and isinstance(arr[1], np.ndarray):
+            return cls.from_numpy(arr[0], arr[1],
+                copy=copy, validate=validate
+            )
+        cls._check_numpy_args(arr, lengths, length_can_be_none=True, self_data=None)
 
         if copy:
-            arr = arr.copy()
-        ret = cls(_mode="ref", storage="numpy", data_store=arr)
+            arr = datacopy(arr)
         if lengths is None:
-            ret._set_lengths_from_data()
-        else:
-            ret._set_lengths(lengths)
+            lengths = _get_lenarray_full(arr.shape)
+        ret = cls(_mode="ref", storage="numpy", data_store=arr,len_data_store=lengths)
         if validate:
             ret.validate()
         return ret
@@ -220,36 +238,48 @@ class SilkArray(SilkObject):
             if args[0] is None:
                 self._is_none = True
                 self._len = 0
-                if self.storage == "numpy":
-                    self._data[:] = np.zeros_like(self._data)
+                self._clear_data()
                 return
         # TODO: make a nice composite exception that stores all exceptions
         try:
             if self.storage == "numpy" and \
               len(args) == 1 and len(kwargs) == 0 and \
               isinstance(args[0], np.ndarray):
-                self._construct_from_numpy(args[0])
+                self._construct_from_numpy(args[0],lengths=None)
             else:
                 raise TypeError("Not a numpy array")
         except:
             try:
+                keep_trying = True
+                ok = False
                 if len(args) == 1:
                     a = args[0]
                     if isinstance(a, str):
                         self._parse(a)
                     elif isinstance(a, SilkArray):
-                        self._construct(prop_setter, *a._data)
+                        if a.storage == "numpy":
+                            if isinstance(a, type(self)):
+                                keep_trying = False
+                                self._construct_from_numpy(a._data, a._Len)
+                            else:
+                                self._construct(prop_setter, a.json(), prop_setter=_prop_setter_json)
+                        else:
+                            self._construct(prop_setter, *a)
                     elif isinstance(a, collections.Iterable) or isinstance(a, np.void):
                         self._construct(prop_setter, *a)
                     else:
                         raise TypeError(a)
                 else:
-                    raise TypeError(a)
+                    raise TypeError(args)
+                ok = True
             except:
-                try:
-                    self._construct(prop_setter, *args)
-                except:
-                    raise
+                if not ok:
+                    if not keep_trying:
+                        raise
+                    try:
+                        self._construct(prop_setter, *args)
+                    except:
+                        raise
         self.validate()
         self._is_none = False
 
@@ -261,7 +291,7 @@ class SilkArray(SilkObject):
             return None
 
         if self.storage == "json":
-            return copy.deepcopy(self._data)
+            return _filter_json(self._data)
 
         if self._elementary:
             return [dd for dd in self._data]
@@ -282,7 +312,7 @@ class SilkArray(SilkObject):
         """
         cls = type(self)
         if self.storage == "numpy":
-            return self._data.copy()
+            return datacopy(self._data), self._Len.copy()
         new_obj = self.copy("json")
         return new_obj.make_numpy()
 
@@ -294,7 +324,7 @@ class SilkArray(SilkObject):
             parent = self._parent()
             if parent is not None and parent.storage == "numpy":
                 parent.numpy_shatter()
-            self._init(parent, "json", None)
+            self._init(parent, "json", None, None, rebind=False)
             self.set(json, prop_setter=_prop_setter_json)
             if parent is not None:
                 parent._remove_nonjson_child(self)
@@ -302,9 +332,15 @@ class SilkArray(SilkObject):
                 parent._data[myname] = self._data
             return self._data
         elif self.storage == "mixed":
-            for child in list(self._storage_nonjson_children):  # copy!
-                child.make_json()
+            for child_id in list(self._storage_nonjson_children):  # copy!
+                for child in self._children:
+                    if id(child) == child_id:
+                        child.make_json()
+                        break
+                else:
+                    raise Exception("Cannot find child that was marked as 'non-JSON'")
             # Above will automatically update storage status to "json"
+            assert self.storage == "json"
             return self._data
 
     def _get_outer_shape(self):
@@ -320,35 +356,126 @@ class SilkArray(SilkObject):
             d = d2
         return shape
 
-    def make_numpy(self):
+    def _get_child_lengths(self, child):
+        if self.storage != "numpy":
+            return None
+        if self._arity == 1:
+            return None
+        child_size = _get_lenarray_size(self._data.shape[1:])
+        start = 1 + child_size * child
+        assert start+child_size <= len(self._Len)
+        return self._Len[start:start+child_size]
+
+    def _del_child_lengths(self, child):
+        if self.storage != "numpy":
+            return
+        if self._arity == 1:
+            return
+        size = _get_lenarray_size(self._data.shape[1:])
+        offset = 1 + size * child
+        lsize = len(self._Len)
+        self._Len[offset:lsize-size] = self._Len[offset+size:lsize]
+        self._Len[lsize-size:] = 0
+        for n in range(child+1, len(self._children)):
+            c_offset = 1 + size * n
+            c = self._children[n]
+            c._Len = self._Len[c_offset:c_offset+size]
+
+    def _insert_child_lengths(self, child, child_lengths):
+        if self.storage != "numpy":
+            assert child_lengths is None
+            return
+        if self._arity == 1:
+            assert child_lengths is None
+            return
+        assert child_lengths is not None
+        size = _get_lenarray_size(self._data.shape[1:])
+        offset = 1 + size * child
+        lsize = len(self._Len)
+        self._Len[offset+size:lsize] = self._Len[offset:lsize-size]
+        self._Len[offset:offset+size] = child_lengths
+        for n in range(child, len(self._children)):
+            c_offset = 1 + size * (n+1)
+            c = self._children[n]
+            c._Len = self._Len[c_offset:c_offset+size]
+
+    def _restore_array_coupling(self):
+        """
+        Array members have their length vector stored in the parent data
+        In addition, var_arrays have a pointer to their data stored
+        If the parent data gets reallocated or copied, then
+         this information gets decoupled, so it must be restored
+        """
+        for child in self._children:
+            child._restore_array_coupling()
+
+        parent = self._parent()
+        if parent is None:
+            return
+        if parent.storage != "numpy":
+            return
+        myname = parent._find_child(id(self))
+        if not isinstance(parent, SilkArray) and \
+          parent._props[myname].get("var_array", False):
+            if not hasattr(parent, "_data"):
+                return
+            parent._data[myname] = self._data
+            parent._data["PTR_"+myname] = self._data.ctypes.data
+            parent._data["LEN_"+myname] = self._Len.copy()
+            self._Len = parent._data["LEN_"+myname]
+            if self._arity > 1:
+                parent._data["PTR_LEN_"+myname] = self._Len.ctypes.data
+
+
+    def make_numpy(self,_toplevel=True):
         """Sets the internal storage to 'numpy'
-        Returns the numpy array that is used as internal storage buffer
-        NOTE: for all numpy arrays,
-          the entire storage buffer is returned,
-          including (zeroed) elements if the data is not present!
-          the length/shape of each array is not stored, and must be obtained
-           from the original SilkArray object
+        Returns the numpy array that is used as internal storage buffer,
+         and the length array that contains all lengths
         """
         if self.storage == "numpy":
-            return self._data
+            return self._data, self._Len
         dtype = np.dtype(self._dtype, align=True)
         shape = self._get_outer_shape()
         data = np.zeros(dtype=dtype, shape=shape)
+        lengths = _get_lenarray_empty(shape)
+        lengths[0] = len(self)
         if self._elementary:
             self._set_numpy_ele_range(self, 0, len(self._data), self._data, self._arity, data)
         else:
             for childnr, child in enumerate(self._children):
-                child.make_numpy()
-                try:
-                    data[childnr] = child._data
-                except ValueError: #numpy bug
-                    for field in child._data.dtype.names:
-                        data[childnr][field] = child._data[field]
-        self._numpy_bind(data)
-        return data
+                child.make_numpy(_toplevel=False)
+                if self._arity > 1:
+                    slices = [slice(0,v) for v in child._data.shape]
+                    data[childnr][slices] = child._data
+                else:
+                    try:
+                        data[childnr] = child._data
+                    except ValueError: #numpy bug
+                        for field in child._data.dtype.names:
+                            data[childnr][field] = child._data[field]
+                if self._arity > 1:
+                    child_size = _get_lenarray_size(shape[1:])
+                    start = 1 + child_size * childnr
+                    arr1 = lengths[start:start+child_size]
+                    shape1 = data.shape[1:]
+                    arr2 = child._Len
+                    shape2 = child._data.shape
+                    _lenarray_copypad(arr1, shape1, arr2, shape2)
+
+        self._init(self._parent(), "numpy", data, lengths, rebind=True)
+        parent = self._parent()
+        if parent is not None:
+            if parent.storage != "numpy":
+                parent._add_nonjson_child(self)
+        if _toplevel:
+            self._restore_array_coupling()
+
+        return data, lengths
 
     def realloc(self, *shape):
         assert self.storage == "numpy"
+        if len(shape) == 1 and isinstance(shape[0], tuple):
+            shape = shape[0]
         parent = self._parent()
         if parent is not None:
             myname = parent._find_child(id(self))
@@ -366,14 +493,14 @@ reallocation")
             if min_shape[n] > shape[n]:
                 raise ValueError(msg % (n+1, min_shape[n], shape[n]))
         old_data = self._data
+        old_len = self._Len
         self._data = np.zeros(dtype=self._dtype, shape=shape)
         slices = [slice(0,s) for s in min_shape]
         self._data[slices] = old_data
-        if parent is not None:
-            parent._data[myname] = self._data
-            if parent._props[myname]["var_array"]:
-                parent._data["PTR_"+myname] = self._data.ctypes.data
-
+        self._Len = _get_lenarray_empty(shape)
+        _lenarray_copypad(self._Len, shape, old_len, old_data.shape)
+        self._init(parent, "numpy", self._data, self._Len, rebind=True)
+        self._restore_array_coupling()
 
     def _find_child(self, child_id):
         for childname, ch in enumerate(self._children):
@@ -417,70 +544,13 @@ reallocation")
             parent.numpy_shatter()
         data = []
         for child in self._children:
-            d = child._data.copy()
+            d = datacopy(child._data)
             data.append(d)
             child._data = d
         self._data = data
         self._storage_nonjson_children = set([p for p in range(len(self._children))])
         self.storage = "mixed"
 
-    def _get_lengths(self):
-        if self._elementary:
-            return "*" * self._len
-        else:
-            ret = []
-            for child in self._children:
-                child_lengths = child._get_lengths()
-                ret.append(child_lengths)
-            return ret
-
-    def _set_lengths_from_data(self):
-        assert self.storage == "numpy"
-        if len(self._children) > 0:
-            raise ValueError("_children already defined")
-        self._len = len(self._data)
-        if not self._elementary:
-            for n in range(self._len):
-                child = self._element(
-                  _mode="parent",
-                  storage="numpy",
-                  parent=self,
-                  data_store=self._data[n]
-                )
-                child._set_lengths_from_data()
-                self._children.append(child)
-
-    def _set_lengths(self, lengths):
-        assert self.storage == "numpy"
-        if len(self._children) > 0:
-            raise ValueError("_children already defined")
-        if self._elementary:
-            if not isinstance(lengths, int):
-                msg = "'%s' requires int for length, found '%s'"
-                raise TypeError(msg % (type(self), type(length)))
-            assert lengths <= len(self._data)
-            self._data[lengths:] = np.zeros_like(self._data[lengths:])
-            self._len = lengths
-        else:
-            if not isinstance(lengths, collections.Iterable):
-                msg = "'%s' requires list for length, found '%s'"
-                raise TypeError(msg % (type(self), type(length)))
-            assert len(lengths) <= len(self._data)
-            l = len(lengths)
-            self._len = l
-            self._data[l:] = np.zeros_like(self._data[l:])
-            for n in range(self._len):
-                child_lengths = lengths[n]
-                child = self._element(
-                  _mode="parent",
-                  storage="numpy",
-                  parent=self,
-                  data_store=self._data[n]
-                )
-                assert child.storage == "numpy"
-                if child_lengths is not None:
-                    child._set_lengths(child_lengths)
-                self._children.append(child)
 
     def _construct(self, prop_setter, *args):
         old_data = self._data
@@ -495,8 +565,18 @@ reallocation")
                     _set_numpy_ele_range(self, 0, len(args), args, self._arity)
                 else:
                     for anr, a in enumerate(args):
-                        self._children[anr].set(args[anr],
-                                                prop_setter=prop_setter)
+                        if anr == len(self._children):
+                            child = self._element(
+                              _mode="parent",
+                              parent=self,
+                              storage="numpy",
+                              data_store=self._data[anr],
+                              len_data_store=self._get_child_lengths(anr),
+                            )
+                            self._children.append(child)
+                        else:
+                            child = self._children[anr]
+                        child.set(args[anr],prop_setter=prop_setter)
             else:
                 if self._elementary:
                     newdata = []
@@ -514,7 +594,8 @@ reallocation")
                           _mode="parent",
                           storage=self.storage,
                           parent=self,
-                          data_store=self._data[n]
+                          data_store=self._data[n],
+                          len_data_store=self._get_child_lengths(n)
                         )
                         self._children.append(child)
 
@@ -532,29 +613,48 @@ reallocation")
 
         self._len = len(args)
 
-    def _construct_from_numpy(self, arr):
+    def _construct_numpy_children(self):
+        assert self.storage == "numpy"
+        assert len(self._Len)
+        self._children = []
+        if self._elementary:
+            return
+        for n in range(self._len):
+            child = self._element(
+              _mode="parent",
+              storage="numpy",
+              parent=self,
+              data_store=self._data[n],
+              len_data_store=self._get_child_lengths(n)
+            )
+            self._children.append(child)
+        self._fix_numpy_ref()
+
+    def _construct_from_numpy(self, arr, lengths):
+        if self.storage != "numpy":
+            self._init(self._parent(), "numpy", arr, lengths, rebind=False)
+            self._fix_numpy_ref()
+            self.make_json()
+            return
+
         d = self._data
-        if len(arr.shape) != len(d.shape) or arr.dtype != d.dtype:
-            err = TypeError((len(arr.shape), len(d.shape), arr.dtype, d.dtype))
-            raise err
+        l = self._Len
         c = self._children
+        self._check_numpy_args(arr, lengths, self_data=self._data, length_can_be_none=False)
+        if lengths is None:
+            lengths = _get_lenarray_full(arr.shape)
+
         ok = False
         try:
-            self._data = arr.copy()
+            self._data = datacopy(arr)
+            self._Len = lengths.copy()
             self._children = []
-            for n in range(len(arr)):
-                child = self._element(
-                  _mode="parent",
-                  storage="numpy",
-                  parent=self,
-                  data_store=self._data[n]
-                )
-                self._children.append(child)
-            self._len = len(arr)
+            self._construct_numpy_children()
             ok = True
         finally:
             if not ok:
                 self._data = d
+                self._Len = l
                 self._children = c
 
     def _parse(self, s):
@@ -575,9 +675,11 @@ reallocation")
         if attr.startswith("_") or attr == "storage":
             object.__setattr__(self, attr, value)
         else:
-            raise AttributeError
+            raise AttributeError(attr)
 
     def __getitem__(self, item):
+        if isinstance(item, slice):
+            return type(self)([self[v] for v in range(*item.indices(len(self)))])
         if not isinstance(item, int):
             msg = "{0} indices must be integers or slices, not {1}"
             raise TypeError(msg.format(self.__class__.__name__,
@@ -590,7 +692,7 @@ reallocation")
         else:
             return self._children[:self._len][item]
 
-    def _set_prop(self, item, value, prop_setter=None):
+    def _set_prop(self, item, value, prop_setter=_prop_setter_any):
         if self._elementary:
             if self.storage == "numpy":
                 _set_numpy_ele_prop(self, item, value)
@@ -626,26 +728,14 @@ a sequence of length %d"
         if isinstance(item, slice):
             start, stop, stride = item.indices(self._len)
             indices = list(range(start, stop, stride))
-            for n in indices:
-                self.__delitem__(n)
+            for n in reversed(indices):
+                self.pop(n)
             return
         if not isinstance(item, int):
             msg = "{0} indices must be integers or slices, not {1}"
             raise TypeError(msg.format(self.__class__.__name__,
                                        item.__class__.__name__))
-        if self.storage == "numpy":
-            self._data[item:self._len-1] = self._data[item+1:self._len]
-            self._data[self._len-1] = np.zeros_like(self._data[self._len-1])
-            if not self._elementary:
-                self._children.pop(-1)
-        elif self._elementary:
-            self._data[:self._len][item]
-            self._data.__delitem__(item)
-        else:
-            self._children[:self._len][item]
-            self._children.__delitem__(item)
-            self._data.__delitem__(item)
-            self._len -= 1
+        self.pop(item)
 
     def pop(self, index=-1):
         if not isinstance(index, int):
@@ -657,13 +747,16 @@ a sequence of length %d"
         if index < 0:
             raise IndexError
         if self.storage == "numpy":
-            ret_data = self._data[:self._len][index].copy()
+            ret_data = datacopy(self._data[index])
+            ret_lengths = None
+            if self._arity > 1:
+                ret_lengths = _get_lenarray_empty(ret_data.shape)
             ret = self._element(
                     _mode="ref",
                     storage="numpy",
-                    data_store=ret_data
+                    data_store=ret_data,
+                    len_data_store=ret_lengths,
                 )
-            ret.set(self[index])
             self._data[index:self._len-1] = self._data[index+1:self._len]
             try:
                 self._data[self._len-1] = np.zeros_like(self._data[self._len-1])
@@ -672,11 +765,12 @@ a sequence of length %d"
                     self._data[self._len-1][field] = np.zeros_like(self._data[self._len-1][field])
             if not self._elementary:
                 self._children.pop(index)
+            self._del_child_lengths(index)
         elif self._elementary:
             ret = self._data[:self._len][index]
             self._data.__delitem__(index)
         else:
-            ret = self._children[:self._len][index]
+            ret = self._children[:self._len][index].copy()
             self._children.__delitem__(index)
             self._data.__delitem__(index)
         self._len -= 1
@@ -688,7 +782,7 @@ a sequence of length %d"
         else:
             return self._children[:self._len].__iter__(*args, **kwargs)
 
-    def __len__(self):
+    def _Len__(self):
         return self._len
 
     def _print(self, spaces):
@@ -720,21 +814,7 @@ a sequence of length %d"
         self.set([])
 
     def append(self, item):
-        if self.storage == "numpy":
-            if self._len >= len(self._data):
-                raise IndexError("Numpy array overflows allocated space")
-        with _ArrayInsertContext(self, self._len):
-            if self._elementary:
-                self._data[self._len] = item
-            else:
-                child = self._element(
-                  _mode="parent",
-                  storage=self.storage,
-                  parent=self,
-                  data_store=self._data[self._len]
-                )
-                child.set(item)
-                self._children.append(child)
+        self.insert(self._len, item)
 
     def insert(self, index, item):
         if not isinstance(index, int):
@@ -749,23 +829,28 @@ a sequence of length %d"
             if self._len >= len(self._data):
                 raise IndexError("Numpy array overflows allocated space")
             if not self._elementary:
-                backup_data = self._data[0].copy()
-                child = self._element(
-                  _mode="parent",
-                  storage=self.storage,
-                  parent=self,
-                  data_store=self._data[0],
-                )
-                child.set(item)
-                child_data = self._data[0].copy()
+                child_data = self._element(item).make_numpy()
+                child_lengths = None
+                if self._arity > 1:
+                    child_data, child_lengths = child_data
                 self._data[index+1:self._len+1] = self._data[index:self._len]
-                if index > 0:
+                if self._arity > 1:
+                    slices = [slice(0,v) for v in child_data.shape]
+                    self._data[index][slices] = child_data
+                else:
                     self._data[index] = child_data
-                    child._data = self._data[index]
-                    self._data[0] = backup_data
+                self._insert_child_lengths(index, child_lengths)
+                child = self._element (
+                    _mode="parent",
+                    parent=self,
+                    storage="numpy",
+                    data_store=self._data[index],
+                    len_data_store=self._get_child_lengths(index),
+                )
                 self._children.insert(index, child)
-                for n in range(index+1, self._len+1):
+                for n in range(index, self._len):
                     self._children[n]._data = self._data[n]
+
             else:
                 self._data[self._len] = item  # dry run
                 self._data[index+1:self._len+1] = self._data[index:self._len]
@@ -781,12 +866,24 @@ a sequence of length %d"
                       storage=self.storage,
                       parent=self,
                       data_store=self._data[index],
+                      len_data_store=self._get_child_lengths(index)
                     )
-                    child.set(item)
                     self._children.insert(index, child)
+                    child.set(item)
 
     def __eq__(self, other):
-        if self.storage == other.storage:
+        if self.storage == other.storage == "json":
             return self._data == other._data
-        else:
+        else: #can't use numpy data because of PTR
             return self.json() == other.json()
+
+    def __len__(self):
+        return self._len
+
+    def _clear_data(self):
+        d = self._data
+        if self.storage == "numpy":
+            d[:] =  np.zeros_like(d)
+        else:
+            for child in self._children:
+                child._clear_data()

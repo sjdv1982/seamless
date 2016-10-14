@@ -1,5 +1,5 @@
 import numpy as np
-
+import copy
 
 def _prop_setter_any(child, value): return child.set(value)
 
@@ -7,6 +7,49 @@ def _prop_setter_any(child, value): return child.set(value)
 def _prop_setter_json(child, value):
     return child.set(value, prop_setter=_prop_setter_json)
 
+def _lenarray_copypad(new_arr, new_shape, old_arr, old_shape):
+    assert len(new_arr)
+    assert len(old_arr)
+    assert len(new_shape) == len(old_shape)
+    assert len(new_shape) > 0
+
+    new_arr[0] = old_arr[0]
+    if len(new_shape) == 1:
+        return
+    new_subsize = _get_lenarray_size(new_shape[1:])
+    old_subsize = _get_lenarray_size(old_shape[1:])
+    for n in range(min(old_shape[0], new_shape[0])):
+        nn_new = 1 + n * new_subsize
+        nn_old = 1 + n * old_subsize
+        _lenarray_copypad(
+            new_arr[nn_new:nn_new+new_subsize],
+            new_shape[1:],
+            old_arr[nn_old:nn_old+old_subsize],
+            old_shape[1:],
+        )
+
+def _get_lenarray_size(shape):
+    assert len(shape) > 0
+    if len(shape) == 1:
+        return 1
+    return shape[0] * _get_lenarray_size(shape[1:]) + 1
+
+def _get_lenarray_empty(shape):
+    size = _get_lenarray_size(shape)
+    arr = np.zeros(size,dtype=np.uint16)
+    return arr
+
+def _get_lenarray_full(shape, arr=None):
+    if arr is None:
+        arr = _get_lenarray_empty(shape)
+    arr[0] = shape[0]
+    if len(shape) == 1:
+        return arr
+    subsize = _get_lenarray_size(shape[1:])
+    for n in range(shape[0]):
+        nn = 1 + n * subsize
+        _get_lenarray_full(shape[1:], arr[nn:nn+subsize])
+    return arr
 
 def _set_numpy_ele_prop(silkobj, prop, value, data=None):
     if data is None:
@@ -109,5 +152,29 @@ def _filter_json(json, obj=None):
         if not len(ret):
             return None
         return ret
+    elif isinstance(json, np.ndarray):
+        raise ValueError
     else:
         return json
+
+def _update_ptr(arr):
+    fields = arr.dtype.fields
+    if fields is None:
+        return
+    for field in fields:
+        if not field[0].isupper():
+            sub_arr = arr[field]
+            _update_ptr(sub_arr)
+        if not field.startswith("PTR_"):
+            continue
+        npfield = field[len("PTR_"):]
+        arr[field] = arr[npfield].ctypes.data
+
+def datacopy(arr):
+    if isinstance(arr, np.ndarray):
+        arr2 = copy.deepcopy(arr)
+        _update_ptr(arr2)
+        return arr2
+    elif isinstance(arr, np.void):
+        return copy.deepcopy(arr)
+    raise TypeError(type(arr))
