@@ -1,5 +1,6 @@
 from seamless.core.cached_compile import cached_compile
 
+
 def substitute_error_message(validation_block_lines, eblocks):
     tmpl = "raise SilkValidationError(\"%s\", globals(), locals())"
     # TODO: swallow original exception
@@ -29,9 +30,8 @@ def substitute_error_message(validation_block_lines, eblocks):
             ret.append(l)
     return ret
 
-def validation_mixin(silkclassname, validation_blocks, error_blocks, properties,
-                     namespace):
 
+def validation_mixin(silk_class_name, validation_blocks, error_blocks, properties, namespace):
     eblocks = None
     if error_blocks is not None:
         def strip(ee):
@@ -58,7 +58,7 @@ def validation_mixin(silkclassname, validation_blocks, error_blocks, properties,
                 message = strip(e["message"])
                 eblocks.append((code,message))
 
-    myclassname = silkclassname + "_validation_mixin"
+    myclassname = silk_class_name + "_validation_mixin"
     validation_lines = []
     validation_lines2 = []
     for prop in properties:
@@ -82,10 +82,12 @@ def validation_mixin(silkclassname, validation_blocks, error_blocks, properties,
     namespace[myclassname] = ret
     return ret
 
+
 def method_mixin(silkclassname, method_blocks, namespace):
     myclassname = silkclassname + "_method_mixin"
     method_lines = []
     method_class_names = []
+
     for blocknr, block in enumerate(method_blocks):
         lines = block.split("\n")
         method_class_name = "_%s_method_block_%s" % (silkclassname, blocknr+1)
@@ -95,10 +97,12 @@ def method_mixin(silkclassname, method_blocks, namespace):
             if len(l.strip()):
                 space = "    " + (len(l)-len(l.lstrip())) * " "
                 break
+
         method_lines.append("%s__slots__ = []" % space)
         for l in lines:
             method_lines.append("    " + l)
         method_class_names.append(method_class_name)
+
     method_code = "\n".join(method_lines)
     print(method_code[:200])
     code_obj = cached_compile(method_code, myclassname)

@@ -1,12 +1,10 @@
 """Module for Context class."""
 
 # TODO: capturing!??
-from collections import Mapping
+from collections import Counter, Mapping
 from weakref import WeakValueDictionary
 from itertools import chain
 from logging import getLogger
-
-from .utils import infinite_range
 
 logger = getLogger(__name__)
 
@@ -218,7 +216,7 @@ class Context:
         cell = self._constructor(*args, **kwargs)
 
         child_name = None
-        for i in infinite_range():
+        for i in Counter():
             child_name = self._default_naming_pattern.format(i)
             if child_name not in self._children:
                 break
