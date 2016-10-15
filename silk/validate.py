@@ -30,6 +30,7 @@ def is_valid_silktype(type_name, permit_array=False):
     if not type_name[0].isupper():
         return False
 
+    # TODO is this correct? Cannot Spyder type names be Python identifiers?
     if len(type_name) > 1 and type_name == type_name.upper():
         return False
 
