@@ -114,6 +114,7 @@ def register_minischema(minischema):
                         else:
                             dtype.append(("LEN_"+pname, np.object))
                             dtype.append(("PTR_LEN_"+pname, np.uintp))
+                            dtype.append(("SHAPE_"+pname, np.uint16, arity))
                     standard_dtype = False
                 else:
                     subschema = _minischemas[ptype]
