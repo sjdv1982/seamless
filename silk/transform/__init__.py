@@ -1,1 +1,1 @@
-from .schema_to_json import schema_to_json
+from .silkschema_to_minischema import silkschema_to_minischema

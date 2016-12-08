@@ -18,12 +18,14 @@ def register_minischema(minischema):
         props = {}
         props.update(baseschema["properties"])
         order = minischema.get("order", baseschema["order"])
-        required = minischema.get("required", baseschema["required"])
+        required = minischema.get("required", baseschema.get("required", None))
+        init = minischema.get("init", baseschema.get("init", []))
         props2 = minischema.get("properties", {})
         props.update(props2)
     else:
         order = minischema["order"]
-        required = minischema["required"]
+        required = minischema.get("required", None)
+        init = minischema.get("init", [])
         props = minischema["properties"]
     allprops = list(props.keys())
     assert sorted(order) == sorted(allprops), (order, allprops)
@@ -45,6 +47,7 @@ def register_minischema(minischema):
             if sub_order is None:
                 sub_order = sorted(list(sub_order.keys))
             sub_required = p.get("required", None)
+            sub_init = p.get("init", [])
             prop["composite"] = True
             prop["order"] = sub_order
 
@@ -56,8 +59,9 @@ def register_minischema(minischema):
                 sub_p = sub_props[sub_pname]
                 _register(sub_pname, sub_prop, sub_p, pdtype)
                 optional = \
-                  sub_required is not None and \
-                  sub_pname not in sub_required
+                   sub_required is not None \
+                   and sub_pname not in sub_required \
+                   and sub_pname not in sub_init
                 sub_prop["optional"] = optional
                 if optional:
                     sub_optionals.append(("HAS_"+sub_pname, np.bool))
@@ -127,7 +131,9 @@ def register_minischema(minischema):
         prop = {}
         p = props[pname]
         _register(pname, prop, p, dtype)
-        optional = (pname not in required)
+        optional = required is not None \
+         and pname not in required \
+         and pname not in init
         if optional:
             optionals.append(("HAS_"+pname, np.bool))
         prop["optional"] = optional
