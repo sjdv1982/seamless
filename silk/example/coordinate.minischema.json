@@ -5,6 +5,6 @@
 		"y": "Float",
 		"z": "Float"
 	},
-	"required": ["x", "y", "z"],
+  "init":["x", "y", "z"],
 	"order": ["x", "y", "z"]
 }

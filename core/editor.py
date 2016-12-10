@@ -1,6 +1,7 @@
 #totally synchronous, for GUI
 #TODO: make an async version too (see editor-OLD)
 
+import os
 import traceback
 from functools import partial
 
@@ -14,36 +15,16 @@ from .. import dtypes
 from .. import silk
 import seamless
 
-transformer_param_docson = {
-  "pin": "Required. Can be \"inputpin\", \"outputpin\", \"bufferpin\"",
-  "pinclass": """Optional for inputpin, used to indicate a code inputpin
-   or a volatile inputpin.
-Required for bufferpin, used to indicate the kind of bufferpin
-For inputpin:
-  if defined, can be "codefunction", "codeblock"  or "volatile" (other)
-  "codefunction" : the code must return a value (contain a return statement)
-  "codeblock" : the code is just executed
-For inputpin or outputpin:
-  "volatile": the cell may change during the transform. Transform code may
-   request the volatile value using ()
-For bufferpin:
-  can be "read", "write" or "modify" """,
-  "order": """Optional, only for codeblock inputpins.
-Indicates the order of codeblock evaluations (codeblocks with a lower order
-get executed first; order must be a positive integer)
-Necessary if there are multiple codeblock inputpins.
-Changing a codeblock re-executes the codeblock and all codeblocks with a higher
-order (unless checkpoint dependencies are defined)""",
-  "dtype": "Optional, must be registered with types if defined"
-}
+editor_param_docson = {} #TODO, adapt from transformer and from editor.silk
+currdir = os.path.dirname(__file__)
 silk.register(
-  ###Cell.fromfile("transformer_param.silk"), #TODO
-  doc = "Transformer pin parameters",
-  docson = transformer_param_docson  #("json", "docson")
+  open(os.path.join(currdir, "editor.silk")).read(),
+  doc = "Editor pin parameters",
+  docson = editor_param_docson  #("json", "docson")
 )
 
-transformer_params = {
-  "*": "silk.TransformerParam",
+editor_params = {
+  "*": "silk.EditorPin",
   "_use_codeblock_checkpoints": {
     "dtype": bool,
     "default": False,
@@ -54,25 +35,12 @@ transformer_params = {
   }
 }
 dtypes.register(
-  ("json", "seamless", "transformerparams"),
-  typeschema = transformer_params, #("json", "typeschema")
+  ("json", "seamless", "editor_params"),
+  typeschema = editor_params, #("json", "typeschema")
   docson = {
-    "*": "Transformer pin parameters",
-    "_use_codeblock_checkpoints": """Optional. If defined, indicates
-that the code kernel global namespace is saved before each codeblock
-evaluation. When there are codeblocks that have changed, the checkpoint
-of the lowest-order changed codeblock is restored before all subsequent
-codeblocks are evaluated""",
-    "_codeblock_deps": """Optional. If defined, must be a dict of lists
-indicating the dependencies between codeblocks. The keys of the dict are
-codeblock inputpin names, and so are the items in the lists. For each codeblock,
-the dependency list must be a subset of all codeblocks with a lower "order"
-value (by default, the dependency list consists of all of those codeblocks)
-Defining _codeblock_deps also changes the codeblock checkpoints from a
-linear stack to a dependency tree of sub-checkpoints that are merged.
-"""
+    "*": "Editor pin parameters",
   },
-  doc = "Transformer parameters"
+  doc = "Editor parameters"
 )
 
 class Editor(Process):
@@ -155,7 +123,7 @@ class Editor(Process):
             pass
 
 # @macro takes nothing, a type, or a dict of types
-@macro(("json", "seamless", "transformerparams"))
+@macro(("json", "seamless", "editor_params"))
 def editor(kwargs):
     #TODO: remapping, e.g. output_finish, destroy, ...
     return Editor(kwargs)

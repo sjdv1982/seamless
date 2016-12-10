@@ -74,8 +74,6 @@ def validation_mixin(silkclassname, validation_blocks, error_blocks, properties,
     validation_lines.extend(validation_lines2)
     validation_code = "def _validate(self):\n" + \
         "\n".join(["    " + l for l in validation_lines])
-    if error_blocks:
-        print(validation_code)
     code_obj = cached_compile(validation_code, myclassname)
     exec(code_obj, namespace)
     ret = type(myclassname, (), {"__slots__":[]})
@@ -100,7 +98,6 @@ def method_mixin(silkclassname, method_blocks, namespace):
             method_lines.append("    " + l)
         method_class_names.append(method_class_name)
     method_code = "\n".join(method_lines)
-    print(method_code[:200])
     code_obj = cached_compile(method_code, myclassname)
     exec(code_obj, namespace)
     method_classes = [namespace[v] for v in method_class_names]

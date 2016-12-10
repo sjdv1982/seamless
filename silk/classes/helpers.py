@@ -36,7 +36,7 @@ def _get_lenarray_size(shape):
 
 def _get_lenarray_empty(shape):
     size = _get_lenarray_size(shape)
-    arr = np.zeros(size,dtype=np.uint16)
+    arr = np.zeros(size,dtype=np.uint32)
     return arr
 
 def _get_lenarray_full(shape, arr=None):

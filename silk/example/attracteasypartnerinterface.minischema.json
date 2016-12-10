@@ -19,7 +19,7 @@
 		"passivereslist": "HaddockResidueList",
 		"auto_passive": "Bool"
 	},
-	"required": [],
+	"init": ["activereslist", "passivereslist", "auto_passive"],
 	"order": ["activereslist", "passivereslist", "auto_passive"]
 },
 {
@@ -36,6 +36,7 @@
     "rmsd_pdb": "ResourceData_PDB",
 	},
 	"required": ["pdbfile"],
+	"init": ["moleculetype", "has_hydrogens", "ensemble_size", "generate_modes", "nr_modes", "use_rmsd"],
 	"order": ["pdbfile", "moleculetype", "has_hydrogens", "haddock_restraints", "ensemble_size", "generate_modes", "nr_modes", "use_rmsd", "rmsd_pdb"]
 }
 ]

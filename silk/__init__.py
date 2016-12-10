@@ -1,4 +1,3 @@
-
 """
 OUTDATED!
 
@@ -121,6 +120,14 @@ TODO:
 """
 from . import typeparse, transform
 from .validate import is_valid_silktype, reserved_endings, reserved_membernames, reserved_types
+from .registers import register
+from .registers.typenames import _silk_types
 
-def register(*args, **kwargs):
-    pass
+class _SilkTypes:
+    def __getattr__(self, silkclass):
+        return _silk_types[silkclass]
+    def __dir__(self):
+        return [k for k in _silk_types.keys() \
+         if not k.endswith("Array")
+         and not k.endswith("mixin")]
+Silk = _SilkTypes()

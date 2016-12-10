@@ -1,6 +1,7 @@
 from collections import deque
 import threading
 import traceback
+import os
 
 from .macro import macro
 from .process import Process, InputPin, OutputPin
@@ -32,14 +33,15 @@ Changing a codeblock re-executes the codeblock and all codeblocks with a higher
 order (unless checkpoint dependencies are defined)""",
   "dtype": "Optional, must be registered with types if defined"
 }
+currdir = os.path.dirname(__file__)
 silk.register(
-  ###Cell.fromfile("transformer_param.silk"), #TODO
+  open(os.path.join(currdir, "transformer.silk")).read(),
   doc = "Transformer pin parameters",
   docson = transformer_param_docson  #("json", "docson")
 )
 
 transformer_params = {
-  "*": "silk.TransformerParam",
+  "*": "silk.SeamlessTransformerPin",
   "_use_codeblock_checkpoints": {
     "dtype": bool,
     "default": False,
@@ -50,7 +52,7 @@ transformer_params = {
   }
 }
 dtypes.register(
-  ("json", "seamless", "transformerparams"),
+  ("json", "seamless", "transformer_params"),
   typeschema = transformer_params, #("json", "typeschema")
   docson = {
     "*": "Transformer pin parameters",
@@ -189,7 +191,7 @@ class Transformer(Process):
             pass
 
 # @macro takes nothing, a type, or a dict of types
-@macro(("json", "seamless", "transformerparams"))
+@macro(("json", "seamless", "transformer_params"))
 def transformer(kwargs):
     #TODO: remapping, e.g. output_finish, destroy, ...
     return Transformer(kwargs)

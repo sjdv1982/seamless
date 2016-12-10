@@ -1,0 +1,22 @@
+Type SeamlessTransformerPin  {
+  Enum pin("inputpin", "outputpin", "bufferpin")
+  *Enum typ("codefunction", "codeblock", "volatile", "read", "write", "modify")
+  *Integer order
+  *String celltype
+  form {
+    celltype.subtype = "celltype"
+  }
+  validate {
+    if typ is not None:
+        if pin == "inputpin":
+            assert typ in ("codefunction", "codeblock", "volatile"), typ
+        elif pin == "bufferpin":
+            assert typ in ("read", "write", "modify")
+        elif pin == "outputpin":
+            assert typ == "volatile"
+  }
+  validate {
+    if order is not None:
+        assert pin == "inputpin" and typ == "codeblock"
+  }
+}
