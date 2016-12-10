@@ -48,6 +48,10 @@ teparams2 = {
     "pin": "input",
     "dtype": ("text", "code", "python")
   },
+  "title": {
+    "pin": "input",
+    "dtype": "str"
+  },
   "output": {
     "pin": "output",
     "dtype": ("text", "code", "python")
@@ -99,6 +103,7 @@ def make_text_editor(ed):
 b, w = _cache["b"], _cache["w"]
 if value != b.toPlainText():
     b.setText(value)
+w.setWindowTitle(title)    
 """)
 
 ed1 = ctx.processes.ed1(editor(eparams))
@@ -113,6 +118,7 @@ c_output.connect(ed2.value)
 
 #ted1 = ctx.processes.ted1(editor(teparams))
 ted1 = ctx.processes.ted1(editor(teparams2))
+ted1.title.cell().set("Formula editor")
 make_text_editor(ted1)
 #c = ed1.title.cell()
 c = c_code
@@ -122,6 +128,7 @@ c.connect(ted1.value)
 ted1.output.solid.connect(c)
 
 meta_ted = ctx.processes.meta_ted(editor(teparams2))
+meta_ted.title.cell().set("Meta-editor")
 make_text_editor(meta_ted)
 c = ted1.code_start.cell()
 #v = meta_ted1.value.cell()

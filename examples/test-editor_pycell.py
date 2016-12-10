@@ -3,6 +3,7 @@ from seamless.qt.QtCore import Qt
 
 w = QWidget()
 w.setWindowFlags(Qt.WindowStaysOnTopHint)
+w.setAttribute(Qt.WA_ShowWithoutActivating)
 vbox = QVBoxLayout()
 vbox.addStretch(1)
 w.setLayout(vbox)
