@@ -1,5 +1,5 @@
 Type SeamlessEditorPin  {
-  Enum pin("inputpin", "outputpin", "bufferpin", "hivepin")
+  Enum pin("inputpin", "outputpin", "bufferpin", "signal")
   *Enum typ("codefunction", "codeblock", "read", "write", "modify")
   *Integer order
   *String celltype

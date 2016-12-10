@@ -5,8 +5,6 @@ import collections
 from weakref import WeakValueDictionary
 
 # TODO
-# - remove children in numpy representation
-# - SHAPE field
 # - composite exception for constructor
 # - resources (new class generated as _silk_types['ResourceX'], where X is name of Silk class)
 # elsewhere:
@@ -30,7 +28,7 @@ class NoneChild(object):
 class Silk(SilkObject):
     _anonymous = None           # bool
     _props = None               # list
-    _dtype = None               # list
+    dtype = None                # list
     _positional_args = None     # list
     __slots__ = [
         "_parent", "_storage_enum", "_storage_nonjson_children",
@@ -91,7 +89,7 @@ class Silk(SilkObject):
         elif storage == "numpy":
             self._children = WeakValueDictionary()
             assert data_store is not None
-            assert data_store.dtype == np.dtype(self._dtype, align=True)
+            assert data_store.dtype == np.dtype(self.dtype, align=True)
             assert data_store.shape == ()
             self._data = data_store
             return
@@ -155,7 +153,7 @@ class Silk(SilkObject):
         """
         if data.shape != ():
             raise TypeError("Data must be a singleton")
-        if data.dtype != np.dtype(cls._dtype,align=True):
+        if data.dtype != np.dtype(cls.dtype,align=True):
             raise TypeError("Data has the wrong dtype")
 
         if copy:
@@ -347,7 +345,7 @@ class Silk(SilkObject):
         if self.storage == "numpy":
             return self._data
 
-        dtype = np.dtype(self._dtype, align=True)
+        dtype = np.dtype(self.dtype, align=True)
         data = np.zeros(dtype=dtype, shape=(1,))
         for propname,prop in self._props.items():
             if prop["elementary"]:
@@ -558,7 +556,7 @@ but {2} were given".format(
 
     def __getattribute__(self, attr):
         value = object.__getattribute__(self, attr)
-        if attr.startswith("_") or attr == "storage":
+        if attr.startswith("_") or attr in ("storage", "dtype"):
             return value
         class_value = getattr(type(self), attr)
         if value is class_value:

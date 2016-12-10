@@ -38,7 +38,7 @@ class _ArrayInsertContext:
         else:
             ele = {}
         if self.arr.storage == "numpy":
-            dtype = np.dtype(self.arr._dtype, align=True)
+            dtype = np.dtype(self.arr.dtype, align=True)
             ele = np.zeros(shape=(1,), dtype=dtype)
             l = self.arr._len
             d = self.arr._data
@@ -67,7 +67,7 @@ class _ArrayInsertContext:
 
 class SilkArray(SilkObject):
     _element = None
-    _dtype = None
+    dtype = None
     _elementary = None
     _arity = None
     __slots__ = [
@@ -143,7 +143,7 @@ class SilkArray(SilkObject):
             assert data_store is not None
             assert len_data_store is not None
             assert len(len_data_store), len_data_store
-            dtype = np.dtype(self._dtype, align=True)
+            dtype = np.dtype(self.dtype, align=True)
             assert data_store.dtype == dtype
             self._data = data_store
             self._Len = len_data_store
@@ -195,11 +195,11 @@ class SilkArray(SilkObject):
                 raise err
         if len(arr.shape) != cls._arity:
             raise TypeError("Array must be %d-dimensional" % cls._arity)
-        if arr.dtype != np.dtype(cls._dtype,align=True):
+        if arr.dtype != np.dtype(cls.dtype,align=True):
             raise TypeError("Array has the wrong dtype")
         if lengths is None and length_can_be_none:
             return
-        assert lengths.dtype == np.uint16
+        assert lengths.dtype == np.uint32
         lenarray_shape = (_get_lenarray_size(arr.shape),)
         if lengths.shape != lenarray_shape:
             err = TypeError((lengths.shape, lenarray_shape, arr.shape))
@@ -337,7 +337,7 @@ class SilkArray(SilkObject):
         TODO: add and document SHAPE field
         """
         if self.storage == "numpy":
-            return datacopy(self._data), self._Len.copy()
+            return datacopy(self._data)
         new_obj = self.copy("json")
         return new_obj.make_numpy()
 
@@ -472,9 +472,9 @@ class SilkArray(SilkObject):
         """
         from .silkarray import SilkArray
         if self.storage == "numpy":
-            return self._data, self._Len
+            return self._data
 
-        dtype = np.dtype(self._dtype, align=True)
+        dtype = np.dtype(self.dtype, align=True)
         shape = self._get_outer_shape()
         data = np.zeros(dtype=dtype, shape=shape)
         lengths = _get_lenarray_empty(shape)
@@ -510,7 +510,11 @@ class SilkArray(SilkObject):
         for child in self._get_children():
             child._restore_array_coupling()
 
-        return data, lengths
+        return data
+
+    def lengths(self):
+        assert self.storage == "numpy"
+        return self._Len
 
     def realloc(self, *shape):
         assert self.storage == "numpy"
@@ -534,7 +538,7 @@ reallocation")
                 raise ValueError(msg % (n+1, min_shape[n], shape[n]))
         old_data = self._data
         old_len = self._Len
-        self._data = np.zeros(dtype=self._dtype, shape=shape)
+        self._data = np.zeros(dtype=self.dtype, shape=shape)
         slices = [slice(0,s) for s in min_shape]
         self._data[slices] = old_data
         self._Len = _get_lenarray_empty(shape)
@@ -832,10 +836,11 @@ a sequence of length %d"
             if self._len >= len(self._data):
                 raise IndexError("Numpy array overflows allocated space")
             if not self._elementary:
-                child_data = self._element(item).make_numpy()
+                ele = self._element(item)
+                child_data = ele.make_numpy()
                 child_lengths = None
                 if self._arity > 1:
-                    child_data, child_lengths = child_data
+                    child_lengths = ele.lengths()
                 self._data[index+1:self._len+1] = self._data[index:self._len]
                 if self._arity > 1:
                     slices = [slice(0,v) for v in child_data.shape]

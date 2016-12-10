@@ -73,7 +73,7 @@ def register_minischema(minischema):
             prop["typename"] = ptype
             if ptype in _primitives:
                 prop["elementary"] = True
-                pdtype = _primitives[ptype]._dtype
+                pdtype = _primitives[ptype].dtype
             elif ptype in _elementaries:
                 prop["elementary"] = True
                 if pdtype == "float":
@@ -109,7 +109,7 @@ def register_minischema(minischema):
                         dtype.append((pname, np.object))
                         dtype.append(("PTR_"+pname, np.uintp))
                     if arity == 1:
-                        dtype.append(("LEN_"+pname, np.uint16, (1,)))
+                        dtype.append(("LEN_"+pname, np.uint32, (1,)))
                     else:
                         if "maxshape" in prop:
                             dtype.append((
@@ -118,7 +118,7 @@ def register_minischema(minischema):
                         else:
                             dtype.append(("LEN_"+pname, np.object))
                             dtype.append(("PTR_LEN_"+pname, np.uintp))
-                            dtype.append(("SHAPE_"+pname, np.uint16, arity))
+                            dtype.append(("SHAPE_"+pname, np.uint32, arity))
                     standard_dtype = False
                 else:
                     subschema = _minischemas[ptype]

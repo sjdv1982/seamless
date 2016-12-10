@@ -32,7 +32,7 @@ def _make_array(typename, typeclass, elementary=False):
     typename_array = typename + "Array"
     d = {
       "_element": typeclass,
-      "_dtype": typeclass._dtype,
+      "dtype": typeclass.dtype,
       "_elementary": elementary,
       "_arity": 1,
       "__slots__": [],
@@ -43,7 +43,7 @@ def _make_array(typename, typeclass, elementary=False):
     typename_array2 = typename + "ArrayArray"
     d = {
       "_element": arr,
-      "_dtype": typeclass._dtype,
+      "dtype": typeclass.dtype,
       "_elementary": False,
       "_arity": 2,
       "__slots__": [],
@@ -54,7 +54,7 @@ def _make_array(typename, typeclass, elementary=False):
     typename_array3 = typename + "ArrayArrayArray"
     d = {
       "_element": arr2,
-      "_dtype": typeclass._dtype,
+      "dtype": typeclass.dtype,
       "_elementary": False,
       "_arity": 3,
       "__slots__": [],
@@ -130,7 +130,7 @@ def register(extended_minischema, init_tree=None,
             if msprop["composite"]:
                 sub_msprops = msprops[p]
                 prop["elementary"] = False
-                if initstr is not None:  # currently not used
+                if initstr is not None:
                     init = stringparse(initstr, typeless=True)
                     props_init[p] = init
                 sub_typename = None
@@ -176,7 +176,7 @@ def register(extended_minischema, init_tree=None,
      "_anonymous": anonymous,
      "_props": all_props,
      "_props_init": props_init,
-     "_dtype": dtype,
+     "dtype": dtype,
      "_positional_args": positional_args,
      "__slots__": [],
     }
