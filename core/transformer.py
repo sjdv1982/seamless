@@ -11,6 +11,8 @@ from .pythreadkernel import Transformer as KernelTransformer
 from .. import dtypes
 from .. import silk
 
+#TODO: run only when output cell is connected too!
+
 transformer_param_docson = {
   "pin": "Required. Can be \"inputpin\", \"outputpin\", \"bufferpin\"",
   "pinclass": """Optional for inputpin, used to indicate a code inputpin
@@ -75,7 +77,7 @@ linear stack to a dependency tree of sub-checkpoints that are merged.
 
 class Transformer(Process):
     """
-    This is the main-thread part of the controller
+    This is the main-thread part of the transformer
     """
     _required_code_type = PythonCell.CodeTypes.FUNCTION
 
@@ -190,8 +192,11 @@ class Transformer(Process):
             print(err)
             pass
 
+    def __dir__(self):
+        return object.__dir__(self) + list(self._pins.keys())
+
 # @macro takes nothing, a type, or a dict of types
-@macro(("json", "seamless", "transformer_params"))
+@macro(type=("json", "seamless", "transformer_params"), with_context=False)
 def transformer(kwargs):
     #TODO: remapping, e.g. output_finish, destroy, ...
     return Transformer(kwargs)

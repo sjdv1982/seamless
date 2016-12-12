@@ -1,19 +1,21 @@
 #TODO: this is currently a stub
 
 _known_types = [
+  "object",
   "int",
   "float",
   "str",
   "bool",
   "text",
   ("text", "code", "python"),
-  ("text", "code", "spyder"),
+  ("text", "code", "silk"),
   ("text", "data", "json"),
   ("text", "data", "xml"),
   ("text", "data", "silk"),
 ]
 
 _constructors = {
+    "object": lambda v: v,
     "int" : int,
     "float" : float,
     "bool" : bool,
@@ -58,7 +60,10 @@ def parse(data_type, value, trusted):
 
 
 def serialize(data_type, value):
-    return str(value)
+    if data_type == "object":
+        return value
+    else:
+        return str(value)
 
 
 class ParseError(Exception):

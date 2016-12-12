@@ -1,9 +1,53 @@
 """Module for Context class."""
-#TODO: capturing!??
-
 from weakref import WeakValueDictionary
+from .cell import Cell, CellLike, ExportedCell
+from .process import Process, ProcessLike, InputPinBase, ExportedInputPin, \
+ OutputPinBase, ExportedOutputPin
 
-class Context:
+_active_context = None
+
+def set_active_context(ctx):
+    global _active_context
+    assert ctx is None or isinstance(ctx, Context)
+    _active_context = ctx
+
+def get_active_context():
+    return _active_context
+
+
+class _ContextConstructor:
+    def __init__(self, parent, name):
+        self.parent = parent
+        self.name = name
+
+    def __getattr__(self, attr):
+        raise AttributeError(self.name)
+
+    def __call__(self, *args, **kwargs):
+        constructor = self.parent._constructor
+        if constructor is None:
+            if len(args) != 1 or len(kwargs) > 0:
+                raise TypeError("""
+Cannot construct attribute '%s' of subcontext '%s':
+subcontext has no constructor""" %      (self.name, self.parent._name)
+                                )
+            else:
+                cell_or_process = args[0]
+                capturing_class = self.parent._capturing_class
+                if not isinstance(
+                    cell_or_process, (capturing_class, Context)
+                ):
+                    raise TypeError("""
+Cannot construct attribute '%s' of subcontext '%s': \
+attribute must be an instance of %s" %""" % (self.name, self.parent._name,
+                                         capturing_class.__name__)
+                                    )
+        else:
+            cell_or_process = constructor(*args, **kwargs)
+        self.parent._add_child(self.name, cell_or_process)
+        return cell_or_process
+
+class Context(CellLike, ProcessLike):
     """Context class. Organizes your cells and processes hierchically.
 
     (Sub)contexts provide a convenient way to manage cells or processes of a
@@ -47,37 +91,21 @@ class Context:
 
     """
 
-    class ContextConstructor:
-        def __init__(self, parent, name):
-            self.parent = parent
-            self.name = name
-
-        def __getattr__(self, attr):
-            raise AttributeError(self.name)
-
-        def __call__(self, *args, **kwargs):
-            constructor = self.parent._constructor
-            if constructor is None:
-                if len(args) != 1 or len(kwargs) > 0:
-                    raise TypeError("""
-Cannot construct attribute '%s' of subcontext '%s':
-subcontext has no constructor""" %      (self.name, self.parent._name)
-                                    )
-                else:
-                    cell_or_process = args[0]
-                    capturing_class = self.parent._capturing_class
-                    if not isinstance(
-                        cell_or_process, (capturing_class, Context)
-                    ):
-                        raise TypeError("""
-Cannot construct attribute '%s' of subcontext '%s': \
-attribute must be an instance of %s" %""" % (self.name, self.parent._name,
-                                             capturing_class.__name__)
-                                        )
-            else:
-                cell_or_process = constructor(*args, **kwargs)
-            self.parent._add_child(self.name, cell_or_process)
-            return cell_or_process
+    _name = None
+    _parent = None
+    _registrar = None
+    _like_cell = False          #can be set to True by export
+    _like_process = False       #can be set to True by export
+    _parent = None
+    _default_naming_pattern = None
+    _constructor = None
+    _capturing_class = None
+    _subcontexts = None
+    _children = None
+    _childids = None
+    _manager = None
+    registrar = None
+    _pins = None
 
     def __init__(
         self,
@@ -85,7 +113,8 @@ attribute must be an instance of %s" %""" % (self.name, self.parent._name,
         parent=None,
         default_naming_pattern=None,
         constructor=None,
-        capturing_class=None
+        capturing_class=None,
+        active_context=True,
     ):
         """Construct a new context.
 
@@ -100,7 +129,9 @@ attribute must be an instance of %s" %""" % (self.name, self.parent._name,
             capturing_class: if defined, captures
                 all instances of capturing_class from the parent context
                 and stores them here
-
+            active_context (default: True): Sets the newly constructed context
+                as the active context. Subcontexts constructed by macros are
+                automatically parented to the active context
         """
         n = name
         if parent is not None and parent._name is not None:
@@ -120,8 +151,13 @@ attribute must be an instance of %s" %""" % (self.name, self.parent._name,
         else:
             from .process import Manager
             self._manager = Manager()
+        if active_context:
+            set_active_context(self)
+        from .registrar import RegistrarAccessor
+        self.registrar = RegistrarAccessor(self)
 
-    _dir = ["root", "define"]
+
+    _dir = ["root", "define", "export", "registrar"]
 
     def __dir__(self):
         return list(self._subcontexts.keys()) + list(self._children.keys()) \
@@ -147,12 +183,14 @@ attribute must be an instance of %s" %""" % (self.name, self.parent._name,
             child.set_context(self)
 
     def __setattr__(self, attr, value):
-        if attr.startswith("_"):
+        if hasattr(self.__class__, attr):
             return object.__setattr__(self, attr, value)
         if attr in self._subcontexts:
             raise AttributeError(
              "Cannot assign to subcontext ''%s'" % attr
             )
+        if self._capturing_class is None and isinstance(value, Context):
+            assert value._parent is self, attr
         self._children[attr] = value
 
     def __getattr__(self, attr):
@@ -161,7 +199,7 @@ attribute must be an instance of %s" %""" % (self.name, self.parent._name,
         elif attr in self._children:
             return self._children[attr]
         else:
-            return self.ContextConstructor(self, attr)
+            return _ContextConstructor(self, attr)
 
     def root(self):
         if self._parent is None:
@@ -187,6 +225,80 @@ subcontext has no constructor""" % self._name
                 break
         self._add_child(childname, cell)
         return cell
+
+    def export(self, attr, force=[]):
+        """Exports all unconnected inputs and outputs of a child
+
+        If the child is a cell (or cell-like context):
+            - export the child's input as primary input (if unconnected)
+            - export the child's output as primary output (if unconnected)
+            - export any other pins, if forced
+            - sets the context as cell-like
+        If the child is a process (or process-like context):
+            - export all unconnected input and output pins of the child
+            - export any other pins, if forced
+            - sets the context as process-like
+
+        Arguments:
+
+        attr: attribute name of the child
+        force: contains a list of pin names that are exported in any case
+          (even if not unconnected).
+          Use "_input" and "_output" to indicate primary cell input and output
+
+        """
+        child = self._children[attr]
+        if self._pins is None:
+            self._pins = {}
+        mode = None
+        if isinstance(child, CellLike) and child._like_cell:
+            mode = "cell"
+            pins = ["_input", "_output"]
+        elif isinstance(child, ProcessLike) and child._like_process:
+            mode = "process"
+            pins = child._pins.keys()
+        else:
+            raise TypeError(child)
+
+        def is_connected(pinname):
+            if isinstance(child, CellLike) and child._like_cell:
+                if not isinstance(child, Cell):
+                    child = child.get_cell()
+                if pinname == "_input":
+                    return (child._incoming_connections > 0)
+                elif pinname == "_output":
+                    return (child._outgoing_connections > 0)
+                else:
+                    raise ValueError(pinname)
+            else:
+                pin = child._pins[pinname]
+                if isinstance(pin, InputPinBase):
+                    manager = pin._get_manager()
+                    con_cells = manager.pin_to_cells.get(pin.get_pin_id(), [])
+                    return (con_cells > 0)
+                elif isinstance(pin, OutputPinBase):
+                    return (len(pin.get_pin()._cell_ids) > 0)
+                else:
+                    raise TypeError(pin)
+        pins = [p for p in pins if not is_connected(pinname)] + forced
+        if not len(pins):
+            raise Exception("Zero pins to be exported!")
+        for pinname in pins:
+            if isinstance(child, CellLike) and child._like_cell:
+                if not isinstance(child, Cell):
+                    child = child.get_cell()
+                    pins[pinname] = ExportedCell(child)
+            else:
+                pin = child._pins[pinname]
+                if isinstance(pin, InputPinBase):
+                    pins[pinname] = ExportedInputPin(pin)
+                elif isinstance(pin, OutputPinBase):
+                    pins[pinname] = ExportedOutputPin(pin)
+
+        if mode == "cell":
+            self._like_cell = True
+        elif mode == "process":
+            self._like_process = True
 
 _registered_subcontexts = {}
 
@@ -221,17 +333,16 @@ def register_subcontext(
     _registered_subcontexts[subcontext_name] = \
         (default_naming_pattern, constructor, capturing_class)
 
-from .cell import Cell, cell, pythoncell
-from .process import Process
+from .cell import cell, pythoncell
 
 register_subcontext(
   "processes", "process",
-  capturing_class=Process,
+  capturing_class=ProcessLike,
   constructor=None,
 )
 register_subcontext(
   "cells", "cell",
-  capturing_class=Cell,
+  capturing_class=CellLike,
   constructor=cell,
 )
 register_subcontext(
@@ -240,9 +351,9 @@ register_subcontext(
   constructor=pythoncell,
 )
 
-def context():
+def context(**kwargs):
     """Return a new Context object."""
-    ctx = Context()
+    ctx = Context(**kwargs)
 
     # Get a list of sorted subcontexts
     def sorter(subcontext):

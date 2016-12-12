@@ -88,7 +88,7 @@ editor_pycell2 =  os.path.join(
 )
 
 def make_editor(ed):
-    ed.code_start.cell().set(open(editor_pycell).read())
+    ed.code_start.cell().fromfile(editor_pycell)
     ed.code_stop.cell().set('_cache["w"].destroy()')
     ed.code_update.cell().set("""
 b, w = _cache["b"], _cache["w"]
@@ -97,13 +97,13 @@ w.setWindowTitle(title)
 """)
 
 def make_text_editor(ed):
-    ed.code_start.cell().set(open(editor_pycell2).read())
+    ed.code_start.cell().fromfile(editor_pycell2)
     ed.code_stop.cell().set('_cache["w"].destroy()')
     ed.code_update.cell().set("""
 b, w = _cache["b"], _cache["w"]
 if value != b.toPlainText():
     b.setText(value)
-w.setWindowTitle(title)    
+w.setWindowTitle(title)
 """)
 
 ed1 = ctx.processes.ed1(editor(eparams))

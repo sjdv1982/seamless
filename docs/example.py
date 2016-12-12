@@ -69,7 +69,7 @@ print(outp) #13
 
 from seamless import macro
 
-@macro
+@macro(with_context=False)
 def add(ctx):
   c, p = ctx.cells, ctx.processes
   from seamless import transformer
@@ -93,7 +93,7 @@ def add(ctx):
   #to do it manually: ctx.pins.input = seamless.core.inputpin(t.input)
 
 #alternative implementation
-@macro
+@macro(with_context=False)
 def add(ctx):
   c, p = ctx.cells, ctx.processes
   from seamless.lib.basic import simple_transformer
@@ -102,7 +102,7 @@ def add(ctx):
   t.code.cell().set("return input + output") #defines not c.pythoncell1 but c.pythoncell_add1
   ctx.define_pins(t)
 
-@macro
+@macro(with_context=False)
 def mult(ctx):
   c, p = ctx.cells, ctx.processes
   from seamless.lib.basic import simple_transformer

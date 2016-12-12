@@ -8,7 +8,29 @@ from .. import dtypes
 from .utils import find_return_in_scope
 from .process import Managed
 
-class Cell(Managed):
+class CellLike(object):
+    """Base class for cells and contexts
+    CellLikes are captured by context.cells"""
+    _like_cell = True
+
+class ExportedCell(Managed, CellLike):
+    def __init__(self, cell):
+        assert isinstance(cell, CellLike) and cell._like_cell
+        self.cell = cell
+
+    def get_cell(self):
+        if isinstance(self.cell, Cell):
+            return self.cell
+        else:
+            return self.cell.get_cell()
+            
+    def set_context(self, context):
+        self.cell.set_context(context)
+
+    def _get_context(self):
+        return self.cell._get_context()
+
+class Cell(Managed, CellLike):
     """Default class for cells.
 
     Cells contain all the state in text form
@@ -64,6 +86,9 @@ class Cell(Managed):
             self._object_set(text_or_object, trusted=False)
         return self
 
+    def fromfile(self, filename):
+        return self.set(open(filename).read())
+
     def _text_set(self, data, trusted):
         if self._status == self.__class__.StatusFlags.OK \
                 and (data == self._data or data == self._data_last):
@@ -92,7 +117,6 @@ class Cell(Managed):
                 and (object_ == self._last_object or
                      object_ == self._last_object2):
             return False
-        print("_object_set", object_)
         try:
             """
             Construct the object:
@@ -324,5 +348,3 @@ def cell(dtype):
 def pythoncell():
     """Factory function for a PythonCell object."""
     return cell(("text", "code", "python"))
-
-from .context import Context

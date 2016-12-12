@@ -93,4 +93,4 @@ def build_canvashive(cls, i, ex, args):
     i.program_rebuilt = hive.triggerfunc()
     ex.program_rebuilt = hive.hook(i.program_rebuilt)
 
-CanvasHive = hive.hive("CanvasHive", build_canvashive, HiveCls_Canvas)
+canvashive = hive.hive("canvashive", build_canvashive, HiveCls_Canvas)

@@ -100,7 +100,8 @@ class Editor(Process):
         work = partial(f, input_pin, value)
         seamless.add_work(work)
 
-
+    def __dir__(self):
+        return object.__dir__(self) + list(self._pins.keys())
 
     def destroy(self):
         self._code_stop()
@@ -123,7 +124,7 @@ class Editor(Process):
             pass
 
 # @macro takes nothing, a type, or a dict of types
-@macro(("json", "seamless", "editor_params"))
+@macro(type=("json", "seamless", "editor_params"),with_context=False)
 def editor(kwargs):
     #TODO: remapping, e.g. output_finish, destroy, ...
     return Editor(kwargs)

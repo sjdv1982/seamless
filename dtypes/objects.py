@@ -76,7 +76,7 @@ class PythonTransformerCodeObject(PythonCodeObject):
             except ValueError:
                 raise SyntaxError("Block must contain return statement(s)")
 
-            patched_src = "def transform(value):\n    " + self.data.replace("\n", "\n    ").rstrip()
+            patched_src = "def transform():\n    " + self.data.replace("\n", "\n    ").rstrip()
 
             self.code = cached_compile(patched_src,
                                        self.name + "-%d" % id(self), "exec")

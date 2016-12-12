@@ -30,7 +30,7 @@ class Transformer(Process):
 
         # If code object is updated, recompile
         if "code" in updated:
-            expr = "{0}(value)".format(func_name)
+            expr = "{0}()".format(func_name)
             self.expression = compile(expr, self.name, "eval")
             self.func_name = func_name
             exec(func, self.namespace)

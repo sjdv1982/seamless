@@ -23,19 +23,19 @@ class Manager:
             self.listeners[cell_id] = [pin_ref]
 
         try:
-            curr_pin_to_cells = self.pin_to_cells[id(input_pin)]
+            curr_pin_to_cells = self.pin_to_cells[input_pin.get_pin_id()]
             assert cell_id not in curr_pin_to_cells
             # TODO: tolerate (append) multiple inputs?
             curr_pin_to_cells.append(cell_id)
 
         except KeyError:
-            self.pin_to_cells[id(input_pin)] = [cell_id]
+            self.pin_to_cells[input_pin.get_pin_id()] = [cell_id]
 
     def remove_listener(self, input_pin):
-        cell_ids = self.pin_to_cells.pop(id(input_pin), [])
+        cell_ids = self.pin_to_cells.pop(input_pin.get_pin_id(), [])
         for cell_id in cell_ids:
             l = self.listeners[cell_id]
-            l[:] = [ref for ref in l if id(ref()) != id(input_pin)]
+            l[:] = [ref for ref in l if ref().get_pin_id() != input_pin.get_pin_id()]
             if not len(l):
                 self.listeners.pop(cell_id)
 
@@ -68,14 +68,18 @@ class Manager:
         return id(cell)
 
     def connect(self, source, target):
-        from .cell import Cell
-        if isinstance(source, Cell):
-            assert isinstance(target, InputPin)
-            assert source._context is not None and \
-                source._context._manager is self
-            assert target._context is not None and \
-                target._context._manager is self
+        from .cell import Cell, CellLike
+        from .context import Context
+        if isinstance(source, CellLike) and source._like_cell:
+            assert isinstance(target, InputPinBase)
+            assert source._get_manager() is self
+            assert target._get_manager() is self
+            if isinstance(target, ExportedInputPin):
+                target = target.get_pin()
 
+            if isinstance(source, Context):
+                assert "_output" in source._pins
+                source = source._pins["_output"]
             process = target.process_ref()
             assert process is not None #weakref may not be dead
             source._on_connect(target, process, incoming = False)
@@ -84,8 +88,13 @@ class Manager:
             if source._status == Cell.StatusFlags.OK:
                 self.update_from_code(source)
 
-        elif isinstance(source, OutputPin):
-            assert isinstance(target, Cell)
+        elif isinstance(source, OutputPinBase):
+            assert isinstance(target, CellLike) and target._like_cell
+            if isinstance(target, Context):
+                assert "_input" in target._pins
+                target = target._pins["_input"]
+            if isinstance(source, ExportedOutputPin):
+                source = source.get_pin()
             process = source.process_ref()
             assert process is not None #weakref may not be dead
             target._on_connect(source, process, incoming = True)
@@ -99,6 +108,7 @@ class Manager:
 class Managed:
     _context = None
     def set_context(self, context):
+        from .context import Context
         assert isinstance(context, Context)
         self._context = context
         return self
@@ -114,21 +124,34 @@ class Managed:
         context = self._get_context()
         return context._manager
 
-class Process(Managed):
+class ProcessLike:
+    """Base class for processes and contexts"""
+    _like_process = True
+
+class Process(Managed, ProcessLike):
     """Base class for all processes."""
+    _pins = None
+
+class InputPinBase(Managed):
     pass
 
-class InputPin(Managed):
+class OutputPinBase(Managed):
+    pass
+
+class InputPin(InputPinBase):
 
     def __init__(self, process, identifier, dtype):
         self.process_ref = weakref.ref(process)
         self.identifier = identifier
         self.dtype = dtype
 
+    def get_pin_id(self):
+        return id(self)
+
     def cell(self):
         manager = self._get_manager()
         context = self._get_context()
-        curr_pin_to_cells = manager.pin_to_cells.get(id(self), [])
+        curr_pin_to_cells = manager.pin_to_cells.get(self.get_pin_id(), [])
         l = len(curr_pin_to_cells)
         if l == 0:
             if self.dtype is None:
@@ -162,7 +185,7 @@ class InputPin(Managed):
             pass
 
 
-class OutputPin(Managed):
+class OutputPin(OutputPinBase):
     def __init__(self, process, identifier, dtype):
         self.process_ref = weakref.ref(process)
         self.identifier = identifier
@@ -203,7 +226,7 @@ class OutputPin(Managed):
         cells = [c for c in cells if c is not None]
         return cells
 
-class EditorOutputPin(Managed):
+class EditorOutputPin(OutputPinBase):
     def __init__(self, process, identifier, dtype):
         self.solid = OutputPin(process, identifier, dtype)
         self.liquid = OutputPin(process, identifier, dtype)
@@ -226,4 +249,19 @@ class EditorOutputPin(Managed):
         self.solid.set_context(context)
         self.liquid.set_context(context)
 
-from .context import Context
+class ExportedPinBase:
+    def __init__(self, pin):
+        self._pin = pin
+    def get_pin_id(self):
+        return self._pin.get_pin_id()
+    def get_pin(self):
+        if not isinstance(self._pin, ExportedPinBase):
+            return self._pin
+        else:
+            return self._pin.get_pin()
+
+class ExportedOutputPin(ExportedPinBase, OutputPinBase):
+    pass
+
+class ExportedInputPin(ExportedPinBase, InputPinBase):
+    pass

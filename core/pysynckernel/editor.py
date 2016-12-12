@@ -112,9 +112,12 @@ class Editor:
             do_update = True
 
         # Update namespace of inputs
+        _updated = set()
         for name in self.inputs.keys():
             if name in updated:
+                _updated.add(name)
                 self.namespace[name] = self.values[name].data
                 do_update = True
         if do_update:
+            self.namespace["_updated"] = _updated
             exec(self.code_update_block, self.namespace)

@@ -252,7 +252,7 @@ class Editor(Process):
             pass
 
 # @macro takes nothing, a type, or a dict of types
-@macro(("json", "seamless", "transformerparams"))
+@macro(type=("json", "seamless", "transformerparams"), with_context=False)
 def editor(kwargs):
     #TODO: remapping, e.g. output_finish, destroy, ...
     return Editor(kwargs)
