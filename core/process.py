@@ -148,6 +148,9 @@ class InputPin(InputPinBase):
     def get_pin_id(self):
         return id(self)
 
+    def get_pin(self):
+        return self
+
     def cell(self):
         manager = self._get_manager()
         context = self._get_context()
@@ -192,6 +195,9 @@ class OutputPin(OutputPinBase):
         self.dtype = dtype
         self._cell_ids = []
 
+    def get_pin(self):
+        return self
+
     def update(self, value):
         manager = self._get_manager()
         for cell_id in self._cell_ids:
@@ -231,6 +237,9 @@ class EditorOutputPin(OutputPinBase):
         self.solid = OutputPin(process, identifier, dtype)
         self.liquid = OutputPin(process, identifier, dtype)
 
+    def get_pin(self):
+        return self
+
     def update(self, value):
         self.solid.update(value)
         self.liquid.update(value)
@@ -255,10 +264,9 @@ class ExportedPinBase:
     def get_pin_id(self):
         return self._pin.get_pin_id()
     def get_pin(self):
-        if not isinstance(self._pin, ExportedPinBase):
-            return self._pin
-        else:
-            return self._pin.get_pin()
+        return self._pin.get_pin()
+    def __getattr__(self, attr):
+        return getattr(self._pin, attr)
 
 class ExportedOutputPin(ExportedPinBase, OutputPinBase):
     pass

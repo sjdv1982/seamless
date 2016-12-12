@@ -6,6 +6,9 @@ from .process import Process, ProcessLike, InputPinBase, ExportedInputPin, \
 
 _active_context = None
 
+#TODO: re-think the concept of capturing classes.
+#  Anyway, capturing does not work well for Context (which is CellLike AND ProcessLike)
+
 def set_active_context(ctx):
     global _active_context
     assert ctx is None or isinstance(ctx, Context)
@@ -34,14 +37,15 @@ subcontext has no constructor""" %      (self.name, self.parent._name)
             else:
                 cell_or_process = args[0]
                 capturing_class = self.parent._capturing_class
-                if not isinstance(
-                    cell_or_process, (capturing_class, Context)
-                ):
-                    raise TypeError("""
-Cannot construct attribute '%s' of subcontext '%s': \
-attribute must be an instance of %s" %""" % (self.name, self.parent._name,
-                                         capturing_class.__name__)
-                                    )
+                if capturing_class is not None:
+                    if not isinstance(
+                        cell_or_process, (capturing_class, Context)
+                    ):
+                        raise TypeError("""
+    Cannot construct attribute '%s' of subcontext '%s': \
+    attribute must be an instance of %s""" % (self.name, self.parent._name,
+                                             capturing_class.__name__)
+                                        )
         else:
             cell_or_process = constructor(*args, **kwargs)
         self.parent._add_child(self.name, cell_or_process)
@@ -144,6 +148,7 @@ class Context(CellLike, ProcessLike):
             capturing_class = parent._capturing_class
         self._capturing_class = capturing_class
         self._subcontexts = {}
+        self._pins = {}
         self._children = {}
         self._childids = WeakValueDictionary()
         if parent is not None:
@@ -155,7 +160,6 @@ class Context(CellLike, ProcessLike):
             set_active_context(self)
         from .registrar import RegistrarAccessor
         self.registrar = RegistrarAccessor(self)
-
 
     _dir = ["root", "define", "export", "registrar"]
 
@@ -198,8 +202,23 @@ class Context(CellLike, ProcessLike):
             return self._subcontexts[attr]
         elif attr in self._children:
             return self._children[attr]
+        elif attr in self._pins:
+            return self._pins[attr]
+        elif attr.startswith("_"):
+            raise AttributeError(attr)
         else:
             return _ContextConstructor(self, attr)
+
+    def _hasattr(self, attr):
+        if hasattr(self.__class__, attr):
+            return True
+        if attr in self._subcontexts:
+            return True
+        if attr in self._children:
+            return True
+        if attr in self._pins:
+            return True
+        return False
 
     def root(self):
         if self._parent is None:
@@ -226,7 +245,7 @@ subcontext has no constructor""" % self._name
         self._add_child(childname, cell)
         return cell
 
-    def export(self, attr, force=[]):
+    def export(self, attr, forced=[]):
         """Exports all unconnected inputs and outputs of a child
 
         If the child is a cell (or cell-like context):
@@ -242,14 +261,12 @@ subcontext has no constructor""" % self._name
         Arguments:
 
         attr: attribute name of the child
-        force: contains a list of pin names that are exported in any case
+        forced: contains a list of pin names that are exported in any case
           (even if not unconnected).
           Use "_input" and "_output" to indicate primary cell input and output
 
         """
         child = self._children[attr]
-        if self._pins is None:
-            self._pins = {}
         mode = None
         if isinstance(child, CellLike) and child._like_cell:
             mode = "cell"
@@ -262,12 +279,13 @@ subcontext has no constructor""" % self._name
 
         def is_connected(pinname):
             if isinstance(child, CellLike) and child._like_cell:
+                child2 = child
                 if not isinstance(child, Cell):
-                    child = child.get_cell()
+                    child2 = child.get_cell()
                 if pinname == "_input":
-                    return (child._incoming_connections > 0)
+                    return (child2._incoming_connections > 0)
                 elif pinname == "_output":
-                    return (child._outgoing_connections > 0)
+                    return (child2._outgoing_connections > 0)
                 else:
                     raise ValueError(pinname)
             else:
@@ -275,25 +293,27 @@ subcontext has no constructor""" % self._name
                 if isinstance(pin, InputPinBase):
                     manager = pin._get_manager()
                     con_cells = manager.pin_to_cells.get(pin.get_pin_id(), [])
-                    return (con_cells > 0)
+                    return (len(con_cells) > 0)
                 elif isinstance(pin, OutputPinBase):
                     return (len(pin.get_pin()._cell_ids) > 0)
                 else:
                     raise TypeError(pin)
-        pins = [p for p in pins if not is_connected(pinname)] + forced
+        pins = [p for p in pins if not is_connected(p)] + forced
         if not len(pins):
             raise Exception("Zero pins to be exported!")
         for pinname in pins:
+            if self._hasattr(pinname):
+                raise Exception("Cannot export pin '%s', context has already this attribute" % pinname)
             if isinstance(child, CellLike) and child._like_cell:
                 if not isinstance(child, Cell):
                     child = child.get_cell()
-                    pins[pinname] = ExportedCell(child)
+                    self._pins[pinname] = ExportedCell(child)
             else:
                 pin = child._pins[pinname]
                 if isinstance(pin, InputPinBase):
-                    pins[pinname] = ExportedInputPin(pin)
+                    self._pins[pinname] = ExportedInputPin(pin)
                 elif isinstance(pin, OutputPinBase):
-                    pins[pinname] = ExportedOutputPin(pin)
+                    self._pins[pinname] = ExportedOutputPin(pin)
 
         if mode == "cell":
             self._like_cell = True
@@ -337,19 +357,21 @@ from .cell import cell, pythoncell
 
 register_subcontext(
   "processes", "process",
-  capturing_class=ProcessLike,
+  #capturing_class=ProcessLike,
   constructor=None,
 )
 register_subcontext(
   "cells", "cell",
-  capturing_class=CellLike,
+  #capturing_class=CellLike,
   constructor=cell,
 )
+"""
 register_subcontext(
   "cells.python", "pythoncell",
   capturing_class=None,
   constructor=pythoncell,
 )
+"""
 
 def context(**kwargs):
     """Return a new Context object."""

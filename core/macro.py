@@ -20,6 +20,7 @@ def _func_macro(func, type, with_context, *args, **kwargs):
         ret = func(ctx, *args2, **kwargs2)
         if ret is not None:
             raise TypeError("Context macro must return None")
+        return ctx
     else:
         return func(*args2, **kwargs2)
 
