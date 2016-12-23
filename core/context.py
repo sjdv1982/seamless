@@ -9,6 +9,8 @@ _active_context = None
 #TODO: re-think the concept of capturing classes.
 #  Anyway, capturing does not work well for Context (which is CellLike AND ProcessLike)
 
+#TODO: deletion of subcontexts deletes all their connections
+
 def set_active_context(ctx):
     global _active_context
     assert ctx is None or isinstance(ctx, Context)
