@@ -87,7 +87,7 @@ gen_texture_dict.code.cell().set(
 import numpy as np
 # Create a texture
 im1 = np.random.normal(
-    0.8, 0.3, (radius * 2 + 1, radius * 2 + 1)).astype(np.float32)
+    0.8, 0.3, (int(radius) * 2 + 1, int(radius) * 2 + 1)).astype(np.float32)
 
 # Mask it with a disk
 L = np.linspace(-radius, radius, 2 * radius + 1)
@@ -106,9 +106,12 @@ gen_texture_dict.output.cell().connect(hp.texture_dict)
 
 
 
-delay = ctx.cells.delay("object").set(1.5)
+delay = ctx.cells.delay("float").set(1.5)
 delay.connect(hp.delay)
 
+from seamless.lib.gui.basic_editor import basic_editor, edit
+edd = edit(delay)
+import sys; sys.exit()
 
 #Editor
 int_editor_code = """

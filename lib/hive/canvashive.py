@@ -49,8 +49,14 @@ class HiveCls_Canvas(app.Canvas):
 def build_canvashive(cls, i, ex, args):
     i.draw = hive.triggerfunc()
 
-    ex.v_vert_shader = hive.attribute(start_value=None)
-    ex.v_frag_shader = hive.attribute(start_value=None)
+    ex.v_vert_shader = hive.attribute(
+        data_type=("text", "code", "vertexshader"),
+        start_value=None
+    )
+    ex.v_frag_shader = hive.attribute(
+        data_type=("text", "code", "fragmentshader"),
+        start_value=None
+    )
     ex.v_vertexbuffer = hive.attribute(start_value=None)
     ex.v_texture_dict = hive.attribute(start_value=None)
     ex.program = hive.property(cls, "_program")

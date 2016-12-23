@@ -3,10 +3,12 @@
 import traceback
 import inspect
 import ast
+import os
 
 from .. import dtypes
 from .utils import find_return_in_scope
 from .process import Managed
+from . import libmanager
 
 class CellLike(object):
     """Base class for cells and contexts
@@ -23,12 +25,13 @@ class ExportedCell(Managed, CellLike):
             return self.cell
         else:
             return self.cell.get_cell()
-            
+
     def set_context(self, context):
         self.cell.set_context(context)
 
-    def _get_context(self):
-        return self.cell._get_context()
+    @property
+    def context(self):
+        return self.cell.context
 
 class Cell(Managed, CellLike):
     """Default class for cells.
@@ -58,6 +61,7 @@ class Cell(Managed, CellLike):
         assert dtypes.check_registered(dtype)
         self._dtype = dtype
         self._last_object = None
+        super().__init__()
 
     @property
     def name(self):
@@ -87,7 +91,25 @@ class Cell(Managed, CellLike):
         return self
 
     def fromfile(self, filename):
-        return self.set(open(filename).read())
+        from .macro import get_macro_mode
+        import seamless
+        if get_macro_mode():
+            caller_filename = inspect.currentframe().f_back.f_code.co_filename
+            caller_filename = os.path.realpath(caller_filename)
+            caller_filedir = os.path.split(caller_filename)[0]
+            seamless_lib_dir = os.path.realpath(
+              os.path.split(seamless.lib.__file__)[0]
+            )
+            if caller_filedir.startswith(seamless_lib_dir):
+                sub_filedir = caller_filedir[len(seamless_lib_dir):]
+                sub_filedir = sub_filedir.replace(os.sep, "/")
+                new_filename = sub_filedir + "/" + filename
+                return libmanager.fromfile(self, new_filename)
+            else:
+                new_filename = caller_filedir + os.sep + filename
+                return self.set(open(new_filename).read())
+        else:
+            return self.set(open(filename).read())
 
     def _text_set(self, data, trusted):
         if self._status == self.__class__.StatusFlags.OK \

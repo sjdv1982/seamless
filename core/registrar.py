@@ -2,6 +2,7 @@ from .cached_compile import cached_compile
 from .macro import macro
 import weakref, ast
 import types
+from collections import OrderedDict
 
 #TODO: ability to inherit from _registrars for subcontexts
 _registrars = {}
@@ -19,7 +20,11 @@ class BaseRegistrar:
         cls = self.__class__
         #monkeypatch until I properly learn to get the method binding working
         self.register = types.MethodType(
-          macro(type=cls._register_type, with_context=False)
+          macro(type=OrderedDict(
+            _arg1="self",
+            _arg2=cls._register_type,
+          ),
+          with_context=False)
           (cls.register),
           self
         )

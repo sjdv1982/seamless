@@ -2,8 +2,8 @@
 from weakref import WeakValueDictionary
 from .cell import Cell, CellLike, ExportedCell
 from .process import Process, ProcessLike, InputPinBase, ExportedInputPin, \
- OutputPinBase, ExportedOutputPin
-
+ OutputPinBase, ExportedOutputPin, EditorOutputPin
+from contextlib import contextmanager as _pystdlib_contextmanager
 _active_context = None
 
 #TODO: re-think the concept of capturing classes.
@@ -19,6 +19,14 @@ def set_active_context(ctx):
 def get_active_context():
     return _active_context
 
+@_pystdlib_contextmanager
+def active_context_as(ctx):
+    previous_context = get_active_context()
+    try:
+        set_active_context(ctx)
+        yield
+    finally:
+        set_active_context(previous_context)
 
 class _ContextConstructor:
     def __init__(self, parent, name):
@@ -262,13 +270,17 @@ subcontext has no constructor""" % self._name
 
         Arguments:
 
-        attr: attribute name of the child
+        attr: attribute name of the child, or the child itself
         forced: contains a list of pin names that are exported in any case
           (even if not unconnected).
           Use "_input" and "_output" to indicate primary cell input and output
 
         """
-        child = self._children[attr]
+        if not isinstance(attr, str):
+            child = attr
+            assert child.context.part_of(self)
+        else:
+            child = self._children[attr]
         mode = None
         if isinstance(child, CellLike) and child._like_cell:
             mode = "cell"
@@ -297,7 +309,12 @@ subcontext has no constructor""" % self._name
                     con_cells = manager.pin_to_cells.get(pin.get_pin_id(), [])
                     return (len(con_cells) > 0)
                 elif isinstance(pin, OutputPinBase):
-                    return (len(pin.get_pin()._cell_ids) > 0)
+                    pin = pin.get_pin()
+                    if isinstance(pin, EditorOutputPin):
+                        return (len(pin.solid._cell_ids) > 0) or \
+                         (len(pin.liquid._cell_ids) > 0)
+                    else:
+                        return (len(pin._cell_ids) > 0)
                 else:
                     raise TypeError(pin)
         pins = [p for p in pins if not is_connected(p)] + forced
@@ -321,6 +338,18 @@ subcontext has no constructor""" % self._name
             self._like_cell = True
         elif mode == "process":
             self._like_process = True
+    def part_of(self, ctx):
+        assert isinstance(ctx, Context)
+        if ctx is self:
+            return True
+        elif self._parent is None:
+            return False
+        else:
+            return self._parent.part_of(ctx)
+
+    def set_context(self, ctx):
+        assert self._parent is None, self._parent
+        self._parent = ctx
 
 _registered_subcontexts = {}
 

@@ -8,6 +8,7 @@ from .core.context import context
 from .core.cell import cell, pythoncell
 from .core.transformer import transformer
 from .core.editor import editor
+from . import lib
 
 __all__ = (macro, context, cell, pythoncell, transformer, editor)
 

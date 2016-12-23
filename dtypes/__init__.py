@@ -9,6 +9,8 @@ _known_types = [
   "text",
   ("text", "code", "python"),
   ("text", "code", "silk"),
+  ("text", "code", "vertexshader"),
+  ("text", "code", "fragmentshader"),  
   ("text", "data", "json"),
   ("text", "data", "xml"),
   ("text", "data", "silk"),

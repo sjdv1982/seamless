@@ -107,13 +107,18 @@ class Manager:
 
 class Managed:
     _context = None
+    _destroyed = False
+    def __init__(self):
+        self._owned = []
+
     def set_context(self, context):
         from .context import Context
         assert isinstance(context, Context)
         self._context = context
         return self
 
-    def _get_context(self):
+    @property
+    def context(self):
         if self._context is None:
             raise Exception(
              "Cannot carry out requested operation without a context"
@@ -121,8 +126,23 @@ class Managed:
         return self._context
 
     def _get_manager(self):
-        context = self._get_context()
+        context = self.context
         return context._manager
+
+    def own(self, obj):
+        from .context import Context
+        assert isinstance(obj, (Managed, Context))
+        if obj not in self._owned:
+            self._owned.append(obj)
+
+    def destroy(self):
+        if self._destroyed:
+            return
+        print("TODO: destroy", self)
+        self._destroyed = True
+        for owned in self._owned:
+            owned.destroy()
+
 
 class ProcessLike:
     """Base class for processes and contexts"""
@@ -144,6 +164,7 @@ class InputPin(InputPinBase):
         self.process_ref = weakref.ref(process)
         self.identifier = identifier
         self.dtype = dtype
+        super().__init__()
 
     def get_pin_id(self):
         return id(self)
@@ -151,9 +172,9 @@ class InputPin(InputPinBase):
     def get_pin(self):
         return self
 
-    def cell(self):
+    def cell(self, own=False):
         manager = self._get_manager()
-        context = self._get_context()
+        context = self.context
         curr_pin_to_cells = manager.pin_to_cells.get(self.get_pin_id(), [])
         l = len(curr_pin_to_cells)
         if l == 0:
@@ -170,6 +191,8 @@ class InputPin(InputPinBase):
             cell = context.root()._childids[curr_pin_to_cells[0]]
         elif l > 1:
             raise TypeError("cell() is ambiguous, multiple cells are connected")
+        if own:
+            self.own(cell)
         return cell
 
 
@@ -194,6 +217,7 @@ class OutputPin(OutputPinBase):
         self.identifier = identifier
         self.dtype = dtype
         self._cell_ids = []
+        super().__init__()
 
     def get_pin(self):
         return self
@@ -208,7 +232,7 @@ class OutputPin(OutputPinBase):
         manager.connect(self, target)
 
     def cell(self):
-        context = self._get_context()
+        context = self.context
         l = len(self._cell_ids)
         if l == 0:
             if self.dtype is None:
@@ -227,15 +251,19 @@ class OutputPin(OutputPinBase):
         return cell
 
     def cells(self):
-        context = self._get_context()
+        context = self.context
         cells = [context.cells[c] for c in self._cell_ids]
         cells = [c for c in cells if c is not None]
         return cells
+
 
 class EditorOutputPin(OutputPinBase):
     def __init__(self, process, identifier, dtype):
         self.solid = OutputPin(process, identifier, dtype)
         self.liquid = OutputPin(process, identifier, dtype)
+        super().__init__()
+        self.own(self.solid)
+        self.own(self.liquid)
 
     def get_pin(self):
         return self
@@ -261,12 +289,34 @@ class EditorOutputPin(OutputPinBase):
 class ExportedPinBase:
     def __init__(self, pin):
         self._pin = pin
+
     def get_pin_id(self):
         return self._pin.get_pin_id()
+
     def get_pin(self):
         return self._pin.get_pin()
+
     def __getattr__(self, attr):
         return getattr(self._pin, attr)
+
+    def set_context(self, context):
+        from .context import Context
+        assert isinstance(context, Context)
+        self._context = context
+        return self
+
+    @property
+    def _context(self):
+        return self._pin._context
+
+    def _get_manager(self):
+        return self._pin._get_manager()
+
+    def own(self, obj):
+        return self._pin.own()
+
+    def destroy(self):
+        return self._pin.destroy()
 
 class ExportedOutputPin(ExportedPinBase, OutputPinBase):
     pass
