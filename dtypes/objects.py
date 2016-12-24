@@ -84,9 +84,12 @@ class PythonTransformerCodeObject(PythonCodeObject):
 
 
 def data_type_to_data_object(data_type):
+    #TODO: stub!
     from . import check_registered
     assert check_registered(data_type), data_type
+    return DataObject
 
+    """
     if data_type[:2] == ("text", "code"):
         return DataObject #by default, code is just text!
 
@@ -101,3 +104,4 @@ def data_type_to_data_object(data_type):
 
     else:
         return DataObject
+    """

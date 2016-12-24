@@ -11,8 +11,6 @@ from .pythreadkernel import Transformer as KernelTransformer
 from .. import dtypes
 from .. import silk
 
-#TODO: run only when output cell is connected too!
-
 transformer_param_docson = {
   "pin": "Required. Can be \"inputpin\", \"outputpin\", \"bufferpin\"",
   "pinclass": """Optional for inputpin, used to indicate a code inputpin
@@ -88,6 +86,8 @@ class Transformer(Process):
         self._io_attrs = ["code"]
         self._pins = {"code":self.code}
         self._output_name = None
+        self._connected_output = False
+        self._last_value = None
         for p in transformer_params:
             param = transformer_params[p]
             if param["pin"] == "input":
@@ -152,10 +152,24 @@ class Transformer(Process):
                         break
 
                 output_name, output_value = self.output_queue.popleft()
-                self._pins[output_name].update(output_value)
+                assert output_name == self._output_name
+                if self._connected_output:
+                    self._pins[self._output_name].update(output_value)
+                else:
+                    self._last_value = output_value
 
             except:
                 traceback.print_exc() #TODO: store it?
+
+    def _on_connect_output(self):
+        last_value = self._last_value
+        if last_value is not None:
+            self._last_value = None
+            self._pins[self._output_name].update(last_value)
+        self._connected_output = True
+
+    def _on_disconnect_output(self):
+        self._connected_output = False
 
     def destroy(self):
         # gracefully terminate the transformer thread

@@ -1,5 +1,7 @@
 #TODO: this is currently a stub
 
+import json
+
 _known_types = [
   "object",
   "int",
@@ -10,10 +12,10 @@ _known_types = [
   ("text", "code", "python"),
   ("text", "code", "silk"),
   ("text", "code", "vertexshader"),
-  ("text", "code", "fragmentshader"),  
-  ("text", "data", "json"),
-  ("text", "data", "xml"),
-  ("text", "data", "silk"),
+  ("text", "code", "fragmentshader"),
+  "json",
+  "xml",
+  "silk",
 ]
 
 _constructors = {
@@ -23,9 +25,13 @@ _constructors = {
     "bool" : bool,
     "str" : str,
     "text" : str,
+    "json": json.dumps,
+    "xml": str, #TODO
+    "silk": str, #TODO
 }
 
-_parsers = _constructors
+_parsers = _constructors.copy()
+_parsers["json"] = json.loads
 
 
 def check_registered(data_type):
@@ -33,9 +39,12 @@ def check_registered(data_type):
 
 
 def construct(data_type, value):
+    dtype = data_type
+    if isinstance(dtype, tuple) and dtype not in _constructors and \
+      dtype[0] in _constructors:
+        dtype = dtype[0]
     try:
-        return _constructors[data_type](value)
-
+        return _constructors[dtype](value)
     except:
         raise ConstructionError
 
@@ -62,8 +71,17 @@ def parse(data_type, value, trusted):
 
 
 def serialize(data_type, value):
-    if data_type == "object":
+    dtype = data_type
+    if isinstance(dtype, tuple):
+        dtype = dtype[0]
+    if dtype == "object":
         return value
+    elif dtype == "json":
+        return json.dumps(value)
+    elif dtype == "xml":
+        raise NotImplementedError
+    elif dtype == "silk":
+        raise NotImplementedError
     else:
         return str(value)
 
@@ -75,7 +93,8 @@ class ParseError(Exception):
 class ConstructionError(Exception):
     pass
 
-def register(*args, **kwargs):
-    pass
+def register(type, *args, **kwargs):
+    #STUB!
+    _known_types.append(type)
 
 from .objects import data_type_to_data_object

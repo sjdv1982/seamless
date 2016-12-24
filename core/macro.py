@@ -75,8 +75,9 @@ def _parse_type_args(type):
 
 def _resolve(a):
     from .cell import Cell
+    from ..dtypes import parse
     if isinstance(a, Cell):
-        return a._data
+        return parse(a.dtype, a._data, trusted=True)
     else:
         return a
 
@@ -117,7 +118,7 @@ def _resolve_type_args(type_args, args0, kwargs0):
     for argname in type_args:
         if argname.startswith("_"):
             continue
-        if argname in kwargs2:
+        if argname in kwargs2 and kwargs2[argname] is not None:
             continue
         arg_default = default.get(argname, None)
         kwargs2[argname] = arg_default

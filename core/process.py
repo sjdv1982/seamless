@@ -2,6 +2,8 @@
 import weakref
 from weakref import WeakValueDictionary, WeakKeyDictionary
 
+#TODO: disconnect
+
 class Manager:
 
     def __init__(self):
@@ -68,6 +70,7 @@ class Manager:
         return id(cell)
 
     def connect(self, source, target):
+        from .transformer import Transformer
         from .cell import Cell, CellLike
         from .context import Context
         if isinstance(source, CellLike) and source._like_cell:
@@ -104,6 +107,10 @@ class Manager:
 
             if cell_id not in source._cell_ids:
                 source._cell_ids.append(cell_id)
+
+            if isinstance(process, Transformer):
+                process._on_connect_output()
+
 
 class Managed:
     _context = None

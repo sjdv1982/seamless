@@ -22,7 +22,7 @@ currdir = os.path.dirname(__file__)
 # Create a texture
 radius = 32.0
 im1 = np.random.normal(
-    0.8, 0.3, (int(radius) * 2 + 1, int(radius) * 2 + 1)).astype(np.float32)
+    0.8, 0.3, (radius * 2 + 1, radius * 2 + 1)).astype(np.float32)
 
 # Mask it with a disk
 L = np.linspace(-radius, radius, 2 * radius + 1)

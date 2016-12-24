@@ -41,6 +41,6 @@ class Transformer(Process):
                 self.namespace[name] = self.values[name].data
 
         # Place result in output
-        result = eval(self.expression, self.namespace)
+        result = eval(self.expression, self.namespace)        
         self.output_queue.append((self.output_name, result))
         self.output_semaphore.release()

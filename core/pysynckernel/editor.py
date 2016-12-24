@@ -101,7 +101,6 @@ class Editor:
             code = self.values["code_start"].data
             self._code_stop()
             self.code_start_block = compile(code, self.name + "_start", "exec")
-            self._code_start()
 
         do_update = False
         if "code_update" in updated:
@@ -118,6 +117,10 @@ class Editor:
                 _updated.add(name)
                 self.namespace[name] = self.values[name].data
                 do_update = True
+
+        if "code_start" in updated:
+            self._code_start()
+
         if do_update:
             self.namespace["_updated"] = _updated
             exec(self.code_update_block, self.namespace)

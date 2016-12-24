@@ -58,7 +58,7 @@ class Cell(Managed, CellLike):
 
     def __init__(self, dtype):
         """TODO: docstring."""
-        assert dtypes.check_registered(dtype)
+        assert dtypes.check_registered(dtype), dtype
         self._dtype = dtype
         self._last_object = None
         super().__init__()
@@ -112,9 +112,14 @@ class Cell(Managed, CellLike):
             return self.set(open(filename).read())
 
     def _text_set(self, data, trusted):
-        if self._status == self.__class__.StatusFlags.OK \
-                and (data == self._data or data == self._data_last):
-            return False
+        try:
+            if self._status == self.__class__.StatusFlags.OK \
+                    and (data is self._data or data is self._data_last or
+                         data == self._data or data == self._data_last):
+                return False
+        except:
+            pass
+
         try:
             """Check if we can parse the text"""
             dtypes.parse(self._dtype, data, trusted=trusted)

@@ -12,6 +12,14 @@ _editors = {
     "code": "cell-basic_editor_float.py",
     "update": "cell-basic_editor_UPDATE.py",
   },
+  "text": {
+    "code": "cell-basic_editor_text.py",
+    "update": None
+  },
+  "json": {
+    "code": "cell-basic_editor_json.py",
+    "update": None
+  },
 }
 
 def _match_type(type, typelist):
@@ -62,22 +70,23 @@ def basic_editor(ctx, editor_type, title):
     ed.title.cell(True).set(title)
     ed.code_start.cell(True).fromfile(_editors[editor_type]["code"])
     ed.code_stop.cell(True).set('_cache["w"].destroy()')
-    ed.code_update.cell(True).fromfile(_editors[editor_type]["update"])
-    ed.value.cell().set(10)
-    ed.output.solid.connect(ed.value.cell())
-    #ctx.export(ed)
+    upfile = _editors[editor_type]["update"]
+    c_up = ed.code_update.cell(True)
+    if upfile is not None:
+        c_up.fromfile(upfile)
+    else:
+        c_up.set("")
+    ctx.export(ed)
 
-def edit(cell, solid=True):
+def edit(cell, title=None, solid=True):
     assert isinstance(cell, Cell)
     assert cell.context is not None
     with active_context_as(cell.context):
-        ed = basic_editor(cell.dtype)
-    """
+        ed = basic_editor(cell.dtype, title)
     cell.connect(ed.value)
     if solid:
         ed.output.solid.connect(cell)
     else:
         ed.output.liquid.connect(cell)
     cell.own(ed)
-    """
     return ed
