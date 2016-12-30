@@ -5,6 +5,8 @@ import types
 from collections import OrderedDict
 
 #TODO: ability to inherit from _registrars for subcontexts
+#TODO: when cells are registered as ctx.registrar.x.register, they must be a
+# part of ctx (ctx._part_of)
 _registrars = {}
 
 class RegistrarAccessor:

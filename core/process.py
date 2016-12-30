@@ -118,22 +118,23 @@ class Managed:
     def __init__(self):
         self._owned = []
 
-    def set_context(self, context):
+    def _set_context(self, context):
         from .context import Context
         assert isinstance(context, Context)
+        #TODO: detach context if self._context is not None
         self._context = context
         return self
 
     @property
     def context(self):
-        if self._context is None:
-            raise Exception(
-             "Cannot carry out requested operation without a context"
-            )
         return self._context
 
     def _get_manager(self):
         context = self.context
+        if context is None:
+            raise Exception(
+             "Cannot carry out requested operation without a context"
+            )
         return context._manager
 
     def own(self, obj):
@@ -158,20 +159,45 @@ class ProcessLike:
 class Process(Managed, ProcessLike):
     """Base class for all processes."""
     _pins = None
+    def __init__(self):
+        from .macro import get_macro_mode
+        from .context import get_active_context
+        if get_macro_mode():
+            self._set_context(get_active_context())
+        super().__init__()
 
-class InputPinBase(Managed):
+class PinBase(Managed):
+
+    def __init__(self, process):
+        self.process_ref = weakref.ref(process)
+        super().__init__()
+
+    def _set_context(self, context):
+        process = self.process_ref()
+        if process is None:
+            return #Process has died...
+        process._set_context(context)
+
+    @property
+    def context(self):
+        process = self.process_ref()
+        if process is None:
+            return None
+        return process.context
+
+
+class InputPinBase(PinBase):
     pass
 
-class OutputPinBase(Managed):
+class OutputPinBase(PinBase):
     pass
 
 class InputPin(InputPinBase):
 
     def __init__(self, process, identifier, dtype):
-        self.process_ref = weakref.ref(process)
+        InputPinBase.__init__(self, process)
         self.identifier = identifier
         self.dtype = dtype
-        super().__init__()
 
     def get_pin_id(self):
         return id(self)
@@ -192,16 +218,15 @@ class InputPin(InputPinBase):
             process = self.process_ref()
             if process is None:
                 raise ValueError("Process has died")
-            cell = context.root().cells.define(self.dtype)
+            cell = context._newcell(self.dtype)
             cell.connect(self)
         elif l == 1:
-            cell = context.root()._childids[curr_pin_to_cells[0]]
+            cell = context._childids[curr_pin_to_cells[0]]
         elif l > 1:
             raise TypeError("cell() is ambiguous, multiple cells are connected")
         if own:
             self.own(cell)
         return cell
-
 
     def update(self, value):
         process = self.process_ref()
@@ -220,11 +245,10 @@ class InputPin(InputPinBase):
 
 class OutputPin(OutputPinBase):
     def __init__(self, process, identifier, dtype):
-        self.process_ref = weakref.ref(process)
+        OutputPinBase.__init__(self, process)
         self.identifier = identifier
         self.dtype = dtype
         self._cell_ids = []
-        super().__init__()
 
     def get_pin(self):
         return self
@@ -249,10 +273,10 @@ class OutputPin(OutputPinBase):
             process = self.process_ref()
             if process is None:
                 raise ValueError("Process has died")
-            cell = context.root().cells.define(self.dtype)
+            cell = context._newcell(self.dtype)
             self.connect(cell)
         elif l == 1:
-            cell = context.root()._childids[self._cell_ids[0]]
+            cell = context._childids[self._cell_ids[0]]
         elif l > 1:
             raise TypeError("cell() is ambiguous, multiple cells are connected")
         return cell
@@ -266,9 +290,9 @@ class OutputPin(OutputPinBase):
 
 class EditorOutputPin(OutputPinBase):
     def __init__(self, process, identifier, dtype):
+        OutputPinBase.__init__(self, process)
         self.solid = OutputPin(process, identifier, dtype)
         self.liquid = OutputPin(process, identifier, dtype)
-        super().__init__()
         self.own(self.solid)
         self.own(self.liquid)
 
@@ -288,11 +312,6 @@ class EditorOutputPin(OutputPinBase):
     def cells(self):
         raise TypeError("Cannot obtain .cells for EditorOutputPin, select .solid or .liquid")
 
-    def set_context(self, context):
-        Managed.set_context(self, context)
-        self.solid.set_context(context)
-        self.liquid.set_context(context)
-
 class ExportedPinBase:
     def __init__(self, pin):
         self._pin = pin
@@ -306,15 +325,12 @@ class ExportedPinBase:
     def __getattr__(self, attr):
         return getattr(self._pin, attr)
 
-    def set_context(self, context):
-        from .context import Context
-        assert isinstance(context, Context)
-        self._context = context
-        return self
+    def _set_context(self, context):
+        self._pin._set_context(context)
 
     @property
-    def _context(self):
-        return self._pin._context
+    def context(self):
+        return self._pin.context
 
     def _get_manager(self):
         return self._pin._get_manager()

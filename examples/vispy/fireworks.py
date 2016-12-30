@@ -3,15 +3,13 @@ from seamless.silk import Silk
 from seamless.lib.hive.hiveprocess import hiveprocess
 
 ctx = context()
-c1 = cell(("text", "code", "silk")).fromfile("vertexdata.silk")
-c1.set_context(ctx)
-ctx.registrar.silk.register(c1)
+ctx.c1 = cell(("text", "code", "silk")).fromfile("vertexdata.silk")
+ctx.registrar.silk.register(ctx.c1)
 #print(Silk.Vec3(1,2,3), ctx.registrar.silk.Vec3(3,4,5))
 
-c2 = pythoncell().fromfile("fireworkhive.py")
-c2.set_context(ctx)
-ctx.registrar.hive.register(c2)
-hp = ctx.processes.hp(hiveprocess("fireworkhive"))
+ctx.c2 = pythoncell().fromfile("fireworkhive.py")
+ctx.registrar.hive.register(ctx.c2)
+hp = ctx.hp = hiveprocess("fireworkhive")
 
 
 hiveprocess_init = """
@@ -46,7 +44,7 @@ hp.code_stop.cell().set(hiveprocess_stop)
 hp.vert_shader.cell().fromfile("fireworks.vert")
 hp.frag_shader.cell().fromfile("fireworks.frag")
 
-gen_vertexbuffer_params = cell(("json", "seamless", "transformer_params")).set(
+ctx.gen_vertexbuffer_params = cell(("json", "seamless", "transformer_params")).set(
  {
   "N": {
     "pin": "input",
@@ -58,13 +56,10 @@ gen_vertexbuffer_params = cell(("json", "seamless", "transformer_params")).set(
   }
 }
 )
-gen_vertexbuffer_params.set_context(ctx)
-gen_vertexbuffer = ctx.processes.gen_vertexbuffer(
- transformer(gen_vertexbuffer_params)
-)
-N = gen_vertexbuffer.N.cell()
+ctx.gen_vertexbuffer = transformer(ctx.gen_vertexbuffer_params)
+N = ctx.gen_vertexbuffer.N.cell()
 N.set(10000)
-gen_vertexbuffer.code.cell().set(
+ctx.gen_vertexbuffer.code.cell().set(
 """
 assert N > 0
 import numpy as np
@@ -74,11 +69,11 @@ data = Silk.VertexDataArray.from_numpy(data, copy=False, validate=False)
 return data
 """
 )
-vertexbuffer = gen_vertexbuffer.output.cell()
+vertexbuffer = ctx.gen_vertexbuffer.output.cell()
 vertexbuffer.connect(hp.vertexbuffer)
 
 
-gen_texture_dict_params = cell(("json", "seamless", "transformer_params")).set(
+ctx.gen_texture_dict_params = cell(("json", "seamless", "transformer_params")).set(
  {
   "radius": {
     "pin": "input",
@@ -90,11 +85,8 @@ gen_texture_dict_params = cell(("json", "seamless", "transformer_params")).set(
   }
 }
 )
-gen_texture_dict_params.set_context(ctx)
-gen_texture_dict = ctx.processes.gen_texture_dict(
-  transformer(gen_texture_dict_params)
-)
-gen_texture_dict.code.cell().set(
+ctx.gen_texture_dict = transformer(ctx.gen_texture_dict_params)
+ctx.gen_texture_dict.code.cell().set(
 """
 import numpy as np
 # Create a texture
@@ -108,30 +100,30 @@ im1 *= np.array((X ** 2 + Y ** 2) <= radius * radius, dtype='float32')
 return {'s_texture': im1}
 """
 )
-radius = gen_texture_dict.radius.cell()
+radius = ctx.gen_texture_dict.radius.cell()
 radius.set(32)
-gen_texture_dict.output.cell().connect(hp.texture_dict)
+ctx.gen_texture_dict.output.cell().connect(hp.texture_dict)
 
 
 #from hive.manager import hive_mode_as
 #with hive_mode_as("build"):
     #hobj = FireWorkHive()
 
-delay = ctx.cells.delay("float").set(1.5)
-delay.connect(hp.delay)
+ctx.delay = cell("float").set(1.5)
+ctx.delay.connect(hp.delay)
 
 from seamless.lib.gui.basic_editor import basic_editor, edit
 
-ed_delay = edit(delay, "Delay")
-ed_radius = edit(radius, "Radius")
-ed_N = edit(N, "N")
-ed_vert = edit(hp.vert_shader.cell(), "Vertex shader")
-ed_frag = edit(hp.frag_shader.cell(), "Fragment shader")
-ed_vertexformat = edit(c1, "Vertex format")
-ed_hive = edit(c2, "Hive")
-ed_gen_vertexbuffer = edit(gen_vertexbuffer.code.cell(),
+ctx.ed_delay = edit(ctx.delay, "Delay")
+ctx.ed_radius = edit(radius, "Radius")
+ctx.ed_N = edit(N, "N")
+ctx.ed_vert = edit(hp.vert_shader.cell(), "Vertex shader")
+ctx.ed_frag = edit(hp.frag_shader.cell(), "Fragment shader")
+ctx.ed_vertexformat = edit(ctx.c1, "Vertex format")
+ctx.ed_hive = edit(ctx.c2, "Hive")
+ctx.ed_gen_vertexbuffer = edit(ctx.gen_vertexbuffer.code.cell(),
   "Vertexbuffer generation")
-ed_gen_vertexbuffer_params = edit(gen_vertexbuffer_params, "Vertexbuffer gen params")
-ed_gen_texturedict = edit(gen_texture_dict.code.cell(),
+ctx.ed_gen_vertexbuffer_params = edit(ctx.gen_vertexbuffer_params, "Vertexbuffer gen params")
+ctx.ed_gen_texturedict = edit(ctx.gen_texture_dict.code.cell(),
   "Texture dict generation")
-ed_gen_texture_dict_params = edit(gen_texture_dict_params, "Texdict gen params")
+ctx.ed_gen_texture_dict_params = edit(ctx.gen_texture_dict_params, "Texdict gen params")

@@ -79,6 +79,7 @@ class Editor(Process):
             kernel_inputs,
             self.output_names,
         )
+        super().__init__()
 
     def output_update(self, name, value):
         self._pins[name].update(value)

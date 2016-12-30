@@ -20,7 +20,7 @@ currdir = os.path.dirname(__file__)
 
 
 # Create a texture
-radius = 32.0
+radius = 32
 im1 = np.random.normal(
     0.8, 0.3, (radius * 2 + 1, radius * 2 + 1)).astype(np.float32)
 

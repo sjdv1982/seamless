@@ -65,8 +65,7 @@ def basic_editor(ctx, editor_type, title):
         "dtype": editor_type
       }
     }
-    ed = ctx.processes.ed(editor(pinparams))
-    ed.set_context(ctx) #TODO: should not be necessary...
+    ed = ctx.ed = editor(pinparams)
     ed.title.cell(True).set(title)
     ed.code_start.cell(True).fromfile(_editors[editor_type]["code"])
     ed.code_stop.cell(True).set('_cache["w"].destroy()')

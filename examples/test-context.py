@@ -22,7 +22,7 @@ if __name__ == "__main__":
     from seamless import context, transformer
     ctx = context()
 
-    cont = ctx.processes.cont(transformer(tparams))
+    cont = ctx.cont = transformer(tparams)
     c_data = cont.value.cell()
     c_data.set(4)
     c_code = cont.code.cell()
@@ -36,7 +36,7 @@ if __name__ == "__main__":
     c_data.set(5)
     c_code.set("return value*3")
 
-    cont2 = ctx.processes.cont2(transformer(tparams))
+    cont2 = ctx.cont2 = transformer(tparams)
     c_code.connect(cont2.code)
     c_data.connect(cont2.value)
     c_output2 = cont2.output.cell()

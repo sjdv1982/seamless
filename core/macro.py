@@ -82,6 +82,11 @@ def _resolve(a):
         return a
 
 def _resolve_type_args(type_args, args0, kwargs0):
+    """
+    #TODO: get cells that have been resolved
+    When macro object is created and attached to context X, verify that all those
+     cells and X have a common ancestor (._root)
+    """
     args = [_resolve(a) for a in args0]
     kwargs = {k: _resolve(v) for k, v in kwargs0.items()}
     if type_args is None:
@@ -127,8 +132,8 @@ def _resolve_type_args(type_args, args0, kwargs0):
 
 def _func_macro(func, type_args, with_context, *args, **kwargs):
     args2, kwargs2 = _resolve_type_args(type_args, args, kwargs)
+    previous_macro_mode = get_macro_mode()
     if with_context:
-        previous_macro_mode = get_macro_mode()
         ctx = context(parent=get_active_context(), active_context=False)
         try:
             set_macro_mode(True)
@@ -139,7 +144,12 @@ def _func_macro(func, type_args, with_context, *args, **kwargs):
         finally:
             set_macro_mode(previous_macro_mode)
     else:
-        return func(*args2, **kwargs2)
+        try:
+            set_macro_mode(True)
+            ret = func(*args2, **kwargs2)
+        finally:
+            set_macro_mode(previous_macro_mode)
+        return ret
 
 def macro(*args, **kwargs):
     """

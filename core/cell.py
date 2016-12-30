@@ -26,8 +26,8 @@ class ExportedCell(Managed, CellLike):
         else:
             return self.cell.get_cell()
 
-    def set_context(self, context):
-        self.cell.set_context(context)
+    def _set_context(self, context):
+        self.cell._set_context(context)
 
     @property
     def context(self):

@@ -20,7 +20,7 @@ class MyTextEdit(QTextEdit):
 w.show()
 b = MyTextEdit()
 b.setFontPointSize(15)
-b.setText(json.dumps(value))
+b.setText(json.dumps(value, indent=2))
 #b.setFontItalic(True)
 #b.setTextColor(QColor(255,0,0))
 vbox.addWidget(b)

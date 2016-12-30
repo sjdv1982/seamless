@@ -22,38 +22,39 @@ if __name__ == "__main__":
     from seamless import cell, pythoncell, transformer, context
     ctx = context()
 
-    c_data = cell("int").set_context(ctx).set(4)
-    c_output = cell("int").set_context(ctx)
-    c_code = pythoncell().set_context(ctx)
+    ctx.c_data = cell("int").set(4)
+    ctx.c_output = cell("int")
+    ctx.c_code = pythoncell()
 
-    cont = transformer(tparams).set_context(ctx)
-    c_data.connect(cont.value)
+    ctx.cont = transformer(tparams)
+    ctx.c_data.connect(ctx.cont.value)
 
-    c_code.connect(cont.code)
-    c_code.set("return value*2")
 
-    print(c_data.data, "'" + c_code.data + "'", c_output.data)
-    cont.output.connect(c_output)
+    ctx.c_code.connect(ctx.cont.code)
+    ctx.c_code.set("return value*2")
+
+    print(ctx.c_data.data, "'" + ctx.c_code.data + "'", ctx.c_output.data)
+    ctx.cont.output.connect(ctx.c_output)
 
     time.sleep(0.001)
     # 1 ms is usually enough to print "8", try 0.0001 for a random chance
-    print(c_data.data, "'" + c_code.data + "'", c_output.data)
+    print(ctx.c_data.data, "'" + ctx.c_code.data + "'", ctx.c_output.data)
 
-    c_data.set(5)
-    c_code.set("return value*3")
+    ctx.c_data.set(5)
+    ctx.c_code.set("return value*3")
 
-    c_output2 = cell("int")
-    cont2 = transformer(tparams).set_context(ctx)
-    c_code.connect(cont2.code)
-    c_data.connect(cont2.value)
-    cont2.output.connect(c_output2)
+    ctx.c_output2 = cell("int")
+    ctx.cont2 = transformer(tparams)
+    ctx.c_code.connect(ctx.cont2.code)
+    ctx.c_data.connect(ctx.cont2.value)
+    ctx.cont2.output.connect(ctx.c_output2)
 
-    # c_output3 = cell("int")
-    # cont2.output.connect(c_output3)
+    # ctx.c_output3 = cell("int")
+    # ctx.cont2.output.connect(ctx.c_output3)
 
-    cont.destroy()
+    del ctx.cont
     # this will sync the controller I/O threads before killing them
-    cont2.destroy()
+    del ctx.cont2
     # this will sync the controller I/O threads before killing them
-    print(c_data.data, "'" + c_code.data + "'", c_output.data)
-    print(c_output2.data)
+    print(ctx.c_data.data, "'" + ctx.c_code.data + "'", ctx.c_output.data)
+    print(ctx.c_output2.data)
