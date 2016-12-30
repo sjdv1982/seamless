@@ -16,6 +16,7 @@ class HiveCls_Canvas(app.Canvas):
 
         gloo.set_viewport(0, 0, self.physical_size[0], self.physical_size[1])
         self._timer = app.Timer('auto', connect=self.update, start=True)
+        self._working = True
 
     def create_program(
             self,
@@ -44,7 +45,15 @@ class HiveCls_Canvas(app.Canvas):
 
     def on_draw(self, event):
         gloo.clear()
-        self._hive().draw()
+        if not self._working:
+            return
+        try:
+            self._hive().draw()
+        except:
+            import traceback
+            traceback.print_exc()
+            self._working = False
+            raise
 
 def build_canvashive(cls, i, ex, args):
     i.draw = hive.triggerfunc()

@@ -2,6 +2,7 @@ import hive
 import numpy as np
 import time
 from seamless.lib.hive.canvashive import canvashive
+from vispy import gloo
 
 def build_fireworkhive(i, ex, args):
     ex.canvas = canvashive(keys='interactive', size=(800, 600))
@@ -52,6 +53,8 @@ def build_fireworkhive(i, ex, args):
 
         # Set time to zero
         self._starttime = time.time()
+
+        program.bind(gloo.VertexBuffer(p))
     i.new_explosion = hive.modifier(new_explosion)
     hive.trigger(ex.canvas.program_rebuilt, i.new_explosion)
 
