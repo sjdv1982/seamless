@@ -178,11 +178,8 @@ def macro(*args, **kwargs):
       if True, the function is passed a context object as additional
        first parameter, and is expected to return None
       if False, the function is expected to return a cell or process.
-       This cell or process must be added manually to the context
-       The returned cell or process is marked as "owner" of any other cells
-       or processes created by the macro. When the owner is deleted, the owned
-       cells and processes are deleted as well
-       (TODO!)
+       This cell or process (together with any other cells or processes
+       created by the macro) are automatically added to the active context.
 
     Example 1:
     @macro
