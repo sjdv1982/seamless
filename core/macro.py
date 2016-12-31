@@ -13,8 +13,6 @@ from contextlib import contextmanager as _pystdlib_contextmanager
 # fork any cellproxies linking to the old lib cell, then update the lib cell,
 # and issue a warning
 
-#TODO: with_context = False should *still* connect to active context!
-
 _macro_mode = False
 
 def get_macro_mode():
