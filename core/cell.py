@@ -4,6 +4,7 @@ import traceback
 import inspect
 import ast
 import os
+import copy
 
 from .. import dtypes
 from .utils import find_return_in_scope
@@ -26,8 +27,8 @@ class ExportedCell(Managed, CellLike):
         else:
             return self.cell.get_cell()
 
-    def _set_context(self, context):
-        self.cell._set_context(context)
+    def _set_context(self, context, force_detach=False):
+        self.cell._set_context(context, force_detach)
 
     @property
     def context(self):
@@ -58,9 +59,14 @@ class Cell(Managed, CellLike):
 
     def __init__(self, dtype):
         """TODO: docstring."""
+        from .macro import get_macro_mode
+        from .context import get_active_context
         assert dtypes.check_registered(dtype), dtype
         self._dtype = dtype
         self._last_object = None
+        if get_macro_mode():
+            ctx = get_active_context()
+            ctx._add_new_cell(self)
         super().__init__()
 
     @property
@@ -141,8 +147,7 @@ class Cell(Managed, CellLike):
 
     def _object_set(self, object_, trusted):
         if self._status == self.__class__.StatusFlags.OK \
-                and (object_ == self._last_object or
-                     object_ == self._last_object2):
+                and object_ == self._last_object:
             return False
         try:
             """
@@ -164,8 +169,7 @@ class Cell(Managed, CellLike):
             # Normally no error here...
             self._data = data
             self._status = self.__class__.StatusFlags.OK
-            self._last_object2 = self._last_object
-            self._last_object = object_
+            self._last_object = copy.deepcopy(object_)
 
             if not trusted and self._context is not None:
                 manager = self._get_manager()
@@ -189,7 +193,7 @@ class Cell(Managed, CellLike):
     @property
     def data(self):
         """The cell's data in text format."""
-        return self._data
+        return copy.deepcopy(self._data)
 
     @property
     def status(self):
@@ -227,6 +231,20 @@ class Cell(Managed, CellLike):
         self._error_message = error_message
         if error_message is not None:
             self._status = self.StatusFlags.ERROR
+
+    def add_macro_object(self, macro_object, macro_arg):
+        manager = self._get_manager()
+        manager.add_macro_listener(self, macro_object, macro_arg)
+
+    def remove_macro_object(self, macro_object, macro_arg):
+        manager = self._get_manager()
+        manager.remove_macro_listener(self, macro_object, macro_arg)
+
+    def destroy(self):
+        if self._destroyed:
+            return
+        #print("CELL DESTROY")
+        super().destroy()
 
 class PythonCell(Cell):
     """
@@ -355,7 +373,6 @@ class PythonCell(Cell):
         Cell._on_disconnect(self, pin, process, incoming)
         if self._outgoing_connections == 0:
             self._required_code_type = self.CodeTypes.ANY
-
 
 _handlers = {
     ("text", "code", "python"): PythonCell

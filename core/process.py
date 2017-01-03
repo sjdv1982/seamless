@@ -1,15 +1,18 @@
 #stub, TODO: refactor, document
 import weakref
 from weakref import WeakValueDictionary, WeakKeyDictionary
+from . import SeamlessBase
 
-#TODO: disconnect
+#TODO: disconnect method (see MacroObject for low-level implementation)
 
 class Manager:
 
     def __init__(self):
         self.listeners = {}
+        self.macro_listeners = {}
         self.pin_to_cells = {}
         self.cells = WeakValueDictionary()
+        super().__init__()
 
     def add_listener(self, cell, input_pin):
         cell_id = self.get_cell_id(cell)
@@ -17,7 +20,7 @@ class Manager:
 
         try:
             listeners = self.listeners[cell_id]
-            assert input_pin not in listeners
+            assert pin_ref not in listeners
             # TODO: tolerate (silently ignore) a connection that exists already?
             listeners.append(pin_ref)
 
@@ -33,15 +36,55 @@ class Manager:
         except KeyError:
             self.pin_to_cells[input_pin.get_pin_id()] = [cell_id]
 
+        if cell_id not in self.cells:
+            self.cells[cell_id] = cell
+
     def remove_listener(self, input_pin):
+        process = input_pin.process_ref()
         cell_ids = self.pin_to_cells.pop(input_pin.get_pin_id(), [])
         for cell_id in cell_ids:
             l = self.listeners[cell_id]
             l[:] = [ref for ref in l if ref().get_pin_id() != input_pin.get_pin_id()]
             if not len(l):
                 self.listeners.pop(cell_id)
+                cell = self.cells.get(cell_id, None)
+                if cell is not None:
+                    cell._on_disconnect(input_pin, process, False)
+
+    def add_macro_listener(self, cell, macro_object, macro_arg):
+        cell_id = self.get_cell_id(cell)
+        macro_ref = weakref.ref(macro_object)
+        m = (macro_ref, macro_arg)
+
+        try:
+            macro_listeners = self.macro_listeners[cell_id]
+            assert m not in macro_listeners
+            macro_listeners.append(m)
+
+        except KeyError:
+            self.macro_listeners[cell_id] = [m]
+
+    def remove_macro_listener(self, cell, macro_object, macro_arg):
+        cell_id = self.get_cell_id(cell)
+        macro_ref = weakref.ref(macro_object)
+        m = (macro_ref, macro_arg)
+
+        if cell_id in self.macro_listeners:
+            l = self.macro_listeners[cell_id]
+            if m in l:
+                l.remove(m)
 
     def _update(self, cell_id, value):
+        macro_listeners = self.macro_listeners.get(cell_id, [])
+
+        for macro_ref, macro_arg in macro_listeners:
+            macro_object = macro_ref()
+
+            if macro_object is None:
+                continue #TODO: error?
+
+            macro_object.update_cell(macro_arg)
+
         listeners = self.listeners.get(cell_id, [])
         for input_pin_ref in listeners:
             input_pin = input_pin_ref()
@@ -50,6 +93,7 @@ class Manager:
                 continue #TODO: error?
 
             input_pin.update(value)
+
 
     def update_from_code(self, cell):
         value = cell._data
@@ -111,24 +155,7 @@ class Manager:
             if isinstance(process, Transformer):
                 process._on_connect_output()
 
-
-class Managed:
-    _context = None
-    _destroyed = False
-    def __init__(self):
-        self._owned = []
-
-    def _set_context(self, context):
-        from .context import Context
-        assert isinstance(context, Context)
-        #TODO: detach context if self._context is not None
-        self._context = context
-        return self
-
-    @property
-    def context(self):
-        return self._context
-
+class Managed(SeamlessBase):
     def _get_manager(self):
         context = self.context
         if context is None:
@@ -137,21 +164,6 @@ class Managed:
             )
         return context._manager
 
-    def own(self, obj):
-        from .context import Context
-        assert isinstance(obj, (Managed, Context))
-        if obj not in self._owned:
-            self._owned.append(obj)
-
-    def destroy(self):
-        if self._destroyed:
-            return
-        print("TODO: destroy", self)
-        self._destroyed = True
-        for owned in self._owned:
-            owned.destroy()
-
-
 class ProcessLike:
     """Base class for processes and contexts"""
     _like_process = True
@@ -159,12 +171,22 @@ class ProcessLike:
 class Process(Managed, ProcessLike):
     """Base class for all processes."""
     _pins = None
+
     def __init__(self):
         from .macro import get_macro_mode
         from .context import get_active_context
         if get_macro_mode():
-            self._set_context(get_active_context())
+            ctx = get_active_context()
+            ctx._add_new_process(self)
         super().__init__()
+
+    def destroy(self):
+        #print("PROCESS DESTROY")
+        if self._destroyed:
+            return
+        for pin_name, pin in self._pins.items():
+            pin.destroy()
+        super().destroy()
 
 class PinBase(Managed):
 
@@ -172,11 +194,11 @@ class PinBase(Managed):
         self.process_ref = weakref.ref(process)
         super().__init__()
 
-    def _set_context(self, context):
+    def _set_context(self, context, force_detach=False):
         process = self.process_ref()
         if process is None:
             return #Process has died...
-        process._set_context(context)
+        process._set_context(context, force_detach)
 
     @property
     def context(self):
@@ -185,12 +207,40 @@ class PinBase(Managed):
             return None
         return process.context
 
+    def get_pin_id(self):
+        return id(self.get_pin())
+
+    def get_pin(self):
+        return self
+
 
 class InputPinBase(PinBase):
-    pass
+
+    def destroy(self):
+        context = self.context
+        if context is None:
+            return
+        super().destroy()
+        manager = self._get_manager()
+        manager.remove_listener(self)
 
 class OutputPinBase(PinBase):
-    pass
+
+    def destroy(self):
+        if self._destroyed:
+            return
+        #print("OUTPUTPIN DESTROY")
+        context = self.context
+        if context is None:
+            return
+        super().destroy()
+        manager = context._manager
+        for cell_id in list(self._cell_ids):
+            cell = manager.cells.get(cell_id, None)
+            if cell is None:
+                continue
+            cell._on_disconnect(self, self.process_ref(), True)
+
 
 class InputPin(InputPinBase):
 
@@ -199,13 +249,8 @@ class InputPin(InputPinBase):
         self.identifier = identifier
         self.dtype = dtype
 
-    def get_pin_id(self):
-        return id(self)
-
-    def get_pin(self):
-        return self
-
     def cell(self, own=False):
+        from .cell import cell
         manager = self._get_manager()
         context = self.context
         curr_pin_to_cells = manager.pin_to_cells.get(self.get_pin_id(), [])
@@ -218,15 +263,16 @@ class InputPin(InputPinBase):
             process = self.process_ref()
             if process is None:
                 raise ValueError("Process has died")
-            cell = context._newcell(self.dtype)
-            cell.connect(self)
+            my_cell = cell(self.dtype)
+            context._add_new_cell(my_cell)
+            my_cell.connect(self)
         elif l == 1:
-            cell = context._childids[curr_pin_to_cells[0]]
+            my_cell = context._childids[curr_pin_to_cells[0]]
         elif l > 1:
             raise TypeError("cell() is ambiguous, multiple cells are connected")
         if own:
-            self.own(cell)
-        return cell
+            self.own(my_cell)
+        return my_cell
 
     def update(self, value):
         process = self.process_ref()
@@ -234,13 +280,6 @@ class InputPin(InputPinBase):
             return #Process has died...
 
         process.receive_update(self.identifier, value)
-
-    def __del__(self):
-        try:
-            manager = self._get_manager()
-            manager.remove_listener(self)
-        except:
-            pass
 
 
 class OutputPin(OutputPinBase):
@@ -262,8 +301,10 @@ class OutputPin(OutputPinBase):
         manager = self._get_manager()
         manager.connect(self, target)
 
-    def cell(self):
+    def cell(self,own=False):
+        from .cell import cell
         context = self.context
+        assert context is not None
         l = len(self._cell_ids)
         if l == 0:
             if self.dtype is None:
@@ -273,18 +314,21 @@ class OutputPin(OutputPinBase):
             process = self.process_ref()
             if process is None:
                 raise ValueError("Process has died")
-            cell = context._newcell(self.dtype)
-            self.connect(cell)
+            my_cell = cell(self.dtype)
+            context._add_new_cell(my_cell)
+            self.connect(my_cell)
         elif l == 1:
-            cell = context._childids[self._cell_ids[0]]
+            my_cell = context._childids[self._cell_ids[0]]
         elif l > 1:
             raise TypeError("cell() is ambiguous, multiple cells are connected")
-        return cell
+        if own:
+            self.own(my_cell)
+        return my_cell
 
     def cells(self):
         context = self.context
-        cells = [context.cells[c] for c in self._cell_ids]
-        cells = [c for c in cells if c is not None]
+        manager = context._manager
+        cells = [c for c in context.cells if manager.get_cell_id(c) in self._cell_ids]
         return cells
 
 
@@ -295,6 +339,10 @@ class EditorOutputPin(OutputPinBase):
         self.liquid = OutputPin(process, identifier, dtype)
         self.own(self.solid)
         self.own(self.liquid)
+
+    @property
+    def _cell_ids(self):
+        return list(self.solid._cell_ids) + list(self.liquid._cell_ids)
 
     def get_pin(self):
         return self
@@ -325,8 +373,8 @@ class ExportedPinBase:
     def __getattr__(self, attr):
         return getattr(self._pin, attr)
 
-    def _set_context(self, context):
-        self._pin._set_context(context)
+    def _set_context(self, context, force_detach=False):
+        self._pin._set_context(context, force_detach)
 
     @property
     def context(self):
@@ -339,10 +387,12 @@ class ExportedPinBase:
         return self._pin.own()
 
     def destroy(self):
-        return self._pin.destroy()
+        self._pin.destroy()
 
 class ExportedOutputPin(ExportedPinBase, OutputPinBase):
-    pass
+    @property
+    def _cell_ids(self):
+        return self._pin._cell_ids
 
 class ExportedInputPin(ExportedPinBase, InputPinBase):
     pass

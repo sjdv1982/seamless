@@ -15,6 +15,8 @@ from .. import dtypes
 from .. import silk
 import seamless
 
+#TODO: on_disconnect? don't do anything if self._destroyed
+
 editor_param_docson = {} #TODO, adapt from transformer and from editor.silk
 currdir = os.path.dirname(__file__)
 silk.register(
@@ -50,6 +52,7 @@ class Editor(Process):
     _required_code_type = PythonCell.CodeTypes.ANY
 
     def __init__(self, editor_params):
+        super().__init__()
         self.state = {}
         self.output_names = []
         self.code_start = InputPin(self, "code_start", ("text", "code", "python"))
@@ -105,6 +108,8 @@ class Editor(Process):
         return object.__dir__(self) + list(self._pins.keys())
 
     def destroy(self):
+        if self._destroyed:
+            return
         self._code_stop()
 
         # free all input and output pins
@@ -115,6 +120,7 @@ class Editor(Process):
 
             setattr(self, attr, None)
             del value
+        super().destroy()
 
     def __del__(self):
         try:

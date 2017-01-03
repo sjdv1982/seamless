@@ -1,6 +1,7 @@
 from collections import OrderedDict
 import functools
 import copy
+import weakref
 from .context import context, get_active_context
 from contextlib import contextmanager as _pystdlib_contextmanager
 
@@ -21,6 +22,146 @@ def get_macro_mode():
 def set_macro_mode(macro_mode):
     global _macro_mode
     _macro_mode = macro_mode
+
+class MacroObject:
+    macro = None
+    args = []
+    kwargs = {}
+    cell_args = {}
+    _parent = None
+
+    def __init__(self, macro, args, kwargs, cell_args):
+        self.macro = macro
+        self.args = args
+        self.kwargs = kwargs
+        self.cell_args = cell_args
+
+    def connect(self, parent):
+        from .cell import CellLike
+        from .process import ProcessLike
+        assert (isinstance(parent, CellLike) and parent._like_cell) or \
+         (isinstance(parent, ProcessLike) and parent._like_process)
+        #TODO: check that all cells and parent share a common root
+        self._parent = weakref.ref(parent)
+        for k in self.cell_args:
+            cell = self.cell_args[k]
+            cell.add_macro_object(self, k)
+
+    def update_cell(self, cellname):
+        from .context import Context
+        from .cell import Cell
+        from .process import Process, InputPinBase, OutputPinBase
+        parent = self._parent()
+        grandparent = parent.context
+        assert isinstance(grandparent, Context), grandparent
+        for parent_childname in grandparent._children:
+            if grandparent._children[parent_childname] is parent:
+                break
+        else:
+            exc = "Cannot identify parent-child relationship of macro context {0}"
+            raise AttributeError(exc.format(parent))
+        external_connections = []
+
+        def find_external_connections_cell(cell, path):
+            manager = cell._get_manager()
+            cell_id = manager.get_cell_id(cell)
+            incons = manager.cells[cell_id]
+            for incon in incons:
+                process = incon.process_ref()
+                if process is None or process in cell._owned: #TODO: indirect ownage
+                    continue
+                external_connections.append((True, incon, path))
+            outcons = manager.listeners[cell]
+            for outcon in outcons:
+                process = outcon.process_ref()
+                if process is None or process in cell._owned: #TODO: indirect ownage
+                    continue
+                if isinstance(parent, Context) and process.context._part_of(parent):
+                    continue
+                external_connections.append((False, path, outcon))
+
+        def find_external_connections_process(process, path, part):
+            for pinname, pin in process._pins.items():
+                manager = pin._get_manager()
+                pin_id = pin.get_pin_id()
+                if isinstance(pin, InputPinBase):
+                    is_incoming = True
+                    cell_ids = manager.pin_to_cells.get(pin_id, [])
+                elif isinstance(pin, OutputPinBase):
+                    is_incoming = False
+                    cell_ids = pin._cell_ids
+                else:
+                    raise TypeError((pinname, pin))
+                for cell_id in cell_ids: #TODO: indirect ownage
+                    cell = manager.cells.get(cell_id, None)
+                    if cell is None:
+                        continue
+                    if cell in process._owned:
+                        continue
+                    if part and isinstance(parent, Context) and cell.context._part_of(parent):
+                        continue
+                    if is_incoming:
+                        external_connections.append((True, cell, (pinname,)))
+                    else:
+                        external_connections.append((False, (pinname,), cell))
+
+        def find_external_connections_context(ctx, path):
+            for childname, child in ctx._children:
+                if path is not None:
+                    path2 = path + (childname,)
+                else:
+                    path2 = (childname,)
+                if isinstance(child, Cell):
+                    find_external_connections_cell(child, path2)
+                elif isinstance(child, Process):
+                    find_external_connections_process(child, path2, True)
+                elif isinstance(child, Context):
+                    find_external_connections_context(child, path2)
+                else:
+                    raise TypeError((childname, child))
+
+        if isinstance(parent, Cell):
+            find_external_connections_cell(parent, None)
+        elif isinstance(parent, Process):
+            find_external_connections_process(parent, None, False)
+        elif isinstance(parent, Context):
+            find_external_connections_context(parent, None)
+        elif parent is None:
+            pass
+        new_parent = self.macro.evaluate(self.args, self.kwargs, self)
+        setattr(grandparent, parent_childname, new_parent) #destroys parent and connections
+        self._parent = weakref.ref(new_parent)
+
+        def resolve_path(target, path, index):
+            if path is not None and len(path) > index:
+                try:
+                    new_target = getattr(target, path[index])
+                except AttributeError:
+                    warn = "WARNING: cannot reconstruct {0}, target no longer exists"
+                    subpath = ".".join(path[:index])
+                    print(warn.format(subpath))
+                return resolve_path(new_target, path, index+1)
+            return target
+        for is_incoming, source, dest in external_connections:
+            #print("CONNECTION: is_incoming {0}, source {1}, dest {2}".format(is_incoming, source, dest))
+            err = "Connection (is_incoming {0}, source {1}, dest {2}) points to a destroyed external cell"
+            if is_incoming:
+                if source._destroyed:
+                    print("ERROR:", err.format(is_incoming, source, dest))
+                dest_target = resolve_path(new_parent, dest, 0)
+                source.connect(dest_target)
+            else:
+                if dest._destroyed:
+                    print("ERROR:", err.format(is_incoming, source, dest))
+                source_target = resolve_path(new_parent, source, 0)
+                source_target.connect(dest)
+
+    def __del__(self):
+        if self._parent is None:
+            return
+        for k in self.cell_args:
+            cell = self.cell_args[k]
+            cell.remove_macro_object(self, k)
 
 class Macro:
     def __init__(self, type=None, with_context=True, func=None):
@@ -62,7 +203,7 @@ class Macro:
                 vtype = v["type"]
                 if "default" in v:
                     #TODO: checking regarding type <=> default
-                    #TODO: check that the default can be pickled
+                    #TODO: check that the default can be serialised, or at least pickled
                     default[k] = v["default"]
             ret[k] = vtype
 
@@ -74,6 +215,7 @@ class Macro:
         self.type_args = ret
 
     def resolve(self, a):
+        #TODO: allow CellLike contexts as well (also in cell_args in resolve_type_args)
         from .cell import Cell
         from ..dtypes import parse
         if isinstance(a, Cell):
@@ -83,16 +225,19 @@ class Macro:
 
     def resolve_type_args(self, args0, kwargs0):
         """
-        #TODO: get cells that have been resolved
-        When macro object is created and attached to context X, verify that all those
+        #TODO: When macro object is created and attached to context X, verify that all resolved
          cells and X have a common ancestor (._root)
         """
+        from .cell import Cell
+
+        macro_object = None
         args = [self.resolve(a) for a in args0]
         kwargs = {k: self.resolve(v) for k, v in kwargs0.items()}
         if self.type_args is None:
-            return args, kwargs
+            return args, kwargs, None
 
         #TODO: take and adapt corresponding routine from Hive
+        cell_args = {}
         args2, kwargs2 = [], {}
         order = self.type_args["_order"]
         assert len(args) <= len(order)
@@ -100,18 +245,24 @@ class Macro:
         for anr in range(len(args)):
             argname = order[anr]
             arg = args[anr]
+            arg0 = args0[anr]
             #TODO: type validation
             if argname.startswith("_arg"):
                 args2.append(arg)
                 positional_done.add(argname)
             else:
                 kwargs2[argname] = arg
+            if isinstance(arg0, Cell):
+                cell_args[argname] = arg0
         for argname in kwargs:
             assert not argname.startswith("_"), argname #not supported
             assert argname in self.type_args, (argname, [v for v in self.type_args.keys() if not v.startswith("_")])
             arg = kwargs[argname]
             #TODO: type validation
+            arg0 = kwargs0[argname]
             kwargs2[argname] = arg
+            if isinstance(arg0, Cell):
+                cell_args[argname] = arg0
 
         default = self.type_args["_default"]
         required = self.type_args["_required"]
@@ -127,28 +278,82 @@ class Macro:
                 continue
             arg_default = default.get(argname, None)
             kwargs2[argname] = arg_default
-        return args2, kwargs2
+        if len(cell_args):
+            macro_object = MacroObject(self, args0, kwargs0, cell_args)
+        return args2, kwargs2, macro_object
+
 
     def __call__(self, *args, **kwargs):
-        args2, kwargs2 = self.resolve_type_args(args, kwargs)
+        return self.evaluate(args, kwargs, None)
+
+    def evaluate(self, args, kwargs, macro_object):
+        from .cell import Cell, CellLike
+        from .process import Process, ProcessLike, InputPinBase, OutputPinBase
+
+        args2, kwargs2, mobj = self.resolve_type_args(args, kwargs)
+        if macro_object is not None:
+            mobj = macro_object
         previous_macro_mode = get_macro_mode()
         if self.with_context:
-            ctx = context(parent=get_active_context(), active_context=False)
+            ctx = get_active_context()._new_subcontext()
+            ret = None
             try:
                 set_macro_mode(True)
                 ret = self.func(ctx, *args2, **kwargs2)
                 if ret is not None:
                     raise TypeError("Context macro must return None")
-                return ctx
+                ctx._set_macro_object(mobj)
+                if macro_object is None: #this is a new construction, not a re-evaluation
+                    if mobj is not None:
+                        mobj.connect(ret)
+                ret = ctx
             finally:
+                if ret is None:
+                    ctx.destroy()
                 set_macro_mode(previous_macro_mode)
         else:
             try:
                 set_macro_mode(True)
                 ret = self.func(*args2, **kwargs2)
+                assert (isinstance(ret, CellLike) and ret._like_cell) or \
+                 (isinstance(ret, ProcessLike) and ret._like_process)
+                if isinstance(ret, Cell):
+                    manager = ret._get_manager()
+                    cell_id = manager.get_cell_id(ret)
+                    incons = manager.cells[cell_id]
+                    for incon in incons:
+                        process = incon.process_ref()
+                        ret.own(process)
+                    outcons = manager.listeners[cell]
+                    for outcon in outcons:
+                        process = outcon.process_ref()
+                        ret.own(process)
+                elif isinstance(ret, Process):
+                    for pinname, pin in ret._pins.items():
+                        manager = pin._get_manager()
+                        pin_id = pin.get_pin_id()
+                        if isinstance(pin, InputPinBase):
+                            is_incoming = True
+                            cell_ids = manager.pin_to_cells.get(pin_id, [])
+                        elif isinstance(pin, OutputPinBase):
+                            is_incoming = False
+                            cell_ids = pin._cell_ids
+                        else:
+                            raise TypeError((pinname, pin))
+                        for cell_id in cell_ids: #TODO: indirect ownage
+                            cell = manager.cells.get(cell_id, None)
+                            if cell is None:
+                                continue
+                            ret.own(cell)
+                else:
+                    raise NotImplementedError(type(ret))
+                ret._set_macro_object(mobj)
+                if macro_object is None: #this is a new construction, not a re-evaluation
+                    if mobj is not None:
+                        mobj.connect(ret)
             finally:
                 set_macro_mode(previous_macro_mode)
-            return ret
+        return ret
 
 def macro(*args, **kwargs):
     """
@@ -179,7 +384,7 @@ def macro(*args, **kwargs):
        first parameter, and is expected to return None
       if False, the function is expected to return a cell or process.
        This cell or process (together with any other cells or processes
-       created by the macro) are automatically added to the active context.
+       created by the macro) is automatically added to the active context.
 
     Example 1:
     @macro

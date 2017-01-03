@@ -80,6 +80,7 @@ class Transformer(Process):
     _required_code_type = PythonCell.CodeTypes.FUNCTION
 
     def __init__(self, transformer_params):
+        super().__init__()
         self.state = {}
         self.code = InputPin(self, "code", ("text", "code", "python"))
         thread_inputs = {}
@@ -169,9 +170,14 @@ class Transformer(Process):
         self._connected_output = True
 
     def _on_disconnect_output(self):
+        if self._destroyed:
+            return
         self._connected_output = False
 
     def destroy(self):
+        if self._destroyed:
+            return
+
         # gracefully terminate the transformer thread
         if self.transformer_thread is not None:
             self.transformer.finish.set()
@@ -197,6 +203,8 @@ class Transformer(Process):
 
             setattr(self, attr, None)
             del value
+
+        super().destroy()
 
     def __del__(self):
         try:

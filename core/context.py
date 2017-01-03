@@ -1,10 +1,13 @@
 """Module for Context class."""
 from weakref import WeakValueDictionary
+from . import SeamlessBase
 from .cell import Cell, CellLike, ExportedCell
 from .process import Managed, Process, ProcessLike, InputPinBase, \
   ExportedInputPin, OutputPinBase, ExportedOutputPin, EditorOutputPin
 from contextlib import contextmanager as _pystdlib_contextmanager
 _active_context = None
+
+#TODO: subcontexts inherit manager from parent? see process.connect source code
 
 def set_active_context(ctx):
     global _active_context
@@ -23,46 +26,45 @@ def active_context_as(ctx):
     finally:
         set_active_context(previous_context)
 
-class Context(CellLike, ProcessLike):
+class Context(SeamlessBase, CellLike, ProcessLike):
     """Context class. Organizes your cells and processes hierarchically.
     """
 
     _name = None
-    _parent = None
     _registrar = None
     _like_cell = False          #can be set to True by export
     _like_process = False       #can be set to True by export
-    _parent = None
     _children = None
     _childids = None
     _manager = None
     registrar = None
     _pins = None
+    _auto = None
 
     def __init__(
         self,
         name=None,
-        parent=None,
+        context=None,
         active_context=True,
     ):
         """Construct a new context.
 
         Args:
-            parent (optional): parent context
+            context (optional): parent context
             active_context (default: True): Sets the newly constructed context
                 as the active context. Subcontexts constructed by macros are
                 automatically parented to the active context
         """
         n = name
-        if parent is not None and parent._name is not None:
-            n = parent._name + "." + str(n)
+        if context is not None and context._name is not None:
+            n = context._name + "." + str(n)
         self._name = name
-        self._parent = parent
         self._pins = {}
         self._children = {}
         self._childids = WeakValueDictionary()
-        if parent is not None:
-            self._manager = parent._manager
+        self._auto = set() #TODO: save this also when serializing
+        if context is not None:
+            self._manager = context._manager
         else:
             from .process import Manager
             self._manager = Manager()
@@ -71,28 +73,59 @@ class Context(CellLike, ProcessLike):
         from .registrar import RegistrarAccessor
         self.registrar = RegistrarAccessor(self)
 
-    _dir = ["export", "registrar"]
+    _dir = ["_name", "export", "registrar", "cells"]
+
+    @property
+    def cells(self):
+        from .cell import CellLike
+        return [v for k,v in self._children.items() if isinstance(v, CellLike) and v._like_cell]
 
     def __dir__(self):
-        return list(self._subcontexts.keys()) + list(self._children.keys()) \
-         + self._dir
+        return [c for c in self._children.keys() if c not in self._auto] \
+         + [c for c in self._pins.keys()] + self._dir
 
     def _add_child(self, childname, child):
         self._children[childname] = child
         self._childids[id(child)] = child
         child._set_context(self)
 
-    def _newcell(self, dtype, naming_pattern="cell"):
-        from .cell import cell
+    def _add_new_cell(self, cell, naming_pattern="cell"):
+        from .cell import Cell
+        assert isinstance(cell, Cell)
         count = 0
         while 1:
             count += 1
-            childname = naming_pattern + str(count)
-            if not self._hasattr(childname):
+            cell_name = naming_pattern + str(count)
+            if not self._hasattr(cell_name):
                 break
-        child = cell(dtype)
-        self._add_child(childname, child)
-        return child
+        self._auto.add(cell_name)
+        self._add_child(cell_name, cell)
+        return cell
+
+    def _add_new_process(self, process, naming_pattern="process"):
+        from .process import Process
+        assert isinstance(process, Process)
+        count = 0
+        while 1:
+            count += 1
+            process_name = naming_pattern + str(count)
+            if not self._hasattr(process_name):
+                break
+        self._auto.add(process_name)
+        self._add_child(process_name, process)
+        return process
+
+    def _new_subcontext(self, naming_pattern="ctx"):
+        count = 0
+        while 1:
+            count += 1
+            context_name = naming_pattern + str(count)
+            if not self._hasattr(context_name):
+                break
+        ctx = context(context=self, active_context=False)
+        self._auto.add(context_name)
+        self._add_child(context_name, ctx)
+        return ctx
 
     def __setattr__(self, attr, value):
         if hasattr(self.__class__, attr):
@@ -100,10 +133,11 @@ class Context(CellLike, ProcessLike):
         if attr in self._pins:
             raise AttributeError(
              "Cannot assign to pin ''%s'" % attr)
-        if attr in self._children:
+        if attr in self._children and self._children[attr] is not value:
             self._children[attr].destroy()
 
-        assert isinstance(value, (Managed, CellLike, ProcessLike))
+        assert isinstance(value, (Managed, CellLike, ProcessLike)), type(value)
+        value._set_context(self, force_detach=True)
         self._add_child(attr, value)
 
     def __getattr__(self, attr):
@@ -216,25 +250,36 @@ class Context(CellLike, ProcessLike):
         assert isinstance(ctx, Context)
         if ctx is self:
             return True
-        elif self._parent is None:
+        elif self._context is None:
             return False
         else:
-            return self._parent._part_of(ctx)
+            return self._context._part_of(ctx)
 
     def _root(self):
-        if self._parent is None:
+        if self._context is None:
             return self
         else:
-            return self._parent._root()
+            return self._context._root()
 
-    def _set_context(self, ctx):
-        #TODO: detach if already in a context
-        self._parent = ctx
+    def _set_context(self, ctx, force_detach=True):
+        if self._context is not None:
+            if self._context is not ctx or force_detach:
+                for childname, child in self._context._children.items():
+                    if child is self:
+                        self._context._children.pop(childname)
+                        break
+                else:
+                    print("WARNING, orphaned context child?")
+        self._context = ctx
 
     def destroy(self):
-        for childname in self._children:
-            child = self._children[name]
+        if self._destroyed:
+            return
+        #print("CONTEXT DESTROY")
+        for childname in list(self._children):
+            child = self._children[childname]
             child.destroy()
+        super().destroy()
 
 def context(**kwargs):
     """Return a new Context object."""
