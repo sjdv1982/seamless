@@ -77,17 +77,17 @@ def basic_editor(ctx, editor_type, title):
         c_up.set("")
     ctx.export(ed)
 
-def edit(cell, title=None, solid=True):
+def edit(cell, title=None, solid=True, own=False):
     assert isinstance(cell, Cell)
     assert cell.context is not None
-    with active_context_as(cell.context):
-        ed = basic_editor(cell.dtype, title)
+    from seamless.core.context import get_active_context
+    ed = basic_editor(cell.dtype, title)
     cell.connect(ed.value)
     if solid:
         ed.output.solid.connect(cell)
     else:
         ed.output.liquid.connect(cell)
-    #cell.own(ed) #Bad idea. If cell gets re-created (e.g. by a macro),
-    # the editor won't be connected to any live cell
+    if own:
+        cell.own(ed)
     ed._validate_path()
     return ed

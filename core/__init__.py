@@ -33,7 +33,6 @@ class SeamlessBase:
         if self._context is not None:
             assert self.name is not None
             if context is not self._context or force_detach:
-                print("DETACH", self.name, self._context, name, context)
                 childname = self.name
                 assert self._context._children[childname] is self
                 self._context._children.pop(childname)
@@ -49,6 +48,7 @@ class SeamlessBase:
         from .cell import Cell
         from .context import Context
         from .process import Process
+        from .macro import get_macro_mode
         assert isinstance(obj, (Cell, Process, Context)), type(obj)
         if self._owner is not None:
             owner = self._owner()
@@ -63,14 +63,56 @@ class SeamlessBase:
                 if owner is not None:
                     if obj in owner._owned:
                         owner._owned.remove(obj)
+            obj._owner = None
+            macro_control = self._macro_control()
+            if not get_macro_mode() and \
+              macro_control is not None and macro_control is not obj._macro_control():
+                macro_cells = macro_control._macro_object.cell_args.values()
+                macro_cells = sorted([str(c) for c in macro_cells])
+                macro_cells = "\n" + "  \n".join(macro_cells)
+                if macro_control is self:
+                    print("""***********************************************************************************************************************
+WARNING: {0} is now owned by {1}, which is under live macro control.
+The macro is controlled by the following cells: {2}
+When any of these cells change and the macro is re-executed, the owned object will be deleted and likely not re-created
+***********************************************************************************************************************"""\
+                    .format(obj, self, macro_cells))
+                elif macro_control is not None:
+                    print("""***********************************************************************************************************************
+WARNING: {0} is now owned by {1}, which is a child of, or owned by, {2}, which is under live macro control.
+The macro is controlled by the following cells: {3}
+When any of these cells change and the macro is re-executed, the owned object will be deleted and likely not re-created
+***********************************************************************************************************************"""\
+                    .format(obj, self, macro_control, macro_cells))
             obj._owner = weakref.ref(self)
-
 
     def _owns_all(self):
         owns = set(self._owned)
         for owned in self._owned:
             owns.update(owned._owns_all())
         return owns
+
+    def _macro_control(self, include_owner=False, primary=True):
+        if self._macro_object is not None:
+            return self
+
+        ret = None
+        if self.context is not None:
+            ret = self.context._macro_control(include_owner, False)
+        if ret is not None:
+            return ret
+        if include_owner:
+            if self._owner is not None:
+                owner = self._owner()
+                if owner is not None:
+                    ret = owner._macro_control(True, False)
+                    if ret is not None:
+                        return ret
+        elif primary:
+            return self._macro_control(True, True)
+        else:
+            return None
+
 
     def destroy(self):
         if self._destroyed:
@@ -87,7 +129,12 @@ class SeamlessBase:
 
 
     def __str__(self):
-        return str(self.path)
+        ret = str(self.path)
+        if self._owner is not None:
+            owner = self._owner()
+            if owner is not None:
+                ret += ", owned by " + str(owner)
+        return ret
 
     @property
     def macro(self):

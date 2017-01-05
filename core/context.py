@@ -6,6 +6,7 @@ from .process import Managed, Process, ProcessLike, InputPinBase, \
   ExportedInputPin, OutputPinBase, ExportedOutputPin, EditorOutputPin
 from contextlib import contextmanager as _pystdlib_contextmanager
 _active_context = None
+_active_parent = None
 
 #TODO: subcontexts inherit manager from parent? see process.connect source code
 
@@ -25,6 +26,24 @@ def active_context_as(ctx):
         yield
     finally:
         set_active_context(previous_context)
+
+
+def set_active_parent(parent):
+    global _active_parent
+    assert parent is None or isinstance(parent, SeamlessBase)
+    _active_parent = parent
+
+def get_active_parent():
+    return _active_parent
+
+@_pystdlib_contextmanager
+def active_parent_as(parent):
+    previous_parent = get_active_parent()
+    try:
+        set_active_parent(parent)
+        yield
+    finally:
+        set_active_parent(previous_parent)
 
 class Context(SeamlessBase, CellLike, ProcessLike):
     """Context class. Organizes your cells and processes hierarchically.
@@ -85,9 +104,37 @@ class Context(SeamlessBase, CellLike, ProcessLike):
          + [c for c in self._pins.keys()] + self._dir
 
     def _add_child(self, childname, child):
+        from .macro import get_macro_mode
+        if not get_macro_mode():
+            macro_control = self._macro_control()
+            child_macro_control = child._macro_control()
         child._set_context(self, childname)
         self._children[childname] = child
         self._manager._childids[id(child)] = child
+        if not get_macro_mode() and \
+         macro_control is not None and macro_control is not child_macro_control:
+            macro_cells = macro_control._macro_object.cell_args.values()
+            macro_cells = sorted([str(c) for c in macro_cells])
+            macro_cells = "\n" + "  \n".join(macro_cells)
+            child_path = str(child.path)
+            if get_active_parent() is not None:
+                child_path += " (active parent: {0})".format(get_active_parent())
+            if macro_control is self:
+                raise Exception
+                print("""***********************************************************************************************************************
+WARNING: {0} is now a child of {1}, which is under live macro control.
+The macro is controlled by the following cells: {2}
+When any of these cells change and the macro is re-executed, the owned object will be deleted and likely not re-created
+***********************************************************************************************************************"""\
+                .format(child_path, self, macro_cells))
+            elif macro_control is not None:
+                print("""***********************************************************************************************************************
+WARNING: {0} is now a child of {1}, which is a child of, or owned by, {2}, which is under live macro control.
+The macro is controlled by the following cells: {3}
+When any of these cells change and the macro is re-executed, the owned object will be deleted and likely not re-created
+***********************************************************************************************************************"""\
+                .format(child_path, self, macro_control, macro_cells))
+
 
 
     def _add_new_cell(self, cell, naming_pattern="cell"):

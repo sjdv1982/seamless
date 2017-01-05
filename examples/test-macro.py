@@ -56,6 +56,7 @@ ctx.n = cell("int")
 ctx.mode = cell("str").set("standard")
 ctx.value = cell("text")
 ctx.cons = construct_silk_model(ctx.mode)
+
 #ctx.cons.transf.value.connect(ctx.value)
 #time.sleep(0.001)
 time.sleep(0.001)
@@ -70,12 +71,20 @@ ctx._validate_path()
 
 #ctx.d_value = display(ctx.value,"Result")
 #ctx.d_value = display(ctx.cons.transf.value.cell(),"Result")
+
+from seamless.core.context import get_active_context
+print("ACTIVE?", get_active_context())
+#import sys
+#sys.exit()
+
 ctx.ed_value = edit(ctx.cons.transf.value.cell(),"Result",solid=False)
 ctx._validate_path()
 
-#import seamless.silk
-#print(seamless.silk.register(silk_model))
-print(ctx.cons.transf.value.cell(), ctx.ed_value.ed.value.cell())
+print(ctx.cons.transf.code.cell())
+print(ctx.cons.transf.value.cell())
+print(list(ctx.cons._children.keys()))
+#import sys
+#sys.exit()
 
 #TODO: above works, but below still fails:
 ctx.mode.set("array")

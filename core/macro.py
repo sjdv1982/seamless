@@ -165,7 +165,7 @@ class MacroObject:
                 try:
                     new_target = getattr(target, path[index])
                 except AttributeError:
-                    warn = "WARNING: cannot reconstruct '{0}', target no longer exists"
+                    warn = "WARNING: cannot reconstruct connections for '{0}', target no longer exists"
                     subpath = "." + ".".join(target.path + path[:index+1])
                     print(warn.format(subpath))
                     return None
@@ -184,8 +184,10 @@ class MacroObject:
                 if dest._destroyed:
                     print(dest.path)
                     print("ERROR:", err.format(new_parent.path, is_incoming, source, ext_path) + " (dest)")
+                    continue
                 source_target = resolve_path(new_parent, source, 0)
-                source_target.connect(dest)
+                if source_target is not None:
+                    source_target.connect(dest)
 
     def __del__(self):
         if self._parent is None:
@@ -332,6 +334,11 @@ class Macro:
                 args2 = args2[1:] #TODO: bound object because of hack...
         previous_macro_mode = get_macro_mode()
         if self.with_context:
+            from seamless.core.context import get_active_context
+            print("ACTIVE", get_active_context())
+            #import sys
+            #sys.exit()
+
             ctx = get_active_context()._new_subcontext()
             ret = None
             try:

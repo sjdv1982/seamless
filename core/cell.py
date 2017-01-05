@@ -41,6 +41,7 @@ class Cell(Managed, CellLike):
 
     def __init__(self, dtype):
         """TODO: docstring."""
+        super().__init__()
         from .macro import get_macro_mode
         from .context import get_active_context
         assert dtypes.check_registered(dtype), dtype
@@ -49,7 +50,6 @@ class Cell(Managed, CellLike):
         if get_macro_mode():
             ctx = get_active_context()
             ctx._add_new_cell(self)
-        super().__init__()
 
     @property
     def name(self):

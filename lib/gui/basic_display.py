@@ -73,12 +73,11 @@ def basic_display(ctx, display_type, title):
         c_up.set("")
     ctx.export(d)
 
-def display(cell, title=None):
+def display(cell, title=None, own=True):
     assert isinstance(cell, Cell)
     assert cell.context is not None
-    with active_context_as(cell.context):
-        d = basic_display(cell.dtype, title)
+    d = basic_display(cell.dtype, title)
     cell.connect(d.value)
-    #cell.own(d) #Bad idea. If cell gets re-created (e.g. by a macro),
-    # the display won't be connected to any live cell
+    if own:
+        cell.own(d)
     return d
