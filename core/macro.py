@@ -221,6 +221,7 @@ class Macro:
 
         if type is None:
             return
+
         if isinstance(type, tuple) or isinstance(type, str):
             self.type_args = dict(
              _order=["_arg1"],
@@ -232,6 +233,10 @@ class Macro:
 
         if not isinstance(type, dict):
             raise TypeError(type.__class__)
+
+        self.type_args = self._get_type_args_from_dict(type)
+
+    def get_type_args_from_dict(self, type):
         order = []
         if "_order" in type:
             order = type["_order"]
@@ -269,8 +274,7 @@ class Macro:
                 required.add(k)
             else:
                 last_nonreq = k
-        ret = copy.deepcopy(ret)
-        self.type_args = ret
+        return copy.deepcopy(ret)
 
     def resolve(self, a):
         #TODO: allow CellLike contexts as well (also in cell_args in resolve_type_args)
@@ -339,7 +343,6 @@ class Macro:
         if len(cell_args):
             macro_object = MacroObject(self, args0, kwargs0, cell_args)
         return args2, kwargs2, macro_object
-
 
     def __call__(self, *args, **kwargs):
         return self.evaluate(args, kwargs, None)
@@ -431,6 +434,7 @@ class Macro:
         if not get_macro_mode():
             run_work()
         return ret
+
 
 def macro(*args, **kwargs):
     """
