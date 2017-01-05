@@ -33,7 +33,6 @@ class Cell(Managed, CellLike):
     _error_message = None
     _status = StatusFlags.UNINITIALISED
 
-    _name = "cell"
     _dependent = False
 
     _incoming_connections = 0
@@ -52,11 +51,6 @@ class Cell(Managed, CellLike):
             ctx._add_new_cell(self)
 
     @property
-    def name(self):
-        """TODO: docstring."""
-        return self._name
-
-    @property
     def dependent(self):
         """Indicate if the cell is dependent.
 
@@ -64,10 +58,6 @@ class Cell(Managed, CellLike):
         e.g. the output of a process.
         """
         return self._dependent
-
-    @name.setter
-    def name(self, value):
-        self._name = value
 
     def set(self, text_or_object):
         """Update cell data from Python code in the main thread."""
@@ -227,7 +217,7 @@ class Cell(Managed, CellLike):
     def destroy(self):
         if self._destroyed:
             return
-        print("CELL DESTROY", self.path)
+        print("CELL DESTROY", self)
         super().destroy()
 
 class PythonCell(Cell):
@@ -260,7 +250,7 @@ class PythonCell(Cell):
             return False
         try:
             """Check if the code is valid Python syntax"""
-            ast_tree = compile(data, self._name, "exec", ast.PyCF_ONLY_AST)
+            ast_tree = compile(data, str(self), "exec", ast.PyCF_ONLY_AST)
 
         except SyntaxError:
             if not trusted:

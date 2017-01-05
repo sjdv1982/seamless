@@ -6,7 +6,7 @@ from .process import Managed, Process, ProcessLike, InputPinBase, \
   ExportedInputPin, OutputPinBase, ExportedOutputPin, EditorOutputPin
 from contextlib import contextmanager as _pystdlib_contextmanager
 _active_context = None
-_active_parent = None
+_active_owner = None
 
 #TODO: subcontexts inherit manager from parent? see process.connect source code
 
@@ -28,22 +28,22 @@ def active_context_as(ctx):
         set_active_context(previous_context)
 
 
-def set_active_parent(parent):
-    global _active_parent
+def set_active_owner(parent):
+    global _active_owner
     assert parent is None or isinstance(parent, SeamlessBase)
-    _active_parent = parent
+    _active_owner = parent
 
-def get_active_parent():
-    return _active_parent
+def get_active_owner():
+    return _active_owner
 
 @_pystdlib_contextmanager
-def active_parent_as(parent):
-    previous_parent = get_active_parent()
+def active_owner_as(parent):
+    previous_parent = get_active_owner()
     try:
-        set_active_parent(parent)
+        set_active_owner(parent)
         yield
     finally:
-        set_active_parent(previous_parent)
+        set_active_owner(previous_parent)
 
 class Context(SeamlessBase, CellLike, ProcessLike):
     """Context class. Organizes your cells and processes hierarchically.
@@ -52,7 +52,7 @@ class Context(SeamlessBase, CellLike, ProcessLike):
     _name = None
     _like_cell = False          #can be set to True by export
     _like_process = False       #can be set to True by export
-    _children = []
+    _children = {}
     _manager = None
     registrar = None
     _pins = []
@@ -103,38 +103,42 @@ class Context(SeamlessBase, CellLike, ProcessLike):
         return [c for c in self._children.keys() if c not in self._auto] \
          + [c for c in self._pins.keys()] + self._dir
 
-    def _add_child(self, childname, child):
+    def _macro_check(self, child, child_macro_control):
         from .macro import get_macro_mode
         if not get_macro_mode():
             macro_control = self._macro_control()
-            child_macro_control = child._macro_control()
-        child._set_context(self, childname)
-        self._children[childname] = child
-        self._manager._childids[id(child)] = child
         if not get_macro_mode() and \
          macro_control is not None and macro_control is not child_macro_control:
             macro_cells = macro_control._macro_object.cell_args.values()
             macro_cells = sorted([str(c) for c in macro_cells])
-            macro_cells = "\n" + "  \n".join(macro_cells)
-            child_path = str(child.path)
-            if get_active_parent() is not None:
-                child_path += " (active parent: {0})".format(get_active_parent())
+            macro_cells = "\n  " + "\n  ".join(macro_cells)
+            child_path = "." + ".".join(child.path)
+            if get_active_owner() is not None:
+                child_path += " (active owner: {0})".format(get_active_owner())
             if macro_control is self:
-                raise Exception
                 print("""***********************************************************************************************************************
 WARNING: {0} is now a child of {1}, which is under live macro control.
 The macro is controlled by the following cells: {2}
-When any of these cells change and the macro is re-executed, the owned object will be deleted and likely not re-created
+When any of these cells change and the macro is re-executed, the child object will be deleted and likely not re-created
 ***********************************************************************************************************************"""\
                 .format(child_path, self, macro_cells))
             elif macro_control is not None:
                 print("""***********************************************************************************************************************
 WARNING: {0} is now a child of {1}, which is a child of, or owned by, {2}, which is under live macro control.
 The macro is controlled by the following cells: {3}
-When any of these cells change and the macro is re-executed, the owned object will be deleted and likely not re-created
+When any of these cells change and the macro is re-executed, the child object will be deleted and likely not re-created
 ***********************************************************************************************************************"""\
                 .format(child_path, self, macro_control, macro_cells))
 
+    def _add_child(self, childname, child, force_detach=False):
+        from .macro import get_macro_mode
+        if not get_macro_mode():
+            child_macro_control = child._macro_control()
+        child._set_context(self, childname, force_detach)
+        self._children[childname] = child
+        self._manager._childids[id(child)] = child
+        if not get_macro_mode():
+            self._macro_check(child, child_macro_control)
 
 
     def _add_new_cell(self, cell, naming_pattern="cell"):
@@ -201,8 +205,7 @@ When any of these cells change and the macro is re-executed, the owned object wi
             self._children[attr].destroy()
 
         assert isinstance(value, (Managed, CellLike, ProcessLike)), type(value)
-        value._set_context(self, attr, force_detach=True)
-        self._add_child(attr, value)
+        self._add_child(attr, value, force_detach=True)
 
     def __getattr__(self, attr):
         if attr in self._pins:
@@ -332,8 +335,8 @@ When any of these cells change and the macro is re-executed, the owned object wi
     def destroy(self):
         if self._destroyed:
             return
-        print("CONTEXT DESTROY", self.path)
-        for childname in list(self._children):
+        print("CONTEXT DESTROY", self, list(self._children.keys()))
+        for childname in list(self._children.keys()):
             if childname not in self._children:
                 continue #child was destroyed automatically by another child
             child = self._children[childname]

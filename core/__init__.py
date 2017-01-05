@@ -69,7 +69,7 @@ class SeamlessBase:
               macro_control is not None and macro_control is not obj._macro_control():
                 macro_cells = macro_control._macro_object.cell_args.values()
                 macro_cells = sorted([str(c) for c in macro_cells])
-                macro_cells = "\n" + "  \n".join(macro_cells)
+                macro_cells = "\n  " + "\n  ".join(macro_cells)
                 if macro_control is self:
                     print("""***********************************************************************************************************************
 WARNING: {0} is now owned by {1}, which is under live macro control.
@@ -129,7 +129,7 @@ When any of these cells change and the macro is re-executed, the owned object wi
 
 
     def __str__(self):
-        ret = str(self.path)
+        ret = "." + ".".join(self.path)
         if self._owner is not None:
             owner = self._owner()
             if owner is not None:
@@ -143,6 +143,7 @@ When any of these cells change and the macro is re-executed, the owned object wi
         self._macro_object = macro_object
 
     def __del__(self):
+        #print("__del__", type(self), self.path, self._destroyed)
         try:
             self.destroy()
         except:

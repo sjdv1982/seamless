@@ -46,7 +46,7 @@ class Process(metaclass=ABCMeta):
         self.updated = set()
 
         self._pending_inputs = {name for name in inputs.keys()}
-        self._bumped_registrar_updates = 0
+        self._bumped = set()
 
     def _cleanup(self):
         pass
@@ -68,27 +68,25 @@ class Process(metaclass=ABCMeta):
                         break
 
                 # If there is a registrar update later in the queue, bump it (= move it to the top)
-                curr_registrar_update = 0
                 bump = False
-                for name, data in list(self.input_queue)[1:]:
-                    if name == "@REGISTRAR":
-                        curr_registrar_update += 1
-                        if curr_registrar_update > self._bumped_registrar_updates:
-                            self._bumped_registrar_updates += 1
-                            bump = True
-                            break
-                else:
-                    name, data = self.input_queue.popleft()  # QueueItem instance
-
-                if name == "@REGISTRAR":
-                    if not bump and self._bumped_registrar_updates > 0:
-                        self._bumped_registrar_updates -= 1
-                        self.semaphore.release()
+                for message_id, name, data in list(self.input_queue):
+                    if message_id in self._bumped:
                         continue
+                    if name == "@REGISTRAR":
+                        bump = True
+                        self._bumped.add(message_id)
+                        self.semaphore.release()
+                        break
                 else:
+                    message_id, name, data = self.input_queue.popleft()  # QueueItem instance
+                    if message_id in self._bumped:
+                        self._bumped.remove(message_id)
+                        continue
+
+                if name != "@REGISTRAR":
                     # It's cheaper to look-ahead for updates and wait until we process them instead
                     look_ahead = False
-                    for new_name, new_update in list(self.input_queue):
+                    for new_message_id, new_name, new_update in list(self.input_queue):
                         if new_name == name:
                             look_ahead = True
                             break
@@ -106,7 +104,8 @@ class Process(metaclass=ABCMeta):
                             registrar_value = registrar.get(key)
                         except KeyError:
                             self._pending_inputs.add(namespace_name)
-                        self.namespace[namespace_name] = registrar_value
+                        else:
+                            self.namespace[namespace_name] = registrar_value
                         if namespace_name in self._pending_inputs:
                             self._pending_inputs.remove(namespace_name)
                     except Exception as exc:

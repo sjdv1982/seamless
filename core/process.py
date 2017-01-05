@@ -30,7 +30,7 @@ class Process(Managed, ProcessLike):
             name = ctx._add_new_process(self)
 
     def destroy(self):
-        print("PROCESS DESTROY", self.path)
+        print("PROCESS DESTROY", self)
         if self._destroyed:
             return
         for pin_name, pin in self._pins.items():
@@ -124,7 +124,7 @@ class InputPin(InputPinBase):
 
     def cell(self, own=False):
         from .cell import cell
-        from seamless.core.context import active_parent_as
+        from seamless.core.context import active_owner_as
         manager = self._get_manager()
         context = self.context
         curr_pin_to_cells = manager.pin_to_cells.get(self.get_pin_id(), [])
@@ -137,7 +137,7 @@ class InputPin(InputPinBase):
             process = self.process_ref()
             if process is None:
                 raise ValueError("Process has died")
-            with active_parent_as(self):
+            with active_owner_as(self):
                 my_cell = cell(self.dtype)
             my_cell.connect(self)
         elif l == 1:
@@ -177,7 +177,10 @@ class OutputPin(OutputPinBase):
 
     def cell(self, own=False):
         from .cell import cell
-        context = self.context
+        from .context import active_owner_as, get_active_context
+        context = get_active_context()
+        if context is None:
+            context = self.context
         assert context is not None
         manager = context._manager
         l = len(self._cell_ids)
@@ -189,8 +192,9 @@ class OutputPin(OutputPinBase):
             process = self.process_ref()
             if process is None:
                 raise ValueError("Process has died")
-            my_cell = cell(self.dtype)
-            context._add_new_cell(my_cell)
+            with active_owner_as(self):
+                my_cell = cell(self.dtype)
+                context._add_new_cell(my_cell)
             self.connect(my_cell)
         elif l == 1:
             my_cell = manager._childids[self._cell_ids[0]]

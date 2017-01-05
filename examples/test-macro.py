@@ -6,7 +6,6 @@ from seamless.lib.gui.basic_display import display
 
 @macro("str")
 def construct_silk_model(ctx, mode):
-    print("CONSTRUCT", mode)
     params = {"value": {"pin": "output", "dtype": "text"}}
     if mode == "array":
         params["N"] = {"pin": "input", "dtype": "int"}
@@ -52,10 +51,13 @@ ctx.registrar.silk.register(ctx.silk_model)
 time.sleep(0.001)
 print(seamless.silk.Silk.SilkModel())
 
-ctx.n = cell("int")
+ctx.n = cell("int").set(3)
 ctx.mode = cell("str").set("standard")
 ctx.value = cell("text")
 ctx.cons = construct_silk_model(ctx.mode)
+
+print(ctx.cons.transf, ctx.cons.transf.code, ctx.cons.transf.value)
+ctx._validate_path()
 
 #ctx.cons.transf.value.connect(ctx.value)
 #time.sleep(0.001)
@@ -69,22 +71,13 @@ print(ctx.value.data)
 ctx.ed_silk_model = edit(ctx.silk_model,"Silk model")
 ctx._validate_path()
 
+
+value = ctx.cons.transf.value.cell()
 #ctx.d_value = display(ctx.value,"Result")
-#ctx.d_value = display(ctx.cons.transf.value.cell(),"Result")
-
-from seamless.core.context import get_active_context
-print("ACTIVE?", get_active_context())
-#import sys
-#sys.exit()
-
-ctx.ed_value = edit(ctx.cons.transf.value.cell(),"Result",solid=False)
+ctx.d_value = display(value,"Result")
+#ctx.ed_value = edit(value,"Result",solid=False)
 ctx._validate_path()
-
-print(ctx.cons.transf.code.cell())
-print(ctx.cons.transf.value.cell())
-print(list(ctx.cons._children.keys()))
-#import sys
-#sys.exit()
 
 #TODO: above works, but below still fails:
 ctx.mode.set("array")
+ctx.n.connect(ctx.cons.transf.N)

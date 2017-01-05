@@ -90,6 +90,7 @@ class Transformer(Process):
         self._output_name = None
         self._connected_output = False
         self._last_value = None
+        self._message_id = 0
         for p in transformer_params:
             param = transformer_params[p]
             if param["pin"] == "input":
@@ -145,13 +146,15 @@ class Transformer(Process):
         return self
 
     def receive_update(self, input_pin, value):
-        self.transformer.input_queue.append((input_pin, value))
+        self._message_id += 1
+        self.transformer.input_queue.append((self._message_id, input_pin, value))
         self.transformer.semaphore.release()
 
     def receive_registrar_update(self, registrar_name, key, namespace_name):
         #TODO: this will only work for same-namespace (thread) kernels
+        self._message_id += 1
         value = registrar_name, key, namespace_name
-        self.transformer.input_queue.append(("@REGISTRAR", value))
+        self.transformer.input_queue.append((self._message_id, "@REGISTRAR", value))
         self.transformer.semaphore.release()
 
     def listen_output(self):
