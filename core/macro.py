@@ -453,14 +453,17 @@ def macro(*args, **kwargs):
     defines a macro with a three arguments. The arguments must be defined as
      keyword arguments, and "spam" is optional
     """
-    if len(args) == 1 and callable(args[0]) and not len(kwargs):
-        new_macro = Macro(func=args[0])
-        #TODO: functools.wraps/update_wrapper on new_macro
+    if len(args) == 1 and not kwargs:
+        arg, = args
+        if callable(arg):
+            return Macro(func=arg)
+            # TODO: functools.wraps/update_wrapper on new_macro
+
+    new_macro = Macro(*args, **kwargs)
+
+    def func_macro_wrapper(func):
+        new_macro.func = func
+        # TODO: functools.wraps/update_wrapper on new_macro
         return new_macro
-    else:
-        new_macro = Macro(*args, **kwargs)
-        def func_macro_wrapper(func):
-            new_macro.func = func
-            #TODO: functools.wraps/update_wrapper on new_macro
-            return new_macro
-        return func_macro_wrapper
+
+    return func_macro_wrapper
