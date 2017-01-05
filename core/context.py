@@ -1,7 +1,7 @@
 """Module for Context class."""
 from weakref import WeakValueDictionary
 from . import SeamlessBase
-from .cell import Cell, CellLike, ExportedCell
+from .cell import Cell, CellLike
 from .process import Managed, Process, ProcessLike, InputPinBase, \
   ExportedInputPin, OutputPinBase, ExportedOutputPin, EditorOutputPin
 from contextlib import contextmanager as _pystdlib_contextmanager
@@ -31,15 +31,15 @@ class Context(SeamlessBase, CellLike, ProcessLike):
     """
 
     _name = None
-    _registrar = None
     _like_cell = False          #can be set to True by export
     _like_process = False       #can be set to True by export
-    _children = None
-    _childids = None
+    _children = []
     _manager = None
     registrar = None
-    _pins = None
+    _pins = []
     _auto = None
+    _owned = []
+    _owner = None
 
     def __init__(
         self,
@@ -55,18 +55,18 @@ class Context(SeamlessBase, CellLike, ProcessLike):
                 as the active context. Subcontexts constructed by macros are
                 automatically parented to the active context
         """
+        super().__init__()
         n = name
         if context is not None and context._name is not None:
             n = context._name + "." + str(n)
         self._name = name
         self._pins = {}
         self._children = {}
-        self._childids = WeakValueDictionary()
         self._auto = set() #TODO: save this also when serializing
         if context is not None:
             self._manager = context._manager
         else:
-            from .process import Manager
+            from .manager import Manager
             self._manager = Manager()
         if active_context:
             set_active_context(self)
@@ -85,9 +85,10 @@ class Context(SeamlessBase, CellLike, ProcessLike):
          + [c for c in self._pins.keys()] + self._dir
 
     def _add_child(self, childname, child):
+        child._set_context(self, childname)
         self._children[childname] = child
-        self._childids[id(child)] = child
-        child._set_context(self)
+        self._manager._childids[id(child)] = child
+
 
     def _add_new_cell(self, cell, naming_pattern="cell"):
         from .cell import Cell
@@ -100,7 +101,7 @@ class Context(SeamlessBase, CellLike, ProcessLike):
                 break
         self._auto.add(cell_name)
         self._add_child(cell_name, cell)
-        return cell
+        return cell_name
 
     def _add_new_process(self, process, naming_pattern="process"):
         from .process import Process
@@ -113,7 +114,20 @@ class Context(SeamlessBase, CellLike, ProcessLike):
                 break
         self._auto.add(process_name)
         self._add_child(process_name, process)
-        return process
+        return process_name
+
+    def _add_new_registrar_object(self, robj, naming_pattern="registrar_object"):
+        from .registrar import RegistrarObject
+        assert isinstance(robj, RegistrarObject)
+        count = 0
+        while 1:
+            count += 1
+            robj_name = naming_pattern + str(count)
+            if not self._hasattr(robj_name):
+                break
+        self._auto.add(robj_name)
+        self._add_child(robj_name, robj)
+        return robj_name
 
     def _new_subcontext(self, naming_pattern="ctx"):
         count = 0
@@ -137,7 +151,7 @@ class Context(SeamlessBase, CellLike, ProcessLike):
             self._children[attr].destroy()
 
         assert isinstance(value, (Managed, CellLike, ProcessLike)), type(value)
-        value._set_context(self, force_detach=True)
+        value._set_context(self, attr, force_detach=True)
         self._add_child(attr, value)
 
     def __getattr__(self, attr):
@@ -230,16 +244,13 @@ class Context(SeamlessBase, CellLike, ProcessLike):
         for pinname in pins:
             if self._hasattr(pinname):
                 raise Exception("Cannot export pin '%s', context has already this attribute" % pinname)
-            if isinstance(child, CellLike) and child._like_cell:
-                if not isinstance(child, Cell):
-                    child = child.get_cell()
-                    self._pins[pinname] = ExportedCell(child)
+            pin = child._pins[pinname]
+            if isinstance(pin, InputPinBase):
+                self._pins[pinname] = ExportedInputPin(pin)
+            elif isinstance(pin, OutputPinBase):
+                self._pins[pinname] = ExportedOutputPin(pin)
             else:
-                pin = child._pins[pinname]
-                if isinstance(pin, InputPinBase):
-                    self._pins[pinname] = ExportedInputPin(pin)
-                elif isinstance(pin, OutputPinBase):
-                    self._pins[pinname] = ExportedOutputPin(pin)
+                raise TypeError(pin)
 
         if mode == "cell":
             self._like_cell = True
@@ -261,25 +272,29 @@ class Context(SeamlessBase, CellLike, ProcessLike):
         else:
             return self._context._root()
 
-    def _set_context(self, ctx, force_detach=True):
-        if self._context is not None:
-            if self._context is not ctx or force_detach:
-                for childname, child in self._context._children.items():
-                    if child is self:
-                        self._context._children.pop(childname)
-                        break
-                else:
-                    print("WARNING, orphaned context child?")
-        self._context = ctx
+    def _owns_all(self):
+        owns = super()._owns_all()
+        for child in self._children.values():
+            owns.add(child)
+            owns.update(child._owns_all())
+        return owns
 
     def destroy(self):
         if self._destroyed:
             return
-        #print("CONTEXT DESTROY")
+        print("CONTEXT DESTROY", self.path)
         for childname in list(self._children):
+            if childname not in self._children:
+                continue #child was destroyed automatically by another child
             child = self._children[childname]
             child.destroy()
         super().destroy()
+
+    def _validate_path(self, required_path=None):
+        required_path = super()._validate_path(required_path)
+        for childname, child in self._children.items():
+            child._validate_path(required_path + (childname,))
+        return required_path
 
 def context(**kwargs):
     """Return a new Context object."""

@@ -120,7 +120,7 @@ TODO:
 """
 from . import typeparse, transform
 from .validate import is_valid_silktype, reserved_endings, reserved_membernames, reserved_types
-from .registers import register
+from .registers import register, unregister
 from .registers.typenames import _silk_types
 
 class _SilkTypes:

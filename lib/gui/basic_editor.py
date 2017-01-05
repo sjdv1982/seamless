@@ -14,11 +14,11 @@ _editors = {
   },
   "text": {
     "code": "cell-basic_editor_text.py",
-    "update": None
+    "update": "cell-basic_editor_text_UPDATE.py",
   },
   "json": {
     "code": "cell-basic_editor_json.py",
-    "update": None
+    "update": None #TODO
   },
 }
 
@@ -66,9 +66,9 @@ def basic_editor(ctx, editor_type, title):
       }
     }
     ed = ctx.ed = editor(pinparams)
-    ed.title.cell(True).set(title)
-    ed.code_start.cell(True).fromfile(_editors[editor_type]["code"])
-    ed.code_stop.cell(True).set('_cache["w"].destroy()')
+    ed.title.cell().set(title)
+    ed.code_start.cell().fromfile(_editors[editor_type]["code"])
+    ed.code_stop.cell().set('_cache["w"].destroy()')
     upfile = _editors[editor_type]["update"]
     c_up = ed.code_update.cell(True)
     if upfile is not None:
@@ -87,5 +87,6 @@ def edit(cell, title=None, solid=True):
         ed.output.solid.connect(cell)
     else:
         ed.output.liquid.connect(cell)
-    cell.own(ed)
+    #cell.own(ed) #Bad idea. If cell gets re-created (e.g. by a macro),
+    # the editor won't be connected to any live cell
     return ed

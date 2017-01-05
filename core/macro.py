@@ -39,8 +39,10 @@ class MacroObject:
     def connect(self, parent):
         from .cell import CellLike
         from .process import ProcessLike
+        from .registrar import RegistrarObject
         assert (isinstance(parent, CellLike) and parent._like_cell) or \
-         (isinstance(parent, ProcessLike) and parent._like_process)
+         (isinstance(parent, ProcessLike) and parent._like_process) or \
+         isinstance(parent, RegistrarObject), type(parent)
         #TODO: check that all cells and parent share a common root
         self._parent = weakref.ref(parent)
         for k in self.cell_args:
@@ -62,25 +64,43 @@ class MacroObject:
             raise AttributeError(exc.format(parent))
         external_connections = []
 
-        def find_external_connections_cell(cell, path):
+        def find_external_connections_cell(cell, path, parent_path, parent_owns):
+            owns = parent_owns
+            if owns is None:
+                owns = cell._owns_all()
             manager = cell._get_manager()
             cell_id = manager.get_cell_id(cell)
-            incons = manager.cells[cell_id]
+             #no macro listeners or registrar listeners; these the macro should re-create
+            incons = manager.cell_to_output_pin.get(cell, [])
             for incon in incons:
-                process = incon.process_ref()
-                if process is None or process in cell._owned: #TODO: indirect ownage
+                output_pin = incon()
+                if output_pin is None:
                     continue
-                external_connections.append((True, incon, path))
-            outcons = manager.listeners[cell]
+                process = output_pin.process_ref()
+                if process is None or process in owns:
+                    continue
+                if parent_path is not None:
+                    if output_pin.path[:len(parent_path)] == parent_path:
+                        continue
+                external_connections.append((True, output_pin, path, output_pin.path))
+            outcons = manager.listeners[cell_id]
             for outcon in outcons:
-                process = outcon.process_ref()
-                if process is None or process in cell._owned: #TODO: indirect ownage
+                input_pin = outcon()
+                if input_pin is None:
                     continue
-                if isinstance(parent, Context) and process.context._part_of(parent):
+                process = input_pin.process_ref()
+                if process is None or process in owns:
                     continue
-                external_connections.append((False, path, outcon))
+                if parent_path is not None:
+                    if input_pin.path[:len(parent_path)] == parent_path:
+                        continue
+                assert len(input_pin.path)
+                external_connections.append((False, path, input_pin, input_pin.path))
 
-        def find_external_connections_process(process, path, part):
+        def find_external_connections_process(process, path, parent_path, parent_owns):
+            owns = parent_owns
+            if owns is None:
+                owns = process._owns_all()
             for pinname, pin in process._pins.items():
                 manager = pin._get_manager()
                 pin_id = pin.get_pin_id()
@@ -92,42 +112,57 @@ class MacroObject:
                     cell_ids = pin._cell_ids
                 else:
                     raise TypeError((pinname, pin))
-                for cell_id in cell_ids: #TODO: indirect ownage
+                for cell_id in cell_ids:
                     cell = manager.cells.get(cell_id, None)
                     if cell is None:
                         continue
-                    if cell in process._owned:
+                    if cell in owns:
                         continue
-                    if part and isinstance(parent, Context) and cell.context._part_of(parent):
-                        continue
+                    if parent_path is not None:
+                        if cell.path[:len(parent_path)] == parent_path:
+                            continue
                     if is_incoming:
-                        external_connections.append((True, cell, (pinname,)))
+                        external_connections.append((True, cell, (pinname,), cell.path))
                     else:
-                        external_connections.append((False, (pinname,), cell))
+                        external_connections.append((False, (pinname,), cell, cell.path))
 
-        def find_external_connections_context(ctx, path):
-            for childname, child in ctx._children:
+        def find_external_connections_context(ctx, path, parent_path, parent_owns):
+            parent_path2 = parent_path
+            if parent_path is None:
+                parent_path2 = ctx.path
+            owns = parent_owns
+            if owns is None:
+                owns = ctx._owns_all()
+                ###
+                print("CHILDREN")
+                for childname, child in ctx._children.items():
+                    print(childname, child)
+                ctx._validate_path()
+                import sys
+                sys.exit()
+            for childname, child in ctx._children.items():
                 if path is not None:
                     path2 = path + (childname,)
                 else:
                     path2 = (childname,)
                 if isinstance(child, Cell):
-                    find_external_connections_cell(child, path2)
+                    find_external_connections_cell(child, path2, parent_path2, owns)
                 elif isinstance(child, Process):
-                    find_external_connections_process(child, path2, True)
+                    find_external_connections_process(child, path2, parent_path2, owns)
                 elif isinstance(child, Context):
-                    find_external_connections_context(child, path2)
+                    find_external_connections_context(child, path2, parent_path2, owns)
                 else:
                     raise TypeError((childname, child))
 
         if isinstance(parent, Cell):
-            find_external_connections_cell(parent, None)
+            find_external_connections_cell(parent, None, None, None)
         elif isinstance(parent, Process):
-            find_external_connections_process(parent, None, False)
+            find_external_connections_process(parent, None, None, None)
         elif isinstance(parent, Context):
-            find_external_connections_context(parent, None)
+            find_external_connections_context(parent, None, None, None)
         elif parent is None:
             pass
+
         new_parent = self.macro.evaluate(self.args, self.kwargs, self)
         setattr(grandparent, parent_childname, new_parent) #destroys parent and connections
         self._parent = weakref.ref(new_parent)
@@ -137,22 +172,25 @@ class MacroObject:
                 try:
                     new_target = getattr(target, path[index])
                 except AttributeError:
-                    warn = "WARNING: cannot reconstruct {0}, target no longer exists"
-                    subpath = ".".join(path[:index])
+                    warn = "WARNING: cannot reconstruct '{0}', target no longer exists"
+                    subpath = "." + ".".join(target.path + path[:index+1])
                     print(warn.format(subpath))
+                    return None
                 return resolve_path(new_target, path, index+1)
             return target
-        for is_incoming, source, dest in external_connections:
+        for is_incoming, source, dest, ext_path in external_connections:
             #print("CONNECTION: is_incoming {0}, source {1}, dest {2}".format(is_incoming, source, dest))
-            err = "Connection (is_incoming {0}, source {1}, dest {2}) points to a destroyed external cell"
+            err = "Connection {0}::(is_incoming {1}, source {2}, dest {3}) points to a destroyed external cell"
             if is_incoming:
                 if source._destroyed:
-                    print("ERROR:", err.format(is_incoming, source, dest))
+                    print("ERROR:", err.format(new_parent.path, is_incoming, ext_path, dest) + " (source)")
                 dest_target = resolve_path(new_parent, dest, 0)
-                source.connect(dest_target)
+                if dest_target is not None:
+                    source.connect(dest_target)
             else:
                 if dest._destroyed:
-                    print("ERROR:", err.format(is_incoming, source, dest))
+                    print(dest.path)
+                    print("ERROR:", err.format(new_parent.path, is_incoming, source, ext_path) + " (dest)")
                 source_target = resolve_path(new_parent, source, 0)
                 source_target.connect(dest)
 
@@ -289,23 +327,29 @@ class Macro:
     def evaluate(self, args, kwargs, macro_object):
         from .cell import Cell, CellLike
         from .process import Process, ProcessLike, InputPinBase, OutputPinBase
+        from .registrar import RegistrarObject
 
         args2, kwargs2, mobj = self.resolve_type_args(args, kwargs)
+        func = self.func
         if macro_object is not None:
             mobj = macro_object
+            parent = macro_object._parent()
+            if isinstance(parent, RegistrarObject):
+                func = parent.re_register
+                args2 = args2[1:] #TODO: bound object because of hack...
         previous_macro_mode = get_macro_mode()
         if self.with_context:
             ctx = get_active_context()._new_subcontext()
             ret = None
             try:
                 set_macro_mode(True)
-                ret = self.func(ctx, *args2, **kwargs2)
+                ret = func(ctx, *args2, **kwargs2)
                 if ret is not None:
                     raise TypeError("Context macro must return None")
                 ctx._set_macro_object(mobj)
                 if macro_object is None: #this is a new construction, not a re-evaluation
                     if mobj is not None:
-                        mobj.connect(ret)
+                        mobj.connect(ctx)
                 ret = ctx
             finally:
                 if ret is None:
@@ -314,9 +358,10 @@ class Macro:
         else:
             try:
                 set_macro_mode(True)
-                ret = self.func(*args2, **kwargs2)
+                ret = func(*args2, **kwargs2)
                 assert (isinstance(ret, CellLike) and ret._like_cell) or \
-                 (isinstance(ret, ProcessLike) and ret._like_process)
+                 (isinstance(ret, ProcessLike) and ret._like_process) or \
+                 isinstance(ret, RegistrarObject), (func, type(ret))
                 if isinstance(ret, Cell):
                     manager = ret._get_manager()
                     cell_id = manager.get_cell_id(ret)
@@ -345,6 +390,8 @@ class Macro:
                             if cell is None:
                                 continue
                             ret.own(cell)
+                elif isinstance(ret, RegistrarObject):
+                    pass
                 else:
                     raise NotImplementedError(type(ret))
                 ret._set_macro_object(mobj)

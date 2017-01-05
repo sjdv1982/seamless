@@ -15,16 +15,21 @@ __all__ = (macro, context, cell, pythoncell, transformer, editor)
 import time
 from collections import deque
 _work = deque()
-def add_work(work):
-    _work.append(work)
+_priority_work = deque()
+def add_work(work, priority=False):
+    if priority:
+        _priority_work.append(work)
+    else:
+        _work.append(work)
 def run_work():
-    count = len(_work)
-    for n in range(count):
-        work = _work.popleft()
-        try:
-            work()
-        except:
-            traceback.print_exc()
+    for w in (_priority_work, _work):
+        count = len(w)
+        for n in range(count):
+            work = w.popleft()
+            try:
+                work()
+            except:
+                traceback.print_exc()
 
 import sys
 import traceback

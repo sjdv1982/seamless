@@ -78,6 +78,7 @@ class Transformer(Process):
     This is the main-thread part of the transformer
     """
     _required_code_type = PythonCell.CodeTypes.FUNCTION
+    transformer = None
 
     def __init__(self, transformer_params):
         super().__init__()
@@ -120,13 +121,19 @@ class Transformer(Process):
           (other than the deques and semaphores, which could as well be
            implemented using network sockets)
         - It must run async from the main thread
+        TODO: in case of process, synchronize registrars (use execnet?)
         """
-        self.transformer = KernelTransformer(thread_inputs, self._output_name, self.output_queue, self.output_semaphore)
+
+        self.transformer = KernelTransformer(
+            thread_inputs, self._output_name,
+            self.output_queue, self.output_semaphore
+        )
+        self._set_context(self.context, self.name) #to update the transformer registrars
         self.transformer_thread = threading.Thread(target=self.transformer.run, daemon=True)
         self.transformer_thread.start()
 
     def __getattr__(self, attr):
-        if attr not in self._pins:
+        if self._pins is None or attr not in self._pins:
             raise AttributeError(attr)
         else:
             return self._pins[attr]
@@ -139,6 +146,12 @@ class Transformer(Process):
 
     def receive_update(self, input_pin, value):
         self.transformer.input_queue.append((input_pin, value))
+        self.transformer.semaphore.release()
+
+    def receive_registrar_update(self, registrar_name, key, namespace_name):
+        #TODO: this will only work for same-namespace (thread) kernels
+        value = registrar_name, key, namespace_name
+        self.transformer.input_queue.append(("@REGISTRAR", value))
         self.transformer.semaphore.release()
 
     def listen_output(self):
@@ -216,6 +229,15 @@ class Transformer(Process):
 
     def __dir__(self):
         return object.__dir__(self) + list(self._pins.keys())
+
+    def _set_context(self, context, name, force_detach=False):
+        super()._set_context(context, name, force_detach)
+        if self.transformer is None:
+            return
+        if self.context is not None:
+            self.transformer.registrars = self.context.registrar
+        else:
+            self.transformer.registrars = None
 
 # @macro takes nothing, a type, or a dict of types
 @macro(type=("json", "seamless", "transformer_params"), with_context=False)

@@ -43,6 +43,27 @@ class Editor:
         self._set_namespace()
 
     def process_input(self, name, data):
+
+        if name == "@REGISTRAR":
+            try:
+                registrar_name, key, namespace_name = data
+                context = self._parent().context
+                registrars = context.registrar
+                registrar = getattr(registrars, registrar_name)
+                try:
+                    registrar_value = registrar.get(key)
+                except KeyError:
+                    self._pending_inputs.add(namespace_name)
+                self.values[namespace_name] = registrar_value
+                if namespace_name in self._pending_inputs:
+                    self._pending_inputs.remove(namespace_name)
+            except Exception as exc:
+                self.exception = exc
+                import traceback
+                traceback.print_exc()
+
+            return
+
         data_object = self.inputs[name]
         # instance of datatypes.objects.DataObject
 

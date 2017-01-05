@@ -16,7 +16,7 @@ def hiveprocess(hivename):
     from seamless.core.registrar import _registrars
     hive_registrar = _registrars["hive"]
     #/HACK
-    hivecls = getattr(hive_registrar, hivename)
+    hivecls = hive_registrar.get(hivename)
     assert issubclass(hivecls, HiveBuilder)
     with hive_mode_as("build"):
         hiveobject = hivecls() #hive must take no arguments!

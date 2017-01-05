@@ -104,13 +104,25 @@ class Editor(Process):
         work = partial(f, input_pin, value)
         seamless.add_work(work)
 
+    def receive_registrar_update(self, registrar_name, key, namespace_name):
+        #TODO: this will only work for same-namespace (thread) kernels
+        f = self.editor.process_input
+        value = registrar_name, key, namespace_name
+        work = partial(f, "@REGISTRAR", value)
+        seamless.add_work(work, priority=True)
+
     def __dir__(self):
         return object.__dir__(self) + list(self._pins.keys())
 
     def destroy(self):
         if self._destroyed:
             return
-        self._code_stop()
+        try:
+            func = self._code_stop
+        except AttributeError:
+            pass
+        else:
+            self._code_stop()
 
         # free all input and output pins
         for attr in self._io_attrs:

@@ -16,24 +16,6 @@ class CellLike(object):
     CellLikes are captured by context.cells"""
     _like_cell = True
 
-class ExportedCell(Managed, CellLike):
-    def __init__(self, cell):
-        assert isinstance(cell, CellLike) and cell._like_cell
-        self.cell = cell
-
-    def get_cell(self):
-        if isinstance(self.cell, Cell):
-            return self.cell
-        else:
-            return self.cell.get_cell()
-
-    def _set_context(self, context, force_detach=False):
-        self.cell._set_context(context, force_detach)
-
-    @property
-    def context(self):
-        return self.cell.context
-
 class Cell(Managed, CellLike):
     """Default class for cells.
 
@@ -209,20 +191,22 @@ class Cell(Managed, CellLike):
         return self._error_message
 
     def _on_connect(self, pin, process, incoming):
-        # TODO: support for liquid connections: check pin!
+        # TODO: proper support for liquid connections
         if incoming:
-            if self._dependent:
+            if self._dependent and not pin.liquid:
                 raise Exception(
                  "Cell is already the output of another process"
                 )
-            self._dependent = True
+            if not pin.liquid:
+                self._dependent = True
             self._incoming_connections += 1
         else:
             self._outgoing_connections += 1
 
     def _on_disconnect(self, pin, process, incoming):
         if incoming:
-            self._dependent = False
+            if not pin.liquid:
+                self._dependent = False
             self._incoming_connections -= 1
         else:
             self._outgoing_connections -= 1
@@ -243,7 +227,7 @@ class Cell(Managed, CellLike):
     def destroy(self):
         if self._destroyed:
             return
-        #print("CELL DESTROY")
+        print("CELL DESTROY", self.path)
         super().destroy()
 
 class PythonCell(Cell):

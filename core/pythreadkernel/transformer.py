@@ -8,7 +8,6 @@ class Transformer(Process):
     def __init__(self, input_data_types, output_name, output_queue, output_semaphore, **kwargs):
         assert "code" not in input_data_types
 
-        self.namespace = {}
         self.input_data_types = input_data_types
         self.output_name = output_name
         self.output_queue = output_queue
@@ -16,6 +15,7 @@ class Transformer(Process):
 
         self.func_name = None
         self.expression = None
+        self.last_result = None
 
         inputs = {name: data_type_to_data_object(value)(name, value) for name, value in input_data_types.items()}
         inputs["code"] = PythonTransformerCodeObject("code", ("text", "code", "python"))
@@ -41,6 +41,7 @@ class Transformer(Process):
                 self.namespace[name] = self.values[name].data
 
         # Place result in output
-        result = eval(self.expression, self.namespace)        
+        result = eval(self.expression, self.namespace)
+        self.last_result = result
         self.output_queue.append((self.output_name, result))
         self.output_semaphore.release()

@@ -3,158 +3,6 @@ import weakref
 from weakref import WeakValueDictionary, WeakKeyDictionary
 from . import SeamlessBase
 
-#TODO: disconnect method (see MacroObject for low-level implementation)
-
-class Manager:
-
-    def __init__(self):
-        self.listeners = {}
-        self.macro_listeners = {}
-        self.pin_to_cells = {}
-        self.cells = WeakValueDictionary()
-        super().__init__()
-
-    def add_listener(self, cell, input_pin):
-        cell_id = self.get_cell_id(cell)
-        pin_ref = weakref.ref(input_pin)
-
-        try:
-            listeners = self.listeners[cell_id]
-            assert pin_ref not in listeners
-            # TODO: tolerate (silently ignore) a connection that exists already?
-            listeners.append(pin_ref)
-
-        except KeyError:
-            self.listeners[cell_id] = [pin_ref]
-
-        try:
-            curr_pin_to_cells = self.pin_to_cells[input_pin.get_pin_id()]
-            assert cell_id not in curr_pin_to_cells
-            # TODO: tolerate (append) multiple inputs?
-            curr_pin_to_cells.append(cell_id)
-
-        except KeyError:
-            self.pin_to_cells[input_pin.get_pin_id()] = [cell_id]
-
-        if cell_id not in self.cells:
-            self.cells[cell_id] = cell
-
-    def remove_listener(self, input_pin):
-        process = input_pin.process_ref()
-        cell_ids = self.pin_to_cells.pop(input_pin.get_pin_id(), [])
-        for cell_id in cell_ids:
-            l = self.listeners[cell_id]
-            l[:] = [ref for ref in l if ref().get_pin_id() != input_pin.get_pin_id()]
-            if not len(l):
-                self.listeners.pop(cell_id)
-                cell = self.cells.get(cell_id, None)
-                if cell is not None:
-                    cell._on_disconnect(input_pin, process, False)
-
-    def add_macro_listener(self, cell, macro_object, macro_arg):
-        cell_id = self.get_cell_id(cell)
-        macro_ref = weakref.ref(macro_object)
-        m = (macro_ref, macro_arg)
-
-        try:
-            macro_listeners = self.macro_listeners[cell_id]
-            assert m not in macro_listeners
-            macro_listeners.append(m)
-
-        except KeyError:
-            self.macro_listeners[cell_id] = [m]
-
-    def remove_macro_listener(self, cell, macro_object, macro_arg):
-        cell_id = self.get_cell_id(cell)
-        macro_ref = weakref.ref(macro_object)
-        m = (macro_ref, macro_arg)
-
-        if cell_id in self.macro_listeners:
-            l = self.macro_listeners[cell_id]
-            if m in l:
-                l.remove(m)
-
-    def _update(self, cell_id, value):
-        macro_listeners = self.macro_listeners.get(cell_id, [])
-
-        for macro_ref, macro_arg in macro_listeners:
-            macro_object = macro_ref()
-
-            if macro_object is None:
-                continue #TODO: error?
-
-            macro_object.update_cell(macro_arg)
-
-        listeners = self.listeners.get(cell_id, [])
-        for input_pin_ref in listeners:
-            input_pin = input_pin_ref()
-
-            if input_pin is None:
-                continue #TODO: error?
-
-            input_pin.update(value)
-
-
-    def update_from_code(self, cell):
-        value = cell._data
-        cell_id = self.get_cell_id(cell)
-        self._update(cell_id, value)
-
-    def update_from_process(self, cell_id, value):
-        cell = self.cells.get(cell_id, None)
-        if cell is None:
-            return #cell has died...
-
-        changed = cell._update(value)
-        if changed:
-            self._update(cell_id, value)
-
-    @classmethod
-    def get_cell_id(cls, cell):
-        return id(cell)
-
-    def connect(self, source, target):
-        from .transformer import Transformer
-        from .cell import Cell, CellLike
-        from .context import Context
-        if isinstance(source, CellLike) and source._like_cell:
-            assert isinstance(target, InputPinBase)
-            assert source._get_manager() is self
-            assert target._get_manager() is self
-            if isinstance(target, ExportedInputPin):
-                target = target.get_pin()
-
-            if isinstance(source, Context):
-                assert "_output" in source._pins
-                source = source._pins["_output"]
-            process = target.process_ref()
-            assert process is not None #weakref may not be dead
-            source._on_connect(target, process, incoming = False)
-            self.add_listener(source, target)
-
-            if source._status == Cell.StatusFlags.OK:
-                self.update_from_code(source)
-
-        elif isinstance(source, OutputPinBase):
-            assert isinstance(target, CellLike) and target._like_cell
-            if isinstance(target, Context):
-                assert "_input" in target._pins
-                target = target._pins["_input"]
-            if isinstance(source, ExportedOutputPin):
-                source = source.get_pin()
-            process = source.process_ref()
-            assert process is not None #weakref may not be dead
-            target._on_connect(source, process, incoming = True)
-            cell_id = self.get_cell_id(target)
-            if cell_id not in self.cells:
-                self.cells[cell_id] = target
-
-            if cell_id not in source._cell_ids:
-                source._cell_ids.append(cell_id)
-
-            if isinstance(process, Transformer):
-                process._on_connect_output()
-
 class Managed(SeamlessBase):
     def _get_manager(self):
         context = self.context
@@ -181,24 +29,47 @@ class Process(Managed, ProcessLike):
         super().__init__()
 
     def destroy(self):
-        #print("PROCESS DESTROY")
+        print("PROCESS DESTROY", self.path)
         if self._destroyed:
             return
         for pin_name, pin in self._pins.items():
             pin.destroy()
+        if self.context is not None:
+            manager = self.context._manager
+            manager.remove_registrar_listeners(self)
         super().destroy()
+
+    def receive_update(self, input_pin, value):
+        raise NotImplementedError
+
+    def receive_registrar_update(self, registrar_name, key, namespace_name):
+        raise NotImplementedError
+
+    def _validate_path(self, required_path=None):
+        required_path = super()._validate_path(required_path)
+        for pin_name, pin in self._pins.items():
+            pin._validate_path(required_path + (pin_name,))
+        return required_path
 
 class PinBase(Managed):
 
-    def __init__(self, process):
+    def __init__(self, process, name):
         self.process_ref = weakref.ref(process)
         super().__init__()
+        self.name = name
 
     def _set_context(self, context, force_detach=False):
+        pass
+
+    @property
+    def path(self):
         process = self.process_ref()
+        name = self.name
+        if isinstance(name, str):
+            name = (name,)
         if process is None:
-            return #Process has died...
-        process._set_context(context, force_detach)
+            return (None,) + name
+        return process.path + name
 
     @property
     def context(self):
@@ -213,6 +84,8 @@ class PinBase(Managed):
     def get_pin(self):
         return self
 
+    def _own(self):
+        raise TypeError(type(self))
 
 class InputPinBase(PinBase):
 
@@ -244,9 +117,8 @@ class OutputPinBase(PinBase):
 
 class InputPin(InputPinBase):
 
-    def __init__(self, process, identifier, dtype):
-        InputPinBase.__init__(self, process)
-        self.identifier = identifier
+    def __init__(self, process, name, dtype):
+        InputPinBase.__init__(self, process, name)
         self.dtype = dtype
 
     def cell(self, own=False):
@@ -267,7 +139,7 @@ class InputPin(InputPinBase):
             context._add_new_cell(my_cell)
             my_cell.connect(self)
         elif l == 1:
-            my_cell = context._childids[curr_pin_to_cells[0]]
+            my_cell = manager._childids[curr_pin_to_cells[0]]
         elif l > 1:
             raise TypeError("cell() is ambiguous, multiple cells are connected")
         if own:
@@ -279,14 +151,14 @@ class InputPin(InputPinBase):
         if process is None:
             return #Process has died...
 
-        process.receive_update(self.identifier, value)
+        process.receive_update(self.name, value)
 
 
 class OutputPin(OutputPinBase):
-    def __init__(self, process, identifier, dtype):
-        OutputPinBase.__init__(self, process)
-        self.identifier = identifier
+    def __init__(self, process, name, dtype, liquid=False):
+        OutputPinBase.__init__(self, process, name)
         self.dtype = dtype
+        self.liquid = liquid
         self._cell_ids = []
 
     def get_pin(self):
@@ -305,6 +177,7 @@ class OutputPin(OutputPinBase):
         from .cell import cell
         context = self.context
         assert context is not None
+        manager = context._manager
         l = len(self._cell_ids)
         if l == 0:
             if self.dtype is None:
@@ -318,7 +191,7 @@ class OutputPin(OutputPinBase):
             context._add_new_cell(my_cell)
             self.connect(my_cell)
         elif l == 1:
-            my_cell = context._childids[self._cell_ids[0]]
+            my_cell = manager._childids[self._cell_ids[0]]
         elif l > 1:
             raise TypeError("cell() is ambiguous, multiple cells are connected")
         if own:
@@ -333,12 +206,10 @@ class OutputPin(OutputPinBase):
 
 
 class EditorOutputPin(OutputPinBase):
-    def __init__(self, process, identifier, dtype):
-        OutputPinBase.__init__(self, process)
-        self.solid = OutputPin(process, identifier, dtype)
-        self.liquid = OutputPin(process, identifier, dtype)
-        self.own(self.solid)
-        self.own(self.liquid)
+    def __init__(self, process, name, dtype):
+        OutputPinBase.__init__(self, process, name)
+        self.solid = OutputPin(process, (name, "solid"), dtype)
+        self.liquid = OutputPin(process, (name, "liquid"), dtype, liquid=True)
 
     @property
     def _cell_ids(self):
@@ -360,6 +231,20 @@ class EditorOutputPin(OutputPinBase):
     def cells(self):
         raise TypeError("Cannot obtain .cells for EditorOutputPin, select .solid or .liquid")
 
+    def destroy(self):
+        if self._destroyed:
+            return
+        self.solid.destroy()
+        self.liquid.destroy()
+        super().destroy()
+
+    def _validate_path(self, required_path=None):
+        required_path = super()._validate_path(required_path)
+        self.solid._validate_path(required_path + ("solid",))
+        self.liquid._validate_path(required_path + ("liquid",))
+        return required_path
+
+
 class ExportedPinBase:
     def __init__(self, pin):
         self._pin = pin
@@ -374,7 +259,7 @@ class ExportedPinBase:
         return getattr(self._pin, attr)
 
     def _set_context(self, context, force_detach=False):
-        self._pin._set_context(context, force_detach)
+        pass
 
     @property
     def context(self):
@@ -382,9 +267,6 @@ class ExportedPinBase:
 
     def _get_manager(self):
         return self._pin._get_manager()
-
-    def own(self, obj):
-        return self._pin.own()
 
     def destroy(self):
         self._pin.destroy()

@@ -17,7 +17,7 @@ hiveprocess_init = """
 from seamless.core.registrar import _registrars
 hive_registrar = _registrars["hive"]
 #/HACK
-hive = hive_registrar.fireworkhive()
+hive = hive_registrar.get("fireworkhive")()
 _cache["hive"] = hive
 """
 hp.code_start.cell().set(hiveprocess_init)

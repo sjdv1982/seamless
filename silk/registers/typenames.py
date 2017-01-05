@@ -190,3 +190,15 @@ def register(extended_minischema, init_tree=None,
         _make_array(typename, ret)
 
     return ret
+
+def unregister(typename):
+    if typename not in _silk_types:
+        return
+    _silk_types.pop(typename)
+    def stripped_typename(t):
+        while t.endswith("Array"):
+            t = t[:-len("Array")]
+        return t
+    popped = [t for t in _typenames if stripped_typename(t) == typename]
+    for t in popped:
+        _typenames.pop(t)
