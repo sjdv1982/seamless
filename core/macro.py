@@ -369,7 +369,7 @@ class Macro:
                     for incon in incons:
                         process = incon.process_ref()
                         ret.own(process)
-                    outcons = manager.listeners[cell]
+                    outcons = manager.listeners[ret]
                     for outcon in outcons:
                         process = outcon.process_ref()
                         ret.own(process)
