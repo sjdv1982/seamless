@@ -98,6 +98,8 @@ class MacroObject:
                 external_connections.append((False, path, input_pin, input_pin.path))
 
         def find_external_connections_process(process, path, parent_path, parent_owns):
+            if path is None:
+                path = ()
             owns = parent_owns
             if owns is None:
                 owns = process._owns_all()
@@ -121,10 +123,11 @@ class MacroObject:
                     if parent_path is not None:
                         if cell.path[:len(parent_path)] == parent_path:
                             continue
+                    path2 = path + (pinname,)
                     if is_incoming:
-                        external_connections.append((True, cell, (pinname,), cell.path))
+                        external_connections.append((True, cell, path2, cell.path))
                     else:
-                        external_connections.append((False, (pinname,), cell, cell.path))
+                        external_connections.append((False, path2, cell, cell.path))
 
         def find_external_connections_context(ctx, path, parent_path, parent_owns):
             parent_path2 = parent_path
@@ -172,7 +175,7 @@ class MacroObject:
                 return resolve_path(new_target, path, index+1)
             return target
         for is_incoming, source, dest, ext_path in external_connections:
-            #print("CONNECTION: is_incoming {0}, source {1}, dest {2}".format(is_incoming, source, dest))
+            print("CONNECTION: is_incoming {0}, source {1}, dest {2}".format(is_incoming, source, dest))
             err = "Connection {0}::(is_incoming {1}, source {2}, dest {3}) points to a destroyed external cell"
             if is_incoming:
                 if source._destroyed:
@@ -323,6 +326,7 @@ class Macro:
         from .cell import Cell, CellLike
         from .process import Process, ProcessLike, InputPinBase, OutputPinBase
         from .registrar import RegistrarObject
+        from .context import active_context_as
 
         args2, kwargs2, mobj = self.resolve_type_args(args, kwargs)
         func = self.func
@@ -334,23 +338,19 @@ class Macro:
                 args2 = args2[1:] #TODO: bound object because of hack...
         previous_macro_mode = get_macro_mode()
         if self.with_context:
-            from seamless.core.context import get_active_context
-            print("ACTIVE", get_active_context())
-            #import sys
-            #sys.exit()
-
             ctx = get_active_context()._new_subcontext()
             ret = None
             try:
-                set_macro_mode(True)
-                ret = func(ctx, *args2, **kwargs2)
-                if ret is not None:
-                    raise TypeError("Context macro must return None")
-                ctx._set_macro_object(mobj)
-                if macro_object is None: #this is a new construction, not a re-evaluation
-                    if mobj is not None:
-                        mobj.connect(ctx)
-                ret = ctx
+                with active_context_as(ctx):
+                    set_macro_mode(True)
+                    ret = func(ctx, *args2, **kwargs2)
+                    if ret is not None:
+                        raise TypeError("Context macro must return None")
+                    ctx._set_macro_object(mobj)
+                    if macro_object is None: #this is a new construction, not a re-evaluation
+                        if mobj is not None:
+                            mobj.connect(ctx)
+                    ret = ctx
             finally:
                 if ret is None:
                     ctx.destroy()

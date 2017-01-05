@@ -106,7 +106,8 @@ class Process(metaclass=ABCMeta):
                             registrar_value = registrar.get(key)
                         except KeyError:
                             self._pending_inputs.add(namespace_name)
-                        self.namespace[namespace_name] = registrar_value
+                        else:
+                            self.namespace[namespace_name] = registrar_value
                         if namespace_name in self._pending_inputs:
                             self._pending_inputs.remove(namespace_name)
                     except Exception as exc:
