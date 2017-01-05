@@ -32,6 +32,7 @@ def macro_mode_as(macro_mode):
     yield
     _macro_mode = old_macro_mode
 
+
 class MacroObject:
     macro = None
     args = []
@@ -216,14 +217,14 @@ class Macro:
 
     def __init__(self, type=None, with_context=True, func=None):
         self.with_context = with_context
-        self.type_args = None
+        self._type_args = None
         self.func = func
 
         if type is None:
             return
 
         if isinstance(type, tuple) or isinstance(type, str):
-            self.type_args = dict(
+            self._type_args = dict(
              _order=["_arg1"],
              _required=["_arg1"],
              _default={},
@@ -234,58 +235,62 @@ class Macro:
         if not isinstance(type, dict):
             raise TypeError(type.__class__)
 
-        self.type_args = self._get_type_args_from_dict(type)
+        self._type_args = self._get_type_args_from_dict(type)
 
-    def get_type_args_from_dict(self, type):
+    @staticmethod
+    def _get_type_args_from_dict(type):
         order = []
         if "_order" in type:
             order = type["_order"]
             assert sorted(order) == sorted([k for k in type.keys() if not k.startswith("_")])
         required = set()
         default = {}
-        ret = dict(_order=order, _required=required, _default=default)
-        last_nonreq = None
-        for k in type:
-            if k.startswith("_"):
-                if k == "_order":
-                    continue
-                assert k.startswith("_arg"), k
-            v = type[k]
-            is_req = True
-            if isinstance(v, dict) and \
-             (v.get("optional", False) or "default" in v):
-                is_req = False
-            if isinstance(type, OrderedDict):
-                order.append(k)
-                if is_req and last_nonreq:
-                    exc = "Cannot specify required argument '{0}' after non-required argument '{1}'"
-                    raise Exception(exc.format(k, last_nonreq))
+        type_args = dict(_order=order, _required=required, _default=default)
+        last_non_required_name = None
 
-            vtype = v
-            if isinstance(v, dict):
-                vtype = v["type"]
-                if "default" in v:
+        for name, value in type.items():
+            if name.startswith("_"):
+                if name == "_order":
+                    continue
+                assert name.startswith("_arg"), k
+
+            is_required = True
+            if isinstance(value, dict) and (value.get("optional", False) or "default" in value):
+                is_required = False
+
+            if isinstance(type, OrderedDict):
+                order.append(name)
+                if is_required and last_non_required_name:
+                    message = "Cannot specify required argument '{0}' after non-required argument '{1}'"
+                    raise Exception(message.format(name, last_non_required_name))
+
+            value_type = value
+            if isinstance(value, dict):
+                value_type = value["type"]
+                if "default" in value:
                     #TODO: checking regarding type <=> default
                     #TODO: check that the default can be serialised, or at least pickled
-                    default[k] = v["default"]
-            ret[k] = vtype
+                    default[name] = value["default"]
+            type_args[name] = value_type
 
-            if is_req:
-                required.add(k)
+            if is_required:
+                required.add(name)
+
             else:
-                last_nonreq = k
-        return copy.deepcopy(ret)
+                last_non_required_name = name
 
     def resolve(self, a):
         #TODO: allow CellLike contexts as well (also in cell_args in resolve_type_args)
         from .cell import Cell
         from ..dtypes import parse
-        if isinstance(a, Cell):
-            return parse(a.dtype, a._data, trusted=True)
-        else:
-            return a
 
-    def resolve_type_args(self, args0, kwargs0):
+        if isinstance(obj, Cell):
+            return parse(obj.dtype, obj._data, trusted=True)
+
+        else:
+            return obj
+
+    def resolve_type_args(self, args, kwargs):
         """
         #TODO: When macro object is created and attached to context X, verify that all resolved
          cells and X have a common ancestor (._root)
@@ -293,59 +298,63 @@ class Macro:
         from .cell import Cell
 
         macro_object = None
-        args = [self.resolve(a) for a in args0]
-        kwargs = {k: self.resolve(v) for k, v in kwargs0.items()}
-        if self.type_args is None:
-            return args, kwargs, None
+        resolved_args = [self.resolve(a) for a in args]
+        resolved_kwargs = {k: self.resolve(v) for k, v in kwargs.items()}
+
+        order = self._type_args["_order"]
+        assert len(resolved_args) <= len(order)
+
+        if self._type_args is None:
+            return resolved_args, resolved_kwargs, None
 
         #TODO: take and adapt corresponding routine from Hive
         cell_args = {}
-        args2, kwargs2 = [], {}
-        order = self.type_args["_order"]
-        assert len(args) <= len(order)
+        new_args, new_kwargs = [], {}
         positional_done = set()
-        for anr in range(len(args)):
-            argname = order[anr]
-            arg = args[anr]
-            arg0 = args0[anr]
-            #TODO: type validation
-            if argname.startswith("_arg"):
-                args2.append(arg)
-                positional_done.add(argname)
-            else:
-                kwargs2[argname] = arg
-            if isinstance(arg0, Cell):
-                cell_args[argname] = arg0
-        for argname in kwargs:
-            assert not argname.startswith("_"), argname #not supported
-            assert argname in self.type_args, (argname, [v for v in self.type_args.keys() if not v.startswith("_")])
-            arg = kwargs[argname]
-            #TODO: type validation
-            arg0 = kwargs0[argname]
-            kwargs2[argname] = arg
-            if isinstance(arg0, Cell):
-                cell_args[argname] = arg0
 
-        default = self.type_args["_default"]
-        required = self.type_args["_required"]
-        for argname in required:
-            if argname.startswith("_arg"):
-                assert argname in positional_done, argname #TODO: error message
+        for name, arg, arg0 in zip(order, resolved_args, args):
+            #TODO: type validation
+            if name.startswith("_arg"):
+                new_args.append(arg)
+                positional_done.add(name)
             else:
-                assert argname in kwargs2, argname #TODO: error message
-        for argname in self.type_args:
-            if argname.startswith("_"):
-                continue
-            if argname in kwargs2 and kwargs2[argname] is not None:
-                continue
-            arg_default = default.get(argname, None)
-            kwargs2[argname] = arg_default
-        if len(cell_args):
-            macro_object = MacroObject(self, args0, kwargs0, cell_args)
-        return args2, kwargs2, macro_object
+                new_kwargs[name] = arg
 
-    def __call__(self, *args, **kwargs):
-        return self.evaluate(args, kwargs, None)
+            if isinstance(arg0, Cell):
+                cell_args[name] = arg0
+
+        new_kwargs.update(resolved_kwargs)
+
+        for name, arg in resolved_kwargs.items():
+            assert not name.startswith("_"), name  # not supported
+            assert name in self._type_args, (name, [v for v in self._type_args.keys() if not v.startswith("_")])
+            #TODO: type validation
+            arg0 = kwargs[name]
+
+            if isinstance(arg0, Cell):
+                cell_args[name] = arg0
+
+        default = self._type_args["_default"]
+        required = self._type_args["_required"]
+
+        for name in required:
+            if name.startswith("_arg"):
+                assert name in positional_done, name  #TODO: error message
+            else:
+                assert name in new_kwargs, name  # TODO: error message
+
+        for name in self._type_args:
+            if name.startswith("_"):
+                continue
+            if name in new_kwargs and new_kwargs[name] is not None:
+                continue
+
+            arg_default = default.get(name, None)
+            new_kwargs[name] = arg_default
+
+        if cell_args:
+            macro_object = MacroObject(self, args, kwargs, cell_args)
+        return new_args, new_kwargs, macro_object
 
     def evaluate(self, args, kwargs, macro_object):
         from .cell import Cell, CellLike
@@ -354,26 +363,24 @@ class Macro:
         from .context import active_context_as
         from .. import run_work
 
-        args2, kwargs2, mobj = self.resolve_type_args(args, kwargs)
+        resolved_args, resolved_kwargs, mobj = self.resolve_type_args(args, kwargs)
         func = self.func
         if macro_object is not None:
             mobj = macro_object
             parent = macro_object._parent()
             if isinstance(parent, RegistrarObject):
                 func = parent.re_register
-                args2 = args2[1:] #TODO: bound object because of hack...
-        previous_macro_mode = get_macro_mode()
+                resolved_args = resolved_args[1:]  #TODO: bound object because of hack...
+
         if self.with_context:
             ctx = get_active_context()._new_subcontext()
-            ret = None
-            try:
-                with active_context_as(ctx):
-                    set_macro_mode(True)
-
-                    ret = func(ctx, *args2, **kwargs2)
-                    if ret is not None:
+            result = None
+            with active_context_as(ctx), macro_mode_as(True):
+                try:
+                    result = func(ctx, *resolved_args, **resolved_kwargs)
+                    if result is not None:
                         raise TypeError("Context macro must return None")
-                    if len(_macro_registrar):
+                    if _macro_registrar:
                         if mobj is None:
                             mobj = MacroObject(self, args, kwargs, {})
                         mobj.set_registrar_listeners(_macro_registrar)
@@ -382,58 +389,69 @@ class Macro:
                     if macro_object is None: #this is a new construction, not a re-evaluation
                         if mobj is not None:
                             mobj.connect(ctx)
-                    ret = ctx
-            finally:
-                _macro_registrar.clear()
-                if ret is None:
-                    ctx.destroy()
-                set_macro_mode(previous_macro_mode)
+                    result = ctx
+                finally:
+                    _macro_registrar.clear()
+                    if result is None:
+                        ctx.destroy()
         else:
             with macro_mode_as(True):
-                ret = func(*args2, **kwargs2)
-                assert (isinstance(ret, CellLike) and ret._like_cell) or \
-                 (isinstance(ret, ProcessLike) and ret._like_process) or \
-                 isinstance(ret, RegistrarObject), (func, type(ret))
-                if isinstance(ret, Cell):
-                    manager = ret._get_manager()
-                    cell_id = manager.get_cell_id(ret)
-                    incons = manager.cells[cell_id]
-                    for incon in incons:
-                        process = incon.process_ref()
-                        ret.own(process)
-                    outcons = manager.listeners[ret]
-                    for outcon in outcons:
-                        process = outcon.process_ref()
-                        ret.own(process)
-                elif isinstance(ret, Process):
-                    for pinname, pin in ret._pins.items():
+                result = func(*resolved_args, **resolved_kwargs)
+                assert (isinstance(result, CellLike) and result._like_cell) \
+                       or (isinstance(result, ProcessLike) and result._like_process) \
+                       or isinstance(result, RegistrarObject), (func, type(result))
+
+                if isinstance(result, Cell):
+                    manager = result._get_manager()
+                    cell_id = manager.get_cell_id(result)
+
+                    in_pins = manager.cells[cell_id]
+                    for in_pin in in_pins:
+                        process = in_pin.process_ref()
+                        result.own(process)
+
+                    out_pins = manager.listeners[result]
+                    for out_pin in out_pins:
+                        process = out_pin.process_ref()
+                        result.own(process)
+
+                elif isinstance(result, Process):
+                    for pinname, pin in result._pins.items():
                         manager = pin._get_manager()
                         pin_id = pin.get_pin_id()
+
                         if isinstance(pin, InputPinBase):
                             is_incoming = True
                             cell_ids = manager.pin_to_cells.get(pin_id, [])
+
                         elif isinstance(pin, OutputPinBase):
                             is_incoming = False
                             cell_ids = pin._cell_ids
+
                         else:
                             raise TypeError((pinname, pin))
+
                         for cell_id in cell_ids: #TODO: indirect ownage
                             cell = manager.cells.get(cell_id, None)
                             if cell is None:
                                 continue
-                            ret.own(cell)
-                elif isinstance(ret, RegistrarObject):
+                            result.own(cell)
+                elif isinstance(result, RegistrarObject):
                     pass
                 else:
-                    raise NotImplementedError(type(ret))
-                ret._set_macro_object(mobj)
+                    raise NotImplementedError(type(result))
+
+                result._set_macro_object(mobj)
                 if macro_object is None: #this is a new construction, not a re-evaluation
                     if mobj is not None:
-                        mobj.connect(ret)
+                        mobj.connect(result)
 
         if not get_macro_mode():
             run_work()
-        return ret
+        return result
+
+    def __call__(self, *args, **kwargs):
+        return self.evaluate(args, kwargs, None)
 
 
 def macro(*args, **kwargs):
