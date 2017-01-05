@@ -5,16 +5,19 @@ import inspect
 import ast
 import os
 import copy
+from enum import Enum
 
 from .. import dtypes
 from .utils import find_return_in_scope
 from .process import Managed
 from . import libmanager
 
+
 class CellLike(object):
     """Base class for cells and contexts
     CellLikes are captured by context.cells"""
     _like_cell = True
+
 
 class Cell(Managed, CellLike):
     """Default class for cells.
@@ -22,9 +25,7 @@ class Cell(Managed, CellLike):
     Cells contain all the state in text form
     """
 
-    class StatusFlags:
-        UNINITIALISED, ERROR, OK = range(3)
-    StatusFlagNames = ["UNINITIALISED", "ERROR", "OK"]
+    StatusFlags = Enum('StatusFlags', ('UNINITIALISED', 'ERROR', 'OK'))
 
     _dtype = None
     _data = None  # data, always in text format
@@ -42,11 +43,14 @@ class Cell(Managed, CellLike):
     def __init__(self, dtype):
         """TODO: docstring."""
         super().__init__()
+
         from .macro import get_macro_mode
         from .context import get_active_context
         assert dtypes.check_registered(dtype), dtype
+
         self._dtype = dtype
         self._last_object = None
+
         if get_macro_mode():
             ctx = get_active_context()
             ctx._add_new_cell(self)
@@ -180,7 +184,7 @@ class Cell(Managed, CellLike):
     @property
     def status(self):
         """The cell's current status."""
-        return self.StatusFlagNames[self._status]
+        return self._status
 
     @property
     def error_message(self):
@@ -230,6 +234,7 @@ class Cell(Managed, CellLike):
         print("CELL DESTROY", self.path)
         super().destroy()
 
+
 class PythonCell(Cell):
     """
     A cell containing Python code.
@@ -247,8 +252,7 @@ class PythonCell(Cell):
             The code block contains no return statement
     """
 
-    class CodeTypes:
-        ANY, FUNCTION, BLOCK = range(3)
+    CodeTypes = Enum('CodeTypes', ('ANY', 'FUNCTION', 'BLOCK'))
 
     _dtype = ("text", "python")
 
