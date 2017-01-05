@@ -19,9 +19,15 @@ _macro_mode = False
 def get_macro_mode():
     return _macro_mode
 
-def set_macro_mode(macro_mode):
+
+@_pystdlib_contextmanager
+def macro_mode_as(macro_mode):
     global _macro_mode
+    old_macro_mode = _macro_mode
     _macro_mode = macro_mode
+    yield
+    _macro_mode = old_macro_mode
+
 
 class MacroObject:
     macro = None
@@ -196,7 +202,9 @@ class MacroObject:
             cell = self.cell_args[k]
             cell.remove_macro_object(self, k)
 
+
 class Macro:
+
     def __init__(self, type=None, with_context=True, func=None):
         self.with_context = with_context
         self.type_args = None
@@ -343,23 +351,22 @@ class Macro:
 
             ctx = get_active_context()._new_subcontext()
             ret = None
-            try:
-                set_macro_mode(True)
-                ret = func(ctx, *args2, **kwargs2)
-                if ret is not None:
-                    raise TypeError("Context macro must return None")
-                ctx._set_macro_object(mobj)
-                if macro_object is None: #this is a new construction, not a re-evaluation
-                    if mobj is not None:
-                        mobj.connect(ctx)
-                ret = ctx
-            finally:
-                if ret is None:
-                    ctx.destroy()
-                set_macro_mode(previous_macro_mode)
+
+            with macro_mode_as(True):
+                try:
+                    ret = func(ctx, *args2, **kwargs2)
+                    if ret is not None:
+                        raise TypeError("Context macro must return None")
+                    ctx._set_macro_object(mobj)
+                    if macro_object is None:  # this is a new construction, not a re-evaluation
+                        if mobj is not None:
+                            mobj.connect(ctx)
+                    ret = ctx
+                finally:
+                    if ret is None:
+                        ctx.destroy()
         else:
-            try:
-                set_macro_mode(True)
+            with macro_mode_as(True):
                 ret = func(*args2, **kwargs2)
                 assert (isinstance(ret, CellLike) and ret._like_cell) or \
                  (isinstance(ret, ProcessLike) and ret._like_process) or \
@@ -400,8 +407,7 @@ class Macro:
                 if macro_object is None: #this is a new construction, not a re-evaluation
                     if mobj is not None:
                         mobj.connect(ret)
-            finally:
-                set_macro_mode(previous_macro_mode)
+
         return ret
 
 def macro(*args, **kwargs):
