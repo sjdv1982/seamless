@@ -133,13 +133,6 @@ class MacroObject:
             owns = parent_owns
             if owns is None:
                 owns = ctx._owns_all()
-                ###
-                print("CHILDREN")
-                for childname, child in ctx._children.items():
-                    print(childname, child)
-                ctx._validate_path()
-                import sys
-                sys.exit()
             for childname, child in ctx._children.items():
                 if path is not None:
                     path2 = path + (childname,)

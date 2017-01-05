@@ -25,7 +25,8 @@ class Process(Managed, ProcessLike):
         from .context import get_active_context
         if get_macro_mode():
             ctx = get_active_context()
-            ctx._add_new_process(self)
+            assert self._context is None, self
+            name = ctx._add_new_process(self)
         super().__init__()
 
     def destroy(self):
@@ -123,6 +124,7 @@ class InputPin(InputPinBase):
 
     def cell(self, own=False):
         from .cell import cell
+        from seamless.core.context import active_context_as
         manager = self._get_manager()
         context = self.context
         curr_pin_to_cells = manager.pin_to_cells.get(self.get_pin_id(), [])
@@ -135,8 +137,8 @@ class InputPin(InputPinBase):
             process = self.process_ref()
             if process is None:
                 raise ValueError("Process has died")
-            my_cell = cell(self.dtype)
-            context._add_new_cell(my_cell)
+            with active_context_as(context):
+                my_cell = cell(self.dtype)
             my_cell.connect(self)
         elif l == 1:
             my_cell = manager._childids[curr_pin_to_cells[0]]

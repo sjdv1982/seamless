@@ -93,6 +93,7 @@ class Context(SeamlessBase, CellLike, ProcessLike):
     def _add_new_cell(self, cell, naming_pattern="cell"):
         from .cell import Cell
         assert isinstance(cell, Cell)
+        assert cell._context is None
         count = 0
         while 1:
             count += 1
@@ -106,6 +107,7 @@ class Context(SeamlessBase, CellLike, ProcessLike):
     def _add_new_process(self, process, naming_pattern="process"):
         from .process import Process
         assert isinstance(process, Process)
+        assert process._context is None
         count = 0
         while 1:
             count += 1
@@ -119,6 +121,7 @@ class Context(SeamlessBase, CellLike, ProcessLike):
     def _add_new_registrar_object(self, robj, naming_pattern="registrar_object"):
         from .registrar import RegistrarObject
         assert isinstance(robj, RegistrarObject)
+        assert robj._context is None
         count = 0
         while 1:
             count += 1

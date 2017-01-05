@@ -6,7 +6,7 @@ from seamless.lib.gui.basic_display import display
 
 @macro("str")
 def construct_silk_model(ctx, mode):
-    print("CONSTRUCT")
+    print("CONSTRUCT", mode)
     params = {"value": {"pin": "output", "dtype": "text"}}
     if mode == "array":
         params["N"] = {"pin": "input", "dtype": "int"}
@@ -67,6 +67,7 @@ print(ctx.value.data)
 
 ctx.ed_silk_model = edit(ctx.silk_model,"Silk model")
 ctx._validate_path()
+
 #ctx.d_value = display(ctx.value,"Result")
 #ctx.d_value = display(ctx.cons.transf.value.cell(),"Result")
 ctx.ed_value = edit(ctx.cons.transf.value.cell(),"Result",solid=False)

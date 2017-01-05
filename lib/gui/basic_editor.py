@@ -89,4 +89,5 @@ def edit(cell, title=None, solid=True):
         ed.output.liquid.connect(cell)
     #cell.own(ed) #Bad idea. If cell gets re-created (e.g. by a macro),
     # the editor won't be connected to any live cell
+    ed._validate_path()
     return ed

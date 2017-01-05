@@ -33,6 +33,7 @@ class SeamlessBase:
         if self._context is not None:
             assert self.name is not None
             if context is not self._context or force_detach:
+                print("DETACH", self.name, self._context, name, context)
                 childname = self.name
                 assert self._context._children[childname] is self
                 self._context._children.pop(childname)
