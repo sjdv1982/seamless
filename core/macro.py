@@ -214,12 +214,7 @@ class Macro:
             return
 
         if isinstance(type, tuple) or isinstance(type, str):
-            self._type_args = dict(
-             _order=["_arg1"],
-             _required=["_arg1"],
-             _default={},
-             _arg1=type,
-            )
+            self._type_args = {'_order': ["_arg1"], '_required': ["_arg1"], '_default': {}, '_arg1': type}
             return
 
         if not isinstance(type, dict):
@@ -232,7 +227,7 @@ class Macro:
         order = []
         required = set()
         default = {}
-        type_args = dict(_order=order, _required=required, _default=default)
+        type_args = {'_order': order, '_required': required, '_default': default}
         last_non_required_name = None
 
         for name, value in type.items():
