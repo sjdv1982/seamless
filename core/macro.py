@@ -200,6 +200,8 @@ class Macro:
     def __init__(self, type=None, with_context=True, func=None):
         self.with_context = with_context
         self.type_args = None
+        self.func = func
+
         if type is None:
             return
         if isinstance(type, tuple) or isinstance(type, str):
@@ -452,7 +454,7 @@ def macro(*args, **kwargs):
      keyword arguments, and "spam" is optional
     """
     if len(args) == 1 and callable(args[0]) and not len(kwargs):
-        new_macro = _parse_init_args(func=args[0])
+        new_macro = Macro(func=args[0])
         #TODO: functools.wraps/update_wrapper on new_macro
         return new_macro
     else:
