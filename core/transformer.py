@@ -133,12 +133,6 @@ class Transformer(Process):
         self.transformer_thread = threading.Thread(target=self.transformer.run, daemon=True)
         self.transformer_thread.start()
 
-    def __getattr__(self, attr):
-        if self._pins is None or attr not in self._pins:
-            raise AttributeError(attr)
-        else:
-            return self._pins[attr]
-
     def set_context(self, context):
         Process.set_context(self, context)
         for p in self._pins:

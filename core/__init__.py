@@ -4,6 +4,7 @@ class SeamlessBase:
     _destroyed = False
     _macro_object = None # macro object that CREATED this instance
     _context = None
+    _last_context = None
     name = None
 
     def __init__(self):
@@ -13,10 +14,7 @@ class SeamlessBase:
     @property
     def path(self):
         if self._context is None:
-            if self.name is None:
-                return ()
-            else:
-                return (self._name,)
+            return ()
         else:
             return self._context.path + (self.name,)
 
@@ -27,6 +25,30 @@ class SeamlessBase:
             assert self.path == required_path, (self.path, required_path)
         return required_path
 
+    def _find_successor(self):
+        path = list(self.path)
+        p = self
+        subpath = []
+        ok = False
+        while p._destroyed:
+            if not len(path):
+                break
+            p = p._last_context
+            if p is None:
+                break
+            subpath = [path.pop(-1)] + subpath
+        if not p._destroyed:
+            for subp in subpath:
+                try:
+                    p = getattr(p, subp)
+                    assert not p._destroyed
+                except:
+                    break
+            else:
+                ok = True
+        if ok:
+            return p
+
     def _set_context(self, context, name, force_detach=False):
         from .context import Context
         assert isinstance(context, Context)
@@ -36,6 +58,8 @@ class SeamlessBase:
                 childname = self.name
                 assert self._context._children[childname] is self
                 self._context._children.pop(childname)
+        if context is not None:
+            self._last_context = context
         self._context = context
         self.name = name
         return self

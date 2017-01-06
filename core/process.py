@@ -29,6 +29,18 @@ class Process(Managed, ProcessLike):
             assert self._context is None, self
             name = ctx._add_new_process(self)
 
+    def __getattr__(self, attr):
+        if self._destroyed:
+            successor = self._find_successor()
+            if successor:
+                return getattr(successor, attr)
+            else:
+                raise AttributeError("Process has been destroyed, cannot find successor")
+        if self._pins is None or attr not in self._pins:
+            raise AttributeError(attr)
+        else:
+            return self._pins[attr]
+
     def destroy(self):
         print("PROCESS DESTROY", self)
         if self._destroyed:

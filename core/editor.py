@@ -88,12 +88,6 @@ class Editor(Process):
     def output_update(self, name, value):
         self._pins[name].update(value)
 
-    def __getattr__(self, attr):
-        if attr not in self._pins:
-            raise AttributeError(attr)
-        else:
-            return self._pins[attr]
-
     def set_context(self, context):
         Process.set_context(self, context)
         for p in self._pins:

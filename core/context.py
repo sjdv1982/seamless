@@ -208,6 +208,13 @@ When any of these cells change and the macro is re-executed, the child object wi
         self._add_child(attr, value, force_detach=True)
 
     def __getattr__(self, attr):
+        if self._destroyed:
+            successor = self._find_successor()
+            if successor:
+                return getattr(successor, attr)
+            else:
+                raise AttributeError("Context has been destroyed, cannot find successor")
+
         if attr in self._pins:
             return self._pins[attr]
         elif attr in self._children:

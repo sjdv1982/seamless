@@ -45,6 +45,9 @@ class Editor:
 
     def process_input(self, name, data):
 
+        if self.parent() is None:
+            return
+            
         if name == "@REGISTRAR":
             try:
                 registrar_name, key, namespace_name = data
