@@ -55,7 +55,7 @@ class Process(metaclass=ABCMeta):
         # TODO: add a mechanism to redirect exception messages (to a cell!)
         # instead of printing them to stderr
         import time
-        time.sleep(0.001) # To allow registrar connections to be made
+        time.sleep(0.01) # To allow registrar connections to be made
         try:
             while True:
                 self.semaphore.acquire()

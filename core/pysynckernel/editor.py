@@ -37,6 +37,7 @@ class Editor:
         self.inputs = inputs
         self._pending_inputs = {name for name in inputs.keys()}
         self.values = {name: None for name in inputs.keys()}
+        self.registrar_namespace = {}
         self.exception = None
         self.updated = set()
         self._active = False
@@ -47,16 +48,26 @@ class Editor:
         if name == "@REGISTRAR":
             try:
                 registrar_name, key, namespace_name = data
-                context = self._parent().context
+                context = self.parent().context
                 registrars = context.registrar
                 registrar = getattr(registrars, registrar_name)
                 try:
                     registrar_value = registrar.get(key)
                 except KeyError:
                     self._pending_inputs.add(namespace_name)
-                self.values[namespace_name] = registrar_value
+                self.namespace[namespace_name] = registrar_value
+                self.registrar_namespace[namespace_name] = registrar_value
                 if namespace_name in self._pending_inputs:
                     self._pending_inputs.remove(namespace_name)
+
+                self._code_stop()
+                self._active = False
+
+                if not self._pending_inputs:
+                    updated = set(self.inputs.keys()) #TODO: not for undefined optional inputs
+                    self.update(updated)
+                    self.updated = set()
+
             except Exception as exc:
                 self.exception = exc
                 import traceback
@@ -110,7 +121,7 @@ class Editor:
                 self.namespace[name] = self.values[name].data
         for o in self.output_names:
             self.namespace[o] = self.EditorOutput(self, o)
-
+        self.namespace.update(self.registrar_namespace)
 
     def update(self, updated):
         # If any code object is updated, recompile

@@ -124,7 +124,8 @@ class InputPin(InputPinBase):
 
     def cell(self, own=False):
         from .cell import cell
-        from seamless.core.context import active_owner_as
+        from .context import active_owner_as, get_active_context
+        from .macro import get_macro_mode
         manager = self._get_manager()
         context = self.context
         curr_pin_to_cells = manager.pin_to_cells.get(self.get_pin_id(), [])
@@ -139,6 +140,11 @@ class InputPin(InputPinBase):
                 raise ValueError("Process has died")
             with active_owner_as(self):
                 my_cell = cell(self.dtype)
+            if not get_macro_mode():
+                ctx = get_active_context()
+                if ctx is None:
+                    ctx = context
+                ctx._add_new_cell(my_cell)
             my_cell.connect(self)
         elif l == 1:
             my_cell = manager._childids[curr_pin_to_cells[0]]
@@ -178,6 +184,7 @@ class OutputPin(OutputPinBase):
     def cell(self, own=False):
         from .cell import cell
         from .context import active_owner_as, get_active_context
+        from .macro import get_macro_mode
         context = get_active_context()
         if context is None:
             context = self.context
@@ -194,7 +201,11 @@ class OutputPin(OutputPinBase):
                 raise ValueError("Process has died")
             with active_owner_as(self):
                 my_cell = cell(self.dtype)
-                context._add_new_cell(my_cell)
+            if not get_macro_mode():
+                ctx = get_active_context()
+                if ctx is None:
+                    ctx = context
+                ctx._add_new_cell(my_cell)
             self.connect(my_cell)
         elif l == 1:
             my_cell = manager._childids[self._cell_ids[0]]
@@ -270,6 +281,17 @@ class ExportedPinBase:
     @property
     def context(self):
         return self._pin.context
+
+    @property
+    def path(self):
+        return self._pin.path
+
+    @property
+    def name(self):
+        return self._pin.name
+
+    def own(self, *args, **kwargs):
+        return self._pin.own(*args, **kwargs)
 
     def _get_manager(self):
         return self._pin._get_manager()

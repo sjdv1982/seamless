@@ -66,6 +66,8 @@ class Editor(Process):
                         "code_stop": self.code_stop,
                      }
         for p in editor_params:
+            #TODO: check that they don't overlap with editor attributes (.path, .name, ...),
+            #     ...and with code_start, code_update, code_stop, or is that allowed  (???)
             param = editor_params[p]
             if param["pin"] == "input":
                 pin = InputPin(self, p, param["dtype"])

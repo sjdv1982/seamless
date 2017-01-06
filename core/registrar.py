@@ -59,11 +59,21 @@ class BaseRegistrar:
             manager.update_registrar_key(self, key)
 
     def connect(self, context, key, target, namespace_name):
+        from .process import Process
+        from .context import Context, get_active_context
+        from .macro import _macro_registrar
         manager = context._manager
-        if namespace_name is None:
-            namespace_name = key
-        manager.add_registrar_listener(self, key, target, namespace_name)
-        target.receive_registrar_update(self.name, key, namespace_name)
+        if isinstance(target, Process):
+            if namespace_name is None:
+                namespace_name = key
+            manager.add_registrar_listener(self, key, target, namespace_name)
+            target.receive_registrar_update(self.name, key, namespace_name)
+        elif isinstance(target, Context):
+            assert namespace_name is None
+            assert target is get_active_context(), (target, get_active_context)
+            _macro_registrar.append((self, manager, key))
+        else:
+            raise TypeError(target)
 
     def get(self, key):
         raise NotImplementedError
@@ -120,7 +130,7 @@ class SilkRegistrarObject(RegistrarObject):
     def re_register(self, silkcode):
         context = self.context
         if context is None:
-            return
+            return self
         self.unregister()
         from seamless import silk
         registered_types = silk.register(silkcode)
@@ -148,11 +158,11 @@ class EvalRegistrar(BaseRegistrar):
         variables_old = list(self._namespace.keys())
         code = cached_compile(pythoncode, "<string>", "exec")
         exec(code, self._namespace)
-        registered_types = [v for v in self._namespace if v not in variables_old]
-        return EvalRegistrarObject(self._namespace, registered_types)
+        registered_types = [v for v in self._namespace if v not in variables_old and not v.startswith("__")]
+        return EvalRegistrarObject(self, registered_types)
 
     def get(self, key):
-        return self._namespace[attr]
+        return self._namespace[key]
 
 class EvalRegistrarObject(RegistrarObject):
 
@@ -165,7 +175,7 @@ class EvalRegistrarObject(RegistrarObject):
     def re_register(self, pythoncode):
         context = self.context
         if context is None:
-            return
+            return self
         self.unregister()
         namespace = self.registrar._namespace
         variables_old = list(namespace.keys())
@@ -173,10 +183,11 @@ class EvalRegistrarObject(RegistrarObject):
         exec(code, namespace)
         registered_types = [v for v in namespace if v not in variables_old]
         updated_keys = [k for k in registered_types]
-        updated_keys += [k for k in self.registered if k not in updated_keys]
+        updated_keys += [k for k in self.registered if k not in updated_keys and not k.startswith("__")]
         #TODO: for hive, figure out dependencies and add them
         self.registered = registered_types
         self.registrar.update(context, updated_keys)
+        return self
 
 def add_registrar(name, registrar):
     assert isinstance(registrar, BaseRegistrar)

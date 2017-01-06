@@ -88,6 +88,11 @@ def build_canvashive(cls, i, ex, args):
 
     i.create_program = hive.modifier(create_program)
 
+    def close(self):
+        self._canvas().close()
+    i.close = hive.modifier(close)
+    ex.close = hive.entry(i.close)
+
     i.vert_shader_in = hive.push_in(ex.v_vert_shader)
     ex.vert_shader = hive.antenna(i.vert_shader_in)
     hive.trigger(i.vert_shader_in, i.create_program)

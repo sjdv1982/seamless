@@ -15,6 +15,7 @@ from contextlib import contextmanager as _pystdlib_contextmanager
 # and issue a warning
 
 _macro_mode = False
+_macro_registrar = []
 
 def get_macro_mode():
     return _macro_mode
@@ -193,12 +194,15 @@ class MacroObject:
                     source.connect(dest_target)
             else:
                 if dest._destroyed:
-                    print(dest.path)
                     print("ERROR:", err.format(new_parent.path, is_incoming, source, ext_path) + " (dest)")
                     continue
                 source_target = resolve_path(new_parent, source, 0)
                 if source_target is not None:
                     source_target.connect(dest)
+
+    def set_registrar_listeners(self, registrar_listeners):
+        for registrar, manager, key in registrar_listeners:
+            manager.add_registrar_listener(registrar, key, self, None)
 
     def __del__(self):
         if self._parent is None:
@@ -359,6 +363,10 @@ class Macro:
                     ret = func(ctx, *args2, **kwargs2)
                     if ret is not None:
                         raise TypeError("Context macro must return None")
+                    if len(_macro_registrar):
+                        if mobj is None:
+                            mobj = MacroObject(self, args, kwargs, {})
+                        mobj.set_registrar_listeners(_macro_registrar)
                     ctx._set_macro_object(mobj)
 
                     if macro_object is None: #this is a new construction, not a re-evaluation
@@ -366,6 +374,7 @@ class Macro:
                             mobj.connect(ctx)
                     ret = ctx
             finally:
+                _macro_registrar.clear()
                 if ret is None:
                     ctx.destroy()
                 set_macro_mode(previous_macro_mode)

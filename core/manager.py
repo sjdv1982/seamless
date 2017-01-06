@@ -148,18 +148,25 @@ class Manager:
             self._update(cell_id, value)
 
     def update_registrar_key(self, registrar, key):
+        print("update_registrar_key", registrar, key)
+        from .process import Process
+        from .macro import MacroObject
         if registrar not in self.registrar_listeners:
             return
         d = self.registrar_listeners[registrar]
         if key not in d:
             return
-        for t in d[key]:
+        for t in list(d[key]):
             target = t[0]()
             if target is None:
                 continue
-            namespace_name = t[1]
-            target.receive_registrar_update(registrar.name, key, namespace_name)
-
+            if isinstance(target, Process):
+                namespace_name = t[1]
+                target.receive_registrar_update(registrar.name, key, namespace_name)
+            elif isinstance(target, MacroObject):
+                target.update_cell((registrar.name, key))
+            else:
+                raise TypeError(target)
     @classmethod
     def get_cell_id(cls, cell):
         return id(cell)

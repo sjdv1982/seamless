@@ -19,8 +19,7 @@ return str(SilkModelArray([s for n in range(N)]))
     ctx.registrar.silk.connect("SilkModel", ctx.transf)
     if mode == "array":
         ctx.registrar.silk.connect("SilkModelArray", ctx.transf)
-    #ctx.export(ctx.transf)
-    ctx._like_process = True ###
+    ctx.export(ctx.transf)
 
 ctx = context()
 silk_model = """
@@ -39,29 +38,16 @@ Type SilkModel {
   String x = "OK2"
 }
 """
-import seamless
-#types = seamless.silk.register(silk_model2)
-#seamless.silk.unregister(types)
-#types = seamless.silk.register(silk_model)
-#obj = ctx.registrar.silk.register(silk_model)
 
 ctx.silk_model = cell(("text", "code", "silk"))
 ctx.silk_model.set(silk_model)
 ctx.registrar.silk.register(ctx.silk_model)
-time.sleep(0.001)
-print(seamless.silk.Silk.SilkModel())
 
 ctx.n = cell("int").set(3)
 ctx.mode = cell("str").set("standard")
 ctx.value = cell("text")
 ctx.cons = construct_silk_model(ctx.mode)
-
-print(ctx.cons.transf, ctx.cons.transf.code, ctx.cons.transf.value)
-ctx._validate_path()
-
-#ctx.cons.transf.value.connect(ctx.value)
-#time.sleep(0.001)
-time.sleep(0.001)
+ctx.cons.value.connect(ctx.value)
 ctx._validate_path()
 
 ctx.silk_model.set(silk_model2)
@@ -71,13 +57,8 @@ print(ctx.value.data)
 ctx.ed_silk_model = edit(ctx.silk_model,"Silk model")
 ctx._validate_path()
 
-
-value = ctx.cons.transf.value.cell()
-#ctx.d_value = display(ctx.value,"Result")
-ctx.d_value = display(value,"Result")
-#ctx.ed_value = edit(value,"Result",solid=False)
+ctx.d_value = display(ctx.value,"Result")
 ctx._validate_path()
 
-#TODO: above works, but below still fails:
 ctx.mode.set("array")
-ctx.n.connect(ctx.cons.transf.N)
+ctx.n.connect(ctx.cons.N)
