@@ -114,7 +114,7 @@ ctx.ed_gen_texture_dict_params = edit(ctx.gen_texture_dict_params, "Texdict gen 
 import tempfile, os
 #tmpdir = tempfile.mkdtemp()
 tmpdir = os.path.join(tempfile.gettempdir(), "fireworks")
-print(tmpdir)
+print("Edit the code in: ", tmpdir)
 try:
     os.mkdir(tmpdir)
 except FileExistsError:
