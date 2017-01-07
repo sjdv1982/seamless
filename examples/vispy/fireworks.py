@@ -122,7 +122,7 @@ except FileExistsError:
 ctx.ed_vert = link(hp.vert_shader.cell(), tmpdir, "Vertex_shader.glsl")
 ctx.ed_frag = link(hp.frag_shader.cell(), tmpdir, "Fragment_shader.glsl")
 ctx.ed_vertexformat = link(ctx.c1, tmpdir, "Vertex_format.silk")
-ctx.ed_hive = link(ctx.c2, tmpdir, "Hive")
+ctx.ed_hive = link(ctx.c2, tmpdir, "Hive.py")
 ctx.ed_gen_vertexbuffer = link(ctx.gen_vertexbuffer.code.cell(),
   tmpdir, "Vertexbuffer_generation.py")
 ctx.ed_gen_texturedict = link(ctx.gen_texture_dict.code.cell(),
