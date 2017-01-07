@@ -119,14 +119,14 @@ try:
     os.mkdir(tmpdir)
 except FileExistsError:
     pass
-ctx.ed_vert = link(hp.vert_shader.cell(), tmpdir, "Vertex shader")
-ctx.ed_frag = link(hp.frag_shader.cell(), tmpdir, "Fragment shader")
-ctx.ed_vertexformat = link(ctx.c1, tmpdir, "Vertex format")
+ctx.ed_vert = link(hp.vert_shader.cell(), tmpdir, "Vertex_shader.glsl")
+ctx.ed_frag = link(hp.frag_shader.cell(), tmpdir, "Fragment_shader.glsl")
+ctx.ed_vertexformat = link(ctx.c1, tmpdir, "Vertex_format.silk")
 ctx.ed_hive = link(ctx.c2, tmpdir, "Hive")
 ctx.ed_gen_vertexbuffer = link(ctx.gen_vertexbuffer.code.cell(),
-  tmpdir, "Vertexbuffer generation")
+  tmpdir, "Vertexbuffer_generation.py")
 ctx.ed_gen_texturedict = link(ctx.gen_texture_dict.code.cell(),
-  tmpdir, "Texture dict generation")
+  tmpdir, "Texture_dict_generation.py")
 #ctx.ed_gen_vertexbuffer_params = link(ctx.gen_vertexbuffer_params, tmpdir, "Vertexbuffer gen params")
 #ctx.ed_gen_texture_dict_params = link(ctx.gen_texture_dict_params, tmpdir, "Texdict gen params")
 
