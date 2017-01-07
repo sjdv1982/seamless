@@ -23,8 +23,7 @@ def add_work(work, priority=False):
         _work.append(work)
 def run_work():
     for w in (_priority_work, _work):
-        count = len(w)
-        for n in range(count):
+        while len(w):
             work = w.popleft()
             try:
                 work()

@@ -92,20 +92,42 @@ ctx.gen_texture_dict.output.cell().connect(hp.texture_dict)
 ctx.delay = cell("float").set(1.5)
 ctx.delay.connect(hp.delay)
 
-from seamless.lib.gui.basic_editor import basic_editor, edit
+from seamless.lib.gui.basic_editor import edit
+from seamless.lib.filelink import link
 
 ctx.ed_delay = edit(ctx.delay, "Delay")
 ctx.ed_radius = edit(radius, "Radius")
 ctx.ed_N = edit(N, "N")
+"""
 ctx.ed_vert = edit(hp.vert_shader.cell(), "Vertex shader")
 ctx.ed_frag = edit(hp.frag_shader.cell(), "Fragment shader")
 ctx.ed_vertexformat = edit(ctx.c1, "Vertex format")
 ctx.ed_hive = edit(ctx.c2, "Hive")
 ctx.ed_gen_vertexbuffer = edit(ctx.gen_vertexbuffer.code.cell(),
   "Vertexbuffer generation")
-ctx.ed_gen_vertexbuffer_params = edit(ctx.gen_vertexbuffer_params, "Vertexbuffer gen params")
 ctx.ed_gen_texturedict = edit(ctx.gen_texture_dict.code.cell(),
   "Texture dict generation")
+"""
+ctx.ed_gen_vertexbuffer_params = edit(ctx.gen_vertexbuffer_params, "Vertexbuffer gen params")
 ctx.ed_gen_texture_dict_params = edit(ctx.gen_texture_dict_params, "Texdict gen params")
+
+import tempfile, os
+#tmpdir = tempfile.mkdtemp()
+tmpdir = os.path.join(tempfile.gettempdir(), "fireworks")
+print(tmpdir)
+try:
+    os.mkdir(tmpdir)
+except FileExistsError:
+    pass
+ctx.ed_vert = link(hp.vert_shader.cell(), tmpdir, "Vertex shader")
+ctx.ed_frag = link(hp.frag_shader.cell(), tmpdir, "Fragment shader")
+ctx.ed_vertexformat = link(ctx.c1, tmpdir, "Vertex format")
+ctx.ed_hive = link(ctx.c2, tmpdir, "Hive")
+ctx.ed_gen_vertexbuffer = link(ctx.gen_vertexbuffer.code.cell(),
+  tmpdir, "Vertexbuffer generation")
+ctx.ed_gen_texturedict = link(ctx.gen_texture_dict.code.cell(),
+  tmpdir, "Texture dict generation")
+#ctx.ed_gen_vertexbuffer_params = link(ctx.gen_vertexbuffer_params, tmpdir, "Vertexbuffer gen params")
+#ctx.ed_gen_texture_dict_params = link(ctx.gen_texture_dict_params, tmpdir, "Texdict gen params")
 
 #ctx.c2.set(ctx.c2.data.replace("800", "400"))
