@@ -233,12 +233,18 @@ class Macro:
         if not isinstance(type, dict):
             raise TypeError(type.__class__)
         order = []
+        if "_order" in type:
+            order = type["_order"]
+            assert sorted(order) == sorted([k for k in type.keys() if not k.startswith("_")])
         required = set()
         default = {}
         ret = dict(_order=order, _required=required, _default=default)
         last_nonreq = None
         for k in type:
-            if k.startswith("_"): assert k.startswith("_arg"), k
+            if k.startswith("_"):
+                if k == "_order":
+                    continue
+                assert k.startswith("_arg"), k
             v = type[k]
             is_req = True
             if isinstance(v, dict) and \
@@ -343,6 +349,7 @@ class Macro:
         from .process import Process, ProcessLike, InputPinBase, OutputPinBase
         from .registrar import RegistrarObject
         from .context import active_context_as
+        from .. import run_work
 
         args2, kwargs2, mobj = self.resolve_type_args(args, kwargs)
         func = self.func
@@ -421,6 +428,8 @@ class Macro:
                     if mobj is not None:
                         mobj.connect(ret)
 
+        if not get_macro_mode():
+            run_work()
         return ret
 
 def macro(*args, **kwargs):

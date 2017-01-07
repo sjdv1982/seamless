@@ -10,39 +10,9 @@ ctx.registrar.silk.register(ctx.c1)
 ctx.c2 = pythoncell().fromfile("fireworkhive.py")
 ctx.registrar.hive.register(ctx.c2)
 hp = ctx.hp = hiveprocess("fireworkhive")
-ctx.registrar.hive.connect("fireworkhive", hp)
-
-hiveprocess_init = """
-hive = fireworkhive()
-_cache["hive"] = hive
-"""
-hp.code_start.cell().set(hiveprocess_init)
-
-hiveprocess_update = """
-#HACK
-hive = _cache["hive"]
-push = ('vert_shader', 'vertexbuffer', 'texture_dict', 'frag_shader')
-for a in push:
-    if a in _updated:
-        getattr(hive, a).push(globals()[a])
-attr = ('delay',)
-for a in attr:
-    if a in _updated:
-        setattr(hive, a, globals()[a])
-"""
-hp.code_update.cell().set(hiveprocess_update)
-
-hiveprocess_stop = """
-hive = _cache.pop("hive")
-hive.canvas.close()
-del hive
-"""
-hp.code_stop.cell().set(hiveprocess_stop)
-
 hp.vert_shader.cell().fromfile("fireworks.vert")
 hp.frag_shader.cell().fromfile("fireworks.frag")
 
-"""
 ctx.gen_vertexbuffer_params = cell(("json", "seamless", "transformer_params")).set(
  {
   "N": {
@@ -63,31 +33,12 @@ ctx.gen_vertexbuffer_params = cell(("json", "seamless", "transformer_params")).s
   }
 }
 )
-"""
-###
-ctx.gen_vertexbuffer_params = cell(("json", "seamless", "transformer_params")).set(
- {
-  "N": {
-    "pin": "input",
-    "dtype": "int"
-  },
-  "output": {
-    "pin": "output",
-    "dtype": "object"
-  },
-}
-)
-###
-
-
 ctx.gen_vertexbuffer = transformer(ctx.gen_vertexbuffer_params)
 N = ctx.gen_vertexbuffer.N.cell()
 N.set(10000)
 # does not work with live macro cells:
 # ctx.registrar.silk.connect("VertexData", ctx.gen_vertexbuffer)
 # ctx.registrar.silk.connect("VertexDataArray", ctx.gen_vertexbuffer)
-ctx.registrar.silk.connect("VertexData", ctx.gen_vertexbuffer) ###
-ctx.registrar.silk.connect("VertexDataArray", ctx.gen_vertexbuffer) ###
 
 ctx.gen_vertexbuffer.code.cell().set(
 """
@@ -143,7 +94,6 @@ ctx.delay.connect(hp.delay)
 
 from seamless.lib.gui.basic_editor import basic_editor, edit
 
-"""
 ctx.ed_delay = edit(ctx.delay, "Delay")
 ctx.ed_radius = edit(radius, "Radius")
 ctx.ed_N = edit(N, "N")
@@ -151,27 +101,11 @@ ctx.ed_vert = edit(hp.vert_shader.cell(), "Vertex shader")
 ctx.ed_frag = edit(hp.frag_shader.cell(), "Fragment shader")
 ctx.ed_vertexformat = edit(ctx.c1, "Vertex format")
 ctx.ed_hive = edit(ctx.c2, "Hive")
-"""
 ctx.ed_gen_vertexbuffer = edit(ctx.gen_vertexbuffer.code.cell(),
   "Vertexbuffer generation")
 ctx.ed_gen_vertexbuffer_params = edit(ctx.gen_vertexbuffer_params, "Vertexbuffer gen params")
 ctx.ed_gen_texturedict = edit(ctx.gen_texture_dict.code.cell(),
   "Texture dict generation")
 ctx.ed_gen_texture_dict_params = edit(ctx.gen_texture_dict_params, "Texdict gen params")
-
-"""
-ctx.gen_vertexbuffer_params.set( {
-  "N": {
-    "pin": "input",
-    "dtype": "int"
-  },
-  "output": {
-    "pin": "output",
-    "test": "test",
-    "dtype": "object"
-  }
-}
-)
-"""
 
 #ctx.c2.set(ctx.c2.data.replace("800", "400"))

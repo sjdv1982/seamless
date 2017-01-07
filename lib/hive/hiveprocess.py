@@ -1,6 +1,7 @@
 from hive.hive import HiveObject, HiveBuilder
 from hive.ppin import PushInBee
 from hive.ppout import PushOutBee
+from hive.classes.resolve_bee import ResolveBee
 from hive.antenna import HiveAntenna
 from hive.output import HiveOutput
 from hive.attribute import Attribute
@@ -18,7 +19,6 @@ def hiveprocess_start():
     _cache["myhive"] = myhive
 
 def hiveprocess_update():
-    print("HIVE UPDATE", _updated)
     myhive = _cache["myhive"]
     for attr, hivepin_type in hive_attributes.items():
         if attr not in _updated:
@@ -30,6 +30,9 @@ def hiveprocess_update():
             getattr(myhive, attr).push(value)
 
 def hiveprocess_stop():
+    myhive = _cache["myhive"]
+    if hasattr(myhive, "destroy"):
+        myhive.destroy()
     del _cache["myhive"]
 
 @macro("str")
@@ -45,20 +48,23 @@ def hiveprocess(ctx, hivename):
     for attr in dir(hiveobject._hive_ex):
         hivepin = getattr(hiveobject._hive_ex, attr)
         hivepin_type = None
-        print(attr, type(hivepin))
         if isinstance(hivepin, HiveAntenna):
-            hivepin = hivepin.export().target
+            hivepin = hivepin.export()
         if isinstance(hivepin, HiveOutput):
-            hivepin = hivepin.export().target
-        print(attr, type(hivepin))
+            hivepin = hivepin.export()
+        while isinstance(hivepin, ResolveBee):
+            hivepin = hivepin._bee
 
         if isinstance(hivepin, Attribute):
             #hivepin_type = "attribute"
+            #pin = "input"
             continue ### keep it like this??
         elif isinstance(hivepin, PushInBee):
             hivepin_type = "push_in"
+            pin = "input"
         elif isinstance(hivepin, PushOutBee):
             hivepin_type = "push_out"
+            pin = "output"
         else:
             continue
 
@@ -66,7 +72,7 @@ def hiveprocess(ctx, hivename):
         dtype = hivepin.data_type
         if dtype is None:
             dtype = "object"
-        editor_params[attr] = {"pin": "input", "dtype": dtype}
+        editor_params[attr] = {"pin": pin, "dtype": dtype}
     ed = ctx.ed = editor(editor_params)
     ctx.registrar.hive.connect(hivename, ed, "hivecls")
     ctx.hive_attributes = ed.hive_attributes.cell().set(hive_attributes)

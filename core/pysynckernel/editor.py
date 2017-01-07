@@ -1,10 +1,11 @@
 
 import weakref
-from ...dtypes.objects import PythonBlockObject
+from ...dtypes.objects import PythonEditorCodeObject
 from ...dtypes import data_type_to_data_object
 
 class Editor:
     name = "editor"
+    _destroyed = False
 
     class EditorOutput:
         def __init__(self, parent, name):
@@ -31,9 +32,9 @@ class Editor:
 
 
         inputs = {name: data_type_to_data_object(value)(name, value) for name, value in input_data_types.items()}
-        inputs["code_start"] = PythonBlockObject("code_start", ("text", "code", "python"))
-        inputs["code_stop"] = PythonBlockObject("code_stop", ("text", "code", "python"))
-        inputs["code_update"] = PythonBlockObject("code_update", ("text", "code", "python"))
+        inputs["code_start"] = PythonEditorCodeObject("code_start", ("text", "code", "python"))
+        inputs["code_stop"] = PythonEditorCodeObject("code_stop", ("text", "code", "python"))
+        inputs["code_update"] = PythonEditorCodeObject("code_update", ("text", "code", "python"))
         self.inputs = inputs
         self._pending_inputs = {name for name in inputs.keys()}
         self.values = {name: None for name in inputs.keys()}
@@ -47,7 +48,7 @@ class Editor:
 
         if self.parent() is None:
             return
-            
+
         if name == "@REGISTRAR":
             try:
                 registrar_name, key, namespace_name = data
@@ -103,15 +104,22 @@ class Editor:
             self.update(self.updated)
             self.updated = set()
 
+    def _execute(self, code_obj):
+        exec(code_obj.code, self.namespace)
+        if code_obj.func_name:
+            exec("{0}()".format(code_obj.func_name), self.namespace)
+
     def _code_stop(self):
         if self._active:
-            exec(self.code_stop_block, self.namespace)
-            self._active = False
+            try:
+                self._execute(self.code_stop_block)
+            finally:
+                self._active = False
             self._set_namespace()
 
     def _code_start(self):
         assert not self._active
-        exec(self.code_start_block, self.namespace)
+        self._execute(self.code_start_block)
         self._active = True
 
 
@@ -127,22 +135,20 @@ class Editor:
         self.namespace.update(self.registrar_namespace)
 
     def update(self, updated):
+
         # If any code object is updated, recompile
+
         if "code_stop" in updated:
-            code = self.values["code_stop"].data
-            self.code_stop_block = compile(code, self.name + "_stop", "exec")
+            self.code_stop_block = self.values["code_stop"]
 
         if "code_start" in updated:
-            code = self.values["code_start"].data
             self._code_stop()
-            self.code_start_block = compile(code, self.name + "_start", "exec")
+            self.code_start_block = self.values["code_start"]
 
         do_update = False
         if "code_update" in updated:
-            code = self.values["code_update"].data
-            self.code_update_block = compile(
-                code, self.name + "_update", "exec"
-            )
+            self._code_stop()
+            self.code_update_block = self.values["code_update"]
             do_update = True
 
         # Update namespace of inputs
@@ -158,4 +164,10 @@ class Editor:
 
         if do_update:
             self.namespace["_updated"] = _updated
-            exec(self.code_update_block, self.namespace)
+            self._execute(self.code_update_block)
+
+    def destroy(self):
+        if self._destroyed:
+            return
+        self._destroyed = True
+        self._code_stop()

@@ -52,5 +52,5 @@ if __name__ == '__main__':
     h.vertexbuffer.push(data)
     h.texture_dict.push({'s_texture': im1})
     h.canvas.title = "FireWorkHive"
-    h.delay = 1.5
+    h.delay.push(1.5)
     app.run()

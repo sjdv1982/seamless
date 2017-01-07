@@ -132,6 +132,11 @@ class Manager:
 
             input_pin.update(value)
 
+        from .. import run_work
+        from .macro import get_macro_mode
+        if not get_macro_mode():
+            run_work()
+
 
     def update_from_code(self, cell, only_last=False):
         value = cell._data
@@ -148,7 +153,6 @@ class Manager:
             self._update(cell_id, value)
 
     def update_registrar_key(self, registrar, key):
-        print("update_registrar_key", registrar, key)
         from .process import Process
         from .macro import MacroObject
         if registrar not in self.registrar_listeners:

@@ -42,7 +42,7 @@ class Process(Managed, ProcessLike):
             return self._pins[attr]
 
     def destroy(self):
-        print("PROCESS DESTROY", self)
+        #print("PROCESS DESTROY", self)
         if self._destroyed:
             return
         for pin_name, pin in self._pins.items():

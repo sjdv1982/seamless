@@ -11,7 +11,7 @@ def build_fireworkhive(i, ex, args):
     def draw(self):
         program = self.canvas.program
         currtime = time.time()
-        if self._starttime is None or currtime - self._starttime > self.delay:
+        if self._starttime is None or currtime - self._starttime > self.v_delay:
             self.new_explosion()
 
         # Draw
@@ -61,7 +61,9 @@ def build_fireworkhive(i, ex, args):
     #make new_explosion triggerable from the outside
     i.t_new_explosion = hive.triggerfunc(i.new_explosion)
     ex.new_explosion = hive.hook(i.t_new_explosion)
-    ex.delay = hive.attribute(data_type="float", start_value=1.5)
+    ex.v_delay = hive.attribute(data_type="float", start_value=1.5)
+    i.p_delay = hive.push_in(ex.v_delay)
+    ex.delay = hive.antenna(i.p_delay)
 
     #export the canvas parameters
     ex.vert_shader = hive.antenna(ex.canvas.vert_shader)
@@ -69,5 +71,11 @@ def build_fireworkhive(i, ex, args):
     ex.texture_dict = hive.antenna(ex.canvas.texture_dict)
     ex.vertexbuffer = hive.antenna(ex.canvas.vertexbuffer)
     #ex.title = hive.antenna(ex.canvas.title)
+
+    #export the destroy() function
+    def destroy(self):
+        self.canvas.destroy()
+    i.destroy = hive.modifier(destroy)
+    ex.destroy = hive.entry(i.destroy)
 
 fireworkhive = hive.hive("fireworkhive", build_fireworkhive)

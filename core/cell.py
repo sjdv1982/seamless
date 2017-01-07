@@ -202,9 +202,11 @@ class Cell(Managed, CellLike):
             self._outgoing_connections -= 1
 
     def _set_error_state(self, error_message=None):
-        self._error_message = error_message
         if error_message is not None:
             self._status = self.StatusFlags.ERROR
+            if error_message != self._error_message:
+                print(error_message)
+        self._error_message = error_message
 
     def add_macro_object(self, macro_object, macro_arg):
         manager = self._get_manager()
@@ -217,7 +219,7 @@ class Cell(Managed, CellLike):
     def destroy(self):
         if self._destroyed:
             return
-        print("CELL DESTROY", self)
+        #print("CELL DESTROY", self)
         super().destroy()
 
 class PythonCell(Cell):

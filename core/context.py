@@ -342,7 +342,7 @@ When any of these cells change and the macro is re-executed, the child object wi
     def destroy(self):
         if self._destroyed:
             return
-        print("CONTEXT DESTROY", self, list(self._children.keys()))
+        #print("CONTEXT DESTROY", self, list(self._children.keys()))
         for childname in list(self._children.keys()):
             if childname not in self._children:
                 continue #child was destroyed automatically by another child

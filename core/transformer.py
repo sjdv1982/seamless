@@ -81,6 +81,7 @@ class Transformer(Process):
     transformer = None
 
     def __init__(self, transformer_params):
+        from .context import get_active_context
         super().__init__()
         self.state = {}
         self.code = InputPin(self, "code", ("text", "code", "python"))
@@ -91,8 +92,10 @@ class Transformer(Process):
         self._connected_output = False
         self._last_value = None
         self._message_id = 0
+        _registrars = []
         for p in transformer_params:
             param = transformer_params[p]
+            pin = None
             if param["pin"] == "input":
                 pin = InputPin(self, p, param["dtype"])
                 thread_inputs[p] = param["dtype"]
@@ -100,8 +103,18 @@ class Transformer(Process):
                 pin = OutputPin(self, p, param["dtype"])
                 assert self._output_name is None  # can have only one output
                 self._output_name = p
-            self._io_attrs.append(p)
-            self._pins[p] = pin
+            elif param["pin"] == "registrar":
+                registrar_name = param["registrar"]
+                ctx = get_active_context()
+                manager = ctx._manager
+                registrar = getattr(ctx.registrar, registrar_name)
+                _registrars.append((registrar, p))
+            else:
+                raise ValueError(param["pin"])
+
+            if pin is not None:
+                self._io_attrs.append(p)
+                self._pins[p] = pin
 
         """Output listener thread
         - It must have the same memory space as the main thread
@@ -130,6 +143,10 @@ class Transformer(Process):
             self.output_queue, self.output_semaphore
         )
         self._set_context(self.context, self.name) #to update the transformer registrars
+
+        for registrar, p in _registrars:
+            registrar.connect(p, self)
+
         self.transformer_thread = threading.Thread(target=self.transformer.run, daemon=True)
         self.transformer_thread.start()
 

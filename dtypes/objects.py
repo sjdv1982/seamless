@@ -61,11 +61,12 @@ class PythonTransformerCodeObject(PythonCodeObject):
     func_name = "transform"
 
     def validate(self):
+        self.func_name = type(self).func_name
         is_function = (len(self.ast.body) == 1 and
                        isinstance(self.ast.body[0], FunctionDef))
 
         if is_function:
-            self.code = cached_compile(self.ast, self.name + "-%d" % id(self),
+            self.code = cached_compile(self.data, self.name + "-%d" % id(self),
                                        "exec")
             self.func_name = self.ast.body[0].name
 
@@ -76,11 +77,24 @@ class PythonTransformerCodeObject(PythonCodeObject):
             except ValueError:
                 raise SyntaxError("Block must contain return statement(s)")
 
-            patched_src = "def transform():\n    " + self.data.replace("\n", "\n    ").rstrip()
+            patched_src = "def {0}():\n    ".format(self.func_name) + \
+              self.data.replace("\n", "\n    ").rstrip()
 
             self.code = cached_compile(patched_src,
                                        self.name + "-%d" % id(self), "exec")
-            self.func_name = "transform"
+
+class PythonEditorCodeObject(PythonTransformerCodeObject):
+    func_name = None
+    def validate(self):
+        self.func_name = None
+        self.code = cached_compile(self.data, self.name + "-%d" % id(self),
+                                   "exec")
+
+        is_function = (len(self.ast.body) == 1 and
+                       isinstance(self.ast.body[0], FunctionDef))
+
+        if is_function:
+            self.func_name = self.ast.body[0].name
 
 
 def data_type_to_data_object(data_type):

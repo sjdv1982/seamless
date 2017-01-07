@@ -113,11 +113,11 @@ class Editor(Process):
         if self._destroyed:
             return
         try:
-            func = self._code_stop
+            func = self.editor
         except AttributeError:
             pass
         else:
-            self._code_stop()
+            self.editor.destroy()
 
         # free all input and output pins
         for attr in self._io_attrs:

@@ -64,25 +64,20 @@ ctx.registrar.hive.register(ctx.my_hive)
 
 hp = ctx.hp = hiveprocess("MyHive")
 ed = ctx.hp.ed
-print("HP", hex(id(ctx.hp)), hex(id(hp)))
-print("ED", hex(id(ctx.hp.ed)), hex(id(ed)))
+
 print(ed.a)
 print(hp.a)
 
 ctx.my_hive.set(hive2)
 import time; time.sleep(0.001)
-print("HP", hex(id(ctx.hp)), hex(id(hp)))
-print("ED", hex(id(ctx.hp.ed)), hex(id(ed)))
 print(ed.b)
 print(hp.b)
 
-print("*" * 80)
 ctx.my_hive.set(hive3)
 ctx.x = hp.x.cell()
 ctx.y = hp.y.cell()
-ctx.result = hp.result.cell()
+ctx.result = hp.result.solid.cell()
 ctx.x.set(2)
 ctx.y.set(4)
-time.sleep(0.001)
+import time; time.sleep(0.01)
 print(ctx.result.data)
-print("*" * 80)
