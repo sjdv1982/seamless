@@ -14,6 +14,8 @@ __all__ = (macro, context, cell, pythoncell, transformer, editor)
 
 import time
 from collections import deque
+import threading
+
 _work = deque()
 _priority_work = deque()
 def add_work(work, priority=False):
@@ -22,6 +24,8 @@ def add_work(work, priority=False):
     else:
         _work.append(work)
 def run_work():
+    if threading.current_thread() is not threading.main_thread():
+        return
     for w in (_priority_work, _work):
         while len(w):
             work = w.popleft()

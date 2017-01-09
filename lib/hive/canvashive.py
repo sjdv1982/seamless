@@ -7,7 +7,7 @@ class HiveCls_Canvas(app.Canvas):
     def __init__(self, *args, **kwargs):
         self._program = None
         self._hive = ref(hive.get_run_hive())
-        self._hive()._canvas = ref(self)
+        self._hive()._canvas = self
         app.Canvas.__init__(self,*args, **kwargs)
 
         # Enable blending
@@ -76,9 +76,9 @@ def build_canvashive(cls, i, ex, args):
            self.v_frag_shader is None or \
            self.v_vertexbuffer is None or \
            self.v_texture_dict is None:
-            self._canvas().show(visible=False)
+            self._canvas.show(visible=False)
             return
-        self._canvas().create_program(
+        self._canvas.create_program(
             self.v_vert_shader,
             self.v_frag_shader,
             self.v_vertexbuffer,
@@ -89,7 +89,7 @@ def build_canvashive(cls, i, ex, args):
     i.create_program = hive.modifier(create_program)
 
     def destroy(self):
-        self._canvas().close()
+        self._canvas.close()
     i.destroy = hive.modifier(destroy)
     ex.destroy = hive.entry(i.destroy)
 
