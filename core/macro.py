@@ -274,7 +274,9 @@ class Macro:
             else:
                 last_non_required_name = name
 
-    def resolve(self, a):
+        return copy.deepcopy(type_args)
+
+    def resolve(self, obj):
         #TODO: allow CellLike contexts as well (also in cell_args in resolve_type_args)
         from .cell import Cell
         from ..dtypes import parse
@@ -372,8 +374,8 @@ class Macro:
             result = None
             with active_context_as(ctx), macro_mode_as(True):
                 try:
-                    result = func(ctx, *resolved_args, **resolved_kwargs)
-                    if result is not None:
+                    ret = func(ctx, *args2, **kwargs2)
+                    if ret is not None:
                         raise TypeError("Context macro must return None")
                     if _macro_registrar:
                         if mobj is None:
