@@ -374,7 +374,7 @@ class Macro:
             result = None
             with active_context_as(ctx), macro_mode_as(True):
                 try:
-                    ret = func(ctx, *args2, **kwargs2)
+                    ret = func(ctx, *resolved_args, **resolved_kwargs)
                     if ret is not None:
                         raise TypeError("Context macro must return None")
                     if _macro_registrar:
