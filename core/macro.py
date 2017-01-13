@@ -1,18 +1,15 @@
 from collections import OrderedDict
 import functools
 import copy
+import inspect
+import sys
 import weakref
 from .context import context, get_active_context
 from contextlib import contextmanager as _pystdlib_contextmanager
+from .macro_object import MacroObject
+from .cached_compile import cached_compile
 
-#TODO: implement lib system, and let pins connect to CellProxies instead of
-# cells. CellProxies work exactly the same as cells
-# (pass-through attribute access), except that they can be forked
-#TODO: get the source of the macro, store this in a cell, and make sure that
-# 1. it gets properly captured by the lib system
-# 2. if the source of the macro is different from the lib cell content,
-# fork any cellproxies linking to the old lib cell, then update the lib cell,
-# and issue a warning
+_macros = weakref.WeakValueDictionary()
 
 _macro_mode = False
 _macro_registrar = []
@@ -32,192 +29,22 @@ def macro_mode_as(macro_mode):
     yield
     _macro_mode = old_macro_mode
 
-class MacroObject:
-    macro = None
-    args = []
-    kwargs = {}
-    cell_args = {}
-    _parent = None
-
-    def __init__(self, macro, args, kwargs, cell_args):
-        self.macro = macro
-        self.args = args
-        self.kwargs = kwargs
-        self.cell_args = cell_args
-
-    def connect(self, parent):
-        from .cell import CellLike
-        from .process import ProcessLike
-        from .registrar import RegistrarObject
-        assert (isinstance(parent, CellLike) and parent._like_cell) or \
-         (isinstance(parent, ProcessLike) and parent._like_process) or \
-         isinstance(parent, RegistrarObject), type(parent)
-        #TODO: check that all cells and parent share a common root
-        self._parent = weakref.ref(parent)
-        for k in self.cell_args:
-            cell = self.cell_args[k]
-            cell.add_macro_object(self, k)
-
-    def update_cell(self, cellname):
-        from .context import Context
-        from .cell import Cell
-        from .process import Process, InputPinBase, OutputPinBase
-        parent = self._parent()
-        grandparent = parent.context
-        assert isinstance(grandparent, Context), grandparent
-        for parent_childname in grandparent._children:
-            if grandparent._children[parent_childname] is parent:
-                break
-        else:
-            exc = "Cannot identify parent-child relationship of macro context {0}"
-            raise AttributeError(exc.format(parent))
-        external_connections = []
-
-        def find_external_connections_cell(cell, path, parent_path, parent_owns):
-            owns = parent_owns
-            if owns is None:
-                owns = cell._owns_all()
-            manager = cell._get_manager()
-            cell_id = manager.get_cell_id(cell)
-             #no macro listeners or registrar listeners; these the macro should re-create
-            incons = manager.cell_to_output_pin.get(cell, [])
-            for incon in incons:
-                output_pin = incon()
-                if output_pin is None:
-                    continue
-                process = output_pin.process_ref()
-                if process is None or process in owns:
-                    continue
-                if parent_path is not None:
-                    if output_pin.path[:len(parent_path)] == parent_path:
-                        continue
-                external_connections.append((True, output_pin, path, output_pin.path))
-            outcons = manager.listeners[cell_id]
-            for outcon in outcons:
-                input_pin = outcon()
-                if input_pin is None:
-                    continue
-                process = input_pin.process_ref()
-                if process is None or process in owns:
-                    continue
-                if parent_path is not None:
-                    if input_pin.path[:len(parent_path)] == parent_path:
-                        continue
-                assert len(input_pin.path)
-                external_connections.append((False, path, input_pin, input_pin.path))
-
-        def find_external_connections_process(process, path, parent_path, parent_owns):
-            if path is None:
-                path = ()
-            owns = parent_owns
-            if owns is None:
-                owns = process._owns_all()
-            for pinname, pin in process._pins.items():
-                manager = pin._get_manager()
-                pin_id = pin.get_pin_id()
-                if isinstance(pin, InputPinBase):
-                    is_incoming = True
-                    cell_ids = manager.pin_to_cells.get(pin_id, [])
-                elif isinstance(pin, OutputPinBase):
-                    is_incoming = False
-                    cell_ids = pin._cell_ids
-                else:
-                    raise TypeError((pinname, pin))
-                for cell_id in cell_ids:
-                    cell = manager.cells.get(cell_id, None)
-                    if cell is None:
-                        continue
-                    if cell in owns:
-                        continue
-                    if parent_path is not None:
-                        if cell.path[:len(parent_path)] == parent_path:
-                            continue
-                    path2 = path + (pinname,)
-                    if is_incoming:
-                        external_connections.append((True, cell, path2, cell.path))
-                    else:
-                        external_connections.append((False, path2, cell, cell.path))
-
-        def find_external_connections_context(ctx, path, parent_path, parent_owns):
-            parent_path2 = parent_path
-            if parent_path is None:
-                parent_path2 = ctx.path
-            owns = parent_owns
-            if owns is None:
-                owns = ctx._owns_all()
-            for childname, child in ctx._children.items():
-                if path is not None:
-                    path2 = path + (childname,)
-                else:
-                    path2 = (childname,)
-                if isinstance(child, Cell):
-                    find_external_connections_cell(child, path2, parent_path2, owns)
-                elif isinstance(child, Process):
-                    find_external_connections_process(child, path2, parent_path2, owns)
-                elif isinstance(child, Context):
-                    find_external_connections_context(child, path2, parent_path2, owns)
-                else:
-                    raise TypeError((childname, child))
-
-        if isinstance(parent, Cell):
-            find_external_connections_cell(parent, None, None, None)
-        elif isinstance(parent, Process):
-            find_external_connections_process(parent, None, None, None)
-        elif isinstance(parent, Context):
-            find_external_connections_context(parent, None, None, None)
-        elif parent is None:
-            pass
-
-        new_parent = self.macro.evaluate(self.args, self.kwargs, self)
-        setattr(grandparent, parent_childname, new_parent) #destroys parent and connections
-        self._parent = weakref.ref(new_parent)
-
-        def resolve_path(target, path, index):
-            if path is not None and len(path) > index:
-                try:
-                    new_target = getattr(target, path[index])
-                except AttributeError:
-                    warn = "WARNING: cannot reconstruct connections for '{0}', target no longer exists"
-                    subpath = "." + ".".join(target.path + path[:index+1])
-                    print(warn.format(subpath))
-                    return None
-                return resolve_path(new_target, path, index+1)
-            return target
-        for is_incoming, source, dest, ext_path in external_connections:
-            print("CONNECTION: is_incoming {0}, source {1}, dest {2}".format(is_incoming, source, dest))
-            err = "Connection {0}::(is_incoming {1}, source {2}, dest {3}) points to a destroyed external cell"
-            if is_incoming:
-                if source._destroyed:
-                    print("ERROR:", err.format(new_parent.path, is_incoming, ext_path, dest) + " (source)")
-                dest_target = resolve_path(new_parent, dest, 0)
-                if dest_target is not None:
-                    source.connect(dest_target)
-            else:
-                if dest._destroyed:
-                    print("ERROR:", err.format(new_parent.path, is_incoming, source, ext_path) + " (dest)")
-                    continue
-                source_target = resolve_path(new_parent, source, 0)
-                if source_target is not None:
-                    source_target.connect(dest)
-
-    def set_registrar_listeners(self, registrar_listeners):
-        for registrar, manager, key in registrar_listeners:
-            manager.add_registrar_listener(registrar, key, self, None)
-
-    def __del__(self):
-        if self._parent is None:
-            return
-        for k in self.cell_args:
-            cell = self.cell_args[k]
-            cell.remove_macro_object(self, k)
-
-
 class Macro:
+    module_name = None
+    func_name = None
+    code = None
+    dtype = ("text", "code", "python")
+    registrar = None
 
-    def __init__(self, type=None, with_context=True, func=None):
+    def __init__(self, type=None, with_context=True,
+            registrar=None,func=None):
         self.with_context = with_context
+        self.registrar = registrar
         self.type_args = None
-        self.func = func
+        self.macro_objects = weakref.WeakValueDictionary() #"WeakList"
+        if func is not None:
+            assert callable(func)
+            self.set_func(func)
 
         if type is None:
             return
@@ -271,6 +98,78 @@ class Macro:
                 last_nonreq = k
         ret = copy.deepcopy(ret)
         self.type_args = ret
+
+    def set_func(self, func):
+        if self.registrar:
+            #self.registrar = func.__self__
+            self.func = func
+            return self
+
+        code = inspect.getsource(func)
+        module = inspect.getmodule(func)
+        #HACK:
+        # I don't know how to get a module's import path in another way,
+        # and apparently a module is in sys.modules already during import
+        for k, v in sys.modules.items():
+            if v is module:
+                module_name = k
+                break
+        else:
+            raise ValueError #module is not in sys.modules...
+        func_name = func.__name__
+        if (module_name, func_name) in _macros:
+            ret = _macros[module_name, func_name]
+            ret.update_code(code)
+        else:
+            _macros[module_name, func_name] = self
+            self.module_name = module_name
+            self.func_name = func_name
+            self.update_code(code)
+            ret = self
+        return ret
+
+    def update_code(self, code):
+        from .utils import strip_source
+        if self.code is not None and self.code == code:
+            return
+        assert self.registrar is None
+        assert self.module_name is not None
+        assert self.func_name is not None
+
+        def dummy_macro(*args, **kwargs):
+            if len(args) == 1 and not kwargs:
+                arg, = args
+                if callable(arg):
+                    return arg
+            return lambda func: func
+
+        namespace = {
+          "OrderedDict": OrderedDict,
+          "macro": dummy_macro
+        }
+        identifier = self.module_name
+        if self.module_name in sys.modules:
+            try:
+                identifier = inspect.getsourcefile(
+                  sys.modules[self.module_name]
+                )
+            except TypeError:
+                pass
+        code = strip_source(code)
+        identifier2 = "macro <= "+identifier + " <= " + self.func_name
+        ast = cached_compile(code, identifier2)
+        exec(ast, namespace)
+        self.code = code
+        self.func = namespace[self.func_name]
+        keys = sorted(self.macro_objects.keys())
+        if len(keys):
+            warn = "WARNING: changing the code of {0}, re-executing {1} live macros"
+            print(warn.format(identifier2, len(keys)))
+        for key in keys:
+            if key not in self.macro_objects:
+                continue
+            macro_object = self.macro_objects[key]
+            macro_object.update_cell(None)
 
     def resolve(self, a):
         #TODO: allow CellLike contexts as well (also in cell_args in resolve_type_args)
@@ -433,8 +332,25 @@ class Macro:
         return ret
 
 def macro(*args, **kwargs):
-    """
-    Macro decorator
+    """Macro decorator,  wraps a macro function
+
+    Any cell arguments to the function are automatically converted to their
+     value, and a live macro object is created: whenever one of the cells
+     changes value, the macro function is re-executed
+    IMPORTANT:
+    The macro function object is never executed directly: instead, its source
+     code is extracted and used to build a new function object
+    This is so that macro source can be included when the context is saved.
+    Therefore, the function source MUST be self-contained, i.e. not rely on
+     other variables defined or imported elsewhere in its module.
+    Only registrar methods deviate from this rule, since registrar code is
+     never stored in the saved context. The "registrar" parameter indicates
+     that the macro is a registrar method.
+
+    Macros are identified by the name of the module (in sys.modules) that
+     defined them, and the name of the macro function.
+    If a new macro is defined with the same module name and function name,
+     the old macro is updated and returned instead
 
     type: a single type tuple, or a dict/OrderedDict
       if type is a dict, then
@@ -490,8 +406,8 @@ def macro(*args, **kwargs):
     new_macro = Macro(*args, **kwargs)
 
     def func_macro_wrapper(func):
-        new_macro.func = func
-        # TODO: functools.wraps/update_wrapper on new_macro
-        return new_macro
+        new_macro2 = new_macro.set_func(func)
+        # TODO: functools.wraps/update_wrapper on new_macro2
+        return new_macro2
 
     return func_macro_wrapper

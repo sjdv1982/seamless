@@ -1,8 +1,12 @@
 from seamless import macro, editor
 from seamless.core.cell import Cell
 
+#TODO: support for no-filename invocations (obtain filepath from resource API)
+#TODO: special-case seamless standard library cells (use resource/libmanager API)
+
 @macro("str")
 def filelink(ctx, cell_type):
+    from seamless import editor
     pinparams = {
        "inp": {
          "pin": "input",

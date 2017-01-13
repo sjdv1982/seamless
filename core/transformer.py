@@ -1,4 +1,4 @@
-from collections import deque
+from collections import deque, OrderedDict
 import threading
 import traceback
 import os
@@ -93,8 +93,10 @@ class Transformer(Process):
         self._last_value = None
         self._message_id = 0
         _registrars = []
-        for p in transformer_params:
+        self._transformer_params = OrderedDict()
+        for p in sorted(transformer_params.keys()):
             param = transformer_params[p]
+            self._transformer_params[p] = param
             pin = None
             if param["pin"] == "input":
                 pin = InputPin(self, p, param["dtype"])
@@ -149,6 +151,10 @@ class Transformer(Process):
 
         self.transformer_thread = threading.Thread(target=self.transformer.run, daemon=True)
         self.transformer_thread.start()
+
+    @property
+    def transformer_params(self):
+        return self._transformer_params
 
     def set_context(self, context):
         Process.set_context(self, context)
@@ -256,6 +262,7 @@ class Transformer(Process):
 # @macro takes nothing, a type, or a dict of types
 @macro(type=("json", "seamless", "transformer_params"), with_context=False)
 def transformer(kwargs):
+    from seamless.core.transformer import Transformer #code must be standalone
     #TODO: remapping, e.g. output_finish, destroy, ...
     return Transformer(kwargs)
 

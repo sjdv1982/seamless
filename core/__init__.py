@@ -58,6 +58,8 @@ class SeamlessBase:
                 childname = self.name
                 assert self._context._children[childname] is self
                 self._context._children.pop(childname)
+                if childname in self._context._auto:
+                    self._context._auto.remove(childname)
         if context is not None:
             self._last_context = context
         self._context = context

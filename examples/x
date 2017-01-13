@@ -1,0 +1,293 @@
+]0;IPython: seamless/examplesVALUE 4 'return value*2' None
+VALUE 5 'return value*3' None
+{
+  "like_process": false,
+  "like_cell": false,
+  "pins": {},
+  "auto": [
+    "cell1",
+    "cell10",
+    "cell11",
+    "cell12",
+    "cell13",
+    "cell14",
+    "cell15",
+    "cell16",
+    "cell17",
+    "cell18",
+    "cell2",
+    "cell3",
+    "cell4",
+    "cell5",
+    "cell6",
+    "cell7",
+    "cell8",
+    "cell9",
+    "ctx1"
+  ],
+  "children": {
+    "cell1": {},
+    "cell10": {
+      "data": "Editor #2"
+    },
+    "cell11": {
+      "resource": {
+        "filename": "/home/sjoerd/seamless/examples/test-editor_pycell2.py",
+        "lib": false,
+        "mode": 5
+      },
+      "owner": [
+        "ted1"
+      ]
+    },
+    "cell12": {
+      "data": "_cache[\"w\"].destroy()",
+      "owner": [
+        "ted1"
+      ]
+    },
+    "cell13": {
+      "data": "\nb, w = _cache[\"b\"], _cache[\"w\"]\nif value != b.toPlainText():\n    b.setText(value)\nw.setWindowTitle(title)\n",
+      "owner": [
+        "ted1"
+      ]
+    },
+    "cell14": {
+      "data": "Formula editor"
+    },
+    "cell15": {
+      "resource": {
+        "filename": "/home/sjoerd/seamless/examples/test-editor_pycell2.py",
+        "lib": false,
+        "mode": 5
+      },
+      "data": "from seamless.qt.QtWidgets import QTextEdit, QWidget, QVBoxLayout\nfrom seamless.qt.QtCore import Qt\nfrom PyQt5.QtGui import QColor\n\nw = QWidget()\nw.setWindowFlags(Qt.WindowStaysOnTopHint)\nw.setAttribute(Qt.WA_ShowWithoutActivating)\nvbox = QVBoxLayout()\nvbox.addStretch(1)\nw.setLayout(vbox)\nw.setWindowTitle('Editing text...')\nw.resize(300,300)\nw.show()\nb = QTextEdit()\n#b.setFontItalic(True)\n#b.setTextColor(QColor(255,0,0))\nvbox.addWidget(b)\ndef func():\n    output.set(b.toPlainText())\nb.textChanged.connect(func)\n_cache[\"func\"] = func\n_cache[\"b\"] = b\n_cache[\"w\"] = w\n",
+      "owner": [
+        "meta_ted"
+      ]
+    },
+    "cell16": {
+      "data": "_cache[\"w\"].destroy()",
+      "owner": [
+        "meta_ted"
+      ]
+    },
+    "cell17": {
+      "data": "\nb, w = _cache[\"b\"], _cache[\"w\"]\nif value != b.toPlainText():\n    b.setText(value)\nw.setWindowTitle(title)\n",
+      "owner": [
+        "meta_ted"
+      ]
+    },
+    "cell18": {
+      "data": "Meta-editor"
+    },
+    "cell2": {},
+    "cell3": {
+      "resource": {
+        "filename": "/home/sjoerd/seamless/examples/test-editor_pycell.py",
+        "lib": false,
+        "mode": 5
+      },
+      "data": "from seamless.qt.QtWidgets import QSpinBox, QWidget, QVBoxLayout\nfrom seamless.qt.QtCore import Qt\n\nw = QWidget()\nw.setWindowFlags(Qt.WindowStaysOnTopHint)\nw.setAttribute(Qt.WA_ShowWithoutActivating)\nvbox = QVBoxLayout()\nvbox.addStretch(1)\nw.setLayout(vbox)\nw.setWindowTitle('Test editor')\nw.resize(300,100)\nw.show()\nb = QSpinBox()\nvbox.addWidget(b)\nb.valueChanged.connect(output.set)\n_cache[\"b\"] = b\n_cache[\"w\"] = w\n",
+      "owner": [
+        "ed1"
+      ]
+    },
+    "cell4": {
+      "data": "_cache[\"w\"].destroy()",
+      "owner": [
+        "ed1"
+      ]
+    },
+    "cell5": {
+      "data": "\nb, w = _cache[\"b\"], _cache[\"w\"]\nb.setValue(value)\nw.setWindowTitle(title)\n",
+      "owner": [
+        "ed1"
+      ]
+    },
+    "cell6": {
+      "resource": {
+        "filename": "/home/sjoerd/seamless/examples/test-editor_pycell.py",
+        "lib": false,
+        "mode": 5
+      },
+      "data": "from seamless.qt.QtWidgets import QSpinBox, QWidget, QVBoxLayout\nfrom seamless.qt.QtCore import Qt\n\nw = QWidget()\nw.setWindowFlags(Qt.WindowStaysOnTopHint)\nw.setAttribute(Qt.WA_ShowWithoutActivating)\nvbox = QVBoxLayout()\nvbox.addStretch(1)\nw.setLayout(vbox)\nw.setWindowTitle('Test editor')\nw.resize(300,100)\nw.show()\nb = QSpinBox()\nvbox.addWidget(b)\nb.valueChanged.connect(output.set)\n_cache[\"b\"] = b\n_cache[\"w\"] = w\n",
+      "owner": [
+        "ed2"
+      ]
+    },
+    "cell7": {
+      "data": "_cache[\"w\"].destroy()",
+      "owner": [
+        "ed2"
+      ]
+    },
+    "cell8": {
+      "data": "\nb, w = _cache[\"b\"], _cache[\"w\"]\nb.setValue(value)\nw.setWindowTitle(title)\n",
+      "owner": [
+        "ed2"
+      ]
+    },
+    "cell9": {
+      "data": "Editor #1"
+    },
+    "ctx1": {
+      "like_process": true,
+      "like_cell": false,
+      "pins": {
+        "output": [
+          "ctx1",
+          "cont",
+          "output"
+        ],
+        "value": [
+          "ctx1",
+          "cont",
+          "value"
+        ]
+      },
+      "auto": [
+        "cell1"
+      ],
+      "children": {
+        "cell1": {},
+        "cont": {
+          "type": "transformer",
+          "mode": "thread",
+          "params": {
+            "output": {
+              "dtype": "int",
+              "pin": "output"
+            },
+            "value": {
+              "dtype": "int",
+              "pin": "input"
+            }
+          }
+        },
+        "tparams": {
+          "data": {
+            "output": {
+              "dtype": "int",
+              "pin": "output"
+            },
+            "value": {
+              "dtype": "int",
+              "pin": "input"
+            }
+          }
+        }
+      }
+    },
+    "ed1": {
+      "type": "editor",
+      "mode": "sync",
+      "params": {
+        "output": {
+          "dtype": "int",
+          "pin": "output"
+        },
+        "title": {
+          "dtype": "str",
+          "pin": "input"
+        },
+        "value": {
+          "dtype": "int",
+          "pin": "input"
+        }
+      }
+    },
+    "ed2": {
+      "type": "editor",
+      "mode": "sync",
+      "params": {
+        "output": {
+          "dtype": "int",
+          "pin": "output"
+        },
+        "title": {
+          "dtype": "str",
+          "pin": "input"
+        },
+        "value": {
+          "dtype": "int",
+          "pin": "input"
+        }
+      }
+    },
+    "eparams": {
+      "data": {
+        "title": {
+          "dtype": "str",
+          "pin": "input"
+        },
+        "output": {
+          "dtype": "int",
+          "pin": "output"
+        },
+        "value": {
+          "dtype": "int",
+          "pin": "input"
+        }
+      }
+    },
+    "meta_ted": {
+      "type": "editor",
+      "mode": "sync",
+      "params": {
+        "output": {
+          "dtype": [
+            "text",
+            "code",
+            "python"
+          ],
+          "pin": "output"
+        },
+        "title": {
+          "dtype": "str",
+          "pin": "input"
+        },
+        "value": {
+          "dtype": [
+            "text",
+            "code",
+            "python"
+          ],
+          "pin": "input"
+        }
+      }
+    },
+    "ted1": {
+      "type": "editor",
+      "mode": "sync",
+      "params": {
+        "output": {
+          "dtype": [
+            "text",
+            "code",
+            "python"
+          ],
+          "pin": "output"
+        },
+        "title": {
+          "dtype": "str",
+          "pin": "input"
+        },
+        "value": {
+          "dtype": [
+            "text",
+            "code",
+            "python"
+          ],
+          "pin": "input"
+        }
+      }
+    }
+  },
+  "macro_objects": [],
+  "macro_listeners": [],
+  "registrar_items": [],
+  "registrar_listeners": [],
+  "registrar_cells": [],
+  "connections": []
+}

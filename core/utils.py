@@ -1,5 +1,18 @@
 from ast import FunctionDef, Return, iter_child_nodes
 
+def strip_source(source):
+    init = 99999999
+    indent = init
+    for l in source.splitlines():
+        i = len(l) - len(l.lstrip())
+        if i < indent:
+            indent = i
+    if indent == init:
+        return source
+    ret = ""
+    for l in source.splitlines():
+        ret += l[indent:] + "\n"
+    return ret
 
 def find_return_in_scope(node):
     """Find return ast Node in current scope

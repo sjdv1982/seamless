@@ -71,8 +71,8 @@ class Context(SeamlessBase, CellLike, ProcessLike):
         Args:
             context (optional): parent context
             active_context (default: True): Sets the newly constructed context
-                as the active context. Subcontexts constructed by macros are
-                automatically parented to the active context
+                as the active context. New seamless objects are automatically
+                parented to the active context
         """
         super().__init__()
         n = name
@@ -338,6 +338,15 @@ When any of these cells change and the macro is re-executed, the child object wi
             owns.add(child)
             owns.update(child._owns_all())
         return owns
+
+    def tofile(self, filename):
+        from .tofile import tofile
+        tofile(self, filename)
+
+    @classmethod
+    def fromfile(cls, filename):
+        from .io import fromfile
+        return fromfile(cls, filename)
 
     def destroy(self):
         if self._destroyed:

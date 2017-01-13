@@ -4,6 +4,7 @@
 import os
 import traceback
 from functools import partial
+from collections import OrderedDict
 
 from .macro import macro
 from .process import Process, InputPin, EditorOutputPin
@@ -65,10 +66,12 @@ class Editor(Process):
                         "code_update": self.code_update,
                         "code_stop": self.code_stop,
                      }
-        for p in editor_params:
+        self._editor_params = OrderedDict()
+        for p in sorted(editor_params.keys()):
             #TODO: check that they don't overlap with editor attributes (.path, .name, ...),
             #     ...and with code_start, code_update, code_stop, or is that allowed  (???)
             param = editor_params[p]
+            self._editor_params[p] = param
             if param["pin"] == "input":
                 pin = InputPin(self, p, param["dtype"])
                 kernel_inputs[p] = param["dtype"]
@@ -84,6 +87,9 @@ class Editor(Process):
             kernel_inputs,
             self.output_names,
         )
+    @property
+    def editor_params(self):
+        return self._editor_params
 
     def output_update(self, name, value):
         self._pins[name].update(value)
@@ -140,6 +146,7 @@ class Editor(Process):
 # @macro takes nothing, a type, or a dict of types
 @macro(type=("json", "seamless", "editor_params"),with_context=False)
 def editor(kwargs):
+    from seamless.core.editor import Editor #code must be standalone
     #TODO: remapping, e.g. output_finish, destroy, ...
     return Editor(kwargs)
 

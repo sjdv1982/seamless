@@ -14,7 +14,24 @@ class Manager:
         self.cells = WeakValueDictionary()
         self.cell_to_output_pin = WeakKeyDictionary()
         self._childids = WeakValueDictionary()
+        self.registrar_items = []
         super().__init__()
+
+    def add_registrar_item(self, registrar_name, dtype, data, data_name):
+        item = registrar_name, dtype, data, data_name
+        for curr_item in self.registrar_items:
+            if data_name is None:
+                exists = (curr_item[:3] == item[:3])
+            else:
+                exists = (curr_item[:2] == item[:2]) and \
+                  curr_item[3] == data_name
+            if exists:
+                raise ValueError("Registrar item already exists")
+        self.registrar_items.append(item)
+
+    def remove_registrar_item(self, registrar_name, dtype, data, data_name):
+        item = registrar_name, dtype, data, data_name
+        self.registrar_items.remove(item)
 
     def add_listener(self, cell, input_pin):
         cell_id = self.get_cell_id(cell)

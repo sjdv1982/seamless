@@ -7,6 +7,7 @@ ctx = context()
 
 @macro({"formula": {"type": "str", "default": "return value*2"}})
 def operator(ctx, formula ):
+    from seamless import cell, transformer
     tparams = ctx.tparams = cell("object").set(
     {
       "value": {
@@ -92,17 +93,11 @@ time.sleep(0.001)
 # 1 ms is usually enough to print "8", try 0.0001 for a random chance
 print("VALUE", c_data.data, "'" + c_code.data + "'", c_output.data)
 
-editor_pycell =  os.path.join(
-  os.path.dirname(__file__), "test-editor_pycell.py"
-)
-editor_pycell2 =  os.path.join(
-  os.path.dirname(__file__), "test-editor_pycell2.py"
-)
-
 @macro("json",with_context=False)
-def make_editor(ed):
+def make_editor(eparams):
+    from seamless import editor
     ed = editor(eparams)
-    ed.code_start.cell().fromfile(editor_pycell)
+    ed.code_start.cell().fromfile("test-editor_pycell.py")
     ed.code_stop.cell().set('_cache["w"].destroy()')
     ed.code_update.cell().set("""
 b, w = _cache["b"], _cache["w"]
@@ -113,8 +108,9 @@ w.setWindowTitle(title)
 
 @macro("json",with_context=False)
 def make_text_editor(eparams):
+    from seamless import cell, editor
     ed = editor(eparams)
-    ed.code_start.cell().fromfile(editor_pycell2)
+    ed.code_start.cell().fromfile("test-editor_pycell2.py")
     ed.code_stop.cell().set('_cache["w"].destroy()')
     ed.code_update.cell().set("""
 b, w = _cache["b"], _cache["w"]

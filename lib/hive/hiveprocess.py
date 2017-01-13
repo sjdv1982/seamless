@@ -1,42 +1,45 @@
-from hive.hive import HiveObject, HiveBuilder
-from hive.ppin import PushInBee
-from hive.ppout import PushOutBee
-from hive.classes.resolve_bee import ResolveBee
-from hive.antenna import HiveAntenna
-from hive.output import HiveOutput
-from hive.attribute import Attribute
-from hive.manager import hive_mode_as
 from seamless import macro
-from seamless.core.editor import editor
-
-def hiveprocess_start():
-    import hive
-    myhive = hivecls()
-    for attr, hivepin_type in hive_attributes.items():
-        if hivepin_type == "push_out":
-            output = globals()[attr]
-            hive.connect(getattr(myhive, attr), hive.push_in(output.set))
-    _cache["myhive"] = myhive
-
-def hiveprocess_update():
-    myhive = _cache["myhive"]
-    for attr, hivepin_type in hive_attributes.items():
-        if attr not in _updated:
-            continue
-        value = globals()[attr]
-        if hivepin_type == "attribute":
-            setattr(myhive, attr, value)
-        elif hivepin_type == "push_in":
-            getattr(myhive, attr).push(value)
-
-def hiveprocess_stop():
-    myhive = _cache["myhive"]
-    if hasattr(myhive, "destroy"):
-        myhive.destroy()
-    del _cache["myhive"]
 
 @macro("str")
 def hiveprocess(ctx, hivename):
+
+    from hive.ppin import PushInBee
+    from hive.ppout import PushOutBee
+    from hive.classes.resolve_bee import ResolveBee
+    from hive.antenna import HiveAntenna
+    from hive.output import HiveOutput
+    from hive.attribute import Attribute
+    from hive.hive import HiveObject, HiveBuilder    
+    from hive.manager import hive_mode_as
+    from seamless.core.editor import editor
+
+    def hiveprocess_start():
+        import hive
+        myhive = hivecls()
+        for attr, hivepin_type in hive_attributes.items():
+            if hivepin_type == "push_out":
+                output = globals()[attr]
+                hive.connect(getattr(myhive, attr), hive.push_in(output.set))
+        _cache["myhive"] = myhive
+
+    def hiveprocess_update():
+        myhive = _cache["myhive"]
+        for attr, hivepin_type in hive_attributes.items():
+            if attr not in _updated:
+                continue
+            value = globals()[attr]
+            if hivepin_type == "attribute":
+                setattr(myhive, attr, value)
+            elif hivepin_type == "push_in":
+                getattr(myhive, attr).push(value)
+
+    def hiveprocess_stop():
+        myhive = _cache["myhive"]
+        if hasattr(myhive, "destroy"):
+            myhive.destroy()
+        del _cache["myhive"]
+
+
     ctx.registrar.hive.connect(hivename, ctx)
     hivecls = ctx.registrar.hive.get(hivename)
     assert issubclass(hivecls, HiveBuilder)
