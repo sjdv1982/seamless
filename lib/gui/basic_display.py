@@ -9,24 +9,24 @@ from seamless.core.context import active_context_as
 )))
 def basic_display(ctx, display_type, title):
     from seamless import editor
-    
+
     _displays = {
-    #  "int": {
-    #    "code": "cell-basic_editor_int.py",
-    #    "update": "cell-basic_editor_UPDATE.py",
-    #  },
-    #  "float": {
-    #    "code": "cell-basic_editor_float.py",
-    #    "update": "cell-basic_editor_UPDATE.py",
-    #  },
+      "int": {
+        "code": "cell-basic_display_int.py",
+        "update": "cell-basic_display_UPDATE.py",
+      },
+      "float": {
+        "code": "cell-basic_display_float.py",
+        "update": "cell-basic_display_UPDATE.py",
+      },
       "text": {
         "code": "cell-basic_display_text.py",
         "update": "cell-basic_display_text_UPDATE.py",
       },
-    #  "json": {
-    #    "code": "cell-basic_editor_json.py",
-    #    "update": None
-    #  },
+      "json": {
+        "code": "cell-basic_display_json.py",
+        "update": "cell-basic_display_json_UPDATE.py",
+      },
     }
 
     def _match_type(type, typelist):
@@ -66,14 +66,14 @@ def basic_display(ctx, display_type, title):
     d = ctx.display = editor(pinparams)
     d.title.cell().set(title)
     d.code_start.cell().fromfile(_displays[display_type]["code"])
-    d.code_stop.cell().set('_cache["w"].destroy()')
+    d.code_stop.cell().set('w.destroy()')
     upfile = _displays[display_type]["update"]
     c_up = d.code_update.cell()
     if upfile is not None:
         c_up.fromfile(upfile)
     else:
         c_up.set("")
-    ctx.export(d)
+    ctx.export(d, forced=["title"])
 
 def display(cell, title=None, own=True):
     assert isinstance(cell, Cell)

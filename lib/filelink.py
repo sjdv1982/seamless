@@ -27,11 +27,11 @@ def filelink(ctx, cell_type):
     }
     ed = ctx.ed = editor(pinparams)
     ed.code_start.cell().fromfile("cell-filelink-start.py")
-    ed.code_update.cell().set("write_file()")
+    ed.code_update.cell().set("write_file(filepath.get())")
     ed.code_stop.cell().set('t.join(0)')
     ctx.export(ed)
 
-def link(cell, directory, filename, latency=0.2, solid=True, own=False):
+def link(cell, directory, filename, latency=0.2, own=False):
     import os
     assert isinstance(cell, Cell)
     assert cell.context is not None
@@ -40,10 +40,7 @@ def link(cell, directory, filename, latency=0.2, solid=True, own=False):
     fl.filepath.cell().set(filepath)
     fl.latency.cell().set(latency)
     cell.connect(fl.inp)
-    if solid:
-        fl.outp.solid.connect(cell)
-    else:
-        fl.outp.liquid.connect(cell)
+    fl.outp.connect(cell)
     if own:
         cell.own(fl)
     fl._validate_path()

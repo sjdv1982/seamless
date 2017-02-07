@@ -1,4 +1,4 @@
-from seamless.qt.QtWidgets import QDoubleSpinBox, QWidget, QVBoxLayout
+from seamless.qt.QtWidgets import QSpinBox, QWidget, QVBoxLayout
 from seamless.qt.QtCore import Qt
 
 w = QWidget()
@@ -10,9 +10,7 @@ w.setLayout(vbox)
 w.resize(300,100)
 w.setWindowTitle(title.get())
 w.show()
-b = QDoubleSpinBox()
-b.setSingleStep(0.1)
+b = QSpinBox()
 b.setMaximum(1000000)
 b.setValue(value.get())
 vbox.addWidget(b)
-b.valueChanged.connect(value.set)

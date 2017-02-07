@@ -245,7 +245,8 @@ class Macro:
 
     def evaluate(self, args, kwargs, macro_object):
         from .cell import Cell, CellLike
-        from .process import Process, ProcessLike, InputPinBase, OutputPinBase
+        from .process import Process, ProcessLike, InputPinBase, \
+         OutputPinBase, EditPinBase
         from .registrar import RegistrarObject
         from .context import active_context_as
         from .. import run_work
@@ -305,11 +306,9 @@ class Macro:
                     for pinname, pin in ret._pins.items():
                         manager = pin._get_manager()
                         pin_id = pin.get_pin_id()
-                        if isinstance(pin, InputPinBase):
-                            is_incoming = True
+                        if isinstance(pin, (InputPinBase, EditPinBase)):
                             cell_ids = manager.pin_to_cells.get(pin_id, [])
                         elif isinstance(pin, OutputPinBase):
-                            is_incoming = False
                             cell_ids = pin._cell_ids
                         else:
                             raise TypeError((pinname, pin))

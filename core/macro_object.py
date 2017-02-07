@@ -34,7 +34,7 @@ class MacroObject:
     def update_cell(self, cellname):
         from .context import Context
         from .cell import Cell
-        from .process import Process, InputPinBase, OutputPinBase, EditorOutputPin
+        from .process import Process, InputPinBase, OutputPinBase, EditPinBase
         parent = self._parent()
         grandparent = parent.context
         assert isinstance(grandparent, Context), grandparent
@@ -88,16 +88,12 @@ class MacroObject:
             for pinname, pin in process._pins.items():
                 manager = pin._get_manager()
                 pin_id = pin.get_pin_id()
-                if isinstance(pin, InputPinBase):
+                if isinstance(pin, (InputPinBase, EditPinBase)):
                     is_incoming = True
                     cell_ids = [(None, v) for v in manager.pin_to_cells.get(pin_id, [])]
                 elif isinstance(pin, OutputPinBase):
                     is_incoming = False
-                    if isinstance(pin, EditorOutputPin):
-                        cell_ids = [("solid", v) for v in pin.solid._cell_ids] + \
-                          [("liquid", v) for v in pin.liquid._cell_ids]
-                    else:
-                        cell_ids = [(None, v) for v in pin._cell_ids]
+                    cell_ids = [(None, v) for v in pin._cell_ids]
                 else:
                     raise TypeError((pinname, pin))
                 for subpin, cell_id in cell_ids:

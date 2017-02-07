@@ -9,35 +9,38 @@ def hiveprocess(ctx, hivename):
     from hive.antenna import HiveAntenna
     from hive.output import HiveOutput
     from hive.attribute import Attribute
-    from hive.hive import HiveObject, HiveBuilder    
+    from hive.hive import HiveObject, HiveBuilder
     from hive.manager import hive_mode_as
     from seamless.core.editor import editor
 
     def hiveprocess_start():
         import hive
+        global myhive
         myhive = hivecls()
-        for attr, hivepin_type in hive_attributes.items():
+        for attr, hivepin_type in hive_attributes.get().items():
             if hivepin_type == "push_out":
                 output = globals()[attr]
                 hive.connect(getattr(myhive, attr), hive.push_in(output.set))
-        _cache["myhive"] = myhive
 
     def hiveprocess_update():
-        myhive = _cache["myhive"]
-        for attr, hivepin_type in hive_attributes.items():
-            if attr not in _updated:
+        for attr, hivepin_type in hive_attributes.get().items():
+            at = globals()[attr]
+            try:
+                if not at.updated:
+                    continue
+            except AttributeError:
                 continue
-            value = globals()[attr]
+            value = at.get()
             if hivepin_type == "attribute":
                 setattr(myhive, attr, value)
             elif hivepin_type == "push_in":
                 getattr(myhive, attr).push(value)
 
     def hiveprocess_stop():
-        myhive = _cache["myhive"]
+        global myhive
         if hasattr(myhive, "destroy"):
             myhive.destroy()
-        del _cache["myhive"]
+        del myhive
 
 
     ctx.registrar.hive.connect(hivename, ctx)

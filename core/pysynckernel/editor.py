@@ -7,11 +7,35 @@ class Editor:
     name = "editor"
     _destroyed = False
 
+    class EditorInput:
+        def __init__(self, parent, name):
+            self._parent = weakref.ref(parent)
+            self._name = name
+            self._value = None
+            self.updated = False
+        def get(self):
+            return self._value
+
     class EditorOutput:
         def __init__(self, parent, name):
             self._parent = weakref.ref(parent)
             self._name = name
         def set(self, value):
+            p = self._parent()
+            if p is None:
+                return
+            p.parent().output_update(self._name, value)
+
+    class EditorEdit:
+        def __init__(self, parent, name):
+            self._parent = weakref.ref(parent)
+            self._name = name
+            self._value = None
+            self.updated = False
+        def get(self):
+            return self._value
+        def set(self, value):
+            self._value = value
             p = self._parent()
             if p is None:
                 return
@@ -125,13 +149,20 @@ class Editor:
 
     def _set_namespace(self):
         self.namespace.clear()
-        self.namespace["_cache"] = {}
         for name in self.values:
             v = self.values[name]
+            if name in self.output_names:
+                e = self.EditorEdit(self, name)
+            else:
+                e = self.EditorInput(self, name)
+            self.namespace[name] = e
             if v is not None:
-                self.namespace[name] = self.values[name].data
-        for o in self.output_names:
-            self.namespace[o] = self.EditorOutput(self, o)
+                value = v.data
+                e._value = value
+        for name in self.output_names:
+            if name in self.values:
+                continue
+            self.namespace[name] = self.EditorOutput(self, name)
         self.namespace.update(self.registrar_namespace)
 
     def update(self, updated):
@@ -144,6 +175,10 @@ class Editor:
         if "code_start" in updated:
             self._code_stop()
             self.code_start_block = self.values["code_start"]
+            for name in self.inputs.keys():
+                if name not in ("code_update", "code_stop"):
+                    updated.add(name)
+                    do_update = True
 
         do_update = False
         if "code_update" in updated:
@@ -152,18 +187,18 @@ class Editor:
             do_update = True
 
         # Update namespace of inputs
-        _updated = set()
         for name in self.inputs.keys():
             if name in updated:
-                _updated.add(name)
-                self.namespace[name] = self.values[name].data
+                self.namespace[name]._value = self.values[name].data
+                self.namespace[name].updated = True
                 do_update = True
+            else:
+                self.namespace[name].updated = False
 
         if "code_start" in updated:
             self._code_start()
 
         if do_update:
-            self.namespace["_updated"] = _updated
             self._execute(self.code_update_block)
 
     def destroy(self):

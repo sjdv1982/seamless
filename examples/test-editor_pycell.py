@@ -12,6 +12,4 @@ w.resize(300,100)
 w.show()
 b = QSpinBox()
 vbox.addWidget(b)
-b.valueChanged.connect(output.set)
-_cache["b"] = b
-_cache["w"] = w
+b.valueChanged.connect(value.set)

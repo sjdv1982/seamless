@@ -1,2 +1,4 @@
-b, w = _cache["b"], _cache["w"]
-b.setText(value)
+if value.updated:
+    b.setText(value.get())
+if title.updated:
+    w.setWindowTitle(title.get())

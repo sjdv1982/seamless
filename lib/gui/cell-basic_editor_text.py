@@ -9,23 +9,17 @@ vbox = QVBoxLayout()
 #vbox.addStretch(1)
 w.resize(600,600)
 w.setLayout(vbox)
-w.setWindowTitle(title)
+w.setWindowTitle(title.get())
 
 class MyTextEdit(QTextEdit):
     def focusOutEvent(self, event):
-        output.set(self.toPlainText())
+        value.set(self.toPlainText())
         QTextEdit.focusOutEvent(self, event)
 
 w.show()
 b = MyTextEdit()
 b.setFontPointSize(15)
-b.setText(value)
+b.setText(value.get())
 #b.setFontItalic(True)
 #b.setTextColor(QColor(255,0,0))
 vbox.addWidget(b)
-def func():
-    output.set(b.toPlainText())
-#b.textChanged.connect(func)focusOut
-_cache["func"] = func
-_cache["b"] = b
-_cache["w"] = w

@@ -27,8 +27,8 @@ ctx.t2.inp1.cell().set(20)
 ctx.t2.inp2.cell().set(30)
 
 #from seamless.lib.gui.basic_editor import edit
-#ctx.ed1 = edit(ctx.t1.outp.cell(),solid=False)
-#ctx.ed2 = edit(ctx.t2.outp.cell(),solid=False)
+#ctx.ed1 = edit(ctx.t1.outp.cell())
+#ctx.ed2 = edit(ctx.t2.outp.cell())
 
 code2 = ctx.t1.macro.macro.code.replace('"inp"', '"INP"')
 ctx.t1.macro.macro.update_code(code2)

@@ -126,7 +126,7 @@ class Manager:
                         self.registrar_listeners.pop(registrar)
 
 
-    def _update(self, cell_id, value, only_last=False):
+    def _update(self, cell_id, value, *, process=None, only_last=False):
         macro_listeners = self.macro_listeners.get(cell_id, [])
 
         if not only_last:
@@ -147,7 +147,10 @@ class Manager:
             if input_pin is None:
                 continue #TODO: error?
 
-            input_pin.update(value)
+            if process is not None and input_pin.process_ref() is process:
+                continue
+
+            input_pin.receive_update(value)
 
         from .. import run_work
         from .macro import get_macro_mode
@@ -158,16 +161,16 @@ class Manager:
     def update_from_code(self, cell, only_last=False):
         value = cell._data
         cell_id = self.get_cell_id(cell)
-        self._update(cell_id, value, only_last)
+        self._update(cell_id, value, only_last=only_last)
 
-    def update_from_process(self, cell_id, value):
+    def update_from_process(self, cell_id, value, process):
         cell = self.cells.get(cell_id, None)
         if cell is None:
             return #cell has died...
 
         changed = cell._update(value)
         if changed:
-            self._update(cell_id, value)
+            self._update(cell_id, value, process=process)
 
     def update_registrar_key(self, registrar, key):
         from .process import Process
@@ -197,10 +200,12 @@ class Manager:
         from .transformer import Transformer
         from .cell import Cell, CellLike
         from .context import Context
-        from .process import InputPinBase, ExportedInputPin
-        from .process import OutputPinBase, ExportedOutputPin
+        from .process import EditPinBase, ExportedEditPin, \
+            InputPinBase, ExportedInputPin, OutputPinBase, ExportedOutputPin
+        if isinstance(source, EditPinBase):
+            source, target = target, source
         if isinstance(source, CellLike) and source._like_cell:
-            assert isinstance(target, InputPinBase)
+            assert isinstance(target, (InputPinBase, EditPinBase))
             assert source._get_manager() is self
             assert target._get_manager() is self
             if isinstance(target, ExportedInputPin):

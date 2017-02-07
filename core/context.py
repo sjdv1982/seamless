@@ -2,8 +2,9 @@
 from weakref import WeakValueDictionary
 from . import SeamlessBase
 from .cell import Cell, CellLike
-from .process import Managed, Process, ProcessLike, InputPinBase, \
-  ExportedInputPin, OutputPinBase, ExportedOutputPin, EditorOutputPin
+from .process import Managed, Process, ProcessLike,  \
+  InputPinBase, ExportedInputPin, OutputPinBase, ExportedOutputPin, \
+  EditPinBase, ExportedEditPin
 from contextlib import contextmanager as _pystdlib_contextmanager
 _active_context = None
 _active_owner = None
@@ -285,17 +286,13 @@ When any of these cells change and the macro is re-executed, the child object wi
                     raise ValueError(pinname)
             else:
                 pin = child._pins[pinname]
-                if isinstance(pin, InputPinBase):
+                if isinstance(pin, (InputPinBase, EditPinBase)):
                     manager = pin._get_manager()
                     con_cells = manager.pin_to_cells.get(pin.get_pin_id(), [])
                     return (len(con_cells) > 0)
                 elif isinstance(pin, OutputPinBase):
                     pin = pin.get_pin()
-                    if isinstance(pin, EditorOutputPin):
-                        return (len(pin.solid._cell_ids) > 0) or \
-                         (len(pin.liquid._cell_ids) > 0)
-                    else:
-                        return (len(pin._cell_ids) > 0)
+                    return (len(pin._cell_ids) > 0)
                 else:
                     raise TypeError(pin)
         pins = [p for p in pins if not is_connected(p)] + forced
@@ -309,6 +306,8 @@ When any of these cells change and the macro is re-executed, the child object wi
                 self._pins[pinname] = ExportedInputPin(pin)
             elif isinstance(pin, OutputPinBase):
                 self._pins[pinname] = ExportedOutputPin(pin)
+            elif isinstance(pin, EditPinBase):
+                self._pins[pinname] = ExportedEditPin(pin)
             else:
                 raise TypeError(pin)
 

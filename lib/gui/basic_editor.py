@@ -9,7 +9,7 @@ from seamless.core.context import active_context_as
 )))
 def basic_editor(ctx, editor_type, title):
     from seamless import editor
-    
+
     _editors = {
       "int": {
         "code": "cell-basic_editor_int.py",
@@ -25,7 +25,7 @@ def basic_editor(ctx, editor_type, title):
       },
       "json": {
         "code": "cell-basic_editor_json.py",
-        "update": None #TODO
+        "update": "cell-basic_editor_json_UPDATE.py",
       },
     }
 
@@ -55,40 +55,32 @@ def basic_editor(ctx, editor_type, title):
     editor_type = _match_type(editor_type, _editors.keys())
     pinparams = {
       "value": {
-        "pin": "input",
+        "pin": "edit",
         "dtype": editor_type
       },
       "title": {
         "pin": "input",
         "dtype": "str",
       },
-      "output": {
-        "pin": "output",
-        "dtype": editor_type
-      }
     }
     ed = ctx.ed = editor(pinparams)
     ed.title.cell().set(title)
     ed.code_start.cell().fromfile(_editors[editor_type]["code"])
-    ed.code_stop.cell().set('_cache["w"].destroy()')
+    ed.code_stop.cell().set('w.destroy()')
     upfile = _editors[editor_type]["update"]
     c_up = ed.code_update.cell(True)
     if upfile is not None:
         c_up.fromfile(upfile)
     else:
         c_up.set("")
-    ctx.export(ed)
+    ctx.export(ed, forced=["title"])
 
-def edit(cell, title=None, solid=True, own=False):
+def edit(cell, title=None, own=False):
     assert isinstance(cell, Cell)
     assert cell.context is not None
     from seamless.core.context import get_active_context
     ed = basic_editor(cell.dtype, title)
     cell.connect(ed.value)
-    if solid:
-        ed.output.solid.connect(cell)
-    else:
-        ed.output.liquid.connect(cell)
     if own:
         cell.own(ed)
     ed._validate_path()

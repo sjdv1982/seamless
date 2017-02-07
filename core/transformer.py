@@ -188,7 +188,7 @@ class Transformer(Process):
                 output_name, output_value = self.output_queue.popleft()
                 assert output_name == self._output_name
                 if self._connected_output:
-                    self._pins[self._output_name].update(output_value)
+                    self._pins[self._output_name].send_update(output_value)
                 else:
                     self._last_value = output_value
 
@@ -199,7 +199,7 @@ class Transformer(Process):
         last_value = self._last_value
         if last_value is not None:
             self._last_value = None
-            self._pins[self._output_name].update(last_value)
+            self._pins[self._output_name].send_update(last_value)
         self._connected_output = True
 
     def _on_disconnect_output(self):

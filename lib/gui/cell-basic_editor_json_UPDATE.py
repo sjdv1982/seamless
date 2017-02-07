@@ -1,4 +1,4 @@
 if value.updated:
-    b.setValue(value.get())
+    b.setText(json.dumps(value.get(), indent=2))
 if title.updated:
     w.setWindowTitle(title.get())

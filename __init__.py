@@ -95,6 +95,7 @@ else:
 
 if qt_error is None:
     import PyQt5.QtWidgets
+    import PyQt5.QtWebEngineWidgets
     qt_app = PyQt5.QtWidgets.QApplication(["  "])
     for _m in list(sys.modules.keys()):
         if _m.startswith("PyQt5"):

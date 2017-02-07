@@ -69,7 +69,6 @@ class Cell(Managed, CellLike):
 
     def set(self, text_or_object):
         """Update cell data from Python code in the main thread."""
-        # TODO: support for liquid (lset)
         if isinstance(text_or_object, (str, bytes)):
             self._text_set(text_or_object, trusted=False)
         else:
@@ -178,21 +177,22 @@ class Cell(Managed, CellLike):
         return self._error_message
 
     def _on_connect(self, pin, process, incoming):
-        # TODO: proper support for liquid connections
+        from .process import OutputPinBase
         if incoming:
-            if self._dependent and not pin.liquid:
+            if self._dependent and isinstance(pin, OutputPinBase):
                 raise Exception(
                  "Cell is already the output of another process"
                 )
-            if not pin.liquid:
+            if isinstance(pin, OutputPinBase):
                 self._dependent = True
             self._incoming_connections += 1
         else:
             self._outgoing_connections += 1
 
     def _on_disconnect(self, pin, process, incoming):
+        from .process import OutputPinBase
         if incoming:
-            if not pin.liquid:
+            if isinstance(pin, OutputPinBase):
                 self._dependent = False
             self._incoming_connections -= 1
         else:

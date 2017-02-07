@@ -32,48 +32,36 @@ def operator(ctx, formula ):
 eparams = ctx.eparams = cell("object").set(
 {
   "value": {
-    "pin": "input",
+    "pin": "edit",
     "dtype": "int"
   },
   "title": {
     "pin": "input",
     "dtype": "str"
   },
-  "output": {
-    "pin": "output",
-    "dtype": "int"
-  }
 }
 )
 
 teparams = {
   "value": {
-    "pin": "input",
+    "pin": "edit",
     "dtype": "str"
   },
   "title": {
     "pin": "input",
     "dtype": "str"
   },
-  "output": {
-    "pin": "output",
-    "dtype": "str"
-  }
 }
 
 teparams2 = {
   "value": {
-    "pin": "input",
+    "pin": "edit",
     "dtype": ("text", "code", "python")
   },
   "title": {
     "pin": "input",
     "dtype": "str"
   },
-  "output": {
-    "pin": "output",
-    "dtype": ("text", "code", "python")
-  }
 }
 
 op = operator()
@@ -98,11 +86,12 @@ def make_editor(eparams):
     from seamless import editor
     ed = editor(eparams)
     ed.code_start.cell().fromfile("test-editor_pycell.py")
-    ed.code_stop.cell().set('_cache["w"].destroy()')
+    ed.code_stop.cell().set('w.destroy()')
     ed.code_update.cell().set("""
-b, w = _cache["b"], _cache["w"]
-b.setValue(value)
-w.setWindowTitle(title)
+if value.updated:
+    b.setValue(value.get())
+if title.updated:
+    w.setWindowTitle(title.get())
 """)
     return ed
 
@@ -111,12 +100,12 @@ def make_text_editor(eparams):
     from seamless import cell, editor
     ed = editor(eparams)
     ed.code_start.cell().fromfile("test-editor_pycell2.py")
-    ed.code_stop.cell().set('_cache["w"].destroy()')
+    ed.code_stop.cell().set('w.destroy()')
     ed.code_update.cell().set("""
-b, w = _cache["b"], _cache["w"]
-if value != b.toPlainText():
-    b.setText(value)
-w.setWindowTitle(title)
+if value.updated:
+    b.setText(value.get())
+if title.updated:
+    w.setWindowTitle(title.get())
 """)
     return ed
 
@@ -125,7 +114,6 @@ ed2 = ctx.ed2 = make_editor(eparams)
 ed1.title.cell().set("Editor #1")
 ed2.title.cell().set("Editor #2")
 c_data.connect(ed1.value)
-ed1.output.solid.connect(c_data)
 c_output.connect(ed2.value)
 
 #ted1 = ctx.ted1 = make_text_editor(teparams)
@@ -136,7 +124,6 @@ c = c_code
 #v = ted1.value.cell()
 #v.set("Test!!")
 c.connect(ted1.value)
-ted1.output.solid.connect(c)
 
 meta_ted = ctx.meta_ted = make_text_editor(teparams2)
 meta_ted.title.cell().set("Meta-editor")
@@ -144,4 +131,3 @@ c = ted1.code_start.cell()
 #v = meta_ted1.value.cell()
 #v.set("Test!!")
 c.connect(meta_ted.value)
-meta_ted.output.solid.connect(c)

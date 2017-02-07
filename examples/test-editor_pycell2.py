@@ -16,8 +16,5 @@ b = QTextEdit()
 #b.setTextColor(QColor(255,0,0))
 vbox.addWidget(b)
 def func():
-    output.set(b.toPlainText())
+    value.set(b.toPlainText())
 b.textChanged.connect(func)
-_cache["func"] = func
-_cache["b"] = b
-_cache["w"] = w

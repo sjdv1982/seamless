@@ -7,7 +7,7 @@ from functools import partial
 from collections import OrderedDict
 
 from .macro import macro
-from .process import Process, InputPin, EditorOutputPin
+from .process import Process, InputPin, EditPin, OutputPin
 from .cell import Cell, PythonCell
 from .pysynckernel import Editor as KernelEditor
 from ..dtypes.objects import PythonBlockObject
@@ -76,7 +76,11 @@ class Editor(Process):
                 pin = InputPin(self, p, param["dtype"])
                 kernel_inputs[p] = param["dtype"]
             elif param["pin"] == "output":
-                pin = EditorOutputPin(self, p, param["dtype"])
+                pin = OutputPin(self, p, param["dtype"])
+                self.output_names.append(p)
+            elif param["pin"] == "edit":
+                pin = EditPin(self, p, param["dtype"])
+                kernel_inputs[p] = param["dtype"]
                 self.output_names.append(p)
             self._io_attrs.append(p)
             self._pins[p] = pin
@@ -92,7 +96,7 @@ class Editor(Process):
         return self._editor_params
 
     def output_update(self, name, value):
-        self._pins[name].update(value)
+        self._pins[name].send_update(value)
 
     def set_context(self, context):
         Process.set_context(self, context)
