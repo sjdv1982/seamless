@@ -82,7 +82,7 @@ class Context(SeamlessBase, CellLike, ProcessLike):
         self._name = name
         self._pins = {}
         self._children = {}
-        self._auto = set() #TODO: save this also when serializing
+        self._auto = set()
         if context is not None:
             self._manager = context._manager
         else:
@@ -93,7 +93,7 @@ class Context(SeamlessBase, CellLike, ProcessLike):
         from .registrar import RegistrarAccessor
         self.registrar = RegistrarAccessor(self)
 
-    _dir = ["_name", "export", "registrar", "cells"]
+    _dir = ["_name", "export", "registrar", "cells", "tofile"]
 
     @property
     def cells(self):
@@ -363,6 +363,38 @@ When any of these cells change and the macro is re-executed, the child object wi
         for childname, child in self._children.items():
             child._validate_path(required_path + (childname,))
         return required_path
+
+    def _cleanup_auto(self):
+        #TODO: test better, or delete? disable for now
+        return ###
+        manager = self._manager
+        for a in sorted(list(self._auto)):
+            if a not in self._children:
+                self._auto.remove(a)
+                continue
+            cell = self._children[a]
+            if not isinstance(cell, Cell):
+                continue
+            #if cell.data is not None:
+            #    continue
+
+            cell_id = manager.get_cell_id(cell)
+            incons = manager.cell_to_output_pin.get(cell, [])
+            if len(incons):
+                continue
+            if cell_id in manager.listeners:
+                outcons = manager.listeners[cell_id]
+                if len(outcons):
+                    continue
+            macro_listeners = manager.macro_listeners.get(cell_id, [])
+            if len(macro_listeners):
+                continue
+            child = self._children.pop(a)
+            child.destroy()
+            print("CLEANUP", self, a)
+            self._auto.remove(a)
+
+
 
 def context(**kwargs):
     """Return a new Context object."""

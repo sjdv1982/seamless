@@ -144,7 +144,8 @@ class Transformer(Process):
             thread_inputs, self._output_name,
             self.output_queue, self.output_semaphore
         )
-        self._set_context(self.context, self.name) #to update the transformer registrars
+        if self.context is not None:
+            self._set_context(self.context, self.name) #to update the transformer registrars
 
         for registrar, p in _registrars:
             registrar.connect(p, self)

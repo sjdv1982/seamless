@@ -54,8 +54,13 @@ class Cell(Managed, CellLike):
             ctx = get_active_context()
             ctx._add_new_cell(self, naming_pattern)
 
+    def _check_destroyed(self):
+        if self._destroyed:
+            raise AttributeError("Cell has been destroyed")
+
     @property
     def resource(self):
+        self._check_destroyed()
         return self._resource
 
     @property
@@ -65,10 +70,12 @@ class Cell(Managed, CellLike):
         Property is true if the cell has a hard incoming connection,
         e.g. the output of a process.
         """
+        self._check_destroyed()
         return self._dependent
 
     def set(self, text_or_object):
         """Update cell data from Python code in the main thread."""
+        self._check_destroyed()
         if isinstance(text_or_object, (str, bytes)):
             self._text_set(text_or_object, trusted=False)
         else:
@@ -76,6 +83,7 @@ class Cell(Managed, CellLike):
         return self
 
     def fromfile(self, filename):
+        self._check_destroyed()
         return self.resource.fromfile(filename, frames_back=2)
 
     def _text_set(self, data, trusted):
@@ -138,6 +146,7 @@ class Cell(Managed, CellLike):
         return True
 
     def touch(self):
+        self._check_destroyed()
         if self._status != self.__class__.StatusFlags.OK:
             return
         if self._context is not None:
@@ -150,6 +159,7 @@ class Cell(Managed, CellLike):
 
     def connect(self, target):
         """Connect the cell to a process's input pin."""
+        self._check_destroyed()
         manager = self._get_manager()
         manager.connect(self, target)
 
@@ -161,11 +171,13 @@ class Cell(Managed, CellLike):
     @property
     def data(self):
         """The cell's data in text format."""
+        self._check_destroyed()
         return copy.deepcopy(self._data)
 
     @property
     def status(self):
         """The cell's current status."""
+        self._check_destroyed()
         return self.StatusFlagNames[self._status]
 
     @property
@@ -174,6 +186,7 @@ class Cell(Managed, CellLike):
 
         Returns None is there is no error
         """
+        self._check_destroyed()
         return self._error_message
 
     def _on_connect(self, pin, process, incoming):
@@ -206,6 +219,7 @@ class Cell(Managed, CellLike):
         self._error_message = error_message
 
     def add_macro_object(self, macro_object, macro_arg):
+        self._check_destroyed()
         manager = self._get_manager()
         manager.add_macro_listener(self, macro_object, macro_arg)
 

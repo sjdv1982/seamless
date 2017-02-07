@@ -9,7 +9,8 @@ from contextlib import contextmanager as _pystdlib_contextmanager
 from .macro_object import MacroObject
 from .cached_compile import cached_compile
 
-_macros = weakref.WeakValueDictionary()
+#macros = weakref.WeakValueDictionary()
+_macros = {}
 
 _macro_mode = False
 _macro_registrar = []
@@ -41,6 +42,7 @@ class Macro:
         self.with_context = with_context
         self.registrar = registrar
         self.type_args = None
+        self._type_args_unparsed = type
         self.macro_objects = weakref.WeakValueDictionary() #"WeakList"
         if func is not None:
             assert callable(func)

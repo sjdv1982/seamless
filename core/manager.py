@@ -82,6 +82,8 @@ class Manager:
 
         except KeyError:
             self.macro_listeners[cell_id] = [m]
+            if cell_id not in self.cells:
+                self.cells[cell_id] = cell
 
     def remove_macro_listener(self, cell, macro_object, macro_arg):
         cell_id = self.get_cell_id(cell)

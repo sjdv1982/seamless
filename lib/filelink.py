@@ -8,8 +8,8 @@ from seamless.core.cell import Cell
 def filelink(ctx, cell_type):
     from seamless import editor
     pinparams = {
-       "inp": {
-         "pin": "input",
+       "value": {
+         "pin": "edit",
          "dtype": cell_type
        },
        "filepath" : {
@@ -19,10 +19,6 @@ def filelink(ctx, cell_type):
        "latency" : {
          "pin": "input",
          "dtype": "float"
-       },
-       "outp": {
-         "pin": "output",
-         "dtype": cell_type
        },
     }
     ed = ctx.ed = editor(pinparams)
@@ -39,8 +35,7 @@ def link(cell, directory, filename, latency=0.2, own=False):
     fl = filelink(cell.dtype)
     fl.filepath.cell().set(filepath)
     fl.latency.cell().set(latency)
-    cell.connect(fl.inp)
-    fl.outp.connect(cell)
+    cell.connect(fl.value)
     if own:
         cell.own(fl)
     fl._validate_path()

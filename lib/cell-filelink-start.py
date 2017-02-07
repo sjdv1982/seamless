@@ -1,12 +1,14 @@
 if __name__ == "__main__":
     #test with ipython -i
     import sys, os
-    class OutputPin:
+    class EditPin:
         def __init__(self, value):
             self.value = value
         def set(self, value):
             print("SET", value)
             self.value = value
+        def get(self):
+            return self.value
 
     class Getter:
         def __init__(self, arg):
@@ -14,14 +16,12 @@ if __name__ == "__main__":
         def get(self):
             return self.arg
 
-    _pin = OutputPin("test")
+    value = EditPin("test")
 
     directory = sys.argv[1]
     filename = sys.argv[2]
     filepath = Getter(os.path.join(directory, filename))
     latency = Getter(float(sys.argv[3]))
-    inp = Getter(_pin.value)
-    outp = _pin
     print("Edit in " + filepath.get())
 
 import os, time, functools
@@ -31,14 +31,14 @@ last_value = None
 
 def write_file(fpath):
     global last_mtime, last_value
-    value = str(inp.get())
-    if last_value == value:
+    val = str(value.get())
+    if last_value == val:
         return
     with lock:
-        if last_value != value:
+        if last_value != val:
             with open(fpath, "w") as f:
-                f.write(value)
-                last_value = value
+                f.write(val)
+                last_value = val
             last_time = time.time()
             try:
                 stat = os.stat(fpath)
@@ -63,7 +63,7 @@ def poll():
                     with open(fpath) as f:
                         data = f.read()
                     if data is not None:
-                        w = functools.partial(outp.set, data)
+                        w = functools.partial(value.set, data)
                         add_work(w)
                         last_value = data
                     last_mtime = stat.st_mtime

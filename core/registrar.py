@@ -189,7 +189,7 @@ class EvalRegistrar(BaseRegistrar):
         code = cached_compile(pythoncode, title, "exec")
         exec(code, self._namespace)
         registered_types = [v for v in self._namespace if v not in variables_old and not v.startswith("__")]
-        return EvalRegistrarObject(self, registered_types, code, name)
+        return EvalRegistrarObject(self, registered_types, pythoncode, name)
 
     def get(self, key):
         return self._namespace[key]
@@ -201,6 +201,7 @@ class EvalRegistrarObject(RegistrarObject):
         for t in self.registered:
             if t in namespace:
                 del namespace[t]
+        self.registrar._unregister(self.data, self.data_name)
 
     def re_register(self, pythoncode):
         context = self.context
@@ -217,7 +218,7 @@ class EvalRegistrarObject(RegistrarObject):
         registered_types = [v for v in namespace if v not in variables_old]
         updated_keys = [k for k in registered_types]
         updated_keys += [k for k in self.registered if k not in updated_keys and not k.startswith("__")]
-        #TODO: for hive, figure out dependencies and add them
+        self.data = pythoncode
         self.registered = registered_types
         self.registrar.update(context, updated_keys)
         return self

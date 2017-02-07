@@ -8,6 +8,7 @@ from .core.context import context
 from .core.cell import cell, pythoncell
 from .core.transformer import transformer
 from .core.editor import editor
+from .core.fromfile import fromfile
 from . import lib
 
 __all__ = (macro, context, cell, pythoncell, transformer, editor)
@@ -39,7 +40,7 @@ import traceback
 qt_error = None
 
 class SeamlessMock:
-    def __init__(self, name, path):
+    def __init__(self, name, path, *args, **kwargs):
         self.__name__ = name
         self.__path__ = path
     def __call__(self, *args, **kwargs):

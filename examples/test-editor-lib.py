@@ -55,3 +55,6 @@ ted1.title.cell().set("Formula editor")
 
 meta_ted = ctx.meta_ted = edit(ted1.ed.code_start.cell())
 meta_ted.title.cell().set("Meta-editor")
+
+import os, tempfile
+ctx.tofile("test-editor-lib.seamless")

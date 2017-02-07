@@ -3,8 +3,8 @@ from seamless.silk import Silk
 from seamless.lib.hive.hiveprocess import hiveprocess
 
 ctx = context()
-ctx.c1 = cell(("text", "code", "silk")).fromfile("vertexdata.silk")
-ctx.registrar.silk.register(ctx.c1)
+c1 = open("vertexdata.silk").read()
+ctx.registrar.silk.register(c1)
 #print(Silk.Vec3(1,2,3), ctx.registrar.silk.Vec3(3,4,5))
 
 ctx.c2 = pythoncell().fromfile("fireworkhive.py")
@@ -123,7 +123,7 @@ except FileExistsError:
     pass
 ctx.ed_vert = link(hp.vert_shader.cell(), tmpdir, "Vertex_shader.glsl")
 ctx.ed_frag = link(hp.frag_shader.cell(), tmpdir, "Fragment_shader.glsl")
-ctx.ed_vertexformat = link(ctx.c1, tmpdir, "Vertex_format.silk")
+#ctx.ed_vertexformat = link(ctx.c1, tmpdir, "Vertex_format.silk")
 ctx.ed_hive = link(ctx.c2, tmpdir, "Hive.py")
 ctx.ed_gen_vertexbuffer = link(ctx.gen_vertexbuffer.code.cell(),
   tmpdir, "Vertexbuffer_generation.py")
@@ -136,4 +136,4 @@ ctx.ed_gen_texturedict = link(ctx.gen_texture_dict.code.cell(),
 
 import time
 time.sleep(0.1)
-ctx.tofile("fireworks.seamless")
+ctx.tofile("fireworks0.seamless")
