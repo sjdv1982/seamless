@@ -1,3 +1,5 @@
+from .fromfile import find_sl
+
 def json_to_connections(ctx, data):
     """
     ret = OrderedDict((
@@ -10,22 +12,21 @@ def json_to_connections(ctx, data):
         ("cell_pin_connections", cell_pin_connections)
     ))
     """
-    def _get_sl(parent, path):
-        if len(path) == 0:
-            return parent
-        child = getattr(parent, path[0])
-        return _get_sl(child, path[1:])
-
-    def find_sl(path):
-        path2 = path.split(".")
-        return _get_sl(ctx, path2)
 
     manager = ctx._manager
     for con in data["pin_cell_connections"]:
-        source = find_sl(con[0])
-        target = find_sl(con[1])
-        manager.connect(source, target)
+        source = find_sl(ctx, con[0])
+        target = find_sl(ctx, con[1])
+        try:
+            manager.connect(source, target)
+        except:
+            print("SOURCE", source, "TARGET", target)
+            raise
     for con in data["cell_pin_connections"]:
-        source = find_sl(con[0])
-        target = find_sl(con[1])
-        manager.connect(source, target)
+        source = find_sl(ctx, con[0])
+        target = find_sl(ctx, con[1])
+        try:
+            manager.connect(source, target)
+        except:
+            print("SOURCE", source, "TARGET", target)
+            raise
