@@ -63,3 +63,6 @@ ctx._validate_path()
 
 ctx.mode.set("array")
 ctx.n.connect(ctx.cons.N)
+
+import os
+ctx.tofile(os.path.splitext(__file__)[0] + ".seamless", backup=False)

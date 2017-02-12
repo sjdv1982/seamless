@@ -11,8 +11,6 @@ from .core.editor import editor
 from .core.fromfile import fromfile
 from . import lib
 
-__all__ = (macro, context, cell, pythoncell, transformer, editor)
-
 import time
 from collections import deque
 import threading
@@ -97,6 +95,7 @@ else:
 if qt_error is None:
     import PyQt5.QtWidgets
     import PyQt5.QtWebEngineWidgets
+    from PyQt5 import QtGui, QtCore
     qt_app = PyQt5.QtWidgets.QApplication(["  "])
     for _m in list(sys.modules.keys()):
         if _m.startswith("PyQt5"):
@@ -107,7 +106,31 @@ if qt_error is None:
     timer = QTimer()
     timer.timeout.connect(run_work)
     timer.start(10)
+
+    import sys
+    import traceback
+
+    last_exception = None
+    def new_except_hook(etype, evalue, tb):
+        global last_exception
+        exc = traceback.format_exception(etype, evalue, tb)
+        if exc != last_exception:
+            last_exception = exc
+            print("".join(exc))
+
+    def patch_excepthook():
+        sys.excepthook = new_except_hook
+    timer2 = QtCore.QTimer()
+    timer2.setSingleShot(True)
+    timer2.timeout.connect(patch_excepthook)
+    timer2.start()
+    patch_excepthook()
+
 else:
     sys.stderr.write("    " + qt_error + "\n")
     sys.stderr.write("    All GUI in seamless.qt has been disabled\n")
     sys.meta_path.append(SeamlessMockImporter("seamless.qt"))
+
+from . import qt
+
+__all__ = (macro, context, cell, pythoncell, transformer, editor, qt)

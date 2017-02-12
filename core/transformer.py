@@ -98,11 +98,14 @@ class Transformer(Process):
             param = transformer_params[p]
             self._transformer_params[p] = param
             pin = None
+            dtype = param.get("dtype", None)
+            if isinstance(dtype, list):
+                dtype = tuple(dtype)
             if param["pin"] == "input":
-                pin = InputPin(self, p, param["dtype"])
-                thread_inputs[p] = param["dtype"]
+                pin = InputPin(self, p, dtype)
+                thread_inputs[p] = dtype
             elif param["pin"] == "output":
-                pin = OutputPin(self, p, param["dtype"])
+                pin = OutputPin(self, p, dtype)
                 assert self._output_name is None  # can have only one output
                 self._output_name = p
             elif param["pin"] == "registrar":

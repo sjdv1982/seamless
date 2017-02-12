@@ -1,5 +1,5 @@
 from collections import OrderedDict
-import json
+import json, os
 from .. import dtypes
 from .editor import Editor
 from .transformer import Transformer
@@ -42,10 +42,17 @@ def cell_to_json(c):
     d["dtype"] = c.dtype
     if c.resource.filename is not None:
         d["resource"] = resource_to_json(c.resource)
-        if c.resource.lib or c.resource.mode == 1:
+        if c.resource.mode == 1:
             store_data = False
     if store_data and c.data is not None:
-        data = dtypes.serialize(c.dtype, c.data)
+        data = c.data
+        is_json = (
+          c.dtype == "json" or (
+            isinstance(c.dtype, tuple) and c.dtype[0] == "json"
+          )
+        )
+        if not is_json:
+            data = dtypes.serialize(c.dtype, data)
         d["data"] = data
     if c._owner is not None:
         d["owner"] = sl_print(c._owner())
@@ -63,16 +70,16 @@ def ctx_to_json(ctx):
     ctx._cleanup_auto()
 
     from .registrar import RegistrarObject
-    children = OrderedDict()
+    children = {}
     d = OrderedDict((
         ("type", "context"),
         ("like_process", ctx._like_process),
         ("like_cell", ctx._like_cell),
-        ("pins", OrderedDict([(pname, sl_print(p)) for pname, p in sorted(ctx._pins.items())])),
+        ("pins", {pname: sl_print(p) for pname, p in ctx._pins.items()}),
         ("auto", [a for a in sorted(ctx._auto) if a in ctx._children]),
         ("children", children),
     ))
-    for childname, child in sorted(ctx._children.items()):
+    for childname, child in ctx._children.items():
         if isinstance(child, Context):
             children[childname] = ctx_to_json(child)
         elif isinstance(child, Cell):
@@ -91,8 +98,8 @@ def ctx_to_json(ctx):
 
 def lib_to_json():
     from .libmanager import _lib, _links
-    ret = OrderedDict()
-    for filename in sorted(_lib.keys()):
+    ret = {}
+    for filename in _lib:
         data = _lib[filename]
         links = [sl_print(cell) for cell in _links.get(filename,[])]
         ret[filename] = OrderedDict((("data", data), ("links", links)))
@@ -115,7 +122,9 @@ def macro_to_json():
         ret.append(m)
     return ret
 
-def tofile(ctx, filename):
+from .utils import ordered_dictsort
+
+def tofile(ctx, filename, backup=True):
     assert isinstance(ctx, Context)
     if ctx.context is not None:
         raise NotImplementedError(".tofile for non-root contexts not supported")
@@ -124,6 +133,16 @@ def tofile(ctx, filename):
       ("macro" , macro_to_json()),
       ("main" , ctx_to_json(ctx)),
     ))
+    ordered_dictsort(data)
     #import pprint
     #pprint.pprint(  data, open(filename, "w"))
-    json.dump(data, open(filename, "w"), indent=2)
+    jdata = json.dumps(data, indent=2)
+    if backup and os.path.exists(filename):
+        count = 1
+        while 1:
+            new_filename = filename + str(count)
+            if not os.path.exists(new_filename):
+                break
+            count += 1
+        os.rename(filename, new_filename)
+    open(filename, "w").write(jdata)

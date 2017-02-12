@@ -1,3 +1,4 @@
+import seamless
 from seamless import context, macro, cell
 
 @macro("int", with_context=False)
@@ -30,6 +31,12 @@ ctx.t2.inp2.cell().set(30)
 #ctx.ed1 = edit(ctx.t1.outp.cell())
 #ctx.ed2 = edit(ctx.t2.outp.cell())
 
-code2 = ctx.t1.macro.macro.code.replace('"inp"', '"INP"')
-ctx.t1.macro.macro.update_code(code2)
-print(ctx.t2.INP2)
+#code2 = ctx.t1.macro.macro.code.replace('"inp"', '"INP"')
+#ctx.t1.macro.macro.update_code(code2)
+#print(ctx.t2.INP2)
+
+import os
+ctx.tofile(os.path.splitext(__file__)[0] + ".seamless", backup=False)
+#ctx.destroy()
+#ctx = seamless.fromfile(os.path.splitext(__file__)[0] + ".seamless")
+#ctx.c2.set(1)

@@ -16,9 +16,9 @@ import time
 import numpy as np
 from vispy import gloo, app
 
-# import vispy
-# vispy.use('pyside', 'es2')
-
+import vispy
+#vispy.use('pyside', 'es2')
+vispy.use("pyqt5","gl+")
 
 # Create a texture
 radius = 32

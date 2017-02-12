@@ -125,7 +125,7 @@ When any of these cells change and the macro is re-executed, the owned object wi
         if done is None:
             done = []
         if self in done:
-            msg = "Ownership circle " + "\n".join([str(x) for x in done])
+            msg = "Ownership circle:\n    " + "\n    ".join([str(x) for x in done])
             raise Exception(msg)
         done.append(self)
 
@@ -138,7 +138,7 @@ When any of these cells change and the macro is re-executed, the owned object wi
             if self._owner is not None:
                 owner = self._owner()
                 if owner is not None:
-                    ret = owner._macro_control(True, False, done)
+                    ret = owner._macro_control(True, False)
                     if ret is not None:
                         return ret
         elif primary:

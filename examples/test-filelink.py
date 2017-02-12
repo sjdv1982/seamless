@@ -26,4 +26,7 @@ ctx.ed_text = edit(ctx.text, title_text)
 print(msg.format(title_text, tmpdir, file_text))
 
 
-#shutil.rmtree(tmpdir) #TODO: make exit hook
+### #shutil.rmtree(tmpdir) #TODO: make exit hook
+
+import os
+ctx.tofile(os.path.splitext(__file__)[0] + ".seamless", backup=False)

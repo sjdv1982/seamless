@@ -71,7 +71,10 @@ class BaseRegistrar:
         if ctx is None:
             return
         manager = ctx._manager
-        manager.remove_registrar_item(self.name, self._register_type, data, data_name)
+        try: ###
+            manager.remove_registrar_item(self.name, self._register_type, data, data_name)
+        except:
+            pass
 
 
     def update(self, context, update_keys):
@@ -105,10 +108,13 @@ class RegistrarObject(Managed):
 
     def __init__(self, registrar, registered, data, data_name):
         from .macro import get_macro_mode
+        from .fromfile import get_fromfile_mode
         from .context import get_active_context
+        #if get_macro_mode() and not get_fromfile_mode():
         if get_macro_mode():
             ctx = get_active_context()
             ctx._add_new_registrar_object(self)
+        assert isinstance(registrar, BaseRegistrar)
         self.registrar = registrar
         self.registered = registered
         self.data = data
@@ -126,24 +132,6 @@ class RegistrarObject(Managed):
             return
         self.unregister()
         super().destroy()
-
-class SilkRegistrar(BaseRegistrar):
-    #TODO: setting up private Silk namespaces for subcontexts
-    _register_type = ("text", "code", "silk")
-
-    #@macro(type=("text", "code", "silk"), with_context=False,_registrar=True)
-    def register(self,silkcode, name=None):
-        self._register(silkcode,name)
-        from seamless import silk
-        registered_types = silk.register(silkcode)
-        return SilkRegistrarObject(self, registered_types, silkcode, name)
-
-    def get(self, key):
-        from seamless.silk import Silk
-        try:
-            return getattr(Silk, key)
-        except AttributeError:
-            raise KeyError(key)
 
 class SilkRegistrarObject(RegistrarObject):
 
@@ -172,27 +160,24 @@ class SilkRegistrarObject(RegistrarObject):
         self.registrar._register(self.data,self.data_name)
         return self
 
-class EvalRegistrar(BaseRegistrar):
-    _register_type = ("text", "code", "python")
+class SilkRegistrar(BaseRegistrar):
+    #TODO: setting up private Silk namespaces for subcontexts
+    _register_type = ("text", "code", "silk")
+    _registrar_object_class = SilkRegistrarObject
 
-    def __init__(self, namespace):
-        self._namespace = namespace
-        BaseRegistrar.__init__(self)
-
-    #@macro(type=("text", "code", "python"), with_context=False,_registrar=True)
-    def register(self, pythoncode, name=None):
-        self._register(pythoncode, name)
-        variables_old = list(self._namespace.keys())
-        title = name
-        if title is None:
-            title = "<string>"
-        code = cached_compile(pythoncode, title, "exec")
-        exec(code, self._namespace)
-        registered_types = [v for v in self._namespace if v not in variables_old and not v.startswith("__")]
-        return EvalRegistrarObject(self, registered_types, pythoncode, name)
+    #@macro(type=("text", "code", "silk"), with_context=False,_registrar=True)
+    def register(self,silkcode, name=None):
+        self._register(silkcode,name)
+        from seamless import silk
+        registered_types = silk.register(silkcode)
+        return self._registrar_object_class(self, registered_types, silkcode, name)
 
     def get(self, key):
-        return self._namespace[key]
+        from seamless.silk import Silk
+        try:
+            return getattr(Silk, key)
+        except AttributeError:
+            raise KeyError(key)
 
 class EvalRegistrarObject(RegistrarObject):
 
@@ -222,6 +207,29 @@ class EvalRegistrarObject(RegistrarObject):
         self.registered = registered_types
         self.registrar.update(context, updated_keys)
         return self
+
+class EvalRegistrar(BaseRegistrar):
+    _register_type = ("text", "code", "python")
+    _registrar_object_class = EvalRegistrarObject
+
+    def __init__(self, namespace):
+        self._namespace = namespace
+        BaseRegistrar.__init__(self)
+
+    #@macro(type=("text", "code", "python"), with_context=False,_registrar=True)
+    def register(self, pythoncode, name=None):
+        self._register(pythoncode, name)
+        variables_old = list(self._namespace.keys())
+        title = name
+        if title is None:
+            title = "<string>"
+        code = cached_compile(pythoncode, title, "exec")
+        exec(code, self._namespace)
+        registered_types = [v for v in self._namespace if v not in variables_old and not v.startswith("__")]
+        return self._registrar_object_class(self, registered_types, pythoncode, name)
+
+    def get(self, key):
+        return self._namespace[key]
 
 def add_registrar(name, registrar):
     assert isinstance(registrar, BaseRegistrar)

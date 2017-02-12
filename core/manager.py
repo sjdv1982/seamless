@@ -72,8 +72,7 @@ class Manager:
 
     def add_macro_listener(self, cell, macro_object, macro_arg):
         cell_id = self.get_cell_id(cell)
-        macro_ref = weakref.ref(macro_object)
-        m = (macro_ref, macro_arg)
+        m = (macro_object, macro_arg)
 
         try:
             macro_listeners = self.macro_listeners[cell_id]
@@ -87,8 +86,7 @@ class Manager:
 
     def remove_macro_listener(self, cell, macro_object, macro_arg):
         cell_id = self.get_cell_id(cell)
-        macro_ref = weakref.ref(macro_object)
-        m = (macro_ref, macro_arg)
+        m = (macro_object, macro_arg)
 
         if cell_id in self.macro_listeners:
             l = self.macro_listeners[cell_id]
@@ -132,12 +130,7 @@ class Manager:
         macro_listeners = self.macro_listeners.get(cell_id, [])
 
         if not only_last:
-            for macro_ref, macro_arg in macro_listeners:
-                macro_object = macro_ref()
-
-                if macro_object is None:
-                    continue #TODO: error?
-
+            for macro_object, macro_arg in macro_listeners:
                 macro_object.update_cell(macro_arg)
 
         listeners = self.listeners.get(cell_id, [])

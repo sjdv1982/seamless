@@ -227,7 +227,7 @@ class Macro:
         required = self.type_args["_required"]
         for argname in required:
             if argname.startswith("_arg"):
-                assert argname in positional_done, argname #TODO: error message
+                assert argname in positional_done, (argname, order, len(args)) #TODO: error message
             else:
                 assert argname in kwargs2, argname #TODO: error message
         for argname in self.type_args:

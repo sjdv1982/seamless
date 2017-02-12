@@ -1,6 +1,7 @@
 #TODO: this is currently a stub
 
 import json
+import functools
 
 _known_types = [
   "object",
@@ -18,6 +19,13 @@ _known_types = [
   "silk",
 ]
 
+
+def json_constructor(data):
+    from ..silk.classes import SilkObject
+    if isinstance(data, SilkObject):
+        data = data.json()
+    return json.dumps(data, indent=2)
+
 _constructors = {
     "object": lambda v: v,
     "int" : int,
@@ -25,13 +33,22 @@ _constructors = {
     "bool" : bool,
     "str" : str,
     "text" : str,
-    "json": json.dumps,
+    "json": json_constructor,
     "xml": str, #TODO
     "silk": str, #TODO
 }
 
 _parsers = _constructors.copy()
-_parsers["json"] = json.loads
+def json_parser(data):
+    from ..silk.classes import SilkObject
+    if isinstance(data, str):
+        return json.loads(data)
+    elif isinstance(data, SilkObject):
+        return data.json()
+    else:
+        jdata = json.dumps(data)
+        return json.loads(jdata)
+_parsers["json"] = json_parser
 
 
 def check_registered(data_type):
@@ -46,7 +63,7 @@ def construct(data_type, value):
     try:
         return _constructors[dtype](value)
     except:
-        raise ConstructionError
+        raise ConstructionError(dtype)
 
 
 def parse(data_type, value, trusted):
@@ -77,7 +94,7 @@ def serialize(data_type, value):
     if dtype == "object":
         return value
     elif dtype == "json":
-        return json.dumps(value)
+        return json_constructor(value)
     elif dtype == "xml":
         raise NotImplementedError
     elif dtype == "silk":

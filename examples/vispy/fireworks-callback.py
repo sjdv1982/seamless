@@ -18,10 +18,10 @@ import time
 import numpy as np
 from vispy import gloo, app
 from OpenGL import GL as gl
+import ctypes
 
-# import vispy
-# vispy.use('pyside', 'es2')
-
+import vispy
+vispy.use('glfw', 'gl2')
 
 # Create a texture
 radius = 32
@@ -54,13 +54,14 @@ out float v_lifetime;
 
 void main () {
     float instance = float(gl_InstanceID);
-    if (u_time <= a_lifetime && (gl_InstanceID > 0))
+
+    if (u_time <= a_lifetime)
     {
         gl_Position.xyz = a_startPosition + (u_time * a_endPosition);
         gl_Position.xyz += u_centerPosition;
         gl_Position.y -= 1.0 * u_time * u_time;
         gl_Position.w = 1.0;
-        gl_Position.x += float(gl_InstanceID) * 50.0;
+        gl_Position.x = instance * 50.0;
     }
     else
         gl_Position = vec4(-1000, -1000, 0, 0);
@@ -99,6 +100,7 @@ class Canvas(app.Canvas):
         # Create program
         self._program = gloo.Program(VERT_SHADER, FRAG_SHADER, convert_shaders=False)
         self._program.bind(gloo.VertexBuffer(data))
+        self.indices = gloo.IndexBuffer(np.arange(len(data), dtype=np.uint16))
         self._program['s_texture'] = gloo.Texture2D(im1)
 
         # Create first explosion
@@ -133,8 +135,17 @@ class Canvas(app.Canvas):
         def mydraw(first, count):
             instances = 10
             gl.glDrawArraysInstanced(gl.GL_POINTS, first, count, instances)
+        def mydraw(first, count):
+            gl.glDrawArrays(gl.GL_POINTS, first, count)
+        def mydraw(count, mode):
+            mode = getattr(gl, "GL_" + mode)
+            gl.glDrawElements(gl.GL_POINTS, count, mode, None)
+        def mydraw(count, mode):
+            mode = getattr(gl, "GL_" + mode)
+            gl.glDrawElementsInstanced(gl.GL_POINTS, count, mode, ctypes.c_void_p(0), 1000)
 
-        self._program.draw('callback',callback=mydraw)
+        #self._program.draw('callback',callback=mydraw)
+        self._program.draw('callback',callback=mydraw, indices=self.indices)
 
         # New explosion?
         if time.time() - self._starttime > 1.5:

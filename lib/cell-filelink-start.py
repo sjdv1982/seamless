@@ -1,3 +1,4 @@
+#BLAAT
 if __name__ == "__main__":
     #test with ipython -i
     import sys, os
@@ -22,7 +23,14 @@ if __name__ == "__main__":
     filename = sys.argv[2]
     filepath = Getter(os.path.join(directory, filename))
     latency = Getter(float(sys.argv[3]))
+    def serializer(v):
+        return str(v.get())
     print("Edit in " + filepath.get())
+else:
+    from seamless.dtypes import serialize
+    def serializer(v):
+        return serialize(v._dtype, v.get())
+
 
 import os, time, functools
 from seamless import add_work
@@ -31,7 +39,7 @@ last_value = None
 
 def write_file(fpath):
     global last_mtime, last_value
-    val = str(value.get())
+    val = serializer(value)
     if last_value == val:
         return
     with lock:
@@ -71,5 +79,6 @@ def poll():
 t = Thread(target=poll)
 t.setDaemon(True)
 lock = RLock()
+val = serializer(value)
 write_file(filepath.get())
 t.start()

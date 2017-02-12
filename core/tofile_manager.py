@@ -7,8 +7,8 @@ def macro_object_to_json(macro_object):
     from .registrar import RegistrarObject
     target = macro_object._parent()
     if macro_object.macro.registrar is not None:
-        assert isinstance(target, RegistrarObject)
-        #MacroObjects that point to a registrar are saved as registrar_cell`
+        assert isinstance(target, RegistrarObject), (str(target), macro_object.macro.registrar)
+        #MacroObjects that point to a registrar are saved as registrar_cell
         # instead
         return None
     else:
@@ -18,19 +18,23 @@ def macro_object_to_json(macro_object):
     macro = macro_object.macro
     order = macro.type_args["_order"]
 
-    args = OrderedDict()
-    cell_args = OrderedDict()
-    args.update(macro_object.kwargs)
+    args = []
+    kwargs = {}
+    cell_args = {}
     for argnr, arg in enumerate(macro_object.args):
         argname = order[argnr]
-        args[argname] = arg
-    for argname, arg in list(args.items()):
         if argname in macro_object.cell_args:
             cell_args[argname] = sl_print(arg)
-            args.pop(argname)
+            args.append(None)
         else:
-            pass #TODO: check that arg is serialisable
+            args.append(arg) #TODO: check that arg is serialisable
+    for argname, arg in macro_object.kwargs.items():
+        if argname in macro_object.cell_args:
+            cell_args[argname] = sl_print(arg)
+        else:
+            kwargs[argname] = arg #TODO: check that arg is serialisable
     mo["args"] = args
+    mo["kwargs"] = kwargs
     mo["cell_args"] = cell_args
 
     for order,k in enumerate(sorted(macro.macro_objects.keys())):
@@ -73,6 +77,7 @@ def manager_to_json(m):
                 continue
             ppath = sl_print(pin)
             pin_cell_connections.append((ppath, cpath))
+    pin_cell_connections.sort(key=lambda v: v[0]+v[1])
 
     for cell_id, pins in m.listeners.items():
         cell = m.cells[cell_id]
@@ -83,6 +88,7 @@ def manager_to_json(m):
                 continue
             ppath = sl_print(pin)
             cell_pin_connections.append((cpath, ppath))
+    cell_pin_connections.sort(key=lambda v: v[0]+v[1])
 
     macro_obj_map = {}
     for cell_id in m.macro_listeners:
@@ -90,8 +96,7 @@ def manager_to_json(m):
         if cell is None:
             continue
         listeners = m.macro_listeners[cell_id]
-        for macro_ref, macro_arg in listeners:
-            macro_object = macro_ref()
+        for macro_object, macro_arg in listeners:
             if macro_object is None:
                 continue
             if macro_object in macro_obj_map:
@@ -120,9 +125,10 @@ def manager_to_json(m):
         i["data_name"] = data_name
         registrar_items.append(i)
 
-    for registrar in m. registrar_listeners:
+    for registrar in sorted(m.registrar_listeners.keys(),
+      key=lambda k: k.name):
         d = m.registrar_listeners[registrar]
-        for key in d:
+        for key in sorted(d):
             for t in d[key]:
                 target = t[0]()
                 if target is None:
@@ -135,7 +141,7 @@ def manager_to_json(m):
                     i["target_process"] = sl_print(target)
                     namespace_name = t[1]
                     i["namespace_name"] = t[1]
-                    target.receive_registrar_update(registrar.name, key, namespace_name)
+                    #target.receive_registrar_update(registrar.name, key, namespace_name)
                 elif isinstance(target, MacroObject):
                     macro_object = target
                     assert macro_object.macro.registrar is None #registrars can't target other registrars

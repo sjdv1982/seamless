@@ -100,6 +100,8 @@ class PythonEditorCodeObject(PythonTransformerCodeObject):
 def data_type_to_data_object(data_type):
     #TODO: stub!
     from . import check_registered
+    if isinstance(data_type, list):
+        data_type = tuple(data_type)
     assert check_registered(data_type), data_type
     return DataObject
 

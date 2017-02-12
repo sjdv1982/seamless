@@ -136,4 +136,6 @@ ctx.ed_gen_texturedict = link(ctx.gen_texture_dict.code.cell(),
 
 import time
 time.sleep(0.1)
-ctx.tofile("fireworks.seamless")
+
+import os
+ctx.tofile(os.path.splitext(__file__)[0] + ".seamless", backup=False)

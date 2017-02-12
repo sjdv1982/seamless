@@ -3,6 +3,13 @@ from seamless import editor, macro
 from seamless.core.cell import Cell
 from seamless.core.context import active_context_as
 
+import os, glob
+from seamless.core import libmanager
+for f in glob.glob(os.path.dirname(__file__) + os.sep + "cell-basic_editor*.py"):
+    ff = os.path.split(f)[1]
+    libmanager.load(ff)
+
+
 @macro(OrderedDict((
     ("editor_type","str"),
     ("title",{"type": "str", "default": "Basic editor"})

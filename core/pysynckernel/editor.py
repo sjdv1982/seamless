@@ -8,8 +8,9 @@ class Editor:
     _destroyed = False
 
     class EditorInput:
-        def __init__(self, parent, name):
+        def __init__(self, parent, dtype, name):
             self._parent = weakref.ref(parent)
+            self._dtype = dtype
             self._name = name
             self._value = None
             self.updated = False
@@ -17,8 +18,9 @@ class Editor:
             return self._value
 
     class EditorOutput:
-        def __init__(self, parent, name):
+        def __init__(self, parent, dtype, name):
             self._parent = weakref.ref(parent)
+            self._dtype = dtype
             self._name = name
         def set(self, value):
             p = self._parent()
@@ -27,8 +29,9 @@ class Editor:
             p.parent().output_update(self._name, value)
 
     class EditorEdit:
-        def __init__(self, parent, name):
+        def __init__(self, parent, dtype, name):
             self._parent = weakref.ref(parent)
+            self._dtype = dtype
             self._name = name
             self._value = None
             self.updated = False
@@ -39,6 +42,7 @@ class Editor:
             p = self._parent()
             if p is None:
                 return
+            p.values[self._name].data = value
             p.parent().output_update(self._name, value)
 
     def __init__(self,
@@ -79,13 +83,16 @@ class Editor:
                 context = self.parent().context
                 registrars = context.registrar
                 registrar = getattr(registrars, registrar_name)
+                registrar_value = None
                 try:
                     registrar_value = registrar.get(key)
                 except KeyError:
                     self._pending_inputs.add(namespace_name)
-                self.namespace[namespace_name] = registrar_value
+                if self.registrar_namespace.get(namespace_name, None) == registrar_value:
+                    return
                 self.registrar_namespace[namespace_name] = registrar_value
-                if namespace_name in self._pending_inputs:
+                self.namespace[namespace_name] = registrar_value
+                if registrar_value is not None and namespace_name in self._pending_inputs:
                     self._pending_inputs.remove(namespace_name)
 
                 self._code_stop()
@@ -121,6 +128,8 @@ class Editor:
             self._pending_inputs.remove(name)
 
         self.values[name] = data_object
+        if name in self.registrar_namespace:
+            self.registrar_namespace.remove(name)
         self.updated.add(name)
 
         # With all inputs now present, we can issue updates
@@ -152,9 +161,9 @@ class Editor:
         for name in self.values:
             v = self.values[name]
             if name in self.output_names:
-                e = self.EditorEdit(self, name)
+                e = self.EditorEdit(self, self.inputs[name].data_type, name)
             else:
-                e = self.EditorInput(self, name)
+                e = self.EditorInput(self, self.inputs[name].data_type, name)
             self.namespace[name] = e
             if v is not None:
                 value = v.data
@@ -162,7 +171,7 @@ class Editor:
         for name in self.output_names:
             if name in self.values:
                 continue
-            self.namespace[name] = self.EditorOutput(self, name)
+            self.namespace[name] = self.EditorOutput(self, self.inputs[name].data_type, name)
         self.namespace.update(self.registrar_namespace)
 
     def update(self, updated):
@@ -182,13 +191,13 @@ class Editor:
 
         do_update = False
         if "code_update" in updated:
-            self._code_stop()
+            #self._code_stop() #why? if so, we should restart...
             self.code_update_block = self.values["code_update"]
             do_update = True
 
         # Update namespace of inputs
         for name in self.inputs.keys():
-            if name in updated:
+            if name in updated and name not in self.registrar_namespace:
                 self.namespace[name]._value = self.values[name].data
                 self.namespace[name].updated = True
                 do_update = True

@@ -136,6 +136,7 @@ When any of these cells change and the macro is re-executed, the child object wi
         if not get_macro_mode():
             child_macro_control = child._macro_control()
         child._set_context(self, childname, force_detach)
+        from .registrar import RegistrarObject
         self._children[childname] = child
         self._manager._childids[id(child)] = child
         if not get_macro_mode():
@@ -338,9 +339,9 @@ When any of these cells change and the macro is re-executed, the child object wi
             owns.update(child._owns_all())
         return owns
 
-    def tofile(self, filename):
+    def tofile(self, filename, backup=True):
         from .tofile import tofile
-        tofile(self, filename)
+        tofile(self, filename, backup)
 
     @classmethod
     def fromfile(cls, filename):

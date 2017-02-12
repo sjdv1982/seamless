@@ -19,7 +19,7 @@ print(c_output.data)
 
 ctx.tofile(f2)
 
-ctx = seamless.fromfile(f2)
+ctx = seamless.fromfile(f2, backup=False)
 time.sleep(0.1)
 c_output = ctx.cont.output.cell()
 print(c_output.data)

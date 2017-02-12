@@ -155,7 +155,8 @@ class Cell(Managed, CellLike):
 
     def _update(self, data):
         """Invoked when cell data is updated by a process."""
-        return self._text_set(data, trusted=True)
+        #return self._text_set(data, trusted=True)
+        return self.set(data) #for now, processes can also set with non-text...
 
     def connect(self, target):
         """Connect the cell to a process's input pin."""
@@ -173,6 +174,13 @@ class Cell(Managed, CellLike):
         """The cell's data in text format."""
         self._check_destroyed()
         return copy.deepcopy(self._data)
+
+    @property
+    def value(self):
+        """The cell's data as Python object"""
+        if self._data is None:
+            return None
+        return dtypes.parse(self._dtype, self._data, trusted=True)
 
     @property
     def status(self):

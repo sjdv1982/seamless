@@ -150,7 +150,9 @@
       "cell8",
       "cell9",
       "registrar_object1",
-      "registrar_object2"
+      "registrar_object2",
+      "registrar_object3",
+      "registrar_object4"
     ],
     "children": {
       "c1": {
@@ -1065,7 +1067,7 @@
           "seamless",
           "transformer_params"
         ],
-        "data": "{\"radius\": {\"pin\": \"input\", \"dtype\": \"int\"}, \"output\": {\"pin\": \"output\", \"dtype\": \"object\"}}"
+        "data": "{\"output\": {\"dtype\": \"object\", \"pin\": \"output\"}, \"radius\": {\"dtype\": \"int\", \"pin\": \"input\"}}"
       },
       "gen_vertexbuffer": {
         "type": "transformer",
@@ -1095,7 +1097,7 @@
           "seamless",
           "transformer_params"
         ],
-        "data": "{\"VertexDataArray\": {\"pin\": \"registrar\", \"registrar\": \"silk\"}, \"output\": {\"pin\": \"output\", \"dtype\": \"object\"}, \"VertexData\": {\"pin\": \"registrar\", \"registrar\": \"silk\"}, \"N\": {\"pin\": \"input\", \"dtype\": \"int\"}}"
+        "data": "{\"output\": {\"dtype\": \"object\", \"pin\": \"output\"}, \"VertexData\": {\"registrar\": \"silk\", \"pin\": \"registrar\"}, \"N\": {\"dtype\": \"int\", \"pin\": \"input\"}, \"VertexDataArray\": {\"registrar\": \"silk\", \"pin\": \"registrar\"}}"
       },
       "hp": {
         "type": "context",
@@ -1178,7 +1180,7 @@
           },
           "hive_attributes": {
             "dtype": "json",
-            "data": "{\"texture_dict\": \"push_in\", \"vertexbuffer\": \"push_in\", \"delay\": \"push_in\", \"vert_shader\": \"push_in\", \"frag_shader\": \"push_in\"}"
+            "data": "{\"frag_shader\": \"push_in\", \"texture_dict\": \"push_in\", \"delay\": \"push_in\", \"vert_shader\": \"push_in\", \"vertexbuffer\": \"push_in\"}"
           }
         }
       },
@@ -1194,13 +1196,36 @@
       "registrar_object2": {
         "registrar": "hive",
         "registered": [
-          "gloo",
           "canvashive",
-          "build_fireworkhive",
           "fireworkhive",
           "hive",
+          "time",
           "np",
-          "time"
+          "build_fireworkhive",
+          "gloo"
+        ],
+        "data": "import hive\nimport numpy as np\nimport time\nfrom seamless.lib.hive.canvashive import canvashive\nfrom vispy import gloo\n\ndef build_fireworkhive(i, ex, args):\n    ex.canvas = canvashive(keys='interactive', size=(800, 600))\n    i.starttime = hive.attribute(data_type=\"float\")\n\n    def draw(self):\n        program = self.canvas.program\n        currtime = time.time()\n        if self._starttime is None or currtime - self._starttime > self.v_delay:\n            self.new_explosion()\n\n        # Draw\n        program['u_time'] = time.time() - self._starttime\n        program.draw('points')\n    i.draw = hive.modifier(draw)\n    hive.connect(ex.canvas.draw, i.draw)\n\n    def new_explosion(self):\n        program = self.canvas.program\n        if program is None:\n            return\n        vertexbuffer = self.canvas.v_vertexbuffer\n        # New centerpos\n        centerpos = np.random.uniform(-0.5, 0.5, (3,))\n        program['u_centerPosition'] = centerpos\n\n        # New color, scale alpha with N\n        N = len(vertexbuffer)\n        alpha = 1.0 / N ** 0.08\n        color = np.random.uniform(0.1, 0.9, (3,))\n\n        program['u_color'] = tuple(color) + (alpha,)\n\n        # Create new vertex data\n        p = vertexbuffer.make_numpy()\n        p['a_lifetime'] = np.random.normal(2.0, 0.5, (N,))\n        start = p['a_startPosition']\n        end = p['a_endPosition']\n        start_values = np.random.normal(0.0, 0.2, (N, 3))\n        end_values = np.random.normal(0.0, 0.2, (N, 3))\n        # The following does not work in Numpy:\n        # start[:] = start_values\n        # end[:] = end_values\n        for n in range(3):\n            field = (\"x\",\"y\",\"z\")[n]\n            start[field] = start_values[:, n]\n            end[field] = end_values[:, n]\n\n        # Set time to zero\n        self._starttime = time.time()\n\n        program.bind(gloo.VertexBuffer(p))\n    i.new_explosion = hive.modifier(new_explosion)\n    hive.trigger(ex.canvas.program_rebuilt, i.new_explosion)\n\n    #make new_explosion triggerable from the outside\n    i.t_new_explosion = hive.triggerfunc(i.new_explosion)\n    ex.new_explosion = hive.hook(i.t_new_explosion)\n    ex.v_delay = hive.attribute(data_type=\"float\", start_value=1.5)\n    i.p_delay = hive.push_in(ex.v_delay)\n    ex.delay = hive.antenna(i.p_delay)\n\n    #export the canvas parameters\n    ex.vert_shader = hive.antenna(ex.canvas.vert_shader)\n    ex.frag_shader = hive.antenna(ex.canvas.frag_shader)\n    ex.texture_dict = hive.antenna(ex.canvas.texture_dict)\n    ex.vertexbuffer = hive.antenna(ex.canvas.vertexbuffer)\n    #ex.title = hive.antenna(ex.canvas.title)\n\n    #export the destroy() function\n    def destroy(self):\n        self.canvas.destroy()\n    i.destroy = hive.modifier(destroy)\n    ex.destroy = hive.entry(i.destroy)\n\nfireworkhive = hive.hive(\"fireworkhive\", build_fireworkhive)\n",
+        "data_name": null
+      },
+      "registrar_object3": {
+        "registrar": "silk",
+        "registered": [
+          "Vec3",
+          "VertexData"
+        ],
+        "data": "Type Vec3 {\n  Float x\n  Float y\n  Float z\n}\n\nType VertexData {\n  Float a_lifetime\n  Vec3 a_startPosition\n  Vec3 a_endPosition\n}\n",
+        "data_name": null
+      },
+      "registrar_object4": {
+        "registrar": "hive",
+        "registered": [
+          "time",
+          "np",
+          "hive",
+          "gloo",
+          "fireworkhive",
+          "build_fireworkhive",
+          "canvashive"
         ],
         "data": "import hive\nimport numpy as np\nimport time\nfrom seamless.lib.hive.canvashive import canvashive\nfrom vispy import gloo\n\ndef build_fireworkhive(i, ex, args):\n    ex.canvas = canvashive(keys='interactive', size=(800, 600))\n    i.starttime = hive.attribute(data_type=\"float\")\n\n    def draw(self):\n        program = self.canvas.program\n        currtime = time.time()\n        if self._starttime is None or currtime - self._starttime > self.v_delay:\n            self.new_explosion()\n\n        # Draw\n        program['u_time'] = time.time() - self._starttime\n        program.draw('points')\n    i.draw = hive.modifier(draw)\n    hive.connect(ex.canvas.draw, i.draw)\n\n    def new_explosion(self):\n        program = self.canvas.program\n        if program is None:\n            return\n        vertexbuffer = self.canvas.v_vertexbuffer\n        # New centerpos\n        centerpos = np.random.uniform(-0.5, 0.5, (3,))\n        program['u_centerPosition'] = centerpos\n\n        # New color, scale alpha with N\n        N = len(vertexbuffer)\n        alpha = 1.0 / N ** 0.08\n        color = np.random.uniform(0.1, 0.9, (3,))\n\n        program['u_color'] = tuple(color) + (alpha,)\n\n        # Create new vertex data\n        p = vertexbuffer.make_numpy()\n        p['a_lifetime'] = np.random.normal(2.0, 0.5, (N,))\n        start = p['a_startPosition']\n        end = p['a_endPosition']\n        start_values = np.random.normal(0.0, 0.2, (N, 3))\n        end_values = np.random.normal(0.0, 0.2, (N, 3))\n        # The following does not work in Numpy:\n        # start[:] = start_values\n        # end[:] = end_values\n        for n in range(3):\n            field = (\"x\",\"y\",\"z\")[n]\n            start[field] = start_values[:, n]\n            end[field] = end_values[:, n]\n\n        # Set time to zero\n        self._starttime = time.time()\n\n        program.bind(gloo.VertexBuffer(p))\n    i.new_explosion = hive.modifier(new_explosion)\n    hive.trigger(ex.canvas.program_rebuilt, i.new_explosion)\n\n    #make new_explosion triggerable from the outside\n    i.t_new_explosion = hive.triggerfunc(i.new_explosion)\n    ex.new_explosion = hive.hook(i.t_new_explosion)\n    ex.v_delay = hive.attribute(data_type=\"float\", start_value=1.5)\n    i.p_delay = hive.push_in(ex.v_delay)\n    ex.delay = hive.antenna(i.p_delay)\n\n    #export the canvas parameters\n    ex.vert_shader = hive.antenna(ex.canvas.vert_shader)\n    ex.frag_shader = hive.antenna(ex.canvas.frag_shader)\n    ex.texture_dict = hive.antenna(ex.canvas.texture_dict)\n    ex.vertexbuffer = hive.antenna(ex.canvas.vertexbuffer)\n    #ex.title = hive.antenna(ex.canvas.title)\n\n    #export the destroy() function\n    def destroy(self):\n        self.canvas.destroy()\n    i.destroy = hive.modifier(destroy)\n    ex.destroy = hive.entry(i.destroy)\n\nfireworkhive = hive.hive(\"fireworkhive\", build_fireworkhive)\n",
         "data_name": null
@@ -1232,29 +1257,6 @@
         "macro_func_name": "transformer",
         "macro_order": 1,
         "target": "gen_texture_dict"
-      },
-      {
-        "args": [
-          "fireworkhive"
-        ],
-        "kwargs": {},
-        "cell_args": {},
-        "macro_module_name": "seamless.lib.hive.hiveprocess",
-        "macro_func_name": "hiveprocess",
-        "macro_order": 0,
-        "target": "hp"
-      },
-      {
-        "args": [
-          "float",
-          "Delay"
-        ],
-        "kwargs": {},
-        "cell_args": {},
-        "macro_module_name": "seamless.lib.gui.basic_editor",
-        "macro_func_name": "basic_editor",
-        "macro_order": 0,
-        "target": "ed_delay"
       }
     ],
     "macro_listeners": [
@@ -1300,12 +1302,6 @@
         "namespace_name": "hivecls"
       },
       {
-        "registrar": "hive",
-        "key": "fireworkhive",
-        "target_type": "macro_object",
-        "target_macro_target": "hp"
-      },
-      {
         "registrar": "silk",
         "key": "VertexData",
         "target_type": "process",
@@ -1315,8 +1311,9 @@
       {
         "registrar": "silk",
         "key": "VertexData",
-        "target_type": "macro_object",
-        "target_macro_target": "ed_delay"
+        "target_type": "process",
+        "target_process": "gen_vertexbuffer",
+        "namespace_name": "VertexData"
       },
       {
         "registrar": "silk",
@@ -1328,8 +1325,9 @@
       {
         "registrar": "silk",
         "key": "VertexDataArray",
-        "target_type": "macro_object",
-        "target_macro_target": "ed_delay"
+        "target_type": "process",
+        "target_process": "gen_vertexbuffer",
+        "namespace_name": "VertexDataArray"
       }
     ],
     "registrar_cells": [

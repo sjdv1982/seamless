@@ -72,15 +72,18 @@ class Editor(Process):
             #     ...and with code_start, code_update, code_stop, or is that allowed  (???)
             param = editor_params[p]
             self._editor_params[p] = param
+            dtype = param.get("dtype", None)
+            if isinstance(dtype, list):
+                dtype = tuple(dtype)
             if param["pin"] == "input":
-                pin = InputPin(self, p, param["dtype"])
-                kernel_inputs[p] = param["dtype"]
+                pin = InputPin(self, p, dtype)
+                kernel_inputs[p] = dtype
             elif param["pin"] == "output":
-                pin = OutputPin(self, p, param["dtype"])
+                pin = OutputPin(self, p, dtype)
                 self.output_names.append(p)
             elif param["pin"] == "edit":
-                pin = EditPin(self, p, param["dtype"])
-                kernel_inputs[p] = param["dtype"]
+                pin = EditPin(self, p, dtype)
+                kernel_inputs[p] = dtype
                 self.output_names.append(p)
             self._io_attrs.append(p)
             self._pins[p] = pin

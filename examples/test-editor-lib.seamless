@@ -49,8 +49,8 @@
       ],
       "type_args": {
         "formula": {
-          "type": "str",
-          "default": "return value*2"
+          "default": "return value*2",
+          "type": "str"
         }
       },
       "module_name": "__main__",
@@ -99,8 +99,8 @@
       "type_args": {
         "display_type": "str",
         "title": {
-          "type": "str",
-          "default": "Basic display"
+          "default": "Basic display",
+          "type": "str"
         }
       },
       "module_name": "seamless.lib.gui.basic_display",
@@ -117,8 +117,8 @@
       "type_args": {
         "editor_type": "str",
         "title": {
-          "type": "str",
-          "default": "Basic editor"
+          "default": "Basic editor",
+          "type": "str"
         }
       },
       "module_name": "seamless.lib.gui.basic_editor",
@@ -181,13 +181,13 @@
           "tparams": {
             "dtype": "object",
             "data": {
-              "value": {
-                "dtype": "int",
-                "pin": "input"
-              },
               "output": {
                 "dtype": "int",
                 "pin": "output"
+              },
+              "value": {
+                "dtype": "int",
+                "pin": "input"
               }
             }
           }
@@ -222,7 +222,8 @@
               "filename": "/gui/cell-basic_editor_int.py",
               "lib": true,
               "mode": 2
-            }
+            },
+            "data": "from seamless.qt.QtWidgets import QSpinBox, QWidget, QVBoxLayout\nfrom seamless.qt.QtCore import Qt\n\nw = QWidget()\n#w.setWindowFlags(Qt.WindowStaysOnTopHint)\nw.setAttribute(Qt.WA_ShowWithoutActivating)\nvbox = QVBoxLayout()\nvbox.addStretch(1)\nw.setLayout(vbox)\nw.resize(300,100)\nw.setWindowTitle(title.get())\nw.show()\nb = QSpinBox()\nb.setMaximum(1000000)\nb.setValue(value.get())\nvbox.addWidget(b)\nb.valueChanged.connect(value.set)\n"
           },
           "cell3": {
             "dtype": [
@@ -243,6 +244,7 @@
               "lib": true,
               "mode": 2
             },
+            "data": "if value.updated:\n    b.setValue(value.get())\nif title.updated:\n    w.setWindowTitle(title.get())\n",
             "owner": "ed1.ed.code_update"
           },
           "ed": {
@@ -290,7 +292,8 @@
               "filename": "/gui/cell-basic_display_int.py",
               "lib": true,
               "mode": 2
-            }
+            },
+            "data": "from seamless.qt.QtWidgets import QSpinBox, QWidget, QVBoxLayout\nfrom seamless.qt.QtCore import Qt\n\nw = QWidget()\n#w.setWindowFlags(Qt.WindowStaysOnTopHint)\nw.setAttribute(Qt.WA_ShowWithoutActivating)\nvbox = QVBoxLayout()\nvbox.addStretch(1)\nw.setLayout(vbox)\nw.resize(300,100)\nw.setWindowTitle(title.get())\nw.show()\nb = QSpinBox()\nb.setMaximum(1000000)\nb.setValue(value.get())\nvbox.addWidget(b)\n"
           },
           "cell3": {
             "dtype": [
@@ -310,7 +313,8 @@
               "filename": "/gui/cell-basic_display_UPDATE.py",
               "lib": true,
               "mode": 2
-            }
+            },
+            "data": "if value.updated:\n    b.setValue(value.get())\nif title.updated:\n    w.setWindowTitle(title.get())\n"
           },
           "display": {
             "type": "editor",
@@ -358,7 +362,8 @@
               "filename": "/gui/cell-basic_editor_text.py",
               "lib": true,
               "mode": 2
-            }
+            },
+            "data": "from seamless.qt.QtWidgets import QTextEdit, QWidget, QVBoxLayout\nfrom seamless.qt.QtCore import Qt\nfrom PyQt5.QtGui import QColor\n\nw = QWidget()\n#w.setWindowFlags(Qt.WindowStaysOnTopHint)\nw.setAttribute(Qt.WA_ShowWithoutActivating)\nvbox = QVBoxLayout()\n#vbox.addStretch(1)\nw.resize(600,600)\nw.setLayout(vbox)\nw.setWindowTitle(title.get())\n\nclass MyTextEdit(QTextEdit):\n    def focusOutEvent(self, event):\n        value.set(self.toPlainText())\n        QTextEdit.focusOutEvent(self, event)\n\nw.show()\nb = MyTextEdit()\nb.setFontPointSize(15)\nb.setText(value.get())\n#b.setFontItalic(True)\n#b.setTextColor(QColor(255,0,0))\nvbox.addWidget(b)\n"
           },
           "cell3": {
             "dtype": [
@@ -379,6 +384,7 @@
               "lib": true,
               "mode": 2
             },
+            "data": "if value.updated:\n    b.setText(value.get())\nif title.updated:\n    w.setWindowTitle(title.get())\n",
             "owner": "meta_ted.ed.code_update"
           },
           "ed": {
@@ -426,7 +432,8 @@
               "filename": "/gui/cell-basic_editor_text.py",
               "lib": true,
               "mode": 2
-            }
+            },
+            "data": "from seamless.qt.QtWidgets import QTextEdit, QWidget, QVBoxLayout\nfrom seamless.qt.QtCore import Qt\nfrom PyQt5.QtGui import QColor\n\nw = QWidget()\n#w.setWindowFlags(Qt.WindowStaysOnTopHint)\nw.setAttribute(Qt.WA_ShowWithoutActivating)\nvbox = QVBoxLayout()\n#vbox.addStretch(1)\nw.resize(600,600)\nw.setLayout(vbox)\nw.setWindowTitle(title.get())\n\nclass MyTextEdit(QTextEdit):\n    def focusOutEvent(self, event):\n        value.set(self.toPlainText())\n        QTextEdit.focusOutEvent(self, event)\n\nw.show()\nb = MyTextEdit()\nb.setFontPointSize(15)\nb.setText(value.get())\n#b.setFontItalic(True)\n#b.setTextColor(QColor(255,0,0))\nvbox.addWidget(b)\n"
           },
           "cell3": {
             "dtype": [
@@ -447,6 +454,7 @@
               "lib": true,
               "mode": 2
             },
+            "data": "if value.updated:\n    b.setText(value.get())\nif title.updated:\n    w.setWindowTitle(title.get())\n",
             "owner": "ted1.ed.code_update"
           },
           "ed": {
@@ -468,7 +476,10 @@
     },
     "macro_objects": [
       {
-        "args": {},
+        "args": [
+          null
+        ],
+        "kwargs": {},
         "cell_args": {
           "_arg1": "ctx1.tparams"
         },
@@ -504,16 +515,8 @@
         "ed1.ed.value"
       ],
       [
-        "ed1.cell2",
-        "ed1.ed.code_start"
-      ],
-      [
-        "ed2.cell1",
-        "ed2.display.title"
-      ],
-      [
-        "ed1.cell3",
-        "ed1.ed.code_stop"
+        "cell2",
+        "ed2.display.value"
       ],
       [
         "ctx1.cell1",
@@ -524,60 +527,68 @@
         "ted1.ed.value"
       ],
       [
-        "meta_ted.cell4",
-        "meta_ted.ed.code_update"
+        "ed1.cell1",
+        "ed1.ed.title"
       ],
       [
-        "ted1.cell2",
-        "ted1.ed.code_start"
+        "ed1.cell2",
+        "ed1.ed.code_start"
       ],
       [
-        "ted1.cell2",
-        "meta_ted.ed.value"
+        "ed1.cell3",
+        "ed1.ed.code_stop"
       ],
       [
         "ed1.cell4",
         "ed1.ed.code_update"
       ],
       [
+        "ed2.cell1",
+        "ed2.display.title"
+      ],
+      [
         "ed2.cell2",
         "ed2.display.code_start"
-      ],
-      [
-        "ed2.cell4",
-        "ed2.display.code_update"
-      ],
-      [
-        "ted1.cell3",
-        "ted1.ed.code_stop"
       ],
       [
         "ed2.cell3",
         "ed2.display.code_stop"
       ],
       [
-        "meta_ted.cell3",
-        "meta_ted.ed.code_stop"
+        "ed2.cell4",
+        "ed2.display.code_update"
       ],
       [
-        "ed1.cell1",
-        "ed1.ed.title"
+        "meta_ted.cell1",
+        "meta_ted.ed.title"
       ],
       [
         "meta_ted.cell2",
         "meta_ted.ed.code_start"
       ],
       [
+        "meta_ted.cell3",
+        "meta_ted.ed.code_stop"
+      ],
+      [
+        "meta_ted.cell4",
+        "meta_ted.ed.code_update"
+      ],
+      [
         "ted1.cell1",
         "ted1.ed.title"
       ],
       [
-        "cell2",
-        "ed2.display.value"
+        "ted1.cell2",
+        "meta_ted.ed.value"
       ],
       [
-        "meta_ted.cell1",
-        "meta_ted.ed.title"
+        "ted1.cell2",
+        "ted1.ed.code_start"
+      ],
+      [
+        "ted1.cell3",
+        "ted1.ed.code_stop"
       ],
       [
         "ted1.cell4",

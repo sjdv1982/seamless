@@ -1,0 +1,200 @@
+{
+  "lib": {},
+  "macro": [
+    {
+      "with_context": false,
+      "dtype": [
+        "text",
+        "code",
+        "python"
+      ],
+      "type_args": "int",
+      "module_name": "__main__",
+      "func_name": "add_all",
+      "code": "@macro(\"int\", with_context=False)\ndef add_all(inputs):\n    from seamless import transformer\n    pattern = \"inp\"\n    params = {\n        \"outp\": {\"pin\": \"output\", \"dtype\": \"int\"}\n    }\n    code = \"return \"\n    for n in range(inputs):\n        p = pattern + str(n+1)\n        params[p] = {\"pin\": \"input\", \"dtype\": \"int\"}\n        code += p + \"+ \"\n    code = code[:-2]\n    t = transformer(params)\n    t.code.cell().set(code)\n    return t\n"
+    },
+    {
+      "with_context": false,
+      "dtype": [
+        "text",
+        "code",
+        "python"
+      ],
+      "type_args": [
+        "json",
+        "seamless",
+        "editor_params"
+      ],
+      "module_name": "seamless.core.editor",
+      "func_name": "editor",
+      "code": "@macro(type=(\"json\", \"seamless\", \"editor_params\"),with_context=False)\ndef editor(kwargs):\n    from seamless.core.editor import Editor #code must be standalone\n    #TODO: remapping, e.g. output_finish, destroy, ...\n    return Editor(kwargs)\n"
+    },
+    {
+      "with_context": false,
+      "dtype": [
+        "text",
+        "code",
+        "python"
+      ],
+      "type_args": [
+        "json",
+        "seamless",
+        "transformer_params"
+      ],
+      "module_name": "seamless.core.transformer",
+      "func_name": "transformer",
+      "code": "@macro(type=(\"json\", \"seamless\", \"transformer_params\"), with_context=False)\ndef transformer(kwargs):\n    from seamless.core.transformer import Transformer #code must be standalone\n    #TODO: remapping, e.g. output_finish, destroy, ...\n    return Transformer(kwargs)\n"
+    }
+  ],
+  "main": {
+    "type": "context",
+    "like_process": false,
+    "like_cell": false,
+    "pins": {},
+    "auto": [
+      "cell1",
+      "cell2",
+      "cell3",
+      "cell4",
+      "cell5"
+    ],
+    "children": {
+      "c1": {
+        "dtype": "int",
+        "data": "1"
+      },
+      "c2": {
+        "dtype": "int",
+        "data": "2"
+      },
+      "cell1": {
+        "dtype": [
+          "text",
+          "code",
+          "python"
+        ],
+        "data": "return inp1",
+        "owner": "t1"
+      },
+      "cell2": {
+        "dtype": [
+          "text",
+          "code",
+          "python"
+        ],
+        "data": "return inp1+ inp2",
+        "owner": "t2"
+      },
+      "cell3": {
+        "dtype": "int",
+        "data": "10"
+      },
+      "cell4": {
+        "dtype": "int",
+        "data": "20"
+      },
+      "cell5": {
+        "dtype": "int",
+        "data": "30"
+      },
+      "t1": {
+        "type": "transformer",
+        "mode": "thread",
+        "params": {
+          "inp1": {
+            "dtype": "int",
+            "pin": "input"
+          },
+          "outp": {
+            "dtype": "int",
+            "pin": "output"
+          }
+        }
+      },
+      "t2": {
+        "type": "transformer",
+        "mode": "thread",
+        "params": {
+          "inp1": {
+            "dtype": "int",
+            "pin": "input"
+          },
+          "inp2": {
+            "dtype": "int",
+            "pin": "input"
+          },
+          "outp": {
+            "dtype": "int",
+            "pin": "output"
+          }
+        }
+      }
+    },
+    "macro_objects": [
+      {
+        "args": [
+          null
+        ],
+        "kwargs": {},
+        "cell_args": {
+          "_arg1": "c1"
+        },
+        "macro_module_name": "__main__",
+        "macro_func_name": "add_all",
+        "macro_order": 0,
+        "target": "t1"
+      },
+      {
+        "args": [
+          null
+        ],
+        "kwargs": {},
+        "cell_args": {
+          "_arg1": "c2"
+        },
+        "macro_module_name": "__main__",
+        "macro_func_name": "add_all",
+        "macro_order": 1,
+        "target": "t2"
+      }
+    ],
+    "macro_listeners": [
+      {
+        "cell": "c1",
+        "macro_target": "t1",
+        "macro_arg": "_arg1"
+      },
+      {
+        "cell": "c2",
+        "macro_target": "t2",
+        "macro_arg": "_arg1"
+      }
+    ],
+    "registrar_items": [],
+    "registrar_listeners": [],
+    "registrar_cells": [],
+    "pin_cell_connections": [],
+    "cell_pin_connections": [
+      [
+        "cell1",
+        "t1.code"
+      ],
+      [
+        "cell2",
+        "t2.code"
+      ],
+      [
+        "cell3",
+        "t1.inp1"
+      ],
+      [
+        "cell4",
+        "t2.inp1"
+      ],
+      [
+        "cell5",
+        "t2.inp2"
+      ]
+    ]
+  }
+}

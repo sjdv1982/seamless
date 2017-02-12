@@ -11,7 +11,7 @@ class MacroObject:
         self.macro = macro
         self.args = args
         self.kwargs = kwargs
-        self.cell_args = cell_args
+        self.cell_args = weakref.WeakValueDictionary(cell_args)
         max_key = 0
         mo = macro.macro_objects
         if len(mo):

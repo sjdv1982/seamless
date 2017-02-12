@@ -63,7 +63,8 @@ class Resource:
         old_filename = self.filename
         old_lib = self.lib
         if get_macro_mode():
-            x =  inspect.currentframe()
+            #TODO: this duplicates code from libmanager
+            x = inspect.currentframe()
             for n in range(frames_back):
                 x = x.f_back
             caller_filename = x.f_code.co_filename
@@ -99,6 +100,22 @@ class Resource:
         if old_lib:
             libmanager.on_cell_destroy(self.parent(), old_filename)
         return self.parent()
+
+    def update(self):
+        #TODO: other modes
+        from .libmanager import _lib
+        parent = self.parent()
+        if parent is None:
+            return
+        if self.lib:
+            if self.mode <= 3:
+                if self.filename in _lib:
+                    lib_data = _lib[self.filename]
+                    current_data = parent.data
+                    if lib_data != current_data:
+                        print("Updating %s from lib filename %s" % (parent, self.filename))
+                        parent.set(lib_data)
+                        current_data = parent.data
 
     def destroy(self):
         if self.lib:
