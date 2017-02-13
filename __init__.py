@@ -132,5 +132,4 @@ else:
     sys.meta_path.append(SeamlessMockImporter("seamless.qt"))
 
 from . import qt
-
 __all__ = (macro, context, cell, pythoncell, transformer, editor, qt)
