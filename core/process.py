@@ -355,3 +355,31 @@ class ExportedInputPin(ExportedPinBase, InputPinBase):
 
 class ExportedEditPin(ExportedPinBase, EditPinBase):
     pass
+
+_runtime_identifiers = WeakValueDictionary()
+_runtime_identifiers_rev = WeakKeyDictionary()
+
+def get_runtime_identifier(process):
+    identifier = str(process)
+    holder = _runtime_identifiers.get(identifier, None)
+    if holder is None:
+        _runtime_identifiers[identifier] = process
+        if process in _runtime_identifiers_rev:
+            old_identifier = _runtime_identifiers_rev.pop(process)
+            _runtime_identifiers.pop(old_identifier)
+        _runtime_identifiers_rev[process] = identifier
+        return identifier
+    elif holder is process:
+        return identifier
+    elif process in _runtime_identifiers_rev:
+        return _runtime_identifiers_rev[process]
+    else:
+        count = 0
+        while True:
+            count += 1
+            new_identifier = identifier + "-" + str(count)
+            if new_identifier not in _runtime_identifiers:
+                break
+        _runtime_identifiers[new_identifier] = process
+        _runtime_identifiers_rev[process] = new_identifier
+        return new_identifier

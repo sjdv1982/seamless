@@ -63,7 +63,8 @@ def basic_editor(ctx, editor_type, title):
     pinparams = {
       "value": {
         "pin": "edit",
-        "dtype": editor_type
+        "dtype": editor_type,
+        "must_be_defined": False
       },
       "title": {
         "pin": "input",
@@ -85,7 +86,6 @@ def basic_editor(ctx, editor_type, title):
 def edit(cell, title=None, own=False):
     assert isinstance(cell, Cell)
     assert cell.context is not None
-    from seamless.core.context import get_active_context
     ed = basic_editor(cell.dtype, title)
     cell.connect(ed.value)
     if own:

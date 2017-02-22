@@ -163,7 +163,7 @@ class Manager:
         if cell is None:
             return #cell has died...
 
-        changed = cell._update(value)
+        changed = cell._update(value,propagate=False)
         if changed:
             self._update(cell_id, value, process=process)
 

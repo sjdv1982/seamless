@@ -17,14 +17,14 @@ def hiveprocess(ctx, hivename):
         import hive
         global myhive
         myhive = hivecls()
-        for attr, hivepin_type in hive_attributes.get().items():
+        for attr, hivepin_type in PINS.hive_attributes.get().items():
             if hivepin_type == "push_out":
-                output = globals()[attr]
+                output = getattr(PINS, attr)
                 hive.connect(getattr(myhive, attr), hive.push_in(output.set))
 
     def hiveprocess_update():
-        for attr, hivepin_type in hive_attributes.get().items():
-            at = globals()[attr]
+        for attr, hivepin_type in PINS.hive_attributes.get().items():
+            at = getattr(PINS, attr)
             try:
                 if not at.updated:
                     continue

@@ -74,20 +74,20 @@ def make_editor(ed):
     ed.code_start.cell().fromfile(editor_pycell)
     ed.code_stop.cell().set('w.destroy()')
     ed.code_update.cell().set("""
-if value.updated:
-    b.setValue(value.get())
-if title.updated:
-    w.setWindowTitle(title.get())
+if PINS.value.updated:
+    b.setValue(PINS.value.get())
+if PINS.title.updated:
+    w.setWindowTitle(PINS.title.get())
 """)
 
 def make_text_editor(ed):
     ed.code_start.cell().fromfile(editor_pycell2)
     ed.code_stop.cell().set('w.destroy()')
     ed.code_update.cell().set("""
-if value.updated:
-    b.setText(value.get())
-if title.updated:
-    w.setWindowTitle(title.get())
+if PINS.value.updated:
+    b.setText(PINS.value.get())
+if PINS.title.updated:
+    w.setWindowTitle(PINS.title.get())
 """)
 
 ed1 = ctx.ed1 = editor(eparams)

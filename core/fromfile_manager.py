@@ -31,7 +31,7 @@ def json_to_macro_objects(ctx, data):
             arg = find_sl(ctx, arg0)
             try:
                 pos = order.index(argname)
-            except IndexError:
+            except ValueError:
                 pos = None
             if pos is not None and len(args) > pos:
                 args[pos] = arg

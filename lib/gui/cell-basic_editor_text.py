@@ -9,17 +9,18 @@ vbox = QVBoxLayout()
 #vbox.addStretch(1)
 w.resize(600,600)
 w.setLayout(vbox)
-w.setWindowTitle(title.get())
+w.setWindowTitle(PINS.title.get())
 
 class MyTextEdit(QTextEdit):
     def focusOutEvent(self, event):
-        value.set(self.toPlainText())
+        PINS.value.set(self.toPlainText())
         QTextEdit.focusOutEvent(self, event)
 
 w.show()
 b = MyTextEdit()
 b.setFontPointSize(15)
-b.setText(value.get())
+if PINS.value.defined:
+    b.setText(PINS.value.get())
 #b.setFontItalic(True)
 #b.setTextColor(QColor(255,0,0))
 vbox.addWidget(b)

@@ -88,10 +88,10 @@ def make_editor(eparams):
     ed.code_start.cell().fromfile("test-editor_pycell.py")
     ed.code_stop.cell().set('w.destroy()')
     ed.code_update.cell().set("""
-if value.updated:
-    b.setValue(value.get())
-if title.updated:
-    w.setWindowTitle(title.get())
+if PINS.value.updated:
+    b.setValue(PINS.value.get())
+if PINS.title.updated:
+    w.setWindowTitle(PINS.title.get())
 """)
     return ed
 
@@ -102,10 +102,10 @@ def make_text_editor(eparams):
     ed.code_start.cell().fromfile("test-editor_pycell2.py")
     ed.code_stop.cell().set('w.destroy()')
     ed.code_update.cell().set("""
-if value.updated:
-    b.setText(value.get())
-if title.updated:
-    w.setWindowTitle(title.get())
+if PINS.value.updated:
+    b.setText(PINS.value.get())
+if PINS.title.updated:
+    w.setWindowTitle(PINS.title.get())
 """)
     return ed
 

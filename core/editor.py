@@ -28,14 +28,6 @@ silk.register(
 
 editor_params = {
   "*": "silk.EditorPin",
-  "_use_codeblock_checkpoints": {
-    "dtype": bool,
-    "default": False,
-  },
-  "_codeblock_deps": {
-    "dtype": dict,
-    "default": {},
-  }
 }
 dtypes.register(
   ("json", "seamless", "editor_params"),
@@ -55,7 +47,7 @@ class Editor(Process):
     def __init__(self, editor_params):
         super().__init__()
         self.state = {}
-        self.output_names = []
+        self.outputs = {}
         self.code_start = InputPin(self, "code_start", ("text", "code", "python"))
         self.code_update = InputPin(self, "code_update", ("text", "code", "python"))
         self.code_stop = InputPin(self, "code_stop", ("text", "code", "python"))
@@ -77,14 +69,14 @@ class Editor(Process):
                 dtype = tuple(dtype)
             if param["pin"] == "input":
                 pin = InputPin(self, p, dtype)
-                kernel_inputs[p] = dtype
+                kernel_inputs[p] = dtype, True
             elif param["pin"] == "output":
                 pin = OutputPin(self, p, dtype)
-                self.output_names.append(p)
+                self.outputs[p] = dtype
             elif param["pin"] == "edit":
                 pin = EditPin(self, p, dtype)
-                kernel_inputs[p] = dtype
-                self.output_names.append(p)
+                kernel_inputs[p] = dtype, param.get("must_be_defined", True)
+                self.outputs[p] = dtype
             self._io_attrs.append(p)
             self._pins[p] = pin
 
@@ -92,7 +84,7 @@ class Editor(Process):
         self.editor = KernelEditor(
             self,
             kernel_inputs,
-            self.output_names,
+            self.outputs,
         )
     @property
     def editor_params(self):

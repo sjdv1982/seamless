@@ -1,7 +1,6 @@
-from seamless.qt.QtWidgets import QTextEdit, QWidget, QVBoxLayout
+from seamless.qt.QtWidgets import QPlainTextEdit, QWidget, QVBoxLayout
 from seamless.qt.QtCore import Qt
 from PyQt5.QtGui import QColor
-import json
 
 w = QWidget()
 #w.setWindowFlags(Qt.WindowStaysOnTopHint)
@@ -12,16 +11,11 @@ w.resize(600,600)
 w.setLayout(vbox)
 w.setWindowTitle(PINS.title.get())
 
-class MyTextEdit(QTextEdit):
-    def focusOutEvent(self, event):
-        PINS.value.set(self.toPlainText())
-        QTextEdit.focusOutEvent(self, event)
-
 w.show()
-b = MyTextEdit()
-b.setFontPointSize(15)
-if PINS.value.defined:
-    b.setText(json.dumps(PINS.value.get(), indent=2))
+b = QPlainTextEdit()
+b.setReadOnly(True)
+#b.setFontPointSize(15)
+b.setPlainText(PINS.value.get())
 #b.setFontItalic(True)
 #b.setTextColor(QColor(255,0,0))
 vbox.addWidget(b)

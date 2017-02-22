@@ -23,7 +23,7 @@ def macro_object_to_json(macro_object):
     cell_args = {}
     for argnr, arg in enumerate(macro_object.args):
         argname = order[argnr]
-        if argname in macro_object.cell_args:
+        if argname.startswith("_arg") and argname in macro_object.cell_args:
             cell_args[argname] = sl_print(arg)
             args.append(None)
         else:
@@ -80,13 +80,21 @@ def manager_to_json(m):
     pin_cell_connections.sort(key=lambda v: v[0]+v[1])
 
     for cell_id, pins in m.listeners.items():
-        cell = m.cells[cell_id]
-        cpath = sl_print(cell)
+        ppaths = []
         for pin0 in pins:
             pin = pin0()
             if pin is None:
                 continue
             ppath = sl_print(pin)
+            ppaths.append(ppath)
+
+        try:
+            cell = m.cells[cell_id]
+        except KeyError:
+            print("WARNING: lost cell connecting to pins {0}".format(ppaths))
+            continue
+        cpath = sl_print(cell)
+        for ppath in ppaths:
             cell_pin_connections.append((cpath, ppath))
     cell_pin_connections.sort(key=lambda v: v[0]+v[1])
 

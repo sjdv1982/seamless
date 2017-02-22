@@ -1,6 +1,6 @@
 """
 Seamless: framework for data-driven and live programming
-Copyright 2016, Sjoerd de Vries
+Copyright 2016-2017, Sjoerd de Vries
 """
 
 from .core.macro import macro
@@ -14,6 +14,11 @@ from . import lib
 import time
 from collections import deque
 import threading
+import asyncio
+import atexit
+import contextlib
+
+FAILSAFE_WORK_LATENCY = 50#latency of run_work in ms
 
 _work = deque()
 _priority_work = deque()
@@ -22,6 +27,7 @@ def add_work(work, priority=False):
         _priority_work.append(work)
     else:
         _work.append(work)
+
 def run_work():
     if threading.current_thread() is not threading.main_thread():
         return
@@ -32,6 +38,20 @@ def run_work():
                 work()
             except:
                 traceback.print_exc()
+
+    #Whenever work is done, do an asyncio flush
+    loop = asyncio.get_event_loop()
+    loop.call_soon(lambda loop: loop.stop(), loop)
+    loop.run_forever()
+
+def asyncio_finish():
+    try:
+        loop = asyncio.get_event_loop()
+        loop.stop()
+        loop.run_forever()
+    except RuntimeError:
+        pass
+atexit.register(asyncio_finish)
 
 import sys
 import traceback
@@ -74,6 +94,7 @@ class SeamlessMockImporter:
         sys.modules[fullname] = mock
         return mock
 
+ipython = None
 try:
     from IPython import get_ipython
     from IPython.core.error import UsageError
@@ -96,16 +117,18 @@ if qt_error is None:
     import PyQt5.QtWidgets
     import PyQt5.QtWebEngineWidgets
     from PyQt5 import QtGui, QtCore
+    from PyQt5.QtCore import QTimer
     qt_app = PyQt5.QtWidgets.QApplication(["  "])
     for _m in list(sys.modules.keys()):
         if _m.startswith("PyQt5"):
             _m2 = _m.replace("PyQt5", "seamless.qt")
             sys.modules[_m2] = sys.modules[_m]
 
-    from PyQt5.QtCore import QTimer
     timer = QTimer()
+
+    #Failsafe: run accumulated work every 50 ms, should not be necessary at all
     timer.timeout.connect(run_work)
-    timer.start(10)
+    timer.start(FAILSAFE_WORK_LATENCY)
 
     import sys
     import traceback
@@ -126,10 +149,17 @@ if qt_error is None:
     timer2.start()
     patch_excepthook()
 
+    def mainloop():
+        raise RuntimeError("Cannot run seamless.mainloop() in IPython mode")
 else:
     sys.stderr.write("    " + qt_error + "\n")
     sys.stderr.write("    All GUI in seamless.qt has been disabled\n")
+    sys.stderr.write("    Call seamless.mainloop() to process cell updates\n")
     sys.meta_path.append(SeamlessMockImporter("seamless.qt"))
 
+    def mainloop():
+        while 1:
+            run_work()
+            time.sleep(FAILSAFE_WORK_LATENCY/1000)
 from . import qt
 __all__ = (macro, context, cell, pythoncell, transformer, editor, qt)

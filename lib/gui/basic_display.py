@@ -29,6 +29,10 @@ def basic_display(ctx, display_type, title):
         "code": "cell-basic_display_text.py",
         "update": "cell-basic_display_text_UPDATE.py",
       },
+      ("text", "html"): {
+        "code": "cell-basic_display_html.py",
+        "update": "cell-basic_display_html_UPDATE.py",
+      },
       "json": {
         "code": "cell-basic_display_json.py",
         "update": "cell-basic_display_json_UPDATE.py",

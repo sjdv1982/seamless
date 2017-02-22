@@ -1,7 +1,7 @@
 {
   "lib": {
     "/cell-filelink-start.py": {
-      "data": "if __name__ == \"__main__\":\n    #test with ipython -i\n    import sys, os\n    class EditPin:\n        def __init__(self, value):\n            self.value = value\n        def set(self, value):\n            print(\"SET\", value)\n            self.value = value\n        def get(self):\n            return self.value\n\n    class Getter:\n        def __init__(self, arg):\n            self.arg = arg\n        def get(self):\n            return self.arg\n\n    value = EditPin(\"test\")\n\n    directory = sys.argv[1]\n    filename = sys.argv[2]\n    filepath = Getter(os.path.join(directory, filename))\n    latency = Getter(float(sys.argv[3]))\n    print(\"Edit in \" + filepath.get())\n\nimport os, time, functools\nfrom seamless import add_work\nfrom threading import Thread, RLock\nlast_value = None\n\ndef write_file(fpath):\n    global last_mtime, last_value\n    val = str(value.get())\n    if last_value == val:\n        return\n    with lock:\n        if last_value != val:\n            with open(fpath, \"w\") as f:\n                f.write(val)\n                last_value = val\n            last_time = time.time()\n            try:\n                stat = os.stat(fpath)\n                last_mtime = stat.st_mtime\n            except:\n                pass\n\ndef poll():\n    global last_time, last_mtime, last_value\n    fpath = filepath.get()\n    while 1:\n        time.sleep(latency.get())\n        curr_time = time.time()\n        last_time = curr_time\n        if not os.path.exists(fpath):\n            write_file(fpath)\n        else:\n            with lock:\n                stat = os.stat(fpath)\n                if stat.st_mtime > last_mtime:\n                    data = None\n                    with open(fpath) as f:\n                        data = f.read()\n                    if data is not None:\n                        w = functools.partial(value.set, data)\n                        add_work(w)\n                        last_value = data\n                    last_mtime = stat.st_mtime\n\nt = Thread(target=poll)\nt.setDaemon(True)\nlock = RLock()\nval = str(value.get())\nwrite_file(filepath.get())\nt.start()\n",
+      "data": "if __name__ == \"__main__\":\n    #test with ipython -i\n    import sys, os\n\n    class dummy:\n        pass\n\n    class EditPin:\n        def __init__(self, value):\n            self.value = value\n            self.defined = True\n        def set(self, value):\n            print(\"SET\", value)\n            self.value = value\n        def get(self):\n            return self.value\n\n    class Getter:\n        def __init__(self, arg):\n            self.arg = arg\n        def get(self):\n            return self.arg\n    PINS = dummy()\n    PINS.value = EditPin(\"test\")\n    directory = sys.argv[1]\n    filename = sys.argv[2]\n    PINS.filepath = Getter(os.path.join(directory, filename))\n    PINS.latency = Getter(float(sys.argv[3]))\n    def serializer(v):\n        return str(v.get())\n    print(\"Edit in \" + filepath.get())\nelse:\n    from seamless.dtypes import serialize\n    def serializer(v):\n        return serialize(v._dtype, v.get())\n\n\nimport os, time, functools\nfrom threading import Thread, RLock\nlast_value = None\nlast_serialized_value = None\n\ndef write_file(fpath):\n    global last_mtime, last_value, last_serialized_value\n    if not PINS.value.defined:\n        last_mtime = -1 #will trigger a file read\n        return\n    if last_value == PINS.value.get():\n        return\n    val = serializer(PINS.value)\n    if last_serialized_value == val:\n        return\n    with lock:\n        if last_serialized_value != val:\n            #print(\"WRITE\", val)\n            with open(fpath, \"w\") as f:\n                f.write(val)\n                last_value = PINS.value.get()\n                last_serialized_value = val\n            last_time = time.time()\n            try:\n                stat = os.stat(fpath)\n                last_mtime = stat.st_mtime\n            except:\n                pass\n\ndef poll():\n    global last_time, last_mtime, last_value, last_serialized_value\n    fpath = PINS.filepath.get()\n    while 1:\n        time.sleep(PINS.latency.get())\n        curr_time = time.time()\n        last_time = curr_time\n        if not os.path.exists(fpath):\n            write_file(fpath)\n        else:\n            with lock:\n                stat = os.stat(fpath)\n                if stat.st_mtime > last_mtime:\n                    data = None\n                    with open(fpath) as f:\n                        data = f.read()\n                    if data is not None:\n                        if last_serialized_value != data:\n                            #print(\"LOAD\")\n                            PINS.value.set(data)\n                            last_value = None\n                            last_serialized_value = data\n                    last_mtime = stat.st_mtime\n\nt = Thread(target=poll)\nt.setDaemon(True)\nlock = RLock()\nwrite_file(PINS.filepath.get())\nt.start()\n",
       "links": [
         "ed_vert.cell1",
         "ed_frag.cell1",
@@ -12,7 +12,7 @@
       ]
     },
     "/gui/cell-basic_editor_UPDATE.py": {
-      "data": "if value.updated:\n    b.setValue(value.get())\nif title.updated:\n    w.setWindowTitle(title.get())\n",
+      "data": "if PINS.value.updated:\n    b.setValue(PINS.value.get())\nif PINS.title.updated:\n    w.setWindowTitle(PINS.title.get())\n",
       "links": [
         "ed_delay.cell4",
         "ed_radius.cell4",
@@ -20,31 +20,39 @@
       ]
     },
     "/gui/cell-basic_editor_float.py": {
-      "data": "from seamless.qt.QtWidgets import QDoubleSpinBox, QWidget, QVBoxLayout\nfrom seamless.qt.QtCore import Qt\n\nw = QWidget()\n#w.setWindowFlags(Qt.WindowStaysOnTopHint)\nw.setAttribute(Qt.WA_ShowWithoutActivating)\nvbox = QVBoxLayout()\nvbox.addStretch(1)\nw.setLayout(vbox)\nw.resize(300,100)\nw.setWindowTitle(title.get())\nw.show()\nb = QDoubleSpinBox()\nb.setSingleStep(0.1)\nb.setMaximum(1000000)\nb.setValue(value.get())\nvbox.addWidget(b)\nb.valueChanged.connect(value.set)\n",
+      "data": "from seamless.qt.QtWidgets import QDoubleSpinBox, QWidget, QVBoxLayout\nfrom seamless.qt.QtCore import Qt\n\nw = QWidget()\n#w.setWindowFlags(Qt.WindowStaysOnTopHint)\nw.setAttribute(Qt.WA_ShowWithoutActivating)\nvbox = QVBoxLayout()\nvbox.addStretch(1)\nw.setLayout(vbox)\nw.resize(300,100)\nw.setWindowTitle(PINS.title.get())\nw.show()\nb = QDoubleSpinBox()\nb.setSingleStep(0.1)\nb.setMaximum(1000000)\nif PINS.value.defined:\n    b.setValue(PINS.value.get())\nvbox.addWidget(b)\nb.valueChanged.connect(PINS.value.set)\n",
       "links": [
         "ed_delay.cell2"
       ]
     },
     "/gui/cell-basic_editor_int.py": {
-      "data": "from seamless.qt.QtWidgets import QSpinBox, QWidget, QVBoxLayout\nfrom seamless.qt.QtCore import Qt\n\nw = QWidget()\n#w.setWindowFlags(Qt.WindowStaysOnTopHint)\nw.setAttribute(Qt.WA_ShowWithoutActivating)\nvbox = QVBoxLayout()\nvbox.addStretch(1)\nw.setLayout(vbox)\nw.resize(300,100)\nw.setWindowTitle(title.get())\nw.show()\nb = QSpinBox()\nb.setMaximum(1000000)\nb.setValue(value.get())\nvbox.addWidget(b)\nb.valueChanged.connect(value.set)\n",
+      "data": "from seamless.qt.QtWidgets import QSpinBox, QWidget, QVBoxLayout\nfrom seamless.qt.QtCore import Qt\n\nw = QWidget()\n#w.setWindowFlags(Qt.WindowStaysOnTopHint)\nw.setAttribute(Qt.WA_ShowWithoutActivating)\nvbox = QVBoxLayout()\nvbox.addStretch(1)\nw.setLayout(vbox)\nw.resize(300,100)\nw.setWindowTitle(PINS.title.get())\nw.show()\nb = QSpinBox()\nb.setMaximum(1000000)\nif PINS.value.defined:\n    b.setValue(PINS.value.get())\nvbox.addWidget(b)\nb.valueChanged.connect(PINS.value.set)\n",
       "links": [
         "ed_radius.cell2",
         "ed_N.cell2"
       ]
     },
     "/gui/cell-basic_editor_json.py": {
-      "data": "from seamless.qt.QtWidgets import QTextEdit, QWidget, QVBoxLayout\nfrom seamless.qt.QtCore import Qt\nfrom PyQt5.QtGui import QColor\nimport json\n\nw = QWidget()\n#w.setWindowFlags(Qt.WindowStaysOnTopHint)\nw.setAttribute(Qt.WA_ShowWithoutActivating)\nvbox = QVBoxLayout()\n#vbox.addStretch(1)\nw.resize(600,600)\nw.setLayout(vbox)\nw.setWindowTitle(title.get())\n\nclass MyTextEdit(QTextEdit):\n    def focusOutEvent(self, event):\n        value.set(self.toPlainText())\n        QTextEdit.focusOutEvent(self, event)\n\nw.show()\nb = MyTextEdit()\nb.setFontPointSize(15)\nb.setText(json.dumps(value.get(), indent=2))\n#b.setFontItalic(True)\n#b.setTextColor(QColor(255,0,0))\nvbox.addWidget(b)\n",
+      "data": "from seamless.qt.QtWidgets import QTextEdit, QWidget, QVBoxLayout\nfrom seamless.qt.QtCore import Qt\nfrom PyQt5.QtGui import QColor\nimport json\n\nw = QWidget()\n#w.setWindowFlags(Qt.WindowStaysOnTopHint)\nw.setAttribute(Qt.WA_ShowWithoutActivating)\nvbox = QVBoxLayout()\n#vbox.addStretch(1)\nw.resize(600,600)\nw.setLayout(vbox)\nw.setWindowTitle(PINS.title.get())\n\nclass MyTextEdit(QTextEdit):\n    def focusOutEvent(self, event):\n        PINS.value.set(self.toPlainText())\n        QTextEdit.focusOutEvent(self, event)\n\nw.show()\nb = MyTextEdit()\nb.setFontPointSize(15)\nif PINS.value.defined:\n    b.setText(json.dumps(PINS.value.get(), indent=2))\n#b.setFontItalic(True)\n#b.setTextColor(QColor(255,0,0))\nvbox.addWidget(b)\n",
       "links": [
         "ed_gen_vertexbuffer_params.cell2",
         "ed_gen_texture_dict_params.cell2"
       ]
     },
     "/gui/cell-basic_editor_json_UPDATE.py": {
-      "data": "if value.updated:\n    b.setText(json.dumps(value.get(), indent=2))\nif title.updated:\n    w.setWindowTitle(title.get())\n",
+      "data": "if PINS.value.updated:\n    b.setText(json.dumps(PINS.value.get(), indent=2))\nif PINS.title.updated:\n    w.setWindowTitle(PINS.title.get())\n",
       "links": [
         "ed_gen_vertexbuffer_params.cell4",
         "ed_gen_texture_dict_params.cell4"
       ]
+    },
+    "/gui/cell-basic_editor_text.py": {
+      "data": "from seamless.qt.QtWidgets import QTextEdit, QWidget, QVBoxLayout\nfrom seamless.qt.QtCore import Qt\nfrom PyQt5.QtGui import QColor\n\nw = QWidget()\n#w.setWindowFlags(Qt.WindowStaysOnTopHint)\nw.setAttribute(Qt.WA_ShowWithoutActivating)\nvbox = QVBoxLayout()\n#vbox.addStretch(1)\nw.resize(600,600)\nw.setLayout(vbox)\nw.setWindowTitle(PINS.title.get())\n\nclass MyTextEdit(QTextEdit):\n    def focusOutEvent(self, event):\n        PINS.value.set(self.toPlainText())\n        QTextEdit.focusOutEvent(self, event)\n\nw.show()\nb = MyTextEdit()\nb.setFontPointSize(15)\nif PINS.value.defined:\n    b.setText(PINS.value.get())\n#b.setFontItalic(True)\n#b.setTextColor(QColor(255,0,0))\nvbox.addWidget(b)\n",
+      "links": []
+    },
+    "/gui/cell-basic_editor_text_UPDATE.py": {
+      "data": "if PINS.value.updated:\n    b.setText(PINS.value.get())\nif PINS.title.updated:\n    w.setWindowTitle(PINS.title.get())\n",
+      "links": []
     }
   },
   "macro": [
@@ -90,7 +98,7 @@
       "type_args": "str",
       "module_name": "seamless.lib.filelink",
       "func_name": "filelink",
-      "code": "@macro(\"str\")\ndef filelink(ctx, cell_type):\n    from seamless import editor\n    pinparams = {\n       \"value\": {\n         \"pin\": \"edit\",\n         \"dtype\": cell_type\n       },\n       \"filepath\" : {\n         \"pin\": \"input\",\n         \"dtype\": \"str\"\n       },\n       \"latency\" : {\n         \"pin\": \"input\",\n         \"dtype\": \"float\"\n       },\n    }\n    ed = ctx.ed = editor(pinparams)\n    ed.code_start.cell().fromfile(\"cell-filelink-start.py\")\n    ed.code_update.cell().set(\"write_file(filepath.get())\")\n    ed.code_stop.cell().set('t.join(0)')\n    ctx.export(ed)\n"
+      "code": "@macro(\"str\")\ndef filelink(ctx, cell_type):\n    cell_filelink_start = \"cell-filelink-start.py\" #repeat for inline\n    from seamless import editor\n    pinparams = {\n       \"value\": {\n         \"pin\": \"edit\",\n         \"dtype\": cell_type,\n         \"must_be_defined\": False\n       },\n       \"filepath\" : {\n         \"pin\": \"input\",\n         \"dtype\": \"str\"\n       },\n       \"latency\" : {\n         \"pin\": \"input\",\n         \"dtype\": \"float\"\n       },\n    }\n    ed = ctx.ed = editor(pinparams)\n    ed.code_start.cell().fromfile(cell_filelink_start)\n    ed.code_update.cell().set(\"write_file(PINS.filepath.get())\")\n    ed.code_stop.cell().set('t.join(0)')\n    ctx.export(ed)\n"
     },
     {
       "with_context": true,
@@ -108,7 +116,7 @@
       },
       "module_name": "seamless.lib.gui.basic_editor",
       "func_name": "basic_editor",
-      "code": "@macro(OrderedDict((\n    (\"editor_type\",\"str\"),\n    (\"title\",{\"type\": \"str\", \"default\": \"Basic editor\"})\n)))\ndef basic_editor(ctx, editor_type, title):\n    from seamless import editor\n\n    _editors = {\n      \"int\": {\n        \"code\": \"cell-basic_editor_int.py\",\n        \"update\": \"cell-basic_editor_UPDATE.py\",\n      },\n      \"float\": {\n        \"code\": \"cell-basic_editor_float.py\",\n        \"update\": \"cell-basic_editor_UPDATE.py\",\n      },\n      \"text\": {\n        \"code\": \"cell-basic_editor_text.py\",\n        \"update\": \"cell-basic_editor_text_UPDATE.py\",\n      },\n      \"json\": {\n        \"code\": \"cell-basic_editor_json.py\",\n        \"update\": \"cell-basic_editor_json_UPDATE.py\",\n      },\n    }\n\n    def _match_type(type, typelist):\n        typelist = list(typelist)\n        type2 = type\n        if isinstance(type, str):\n            type2 = (type,)\n        typelist2 = []\n        for t in typelist:\n            if isinstance(t, str):\n                typelist2.append((t,))\n            else:\n                typelist2.append(t)\n        matches = []\n        for n in range(len(typelist)):\n            ltype = typelist2[n]\n            k = min(len(type2), len(ltype))\n            if type2[:k] == ltype[:k]:\n                matches.append((n, k))\n        if not len(matches):\n            raise TypeError(\"Cannot find editor for cell type '{0}'\".format(type))\n        matches.sort(key=lambda v: -v[1])\n        bestmatch = matches[0][0]\n        return typelist[bestmatch]\n\n    editor_type = _match_type(editor_type, _editors.keys())\n    pinparams = {\n      \"value\": {\n        \"pin\": \"edit\",\n        \"dtype\": editor_type\n      },\n      \"title\": {\n        \"pin\": \"input\",\n        \"dtype\": \"str\",\n      },\n    }\n    ed = ctx.ed = editor(pinparams)\n    ed.title.cell().set(title)\n    ed.code_start.cell().fromfile(_editors[editor_type][\"code\"])\n    ed.code_stop.cell().set('w.destroy()')\n    upfile = _editors[editor_type][\"update\"]\n    c_up = ed.code_update.cell(True)\n    if upfile is not None:\n        c_up.fromfile(upfile)\n    else:\n        c_up.set(\"\")\n    ctx.export(ed, forced=[\"title\"])\n"
+      "code": "@macro(OrderedDict((\n    (\"editor_type\",\"str\"),\n    (\"title\",{\"type\": \"str\", \"default\": \"Basic editor\"})\n)))\ndef basic_editor(ctx, editor_type, title):\n    from seamless import editor\n\n    _editors = {\n      \"int\": {\n        \"code\": \"cell-basic_editor_int.py\",\n        \"update\": \"cell-basic_editor_UPDATE.py\",\n      },\n      \"float\": {\n        \"code\": \"cell-basic_editor_float.py\",\n        \"update\": \"cell-basic_editor_UPDATE.py\",\n      },\n      \"text\": {\n        \"code\": \"cell-basic_editor_text.py\",\n        \"update\": \"cell-basic_editor_text_UPDATE.py\",\n      },\n      \"json\": {\n        \"code\": \"cell-basic_editor_json.py\",\n        \"update\": \"cell-basic_editor_json_UPDATE.py\",\n      },\n    }\n\n    def _match_type(type, typelist):\n        typelist = list(typelist)\n        type2 = type\n        if isinstance(type, str):\n            type2 = (type,)\n        typelist2 = []\n        for t in typelist:\n            if isinstance(t, str):\n                typelist2.append((t,))\n            else:\n                typelist2.append(t)\n        matches = []\n        for n in range(len(typelist)):\n            ltype = typelist2[n]\n            k = min(len(type2), len(ltype))\n            if type2[:k] == ltype[:k]:\n                matches.append((n, k))\n        if not len(matches):\n            raise TypeError(\"Cannot find editor for cell type '{0}'\".format(type))\n        matches.sort(key=lambda v: -v[1])\n        bestmatch = matches[0][0]\n        return typelist[bestmatch]\n\n    editor_type = _match_type(editor_type, _editors.keys())\n    pinparams = {\n      \"value\": {\n        \"pin\": \"edit\",\n        \"dtype\": editor_type,\n        \"must_be_defined\": False\n      },\n      \"title\": {\n        \"pin\": \"input\",\n        \"dtype\": \"str\",\n      },\n    }\n    ed = ctx.ed = editor(pinparams)\n    ed.title.cell().set(title)\n    ed.code_start.cell().fromfile(_editors[editor_type][\"code\"])\n    ed.code_stop.cell().set('w.destroy()')\n    upfile = _editors[editor_type][\"update\"]\n    c_up = ed.code_update.cell(True)\n    if upfile is not None:\n        c_up.fromfile(upfile)\n    else:\n        c_up.set(\"\")\n    ctx.export(ed, forced=[\"title\"])\n"
     },
     {
       "with_context": true,
@@ -120,7 +128,7 @@
       "type_args": "str",
       "module_name": "seamless.lib.hive.hiveprocess",
       "func_name": "hiveprocess",
-      "code": "@macro(\"str\")\ndef hiveprocess(ctx, hivename):\n\n    from hive.ppin import PushInBee\n    from hive.ppout import PushOutBee\n    from hive.classes.resolve_bee import ResolveBee\n    from hive.antenna import HiveAntenna\n    from hive.output import HiveOutput\n    from hive.attribute import Attribute\n    from hive.hive import HiveObject, HiveBuilder\n    from hive.manager import hive_mode_as\n    from seamless.core.editor import editor\n\n    def hiveprocess_start():\n        import hive\n        global myhive\n        myhive = hivecls()\n        for attr, hivepin_type in hive_attributes.get().items():\n            if hivepin_type == \"push_out\":\n                output = globals()[attr]\n                hive.connect(getattr(myhive, attr), hive.push_in(output.set))\n\n    def hiveprocess_update():\n        for attr, hivepin_type in hive_attributes.get().items():\n            at = globals()[attr]\n            try:\n                if not at.updated:\n                    continue\n            except AttributeError:\n                continue\n            value = at.get()\n            if hivepin_type == \"attribute\":\n                setattr(myhive, attr, value)\n            elif hivepin_type == \"push_in\":\n                getattr(myhive, attr).push(value)\n\n    def hiveprocess_stop():\n        global myhive\n        if hasattr(myhive, \"destroy\"):\n            myhive.destroy()\n        del myhive\n\n\n    ctx.registrar.hive.connect(hivename, ctx)\n    hivecls = ctx.registrar.hive.get(hivename)\n    assert issubclass(hivecls, HiveBuilder)\n    with hive_mode_as(\"build\"):\n        hiveobject = hivecls() #hive must take no arguments!\n    assert isinstance(hiveobject, HiveObject)\n    hive_attributes = {}\n    editor_params = { \"hive_attributes\": {\"pin\": \"input\", \"dtype\": \"json\"}}\n    for attr in dir(hiveobject._hive_ex):\n        hivepin = getattr(hiveobject._hive_ex, attr)\n        hivepin_type = None\n        if isinstance(hivepin, HiveAntenna):\n            hivepin = hivepin.export()\n        if isinstance(hivepin, HiveOutput):\n            hivepin = hivepin.export()\n        while isinstance(hivepin, ResolveBee):\n            hivepin = hivepin._bee\n\n        if isinstance(hivepin, Attribute):\n            #hivepin_type = \"attribute\"\n            #pin = \"input\"\n            continue ### keep it like this??\n        elif isinstance(hivepin, PushInBee):\n            hivepin_type = \"push_in\"\n            pin = \"input\"\n        elif isinstance(hivepin, PushOutBee):\n            hivepin_type = \"push_out\"\n            pin = \"output\"\n        else:\n            continue\n\n        hive_attributes[attr] = hivepin_type\n        dtype = hivepin.data_type\n        if dtype is None:\n            dtype = \"object\"\n        editor_params[attr] = {\"pin\": pin, \"dtype\": dtype}\n    ed = ctx.ed = editor(editor_params)\n    ctx.registrar.hive.connect(hivename, ed, \"hivecls\")\n    ctx.hive_attributes = ed.hive_attributes.cell().set(hive_attributes)\n    ed.code_start.cell().set(hiveprocess_start)\n    ed.code_update.cell().set(hiveprocess_update)\n    ed.code_stop.cell().set(hiveprocess_stop)\n    ctx.export(ed)\n"
+      "code": "@macro(\"str\")\ndef hiveprocess(ctx, hivename):\n\n    from hive.ppin import PushInBee\n    from hive.ppout import PushOutBee\n    from hive.classes.resolve_bee import ResolveBee\n    from hive.antenna import HiveAntenna\n    from hive.output import HiveOutput\n    from hive.attribute import Attribute\n    from hive.hive import HiveObject, HiveBuilder\n    from hive.manager import hive_mode_as\n    from seamless.core.editor import editor\n\n    def hiveprocess_start():\n        import hive\n        global myhive\n        myhive = hivecls()\n        for attr, hivepin_type in PINS.hive_attributes.get().items():\n            if hivepin_type == \"push_out\":\n                output = getattr(PINS, attr)\n                hive.connect(getattr(myhive, attr), hive.push_in(output.set))\n\n    def hiveprocess_update():\n        for attr, hivepin_type in PINS.hive_attributes.get().items():\n            at = getattr(PINS, attr)\n            try:\n                if not at.updated:\n                    continue\n            except AttributeError:\n                continue\n            value = at.get()\n            if hivepin_type == \"attribute\":\n                setattr(myhive, attr, value)\n            elif hivepin_type == \"push_in\":\n                getattr(myhive, attr).push(value)\n\n    def hiveprocess_stop():\n        global myhive\n        if hasattr(myhive, \"destroy\"):\n            myhive.destroy()\n        del myhive\n\n\n    ctx.registrar.hive.connect(hivename, ctx)\n    hivecls = ctx.registrar.hive.get(hivename)\n    assert issubclass(hivecls, HiveBuilder)\n    with hive_mode_as(\"build\"):\n        hiveobject = hivecls() #hive must take no arguments!\n    assert isinstance(hiveobject, HiveObject)\n    hive_attributes = {}\n    editor_params = { \"hive_attributes\": {\"pin\": \"input\", \"dtype\": \"json\"}}\n    for attr in dir(hiveobject._hive_ex):\n        hivepin = getattr(hiveobject._hive_ex, attr)\n        hivepin_type = None\n        if isinstance(hivepin, HiveAntenna):\n            hivepin = hivepin.export()\n        if isinstance(hivepin, HiveOutput):\n            hivepin = hivepin.export()\n        while isinstance(hivepin, ResolveBee):\n            hivepin = hivepin._bee\n\n        if isinstance(hivepin, Attribute):\n            #hivepin_type = \"attribute\"\n            #pin = \"input\"\n            continue ### keep it like this??\n        elif isinstance(hivepin, PushInBee):\n            hivepin_type = \"push_in\"\n            pin = \"input\"\n        elif isinstance(hivepin, PushOutBee):\n            hivepin_type = \"push_out\"\n            pin = \"output\"\n        else:\n            continue\n\n        hive_attributes[attr] = hivepin_type\n        dtype = hivepin.data_type\n        if dtype is None:\n            dtype = \"object\"\n        editor_params[attr] = {\"pin\": pin, \"dtype\": dtype}\n    ed = ctx.ed = editor(editor_params)\n    ctx.registrar.hive.connect(hivename, ed, \"hivecls\")\n    ctx.hive_attributes = ed.hive_attributes.cell().set(hive_attributes)\n    ed.code_start.cell().set(hiveprocess_start)\n    ed.code_update.cell().set(hiveprocess_update)\n    ed.code_stop.cell().set(hiveprocess_stop)\n    ctx.export(ed)\n"
     }
   ],
   "main": {
@@ -317,7 +325,7 @@
               "lib": true,
               "mode": 2
             },
-            "data": "from seamless.qt.QtWidgets import QSpinBox, QWidget, QVBoxLayout\nfrom seamless.qt.QtCore import Qt\n\nw = QWidget()\n#w.setWindowFlags(Qt.WindowStaysOnTopHint)\nw.setAttribute(Qt.WA_ShowWithoutActivating)\nvbox = QVBoxLayout()\nvbox.addStretch(1)\nw.setLayout(vbox)\nw.resize(300,100)\nw.setWindowTitle(title.get())\nw.show()\nb = QSpinBox()\nb.setMaximum(1000000)\nb.setValue(value.get())\nvbox.addWidget(b)\nb.valueChanged.connect(value.set)\n"
+            "data": "from seamless.qt.QtWidgets import QSpinBox, QWidget, QVBoxLayout\nfrom seamless.qt.QtCore import Qt\n\nw = QWidget()\n#w.setWindowFlags(Qt.WindowStaysOnTopHint)\nw.setAttribute(Qt.WA_ShowWithoutActivating)\nvbox = QVBoxLayout()\nvbox.addStretch(1)\nw.setLayout(vbox)\nw.resize(300,100)\nw.setWindowTitle(PINS.title.get())\nw.show()\nb = QSpinBox()\nb.setMaximum(1000000)\nif PINS.value.defined:\n    b.setValue(PINS.value.get())\nvbox.addWidget(b)\nb.valueChanged.connect(PINS.value.set)\n"
           },
           "cell3": {
             "dtype": [
@@ -338,7 +346,7 @@
               "lib": true,
               "mode": 2
             },
-            "data": "if value.updated:\n    b.setValue(value.get())\nif title.updated:\n    w.setWindowTitle(title.get())\n",
+            "data": "if PINS.value.updated:\n    b.setValue(PINS.value.get())\nif PINS.title.updated:\n    w.setWindowTitle(PINS.title.get())\n",
             "owner": "ed_N.ed.code_update"
           },
           "ed": {
@@ -351,6 +359,7 @@
               },
               "value": {
                 "dtype": "int",
+                "must_be_defined": false,
                 "pin": "edit"
               }
             }
@@ -387,7 +396,7 @@
               "lib": true,
               "mode": 2
             },
-            "data": "from seamless.qt.QtWidgets import QDoubleSpinBox, QWidget, QVBoxLayout\nfrom seamless.qt.QtCore import Qt\n\nw = QWidget()\n#w.setWindowFlags(Qt.WindowStaysOnTopHint)\nw.setAttribute(Qt.WA_ShowWithoutActivating)\nvbox = QVBoxLayout()\nvbox.addStretch(1)\nw.setLayout(vbox)\nw.resize(300,100)\nw.setWindowTitle(title.get())\nw.show()\nb = QDoubleSpinBox()\nb.setSingleStep(0.1)\nb.setMaximum(1000000)\nb.setValue(value.get())\nvbox.addWidget(b)\nb.valueChanged.connect(value.set)\n"
+            "data": "from seamless.qt.QtWidgets import QDoubleSpinBox, QWidget, QVBoxLayout\nfrom seamless.qt.QtCore import Qt\n\nw = QWidget()\n#w.setWindowFlags(Qt.WindowStaysOnTopHint)\nw.setAttribute(Qt.WA_ShowWithoutActivating)\nvbox = QVBoxLayout()\nvbox.addStretch(1)\nw.setLayout(vbox)\nw.resize(300,100)\nw.setWindowTitle(PINS.title.get())\nw.show()\nb = QDoubleSpinBox()\nb.setSingleStep(0.1)\nb.setMaximum(1000000)\nif PINS.value.defined:\n    b.setValue(PINS.value.get())\nvbox.addWidget(b)\nb.valueChanged.connect(PINS.value.set)\n"
           },
           "cell3": {
             "dtype": [
@@ -408,7 +417,7 @@
               "lib": true,
               "mode": 2
             },
-            "data": "if value.updated:\n    b.setValue(value.get())\nif title.updated:\n    w.setWindowTitle(title.get())\n",
+            "data": "if PINS.value.updated:\n    b.setValue(PINS.value.get())\nif PINS.title.updated:\n    w.setWindowTitle(PINS.title.get())\n",
             "owner": "ed_delay.ed.code_update"
           },
           "ed": {
@@ -421,6 +430,7 @@
               },
               "value": {
                 "dtype": "float",
+                "must_be_defined": false,
                 "pin": "edit"
               }
             }
@@ -453,7 +463,7 @@
               "lib": true,
               "mode": 2
             },
-            "data": "if __name__ == \"__main__\":\n    #test with ipython -i\n    import sys, os\n    class EditPin:\n        def __init__(self, value):\n            self.value = value\n        def set(self, value):\n            print(\"SET\", value)\n            self.value = value\n        def get(self):\n            return self.value\n\n    class Getter:\n        def __init__(self, arg):\n            self.arg = arg\n        def get(self):\n            return self.arg\n\n    value = EditPin(\"test\")\n\n    directory = sys.argv[1]\n    filename = sys.argv[2]\n    filepath = Getter(os.path.join(directory, filename))\n    latency = Getter(float(sys.argv[3]))\n    print(\"Edit in \" + filepath.get())\n\nimport os, time, functools\nfrom seamless import add_work\nfrom threading import Thread, RLock\nlast_value = None\n\ndef write_file(fpath):\n    global last_mtime, last_value\n    val = str(value.get())\n    if last_value == val:\n        return\n    with lock:\n        if last_value != val:\n            with open(fpath, \"w\") as f:\n                f.write(val)\n                last_value = val\n            last_time = time.time()\n            try:\n                stat = os.stat(fpath)\n                last_mtime = stat.st_mtime\n            except:\n                pass\n\ndef poll():\n    global last_time, last_mtime, last_value\n    fpath = filepath.get()\n    while 1:\n        time.sleep(latency.get())\n        curr_time = time.time()\n        last_time = curr_time\n        if not os.path.exists(fpath):\n            write_file(fpath)\n        else:\n            with lock:\n                stat = os.stat(fpath)\n                if stat.st_mtime > last_mtime:\n                    data = None\n                    with open(fpath) as f:\n                        data = f.read()\n                    if data is not None:\n                        w = functools.partial(value.set, data)\n                        add_work(w)\n                        last_value = data\n                    last_mtime = stat.st_mtime\n\nt = Thread(target=poll)\nt.setDaemon(True)\nlock = RLock()\nval = str(value.get())\nwrite_file(filepath.get())\nt.start()\n"
+            "data": "if __name__ == \"__main__\":\n    #test with ipython -i\n    import sys, os\n\n    class dummy:\n        pass\n\n    class EditPin:\n        def __init__(self, value):\n            self.value = value\n            self.defined = True\n        def set(self, value):\n            print(\"SET\", value)\n            self.value = value\n        def get(self):\n            return self.value\n\n    class Getter:\n        def __init__(self, arg):\n            self.arg = arg\n        def get(self):\n            return self.arg\n    PINS = dummy()\n    PINS.value = EditPin(\"test\")\n    directory = sys.argv[1]\n    filename = sys.argv[2]\n    PINS.filepath = Getter(os.path.join(directory, filename))\n    PINS.latency = Getter(float(sys.argv[3]))\n    def serializer(v):\n        return str(v.get())\n    print(\"Edit in \" + filepath.get())\nelse:\n    from seamless.dtypes import serialize\n    def serializer(v):\n        return serialize(v._dtype, v.get())\n\n\nimport os, time, functools\nfrom threading import Thread, RLock\nlast_value = None\nlast_serialized_value = None\n\ndef write_file(fpath):\n    global last_mtime, last_value, last_serialized_value\n    if not PINS.value.defined:\n        last_mtime = -1 #will trigger a file read\n        return\n    if last_value == PINS.value.get():\n        return\n    val = serializer(PINS.value)\n    if last_serialized_value == val:\n        return\n    with lock:\n        if last_serialized_value != val:\n            #print(\"WRITE\", val)\n            with open(fpath, \"w\") as f:\n                f.write(val)\n                last_value = PINS.value.get()\n                last_serialized_value = val\n            last_time = time.time()\n            try:\n                stat = os.stat(fpath)\n                last_mtime = stat.st_mtime\n            except:\n                pass\n\ndef poll():\n    global last_time, last_mtime, last_value, last_serialized_value\n    fpath = PINS.filepath.get()\n    while 1:\n        time.sleep(PINS.latency.get())\n        curr_time = time.time()\n        last_time = curr_time\n        if not os.path.exists(fpath):\n            write_file(fpath)\n        else:\n            with lock:\n                stat = os.stat(fpath)\n                if stat.st_mtime > last_mtime:\n                    data = None\n                    with open(fpath) as f:\n                        data = f.read()\n                    if data is not None:\n                        if last_serialized_value != data:\n                            #print(\"LOAD\")\n                            PINS.value.set(data)\n                            last_value = None\n                            last_serialized_value = data\n                    last_mtime = stat.st_mtime\n\nt = Thread(target=poll)\nt.setDaemon(True)\nlock = RLock()\nwrite_file(PINS.filepath.get())\nt.start()\n"
           },
           "cell2": {
             "dtype": [
@@ -461,7 +471,7 @@
               "code",
               "python"
             ],
-            "data": "write_file(filepath.get())"
+            "data": "write_file(PINS.filepath.get())"
           },
           "cell3": {
             "dtype": [
@@ -489,6 +499,7 @@
                   "code",
                   "fragmentshader"
                 ],
+                "must_be_defined": false,
                 "pin": "edit"
               }
             }
@@ -525,7 +536,7 @@
               "lib": true,
               "mode": 2
             },
-            "data": "from seamless.qt.QtWidgets import QTextEdit, QWidget, QVBoxLayout\nfrom seamless.qt.QtCore import Qt\nfrom PyQt5.QtGui import QColor\nimport json\n\nw = QWidget()\n#w.setWindowFlags(Qt.WindowStaysOnTopHint)\nw.setAttribute(Qt.WA_ShowWithoutActivating)\nvbox = QVBoxLayout()\n#vbox.addStretch(1)\nw.resize(600,600)\nw.setLayout(vbox)\nw.setWindowTitle(title.get())\n\nclass MyTextEdit(QTextEdit):\n    def focusOutEvent(self, event):\n        value.set(self.toPlainText())\n        QTextEdit.focusOutEvent(self, event)\n\nw.show()\nb = MyTextEdit()\nb.setFontPointSize(15)\nb.setText(json.dumps(value.get(), indent=2))\n#b.setFontItalic(True)\n#b.setTextColor(QColor(255,0,0))\nvbox.addWidget(b)\n"
+            "data": "from seamless.qt.QtWidgets import QTextEdit, QWidget, QVBoxLayout\nfrom seamless.qt.QtCore import Qt\nfrom PyQt5.QtGui import QColor\nimport json\n\nw = QWidget()\n#w.setWindowFlags(Qt.WindowStaysOnTopHint)\nw.setAttribute(Qt.WA_ShowWithoutActivating)\nvbox = QVBoxLayout()\n#vbox.addStretch(1)\nw.resize(600,600)\nw.setLayout(vbox)\nw.setWindowTitle(PINS.title.get())\n\nclass MyTextEdit(QTextEdit):\n    def focusOutEvent(self, event):\n        PINS.value.set(self.toPlainText())\n        QTextEdit.focusOutEvent(self, event)\n\nw.show()\nb = MyTextEdit()\nb.setFontPointSize(15)\nif PINS.value.defined:\n    b.setText(json.dumps(PINS.value.get(), indent=2))\n#b.setFontItalic(True)\n#b.setTextColor(QColor(255,0,0))\nvbox.addWidget(b)\n"
           },
           "cell3": {
             "dtype": [
@@ -546,7 +557,7 @@
               "lib": true,
               "mode": 2
             },
-            "data": "if value.updated:\n    b.setText(json.dumps(value.get(), indent=2))\nif title.updated:\n    w.setWindowTitle(title.get())\n",
+            "data": "if PINS.value.updated:\n    b.setText(json.dumps(PINS.value.get(), indent=2))\nif PINS.title.updated:\n    w.setWindowTitle(PINS.title.get())\n",
             "owner": "ed_gen_texture_dict_params.ed.code_update"
           },
           "ed": {
@@ -559,6 +570,7 @@
               },
               "value": {
                 "dtype": "json",
+                "must_be_defined": false,
                 "pin": "edit"
               }
             }
@@ -591,7 +603,7 @@
               "lib": true,
               "mode": 2
             },
-            "data": "if __name__ == \"__main__\":\n    #test with ipython -i\n    import sys, os\n    class EditPin:\n        def __init__(self, value):\n            self.value = value\n        def set(self, value):\n            print(\"SET\", value)\n            self.value = value\n        def get(self):\n            return self.value\n\n    class Getter:\n        def __init__(self, arg):\n            self.arg = arg\n        def get(self):\n            return self.arg\n\n    value = EditPin(\"test\")\n\n    directory = sys.argv[1]\n    filename = sys.argv[2]\n    filepath = Getter(os.path.join(directory, filename))\n    latency = Getter(float(sys.argv[3]))\n    print(\"Edit in \" + filepath.get())\n\nimport os, time, functools\nfrom seamless import add_work\nfrom threading import Thread, RLock\nlast_value = None\n\ndef write_file(fpath):\n    global last_mtime, last_value\n    val = str(value.get())\n    if last_value == val:\n        return\n    with lock:\n        if last_value != val:\n            with open(fpath, \"w\") as f:\n                f.write(val)\n                last_value = val\n            last_time = time.time()\n            try:\n                stat = os.stat(fpath)\n                last_mtime = stat.st_mtime\n            except:\n                pass\n\ndef poll():\n    global last_time, last_mtime, last_value\n    fpath = filepath.get()\n    while 1:\n        time.sleep(latency.get())\n        curr_time = time.time()\n        last_time = curr_time\n        if not os.path.exists(fpath):\n            write_file(fpath)\n        else:\n            with lock:\n                stat = os.stat(fpath)\n                if stat.st_mtime > last_mtime:\n                    data = None\n                    with open(fpath) as f:\n                        data = f.read()\n                    if data is not None:\n                        w = functools.partial(value.set, data)\n                        add_work(w)\n                        last_value = data\n                    last_mtime = stat.st_mtime\n\nt = Thread(target=poll)\nt.setDaemon(True)\nlock = RLock()\nval = str(value.get())\nwrite_file(filepath.get())\nt.start()\n"
+            "data": "if __name__ == \"__main__\":\n    #test with ipython -i\n    import sys, os\n\n    class dummy:\n        pass\n\n    class EditPin:\n        def __init__(self, value):\n            self.value = value\n            self.defined = True\n        def set(self, value):\n            print(\"SET\", value)\n            self.value = value\n        def get(self):\n            return self.value\n\n    class Getter:\n        def __init__(self, arg):\n            self.arg = arg\n        def get(self):\n            return self.arg\n    PINS = dummy()\n    PINS.value = EditPin(\"test\")\n    directory = sys.argv[1]\n    filename = sys.argv[2]\n    PINS.filepath = Getter(os.path.join(directory, filename))\n    PINS.latency = Getter(float(sys.argv[3]))\n    def serializer(v):\n        return str(v.get())\n    print(\"Edit in \" + filepath.get())\nelse:\n    from seamless.dtypes import serialize\n    def serializer(v):\n        return serialize(v._dtype, v.get())\n\n\nimport os, time, functools\nfrom threading import Thread, RLock\nlast_value = None\nlast_serialized_value = None\n\ndef write_file(fpath):\n    global last_mtime, last_value, last_serialized_value\n    if not PINS.value.defined:\n        last_mtime = -1 #will trigger a file read\n        return\n    if last_value == PINS.value.get():\n        return\n    val = serializer(PINS.value)\n    if last_serialized_value == val:\n        return\n    with lock:\n        if last_serialized_value != val:\n            #print(\"WRITE\", val)\n            with open(fpath, \"w\") as f:\n                f.write(val)\n                last_value = PINS.value.get()\n                last_serialized_value = val\n            last_time = time.time()\n            try:\n                stat = os.stat(fpath)\n                last_mtime = stat.st_mtime\n            except:\n                pass\n\ndef poll():\n    global last_time, last_mtime, last_value, last_serialized_value\n    fpath = PINS.filepath.get()\n    while 1:\n        time.sleep(PINS.latency.get())\n        curr_time = time.time()\n        last_time = curr_time\n        if not os.path.exists(fpath):\n            write_file(fpath)\n        else:\n            with lock:\n                stat = os.stat(fpath)\n                if stat.st_mtime > last_mtime:\n                    data = None\n                    with open(fpath) as f:\n                        data = f.read()\n                    if data is not None:\n                        if last_serialized_value != data:\n                            #print(\"LOAD\")\n                            PINS.value.set(data)\n                            last_value = None\n                            last_serialized_value = data\n                    last_mtime = stat.st_mtime\n\nt = Thread(target=poll)\nt.setDaemon(True)\nlock = RLock()\nwrite_file(PINS.filepath.get())\nt.start()\n"
           },
           "cell2": {
             "dtype": [
@@ -599,7 +611,7 @@
               "code",
               "python"
             ],
-            "data": "write_file(filepath.get())"
+            "data": "write_file(PINS.filepath.get())"
           },
           "cell3": {
             "dtype": [
@@ -627,6 +639,7 @@
                   "code",
                   "python"
                 ],
+                "must_be_defined": false,
                 "pin": "edit"
               }
             }
@@ -659,7 +672,7 @@
               "lib": true,
               "mode": 2
             },
-            "data": "if __name__ == \"__main__\":\n    #test with ipython -i\n    import sys, os\n    class EditPin:\n        def __init__(self, value):\n            self.value = value\n        def set(self, value):\n            print(\"SET\", value)\n            self.value = value\n        def get(self):\n            return self.value\n\n    class Getter:\n        def __init__(self, arg):\n            self.arg = arg\n        def get(self):\n            return self.arg\n\n    value = EditPin(\"test\")\n\n    directory = sys.argv[1]\n    filename = sys.argv[2]\n    filepath = Getter(os.path.join(directory, filename))\n    latency = Getter(float(sys.argv[3]))\n    print(\"Edit in \" + filepath.get())\n\nimport os, time, functools\nfrom seamless import add_work\nfrom threading import Thread, RLock\nlast_value = None\n\ndef write_file(fpath):\n    global last_mtime, last_value\n    val = str(value.get())\n    if last_value == val:\n        return\n    with lock:\n        if last_value != val:\n            with open(fpath, \"w\") as f:\n                f.write(val)\n                last_value = val\n            last_time = time.time()\n            try:\n                stat = os.stat(fpath)\n                last_mtime = stat.st_mtime\n            except:\n                pass\n\ndef poll():\n    global last_time, last_mtime, last_value\n    fpath = filepath.get()\n    while 1:\n        time.sleep(latency.get())\n        curr_time = time.time()\n        last_time = curr_time\n        if not os.path.exists(fpath):\n            write_file(fpath)\n        else:\n            with lock:\n                stat = os.stat(fpath)\n                if stat.st_mtime > last_mtime:\n                    data = None\n                    with open(fpath) as f:\n                        data = f.read()\n                    if data is not None:\n                        w = functools.partial(value.set, data)\n                        add_work(w)\n                        last_value = data\n                    last_mtime = stat.st_mtime\n\nt = Thread(target=poll)\nt.setDaemon(True)\nlock = RLock()\nval = str(value.get())\nwrite_file(filepath.get())\nt.start()\n"
+            "data": "if __name__ == \"__main__\":\n    #test with ipython -i\n    import sys, os\n\n    class dummy:\n        pass\n\n    class EditPin:\n        def __init__(self, value):\n            self.value = value\n            self.defined = True\n        def set(self, value):\n            print(\"SET\", value)\n            self.value = value\n        def get(self):\n            return self.value\n\n    class Getter:\n        def __init__(self, arg):\n            self.arg = arg\n        def get(self):\n            return self.arg\n    PINS = dummy()\n    PINS.value = EditPin(\"test\")\n    directory = sys.argv[1]\n    filename = sys.argv[2]\n    PINS.filepath = Getter(os.path.join(directory, filename))\n    PINS.latency = Getter(float(sys.argv[3]))\n    def serializer(v):\n        return str(v.get())\n    print(\"Edit in \" + filepath.get())\nelse:\n    from seamless.dtypes import serialize\n    def serializer(v):\n        return serialize(v._dtype, v.get())\n\n\nimport os, time, functools\nfrom threading import Thread, RLock\nlast_value = None\nlast_serialized_value = None\n\ndef write_file(fpath):\n    global last_mtime, last_value, last_serialized_value\n    if not PINS.value.defined:\n        last_mtime = -1 #will trigger a file read\n        return\n    if last_value == PINS.value.get():\n        return\n    val = serializer(PINS.value)\n    if last_serialized_value == val:\n        return\n    with lock:\n        if last_serialized_value != val:\n            #print(\"WRITE\", val)\n            with open(fpath, \"w\") as f:\n                f.write(val)\n                last_value = PINS.value.get()\n                last_serialized_value = val\n            last_time = time.time()\n            try:\n                stat = os.stat(fpath)\n                last_mtime = stat.st_mtime\n            except:\n                pass\n\ndef poll():\n    global last_time, last_mtime, last_value, last_serialized_value\n    fpath = PINS.filepath.get()\n    while 1:\n        time.sleep(PINS.latency.get())\n        curr_time = time.time()\n        last_time = curr_time\n        if not os.path.exists(fpath):\n            write_file(fpath)\n        else:\n            with lock:\n                stat = os.stat(fpath)\n                if stat.st_mtime > last_mtime:\n                    data = None\n                    with open(fpath) as f:\n                        data = f.read()\n                    if data is not None:\n                        if last_serialized_value != data:\n                            #print(\"LOAD\")\n                            PINS.value.set(data)\n                            last_value = None\n                            last_serialized_value = data\n                    last_mtime = stat.st_mtime\n\nt = Thread(target=poll)\nt.setDaemon(True)\nlock = RLock()\nwrite_file(PINS.filepath.get())\nt.start()\n"
           },
           "cell2": {
             "dtype": [
@@ -667,7 +680,7 @@
               "code",
               "python"
             ],
-            "data": "write_file(filepath.get())"
+            "data": "write_file(PINS.filepath.get())"
           },
           "cell3": {
             "dtype": [
@@ -695,6 +708,7 @@
                   "code",
                   "python"
                 ],
+                "must_be_defined": false,
                 "pin": "edit"
               }
             }
@@ -731,7 +745,7 @@
               "lib": true,
               "mode": 2
             },
-            "data": "from seamless.qt.QtWidgets import QTextEdit, QWidget, QVBoxLayout\nfrom seamless.qt.QtCore import Qt\nfrom PyQt5.QtGui import QColor\nimport json\n\nw = QWidget()\n#w.setWindowFlags(Qt.WindowStaysOnTopHint)\nw.setAttribute(Qt.WA_ShowWithoutActivating)\nvbox = QVBoxLayout()\n#vbox.addStretch(1)\nw.resize(600,600)\nw.setLayout(vbox)\nw.setWindowTitle(title.get())\n\nclass MyTextEdit(QTextEdit):\n    def focusOutEvent(self, event):\n        value.set(self.toPlainText())\n        QTextEdit.focusOutEvent(self, event)\n\nw.show()\nb = MyTextEdit()\nb.setFontPointSize(15)\nb.setText(json.dumps(value.get(), indent=2))\n#b.setFontItalic(True)\n#b.setTextColor(QColor(255,0,0))\nvbox.addWidget(b)\n"
+            "data": "from seamless.qt.QtWidgets import QTextEdit, QWidget, QVBoxLayout\nfrom seamless.qt.QtCore import Qt\nfrom PyQt5.QtGui import QColor\nimport json\n\nw = QWidget()\n#w.setWindowFlags(Qt.WindowStaysOnTopHint)\nw.setAttribute(Qt.WA_ShowWithoutActivating)\nvbox = QVBoxLayout()\n#vbox.addStretch(1)\nw.resize(600,600)\nw.setLayout(vbox)\nw.setWindowTitle(PINS.title.get())\n\nclass MyTextEdit(QTextEdit):\n    def focusOutEvent(self, event):\n        PINS.value.set(self.toPlainText())\n        QTextEdit.focusOutEvent(self, event)\n\nw.show()\nb = MyTextEdit()\nb.setFontPointSize(15)\nif PINS.value.defined:\n    b.setText(json.dumps(PINS.value.get(), indent=2))\n#b.setFontItalic(True)\n#b.setTextColor(QColor(255,0,0))\nvbox.addWidget(b)\n"
           },
           "cell3": {
             "dtype": [
@@ -752,7 +766,7 @@
               "lib": true,
               "mode": 2
             },
-            "data": "if value.updated:\n    b.setText(json.dumps(value.get(), indent=2))\nif title.updated:\n    w.setWindowTitle(title.get())\n",
+            "data": "if PINS.value.updated:\n    b.setText(json.dumps(PINS.value.get(), indent=2))\nif PINS.title.updated:\n    w.setWindowTitle(PINS.title.get())\n",
             "owner": "ed_gen_vertexbuffer_params.ed.code_update"
           },
           "ed": {
@@ -765,6 +779,7 @@
               },
               "value": {
                 "dtype": "json",
+                "must_be_defined": false,
                 "pin": "edit"
               }
             }
@@ -797,7 +812,7 @@
               "lib": true,
               "mode": 2
             },
-            "data": "if __name__ == \"__main__\":\n    #test with ipython -i\n    import sys, os\n    class EditPin:\n        def __init__(self, value):\n            self.value = value\n        def set(self, value):\n            print(\"SET\", value)\n            self.value = value\n        def get(self):\n            return self.value\n\n    class Getter:\n        def __init__(self, arg):\n            self.arg = arg\n        def get(self):\n            return self.arg\n\n    value = EditPin(\"test\")\n\n    directory = sys.argv[1]\n    filename = sys.argv[2]\n    filepath = Getter(os.path.join(directory, filename))\n    latency = Getter(float(sys.argv[3]))\n    print(\"Edit in \" + filepath.get())\n\nimport os, time, functools\nfrom seamless import add_work\nfrom threading import Thread, RLock\nlast_value = None\n\ndef write_file(fpath):\n    global last_mtime, last_value\n    val = str(value.get())\n    if last_value == val:\n        return\n    with lock:\n        if last_value != val:\n            with open(fpath, \"w\") as f:\n                f.write(val)\n                last_value = val\n            last_time = time.time()\n            try:\n                stat = os.stat(fpath)\n                last_mtime = stat.st_mtime\n            except:\n                pass\n\ndef poll():\n    global last_time, last_mtime, last_value\n    fpath = filepath.get()\n    while 1:\n        time.sleep(latency.get())\n        curr_time = time.time()\n        last_time = curr_time\n        if not os.path.exists(fpath):\n            write_file(fpath)\n        else:\n            with lock:\n                stat = os.stat(fpath)\n                if stat.st_mtime > last_mtime:\n                    data = None\n                    with open(fpath) as f:\n                        data = f.read()\n                    if data is not None:\n                        w = functools.partial(value.set, data)\n                        add_work(w)\n                        last_value = data\n                    last_mtime = stat.st_mtime\n\nt = Thread(target=poll)\nt.setDaemon(True)\nlock = RLock()\nval = str(value.get())\nwrite_file(filepath.get())\nt.start()\n"
+            "data": "if __name__ == \"__main__\":\n    #test with ipython -i\n    import sys, os\n\n    class dummy:\n        pass\n\n    class EditPin:\n        def __init__(self, value):\n            self.value = value\n            self.defined = True\n        def set(self, value):\n            print(\"SET\", value)\n            self.value = value\n        def get(self):\n            return self.value\n\n    class Getter:\n        def __init__(self, arg):\n            self.arg = arg\n        def get(self):\n            return self.arg\n    PINS = dummy()\n    PINS.value = EditPin(\"test\")\n    directory = sys.argv[1]\n    filename = sys.argv[2]\n    PINS.filepath = Getter(os.path.join(directory, filename))\n    PINS.latency = Getter(float(sys.argv[3]))\n    def serializer(v):\n        return str(v.get())\n    print(\"Edit in \" + filepath.get())\nelse:\n    from seamless.dtypes import serialize\n    def serializer(v):\n        return serialize(v._dtype, v.get())\n\n\nimport os, time, functools\nfrom threading import Thread, RLock\nlast_value = None\nlast_serialized_value = None\n\ndef write_file(fpath):\n    global last_mtime, last_value, last_serialized_value\n    if not PINS.value.defined:\n        last_mtime = -1 #will trigger a file read\n        return\n    if last_value == PINS.value.get():\n        return\n    val = serializer(PINS.value)\n    if last_serialized_value == val:\n        return\n    with lock:\n        if last_serialized_value != val:\n            #print(\"WRITE\", val)\n            with open(fpath, \"w\") as f:\n                f.write(val)\n                last_value = PINS.value.get()\n                last_serialized_value = val\n            last_time = time.time()\n            try:\n                stat = os.stat(fpath)\n                last_mtime = stat.st_mtime\n            except:\n                pass\n\ndef poll():\n    global last_time, last_mtime, last_value, last_serialized_value\n    fpath = PINS.filepath.get()\n    while 1:\n        time.sleep(PINS.latency.get())\n        curr_time = time.time()\n        last_time = curr_time\n        if not os.path.exists(fpath):\n            write_file(fpath)\n        else:\n            with lock:\n                stat = os.stat(fpath)\n                if stat.st_mtime > last_mtime:\n                    data = None\n                    with open(fpath) as f:\n                        data = f.read()\n                    if data is not None:\n                        if last_serialized_value != data:\n                            #print(\"LOAD\")\n                            PINS.value.set(data)\n                            last_value = None\n                            last_serialized_value = data\n                    last_mtime = stat.st_mtime\n\nt = Thread(target=poll)\nt.setDaemon(True)\nlock = RLock()\nwrite_file(PINS.filepath.get())\nt.start()\n"
           },
           "cell2": {
             "dtype": [
@@ -805,7 +820,7 @@
               "code",
               "python"
             ],
-            "data": "write_file(filepath.get())"
+            "data": "write_file(PINS.filepath.get())"
           },
           "cell3": {
             "dtype": [
@@ -833,6 +848,7 @@
                   "code",
                   "python"
                 ],
+                "must_be_defined": false,
                 "pin": "edit"
               }
             }
@@ -869,7 +885,7 @@
               "lib": true,
               "mode": 2
             },
-            "data": "from seamless.qt.QtWidgets import QSpinBox, QWidget, QVBoxLayout\nfrom seamless.qt.QtCore import Qt\n\nw = QWidget()\n#w.setWindowFlags(Qt.WindowStaysOnTopHint)\nw.setAttribute(Qt.WA_ShowWithoutActivating)\nvbox = QVBoxLayout()\nvbox.addStretch(1)\nw.setLayout(vbox)\nw.resize(300,100)\nw.setWindowTitle(title.get())\nw.show()\nb = QSpinBox()\nb.setMaximum(1000000)\nb.setValue(value.get())\nvbox.addWidget(b)\nb.valueChanged.connect(value.set)\n"
+            "data": "from seamless.qt.QtWidgets import QSpinBox, QWidget, QVBoxLayout\nfrom seamless.qt.QtCore import Qt\n\nw = QWidget()\n#w.setWindowFlags(Qt.WindowStaysOnTopHint)\nw.setAttribute(Qt.WA_ShowWithoutActivating)\nvbox = QVBoxLayout()\nvbox.addStretch(1)\nw.setLayout(vbox)\nw.resize(300,100)\nw.setWindowTitle(PINS.title.get())\nw.show()\nb = QSpinBox()\nb.setMaximum(1000000)\nif PINS.value.defined:\n    b.setValue(PINS.value.get())\nvbox.addWidget(b)\nb.valueChanged.connect(PINS.value.set)\n"
           },
           "cell3": {
             "dtype": [
@@ -890,7 +906,7 @@
               "lib": true,
               "mode": 2
             },
-            "data": "if value.updated:\n    b.setValue(value.get())\nif title.updated:\n    w.setWindowTitle(title.get())\n",
+            "data": "if PINS.value.updated:\n    b.setValue(PINS.value.get())\nif PINS.title.updated:\n    w.setWindowTitle(PINS.title.get())\n",
             "owner": "ed_radius.ed.code_update"
           },
           "ed": {
@@ -903,6 +919,7 @@
               },
               "value": {
                 "dtype": "int",
+                "must_be_defined": false,
                 "pin": "edit"
               }
             }
@@ -935,7 +952,7 @@
               "lib": true,
               "mode": 2
             },
-            "data": "if __name__ == \"__main__\":\n    #test with ipython -i\n    import sys, os\n    class EditPin:\n        def __init__(self, value):\n            self.value = value\n        def set(self, value):\n            print(\"SET\", value)\n            self.value = value\n        def get(self):\n            return self.value\n\n    class Getter:\n        def __init__(self, arg):\n            self.arg = arg\n        def get(self):\n            return self.arg\n\n    value = EditPin(\"test\")\n\n    directory = sys.argv[1]\n    filename = sys.argv[2]\n    filepath = Getter(os.path.join(directory, filename))\n    latency = Getter(float(sys.argv[3]))\n    print(\"Edit in \" + filepath.get())\n\nimport os, time, functools\nfrom seamless import add_work\nfrom threading import Thread, RLock\nlast_value = None\n\ndef write_file(fpath):\n    global last_mtime, last_value\n    val = str(value.get())\n    if last_value == val:\n        return\n    with lock:\n        if last_value != val:\n            with open(fpath, \"w\") as f:\n                f.write(val)\n                last_value = val\n            last_time = time.time()\n            try:\n                stat = os.stat(fpath)\n                last_mtime = stat.st_mtime\n            except:\n                pass\n\ndef poll():\n    global last_time, last_mtime, last_value\n    fpath = filepath.get()\n    while 1:\n        time.sleep(latency.get())\n        curr_time = time.time()\n        last_time = curr_time\n        if not os.path.exists(fpath):\n            write_file(fpath)\n        else:\n            with lock:\n                stat = os.stat(fpath)\n                if stat.st_mtime > last_mtime:\n                    data = None\n                    with open(fpath) as f:\n                        data = f.read()\n                    if data is not None:\n                        w = functools.partial(value.set, data)\n                        add_work(w)\n                        last_value = data\n                    last_mtime = stat.st_mtime\n\nt = Thread(target=poll)\nt.setDaemon(True)\nlock = RLock()\nval = str(value.get())\nwrite_file(filepath.get())\nt.start()\n"
+            "data": "if __name__ == \"__main__\":\n    #test with ipython -i\n    import sys, os\n\n    class dummy:\n        pass\n\n    class EditPin:\n        def __init__(self, value):\n            self.value = value\n            self.defined = True\n        def set(self, value):\n            print(\"SET\", value)\n            self.value = value\n        def get(self):\n            return self.value\n\n    class Getter:\n        def __init__(self, arg):\n            self.arg = arg\n        def get(self):\n            return self.arg\n    PINS = dummy()\n    PINS.value = EditPin(\"test\")\n    directory = sys.argv[1]\n    filename = sys.argv[2]\n    PINS.filepath = Getter(os.path.join(directory, filename))\n    PINS.latency = Getter(float(sys.argv[3]))\n    def serializer(v):\n        return str(v.get())\n    print(\"Edit in \" + filepath.get())\nelse:\n    from seamless.dtypes import serialize\n    def serializer(v):\n        return serialize(v._dtype, v.get())\n\n\nimport os, time, functools\nfrom threading import Thread, RLock\nlast_value = None\nlast_serialized_value = None\n\ndef write_file(fpath):\n    global last_mtime, last_value, last_serialized_value\n    if not PINS.value.defined:\n        last_mtime = -1 #will trigger a file read\n        return\n    if last_value == PINS.value.get():\n        return\n    val = serializer(PINS.value)\n    if last_serialized_value == val:\n        return\n    with lock:\n        if last_serialized_value != val:\n            #print(\"WRITE\", val)\n            with open(fpath, \"w\") as f:\n                f.write(val)\n                last_value = PINS.value.get()\n                last_serialized_value = val\n            last_time = time.time()\n            try:\n                stat = os.stat(fpath)\n                last_mtime = stat.st_mtime\n            except:\n                pass\n\ndef poll():\n    global last_time, last_mtime, last_value, last_serialized_value\n    fpath = PINS.filepath.get()\n    while 1:\n        time.sleep(PINS.latency.get())\n        curr_time = time.time()\n        last_time = curr_time\n        if not os.path.exists(fpath):\n            write_file(fpath)\n        else:\n            with lock:\n                stat = os.stat(fpath)\n                if stat.st_mtime > last_mtime:\n                    data = None\n                    with open(fpath) as f:\n                        data = f.read()\n                    if data is not None:\n                        if last_serialized_value != data:\n                            #print(\"LOAD\")\n                            PINS.value.set(data)\n                            last_value = None\n                            last_serialized_value = data\n                    last_mtime = stat.st_mtime\n\nt = Thread(target=poll)\nt.setDaemon(True)\nlock = RLock()\nwrite_file(PINS.filepath.get())\nt.start()\n"
           },
           "cell2": {
             "dtype": [
@@ -943,7 +960,7 @@
               "code",
               "python"
             ],
-            "data": "write_file(filepath.get())"
+            "data": "write_file(PINS.filepath.get())"
           },
           "cell3": {
             "dtype": [
@@ -971,6 +988,7 @@
                   "code",
                   "vertexshader"
                 ],
+                "must_be_defined": false,
                 "pin": "edit"
               }
             }
@@ -1003,7 +1021,7 @@
               "lib": true,
               "mode": 2
             },
-            "data": "if __name__ == \"__main__\":\n    #test with ipython -i\n    import sys, os\n    class EditPin:\n        def __init__(self, value):\n            self.value = value\n        def set(self, value):\n            print(\"SET\", value)\n            self.value = value\n        def get(self):\n            return self.value\n\n    class Getter:\n        def __init__(self, arg):\n            self.arg = arg\n        def get(self):\n            return self.arg\n\n    value = EditPin(\"test\")\n\n    directory = sys.argv[1]\n    filename = sys.argv[2]\n    filepath = Getter(os.path.join(directory, filename))\n    latency = Getter(float(sys.argv[3]))\n    print(\"Edit in \" + filepath.get())\n\nimport os, time, functools\nfrom seamless import add_work\nfrom threading import Thread, RLock\nlast_value = None\n\ndef write_file(fpath):\n    global last_mtime, last_value\n    val = str(value.get())\n    if last_value == val:\n        return\n    with lock:\n        if last_value != val:\n            with open(fpath, \"w\") as f:\n                f.write(val)\n                last_value = val\n            last_time = time.time()\n            try:\n                stat = os.stat(fpath)\n                last_mtime = stat.st_mtime\n            except:\n                pass\n\ndef poll():\n    global last_time, last_mtime, last_value\n    fpath = filepath.get()\n    while 1:\n        time.sleep(latency.get())\n        curr_time = time.time()\n        last_time = curr_time\n        if not os.path.exists(fpath):\n            write_file(fpath)\n        else:\n            with lock:\n                stat = os.stat(fpath)\n                if stat.st_mtime > last_mtime:\n                    data = None\n                    with open(fpath) as f:\n                        data = f.read()\n                    if data is not None:\n                        w = functools.partial(value.set, data)\n                        add_work(w)\n                        last_value = data\n                    last_mtime = stat.st_mtime\n\nt = Thread(target=poll)\nt.setDaemon(True)\nlock = RLock()\nval = str(value.get())\nwrite_file(filepath.get())\nt.start()\n"
+            "data": "if __name__ == \"__main__\":\n    #test with ipython -i\n    import sys, os\n\n    class dummy:\n        pass\n\n    class EditPin:\n        def __init__(self, value):\n            self.value = value\n            self.defined = True\n        def set(self, value):\n            print(\"SET\", value)\n            self.value = value\n        def get(self):\n            return self.value\n\n    class Getter:\n        def __init__(self, arg):\n            self.arg = arg\n        def get(self):\n            return self.arg\n    PINS = dummy()\n    PINS.value = EditPin(\"test\")\n    directory = sys.argv[1]\n    filename = sys.argv[2]\n    PINS.filepath = Getter(os.path.join(directory, filename))\n    PINS.latency = Getter(float(sys.argv[3]))\n    def serializer(v):\n        return str(v.get())\n    print(\"Edit in \" + filepath.get())\nelse:\n    from seamless.dtypes import serialize\n    def serializer(v):\n        return serialize(v._dtype, v.get())\n\n\nimport os, time, functools\nfrom threading import Thread, RLock\nlast_value = None\nlast_serialized_value = None\n\ndef write_file(fpath):\n    global last_mtime, last_value, last_serialized_value\n    if not PINS.value.defined:\n        last_mtime = -1 #will trigger a file read\n        return\n    if last_value == PINS.value.get():\n        return\n    val = serializer(PINS.value)\n    if last_serialized_value == val:\n        return\n    with lock:\n        if last_serialized_value != val:\n            #print(\"WRITE\", val)\n            with open(fpath, \"w\") as f:\n                f.write(val)\n                last_value = PINS.value.get()\n                last_serialized_value = val\n            last_time = time.time()\n            try:\n                stat = os.stat(fpath)\n                last_mtime = stat.st_mtime\n            except:\n                pass\n\ndef poll():\n    global last_time, last_mtime, last_value, last_serialized_value\n    fpath = PINS.filepath.get()\n    while 1:\n        time.sleep(PINS.latency.get())\n        curr_time = time.time()\n        last_time = curr_time\n        if not os.path.exists(fpath):\n            write_file(fpath)\n        else:\n            with lock:\n                stat = os.stat(fpath)\n                if stat.st_mtime > last_mtime:\n                    data = None\n                    with open(fpath) as f:\n                        data = f.read()\n                    if data is not None:\n                        if last_serialized_value != data:\n                            #print(\"LOAD\")\n                            PINS.value.set(data)\n                            last_value = None\n                            last_serialized_value = data\n                    last_mtime = stat.st_mtime\n\nt = Thread(target=poll)\nt.setDaemon(True)\nlock = RLock()\nwrite_file(PINS.filepath.get())\nt.start()\n"
           },
           "cell2": {
             "dtype": [
@@ -1011,7 +1029,7 @@
               "code",
               "python"
             ],
-            "data": "write_file(filepath.get())"
+            "data": "write_file(PINS.filepath.get())"
           },
           "cell3": {
             "dtype": [
@@ -1039,6 +1057,7 @@
                   "code",
                   "silk"
                 ],
+                "must_be_defined": false,
                 "pin": "edit"
               }
             }
@@ -1065,7 +1084,7 @@
           "seamless",
           "transformer_params"
         ],
-        "data": "{\"radius\": {\"pin\": \"input\", \"dtype\": \"int\"}, \"output\": {\"pin\": \"output\", \"dtype\": \"object\"}}"
+        "data": "{\n  \"output\": {\n    \"dtype\": \"object\",\n    \"pin\": \"output\"\n  },\n  \"radius\": {\n    \"dtype\": \"int\",\n    \"pin\": \"input\"\n  }\n}"
       },
       "gen_vertexbuffer": {
         "type": "transformer",
@@ -1095,7 +1114,7 @@
           "seamless",
           "transformer_params"
         ],
-        "data": "{\"VertexDataArray\": {\"pin\": \"registrar\", \"registrar\": \"silk\"}, \"output\": {\"pin\": \"output\", \"dtype\": \"object\"}, \"VertexData\": {\"pin\": \"registrar\", \"registrar\": \"silk\"}, \"N\": {\"pin\": \"input\", \"dtype\": \"int\"}}"
+        "data": "{\n  \"output\": {\n    \"dtype\": \"object\",\n    \"pin\": \"output\"\n  },\n  \"VertexDataArray\": {\n    \"pin\": \"registrar\",\n    \"registrar\": \"silk\"\n  },\n  \"VertexData\": {\n    \"pin\": \"registrar\",\n    \"registrar\": \"silk\"\n  },\n  \"N\": {\n    \"dtype\": \"int\",\n    \"pin\": \"input\"\n  }\n}"
       },
       "hp": {
         "type": "context",
@@ -1120,7 +1139,7 @@
               "code",
               "python"
             ],
-            "data": "def hiveprocess_start():\n    import hive\n    global myhive\n    myhive = hivecls()\n    for attr, hivepin_type in hive_attributes.get().items():\n        if hivepin_type == \"push_out\":\n            output = globals()[attr]\n            hive.connect(getattr(myhive, attr), hive.push_in(output.set))\n"
+            "data": "def hiveprocess_start():\n    import hive\n    global myhive\n    myhive = hivecls()\n    for attr, hivepin_type in PINS.hive_attributes.get().items():\n        if hivepin_type == \"push_out\":\n            output = getattr(PINS, attr)\n            hive.connect(getattr(myhive, attr), hive.push_in(output.set))\n"
           },
           "cell2": {
             "dtype": [
@@ -1128,7 +1147,7 @@
               "code",
               "python"
             ],
-            "data": "def hiveprocess_update():\n    for attr, hivepin_type in hive_attributes.get().items():\n        at = globals()[attr]\n        try:\n            if not at.updated:\n                continue\n        except AttributeError:\n            continue\n        value = at.get()\n        if hivepin_type == \"attribute\":\n            setattr(myhive, attr, value)\n        elif hivepin_type == \"push_in\":\n            getattr(myhive, attr).push(value)\n"
+            "data": "def hiveprocess_update():\n    for attr, hivepin_type in PINS.hive_attributes.get().items():\n        at = getattr(PINS, attr)\n        try:\n            if not at.updated:\n                continue\n        except AttributeError:\n            continue\n        value = at.get()\n        if hivepin_type == \"attribute\":\n            setattr(myhive, attr, value)\n        elif hivepin_type == \"push_in\":\n            getattr(myhive, attr).push(value)\n"
           },
           "cell3": {
             "dtype": [
@@ -1178,7 +1197,7 @@
           },
           "hive_attributes": {
             "dtype": "json",
-            "data": "{\"texture_dict\": \"push_in\", \"vertexbuffer\": \"push_in\", \"delay\": \"push_in\", \"vert_shader\": \"push_in\", \"frag_shader\": \"push_in\"}"
+            "data": "{\n  \"frag_shader\": \"push_in\",\n  \"texture_dict\": \"push_in\",\n  \"vert_shader\": \"push_in\",\n  \"vertexbuffer\": \"push_in\",\n  \"delay\": \"push_in\"\n}"
           }
         }
       },
@@ -1194,13 +1213,13 @@
       "registrar_object2": {
         "registrar": "hive",
         "registered": [
+          "time",
           "gloo",
-          "canvashive",
-          "build_fireworkhive",
-          "fireworkhive",
-          "hive",
           "np",
-          "time"
+          "canvashive",
+          "hive",
+          "fireworkhive",
+          "build_fireworkhive"
         ],
         "data": "import hive\nimport numpy as np\nimport time\nfrom seamless.lib.hive.canvashive import canvashive\nfrom vispy import gloo\n\ndef build_fireworkhive(i, ex, args):\n    ex.canvas = canvashive(keys='interactive', size=(800, 600))\n    i.starttime = hive.attribute(data_type=\"float\")\n\n    def draw(self):\n        program = self.canvas.program\n        currtime = time.time()\n        if self._starttime is None or currtime - self._starttime > self.v_delay:\n            self.new_explosion()\n\n        # Draw\n        program['u_time'] = time.time() - self._starttime\n        program.draw('points')\n    i.draw = hive.modifier(draw)\n    hive.connect(ex.canvas.draw, i.draw)\n\n    def new_explosion(self):\n        program = self.canvas.program\n        if program is None:\n            return\n        vertexbuffer = self.canvas.v_vertexbuffer\n        # New centerpos\n        centerpos = np.random.uniform(-0.5, 0.5, (3,))\n        program['u_centerPosition'] = centerpos\n\n        # New color, scale alpha with N\n        N = len(vertexbuffer)\n        alpha = 1.0 / N ** 0.08\n        color = np.random.uniform(0.1, 0.9, (3,))\n\n        program['u_color'] = tuple(color) + (alpha,)\n\n        # Create new vertex data\n        p = vertexbuffer.make_numpy()\n        p['a_lifetime'] = np.random.normal(2.0, 0.5, (N,))\n        start = p['a_startPosition']\n        end = p['a_endPosition']\n        start_values = np.random.normal(0.0, 0.2, (N, 3))\n        end_values = np.random.normal(0.0, 0.2, (N, 3))\n        # The following does not work in Numpy:\n        # start[:] = start_values\n        # end[:] = end_values\n        for n in range(3):\n            field = (\"x\",\"y\",\"z\")[n]\n            start[field] = start_values[:, n]\n            end[field] = end_values[:, n]\n\n        # Set time to zero\n        self._starttime = time.time()\n\n        program.bind(gloo.VertexBuffer(p))\n    i.new_explosion = hive.modifier(new_explosion)\n    hive.trigger(ex.canvas.program_rebuilt, i.new_explosion)\n\n    #make new_explosion triggerable from the outside\n    i.t_new_explosion = hive.triggerfunc(i.new_explosion)\n    ex.new_explosion = hive.hook(i.t_new_explosion)\n    ex.v_delay = hive.attribute(data_type=\"float\", start_value=1.5)\n    i.p_delay = hive.push_in(ex.v_delay)\n    ex.delay = hive.antenna(i.p_delay)\n\n    #export the canvas parameters\n    ex.vert_shader = hive.antenna(ex.canvas.vert_shader)\n    ex.frag_shader = hive.antenna(ex.canvas.frag_shader)\n    ex.texture_dict = hive.antenna(ex.canvas.texture_dict)\n    ex.vertexbuffer = hive.antenna(ex.canvas.vertexbuffer)\n    #ex.title = hive.antenna(ex.canvas.title)\n\n    #export the destroy() function\n    def destroy(self):\n        self.canvas.destroy()\n    i.destroy = hive.modifier(destroy)\n    ex.destroy = hive.entry(i.destroy)\n\nfireworkhive = hive.hive(\"fireworkhive\", build_fireworkhive)\n",
         "data_name": null
@@ -1213,12 +1232,12 @@
         ],
         "kwargs": {},
         "cell_args": {
-          "_arg1": "gen_vertexbuffer_params"
+          "_arg1": "gen_texture_dict_params"
         },
         "macro_module_name": "seamless.core.transformer",
         "macro_func_name": "transformer",
-        "macro_order": 0,
-        "target": "gen_vertexbuffer"
+        "macro_order": 1,
+        "target": "gen_texture_dict"
       },
       {
         "args": [
@@ -1226,12 +1245,12 @@
         ],
         "kwargs": {},
         "cell_args": {
-          "_arg1": "gen_texture_dict_params"
+          "_arg1": "gen_vertexbuffer_params"
         },
         "macro_module_name": "seamless.core.transformer",
         "macro_func_name": "transformer",
-        "macro_order": 1,
-        "target": "gen_texture_dict"
+        "macro_order": 0,
+        "target": "gen_vertexbuffer"
       },
       {
         "args": [
@@ -1259,13 +1278,13 @@
     ],
     "macro_listeners": [
       {
-        "cell": "gen_vertexbuffer_params",
-        "macro_target": "gen_vertexbuffer",
+        "cell": "gen_texture_dict_params",
+        "macro_target": "gen_texture_dict",
         "macro_arg": "_arg1"
       },
       {
-        "cell": "gen_texture_dict_params",
-        "macro_target": "gen_texture_dict",
+        "cell": "gen_vertexbuffer_params",
+        "macro_target": "gen_vertexbuffer",
         "macro_arg": "_arg1"
       }
     ],

@@ -73,20 +73,26 @@ class Cell(Managed, CellLike):
         self._check_destroyed()
         return self._dependent
 
-    def set(self, text_or_object):
+    def _set(self, text_or_object,propagate):
         """Update cell data from Python code in the main thread."""
         self._check_destroyed()
         if isinstance(text_or_object, (str, bytes)):
-            self._text_set(text_or_object, trusted=False)
+            self._text_set(text_or_object, propagate, trusted=False)
         else:
-            self._object_set(text_or_object, trusted=False)
+            self._object_set(text_or_object, propagate, trusted=False)
         return self
+
+    def set(self, text_or_object):
+        ret = self._set(text_or_object, propagate=True)
+        import seamless
+        seamless.run_work()
+        return ret
 
     def fromfile(self, filename):
         self._check_destroyed()
         return self.resource.fromfile(filename, frames_back=2)
 
-    def _text_set(self, data, trusted):
+    def _text_set(self, data, propagate, trusted):
         try:
             if self._status == self.__class__.StatusFlags.OK \
                     and (data is self._data or data is self._data_last or
@@ -110,14 +116,18 @@ class Cell(Managed, CellLike):
             self._status = self.__class__.StatusFlags.OK
 
             if not trusted and self._context is not None:
-                manager = self._get_manager()
-                manager.update_from_code(self)
+                if propagate:
+                    manager = self._get_manager()
+                    manager.update_from_code(self)
         return True
 
-    def _object_set(self, object_, trusted):
-        if self._status == self.__class__.StatusFlags.OK \
-                and object_ == self._last_object:
-            return False
+    def _object_set(self, object_, propagate, trusted):
+        if self._status == self.__class__.StatusFlags.OK:
+            try:
+                if object_ == self._last_object:
+                    return False
+            except ValueError:
+                pass
         try:
             """
             Construct the object:
@@ -141,8 +151,9 @@ class Cell(Managed, CellLike):
             self._last_object = copy.deepcopy(object_)
 
             if not trusted and self._context is not None:
-                manager = self._get_manager()
-                manager.update_from_code(self)
+                if propagate:
+                    manager = self._get_manager()
+                    manager.update_from_code(self)
         return True
 
     def touch(self):
@@ -153,10 +164,10 @@ class Cell(Managed, CellLike):
             manager = self._get_manager()
             manager.update_from_code(self)
 
-    def _update(self, data):
+    def _update(self, data, propagate=False):
         """Invoked when cell data is updated by a process."""
-        #return self._text_set(data, trusted=True)
-        return self.set(data) #for now, processes can also set with non-text...
+        #return self._text_set(data, propagate=False, trusted=True)
+        return self._set(data, propagate=False) #for now, processes can also set with non-text...
 
     def connect(self, target):
         """Connect the cell to a process's input pin."""
@@ -267,7 +278,7 @@ class PythonCell(Cell):
     _code_type = CodeTypes.ANY
     _required_code_type = CodeTypes.ANY
 
-    def _text_set(self, data, trusted):
+    def _text_set(self, data, propagate, trusted):
         if data == self._data:
             return False
         try:
@@ -315,11 +326,12 @@ class PythonCell(Cell):
             self._status = self.StatusFlags.OK
 
             if not trusted and self._context is not None:
-                manager = self._get_manager()
-                manager.update_from_code(self)
+                if propagate:
+                    manager = self._get_manager()
+                    manager.update_from_code(self)
             return True
 
-    def _object_set(self, object_, trusted):
+    def _object_set(self, object_, propagate, trusted):
         from .utils import strip_source
         try:
             """
@@ -345,8 +357,9 @@ class PythonCell(Cell):
             self._status = self.__class__.StatusFlags.OK
 
             if not trusted and self._context is not None:
-                manager = self._get_manager()
-                manager.update_from_code(self)
+                if propagate:
+                    manager = self._get_manager()
+                    manager.update_from_code(self)
             return code != oldcode
 
     def _on_connect(self, pin, process, incoming):

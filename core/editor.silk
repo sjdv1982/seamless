@@ -3,6 +3,7 @@ Type SeamlessEditorPin  {
   *Enum typ("codefunction", "codeblock", "read", "define", "modify")
   *Integer order
   *String celltype
+  Bool must_be_defined = True
   form {
     celltype.subtype = "celltype"
   }
@@ -18,5 +19,9 @@ Type SeamlessEditorPin  {
   validate {
     if order is not None:
         assert pin == "input" and typ == "codeblock"
+  }
+  validate {
+    if not must_be_defined:
+        assert pin in ("edit", "buffer", "signal")
   }
 }

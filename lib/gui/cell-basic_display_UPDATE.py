@@ -1,4 +1,4 @@
-if value.updated:
-    b.setValue(value.get())
-if title.updated:
-    w.setWindowTitle(title.get())
+if PINS.value.updated:
+    b.setValue(PINS.value.get())
+if PINS.title.updated:
+    w.setWindowTitle(PINS.title.get())
