@@ -1,0 +1,221 @@
+{
+  "lib": {
+    "/cell-filelink-start.py": {
+      "data": "if __name__ == \"__main__\":\n    #test with ipython -i\n    import sys, os\n\n    class dummy:\n        pass\n\n    class EditPin:\n        def __init__(self, value):\n            self.value = value\n            self.defined = True\n        def set(self, value):\n            print(\"SET\", value)\n            self.value = value\n        def get(self):\n            return self.value\n\n    class Getter:\n        def __init__(self, arg):\n            self.arg = arg\n        def get(self):\n            return self.arg\n    PINS = dummy()\n    PINS.value = EditPin(\"test\")\n    directory = sys.argv[1]\n    filename = sys.argv[2]\n    PINS.filepath = Getter(os.path.join(directory, filename))\n    PINS.latency = Getter(float(sys.argv[3]))\n    def serializer(v):\n        return str(v.get())\n    print(\"Edit in \" + filepath.get())\nelse:\n    from seamless.dtypes import serialize\n    def serializer(v):\n        return serialize(v._dtype, v.get())\n\n\nimport os, time, functools\nfrom threading import Thread, RLock\nlast_value = None\nlast_serialized_value = None\n\ndef write_file(fpath):\n    global last_mtime, last_value, last_serialized_value\n    if not PINS.value.defined:\n        last_mtime = -1 #will trigger a file read\n        return\n    if last_value == PINS.value.get():\n        return\n    val = serializer(PINS.value)\n    if last_serialized_value == val:\n        return\n    with lock:\n        if last_serialized_value != val:\n            #print(\"WRITE\", val)\n            with open(fpath, \"w\") as f:\n                f.write(val)\n                last_value = PINS.value.get()\n                last_serialized_value = val\n            last_time = time.time()\n            try:\n                stat = os.stat(fpath)\n                last_mtime = stat.st_mtime\n            except:\n                pass\n\ndef poll():\n    global last_time, last_mtime, last_value, last_serialized_value\n    fpath = PINS.filepath.get()\n    while 1:\n        time.sleep(PINS.latency.get())\n        curr_time = time.time()\n        last_time = curr_time\n        if not os.path.exists(fpath):\n            write_file(fpath)\n        else:\n            with lock:\n                stat = os.stat(fpath)\n                if stat.st_mtime > last_mtime:\n                    data = None\n                    with open(fpath) as f:\n                        data = f.read()\n                    if data is not None:\n                        if last_serialized_value != data:\n                            #print(\"LOAD\")\n                            PINS.value.set(data)\n                            last_value = None\n                            last_serialized_value = data\n                    last_mtime = stat.st_mtime\n\nt = Thread(target=poll)\nt.setDaemon(True)\nlock = RLock()\nwrite_file(PINS.filepath.get())\nt.start()\n",
+      "links": [
+        "ctx1.cell1"
+      ]
+    }
+  },
+  "macro": [
+    {
+      "with_context": false,
+      "dtype": [
+        "text",
+        "code",
+        "python"
+      ],
+      "type_args": [
+        "json",
+        "seamless",
+        "editor_params"
+      ],
+      "module_name": "seamless.core.editor",
+      "func_name": "editor",
+      "code": "@macro(type=(\"json\", \"seamless\", \"editor_params\"),with_context=False)\ndef editor(kwargs):\n    from seamless.core.editor import Editor #code must be standalone\n    #TODO: remapping, e.g. output_finish, destroy, ...\n    return Editor(kwargs)\n"
+    },
+    {
+      "with_context": false,
+      "dtype": [
+        "text",
+        "code",
+        "python"
+      ],
+      "type_args": [
+        "json",
+        "seamless",
+        "transformer_params"
+      ],
+      "module_name": "seamless.core.transformer",
+      "func_name": "transformer",
+      "code": "@macro(type=(\"json\", \"seamless\", \"transformer_params\"), with_context=False)\ndef transformer(kwargs):\n    from seamless.core.transformer import Transformer #code must be standalone\n    #TODO: remapping, e.g. output_finish, destroy, ...\n    return Transformer(kwargs)\n"
+    },
+    {
+      "with_context": true,
+      "dtype": [
+        "text",
+        "code",
+        "python"
+      ],
+      "type_args": "str",
+      "module_name": "seamless.lib.filelink",
+      "func_name": "filelink",
+      "code": "@macro(\"str\")\ndef filelink(ctx, cell_type):\n    cell_filelink_start = \"cell-filelink-start.py\" #repeat for inline\n    from seamless import editor\n    pinparams = {\n       \"value\": {\n         \"pin\": \"edit\",\n         \"dtype\": cell_type\n       },\n       \"filepath\" : {\n         \"pin\": \"input\",\n         \"dtype\": \"str\"\n       },\n       \"latency\" : {\n         \"pin\": \"input\",\n         \"dtype\": \"float\"\n       },\n    }\n    ed = ctx.ed = editor(pinparams)\n    ed.code_start.cell().fromfile(cell_filelink_start)\n    ed.code_update.cell().set(\"write_file(filepath.get())\")\n    ed.code_stop.cell().set('t.join(0)')\n    ctx.export(ed)\n"
+    }
+  ],
+  "main": {
+    "type": "context",
+    "like_process": false,
+    "like_cell": false,
+    "pins": {},
+    "auto": [
+      "cell1",
+      "cell2",
+      "cell3",
+      "cell4",
+      "cell5",
+      "ctx1"
+    ],
+    "children": {
+      "cell1": {
+        "dtype": [
+          "text",
+          "code",
+          "python"
+        ],
+        "data": ""
+      },
+      "cell2": {
+        "dtype": [
+          "text",
+          "code",
+          "python"
+        ],
+        "data": "widget.destroy()"
+      },
+      "cell3": {
+        "dtype": [
+          "text",
+          "code",
+          "python"
+        ],
+        "data": "from PyQt5 import QtGui, QtWidgets, QtCore\nfrom PyQt5.QtCore import Qt\nfrom PyQt5.QtWidgets import QWidget, QLabel, QPlainTextEdit\nfrom PyQt5.QtGui import QPainter, QPixmap, QPen\nclass Panel(QWidget):\n    def __init__(self, parent):\n        QLabel.__init__(self, parent)\n    def paintEvent(self, e):\n        super().paintEvent(e)\n        qp = QPainter()\n        qp.begin(self)\n        line_numbers = (3,5,6,14)\n        try:\n            qp.setBrush(QtGui.QColor(\"#D0D0D0\"))\n            qp.drawRect(0,0,self.width(), self.height())\n            qp.setBrush(Qt.red)\n            x = self.parent().margin / 2\n            for top, bottom, line_number, block in self.parent().visible_blocks:\n                if line_number in line_numbers:\n                    mid = (bottom + top)/2\n                    radius = (bottom - top) / 2\n                    qp.drawEllipse(x-0.5*radius, mid-0.5*radius, radius, radius)\n        finally:\n            qp.end()\n\n\nclass CodeEditor(QPlainTextEdit):\n    margin = 50\n    def __init__(self):\n        super().__init__()\n        self.panel = Panel(self)\n        self.visible_blocks = []\n        #self.panel.show()\n\n    def update_visible_blocks(self, event):\n        \"\"\"Update the list of visible blocks/lines position\"\"\"\n        #from Spyder prpject\n        self.visible_blocks[:] = []\n        block = self.firstVisibleBlock()\n        blockNumber = block.blockNumber()\n        top = int(self.blockBoundingGeometry(block).translated(\n            self.contentOffset()).top())\n        bottom = top + int(self.blockBoundingRect(block).height())\n        ebottom_top = 0\n        ebottom_bottom = self.height()\n\n        while block.isValid():\n            visible = (top >= ebottom_top and bottom <= ebottom_bottom)\n            if not visible:\n                break\n            if block.isVisible():\n                self.visible_blocks.append((top, bottom, blockNumber+1, block))\n            block = block.next()\n            top = bottom\n            bottom = top + int(self.blockBoundingRect(block).height())\n            blockNumber = block.blockNumber()\n\n    def resizeEvent(self, e):\n        #print(e.size())\n        super().resizeEvent(e)\n        crect = self.contentsRect()\n        self.viewport().setGeometry(\n          crect.left() + self.margin,\n          crect.top(),\n          crect.width() - self.margin,\n          crect.height()\n        )\n        self.panel.setGeometry(\n            crect.left(),\n            crect.top(),\n            self.margin,\n            crect.height(),\n        )\n\n    def paintEvent(self, e):\n        self.update_visible_blocks(e)\n        #print(self.visible_blocks[0][2])\n        self.panel.repaint()\n        super().paintEvent(e)\n\n        #self.panel.paintEvent(e)\n        #print(\"PAINT!\")\n\n\nwidget = CodeEditor()\nwidget.setGeometry(0, 100, 300,200)\nwidget.zoomIn(10)\nwidget.show()\nwidget.setPlainText(\"\\n\".join([str(v) for v in range(10,1000,10)]))\n"
+      },
+      "cell4": {
+        "dtype": "str",
+        "data": "./code-editor.py"
+      },
+      "cell5": {
+        "dtype": "float",
+        "data": "0.2"
+      },
+      "ctx1": {
+        "type": "context",
+        "like_process": true,
+        "like_cell": false,
+        "pins": {
+          "filepath": "ctx1.ed.filepath",
+          "latency": "ctx1.ed.latency",
+          "value": "ctx1.ed.value"
+        },
+        "auto": [
+          "cell1",
+          "cell2",
+          "cell3"
+        ],
+        "children": {
+          "cell1": {
+            "dtype": [
+              "text",
+              "code",
+              "python"
+            ],
+            "resource": {
+              "filename": "/cell-filelink-start.py",
+              "lib": true,
+              "mode": 2
+            },
+            "data": "if __name__ == \"__main__\":\n    #test with ipython -i\n    import sys, os\n\n    class dummy:\n        pass\n\n    class EditPin:\n        def __init__(self, value):\n            self.value = value\n            self.defined = True\n        def set(self, value):\n            print(\"SET\", value)\n            self.value = value\n        def get(self):\n            return self.value\n\n    class Getter:\n        def __init__(self, arg):\n            self.arg = arg\n        def get(self):\n            return self.arg\n    PINS = dummy()\n    PINS.value = EditPin(\"test\")\n    directory = sys.argv[1]\n    filename = sys.argv[2]\n    PINS.filepath = Getter(os.path.join(directory, filename))\n    PINS.latency = Getter(float(sys.argv[3]))\n    def serializer(v):\n        return str(v.get())\n    print(\"Edit in \" + filepath.get())\nelse:\n    from seamless.dtypes import serialize\n    def serializer(v):\n        return serialize(v._dtype, v.get())\n\n\nimport os, time, functools\nfrom threading import Thread, RLock\nlast_value = None\nlast_serialized_value = None\n\ndef write_file(fpath):\n    global last_mtime, last_value, last_serialized_value\n    if not PINS.value.defined:\n        last_mtime = -1 #will trigger a file read\n        return\n    if last_value == PINS.value.get():\n        return\n    val = serializer(PINS.value)\n    if last_serialized_value == val:\n        return\n    with lock:\n        if last_serialized_value != val:\n            #print(\"WRITE\", val)\n            with open(fpath, \"w\") as f:\n                f.write(val)\n                last_value = PINS.value.get()\n                last_serialized_value = val\n            last_time = time.time()\n            try:\n                stat = os.stat(fpath)\n                last_mtime = stat.st_mtime\n            except:\n                pass\n\ndef poll():\n    global last_time, last_mtime, last_value, last_serialized_value\n    fpath = PINS.filepath.get()\n    while 1:\n        time.sleep(PINS.latency.get())\n        curr_time = time.time()\n        last_time = curr_time\n        if not os.path.exists(fpath):\n            write_file(fpath)\n        else:\n            with lock:\n                stat = os.stat(fpath)\n                if stat.st_mtime > last_mtime:\n                    data = None\n                    with open(fpath) as f:\n                        data = f.read()\n                    if data is not None:\n                        if last_serialized_value != data:\n                            #print(\"LOAD\")\n                            PINS.value.set(data)\n                            last_value = None\n                            last_serialized_value = data\n                    last_mtime = stat.st_mtime\n\nt = Thread(target=poll)\nt.setDaemon(True)\nlock = RLock()\nwrite_file(PINS.filepath.get())\nt.start()\n"
+          },
+          "cell2": {
+            "dtype": [
+              "text",
+              "code",
+              "python"
+            ],
+            "data": "write_file(PINS.filepath.get())"
+          },
+          "cell3": {
+            "dtype": [
+              "text",
+              "code",
+              "python"
+            ],
+            "data": "t.join(0)"
+          },
+          "ed": {
+            "type": "editor",
+            "mode": "sync",
+            "params": {
+              "filepath": {
+                "dtype": "str",
+                "pin": "input"
+              },
+              "latency": {
+                "dtype": "float",
+                "pin": "input"
+              },
+              "value": {
+                "dtype": [
+                  "text",
+                  "code",
+                  "python"
+                ],
+                "pin": "edit"
+              }
+            }
+          }
+        }
+      },
+      "ed": {
+        "type": "editor",
+        "mode": "sync",
+        "params": {}
+      }
+    },
+    "macro_objects": [],
+    "macro_listeners": [],
+    "registrar_items": [],
+    "registrar_listeners": [],
+    "registrar_cells": [],
+    "pin_cell_connections": [],
+    "cell_pin_connections": [
+      [
+        "cell1",
+        "ed.code_update"
+      ],
+      [
+        "cell2",
+        "ed.code_stop"
+      ],
+      [
+        "cell3",
+        "ctx1.ed.value"
+      ],
+      [
+        "cell3",
+        "ed.code_start"
+      ],
+      [
+        "cell4",
+        "ctx1.ed.filepath"
+      ],
+      [
+        "cell5",
+        "ctx1.ed.latency"
+      ],
+      [
+        "ctx1.cell1",
+        "ctx1.ed.code_start"
+      ],
+      [
+        "ctx1.cell2",
+        "ctx1.ed.code_update"
+      ],
+      [
+        "ctx1.cell3",
+        "ctx1.ed.code_stop"
+      ]
+    ]
+  }
+}
