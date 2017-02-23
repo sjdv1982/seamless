@@ -30,6 +30,186 @@ def macro_mode_as(macro_mode):
     yield
     _macro_mode = old_macro_mode
 
+
+class MacroObject:
+    macro = None
+    args = []
+    kwargs = {}
+    cell_args = {}
+    _parent = None
+
+    def __init__(self, macro, args, kwargs, cell_args):
+        self.macro = macro
+        self.args = args
+        self.kwargs = kwargs
+        self.cell_args = cell_args
+
+    def connect(self, parent):
+        from .cell import CellLike
+        from .process import ProcessLike
+        from .registrar import RegistrarObject
+        assert (isinstance(parent, CellLike) and parent._like_cell) or \
+         (isinstance(parent, ProcessLike) and parent._like_process) or \
+         isinstance(parent, RegistrarObject), type(parent)
+        #TODO: check that all cells and parent share a common root
+        self._parent = weakref.ref(parent)
+        for k in self.cell_args:
+            cell = self.cell_args[k]
+            cell.add_macro_object(self, k)
+
+    def update_cell(self, cellname):
+        from .context import Context
+        from .cell import Cell
+        from .process import Process, InputPinBase, OutputPinBase
+        parent = self._parent()
+        grandparent = parent.context
+        assert isinstance(grandparent, Context), grandparent
+        for parent_childname in grandparent._children:
+            if grandparent._children[parent_childname] is parent:
+                break
+        else:
+            exc = "Cannot identify parent-child relationship of macro context {0}"
+            raise AttributeError(exc.format(parent))
+        external_connections = []
+
+        def find_external_connections_cell(cell, path, parent_path, parent_owns):
+            owns = parent_owns
+            if owns is None:
+                owns = cell._owns_all()
+            manager = cell._get_manager()
+            cell_id = manager.get_cell_id(cell)
+             #no macro listeners or registrar listeners; these the macro should re-create
+            incons = manager.cell_to_output_pin.get(cell, [])
+            for incon in incons:
+                output_pin = incon()
+                if output_pin is None:
+                    continue
+                process = output_pin.process_ref()
+                if process is None or process in owns:
+                    continue
+                if parent_path is not None:
+                    if output_pin.path[:len(parent_path)] == parent_path:
+                        continue
+                external_connections.append((True, output_pin, path, output_pin.path))
+            outcons = manager.listeners[cell_id]
+            for outcon in outcons:
+                input_pin = outcon()
+                if input_pin is None:
+                    continue
+                process = input_pin.process_ref()
+                if process is None or process in owns:
+                    continue
+                if parent_path is not None:
+                    if input_pin.path[:len(parent_path)] == parent_path:
+                        continue
+                assert len(input_pin.path)
+                external_connections.append((False, path, input_pin, input_pin.path))
+
+        def find_external_connections_process(process, path, parent_path, parent_owns):
+            if path is None:
+                path = ()
+            owns = parent_owns
+            if owns is None:
+                owns = process._owns_all()
+            for pinname, pin in process._pins.items():
+                manager = pin._get_manager()
+                pin_id = pin.get_pin_id()
+                if isinstance(pin, InputPinBase):
+                    is_incoming = True
+                    cell_ids = manager.pin_to_cells.get(pin_id, [])
+                elif isinstance(pin, OutputPinBase):
+                    is_incoming = False
+                    cell_ids = pin._cell_ids
+                else:
+                    raise TypeError((pinname, pin))
+                for cell_id in cell_ids:
+                    cell = manager.cells.get(cell_id, None)
+                    if cell is None:
+                        continue
+                    if cell in owns:
+                        continue
+                    if parent_path is not None:
+                        if cell.path[:len(parent_path)] == parent_path:
+                            continue
+                    path2 = path + (pinname,)
+                    if is_incoming:
+                        external_connections.append((True, cell, path2, cell.path))
+                    else:
+                        external_connections.append((False, path2, cell, cell.path))
+
+        def find_external_connections_context(ctx, path, parent_path, parent_owns):
+            parent_path2 = parent_path
+            if parent_path is None:
+                parent_path2 = ctx.path
+            owns = parent_owns
+            if owns is None:
+                owns = ctx._owns_all()
+            for childname, child in ctx._children.items():
+                if path is not None:
+                    path2 = path + (childname,)
+                else:
+                    path2 = (childname,)
+                if isinstance(child, Cell):
+                    find_external_connections_cell(child, path2, parent_path2, owns)
+                elif isinstance(child, Process):
+                    find_external_connections_process(child, path2, parent_path2, owns)
+                elif isinstance(child, Context):
+                    find_external_connections_context(child, path2, parent_path2, owns)
+                else:
+                    raise TypeError((childname, child))
+
+        if isinstance(parent, Cell):
+            find_external_connections_cell(parent, None, None, None)
+        elif isinstance(parent, Process):
+            find_external_connections_process(parent, None, None, None)
+        elif isinstance(parent, Context):
+            find_external_connections_context(parent, None, None, None)
+        elif parent is None:
+            pass
+
+        new_parent = self.macro.evaluate(self.args, self.kwargs, self)
+        setattr(grandparent, parent_childname, new_parent) #destroys parent and connections
+        self._parent = weakref.ref(new_parent)
+
+        def resolve_path(target, path, index):
+            if path is not None and len(path) > index:
+                try:
+                    new_target = getattr(target, path[index])
+                except AttributeError:
+                    warn = "WARNING: cannot reconstruct connections for '{0}', target no longer exists"
+                    subpath = "." + ".".join(target.path + path[:index+1])
+                    print(warn.format(subpath))
+                    return None
+                return resolve_path(new_target, path, index+1)
+            return target
+        for is_incoming, source, dest, ext_path in external_connections:
+            print("CONNECTION: is_incoming {0}, source {1}, dest {2}".format(is_incoming, source, dest))
+            err = "Connection {0}::(is_incoming {1}, source {2}, dest {3}) points to a destroyed external cell"
+            if is_incoming:
+                if source._destroyed:
+                    print("ERROR:", err.format(new_parent.path, is_incoming, ext_path, dest) + " (source)")
+                dest_target = resolve_path(new_parent, dest, 0)
+                if dest_target is not None:
+                    source.connect(dest_target)
+            else:
+                if dest._destroyed:
+                    print("ERROR:", err.format(new_parent.path, is_incoming, source, ext_path) + " (dest)")
+                    continue
+                source_target = resolve_path(new_parent, source, 0)
+                if source_target is not None:
+                    source_target.connect(dest)
+
+    def set_registrar_listeners(self, registrar_listeners):
+        for registrar, manager, key in registrar_listeners:
+            manager.add_registrar_listener(registrar, key, self, None)
+
+    def __del__(self):
+        if self._parent is None:
+            return
+        for k in self.cell_args:
+            cell = self.cell_args[k]
+            cell.remove_macro_object(self, k)
+
 class Macro:
     module_name = None
     func_name = None
@@ -40,8 +220,9 @@ class Macro:
     def __init__(self, type=None, with_context=True,
             registrar=None,func=None):
         self.with_context = with_context
+
         self.registrar = registrar
-        self.type_args = None
+        self._type_args = None
         self._type_args_unparsed = type
         self.macro_objects = weakref.WeakValueDictionary() #"WeakList"
         if func is not None:
@@ -50,56 +231,59 @@ class Macro:
 
         if type is None:
             return
+
         if isinstance(type, tuple) or isinstance(type, str):
-            self.type_args = dict(
-             _order=["_arg1"],
-             _required=["_arg1"],
-             _default={},
-             _arg1=type,
-            )
+            self._type_args = {'_order': ["_arg1"], '_required': ["_arg1"], '_default': {}, '_arg1': type}
             return
 
         if not isinstance(type, dict):
             raise TypeError(type.__class__)
+
+        self._type_args = self._get_type_args_from_dict(type)
+
+    @staticmethod
+    def _get_type_args_from_dict(type):
         order = []
         if "_order" in type:
             order = type["_order"]
             assert sorted(order) == sorted([k for k in type.keys() if not k.startswith("_")])
         required = set()
         default = {}
-        ret = dict(_order=order, _required=required, _default=default)
-        last_nonreq = None
-        for k in type:
-            if k.startswith("_"):
-                if k == "_order":
-                    continue
-                assert k.startswith("_arg"), k
-            v = type[k]
-            is_req = True
-            if isinstance(v, dict) and \
-             (v.get("optional", False) or "default" in v):
-                is_req = False
-            if isinstance(type, OrderedDict):
-                order.append(k)
-                if is_req and last_nonreq:
-                    exc = "Cannot specify required argument '{0}' after non-required argument '{1}'"
-                    raise Exception(exc.format(k, last_nonreq))
+        type_args = {'_order': order, '_required': required, '_default': default}
+        last_non_required_name = None
 
-            vtype = v
-            if isinstance(v, dict):
-                vtype = v["type"]
-                if "default" in v:
+        for name, value in type.items():
+            if name.startswith("_"):
+                if name == "_order":
+                    continue
+                assert name.startswith("_arg"), k
+
+            is_required = True
+            if isinstance(value, dict) and (value.get("optional", False) or "default" in value):
+                is_required = False
+
+            if isinstance(type, OrderedDict):
+                order.append(name)
+                if is_required and last_non_required_name:
+                    message = "Cannot specify required argument '{0}' after non-required argument '{1}'"
+                    raise Exception(message.format(name, last_non_required_name))
+
+            value_type = value
+            if isinstance(value, dict):
+                value_type = value["type"]
+                if "default" in value:
                     #TODO: checking regarding type <=> default
                     #TODO: check that the default can be serialised, or at least pickled
-                    default[k] = v["default"]
-            ret[k] = vtype
+                    default[name] = value["default"]
+            type_args[name] = value_type
 
-            if is_req:
-                required.add(k)
+            if is_required:
+                required.add(name)
+
             else:
-                last_nonreq = k
-        ret = copy.deepcopy(ret)
-        self.type_args = ret
+                last_non_required_name = name
+
+        return copy.deepcopy(type_args)
 
     def set_func(self, func):
         if self.registrar:
@@ -177,12 +361,14 @@ class Macro:
         #TODO: allow CellLike contexts as well (also in cell_args in resolve_type_args)
         from .cell import Cell
         from ..dtypes import parse
-        if isinstance(a, Cell):
-            return parse(a.dtype, a._data, trusted=True)
-        else:
-            return a
 
-    def resolve_type_args(self, args0, kwargs0):
+        if isinstance(obj, Cell):
+            return parse(obj.dtype, obj._data, trusted=True)
+
+        else:
+            return obj
+
+    def resolve_type_args(self, args, kwargs):
         """
         #TODO: When macro object is created and attached to context X, verify that all resolved
          cells and X have a common ancestor (._root)
@@ -190,38 +376,44 @@ class Macro:
         from .cell import Cell
 
         macro_object = None
-        args = [self.resolve(a) for a in args0]
-        kwargs = {k: self.resolve(v) for k, v in kwargs0.items()}
-        if self.type_args is None:
-            return args, kwargs, None
+        resolved_args = [self.resolve(a) for a in args]
+        resolved_kwargs = {k: self.resolve(v) for k, v in kwargs.items()}
+
+        order = self._type_args["_order"]
+        assert len(resolved_args) <= len(order)
+
+        if self._type_args is None:
+            return resolved_args, resolved_kwargs, None
 
         #TODO: take and adapt corresponding routine from Hive
         cell_args = {}
-        args2, kwargs2 = [], {}
-        order = self.type_args["_order"]
-        assert len(args) <= len(order)
+        new_args, new_kwargs = [], {}
         positional_done = set()
-        for anr in range(len(args)):
-            argname = order[anr]
-            arg = args[anr]
-            arg0 = args0[anr]
+
+        for name, arg, arg0 in zip(order, resolved_args, args):
             #TODO: type validation
-            if argname.startswith("_arg"):
-                args2.append(arg)
-                positional_done.add(argname)
+            if name.startswith("_arg"):
+                new_args.append(arg)
+                positional_done.add(name)
             else:
-                kwargs2[argname] = arg
+                new_kwargs[name] = arg
+
             if isinstance(arg0, Cell):
-                cell_args[argname] = arg0
-        for argname in kwargs:
-            assert not argname.startswith("_"), argname #not supported
-            assert argname in self.type_args, (argname, [v for v in self.type_args.keys() if not v.startswith("_")])
-            arg = kwargs[argname]
+                cell_args[name] = arg0
+
+        new_kwargs.update(resolved_kwargs)
+
+        for name, arg in resolved_kwargs.items():
+            assert not name.startswith("_"), name  # not supported
+            assert name in self._type_args, (name, [v for v in self._type_args.keys() if not v.startswith("_")])
             #TODO: type validation
-            arg0 = kwargs0[argname]
-            kwargs2[argname] = arg
+            arg0 = kwargs[name]
+
             if isinstance(arg0, Cell):
-                cell_args[argname] = arg0
+                cell_args[name] = arg0
+
+        default = self._type_args["_default"]
+        required = self._type_args["_required"]
 
         default = self.type_args["_default"]
         required = self.type_args["_required"]
@@ -229,21 +421,20 @@ class Macro:
             if argname.startswith("_arg"):
                 assert argname in positional_done, (argname, order, len(args)) #TODO: error message
             else:
-                assert argname in kwargs2, argname #TODO: error message
-        for argname in self.type_args:
-            if argname.startswith("_"):
-                continue
-            if argname in kwargs2 and kwargs2[argname] is not None:
-                continue
-            arg_default = default.get(argname, None)
-            kwargs2[argname] = arg_default
-        if len(cell_args):
-            macro_object = MacroObject(self, args0, kwargs0, cell_args)
-        return args2, kwargs2, macro_object
+                assert name in new_kwargs, name  # TODO: error message
 
+        for name in self._type_args:
+            if name.startswith("_"):
+                continue
+            if name in new_kwargs and new_kwargs[name] is not None:
+                continue
 
-    def __call__(self, *args, **kwargs):
-        return self.evaluate(args, kwargs, None)
+            arg_default = default.get(name, None)
+            new_kwargs[name] = arg_default
+
+        if cell_args:
+            macro_object = MacroObject(self, args, kwargs, cell_args)
+        return new_args, new_kwargs, macro_object
 
     def evaluate(self, args, kwargs, macro_object):
         from .cell import Cell, CellLike
@@ -253,26 +444,24 @@ class Macro:
         from .context import active_context_as
         from .. import run_work
 
-        args2, kwargs2, mobj = self.resolve_type_args(args, kwargs)
+        resolved_args, resolved_kwargs, mobj = self.resolve_type_args(args, kwargs)
         func = self.func
         if macro_object is not None:
             mobj = macro_object
             parent = macro_object._parent()
             if isinstance(parent, RegistrarObject):
                 func = parent.re_register
-                args2 = args2[1:] #TODO: bound object because of hack...
-        previous_macro_mode = get_macro_mode()
+                resolved_args = resolved_args[1:]  #TODO: bound object because of hack...
+
         if self.with_context:
             ctx = get_active_context()._new_subcontext()
-            ret = None
-            try:
-                with active_context_as(ctx):
-                    set_macro_mode(True)
-
-                    ret = func(ctx, *args2, **kwargs2)
+            result = None
+            with active_context_as(ctx), macro_mode_as(True):
+                try:
+                    ret = func(ctx, *resolved_args, **resolved_kwargs)
                     if ret is not None:
                         raise TypeError("Context macro must return None")
-                    if len(_macro_registrar):
+                    if _macro_registrar:
                         if mobj is None:
                             mobj = MacroObject(self, args, kwargs, {})
                         mobj.set_registrar_listeners(_macro_registrar)
@@ -281,56 +470,68 @@ class Macro:
                     if macro_object is None: #this is a new construction, not a re-evaluation
                         if mobj is not None:
                             mobj.connect(ctx)
-                    ret = ctx
-            finally:
-                _macro_registrar.clear()
-                if ret is None:
-                    ctx.destroy()
-                set_macro_mode(previous_macro_mode)
+                    result = ctx
+                finally:
+                    _macro_registrar.clear()
+                    if result is None:
+                        ctx.destroy()
         else:
             with macro_mode_as(True):
-                ret = func(*args2, **kwargs2)
-                assert (isinstance(ret, CellLike) and ret._like_cell) or \
-                 (isinstance(ret, ProcessLike) and ret._like_process) or \
-                 isinstance(ret, RegistrarObject), (func, type(ret))
-                if isinstance(ret, Cell):
-                    manager = ret._get_manager()
-                    cell_id = manager.get_cell_id(ret)
-                    incons = manager.cells[cell_id]
-                    for incon in incons:
-                        process = incon.process_ref()
-                        ret.own(process)
-                    outcons = manager.listeners[ret]
-                    for outcon in outcons:
-                        process = outcon.process_ref()
-                        ret.own(process)
-                elif isinstance(ret, Process):
-                    for pinname, pin in ret._pins.items():
+                result = func(*resolved_args, **resolved_kwargs)
+                assert (isinstance(result, CellLike) and result._like_cell) \
+                       or (isinstance(result, ProcessLike) and result._like_process) \
+                       or isinstance(result, RegistrarObject), (func, type(result))
+
+                if isinstance(result, Cell):
+                    manager = result._get_manager()
+                    cell_id = manager.get_cell_id(result)
+
+                    in_pins = manager.cells[cell_id]
+                    for in_pin in in_pins:
+                        process = in_pin.process_ref()
+                        result.own(process)
+
+                    out_pins = manager.listeners[result]
+                    for out_pin in out_pins:
+                        process = out_pin.process_ref()
+                        result.own(process)
+
+                elif isinstance(result, Process):
+                    for pinname, pin in result._pins.items():
                         manager = pin._get_manager()
                         pin_id = pin.get_pin_id()
+
                         if isinstance(pin, (InputPinBase, EditPinBase)):
                             cell_ids = manager.pin_to_cells.get(pin_id, [])
+
                         elif isinstance(pin, OutputPinBase):
                             cell_ids = pin._cell_ids
+
                         else:
                             raise TypeError((pinname, pin))
+
                         for cell_id in cell_ids: #TODO: indirect ownage
                             cell = manager.cells.get(cell_id, None)
                             if cell is None:
                                 continue
-                            ret.own(cell)
-                elif isinstance(ret, RegistrarObject):
+                            result.own(cell)
+                elif isinstance(result, RegistrarObject):
                     pass
                 else:
-                    raise NotImplementedError(type(ret))
-                ret._set_macro_object(mobj)
+                    raise NotImplementedError(type(result))
+
+                result._set_macro_object(mobj)
                 if macro_object is None: #this is a new construction, not a re-evaluation
                     if mobj is not None:
-                        mobj.connect(ret)
+                        mobj.connect(result)
 
         if not get_macro_mode():
             run_work()
-        return ret
+        return result
+
+    def __call__(self, *args, **kwargs):
+        return self.evaluate(args, kwargs, None)
+
 
 def macro(*args, **kwargs):
     """Macro decorator,  wraps a macro function

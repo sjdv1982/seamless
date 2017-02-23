@@ -5,6 +5,7 @@ import inspect
 import ast
 import os
 import copy
+from enum import Enum
 
 from .. import dtypes
 from .utils import find_return_in_scope
@@ -12,10 +13,12 @@ from .process import Managed
 from . import libmanager
 from .resource import Resource
 
+
 class CellLike(object):
     """Base class for cells and contexts
     CellLikes are captured by context.cells"""
     _like_cell = True
+
 
 class Cell(Managed, CellLike):
     """Default class for cells.
@@ -23,9 +26,7 @@ class Cell(Managed, CellLike):
     Cells contain all the state in text form
     """
 
-    class StatusFlags:
-        UNINITIALISED, ERROR, OK = range(3)
-    StatusFlagNames = ["UNINITIALISED", "ERROR", "OK"]
+    StatusFlags = Enum('StatusFlags', ('UNINITIALISED', 'ERROR', 'OK'))
 
     _dtype = None
     _data = None  # data, always in text format
@@ -44,12 +45,15 @@ class Cell(Managed, CellLike):
     def __init__(self, dtype, *, naming_pattern="cell"):
         """TODO: docstring."""
         super().__init__()
+
         from .macro import get_macro_mode
         from .context import get_active_context
         assert dtypes.check_registered(dtype), dtype
+
         self._dtype = dtype
         self._last_object = None
         self._resource = Resource(self)
+
         if get_macro_mode():
             ctx = get_active_context()
             ctx._add_new_cell(self, naming_pattern)
@@ -253,6 +257,7 @@ class Cell(Managed, CellLike):
         self.resource.destroy()
         super().destroy()
 
+
 class PythonCell(Cell):
     """
     A cell containing Python code.
@@ -270,8 +275,7 @@ class PythonCell(Cell):
             The code block contains no return statement
     """
 
-    class CodeTypes:
-        ANY, FUNCTION, BLOCK = range(3)
+    CodeTypes = Enum('CodeTypes', ('ANY', 'FUNCTION', 'BLOCK'))
 
     _dtype = ("text", "python")
 
