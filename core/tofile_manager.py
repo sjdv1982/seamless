@@ -16,7 +16,7 @@ def macro_object_to_json(macro_object):
 
     mo = OrderedDict()
     macro = macro_object.macro
-    order = macro.type_args["_order"]
+    order = macro._type_args["_order"]
 
     args = []
     kwargs = {}

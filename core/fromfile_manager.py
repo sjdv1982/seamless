@@ -19,7 +19,7 @@ def json_to_macro_objects(ctx, data):
     for d in data:
         key = (d["macro_module_name"], d["macro_func_name"])
         macro = _macros[key]
-        order = macro.type_args["_order"]
+        order = macro._type_args["_order"]
         args = []
         for argname, arg in enumerate(d["args"]):
             args.append(arg)
