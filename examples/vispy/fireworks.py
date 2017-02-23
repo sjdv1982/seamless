@@ -39,6 +39,8 @@ N.set(10000)
 # does not work with live macro cells:
 # ctx.registrar.silk.connect("VertexData", ctx.gen_vertexbuffer)
 # ctx.registrar.silk.connect("VertexDataArray", ctx.gen_vertexbuffer)
+ctx.registrar.silk.connect("VertexData", ctx)
+ctx.registrar.silk.connect("VertexDataArray", ctx)
 
 ctx.gen_vertexbuffer.code.cell().set(
 """
@@ -131,3 +133,9 @@ ctx.ed_gen_texturedict = link(ctx.gen_texture_dict.code.cell(),
 #ctx.ed_gen_texture_dict_params = link(ctx.gen_texture_dict_params, tmpdir, "Texdict gen params")
 
 #ctx.c2.set(ctx.c2.data.replace("800", "400"))
+
+import time
+time.sleep(0.1)
+
+import os
+ctx.tofile(os.path.splitext(__file__)[0] + ".seamless", backup=False)

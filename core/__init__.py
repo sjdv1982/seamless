@@ -58,6 +58,8 @@ class SeamlessBase:
                 childname = self.name
                 assert self._context._children[childname] is self
                 self._context._children.pop(childname)
+                if childname in self._context._auto:
+                    self._context._auto.remove(childname)
         if context is not None:
             self._last_context = context
         self._context = context
@@ -74,6 +76,7 @@ class SeamlessBase:
         from .process import Process
         from .macro import get_macro_mode
         assert isinstance(obj, (Cell, Process, Context)), type(obj)
+        assert obj is not self
         if self._owner is not None:
             owner = self._owner()
             if owner is not None:
@@ -116,13 +119,19 @@ When any of these cells change and the macro is re-executed, the owned object wi
             owns.update(owned._owns_all())
         return owns
 
-    def _macro_control(self, include_owner=False, primary=True):
+    def _macro_control(self, include_owner=False, primary=True, done=None):
         if self._macro_object is not None:
             return self
+        if done is None:
+            done = []
+        if self in done:
+            msg = "Ownership circle:\n    " + "\n    ".join([str(x) for x in done])
+            raise Exception(msg)
+        done.append(self)
 
         ret = None
         if self.context is not None:
-            ret = self.context._macro_control(include_owner, False)
+            ret = self.context._macro_control(include_owner, False, done)
         if ret is not None:
             return ret
         if include_owner:

@@ -254,6 +254,7 @@ class Editor(Process):
 # @macro takes nothing, a type, or a dict of types
 @macro(type=("json", "seamless", "transformerparams"), with_context=False)
 def editor(kwargs):
+    from seamless.core.editor import Editor #code must be standalone
     #TODO: remapping, e.g. output_finish, destroy, ...
     return Editor(kwargs)
 

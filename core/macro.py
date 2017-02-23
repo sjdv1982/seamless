@@ -1,18 +1,16 @@
 from collections import OrderedDict
 import functools
 import copy
+import inspect
+import sys
 import weakref
 from .context import context, get_active_context
 from contextlib import contextmanager as _pystdlib_contextmanager
+from .macro_object import MacroObject
+from .cached_compile import cached_compile
 
-#TODO: implement lib system, and let pins connect to CellProxies instead of
-# cells. CellProxies work exactly the same as cells
-# (pass-through attribute access), except that they can be forked
-#TODO: get the source of the macro, store this in a cell, and make sure that
-# 1. it gets properly captured by the lib system
-# 2. if the source of the macro is different from the lib cell content,
-# fork any cellproxies linking to the old lib cell, then update the lib cell,
-# and issue a warning
+#macros = weakref.WeakValueDictionary()
+_macros = {}
 
 _macro_mode = False
 _macro_registrar = []
@@ -212,13 +210,24 @@ class MacroObject:
             cell = self.cell_args[k]
             cell.remove_macro_object(self, k)
 
-
 class Macro:
+    module_name = None
+    func_name = None
+    code = None
+    dtype = ("text", "code", "python")
+    registrar = None
 
-    def __init__(self, type=None, with_context=True, func=None):
+    def __init__(self, type=None, with_context=True,
+            registrar=None,func=None):
         self.with_context = with_context
+
+        self.registrar = registrar
         self._type_args = None
-        self.func = func
+        self._type_args_unparsed = type
+        self.macro_objects = weakref.WeakValueDictionary() #"WeakList"
+        if func is not None:
+            assert callable(func)
+            self.set_func(func)
 
         if type is None:
             return
@@ -276,7 +285,79 @@ class Macro:
 
         return copy.deepcopy(type_args)
 
-    def resolve(self, obj):
+    def set_func(self, func):
+        if self.registrar:
+            #self.registrar = func.__self__
+            self.func = func
+            return self
+
+        code = inspect.getsource(func)
+        module = inspect.getmodule(func)
+        #HACK:
+        # I don't know how to get a module's import path in another way,
+        # and apparently a module is in sys.modules already during import
+        for k, v in sys.modules.items():
+            if v is module:
+                module_name = k
+                break
+        else:
+            raise ValueError #module is not in sys.modules...
+        func_name = func.__name__
+        if (module_name, func_name) in _macros:
+            ret = _macros[module_name, func_name]
+            ret.update_code(code)
+        else:
+            _macros[module_name, func_name] = self
+            self.module_name = module_name
+            self.func_name = func_name
+            self.update_code(code)
+            ret = self
+        return ret
+
+    def update_code(self, code):
+        from .utils import strip_source
+        if self.code is not None and self.code == code:
+            return
+        assert self.registrar is None
+        assert self.module_name is not None
+        assert self.func_name is not None
+
+        def dummy_macro(*args, **kwargs):
+            if len(args) == 1 and not kwargs:
+                arg, = args
+                if callable(arg):
+                    return arg
+            return lambda func: func
+
+        namespace = {
+          "OrderedDict": OrderedDict,
+          "macro": dummy_macro
+        }
+        identifier = self.module_name
+        if self.module_name in sys.modules:
+            try:
+                identifier = inspect.getsourcefile(
+                  sys.modules[self.module_name]
+                )
+            except TypeError:
+                pass
+        code = strip_source(code)
+        identifier2 = "macro <= "+identifier + " <= " + self.func_name
+        ast = cached_compile(code, identifier2)
+        exec(ast, namespace)
+        self.code = code
+        self.func = namespace[self.func_name]
+        keys = sorted(self.macro_objects.keys())
+        if len(keys):
+            warn = "WARNING: changing the code of {0}, re-executing {1} live macros"
+            print(warn.format(identifier2, len(keys)))
+        for key in keys:
+            if key not in self.macro_objects:
+                continue
+            macro_object = self.macro_objects[key]
+            macro_object.update_cell(None)
+
+    def resolve(self, a):
         #TODO: allow CellLike contexts as well (also in cell_args in resolve_type_args)
         from .cell import Cell
         from ..dtypes import parse
@@ -334,9 +415,11 @@ class Macro:
         default = self._type_args["_default"]
         required = self._type_args["_required"]
 
-        for name in required:
-            if name.startswith("_arg"):
-                assert name in positional_done, name  #TODO: error message
+        default = self.type_args["_default"]
+        required = self.type_args["_required"]
+        for argname in required:
+            if argname.startswith("_arg"):
+                assert argname in positional_done, (argname, order, len(args)) #TODO: error message
             else:
                 assert name in new_kwargs, name  # TODO: error message
 
@@ -355,7 +438,8 @@ class Macro:
 
     def evaluate(self, args, kwargs, macro_object):
         from .cell import Cell, CellLike
-        from .process import Process, ProcessLike, InputPinBase, OutputPinBase
+        from .process import Process, ProcessLike, InputPinBase, \
+         OutputPinBase, EditPinBase
         from .registrar import RegistrarObject
         from .context import active_context_as
         from .. import run_work
@@ -417,12 +501,10 @@ class Macro:
                         manager = pin._get_manager()
                         pin_id = pin.get_pin_id()
 
-                        if isinstance(pin, InputPinBase):
-                            is_incoming = True
+                        if isinstance(pin, (InputPinBase, EditPinBase)):
                             cell_ids = manager.pin_to_cells.get(pin_id, [])
 
                         elif isinstance(pin, OutputPinBase):
-                            is_incoming = False
                             cell_ids = pin._cell_ids
 
                         else:
@@ -452,8 +534,25 @@ class Macro:
 
 
 def macro(*args, **kwargs):
-    """
-    Macro decorator
+    """Macro decorator,  wraps a macro function
+
+    Any cell arguments to the function are automatically converted to their
+     value, and a live macro object is created: whenever one of the cells
+     changes value, the macro function is re-executed
+    IMPORTANT:
+    The macro function object is never executed directly: instead, its source
+     code is extracted and used to build a new function object
+    This is so that macro source can be included when the context is saved.
+    Therefore, the function source MUST be self-contained, i.e. not rely on
+     other variables defined or imported elsewhere in its module.
+    Only registrar methods deviate from this rule, since registrar code is
+     never stored in the saved context. The "registrar" parameter indicates
+     that the macro is a registrar method.
+
+    Macros are identified by the name of the module (in sys.modules) that
+     defined them, and the name of the macro function.
+    If a new macro is defined with the same module name and function name,
+     the old macro is updated and returned instead
 
     type: a single type tuple, or a dict/OrderedDict
       if type is a dict, then
@@ -509,8 +608,8 @@ def macro(*args, **kwargs):
     new_macro = Macro(*args, **kwargs)
 
     def func_macro_wrapper(func):
-        new_macro.func = func
-        # TODO: functools.wraps/update_wrapper on new_macro
-        return new_macro
+        new_macro2 = new_macro.set_func(func)
+        # TODO: functools.wraps/update_wrapper on new_macro2
+        return new_macro2
 
     return func_macro_wrapper

@@ -1,0 +1,100 @@
+{
+  "lib": {},
+  "macro": [
+    {
+      "with_context": false,
+      "dtype": [
+        "text",
+        "code",
+        "python"
+      ],
+      "type_args": [
+        "json",
+        "seamless",
+        "editor_params"
+      ],
+      "module_name": "seamless.core.editor",
+      "func_name": "editor",
+      "code": "@macro(type=(\"json\", \"seamless\", \"editor_params\"),with_context=False)\ndef editor(kwargs):\n    from seamless.core.editor import Editor #code must be standalone\n    #TODO: remapping, e.g. output_finish, destroy, ...\n    return Editor(kwargs)\n"
+    },
+    {
+      "with_context": false,
+      "dtype": [
+        "text",
+        "code",
+        "python"
+      ],
+      "type_args": [
+        "json",
+        "seamless",
+        "transformer_params"
+      ],
+      "module_name": "seamless.core.transformer",
+      "func_name": "transformer",
+      "code": "@macro(type=(\"json\", \"seamless\", \"transformer_params\"), with_context=False)\ndef transformer(kwargs):\n    from seamless.core.transformer import Transformer #code must be standalone\n    #TODO: remapping, e.g. output_finish, destroy, ...\n    return Transformer(kwargs)\n"
+    }
+  ],
+  "main": {
+    "type": "context",
+    "like_process": false,
+    "like_cell": false,
+    "pins": {},
+    "auto": [
+      "cell1",
+      "cell2",
+      "cell3"
+    ],
+    "children": {
+      "cell1": {
+        "dtype": "int",
+        "data": "4"
+      },
+      "cell2": {
+        "dtype": [
+          "text",
+          "code",
+          "python"
+        ],
+        "data": "return value*2"
+      },
+      "cell3": {
+        "dtype": "int"
+      },
+      "cont": {
+        "type": "transformer",
+        "mode": "thread",
+        "params": {
+          "output": {
+            "dtype": "int",
+            "pin": "output"
+          },
+          "value": {
+            "dtype": "int",
+            "pin": "input"
+          }
+        }
+      }
+    },
+    "macro_objects": [],
+    "macro_listeners": [],
+    "registrar_items": [],
+    "registrar_listeners": [],
+    "registrar_cells": [],
+    "pin_cell_connections": [
+      [
+        "cont.output",
+        "cell3"
+      ]
+    ],
+    "cell_pin_connections": [
+      [
+        "cell1",
+        "cont.value"
+      ],
+      [
+        "cell2",
+        "cont.code"
+      ]
+    ]
+  }
+}

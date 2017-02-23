@@ -14,7 +14,24 @@ class Manager:
         self.cells = WeakValueDictionary()
         self.cell_to_output_pin = WeakKeyDictionary()
         self._childids = WeakValueDictionary()
+        self.registrar_items = []
         super().__init__()
+
+    def add_registrar_item(self, registrar_name, dtype, data, data_name):
+        item = registrar_name, dtype, data, data_name
+        for curr_item in self.registrar_items:
+            if data_name is None:
+                exists = (curr_item[:3] == item[:3])
+            else:
+                exists = (curr_item[:2] == item[:2]) and \
+                  curr_item[3] == data_name
+            if exists:
+                raise ValueError("Registrar item already exists")
+        self.registrar_items.append(item)
+
+    def remove_registrar_item(self, registrar_name, dtype, data, data_name):
+        item = registrar_name, dtype, data, data_name
+        self.registrar_items.remove(item)
 
     def add_listener(self, cell, input_pin):
         cell_id = self.get_cell_id(cell)
@@ -55,8 +72,7 @@ class Manager:
 
     def add_macro_listener(self, cell, macro_object, macro_arg):
         cell_id = self.get_cell_id(cell)
-        macro_ref = weakref.ref(macro_object)
-        m = (macro_ref, macro_arg)
+        m = (macro_object, macro_arg)
 
         try:
             macro_listeners = self.macro_listeners[cell_id]
@@ -65,11 +81,12 @@ class Manager:
 
         except KeyError:
             self.macro_listeners[cell_id] = [m]
+            if cell_id not in self.cells:
+                self.cells[cell_id] = cell
 
     def remove_macro_listener(self, cell, macro_object, macro_arg):
         cell_id = self.get_cell_id(cell)
-        macro_ref = weakref.ref(macro_object)
-        m = (macro_ref, macro_arg)
+        m = (macro_object, macro_arg)
 
         if cell_id in self.macro_listeners:
             l = self.macro_listeners[cell_id]
@@ -109,16 +126,11 @@ class Manager:
                         self.registrar_listeners.pop(registrar)
 
 
-    def _update(self, cell_id, value, only_last=False):
+    def _update(self, cell_id, value, *, process=None, only_last=False):
         macro_listeners = self.macro_listeners.get(cell_id, [])
 
         if not only_last:
-            for macro_ref, macro_arg in macro_listeners:
-                macro_object = macro_ref()
-
-                if macro_object is None:
-                    continue #TODO: error?
-
+            for macro_object, macro_arg in macro_listeners:
                 macro_object.update_cell(macro_arg)
 
         listeners = self.listeners.get(cell_id, [])
@@ -130,7 +142,10 @@ class Manager:
             if input_pin is None:
                 continue #TODO: error?
 
-            input_pin.update(value)
+            if process is not None and input_pin.process_ref() is process:
+                continue
+
+            input_pin.receive_update(value)
 
         from .. import run_work
         from .macro import get_macro_mode
@@ -141,16 +156,16 @@ class Manager:
     def update_from_code(self, cell, only_last=False):
         value = cell._data
         cell_id = self.get_cell_id(cell)
-        self._update(cell_id, value, only_last)
+        self._update(cell_id, value, only_last=only_last)
 
-    def update_from_process(self, cell_id, value):
+    def update_from_process(self, cell_id, value, process):
         cell = self.cells.get(cell_id, None)
         if cell is None:
             return #cell has died...
 
-        changed = cell._update(value)
+        changed = cell._update(value,propagate=False)
         if changed:
-            self._update(cell_id, value)
+            self._update(cell_id, value, process=process)
 
     def update_registrar_key(self, registrar, key):
         from .process import Process
@@ -180,10 +195,12 @@ class Manager:
         from .transformer import Transformer
         from .cell import Cell, CellLike
         from .context import Context
-        from .process import InputPinBase, ExportedInputPin
-        from .process import OutputPinBase, ExportedOutputPin
+        from .process import EditPinBase, ExportedEditPin, \
+            InputPinBase, ExportedInputPin, OutputPinBase, ExportedOutputPin
+        if isinstance(source, EditPinBase):
+            source, target = target, source
         if isinstance(source, CellLike) and source._like_cell:
-            assert isinstance(target, InputPinBase)
+            assert isinstance(target, (InputPinBase, EditPinBase))
             assert source._get_manager() is self
             assert target._get_manager() is self
             if isinstance(target, ExportedInputPin):

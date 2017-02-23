@@ -2,8 +2,9 @@
 from weakref import WeakValueDictionary
 from . import SeamlessBase
 from .cell import Cell, CellLike
-from .process import Managed, Process, ProcessLike, InputPinBase, \
-  ExportedInputPin, OutputPinBase, ExportedOutputPin, EditorOutputPin
+from .process import Managed, Process, ProcessLike,  \
+  InputPinBase, ExportedInputPin, OutputPinBase, ExportedOutputPin, \
+  EditPinBase, ExportedEditPin
 from contextlib import contextmanager as _pystdlib_contextmanager
 _active_context = None
 _active_owner = None
@@ -71,8 +72,8 @@ class Context(SeamlessBase, CellLike, ProcessLike):
         Args:
             context (optional): parent context
             active_context (default: True): Sets the newly constructed context
-                as the active context. Subcontexts constructed by macros are
-                automatically parented to the active context
+                as the active context. New seamless objects are automatically
+                parented to the active context
         """
         super().__init__()
         n = name
@@ -81,7 +82,7 @@ class Context(SeamlessBase, CellLike, ProcessLike):
         self._name = name
         self._pins = {}
         self._children = {}
-        self._auto = set() #TODO: save this also when serializing
+        self._auto = set()
         if context is not None:
             self._manager = context._manager
         else:
@@ -92,7 +93,7 @@ class Context(SeamlessBase, CellLike, ProcessLike):
         from .registrar import RegistrarAccessor
         self.registrar = RegistrarAccessor(self)
 
-    _dir = ["_name", "export", "registrar", "cells"]
+    _dir = ["_name", "export", "registrar", "cells", "tofile"]
 
     @property
     def cells(self):
@@ -135,6 +136,7 @@ When any of these cells change and the macro is re-executed, the child object wi
         if not get_macro_mode():
             child_macro_control = child._macro_control()
         child._set_context(self, childname, force_detach)
+        from .registrar import RegistrarObject
         self._children[childname] = child
         self._manager._childids[id(child)] = child
         if not get_macro_mode():
@@ -285,17 +287,13 @@ When any of these cells change and the macro is re-executed, the child object wi
                     raise ValueError(pinname)
             else:
                 pin = child._pins[pinname]
-                if isinstance(pin, InputPinBase):
+                if isinstance(pin, (InputPinBase, EditPinBase)):
                     manager = pin._get_manager()
                     con_cells = manager.pin_to_cells.get(pin.get_pin_id(), [])
                     return (len(con_cells) > 0)
                 elif isinstance(pin, OutputPinBase):
                     pin = pin.get_pin()
-                    if isinstance(pin, EditorOutputPin):
-                        return (len(pin.solid._cell_ids) > 0) or \
-                         (len(pin.liquid._cell_ids) > 0)
-                    else:
-                        return (len(pin._cell_ids) > 0)
+                    return (len(pin._cell_ids) > 0)
                 else:
                     raise TypeError(pin)
         pins = [p for p in pins if not is_connected(p)] + forced
@@ -309,6 +307,8 @@ When any of these cells change and the macro is re-executed, the child object wi
                 self._pins[pinname] = ExportedInputPin(pin)
             elif isinstance(pin, OutputPinBase):
                 self._pins[pinname] = ExportedOutputPin(pin)
+            elif isinstance(pin, EditPinBase):
+                self._pins[pinname] = ExportedEditPin(pin)
             else:
                 raise TypeError(pin)
 
@@ -339,6 +339,15 @@ When any of these cells change and the macro is re-executed, the child object wi
             owns.update(child._owns_all())
         return owns
 
+    def tofile(self, filename, backup=True):
+        from .tofile import tofile
+        tofile(self, filename, backup)
+
+    @classmethod
+    def fromfile(cls, filename):
+        from .io import fromfile
+        return fromfile(cls, filename)
+
     def destroy(self):
         if self._destroyed:
             return
@@ -355,6 +364,38 @@ When any of these cells change and the macro is re-executed, the child object wi
         for childname, child in self._children.items():
             child._validate_path(required_path + (childname,))
         return required_path
+
+    def _cleanup_auto(self):
+        #TODO: test better, or delete? disable for now
+        return ###
+        manager = self._manager
+        for a in sorted(list(self._auto)):
+            if a not in self._children:
+                self._auto.remove(a)
+                continue
+            cell = self._children[a]
+            if not isinstance(cell, Cell):
+                continue
+            #if cell.data is not None:
+            #    continue
+
+            cell_id = manager.get_cell_id(cell)
+            incons = manager.cell_to_output_pin.get(cell, [])
+            if len(incons):
+                continue
+            if cell_id in manager.listeners:
+                outcons = manager.listeners[cell_id]
+                if len(outcons):
+                    continue
+            macro_listeners = manager.macro_listeners.get(cell_id, [])
+            if len(macro_listeners):
+                continue
+            child = self._children.pop(a)
+            child.destroy()
+            print("CLEANUP", self, a)
+            self._auto.remove(a)
+
+
 
 def context(**kwargs):
     """Return a new Context object."""

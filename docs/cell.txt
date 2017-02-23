@@ -1,5 +1,5 @@
 The cell graph has a "master kernel" (usually an IPython REPL, occasionally a command line script, e.g. a cell graph interpreter). Cells and processes are constructed inside the master process. Macros also run inside the master process.
-Cell values (both solid and liquid) can be set from the master process.
+Cell values can be set from the master process.
 
 The master process API
 ======================
@@ -14,7 +14,7 @@ All primitives except "macro" are themselves macros
 
 For the rest, there are subclasses of cell in seamless.cells:
 
-from seamless.cell.cells import pythoncell, buffercell, bufferdictcell, liquidcell
+from seamless.cell.cells import pythoncell, buffercell, bufferdictcell
 
 (these are also macros).
 
@@ -53,10 +53,8 @@ Properties of the cell system
 
 - Asynchronous: processes are normally in a separate thread
 - Cells are dependent or independent (default). Connecting an output pin of a transformer makes a cell dependent.
-- Connections from editor output pins can be solid or liquid. Solid connections update both the current and the persistent value of a cell. Liquid connections update the current value but not the persistent value.
 - Editor output pins and any input pins may also be declared as buffer pins (see below).
 - Buffer cells have in addition special buffer pins (read, write and update).
-Update pins must always be liquid. Write pins may be solid or liquid.
 
 Auxiliary systems:
 Type system (see type.txt)

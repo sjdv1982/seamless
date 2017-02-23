@@ -1,4 +1,4 @@
-from collections import deque
+from collections import deque, OrderedDict
 import threading
 import traceback
 import os
@@ -93,14 +93,19 @@ class Transformer(Process):
         self._last_value = None
         self._message_id = 0
         _registrars = []
-        for p in transformer_params:
+        self._transformer_params = OrderedDict()
+        for p in sorted(transformer_params.keys()):
             param = transformer_params[p]
+            self._transformer_params[p] = param
             pin = None
+            dtype = param.get("dtype", None)
+            if isinstance(dtype, list):
+                dtype = tuple(dtype)
             if param["pin"] == "input":
-                pin = InputPin(self, p, param["dtype"])
-                thread_inputs[p] = param["dtype"]
+                pin = InputPin(self, p, dtype)
+                thread_inputs[p] = dtype
             elif param["pin"] == "output":
-                pin = OutputPin(self, p, param["dtype"])
+                pin = OutputPin(self, p, dtype)
                 assert self._output_name is None  # can have only one output
                 self._output_name = p
             elif param["pin"] == "registrar":
@@ -142,13 +147,18 @@ class Transformer(Process):
             thread_inputs, self._output_name,
             self.output_queue, self.output_semaphore
         )
-        self._set_context(self.context, self.name) #to update the transformer registrars
+        if self.context is not None:
+            self._set_context(self.context, self.name) #to update the transformer registrars
 
         for registrar, p in _registrars:
             registrar.connect(p, self)
 
         self.transformer_thread = threading.Thread(target=self.transformer.run, daemon=True)
         self.transformer_thread.start()
+
+    @property
+    def transformer_params(self):
+        return self._transformer_params
 
     def set_context(self, context):
         Process.set_context(self, context)
@@ -182,7 +192,7 @@ class Transformer(Process):
                 output_name, output_value = self.output_queue.popleft()
                 assert output_name == self._output_name
                 if self._connected_output:
-                    self._pins[self._output_name].update(output_value)
+                    self._pins[self._output_name].send_update(output_value)
                 else:
                     self._last_value = output_value
 
@@ -193,7 +203,7 @@ class Transformer(Process):
         last_value = self._last_value
         if last_value is not None:
             self._last_value = None
-            self._pins[self._output_name].update(last_value)
+            self._pins[self._output_name].send_update(last_value)
         self._connected_output = True
 
     def _on_disconnect_output(self):
@@ -256,6 +266,7 @@ class Transformer(Process):
 # @macro takes nothing, a type, or a dict of types
 @macro(type=("json", "seamless", "transformer_params"), with_context=False)
 def transformer(kwargs):
+    from seamless.core.transformer import Transformer #code must be standalone
     #TODO: remapping, e.g. output_finish, destroy, ...
     return Transformer(kwargs)
 

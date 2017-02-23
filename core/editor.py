@@ -4,9 +4,10 @@
 import os
 import traceback
 from functools import partial
+from collections import OrderedDict
 
 from .macro import macro
-from .process import Process, InputPin, EditorOutputPin
+from .process import Process, InputPin, EditPin, OutputPin
 from .cell import Cell, PythonCell
 from .pysynckernel import Editor as KernelEditor
 from ..dtypes.objects import PythonBlockObject
@@ -27,14 +28,6 @@ silk.register(
 
 editor_params = {
   "*": "silk.EditorPin",
-  "_use_codeblock_checkpoints": {
-    "dtype": bool,
-    "default": False,
-  },
-  "_codeblock_deps": {
-    "dtype": dict,
-    "default": {},
-  }
 }
 dtypes.register(
   ("json", "seamless", "editor_params"),
@@ -54,7 +47,7 @@ class Editor(Process):
     def __init__(self, editor_params):
         super().__init__()
         self.state = {}
-        self.output_names = []
+        self.outputs = {}
         self.code_start = InputPin(self, "code_start", ("text", "code", "python"))
         self.code_update = InputPin(self, "code_update", ("text", "code", "python"))
         self.code_stop = InputPin(self, "code_stop", ("text", "code", "python"))
@@ -65,16 +58,25 @@ class Editor(Process):
                         "code_update": self.code_update,
                         "code_stop": self.code_stop,
                      }
-        for p in editor_params:
+        self._editor_params = OrderedDict()
+        for p in sorted(editor_params.keys()):
             #TODO: check that they don't overlap with editor attributes (.path, .name, ...),
             #     ...and with code_start, code_update, code_stop, or is that allowed  (???)
             param = editor_params[p]
+            self._editor_params[p] = param
+            dtype = param.get("dtype", None)
+            if isinstance(dtype, list):
+                dtype = tuple(dtype)
             if param["pin"] == "input":
-                pin = InputPin(self, p, param["dtype"])
-                kernel_inputs[p] = param["dtype"]
+                pin = InputPin(self, p, dtype)
+                kernel_inputs[p] = dtype, True
             elif param["pin"] == "output":
-                pin = EditorOutputPin(self, p, param["dtype"])
-                self.output_names.append(p)
+                pin = OutputPin(self, p, dtype)
+                self.outputs[p] = dtype
+            elif param["pin"] == "edit":
+                pin = EditPin(self, p, dtype)
+                kernel_inputs[p] = dtype, param.get("must_be_defined", True)
+                self.outputs[p] = dtype
             self._io_attrs.append(p)
             self._pins[p] = pin
 
@@ -82,11 +84,14 @@ class Editor(Process):
         self.editor = KernelEditor(
             self,
             kernel_inputs,
-            self.output_names,
+            self.outputs,
         )
+    @property
+    def editor_params(self):
+        return self._editor_params
 
     def output_update(self, name, value):
-        self._pins[name].update(value)
+        self._pins[name].send_update(value)
 
     def set_context(self, context):
         Process.set_context(self, context)
@@ -140,6 +145,7 @@ class Editor(Process):
 # @macro takes nothing, a type, or a dict of types
 @macro(type=("json", "seamless", "editor_params"),with_context=False)
 def editor(kwargs):
+    from seamless.core.editor import Editor #code must be standalone
     #TODO: remapping, e.g. output_finish, destroy, ...
     return Editor(kwargs)
 

@@ -2,46 +2,86 @@
 import weakref
 from ...dtypes.objects import PythonEditorCodeObject
 from ...dtypes import data_type_to_data_object
+from ..process import get_runtime_identifier
+class PINS:
+    pass
 
 class Editor:
     name = "editor"
     _destroyed = False
 
-    class EditorOutput:
-        def __init__(self, parent, name):
+    class EditorInput:
+        def __init__(self, parent, dtype, name):
             self._parent = weakref.ref(parent)
+            self._dtype = dtype
+            self._name = name
+            self._value = None
+            self.updated = False
+            self.defined = False
+        def get(self):
+            return self._value
+
+    class EditorOutput:
+        def __init__(self, parent, dtype, name):
+            self._parent = weakref.ref(parent)
+            self._dtype = dtype
             self._name = name
         def set(self, value):
             p = self._parent()
             if p is None:
                 return
-            p.parent().output_update(self._name, value)
+            p.output_update(self._name, value)
+
+    class EditorEdit:
+        def __init__(self, parent, dtype, name):
+            self._parent = weakref.ref(parent)
+            self._dtype = dtype
+            self._name = name
+            self._value = None
+            self.updated = False
+            self.defined = False
+        def get(self):
+            return self._value
+        def set(self, value):
+            self._value = value
+            self.defined = True
+            p = self._parent()
+            if p is None:
+                return
+            if p.values[self._name] is None:
+                p.values[self._name] = p.inputs[self._name]
+            p.values[self._name].data = value
+            p.output_update(self._name, value)
 
     def __init__(self,
         parent,
-        input_data_types,output_names
+        input_data,outputs
     ):
-        assert "code_start" not in input_data_types
-        assert "code_stop" not in input_data_types
-        assert "code_update" not in input_data_types
+        assert "code_start" not in input_data
+        assert "code_stop" not in input_data
+        assert "code_update" not in input_data
 
         self.parent = weakref.ref(parent)
+        self.PINS = PINS()
         self.namespace = {}
-        self.input_data_types = input_data_types
-        self.output_names = output_names
+        self.input_data = input_data
+        self.input_must_be_defined = {k for k,v in input_data.items() if v[1]}
+        self.outputs = outputs
 
 
-        inputs = {name: data_type_to_data_object(value)(name, value) for name, value in input_data_types.items()}
+        inputs = {name: data_type_to_data_object(value[0])(name, value[0]) for name, value in input_data.items()}
         inputs["code_start"] = PythonEditorCodeObject("code_start", ("text", "code", "python"))
         inputs["code_stop"] = PythonEditorCodeObject("code_stop", ("text", "code", "python"))
         inputs["code_update"] = PythonEditorCodeObject("code_update", ("text", "code", "python"))
         self.inputs = inputs
-        self._pending_inputs = {name for name in inputs.keys()}
+        self._pending_inputs = {name for name in self.input_must_be_defined}\
+          .union({"code_start", "code_update", "code_stop"})
         self.values = {name: None for name in inputs.keys()}
         self.registrar_namespace = {}
         self.exception = None
         self.updated = set()
         self._active = False
+        self._spontaneous = True
         self._set_namespace()
 
     def process_input(self, name, data):
@@ -55,13 +95,16 @@ class Editor:
                 context = self.parent().context
                 registrars = context.registrar
                 registrar = getattr(registrars, registrar_name)
+                registrar_value = None
                 try:
                     registrar_value = registrar.get(key)
                 except KeyError:
                     self._pending_inputs.add(namespace_name)
-                self.namespace[namespace_name] = registrar_value
+                if self.registrar_namespace.get(namespace_name, None) == registrar_value:
+                    return
                 self.registrar_namespace[namespace_name] = registrar_value
-                if namespace_name in self._pending_inputs:
+                self.namespace[namespace_name] = registrar_value
+                if registrar_value is not None and namespace_name in self._pending_inputs:
                     self._pending_inputs.remove(namespace_name)
 
                 self._code_stop()
@@ -93,10 +136,12 @@ class Editor:
             return
 
         # If we have missing values, and this input is currently default, it's no longer missing
-        if self._pending_inputs and self.values[name] is None:
+        if name in self._pending_inputs and self.values[name] is None:
             self._pending_inputs.remove(name)
 
         self.values[name] = data_object
+        if name in self.registrar_namespace:
+            self.registrar_namespace.remove(name)
         self.updated.add(name)
 
         # With all inputs now present, we can issue updates
@@ -109,29 +154,60 @@ class Editor:
         if code_obj.func_name:
             exec("{0}()".format(code_obj.func_name), self.namespace)
 
+
+    def _code_start(self):
+        assert not self._active
+        try:
+            self._spontaneous = True
+            self.namespace["IDENTIFIER"] = get_runtime_identifier(self.parent())
+            self._execute(self.code_start_block)
+        finally:
+            self._spontaneous = False
+        self._active = True
+
+    def _code_update(self):
+        assert self._active
+        try:
+            self._spontaneous = True
+            self._execute(self.code_update_block)
+        finally:
+            self._spontaneous = False
+
     def _code_stop(self):
         if self._active:
+            self._spontaneous = False
             try:
                 self._execute(self.code_stop_block)
             finally:
                 self._active = False
+                self._spontaneous = True
             self._set_namespace()
 
-    def _code_start(self):
-        assert not self._active
-        self._execute(self.code_start_block)
-        self._active = True
-
-
     def _set_namespace(self):
-        self.namespace.clear()
-        self.namespace["_cache"] = {}
+        #self.namespace.clear() #need to keep ipython vars
+        dels = [k for k in self.namespace if not k.startswith("_")]
+        for k in dels:
+            self.namespace.pop(k)
+        self.namespace["PINS"] = self.PINS
         for name in self.values:
             v = self.values[name]
+            if name in self.outputs:
+                e = self.EditorEdit(self, self.inputs[name].data_type, name)
+            else:
+                e = self.EditorInput(self, self.inputs[name].data_type, name)
+            setattr(self.PINS, name,  e)
+            #self.namespace[name] = e
             if v is not None:
-                self.namespace[name] = self.values[name].data
-        for o in self.output_names:
-            self.namespace[o] = self.EditorOutput(self, o)
+                value = v.data
+                e.defined = True
+                e._value = value
+        for name in self.outputs:
+            if name in self.values:
+                continue
+            e = self.EditorOutput(self, self.outputs[name], name)
+            #self.namespace[name] = e
+            setattr(self.PINS, name,  e)
+
         self.namespace.update(self.registrar_namespace)
 
     def update(self, updated):
@@ -144,27 +220,41 @@ class Editor:
         if "code_start" in updated:
             self._code_stop()
             self.code_start_block = self.values["code_start"]
+            for name in self.inputs.keys():
+                if name not in ("code_update", "code_stop"):
+                    if self.values[name] is not None:
+                        updated.add(name)
+                        do_update = True
 
         do_update = False
         if "code_update" in updated:
-            self._code_stop()
+            #self._code_stop() #why? if so, we should restart...
             self.code_update_block = self.values["code_update"]
             do_update = True
 
         # Update namespace of inputs
-        _updated = set()
         for name in self.inputs.keys():
-            if name in updated:
-                _updated.add(name)
-                self.namespace[name] = self.values[name].data
+            #pin = self.namespace[name]
+            pin = getattr(self.PINS, name)
+            if name in updated and name not in self.registrar_namespace:
+                pin._value = self.values[name].data
+                pin.defined = True
+                pin.updated = True
                 do_update = True
+            else:
+                pin.updated = False
 
         if "code_start" in updated:
             self._code_start()
 
         if do_update:
-            self.namespace["_updated"] = _updated
-            self._execute(self.code_update_block)
+            self._code_update()
+
+    def output_update(self, name, value):
+        self.parent().output_update(name, value)
+        if self._spontaneous:
+            import seamless
+            seamless.run_work()
 
     def destroy(self):
         if self._destroyed:

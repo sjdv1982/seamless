@@ -1,3 +1,5 @@
+OUTDATED:
+
 The world consists of cells and controllers
 Only cells contain state, and only controllers modify state
 A controller may embed an asynchronous *process*

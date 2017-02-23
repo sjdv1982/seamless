@@ -611,6 +611,8 @@ but {2} were given".format(
         return self._print(0)
 
     def __eq__(self, other):
+        if not isinstance(other, SilkObject):
+            return False
         if self.storage == other.storage == "json":
             return self._data == other._data
         else: #can't use numpy _data because of PTR and different allocation sizes

@@ -1,2 +1,4 @@
-b, w = _cache["b"], _cache["w"]
-b.setText(value)
+if PINS.value.updated:
+    b.setText(PINS.value.get())
+if PINS.title.updated:
+    w.setWindowTitle(PINS.title.get())

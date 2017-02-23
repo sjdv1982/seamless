@@ -6,6 +6,7 @@ from seamless.lib.gui.basic_display import display
 
 @macro("str")
 def construct_silk_model(ctx, mode):
+    from seamless import transformer
     params = {"value": {"pin": "output", "dtype": "text"}}
     if mode == "array":
         params["N"] = {"pin": "input", "dtype": "int"}
@@ -62,3 +63,6 @@ ctx._validate_path()
 
 ctx.mode.set("array")
 ctx.n.connect(ctx.cons.N)
+
+import os
+ctx.tofile(os.path.splitext(__file__)[0] + ".seamless", backup=False)

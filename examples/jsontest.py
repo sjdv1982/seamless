@@ -11,5 +11,5 @@ t = ctx.t = transformer({
 t.code.cell().set("""return input['test']""")
 c.connect(t.input)
 x = t.value.cell()
-time.sleep(0.001)
+time.sleep(0.01)
 print('X',x.data)

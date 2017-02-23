@@ -11,6 +11,7 @@ from .. import dtypes
 from .utils import find_return_in_scope
 from .process import Managed
 from . import libmanager
+from .resource import Resource
 
 
 class CellLike(object):
@@ -39,7 +40,9 @@ class Cell(Managed, CellLike):
     _incoming_connections = 0
     _outgoing_connections = 0
 
-    def __init__(self, dtype):
+    _resource = None
+
+    def __init__(self, dtype, *, naming_pattern="cell"):
         """TODO: docstring."""
         super().__init__()
 
@@ -49,10 +52,20 @@ class Cell(Managed, CellLike):
 
         self._dtype = dtype
         self._last_object = None
+        self._resource = Resource(self)
 
         if get_macro_mode():
             ctx = get_active_context()
-            ctx._add_new_cell(self)
+            ctx._add_new_cell(self, naming_pattern)
+
+    def _check_destroyed(self):
+        if self._destroyed:
+            raise AttributeError("Cell has been destroyed")
+
+    @property
+    def resource(self):
+        self._check_destroyed()
+        return self._resource
 
     @property
     def dependent(self):
@@ -61,39 +74,29 @@ class Cell(Managed, CellLike):
         Property is true if the cell has a hard incoming connection,
         e.g. the output of a process.
         """
+        self._check_destroyed()
         return self._dependent
 
-    def set(self, text_or_object):
+    def _set(self, text_or_object,propagate):
         """Update cell data from Python code in the main thread."""
-        # TODO: support for liquid (lset)
+        self._check_destroyed()
         if isinstance(text_or_object, (str, bytes)):
-            self._text_set(text_or_object, trusted=False)
+            self._text_set(text_or_object, propagate, trusted=False)
         else:
-            self._object_set(text_or_object, trusted=False)
+            self._object_set(text_or_object, propagate, trusted=False)
         return self
 
-    def fromfile(self, filename):
-        from .macro import get_macro_mode
+    def set(self, text_or_object):
+        ret = self._set(text_or_object, propagate=True)
         import seamless
-        if get_macro_mode():
-            caller_filename = inspect.currentframe().f_back.f_code.co_filename
-            caller_filename = os.path.realpath(caller_filename)
-            caller_filedir = os.path.split(caller_filename)[0]
-            seamless_lib_dir = os.path.realpath(
-              os.path.split(seamless.lib.__file__)[0]
-            )
-            if caller_filedir.startswith(seamless_lib_dir):
-                sub_filedir = caller_filedir[len(seamless_lib_dir):]
-                sub_filedir = sub_filedir.replace(os.sep, "/")
-                new_filename = sub_filedir + "/" + filename
-                return libmanager.fromfile(self, new_filename)
-            else:
-                new_filename = caller_filedir + os.sep + filename
-                return self.set(open(new_filename).read())
-        else:
-            return self.set(open(filename).read())
+        seamless.run_work()
+        return ret
 
-    def _text_set(self, data, trusted):
+    def fromfile(self, filename):
+        self._check_destroyed()
+        return self.resource.fromfile(filename, frames_back=2)
+
+    def _text_set(self, data, propagate, trusted):
         try:
             if self._status == self.__class__.StatusFlags.OK \
                     and (data is self._data or data is self._data_last or
@@ -117,14 +120,18 @@ class Cell(Managed, CellLike):
             self._status = self.__class__.StatusFlags.OK
 
             if not trusted and self._context is not None:
-                manager = self._get_manager()
-                manager.update_from_code(self)
+                if propagate:
+                    manager = self._get_manager()
+                    manager.update_from_code(self)
         return True
 
-    def _object_set(self, object_, trusted):
-        if self._status == self.__class__.StatusFlags.OK \
-                and object_ == self._last_object:
-            return False
+    def _object_set(self, object_, propagate, trusted):
+        if self._status == self.__class__.StatusFlags.OK:
+            try:
+                if object_ == self._last_object:
+                    return False
+            except ValueError:
+                pass
         try:
             """
             Construct the object:
@@ -148,16 +155,27 @@ class Cell(Managed, CellLike):
             self._last_object = copy.deepcopy(object_)
 
             if not trusted and self._context is not None:
-                manager = self._get_manager()
-                manager.update_from_code(self)
+                if propagate:
+                    manager = self._get_manager()
+                    manager.update_from_code(self)
         return True
 
-    def _update(self, data):
+    def touch(self):
+        self._check_destroyed()
+        if self._status != self.__class__.StatusFlags.OK:
+            return
+        if self._context is not None:
+            manager = self._get_manager()
+            manager.update_from_code(self)
+
+    def _update(self, data, propagate=False):
         """Invoked when cell data is updated by a process."""
-        return self._text_set(data, trusted=True)
+        #return self._text_set(data, propagate=False, trusted=True)
+        return self._set(data, propagate=False) #for now, processes can also set with non-text...
 
     def connect(self, target):
         """Connect the cell to a process's input pin."""
+        self._check_destroyed()
         manager = self._get_manager()
         manager.connect(self, target)
 
@@ -169,12 +187,21 @@ class Cell(Managed, CellLike):
     @property
     def data(self):
         """The cell's data in text format."""
+        self._check_destroyed()
         return copy.deepcopy(self._data)
+
+    @property
+    def value(self):
+        """The cell's data as Python object"""
+        if self._data is None:
+            return None
+        return dtypes.parse(self._dtype, self._data, trusted=True)
 
     @property
     def status(self):
         """The cell's current status."""
-        return self._status
+        self._check_destroyed()
+        return self.StatusFlagNames[self._status]
 
     @property
     def error_message(self):
@@ -182,24 +209,26 @@ class Cell(Managed, CellLike):
 
         Returns None is there is no error
         """
+        self._check_destroyed()
         return self._error_message
 
     def _on_connect(self, pin, process, incoming):
-        # TODO: proper support for liquid connections
+        from .process import OutputPinBase
         if incoming:
-            if self._dependent and not pin.liquid:
+            if self._dependent and isinstance(pin, OutputPinBase):
                 raise Exception(
                  "Cell is already the output of another process"
                 )
-            if not pin.liquid:
+            if isinstance(pin, OutputPinBase):
                 self._dependent = True
             self._incoming_connections += 1
         else:
             self._outgoing_connections += 1
 
     def _on_disconnect(self, pin, process, incoming):
+        from .process import OutputPinBase
         if incoming:
-            if not pin.liquid:
+            if isinstance(pin, OutputPinBase):
                 self._dependent = False
             self._incoming_connections -= 1
         else:
@@ -213,6 +242,7 @@ class Cell(Managed, CellLike):
         self._error_message = error_message
 
     def add_macro_object(self, macro_object, macro_arg):
+        self._check_destroyed()
         manager = self._get_manager()
         manager.add_macro_listener(self, macro_object, macro_arg)
 
@@ -224,6 +254,7 @@ class Cell(Managed, CellLike):
         if self._destroyed:
             return
         #print("CELL DESTROY", self)
+        self.resource.destroy()
         super().destroy()
 
 
@@ -251,7 +282,7 @@ class PythonCell(Cell):
     _code_type = CodeTypes.ANY
     _required_code_type = CodeTypes.ANY
 
-    def _text_set(self, data, trusted):
+    def _text_set(self, data, propagate, trusted):
         if data == self._data:
             return False
         try:
@@ -299,11 +330,13 @@ class PythonCell(Cell):
             self._status = self.StatusFlags.OK
 
             if not trusted and self._context is not None:
-                manager = self._get_manager()
-                manager.update_from_code(self)
+                if propagate:
+                    manager = self._get_manager()
+                    manager.update_from_code(self)
             return True
 
-    def _object_set(self, object_, trusted):
+    def _object_set(self, object_, propagate, trusted):
+        from .utils import strip_source
         try:
             """
             Try to retrieve the source code
@@ -313,6 +346,7 @@ class PythonCell(Cell):
                 raise Exception("Python object must be a function")
 
             code = inspect.getsource(object_)
+            code = strip_source(code)
 
         except:
             self._set_error_state(traceback.format_exc())
@@ -327,8 +361,9 @@ class PythonCell(Cell):
             self._status = self.__class__.StatusFlags.OK
 
             if not trusted and self._context is not None:
-                manager = self._get_manager()
-                manager.update_from_code(self)
+                if propagate:
+                    manager = self._get_manager()
+                    manager.update_from_code(self)
             return code != oldcode
 
     def _on_connect(self, pin, process, incoming):

@@ -1,22 +1,27 @@
 Type SeamlessEditorPin  {
-  Enum pin("inputpin", "outputpin", "bufferpin", "signal")
-  *Enum typ("codefunction", "codeblock", "read", "write", "modify")
+  Enum pin("input", "output", "edit", "buffer", "signal")
+  *Enum typ("codefunction", "codeblock", "read", "define", "modify")
   *Integer order
   *String celltype
+  Bool must_be_defined = True
   form {
     celltype.subtype = "celltype"
   }
   validate {
     if typ is not None:
-        if pin == "inputpin":
+        if pin == "input":
             assert typ in ("codefunction", "codeblock"), typ
-        elif pin == "bufferpin":
-            assert typ in ("read", "write", "modify")
+        elif pin == "buffer":
+            assert typ in ("read", "define", "modify")
         else:
             assert typ is None, typ
   }
   validate {
     if order is not None:
-        assert pin == "inputpin" and typ == "codeblock"
+        assert pin == "input" and typ == "codeblock"
+  }
+  validate {
+    if not must_be_defined:
+        assert pin in ("edit", "buffer", "signal")
   }
 }

@@ -8,11 +8,11 @@ vbox = QVBoxLayout()
 vbox.addStretch(1)
 w.setLayout(vbox)
 w.resize(300,100)
-w.setWindowTitle(title)
+w.setWindowTitle(PINS.title.get())
 w.show()
 b = QSpinBox()
 b.setMaximum(1000000)
+if PINS.value.defined:
+    b.setValue(PINS.value.get())
 vbox.addWidget(b)
-b.valueChanged.connect(output.set)
-_cache["b"] = b
-_cache["w"] = w
+b.valueChanged.connect(PINS.value.set)

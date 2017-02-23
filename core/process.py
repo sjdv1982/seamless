@@ -101,32 +101,10 @@ class PinBase(Managed):
         raise TypeError(type(self))
 
 class InputPinBase(PinBase):
-
-    def destroy(self):
-        context = self.context
-        if context is None:
-            return
-        super().destroy()
-        manager = self._get_manager()
-        manager.remove_listener(self)
+    pass
 
 class OutputPinBase(PinBase):
-
-    def destroy(self):
-        if self._destroyed:
-            return
-        #print("OUTPUTPIN DESTROY")
-        context = self.context
-        if context is None:
-            return
-        super().destroy()
-        manager = context._manager
-        for cell_id in list(self._cell_ids):
-            cell = manager.cells.get(cell_id, None)
-            if cell is None:
-                continue
-            cell._on_disconnect(self, self.process_ref(), True)
-
+    pass
 
 class InputPin(InputPinBase):
 
@@ -166,28 +144,37 @@ class InputPin(InputPinBase):
             self.own(my_cell)
         return my_cell
 
-    def update(self, value):
+    def receive_update(self, value):
         process = self.process_ref()
         if process is None:
             return #Process has died...
 
         process.receive_update(self.name, value)
 
+    def destroy(self):
+        if self._destroyed:
+            return
+        context = self.context
+        if context is None:
+            return
+        super().destroy()
+        manager = self._get_manager()
+        manager.remove_listener(self)
+
 
 class OutputPin(OutputPinBase):
-    def __init__(self, process, name, dtype, liquid=False):
+    def __init__(self, process, name, dtype):
         OutputPinBase.__init__(self, process, name)
         self.dtype = dtype
-        self.liquid = liquid
         self._cell_ids = []
 
     def get_pin(self):
         return self
 
-    def update(self, value):
+    def send_update(self, value):
         manager = self._get_manager()
         for cell_id in self._cell_ids:
-            manager.update_from_process(cell_id, value)
+            manager.update_from_process(cell_id, value, self.process_ref())
 
     def connect(self, target):
         manager = self._get_manager()
@@ -233,45 +220,92 @@ class OutputPin(OutputPinBase):
         cells = [c for c in context.cells if manager.get_cell_id(c) in self._cell_ids]
         return cells
 
+    def destroy(self):
+        if self._destroyed:
+            return
+        #print("OUTPUTPIN DESTROY")
+        context = self.context
+        if context is None:
+            return
+        super().destroy()
+        manager = self._get_manager()
+        for cell_id in list(self._cell_ids):
+            cell = manager.cells.get(cell_id, None)
+            if cell is None:
+                continue
+            cell._on_disconnect(self, self.process_ref(), True)
 
-class EditorOutputPin(OutputPinBase):
+class EditPinBase(PinBase):
+    pass
+
+class EditPin(EditPinBase):
     def __init__(self, process, name, dtype):
-        OutputPinBase.__init__(self, process, name)
-        self.solid = OutputPin(process, (name, "solid"), dtype)
-        self.liquid = OutputPin(process, (name, "liquid"), dtype, liquid=True)
-
-    @property
-    def _cell_ids(self):
-        return list(self.solid._cell_ids) + list(self.liquid._cell_ids)
+        InputPinBase.__init__(self, process, name)
+        self.dtype = dtype
 
     def get_pin(self):
         return self
 
-    def update(self, value):
-        self.solid.update(value)
-        self.liquid.update(value)
+    def cell(self, own=False):
+        from .cell import cell
+        from .context import active_owner_as, get_active_context
+        from .macro import get_macro_mode
+        manager = self._get_manager()
+        context = self.context
+        curr_pin_to_cells = manager.pin_to_cells.get(self.get_pin_id(), [])
+        l = len(curr_pin_to_cells)
+        if l == 0:
+            if self.dtype is None:
+                raise ValueError(
+                 "Cannot construct cell() for pin with dtype=None"
+                )
+            process = self.process_ref()
+            if process is None:
+                raise ValueError("Process has died")
+            with active_owner_as(self):
+                my_cell = cell(self.dtype)
+            if not get_macro_mode():
+                ctx = get_active_context()
+                if ctx is None:
+                    ctx = context
+                ctx._add_new_cell(my_cell)
+            my_cell.connect(self)
+        elif l == 1:
+            my_cell = manager._childids[curr_pin_to_cells[0]]
+        elif l > 1:
+            raise TypeError("cell() is ambiguous, multiple cells are connected")
+        if own:
+            self.own(my_cell)
+        return my_cell
 
-    def connect(self, target):
-        raise TypeError("Cannot connect EditorOutputPin, select .solid or .liquid")
+    def receive_update(self, value):
+        process = self.process_ref()
+        if process is None:
+            return #Process has died...
 
-    def cell(self):
-        raise TypeError("Cannot obtain .cell for EditorOutputPin, select .solid or .liquid")
+        process.receive_update(self.name, value)
 
-    def cells(self):
-        raise TypeError("Cannot obtain .cells for EditorOutputPin, select .solid or .liquid")
+    def send_update(self, value):
+        manager = self._get_manager()
+        curr_pin_to_cells = manager.pin_to_cells.get(self.get_pin_id(), [])
+        for cell_id in curr_pin_to_cells:
+            manager.update_from_process(cell_id, value, self.process_ref())
 
     def destroy(self):
         if self._destroyed:
             return
-        self.solid.destroy()
-        self.liquid.destroy()
+        context = self.context
+        if context is None:
+            return
         super().destroy()
+        manager = self._get_manager()
+        manager.remove_listener(self)
 
-    def _validate_path(self, required_path=None):
-        required_path = super()._validate_path(required_path)
-        self.solid._validate_path(required_path + ("solid",))
-        self.liquid._validate_path(required_path + ("liquid",))
-        return required_path
+
+    def connect(self, target):
+        manager = self._get_manager()
+        manager.connect(self, target)
+
 
 
 class ExportedPinBase:
@@ -318,3 +352,34 @@ class ExportedOutputPin(ExportedPinBase, OutputPinBase):
 
 class ExportedInputPin(ExportedPinBase, InputPinBase):
     pass
+
+class ExportedEditPin(ExportedPinBase, EditPinBase):
+    pass
+
+_runtime_identifiers = WeakValueDictionary()
+_runtime_identifiers_rev = WeakKeyDictionary()
+
+def get_runtime_identifier(process):
+    identifier = str(process)
+    holder = _runtime_identifiers.get(identifier, None)
+    if holder is None:
+        _runtime_identifiers[identifier] = process
+        if process in _runtime_identifiers_rev:
+            old_identifier = _runtime_identifiers_rev.pop(process)
+            _runtime_identifiers.pop(old_identifier)
+        _runtime_identifiers_rev[process] = identifier
+        return identifier
+    elif holder is process:
+        return identifier
+    elif process in _runtime_identifiers_rev:
+        return _runtime_identifiers_rev[process]
+    else:
+        count = 0
+        while True:
+            count += 1
+            new_identifier = identifier + "-" + str(count)
+            if new_identifier not in _runtime_identifiers:
+                break
+        _runtime_identifiers[new_identifier] = process
+        _runtime_identifiers_rev[process] = new_identifier
+        return new_identifier
