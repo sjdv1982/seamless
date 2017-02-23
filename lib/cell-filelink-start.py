@@ -35,10 +35,11 @@ else:
         return serialize(v._dtype, v.get())
 
 
-import os, time, functools
+import os, time, functools, traceback
 from threading import Thread, RLock
 last_value = None
 last_serialized_value = None
+last_exc = None
 
 def write_file(fpath):
     global last_mtime, last_value, last_serialized_value
@@ -65,28 +66,40 @@ def write_file(fpath):
                 pass
 
 def poll():
-    global last_time, last_mtime, last_value, last_serialized_value
+    global last_time, last_mtime, last_value, last_serialized_value, last_exc
     fpath = PINS.filepath.get()
     while 1:
         time.sleep(PINS.latency.get())
         curr_time = time.time()
         last_time = curr_time
         if not os.path.exists(fpath):
-            write_file(fpath)
+            try:
+                write_file(fpath)
+            except:
+                exc = traceback.format_exc()
+                if exc != last_exc:
+                    print(exc)
+                    last_exc = exc
         else:
             with lock:
                 stat = os.stat(fpath)
-                if stat.st_mtime > last_mtime:
-                    data = None
-                    with open(fpath) as f:
-                        data = f.read()
-                    if data is not None:
-                        if last_serialized_value != data:
-                            #print("LOAD")
-                            PINS.value.set(data)
-                            last_value = None
-                            last_serialized_value = data
-                    last_mtime = stat.st_mtime
+                try:
+                    if stat.st_mtime > last_mtime:
+                        data = None
+                        with open(fpath) as f:
+                            data = f.read()
+                        if data is not None:
+                            if last_serialized_value != data:
+                                #print("LOAD")
+                                PINS.value.set(data)
+                                last_value = None
+                                last_serialized_value = data
+                        last_mtime = stat.st_mtime
+                except:
+                    exc = traceback.format_exc()
+                    if exc != last_exc:
+                        print(exc)
+                        last_exc = exc
 
 t = Thread(target=poll)
 t.setDaemon(True)
