@@ -28,9 +28,14 @@ def add_work(work, priority=False):
     else:
         _work.append(work)
 
+_running_work = False
 def run_work():
+    global _running_work
     if threading.current_thread() is not threading.main_thread():
         return
+    if _running_work:
+        return
+    _running_work = True
     for w in (_priority_work, _work):
         while len(w):
             work = w.popleft()
@@ -43,6 +48,7 @@ def run_work():
     loop = asyncio.get_event_loop()
     loop.call_soon(lambda loop: loop.stop(), loop)
     loop.run_forever()
+    _running_work = False
 
 def asyncio_finish():
     try:
@@ -151,6 +157,7 @@ if qt_error is None:
 
     def mainloop():
         raise RuntimeError("Cannot run seamless.mainloop() in IPython mode")
+
 else:
     sys.stderr.write("    " + qt_error + "\n")
     sys.stderr.write("    All GUI in seamless.qt has been disabled\n")
@@ -161,5 +168,6 @@ else:
         while 1:
             run_work()
             time.sleep(FAILSAFE_WORK_LATENCY/1000)
+
 from . import qt
 __all__ = (macro, context, cell, pythoncell, transformer, editor, qt)

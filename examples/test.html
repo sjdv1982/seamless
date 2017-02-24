@@ -1,0 +1,37 @@
+
+<!DOCTYPE html>
+<html>
+<head></head>
+<body>
+<div id="echo"></div>
+<div id="MyDiv"></div>
+<div id="MyDiv2"></div>
+<script>
+
+    var bird = null;
+
+    var ws = new WebSocket("ws://127.0.0.1:5678/");
+    ws.onopen = function () {
+        ws.send("test-dynamic-html");
+    }
+    ws.onmessage = function (event) {
+        var message = JSON.parse(event.data);
+        if (message.type == "var") {
+          if (0) {}
+          
+          else if (message.var == "bird") {
+            bird = message.value;
+          }
+          
+        }
+        else if (message.type == "html") {
+          var ele = document.getElementById(message.id);
+          ele.innerHTML = message.value;
+        }
+        else if (message.type == "eval") {
+          eval(message.value);
+        }
+    };
+</script>
+</body>
+</html>

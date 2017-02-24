@@ -5,13 +5,10 @@ ctx = context()
 
 ctx.server = editor({"socket": {"pin": "output", "dtype": "int"}})
 ctx.servercode = ctx.server.code_start.cell()
-link(ctx.servercode, ".", "test-websockets_pycell.py")
-#ctx.servercode.fromfile("test-websockets_pycell.py")
+link(ctx.servercode, ".", "test-websockets-lib_pycell.py")
+#ctx.servercode.fromfile("test-websockets-lib_pycell.py")
 ctx.server.code_update.cell().set("")
-ctx.server.code_stop.cell().set("""
-server.close()
-loop.run_until_complete(server.wait_closed())
-""")
+ctx.server.code_stop.cell().set("""server.close()""")
 
 from seamless.lib.gui.browser import browse
 

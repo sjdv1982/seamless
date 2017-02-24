@@ -2,6 +2,9 @@ import asyncio
 import datetime
 import random
 import websockets
+import seamless
+
+SOCKET = 5678
 
 async def time(websocket, path):
     identifier = await websocket.recv()
@@ -15,11 +18,20 @@ async def time(websocket, path):
             break
 
 async def start_server(server_future):
-    server = await websockets.serve(time, '127.0.0.1', 5678)
-    server_future.set_result(server)
+    socket = SOCKET
+    while 1:
+        try:
+            server = await websockets.serve(time, '127.0.0.1', socket)
+            break
+        except OSError:
+            socket += 1
+    print("Opened a server at socket {0}".format(socket))
+    PINS.socket.set(socket)
+    server_future.set_result((server, socket))
 
 loop = asyncio.get_event_loop()
 server_future = asyncio.Future()
 asyncio.ensure_future(start_server(server_future))
 loop.run_until_complete(server_future)
-server = server_future.result()
+server, socket = server_future.result()
+print(server, socket)
