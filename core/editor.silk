@@ -1,5 +1,5 @@
 Type SeamlessEditorPin  {
-  Enum pin("input", "output", "edit", "buffer", "signal")
+  Enum pin("input", "output", "edit", "buffer")
   *Enum typ("codefunction", "codeblock", "read", "define", "modify")
   *Integer order
   *String celltype
@@ -22,6 +22,6 @@ Type SeamlessEditorPin  {
   }
   validate {
     if not must_be_defined:
-        assert pin in ("edit", "buffer", "signal")
+        assert pin in ("edit", "buffer")
   }
 }

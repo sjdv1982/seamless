@@ -16,9 +16,13 @@ class DataObject:
             self.parse(data)
 
     def parse(self, data):
+        if self.data_type == "signal":
+            return
         self.data = parse(self.data_type, data, trusted=True)
 
     def serialize(self):
+        if self.data_type == "signal":
+            return None
         return serialize(self.data_type, self.data)
 
     def validate(self):

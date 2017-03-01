@@ -19,6 +19,7 @@ _known_types = [
   "json",
   "xml",
   "silk",
+  "signal"
 ]
 
 def validate_dtype(data):
@@ -40,6 +41,9 @@ def json_constructor(data):
         data = data.json()
     return json.dumps(data, indent=2)
 
+def signal_error(data):
+    raise TypeError("Cannot construct signal")
+
 _constructors = {
     "object": lambda v: v,
     "dtype": construct_dtype,
@@ -51,6 +55,7 @@ _constructors = {
     "json": json_constructor,
     "xml": str, #TODO
     "silk": str, #TODO
+    "signal": signal_error,
 }
 
 _parsers = _constructors.copy()
@@ -124,6 +129,7 @@ def serialize(data_type, value):
     dtype = data_type
     if isinstance(dtype, tuple):
         dtype = dtype[0]
+
     if dtype == "object":
         return value
     elif dtype == "dtype":
@@ -134,6 +140,8 @@ def serialize(data_type, value):
         raise NotImplementedError
     elif dtype == "silk":
         raise NotImplementedError
+    elif dtype == "signal":
+        raise TypeError(dtype)
     else:
         return str(value)
 

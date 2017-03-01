@@ -42,11 +42,13 @@ def link(cell, directory=None, filename=None, latency=0.2, own=False):
         filepath = cell.resource.filename
     else:
         filepath = os.path.join(directory, filename)
+    if cell.status == "UNINITIALISED" and not os.path.exists(filepath):
+        fh = open(filepath, "w")
+        fh.close()
     fl = filelink(cell.dtype)
     fl.filepath.cell().set(filepath)
     fl.latency.cell().set(latency)
     cell.connect(fl.value)
     if own:
         cell.own(fl)
-    fl._validate_path()
     return fl

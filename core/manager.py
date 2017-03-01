@@ -159,13 +159,18 @@ class Manager:
         self._update(cell_id, value, only_last=only_last)
 
     def update_from_process(self, cell_id, value, process):
+        from .cell import Signal
         cell = self.cells.get(cell_id, None)
         if cell is None:
             return #cell has died...
 
-        changed = cell._update(value,propagate=False)
-        if changed:
-            self._update(cell_id, value, process=process)
+        if isinstance(cell, Signal):
+            assert value is None
+            self._update(cell_id, None, process=process)
+        else:
+            changed = cell._update(value,propagate=False)
+            if changed:
+                self._update(cell_id, value, process=process)
 
     def update_registrar_key(self, registrar, key):
         from .process import Process

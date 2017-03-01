@@ -201,7 +201,7 @@ class Cell(Managed, CellLike):
     def status(self):
         """The cell's current status."""
         self._check_destroyed()
-        return self.StatusFlagNames[self._status]
+        return self._status.name
 
     @property
     def error_message(self):
@@ -389,8 +389,66 @@ class PythonCell(Cell):
         if self._outgoing_connections == 0:
             self._required_code_type = self.CodeTypes.ANY
 
+
+class Signal(Cell):
+    def __init__(self, dtype, *, naming_pattern="signal"):
+        """TODO: docstring."""
+        assert dtype == "signal"
+        Managed.__init__(self)
+
+        from .macro import get_macro_mode
+        from .context import get_active_context
+
+        if get_macro_mode():
+            ctx = get_active_context()
+            ctx._add_new_cell(self, naming_pattern)
+
+    def set(self):
+        self._status = self.__class__.StatusFlags.OK
+        self.touch()
+        import seamless
+        seamless.run_work()
+
+    def fromfile(self, filename):
+        raise AttributeError("fromfile")
+
+    def _text_set(self, propagate):
+        raise AttributeError
+
+    def _object_set(self, propagate):
+        raise AttributeError
+
+    def _update(self, data, propagate=False):
+        raise AttributeError
+
+    @property
+    def dtype(self):
+        return None
+
+    @property
+    def data(self):
+        return None
+
+    @property
+    def value(self):
+        return None
+
+    def add_macro_object(self, macro_object, macro_arg):
+        raise AttributeError
+
+    def remove_macro_object(self, macro_object, macro_arg):
+        raise AttributeError
+
+    def destroy(self):
+        if self._destroyed:
+            return
+        #print("CELL DESTROY", self)
+        Managed.destroy(self)
+
+
 _handlers = {
-    ("text", "code", "python"): PythonCell
+    ("text", "code", "python"): PythonCell,
+    "signal": Signal
 }
 
 

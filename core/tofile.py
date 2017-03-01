@@ -40,7 +40,9 @@ def cell_to_json(c):
     if c._dependent:
         store_data = False
     d["dtype"] = c.dtype
-    if c.resource.filename is not None:
+    if c.dtype is None:
+        d["dtype"] = "signal"
+    if c.resource is not None and c.resource.filename is not None:
         d["resource"] = resource_to_json(c.resource)
         if c.resource.mode == 1:
             store_data = False

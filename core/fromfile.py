@@ -1,7 +1,7 @@
 from .context import Context
 from .editor import Editor
 from .transformer import Transformer
-from .cell import Cell
+from .cell import Cell, cell as cell_factory
 import json
 from collections import OrderedDict
 
@@ -83,7 +83,7 @@ def json_to_cell(ctx, data, myname, ownerdict):
     dtype = data["dtype"]
     if isinstance(dtype, list):
         dtype = tuple(dtype)
-    cell = Cell(dtype)
+    cell = cell_factory(dtype)
     if "data" in data:
         #if dtype == "json":
         #    import seamless.dtypes

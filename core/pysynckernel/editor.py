@@ -21,6 +21,12 @@ class Editor:
         def get(self):
             return self._value
 
+    class EditorInputSignal:
+        def __init__(self, parent, name):
+            self._parent = weakref.ref(parent)
+            self._name = name
+            self.updated = False
+
     class EditorOutput:
         def __init__(self, parent, dtype, name):
             self._parent = weakref.ref(parent)
@@ -31,6 +37,16 @@ class Editor:
             if p is None:
                 return
             p.output_update(self._name, value)
+
+    class EditorOutputSignal:
+        def __init__(self, parent, name):
+            self._parent = weakref.ref(parent)
+            self._name = name
+        def set(self):
+            p = self._parent()
+            if p is None:
+                return
+            p.output_update(self._name, None)
 
     class EditorEdit:
         def __init__(self, parent, dtype, name):
@@ -191,20 +207,29 @@ class Editor:
         self.namespace["PINS"] = self.PINS
         for name in self.values:
             v = self.values[name]
+            dtype = self.inputs[name].data_type
             if name in self.outputs:
-                e = self.EditorEdit(self, self.inputs[name].data_type, name)
+                assert dtype != "signal"
+                e = self.EditorEdit(self, dtype, name)
             else:
-                e = self.EditorInput(self, self.inputs[name].data_type, name)
+                if dtype == "signal":
+                    e = self.EditorInputSignal(self, name)
+                else:
+                    e = self.EditorInput(self, dtype, name)
             setattr(self.PINS, name,  e)
             #self.namespace[name] = e
-            if v is not None:
+            if v is not None and dtype != "signal":
                 value = v.data
                 e.defined = True
                 e._value = value
         for name in self.outputs:
             if name in self.values:
                 continue
-            e = self.EditorOutput(self, self.outputs[name], name)
+            dtype = self.outputs[name]
+            if dtype == "signal":
+                e = self.EditorOutputSignal(self, name)
+            else:
+                e = self.EditorOutput(self, dtype, name)
             #self.namespace[name] = e
             setattr(self.PINS, name,  e)
 
@@ -237,8 +262,10 @@ class Editor:
             #pin = self.namespace[name]
             pin = getattr(self.PINS, name)
             if name in updated and name not in self.registrar_namespace:
-                pin._value = self.values[name].data
-                pin.defined = True
+                v = self.values[name]
+                if v.data_type != "signal":
+                    pin._value = v.data
+                    pin.defined = True
                 pin.updated = True
                 do_update = True
             else:
