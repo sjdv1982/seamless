@@ -147,16 +147,14 @@ class Manager:
 
             input_pin.receive_update(value)
 
-        from .. import run_work
-        from .macro import get_macro_mode
-        if not get_macro_mode():
-            run_work()
-
-
     def update_from_code(self, cell, only_last=False):
         value = cell._data
         cell_id = self.get_cell_id(cell)
         self._update(cell_id, value, only_last=only_last)
+        from .. import run_work
+        from .macro import get_macro_mode
+        if not get_macro_mode():
+            run_work()
 
     def update_from_process(self, cell_id, value, process):
         from .cell import Signal

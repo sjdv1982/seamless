@@ -66,7 +66,6 @@
       "cell5",
       "cell6",
       "cell7",
-      "cell8",
       "ctx1"
     ],
     "children": {
@@ -108,7 +107,7 @@
           "code",
           "python"
         ],
-        "data": "\nif PINS.inp.updated:\n    print('Signal received')\nelse:\n    print(\"Signal was not updated\")\n"
+        "data": "\nif PINS.inp.updated:\n    print('Receiver: signal received')\nif PINS.inp2.updated:\n    print(\"Receiver: secondary input was updated\")\n"
       },
       "cell7": {
         "dtype": [
@@ -117,10 +116,6 @@
           "python"
         ],
         "data": ""
-      },
-      "cell8": {
-        "dtype": "int",
-        "data": "1"
       },
       "code": {
         "dtype": [
@@ -219,11 +214,18 @@
           "outp": {
             "dtype": "signal",
             "pin": "output"
+          },
+          "outp2": {
+            "dtype": "int",
+            "pin": "output"
           }
         }
       },
       "signal": {
         "dtype": "signal"
+      },
+      "value": {
+        "dtype": "int"
       }
     },
     "macro_objects": [],
@@ -232,6 +234,10 @@
     "registrar_listeners": [],
     "registrar_cells": [],
     "pin_cell_connections": [
+      [
+        "sender.outp2",
+        "value"
+      ],
       [
         "sender.outp",
         "signal"
@@ -267,10 +273,6 @@
         "receiver.code_stop"
       ],
       [
-        "cell8",
-        "receiver.inp2"
-      ],
-      [
         "code",
         "ctx1.ed.value"
       ],
@@ -293,6 +295,10 @@
       [
         "signal",
         "receiver.inp"
+      ],
+      [
+        "value",
+        "receiver.inp2"
       ]
     ]
   }

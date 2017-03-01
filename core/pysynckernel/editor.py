@@ -172,6 +172,7 @@ class Editor:
 
 
     def _code_start(self):
+        from ... import run_work
         assert not self._active
         try:
             self._spontaneous = True
@@ -179,17 +180,21 @@ class Editor:
             self._execute(self.code_start_block)
         finally:
             self._spontaneous = False
+            run_work()
         self._active = True
 
     def _code_update(self):
+        from ... import run_work
         assert self._active
         try:
             self._spontaneous = True
             self._execute(self.code_update_block)
         finally:
             self._spontaneous = False
+            run_work()
 
     def _code_stop(self):
+        from ... import run_work
         if self._active:
             self._spontaneous = False
             try:
@@ -197,7 +202,8 @@ class Editor:
             finally:
                 self._active = False
                 self._spontaneous = True
-            self._set_namespace()
+                self._set_namespace()
+                run_work()
 
     def _set_namespace(self):
         #self.namespace.clear() #need to keep ipython vars

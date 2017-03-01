@@ -101,8 +101,11 @@ class Editor(Process):
 
     def receive_update(self, input_pin, value):
         f = self.editor.process_input
-        work = partial(f, input_pin, value)
-        seamless.add_work(work)
+        if self._pins[input_pin].dtype == "signal":
+            f(input_pin, value)
+        else:
+            work = partial(f, input_pin, value)
+            seamless.add_work(work)
 
     def receive_registrar_update(self, registrar_name, key, namespace_name):
         #TODO: this will only work for same-namespace (thread) kernels
