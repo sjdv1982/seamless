@@ -1,3 +1,5 @@
+import json
+from ..dtypes.cson import cson2json
 import weakref
 from weakref import WeakKeyDictionary, WeakValueDictionary
 
@@ -58,17 +60,28 @@ class Manager:
         if cell_id not in self.cells:
             self.cells[cell_id] = cell
 
-    def remove_listener(self, input_pin):
+    def _remove_listener(self, cell_id, input_pin, process):
+        input_pin_id = input_pin.get_pin_id()
+        l = self.listeners[cell_id]
+        l[:] = [ref for ref in l if ref().get_pin_id() != input_pin_id]
+        if not len(l):
+            self.listeners.pop(cell_id)
+            cell = self.cells.get(cell_id, None)
+            if cell is not None:
+                cell._on_disconnect(input_pin, process, False)
+
+    def remove_listener(self, cell, input_pin):
+        process = input_pin.process_ref()
+        input_pin_id = input_pin.get_pin_id()
+        cell_ids = self.pin_to_cells.pop(input_pin_id, [])
+        cell_id = self.get_cell_id(cell)
+        self._remove_listener(cell_id, input_pin, process)
+
+    def remove_listeners(self, input_pin):
         process = input_pin.process_ref()
         cell_ids = self.pin_to_cells.pop(input_pin.get_pin_id(), [])
         for cell_id in cell_ids:
-            l = self.listeners[cell_id]
-            l[:] = [ref for ref in l if ref().get_pin_id() != input_pin.get_pin_id()]
-            if not len(l):
-                self.listeners.pop(cell_id)
-                cell = self.cells.get(cell_id, None)
-                if cell is not None:
-                    cell._on_disconnect(input_pin, process, False)
+            self._remove_listener(cell_id, input_pin, process)
 
     def add_macro_listener(self, cell, macro_object, macro_arg):
         cell_id = self.get_cell_id(cell)
@@ -126,7 +139,7 @@ class Manager:
                         self.registrar_listeners.pop(registrar)
 
 
-    def _update(self, cell_id, value, *, process=None, only_last=False):
+    def _update(self, cell_id, dtype, value, *, process=None, only_last=False):
         macro_listeners = self.macro_listeners.get(cell_id, [])
 
         if not only_last:
@@ -144,13 +157,16 @@ class Manager:
 
             if process is not None and input_pin.process_ref() is process:
                 continue
-
+            if (dtype == "cson" or dtype[0] == "cson") and \
+              (input_pin.dtype == "json" or input_pin.dtype[0] == "json"):
+                if isinstance(value, (str, bytes)):
+                    value = cson2json(value)
             input_pin.receive_update(value)
 
     def update_from_code(self, cell, only_last=False):
         value = cell._data
         cell_id = self.get_cell_id(cell)
-        self._update(cell_id, value, only_last=only_last)
+        self._update(cell_id, cell.dtype, value, only_last=only_last)
         from .. import run_work
         from .macro import get_macro_mode
         if not get_macro_mode():
@@ -164,11 +180,11 @@ class Manager:
 
         if isinstance(cell, Signal):
             assert value is None
-            self._update(cell_id, None, process=process)
+            self._update(cell_id, None, None, process=process)
         else:
             changed = cell._update(value,propagate=False)
             if changed:
-                self._update(cell_id, value, process=process)
+                self._update(cell_id, cell.dtype, value, process=process)
 
     def update_registrar_key(self, registrar, key):
         from .process import Process
@@ -193,7 +209,62 @@ class Manager:
     def get_cell_id(cls, cell):
         return id(cell)
 
-    #TODO disconnect
+    def disconnect(self, source, target):
+        from .transformer import Transformer
+        from .cell import Cell, CellLike
+        from .context import Context
+        from .process import EditPinBase, ExportedEditPin, \
+            InputPinBase, ExportedInputPin, OutputPinBase, ExportedOutputPin
+        if isinstance(source, EditPinBase):
+            source, target = target, source
+        if isinstance(source, CellLike) and source._like_cell:
+            if isinstance(target, ExportedInputPin):
+                target = target.get_pin()
+            if isinstance(source, Context):
+                assert "_output" in source._pins
+                source = source._pins["_output"]
+            self.remove_listener(source, target)
+            process = target.process_ref()
+            if process is not None:
+                source._on_disconnect(target, process, incoming = False)
+
+        elif isinstance(source, OutputPinBase):
+            if isinstance(target, Context):
+                assert "_input" in target._pins
+                target = target._pins["_input"]
+            if isinstance(source, ExportedOutputPin):
+                source = source.get_pin()
+
+            cell_id = self.get_cell_id(target)
+
+            ok = False
+            if cell_id in self.cells and \
+              target in self.cell_to_output_pin:
+                if cell_id not in source._cell_ids:
+                    ok = False
+                else:
+                    for ref in self.cell_to_output_pin[target]:
+                        if ref() is source:
+                            self.cell_to_output_pin.remove(ref)
+                            source._cell_ids.remove(cell_id)
+                            ok = True
+            if not ok:
+                raise ValueError("Connection does not exist")
+
+                if target not in self.cell_to_output_pin:
+                    self.cell_to_output_pin[target] = []
+                self.cell_to_output_pin[target].append(weakref.ref(source))
+
+            if isinstance(process, Transformer):
+                process._on_disconnect_output()
+
+            process = source.process_ref()
+            if process is not None:
+                target._on_disconnect(source, process)
+
+        else:
+            raise TypeError
+
     def connect(self, source, target):
         from .transformer import Transformer
         from .cell import Cell, CellLike
@@ -242,3 +313,6 @@ class Manager:
 
             if isinstance(process, Transformer):
                 process._on_connect_output()
+
+        else:
+            raise TypeError

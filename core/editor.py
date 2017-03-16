@@ -69,7 +69,7 @@ class Editor(Process):
                 dtype = tuple(dtype)
             if param["pin"] == "input":
                 pin = InputPin(self, p, dtype)
-                kernel_inputs[p] = dtype, True
+                kernel_inputs[p] = dtype, (dtype != "signal")
             elif param["pin"] == "output":
                 pin = OutputPin(self, p, dtype)
                 self.outputs[p] = dtype
@@ -86,6 +86,10 @@ class Editor(Process):
             kernel_inputs,
             self.outputs,
         )
+        for p in self._pins:
+            pin = self._pins[p]
+            if isinstance(pin, OutputPin):
+                pin.cell() #auto-create a cell
     @property
     def editor_params(self):
         return self._editor_params

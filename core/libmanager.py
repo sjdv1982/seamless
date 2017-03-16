@@ -12,7 +12,7 @@ def fromfile(cell, filename):
         data = _lib[filename]
     else:
         new_filename = seamless_lib_dir + filename
-        data = open(new_filename).read()
+        data = open(new_filename, encoding="utf8").read()
         _lib[filename] = data
         _links[filename] = []
     _links[filename].append(cell)
@@ -54,7 +54,7 @@ def load(filename, reload=False):
     if not reload and lib_filename in _lib:
         return
     filepath = seamless_lib_dir + os.sep + lib_filename.replace("/", os.sep)
-    data = open(filepath).read()
+    data = open(filepath, encoding="utf8").read()
     _lib[lib_filename] = data
     if lib_filename not in _links:
         _links[lib_filename] = []

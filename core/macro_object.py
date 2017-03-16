@@ -65,7 +65,7 @@ class MacroObject:
                     if output_pin.path[:len(parent_path)] == parent_path:
                         continue
                 external_connections.append((True, output_pin, path, output_pin.path))
-            outcons = manager.listeners[cell_id]
+            outcons = manager.listeners.get(cell_id, [])
             for outcon in outcons:
                 input_pin = outcon()
                 if input_pin is None:

@@ -3,10 +3,10 @@ from seamless import editor, macro
 from seamless.core.cell import Cell
 
 @macro(OrderedDict((
-    ("dtype","dtype"),
+    ("dtype",{"type": "dtype", "default": ("text", "html")}),
     ("title",{"type": "str", "default": "Browser"})
 )))
-def browser(ctx, dtype, title=None):
+def browser(ctx, dtype, title):
     from seamless import editor
     assert dtype[:2] == ("text", "html") #for now...
     pinparams = {

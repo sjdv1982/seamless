@@ -101,7 +101,7 @@ class Editor:
         self._set_namespace()
 
     def process_input(self, name, data):
-
+        #print("process", self.parent(), name, self._pending_inputs)
         if self.parent() is None:
             return
 
@@ -172,6 +172,7 @@ class Editor:
 
 
     def _code_start(self):
+        #print("CODE-START", self.parent())
         from ... import run_work
         assert not self._active
         try:

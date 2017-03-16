@@ -12,11 +12,13 @@ _known_types = [
   "bool",
   "text",
   ("text", "code", "python"),
+  ("text", "code", "ipython"),
   ("text", "code", "silk"),
   ("text", "code", "vertexshader"),
   ("text", "code", "fragmentshader"),
   ("text", "html"),
   "json",
+  "cson",
   "xml",
   "silk",
   "signal"
@@ -41,6 +43,20 @@ def json_constructor(data):
         data = data.json()
     return json.dumps(data, indent=2)
 
+def cson_constructor(data):
+    from ..silk.classes import SilkObject
+    if isinstance(data, SilkObject):
+        data = data.json()
+        return json.dumps(data, indent=2)
+    elif isinstance(data, (str, bytes)):
+        return data
+    else:
+        try:
+            result = json.dumps(data, indent=2)
+            return result
+        except:
+            return data
+
 def signal_error(data):
     raise TypeError("Cannot construct signal")
 
@@ -53,6 +69,7 @@ _constructors = {
     "str" : str,
     "text" : str,
     "json": json_constructor,
+    "cson": cson_constructor,
     "xml": str, #TODO
     "silk": str, #TODO
     "signal": signal_error,
@@ -73,17 +90,28 @@ def dtype_parser(data):
 
 def json_parser(data):
     from ..silk.classes import SilkObject
-    if isinstance(data, str):
-        return json.loads(data)
+    if isinstance(data, str) or isinstance(data, bytes):
+        if len(data) == 0:
+            return None
+        else:
+            return json.loads(data)
     elif isinstance(data, SilkObject):
         return data.json()
     else:
         jdata = json.dumps(data)
         return json.loads(jdata)
 
+def cson_parser(data):
+    from ..silk.classes import SilkObject
+    if isinstance(data, str) or isinstance(data, bytes):
+        return data
+    if isinstance(data, SilkObject):
+        data = data.json()
+    return json.dumps(data, indent=2)
+
 _parsers["dtype"] = dtype_parser
 _parsers["json"] = json_parser
-
+_parsers["cson"] = cson_parser
 
 def check_registered(data_type):
     return data_type in _known_types
@@ -136,6 +164,8 @@ def serialize(data_type, value):
         return construct_dtype(value)
     elif dtype == "json":
         return json_constructor(value)
+    elif dtype == "cson":
+        return cson_constructor(value)
     elif dtype == "xml":
         raise NotImplementedError
     elif dtype == "silk":

@@ -142,6 +142,11 @@ When any of these cells change and the macro is re-executed, the child object wi
         if not get_macro_mode():
             self._macro_check(child, child_macro_control)
 
+    def _set_context(self, context, name, force_detach=False):
+        super()._set_context(context, name, force_detach)
+        if self._manager is not context._manager:
+            assert not len(self._children) #TODO: insert a non-empty context into a parent context
+            self._manager = context._manager
 
     def _add_new_cell(self, cell, naming_pattern="cell"):
         from .cell import Cell
@@ -231,7 +236,7 @@ When any of these cells change and the macro is re-executed, the child object wi
             raise AttributeError(attr)
         child = self._children[attr]
         child.destroy()
-        self._children.pop(attr)
+        self._children.pop(attr, None)
 
     def _hasattr(self, attr):
         if hasattr(self.__class__, attr):
@@ -242,24 +247,29 @@ When any of these cells change and the macro is re-executed, the child object wi
             return True
         return False
 
-    def export(self, child, forced=[]):
+    def export(self, child, forced=[], skipped=[]):
         """Exports all unconnected inputs and outputs of a child
 
         If the child is a cell (or cell-like context):
-            - export the child's input as primary input (if unconnected)
-            - export the child's output as primary output (if unconnected)
+            - export the child's inputs/outputs as primary inputs/outputs
+                (if unconnected, and not in skipped)
             - export any other pins, if forced
             - sets the context as cell-like
         If the child is a process (or process-like context):
-            - export all unconnected input and output pins of the child
+            - export the child's inputs/outputs as primary inputs/outputs
+                (if unconnected, and not in skipped)
             - export any other pins, if forced
             - sets the context as process-like
+        Outputs with a single, undefined, auto cell are considered unconnected
 
         Arguments:
 
         child: a direct or indirect child (grandchild) of the context
         forced: contains a list of pin names that are exported in any case
           (even if not unconnected).
+          Use "_input" and "_output" to indicate primary cell input and output
+        skipped: contains a list of pin names that are never exported
+          (even if unconnected).
           Use "_input" and "_output" to indicate primary cell input and output
 
         """
@@ -293,10 +303,21 @@ When any of these cells change and the macro is re-executed, the child object wi
                     return (len(con_cells) > 0)
                 elif isinstance(pin, OutputPinBase):
                     pin = pin.get_pin()
-                    return (len(pin._cell_ids) > 0)
+                    manager = pin._get_manager()
+                    if len(pin._cell_ids) == 0:
+                        return False
+                    elif len(pin._cell_ids) > 1:
+                        return True
+                    con_cell = manager.cells[pin._cell_ids[0]]
+                    if con_cell._data is not None:
+                        return True
+                    if con_cell.name not in self._auto:
+                        return True
+                    return False
                 else:
                     raise TypeError(pin)
-        pins = [p for p in pins if not is_connected(p)] + forced
+        pins = [p for p in pins if not is_connected(p) and p not in skipped]
+        pins = pins + forced
         if not len(pins):
             raise Exception("Zero pins to be exported!")
         for pinname in pins:

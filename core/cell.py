@@ -5,6 +5,7 @@ import inspect
 import ast
 import os
 import copy
+import json
 from enum import Enum
 
 from .. import dtypes
@@ -96,6 +97,10 @@ class Cell(Managed, CellLike):
         self._check_destroyed()
         return self.resource.fromfile(filename, frames_back=2)
 
+    def fromlibfile(self, lib, filename):
+        self._check_destroyed()
+        return self.resource.fromlibfile(lib, filename)
+
     def _text_set(self, data, propagate, trusted):
         try:
             if self._status == self.__class__.StatusFlags.OK \
@@ -172,6 +177,12 @@ class Cell(Managed, CellLike):
         """Invoked when cell data is updated by a process."""
         #return self._text_set(data, propagate=False, trusted=True)
         return self._set(data, propagate=False) #for now, processes can also set with non-text...
+
+    def disconnect(self, target):
+        """Break ane existing connection between the cell and a process's input pin."""
+        self._check_destroyed()
+        manager = self._get_manager()
+        manager.disconnect(self, target)
 
     def connect(self, target):
         """Connect the cell to a process's input pin."""
@@ -445,10 +456,25 @@ class Signal(Cell):
         #print("CELL DESTROY", self)
         Managed.destroy(self)
 
+class CsonCell(Cell):
+    @property
+    def value(self):
+        """
+        Converts the data to JSON and returns the dictionary
+        """
+        data = self._data
+        from ..dtypes.cson import cson2json
+        return cson2json(data)
+    def _update(self, data, propagate=False):
+        """Invoked when cell data is updated by a process."""
+        if not isinstance(data, (str, bytes)):
+            data = json.dumps(data, indent=2)
+        return super()._update(data, propagate)
 
 _handlers = {
     ("text", "code", "python"): PythonCell,
-    "signal": Signal
+    "signal": Signal,
+    "cson": CsonCell
 }
 
 

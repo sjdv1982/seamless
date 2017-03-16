@@ -71,7 +71,7 @@ class PinBase(Managed):
         super().__init__()
         self.name = name
 
-    def _set_context(self, context, force_detach=False):
+    def _set_context(self, context, childname, force_detach=False):
         pass
 
     @property
@@ -159,7 +159,7 @@ class InputPin(InputPinBase):
             return
         super().destroy()
         manager = self._get_manager()
-        manager.remove_listener(self)
+        manager.remove_listeners(self)
 
 
 class OutputPin(OutputPinBase):
@@ -179,6 +179,10 @@ class OutputPin(OutputPinBase):
     def connect(self, target):
         manager = self._get_manager()
         manager.connect(self, target)
+
+    def disconnect(self, target):
+        manager = self._get_manager()
+        manager.disconnect(self, target)
 
     def cell(self, own=False):
         from .cell import cell
@@ -299,12 +303,16 @@ class EditPin(EditPinBase):
             return
         super().destroy()
         manager = self._get_manager()
-        manager.remove_listener(self)
+        manager.remove_listeners(self)
 
 
     def connect(self, target):
         manager = self._get_manager()
         manager.connect(self, target)
+
+    def disconnect(self, target):
+        manager = self._get_manager()
+        manager.disconnect(self, target)
 
 
 
@@ -321,7 +329,7 @@ class ExportedPinBase:
     def __getattr__(self, attr):
         return getattr(self._pin, attr)
 
-    def _set_context(self, context, force_detach=False):
+    def _set_context(self, context, childname, force_detach=False):
         pass
 
     @property

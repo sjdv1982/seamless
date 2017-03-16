@@ -1,0 +1,316 @@
+{
+  "lib": {
+    "/cell-filelink-start.py": {
+      "data": "if __name__ == \"__main__\":\n    #test with ipython -i\n    import sys, os\n\n    class dummy:\n        pass\n\n    class EditPin:\n        def __init__(self, value):\n            self.value = value\n            self.defined = True\n        def set(self, value):\n            print(\"SET\", value)\n            self.value = value\n        def get(self):\n            return self.value\n\n    class Getter:\n        def __init__(self, arg):\n            self.arg = arg\n        def get(self):\n            return self.arg\n    PINS = dummy()\n    PINS.value = EditPin(\"test\")\n    directory = sys.argv[1]\n    filename = sys.argv[2]\n    PINS.filepath = Getter(os.path.join(directory, filename))\n    PINS.latency = Getter(float(sys.argv[3]))\n    def serializer(v):\n        return str(v.get())\n    print(\"Edit in \" + filepath.get())\nelse:\n    from seamless.dtypes import serialize\n    def serializer(v):\n        return serialize(v._dtype, v.get())\n\n\nimport os, time, functools, traceback\nfrom threading import Thread, RLock\nlast_value = None\nlast_serialized_value = None\nlast_exc = None\nlast_mtime = None\n\ndef write_file(fpath):\n    global last_mtime, last_value, last_serialized_value\n    if not PINS.value.defined:\n        last_mtime = -1 #will trigger a file read\n        return\n    if last_value == PINS.value.get():\n        return\n    val = serializer(PINS.value)\n    if last_serialized_value == val:\n        return\n    with lock:\n        if last_serialized_value != val:\n            #print(\"WRITE\", val)\n            with open(fpath, \"w\", encoding=\"utf-8\") as f:\n                f.write(val)\n                last_value = PINS.value.get()\n                last_serialized_value = val\n            last_time = time.time()\n            try:\n                stat = os.stat(fpath)\n                last_mtime = stat.st_mtime\n            except:\n                pass\n\ndef poll():\n    global last_time, last_mtime, last_value, last_serialized_value, last_exc\n    fpath = PINS.filepath.get()\n    while 1:\n        time.sleep(PINS.latency.get())\n        curr_time = time.time()\n        last_time = curr_time\n        if not os.path.exists(fpath):\n            try:\n                write_file(fpath)\n            except:\n                exc = traceback.format_exc()\n                if exc != last_exc:\n                    print(exc)\n                    last_exc = exc\n        else:\n            with lock:\n                stat = os.stat(fpath)\n                try:\n                    if last_mtime is None or stat.st_mtime > last_mtime:\n                        data = None\n                        with open(fpath, encoding=\"utf-8\") as f:\n                            data = f.read()\n                        if data is not None:\n                            if last_serialized_value != data:\n                                #print(\"LOAD\")\n                                PINS.value.set(data)\n                                last_value = None\n                                last_serialized_value = data\n                        last_mtime = stat.st_mtime\n                except:\n                    exc = traceback.format_exc()\n                    if exc != last_exc:\n                        print(exc)\n                        last_exc = exc\n\nt = Thread(target=poll)\nt.setDaemon(True)\nlock = RLock()\nwrite_file(PINS.filepath.get())\nt.start()\n",
+      "links": [
+        "cson_link.cell1",
+        "json_link.cell1"
+      ]
+    }
+  },
+  "macro": [
+    {
+      "with_context": false,
+      "dtype": [
+        "text",
+        "code",
+        "python"
+      ],
+      "type_args": [
+        "json",
+        "seamless",
+        "editor_params"
+      ],
+      "module_name": "seamless.core.editor",
+      "func_name": "editor",
+      "code": "@macro(type=(\"json\", \"seamless\", \"editor_params\"),with_context=False)\ndef editor(kwargs):\n    from seamless.core.editor import Editor #code must be standalone\n    #TODO: remapping, e.g. output_finish, destroy, ...\n    return Editor(kwargs)\n"
+    },
+    {
+      "with_context": false,
+      "dtype": [
+        "text",
+        "code",
+        "python"
+      ],
+      "type_args": [
+        "json",
+        "seamless",
+        "transformer_params"
+      ],
+      "module_name": "seamless.core.transformer",
+      "func_name": "transformer",
+      "code": "@macro(type=(\"json\", \"seamless\", \"transformer_params\"), with_context=False)\ndef transformer(kwargs):\n    from seamless.core.transformer import Transformer #code must be standalone\n    #TODO: remapping, e.g. output_finish, destroy, ...\n    return Transformer(kwargs)\n"
+    },
+    {
+      "with_context": true,
+      "dtype": [
+        "text",
+        "code",
+        "python"
+      ],
+      "type_args": "str",
+      "module_name": "seamless.lib.filelink",
+      "func_name": "filelink",
+      "code": "@macro(\"str\")\ndef filelink(ctx, cell_type):\n    cell_filelink_start = \"cell-filelink-start.py\" #repeat for inline\n    from seamless import editor\n    pinparams = {\n       \"value\": {\n         \"pin\": \"edit\",\n         \"dtype\": cell_type,\n         \"must_be_defined\": False\n       },\n       \"filepath\" : {\n         \"pin\": \"input\",\n         \"dtype\": \"str\"\n       },\n       \"latency\" : {\n         \"pin\": \"input\",\n         \"dtype\": \"float\"\n       },\n    }\n    ed = ctx.ed = editor(pinparams)\n    ed.code_start.cell().fromfile(cell_filelink_start)\n    ed.code_update.cell().set(\"write_file(PINS.filepath.get())\")\n    ed.code_stop.cell().set('t.join(0)')\n    ctx.export(ed)\n"
+    }
+  ],
+  "main": {
+    "type": "context",
+    "like_process": false,
+    "like_cell": false,
+    "pins": {},
+    "auto": [
+      "cell1",
+      "cell2",
+      "cell3",
+      "cell4",
+      "cell5"
+    ],
+    "children": {
+      "cell1": {
+        "dtype": "str",
+        "data": "./test-cson.cson"
+      },
+      "cell2": {
+        "dtype": "float",
+        "data": "0.2"
+      },
+      "cell3": {
+        "dtype": "str",
+        "data": "./test-cson.json"
+      },
+      "cell4": {
+        "dtype": "float",
+        "data": "0.2"
+      },
+      "cell5": {
+        "dtype": [
+          "text",
+          "code",
+          "python"
+        ],
+        "data": "\nreturn inp\n"
+      },
+      "cson": {
+        "dtype": "cson",
+        "data": "# Comments!!!\n\n# An Array with no commas!\ngreatDocumentaries: [\n    'earthlings.com'\n    'forksoverknives.com'\n    'cowspiracy.com'\n]\n\n# An Object without braces!\nimportantFact:\n    # Multi-Line Strings! Without Quote Escaping!\n    emissions: '''\n        Livestock and their byproducts account for at least 32,000 million tons of carbon dioxide (CO2) per year, or 51% of all worldwide greenhouse gas emissions.\n        Goodland, R Anhang, J. \u201cLivestock and Climate Change: What if the key actors in climate change were pigs, chickens and cows?\u201d\n        WorldWatch, November/December 2009. Worldwatch Institute, Washington, DC, USA. Pp. 10\u201319.\n        http://www.worldwatch.org/node/6294\n        '''\n\n    landuse: '''\n        Livestock covers 45% of the earth\u2019s total land.\n        Thornton, Phillip, Mario Herrero, and Polly Ericksen. \u201cLivestock and Climate Change.\u201d Livestock Exchange, no. 3 (2011).\n        https://cgspace.cgiar.org/bitstream/handle/10568/10601/IssueBrief3.pdf\n        '''\n\n    burger: '''\n        One hamburger requires 660 gallons of water to produce \u2013 the equivalent of 2 months\u2019 worth of showers.\n        Catanese, Christina. \u201cVirtual Water, Real Impacts.\u201d Greenversations: Official Blog of the U.S. EPA. 2012.\n        http://blog.epa.gov/healthywaters/2012/03/virtual-water-real-impacts-world-water-day-2012/\n        \u201c50 Ways to Save Your River.\u201d Friends of the River.\n        http://www.friendsoftheriver.org/site/PageServer?pagename=50ways\n        '''\n\n    milk: '''\n        1,000 gallons of water are required to produce 1 gallon of milk.\n        \u201cWater trivia facts.\u201d United States Environmental Protection Agency.\n        http://water.epa.gov/learn/kids/drinkingwater/water_trivia_facts.cfm#_edn11\n        '''\n\n    more: 'http://cowspiracy.com/facts'\n"
+      },
+      "cson_link": {
+        "type": "context",
+        "like_process": true,
+        "like_cell": false,
+        "pins": {
+          "filepath": "cson_link.ed.filepath",
+          "latency": "cson_link.ed.latency",
+          "value": "cson_link.ed.value"
+        },
+        "auto": [
+          "cell1",
+          "cell2",
+          "cell3"
+        ],
+        "children": {
+          "cell1": {
+            "dtype": [
+              "text",
+              "code",
+              "python"
+            ],
+            "resource": {
+              "filename": "/cell-filelink-start.py",
+              "lib": true,
+              "mode": 2
+            },
+            "data": "if __name__ == \"__main__\":\n    #test with ipython -i\n    import sys, os\n\n    class dummy:\n        pass\n\n    class EditPin:\n        def __init__(self, value):\n            self.value = value\n            self.defined = True\n        def set(self, value):\n            print(\"SET\", value)\n            self.value = value\n        def get(self):\n            return self.value\n\n    class Getter:\n        def __init__(self, arg):\n            self.arg = arg\n        def get(self):\n            return self.arg\n    PINS = dummy()\n    PINS.value = EditPin(\"test\")\n    directory = sys.argv[1]\n    filename = sys.argv[2]\n    PINS.filepath = Getter(os.path.join(directory, filename))\n    PINS.latency = Getter(float(sys.argv[3]))\n    def serializer(v):\n        return str(v.get())\n    print(\"Edit in \" + filepath.get())\nelse:\n    from seamless.dtypes import serialize\n    def serializer(v):\n        return serialize(v._dtype, v.get())\n\n\nimport os, time, functools, traceback\nfrom threading import Thread, RLock\nlast_value = None\nlast_serialized_value = None\nlast_exc = None\nlast_mtime = None\n\ndef write_file(fpath):\n    global last_mtime, last_value, last_serialized_value\n    if not PINS.value.defined:\n        last_mtime = -1 #will trigger a file read\n        return\n    if last_value == PINS.value.get():\n        return\n    val = serializer(PINS.value)\n    if last_serialized_value == val:\n        return\n    with lock:\n        if last_serialized_value != val:\n            #print(\"WRITE\", val)\n            with open(fpath, \"w\", encoding=\"utf-8\") as f:\n                f.write(val)\n                last_value = PINS.value.get()\n                last_serialized_value = val\n            last_time = time.time()\n            try:\n                stat = os.stat(fpath)\n                last_mtime = stat.st_mtime\n            except:\n                pass\n\ndef poll():\n    global last_time, last_mtime, last_value, last_serialized_value, last_exc\n    fpath = PINS.filepath.get()\n    while 1:\n        time.sleep(PINS.latency.get())\n        curr_time = time.time()\n        last_time = curr_time\n        if not os.path.exists(fpath):\n            try:\n                write_file(fpath)\n            except:\n                exc = traceback.format_exc()\n                if exc != last_exc:\n                    print(exc)\n                    last_exc = exc\n        else:\n            with lock:\n                stat = os.stat(fpath)\n                try:\n                    if last_mtime is None or stat.st_mtime > last_mtime:\n                        data = None\n                        with open(fpath, encoding=\"utf-8\") as f:\n                            data = f.read()\n                        if data is not None:\n                            if last_serialized_value != data:\n                                #print(\"LOAD\")\n                                PINS.value.set(data)\n                                last_value = None\n                                last_serialized_value = data\n                        last_mtime = stat.st_mtime\n                except:\n                    exc = traceback.format_exc()\n                    if exc != last_exc:\n                        print(exc)\n                        last_exc = exc\n\nt = Thread(target=poll)\nt.setDaemon(True)\nlock = RLock()\nwrite_file(PINS.filepath.get())\nt.start()\n"
+          },
+          "cell2": {
+            "dtype": [
+              "text",
+              "code",
+              "python"
+            ],
+            "data": "write_file(PINS.filepath.get())"
+          },
+          "cell3": {
+            "dtype": [
+              "text",
+              "code",
+              "python"
+            ],
+            "data": "t.join(0)"
+          },
+          "ed": {
+            "type": "editor",
+            "mode": "sync",
+            "params": {
+              "filepath": {
+                "dtype": "str",
+                "pin": "input"
+              },
+              "latency": {
+                "dtype": "float",
+                "pin": "input"
+              },
+              "value": {
+                "dtype": "cson",
+                "must_be_defined": false,
+                "pin": "edit"
+              }
+            }
+          }
+        }
+      },
+      "json": {
+        "dtype": "json"
+      },
+      "json_link": {
+        "type": "context",
+        "like_process": true,
+        "like_cell": false,
+        "pins": {
+          "filepath": "json_link.ed.filepath",
+          "latency": "json_link.ed.latency",
+          "value": "json_link.ed.value"
+        },
+        "auto": [
+          "cell1",
+          "cell2",
+          "cell3"
+        ],
+        "children": {
+          "cell1": {
+            "dtype": [
+              "text",
+              "code",
+              "python"
+            ],
+            "resource": {
+              "filename": "/cell-filelink-start.py",
+              "lib": true,
+              "mode": 2
+            },
+            "data": "if __name__ == \"__main__\":\n    #test with ipython -i\n    import sys, os\n\n    class dummy:\n        pass\n\n    class EditPin:\n        def __init__(self, value):\n            self.value = value\n            self.defined = True\n        def set(self, value):\n            print(\"SET\", value)\n            self.value = value\n        def get(self):\n            return self.value\n\n    class Getter:\n        def __init__(self, arg):\n            self.arg = arg\n        def get(self):\n            return self.arg\n    PINS = dummy()\n    PINS.value = EditPin(\"test\")\n    directory = sys.argv[1]\n    filename = sys.argv[2]\n    PINS.filepath = Getter(os.path.join(directory, filename))\n    PINS.latency = Getter(float(sys.argv[3]))\n    def serializer(v):\n        return str(v.get())\n    print(\"Edit in \" + filepath.get())\nelse:\n    from seamless.dtypes import serialize\n    def serializer(v):\n        return serialize(v._dtype, v.get())\n\n\nimport os, time, functools, traceback\nfrom threading import Thread, RLock\nlast_value = None\nlast_serialized_value = None\nlast_exc = None\nlast_mtime = None\n\ndef write_file(fpath):\n    global last_mtime, last_value, last_serialized_value\n    if not PINS.value.defined:\n        last_mtime = -1 #will trigger a file read\n        return\n    if last_value == PINS.value.get():\n        return\n    val = serializer(PINS.value)\n    if last_serialized_value == val:\n        return\n    with lock:\n        if last_serialized_value != val:\n            #print(\"WRITE\", val)\n            with open(fpath, \"w\", encoding=\"utf-8\") as f:\n                f.write(val)\n                last_value = PINS.value.get()\n                last_serialized_value = val\n            last_time = time.time()\n            try:\n                stat = os.stat(fpath)\n                last_mtime = stat.st_mtime\n            except:\n                pass\n\ndef poll():\n    global last_time, last_mtime, last_value, last_serialized_value, last_exc\n    fpath = PINS.filepath.get()\n    while 1:\n        time.sleep(PINS.latency.get())\n        curr_time = time.time()\n        last_time = curr_time\n        if not os.path.exists(fpath):\n            try:\n                write_file(fpath)\n            except:\n                exc = traceback.format_exc()\n                if exc != last_exc:\n                    print(exc)\n                    last_exc = exc\n        else:\n            with lock:\n                stat = os.stat(fpath)\n                try:\n                    if last_mtime is None or stat.st_mtime > last_mtime:\n                        data = None\n                        with open(fpath, encoding=\"utf-8\") as f:\n                            data = f.read()\n                        if data is not None:\n                            if last_serialized_value != data:\n                                #print(\"LOAD\")\n                                PINS.value.set(data)\n                                last_value = None\n                                last_serialized_value = data\n                        last_mtime = stat.st_mtime\n                except:\n                    exc = traceback.format_exc()\n                    if exc != last_exc:\n                        print(exc)\n                        last_exc = exc\n\nt = Thread(target=poll)\nt.setDaemon(True)\nlock = RLock()\nwrite_file(PINS.filepath.get())\nt.start()\n"
+          },
+          "cell2": {
+            "dtype": [
+              "text",
+              "code",
+              "python"
+            ],
+            "data": "write_file(PINS.filepath.get())"
+          },
+          "cell3": {
+            "dtype": [
+              "text",
+              "code",
+              "python"
+            ],
+            "data": "t.join(0)"
+          },
+          "ed": {
+            "type": "editor",
+            "mode": "sync",
+            "params": {
+              "filepath": {
+                "dtype": "str",
+                "pin": "input"
+              },
+              "latency": {
+                "dtype": "float",
+                "pin": "input"
+              },
+              "value": {
+                "dtype": "json",
+                "must_be_defined": false,
+                "pin": "edit"
+              }
+            }
+          }
+        }
+      },
+      "tf": {
+        "type": "transformer",
+        "mode": "thread",
+        "params": {
+          "inp": {
+            "dtype": "json",
+            "pin": "input"
+          },
+          "outp": {
+            "dtype": "json",
+            "pin": "output"
+          }
+        }
+      }
+    },
+    "macro_objects": [],
+    "macro_listeners": [],
+    "registrar_items": [],
+    "registrar_listeners": [],
+    "registrar_cells": [],
+    "pin_cell_connections": [
+      [
+        "tf.outp",
+        "json"
+      ]
+    ],
+    "cell_pin_connections": [
+      [
+        "cell1",
+        "cson_link.ed.filepath"
+      ],
+      [
+        "cell2",
+        "cson_link.ed.latency"
+      ],
+      [
+        "cell3",
+        "json_link.ed.filepath"
+      ],
+      [
+        "cell4",
+        "json_link.ed.latency"
+      ],
+      [
+        "cell5",
+        "tf.code"
+      ],
+      [
+        "cson_link.cell1",
+        "cson_link.ed.code_start"
+      ],
+      [
+        "cson_link.cell2",
+        "cson_link.ed.code_update"
+      ],
+      [
+        "cson_link.cell3",
+        "cson_link.ed.code_stop"
+      ],
+      [
+        "cson",
+        "cson_link.ed.value"
+      ],
+      [
+        "cson",
+        "tf.inp"
+      ],
+      [
+        "json_link.cell1",
+        "json_link.ed.code_start"
+      ],
+      [
+        "json_link.cell2",
+        "json_link.ed.code_update"
+      ],
+      [
+        "json_link.cell3",
+        "json_link.ed.code_stop"
+      ],
+      [
+        "json",
+        "json_link.ed.value"
+      ]
+    ]
+  }
+}

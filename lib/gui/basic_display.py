@@ -91,5 +91,8 @@ def display(cell, title=None, own=True):
     d = basic_display(cell.dtype, title)
     cell.connect(d.value)
     if own:
-        cell.own(d)
+        try:
+            cell.own(d)
+        except:
+            pass
     return d

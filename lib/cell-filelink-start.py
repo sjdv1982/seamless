@@ -40,6 +40,7 @@ from threading import Thread, RLock
 last_value = None
 last_serialized_value = None
 last_exc = None
+last_mtime = None
 
 def write_file(fpath):
     global last_mtime, last_value, last_serialized_value
@@ -54,7 +55,7 @@ def write_file(fpath):
     with lock:
         if last_serialized_value != val:
             #print("WRITE", val)
-            with open(fpath, "w") as f:
+            with open(fpath, "w", encoding="utf-8") as f:
                 f.write(val)
                 last_value = PINS.value.get()
                 last_serialized_value = val
@@ -84,9 +85,9 @@ def poll():
             with lock:
                 stat = os.stat(fpath)
                 try:
-                    if stat.st_mtime > last_mtime:
+                    if last_mtime is None or stat.st_mtime > last_mtime:
                         data = None
-                        with open(fpath) as f:
+                        with open(fpath, encoding="utf-8") as f:
                             data = f.read()
                         if data is not None:
                             if last_serialized_value != data:

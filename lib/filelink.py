@@ -36,15 +36,29 @@ def filelink(ctx, cell_type):
 def link(cell, directory=None, filename=None, latency=0.2, own=False):
     import os
     assert isinstance(cell, Cell)
+    if directory is not None: assert filename is not None
     assert cell.context is not None
     if directory is None or filename is None:
-        assert not cell.resource.lib
         filepath = cell.resource.filename
+        if cell.resource.lib:
+            import seamless
+            seamless_lib_dir = os.path.realpath(
+              os.path.split(seamless.lib.__file__)[0]
+            )
+            filepath = seamless_lib_dir + filepath
+            print("WARNING: linking library file '%s'" % filepath )
     else:
         filepath = os.path.join(directory, filename)
-    if cell.status == "UNINITIALISED" and not os.path.exists(filepath):
-        fh = open(filepath, "w")
-        fh.close()
+    if cell.status == "UNINITIALISED" :
+        if filepath is not None and not os.path.exists(filepath):
+            fh = open(filepath, "w", encoding="utf-8")
+            fh.close()
+        elif filepath is not None:
+            cell.set(open(filepath, encoding="utf-8").read())
+
+    dtype = cell.dtype
+    if dtype == "cson" or dtype[0] == "cson":
+        dtype = "text"
     fl = filelink(cell.dtype)
     fl.filepath.cell().set(filepath)
     fl.latency.cell().set(latency)

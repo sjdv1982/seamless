@@ -116,7 +116,7 @@ else:
         except UsageError:
             qt_error = "Your IPython is too old to support qt5"
         except ImportError:
-            qt_error = "Cannot find PyQt5 (requires QtCore, QtGui, QtSvg, QtWidgets)"
+            qt_error = "Cannot find PyQt5 (requires PyQt5.QtCore, .QtGui, .QtSvg, .QtWidgets)"
 
 
 if qt_error is None:
@@ -124,6 +124,7 @@ if qt_error is None:
     import PyQt5.QtWebEngineWidgets
     from PyQt5 import QtGui, QtCore
     from PyQt5.QtCore import QTimer
+    QtCore.Qt.AA_ShareOpenGLContexts = True
     qt_app = PyQt5.QtWidgets.QApplication(["  "])
     for _m in list(sys.modules.keys()):
         if _m.startswith("PyQt5"):
@@ -168,6 +169,17 @@ else:
         while 1:
             run_work()
             time.sleep(FAILSAFE_WORK_LATENCY/1000)
+
+_opengl_contexts = []
+def add_opengl_context(context):
+    _opengl_contexts.append(context)
+
+def remove_opengl_context(context):
+    if context in _opengl_contexts:
+        _opengl_contexts.remove(context)
+
+def opengl():
+    return qt_error is None and len(_opengl_contexts) > 0
 
 from . import qt
 __all__ = (macro, context, cell, pythoncell, transformer, editor, qt)

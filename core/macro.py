@@ -8,6 +8,7 @@ from .context import context, get_active_context
 from contextlib import contextmanager as _pystdlib_contextmanager
 from .macro_object import MacroObject
 from .cached_compile import cached_compile
+from ..dtypes.cson import cson2json
 
 #macros = weakref.WeakValueDictionary()
 _macros = {}
@@ -154,6 +155,7 @@ class Macro:
           "macro": dummy_macro
         }
         identifier = self.module_name
+        """ #interferes with resource.fromfile
         if self.module_name in sys.modules:
             try:
                 identifier = inspect.getsourcefile(
@@ -161,6 +163,7 @@ class Macro:
                 )
             except TypeError:
                 pass
+        """
         code = strip_source(code)
         identifier2 = "macro <= "+identifier + " <= " + self.func_name
         ast = cached_compile(code, identifier2)
@@ -211,7 +214,14 @@ class Macro:
         positional_done = set()
 
         for name, arg, arg0 in zip(order, resolved_args, args):
+            dtype = self._type_args[name]
             #TODO: type validation
+
+            #STUB:
+            if isinstance(arg0, Cell):
+                if (dtype == "json" or dtype[0] == "json") and \
+                  arg0.dtype == "cson" or arg0.dtype[0] == "cson":
+                    arg = cson2json(arg)
             if name.startswith("_arg"):
                 new_args.append(arg)
                 positional_done.add(name)
@@ -241,7 +251,7 @@ class Macro:
             if argname.startswith("_arg"):
                 assert argname in positional_done, (argname, order, len(args)) #TODO: error message
             else:
-                assert name in new_kwargs, name  # TODO: error message
+                assert argname in new_kwargs, argname  # TODO: error message
 
         for name in self._type_args:
             if name.startswith("_"):

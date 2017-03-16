@@ -1,6 +1,8 @@
 import inspect
 import weakref
 import os
+import inspect
+import importlib
 from . import libmanager
 
 class Resource:
@@ -69,7 +71,9 @@ class Resource:
                 x = x.f_back
             caller_filename = x.f_code.co_filename
             if caller_filename.startswith("macro <= "):
-                caller_filename = caller_filename.split(" <= ")[1]
+                caller_modulename = caller_filename.split(" <= ")[1]
+                mod = importlib.import_module(caller_modulename )
+                caller_filename = inspect.getsourcefile(mod)
             caller_filename = os.path.realpath(caller_filename)
             caller_filedir = os.path.split(caller_filename)[0]
             seamless_lib_dir = os.path.realpath(
@@ -82,24 +86,40 @@ class Resource:
                 if old_lib and new_filename == old_filename:
                     old_lib = False #nothing changes
                 else:
-                    ret = libmanager.fromfile(cell, new_filename)
+                    result = libmanager.fromfile(cell, new_filename)
                 self.filename = new_filename
                 self.lib = True
                 self.mode = 2
             else:
                 new_filename = caller_filedir + os.sep + filename
-                ret = cell.set(open(new_filename).read())
+                result = cell.set(open(new_filename, encoding="utf8").read())
                 self.filename = new_filename
                 self.lib = False
                 self.mode = 5
         else:
-            ret = cell.set(open(filename).read())
+            result = cell.set(open(filename, encoding="utf8").read())
             self.filename = filename
             self.lib = False
             self.mode = 5
         if old_lib:
             libmanager.on_cell_destroy(self.parent(), old_filename)
-        return self.parent()
+        return result
+
+    def fromlibfile(self, lib, filename):
+        cell = self.parent()
+        if inspect.ismodule(lib):
+            mod = lib
+        else:
+            mod = importlib.import_module(lib)
+        modfilename = inspect.getsourcefile(mod)
+        modfilename = os.path.realpath(modfilename)
+        mod_dir = os.path.split(modfilename)[0]
+        new_filename = mod_dir + os.sep + filename
+        result = cell.set(open(new_filename, encoding="utf8").read())
+        self.filename = new_filename
+        self.lib = False
+        self.mode = 5
+        return result
 
     def update(self):
         #TODO: other modes

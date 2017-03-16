@@ -1,5 +1,5 @@
 from qtconsole.rich_jupyter_widget import RichJupyterWidget
-from qtconsole.inprocess import QtInProcessKernelManager
+from qtconsole.inprocess import InProcessKernelManager, QtInProcessKernelManager
 from ipykernel.inprocess.ipkernel import InProcessKernel
 from ipykernel.zmqshell import ZMQInteractiveShell
 
@@ -10,7 +10,11 @@ class MyInProcessKernel(InProcessKernel):
             return(ZMQInteractiveShell(*args, **kwargs))
     shell_class = dummy()
 
-class MyInProcessKernelManager(QtInProcessKernelManager):
+class MyInProcessKernelManager(InProcessKernelManager):
+    def start_kernel(self, namespace):
+        self.kernel = MyInProcessKernel(parent=self, session=self.session, user_ns = namespace)
+
+class MyQtInProcessKernelManager(QtInProcessKernelManager):
     def start_kernel(self, namespace):
         self.kernel = MyInProcessKernel(parent=self, session=self.session, user_ns = namespace)
 
@@ -22,7 +26,7 @@ class PyShell:
             self._dummy = True
             return
         self.namespace = namespace
-        self.kernel_manager = MyInProcessKernelManager()
+        self.kernel_manager = MyQtInProcessKernelManager()
         self.kernel_manager.start_kernel(namespace)
         self.kernel_client = self.kernel_manager.client()
         self.kernel_client.start_channels()

@@ -71,12 +71,19 @@ class Node:
             depsgraph[dep].dependees.append(self.name)
 
 def make_template():
+    global result_template
     import jinja2
     tempdef = PINS.TEMPLATE_DEFINITION.get()
     if PINS.TEMPLATE_DEFINITION.updated:
         env.clear()
         depsgraph.clear()
         templates[:] = tempdef["templates"]
+        result_template = tempdef.get("result", None)
+        if len(templates) > 1:
+            assert result_template is not None
+        else:
+            result_template = templates[0]
+        assert result_template in templates, (result_template, templates)
 
     tempdef = PINS.TEMPLATE_DEFINITION.get()
     environment = tempdef["environment"]
@@ -110,8 +117,7 @@ def make_template():
         node = depsgraph[t]
         node.set_template(template.get())
 
-    firstnode = depsgraph[templates[0]]
+    firstnode = depsgraph[result_template]
     result = firstnode.render()
 
-    #print(env["head"])
     PINS.RESULT.set(result)

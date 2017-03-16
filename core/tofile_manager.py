@@ -23,7 +23,7 @@ def macro_object_to_json(macro_object):
     cell_args = {}
     for argnr, arg in enumerate(macro_object.args):
         argname = order[argnr]
-        if argname.startswith("_arg") and argname in macro_object.cell_args:
+        if argname in macro_object.cell_args:
             cell_args[argname] = sl_print(arg)
             args.append(None)
         else:

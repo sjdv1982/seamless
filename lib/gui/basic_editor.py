@@ -89,6 +89,9 @@ def edit(cell, title=None, own=False):
     ed = basic_editor(cell.dtype, title)
     cell.connect(ed.value)
     if own:
-        cell.own(ed)
+        try:
+            cell.own(ed)
+        except:
+            pass
     ed._validate_path()
     return ed
