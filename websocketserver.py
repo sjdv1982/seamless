@@ -3,6 +3,7 @@ import asyncio
 from asyncio.queues import Queue, QueueEmpty
 from threading import Lock, Event
 import json
+import copy
 
 class BaseWebSocketServer:
     address = '127.0.0.1'
@@ -44,29 +45,36 @@ class BaseWebSocketServer:
 
 class MessageSendServer(BaseWebSocketServer):
     def __init__(self):
-        self._message_queues = {}
+        self._message_queue_lists = {}
         self._pending_message_queues = {}
-        self._connections = {}
         self._closing = False
         self.queue_lock = Lock()
-
-        #connections that are closed before they were ever opened
-        self._preclosed_connections = {}
 
         super().__init__()
 
     async def _serve(self, websocket, path):
         connection_id = await websocket.recv()
-        assert connection_id not in self._message_queues
         with self.queue_lock:
-            if connection_id in self._preclosed_connections:
-                self._preclosed_connections[connection_id].set()
-                return
-            self._connections[connection_id] = websocket
-            myqueue = self._pending_message_queues.pop(connection_id, None)
-            if myqueue is None:
-                myqueue = Queue()
-            self._message_queues[connection_id] = myqueue
+            #if connection_id in self._preclosed_connections:
+            #    self._preclosed_connections[connection_id].set()
+            #    return
+            pmqueue = self._pending_message_queues.get(connection_id, None)
+            myqueue = Queue()
+            if pmqueue is not None:
+                events = []
+                while 1:
+                    try:
+                        e = pmqueue.get_nowait()
+                    except QueueEmpty:
+                        break
+                    events.append(e)
+                events = events[-100:] #discard all before the last 100 events
+                for e in events:
+                    myqueue.put_nowait(e)
+                    pmqueue.put_nowait(e) #put the events back
+            if connection_id not in self._message_queue_lists:
+                self._message_queue_lists[connection_id] = []
+            self._message_queue_lists[connection_id].append(myqueue)
         while True:
             #print("WAIT")
             try:
@@ -83,32 +91,21 @@ class MessageSendServer(BaseWebSocketServer):
             except websockets.exceptions.ConnectionClosed:
                 break
         with self.queue_lock:
-            self._message_queues.pop(connection_id)
-            self._connections.pop(connection_id)
+            self._message_queue_lists[connection_id].remove(myqueue)
 
     async def _send_message(self, connection_id, message):
         assert connection_id is not None
         assert message is not None #has special meaning as terminating message
         if self._closing:
             return
-        if connection_id not in self._message_queues:
-            with self.queue_lock:
-                if connection_id not in self._message_queues:
-                    queue = self._pending_message_queues.get(connection_id, None)
-                    if queue is None:
-                        queue = Queue()
-                        self._pending_message_queues[connection_id] = queue
-                else: #connection was *just* opened
-                    queue = self._message_queues[connection_id]
-        else:
-            queue = self._message_queues[connection_id]
-            #theoretically , this could fail, since another thread
-            # could simultaneously close the connection
-            # However, in seamless, only one process knows the connection_id,
-            # so only one thread may send messages and close the connection
-            # RULE: never share connection_ids using cells or registrars!
-        #print("PUT", message)
-        await queue.put(message)
+
+        pmqueue = self._pending_message_queues.get(connection_id, None)
+        if pmqueue is None:
+            pmqueue = Queue()
+            self._pending_message_queues[connection_id] = pmqueue
+        queues = [pmqueue] + self._message_queue_lists.get(connection_id, [])        
+        for queue in queues:
+            await queue.put(message)
 
     def send_message(self, connection_id, message):
         """
@@ -121,33 +118,24 @@ class MessageSendServer(BaseWebSocketServer):
         loop.run_until_complete(self._send_message(connection_id, message))
 
     async def _close_connection(self, connection_id):
-        event = None
         with self.queue_lock:
-            #don't pop, the _serve function will do that
-            queue = self._message_queues.get(connection_id, None)
+            queues = self._message_queue_lists.pop(connection_id, [])
             if queue is None: #connection is not yet opened
                 self._pending_message_queues.pop(connection_id, None)
-                event = Event()
-                self._preclosed_connections[connection_id] = event
-        if event is not None:
-            event.wait() #wait until the connection is opened...
-            return
 
-        while 1: #flush the queue, discarding all items
-            try:
-                await queue.get_nowait()
-            except QueueEmpty:
-                #queue is empty and will remain empty
-                #we push now one final message, None, for termination
-                await queue.put(None)
-                break
+        for queue in queues:
+            while 1: #flush the queue, discarding all items
+                try:
+                    await queue.get_nowait()
+                except QueueEmpty:
+                    #queue is empty and will remain empty
+                    #we push now one final message, None, for termination
+                    await queue.put(None)
+                    break
 
     def close_connection(self, connection_id):
         """
         Close a connection
-
-        Note that if a connection is not yet opened, close_connection will
-         wait for it to be opened
 
         Make sure that no other thread is simultaneously sending messages
          to the connection, or is simultaneously closing it

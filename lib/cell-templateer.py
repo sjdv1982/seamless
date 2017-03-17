@@ -1,4 +1,5 @@
 import jinja2, jinja2.meta
+import json
 
 env = {}
 depsgraph = {}
@@ -93,7 +94,11 @@ def make_template():
         inp = getattr(PINS, k)
         if inp.updated or k not in env:
             val = inp.get()
-            env[k] = val
+            if isinstance(val, (bytes, str)):
+                sval = val
+            else:
+                sval = json.dumps(val, indent=2)
+            env[k] = sval
             env_updates.append(k)
 
     for k in env_updates:

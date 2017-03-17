@@ -44,3 +44,4 @@ ele.innerHTML = bird;
 """
 ctx.dynamic_html.eval_bird.cell().set(js)
 browse(ctx.templateer.RESULT.cell())
+browse(ctx.templateer.RESULT.cell())
