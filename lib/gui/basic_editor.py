@@ -93,5 +93,4 @@ def edit(cell, title=None, own=False):
             cell.own(ed)
         except:
             pass
-    ed._validate_path()
     return ed

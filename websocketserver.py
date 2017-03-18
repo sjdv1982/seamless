@@ -53,6 +53,7 @@ class MessageSendServer(BaseWebSocketServer):
         super().__init__()
 
     async def _serve(self, websocket, path):
+        import websockets
         connection_id = await websocket.recv()
         with self.queue_lock:
             #if connection_id in self._preclosed_connections:
