@@ -13,7 +13,7 @@ if PINS.options.updated:
     on_change = False
 if PINS.value.updated:
     try:
-        ind = str_options.index(PINS.value.get())
+        ind = str_options.index(str(PINS.value.get()))
         b.setCurrentIndex(ind)
     except IndexError:
         pass
