@@ -8,12 +8,16 @@ try:
 except:
     has_cson_lib = False
 
-p = subprocess.Popen(["cson2json"], stdin=PIPE, stdout=PIPE, stderr=PIPE)
-json, err = p.communicate("{}".encode("utf-8"))
-if err:
-    has_cson_cmd = False
-else:
-    has_cson_cmd = True
+has_cson_cmd = False
+try:
+    p = subprocess.Popen(["cson2json"], stdin=PIPE, stdout=PIPE, stderr=PIPE)
+    json, err = p.communicate("{}".encode("utf-8"))
+    if err:
+        has_cson_cmd = False
+    else:
+        has_cson_cmd = True
+except:
+    pass
 
 if not has_cson_lib and not has_cson_cmd:
     msg = "You need either the cson Python package or the cson2json command line utility"
