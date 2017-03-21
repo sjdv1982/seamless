@@ -3,13 +3,13 @@ Seamless: framework for data-driven and live programming
 Copyright 2016-2017, Sjoerd de Vries
 """
 
+from . import lib
 from .core.macro import macro
 from .core.context import context
 from .core.cell import cell, pythoncell
 from .core.transformer import transformer
 from .core.editor import editor
 from .core.fromfile import fromfile
-from . import lib
 
 import time
 from collections import deque
