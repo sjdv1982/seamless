@@ -6,9 +6,16 @@ Copyright 2016-2017, Sjoerd de Vries
 debug = False
 
 #pre-import some libraries that will be needed by transformer threads
-# better import them in the main thread
-import numpy
-import pandas
+# better to import them in the main thread
+try:
+    import numpy
+    import scipy
+except ImportError:
+    pass
+try:
+    import pandas
+except ImportError:
+    pass
 
 from . import lib
 from .core.macro import macro
