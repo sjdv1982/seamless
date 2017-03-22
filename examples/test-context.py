@@ -23,8 +23,7 @@ c_code = cont.code.cell()
 c_output = cont.output.cell()
 c_code.set("return value*2")
 
-time.sleep(0.001)
-# 1 ms is usually enough to print "8", try 0.0001 for a random chance
+ctx.equilibrate()
 print(c_data.data, "'" + c_code.data + "'", c_output.data)
 
 c_data.set(5)

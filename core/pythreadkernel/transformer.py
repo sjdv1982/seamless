@@ -1,3 +1,4 @@
+import weakref
 from . import Process
 from ...dtypes.objects import PythonTransformerCodeObject
 from ...dtypes import data_type_to_data_object
@@ -5,9 +6,10 @@ from ...dtypes import data_type_to_data_object
 class Transformer(Process):
     name = "transformer"
 
-    def __init__(self, input_data_types, output_name, output_queue, output_semaphore, **kwargs):
+    def __init__(self, parent, input_data_types, output_name, output_queue, output_semaphore, **kwargs):
         assert "code" not in input_data_types
 
+        self.parent = weakref.ref(parent)
         self.input_data_types = input_data_types
         self.output_name = output_name
         self.output_queue = output_queue

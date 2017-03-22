@@ -10,11 +10,27 @@
       "data": "from seamless.qt.QtWidgets import QDoubleSpinBox, QWidget, QVBoxLayout\nfrom seamless.qt.QtCore import Qt\n\nw = QWidget()\n#w.setWindowFlags(Qt.WindowStaysOnTopHint)\nw.setAttribute(Qt.WA_ShowWithoutActivating)\nvbox = QVBoxLayout()\nvbox.addStretch(1)\nw.setLayout(vbox)\nw.resize(300,100)\nw.setWindowTitle(PINS.title.get())\nw.show()\nb = QDoubleSpinBox()\nb.setSingleStep(0.1)\nb.setMaximum(1000000)\nb.setValue(PINS.value.get())\nvbox.addWidget(b)\n",
       "links": []
     },
+    "/gui/cell-basic_display_html.py": {
+      "data": "from seamless.qt.QtWidgets import QPlainTextEdit, QWidget, QVBoxLayout\nfrom seamless.qt.QtCore import Qt\nfrom PyQt5.QtGui import QColor\n\nw = QWidget()\n#w.setWindowFlags(Qt.WindowStaysOnTopHint)\nw.setAttribute(Qt.WA_ShowWithoutActivating)\nvbox = QVBoxLayout()\n#vbox.addStretch(1)\nw.resize(600,600)\nw.setLayout(vbox)\nw.setWindowTitle(PINS.title.get())\n\nw.show()\nb = QPlainTextEdit()\nb.setReadOnly(True)\n#b.setFontPointSize(15)\nb.setPlainText(PINS.value.get())\n#b.setFontItalic(True)\n#b.setTextColor(QColor(255,0,0))\nvbox.addWidget(b)\n",
+      "links": []
+    },
+    "/gui/cell-basic_display_html_UPDATE.py": {
+      "data": "if PINS.value.updated:\n    b.setPlainText(PINS.value.get())\nif PINS.title.updated:\n    w.setWindowTitle(PINS.title.get())\n",
+      "links": []
+    },
     "/gui/cell-basic_display_int.py": {
       "data": "from seamless.qt.QtWidgets import QSpinBox, QWidget, QVBoxLayout\nfrom seamless.qt.QtCore import Qt\n\nw = QWidget()\n#w.setWindowFlags(Qt.WindowStaysOnTopHint)\nw.setAttribute(Qt.WA_ShowWithoutActivating)\nvbox = QVBoxLayout()\nvbox.addStretch(1)\nw.setLayout(vbox)\nw.resize(300,100)\nw.setWindowTitle(PINS.title.get())\nw.show()\nb = QSpinBox()\nb.setMaximum(1000000)\nb.setValue(PINS.value.get())\nvbox.addWidget(b)\n",
       "links": [
         "ed2.cell2"
       ]
+    },
+    "/gui/cell-basic_display_json.py": {
+      "data": "from seamless.qt.QtWidgets import QTextEdit, QWidget, QVBoxLayout\nfrom seamless.qt.QtCore import Qt\nfrom PyQt5.QtGui import QColor\nimport json\n\nw = QWidget()\n#w.setWindowFlags(Qt.WindowStaysOnTopHint)\nw.setAttribute(Qt.WA_ShowWithoutActivating)\nvbox = QVBoxLayout()\n#vbox.addStretch(1)\nw.resize(600,600)\nw.setLayout(vbox)\nw.setWindowTitle(PINS.title.get())\n\nw.show()\nb = QTextEdit()\nb.setReadOnly(True)\nb.setFontPointSize(15)\nb.setText(json.dumps(PINS.value.get(), indent=2))\n#b.setFontItalic(True)\n#b.setTextColor(QColor(255,0,0))\nvbox.addWidget(b)\n",
+      "links": []
+    },
+    "/gui/cell-basic_display_json_UPDATE.py": {
+      "data": "if PINS.value.updated:\n    b.setText(json.dumps(PINS.value.get(), indent=2))\nif PINS.title.updated:\n    b.setWindowTitle(PINS.title.get())\n",
+      "links": []
     },
     "/gui/cell-basic_display_text.py": {
       "data": "from seamless.qt.QtWidgets import QTextEdit, QWidget, QVBoxLayout\nfrom seamless.qt.QtCore import Qt\nfrom PyQt5.QtGui import QColor\n\nw = QWidget()\n#w.setWindowFlags(Qt.WindowStaysOnTopHint)\nw.setAttribute(Qt.WA_ShowWithoutActivating)\nvbox = QVBoxLayout()\n#vbox.addStretch(1)\nw.resize(600,600)\nw.setLayout(vbox)\nw.setWindowTitle(PINS.title.get())\n\nw.show()\nb = QTextEdit()\nb.setReadOnly(True)\nb.setFontPointSize(15)\nb.setText(PINS.value.get())\n#b.setFontItalic(True)\n#b.setTextColor(QColor(255,0,0))\nvbox.addWidget(b)\n",
@@ -77,7 +93,7 @@
           "type": "str"
         }
       },
-      "module_name": "__mp_main__",
+      "module_name": "__main__",
       "func_name": "operator",
       "code": "@macro({\"formula\": {\"type\": \"str\", \"default\": \"return value*2\"}})\ndef operator(ctx, formula ):\n    from seamless import cell, transformer\n    tparams = ctx.tparams = cell(\"object\").set(\n    {\n      \"value\": {\n        \"pin\": \"input\",\n        \"dtype\": \"int\"\n      },\n      \"output\": {\n        \"pin\": \"output\",\n        \"dtype\": \"int\"\n      }\n    }\n    )\n\n    cont = ctx.cont = transformer(tparams)\n    c_code = cont.code.cell()\n    c_code.set(formula)\n    ctx.export(cont)\n"
     },
@@ -129,7 +145,7 @@
       },
       "module_name": "seamless.lib.gui.basic_display",
       "func_name": "basic_display",
-      "code": "@macro(OrderedDict((\n    (\"display_type\",\"str\"),\n    (\"title\",{\"type\": \"str\", \"default\": \"Basic display\"})\n)))\ndef basic_display(ctx, display_type, title):\n    from seamless import editor\n\n    _displays = {\n      \"int\": {\n        \"code\": \"cell-basic_display_int.py\",\n        \"update\": \"cell-basic_display_UPDATE.py\",\n      },\n      \"float\": {\n        \"code\": \"cell-basic_display_float.py\",\n        \"update\": \"cell-basic_display_UPDATE.py\",\n      },\n      \"text\": {\n        \"code\": \"cell-basic_display_text.py\",\n        \"update\": \"cell-basic_display_text_UPDATE.py\",\n      },\n      \"json\": {\n        \"code\": \"cell-basic_display_json.py\",\n        \"update\": \"cell-basic_display_json_UPDATE.py\",\n      },\n    }\n\n    def _match_type(type, typelist):\n        typelist = list(typelist)\n        type2 = type\n        if isinstance(type, str):\n            type2 = (type,)\n        typelist2 = []\n        for t in typelist:\n            if isinstance(t, str):\n                typelist2.append((t,))\n            else:\n                typelist2.append(t)\n        matches = []\n        for n in range(len(typelist)):\n            ltype = typelist2[n]\n            k = min(len(type2), len(ltype))\n            if type2[:k] == ltype[:k]:\n                matches.append((n, k))\n        if not len(matches):\n            raise TypeError(\"Cannot find display for cell type '{0}'\".format(type))\n        matches.sort(key=lambda v: -v[1])\n        bestmatch = matches[0][0]\n        return typelist[bestmatch]\n\n    display_type = _match_type(display_type, _displays.keys())\n    pinparams = {\n      \"value\": {\n        \"pin\": \"input\",\n        \"dtype\": display_type\n      },\n      \"title\": {\n        \"pin\": \"input\",\n        \"dtype\": \"str\",\n      },\n    }\n    d = ctx.display = editor(pinparams)\n    d.title.cell().set(title)\n    d.code_start.cell().fromfile(_displays[display_type][\"code\"])\n    d.code_stop.cell().set('w.destroy()')\n    upfile = _displays[display_type][\"update\"]\n    c_up = d.code_update.cell()\n    if upfile is not None:\n        c_up.fromfile(upfile)\n    else:\n        c_up.set(\"\")\n    ctx.export(d, forced=[\"title\"])\n"
+      "code": "@macro(OrderedDict((\n    (\"display_type\",\"str\"),\n    (\"title\",{\"type\": \"str\", \"default\": \"Basic display\"})\n)))\ndef basic_display(ctx, display_type, title):\n    from seamless import editor\n\n    _displays = {\n      \"int\": {\n        \"code\": \"cell-basic_display_int.py\",\n        \"update\": \"cell-basic_display_UPDATE.py\",\n      },\n      \"float\": {\n        \"code\": \"cell-basic_display_float.py\",\n        \"update\": \"cell-basic_display_UPDATE.py\",\n      },\n      \"text\": {\n        \"code\": \"cell-basic_display_text.py\",\n        \"update\": \"cell-basic_display_text_UPDATE.py\",\n      },\n      (\"text\", \"html\"): {\n        \"code\": \"cell-basic_display_html.py\",\n        \"update\": \"cell-basic_display_html_UPDATE.py\",\n      },\n      \"json\": {\n        \"code\": \"cell-basic_display_json.py\",\n        \"update\": \"cell-basic_display_json_UPDATE.py\",\n      },\n    }\n\n    def _match_type(type, typelist):\n        typelist = list(typelist)\n        type2 = type\n        if isinstance(type, str):\n            type2 = (type,)\n        typelist2 = []\n        for t in typelist:\n            if isinstance(t, str):\n                typelist2.append((t,))\n            else:\n                typelist2.append(t)\n        matches = []\n        for n in range(len(typelist)):\n            ltype = typelist2[n]\n            k = min(len(type2), len(ltype))\n            if type2[:k] == ltype[:k]:\n                matches.append((n, k))\n        if not len(matches):\n            raise TypeError(\"Cannot find display for cell type '{0}'\".format(type))\n        matches.sort(key=lambda v: -v[1])\n        bestmatch = matches[0][0]\n        return typelist[bestmatch]\n\n    display_type = _match_type(display_type, _displays.keys())\n    pinparams = {\n      \"value\": {\n        \"pin\": \"input\",\n        \"dtype\": display_type\n      },\n      \"title\": {\n        \"pin\": \"input\",\n        \"dtype\": \"str\",\n      },\n    }\n    d = ctx.display = editor(pinparams)\n    d.title.cell().set(title)\n    d.code_start.cell().fromfile(_displays[display_type][\"code\"])\n    d.code_stop.cell().set('w.destroy()')\n    upfile = _displays[display_type][\"update\"]\n    c_up = d.code_update.cell()\n    if upfile is not None:\n        c_up.fromfile(upfile)\n    else:\n        c_up.set(\"\")\n    ctx.export(d, forced=[\"title\"])\n"
     },
     {
       "with_context": true,
@@ -155,67 +171,14 @@
     "like_process": false,
     "like_cell": false,
     "pins": {},
-    "auto": [
-      "cell1",
-      "cell2",
-      "ctx1"
-    ],
+    "auto": [],
     "children": {
-      "cell1": {
+      "c_data": {
         "dtype": "int",
         "data": "5"
       },
-      "cell2": {
+      "c_output": {
         "dtype": "int"
-      },
-      "ctx1": {
-        "type": "context",
-        "like_process": true,
-        "like_cell": false,
-        "pins": {
-          "output": "ctx1.cont.output",
-          "value": "ctx1.cont.value"
-        },
-        "auto": [
-          "cell1"
-        ],
-        "children": {
-          "cell1": {
-            "dtype": [
-              "text",
-              "code",
-              "python"
-            ],
-            "data": "return value*3"
-          },
-          "cont": {
-            "type": "transformer",
-            "mode": "thread",
-            "params": {
-              "output": {
-                "dtype": "int",
-                "pin": "output"
-              },
-              "value": {
-                "dtype": "int",
-                "pin": "input"
-              }
-            }
-          },
-          "tparams": {
-            "dtype": "object",
-            "data": {
-              "output": {
-                "dtype": "int",
-                "pin": "output"
-              },
-              "value": {
-                "dtype": "int",
-                "pin": "input"
-              }
-            }
-          }
-        }
       },
       "ed1": {
         "type": "context",
@@ -356,7 +319,7 @@
             }
           }
         },
-        "owner": "cell2"
+        "owner": "c_output"
       },
       "meta_ted": {
         "type": "context",
@@ -424,6 +387,55 @@
                 "dtype": "text",
                 "must_be_defined": false,
                 "pin": "edit"
+              }
+            }
+          }
+        }
+      },
+      "op": {
+        "type": "context",
+        "like_process": true,
+        "like_cell": false,
+        "pins": {
+          "output": "op.cont.output",
+          "value": "op.cont.value"
+        },
+        "auto": [
+          "cell1"
+        ],
+        "children": {
+          "cell1": {
+            "dtype": [
+              "text",
+              "code",
+              "python"
+            ],
+            "data": "return value*3"
+          },
+          "cont": {
+            "type": "transformer",
+            "mode": "thread",
+            "params": {
+              "output": {
+                "dtype": "int",
+                "pin": "output"
+              },
+              "value": {
+                "dtype": "int",
+                "pin": "input"
+              }
+            }
+          },
+          "tparams": {
+            "dtype": "object",
+            "data": {
+              "output": {
+                "dtype": "int",
+                "pin": "output"
+              },
+              "value": {
+                "dtype": "int",
+                "pin": "input"
               }
             }
           }
@@ -508,18 +520,18 @@
         ],
         "kwargs": {},
         "cell_args": {
-          "_arg1": "ctx1.tparams"
+          "_arg1": "op.tparams"
         },
         "macro_module_name": "seamless.core.transformer",
         "macro_func_name": "transformer",
         "macro_order": 0,
-        "target": "ctx1.cont"
+        "target": "op.cont"
       }
     ],
     "macro_listeners": [
       {
-        "cell": "ctx1.tparams",
-        "macro_target": "ctx1.cont",
+        "cell": "op.tparams",
+        "macro_target": "op.cont",
         "macro_arg": "_arg1"
       }
     ],
@@ -528,30 +540,22 @@
     "registrar_cells": [],
     "pin_cell_connections": [
       [
-        "ctx1.cont.output",
-        "cell2"
+        "op.cont.output",
+        "c_output"
       ]
     ],
     "cell_pin_connections": [
       [
-        "cell1",
-        "ctx1.cont.value"
-      ],
-      [
-        "cell1",
+        "c_data",
         "ed1.ed.value"
       ],
       [
-        "cell2",
+        "c_data",
+        "op.cont.value"
+      ],
+      [
+        "c_output",
         "ed2.display.value"
-      ],
-      [
-        "ctx1.cell1",
-        "ctx1.cont.code"
-      ],
-      [
-        "ctx1.cell1",
-        "ted1.ed.value"
       ],
       [
         "ed1.cell1",
@@ -600,6 +604,14 @@
       [
         "meta_ted.cell4",
         "meta_ted.ed.code_update"
+      ],
+      [
+        "op.cell1",
+        "op.cont.code"
+      ],
+      [
+        "op.cell1",
+        "ted1.ed.value"
       ],
       [
         "ted1.cell1",

@@ -22,12 +22,28 @@ class Process(Managed, ProcessLike):
 
     def __init__(self):
         super().__init__()
+        self._pending_updates_value = 0
         from .macro import get_macro_mode
         from .context import get_active_context
         if get_macro_mode():
             ctx = get_active_context()
             assert self._context is None, self
             name = ctx._add_new_process(self)
+
+    @property
+    def _pending_updates(self):
+        return self._pending_updates_value
+
+    @_pending_updates.setter
+    def _pending_updates(self, value):
+        assert self.context is not None
+        manager = self.context._manager
+        old_value = self._pending_updates_value
+        if old_value == 0 and value > 0:
+            manager.set_stable(self, False)
+        if old_value > 0 and value == 0:
+            manager.set_stable(self, True)
+        self._pending_updates_value = value
 
     def __getattr__(self, attr):
         if self._destroyed:

@@ -28,21 +28,19 @@ def operator(ctx, formula ):
     c_code.set(formula)
     ctx.export(cont)
 
-op = operator()
-c_data = op.value.cell()
+op = ctx.op = operator()
+c_data = ctx.c_data = op.value.cell()
 c_data.set(4)
-c_output = op.output.cell()
+c_output = ctx.c_output = op.output.cell()
 c_code = op.cont.code.cell()
 
-time.sleep(0.001)
-# 1 ms is usually enough to print "8", try 0.0001 for a random chance
+ctx.equilibrate()
 print("VALUE", c_data.data, "'" + c_code.data + "'", c_output.data)
 
 c_data.set(5)
 c_code.set("return value*3")
 
-time.sleep(0.001)
-# 1 ms is usually enough to print "8", try 0.0001 for a random chance
+ctx.equilibrate()
 print("VALUE", c_data.data, "'" + c_code.data + "'", c_output.data)
 
 ed1 = ctx.ed1 = edit(c_data)
@@ -58,3 +56,4 @@ meta_ted.title.cell().set("Meta-editor")
 
 import os
 ctx.tofile(os.path.splitext(__file__)[0] + ".seamless", backup=False)
+ctx.equilibrate()

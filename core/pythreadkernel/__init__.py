@@ -32,6 +32,9 @@ class QueueItem:
 class Process(metaclass=ABCMeta):
     """Base class for seamless Process"""
     name = "process"
+    parent = lambda self: None
+    output_queue = None
+    output_semaphore = None
 
     def __init__(self, inputs, event_cls=threading.Event, semaphore_cls=threading.Semaphore):
         self.namespace = {}
@@ -46,6 +49,7 @@ class Process(metaclass=ABCMeta):
         self.updated = set()
 
         self._pending_inputs = {name for name in inputs.keys()}
+        self._pending_updates = 0
         self._bumped = set()
 
     def _cleanup(self):
@@ -59,6 +63,7 @@ class Process(metaclass=ABCMeta):
         try:
             while True:
                 self.semaphore.acquire()
+                self._pending_updates += 1
 
                 # Consume queue and break when asked to finish
                 if self.finish.is_set() and not self.input_queue:
@@ -135,6 +140,8 @@ class Process(metaclass=ABCMeta):
                     self.values[name] = data_object
                     self.updated.add(name)
 
+                updates_processed = self._pending_updates
+
                 # With all inputs now present, we can issue updates
                 if not self._pending_inputs:
                     try:
@@ -146,6 +153,9 @@ class Process(metaclass=ABCMeta):
                         import traceback
                         traceback.print_exc()
 
+                self._pending_updates -= updates_processed
+                self.output_queue.append((None, updates_processed))
+                self.output_semaphore.release()
 
         finally:
             self.finished.set()

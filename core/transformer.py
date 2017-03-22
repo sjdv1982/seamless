@@ -144,6 +144,7 @@ class Transformer(Process):
         """
 
         self.transformer = KernelTransformer(
+            self,
             thread_inputs, self._output_name,
             self.output_queue, self.output_semaphore
         )
@@ -168,12 +169,14 @@ class Transformer(Process):
 
     def receive_update(self, input_pin, value):
         self._message_id += 1
+        self._pending_updates += 1
         self.transformer.input_queue.append((self._message_id, input_pin, value))
         self.transformer.semaphore.release()
 
     def receive_registrar_update(self, registrar_name, key, namespace_name):
         #TODO: this will only work for same-namespace (thread) kernels
         self._message_id += 1
+        self._pending_updates += 1
         value = registrar_name, key, namespace_name
         self.transformer.input_queue.append((self._message_id, "@REGISTRAR", value))
         self.transformer.semaphore.release()
@@ -190,6 +193,11 @@ class Transformer(Process):
                         break
 
                 output_name, output_value = self.output_queue.popleft()
+                if output_name is None:
+                    updates_processed = output_value
+                    self._pending_updates -= updates_processed
+                    continue
+
                 assert output_name == self._output_name
                 if self._connected_output:
                     self._pins[self._output_name].send_update(output_value)

@@ -3,71 +3,15 @@ import weakref
 from ...dtypes.objects import PythonEditorCodeObject
 from ...dtypes import data_type_to_data_object
 from ..process import get_runtime_identifier
+from .editor_pins import EditorInput, EditorInputSignal, \
+    EditorOutput, EditorOutputSignal, EditorEdit
+
 class PINS:
     pass
 
 class Editor:
     name = "editor"
     _destroyed = False
-
-    class EditorInput:
-        def __init__(self, parent, dtype, name):
-            self._parent = weakref.ref(parent)
-            self._dtype = dtype
-            self._name = name
-            self._value = None
-            self.updated = False
-            self.defined = False
-        def get(self):
-            return self._value
-
-    class EditorInputSignal:
-        def __init__(self, parent, name):
-            self._parent = weakref.ref(parent)
-            self._name = name
-            self.updated = False
-
-    class EditorOutput:
-        def __init__(self, parent, dtype, name):
-            self._parent = weakref.ref(parent)
-            self._dtype = dtype
-            self._name = name
-        def set(self, value):
-            p = self._parent()
-            if p is None:
-                return
-            p.output_update(self._name, value)
-
-    class EditorOutputSignal:
-        def __init__(self, parent, name):
-            self._parent = weakref.ref(parent)
-            self._name = name
-        def set(self):
-            p = self._parent()
-            if p is None:
-                return
-            p.output_update(self._name, None)
-
-    class EditorEdit:
-        def __init__(self, parent, dtype, name):
-            self._parent = weakref.ref(parent)
-            self._dtype = dtype
-            self._name = name
-            self._value = None
-            self.updated = False
-            self.defined = False
-        def get(self):
-            return self._value
-        def set(self, value):
-            self._value = value
-            self.defined = True
-            p = self._parent()
-            if p is None:
-                return
-            if p.values[self._name] is None:
-                p.values[self._name] = p.inputs[self._name]
-            p.values[self._name].data = value
-            p.output_update(self._name, value)
 
     def __init__(self,
         parent,
@@ -83,6 +27,7 @@ class Editor:
         self.input_data = input_data
         self.input_must_be_defined = {k for k,v in input_data.items() if v[1]}
         self.outputs = outputs
+        self._pending_updates = 0
 
 
         inputs = {name: data_type_to_data_object(value[0])(name, value[0]) for name, value in input_data.items()}
@@ -99,12 +44,14 @@ class Editor:
         self._active = False
         self._spontaneous = True
         self._set_namespace()
+        self._pending_updates = 0
 
     def process_input(self, name, data):
         #print("process", self.parent(), name, self._pending_inputs)
         if self.parent() is None:
             return
 
+        self._pending_updates += 1
         if name == "@REGISTRAR":
             try:
                 registrar_name, key, namespace_name = data
@@ -160,10 +107,15 @@ class Editor:
             self.registrar_namespace.remove(name)
         self.updated.add(name)
 
+        updates_processed = self._pending_updates
+
         # With all inputs now present, we can issue updates
         if not self._pending_inputs:
             self.update(self.updated)
             self.updated = set()
+
+        self._pending_updates -= updates_processed
+        self.parent().updates_processed(updates_processed)
 
     def _execute(self, code_obj):
         exec(code_obj.code, self.namespace)
@@ -217,12 +169,12 @@ class Editor:
             dtype = self.inputs[name].data_type
             if name in self.outputs:
                 assert dtype != "signal"
-                e = self.EditorEdit(self, dtype, name)
+                e = EditorEdit(self, dtype, name)
             else:
                 if dtype == "signal":
-                    e = self.EditorInputSignal(self, name)
+                    e = EditorInputSignal(self, name)
                 else:
-                    e = self.EditorInput(self, dtype, name)
+                    e = EditorInput(self, dtype, name)
             setattr(self.PINS, name,  e)
             #self.namespace[name] = e
             if v is not None and dtype != "signal":
@@ -234,9 +186,9 @@ class Editor:
                 continue
             dtype = self.outputs[name]
             if dtype == "signal":
-                e = self.EditorOutputSignal(self, name)
+                e = EditorOutputSignal(self, name)
             else:
-                e = self.EditorOutput(self, dtype, name)
+                e = EditorOutput(self, dtype, name)
             #self.namespace[name] = e
             setattr(self.PINS, name,  e)
 

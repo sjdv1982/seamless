@@ -157,6 +157,7 @@ When any of these cells change and the macro is re-executed, the owned object wi
                 if child is self:
                     ctx._children.pop(childname)
                     break
+            ctx._manager.unstable_processes.discard(self)
         for obj in self._owned:
             obj.destroy()
 

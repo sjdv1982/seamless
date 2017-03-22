@@ -99,6 +99,9 @@ class Editor(Process):
     def output_update(self, name, value):
         self._pins[name].send_update(value)
 
+    def updates_processed(self, updates):
+        self._pending_updates -= updates
+
     def set_context(self, context):
         Process.set_context(self, context)
         for p in self._pins:
@@ -106,6 +109,7 @@ class Editor(Process):
         return self
 
     def receive_update(self, input_pin, value):
+        self._pending_updates += 1
         f = self.editor.process_input
         if self._pins[input_pin].dtype == "signal":
             f(input_pin, value)
@@ -115,6 +119,7 @@ class Editor(Process):
 
     def receive_registrar_update(self, registrar_name, key, namespace_name):
         #TODO: this will only work for same-namespace (thread) kernels
+        self._pending_updates += 1
         f = self.editor.process_input
         value = registrar_name, key, namespace_name
         work = partial(f, "@REGISTRAR", value)

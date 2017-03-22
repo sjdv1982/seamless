@@ -65,12 +65,12 @@
         "mode": "thread",
         "params": {
           "output": {
-            "pin": "output",
-            "dtype": "int"
+            "dtype": "int",
+            "pin": "output"
           },
           "value": {
-            "pin": "input",
-            "dtype": "int"
+            "dtype": "int",
+            "pin": "input"
           }
         }
       }

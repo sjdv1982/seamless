@@ -1,7 +1,7 @@
 import json
 from ..dtypes.cson import cson2json
 import weakref
-from weakref import WeakKeyDictionary, WeakValueDictionary
+from weakref import WeakKeyDictionary, WeakValueDictionary, WeakSet
 
 #TODO: disconnect method (see MacroObject for low-level implementation)
 
@@ -17,7 +17,17 @@ class Manager:
         self.cell_to_output_pin = WeakKeyDictionary()
         self._childids = WeakValueDictionary()
         self.registrar_items = []
+        self.unstable_processes = WeakSet()
         super().__init__()
+
+    def set_stable(self, process, value):
+        assert value in (True, False), value
+        if not value:
+            #print("UNSTABLE", process)
+            self.unstable_processes.add(process)
+        else:
+            #print("STABLE", process)
+            self.unstable_processes.discard(process)
 
     def add_registrar_item(self, registrar_name, dtype, data, data_name):
         item = registrar_name, dtype, data, data_name

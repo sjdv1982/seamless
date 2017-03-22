@@ -386,6 +386,24 @@ When any of these cells change and the macro is re-executed, the child object wi
             child._validate_path(required_path + (childname,))
         return required_path
 
+    def equilibrate(self, timeout=None):
+        """
+        Run processes and cell updates until all processes are stable,
+         i.e. they have no more updates to process
+        If you supply a timeout, equilibrate() will return after at most
+         timeout seconds
+        """
+        from .. import run_work
+        import time
+        start_time = time.time()
+        run_work()
+        manager = self._manager
+        while len(manager.unstable_processes):
+            if timeout is not None:
+                if time.time() - start_time > timeout:
+                    break
+            run_work()
+
     def _cleanup_auto(self):
         #TODO: test better, or delete? disable for now
         return ###
