@@ -45,6 +45,7 @@ class Editor(Process):
     _required_code_type = PythonCell.CodeTypes.ANY
 
     def __init__(self, editor_params):
+        from .macro import get_macro_mode
         super().__init__()
         self.state = {}
         self.outputs = {}
@@ -86,10 +87,11 @@ class Editor(Process):
             kernel_inputs,
             self.outputs,
         )
-        for p in self._pins:
-            pin = self._pins[p]
-            if isinstance(pin, OutputPin):
-                pin.cell() #auto-create a cell
+        if get_macro_mode():
+            for p in self._pins:
+                pin = self._pins[p]
+                if isinstance(pin, OutputPin):
+                    pin.cell() #auto-create a cell
     @property
     def editor_params(self):
         return self._editor_params

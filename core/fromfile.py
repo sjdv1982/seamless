@@ -119,7 +119,7 @@ def json_to_process(ctx, data, myname, ownerdict):
     if owner is not None:
         ownerdict[child] = owner
 
-def json_to_ctx(ctx, data, myname=None, ownerdict=None):
+def json_to_ctx(ctx, data, myname=None, ownerdict=None, pinlist=None):
 
     from .process import InputPinBase, ExportedInputPin, \
       OutputPinBase, ExportedOutputPin, \
@@ -127,11 +127,14 @@ def json_to_ctx(ctx, data, myname=None, ownerdict=None):
 
     if myname is None:
         myctx = ctx
+        assert ownerdict is None
+        assert pinlist is None
+        ownerdict = OrderedDict()
+        pinlist = []
     else:
         myctx = Context(context=ctx,active_context=False)
-
-    if ownerdict is None:
-        ownerdict = OrderedDict()
+        assert ownerdict is not None
+        assert pinlist is not None
 
     myctx._like_process = data["like_process"]
     myctx._like_cell = data["like_cell"]
@@ -147,7 +150,7 @@ def json_to_ctx(ctx, data, myname=None, ownerdict=None):
         elif c["type"] in ("editor", "transformer"):
             json_to_process(myctx, c, childname, ownerdict)
         elif c["type"] == "context":
-            json_to_ctx(myctx, c, childname, ownerdict)
+            json_to_ctx(myctx, c, childname, ownerdict, pinlist)
 
     owner = data.get("owner", None)
     if owner is not None:
@@ -159,15 +162,19 @@ def json_to_ctx(ctx, data, myname=None, ownerdict=None):
             owner.own(sl)
 
     for pinname, pinpath in sorted(data["pins"].items()):
-        pin = find_sl(ctx, pinpath)
-        if isinstance(pin, InputPinBase):
-            myctx._pins[pinname] = ExportedInputPin(pin)
-        elif isinstance(pin, OutputPinBase):
-            myctx._pins[pinname] = ExportedOutputPin(pin)
-        elif isinstance(pin, EditPinBase):
-            myctx._pins[pinname] = ExportedEditPin(pin)
-        else:
-            raise TypeError(pin)
+        pinlist.append((myctx, pinname, pinpath))
+
+    if myname is None:
+        for myctx, pinname, pinpath in pinlist:
+            pin = find_sl(ctx, pinpath)
+            if isinstance(pin, InputPinBase):
+                myctx._pins[pinname] = ExportedInputPin(pin)
+            elif isinstance(pin, OutputPinBase):
+                myctx._pins[pinname] = ExportedOutputPin(pin)
+            elif isinstance(pin, EditPinBase):
+                myctx._pins[pinname] = ExportedEditPin(pin)
+            else:
+                raise TypeError(pin)
 
 
 def fromfile(filename):
