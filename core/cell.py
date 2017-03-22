@@ -261,11 +261,18 @@ class Cell(Managed, CellLike):
         manager = self._get_manager()
         manager.remove_macro_listener(self, macro_object, macro_arg)
 
+    def _unregister_listeners(self):
+        if self._context is None:
+            return
+        manager = self._get_manager()
+        manager.remove_listeners_cell(self)
+
     def destroy(self):
         if self._destroyed:
             return
         #print("CELL DESTROY", self)
         self.resource.destroy()
+        self._unregister_listeners()
         super().destroy()
 
 
@@ -454,6 +461,7 @@ class Signal(Cell):
         if self._destroyed:
             return
         #print("CELL DESTROY", self)
+        self._unregister_listeners()
         Managed.destroy(self)
 
 class CsonCell(Cell):

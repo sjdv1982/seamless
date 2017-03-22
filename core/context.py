@@ -404,6 +404,9 @@ When any of these cells change and the macro is re-executed, the child object wi
                     break
             run_work()
 
+    def unstable_processes(self):
+        return [p for p in self._manager.unstable_processes]
+
     def _cleanup_auto(self):
         #TODO: test better, or delete? disable for now
         return ###

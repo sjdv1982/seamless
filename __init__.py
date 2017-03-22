@@ -3,6 +3,13 @@ Seamless: framework for data-driven and live programming
 Copyright 2016-2017, Sjoerd de Vries
 """
 
+debug = False
+
+#pre-import some libraries that will be needed by transformer threads
+# better import them in the main thread
+import numpy
+import pandas
+
 from . import lib
 from .core.macro import macro
 from .core.context import context

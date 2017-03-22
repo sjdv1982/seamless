@@ -87,11 +87,25 @@ class Manager:
         cell_id = self.get_cell_id(cell)
         self._remove_listener(cell_id, input_pin, process)
 
-    def remove_listeners(self, input_pin):
+    def remove_listeners_pin(self, input_pin):
         process = input_pin.process_ref()
         cell_ids = self.pin_to_cells.pop(input_pin.get_pin_id(), [])
         for cell_id in cell_ids:
             self._remove_listener(cell_id, input_pin, process)
+
+    def remove_listeners_cell(self, cell):
+        cell_id = self.get_cell_id(cell)
+        listeners = self.listeners.pop(cell_id, [])
+        for listener in listeners:
+            pin = listener()
+            if pin is None:
+                continue
+            pin_id = pin.get_pin_id()
+            if pin_id not in self.pin_to_cells:
+                continue
+            self.pin_to_cells[pin_id][:] = \
+                [c for c in self.pin_to_cells[pin_id] if c != cell_id ]
+
 
     def add_macro_listener(self, cell, macro_object, macro_arg):
         cell_id = self.get_cell_id(cell)
@@ -174,8 +188,11 @@ class Manager:
             input_pin.receive_update(value)
 
     def update_from_code(self, cell, only_last=False):
+        import seamless
         value = cell._data
         cell_id = self.get_cell_id(cell)
+        if seamless.debug:
+            print("manager.update_from_code", cell, str(value)[:50])
         self._update(cell_id, cell.dtype, value, only_last=only_last)
         from .. import run_work
         from .macro import get_macro_mode
@@ -183,10 +200,13 @@ class Manager:
             run_work()
 
     def update_from_process(self, cell_id, value, process):
+        import seamless
         from .cell import Signal
         cell = self.cells.get(cell_id, None)
         if cell is None:
             return #cell has died...
+        if seamless.debug:
+            print("manager.update_from_process", cell, value, process)
 
         if isinstance(cell, Signal):
             assert value is None

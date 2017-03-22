@@ -175,7 +175,7 @@ class InputPin(InputPinBase):
             return
         super().destroy()
         manager = self._get_manager()
-        manager.remove_listeners(self)
+        manager.remove_listeners_pin(self)
 
 
 class OutputPin(OutputPinBase):
@@ -319,7 +319,7 @@ class EditPin(EditPinBase):
             return
         super().destroy()
         manager = self._get_manager()
-        manager.remove_listeners(self)
+        manager.remove_listeners_pin(self)
 
 
     def connect(self, target):

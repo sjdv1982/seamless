@@ -1,7 +1,7 @@
 from abc import ABCMeta, abstractmethod
 from collections import deque
 import threading
-
+import weakref
 
 def init():
     pass
@@ -32,11 +32,11 @@ class QueueItem:
 class Process(metaclass=ABCMeta):
     """Base class for seamless Process"""
     name = "process"
-    parent = lambda self: None
     output_queue = None
     output_semaphore = None
 
-    def __init__(self, inputs, event_cls=threading.Event, semaphore_cls=threading.Semaphore):
+    def __init__(self, parent, inputs, event_cls=threading.Event, semaphore_cls=threading.Semaphore):
+        self.parent = weakref.ref(parent)
         self.namespace = {}
         self.registrars = None #to be set by parent
         self.inputs = inputs
@@ -60,6 +60,13 @@ class Process(metaclass=ABCMeta):
         # instead of printing them to stderr
         import time
         time.sleep(0.01) # To allow registrar connections to be made
+
+        def ack():
+            updates_processed = self._pending_updates
+            self._pending_updates = 0
+            self.output_queue.append((None, updates_processed))
+            self.output_semaphore.release()
+
         try:
             while True:
                 self.semaphore.acquire()
@@ -86,6 +93,7 @@ class Process(metaclass=ABCMeta):
                     message_id, name, data = self.input_queue.popleft()  # QueueItem instance
                     if message_id in self._bumped:
                         self._bumped.remove(message_id)
+                        ack()
                         continue
 
                 if name != "@REGISTRAR":
@@ -96,6 +104,7 @@ class Process(metaclass=ABCMeta):
                             look_ahead = True
                             break
                     if look_ahead:
+                        ack()
                         continue
 
                 if name == "@REGISTRAR":
@@ -117,7 +126,9 @@ class Process(metaclass=ABCMeta):
                     except Exception as exc:
                         self.exception = exc
                         import traceback
+                        print("*********** ERROR in transformer %s: registrar error **************" % self.parent())
                         traceback.print_exc()
+                        ack()
                         continue
                 else:
                     data_object = self.inputs[name]
@@ -130,7 +141,9 @@ class Process(metaclass=ABCMeta):
                     except Exception as exc:
                         self.exception = exc
                         import traceback
+                        print("*********** ERROR in transformer %s: parsing error, pin %s **************" % (self.parent(), name))
                         traceback.print_exc()
+                        ack()
                         continue
 
                     # If we have missing values, and this input is currently default, it's no longer missing
@@ -140,8 +153,6 @@ class Process(metaclass=ABCMeta):
                     self.values[name] = data_object
                     self.updated.add(name)
 
-                updates_processed = self._pending_updates
-
                 # With all inputs now present, we can issue updates
                 if not self._pending_inputs:
                     try:
@@ -150,12 +161,11 @@ class Process(metaclass=ABCMeta):
 
                     except Exception as exc:
                         self.exception = exc
+                        print("*********** ERROR in transformer %s: execution error **************" % self.parent())
                         import traceback
                         traceback.print_exc()
 
-                self._pending_updates -= updates_processed
-                self.output_queue.append((None, updates_processed))
-                self.output_semaphore.release()
+                ack()
 
         finally:
             self.finished.set()

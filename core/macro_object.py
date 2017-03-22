@@ -32,6 +32,7 @@ class MacroObject:
             cell.add_macro_object(self, k)
 
     def update_cell(self, cellname):
+        from .. import debug
         from .context import Context
         from .cell import Cell
         from .process import Process, InputPinBase, OutputPinBase, EditPinBase
@@ -160,7 +161,8 @@ class MacroObject:
             return target
 
         for is_incoming, source, dest, ext_path in external_connections:
-            print("CONNECTION: is_incoming {0}, source {1}, dest {2}".format(is_incoming, source, dest))
+            if debug:
+                print("CONNECTION: is_incoming {0}, source {1}, dest {2}".format(is_incoming, source, dest))
             err = "Connection {0}::(is_incoming {1}, source {2}, dest {3}) points to a destroyed external cell"
             if is_incoming:
                 if source._destroyed:
