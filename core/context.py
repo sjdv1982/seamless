@@ -1,5 +1,6 @@
 """Module for Context class."""
 from weakref import WeakValueDictionary
+from collections import OrderedDict
 from . import SeamlessBase
 from .cell import Cell, CellLike
 from .process import Managed, Process, ProcessLike,  \
@@ -10,6 +11,10 @@ _active_context = None
 _active_owner = None
 
 #TODO: subcontexts inherit manager from parent? see process.connect source code
+
+class PrintableList(list):
+    def __str__(self):
+        return str([str(v) for v in self])
 
 def set_active_context(ctx):
     global _active_context
@@ -45,6 +50,20 @@ def active_owner_as(parent):
         yield
     finally:
         set_active_owner(previous_parent)
+
+class Wrapper:
+    def __init__(self, wrapped):
+        self._wrapped = wrapped
+    def __getattr__(self, attr):
+        if attr not in self._wrapped:
+            raise AttributeError(attr)
+        return self._wrapped[attr]
+    def __dir__(self):
+        return self._wrapped.keys()
+    def __str__(self):
+        return str(sorted(list(self._wrapped.keys())))
+    def _repr_pretty_(self, p, cycle):
+        p.text(str(self))
 
 class Context(SeamlessBase, CellLike, ProcessLike):
     """Context class. Organizes your cells and processes hierarchically.
@@ -93,16 +112,82 @@ class Context(SeamlessBase, CellLike, ProcessLike):
         from .registrar import RegistrarAccessor
         self.registrar = RegistrarAccessor(self)
 
-    _dir = ["_name", "export", "registrar", "cells", "tofile"]
+    def __dir__(self):
+        return self.METHODS + dir(self.PINS) + dir(self.CHILDREN)
 
     @property
-    def cells(self):
-        from .cell import CellLike
-        return [v for k,v in self._children.items() if isinstance(v, CellLike) and v._like_cell]
+    def METHODS(self):
+        result = [k for k in super().__dir__() \
+            if not k.startswith("_")]
+        for name in ["fromfile", "export", "context"]:
+            result.remove(name)
+        return sorted(result)
 
-    def __dir__(self):
-        return [c for c in self._children.keys() if c not in self._auto] \
-         + [c for c in self._pins.keys()] + self._dir
+    @property
+    def PINS(self):
+        return Wrapper(self._pins)
+
+    @property
+    def CHILDREN(self):
+        return Wrapper(
+            {k:v for k,v in self._children.items() \
+             if k not in self._auto}
+        )
+
+    @property
+    def ALL_CHILDREN(self):
+        return Wrapper(self._children)
+
+    @property
+    def CELLS(self):
+        from .cell import CellLike
+        return Wrapper(
+            {k:v for k,v in self._children.items() \
+             if isinstance(v, CellLike) and v._like_cell\
+             and not k in self._auto}
+        )
+
+    @property
+    def AUTO_CELLS(self):
+        from .cell import CellLike
+        return Wrapper(
+            {k:v for k,v in self._children.items() \
+             if isinstance(v, CellLike) and v._like_cell\
+             and k in self._auto}
+        )
+
+    @property
+    def PROCESSES(self):
+        return Wrapper(
+            {k:v for k,v in self._children.items() \
+             if isinstance(v, ProcessLike) and v._like_process}
+        )
+
+    @property
+    def CONTEXTS(self):
+        return Wrapper(
+            {k:v for k,v in self._children.items() \
+             if isinstance(v, Context) and \
+             not v._like_process and not v._like_cell}
+        )
+
+    @property
+    def ALL_CONTEXTS(self):
+        return Wrapper(
+            {k:v for k,v in self._children.items() \
+             if isinstance(v, Context)}
+        )
+
+    @property
+    def tree(self):
+        result = OrderedDict()
+        for childname in sorted(list(self._children.keys())):
+            child = self._children[childname]
+            value = child
+            if isinstance(child, Context):
+                value = child.tree
+            result[childname] = value
+        return result
 
     def _macro_check(self, child, child_macro_control):
         from .macro import get_macro_mode
@@ -386,26 +471,34 @@ When any of these cells change and the macro is re-executed, the child object wi
             child._validate_path(required_path + (childname,))
         return required_path
 
-    def equilibrate(self, timeout=None):
+    def equilibrate(self, timeout=None, report=2):
         """
         Run processes and cell updates until all processes are stable,
          i.e. they have no more updates to process
         If you supply a timeout, equilibrate() will return after at most
-         timeout seconds
+         "timeout" seconds
+        Report the processes that are not stable every "report" seconds
         """
         from .. import run_work
         import time
         start_time = time.time()
+        last_report_time = start_time
         run_work()
         manager = self._manager
         while len(manager.unstable_processes):
+            curr_time = time.time()
+            if curr_time - last_report_time > report:
+                print("Waiting for:", self.unstable_processes)
             if timeout is not None:
-                if time.time() - start_time > timeout:
+                if curr_time - start_time > timeout:
                     break
             run_work()
+            time.sleep(0.001)
 
+    @property
     def unstable_processes(self):
-        return [p for p in self._manager.unstable_processes]
+        result = list(self._manager.unstable_processes)
+        return PrintableList(sorted(result, key=lambda p:str(p)))
 
     def _cleanup_auto(self):
         #TODO: test better, or delete? disable for now

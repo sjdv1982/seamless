@@ -37,6 +37,14 @@ def construct_dtype(data):
     validate_dtype(data)
     return json.dumps(data)
 
+def bool_constructor(data):
+    if data in (False, "False", 0, "0"):
+        return False
+    elif data in (True, "True", 1, "1"):
+        return True
+    else:
+        return bool(int(data))
+
 def json_constructor(data):
     from ..silk.classes import SilkObject
     if isinstance(data, SilkObject):
@@ -65,7 +73,7 @@ _constructors = {
     "dtype": construct_dtype,
     "int" : int,
     "float" : float,
-    "bool" : bool,
+    "bool" : bool_constructor,
     "str" : str,
     "text" : str,
     "json": json_constructor,

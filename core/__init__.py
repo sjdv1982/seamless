@@ -170,6 +170,9 @@ When any of these cells change and the macro is re-executed, the owned object wi
                 ret += ", owned by " + str(owner)
         return ret
 
+    def __repr__(self):
+        return self.__str__()
+
     @property
     def macro(self):
         return self._macro_object

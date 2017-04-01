@@ -5,9 +5,15 @@ from threading import Lock, Event
 import json
 import copy
 
+
 class BaseWebSocketServer:
     address = '127.0.0.1'
-    _DEFAULT_SOCKET = 5678
+    DEFAULT_SOCKET = 5678
+
+    #when new connections are opened,
+    # they receive the first 50 and the last 50 events
+    CACHE_EVENTS_FIRST = 50
+    CACHE_EVENTS_LAST = 50
 
     def __init__(self):
         self.socket = None
@@ -20,7 +26,7 @@ class BaseWebSocketServer:
         import websockets
         if self._server is not None:
             return
-        socket = self._DEFAULT_SOCKET
+        socket = self.DEFAULT_SOCKET
         while 1:
             try:
                 server = await websockets.serve(self._serve, self.address, socket)
@@ -69,7 +75,9 @@ class MessageSendServer(BaseWebSocketServer):
                     except QueueEmpty:
                         break
                     events.append(e)
-                events = events[-100:] #discard all before the last 100 events
+                if len(events) > self.CACHE_EVENTS_FIRST + self.CACHE_EVENTS_LAST:
+                    events = events[:self.CACHE_EVENTS_FIRST] + \
+                        events[-self.CACHE_EVENTS_LAST:]
                 for e in events:
                     myqueue.put_nowait(e)
                     pmqueue.put_nowait(e) #put the events back
@@ -104,7 +112,7 @@ class MessageSendServer(BaseWebSocketServer):
         if pmqueue is None:
             pmqueue = Queue()
             self._pending_message_queues[connection_id] = pmqueue
-        queues = [pmqueue] + self._message_queue_lists.get(connection_id, [])        
+        queues = [pmqueue] + self._message_queue_lists.get(connection_id, [])
         for queue in queues:
             await queue.put(message)
 
