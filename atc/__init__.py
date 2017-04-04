@@ -18,11 +18,11 @@ See the Spyder ATC chain for an example
 """
 
 
-
 class ATCType(object):
     name = None
     converters = None
     methods = None
+
 
 def init():
     pass
