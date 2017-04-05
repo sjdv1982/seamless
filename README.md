@@ -37,6 +37,7 @@ Technically-oriented releases are marked with *
 
 *0.6
 - Array cells, channels, caching, sub-cells
+- Seamless shell language
 - GPU computing (OpenCL)
 - Update Game of Life demo
 
