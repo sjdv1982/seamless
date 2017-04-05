@@ -36,7 +36,7 @@
   ],
   "main": {
     "type": "context",
-    "like_worker": false,
+    "like_process": false,
     "like_cell": false,
     "pins": {},
     "auto": [

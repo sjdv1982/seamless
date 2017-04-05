@@ -1,9 +1,9 @@
 import seamless
-from seamless import context, cell, editor, transformer
+from seamless import context, cell, reactor, transformer
 from seamless.lib.filelink import link
 ctx = context()
 
-ctx.server = editor({"socket": {"pin": "output", "dtype": "int"}})
+ctx.server = reactor({"socket": {"pin": "output", "dtype": "int"}})
 ctx.servercode = ctx.server.code_start.cell()
 link(ctx.servercode, ".", "test-websockets-lib_pycell.py")
 #ctx.servercode.fromfile("test-websockets-lib_pycell.py")

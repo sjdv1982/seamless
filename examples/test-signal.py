@@ -1,8 +1,8 @@
 import seamless
-from seamless import context, editor, cell
+from seamless import context, reactor, cell
 from seamless.lib.filelink import link
 ctx = context()
-ctx.sender = editor({"outp": {"pin": "output", "dtype": "signal"},
+ctx.sender = reactor({"outp": {"pin": "output", "dtype": "signal"},
                        "outp2": {"pin": "output", "dtype": "int"}})
 ctx.code = ctx.sender.code_start.cell()
 link(ctx.code, ".", "test-signal_pycell.py")
@@ -15,7 +15,7 @@ except:
 """)
 ctx.signal = ctx.sender.outp.cell()
 ctx.value = ctx.sender.outp2.cell()
-ctx.receiver = editor({"inp": {"pin": "input", "dtype": "signal"},
+ctx.receiver = reactor({"inp": {"pin": "input", "dtype": "signal"},
                        "inp2": {"pin": "input", "dtype": "int"}})
 ctx.signal.connect(ctx.receiver.inp)
 ctx.value.connect(ctx.receiver.inp2)

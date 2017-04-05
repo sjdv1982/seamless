@@ -11,5 +11,5 @@ t = ctx.t = transformer({
 t.code.cell().set("""return input['test']""")
 c.connect(t.input)
 x = t.value.cell()
-ctx.stabilize()
+ctx.equilibrate()
 print('X',x.data)

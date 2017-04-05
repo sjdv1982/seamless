@@ -1,5 +1,5 @@
 import seamless
-from seamless import context, cell, editor, transformer
+from seamless import context, cell, reactor, transformer
 from seamless.lib.filelink import link
 from seamless.lib.gui.browser import browse
 from seamless.lib.dynamic_html import dynamic_html

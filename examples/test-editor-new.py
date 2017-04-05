@@ -2,7 +2,7 @@ import os
 import sys
 import time
 
-from seamless import context, cell, transformer, editor, macro
+from seamless import context, cell, transformer, reactor, macro
 ctx = context()
 
 @macro({"formula": {"type": "str", "default": "return value*2"}})
@@ -81,31 +81,31 @@ print("VALUE", c_data.data, "'" + c_code.data + "'", c_output.data)
 
 @macro("json",with_context=False)
 def make_editor(eparams):
-    from seamless import editor
-    ed = editor(eparams)
-    ed.code_start.cell().fromfile("test-editor_pycell.py")
-    ed.code_stop.cell().set('w.destroy()')
-    ed.code_update.cell().set("""
+    from seamless import reactor
+    rc = reactor(eparams)
+    rc.code_start.cell().fromfile("test-editor_pycell.py")
+    rc.code_stop.cell().set('w.destroy()')
+    rc.code_update.cell().set("""
 if PINS.value.updated:
     b.setValue(PINS.value.get())
 if PINS.title.updated:
     w.setWindowTitle(PINS.title.get())
 """)
-    return ed
+    return rc
 
 @macro("json",with_context=False)
 def make_text_editor(eparams):
-    from seamless import cell, editor
-    ed = editor(eparams)
-    ed.code_start.cell().fromfile("test-editor_pycell2.py")
-    ed.code_stop.cell().set('w.destroy()')
-    ed.code_update.cell().set("""
+    from seamless import cell, reactor
+    rc = reactor(eparams)
+    rc.code_start.cell().fromfile("test-editor_pycell2.py")
+    rc.code_stop.cell().set('w.destroy()')
+    rc.code_update.cell().set("""
 if PINS.value.updated:
     b.setText(PINS.value.get())
 if PINS.title.updated:
     w.setWindowTitle(PINS.title.get())
 """)
-    return ed
+    return rc
 
 ed1 = ctx.ed1 = make_editor(eparams)
 ed2 = ctx.ed2 = make_editor(eparams)

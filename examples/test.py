@@ -14,11 +14,6 @@ tparams = {
 }
 
 if __name__ == "__main__":
-    dir_containing_seamless = os.path.normpath(
-     os.path.join(os.path.dirname(__file__), '../../')
-    )
-    sys.path.append(dir_containing_seamless)
-
     from seamless import cell, pythoncell, transformer, context
     ctx = context()
 
@@ -36,8 +31,7 @@ if __name__ == "__main__":
     print(ctx.c_data.data, "'" + ctx.c_code.data + "'", ctx.c_output.data)
     ctx.cont.output.connect(ctx.c_output)
 
-    time.sleep(0.001)
-    # 1 ms is usually enough to print "8", try 0.0001 for a random chance
+    ctx.equilibrate()
     print(ctx.c_data.data, "'" + ctx.c_code.data + "'", ctx.c_output.data)
 
     ctx.c_data.set(5)

@@ -1,25 +1,73 @@
 {
   "lib": {
+    "/gui/cell-basic_display_UPDATE.py": {
+      "data": "if PINS.value.updated:\n    b.setValue(PINS.value.get())\nif PINS.title.updated:\n    w.setWindowTitle(PINS.title.get())\n",
+      "links": []
+    },
+    "/gui/cell-basic_display_float.py": {
+      "data": "from seamless.qt.QtWidgets import QDoubleSpinBox, QWidget, QVBoxLayout\nfrom seamless.qt.QtCore import Qt\n\nw = QWidget()\n#w.setWindowFlags(Qt.WindowStaysOnTopHint)\nw.setAttribute(Qt.WA_ShowWithoutActivating)\nvbox = QVBoxLayout()\nvbox.addStretch(1)\nw.setLayout(vbox)\nw.resize(300,100)\nw.setWindowTitle(PINS.title.get())\nw.show()\nb = QDoubleSpinBox()\nb.setSingleStep(0.1)\nb.setMaximum(1000000)\nb.setValue(PINS.value.get())\nvbox.addWidget(b)\n",
+      "links": []
+    },
+    "/gui/cell-basic_display_html.py": {
+      "data": "from seamless.qt.QtWidgets import QPlainTextEdit, QWidget, QVBoxLayout\nfrom seamless.qt.QtCore import Qt\nfrom PyQt5.QtGui import QColor\n\nw = QWidget()\n#w.setWindowFlags(Qt.WindowStaysOnTopHint)\nw.setAttribute(Qt.WA_ShowWithoutActivating)\nvbox = QVBoxLayout()\n#vbox.addStretch(1)\nw.resize(600,600)\nw.setLayout(vbox)\nw.setWindowTitle(PINS.title.get())\n\nw.show()\nb = QPlainTextEdit()\nb.setReadOnly(True)\n#b.setFontPointSize(15)\nb.setPlainText(PINS.value.get())\n#b.setFontItalic(True)\n#b.setTextColor(QColor(255,0,0))\nvbox.addWidget(b)\n",
+      "links": []
+    },
+    "/gui/cell-basic_display_html_UPDATE.py": {
+      "data": "if PINS.value.updated:\n    b.setPlainText(PINS.value.get())\nif PINS.title.updated:\n    w.setWindowTitle(PINS.title.get())\n",
+      "links": []
+    },
+    "/gui/cell-basic_display_int.py": {
+      "data": "from seamless.qt.QtWidgets import QSpinBox, QWidget, QVBoxLayout\nfrom seamless.qt.QtCore import Qt\n\nw = QWidget()\n#w.setWindowFlags(Qt.WindowStaysOnTopHint)\nw.setAttribute(Qt.WA_ShowWithoutActivating)\nvbox = QVBoxLayout()\nvbox.addStretch(1)\nw.setLayout(vbox)\nw.resize(300,100)\nw.setWindowTitle(PINS.title.get())\nw.show()\nb = QSpinBox()\nb.setMaximum(1000000)\nb.setValue(PINS.value.get())\nvbox.addWidget(b)\n",
+      "links": []
+    },
+    "/gui/cell-basic_display_json.py": {
+      "data": "from seamless.qt.QtWidgets import QTextEdit, QWidget, QVBoxLayout\nfrom seamless.qt.QtCore import Qt\nfrom PyQt5.QtGui import QColor\nimport json\n\nw = QWidget()\n#w.setWindowFlags(Qt.WindowStaysOnTopHint)\nw.setAttribute(Qt.WA_ShowWithoutActivating)\nvbox = QVBoxLayout()\n#vbox.addStretch(1)\nw.resize(600,600)\nw.setLayout(vbox)\nw.setWindowTitle(PINS.title.get())\n\nw.show()\nb = QTextEdit()\nb.setReadOnly(True)\nb.setFontPointSize(15)\nb.setText(json.dumps(PINS.value.get(), indent=2))\n#b.setFontItalic(True)\n#b.setTextColor(QColor(255,0,0))\nvbox.addWidget(b)\n",
+      "links": []
+    },
+    "/gui/cell-basic_display_json_UPDATE.py": {
+      "data": "if PINS.value.updated:\n    b.setText(json.dumps(PINS.value.get(), indent=2))\nif PINS.title.updated:\n    b.setWindowTitle(PINS.title.get())\n",
+      "links": []
+    },
     "/gui/cell-basic_display_text.py": {
-      "data": "from seamless.qt.QtWidgets import QTextEdit, QWidget, QVBoxLayout\nfrom seamless.qt.QtCore import Qt\nfrom PyQt5.QtGui import QColor\n\nw = QWidget()\n#w.setWindowFlags(Qt.WindowStaysOnTopHint)\nw.setAttribute(Qt.WA_ShowWithoutActivating)\nvbox = QVBoxLayout()\n#vbox.addStretch(1)\nw.resize(600,600)\nw.setLayout(vbox)\nw.setWindowTitle(title.get())\n\nw.show()\nb = QTextEdit()\nb.setReadOnly(True)\nb.setFontPointSize(15)\nb.setText(value.get())\n#b.setFontItalic(True)\n#b.setTextColor(QColor(255,0,0))\nvbox.addWidget(b)\n",
+      "data": "from seamless.qt.QtWidgets import QTextEdit, QWidget, QVBoxLayout\nfrom seamless.qt.QtCore import Qt\nfrom PyQt5.QtGui import QColor\n\nw = QWidget()\n#w.setWindowFlags(Qt.WindowStaysOnTopHint)\nw.setAttribute(Qt.WA_ShowWithoutActivating)\nvbox = QVBoxLayout()\n#vbox.addStretch(1)\nw.resize(600,600)\nw.setLayout(vbox)\nw.setWindowTitle(PINS.title.get())\n\nw.show()\nb = QTextEdit()\nb.setReadOnly(True)\nb.setFontPointSize(15)\nb.setText(PINS.value.get())\n#b.setFontItalic(True)\n#b.setTextColor(QColor(255,0,0))\nvbox.addWidget(b)\n",
       "links": [
         "d_value.cell2"
       ]
     },
     "/gui/cell-basic_display_text_UPDATE.py": {
-      "data": "if value.updated:\n    b.setText(value.get())\nif title.updated:\n    w.setWindowTitle(title.get())\n",
+      "data": "if PINS.value.updated:\n    b.setText(PINS.value.get())\nif PINS.title.updated:\n    w.setWindowTitle(PINS.title.get())\n",
       "links": [
         "d_value.cell4"
       ]
     },
+    "/gui/cell-basic_editor_UPDATE.py": {
+      "data": "if PINS.value.updated:\n    b.setValue(PINS.value.get())\nif PINS.title.updated:\n    w.setWindowTitle(PINS.title.get())\n",
+      "links": []
+    },
+    "/gui/cell-basic_editor_float.py": {
+      "data": "from seamless.qt.QtWidgets import QDoubleSpinBox, QWidget, QVBoxLayout\nfrom seamless.qt.QtCore import Qt\n\nw = QWidget()\n#w.setWindowFlags(Qt.WindowStaysOnTopHint)\nw.setAttribute(Qt.WA_ShowWithoutActivating)\nvbox = QVBoxLayout()\nvbox.addStretch(1)\nw.setLayout(vbox)\nw.resize(300,100)\nw.setWindowTitle(PINS.title.get())\nw.show()\nb = QDoubleSpinBox()\nb.setSingleStep(0.1)\nb.setMaximum(1000000)\nif PINS.value.defined:\n    b.setValue(PINS.value.get())\nvbox.addWidget(b)\nb.valueChanged.connect(PINS.value.set)\n",
+      "links": []
+    },
+    "/gui/cell-basic_editor_int.py": {
+      "data": "from seamless.qt.QtWidgets import QSpinBox, QWidget, QVBoxLayout\nfrom seamless.qt.QtCore import Qt\n\nw = QWidget()\n#w.setWindowFlags(Qt.WindowStaysOnTopHint)\nw.setAttribute(Qt.WA_ShowWithoutActivating)\nvbox = QVBoxLayout()\nvbox.addStretch(1)\nw.setLayout(vbox)\nw.resize(300,100)\nw.setWindowTitle(PINS.title.get())\nw.show()\nb = QSpinBox()\nb.setMaximum(1000000)\nif PINS.value.defined:\n    b.setValue(PINS.value.get())\nvbox.addWidget(b)\nb.valueChanged.connect(PINS.value.set)\n",
+      "links": []
+    },
+    "/gui/cell-basic_editor_json.py": {
+      "data": "from seamless.qt.QtWidgets import QTextEdit, QWidget, QVBoxLayout\nfrom seamless.qt.QtCore import Qt\nfrom PyQt5.QtGui import QColor\nimport json\n\nw = QWidget()\n#w.setWindowFlags(Qt.WindowStaysOnTopHint)\nw.setAttribute(Qt.WA_ShowWithoutActivating)\nvbox = QVBoxLayout()\n#vbox.addStretch(1)\nw.resize(600,600)\nw.setLayout(vbox)\nw.setWindowTitle(PINS.title.get())\n\nclass MyTextEdit(QTextEdit):\n    def focusOutEvent(self, event):\n        PINS.value.set(self.toPlainText())\n        QTextEdit.focusOutEvent(self, event)\n\nw.show()\nb = MyTextEdit()\nb.setFontPointSize(15)\nif PINS.value.defined:\n    b.setText(json.dumps(PINS.value.get(), indent=2))\n#b.setFontItalic(True)\n#b.setTextColor(QColor(255,0,0))\nvbox.addWidget(b)\n",
+      "links": []
+    },
+    "/gui/cell-basic_editor_json_UPDATE.py": {
+      "data": "if PINS.value.updated:\n    b.setText(json.dumps(PINS.value.get(), indent=2))\nif PINS.title.updated:\n    w.setWindowTitle(PINS.title.get())\n",
+      "links": []
+    },
     "/gui/cell-basic_editor_text.py": {
-      "data": "from seamless.qt.QtWidgets import QTextEdit, QWidget, QVBoxLayout\nfrom seamless.qt.QtCore import Qt\nfrom PyQt5.QtGui import QColor\n\nw = QWidget()\n#w.setWindowFlags(Qt.WindowStaysOnTopHint)\nw.setAttribute(Qt.WA_ShowWithoutActivating)\nvbox = QVBoxLayout()\n#vbox.addStretch(1)\nw.resize(600,600)\nw.setLayout(vbox)\nw.setWindowTitle(title.get())\n\nclass MyTextEdit(QTextEdit):\n    def focusOutEvent(self, event):\n        value.set(self.toPlainText())\n        QTextEdit.focusOutEvent(self, event)\n\nw.show()\nb = MyTextEdit()\nb.setFontPointSize(15)\nb.setText(value.get())\n#b.setFontItalic(True)\n#b.setTextColor(QColor(255,0,0))\nvbox.addWidget(b)\n",
+      "data": "from seamless.qt.QtWidgets import QTextEdit, QWidget, QVBoxLayout\nfrom seamless.qt.QtCore import Qt\nfrom PyQt5.QtGui import QColor\n\nw = QWidget()\n#w.setWindowFlags(Qt.WindowStaysOnTopHint)\nw.setAttribute(Qt.WA_ShowWithoutActivating)\nvbox = QVBoxLayout()\n#vbox.addStretch(1)\nw.resize(600,600)\nw.setLayout(vbox)\nw.setWindowTitle(PINS.title.get())\n\nclass MyTextEdit(QTextEdit):\n    def focusOutEvent(self, event):\n        PINS.value.set(self.toPlainText())\n        QTextEdit.focusOutEvent(self, event)\n\nw.show()\nb = MyTextEdit()\nb.setFontPointSize(15)\nif PINS.value.defined:\n    b.setText(PINS.value.get())\n#b.setFontItalic(True)\n#b.setTextColor(QColor(255,0,0))\nvbox.addWidget(b)\n",
       "links": [
         "ed_silk_model.cell2"
       ]
     },
     "/gui/cell-basic_editor_text_UPDATE.py": {
-      "data": "if value.updated:\n    b.setText(value.get())\nif title.updated:\n    w.setWindowTitle(title.get())\n",
+      "data": "if PINS.value.updated:\n    b.setText(PINS.value.get())\nif PINS.title.updated:\n    w.setWindowTitle(PINS.title.get())\n",
       "links": [
         "ed_silk_model.cell4"
       ]
@@ -48,11 +96,11 @@
       "type_args": [
         "json",
         "seamless",
-        "editor_params"
+        "reactor_params"
       ],
-      "module_name": "seamless.core.editor",
-      "func_name": "editor",
-      "code": "@macro(type=(\"json\", \"seamless\", \"editor_params\"),with_context=False)\ndef editor(kwargs):\n    from seamless.core.editor import Editor #code must be standalone\n    #TODO: remapping, e.g. output_finish, destroy, ...\n    return Editor(kwargs)\n"
+      "module_name": "seamless.core.reactor",
+      "func_name": "reactor",
+      "code": "@macro(type=(\"json\", \"seamless\", \"reactor_params\"),with_context=False)\ndef reactor(kwargs):\n    from seamless.core.reactor import Reactor #code must be standalone\n    #TODO: remapping, e.g. output_finish, destroy, ...\n    return Reactor(kwargs)\n"
     },
     {
       "with_context": false,
@@ -86,7 +134,7 @@
       },
       "module_name": "seamless.lib.gui.basic_display",
       "func_name": "basic_display",
-      "code": "@macro(OrderedDict((\n    (\"display_type\",\"str\"),\n    (\"title\",{\"type\": \"str\", \"default\": \"Basic display\"})\n)))\ndef basic_display(ctx, display_type, title):\n    from seamless import editor\n\n    _displays = {\n      \"int\": {\n        \"code\": \"cell-basic_display_int.py\",\n        \"update\": \"cell-basic_display_UPDATE.py\",\n      },\n      \"float\": {\n        \"code\": \"cell-basic_display_float.py\",\n        \"update\": \"cell-basic_display_UPDATE.py\",\n      },\n      \"text\": {\n        \"code\": \"cell-basic_display_text.py\",\n        \"update\": \"cell-basic_display_text_UPDATE.py\",\n      },\n      \"json\": {\n        \"code\": \"cell-basic_display_json.py\",\n        \"update\": \"cell-basic_display_json_UPDATE.py\",\n      },\n    }\n\n    def _match_type(type, typelist):\n        typelist = list(typelist)\n        type2 = type\n        if isinstance(type, str):\n            type2 = (type,)\n        typelist2 = []\n        for t in typelist:\n            if isinstance(t, str):\n                typelist2.append((t,))\n            else:\n                typelist2.append(t)\n        matches = []\n        for n in range(len(typelist)):\n            ltype = typelist2[n]\n            k = min(len(type2), len(ltype))\n            if type2[:k] == ltype[:k]:\n                matches.append((n, k))\n        if not len(matches):\n            raise TypeError(\"Cannot find display for cell type '{0}'\".format(type))\n        matches.sort(key=lambda v: -v[1])\n        bestmatch = matches[0][0]\n        return typelist[bestmatch]\n\n    display_type = _match_type(display_type, _displays.keys())\n    pinparams = {\n      \"value\": {\n        \"pin\": \"input\",\n        \"dtype\": display_type\n      },\n      \"title\": {\n        \"pin\": \"input\",\n        \"dtype\": \"str\",\n      },\n    }\n    d = ctx.display = editor(pinparams)\n    d.title.cell().set(title)\n    d.code_start.cell().fromfile(_displays[display_type][\"code\"])\n    d.code_stop.cell().set('w.destroy()')\n    upfile = _displays[display_type][\"update\"]\n    c_up = d.code_update.cell()\n    if upfile is not None:\n        c_up.fromfile(upfile)\n    else:\n        c_up.set(\"\")\n    ctx.export(d, forced=[\"title\"])\n"
+      "code": "@macro(OrderedDict((\n    (\"display_type\",\"str\"),\n    (\"title\",{\"type\": \"str\", \"default\": \"Basic display\"})\n)))\ndef basic_display(ctx, display_type, title):\n    from seamless import reactor\n\n    _displays = {\n      \"int\": {\n        \"code\": \"cell-basic_display_int.py\",\n        \"update\": \"cell-basic_display_UPDATE.py\",\n      },\n      \"float\": {\n        \"code\": \"cell-basic_display_float.py\",\n        \"update\": \"cell-basic_display_UPDATE.py\",\n      },\n      \"text\": {\n        \"code\": \"cell-basic_display_text.py\",\n        \"update\": \"cell-basic_display_text_UPDATE.py\",\n      },\n      (\"text\", \"html\"): {\n        \"code\": \"cell-basic_display_html.py\",\n        \"update\": \"cell-basic_display_html_UPDATE.py\",\n      },\n      \"json\": {\n        \"code\": \"cell-basic_display_json.py\",\n        \"update\": \"cell-basic_display_json_UPDATE.py\",\n      },\n    }\n\n    def _match_type(type, typelist):\n        typelist = list(typelist)\n        type2 = type\n        if isinstance(type, str):\n            type2 = (type,)\n        typelist2 = []\n        for t in typelist:\n            if isinstance(t, str):\n                typelist2.append((t,))\n            else:\n                typelist2.append(t)\n        matches = []\n        for n in range(len(typelist)):\n            ltype = typelist2[n]\n            k = min(len(type2), len(ltype))\n            if type2[:k] == ltype[:k]:\n                matches.append((n, k))\n        if not len(matches):\n            raise TypeError(\"Cannot find display for cell type '{0}'\".format(type))\n        matches.sort(key=lambda v: -v[1])\n        bestmatch = matches[0][0]\n        return typelist[bestmatch]\n\n    display_type = _match_type(display_type, _displays.keys())\n    pinparams = {\n      \"value\": {\n        \"pin\": \"input\",\n        \"dtype\": display_type\n      },\n      \"title\": {\n        \"pin\": \"input\",\n        \"dtype\": \"str\",\n      },\n    }\n    d = ctx.display = reactor(pinparams)\n    d.title.cell().set(title)\n    d.code_start.cell().fromfile(_displays[display_type][\"code\"])\n    d.code_stop.cell().set('w.destroy()')\n    upfile = _displays[display_type][\"update\"]\n    c_up = d.code_update.cell()\n    if upfile is not None:\n        c_up.fromfile(upfile)\n    else:\n        c_up.set(\"\")\n    ctx.export(d, forced=[\"title\"])\n"
     },
     {
       "with_context": true,
@@ -104,19 +152,19 @@
       },
       "module_name": "seamless.lib.gui.basic_editor",
       "func_name": "basic_editor",
-      "code": "@macro(OrderedDict((\n    (\"editor_type\",\"str\"),\n    (\"title\",{\"type\": \"str\", \"default\": \"Basic editor\"})\n)))\ndef basic_editor(ctx, editor_type, title):\n    from seamless import editor\n\n    _editors = {\n      \"int\": {\n        \"code\": \"cell-basic_editor_int.py\",\n        \"update\": \"cell-basic_editor_UPDATE.py\",\n      },\n      \"float\": {\n        \"code\": \"cell-basic_editor_float.py\",\n        \"update\": \"cell-basic_editor_UPDATE.py\",\n      },\n      \"text\": {\n        \"code\": \"cell-basic_editor_text.py\",\n        \"update\": \"cell-basic_editor_text_UPDATE.py\",\n      },\n      \"json\": {\n        \"code\": \"cell-basic_editor_json.py\",\n        \"update\": \"cell-basic_editor_json_UPDATE.py\",\n      },\n    }\n\n    def _match_type(type, typelist):\n        typelist = list(typelist)\n        type2 = type\n        if isinstance(type, str):\n            type2 = (type,)\n        typelist2 = []\n        for t in typelist:\n            if isinstance(t, str):\n                typelist2.append((t,))\n            else:\n                typelist2.append(t)\n        matches = []\n        for n in range(len(typelist)):\n            ltype = typelist2[n]\n            k = min(len(type2), len(ltype))\n            if type2[:k] == ltype[:k]:\n                matches.append((n, k))\n        if not len(matches):\n            raise TypeError(\"Cannot find editor for cell type '{0}'\".format(type))\n        matches.sort(key=lambda v: -v[1])\n        bestmatch = matches[0][0]\n        return typelist[bestmatch]\n\n    editor_type = _match_type(editor_type, _editors.keys())\n    pinparams = {\n      \"value\": {\n        \"pin\": \"edit\",\n        \"dtype\": editor_type\n      },\n      \"title\": {\n        \"pin\": \"input\",\n        \"dtype\": \"str\",\n      },\n    }\n    ed = ctx.ed = editor(pinparams)\n    ed.title.cell().set(title)\n    ed.code_start.cell().fromfile(_editors[editor_type][\"code\"])\n    ed.code_stop.cell().set('w.destroy()')\n    upfile = _editors[editor_type][\"update\"]\n    c_up = ed.code_update.cell(True)\n    if upfile is not None:\n        c_up.fromfile(upfile)\n    else:\n        c_up.set(\"\")\n    ctx.export(ed, forced=[\"title\"])\n"
+      "code": "@macro(OrderedDict((\n    (\"editor_type\",\"str\"),\n    (\"title\",{\"type\": \"str\", \"default\": \"Basic editor\"})\n)))\ndef basic_editor(ctx, editor_type, title):\n    from seamless import reactor\n\n    _editors = {\n      \"int\": {\n        \"code\": \"cell-basic_editor_int.py\",\n        \"update\": \"cell-basic_editor_UPDATE.py\",\n      },\n      \"float\": {\n        \"code\": \"cell-basic_editor_float.py\",\n        \"update\": \"cell-basic_editor_UPDATE.py\",\n      },\n      \"text\": {\n        \"code\": \"cell-basic_editor_text.py\",\n        \"update\": \"cell-basic_editor_text_UPDATE.py\",\n      },\n      \"json\": {\n        \"code\": \"cell-basic_editor_json.py\",\n        \"update\": \"cell-basic_editor_json_UPDATE.py\",\n      },\n    }\n\n    def _match_type(type, typelist):\n        typelist = list(typelist)\n        type2 = type\n        if isinstance(type, str):\n            type2 = (type,)\n        typelist2 = []\n        for t in typelist:\n            if isinstance(t, str):\n                typelist2.append((t,))\n            else:\n                typelist2.append(t)\n        matches = []\n        for n in range(len(typelist)):\n            ltype = typelist2[n]\n            k = min(len(type2), len(ltype))\n            if type2[:k] == ltype[:k]:\n                matches.append((n, k))\n        if not len(matches):\n            raise TypeError(\"Cannot find editor for cell type '{0}'\".format(type))\n        matches.sort(key=lambda v: -v[1])\n        bestmatch = matches[0][0]\n        return typelist[bestmatch]\n\n    editor_type = _match_type(editor_type, _editors.keys())\n    pinparams = {\n      \"value\": {\n        \"pin\": \"edit\",\n        \"dtype\": editor_type,\n        \"must_be_defined\": False\n      },\n      \"title\": {\n        \"pin\": \"input\",\n        \"dtype\": \"str\",\n      },\n    }\n    rc = ctx.rc = reactor(pinparams)\n    rc.title.cell().set(title)\n    rc.code_start.cell().fromfile(_editors[editor_type][\"code\"])\n    rc.code_stop.cell().set('w.destroy()')\n    upfile = _editors[editor_type][\"update\"]\n    c_up = rc.code_update.cell(True)\n    if upfile is not None:\n        c_up.fromfile(upfile)\n    else:\n        c_up.set(\"\")\n    ctx.export(rc, forced=[\"title\"])\n"
     }
   ],
   "main": {
     "type": "context",
-    "like_process": false,
+    "like_worker": false,
     "like_cell": false,
     "pins": {},
     "auto": [],
     "children": {
       "cons": {
         "type": "context",
-        "like_process": true,
+        "like_worker": true,
         "like_cell": false,
         "pins": {
           "N": "cons.transf.N",
@@ -152,7 +200,7 @@
       },
       "d_value": {
         "type": "context",
-        "like_process": true,
+        "like_worker": true,
         "like_cell": false,
         "pins": {
           "title": "d_value.display.title",
@@ -180,7 +228,7 @@
               "lib": true,
               "mode": 2
             },
-            "data": "from seamless.qt.QtWidgets import QTextEdit, QWidget, QVBoxLayout\nfrom seamless.qt.QtCore import Qt\nfrom PyQt5.QtGui import QColor\n\nw = QWidget()\n#w.setWindowFlags(Qt.WindowStaysOnTopHint)\nw.setAttribute(Qt.WA_ShowWithoutActivating)\nvbox = QVBoxLayout()\n#vbox.addStretch(1)\nw.resize(600,600)\nw.setLayout(vbox)\nw.setWindowTitle(title.get())\n\nw.show()\nb = QTextEdit()\nb.setReadOnly(True)\nb.setFontPointSize(15)\nb.setText(value.get())\n#b.setFontItalic(True)\n#b.setTextColor(QColor(255,0,0))\nvbox.addWidget(b)\n"
+            "data": "from seamless.qt.QtWidgets import QTextEdit, QWidget, QVBoxLayout\nfrom seamless.qt.QtCore import Qt\nfrom PyQt5.QtGui import QColor\n\nw = QWidget()\n#w.setWindowFlags(Qt.WindowStaysOnTopHint)\nw.setAttribute(Qt.WA_ShowWithoutActivating)\nvbox = QVBoxLayout()\n#vbox.addStretch(1)\nw.resize(600,600)\nw.setLayout(vbox)\nw.setWindowTitle(PINS.title.get())\n\nw.show()\nb = QTextEdit()\nb.setReadOnly(True)\nb.setFontPointSize(15)\nb.setText(PINS.value.get())\n#b.setFontItalic(True)\n#b.setTextColor(QColor(255,0,0))\nvbox.addWidget(b)\n"
           },
           "cell3": {
             "dtype": [
@@ -201,10 +249,10 @@
               "lib": true,
               "mode": 2
             },
-            "data": "if value.updated:\n    b.setText(value.get())\nif title.updated:\n    w.setWindowTitle(title.get())\n"
+            "data": "if PINS.value.updated:\n    b.setText(PINS.value.get())\nif PINS.title.updated:\n    w.setWindowTitle(PINS.title.get())\n"
           },
           "display": {
-            "type": "editor",
+            "type": "reactor",
             "mode": "sync",
             "params": {
               "title": {
@@ -222,11 +270,11 @@
       },
       "ed_silk_model": {
         "type": "context",
-        "like_process": true,
+        "like_worker": true,
         "like_cell": false,
         "pins": {
-          "title": "ed_silk_model.ed.title",
-          "value": "ed_silk_model.ed.value"
+          "title": "ed_silk_model.rc.title",
+          "value": "ed_silk_model.rc.value"
         },
         "auto": [
           "cell1",
@@ -250,7 +298,7 @@
               "lib": true,
               "mode": 2
             },
-            "data": "from seamless.qt.QtWidgets import QTextEdit, QWidget, QVBoxLayout\nfrom seamless.qt.QtCore import Qt\nfrom PyQt5.QtGui import QColor\n\nw = QWidget()\n#w.setWindowFlags(Qt.WindowStaysOnTopHint)\nw.setAttribute(Qt.WA_ShowWithoutActivating)\nvbox = QVBoxLayout()\n#vbox.addStretch(1)\nw.resize(600,600)\nw.setLayout(vbox)\nw.setWindowTitle(title.get())\n\nclass MyTextEdit(QTextEdit):\n    def focusOutEvent(self, event):\n        value.set(self.toPlainText())\n        QTextEdit.focusOutEvent(self, event)\n\nw.show()\nb = MyTextEdit()\nb.setFontPointSize(15)\nb.setText(value.get())\n#b.setFontItalic(True)\n#b.setTextColor(QColor(255,0,0))\nvbox.addWidget(b)\n"
+            "data": "from seamless.qt.QtWidgets import QTextEdit, QWidget, QVBoxLayout\nfrom seamless.qt.QtCore import Qt\nfrom PyQt5.QtGui import QColor\n\nw = QWidget()\n#w.setWindowFlags(Qt.WindowStaysOnTopHint)\nw.setAttribute(Qt.WA_ShowWithoutActivating)\nvbox = QVBoxLayout()\n#vbox.addStretch(1)\nw.resize(600,600)\nw.setLayout(vbox)\nw.setWindowTitle(PINS.title.get())\n\nclass MyTextEdit(QTextEdit):\n    def focusOutEvent(self, event):\n        PINS.value.set(self.toPlainText())\n        QTextEdit.focusOutEvent(self, event)\n\nw.show()\nb = MyTextEdit()\nb.setFontPointSize(15)\nif PINS.value.defined:\n    b.setText(PINS.value.get())\n#b.setFontItalic(True)\n#b.setTextColor(QColor(255,0,0))\nvbox.addWidget(b)\n"
           },
           "cell3": {
             "dtype": [
@@ -271,11 +319,11 @@
               "lib": true,
               "mode": 2
             },
-            "data": "if value.updated:\n    b.setText(value.get())\nif title.updated:\n    w.setWindowTitle(title.get())\n",
-            "owner": "ed_silk_model.ed.code_update"
+            "data": "if PINS.value.updated:\n    b.setText(PINS.value.get())\nif PINS.title.updated:\n    w.setWindowTitle(PINS.title.get())\n",
+            "owner": "ed_silk_model.rc.code_update"
           },
-          "ed": {
-            "type": "editor",
+          "rc": {
+            "type": "reactor",
             "mode": "sync",
             "params": {
               "title": {
@@ -284,6 +332,7 @@
               },
               "value": {
                 "dtype": "text",
+                "must_be_defined": false,
                 "pin": "edit"
               }
             }
@@ -356,15 +405,15 @@
       {
         "registrar": "silk",
         "key": "SilkModel",
-        "target_type": "process",
-        "target_process": "cons.transf",
+        "target_type": "worker",
+        "target_worker": "cons.transf",
         "namespace_name": "SilkModel"
       },
       {
         "registrar": "silk",
         "key": "SilkModelArray",
-        "target_type": "process",
-        "target_process": "cons.transf",
+        "target_type": "worker",
+        "target_worker": "cons.transf",
         "namespace_name": "SilkModelArray"
       }
     ],
@@ -404,19 +453,19 @@
       ],
       [
         "ed_silk_model.cell1",
-        "ed_silk_model.ed.title"
+        "ed_silk_model.rc.title"
       ],
       [
         "ed_silk_model.cell2",
-        "ed_silk_model.ed.code_start"
+        "ed_silk_model.rc.code_start"
       ],
       [
         "ed_silk_model.cell3",
-        "ed_silk_model.ed.code_stop"
+        "ed_silk_model.rc.code_stop"
       ],
       [
         "ed_silk_model.cell4",
-        "ed_silk_model.ed.code_update"
+        "ed_silk_model.rc.code_update"
       ],
       [
         "n",
@@ -424,7 +473,7 @@
       ],
       [
         "silk_model",
-        "ed_silk_model.ed.value"
+        "ed_silk_model.rc.value"
       ],
       [
         "value",

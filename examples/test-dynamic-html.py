@@ -1,5 +1,5 @@
 import seamless
-from seamless import context, cell, editor, transformer
+from seamless import context, cell, reactor, transformer
 from seamless.lib.filelink import link
 from seamless.lib.gui.browser import browse
 import time
@@ -34,7 +34,7 @@ html_tmpl = jinja2.Template(tmpl).render({"body": body})
 identifier = "test-dynamic-html"
 html = jinja2.Template(html_tmpl).render({"IDENTIFIER": identifier, "socket": websocketserver.socket})
 
-open("test.html", "w").write(html)
+open("test-dynamic-html.html", "w").write(html)
 ctx.html = cell(("text", "html")).set(html)
 browse(ctx.html)
 seamless.run_work()

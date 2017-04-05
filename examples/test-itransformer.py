@@ -9,6 +9,6 @@ ctx.itf = itransformer({
     "outp": {"pin": "output", "dtype": "json"},
 })
 link(ctx.itf.code.cell(), ".", "test-itransformer_pycell.py")
-link(ctx.itf.ed.code_start.cell())
+link(ctx.itf.rc.code_start.cell())
 display(ctx.itf.outp.cell())
 edit(ctx.itf.i.cell().set(100))

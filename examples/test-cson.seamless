@@ -19,11 +19,11 @@
       "type_args": [
         "json",
         "seamless",
-        "editor_params"
+        "reactor_params"
       ],
-      "module_name": "seamless.core.editor",
-      "func_name": "editor",
-      "code": "@macro(type=(\"json\", \"seamless\", \"editor_params\"),with_context=False)\ndef editor(kwargs):\n    from seamless.core.editor import Editor #code must be standalone\n    #TODO: remapping, e.g. output_finish, destroy, ...\n    return Editor(kwargs)\n"
+      "module_name": "seamless.core.reactor",
+      "func_name": "reactor",
+      "code": "@macro(type=(\"json\", \"seamless\", \"reactor_params\"),with_context=False)\ndef reactor(kwargs):\n    from seamless.core.reactor import Reactor #code must be standalone\n    #TODO: remapping, e.g. output_finish, destroy, ...\n    return Reactor(kwargs)\n"
     },
     {
       "with_context": false,
@@ -51,12 +51,12 @@
       "type_args": "str",
       "module_name": "seamless.lib.filelink",
       "func_name": "filelink",
-      "code": "@macro(\"str\")\ndef filelink(ctx, cell_type):\n    cell_filelink_start = \"cell-filelink-start.py\" #repeat for inline\n    from seamless import editor\n    pinparams = {\n       \"value\": {\n         \"pin\": \"edit\",\n         \"dtype\": cell_type,\n         \"must_be_defined\": False\n       },\n       \"filepath\" : {\n         \"pin\": \"input\",\n         \"dtype\": \"str\"\n       },\n       \"latency\" : {\n         \"pin\": \"input\",\n         \"dtype\": \"float\"\n       },\n    }\n    ed = ctx.ed = editor(pinparams)\n    ed.code_start.cell().fromfile(cell_filelink_start)\n    ed.code_update.cell().set(\"write_file(PINS.filepath.get())\")\n    ed.code_stop.cell().set('t.join(0)')\n    ctx.export(ed)\n"
+      "code": "@macro(\"str\")\ndef filelink(ctx, cell_type):\n    cell_filelink_start = \"cell-filelink-start.py\" #repeat for inline\n    from seamless import reactor\n    pinparams = {\n       \"value\": {\n         \"pin\": \"edit\",\n         \"dtype\": cell_type,\n         \"must_be_defined\": False\n       },\n       \"filepath\" : {\n         \"pin\": \"input\",\n         \"dtype\": \"str\"\n       },\n       \"latency\" : {\n         \"pin\": \"input\",\n         \"dtype\": \"float\"\n       },\n    }\n    rc = ctx.rc = reactor(pinparams)\n    rc.code_start.cell().fromfile(cell_filelink_start)\n    rc.code_update.cell().set(\"write_file(PINS.filepath.get())\")\n    rc.code_stop.cell().set('t.join(0)')\n    ctx.export(rc)\n"
     }
   ],
   "main": {
     "type": "context",
-    "like_process": false,
+    "like_worker": false,
     "like_cell": false,
     "pins": {},
     "auto": [
@@ -97,12 +97,12 @@
       },
       "cson_link": {
         "type": "context",
-        "like_process": true,
+        "like_worker": true,
         "like_cell": false,
         "pins": {
-          "filepath": "cson_link.ed.filepath",
-          "latency": "cson_link.ed.latency",
-          "value": "cson_link.ed.value"
+          "filepath": "cson_link.rc.filepath",
+          "latency": "cson_link.rc.latency",
+          "value": "cson_link.rc.value"
         },
         "auto": [
           "cell1",
@@ -139,8 +139,8 @@
             ],
             "data": "t.join(0)"
           },
-          "ed": {
-            "type": "editor",
+          "rc": {
+            "type": "reactor",
             "mode": "sync",
             "params": {
               "filepath": {
@@ -165,12 +165,12 @@
       },
       "json_link": {
         "type": "context",
-        "like_process": true,
+        "like_worker": true,
         "like_cell": false,
         "pins": {
-          "filepath": "json_link.ed.filepath",
-          "latency": "json_link.ed.latency",
-          "value": "json_link.ed.value"
+          "filepath": "json_link.rc.filepath",
+          "latency": "json_link.rc.latency",
+          "value": "json_link.rc.value"
         },
         "auto": [
           "cell1",
@@ -207,8 +207,8 @@
             ],
             "data": "t.join(0)"
           },
-          "ed": {
-            "type": "editor",
+          "rc": {
+            "type": "reactor",
             "mode": "sync",
             "params": {
               "filepath": {
@@ -257,19 +257,19 @@
     "cell_pin_connections": [
       [
         "cell1",
-        "cson_link.ed.filepath"
+        "cson_link.rc.filepath"
       ],
       [
         "cell2",
-        "cson_link.ed.latency"
+        "cson_link.rc.latency"
       ],
       [
         "cell3",
-        "json_link.ed.filepath"
+        "json_link.rc.filepath"
       ],
       [
         "cell4",
-        "json_link.ed.latency"
+        "json_link.rc.latency"
       ],
       [
         "cell5",
@@ -277,19 +277,19 @@
       ],
       [
         "cson_link.cell1",
-        "cson_link.ed.code_start"
+        "cson_link.rc.code_start"
       ],
       [
         "cson_link.cell2",
-        "cson_link.ed.code_update"
+        "cson_link.rc.code_update"
       ],
       [
         "cson_link.cell3",
-        "cson_link.ed.code_stop"
+        "cson_link.rc.code_stop"
       ],
       [
         "cson",
-        "cson_link.ed.value"
+        "cson_link.rc.value"
       ],
       [
         "cson",
@@ -297,19 +297,19 @@
       ],
       [
         "json_link.cell1",
-        "json_link.ed.code_start"
+        "json_link.rc.code_start"
       ],
       [
         "json_link.cell2",
-        "json_link.ed.code_update"
+        "json_link.rc.code_update"
       ],
       [
         "json_link.cell3",
-        "json_link.ed.code_stop"
+        "json_link.rc.code_stop"
       ],
       [
         "json",
-        "json_link.ed.value"
+        "json_link.rc.value"
       ]
     ]
   }

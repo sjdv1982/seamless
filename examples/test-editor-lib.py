@@ -2,7 +2,7 @@ import os
 import sys
 import time
 
-from seamless import context, cell, transformer, editor, macro
+from seamless import context, cell, transformer, reactor, macro
 from seamless.lib.gui.basic_editor import edit
 from seamless.lib.gui.basic_display import display
 ctx = context()
@@ -51,7 +51,7 @@ ed2.title.cell().set("Output")
 ted1 = ctx.ted1 = edit(c_code)
 ted1.title.cell().set("Formula editor")
 
-meta_ted = ctx.meta_ted = edit(ted1.ed.code_start.cell())
+meta_ted = ctx.meta_ted = edit(ted1.rc.code_start.cell())
 meta_ted.title.cell().set("Meta-editor")
 
 import os

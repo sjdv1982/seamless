@@ -23,11 +23,11 @@
       "type_args": [
         "json",
         "seamless",
-        "editor_params"
+        "reactor_params"
       ],
-      "module_name": "seamless.core.editor",
-      "func_name": "editor",
-      "code": "@macro(type=(\"json\", \"seamless\", \"editor_params\"),with_context=False)\ndef editor(kwargs):\n    from seamless.core.editor import Editor #code must be standalone\n    #TODO: remapping, e.g. output_finish, destroy, ...\n    return Editor(kwargs)\n"
+      "module_name": "seamless.core.reactor",
+      "func_name": "reactor",
+      "code": "@macro(type=(\"json\", \"seamless\", \"reactor_params\"),with_context=False)\ndef reactor(kwargs):\n    from seamless.core.reactor import Reactor #code must be standalone\n    #TODO: remapping, e.g. output_finish, destroy, ...\n    return Reactor(kwargs)\n"
     },
     {
       "with_context": false,
@@ -48,7 +48,7 @@
   ],
   "main": {
     "type": "context",
-    "like_process": false,
+    "like_worker": false,
     "like_cell": false,
     "pins": {},
     "auto": [
