@@ -6,9 +6,12 @@ take-home message:
  recreated; you may want to keep (copy/move over) cell contents and worker state
 - Two dialects:
     slash-0
-  - has static and dynamic variables
+  - has dynamic variables (static ones must be pre-substituted)
   - has no cell expressions, only cell names => no dynamic cells
-  - has cell lists and variable lists, but only static-length
+  - has cell lists, but only static-length
+  - has subcontexts
+  - has dynamic-length variable lists.
+    In both slash-0 and slash-1, they cannot be accessed (only exported)
 
  lib.slash.slash1.script
  lib.slash.slash1.multi_script
@@ -19,10 +22,9 @@ take-home message:
  - register a normal worker as slash command
 
 
-Standard syntax:
-<command> <arguments> > <cell name or cell expression>
+Glossary:
 
-Arguments can be: cells, variable expressions or literals
+Arguments can be: cells, variable names, cell expressions or literals
 
 Variable: same as bash variable
 
@@ -33,11 +35,16 @@ i.e. only known at runtime. Since for-loops are always unrolled, for-loop
 variables are *not* dynamic variables.
 
 Dynamic variable expression: variable expression that contain dynamic variables
-Cell expression: either the name of a cell, or a non-dynamic variable expression
 
-Dynamic cell: cell whose *name* is defined by a dynamic variable expression,
+Cell expression: the name of a cell, or a variable expression that
+evaluates to the name of a cell. Dynamic variable expressions make the cell
+expression dynamic.
+Cell expressions are slash-1 only.
+
+Dynamic cell: cell whose name is defined by a dynamic cell expression,
 i.e. only known at runtime. Cells whose names are defined by a non-dynamic
 variable expression are *not* dynamic cells.
+Dynamic cells are slash-1 only.
 
 Variable list: variable that consists of multiple variables. A variable list
 is static if all of its variables are static, otherwise it is dynamic.
@@ -47,32 +54,62 @@ Can be iterated over in for loops, but only if static-length.
 the variable list is static-length.
 
 Subcontexts: contains other cells.
-"foo/bar" gets static cell "bar" from a subcontext "foo", this is only allowed
-if the subcontext is static
+Subcontexts are static, coming from @macro_context (slash-1) or @subcontext
+(slash-0)
+Subcontexts can be used in cell expressions:
+"foo/bar" gets static cell "bar" from a static subcontext "foo"
 "bar" can also be a static cell expression
 "bar" can also be a dynamic cell expression, in which case the result is a
 dynamic cell.
 
+*******
+Standard syntax:
+<command> <arguments> > <cell expression> [&](slash-1)
+<command> <arguments> > <cell name> [&] (slash-0)
+& means that the command does not take a seamless execution slot (TODO)
+
 command lookup:
-    foo looks in registered slash commands, then on disk using "which"
+    $FOO...: anything that starts with $-plus-all-capitals has BAR looked up in
+     os.environ and the whole construct treated as a file name
+    foo: looks in the following order:
+      - an alias named "foo" (slash-1 only)
+      - a register slash command named "foo" (TODO)
+      - then on disk using "which"
     /foo looks on disk, absolute path
     ./foo looks on disk, in cwd
-    $DIR/foo looks in os.environ["DIR"]
 argument lookup:
-   STDIN, STDOUT, STDERR are substituted
+   $BAR...: as $FOO... above
    -bar: literal
    2: literal
    "bar", 'bar': literal
-   bar looks for cell "bar"
-   if bar contains $ outside quotes, then it is a variable expression
-    $foo: looks for variable "foo"
-    $foo-2: looks for variable "foo" and appends the literal "-2"
+   bar: looks for an alias called "bar". If none is found:
+    In slash-1: equivalent to $$bar (see below)
+    In slash-0: equivalent to the cell name "bar"
+   $bar is a variable expression. It looks for the variable "bar" and
+    substitutes its value
+   $bar-1: looks for the variable "bar" and appends "-1".
+    If bar="baz", $bar-1 will be "baz-1"
+   $$bar is a cell expression: It will evaluate "bar" as a literal or variable
+    expression, and then look for a cell with that name.
+    If bar="baz", $$bar will substitute (the file name of) the cell "baz"
+      and $$bar-1 will substitute the cell "baz-1"
+    Slash-1 only
+   &bar: short-hand for $$$bar. "bar" can be a variable expression.
+      Example 1: &foo
+      If the variable foo=baz, then it will evaluate to the contents of
+      cell baz
+      Example 2: &foo-$bar-1
+      If the variable foo=baz, and variable bar=foobaz, then it will evaluate
+      to the contents of a cell named baz-foobaz-1.
+      Slash-1 only
 |, 2> bar, 2>&1 bar: as expected
-!> bar: captures all files created by the command into a dynamic
-subcontext "bar".
+NULL is substituted with /dev/null, else stderr and stdout are printed on screen
+!> bar, >! bar: captures all files created by the command into a JSON cell "bar".
+*******
 
 foo = bar: defines a variable "foo" from variable expression "bar".
 If the variable expression is dynamic, then "foo" will be a dynamic variable.
+Slash-1 and slash-0 (in slash-0, only if dynamic)
 
 @: special commands
 
@@ -89,8 +126,8 @@ dynamic-length dynamic variable list "foo" (or "bar").
 Only slash-1
 
 @macro_cell foo [bar]: defines a text macro parameter "foo" that becomes a
-static cell "foo" (or "bar"). Just cell names, no expressions.
-Slash-1 and slash-0
+static, constant-value cell "foo" (or "bar"). Just cell names, no expressions.
+Only slash-1; substitution in slash-0
 
 @macro_var foo [bar]: defines a str macro parameter "foo" that becomes a
 static variable "foo" (or "bar")
@@ -102,19 +139,20 @@ Only slash-1; substitution in slash-0
 
 @macro_context foo [bar]: defines a JSON macro parameter "foo" that becomes a
 static subcontext "foo" (or "bar")
-Only slash-1; substitution in slash-0
+Only slash-1; substitution to "extern" in slash-0
 
-@export foo [bar]: exports a cell(/variable/variable list/subcontext) "foo" as
-text(/str/JSON/JSON) output pin [under the name "bar"].
+@export foo [bar]: exports a cell (/JSON cell/variable/variable list/subcontext)
+"foo" as text(/JSON/str/JSON/JSON) output pin [under the name "bar"].
+Variables and variable lists are referred to as $foo.
 If "foo" is a variable list, the JSON will contain a list
-If it is a subcontext, the JSON will contain a dict
+If it is a subcontext or JSON cell, the JSON will contain a dict
 Slash-1 and slash-0
 
 @cat foo bar ... > baz
-defines a variable list "baz" from variable expressions foo, bar, etc.
-If all variable expressions are static, "baz" will be static,
+defines a cell array "baz" from cell expressions foo, bar, etc.
+If all cell expressions are static, "baz" will be static,
 else it will be dynamic.
-If a variable expression corresponds to $(name-of-variable-list-foobar) then
+If a cell expression corresponds to $(name-of-cell-array-foobar) then
 the result will be flattened. If "foobar" is dynamic-length, then "baz" will be
 dynamic-length.
 Under all other circumstances, "baz" will be static-length.
@@ -135,15 +173,17 @@ Slash-1 and slash-0
 @glob foo bar: loads all cell names in subcontext "foo" into
 dynamic variable list "bar". If the subcontext is static, then
 "bar" will be static-length, else dynamic-length.
-Slash-1 and slash-0
+Only slash-1
 
 @cell foo bar: loads the content of variable expression "foo" as cell "bar".
 If foo is a dynamic variable expression, then "bar" will be a dynamic cell.
 Slash-1 and slash-0
 
 @alias foo bar:
-Substitution all instances of the text "foo" with "bar"
-Slash-1 and slash-0, although slash-0 generated from slash-1 does not contain it
+Substitution of all instances of the text "foo" with "bar"
+There can't be any cell or subcontext called "foo" (declared using @cell,
+@import_cell, @macro_cell, @load, @globload, @lines, @fields, @glob, @cat)
+Slash-1 only, substituted in slash-0
 
 @load foo bar: loads file "foo" as cell "bar". "foo" can be a static variable
 expression. "foo" is monitored continuously.
@@ -154,9 +194,12 @@ dynamic subcontext "bar". To generate cell names, everything before the first *
 or ? is eliminated, and slashes afterwards are replaced by "-".
 Only slash-1
 
-@mount foo bar:
-Mount all files in static subcontext "foo" onto the file system. File names
-generated as cell names, subcontexts become subdirectories.
+@map foo bar:
+Map all files in "foo" onto the file system (write-only, no readback).
+"foo" can be a cell, subcontext or JSON cell.
+If "foo" is ".", the entire main context is mapped
+File names are generated as cell names.
+Subcontexts and JSON cells become subdirectories.
 Slash-1 and slash-0
 
 @subcontext foo:
@@ -166,6 +209,20 @@ Only in slash-0; in slash-1 it is inferred from the code.
 @cell_array foo bar:
 Declare a cell array "foo" of length "bar".
 Only slash-0, in slash-1 all cell arrays are in loops.
+
+@intern foo:
+Declare a cell "foo" that will be assigned to in the script.
+Only slash-0, in slash-1 it is inferred from code.
+
+@intern_json foo:
+Declare a cell "foo" that will be assigned to in the script using !>
+Will contain a JSON dict of captured file names and their contents
+Only slash-0, in slash-1 it is inferred from code.
+
+@extern foo:
+Declare a cell "foo" that is supplied in the "extern" JSON argument of a slash-0
+script.
+Only slash-0, in slash-1 it is generated from @macro_context
 
 You can assign to every cell only once.
 
@@ -213,7 +270,7 @@ script2:
 @input_var atom1
 @macro_var atom2
 @glob pdbsplit x
-@alias currpdb cell::pdbsplit/$xx #cannot use @cell since the name changes!
+@alias currpdb $$pdbsplit/$xx #cannot use @cell since the name changes!
 for xx in x > a,b,c-$atom2; do
   grep 'ATOM' currpdb | awk '{print $2}' > $xx/ind
   grep 'CA' currpdb | head -20 > a
@@ -225,17 +282,20 @@ done
 @export c-$atom2
 
 slash-0:
-script1: unchanged
+script1: unchanged, except @intern_json pdbsplit
 
 script2:
 @input_var atom1
 @subcontext pdbsplit
-@macro_cell pdbsplit/model-1
-@macro_cell pdbsplit/model-2
-@macro_cell pdbsplit/model-3
+@extern pdbsplit/model-1
+@extern pdbsplit/model-2
+@extern pdbsplit/model-3
 @subcontext model-1
+@intern model-1/ind
 @subcontext model-2
+@intern model-2/ind
 @subcontext model-3
+@intern model-3/ind
 @cell_array a 3
 @cell_array b 3
 @cell_array c-CB 3
@@ -255,7 +315,6 @@ grep CB pdbsplit/model-3 > c-CB[2]
 @cat a b > ab
 @export ab
 @export c-CB
-
 
 #####################################
 ALTERNATIVE EXAMPLE (more bash style, copy files in and out of the context)
@@ -277,7 +336,7 @@ for xx in x; do
   grep $atom1 currpdb > $xx/ATOM1
   grep $atom2 currpdb > $xx/$atom2
 done
-@mount . ~/splitpdb  #. means "all". Write to disk, but never read!
+@map . ~/splitpdb  #. means "all". Write to disk, but never read!
 
 #results are now in:
 # ~/splitpdb/$xx/ind
@@ -286,16 +345,25 @@ done
 # ~/splitpdb/$xx/CB
 
 =>
-script1: unchanged
+script1: unchanged, except @subcontext pdbsplit
 
 script2:
 @subcontext pdbsplit
-@macro_cell pdbsplit/model-1
-@macro_cell pdbsplit/model-2
-@macro_cell pdbsplit/model-3
+@extern pdbsplit/model-1
+@extern pdbsplit/model-2
+@extern pdbsplit/model-3
 @subcontext model-1
+@intern model-1/ind
+@intern model-1/CA
+@intern model-1/ATOM1
 @subcontext model-2
+@intern model-2/ind
+@intern model-2/CA
+@intern model-2/ATOM1
 @subcontext model-3
+@intern model-3/ind
+@intern model-3/CA
+@intern model-3/ATOM1
 grep 'ATOM' pdbsplit/model-1 | awk '{print $2}' > model-1/ind
 grep 'CA' pdbsplit/model-1 | head -20 > model-1/CA
 grep 'N' pdbsplit/model-1 > model-1/ATOM1
@@ -308,11 +376,11 @@ grep 'ATOM' pdbsplit/model-3 | awk '{print $2}' > model-3/ind
 grep 'CA' pdbsplit/model-3 | head -20 > model-3/CA
 grep 'N' pdbsplit/model-3 > model-3/ATOM1
 grep CB pdbsplit/model-3 > model-3/CB
-@mount . ~/splitpdb
+@map . ~/splitpdb
 
 
 
-Slash0 parsing:
+Slash-1 parsing:
 Check for """, ''' => "Not supported" message
 Split into lines and strip each line
 Check for \ on the end of a line => "Not supported" message
@@ -336,9 +404,9 @@ Evaluate all cell expressions
   - Check that there are no dynamic variable deps
   - Check that there are no duplicate definitions
   - Implicitly create subcontexts whose cells are created
-Compile to slash0
+Compile to slash-0
 
-
+Slash-0 parsing:
 Look up all commands
 Generate command strings and their arg lists.
 Integrate with @, generate pins
