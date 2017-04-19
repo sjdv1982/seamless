@@ -1,8 +1,17 @@
 import re
 double_quote = re.compile(r'(\A|[^\\])\"')
 single_quote = re.compile(r"(\A|[^\\])\'")
+cell_name = re.compile(r'^[A-Za-z_][A-Za-z0-9_]*$')
 token_separators=r'(?P<sep1>[\s]+)|[\s](?P<sep2>2>)[^&][^1]|[\s](?P<sep3>!>)[\s]|[\s](?P<sep4>2>&1)|[^2!](?P<sep5>>)'
 token_separators = re.compile(token_separators)
+literal = re.compile(r'^([A-Za-z0-9_\-/]|\\[^A-Za-z0-9_\-/])*$')
+
+def syntax_error(lineno, line, message):
+    msg = """Line {0}:
+    {1}
+Error message:
+    {2}""".format(lineno, line, message)
+    raise SyntaxError(msg)
 
 def tokenize(text, masked_text):
     tokens = []

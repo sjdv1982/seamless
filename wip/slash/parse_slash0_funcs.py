@@ -1,44 +1,31 @@
-from parse_slash0_utils import tokenize, double_quote, single_quote
+from parse_slash0_utils import syntax_error, tokenize, cell_name, literal
 
-def parse_literal(word, maskpos):
-    word_unmasked = "".join(
-        [c1 for c1,c2 in zip(word, word_masked) if c1 != c2]
-    )
-    w1 = re.sub(single_quote, word, "")
-    w2 = re.sub(double_quote, w1, "")
-    return w2
+def parse_literal(word, lineno, l):
+    if word[0] == word[-1] == "'":
+        v = word[1:-1]
+    elif word[0] == word[-1] == '"':
+        v = word[1:-1]
+    else:
+        v = word
+    if literal.match(v) is None:
+        msg = "Invalid literal: '%s'" % v
+        syntax_error(lineno, l, msg)
+    return v
 
-def cmd_standard(line, nodes):
-    raise NotImplementedError
+def parse_cell_name(word, lnr, l):
+    if cell_name.match(word) is None:
+        msg = "Invalid cell name: '%s'" % word
+        syntax_error(lineno, l, msg)
+    return word
 
-def cmd_assign(line, nodes):
-    raise NotImplementedError
-
-def cmd_cat(line, nodes):
-    raise NotImplementedError
-
-def cmd_read(line, nodes):
-    raise NotImplementedError
-
-def cmd_lines(line, nodes):
-    raise NotImplementedError
-
-def cmd_fields(line, nodes):
-    raise NotImplementedError
-
-def cmd_cell(line, nodes):
-    raise NotImplementedError
-
-def cmd_load(line, nodes):
-    raise NotImplementedError
-
-def cmd_map(line, nodes):
-    raise NotImplementedError
+##################################
+#firstpass = ["input_cell", "input_var", "subcontext", "cell_array",
+#"cell_var_list", "cell_var", "intern", "intern_json", "extern"]
 
 def cmd_input_cell(line, nodes):
-    command, lnr, l, words = line
+    command, lineno, l, words = line
     assert len(words) == 2, l
-    cell_name = parse_cell_name(words[1])
+    cell_name = parse_cell_name(words[1], lineno, l)
     node = {
         "name": cell_name,
         "origin": "input",
@@ -46,11 +33,7 @@ def cmd_input_cell(line, nodes):
     }
     nodes["cell"].append(node)
 
-
 def cmd_input_var(line, nodes):
-    raise NotImplementedError
-
-def cmd_export(line, nodes):
     raise NotImplementedError
 
 def cmd_subcontext(line, nodes):
@@ -69,10 +52,64 @@ def cmd_intern(line, nodes):
     raise NotImplementedError
 
 def cmd_intern_json(line, nodes):
-    raise NotImplementedError
+    command, lineno, l, words = line
+    assert len(words) == 2, l
+    context_name = parse_cell_name(words[1], lineno, l)
+    node = {
+        "name": context_name,
+        "is_json": True
+    }
+    nodes["context"].append(node)
 
 def cmd_extern(line, nodes):
     raise NotImplementedError
+
+###############################
+
+def cmd_standard(cmd_index, line, nodes):
+    raise NotImplementedError
+
+def cmd_assign(cmd_index, line, nodes):
+    raise NotImplementedError
+
+def cmd_cat(cmd_index, line, nodes):
+    raise NotImplementedError
+
+def cmd_read(cmd_index, line, nodes):
+    raise NotImplementedError
+
+def cmd_lines(cmd_index, line, nodes):
+    raise NotImplementedError
+
+def cmd_fields(cmd_index, line, nodes):
+    raise NotImplementedError
+
+def cmd_cell(cmd_index, line, nodes):
+    raise NotImplementedError
+    """
+    command, lineno, l, words = line
+    assert len(words) == 2, l
+    cell_name = parse_cell_name(words[1], lineno, l)
+    assert cell_name in nodes["cell"], cell_name
+    return {
+        "index": cmd_index,
+        "lineno": line+1,
+        "type": words[0],
+
+    }
+    """
+
+def cmd_load(cmd_index, line, nodes):
+    raise NotImplementedError
+
+def cmd_map(cmd_index, line, nodes):
+    raise NotImplementedError
+
+########
+
+def cmd_export(line, nodes):
+    raise NotImplementedError
+
 
 cmd_funcs = {
     "standard": cmd_standard,

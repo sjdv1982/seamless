@@ -2,6 +2,7 @@ Slash-0 grammar
 
 Slash0:
   - List of nodes
+  - Export (return) struct
   - List of commands
 
 node:
