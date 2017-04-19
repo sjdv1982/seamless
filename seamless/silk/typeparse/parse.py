@@ -77,14 +77,16 @@ def mask_characters(expression, search_text, target_text, mask_char):
     :param target_text: text to apply mask to
     :param mask_char: character to replace masked characters
     """
+    matches = []
     pos = 0
     masked_text = ""
     for match in expression.finditer(search_text):
+        matches.append(match)
         masked_text += target_text[pos:match.start()] + mask_char * (match.end() - match.start())
         pos = match.end()
 
     masked_text += target_text[pos:]
-    return masked_text, pos
+    return masked_text, matches
 
 
 def divide_blocks(silktext):
@@ -108,9 +110,9 @@ def divide_blocks(silktext):
     masked_single_quote, _ = mask_characters(single_quote_match, masked_triple_quote, silktext, mask_sign_single_quote)
     # Now, look for curly braces in masked_single_quote, and mask them out iteratively (modifying masked_single_quote)
     while True:
-        masked_curly_brace, pos = mask_characters(curly_brace_match, masked_single_quote, masked_single_quote,
+        masked_curly_brace, matches = mask_characters(curly_brace_match, masked_single_quote, masked_single_quote,
                                                   mask_sign_curly)
-        if pos == 0:
+        if not len(matches):
             break
 
         masked_single_quote = masked_curly_brace
