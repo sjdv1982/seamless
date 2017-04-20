@@ -11,7 +11,7 @@ node types:
   env: environment variable
   file: file name
         is_directory: true/false
-  cell: cell name
+  doc: doc name
         origin: input, intern, extern
         is_array: true/false
         array_length
@@ -32,23 +32,23 @@ command:
         - variable noderef
         - variable expression (see below)
     "cat"
-      - list of cell noderefs (is_array must be True)
-      - result cell noderef (is_array must be True)
+      - list of doc noderefs (is_array must be True)
+      - result doc noderef (is_array must be True)
     "read",
-      - input cell noderef
+      - input doc noderef
       - output variable noderef (is_list=False)
     "lines",
-    - input cell noderef
+    - input doc noderef
     - output variable noderef (is_list=True)
     "fields",
-    - input cell noderef
+    - input doc noderef
     - output variable noderef (is_list=True)
-    "cell",
+    "doc",
     - input variable expression
-    - output cell noderef
+    - output doc noderef
     "load",
     - input file noderef
-    - result cell noderef
+    - result doc noderef
     "map"
     - input_dot: True or False
     - input context noderef (only if non-dotted)
@@ -62,16 +62,16 @@ Standard-command grammar:
       - noderef list:
         - env
 - argument list:
-  - type: literal, file, cell or variable expression
+  - type: literal, file, doc or variable expression
     for type=file: just return literal
     for type=file: see above
-    for type=cell:
-      - single noderef of type=cell
+    for type=doc:
+      - single noderef of type=doc
     for type=varexp (variable expression):
        see below
 - output list:
   - type: stdout, stderr, stdout+stderr
-  - single noderef of type=cell
+  - single noderef of type=doc
 - capture (>!):
   - single noderef of type=context
      (json must be true)
@@ -86,7 +86,7 @@ variable expression:
 
 noderef:
     - command index
-    - type: env, cell, variable,
+    - type: env, doc, variable,
         or context
     - index: -1 for NULL node
     - input or output

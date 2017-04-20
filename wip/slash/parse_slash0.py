@@ -9,10 +9,10 @@ import re
 def parse_slash0(code):
     exports = []
     commands = []
-    nodes = OrderedDict(
+    nodes = dict(
         env = [],
         file=[],
-        cell=[],
+        doc=[],
         variable=[],
         context=[],
     )
@@ -45,8 +45,6 @@ def parse_slash0(code):
             lines.append((command, lnr, l, words))
         else:
             lines.append(("standard", lnr, l, words))
-    for line in lines:
-        print(line)
 
     #First pass (declarations)
     for line in lines:
@@ -73,11 +71,24 @@ def parse_slash0(code):
         cmd = cmd_funcs[command_name](len(commands)+1, line, nodes)
         commands.append(cmd)
 
+    result = {
+        "nodes": nodes,
+        "commands": commands,
+        "exports": exports
+    }
+    return result
+
 if __name__ == "__main__":
     example = """
-    @input_cell pdb
+    @input_doc pdb
+    @input_var nhead
     @intern_json pdbsplit
+    @intern headatoms
+    grep CA !pdb | head $nhead > heatatoms
     $ATTRACTTOOLS/splitmodel !pdb "model">NULL !> pdbsplit
     @export pdbsplit
+    @export headatoms
     """
-    tree = parse_slash0(example)
+    tree = parse_slash0(example) #TODO: should fail, CA => "CA", unknown var heatatoms
+    #TODO: check assign once
+    import pprint;pprint.pprint(tree)
