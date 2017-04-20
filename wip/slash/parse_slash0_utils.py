@@ -1,10 +1,38 @@
 import re
+quote_match = re.compile(r'(([\"\']).*?\2)')
 double_quote = re.compile(r'(\A|[^\\])\"')
 single_quote = re.compile(r"(\A|[^\\])\'")
 cell_name = re.compile(r'^[A-Za-z_][A-Za-z0-9_]*$')
 token_separators=r'(?P<sep1>[\s]+)|[\s](?P<sep2>2>)[^&][^1]|[\s](?P<sep3>!>)[\s]|[\s](?P<sep4>2>&1)|[^2!](?P<sep5>>)'
 token_separators = re.compile(token_separators)
 literal = re.compile(r'^([A-Za-z0-9_\-/]|\\[^A-Za-z0-9_\-/])*$')
+
+def find_node(node_name, nodes, nodetypes):
+    if isinstance(nodetypes, str):
+        nodetypes = [nodetypes]
+    for nodetype in nodetypes:
+        for node_index, node in enumerate(nodes[nodetype]):
+            if node["name"] == node_name:
+                return nodetype, node_index
+    raise NameError(node_name, nodetypes)
+
+def append_node(nodes, nodetype, node):
+    for curr_node_index, curr_node in enumerate(nodes[nodetype]):
+        if curr_node:
+            if curr_node[name] == node[name]:
+                for field in curr_node:
+                    assert field in node, field #TODO: more informative message...
+                    assert node[field] == curr_node[field], field #TODO: more informative message...
+                for field in node:
+                    assert field in curr_node, field #TODO: more informative message...
+                return curr_node_index
+    for other_nodetype in nodes.keys():
+        if other_nodetype == nodetype:
+            continue
+        for curr_node in nodes[other_nodetype]:
+            assert curr_node["name"] != node["name"], (nodetype, other_nodetype, node["name"]) #TODO: nicer error message
+    nodes[nodetype].append(node)
+    return len(nodes[nodetype]) - 1
 
 def syntax_error(lineno, line, message):
     msg = """Line {0}:

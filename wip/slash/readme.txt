@@ -78,6 +78,7 @@ command name lookup:
     ./foo looks on disk, in cwd
 argument lookup:
    $BAR...: as $FOO... above
+   /bar, ./bar: as above
    -bar: literal
    2: literal
    "bar", 'bar': literal

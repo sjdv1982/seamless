@@ -1,12 +1,14 @@
 from seamless.silk.typeparse.parse import mask_characters
 from parse_slash0_funcs import cmd_funcs, firstpass
-from parse_slash0_utils import syntax_error, tokenize, double_quote, single_quote
+from parse_slash0_utils import syntax_error, tokenize, \
+    double_quote, single_quote, quote_match
 
 from collections import OrderedDict
 import re
-quote_match = re.compile(r'(([\"\']).*?\2)')
 
 def parse_slash0(code):
+    exports = []
+    commands = []
     nodes = OrderedDict(
         env = [],
         file=[],
@@ -58,9 +60,9 @@ def parse_slash0(code):
         command_name = line[0]
         if command_name != "export":
             continue
-        cmd_funcs[command_name](line, nodes)
+        export = cmd_funcs[command_name](line, nodes)
+        exports.append(export)
 
-    commands = []
     #Second pass (commands)
     for line in lines:
         command_name = line[0]

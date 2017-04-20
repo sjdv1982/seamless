@@ -62,11 +62,12 @@ Standard-command grammar:
       - noderef list:
         - env
 - argument list:
-  - type: file, cell or variable expression
+  - type: literal, file, cell or variable expression
+    for type=file: just return literal
     for type=file: see above
     for type=cell:
       - single noderef of type=cell
-    for type=variable expression:
+    for type=varexp (variable expression):
        see below
 - output list:
   - type: stdout, stderr, stdout+stderr
