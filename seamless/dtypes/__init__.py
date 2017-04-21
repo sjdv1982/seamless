@@ -14,6 +14,7 @@ _known_types = [
   ("text", "code", "python"),
   ("text", "code", "ipython"),
   ("text", "code", "silk"),
+  ("text", "code", "slash-0"),
   ("text", "code", "vertexshader"),
   ("text", "code", "fragmentshader"),
   ("text", "html"),

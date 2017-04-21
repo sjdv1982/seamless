@@ -40,7 +40,11 @@ def parse_variable_expression(cmd_index, word, lineno, l, nodes, noderefs):
                 pos = newpos
                 continue
             varname = subexpr[pos+1:newpos]
-            node_index = find_node(varname, "variable", nodes)[1]
+            try:
+                node_index = find_node(varname, "variable", nodes)[1]
+            except NameError:
+                msg = "Unknown variable name '%s'" % varname
+                syntax_error(lineno, l, msg)
             noderef = {
                 "command_index": cmd_index,
                 "type": "variable",
@@ -116,7 +120,11 @@ def parse_command_argument(cmd_index, word, lineno, l, nodes, noderefs):
             msg = "Slash-0 doc expressions cannot contain $"
             syntax_error(lineno, l, msg)
         v = parse_doc_name(word[1:], lineno, l)
-        node_type, node_index = find_node(v, "doc", nodes)
+        try:
+            node_type, node_index = find_node(v, "doc", nodes)
+        except NameError:
+            msg = "Unknown doc name '%s'" % v
+            syntax_error(lineno, l, msg)
         noderef = {
             "command_index": cmd_index,
             "type": node_type,
@@ -226,8 +234,12 @@ def cmd_extern(line, nodes):
 def cmd_export(line, nodes):
     command, lineno, l, words = line
     assert len(words) == 2, l
-    doc_name = parse_doc_name(words[1], lineno, l)
-    node_type, node_index = find_node(doc_name, ["doc", "context"], nodes)
+    name = parse_doc_name(words[1], lineno, l)
+    try:
+        node_type, node_index = find_node(name, ["doc", "context", "variable"], nodes)
+    except NameError:
+        msg = "Unknown symbol '%s'" % name
+        syntax_error(lineno, l, msg)
     noderef = {
         "command_index": None,
         "type": node_type,

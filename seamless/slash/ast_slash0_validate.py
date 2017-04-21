@@ -33,7 +33,17 @@ def find_noderefs(ast):
         mine_noderefs(command)
     return noderefs
 
+
+
 def ast_slash0_validate(ast):
+    def validate_head():
+        splits = head.split("/")
+        for n in reversed(range(len(splits))):
+            sub = "/".join(splits[:n+1])
+            if sub not in symbols:
+                msg = "%s '%s' is declared, but not context '%s'"
+                raise Exception(msg % (node_type.capitalize(), name, sub))
+
     nodes = ast["nodes"]
     symbols = find_symbols(nodes)
     noderefs = find_noderefs(ast)
@@ -45,5 +55,25 @@ def ast_slash0_validate(ast):
         if node_type == "env":
             continue
         node = nodes[node_type][node_index]
-        symbols[node["name"]]["noderefs"].append(noderef)
-    import pprint; pprint.pprint(symbols)
+        name = node["name"]
+        if node_type == "doc":
+            last_slash = name.rfind("/")
+            if last_slash > -1:
+                head = name[:last_slash]
+                validate_head()
+        if node_type == "context":
+            head = name
+            validate_head()
+        symbols[name]["noderefs"].append(noderef)
+    for symbol_name in symbols:
+        symbol = symbols[symbol_name]
+        nr_inputs = len([n for n in symbol["noderefs"] if n["mode"] == "input"])
+        nr_outputs = len([n for n in symbol["noderefs"] if n["mode"] == "output"])
+        if nr_outputs > 1:
+            raise Exception("Multiple assigments to '%s'" % symbol_name)
+        if nr_inputs == 0:
+            print("WARNING: unused %s '%s'" % (symbol["type"], symbol_name))
+        if symbol["type"] == "context":
+            pass
+
+    return symbols

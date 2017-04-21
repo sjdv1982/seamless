@@ -19,11 +19,13 @@ class MacroObject:
         mo[max_key+1] = self
 
     def connect(self, parent):
+        from .context import Context
         from .cell import CellLike
         from .worker import WorkerLike
         from .registrar import RegistrarObject
         assert (isinstance(parent, CellLike) and parent._like_cell) or \
          (isinstance(parent, WorkerLike) and parent._like_worker) or \
+         (isinstance(parent, Context)) or \
          isinstance(parent, RegistrarObject), type(parent)
         #TODO: check that all cells and parent share a common root
         self._parent = weakref.ref(parent)

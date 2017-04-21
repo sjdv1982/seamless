@@ -19,13 +19,21 @@ def parse_slash0(code):
         raise SyntaxError("Triple quotes not supported")
     lines = []
     for lnr, l in enumerate(code.splitlines()):
-        l = l.strip()
+        while 1:
+            l = l.strip()
+            if not len(l):
+                break
+            if l.endswith("\\"):
+                syntax_error(lnr+1, l, "Line continuations not supported")
+            lmask = mask_characters(quote_match, l, l, '*')[0]
+            find_comment = lmask.find("#")
+            if find_comment > -1:
+                l = l[:find_comment]
+            else:
+                break
         if not len(l):
             continue
-        if l.endswith("\\"):
-            syntax_error(lnr+1, l, "Line continuations not supported")
-        lmask, mask_matches = mask_characters(quote_match, l, l, '*')
-        maskpos = [(match.start(), match.end()) for match in mask_matches]
+
         if len(list(double_quote.finditer(lmask))):
             syntax_error(lnr+1, l, 'Unmatched " (double quote)')
         if len(list(single_quote.finditer(lmask))):
