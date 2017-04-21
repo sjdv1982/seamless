@@ -1,10 +1,5 @@
 import json, sys, os
 
-dir_containing_seamless = os.path.normpath(
-    os.path.join(os.path.dirname(__file__), '../../../')
-)
-sys.path.append(dir_containing_seamless)
-
 from pprint import pprint
 from seamless.silk.typeparse.xmlschemaparse import xmlschemaparse, get_blocks, get_init_tree
 from seamless.silk.registers.minischemas import _minischemas, register_minischema

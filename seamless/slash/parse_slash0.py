@@ -1,9 +1,8 @@
-from seamless.silk.typeparse.parse import mask_characters
-from parse_slash0_funcs import cmd_funcs, firstpass
-from parse_slash0_utils import syntax_error, tokenize, \
+from ..silk.typeparse.parse import mask_characters
+from .parse_slash0_funcs import cmd_funcs, firstpass
+from .parse_slash0_utils import syntax_error, tokenize, \
     double_quote, single_quote, quote_match
 
-from collections import OrderedDict
 import re
 
 def parse_slash0(code):
@@ -77,18 +76,3 @@ def parse_slash0(code):
         "exports": exports
     }
     return result
-
-if __name__ == "__main__":
-    example = """
-    @input_doc pdb
-    @input_var nhead
-    @intern_json pdbsplit
-    @intern headatoms
-    grep CA !pdb | head $nhead > heatatoms
-    $ATTRACTTOOLS/splitmodel !pdb "model">NULL !> pdbsplit
-    @export pdbsplit
-    @export headatoms
-    """
-    tree = parse_slash0(example) #TODO: should fail, CA => "CA", unknown var heatatoms
-    #TODO: check assign once
-    import pprint;pprint.pprint(tree)

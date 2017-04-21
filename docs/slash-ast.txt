@@ -77,9 +77,6 @@ Standard-command grammar:
      (json must be true)
 
 variable expression:
-  is_simple: True if refers to just a variable
-  if True: variable noderef
-  if False:
   - argument expression (str with {})
   - noderef list:
       - variable

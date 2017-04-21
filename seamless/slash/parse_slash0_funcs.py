@@ -1,5 +1,6 @@
 import re
-from parse_slash0_utils import syntax_error, tokenize, doc_name, literal, \
+from ..silk.typeparse.parse import mask_characters
+from .parse_slash0_utils import syntax_error, tokenize, doc_name, literal, \
  append_node, find_node, quote_match
 
 def parse_literal(word, lineno, l):
@@ -20,8 +21,49 @@ def parse_doc_name(word, lineno, l):
         syntax_error(lineno, l, msg)
     return word
 
+varsplit = re.compile(r"([/\-]+)")
+match_dollar = re.compile(r"(?<![\\])\$")
 def parse_variable_expression(cmd_index, word, lineno, l, nodes, noderefs):
-    raise NotImplementedError
+    #noderefs are appended
+    def parse_variable_subexpr(subexpr, masked_subexpr):
+        dollars = list(match_dollar.finditer(masked_subexpr))
+        if not len(dollars):
+            return subexpr
+        pos = None
+        for dollar in dollars + [None]:
+            if dollar is None:
+                newpos = len(subexpr)
+            else:
+                newpos = dollar.start()
+            if pos is None:
+                result = subexpr[:newpos]
+                pos = newpos
+                continue
+            varname = subexpr[pos+1:newpos]
+            node_index = find_node(varname, "variable", nodes)[1]
+            noderef = {
+                "command_index": cmd_index,
+                "type": "variable",
+                "index": node_index,
+                "mode": "input",
+            }
+            noderefs.append(noderef)
+            result += "{%d}" % (len(noderefs)-1)
+        return result
+
+    masked_word = mask_characters(quote_match, word, word, '*')[0]
+    pos = 0
+    varexpr = ""
+    for match in varsplit.finditer(masked_word):
+        subexpr = word[pos:match.start()]
+        masked_subexpr = masked_word[pos:match.start()]
+        varexpr += parse_variable_subexpr(subexpr, masked_subexpr)
+        varexpr += word[match.start():match.end()]
+        pos = match.end()
+    subexpr = word[pos:]
+    masked_subexpr = masked_word[pos:]
+    varexpr += parse_variable_subexpr(subexpr, masked_subexpr)
+    return varexpr
 
 def parse_command_name(cmd_index, word, lineno, l, nodes, noderefs):
     #nodes and noderefs are appended
@@ -39,12 +81,12 @@ def parse_command_name(cmd_index, word, lineno, l, nodes, noderefs):
             msg = "Environment variables in command names must be at the beginning"
             syntax_error(lineno, l, msg)
         if subwordnr == 0 and dollar == 0:
-            varname = subword[1:]
-            if not varname.isupper():
+            envname = subword[1:]
+            if not envname.isupper():
                 msg = "Only environment variables (all-capital) are allowed in command names"
                 syntax_error(lineno, l, msg)
             node = {
-                "name": varname
+                "name": envname
             }
             node_index = append_node(nodes, "env", node)
             noderef = {
@@ -74,13 +116,20 @@ def parse_command_argument(cmd_index, word, lineno, l, nodes, noderefs):
             msg = "Slash-0 doc expressions cannot contain $"
             syntax_error(lineno, l, msg)
         v = parse_doc_name(word[1:], lineno, l)
-        noderefs.append({"type": "doc", "value": v})
+        node_type, node_index = find_node(v, "doc", nodes)
+        noderef = {
+            "command_index": cmd_index,
+            "type": node_type,
+            "index": node_index,
+            "mode": "input",
+        }
+        noderefs.append(noderef)
         return "{%d}" % (len(noderefs) - 1)
     else:
         if not has_dollars:
             if word.startswith("/") or word.startswith("./"):
                 return {"type": "file", "value": word}
-            if word[0].isnum() or word[0] == "-":
+            if word[0].isdigit() or word[0] == "-":
                 pass #variable expression
             else:
                 msg = """Ambiguous expression: {0}
@@ -88,8 +137,9 @@ If a doc name is meant, write as !{0}
 If a variable name is meant, write as ${0}
 If a literal is meant, write as "{0}" """.format(word)
                 syntax_error(lineno, l, msg)
-        v = parse_variable_expression(cmd_index, word, lineno, l, nodes, noderefs)
-        noderefs.append({"type": "varexp", "value": v})
+        varexp_noderefs = []
+        v = parse_variable_expression(cmd_index, word, lineno, l, nodes, varexp_noderefs)
+        noderefs.append({"type": "varexp", "value": v, "noderefs": varexp_noderefs})
         return "{%d}" % (len(noderefs) - 1)
 
 
@@ -140,7 +190,15 @@ def cmd_var_list(line, nodes):
     raise NotImplementedError
 
 def cmd_intern(line, nodes):
-    raise NotImplementedError
+    command, lineno, l, words = line
+    assert len(words) == 2, l
+    doc_name = parse_doc_name(words[1], lineno, l)
+    node = {
+        "name": doc_name,
+        "origin": "intern",
+        "is_array": False
+    }
+    append_node(nodes, "doc", node)
 
 def cmd_intern_json(line, nodes):
     command, lineno, l, words = line
@@ -153,7 +211,15 @@ def cmd_intern_json(line, nodes):
     append_node(nodes, "context", node)
 
 def cmd_extern(line, nodes):
-    raise NotImplementedError
+    command, lineno, l, words = line
+    assert len(words) == 2, l
+    doc_name = parse_doc_name(words[1], lineno, l)
+    node = {
+        "name": doc_name,
+        "origin": "extern",
+        "is_array": False
+    }
+    append_node(nodes, "doc", node)
 
 ###############################
 
@@ -161,7 +227,7 @@ def cmd_export(line, nodes):
     command, lineno, l, words = line
     assert len(words) == 2, l
     doc_name = parse_doc_name(words[1], lineno, l)
-    node_type, node_index = find_node(doc_name, nodes, ["doc", "context"])
+    node_type, node_index = find_node(doc_name, ["doc", "context"], nodes)
     noderef = {
         "command_index": None,
         "type": node_type,
@@ -200,7 +266,10 @@ def cmd_standard(cmd_index, line, nodes):
             if doc_name == "NULL":
                 node_type, node_index = "doc", -1
             else:
-                node_type, node_index = find_node(doc_name, nodes, ["doc", "context"])
+                try:
+                    node_type, node_index = find_node(doc_name, ["doc", "context"], nodes)
+                except NameError:
+                    syntax_error(lineno, l, "Unknown doc name: %s" % doc_name)
             noderef = {
                 "command_index": None,
                 "type": node_type,
@@ -251,6 +320,8 @@ def cmd_standard(cmd_index, line, nodes):
         "noderefs": noderefs,
         "output": output
     }
+    if capture is not None:
+        result["capture"] = capture
     return result
 
 def cmd_assign(cmd_index, line, nodes):

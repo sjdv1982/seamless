@@ -7,7 +7,7 @@ token_separators=r'(?P<sep1>[\s]+)|[\s](?P<sep2>2>)[^&][^1]|[\s](?P<sep3>!>)[\s]
 token_separators = re.compile(token_separators)
 literal = re.compile(r'^([A-Za-z0-9_\-/]|\\[^A-Za-z0-9_\-/])*$')
 
-def find_node(node_name, nodes, nodetypes):
+def find_node(node_name, nodetypes, nodes):
     if isinstance(nodetypes, str):
         nodetypes = [nodetypes]
     for nodetype in nodetypes:
@@ -19,7 +19,7 @@ def find_node(node_name, nodes, nodetypes):
 def append_node(nodes, nodetype, node):
     for curr_node_index, curr_node in enumerate(nodes[nodetype]):
         if curr_node:
-            if curr_node[name] == node[name]:
+            if curr_node["name"] == node["name"]:
                 for field in curr_node:
                     assert field in node, field #TODO: more informative message...
                     assert node[field] == curr_node[field], field #TODO: more informative message...
@@ -35,10 +35,11 @@ def append_node(nodes, nodetype, node):
     return len(nodes[nodetype]) - 1
 
 def syntax_error(lineno, line, message):
+    message = "    " + "\n    ".join(message.splitlines())
     msg = """Line {0}:
     {1}
 Error message:
-    {2}""".format(lineno, line, message)
+{2}""".format(lineno, line, message)
     raise SyntaxError(msg)
 
 def tokenize(text, masked_text):
