@@ -10,11 +10,11 @@ node:
 node types:
   env: environment variable
   file: file name
-        is_directory: true/false
+        is_directory: true/false (TODO ???)
   doc: doc name
         origin: input, intern, extern
         is_array: true/false
-        array_length
+        array_length (TODO: array-of-array-lengths for 2D array, similar for 3D, higher not supported)
   variable: (dynamic) variable name
         is_list: true/false
   context: context_name

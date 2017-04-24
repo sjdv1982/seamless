@@ -3,7 +3,7 @@ quote_match = re.compile(r'(([\"\']).*?\2)')
 double_quote = re.compile(r'(\A|[^\\])\"')
 single_quote = re.compile(r"(\A|[^\\])\'")
 doc_name = re.compile(r'^[A-Za-z_][A-Za-z0-9_/]*$')
-token_separators=r'(?P<sep1>[\s]+)|[\s](?P<sep2>2>)[^&][^1]|[\s](?P<sep3>!>)[\s]|[\s](?P<sep4>2>&1)|(?P<sep5>(?<![2!])>)'
+token_separators=r'(?P<sep1>[\s]+)|[\s](?P<sep2>2>)[^&][^1]|[\s](?P<sep3>!>)[\s]|[\s](?P<sep4>2>&1)|(?P<sep5>(?<![2!])>)|(?P<sep6>[;|])'
 token_separators = re.compile(token_separators)
 literal = re.compile(r'^([A-Za-z0-9_\-/]|\\[^A-Za-z0-9_\-/])*$')
 

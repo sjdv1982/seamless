@@ -71,6 +71,15 @@ def parse_variable_expression(cmd_index, word, lineno, l, nodes, noderefs):
 
 def parse_command_name(cmd_index, word, lineno, l, nodes, noderefs):
     #nodes and noderefs are appended
+    if word.startswith("/") or word.startswith("./") or word.startswith("~/"):
+        dollar = word.find("$")
+        if dollar > -1:
+            msg = "Environment variables in command names must be at the beginning"
+            syntax_error(lineno, l, msg)
+        noderef = {"type": "file", "value": word}
+        command_name_str = "{%d}" % len(noderefs)
+        noderefs.append(noderef)
+        return command_name_str
     subwords = re.split(r"([/\-]+)", word)
     assert len(subwords) % 2
     command_name_str = ""
@@ -135,8 +144,10 @@ def parse_command_argument(cmd_index, word, lineno, l, nodes, noderefs):
         return "{%d}" % (len(noderefs) - 1)
     else:
         if not has_dollars:
-            if word.startswith("/") or word.startswith("./"):
-                return {"type": "file", "value": word}
+            if word.startswith("/") or word.startswith("./") or word.startswith("~/"):
+                noderef = {"type": "file", "value": word}
+                noderefs.append(noderef)
+                return "{%d}" % (len(noderefs) - 1)
             if word[0].isdigit() or word[0] == "-":
                 pass #variable expression
             else:
@@ -254,12 +265,16 @@ def cmd_standard(cmd_index, line, nodes):
     command, lineno, l, words = line
     noderefs = []
     parsed = []
-    output = []
+    outputs = []
     capture = None
     mode = "command"
+    capt_stdout, capt_stderr = False, False
     for word in words:
-        if word == "|":
+        if word in ("|", ";"):
             assert mode == "arg" #TODO: nicer error message
+            if len(outputs) or capture is not None:
+               msg = "'>' must be in the last subcommand, no '|' or ';' may follow"
+               syntax_error(lineno, l, msg)
             mode = "command"
             parsed.append(word)
         elif word in (">", "2>", ">&", "!>"):
@@ -307,8 +322,19 @@ def cmd_standard(cmd_index, line, nodes):
                     "2>": "stderr",
                     ">&": "stdout+stderr",
                 }
-                output_type = output_types[submode]
-                output.append({
+                capt_mode = output_types[submode]
+                if "stdout" in capt_mode:
+                    if capt_stdout:
+                        msg = "Multiple capture of stdout (other than |)"
+                        syntax_error(lineno, l, msg)
+                    capt_stdout = True
+                if "stderr" in capt_mode:
+                    if capt_stderr:
+                        msg = "Multiple capture of stderr"
+                        syntax_error(lineno, l, msg)
+                    capt_stdout = True
+                output_type = capt_mode
+                outputs.append({
                     "type": output_type,
                     "noderef": noderef
                 })
@@ -330,7 +356,7 @@ def cmd_standard(cmd_index, line, nodes):
         },
         "parsed": parsed,
         "noderefs": noderefs,
-        "output": output
+        "outputs": outputs
     }
     if capture is not None:
         result["capture"] = capture

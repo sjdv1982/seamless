@@ -73,7 +73,8 @@ def ast_slash0_validate(ast):
             raise Exception("Multiple assigments to '%s'" % symbol_name)
         if nr_inputs == 0:
             print("WARNING: unused %s '%s'" % (symbol["type"], symbol_name))
-        if symbol["type"] == "context":
-            pass
-
+        if symbol["type"] == "doc":
+            node = symbol["node"]
+            if node["origin"] in ("input", "extern") and nr_outputs > 0:
+                raise Exception("Cannot assign to %s doc '%s'" % (node["origin"], symbol_name))
     return symbols

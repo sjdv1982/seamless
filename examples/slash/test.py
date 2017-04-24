@@ -4,10 +4,11 @@ code = """
 @input_var nhead
 @intern_json pdbsplit
 @intern headatoms
-grep $atom !pdb | head $nhead > headatoms
-$ATTRACTTOOLS/splitmodel !pdb "model">NULL !> pdbsplit
+#grep $atom !pdb | head $nhead > headatoms
+#$ATTRACTTOOLS/splitmodel !pdb "model">NULL !> pdbsplit
+~/attract/tools/splitmodel !pdb "model">NULL !> pdbsplit
 @export pdbsplit
-@export headatoms
+#@export headatoms
 """
 
 from seamless import context, cell
