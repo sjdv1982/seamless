@@ -1,0 +1,325 @@
+{
+  "lib": {
+    "/cell-filehash-start.py": {
+      "data": "import os, time, traceback, hashlib\nfrom threading import Thread, RLock\nlast_filehash = None\nlast_mtime = None\nlast_exc = None\n\ndef poll():\n    global last_time, last_mtime, last_filehash, last_exc\n    fpath = PINS.filepath.get()\n    if fpath.startswith(\"~/\"):\n        fpath = os.environ[\"HOME\"] + fpath[1:]\n    while 1:\n        time.sleep(PINS.latency.get())\n        curr_time = time.time()\n        last_time = curr_time\n        if not os.path.exists(fpath):\n            if last_filehash is not None:\n                PINS.filehash.set(None)\n                last_filehash = None\n        else:\n            with lock:\n                stat = os.stat(fpath)\n                try:\n                    if last_mtime is None or stat.st_mtime > last_mtime:\n                        data = None\n                        with open(fpath, \"rb\") as f:\n                            data = f.read()\n                        if data is not None:\n                            filehash = hashlib.md5(data).hexdigest()\n                            PINS.filehash.set(filehash)\n                            last_filehash = filehash\n                        last_mtime = stat.st_mtime\n                except:\n                    exc = traceback.format_exc()\n                    if exc != last_exc:\n                        print(exc)\n                        last_exc = exc\n\nt = Thread(target=poll)\nt.setDaemon(True)\nlock = RLock()\nt.start()\n",
+      "links": [
+        "fh_text.cell_filehash"
+      ]
+    },
+    "/gui/cell-basic_display_UPDATE.py": {
+      "data": "if PINS.value.updated:\n    b.setValue(PINS.value.get())\nif PINS.title.updated:\n    w.setWindowTitle(PINS.title.get())\n",
+      "links": []
+    },
+    "/gui/cell-basic_display_float.py": {
+      "data": "from seamless.qt.QtWidgets import QDoubleSpinBox, QWidget, QVBoxLayout\nfrom seamless.qt.QtCore import Qt\n\nw = QWidget()\n#w.setWindowFlags(Qt.WindowStaysOnTopHint)\nw.setAttribute(Qt.WA_ShowWithoutActivating)\nvbox = QVBoxLayout()\nvbox.addStretch(1)\nw.setLayout(vbox)\nw.resize(300,100)\nw.setWindowTitle(PINS.title.get())\nw.show()\nb = QDoubleSpinBox()\nb.setSingleStep(0.1)\nb.setMaximum(1000000)\nb.setValue(PINS.value.get())\nvbox.addWidget(b)\n",
+      "links": []
+    },
+    "/gui/cell-basic_display_html.py": {
+      "data": "from seamless.qt.QtWidgets import QPlainTextEdit, QWidget, QVBoxLayout\nfrom seamless.qt.QtCore import Qt\nfrom PyQt5.QtGui import QColor\n\nw = QWidget()\n#w.setWindowFlags(Qt.WindowStaysOnTopHint)\nw.setAttribute(Qt.WA_ShowWithoutActivating)\nvbox = QVBoxLayout()\n#vbox.addStretch(1)\nw.resize(600,600)\nw.setLayout(vbox)\nw.setWindowTitle(PINS.title.get())\n\nw.show()\nb = QPlainTextEdit()\nb.setReadOnly(True)\n#b.setFontPointSize(15)\nb.setPlainText(PINS.value.get())\n#b.setFontItalic(True)\n#b.setTextColor(QColor(255,0,0))\nvbox.addWidget(b)\n",
+      "links": []
+    },
+    "/gui/cell-basic_display_html_UPDATE.py": {
+      "data": "if PINS.value.updated:\n    b.setPlainText(PINS.value.get())\nif PINS.title.updated:\n    w.setWindowTitle(PINS.title.get())\n",
+      "links": []
+    },
+    "/gui/cell-basic_display_int.py": {
+      "data": "from seamless.qt.QtWidgets import QSpinBox, QWidget, QVBoxLayout\nfrom seamless.qt.QtCore import Qt\n\nw = QWidget()\n#w.setWindowFlags(Qt.WindowStaysOnTopHint)\nw.setAttribute(Qt.WA_ShowWithoutActivating)\nvbox = QVBoxLayout()\nvbox.addStretch(1)\nw.setLayout(vbox)\nw.resize(300,100)\nw.setWindowTitle(PINS.title.get())\nw.show()\nb = QSpinBox()\nb.setMaximum(1000000)\nb.setValue(PINS.value.get())\nvbox.addWidget(b)\n",
+      "links": []
+    },
+    "/gui/cell-basic_display_json.py": {
+      "data": "from seamless.qt.QtWidgets import QTextEdit, QWidget, QVBoxLayout\nfrom seamless.qt.QtCore import Qt\nfrom PyQt5.QtGui import QColor\nimport json\n\nw = QWidget()\n#w.setWindowFlags(Qt.WindowStaysOnTopHint)\nw.setAttribute(Qt.WA_ShowWithoutActivating)\nvbox = QVBoxLayout()\n#vbox.addStretch(1)\nw.resize(600,600)\nw.setLayout(vbox)\nw.setWindowTitle(PINS.title.get())\n\nw.show()\nb = QTextEdit()\nb.setReadOnly(True)\nb.setFontPointSize(15)\nb.setText(json.dumps(PINS.value.get(), indent=2))\n#b.setFontItalic(True)\n#b.setTextColor(QColor(255,0,0))\nvbox.addWidget(b)\n",
+      "links": []
+    },
+    "/gui/cell-basic_display_json_UPDATE.py": {
+      "data": "if PINS.value.updated:\n    b.setText(json.dumps(PINS.value.get(), indent=2))\nif PINS.title.updated:\n    b.setWindowTitle(PINS.title.get())\n",
+      "links": []
+    },
+    "/gui/cell-basic_display_text.py": {
+      "data": "from seamless.qt.QtWidgets import QTextEdit, QWidget, QVBoxLayout\nfrom seamless.qt.QtCore import Qt\nfrom PyQt5.QtGui import QColor\n\nw = QWidget()\n#w.setWindowFlags(Qt.WindowStaysOnTopHint)\nw.setAttribute(Qt.WA_ShowWithoutActivating)\nvbox = QVBoxLayout()\n#vbox.addStretch(1)\nw.resize(600,600)\nw.setLayout(vbox)\nw.setWindowTitle(PINS.title.get())\n\nw.show()\nb = QTextEdit()\nb.setReadOnly(True)\nb.setFontPointSize(15)\nb.setText(PINS.value.get())\n#b.setFontItalic(True)\n#b.setTextColor(QColor(255,0,0))\nvbox.addWidget(b)\n",
+      "links": [
+        "d_text.cell2"
+      ]
+    },
+    "/gui/cell-basic_display_text_UPDATE.py": {
+      "data": "if PINS.value.updated:\n    b.setText(PINS.value.get())\nif PINS.title.updated:\n    w.setWindowTitle(PINS.title.get())\n",
+      "links": [
+        "d_text.cell4"
+      ]
+    }
+  },
+  "macro": [
+    {
+      "with_context": false,
+      "dtype": [
+        "text",
+        "code",
+        "python"
+      ],
+      "type_args": [
+        "json",
+        "seamless",
+        "reactor_params"
+      ],
+      "module_name": "seamless.core.reactor",
+      "func_name": "reactor",
+      "code": "@macro(type=(\"json\", \"seamless\", \"reactor_params\"),with_context=False)\ndef reactor(kwargs):\n    from seamless.core.reactor import Reactor #code must be standalone\n    #TODO: remapping, e.g. output_finish, destroy, ...\n    return Reactor(kwargs)\n"
+    },
+    {
+      "with_context": false,
+      "dtype": [
+        "text",
+        "code",
+        "python"
+      ],
+      "type_args": [
+        "json",
+        "seamless",
+        "transformer_params"
+      ],
+      "module_name": "seamless.core.transformer",
+      "func_name": "transformer",
+      "code": "@macro(type=(\"json\", \"seamless\", \"transformer_params\"), with_context=False)\ndef transformer(kwargs):\n    from seamless.core.transformer import Transformer #code must be standalone\n    #TODO: remapping, e.g. output_finish, destroy, ...\n    return Transformer(kwargs)\n"
+    },
+    {
+      "with_context": true,
+      "dtype": [
+        "text",
+        "code",
+        "python"
+      ],
+      "type_args": "str",
+      "module_name": "seamless.lib.filehash",
+      "func_name": "filehash",
+      "code": "@macro(\"str\")\ndef filehash(ctx, filepath):\n    from seamless import reactor, pythoncell\n    ctx.cell_filehash = pythoncell().fromfile(\"cell-filehash-start.py\")\n    reactor_params = {\n        \"filepath\": {\n            \"pin\": \"input\",\n            \"dtype\": \"str\",\n        },\n        \"latency\": {\n            \"pin\": \"input\",\n            \"dtype\": \"float\",\n        },\n        \"filehash\": {\n            \"pin\": \"output\",\n            \"dtype\": \"str\",\n        },\n    }\n    rc = ctx.rc = reactor(reactor_params)\n\n    ctx.cell_filehash.connect(rc.code_start)\n    rc.filepath.cell().set(filepath)\n    rc.latency.cell().set(1)\n    rc.code_update.cell().set(\"\")\n    rc.code_stop.cell().set('t.join(0)')\n    ctx.export(rc)\n"
+    },
+    {
+      "with_context": true,
+      "dtype": [
+        "text",
+        "code",
+        "python"
+      ],
+      "type_args": {
+        "display_type": "str",
+        "title": {
+          "default": "Basic display",
+          "type": "str"
+        }
+      },
+      "module_name": "seamless.lib.gui.basic_display",
+      "func_name": "basic_display",
+      "code": "@macro(OrderedDict((\n    (\"display_type\",\"str\"),\n    (\"title\",{\"type\": \"str\", \"default\": \"Basic display\"})\n)))\ndef basic_display(ctx, display_type, title):\n    from seamless import reactor\n\n    _displays = {\n      \"int\": {\n        \"code\": \"cell-basic_display_int.py\",\n        \"update\": \"cell-basic_display_UPDATE.py\",\n      },\n      \"float\": {\n        \"code\": \"cell-basic_display_float.py\",\n        \"update\": \"cell-basic_display_UPDATE.py\",\n      },\n      \"text\": {\n        \"code\": \"cell-basic_display_text.py\",\n        \"update\": \"cell-basic_display_text_UPDATE.py\",\n      },\n      \"str\": {\n        \"code\": \"cell-basic_display_text.py\",\n        \"update\": \"cell-basic_display_text_UPDATE.py\",\n      },\n      (\"text\", \"html\"): {\n        \"code\": \"cell-basic_display_html.py\",\n        \"update\": \"cell-basic_display_html_UPDATE.py\",\n      },\n      \"json\": {\n        \"code\": \"cell-basic_display_json.py\",\n        \"update\": \"cell-basic_display_json_UPDATE.py\",\n      },\n    }\n\n    def _match_type(type, typelist):\n        typelist = list(typelist)\n        type2 = type\n        if isinstance(type, str):\n            type2 = (type,)\n        typelist2 = []\n        for t in typelist:\n            if isinstance(t, str):\n                typelist2.append((t,))\n            else:\n                typelist2.append(t)\n        matches = []\n        for n in range(len(typelist)):\n            ltype = typelist2[n]\n            k = min(len(type2), len(ltype))\n            if type2[:k] == ltype[:k]:\n                matches.append((n, k))\n        if not len(matches):\n            raise TypeError(\"Cannot find display for cell type '{0}'\".format(type))\n        matches.sort(key=lambda v: -v[1])\n        bestmatch = matches[0][0]\n        return typelist[bestmatch]\n\n    display_type = _match_type(display_type, _displays.keys())\n    pinparams = {\n      \"value\": {\n        \"pin\": \"input\",\n        \"dtype\": display_type\n      },\n      \"title\": {\n        \"pin\": \"input\",\n        \"dtype\": \"str\",\n      },\n    }\n    d = ctx.display = reactor(pinparams)\n    d.title.cell().set(title)\n    d.code_start.cell().fromfile(_displays[display_type][\"code\"])\n    d.code_stop.cell().set('w.destroy()')\n    upfile = _displays[display_type][\"update\"]\n    c_up = d.code_update.cell()\n    if upfile is not None:\n        c_up.fromfile(upfile)\n    else:\n        c_up.set(\"\")\n    ctx.export(d, forced=[\"title\"])\n"
+    }
+  ],
+  "main": {
+    "type": "context",
+    "like_worker": false,
+    "like_cell": false,
+    "pins": {},
+    "auto": [],
+    "children": {
+      "d_text": {
+        "type": "context",
+        "like_worker": true,
+        "like_cell": false,
+        "pins": {
+          "title": "d_text.display.title",
+          "value": "d_text.display.value"
+        },
+        "auto": [
+          "cell1",
+          "cell2",
+          "cell3",
+          "cell4"
+        ],
+        "children": {
+          "cell1": {
+            "dtype": "str",
+            "data": "Hash"
+          },
+          "cell2": {
+            "dtype": [
+              "text",
+              "code",
+              "python"
+            ],
+            "resource": {
+              "filename": "/gui/cell-basic_display_text.py",
+              "lib": true,
+              "mode": 2
+            },
+            "data": "from seamless.qt.QtWidgets import QTextEdit, QWidget, QVBoxLayout\nfrom seamless.qt.QtCore import Qt\nfrom PyQt5.QtGui import QColor\n\nw = QWidget()\n#w.setWindowFlags(Qt.WindowStaysOnTopHint)\nw.setAttribute(Qt.WA_ShowWithoutActivating)\nvbox = QVBoxLayout()\n#vbox.addStretch(1)\nw.resize(600,600)\nw.setLayout(vbox)\nw.setWindowTitle(PINS.title.get())\n\nw.show()\nb = QTextEdit()\nb.setReadOnly(True)\nb.setFontPointSize(15)\nb.setText(PINS.value.get())\n#b.setFontItalic(True)\n#b.setTextColor(QColor(255,0,0))\nvbox.addWidget(b)\n"
+          },
+          "cell3": {
+            "dtype": [
+              "text",
+              "code",
+              "python"
+            ],
+            "data": "w.destroy()"
+          },
+          "cell4": {
+            "dtype": [
+              "text",
+              "code",
+              "python"
+            ],
+            "resource": {
+              "filename": "/gui/cell-basic_display_text_UPDATE.py",
+              "lib": true,
+              "mode": 2
+            },
+            "data": "if PINS.value.updated:\n    b.setText(PINS.value.get())\nif PINS.title.updated:\n    w.setWindowTitle(PINS.title.get())\n"
+          },
+          "display": {
+            "type": "reactor",
+            "mode": "sync",
+            "params": {
+              "title": {
+                "dtype": "str",
+                "pin": "input"
+              },
+              "value": {
+                "dtype": "str",
+                "pin": "input"
+              }
+            }
+          }
+        }
+      },
+      "fh_text": {
+        "type": "context",
+        "like_worker": true,
+        "like_cell": false,
+        "pins": {
+          "filehash": "fh_text.rc.filehash"
+        },
+        "auto": [
+          "cell1",
+          "cell2",
+          "cell3",
+          "cell4",
+          "cell5"
+        ],
+        "children": {
+          "cell1": {
+            "dtype": "str",
+            "owner": "fh_text.rc"
+          },
+          "cell2": {
+            "dtype": "str",
+            "data": "/tmp/text.txt"
+          },
+          "cell3": {
+            "dtype": "float",
+            "data": "1"
+          },
+          "cell4": {
+            "dtype": [
+              "text",
+              "code",
+              "python"
+            ],
+            "data": ""
+          },
+          "cell5": {
+            "dtype": [
+              "text",
+              "code",
+              "python"
+            ],
+            "data": "t.join(0)"
+          },
+          "cell_filehash": {
+            "dtype": [
+              "text",
+              "code",
+              "python"
+            ],
+            "resource": {
+              "filename": "/cell-filehash-start.py",
+              "lib": true,
+              "mode": 2
+            },
+            "data": "import os, time, traceback, hashlib\nfrom threading import Thread, RLock\nlast_filehash = None\nlast_mtime = None\nlast_exc = None\n\ndef poll():\n    global last_time, last_mtime, last_filehash, last_exc\n    fpath = PINS.filepath.get()\n    if fpath.startswith(\"~/\"):\n        fpath = os.environ[\"HOME\"] + fpath[1:]\n    while 1:\n        time.sleep(PINS.latency.get())\n        curr_time = time.time()\n        last_time = curr_time\n        if not os.path.exists(fpath):\n            if last_filehash is not None:\n                PINS.filehash.set(None)\n                last_filehash = None\n        else:\n            with lock:\n                stat = os.stat(fpath)\n                try:\n                    if last_mtime is None or stat.st_mtime > last_mtime:\n                        data = None\n                        with open(fpath, \"rb\") as f:\n                            data = f.read()\n                        if data is not None:\n                            filehash = hashlib.md5(data).hexdigest()\n                            PINS.filehash.set(filehash)\n                            last_filehash = filehash\n                        last_mtime = stat.st_mtime\n                except:\n                    exc = traceback.format_exc()\n                    if exc != last_exc:\n                        print(exc)\n                        last_exc = exc\n\nt = Thread(target=poll)\nt.setDaemon(True)\nlock = RLock()\nt.start()\n"
+          },
+          "rc": {
+            "type": "reactor",
+            "mode": "sync",
+            "params": {
+              "filehash": {
+                "dtype": "str",
+                "pin": "output"
+              },
+              "filepath": {
+                "dtype": "str",
+                "pin": "input"
+              },
+              "latency": {
+                "dtype": "float",
+                "pin": "input"
+              }
+            }
+          }
+        }
+      },
+      "text": {
+        "dtype": "text",
+        "data": "Lorem ipsum"
+      }
+    },
+    "macro_objects": [],
+    "macro_listeners": [],
+    "registrar_items": [],
+    "registrar_listeners": [],
+    "registrar_cells": [],
+    "pin_cell_connections": [
+      [
+        "fh_text.rc.filehash",
+        "fh_text.cell1"
+      ]
+    ],
+    "cell_pin_connections": [
+      [
+        "d_text.cell1",
+        "d_text.display.title"
+      ],
+      [
+        "d_text.cell2",
+        "d_text.display.code_start"
+      ],
+      [
+        "d_text.cell3",
+        "d_text.display.code_stop"
+      ],
+      [
+        "d_text.cell4",
+        "d_text.display.code_update"
+      ],
+      [
+        "fh_text.cell1",
+        "d_text.display.value"
+      ],
+      [
+        "fh_text.cell2",
+        "fh_text.rc.filepath"
+      ],
+      [
+        "fh_text.cell3",
+        "fh_text.rc.latency"
+      ],
+      [
+        "fh_text.cell4",
+        "fh_text.rc.code_update"
+      ],
+      [
+        "fh_text.cell5",
+        "fh_text.rc.code_stop"
+      ],
+      [
+        "fh_text.cell_filehash",
+        "fh_text.rc.code_start"
+      ]
+    ]
+  }
+}

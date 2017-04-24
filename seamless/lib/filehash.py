@@ -1,7 +1,9 @@
+from seamless import macro
 
-@macro("str", with_context=False)
-def filehash(filepath):
-    from seamless import reactor
+@macro("str")
+def filehash(ctx, filepath):
+    from seamless import reactor, pythoncell
+    ctx.cell_filehash = pythoncell().fromfile("cell-filehash-start.py")
     reactor_params = {
         "filepath": {
             "pin": "input",
@@ -16,9 +18,11 @@ def filehash(filepath):
             "dtype": "str",
         },
     }
-    rc = reactor(reactor_params)
+    rc = ctx.rc = reactor(reactor_params)
 
-    rc.cell_filehash.connect(rc.code_start)
-    rc.code_update.set("stop(); start()")
-    rc.cell_filehash_stop.connect(rc.code_stop)
-    return rc
+    ctx.cell_filehash.connect(rc.code_start)
+    rc.filepath.cell().set(filepath)
+    rc.latency.cell().set(1)
+    rc.code_update.cell().set("")
+    rc.code_stop.cell().set('t.join(0)')
+    ctx.export(rc)

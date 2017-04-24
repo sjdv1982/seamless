@@ -370,15 +370,28 @@ class ExportedPinBase:
         self._pin.destroy()
 
 class ExportedOutputPin(ExportedPinBase, OutputPinBase):
+    def __init__(self, pin):
+        from .cell import CellLike
+        if isinstance(pin, CellLike) and pin._like_cell:
+            pin = pin._pins["_output"]
+        assert isinstance(pin, OutputPinBase)
+        super().__init__(pin)
     @property
     def _cell_ids(self):
         return self._pin._cell_ids
 
 class ExportedInputPin(ExportedPinBase, InputPinBase):
-    pass
+    def __init__(self, pin):
+        from .cell import CellLike
+        if isinstance(pin, CellLike) and pin._like_cell:
+            pin = pin._pins["_input"]
+        assert isinstance(pin, InputPinBase)
+        super().__init__(pin)
 
 class ExportedEditPin(ExportedPinBase, EditPinBase):
-    pass
+    def __init__(self, pin):
+        assert isinstance(pin, (EditPinBase, Cell))
+        super().__init__(pin)
 
 _runtime_identifiers = WeakValueDictionary()
 _runtime_identifiers_rev = WeakKeyDictionary()

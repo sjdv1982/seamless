@@ -16,3 +16,5 @@ from seamless.slash import slash0
 ctx = context()
 ctx.code = cell(("text", "code", "slash-0")).set(code)
 ctx.slash0 = slash0(ctx.code)
+ctx.pdb = cell("text").fromfile("1AVXA.pdb")
+ctx.pdb.connect(ctx.slash0.pdb)

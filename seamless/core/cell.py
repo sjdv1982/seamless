@@ -6,6 +6,7 @@ import ast
 import os
 import copy
 import json
+import weakref
 from enum import Enum
 
 from .. import dtypes
@@ -20,6 +21,23 @@ class CellLike(object):
     CellLikes are captured by context.cells"""
     _like_cell = True
 
+
+class CellPinWrapper:
+    def __init__(self, parent):
+        self.parent = weakref.ref(parent)
+        self._pins = {}
+    def __getitem__(self, attr):
+        from .worker import CellInputPin, CellOutputPin
+        if attr == "_input":
+            if "_input" not in self._pins:
+                self._pins["_input"] = CellInputPin(self.parent)
+            return self._pins["_input"]
+        elif attr == "_output":
+            if "_output" not in self._pins:
+                self._pins["_output"] = CellOutputPin(self.parent)
+            return self._pins["_output"]
+        else:
+            raise KeyError(attr)
 
 class Cell(Managed, CellLike):
     """Default class for cells.
@@ -43,9 +61,11 @@ class Cell(Managed, CellLike):
 
     _resource = None
 
+
     def __init__(self, dtype, *, naming_pattern="cell"):
         """TODO: docstring."""
         super().__init__()
+        self._pins = CellPinWrapper(self)
 
         from .macro import get_macro_mode
         from .context import get_active_context

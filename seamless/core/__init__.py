@@ -185,3 +185,5 @@ When any of these cells change and the macro is re-executed, the owned object wi
             self.destroy()
         except:
             pass
+
+from . import pysynckernel, pythreadkernel

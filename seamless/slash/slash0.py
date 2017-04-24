@@ -2,18 +2,15 @@ from ..core.macro import macro
 
 @macro(("text", "code", "slash-0"))
 def slash0(ctx, code, extern_map = {}, **macro_args):
-    import os
-    from seamless import context, cell, reactor
+    import os, seamless
+    from seamless import context, cell, pythoncell, reactor, transformer
     from seamless.core.cell import Cell
     from seamless.core.worker import ExportedInputPin, ExportedOutputPin
     from seamless.lib.filehash import filehash
     from seamless.slash.parse_slash0 import parse_slash0
     from seamless.slash.ast_slash0_validate import ast_slash0_validate
     from seamless.slash.slash0_standard_command import make_cmd_params
-    #cell_cmd_start = seamless.cell(("text", "code", "python")).fromfile("cell-command-start.py")
-    #cell_cmd = seamless.cell(("text", "code", "python")).fromfile("cell-command.py")
-    cell_filehash = seamless.cell(("text", "code", "python")).fromfile("cell-filehash.py")
-    cell_filehash_stop = seamless.cell(("text", "code", "python")).fromfile("cell-filehash-stop.py")
+    ctx.cell_cmd_std = seamless.pythoncell().fromfile("cell-command-standard.py")
     ast = parse_slash0(code)
     symbols = ast_slash0_validate(ast)
     env = {}
@@ -24,23 +21,68 @@ def slash0(ctx, code, extern_map = {}, **macro_args):
 
 
     def make_cmd_std(cmd_params):
-        reactor_params = {}
+        nonlocal filehashes
+        print(cmd_params)
+        tf_params = {
+            "PARAMS": {
+                "pin": "input",
+                "dtype": "json",
+            },
+        }
         in_connections = []
         out_connections = []
         for file_ in cmd_params["files"]:
-            fh = make_filehash(file_)
+            fh = filehash(file_)
             filehashes += 1
-            fhname = "filehash-%d" % filehashes
-            ctx.setattr(fhname, fh)
-            in_connections.append((fh, fhname))
-        rc = reactor(reactor_params)
+            fhname = "filehash_%d" % filehashes
+            tf_params[fhname] = {
+                "pin": "input",
+                "dtype": "str"
+            }
+            setattr(ctx, fhname, fh)
+            in_connections.append((fh.filehash.cell(), fhname))
+        for inp,typ in cmd_params["inputs"].items():
+            if typ == "doc":
+                dtype = "text"
+                prefix = "doc_"
+            elif typ == "variable":
+                dtype = "str"
+                prefix = "var_"
+            else:
+                raise TypeError((cmd_params["lineno"], cmd_params["source"], inp, typ)) #must be a bug
+            tf_params[inp] = {
+                "pin": "input",
+                "dtype": dtype,
+            }
+            in_connections.append((ctx.CHILDREN[prefix + inp], inp))
+
+        if len(cmd_params["outputs"]) > 1:
+            raise NotImplementedError("Multiple outputs not yet implemented")
+
+        for output in cmd_params["outputs"]:
+            if hasattr(ctx, "ctx_" + output):
+                dtype = "json"
+                prefix = "ctx_"
+            else:
+                dtype = "text"
+                prefix = "doc_"
+            tf_params[output] = {
+                "pin": "output",
+                "dtype": dtype,
+            } #TODO: in case of multiple outputs => single JSON cell + subcells (to be implemented)
+            out_connections.append((output, ctx.CHILDREN[prefix + output]))
+
+        tf = transformer(tf_params)
+        tf.PARAMS.cell().set(cmd_params)
         for con in in_connections:
-            pin = getattr(rc, con[1])
+            pin = getattr(tf, con[1])
+            print(type(con[0]), con[1], type(pin))
             con[0].connect(pin)
         for con in out_connections:
-            pin = getattr(rc, con[0])
+            pin = getattr(tf, con[0])
             pin.connect(con[1])
-        return rc
+        ctx.cell_cmd_std.connect(tf.code)
+        return tf
 
     for node in ast["nodes"]["env"]:
         envname = node["name"]
@@ -51,6 +93,7 @@ def slash0(ctx, code, extern_map = {}, **macro_args):
         assert os.path.exists(filename), filename
     for node in ast["nodes"]["context"]:
         name = "ctx_" + node["name"]
+        print("CREATE", name)
         if node["is_json"]:
             c = cell("json")
         else:
@@ -59,17 +102,19 @@ def slash0(ctx, code, extern_map = {}, **macro_args):
         setattr(ctx, name, c)
     for node in ast["nodes"]["variable"]:
         name = "var_" + node["name"]
+        print("CREATE", name)
         c = cell("str")
         variables[node["name"]] = c
         setattr(ctx, name, c)
     for node in ast["nodes"]["doc"]:
-        name = "doc-" + node["name"]
+        name = "doc_" + node["name"]
+        print("CREATE", name)
         c = cell("text")
         docs[node["name"]] = c
         setattr(ctx, name, c)
         origin = node["origin"]
         if origin == "intern":
-            pass
+            pass #nothing to do
         elif origin == "extern":
             raise NotImplementedError #c.set(...) using extern_mapping + macro_args
         elif origin == "input":
@@ -98,7 +143,9 @@ def slash0(ctx, code, extern_map = {}, **macro_args):
         cmd_type = command["cmd"]["command"]
         if cmd_type == "standard":
             cmd_params = make_cmd_params(command, nodes, env)
-            make_cmd_std(cmd_params)
+            command_worker = make_cmd_std(cmd_params)
+            name = "cmd-" + sourcehash
+            setattr(ctx, name, command_worker)
         else:
             raise NotImplementedError(cmd_type)
 #TODO: file nodes!

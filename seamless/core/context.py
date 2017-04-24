@@ -58,6 +58,10 @@ class Wrapper:
         if attr not in self._wrapped:
             raise AttributeError(attr)
         return self._wrapped[attr]
+    def __getitem__(self, attr):
+        return self.__getattr__(attr)
+    def __iter__(self):
+        return iter(self._wrapped.keys())
     def __dir__(self):
         return self._wrapped.keys()
     def __str__(self):
