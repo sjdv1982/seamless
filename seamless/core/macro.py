@@ -15,21 +15,36 @@ _macros = {}
 
 _macro_mode = False
 _macro_registrar = []
+_activate = []
+
+def add_activate(obj):
+    if not _macro_mode:
+        obj.activate()
+    else:
+        _activate.append(obj)
 
 def get_macro_mode():
     return _macro_mode
 
 def set_macro_mode(macro_mode):
-    global _macro_mode
+    global _macro_mode, _activate
+    if _macro_mode and not macro_mode:
+        try:
+            for obj in _activate:
+                if obj._destroyed:
+                    continue
+                obj.activate()
+        finally:
+            _activate[:] = []
     _macro_mode = macro_mode
 
 @_pystdlib_contextmanager
 def macro_mode_as(macro_mode):
     global _macro_mode
     old_macro_mode = _macro_mode
-    _macro_mode = macro_mode
+    set_macro_mode(macro_mode)
     yield
-    _macro_mode = old_macro_mode
+    set_macro_mode(old_macro_mode)
 
 class Macro:
     module_name = None
@@ -38,9 +53,11 @@ class Macro:
     dtype = ("text", "code", "python")
     registrar = None
 
-    def __init__(self, type=None, with_context=True,
+    def __init__(self, type=None, *, with_context=True, with_caching=False, 
             registrar=None,func=None):
         self.with_context = with_context
+        if with_caching: assert with_context == True
+        self.with_caching = with_caching
 
         self.registrar = registrar
         self._type_args = None
@@ -412,6 +429,11 @@ def macro(*args, **kwargs):
       if False, the function is expected to return a cell or worker.
        This cell or worker (together with any other cells or workers
        created by the macro) is automatically added to the active context.
+
+    with_caching: bool
+        if True, when the macro is re-invoked, it tries to salvage as much as
+        possible from the previously created context
+        Requires that with_context is True
 
     Example 1:
     @macro

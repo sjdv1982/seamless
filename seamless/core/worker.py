@@ -80,6 +80,7 @@ class Worker(Managed, WorkerLike):
             pin._validate_path(required_path + (pin_name,))
         return required_path
 
+
 class PinBase(Managed):
 
     def __init__(self, worker, name):
@@ -337,9 +338,15 @@ class ExportedPinBase:
         self._pin = pin
 
     def get_pin_id(self):
+        from .cell import CellLike
+        if isinstance(self._pin, CellLike):
+            raise TypeError
         return self._pin.get_pin_id()
 
     def get_pin(self):
+        from .cell import CellLike
+        if isinstance(self._pin, CellLike):
+            return self._pin
         return self._pin.get_pin()
 
     def __getattr__(self, attr):
@@ -372,9 +379,7 @@ class ExportedPinBase:
 class ExportedOutputPin(ExportedPinBase, OutputPinBase):
     def __init__(self, pin):
         from .cell import CellLike
-        if isinstance(pin, CellLike) and pin._like_cell:
-            pin = pin._pins["_output"]
-        assert isinstance(pin, OutputPinBase)
+        assert isinstance(pin, (OutputPinBase, CellLike))
         super().__init__(pin)
     @property
     def _cell_ids(self):
@@ -383,14 +388,13 @@ class ExportedOutputPin(ExportedPinBase, OutputPinBase):
 class ExportedInputPin(ExportedPinBase, InputPinBase):
     def __init__(self, pin):
         from .cell import CellLike
-        if isinstance(pin, CellLike) and pin._like_cell:
-            pin = pin._pins["_input"]
-        assert isinstance(pin, InputPinBase)
+        assert isinstance(pin, (InputPinBase, CellLike))
         super().__init__(pin)
 
 class ExportedEditPin(ExportedPinBase, EditPinBase):
     def __init__(self, pin):
-        assert isinstance(pin, (EditPinBase, Cell))
+        from .cell import CellLike
+        assert isinstance(pin, (EditPinBase, CellLike))
         super().__init__(pin)
 
 _runtime_identifiers = WeakValueDictionary()

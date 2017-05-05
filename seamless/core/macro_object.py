@@ -1,4 +1,7 @@
 import weakref
+from .connection_finder import find_external_connections, \
+  find_external_connections_cell, find_external_connections_worker, \
+  find_internal_connections
 
 class MacroObject:
     macro = None
@@ -6,6 +9,7 @@ class MacroObject:
     kwargs = {}
     cell_args = {}
     _parent = None
+    cache_signature = None
 
     def __init__(self, macro, args, kwargs, cell_args):
         self.macro = macro
@@ -35,9 +39,12 @@ class MacroObject:
 
     def update_cell(self, cellname):
         from .. import debug
+        from .macro import macro_mode_as
         from .context import Context
         from .cell import Cell
         from .worker import Worker, InputPinBase, OutputPinBase, EditPinBase
+        from .cache_signature import cache_signature
+        from .registrar import RegistrarObject
         parent = self._parent()
         grandparent = parent.context
         assert isinstance(grandparent, Context), grandparent
@@ -47,138 +54,125 @@ class MacroObject:
         else:
             exc = "Cannot identify parent-child relationship of macro context {0}"
             raise AttributeError(exc.format(parent))
+
+        with_caching = self.macro.with_caching and isinstance(parent, Context)
+        signature = self.cache_signature
+        if signature is None and with_caching:
+            signature = cache_signature(parent)
+
         external_connections = []
-
-        def find_external_connections_cell(cell, path, parent_path, parent_owns):
-            owns = parent_owns
-            if owns is None:
-                owns = cell._owns_all()
-            manager = cell._get_manager()
-            cell_id = manager.get_cell_id(cell)
-             #no macro listeners or registrar listeners; these the macro should re-create
-            incons = manager.cell_to_output_pin.get(cell, [])
-            for incon in incons:
-                output_pin = incon()
-                if output_pin is None:
-                    continue
-                worker = output_pin.worker_ref()
-                if worker is None or worker in owns:
-                    continue
-                if parent_path is not None:
-                    if output_pin.path[:len(parent_path)] == parent_path:
-                        continue
-                external_connections.append((True, output_pin, path, output_pin.path))
-            outcons = manager.listeners.get(cell_id, [])
-            for outcon in outcons:
-                input_pin = outcon()
-                if input_pin is None:
-                    continue
-                worker = input_pin.worker_ref()
-                if worker is None or worker in owns:
-                    continue
-                if parent_path is not None:
-                    if input_pin.path[:len(parent_path)] == parent_path:
-                        continue
-                assert len(input_pin.path)
-                external_connections.append((False, path, input_pin, input_pin.path))
-
-        def find_external_connections_worker(worker, path, parent_path, parent_owns):
-            if path is None:
-                path = ()
-            owns = parent_owns
-            if owns is None:
-                owns = worker._owns_all()
-            for pinname, pin in worker._pins.items():
-                manager = pin._get_manager()
-                pin_id = pin.get_pin_id()
-                if isinstance(pin, (InputPinBase, EditPinBase)):
-                    is_incoming = True
-                    cell_ids = [(None, v) for v in manager.pin_to_cells.get(pin_id, [])]
-                elif isinstance(pin, OutputPinBase):
-                    is_incoming = False
-                    cell_ids = [(None, v) for v in pin._cell_ids]
-                else:
-                    raise TypeError((pinname, pin))
-                for subpin, cell_id in cell_ids:
-                    cell = manager.cells.get(cell_id, None)
-                    if cell is None:
-                        continue
-                    if cell in owns:
-                        continue
-                    if parent_path is not None:
-                        if cell.path[:len(parent_path)] == parent_path:
-                            continue
-                    path2 = path + (pinname,)
-                    if subpin is not None:
-                        path2 += (subpin,)
-                    if is_incoming:
-                        external_connections.append((True, cell, path2, cell.path))
-                    else:
-                        external_connections.append((False, path2, cell, cell.path))
-
-        def find_external_connections_context(ctx, path, parent_path, parent_owns):
-            parent_path2 = parent_path
-            if parent_path is None:
-                parent_path2 = ctx.path
-            owns = parent_owns
-            if owns is None:
-                owns = ctx._owns_all()
-            for childname, child in ctx._children.items():
-                if path is not None:
-                    path2 = path + (childname,)
-                else:
-                    path2 = (childname,)
-                if isinstance(child, Cell):
-                    find_external_connections_cell(child, path2, parent_path2, owns)
-                elif isinstance(child, Worker):
-                    find_external_connections_worker(child, path2, parent_path2, owns)
-                elif isinstance(child, Context):
-                    find_external_connections_context(child, path2, parent_path2, owns)
-                else:
-                    raise TypeError((childname, child))
-
         if isinstance(parent, Cell):
-            find_external_connections_cell(parent, None, None, None)
+            find_external_connections_cell(external_connections, parent, None, None, None)
         elif isinstance(parent, Worker):
-            find_external_connections_worker(parent, None, None, None)
+            find_external_connections_worker(external_connections, parent, None, None, None)
         elif isinstance(parent, Context):
-            find_external_connections_context(parent, None, None, None)
+            find_external_connections(external_connections, parent, None, None, None)
+        elif isinstance(parent, RegistrarObject):
+            pass
         elif parent is None:
             pass
+        else:
+            raise TypeError(type(parent))
 
-        new_parent = self.macro.evaluate(self.args, self.kwargs, self)
-        setattr(grandparent, parent_childname, new_parent) #destroys parent and connections
-        self._parent = weakref.ref(new_parent)
-
-        def resolve_path(target, path, index):
-            if path is not None and len(path) > index:
+        with macro_mode_as(True):
+            new_parent = self.macro.evaluate(self.args, self.kwargs, self)
+            new_signature = None
+            if with_caching:
+                old_internal_connections = []
+                find_internal_connections(old_internal_connections, parent, None, None)
                 try:
-                    new_target = getattr(target, path[index])
-                except AttributeError:
-                    warn = "WARNING: cannot reconstruct connections for '{0}', target no longer exists"
-                    subpath = "." + ".".join(target.path + path[:index+1])
-                    print(warn.format(subpath))
-                    return None
-                return resolve_path(new_target, path, index+1)
-            return target
+                    old_name = new_parent.name
+                    new_parent.name = parent.name
+                    new_signature = cache_signature(new_parent)
+                finally:
+                    new_parent.name = old_name
+            if with_caching:
+                setattr(grandparent, "@TEMP_CONTEXT", parent)
+            setattr(grandparent, parent_childname, new_parent) #destroys parent and connections
+            self._parent = weakref.ref(new_parent)
+            self.cache_signature = new_signature
 
-        for is_incoming, source, dest, ext_path in external_connections:
-            if debug:
-                print("CONNECTION: is_incoming {0}, source {1}, dest {2}".format(is_incoming, source, dest))
-            err = "Connection {0}::(is_incoming {1}, source {2}, dest {3}) points to a destroyed external cell"
-            if is_incoming:
-                if source._destroyed:
-                    print("ERROR:", err.format(new_parent.path, is_incoming, ext_path, dest) + " (source)")
-                dest_target = resolve_path(new_parent, dest, 0)
-                if dest_target is not None:
-                    source.connect(dest_target)
-            else:
-                if dest._destroyed:
-                    print("ERROR:", err.format(new_parent.path, is_incoming, source, ext_path) + " (dest)")
-                    continue
-                source_target = resolve_path(new_parent, source, 0)
-                if source_target is not None:
-                    source_target.connect(dest)
+
+            def resolve_path(target, path, index):
+                if path is not None and len(path) > index:
+                    try:
+                        new_target = getattr(target, path[index])
+                    except AttributeError:
+                        warn = "WARNING: cannot reconstruct connections for '{0}', target no longer exists"
+                        subpath = "." + ".".join(target.path + path[:index+1])
+                        print(warn.format(subpath))
+                        return None
+                    return resolve_path(new_target, path, index+1)
+                return target
+
+            transplanted = set()
+            if with_caching: #transplant from old parent context into new parent context
+                #TODO: this will only work as long as registrars/registries are global
+                new_internal_connections = []
+                find_internal_connections(new_internal_connections, new_parent, None, None)
+
+                #build a set of to-be-transplanted children
+                for childname, child in sorted(new_parent._children.items()):
+                    old_sig = signature.get(childname, None)
+                    new_sig = new_signature[childname]
+                    if old_sig == new_sig:
+                        transplanted.add(childname)
+                #destroy internal connections that are no longer used
+                for con in old_internal_connections:
+                    n_intern = sum([c[0] in transplanted for c in con])
+                    equiv = (con in new_internal_connections)
+                    if n_intern == 0:
+                        pass
+                    elif n_intern == 1 or (n_intern == 2 and not equiv):
+                        source = resolve_path(parent, con[0], 0)
+                        dest = resolve_path(parent, con[1], 0)
+                        source.disconnect(dest)
+                    else: #n_intern == 2 and equiv
+                        pass
+                #transplant the children
+                for childname in transplanted:
+                    child = getattr(parent, childname)
+                    setattr(new_parent, childname, child)
+                #destroy the remnants of the old context
+                if with_caching:
+                    delattr(grandparent, "@TEMP_CONTEXT")
+                #build new internal connections that didn't exist before
+                for con in new_internal_connections:
+                    n_intern = sum([c[0] in transplanted for c in con])
+                    equiv = (con in old_internal_connections)
+                    if n_intern == 0:
+                        pass
+                    elif n_intern == 1 or (n_intern == 2 and not equiv):
+                        source = resolve_path(new_parent, con[0], 0)
+                        dest = resolve_path(new_parent, con[1], 0)
+                        source.connect(dest)
+                    else: #n_intern == 2 and equiv
+                        pass
+
+            for mode, source, dest, ext_path in external_connections:
+                if debug:
+                    print("CONNECTION: mode '{0}', source {1}, dest {2}".format(mode, source, dest))
+                err = "Connection {0}::(mode {1}, source {2}, dest {3}) points to a destroyed external cell"
+                if mode in ("input", "rev_alias"):
+                    if source._destroyed:
+                        print("ERROR:", err.format(new_parent.path, mode, ext_path, dest) + " (source)")
+                    if dest[0] in transplanted:
+                        continue
+                    dest_target = resolve_path(new_parent, dest, 0)
+                    if dest_target is not None:
+                        source.connect(dest_target)
+                elif mode in ("output", "alias"):
+                    if dest._destroyed:
+                        print("ERROR:", err.format(new_parent.path, mode, source, ext_path) + " (dest)")
+                        continue
+                    if source[0] in transplanted:
+                        continue
+                    source_target = resolve_path(new_parent, source, 0)
+                    if source_target is not None:
+                        source_target.connect(dest)
+                else:
+                    #print("CONNECTION: mode '{0}', source {1}, dest {2}".format(mode, source, dest))
+                    raise TypeError(mode)
 
     def set_registrar_listeners(self, registrar_listeners):
         for registrar, manager, key in registrar_listeners:

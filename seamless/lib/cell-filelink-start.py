@@ -36,7 +36,7 @@ else:
 
 
 import os, time, functools, traceback
-from threading import Thread, RLock
+from threading import Thread, RLock, Event
 last_value = None
 last_serialized_value = None
 last_exc = None
@@ -66,11 +66,19 @@ def write_file(fpath):
             except:
                 pass
 
+sleeptime = 0.01
+
 def poll():
     global last_time, last_mtime, last_value, last_serialized_value, last_exc
     fpath = PINS.filepath.get()
     while 1:
-        time.sleep(PINS.latency.get())
+        sleeps = int(PINS.latency.get() / sleeptime + 0.9999)
+        for n in range(sleeps):
+            time.sleep(sleeptime)
+            if terminate.is_set():
+                break
+        if terminate.is_set():
+            break
         curr_time = time.time()
         last_time = curr_time
         if not os.path.exists(fpath):
@@ -102,6 +110,7 @@ def poll():
                         print(exc)
                         last_exc = exc
 
+terminate = Event()
 t = Thread(target=poll)
 t.setDaemon(True)
 lock = RLock()

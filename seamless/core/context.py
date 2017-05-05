@@ -74,7 +74,7 @@ class Context(SeamlessBase, CellLike, WorkerLike):
     """
 
     _name = None
-    _like_cell = False          #can be set to True by export
+    _like_cell = False
     _like_worker = False       #can be set to True by export
     _children = {}
     _manager = None
@@ -292,11 +292,18 @@ When any of these cells change and the macro is re-executed, the child object wi
         return ctx
 
     def __setattr__(self, attr, value):
+        from .worker import ExportedInputPin, ExportedOutputPin, \
+          ExportedEditPin
         if hasattr(self.__class__, attr):
             return object.__setattr__(self, attr, value)
         if attr in self._pins:
             raise AttributeError(
              "Cannot assign to pin ''%s'" % attr)
+        pintypes = (ExportedInputPin, ExportedOutputPin, ExportedEditPin)
+        if isinstance(value, pintypes):
+            #TODO: check that pin target is a child
+            self._pins[attr] = value
+            return
         if attr in self._children and self._children[attr] is not value:
             self._children[attr].destroy()
 
@@ -339,11 +346,6 @@ When any of these cells change and the macro is re-executed, the child object wi
     def export(self, child, forced=[], skipped=[]):
         """Exports all unconnected inputs and outputs of a child
 
-        If the child is a cell (or cell-like context):
-            - export the child's inputs/outputs as primary inputs/outputs
-                (if unconnected, and not in skipped)
-            - export any other pins, if forced
-            - sets the context as cell-like
         If the child is a worker (or worker-like context):
             - export the child's inputs/outputs as primary inputs/outputs
                 (if unconnected, and not in skipped)
@@ -356,19 +358,12 @@ When any of these cells change and the macro is re-executed, the child object wi
         child: a direct or indirect child (grandchild) of the context
         forced: contains a list of pin names that are exported in any case
           (even if not unconnected).
-          Use "_input" and "_output" to indicate primary cell input and output
         skipped: contains a list of pin names that are never exported
           (even if unconnected).
-          Use "_input" and "_output" to indicate primary cell input and output
 
         """
         assert child.context._part_of(self)
-        mode = None
-        if isinstance(child, CellLike) and child._like_cell:
-            mode = "cell"
-            pins = ["_input", "_output"]
-        elif isinstance(child, WorkerLike) and child._like_worker:
-            mode = "worker"
+        if isinstance(child, WorkerLike) and child._like_worker:
             pins = child._pins.keys()
         else:
             raise TypeError(child)
@@ -406,7 +401,7 @@ When any of these cells change and the macro is re-executed, the child object wi
                 else:
                     raise TypeError(pin)
         pins = [p for p in pins if not is_connected(p) and p not in skipped]
-        pins = pins + forced
+        pins = pins + [p for p in forced if p not in pins]
         if not len(pins):
             raise Exception("Zero pins to be exported!")
         for pinname in pins:
@@ -422,10 +417,7 @@ When any of these cells change and the macro is re-executed, the child object wi
             else:
                 raise TypeError(pin)
 
-        if mode == "cell":
-            self._like_cell = True
-        elif mode == "worker":
-            self._like_worker = True
+        self._like_worker = True
 
     def _part_of(self, ctx):
         assert isinstance(ctx, Context)
@@ -489,6 +481,7 @@ When any of these cells change and the macro is re-executed, the child object wi
         last_report_time = start_time
         run_work()
         manager = self._manager
+        #print("UNSTABLE", list(manager.unstable_workers))
         while len(manager.unstable_workers):
             curr_time = time.time()
             if curr_time - last_report_time > report:
@@ -498,6 +491,7 @@ When any of these cells change and the macro is re-executed, the child object wi
                     break
             run_work()
             time.sleep(0.001)
+        #print("UNSTABLE", list(manager.unstable_workers))
 
     @property
     def unstable_workers(self):

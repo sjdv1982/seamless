@@ -1,6 +1,4 @@
-def make_cmd_params(command, nodes, env):
-    print(command)
-    print()
+def make_cmd_params(command, nodes, env, sourcehash):
     inputs = {}
     outputs = []
     files = [] #to be monitored
@@ -9,6 +7,7 @@ def make_cmd_params(command, nodes, env):
     params = {
         "lineno": command["cmd"]["lineno"],
         "source": command["cmd"]["source"],
+        "sourcehash": sourcehash,
         "refs": refs,
         "output_refs": output_refs,
         "inputs": inputs,
@@ -29,15 +28,16 @@ def make_cmd_params(command, nodes, env):
             inputs[name] = noderef["type"]
             refs.append(name)
         elif noderef["type"] == "env":
-            refs.append(noderef)
+            envname = nodes["env"][noderef["index"]]["name"]
+            refs.append({"type": "env", "value": env[envname]})
         elif noderef["type"] == "varexp":
             subrefs = []
-            for subnoderef in noderefs["noderefs"]:
+            for subnoderef in noderef["noderefs"]:
                 node = nodes["variable"][subnoderef["index"]]
                 name = node["name"]
                 subrefs.append(name)
                 inputs[name] = "variable"
-            ref = {"type": "varexp", "refs": subrefs}
+            ref = {"type": "varexp", "value": noderef["value"], "refs": subrefs}
             refs.append(ref)
         else:
             raise ValueError(command["cmd"]["source"], noderef["type"])
@@ -65,6 +65,5 @@ def make_cmd_params(command, nodes, env):
             outputs.append(name)
             output_refs.append({"type": type_, "name": name})
 
-    command = " ".join(command["parsed"])
-    params["command"] = command
+    params["command"] = command["parsed"]
     return params

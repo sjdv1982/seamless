@@ -116,6 +116,8 @@ def macro_to_json():
             continue #registrar register methods are never saved
         m = OrderedDict()
         m["with_context"] = macro.with_context
+        if macro.with_caching:
+            m["with_caching"] = True
         m["dtype"] = macro.dtype
         m["type_args"] = macro._type_args_unparsed
         m["module_name"] = module_name

@@ -115,7 +115,8 @@ def json_to_connections(ctx, data):
         except:
             print("SOURCE", source, "TARGET", target)
             raise
-    for con in data["cell_pin_connections"]:
+    for con in data["cell_pin_connections"] + \
+      data.get("cell_cell_connections",[]):
         source = find_sl(ctx, con[0])
         target = find_sl(ctx, con[1])
         try:

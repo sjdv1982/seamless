@@ -55,6 +55,13 @@ class Resource:
     filename = None
     lib = None
     mode = None
+    cache = None
+    """cache can have the following modes:
+    - None: the cell is undefined
+    - False: the cell has been set with an arbitrary value, from code or from edit
+    - True: the cell is dependent and has been set from its upstream transformer
+    - a string: the cell has been set using .fromfile(), the string indicates the file name
+    """
     def __init__(self, parent):
         self.parent = weakref.ref(parent)
 
@@ -103,6 +110,7 @@ class Resource:
             self.mode = 5
         if old_lib:
             libmanager.on_cell_destroy(self.parent(), old_filename)
+        self.cache = self.filename
         return result
 
     def fromlibfile(self, lib, filename):
@@ -117,6 +125,7 @@ class Resource:
         new_filename = mod_dir + os.sep + filename
         result = cell.set(open(new_filename, encoding="utf8").read())
         self.filename = new_filename
+        self.cache = self.filename
         self.lib = False
         self.mode = 5
         return result
@@ -136,6 +145,7 @@ class Resource:
                         print("Updating %s from lib filename %s" % (parent, self.filename))
                         parent.set(lib_data)
                         current_data = parent.data
+                        self.cache = self.filename
 
     def destroy(self):
         if self.lib:

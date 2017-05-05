@@ -59,6 +59,7 @@ def manager_to_json(m):
     registrar_cells = []
     pin_cell_connections = []
     cell_pin_connections = []
+    cell_cell_connections = []
     ret = OrderedDict((
         ("macro_objects", macro_objects),
         ("macro_listeners", macro_listeners),
@@ -66,7 +67,9 @@ def manager_to_json(m):
         ("registrar_listeners", registrar_listeners),
         ("registrar_cells", registrar_cells),
         ("pin_cell_connections", pin_cell_connections),
-        ("cell_pin_connections", cell_pin_connections)
+        ("cell_pin_connections", cell_pin_connections),
+        ("cell_cell_connections", cell_cell_connections)
+
     ))
 
     for cell, pins in m.cell_to_output_pin.items():
@@ -97,6 +100,25 @@ def manager_to_json(m):
         for ppath in ppaths:
             cell_pin_connections.append((cpath, ppath))
     cell_pin_connections.sort(key=lambda v: v[0]+v[1])
+
+    for cell_id, aliases in m.cell_aliases.items():
+        apaths = []
+        for alias0 in aliases:
+            alias = alias0()
+            if alias is None:
+                continue
+            apath = sl_print(alias)
+            apaths.append(apath)
+        try:
+            cell = m.cells[cell_id]
+        except KeyError:
+            print("WARNING: lost cell connecting to cell {0}".format(apaths))
+            continue
+        cpath = sl_print(cell)
+        for apath in apaths:
+            cell_cell_connections.append((cpath, apath))
+    cell_cell_connections.sort(key=lambda v: v[0]+v[1])
+
 
     macro_obj_map = {}
     for cell_id in m.macro_listeners:

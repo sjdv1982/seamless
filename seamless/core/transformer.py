@@ -79,6 +79,9 @@ class Transformer(Worker):
     """
     _required_code_type = PythonCell.CodeTypes.FUNCTION
     transformer = None
+    transformer_thread = None
+    output_thread = None
+    active = False
 
     def __init__(self, transformer_params):
         from .context import get_active_context
@@ -129,9 +132,6 @@ class Transformer(Worker):
         self.output_finish = threading.Event()
         self.output_queue = deque()
         self.output_semaphore = threading.Semaphore(0)
-        thread = threading.Thread(target=self.listen_output, daemon=True)
-        self.output_thread = thread
-        self.output_thread.start()
 
         """Transformer thread
         For now, it is implemented as a thread
@@ -154,8 +154,22 @@ class Transformer(Worker):
         for registrar, p in _registrars:
             registrar.connect(p, self)
 
-        self.transformer_thread = threading.Thread(target=self.transformer.run, daemon=True)
+        from .macro import add_activate
+        add_activate(self)
+
+    def activate(self):
+        if self.active:
+            return
+
+        thread = threading.Thread(target=self.listen_output, daemon=True)
+        self.output_thread = thread
+        self.output_thread.start()
+
+        thread = threading.Thread(target=self.transformer.run, daemon=True)
+        self.transformer_thread = thread
         self.transformer_thread.start()
+
+        self.active = True
 
     @property
     def transformer_params(self):
@@ -194,7 +208,7 @@ class Transformer(Worker):
 
                 output_name, output_value = self.output_queue.popleft()
                 if output_name is None:
-                    updates_processed = output_value
+                    updates_processed = output_value[0]
                     self._pending_updates -= updates_processed
                     continue
 

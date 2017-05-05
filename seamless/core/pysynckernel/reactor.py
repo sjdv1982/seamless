@@ -12,6 +12,7 @@ class PINS:
 class Reactor:
     name = "reactor"
     _destroyed = False
+    _active = False
 
     def __init__(self,
         parent,
@@ -41,10 +42,29 @@ class Reactor:
         self.registrar_namespace = {}
         self.exception = None
         self.updated = set()
-        self._active = False
+        self._running = False
         self._spontaneous = True
         self._set_namespace()
         self._pending_updates = 0
+
+        from ..macro import add_activate
+        add_activate(self)
+
+    def _update_from_start(self):
+        for up in self.inputs.keys():
+            if up not in self.input_must_be_defined:
+                continue
+            self.updated.add(up)
+        self.update(self.updated)
+        self.updated = set()
+
+
+    def activate(self):
+        if self._active:
+            return
+        if not self._pending_inputs:
+            self._update_from_start()
+        self._active = True
 
     def process_input(self, name, data):
         #print("process_input", self.parent(), name, self._pending_inputs)
@@ -71,12 +91,10 @@ class Reactor:
                     self._pending_inputs.remove(namespace_name)
 
                 self._code_stop()
-                self._active = False
+                self._running = False
 
-                if not self._pending_inputs:
-                    updated = set(self.inputs.keys()) #TODO: not for undefined optional inputs
-                    self.update(updated)
-                    self.updated = set()
+                if self._active and not self._pending_inputs:
+                    self._update_from_start()
 
             except Exception as exc:
                 self.exception = exc
@@ -110,12 +128,14 @@ class Reactor:
         updates_processed = self._pending_updates
 
         # With all inputs now present, we can issue updates
-        if not self._pending_inputs:
+        if self._active and not self._pending_inputs:
             self.update(self.updated)
             self.updated = set()
 
         self._pending_updates -= updates_processed
-        self.parent().updates_processed(updates_processed)
+        p = self.parent()
+        if p is not None:
+            p.updates_processed(updates_processed)
 
     def _execute(self, code_obj):
         exec(code_obj.code, self.namespace)
@@ -126,7 +146,7 @@ class Reactor:
     def _code_start(self):
         #print("CODE-START", self.parent())
         from ... import run_work
-        assert not self._active
+        assert not self._running
         try:
             self._spontaneous = True
             self.namespace["IDENTIFIER"] = get_runtime_identifier(self.parent())
@@ -134,11 +154,11 @@ class Reactor:
         finally:
             self._spontaneous = False
             run_work()
-        self._active = True
+        self._running = True
 
     def _code_update(self):
         from ... import run_work
-        assert self._active
+        assert self._running
         try:
             self._spontaneous = True
             self._execute(self.code_update_block)
@@ -148,12 +168,12 @@ class Reactor:
 
     def _code_stop(self):
         from ... import run_work
-        if self._active:
+        if self._running:
             self._spontaneous = False
             try:
                 self._execute(self.code_stop_block)
             finally:
-                self._active = False
+                self._running = False
                 self._spontaneous = True
                 self._set_namespace()
                 run_work()
@@ -237,7 +257,9 @@ class Reactor:
             self._code_update()
 
     def output_update(self, name, value):
-        self.parent().output_update(name, value)
+        p = self.parent()
+        if p is not None:
+            p.output_update(name, value)
         if self._spontaneous:
             import seamless
             seamless.run_work()

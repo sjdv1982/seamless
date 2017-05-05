@@ -24,5 +24,5 @@ def filehash(ctx, filepath):
     rc.filepath.cell().set(filepath)
     rc.latency.cell().set(1)
     rc.code_update.cell().set("")
-    rc.code_stop.cell().set('t.join(0)')
-    ctx.export(rc)
+    rc.code_stop.cell().set('terminate.set(); t.join()')
+    ctx.export(rc, ["filehash"])

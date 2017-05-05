@@ -1,8 +1,8 @@
 from ..core.macro import macro
 
-@macro(("text", "code", "slash-0"))
+@macro(("text", "code", "slash-0"), with_caching=True)
 def slash0(ctx, code, extern_map = {}, **macro_args):
-    import os, seamless
+    import os, seamless, hashlib
     from seamless import context, cell, pythoncell, reactor, transformer
     from seamless.core.cell import Cell
     from seamless.core.worker import ExportedInputPin, ExportedOutputPin
@@ -22,7 +22,6 @@ def slash0(ctx, code, extern_map = {}, **macro_args):
 
     def make_cmd_std(cmd_params):
         nonlocal filehashes
-        print(cmd_params)
         tf_params = {
             "PARAMS": {
                 "pin": "input",
@@ -39,6 +38,7 @@ def slash0(ctx, code, extern_map = {}, **macro_args):
                 "pin": "input",
                 "dtype": "str"
             }
+            fhname = "filehash_%d" % filehashes
             setattr(ctx, fhname, fh)
             in_connections.append((fh.filehash.cell(), fhname))
         for inp,typ in cmd_params["inputs"].items():
@@ -76,7 +76,6 @@ def slash0(ctx, code, extern_map = {}, **macro_args):
         tf.PARAMS.cell().set(cmd_params)
         for con in in_connections:
             pin = getattr(tf, con[1])
-            print(type(con[0]), con[1], type(pin))
             con[0].connect(pin)
         for con in out_connections:
             pin = getattr(tf, con[0])
@@ -93,7 +92,6 @@ def slash0(ctx, code, extern_map = {}, **macro_args):
         assert os.path.exists(filename), filename
     for node in ast["nodes"]["context"]:
         name = "ctx_" + node["name"]
-        print("CREATE", name)
         if node["is_json"]:
             c = cell("json")
         else:
@@ -102,13 +100,21 @@ def slash0(ctx, code, extern_map = {}, **macro_args):
         setattr(ctx, name, c)
     for node in ast["nodes"]["variable"]:
         name = "var_" + node["name"]
-        print("CREATE", name)
         c = cell("str")
         variables[node["name"]] = c
         setattr(ctx, name, c)
+        origin = node["origin"]
+        if origin == "intern":
+            pass #nothing to do
+        elif origin == "extern":
+            raise NotImplementedError #c.set(...) using extern_mapping + macro_args
+        elif origin == "input":
+            pin = ExportedInputPin(c)
+            setattr(ctx, node["name"], pin)
+        else:
+            raise ValueError(origin)
     for node in ast["nodes"]["doc"]:
         name = "doc_" + node["name"]
-        print("CREATE", name)
         c = cell("text")
         docs[node["name"]] = c
         setattr(ctx, name, c)
@@ -139,13 +145,14 @@ def slash0(ctx, code, extern_map = {}, **macro_args):
         setattr(ctx, name, pin)
     for command in ast["commands"]:
         source = command["cmd"]["source"]
-        sourcehash = hex(hash(source))[2:]
+        sourcehash = hashlib.md5(source.encode("utf-8")).hexdigest()
         cmd_type = command["cmd"]["command"]
         if cmd_type == "standard":
-            cmd_params = make_cmd_params(command, nodes, env)
+            cmd_params = make_cmd_params(command, nodes, env, sourcehash)
             command_worker = make_cmd_std(cmd_params)
             name = "cmd-" + sourcehash
             setattr(ctx, name, command_worker)
+            setattr(ctx, name +"-PARAMS", command_worker.PARAMS.cell())
         else:
             raise NotImplementedError(cmd_type)
-#TODO: file nodes!
+#TODO: file nodes! (???)

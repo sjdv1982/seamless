@@ -30,7 +30,7 @@ def filelink(ctx, cell_type):
     rc = ctx.rc = reactor(pinparams)
     rc.code_start.cell().fromfile(cell_filelink_start)
     rc.code_update.cell().set("write_file(PINS.filepath.get())")
-    rc.code_stop.cell().set('t.join(0)')
+    rc.code_stop.cell().set('terminate.set(); t.join()')
     ctx.export(rc)
 
 def link(cell, directory=None, filename=None, latency=0.2, own=False):

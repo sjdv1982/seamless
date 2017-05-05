@@ -58,6 +58,7 @@ def json_to_macros(ctx, data):
             ta = tuple(ta)
         macro = Macro(
           with_context=m["with_context"],
+          with_caching=m.get("with_caching", False),
           type=ta,
         )
         macro.module_name=m["module_name"]

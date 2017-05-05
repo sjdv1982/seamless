@@ -1,45 +1,59 @@
 import os, time, traceback, hashlib
-from threading import Thread, RLock
+from threading import Thread, RLock, Event
 last_filehash = None
 last_mtime = None
 last_exc = None
 
-def poll():
+def read(fpath):
     global last_time, last_mtime, last_filehash, last_exc
+    curr_time = time.time()
+    last_time = curr_time
+    try:
+        if not os.path.exists(fpath):
+            if last_filehash is not None:
+                PINS.filehash.set(None)
+                last_filehash = None
+            raise Exception("File does not exist: '%s'" % fpath)
+        else:
+            with lock:
+                stat = os.stat(fpath)
+
+                if last_mtime is None or stat.st_mtime > last_mtime:
+                    data = None
+                    with open(fpath, "rb") as f:
+                        data = f.read()
+                    if data is not None:
+                        filehash = hashlib.md5(data).hexdigest()
+                        PINS.filehash.set(filehash)
+                        last_filehash = filehash
+                    last_mtime = stat.st_mtime
+    except:
+        exc = traceback.format_exc()
+        if exc != last_exc:
+            print(exc)
+            last_exc = exc
+
+sleeptime = 0.01
+def poll():
     fpath = PINS.filepath.get()
-    if fpath.startswith("~/"):
-        fpath = os.environ["HOME"] + fpath[1:]
-    print("FILEHASH PATH", fpath, os.path.exists(fpath))
+    fpath = os.path.expanduser(fpath)
     while 1:
+        sleeps = int(PINS.latency.get() / sleeptime + 0.9999)
+        for n in range(sleeps):
+            time.sleep(sleeptime)
+            if terminate.is_set():
+                break
+        if terminate.is_set():
+            break
         time.sleep(PINS.latency.get())
-        curr_time = time.time()
-        last_time = curr_time
-        try:
-            if not os.path.exists(fpath):
-                if last_filehash is not None:
-                    PINS.filehash.set(None)
-                    last_filehash = None
-                raise Exception("File does not exist: '%s'" % fpath)
-            else:
-                with lock:
-                    stat = os.stat(fpath)
+        read(fpath)
 
-                    if last_mtime is None or stat.st_mtime > last_mtime:
-                        data = None
-                        with open(fpath, "rb") as f:
-                            data = f.read()
-                        if data is not None:
-                            filehash = hashlib.md5(data).hexdigest()
-                            PINS.filehash.set(filehash)
-                            last_filehash = filehash
-                        last_mtime = stat.st_mtime
-        except:
-            exc = traceback.format_exc()
-            if exc != last_exc:
-                print(exc)
-                last_exc = exc
-
+terminate = Event()
 t = Thread(target=poll)
 t.setDaemon(True)
 lock = RLock()
 t.start()
+
+fpath = PINS.filepath.get()
+fpath = os.path.expanduser(fpath)
+read(fpath)

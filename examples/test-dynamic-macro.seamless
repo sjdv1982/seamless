@@ -195,6 +195,7 @@
         "cell5",
         "t2.inp2"
       ]
-    ]
+    ],
+    "cell_cell_connections": []
   }
 }

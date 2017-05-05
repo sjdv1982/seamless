@@ -5,10 +5,15 @@ from weakref import WeakKeyDictionary, WeakValueDictionary, WeakSet
 
 #TODO: disconnect method (see MacroObject for low-level implementation)
 
+def head(value):
+    return str(value)[:50].replace("\n","\\n")
+
 class Manager:
 
     def __init__(self):
         self.listeners = {}
+        self.cell_aliases = {}
+        self.cell_rev_aliases = {}
         self.macro_listeners = {}
         self.registrar_listeners = WeakKeyDictionary()
         self.rev_registrar_listeners = WeakKeyDictionary()
@@ -28,6 +33,40 @@ class Manager:
         else:
             #print("STABLE", worker)
             self.unstable_workers.discard(worker)
+
+    def add_cell_alias(self, source, target):
+        from .cell import Cell
+        assert isinstance(source, Cell)
+        assert isinstance(target, Cell)
+        assert source is not target
+        cell_id = self.get_cell_id(source)
+        target_ref = weakref.ref(target)
+
+        try:
+            aliases = self.cell_aliases[cell_id]
+            if target_ref not in aliases:
+                aliases.append(target_ref)
+
+        except KeyError:
+            self.cell_aliases[cell_id] = [target_ref]
+
+        if cell_id not in self.cells:
+            self.cells[cell_id] = source
+
+        #reverse alias
+        cell_id = self.get_cell_id(target)
+        source_ref = weakref.ref(source)
+
+        try:
+            rev_aliases = self.cell_rev_aliases[cell_id]
+            if source_ref not in aliases:
+                rev_aliases.append(source_ref)
+
+        except KeyError:
+            self.cell_rev_aliases[cell_id] = [source_ref]
+
+        if cell_id not in self.cells:
+            self.cells[cell_id] = target
 
     def add_registrar_item(self, registrar_name, dtype, data, data_name):
         item = registrar_name, dtype, data, data_name
@@ -92,6 +131,35 @@ class Manager:
         cell_ids = self.pin_to_cells.pop(input_pin.get_pin_id(), [])
         for cell_id in cell_ids:
             self._remove_listener(cell_id, input_pin, worker)
+
+    def remove_aliases(self, cell):
+        cell_id = self.get_cell_id(cell)
+        cell_ref = weakref.ref(cell)
+        targets = self.cell_aliases.pop(cell_id, [])
+
+        for target_ref in targets:
+            target = target_ref()
+            if target is None:
+                continue
+            target._on_disconnect(cell, None, incoming=True)
+            target_id = self.get_cell_id(target)
+            r = self.cell_rev_aliases[target_id]
+            r[:] = [rr for rr in r if rr is not cell_ref]
+            if not len(r):
+                self.cell_rev_aliases.pop(target_id)
+
+        #rev_aliases
+        targets = self.cell_rev_aliases.pop(cell_id, [])
+
+        for target_ref in targets:
+            target = target_ref()
+            if target is None:
+                continue
+            target_id = self.get_cell_id(target)
+            r = self.cell_aliases[target_id]
+            r[:] = [rr for rr in r if rr is not cell_ref]
+            if not len(r):
+                self.cell_aliases.pop(target_id)
 
     def remove_listeners_cell(self, cell):
         cell_id = self.get_cell_id(cell)
@@ -170,6 +238,12 @@ class Manager:
             for macro_object, macro_arg in macro_listeners:
                 macro_object.update_cell(macro_arg)
 
+        aliases = self.cell_aliases.get(cell_id, [])
+        for target_cell_ref in aliases:
+            target_cell = target_cell_ref()
+            if target_cell is not None:
+                target_cell._update(value, propagate=True)
+
         listeners = self.listeners.get(cell_id, [])
         if only_last:
             listeners = listeners[-1:]
@@ -194,7 +268,7 @@ class Manager:
         value = cell._data
         cell_id = self.get_cell_id(cell)
         if seamless.debug:
-            print("manager.update_from_code", cell, str(value)[:50])
+            print("manager.update_from_code", cell, head(value))
         self._update(cell_id, cell.dtype, value, only_last=only_last)
         from .. import run_work
         from .macro import get_macro_mode
@@ -208,7 +282,7 @@ class Manager:
         if cell is None:
             return #cell has died...
         if seamless.debug:
-            print("manager.update_from_worker", cell, value, worker)
+            print("manager.update_from_worker", cell, head(value), worker)
 
         if isinstance(cell, Signal):
             assert value is None
@@ -306,15 +380,19 @@ class Manager:
         if isinstance(source, EditPinBase):
             source, target = target, source
         if isinstance(source, CellLike) and source._like_cell:
-            assert isinstance(target, (InputPinBase, EditPinBase))
+            assert isinstance(target, (InputPinBase, EditPinBase, CellLike))
             assert source._get_manager() is self
             assert target._get_manager() is self
             if isinstance(target, ExportedInputPin):
                 target = target.get_pin()
 
-            if isinstance(source, Context):
-                assert "_output" in source._pins
-                source = source._pins["_output"]
+            if isinstance(target, Cell):
+                self.add_cell_alias(source, target)
+                target._on_connect(source, None, incoming = True)
+                if source._status == Cell.StatusFlags.OK:
+                    target._update(source._data,propagate=True)
+
+                return
             worker = target.worker_ref()
             assert worker is not None #weakref may not be dead
             source._on_connect(target, worker, incoming = False)

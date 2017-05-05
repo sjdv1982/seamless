@@ -52,7 +52,8 @@ ctx.cons.value.connect(ctx.value)
 ctx._validate_path()
 
 ctx.silk_model.set(silk_model2)
-time.sleep(0.001)
+#time.sleep(0.001)
+ctx.equilibrate()
 print(ctx.value.data)
 
 ctx.ed_silk_model = edit(ctx.silk_model,"Silk model")

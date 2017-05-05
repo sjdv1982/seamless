@@ -58,13 +58,13 @@ class Worker(metaclass=ABCMeta):
     def run(self):
         # TODO: add a mechanism to redirect exception messages (to a cell!)
         # instead of printing them to stderr
-        import time
-        time.sleep(0.01) # To allow registrar connections to be made
 
-        def ack():
+        def ack(end_of_loop=False):
+            #if not end_of_loop and not len(self._pending_inputs):
+            #    raise Exception
             updates_processed = self._pending_updates
             self._pending_updates = 0
-            self.output_queue.append((None, updates_processed))
+            self.output_queue.append((None, (updates_processed, self._pending_inputs)))
             self.output_semaphore.release()
 
         try:
@@ -165,7 +165,7 @@ class Worker(metaclass=ABCMeta):
                         import traceback
                         traceback.print_exc()
 
-                ack()
+                ack(True)
 
         finally:
             self.finished.set()

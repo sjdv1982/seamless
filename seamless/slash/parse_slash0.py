@@ -41,17 +41,18 @@ def parse_slash0(code):
         pos = 0
         assign = lmask.find("=")
         words = tokenize(l, lmask)
+        source = " ".join(words)
         if assign > -1:
-            lines.append(("assign", lnr, l, words))
+            lines.append(("assign", lnr, source, words))
             continue
         command = words[0]
         if command.startswith("@"):
             command = command[1:]
             if command in ("assign", "standard") or command not in cmd_funcs:
                 syntax_error(lnr+1, l, "Unknown command: {0}".format(command))
-            lines.append((command, lnr, l, words))
+            lines.append((command, lnr, source, words))
         else:
-            lines.append(("standard", lnr, l, words))
+            lines.append(("standard", lnr, source, words))
 
     #First pass (declarations)
     for line in lines:

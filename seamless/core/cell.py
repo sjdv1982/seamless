@@ -21,24 +21,6 @@ class CellLike(object):
     CellLikes are captured by context.cells"""
     _like_cell = True
 
-
-class CellPinWrapper:
-    def __init__(self, parent):
-        self.parent = weakref.ref(parent)
-        self._pins = {}
-    def __getitem__(self, attr):
-        from .worker import CellInputPin, CellOutputPin
-        if attr == "_input":
-            if "_input" not in self._pins:
-                self._pins["_input"] = CellInputPin(self.parent)
-            return self._pins["_input"]
-        elif attr == "_output":
-            if "_output" not in self._pins:
-                self._pins["_output"] = CellOutputPin(self.parent)
-            return self._pins["_output"]
-        else:
-            raise KeyError(attr)
-
 class Cell(Managed, CellLike):
     """Default class for cells.
 
@@ -65,7 +47,6 @@ class Cell(Managed, CellLike):
     def __init__(self, dtype, *, naming_pattern="cell"):
         """TODO: docstring."""
         super().__init__()
-        self._pins = CellPinWrapper(self)
 
         from .macro import get_macro_mode
         from .context import get_active_context
@@ -108,10 +89,14 @@ class Cell(Managed, CellLike):
         return self
 
     def set(self, text_or_object):
-        ret = self._set(text_or_object, propagate=True)
+        result = self._set(text_or_object, propagate=True)
+        if text_or_object is None:
+            self.resource.cache = None
+        else:
+            self.resource.cache = False
         import seamless
         seamless.run_work()
-        return ret
+        return result
 
     def fromfile(self, filename):
         self._check_destroyed()
@@ -194,9 +179,14 @@ class Cell(Managed, CellLike):
             manager.update_from_code(self)
 
     def _update(self, data, propagate=False):
-        """Invoked when cell data is updated by a worker."""
+        """Invoked when cell data is updated by a worker or an alias."""
         #return self._text_set(data, propagate=False, trusted=True)
-        return self._set(data, propagate=False) #for now, workers can also set with non-text...
+        result = self._set(data, propagate=propagate) #for now, workers can also set with non-text...
+        if data is None:
+            self.resource.cache = None
+        elif self.dependent:
+            self.resource.cache = True
+        return result
 
     def disconnect(self, target):
         """Break ane existing connection between the cell and a worker's input pin."""
@@ -243,14 +233,17 @@ class Cell(Managed, CellLike):
         self._check_destroyed()
         return self._error_message
 
+    def cell(self):
+        return self
+
     def _on_connect(self, pin, worker, incoming):
         from .worker import OutputPinBase
         if incoming:
-            if self._dependent and isinstance(pin, OutputPinBase):
+            if self._dependent and isinstance(pin, (OutputPinBase, Cell)):
                 raise Exception(
                  "Cell is already the output of another worker"
                 )
-            if isinstance(pin, OutputPinBase):
+            if isinstance(pin, (OutputPinBase, Cell)):
                 self._dependent = True
             self._incoming_connections += 1
         else:
@@ -259,8 +252,10 @@ class Cell(Managed, CellLike):
     def _on_disconnect(self, pin, worker, incoming):
         from .worker import OutputPinBase
         if incoming:
-            if isinstance(pin, OutputPinBase):
+            if isinstance(pin, (OutputPinBase, Cell)):
                 self._dependent = False
+                if not self._destroyed:
+                    self.resource.cache = False
             self._incoming_connections -= 1
         else:
             self._outgoing_connections -= 1
@@ -285,6 +280,7 @@ class Cell(Managed, CellLike):
         if self._context is None:
             return
         manager = self._get_manager()
+        manager.remove_aliases(self)
         manager.remove_listeners_cell(self)
 
     def destroy(self):

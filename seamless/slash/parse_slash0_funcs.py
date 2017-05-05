@@ -1,4 +1,4 @@
-import re
+import re, shlex
 from ..silk.typeparse.parse import mask_characters
 from .parse_slash0_utils import syntax_error, tokenize, doc_name, literal, \
  append_node, find_node, quote_match
@@ -117,7 +117,7 @@ def parse_command_argument(cmd_index, word, lineno, l, nodes, noderefs):
     #nodes and noderefs are appended
     if quote_match.match(word):
         v = parse_literal(word, lineno, l)
-        return '"' + v + '"'
+        return shlex.quote(v)
     has_dollars = False
     for pos0 in re.finditer(r"\$", word):
         pos = pos0.start()
@@ -351,7 +351,8 @@ def cmd_standard(cmd_index, line, nodes):
     result = {
         "cmd" : {
             "command": command,
-            "lineno": lineno,
+            #"lineno": lineno,
+            "lineno": "X", #disable for caching purposes (re-arranging lines shouldn't be a cache miss)
             "source": l,
         },
         "parsed": parsed,
