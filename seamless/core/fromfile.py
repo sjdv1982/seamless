@@ -4,6 +4,7 @@ from .transformer import Transformer
 from .cell import Cell, cell as cell_factory
 import json
 from collections import OrderedDict
+from contextlib import contextmanager
 
 _fromfile_mode = False
 
@@ -13,6 +14,16 @@ def get_fromfile_mode():
 def set_fromfile_mode(fromfile_mode):
     global _fromfile_mode
     _fromfile_mode = fromfile_mode
+
+
+@contextmanager
+def fromfile_mode_as(mode):
+    original_mode = get_fromfile_mode()
+    set_fromfile_mode(mode)
+    try:
+        yield
+    finally:
+        set_fromfile_mode(original_mode)
 
 def _get_sl(parent, path):
     if len(path) == 0:
@@ -182,8 +193,7 @@ def json_to_ctx(ctx, data, myname=None, ownerdict=None, pinlist=None):
 
 def fromfile(filename):
     ctx = Context()
-    try:
-        set_fromfile_mode(True)
+    with fromfile_mode_as(True):
         data = json.load(open(filename))
         links = json_to_lib(data["lib"])
         m = ctx._manager
@@ -196,6 +206,4 @@ def fromfile(filename):
         json_to_macro_listeners(ctx, data["main"]["macro_listeners"], macro_objects)
         json_to_registrar_cells(ctx, data["main"]["registrar_cells"])
         json_to_connections(ctx, data["main"])
-    finally:
-        set_fromfile_mode(False)
     return ctx
