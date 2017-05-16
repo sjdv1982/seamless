@@ -44,8 +44,9 @@ class Reactor(Worker):
     _required_code_type = PythonCell.CodeTypes.ANY
 
     def __init__(self, reactor_params):
-        from .macro import get_macro_mode
         super().__init__()
+
+        from .macro import get_macro_mode
         self.state = {}
         self.outputs = {}
         self.code_start = InputPin(self, "code_start", ("text", "code", "python"))
@@ -87,8 +88,7 @@ class Reactor(Worker):
             self.outputs,
         )
         if get_macro_mode():
-            for p in self._pins:
-                pin = self._pins[p]
+            for pin in self._pins.values():
                 if isinstance(pin, OutputPin):
                     pin.cell() #auto-create a cell
     @property
@@ -103,17 +103,17 @@ class Reactor(Worker):
 
     def set_context(self, context):
         Worker.set_context(self, context)
-        for p in self._pins:
-            self._pins[p].set_context(context)
+        for pin in self._pins.values():
+            pin.set_context(context)
         return self
 
     def receive_update(self, input_pin, value):
         self._pending_updates += 1
-        f = self.reactor.process_input
+
         if self._pins[input_pin].dtype == "signal":
-            f(input_pin, value)
+            self.reactor.process_input(input_pin, value)
         else:
-            work = partial(f, input_pin, value)
+            work = partial(self.reactor.process_input, input_pin, value)
             seamless.add_work(work)
 
     def receive_registrar_update(self, registrar_name, key, namespace_name):
@@ -131,11 +131,11 @@ class Reactor(Worker):
         if self._destroyed:
             return
         try:
-            func = self.reactor
+            reactor = self.reactor
         except AttributeError:
             pass
         else:
-            self.reactor.destroy()
+            reactor.destroy()
 
         # free all input and output pins
         for attr in self._io_attrs:
