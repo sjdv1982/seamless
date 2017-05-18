@@ -117,6 +117,7 @@ def parse_command_argument(cmd_index, word, lineno, l, nodes, noderefs):
     #nodes and noderefs are appended
     if quote_match.match(word):
         v = parse_literal(word, lineno, l)
+        v = v.replace("{", "{{").replace("}", "}}")
         return shlex.quote(v)
     has_dollars = False
     for pos0 in re.finditer(r"\$", word):

@@ -10,15 +10,11 @@
     },
     "/gui/cell-basic_display_html.py": {
       "data": "from seamless.qt.QtWidgets import QPlainTextEdit, QWidget, QVBoxLayout\nfrom seamless.qt.QtCore import Qt\nfrom PyQt5.QtGui import QColor\n\nw = QWidget()\n#w.setWindowFlags(Qt.WindowStaysOnTopHint)\nw.setAttribute(Qt.WA_ShowWithoutActivating)\nvbox = QVBoxLayout()\n#vbox.addStretch(1)\nw.resize(600,600)\nw.setLayout(vbox)\nw.setWindowTitle(PINS.title.get())\n\nw.show()\nb = QPlainTextEdit()\nb.setReadOnly(True)\n#b.setFontPointSize(15)\nb.setPlainText(PINS.value.get())\n#b.setFontItalic(True)\n#b.setTextColor(QColor(255,0,0))\nvbox.addWidget(b)\n",
-      "links": [
-        "d_value.cell2"
-      ]
+      "links": []
     },
     "/gui/cell-basic_display_html_UPDATE.py": {
       "data": "if PINS.value.updated:\n    b.setPlainText(PINS.value.get())\nif PINS.title.updated:\n    w.setWindowTitle(PINS.title.get())\n",
-      "links": [
-        "d_value.cell4"
-      ]
+      "links": []
     },
     "/gui/cell-basic_display_int.py": {
       "data": "from seamless.qt.QtWidgets import QSpinBox, QWidget, QVBoxLayout\nfrom seamless.qt.QtCore import Qt\n\nw = QWidget()\n#w.setWindowFlags(Qt.WindowStaysOnTopHint)\nw.setAttribute(Qt.WA_ShowWithoutActivating)\nvbox = QVBoxLayout()\nvbox.addStretch(1)\nw.setLayout(vbox)\nw.resize(300,100)\nw.setWindowTitle(PINS.title.get())\nw.show()\nb = QSpinBox()\nb.setMaximum(1000000)\nb.setValue(PINS.value.get())\nvbox.addWidget(b)\n",
@@ -34,11 +30,15 @@
     },
     "/gui/cell-basic_display_text.py": {
       "data": "from seamless.qt.QtWidgets import QTextEdit, QWidget, QVBoxLayout\nfrom seamless.qt.QtCore import Qt\nfrom PyQt5.QtGui import QColor\n\nw = QWidget()\n#w.setWindowFlags(Qt.WindowStaysOnTopHint)\nw.setAttribute(Qt.WA_ShowWithoutActivating)\nvbox = QVBoxLayout()\n#vbox.addStretch(1)\nw.resize(600,600)\nw.setLayout(vbox)\nw.setWindowTitle(PINS.title.get())\n\nw.show()\nb = QTextEdit()\nb.setReadOnly(True)\nb.setFontPointSize(15)\nb.setText(PINS.value.get())\n#b.setFontItalic(True)\n#b.setTextColor(QColor(255,0,0))\nvbox.addWidget(b)\n",
-      "links": []
+      "links": [
+        "d_value.cell2"
+      ]
     },
     "/gui/cell-basic_display_text_UPDATE.py": {
       "data": "if PINS.value.updated:\n    b.setText(PINS.value.get())\nif PINS.title.updated:\n    w.setWindowTitle(PINS.title.get())\n",
-      "links": []
+      "links": [
+        "d_value.cell4"
+      ]
     },
     "/gui/cell-basic_editor_UPDATE.py": {
       "data": "if PINS.value.updated:\n    b.setValue(PINS.value.get())\nif PINS.title.updated:\n    w.setWindowTitle(PINS.title.get())\n",
@@ -82,7 +82,7 @@
         "python"
       ],
       "type_args": "str",
-      "module_name": "__main__",
+      "module_name": "__mp_main__",
       "func_name": "construct_silk_model",
       "code": "@macro(\"str\")\ndef construct_silk_model(ctx, mode):\n    from seamless import transformer\n    params = {\"value\": {\"pin\": \"output\", \"dtype\": \"text\"}}\n    if mode == \"array\":\n        params[\"N\"] = {\"pin\": \"input\", \"dtype\": \"int\"}\n        code = \"\"\"s = SilkModel()\nreturn str(SilkModelArray([s for n in range(N)]))\n\"\"\"\n    else:\n        code = \"return str(SilkModel())\"\n    ctx.transf = transformer(params)\n    ctx.transf.code.cell().set(code)\n    ctx.registrar.silk.connect(\"SilkModel\", ctx.transf)\n    if mode == \"array\":\n        ctx.registrar.silk.connect(\"SilkModelArray\", ctx.transf)\n    ctx.export(ctx.transf)\n"
     },
@@ -160,13 +160,8 @@
     "like_worker": false,
     "like_cell": false,
     "pins": {},
-    "auto": [
-      "cell1"
-    ],
+    "auto": [],
     "children": {
-      "cell1": {
-        "dtype": "int"
-      },
       "cons": {
         "type": "context",
         "like_worker": true,
@@ -229,11 +224,11 @@
               "python"
             ],
             "resource": {
-              "filename": "/gui/cell-basic_display_html.py",
+              "filepath": "/gui/cell-basic_display_text.py",
               "lib": true,
               "mode": 2
             },
-            "data": "from seamless.qt.QtWidgets import QPlainTextEdit, QWidget, QVBoxLayout\nfrom seamless.qt.QtCore import Qt\nfrom PyQt5.QtGui import QColor\n\nw = QWidget()\n#w.setWindowFlags(Qt.WindowStaysOnTopHint)\nw.setAttribute(Qt.WA_ShowWithoutActivating)\nvbox = QVBoxLayout()\n#vbox.addStretch(1)\nw.resize(600,600)\nw.setLayout(vbox)\nw.setWindowTitle(PINS.title.get())\n\nw.show()\nb = QPlainTextEdit()\nb.setReadOnly(True)\n#b.setFontPointSize(15)\nb.setPlainText(PINS.value.get())\n#b.setFontItalic(True)\n#b.setTextColor(QColor(255,0,0))\nvbox.addWidget(b)\n"
+            "data": "from seamless.qt.QtWidgets import QTextEdit, QWidget, QVBoxLayout\nfrom seamless.qt.QtCore import Qt\nfrom PyQt5.QtGui import QColor\n\nw = QWidget()\n#w.setWindowFlags(Qt.WindowStaysOnTopHint)\nw.setAttribute(Qt.WA_ShowWithoutActivating)\nvbox = QVBoxLayout()\n#vbox.addStretch(1)\nw.resize(600,600)\nw.setLayout(vbox)\nw.setWindowTitle(PINS.title.get())\n\nw.show()\nb = QTextEdit()\nb.setReadOnly(True)\nb.setFontPointSize(15)\nb.setText(PINS.value.get())\n#b.setFontItalic(True)\n#b.setTextColor(QColor(255,0,0))\nvbox.addWidget(b)\n"
           },
           "cell3": {
             "dtype": [
@@ -250,11 +245,11 @@
               "python"
             ],
             "resource": {
-              "filename": "/gui/cell-basic_display_html_UPDATE.py",
+              "filepath": "/gui/cell-basic_display_text_UPDATE.py",
               "lib": true,
               "mode": 2
             },
-            "data": "if PINS.value.updated:\n    b.setPlainText(PINS.value.get())\nif PINS.title.updated:\n    w.setWindowTitle(PINS.title.get())\n"
+            "data": "if PINS.value.updated:\n    b.setText(PINS.value.get())\nif PINS.title.updated:\n    w.setWindowTitle(PINS.title.get())\n"
           },
           "display": {
             "type": "reactor",
@@ -265,10 +260,7 @@
                 "pin": "input"
               },
               "value": {
-                "dtype": [
-                  "text",
-                  "html"
-                ],
+                "dtype": "text",
                 "pin": "input"
               }
             }
@@ -302,7 +294,7 @@
               "python"
             ],
             "resource": {
-              "filename": "/gui/cell-basic_editor_text.py",
+              "filepath": "/gui/cell-basic_editor_text.py",
               "lib": true,
               "mode": 2
             },
@@ -323,7 +315,7 @@
               "python"
             ],
             "resource": {
-              "filename": "/gui/cell-basic_editor_text_UPDATE.py",
+              "filepath": "/gui/cell-basic_editor_text_UPDATE.py",
               "lib": true,
               "mode": 2
             },
@@ -384,7 +376,7 @@
         "cell_args": {
           "_arg1": "mode"
         },
-        "macro_module_name": "__main__",
+        "macro_module_name": "__mp_main__",
         "macro_func_name": "construct_silk_model",
         "macro_order": 0,
         "target": "cons"
@@ -439,10 +431,6 @@
       ]
     ],
     "cell_pin_connections": [
-      [
-        "cell1",
-        "cons.transf.N"
-      ],
       [
         "cons.cell1",
         "cons.transf.code"

@@ -25,7 +25,7 @@ time.sleep(0.1)
 print(c_output.data)
 
 f = "test-tofromfile.seamless"
-ctx.tofile(f)
+ctx.tofile(f, backup=False)
 ctx.destroy()
 
 ctx = seamless.fromfile(f)

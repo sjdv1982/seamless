@@ -236,7 +236,12 @@ class Manager:
 
         if not only_last:
             for macro_object, macro_arg in macro_listeners:
-                macro_object.update_cell(macro_arg)
+                try:
+                    macro_object.update_cell(macro_arg)
+                except:
+                    #TODO: proper logging
+                    import traceback
+                    traceback.print_exc()
 
         aliases = self.cell_aliases.get(cell_id, [])
         for target_cell_ref in aliases:

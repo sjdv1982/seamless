@@ -55,10 +55,16 @@ def write_file(fpath):
     with lock:
         if last_serialized_value != val:
             #print("WRITE", val)
-            with open(fpath, "w", encoding="utf-8") as f:
-                f.write(val)
-                last_value = PINS.value.get()
-                last_serialized_value = val
+            if PINS.value._dtype == "object":
+                with open(fpath, "wb") as f:
+                    f.write(val)
+                    last_value = PINS.value.get()
+                    last_serialized_value = val
+            else:
+                with open(fpath, "w", encoding="utf-8") as f:
+                    f.write(val)
+                    last_value = PINS.value.get()
+                    last_serialized_value = val
             last_time = time.time()
             try:
                 stat = os.stat(fpath)
@@ -95,8 +101,12 @@ def poll():
                 try:
                     if last_mtime is None or stat.st_mtime > last_mtime:
                         data = None
-                        with open(fpath, encoding="utf-8") as f:
-                            data = f.read()
+                        if PINS.value._dtype == "object":
+                            with open(fpath, "rb") as f:
+                                data = f.read()
+                        else:
+                            with open(fpath, encoding="utf-8") as f:
+                                data = f.read()
                         if data is not None:
                             if last_serialized_value != data:
                                 #print("LOAD")

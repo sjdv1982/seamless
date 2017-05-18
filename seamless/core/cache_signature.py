@@ -1,5 +1,3 @@
-import hashlib
-
 def cache_signature_cell(cell, ctx_path, manager, known):
     from .transformer import Transformer
     from .reactor import Reactor
@@ -58,7 +56,8 @@ def cache_signature_cell(cell, ctx_path, manager, known):
             sig["signature"] = wsigs
     elif cache == False:
         sig["mode"] = "independent"
-        sig["signature"] = hashlib.md5(str(cell.value).encode("utf-8")).hexdigest()
+        hash_ = cell.resource.get_hash()
+        sig["signature"] = hash_
     elif isinstance(cache, str):
         sig["mode"] = "fromfile"
         sig["signature"] = cache
@@ -72,12 +71,19 @@ def cache_signature_reactor(rc, ctx_path, manager, known):
         return known[rc]
     known[rc] = rc.path #placeholder for infinite cycles
     sig = {}
-    for pinname, pin in rc.reactor_params.items():
-        if pin["pin"] == "output":
+    manager = rc._get_manager()
+    for pinname, pindict in rc.reactor_params.items():
+        if pindict["pin"] == "output":
             continue
-        c = getattr(rc, pinname).cell()
+        pin = getattr(rc, pinname)
+        #c = pin.cell()
+        curr_pin_to_cells = manager.pin_to_cells.get(pin.get_pin_id(), [])
+        if len(curr_pin_to_cells) == 0:
+            continue
+        assert len(curr_pin_to_cells) == 1
+        c = curr_pin_to_cells[0]
         csig = cache_signature_cell(c, ctx_path, manager, known)
-        sig[pinname] = (pin["pin"], pin["dtype"], c.path, csig)
+        sig[pinname] = (pindict["pin"], pindict["dtype"], c.path, csig)
     known[rc] = sig
     return sig
 
@@ -86,12 +92,20 @@ def cache_signature_transformer(tf, ctx_path, manager, known):
         return known[tf]
     known[tf] = tf.path #placeholder for infinite cycles
     sig = {}
-    for pinname, pin in tf.transformer_params.items():
-        if pin["pin"] == "output":
+    all_cells = manager.cells
+    for pinname, pindict in tf.transformer_params.items():
+        if pindict["pin"] == "output":
             continue
-        c = getattr(tf, pinname).cell()
-        csig = cache_signature_cell(c, ctx_path, manager, known)
-        sig[pinname] = (pin["pin"], pin["dtype"], c.path, csig)
+        pin = getattr(tf, pinname)
+        #c = pin.cell()
+        curr_pin_to_cells = manager.pin_to_cells.get(pin.get_pin_id(), [])
+        if len(curr_pin_to_cells) == 0:
+            continue
+        assert len(curr_pin_to_cells) == 1
+        c = curr_pin_to_cells[0]
+        cell = all_cells[c] #should always exist
+        csig = cache_signature_cell(cell, ctx_path, manager, known)
+        sig[pinname] = (pindict["pin"], pindict["dtype"], cell.path, csig)
     known[tf] = sig
     return sig
 

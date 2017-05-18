@@ -9,7 +9,6 @@ class MacroObject:
     kwargs = {}
     cell_args = {}
     _parent = None
-    cache_signature = None
 
     def __init__(self, macro, args, kwargs, cell_args):
         self.macro = macro
@@ -39,7 +38,7 @@ class MacroObject:
 
     def update_cell(self, cellname):
         from .. import debug
-        from .macro import macro_mode_as
+        from .macro import macro_mode_on
         from .context import Context
         from .cell import Cell
         from .worker import Worker, InputPinBase, OutputPinBase, EditPinBase
@@ -56,8 +55,7 @@ class MacroObject:
             raise AttributeError(exc.format(parent))
 
         with_caching = self.macro.with_caching and isinstance(parent, Context)
-        signature = self.cache_signature
-        if signature is None and with_caching:
+        if with_caching:
             signature = cache_signature(parent)
 
         external_connections = []
@@ -74,7 +72,7 @@ class MacroObject:
         else:
             raise TypeError(type(parent))
 
-        with macro_mode_as(True):
+        with macro_mode_on():
             new_parent = self.macro.evaluate(self.args, self.kwargs, self)
             new_signature = None
             if with_caching:
@@ -90,8 +88,6 @@ class MacroObject:
                 setattr(grandparent, "@TEMP_CONTEXT", parent)
             setattr(grandparent, parent_childname, new_parent) #destroys parent and connections
             self._parent = weakref.ref(new_parent)
-            self.cache_signature = new_signature
-
 
             def resolve_path(target, path, index):
                 if path is not None and len(path) > index:
@@ -105,7 +101,7 @@ class MacroObject:
                     return resolve_path(new_target, path, index+1)
                 return target
 
-            transplanted = set()
+            transplanted = {}
             if with_caching: #transplant from old parent context into new parent context
                 #TODO: this will only work as long as registrars/registries are global
                 new_internal_connections = []
@@ -113,10 +109,14 @@ class MacroObject:
 
                 #build a set of to-be-transplanted children
                 for childname, child in sorted(new_parent._children.items()):
+                    assert not child._destroyed, childname
                     old_sig = signature.get(childname, None)
                     new_sig = new_signature[childname]
                     if old_sig == new_sig:
-                        transplanted.add(childname)
+                        transplanted[childname] = getattr(parent, childname)
+
+                manager = parent._manager
+
                 #destroy internal connections that are no longer used
                 for con in old_internal_connections:
                     n_intern = sum([c[0] in transplanted for c in con])
@@ -129,15 +129,20 @@ class MacroObject:
                         source.disconnect(dest)
                     else: #n_intern == 2 and equiv
                         pass
+
                 #transplant the children
                 for childname in transplanted:
-                    child = getattr(parent, childname)
+                    child = transplanted[childname]
+                    c = manager.get_cell_id(child)
                     setattr(new_parent, childname, child)
+                    assert manager.get_cell_id(getattr(new_parent, childname)) == c
                 #destroy the remnants of the old context
                 if with_caching:
                     delattr(grandparent, "@TEMP_CONTEXT")
+                    parent.destroy()
+
                 #build new internal connections that didn't exist before
-                for con in new_internal_connections:
+                for con in sorted(new_internal_connections):
                     n_intern = sum([c[0] in transplanted for c in con])
                     equiv = (con in old_internal_connections)
                     if n_intern == 0:

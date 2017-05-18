@@ -45,3 +45,13 @@ ctx.nhead = cell("str").set(100)
 ctx.nhead.connect(ctx.slash0.nhead)
 
 ctx.equilibrate()
+
+ctx.tofile("test.seamless", backup = False)
+"""
+ctx.slash0.res.cell().set("ALA")
+print("START")
+ctx.code.set(ctx.code.value.replace("-$nhead", "-$nhead | awk '{print NR, $0}'"))
+ctx.equilibrate()
+ctx.slash0.res.cell().set("GLN")
+ctx.equilibrate()
+"""

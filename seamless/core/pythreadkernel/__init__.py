@@ -34,6 +34,7 @@ class Worker(metaclass=ABCMeta):
     name = "worker"
     output_queue = None
     output_semaphore = None
+    responsive = True
 
     def __init__(self, parent, inputs, event_cls=threading.Event, semaphore_cls=threading.Semaphore):
         self.parent = weakref.ref(parent)
@@ -96,6 +97,11 @@ class Worker(metaclass=ABCMeta):
                         ack()
                         continue
 
+                if name == "@RESPONSIVE":
+                    self.responsive = True
+                    ack(True)
+                    continue
+
                 if name != "@REGISTRAR":
                     # It's cheaper to look-ahead for updates and wait until we process them instead
                     look_ahead = False
@@ -154,7 +160,7 @@ class Worker(metaclass=ABCMeta):
                     self.updated.add(name)
 
                 # With all inputs now present, we can issue updates
-                if not self._pending_inputs:
+                if not self._pending_inputs and self.responsive:
                     try:
                         self.update(self.updated)
                         self.updated = set()

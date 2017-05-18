@@ -145,7 +145,7 @@
       },
       "module_name": "seamless.lib.gui.basic_display",
       "func_name": "basic_display",
-      "code": "@macro(OrderedDict((\n    (\"display_type\",\"str\"),\n    (\"title\",{\"type\": \"str\", \"default\": \"Basic display\"})\n)))\ndef basic_display(ctx, display_type, title):\n    from seamless import reactor\n\n    _displays = {\n      \"int\": {\n        \"code\": \"cell-basic_display_int.py\",\n        \"update\": \"cell-basic_display_UPDATE.py\",\n      },\n      \"float\": {\n        \"code\": \"cell-basic_display_float.py\",\n        \"update\": \"cell-basic_display_UPDATE.py\",\n      },\n      \"text\": {\n        \"code\": \"cell-basic_display_text.py\",\n        \"update\": \"cell-basic_display_text_UPDATE.py\",\n      },\n      (\"text\", \"html\"): {\n        \"code\": \"cell-basic_display_html.py\",\n        \"update\": \"cell-basic_display_html_UPDATE.py\",\n      },\n      \"json\": {\n        \"code\": \"cell-basic_display_json.py\",\n        \"update\": \"cell-basic_display_json_UPDATE.py\",\n      },\n    }\n\n    def _match_type(type, typelist):\n        typelist = list(typelist)\n        type2 = type\n        if isinstance(type, str):\n            type2 = (type,)\n        typelist2 = []\n        for t in typelist:\n            if isinstance(t, str):\n                typelist2.append((t,))\n            else:\n                typelist2.append(t)\n        matches = []\n        for n in range(len(typelist)):\n            ltype = typelist2[n]\n            k = min(len(type2), len(ltype))\n            if type2[:k] == ltype[:k]:\n                matches.append((n, k))\n        if not len(matches):\n            raise TypeError(\"Cannot find display for cell type '{0}'\".format(type))\n        matches.sort(key=lambda v: -v[1])\n        bestmatch = matches[0][0]\n        return typelist[bestmatch]\n\n    display_type = _match_type(display_type, _displays.keys())\n    pinparams = {\n      \"value\": {\n        \"pin\": \"input\",\n        \"dtype\": display_type\n      },\n      \"title\": {\n        \"pin\": \"input\",\n        \"dtype\": \"str\",\n      },\n    }\n    d = ctx.display = reactor(pinparams)\n    d.title.cell().set(title)\n    d.code_start.cell().fromfile(_displays[display_type][\"code\"])\n    d.code_stop.cell().set('w.destroy()')\n    upfile = _displays[display_type][\"update\"]\n    c_up = d.code_update.cell()\n    if upfile is not None:\n        c_up.fromfile(upfile)\n    else:\n        c_up.set(\"\")\n    ctx.export(d, forced=[\"title\"])\n"
+      "code": "@macro(OrderedDict((\n    (\"display_type\",\"str\"),\n    (\"title\",{\"type\": \"str\", \"default\": \"Basic display\"})\n)))\ndef basic_display(ctx, display_type, title):\n    from seamless import reactor\n\n    _displays = {\n      \"int\": {\n        \"code\": \"cell-basic_display_int.py\",\n        \"update\": \"cell-basic_display_UPDATE.py\",\n      },\n      \"float\": {\n        \"code\": \"cell-basic_display_float.py\",\n        \"update\": \"cell-basic_display_UPDATE.py\",\n      },\n      \"text\": {\n        \"code\": \"cell-basic_display_text.py\",\n        \"update\": \"cell-basic_display_text_UPDATE.py\",\n      },\n      \"str\": {\n        \"code\": \"cell-basic_display_text.py\",\n        \"update\": \"cell-basic_display_text_UPDATE.py\",\n      },\n      (\"text\", \"html\"): {\n        \"code\": \"cell-basic_display_html.py\",\n        \"update\": \"cell-basic_display_html_UPDATE.py\",\n      },\n      \"json\": {\n        \"code\": \"cell-basic_display_json.py\",\n        \"update\": \"cell-basic_display_json_UPDATE.py\",\n      },\n    }\n\n    def _match_type(type, typelist):\n        typelist = list(typelist)\n        type2 = type\n        if isinstance(type, str):\n            type2 = (type,)\n        typelist2 = []\n        for t in typelist:\n            if isinstance(t, str):\n                typelist2.append((t,))\n            else:\n                typelist2.append(t)\n        matches = []\n        for n in range(len(typelist)):\n            ltype = typelist2[n]\n            k = min(len(type2), len(ltype))\n            if type2[:k] == ltype[:k]:\n                matches.append((n, k))\n        if not len(matches):\n            raise TypeError(\"Cannot find display for cell type '{0}'\".format(type))\n        matches.sort(key=lambda v: -v[1])\n        bestmatch = matches[0][0]\n        return typelist[bestmatch]\n\n    display_type = _match_type(display_type, _displays.keys())\n    pinparams = {\n      \"value\": {\n        \"pin\": \"input\",\n        \"dtype\": display_type\n      },\n      \"title\": {\n        \"pin\": \"input\",\n        \"dtype\": \"str\",\n      },\n    }\n    d = ctx.display = reactor(pinparams)\n    d.title.cell().set(title)\n    d.code_start.cell().fromfile(_displays[display_type][\"code\"])\n    d.code_stop.cell().set('w.destroy()')\n    upfile = _displays[display_type][\"update\"]\n    c_up = d.code_update.cell()\n    if upfile is not None:\n        c_up.fromfile(upfile)\n    else:\n        c_up.set(\"\")\n    ctx.export(d, forced=[\"title\"])\n"
     },
     {
       "with_context": true,
@@ -206,7 +206,7 @@
               "python"
             ],
             "resource": {
-              "filename": "/gui/cell-basic_editor_int.py",
+              "filepath": "/gui/cell-basic_editor_int.py",
               "lib": true,
               "mode": 2
             },
@@ -227,7 +227,7 @@
               "python"
             ],
             "resource": {
-              "filename": "/gui/cell-basic_editor_UPDATE.py",
+              "filepath": "/gui/cell-basic_editor_UPDATE.py",
               "lib": true,
               "mode": 2
             },
@@ -277,7 +277,7 @@
               "python"
             ],
             "resource": {
-              "filename": "/gui/cell-basic_display_int.py",
+              "filepath": "/gui/cell-basic_display_int.py",
               "lib": true,
               "mode": 2
             },
@@ -298,7 +298,7 @@
               "python"
             ],
             "resource": {
-              "filename": "/gui/cell-basic_display_UPDATE.py",
+              "filepath": "/gui/cell-basic_display_UPDATE.py",
               "lib": true,
               "mode": 2
             },
@@ -347,7 +347,7 @@
               "python"
             ],
             "resource": {
-              "filename": "/gui/cell-basic_editor_text.py",
+              "filepath": "/gui/cell-basic_editor_text.py",
               "lib": true,
               "mode": 2
             },
@@ -368,7 +368,7 @@
               "python"
             ],
             "resource": {
-              "filename": "/gui/cell-basic_editor_text_UPDATE.py",
+              "filepath": "/gui/cell-basic_editor_text_UPDATE.py",
               "lib": true,
               "mode": 2
             },
@@ -467,7 +467,7 @@
               "python"
             ],
             "resource": {
-              "filename": "/gui/cell-basic_editor_text.py",
+              "filepath": "/gui/cell-basic_editor_text.py",
               "lib": true,
               "mode": 2
             },
@@ -488,7 +488,7 @@
               "python"
             ],
             "resource": {
-              "filename": "/gui/cell-basic_editor_text_UPDATE.py",
+              "filepath": "/gui/cell-basic_editor_text_UPDATE.py",
               "lib": true,
               "mode": 2
             },
@@ -633,6 +633,7 @@
         "ted1.cell4",
         "ted1.rc.code_update"
       ]
-    ]
+    ],
+    "cell_cell_connections": []
   }
 }
