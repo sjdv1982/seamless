@@ -5,6 +5,8 @@ def cache_signature_cell(cell, ctx_path, manager, known):
         return known[cell]
     known[cell] = cell.path #placeholder for infinite cycles
     sig = {}
+    if cell.resource is None:
+        return None
     cache = cell.resource.cache
     if cache is None and not cell.dependent:
         sig["mode"] = None

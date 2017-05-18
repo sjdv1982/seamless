@@ -9,7 +9,7 @@ def _fromfile_caching_walk(ctx, clean_cells, transformers ):
             _fromfile_caching_walk(child, clean_cells, transformers)
         elif isinstance(child, Transformer):
             transformers.add(child)
-        elif isinstance(child, Cell):
+        elif isinstance(child, Cell) and child.resource is not None:
             r = child.resource
             dirty = False
             if r.dirty:

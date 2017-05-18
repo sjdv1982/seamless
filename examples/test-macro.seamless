@@ -82,7 +82,7 @@
         "python"
       ],
       "type_args": "str",
-      "module_name": "__mp_main__",
+      "module_name": "__main__",
       "func_name": "construct_silk_model",
       "code": "@macro(\"str\")\ndef construct_silk_model(ctx, mode):\n    from seamless import transformer\n    params = {\"value\": {\"pin\": \"output\", \"dtype\": \"text\"}}\n    if mode == \"array\":\n        params[\"N\"] = {\"pin\": \"input\", \"dtype\": \"int\"}\n        code = \"\"\"s = SilkModel()\nreturn str(SilkModelArray([s for n in range(N)]))\n\"\"\"\n    else:\n        code = \"return str(SilkModel())\"\n    ctx.transf = transformer(params)\n    ctx.transf.code.cell().set(code)\n    ctx.registrar.silk.connect(\"SilkModel\", ctx.transf)\n    if mode == \"array\":\n        ctx.registrar.silk.connect(\"SilkModelArray\", ctx.transf)\n    ctx.export(ctx.transf)\n"
     },
@@ -167,8 +167,14 @@
         "like_worker": true,
         "like_cell": false,
         "pins": {
-          "N": "cons.transf.N",
-          "value": "cons.transf.value"
+          "N": [
+            "ExportedInputPin",
+            "cons.transf.N"
+          ],
+          "value": [
+            "ExportedOutputPin",
+            "cons.transf.value"
+          ]
         },
         "auto": [
           "cell1"
@@ -180,6 +186,11 @@
               "code",
               "python"
             ],
+            "resource": {
+              "filepath": null,
+              "lib": null,
+              "mode": null
+            },
             "data": "s = SilkModel()\nreturn str(SilkModelArray([s for n in range(N)]))\n"
           },
           "transf": {
@@ -203,8 +214,14 @@
         "like_worker": true,
         "like_cell": false,
         "pins": {
-          "title": "d_value.display.title",
-          "value": "d_value.display.value"
+          "title": [
+            "ExportedInputPin",
+            "d_value.display.title"
+          ],
+          "value": [
+            "ExportedInputPin",
+            "d_value.display.value"
+          ]
         },
         "auto": [
           "cell1",
@@ -215,6 +232,11 @@
         "children": {
           "cell1": {
             "dtype": "str",
+            "resource": {
+              "filepath": null,
+              "lib": null,
+              "mode": null
+            },
             "data": "Result"
           },
           "cell2": {
@@ -236,6 +258,11 @@
               "code",
               "python"
             ],
+            "resource": {
+              "filepath": null,
+              "lib": null,
+              "mode": null
+            },
             "data": "w.destroy()"
           },
           "cell4": {
@@ -273,8 +300,14 @@
         "like_worker": true,
         "like_cell": false,
         "pins": {
-          "title": "ed_silk_model.rc.title",
-          "value": "ed_silk_model.rc.value"
+          "title": [
+            "ExportedInputPin",
+            "ed_silk_model.rc.title"
+          ],
+          "value": [
+            "ExportedEditPin",
+            "ed_silk_model.rc.value"
+          ]
         },
         "auto": [
           "cell1",
@@ -285,6 +318,11 @@
         "children": {
           "cell1": {
             "dtype": "str",
+            "resource": {
+              "filepath": null,
+              "lib": null,
+              "mode": null
+            },
             "data": "Silk model"
           },
           "cell2": {
@@ -306,6 +344,11 @@
               "code",
               "python"
             ],
+            "resource": {
+              "filepath": null,
+              "lib": null,
+              "mode": null
+            },
             "data": "w.destroy()"
           },
           "cell4": {
@@ -341,10 +384,20 @@
       },
       "mode": {
         "dtype": "str",
+        "resource": {
+          "filepath": null,
+          "lib": null,
+          "mode": null
+        },
         "data": "array"
       },
       "n": {
         "dtype": "int",
+        "resource": {
+          "filepath": null,
+          "lib": null,
+          "mode": null
+        },
         "data": "3"
       },
       "registrar_object1": {
@@ -361,10 +414,20 @@
           "code",
           "silk"
         ],
+        "resource": {
+          "filepath": null,
+          "lib": null,
+          "mode": null
+        },
         "data": "\nType SilkModel {\n  Integer a = 1\n  Float b = 2.0\n  Bool c = True\n  String x = \"OK2\"\n}\n"
       },
       "value": {
-        "dtype": "text"
+        "dtype": "text",
+        "resource": {
+          "filepath": null,
+          "lib": null,
+          "mode": null
+        }
       }
     },
     "macro_objects": [
@@ -376,7 +439,7 @@
         "cell_args": {
           "_arg1": "mode"
         },
-        "macro_module_name": "__mp_main__",
+        "macro_module_name": "__main__",
         "macro_func_name": "construct_silk_model",
         "macro_order": 0,
         "target": "cons"

@@ -1,7 +1,7 @@
 {
   "lib": {
     "/cell-filehash-start.py": {
-      "data": "import os, time, traceback, hashlib\nfrom threading import Thread, RLock\nlast_filehash = None\nlast_mtime = None\nlast_exc = None\n\ndef poll():\n    global last_time, last_mtime, last_filehash, last_exc\n    fpath = PINS.filepath.get()\n    if fpath.startswith(\"~/\"):\n        fpath = os.environ[\"HOME\"] + fpath[1:]\n    while 1:\n        time.sleep(PINS.latency.get())\n        curr_time = time.time()\n        last_time = curr_time\n        if not os.path.exists(fpath):\n            if last_filehash is not None:\n                PINS.filehash.set(None)\n                last_filehash = None\n        else:\n            with lock:\n                stat = os.stat(fpath)\n                try:\n                    if last_mtime is None or stat.st_mtime > last_mtime:\n                        data = None\n                        with open(fpath, \"rb\") as f:\n                            data = f.read()\n                        if data is not None:\n                            filehash = hashlib.md5(data).hexdigest()\n                            PINS.filehash.set(filehash)\n                            last_filehash = filehash\n                        last_mtime = stat.st_mtime\n                except:\n                    exc = traceback.format_exc()\n                    if exc != last_exc:\n                        print(exc)\n                        last_exc = exc\n\nt = Thread(target=poll)\nt.setDaemon(True)\nlock = RLock()\nt.start()\n",
+      "data": "import os, time, traceback, hashlib\nfrom threading import Thread, RLock, Event\nlast_filehash = None\nlast_mtime = None\nlast_exc = None\n\ndef read(fpath):\n    global last_time, last_mtime, last_filehash, last_exc\n    curr_time = time.time()\n    last_time = curr_time\n    try:\n        if not os.path.exists(fpath):\n            if last_filehash is not None:\n                PINS.filehash.set(None)\n                last_filehash = None\n            raise Exception(\"File does not exist: '%s'\" % fpath)\n        else:\n            with lock:\n                stat = os.stat(fpath)\n\n                if last_mtime is None or stat.st_mtime > last_mtime:\n                    data = None\n                    with open(fpath, \"rb\") as f:\n                        data = f.read()\n                    if data is not None:\n                        filehash = hashlib.md5(data).hexdigest()\n                        PINS.filehash.set(filehash)\n                        last_filehash = filehash\n                    last_mtime = stat.st_mtime\n    except:\n        exc = traceback.format_exc()\n        if exc != last_exc:\n            print(exc)\n            last_exc = exc\n\nsleeptime = 0.01\ndef poll():\n    fpath = PINS.filepath.get()\n    fpath = os.path.expanduser(fpath)\n    while 1:\n        sleeps = int(PINS.latency.get() / sleeptime + 0.9999)\n        for n in range(sleeps):\n            time.sleep(sleeptime)\n            if terminate.is_set():\n                break\n        if terminate.is_set():\n            break\n        time.sleep(PINS.latency.get())\n        read(fpath)\n\nterminate = Event()\nt = Thread(target=poll)\nt.setDaemon(True)\nlock = RLock()\nt.start()\n\nfpath = PINS.filepath.get()\nfpath = os.path.expanduser(fpath)\nread(fpath)\n",
       "links": [
         "fh_text.cell_filehash"
       ]
@@ -90,7 +90,7 @@
       "type_args": "str",
       "module_name": "seamless.lib.filehash",
       "func_name": "filehash",
-      "code": "@macro(\"str\")\ndef filehash(ctx, filepath):\n    from seamless import reactor, pythoncell\n    ctx.cell_filehash = pythoncell().fromfile(\"cell-filehash-start.py\")\n    reactor_params = {\n        \"filepath\": {\n            \"pin\": \"input\",\n            \"dtype\": \"str\",\n        },\n        \"latency\": {\n            \"pin\": \"input\",\n            \"dtype\": \"float\",\n        },\n        \"filehash\": {\n            \"pin\": \"output\",\n            \"dtype\": \"str\",\n        },\n    }\n    rc = ctx.rc = reactor(reactor_params)\n\n    ctx.cell_filehash.connect(rc.code_start)\n    rc.filepath.cell().set(filepath)\n    rc.latency.cell().set(1)\n    rc.code_update.cell().set(\"\")\n    rc.code_stop.cell().set('t.join(0)')\n    ctx.export(rc)\n"
+      "code": "@macro(\"str\")\ndef filehash(ctx, filepath):\n    from seamless import reactor, pythoncell\n    ctx.cell_filehash = pythoncell().fromfile(\"cell-filehash-start.py\")\n    reactor_params = {\n        \"filepath\": {\n            \"pin\": \"input\",\n            \"dtype\": \"str\",\n        },\n        \"latency\": {\n            \"pin\": \"input\",\n            \"dtype\": \"float\",\n        },\n        \"filehash\": {\n            \"pin\": \"output\",\n            \"dtype\": \"str\",\n        },\n    }\n    rc = ctx.rc = reactor(reactor_params)\n\n    ctx.cell_filehash.connect(rc.code_start)\n    rc.filepath.cell().set(filepath)\n    rc.latency.cell().set(1)\n    rc.code_update.cell().set(\"\")\n    rc.code_stop.cell().set('terminate.set(); t.join()')\n    ctx.export(rc, [\"filehash\"])\n"
     },
     {
       "with_context": true,
@@ -123,8 +123,14 @@
         "like_worker": true,
         "like_cell": false,
         "pins": {
-          "title": "d_text.display.title",
-          "value": "d_text.display.value"
+          "title": [
+            "ExportedInputPin",
+            "d_text.display.title"
+          ],
+          "value": [
+            "ExportedInputPin",
+            "d_text.display.value"
+          ]
         },
         "auto": [
           "cell1",
@@ -135,6 +141,11 @@
         "children": {
           "cell1": {
             "dtype": "str",
+            "resource": {
+              "filepath": null,
+              "lib": null,
+              "mode": null
+            },
             "data": "Hash"
           },
           "cell2": {
@@ -144,7 +155,7 @@
               "python"
             ],
             "resource": {
-              "filename": "/gui/cell-basic_display_text.py",
+              "filepath": "/gui/cell-basic_display_text.py",
               "lib": true,
               "mode": 2
             },
@@ -156,6 +167,11 @@
               "code",
               "python"
             ],
+            "resource": {
+              "filepath": null,
+              "lib": null,
+              "mode": null
+            },
             "data": "w.destroy()"
           },
           "cell4": {
@@ -165,7 +181,7 @@
               "python"
             ],
             "resource": {
-              "filename": "/gui/cell-basic_display_text_UPDATE.py",
+              "filepath": "/gui/cell-basic_display_text_UPDATE.py",
               "lib": true,
               "mode": 2
             },
@@ -192,7 +208,10 @@
         "like_worker": true,
         "like_cell": false,
         "pins": {
-          "filehash": "fh_text.rc.filehash"
+          "filehash": [
+            "ExportedOutputPin",
+            "fh_text.rc.filehash"
+          ]
         },
         "auto": [
           "cell1",
@@ -204,14 +223,29 @@
         "children": {
           "cell1": {
             "dtype": "str",
+            "resource": {
+              "filepath": null,
+              "lib": null,
+              "mode": null
+            },
             "owner": "fh_text.rc"
           },
           "cell2": {
             "dtype": "str",
+            "resource": {
+              "filepath": null,
+              "lib": null,
+              "mode": null
+            },
             "data": "/tmp/text.txt"
           },
           "cell3": {
             "dtype": "float",
+            "resource": {
+              "filepath": null,
+              "lib": null,
+              "mode": null
+            },
             "data": "1"
           },
           "cell4": {
@@ -220,6 +254,11 @@
               "code",
               "python"
             ],
+            "resource": {
+              "filepath": null,
+              "lib": null,
+              "mode": null
+            },
             "data": ""
           },
           "cell5": {
@@ -228,7 +267,12 @@
               "code",
               "python"
             ],
-            "data": "t.join(0)"
+            "resource": {
+              "filepath": null,
+              "lib": null,
+              "mode": null
+            },
+            "data": "terminate.set(); t.join()"
           },
           "cell_filehash": {
             "dtype": [
@@ -237,11 +281,11 @@
               "python"
             ],
             "resource": {
-              "filename": "/cell-filehash-start.py",
+              "filepath": "/cell-filehash-start.py",
               "lib": true,
               "mode": 2
             },
-            "data": "import os, time, traceback, hashlib\nfrom threading import Thread, RLock\nlast_filehash = None\nlast_mtime = None\nlast_exc = None\n\ndef poll():\n    global last_time, last_mtime, last_filehash, last_exc\n    fpath = PINS.filepath.get()\n    if fpath.startswith(\"~/\"):\n        fpath = os.environ[\"HOME\"] + fpath[1:]\n    while 1:\n        time.sleep(PINS.latency.get())\n        curr_time = time.time()\n        last_time = curr_time\n        if not os.path.exists(fpath):\n            if last_filehash is not None:\n                PINS.filehash.set(None)\n                last_filehash = None\n        else:\n            with lock:\n                stat = os.stat(fpath)\n                try:\n                    if last_mtime is None or stat.st_mtime > last_mtime:\n                        data = None\n                        with open(fpath, \"rb\") as f:\n                            data = f.read()\n                        if data is not None:\n                            filehash = hashlib.md5(data).hexdigest()\n                            PINS.filehash.set(filehash)\n                            last_filehash = filehash\n                        last_mtime = stat.st_mtime\n                except:\n                    exc = traceback.format_exc()\n                    if exc != last_exc:\n                        print(exc)\n                        last_exc = exc\n\nt = Thread(target=poll)\nt.setDaemon(True)\nlock = RLock()\nt.start()\n"
+            "data": "import os, time, traceback, hashlib\nfrom threading import Thread, RLock, Event\nlast_filehash = None\nlast_mtime = None\nlast_exc = None\n\ndef read(fpath):\n    global last_time, last_mtime, last_filehash, last_exc\n    curr_time = time.time()\n    last_time = curr_time\n    try:\n        if not os.path.exists(fpath):\n            if last_filehash is not None:\n                PINS.filehash.set(None)\n                last_filehash = None\n            raise Exception(\"File does not exist: '%s'\" % fpath)\n        else:\n            with lock:\n                stat = os.stat(fpath)\n\n                if last_mtime is None or stat.st_mtime > last_mtime:\n                    data = None\n                    with open(fpath, \"rb\") as f:\n                        data = f.read()\n                    if data is not None:\n                        filehash = hashlib.md5(data).hexdigest()\n                        PINS.filehash.set(filehash)\n                        last_filehash = filehash\n                    last_mtime = stat.st_mtime\n    except:\n        exc = traceback.format_exc()\n        if exc != last_exc:\n            print(exc)\n            last_exc = exc\n\nsleeptime = 0.01\ndef poll():\n    fpath = PINS.filepath.get()\n    fpath = os.path.expanduser(fpath)\n    while 1:\n        sleeps = int(PINS.latency.get() / sleeptime + 0.9999)\n        for n in range(sleeps):\n            time.sleep(sleeptime)\n            if terminate.is_set():\n                break\n        if terminate.is_set():\n            break\n        time.sleep(PINS.latency.get())\n        read(fpath)\n\nterminate = Event()\nt = Thread(target=poll)\nt.setDaemon(True)\nlock = RLock()\nt.start()\n\nfpath = PINS.filepath.get()\nfpath = os.path.expanduser(fpath)\nread(fpath)\n"
           },
           "rc": {
             "type": "reactor",
@@ -265,6 +309,11 @@
       },
       "text": {
         "dtype": "text",
+        "resource": {
+          "filepath": null,
+          "lib": null,
+          "mode": null
+        },
         "data": "Lorem ipsum"
       }
     },
@@ -320,6 +369,7 @@
         "fh_text.cell_filehash",
         "fh_text.rc.code_start"
       ]
-    ]
+    ],
+    "cell_cell_connections": []
   }
 }

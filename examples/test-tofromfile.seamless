@@ -47,6 +47,11 @@
     "children": {
       "cell1": {
         "dtype": "int",
+        "resource": {
+          "filepath": null,
+          "lib": null,
+          "mode": null
+        },
         "data": "4"
       },
       "cell2": {
@@ -55,10 +60,20 @@
           "code",
           "python"
         ],
+        "resource": {
+          "filepath": null,
+          "lib": null,
+          "mode": null
+        },
         "data": "return value*2"
       },
       "cell3": {
-        "dtype": "int"
+        "dtype": "int",
+        "resource": {
+          "filepath": null,
+          "lib": null,
+          "mode": null
+        }
       },
       "cont": {
         "type": "transformer",

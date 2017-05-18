@@ -61,10 +61,20 @@
     "children": {
       "c1": {
         "dtype": "int",
+        "resource": {
+          "filepath": null,
+          "lib": null,
+          "mode": null
+        },
         "data": "1"
       },
       "c2": {
         "dtype": "int",
+        "resource": {
+          "filepath": null,
+          "lib": null,
+          "mode": null
+        },
         "data": "2"
       },
       "cell1": {
@@ -73,6 +83,11 @@
           "code",
           "python"
         ],
+        "resource": {
+          "filepath": null,
+          "lib": null,
+          "mode": null
+        },
         "data": "return inp1",
         "owner": "t1"
       },
@@ -82,19 +97,39 @@
           "code",
           "python"
         ],
+        "resource": {
+          "filepath": null,
+          "lib": null,
+          "mode": null
+        },
         "data": "return inp1+ inp2",
         "owner": "t2"
       },
       "cell3": {
         "dtype": "int",
+        "resource": {
+          "filepath": null,
+          "lib": null,
+          "mode": null
+        },
         "data": "10"
       },
       "cell4": {
         "dtype": "int",
+        "resource": {
+          "filepath": null,
+          "lib": null,
+          "mode": null
+        },
         "data": "20"
       },
       "cell5": {
         "dtype": "int",
+        "resource": {
+          "filepath": null,
+          "lib": null,
+          "mode": null
+        },
         "data": "30"
       },
       "t1": {

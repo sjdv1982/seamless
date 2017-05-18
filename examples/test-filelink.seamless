@@ -1,7 +1,7 @@
 {
   "lib": {
     "/cell-filelink-start.py": {
-      "data": "if __name__ == \"__main__\":\n    #test with ipython -i\n    import sys, os\n\n    class dummy:\n        pass\n\n    class EditPin:\n        def __init__(self, value):\n            self.value = value\n            self.defined = True\n        def set(self, value):\n            print(\"SET\", value)\n            self.value = value\n        def get(self):\n            return self.value\n\n    class Getter:\n        def __init__(self, arg):\n            self.arg = arg\n        def get(self):\n            return self.arg\n    PINS = dummy()\n    PINS.value = EditPin(\"test\")\n    directory = sys.argv[1]\n    filename = sys.argv[2]\n    PINS.filepath = Getter(os.path.join(directory, filename))\n    PINS.latency = Getter(float(sys.argv[3]))\n    def serializer(v):\n        return str(v.get())\n    print(\"Edit in \" + filepath.get())\nelse:\n    from seamless.dtypes import serialize\n    def serializer(v):\n        return serialize(v._dtype, v.get())\n\n\nimport os, time, functools, traceback\nfrom threading import Thread, RLock, Event\nlast_value = None\nlast_serialized_value = None\nlast_exc = None\nlast_mtime = None\n\ndef write_file(fpath):\n    global last_mtime, last_value, last_serialized_value\n    if not PINS.value.defined:\n        last_mtime = -1 #will trigger a file read\n        return\n    if last_value == PINS.value.get():\n        return\n    val = serializer(PINS.value)\n    if last_serialized_value == val:\n        return\n    with lock:\n        if last_serialized_value != val:\n            #print(\"WRITE\", val)\n            with open(fpath, \"w\", encoding=\"utf-8\") as f:\n                f.write(val)\n                last_value = PINS.value.get()\n                last_serialized_value = val\n            last_time = time.time()\n            try:\n                stat = os.stat(fpath)\n                last_mtime = stat.st_mtime\n            except:\n                pass\n\nsleeptime = 0.01\n\ndef poll():\n    global last_time, last_mtime, last_value, last_serialized_value, last_exc\n    fpath = PINS.filepath.get()\n    while 1:\n        sleeps = int(PINS.latency.get() / sleeptime + 0.9999)\n        for n in range(sleeps):\n            time.sleep(sleeptime)\n            if terminate.is_set():\n                break\n        if terminate.is_set():\n            break\n        curr_time = time.time()\n        last_time = curr_time\n        if not os.path.exists(fpath):\n            try:\n                write_file(fpath)\n            except:\n                exc = traceback.format_exc()\n                if exc != last_exc:\n                    print(exc)\n                    last_exc = exc\n        else:\n            with lock:\n                stat = os.stat(fpath)\n                try:\n                    if last_mtime is None or stat.st_mtime > last_mtime:\n                        data = None\n                        with open(fpath, encoding=\"utf-8\") as f:\n                            data = f.read()\n                        if data is not None:\n                            if last_serialized_value != data:\n                                #print(\"LOAD\")\n                                PINS.value.set(data)\n                                last_value = None\n                                last_serialized_value = data\n                        last_mtime = stat.st_mtime\n                except:\n                    exc = traceback.format_exc()\n                    if exc != last_exc:\n                        print(exc)\n                        last_exc = exc\n\nterminate = Event()\nt = Thread(target=poll)\nt.setDaemon(True)\nlock = RLock()\nwrite_file(PINS.filepath.get())\nt.start()\n",
+      "data": "if __name__ == \"__main__\":\n    #test with ipython -i\n    import sys, os\n\n    class dummy:\n        pass\n\n    class EditPin:\n        def __init__(self, value):\n            self.value = value\n            self.defined = True\n        def set(self, value):\n            print(\"SET\", value)\n            self.value = value\n        def get(self):\n            return self.value\n\n    class Getter:\n        def __init__(self, arg):\n            self.arg = arg\n        def get(self):\n            return self.arg\n    PINS = dummy()\n    PINS.value = EditPin(\"test\")\n    directory = sys.argv[1]\n    filename = sys.argv[2]\n    PINS.filepath = Getter(os.path.join(directory, filename))\n    PINS.latency = Getter(float(sys.argv[3]))\n    def serializer(v):\n        return str(v.get())\n    print(\"Edit in \" + filepath.get())\nelse:\n    from seamless.dtypes import serialize\n    def serializer(v):\n        return serialize(v._dtype, v.get())\n\n\nimport os, time, functools, traceback\nfrom threading import Thread, RLock, Event\nlast_value = None\nlast_serialized_value = None\nlast_exc = None\nlast_mtime = None\n\ndef write_file(fpath):\n    global last_mtime, last_value, last_serialized_value\n    if not PINS.value.defined:\n        last_mtime = -1 #will trigger a file read\n        return\n    if last_value == PINS.value.get():\n        return\n    val = serializer(PINS.value)\n    if last_serialized_value == val:\n        return\n    with lock:\n        if last_serialized_value != val:\n            #print(\"WRITE\", val)\n            if PINS.value._dtype == \"object\":\n                with open(fpath, \"wb\") as f:\n                    f.write(val)\n                    last_value = PINS.value.get()\n                    last_serialized_value = val\n            else:\n                with open(fpath, \"w\", encoding=\"utf-8\") as f:\n                    f.write(val)\n                    last_value = PINS.value.get()\n                    last_serialized_value = val\n            last_time = time.time()\n            try:\n                stat = os.stat(fpath)\n                last_mtime = stat.st_mtime\n            except:\n                pass\n\nsleeptime = 0.01\n\ndef poll():\n    global last_time, last_mtime, last_value, last_serialized_value, last_exc\n    fpath = PINS.filepath.get()\n    while 1:\n        sleeps = int(PINS.latency.get() / sleeptime + 0.9999)\n        for n in range(sleeps):\n            time.sleep(sleeptime)\n            if terminate.is_set():\n                break\n        if terminate.is_set():\n            break\n        curr_time = time.time()\n        last_time = curr_time\n        if not os.path.exists(fpath):\n            try:\n                write_file(fpath)\n            except:\n                exc = traceback.format_exc()\n                if exc != last_exc:\n                    print(exc)\n                    last_exc = exc\n        else:\n            with lock:\n                stat = os.stat(fpath)\n                try:\n                    if last_mtime is None or stat.st_mtime > last_mtime:\n                        data = None\n                        if PINS.value._dtype == \"object\":\n                            with open(fpath, \"rb\") as f:\n                                data = f.read()\n                        else:\n                            with open(fpath, encoding=\"utf-8\") as f:\n                                data = f.read()\n                        if data is not None:\n                            if last_serialized_value != data:\n                                #print(\"LOAD\")\n                                PINS.value.set(data)\n                                last_value = None\n                                last_serialized_value = data\n                        last_mtime = stat.st_mtime\n                except:\n                    exc = traceback.format_exc()\n                    if exc != last_exc:\n                        print(exc)\n                        last_exc = exc\n\nterminate = Event()\nt = Thread(target=poll)\nt.setDaemon(True)\nlock = RLock()\nwrite_file(PINS.filepath.get())\nt.start()\n",
       "links": [
         "fl_number.cell1",
         "fl_text.cell1"
@@ -122,18 +122,38 @@
     "children": {
       "cell1": {
         "dtype": "str",
+        "resource": {
+          "filepath": null,
+          "lib": null,
+          "mode": null
+        },
         "data": "/tmp/number.txt"
       },
       "cell2": {
         "dtype": "float",
+        "resource": {
+          "filepath": null,
+          "lib": null,
+          "mode": null
+        },
         "data": "0.2"
       },
       "cell3": {
         "dtype": "str",
+        "resource": {
+          "filepath": null,
+          "lib": null,
+          "mode": null
+        },
         "data": "/tmp/text.txt"
       },
       "cell4": {
         "dtype": "float",
+        "resource": {
+          "filepath": null,
+          "lib": null,
+          "mode": null
+        },
         "data": "0.2"
       },
       "ed_number": {
@@ -141,8 +161,14 @@
         "like_worker": true,
         "like_cell": false,
         "pins": {
-          "title": "ed_number.rc.title",
-          "value": "ed_number.rc.value"
+          "title": [
+            "ExportedInputPin",
+            "ed_number.rc.title"
+          ],
+          "value": [
+            "ExportedEditPin",
+            "ed_number.rc.value"
+          ]
         },
         "auto": [
           "cell1",
@@ -153,6 +179,11 @@
         "children": {
           "cell1": {
             "dtype": "str",
+            "resource": {
+              "filepath": null,
+              "lib": null,
+              "mode": null
+            },
             "data": "Number"
           },
           "cell2": {
@@ -162,7 +193,7 @@
               "python"
             ],
             "resource": {
-              "filename": "/gui/cell-basic_editor_int.py",
+              "filepath": "/gui/cell-basic_editor_int.py",
               "lib": true,
               "mode": 2
             },
@@ -174,6 +205,11 @@
               "code",
               "python"
             ],
+            "resource": {
+              "filepath": null,
+              "lib": null,
+              "mode": null
+            },
             "data": "w.destroy()"
           },
           "cell4": {
@@ -183,7 +219,7 @@
               "python"
             ],
             "resource": {
-              "filename": "/gui/cell-basic_editor_UPDATE.py",
+              "filepath": "/gui/cell-basic_editor_UPDATE.py",
               "lib": true,
               "mode": 2
             },
@@ -212,8 +248,14 @@
         "like_worker": true,
         "like_cell": false,
         "pins": {
-          "title": "ed_text.rc.title",
-          "value": "ed_text.rc.value"
+          "title": [
+            "ExportedInputPin",
+            "ed_text.rc.title"
+          ],
+          "value": [
+            "ExportedEditPin",
+            "ed_text.rc.value"
+          ]
         },
         "auto": [
           "cell1",
@@ -224,6 +266,11 @@
         "children": {
           "cell1": {
             "dtype": "str",
+            "resource": {
+              "filepath": null,
+              "lib": null,
+              "mode": null
+            },
             "data": "Text"
           },
           "cell2": {
@@ -233,7 +280,7 @@
               "python"
             ],
             "resource": {
-              "filename": "/gui/cell-basic_editor_text.py",
+              "filepath": "/gui/cell-basic_editor_text.py",
               "lib": true,
               "mode": 2
             },
@@ -245,6 +292,11 @@
               "code",
               "python"
             ],
+            "resource": {
+              "filepath": null,
+              "lib": null,
+              "mode": null
+            },
             "data": "w.destroy()"
           },
           "cell4": {
@@ -254,7 +306,7 @@
               "python"
             ],
             "resource": {
-              "filename": "/gui/cell-basic_editor_text_UPDATE.py",
+              "filepath": "/gui/cell-basic_editor_text_UPDATE.py",
               "lib": true,
               "mode": 2
             },
@@ -283,9 +335,18 @@
         "like_worker": true,
         "like_cell": false,
         "pins": {
-          "filepath": "fl_number.rc.filepath",
-          "latency": "fl_number.rc.latency",
-          "value": "fl_number.rc.value"
+          "filepath": [
+            "ExportedInputPin",
+            "fl_number.rc.filepath"
+          ],
+          "latency": [
+            "ExportedInputPin",
+            "fl_number.rc.latency"
+          ],
+          "value": [
+            "ExportedEditPin",
+            "fl_number.rc.value"
+          ]
         },
         "auto": [
           "cell1",
@@ -300,11 +361,11 @@
               "python"
             ],
             "resource": {
-              "filename": "/cell-filelink-start.py",
+              "filepath": "/cell-filelink-start.py",
               "lib": true,
               "mode": 2
             },
-            "data": "if __name__ == \"__main__\":\n    #test with ipython -i\n    import sys, os\n\n    class dummy:\n        pass\n\n    class EditPin:\n        def __init__(self, value):\n            self.value = value\n            self.defined = True\n        def set(self, value):\n            print(\"SET\", value)\n            self.value = value\n        def get(self):\n            return self.value\n\n    class Getter:\n        def __init__(self, arg):\n            self.arg = arg\n        def get(self):\n            return self.arg\n    PINS = dummy()\n    PINS.value = EditPin(\"test\")\n    directory = sys.argv[1]\n    filename = sys.argv[2]\n    PINS.filepath = Getter(os.path.join(directory, filename))\n    PINS.latency = Getter(float(sys.argv[3]))\n    def serializer(v):\n        return str(v.get())\n    print(\"Edit in \" + filepath.get())\nelse:\n    from seamless.dtypes import serialize\n    def serializer(v):\n        return serialize(v._dtype, v.get())\n\n\nimport os, time, functools, traceback\nfrom threading import Thread, RLock, Event\nlast_value = None\nlast_serialized_value = None\nlast_exc = None\nlast_mtime = None\n\ndef write_file(fpath):\n    global last_mtime, last_value, last_serialized_value\n    if not PINS.value.defined:\n        last_mtime = -1 #will trigger a file read\n        return\n    if last_value == PINS.value.get():\n        return\n    val = serializer(PINS.value)\n    if last_serialized_value == val:\n        return\n    with lock:\n        if last_serialized_value != val:\n            #print(\"WRITE\", val)\n            with open(fpath, \"w\", encoding=\"utf-8\") as f:\n                f.write(val)\n                last_value = PINS.value.get()\n                last_serialized_value = val\n            last_time = time.time()\n            try:\n                stat = os.stat(fpath)\n                last_mtime = stat.st_mtime\n            except:\n                pass\n\nsleeptime = 0.01\n\ndef poll():\n    global last_time, last_mtime, last_value, last_serialized_value, last_exc\n    fpath = PINS.filepath.get()\n    while 1:\n        sleeps = int(PINS.latency.get() / sleeptime + 0.9999)\n        for n in range(sleeps):\n            time.sleep(sleeptime)\n            if terminate.is_set():\n                break\n        if terminate.is_set():\n            break\n        curr_time = time.time()\n        last_time = curr_time\n        if not os.path.exists(fpath):\n            try:\n                write_file(fpath)\n            except:\n                exc = traceback.format_exc()\n                if exc != last_exc:\n                    print(exc)\n                    last_exc = exc\n        else:\n            with lock:\n                stat = os.stat(fpath)\n                try:\n                    if last_mtime is None or stat.st_mtime > last_mtime:\n                        data = None\n                        with open(fpath, encoding=\"utf-8\") as f:\n                            data = f.read()\n                        if data is not None:\n                            if last_serialized_value != data:\n                                #print(\"LOAD\")\n                                PINS.value.set(data)\n                                last_value = None\n                                last_serialized_value = data\n                        last_mtime = stat.st_mtime\n                except:\n                    exc = traceback.format_exc()\n                    if exc != last_exc:\n                        print(exc)\n                        last_exc = exc\n\nterminate = Event()\nt = Thread(target=poll)\nt.setDaemon(True)\nlock = RLock()\nwrite_file(PINS.filepath.get())\nt.start()\n"
+            "data": "if __name__ == \"__main__\":\n    #test with ipython -i\n    import sys, os\n\n    class dummy:\n        pass\n\n    class EditPin:\n        def __init__(self, value):\n            self.value = value\n            self.defined = True\n        def set(self, value):\n            print(\"SET\", value)\n            self.value = value\n        def get(self):\n            return self.value\n\n    class Getter:\n        def __init__(self, arg):\n            self.arg = arg\n        def get(self):\n            return self.arg\n    PINS = dummy()\n    PINS.value = EditPin(\"test\")\n    directory = sys.argv[1]\n    filename = sys.argv[2]\n    PINS.filepath = Getter(os.path.join(directory, filename))\n    PINS.latency = Getter(float(sys.argv[3]))\n    def serializer(v):\n        return str(v.get())\n    print(\"Edit in \" + filepath.get())\nelse:\n    from seamless.dtypes import serialize\n    def serializer(v):\n        return serialize(v._dtype, v.get())\n\n\nimport os, time, functools, traceback\nfrom threading import Thread, RLock, Event\nlast_value = None\nlast_serialized_value = None\nlast_exc = None\nlast_mtime = None\n\ndef write_file(fpath):\n    global last_mtime, last_value, last_serialized_value\n    if not PINS.value.defined:\n        last_mtime = -1 #will trigger a file read\n        return\n    if last_value == PINS.value.get():\n        return\n    val = serializer(PINS.value)\n    if last_serialized_value == val:\n        return\n    with lock:\n        if last_serialized_value != val:\n            #print(\"WRITE\", val)\n            if PINS.value._dtype == \"object\":\n                with open(fpath, \"wb\") as f:\n                    f.write(val)\n                    last_value = PINS.value.get()\n                    last_serialized_value = val\n            else:\n                with open(fpath, \"w\", encoding=\"utf-8\") as f:\n                    f.write(val)\n                    last_value = PINS.value.get()\n                    last_serialized_value = val\n            last_time = time.time()\n            try:\n                stat = os.stat(fpath)\n                last_mtime = stat.st_mtime\n            except:\n                pass\n\nsleeptime = 0.01\n\ndef poll():\n    global last_time, last_mtime, last_value, last_serialized_value, last_exc\n    fpath = PINS.filepath.get()\n    while 1:\n        sleeps = int(PINS.latency.get() / sleeptime + 0.9999)\n        for n in range(sleeps):\n            time.sleep(sleeptime)\n            if terminate.is_set():\n                break\n        if terminate.is_set():\n            break\n        curr_time = time.time()\n        last_time = curr_time\n        if not os.path.exists(fpath):\n            try:\n                write_file(fpath)\n            except:\n                exc = traceback.format_exc()\n                if exc != last_exc:\n                    print(exc)\n                    last_exc = exc\n        else:\n            with lock:\n                stat = os.stat(fpath)\n                try:\n                    if last_mtime is None or stat.st_mtime > last_mtime:\n                        data = None\n                        if PINS.value._dtype == \"object\":\n                            with open(fpath, \"rb\") as f:\n                                data = f.read()\n                        else:\n                            with open(fpath, encoding=\"utf-8\") as f:\n                                data = f.read()\n                        if data is not None:\n                            if last_serialized_value != data:\n                                #print(\"LOAD\")\n                                PINS.value.set(data)\n                                last_value = None\n                                last_serialized_value = data\n                        last_mtime = stat.st_mtime\n                except:\n                    exc = traceback.format_exc()\n                    if exc != last_exc:\n                        print(exc)\n                        last_exc = exc\n\nterminate = Event()\nt = Thread(target=poll)\nt.setDaemon(True)\nlock = RLock()\nwrite_file(PINS.filepath.get())\nt.start()\n"
           },
           "cell2": {
             "dtype": [
@@ -312,6 +373,11 @@
               "code",
               "python"
             ],
+            "resource": {
+              "filepath": null,
+              "lib": null,
+              "mode": null
+            },
             "data": "write_file(PINS.filepath.get())"
           },
           "cell3": {
@@ -320,6 +386,11 @@
               "code",
               "python"
             ],
+            "resource": {
+              "filepath": null,
+              "lib": null,
+              "mode": null
+            },
             "data": "terminate.set(); t.join()"
           },
           "rc": {
@@ -348,9 +419,18 @@
         "like_worker": true,
         "like_cell": false,
         "pins": {
-          "filepath": "fl_text.rc.filepath",
-          "latency": "fl_text.rc.latency",
-          "value": "fl_text.rc.value"
+          "filepath": [
+            "ExportedInputPin",
+            "fl_text.rc.filepath"
+          ],
+          "latency": [
+            "ExportedInputPin",
+            "fl_text.rc.latency"
+          ],
+          "value": [
+            "ExportedEditPin",
+            "fl_text.rc.value"
+          ]
         },
         "auto": [
           "cell1",
@@ -365,11 +445,11 @@
               "python"
             ],
             "resource": {
-              "filename": "/cell-filelink-start.py",
+              "filepath": "/cell-filelink-start.py",
               "lib": true,
               "mode": 2
             },
-            "data": "if __name__ == \"__main__\":\n    #test with ipython -i\n    import sys, os\n\n    class dummy:\n        pass\n\n    class EditPin:\n        def __init__(self, value):\n            self.value = value\n            self.defined = True\n        def set(self, value):\n            print(\"SET\", value)\n            self.value = value\n        def get(self):\n            return self.value\n\n    class Getter:\n        def __init__(self, arg):\n            self.arg = arg\n        def get(self):\n            return self.arg\n    PINS = dummy()\n    PINS.value = EditPin(\"test\")\n    directory = sys.argv[1]\n    filename = sys.argv[2]\n    PINS.filepath = Getter(os.path.join(directory, filename))\n    PINS.latency = Getter(float(sys.argv[3]))\n    def serializer(v):\n        return str(v.get())\n    print(\"Edit in \" + filepath.get())\nelse:\n    from seamless.dtypes import serialize\n    def serializer(v):\n        return serialize(v._dtype, v.get())\n\n\nimport os, time, functools, traceback\nfrom threading import Thread, RLock, Event\nlast_value = None\nlast_serialized_value = None\nlast_exc = None\nlast_mtime = None\n\ndef write_file(fpath):\n    global last_mtime, last_value, last_serialized_value\n    if not PINS.value.defined:\n        last_mtime = -1 #will trigger a file read\n        return\n    if last_value == PINS.value.get():\n        return\n    val = serializer(PINS.value)\n    if last_serialized_value == val:\n        return\n    with lock:\n        if last_serialized_value != val:\n            #print(\"WRITE\", val)\n            with open(fpath, \"w\", encoding=\"utf-8\") as f:\n                f.write(val)\n                last_value = PINS.value.get()\n                last_serialized_value = val\n            last_time = time.time()\n            try:\n                stat = os.stat(fpath)\n                last_mtime = stat.st_mtime\n            except:\n                pass\n\nsleeptime = 0.01\n\ndef poll():\n    global last_time, last_mtime, last_value, last_serialized_value, last_exc\n    fpath = PINS.filepath.get()\n    while 1:\n        sleeps = int(PINS.latency.get() / sleeptime + 0.9999)\n        for n in range(sleeps):\n            time.sleep(sleeptime)\n            if terminate.is_set():\n                break\n        if terminate.is_set():\n            break\n        curr_time = time.time()\n        last_time = curr_time\n        if not os.path.exists(fpath):\n            try:\n                write_file(fpath)\n            except:\n                exc = traceback.format_exc()\n                if exc != last_exc:\n                    print(exc)\n                    last_exc = exc\n        else:\n            with lock:\n                stat = os.stat(fpath)\n                try:\n                    if last_mtime is None or stat.st_mtime > last_mtime:\n                        data = None\n                        with open(fpath, encoding=\"utf-8\") as f:\n                            data = f.read()\n                        if data is not None:\n                            if last_serialized_value != data:\n                                #print(\"LOAD\")\n                                PINS.value.set(data)\n                                last_value = None\n                                last_serialized_value = data\n                        last_mtime = stat.st_mtime\n                except:\n                    exc = traceback.format_exc()\n                    if exc != last_exc:\n                        print(exc)\n                        last_exc = exc\n\nterminate = Event()\nt = Thread(target=poll)\nt.setDaemon(True)\nlock = RLock()\nwrite_file(PINS.filepath.get())\nt.start()\n"
+            "data": "if __name__ == \"__main__\":\n    #test with ipython -i\n    import sys, os\n\n    class dummy:\n        pass\n\n    class EditPin:\n        def __init__(self, value):\n            self.value = value\n            self.defined = True\n        def set(self, value):\n            print(\"SET\", value)\n            self.value = value\n        def get(self):\n            return self.value\n\n    class Getter:\n        def __init__(self, arg):\n            self.arg = arg\n        def get(self):\n            return self.arg\n    PINS = dummy()\n    PINS.value = EditPin(\"test\")\n    directory = sys.argv[1]\n    filename = sys.argv[2]\n    PINS.filepath = Getter(os.path.join(directory, filename))\n    PINS.latency = Getter(float(sys.argv[3]))\n    def serializer(v):\n        return str(v.get())\n    print(\"Edit in \" + filepath.get())\nelse:\n    from seamless.dtypes import serialize\n    def serializer(v):\n        return serialize(v._dtype, v.get())\n\n\nimport os, time, functools, traceback\nfrom threading import Thread, RLock, Event\nlast_value = None\nlast_serialized_value = None\nlast_exc = None\nlast_mtime = None\n\ndef write_file(fpath):\n    global last_mtime, last_value, last_serialized_value\n    if not PINS.value.defined:\n        last_mtime = -1 #will trigger a file read\n        return\n    if last_value == PINS.value.get():\n        return\n    val = serializer(PINS.value)\n    if last_serialized_value == val:\n        return\n    with lock:\n        if last_serialized_value != val:\n            #print(\"WRITE\", val)\n            if PINS.value._dtype == \"object\":\n                with open(fpath, \"wb\") as f:\n                    f.write(val)\n                    last_value = PINS.value.get()\n                    last_serialized_value = val\n            else:\n                with open(fpath, \"w\", encoding=\"utf-8\") as f:\n                    f.write(val)\n                    last_value = PINS.value.get()\n                    last_serialized_value = val\n            last_time = time.time()\n            try:\n                stat = os.stat(fpath)\n                last_mtime = stat.st_mtime\n            except:\n                pass\n\nsleeptime = 0.01\n\ndef poll():\n    global last_time, last_mtime, last_value, last_serialized_value, last_exc\n    fpath = PINS.filepath.get()\n    while 1:\n        sleeps = int(PINS.latency.get() / sleeptime + 0.9999)\n        for n in range(sleeps):\n            time.sleep(sleeptime)\n            if terminate.is_set():\n                break\n        if terminate.is_set():\n            break\n        curr_time = time.time()\n        last_time = curr_time\n        if not os.path.exists(fpath):\n            try:\n                write_file(fpath)\n            except:\n                exc = traceback.format_exc()\n                if exc != last_exc:\n                    print(exc)\n                    last_exc = exc\n        else:\n            with lock:\n                stat = os.stat(fpath)\n                try:\n                    if last_mtime is None or stat.st_mtime > last_mtime:\n                        data = None\n                        if PINS.value._dtype == \"object\":\n                            with open(fpath, \"rb\") as f:\n                                data = f.read()\n                        else:\n                            with open(fpath, encoding=\"utf-8\") as f:\n                                data = f.read()\n                        if data is not None:\n                            if last_serialized_value != data:\n                                #print(\"LOAD\")\n                                PINS.value.set(data)\n                                last_value = None\n                                last_serialized_value = data\n                        last_mtime = stat.st_mtime\n                except:\n                    exc = traceback.format_exc()\n                    if exc != last_exc:\n                        print(exc)\n                        last_exc = exc\n\nterminate = Event()\nt = Thread(target=poll)\nt.setDaemon(True)\nlock = RLock()\nwrite_file(PINS.filepath.get())\nt.start()\n"
           },
           "cell2": {
             "dtype": [
@@ -377,6 +457,11 @@
               "code",
               "python"
             ],
+            "resource": {
+              "filepath": null,
+              "lib": null,
+              "mode": null
+            },
             "data": "write_file(PINS.filepath.get())"
           },
           "cell3": {
@@ -385,6 +470,11 @@
               "code",
               "python"
             ],
+            "resource": {
+              "filepath": null,
+              "lib": null,
+              "mode": null
+            },
             "data": "terminate.set(); t.join()"
           },
           "rc": {
@@ -410,10 +500,20 @@
       },
       "number": {
         "dtype": "int",
+        "resource": {
+          "filepath": "/tmp/number.txt",
+          "lib": false,
+          "mode": 5
+        },
         "data": "1"
       },
       "text": {
         "dtype": "text",
+        "resource": {
+          "filepath": "/tmp/text.txt",
+          "lib": false,
+          "mode": 5
+        },
         "data": "Lorem ipsum"
       }
     },

@@ -46,27 +46,28 @@ def cell_to_json(c):
     d["dtype"] = c.dtype
     if c.dtype is None:
         d["dtype"] = "signal"
-    if c.resource.filepath is not None or c.resource.save_policy is not None:
-        d["resource"] = resource_to_json(c.resource)
-        if c.resource.mode == 1:
-            store_data = False
+    if c.resource is not None:
+        if c.resource.filepath is not None or c.resource.save_policy is not None:
+            d["resource"] = resource_to_json(c.resource)
+            if c.resource.mode == 1:
+                store_data = False
 
-    sp = c.resource.save_policy
-    if sp == 0:
-        pass
-    elif sp == 1:
-        pass
-    elif sp == 2: #TODO: MAX_SAVE bytes
-        if c.resource.filepath is None or c.resource.mode == 1:
+        sp = c.resource.save_policy
+        if sp == 0:
+            pass
+        elif sp == 1:
+            pass
+        elif sp == 2: #TODO: MAX_SAVE bytes
+            if c.resource.filepath is None or c.resource.mode == 1:
+                store_data = True
+        elif sp == 3:
+            if c.resource.filepath is None or c.resource.mode == 1:
+                store_data = True
+        elif sp == 4:
             store_data = True
-    elif sp == 3:
-        if c.resource.filepath is None or c.resource.mode == 1:
-            store_data = True
-    elif sp == 4:
-        store_data = True
-    if sp > 0:
-        if not store_data:
-            store_hash = True
+        if sp > 0:
+            if not store_data:
+                store_hash = True
 
     if store_data and c.data is not None:
         data = c.data

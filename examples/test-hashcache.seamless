@@ -73,22 +73,47 @@
           "code",
           "python"
         ],
+        "resource": {
+          "filepath": null,
+          "lib": null,
+          "mode": null
+        },
         "data": "print(\"evaluate!\"); return value"
       },
       "cell2": {
         "dtype": "str",
+        "resource": {
+          "filepath": null,
+          "lib": null,
+          "mode": null
+        },
         "data": "./hashcache-value.txt"
       },
       "cell3": {
         "dtype": "float",
+        "resource": {
+          "filepath": null,
+          "lib": null,
+          "mode": null
+        },
         "data": "0.2"
       },
       "cell4": {
         "dtype": "str",
+        "resource": {
+          "filepath": null,
+          "lib": null,
+          "mode": null
+        },
         "data": "./hashcache-result.txt"
       },
       "cell5": {
         "dtype": "float",
+        "resource": {
+          "filepath": null,
+          "lib": null,
+          "mode": null
+        },
         "data": "0.2"
       },
       "link_result": {
@@ -96,9 +121,18 @@
         "like_worker": true,
         "like_cell": false,
         "pins": {
-          "filepath": "link_result.rc.filepath",
-          "latency": "link_result.rc.latency",
-          "value": "link_result.rc.value"
+          "filepath": [
+            "ExportedInputPin",
+            "link_result.rc.filepath"
+          ],
+          "latency": [
+            "ExportedInputPin",
+            "link_result.rc.latency"
+          ],
+          "value": [
+            "ExportedEditPin",
+            "link_result.rc.value"
+          ]
         },
         "auto": [
           "cell1",
@@ -125,6 +159,11 @@
               "code",
               "python"
             ],
+            "resource": {
+              "filepath": null,
+              "lib": null,
+              "mode": null
+            },
             "data": "write_file(PINS.filepath.get())"
           },
           "cell3": {
@@ -133,6 +172,11 @@
               "code",
               "python"
             ],
+            "resource": {
+              "filepath": null,
+              "lib": null,
+              "mode": null
+            },
             "data": "terminate.set(); t.join()"
           },
           "rc": {
@@ -161,9 +205,18 @@
         "like_worker": true,
         "like_cell": false,
         "pins": {
-          "filepath": "link_value.rc.filepath",
-          "latency": "link_value.rc.latency",
-          "value": "link_value.rc.value"
+          "filepath": [
+            "ExportedInputPin",
+            "link_value.rc.filepath"
+          ],
+          "latency": [
+            "ExportedInputPin",
+            "link_value.rc.latency"
+          ],
+          "value": [
+            "ExportedEditPin",
+            "link_value.rc.value"
+          ]
         },
         "auto": [
           "cell1",
@@ -190,6 +243,11 @@
               "code",
               "python"
             ],
+            "resource": {
+              "filepath": null,
+              "lib": null,
+              "mode": null
+            },
             "data": "write_file(PINS.filepath.get())"
           },
           "cell3": {
@@ -198,6 +256,11 @@
               "code",
               "python"
             ],
+            "resource": {
+              "filepath": null,
+              "lib": null,
+              "mode": null
+            },
             "data": "terminate.set(); t.join()"
           },
           "rc": {
@@ -229,7 +292,7 @@
           "mode": 3,
           "save_policy": 2
         },
-        "data": "42"
+        "hash": "a1d0c6e83f027327d8461063f4ac58a6"
       },
       "tf": {
         "type": "transformer",

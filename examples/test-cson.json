@@ -1,14 +1,14 @@
 {
+  "importantFact": {
+    "emissions": "Livestock and their byproducts account for at least 32,000 million tons of carbon dioxide (CO2) per year, or 51% of all worldwide greenhouse gas emissions.\nGoodland, R Anhang, J. \u201cLivestock and Climate Change: What if the key actors in climate change were pigs, chickens and cows?\u201d\nWorldWatch, November/December 2009. Worldwatch Institute, Washington, DC, USA. Pp. 10\u201319.\nhttp://www.worldwatch.org/node/6294",
+    "more": "http://cowspiracy.com/facts",
+    "milk": "1,000 gallons of water are required to produce 1 gallon of milk.\n\u201cWater trivia facts.\u201d United States Environmental Protection Agency.\nhttp://water.epa.gov/learn/kids/drinkingwater/water_trivia_facts.cfm#_edn11",
+    "landuse": "Livestock covers 45% of the earth\u2019s total land.\nThornton, Phillip, Mario Herrero, and Polly Ericksen. \u201cLivestock and Climate Change.\u201d Livestock Exchange, no. 3 (2011).\nhttps://cgspace.cgiar.org/bitstream/handle/10568/10601/IssueBrief3.pdf",
+    "burger": "One hamburger requires 660 gallons of water to produce \u2013 the equivalent of 2 months\u2019 worth of showers.\nCatanese, Christina. \u201cVirtual Water, Real Impacts.\u201d Greenversations: Official Blog of the U.S. EPA. 2012.\nhttp://blog.epa.gov/healthywaters/2012/03/virtual-water-real-impacts-world-water-day-2012/\n\u201c50 Ways to Save Your River.\u201d Friends of the River.\nhttp://www.friendsoftheriver.org/site/PageServer?pagename=50ways"
+  },
   "greatDocumentaries": [
     "earthlings.com",
     "forksoverknives.com",
     "cowspiracy.com"
-  ],
-  "importantFact": {
-    "more": "http://cowspiracy.com/facts",
-    "burger": "One hamburger requires 660 gallons of water to produce \u2013 the equivalent of 2 months\u2019 worth of showers.\nCatanese, Christina. \u201cVirtual Water, Real Impacts.\u201d Greenversations: Official Blog of the U.S. EPA. 2012.\nhttp://blog.epa.gov/healthywaters/2012/03/virtual-water-real-impacts-world-water-day-2012/\n\u201c50 Ways to Save Your River.\u201d Friends of the River.\nhttp://www.friendsoftheriver.org/site/PageServer?pagename=50ways",
-    "milk": "1,000 gallons of water are required to produce 1 gallon of milk.\n\u201cWater trivia facts.\u201d United States Environmental Protection Agency.\nhttp://water.epa.gov/learn/kids/drinkingwater/water_trivia_facts.cfm#_edn11",
-    "emissions": "Livestock and their byproducts account for at least 32,000 million tons of carbon dioxide (CO2) per year, or 51% of all worldwide greenhouse gas emissions.\nGoodland, R Anhang, J. \u201cLivestock and Climate Change: What if the key actors in climate change were pigs, chickens and cows?\u201d\nWorldWatch, November/December 2009. Worldwatch Institute, Washington, DC, USA. Pp. 10\u201319.\nhttp://www.worldwatch.org/node/6294",
-    "landuse": "Livestock covers 45% of the earth\u2019s total land.\nThornton, Phillip, Mario Herrero, and Polly Ericksen. \u201cLivestock and Climate Change.\u201d Livestock Exchange, no. 3 (2011).\nhttps://cgspace.cgiar.org/bitstream/handle/10568/10601/IssueBrief3.pdf"
-  }
+  ]
 }
