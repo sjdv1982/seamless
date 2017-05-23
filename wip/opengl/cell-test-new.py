@@ -6,7 +6,6 @@ from OpenGL.GL import shaders
 from OpenGL.GL import *
 from OpenGL import GL as gl
 
-from GLStore import GLStore, GLSubStore
 from Renderer import Renderer, VertexAttribute
 
 initialized = False
@@ -35,13 +34,6 @@ def init():
 
     if initialized:
         return
-    # Build data
-    data = np.zeros(4, [("position", np.float32, 2),
-                             ("color",    np.float32, 4)])
-    data['color'] = [(1, 0, 0, 1), (0, 1, 0, 1),
-                          (0, 0, 1, 1), (1, 1, 0, 1)]
-    data['position'] = [(-1, -1), (-1, +1),
-                             (+1, -1), (+1, +1)]
 
     vertex_shader = shaders.compileShader(vertex_code, GL_VERTEX_SHADER)
 
@@ -50,10 +42,7 @@ def init():
     program = shaders.compileProgram(vertex_shader, fragment_shader)
     shaders.glUseProgram(program)
 
-    class dummy:
-        pass
-    dummy1 = dummy(); dummy1.data = data
-    store = GLStore(dummy1)
+    store = PINS.data_default.store
     store.bind()
 
     mapping = {
@@ -74,10 +63,7 @@ def init():
     storedict = {"default": store}
     print(storedict["default"].parent().data)
 
-    #
-    indices = np.array((1,2,3,0,1,2),dtype=np.uint16)
-    dummy2=dummy(); dummy.data = indices
-    storedict["indices"] = GLStore(dummy2)
+    storedict["indices"] = PINS.data_indices.store
     storedict["indices"].bind()
     print(storedict["indices"].parent().data)
     mapping["indices"] = {
@@ -86,7 +72,7 @@ def init():
                     }
     mapping["command"] = "triangles_indexed"
 
-    #
+
     renderer = Renderer(mapping, program, storedict)
     print(storedict["indices"].parent().data)
     print(storedict["default"].parent().data)

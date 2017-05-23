@@ -6,6 +6,7 @@ from . import parse, serialize
 from ..core.cached_compile import cached_compile
 
 class DataObject:
+    store = None
 
     def __init__(self, name, data_type, data = None):
         self.name = name
@@ -89,6 +90,7 @@ class PythonTransformerCodeObject(PythonCodeObject):
 
 class PythonReactorCodeObject(PythonTransformerCodeObject):
     func_name = None
+
     def validate(self):
         self.func_name = None
         self.code = cached_compile(self.data, self.name + "-%d" % id(self),
@@ -100,6 +102,12 @@ class PythonReactorCodeObject(PythonTransformerCodeObject):
         if is_function:
             self.func_name = self.ast.body[0].name
 
+class ArrayDataObject(DataObject):
+    def parse(self, data):
+        from . import TransportedArray
+        assert isinstance(data, TransportedArray)
+        self.data = parse(self.data_type, data.array, trusted=True)
+        self.store = data.store
 
 def data_type_to_data_object(data_type):
     #TODO: stub!
@@ -107,6 +115,8 @@ def data_type_to_data_object(data_type):
     if isinstance(data_type, list):
         data_type = tuple(data_type)
     assert check_registered(data_type), data_type
+    if data_type == "array":
+        return ArrayDataObject
     return DataObject
 
     """

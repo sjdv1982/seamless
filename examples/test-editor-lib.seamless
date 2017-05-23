@@ -47,7 +47,7 @@
       ]
     },
     "/gui/cell-basic_editor_float.py": {
-      "data": "from seamless.qt.QtWidgets import QDoubleSpinBox, QWidget, QVBoxLayout\nfrom seamless.qt.QtCore import Qt\n\nw = QWidget()\n#w.setWindowFlags(Qt.WindowStaysOnTopHint)\nw.setAttribute(Qt.WA_ShowWithoutActivating)\nvbox = QVBoxLayout()\nvbox.addStretch(1)\nw.setLayout(vbox)\nw.resize(300,100)\nw.setWindowTitle(PINS.title.get())\nw.show()\nb = QDoubleSpinBox()\nb.setSingleStep(0.1)\nb.setMaximum(1000000)\nif PINS.value.defined:\n    b.setValue(PINS.value.get())\nvbox.addWidget(b)\nb.valueChanged.connect(PINS.value.set)\n",
+      "data": "from seamless.qt.QtWidgets import QDoubleSpinBox, QWidget, QVBoxLayout\nfrom seamless.qt.QtCore import Qt\n\nw = QWidget()\n#w.setWindowFlags(Qt.WindowStaysOnTopHint)\nw.setAttribute(Qt.WA_ShowWithoutActivating)\nvbox = QVBoxLayout()\nvbox.addStretch(1)\nw.setLayout(vbox)\nw.resize(300,100)\nw.setWindowTitle(PINS.title.get())\nw.show()\nb = QDoubleSpinBox()\nb.setSingleStep(0.01)\nb.setDecimals(3)\nb.setMaximum(1000000)\nif PINS.value.defined:\n    b.setValue(PINS.value.get())\nvbox.addWidget(b)\nb.valueChanged.connect(PINS.value.set)\n",
       "links": []
     },
     "/gui/cell-basic_editor_int.py": {
@@ -93,7 +93,7 @@
           "type": "str"
         }
       },
-      "module_name": "__main__",
+      "module_name": "__mp_main__",
       "func_name": "operator",
       "code": "@macro({\"formula\": {\"type\": \"str\", \"default\": \"return value*2\"}})\ndef operator(ctx, formula ):\n    from seamless import cell, transformer\n    tparams = ctx.tparams = cell(\"object\").set(\n    {\n      \"value\": {\n        \"pin\": \"input\",\n        \"dtype\": \"int\"\n      },\n      \"output\": {\n        \"pin\": \"output\",\n        \"dtype\": \"int\"\n      }\n    }\n    )\n\n    cont = ctx.cont = transformer(tparams)\n    c_code = cont.code.cell()\n    c_code.set(formula)\n    ctx.export(cont)\n"
     },

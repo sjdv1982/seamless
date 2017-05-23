@@ -1,4 +1,18 @@
+Seamless: a cell-based reactive programming framework
 Seamless was created on June 3rd, 2016
+
+Seamless Zen
+
+Watch the state as it is now, don't watch the news
+All state is in cells, unless it is local
+Always be prepared to rebuild from cells
+Cells are good, files are bad
+Importing external libraries is good, importing project code is bad
+Namespaces are good, classes less so
+GUIs are good, unless they hide the state
+Edit all state, then edit the editor
+Code execution is repeatable; if it is not repeatable, you throw away the code, and keep its result
+Transform lazily, react eagerly
 
 TODO:
 
@@ -6,14 +20,17 @@ Technically-oriented releases are marked with *
 
 *0.1
 - OpenGL rendering
+- Sane pseudo-filename for transformer/editor code block
 - Make a sane status report system (missing inputs, undefined inputs, also in children)
 - Integrate protein viewer in browser
 - Demos: plotly, OpenGL, orca, slash+protein  
 
 0.2
+- Replace ctx.CHILDREN, ctx.CELLS etc. with ctx.self.children
+- Get rid of seamless.qt
 - Composite (JSON) cells
 - Expand seamless shell language (slash)
-- Logging + dtype/worker documentation system (using composite cells)
+- Logging + dtype/worker documentation.resource system (using composite cells)
 - Error message logging system (using composite cells)
 - Overhaul dtypes, docson/type registration API, integrate with logging/documentation system
 - Update demos

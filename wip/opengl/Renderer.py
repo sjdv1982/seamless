@@ -2,7 +2,7 @@ import numpy as np
 from OpenGL import GL as gl
 import ctypes
 from collections import OrderedDict
-from GLStore import GLSubStore
+from seamless.dtypes.GLStore import GLSubStore
 
 class VertexAttribute:
     def __init__(self, attribute, glsl_dtype, program, store):

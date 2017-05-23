@@ -207,7 +207,7 @@ class Transformer(Worker):
                         break
 
                 output_name, output_value = self.output_queue.popleft()
-                if output_name is None:
+                if output_name is None and output_value is not None:
                     updates_processed = output_value[0]
                     self._pending_updates -= updates_processed
                     continue

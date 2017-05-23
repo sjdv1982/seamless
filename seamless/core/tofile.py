@@ -38,6 +38,9 @@ def resource_to_json(r):
     return result
 
 def cell_to_json(c):
+    if c.dtype == "array":
+        raise NotImplementedError("Saving array cells is not (yet?) supported")
+        #TODO: if we implement this, also implement saving/loading the store parameters
     d = OrderedDict()
     store_data = True
     store_hash = False

@@ -245,6 +245,7 @@ class Reactor:
                 if v.data_type != "signal":
                     pin._value = v.data
                     pin.defined = True
+                    pin._store = v.store
                 pin.updated = True
                 do_update = True
             else:

@@ -2,6 +2,16 @@
 
 import json
 import functools
+import numpy as np
+
+class TransportedArray:
+    def __init__(self, array, store=None):
+        assert isinstance(array, np.ndarray)
+        from .GLStore import GLStore
+        if store is not None:
+            assert isinstance(store, GLStore)
+        self.array = array
+        self.store = store
 
 _known_types = [
   "object",
@@ -22,6 +32,7 @@ _known_types = [
   "cson",
   "xml",
   "silk",
+  "array",
   "signal"
 ]
 
@@ -66,11 +77,18 @@ def cson_constructor(data):
         except:
             return data
 
+def construct_array(data):
+    if isinstance(data, TransportedArray):
+        return data.array
+    assert isinstance(data, np.ndarray)
+    return data
+
 def signal_error(data):
     raise TypeError("Cannot construct signal")
 
 _constructors = {
     "object": lambda v: v,
+    "array": construct_array,
     "dtype": construct_dtype,
     "int" : int,
     "float" : float,
@@ -168,6 +186,9 @@ def serialize(data_type, value):
         dtype = dtype[0]
 
     if dtype == "object":
+        return value
+    elif dtype == "array":
+        assert isinstance(value, np.ndarray)
         return value
     elif dtype == "dtype":
         return construct_dtype(value)

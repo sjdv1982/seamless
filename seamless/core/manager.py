@@ -2,6 +2,7 @@ import json
 from ..dtypes.cson import cson2json
 import weakref
 from weakref import WeakKeyDictionary, WeakValueDictionary, WeakSet
+from ..dtypes import TransportedArray
 
 #TODO: disconnect method (see MacroObject for low-level implementation)
 
@@ -270,7 +271,10 @@ class Manager:
 
     def update_from_code(self, cell, only_last=False):
         import seamless
-        value = cell._data
+        if cell.dtype == "array":
+            value = TransportedArray(cell._data, cell._store)
+        else:
+            value = cell._data
         cell_id = self.get_cell_id(cell)
         if seamless.debug:
             print("manager.update_from_code", cell, head(value))
@@ -295,6 +299,8 @@ class Manager:
         else:
             changed = cell._update(value,propagate=False)
             if changed:
+                if cell.dtype == "array":
+                    value = TransportedArray(value, cell._store)
                 self._update(cell_id, cell.dtype, value, worker=worker)
 
     def update_registrar_key(self, registrar, key):

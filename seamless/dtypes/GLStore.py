@@ -7,9 +7,6 @@ import re
 class GLStoreBase:
     pass
 
-
-
-
 class GLSubStore(GLStoreBase):
     regexp = re.compile("\[.*?\]")
     def __init__(self, parent, expression):
@@ -183,7 +180,7 @@ class GLStore(GLStoreBase):
             self._id = GL.glGenBuffers(1)
         elif self._state:
             GL.glBindBuffer(GL.GL_ARRAY_BUFFER, self._id)
-            GL.glBufferData(GL.GL_ARRAY_BUFFER, 0, 0, self.usage)
+            GL.glBufferData(GL.GL_ARRAY_BUFFER, 0, None, self.usage)
         arr = self.parent().data
         assert arr is not None and isinstance(arr, np.ndarray)
         GL.glBindBuffer(GL.GL_ARRAY_BUFFER, self._id)
