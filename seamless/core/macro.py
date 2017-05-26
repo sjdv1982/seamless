@@ -1,16 +1,17 @@
-from collections import OrderedDict
-import functools
 import copy
 import inspect
 import sys
 import weakref
-from .context import context, get_active_context
+from collections import OrderedDict
+from contextlib import contextmanager
 from contextlib import contextmanager as _pystdlib_contextmanager
-from .macro_object import MacroObject
+
 from .cached_compile import cached_compile
+from .context import get_active_context
+from .macro_object import MacroObject
 from ..dtypes.cson import cson2json
 
-#macros = weakref.WeakValueDictionary()
+# macros = weakref.WeakValueDictionary()
 _macros = {}
 
 _activation_mode = True
@@ -18,11 +19,13 @@ _macro_mode = False
 _macro_registrar = []
 _activate = []
 
+
 def add_activate(obj):
     if _activation_mode:
         obj.activate()
     else:
         _activate.append(obj)
+
 
 def set_activation_mode(activation_mode):
     global _activation_mode
@@ -36,11 +39,22 @@ def set_activation_mode(activation_mode):
             _activate[:] = []
     _activation_mode = activation_mode
 
+
 def get_activation_mode():
     return _activation_mode
 
+
+@contextmanager
+def activation_mode_as(mode):
+    old_mode = get_activation_mode()
+    set_activation_mode(mode)
+    yield
+    set_activation_mode(old_mode)
+
+
 def get_macro_mode():
     return _macro_mode
+
 
 @_pystdlib_contextmanager
 def macro_mode_on():
@@ -55,6 +69,7 @@ def macro_mode_on():
         _macro_mode = old_macro_mode
         set_activation_mode(old_activation_mode)
 
+
 class Macro:
     module_name = None
     func_name = None
@@ -63,7 +78,7 @@ class Macro:
     registrar = None
 
     def __init__(self, type=None, *, with_context=True, with_caching=False,
-            registrar=None,func=None):
+                 registrar=None, func=None):
         self.with_context = with_context
         if with_caching: assert with_context == True
         self.with_caching = with_caching
@@ -71,7 +86,7 @@ class Macro:
         self.registrar = registrar
         self._type_args = None
         self._type_args_unparsed = type
-        self.macro_objects = weakref.WeakValueDictionary() #"WeakList"
+        self.macro_objects = weakref.WeakValueDictionary()  # "WeakList"
         if func is not None:
             assert callable(func)
             self.set_func(func)
@@ -119,8 +134,8 @@ class Macro:
             if isinstance(value, dict):
                 value_type = value["type"]
                 if "default" in value:
-                    #TODO: checking regarding type <=> default
-                    #TODO: check that the default can be serialised, or at least pickled
+                    # TODO: checking regarding type <=> default
+                    # TODO: check that the default can be serialised, or at least pickled
                     default[name] = value["default"]
             type_args[name] = value_type
 
@@ -134,13 +149,13 @@ class Macro:
 
     def set_func(self, func):
         if self.registrar:
-            #self.registrar = func.__self__
+            # self.registrar = func.__self__
             self.func = func
             return self
 
         code = inspect.getsource(func)
         module = inspect.getmodule(func)
-        #HACK:
+        # HACK:
         # I don't know how to get a module's import path in another way,
         # and apparently a module is in sys.modules already during import
         for k, v in sys.modules.items():
@@ -148,7 +163,7 @@ class Macro:
                 module_name = k
                 break
         else:
-            raise ValueError #module is not in sys.modules...
+            raise ValueError  # module is not in sys.modules...
         func_name = func.__name__
         if (module_name, func_name) in _macros:
             ret = _macros[module_name, func_name]
@@ -177,8 +192,8 @@ class Macro:
             return lambda func: func
 
         namespace = {
-          "OrderedDict": OrderedDict,
-          "macro": dummy_macro
+            "OrderedDict": OrderedDict,
+            "macro": dummy_macro
         }
         identifier = self.module_name
         """ #interferes with resource.fromfile
@@ -191,7 +206,7 @@ class Macro:
                 pass
         """
         code = strip_source(code)
-        identifier2 = "macro <= "+identifier + " <= " + self.func_name
+        identifier2 = "macro <= " + identifier + " <= " + self.func_name
         ast = cached_compile(code, identifier2)
         exec(ast, namespace)
         self.code = code
@@ -207,7 +222,7 @@ class Macro:
             macro_object.update_cell(None)
 
     def resolve(self, obj):
-        #TODO: allow CellLike contexts as well (also in cell_args in resolve_type_args)
+        # TODO: allow CellLike contexts as well (also in cell_args in resolve_type_args)
         from .cell import Cell
         from ..dtypes import parse
 
@@ -234,21 +249,21 @@ class Macro:
         if self._type_args is None:
             return resolved_args, resolved_kwargs, None
 
-        #TODO: take and adapt corresponding routine from Hive
+        # TODO: take and adapt corresponding routine from Hive
         cell_args = {}
         new_args, new_kwargs = [], {}
         positional_done = set()
 
         for name, arg, arg0 in zip(order, resolved_args, args):
             dtype = self._type_args[name]
-            #TODO: type validation
+            # TODO: type validation
 
-            #STUB:
+            # STUB:
             if isinstance(arg0, Cell):
                 if dtype is not None and \
-                  (dtype == "json" or dtype[0] == "json") and \
-                  arg0.dtype is not None and \
-                  (arg0.dtype == "cson" or arg0.dtype[0] == "cson"):
+                        (dtype == "json" or dtype[0] == "json") and \
+                                arg0.dtype is not None and \
+                        (arg0.dtype == "cson" or arg0.dtype[0] == "cson"):
                     arg = cson2json(arg)
             if name.startswith("_arg"):
                 new_args.append(arg)
@@ -264,7 +279,7 @@ class Macro:
         for name, arg in resolved_kwargs.items():
             assert not name.startswith("_"), name  # not supported
             assert name in self._type_args, (name, [v for v in self._type_args.keys() if not v.startswith("_")])
-            #TODO: type validation
+            # TODO: type validation
             arg0 = kwargs[name]
 
             if isinstance(arg0, Cell):
@@ -277,7 +292,7 @@ class Macro:
         required = self._type_args["_required"]
         for argname in required:
             if argname.startswith("_arg"):
-                assert argname in positional_done, (argname, order, len(args)) #TODO: error message
+                assert argname in positional_done, (argname, order, len(args))  # TODO: error message
             else:
                 assert argname in new_kwargs, argname  # TODO: error message
 
@@ -297,7 +312,7 @@ class Macro:
     def evaluate(self, args, kwargs, macro_object):
         from .cell import Cell, CellLike
         from .worker import Worker, WorkerLike, InputPinBase, \
-         OutputPinBase, EditPinBase
+            OutputPinBase, EditPinBase
         from .registrar import RegistrarObject
         from .context import active_context_as
         from .. import run_work
@@ -309,7 +324,7 @@ class Macro:
             parent = macro_object._parent()
             if isinstance(parent, RegistrarObject):
                 func = parent.re_register
-                resolved_args = resolved_args[1:]  #TODO: bound object because of hack...
+                resolved_args = resolved_args[1:]  # TODO: bound object because of hack...
 
         if self.with_context:
             ctx = get_active_context()._new_subcontext()
@@ -325,7 +340,7 @@ class Macro:
                         mobj.set_registrar_listeners(_macro_registrar)
                     ctx._set_macro_object(mobj)
 
-                    if macro_object is None: #this is a new construction, not a re-evaluation
+                    if macro_object is None:  # this is a new construction, not a re-evaluation
                         if mobj is not None:
                             mobj.connect(ctx)
                     result = ctx
@@ -368,7 +383,7 @@ class Macro:
                         else:
                             raise TypeError((pinname, pin))
 
-                        for cell_id in cell_ids: #TODO: indirect ownage
+                        for cell_id in cell_ids:  # TODO: indirect ownage
                             cell = manager.cells.get(cell_id, None)
                             if cell is None:
                                 continue
@@ -379,7 +394,7 @@ class Macro:
                     raise NotImplementedError(type(result))
 
                 result._set_macro_object(mobj)
-                if macro_object is None: #this is a new construction, not a re-evaluation
+                if macro_object is None:  # this is a new construction, not a re-evaluation
                     if mobj is not None:
                         mobj.connect(result)
 

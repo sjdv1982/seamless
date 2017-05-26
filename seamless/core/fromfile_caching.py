@@ -1,3 +1,6 @@
+from contextlib import contextmanager
+
+
 def _fromfile_caching_walk(ctx, clean_cells, transformers ):
     from .context import Context
     from .cell import Cell
@@ -24,6 +27,7 @@ def _fromfile_caching_walk(ctx, clean_cells, transformers ):
             else:
                 #print("NOT CLEAN", child, r.dirty, child.value is None)
                 pass
+
 
 def fromfile_caching(ctx):
     """This function is to be invoked right after a context has been loaded
@@ -64,3 +68,9 @@ def fromfile_caching(ctx):
             manager.set_stable(tf, True)
             tf.transformer.responsive = False
             tf.receive_update("@RESPONSIVE", None)
+
+
+@contextmanager
+def fromfile_caching_ctx(ctx):
+    yield
+    fromfile_caching(ctx)

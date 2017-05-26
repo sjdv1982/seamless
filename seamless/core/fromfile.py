@@ -2,6 +2,7 @@ from .context import Context
 from .reactor import Reactor
 from .transformer import Transformer
 from .cell import Cell, cell as cell_factory
+from .macro import activation_mode_as
 import json
 from collections import OrderedDict
 from contextlib import contextmanager
@@ -38,7 +39,7 @@ def find_sl(ctx, path):
 from .fromfile_manager import json_to_connections, json_to_registrar_items, \
  json_to_macro_objects, json_to_macro_listeners, json_to_registrar_cells, \
  json_to_registrar_listeners
-from .fromfile_caching import fromfile_caching
+from .fromfile_caching import fromfile_caching_ctx
 
 
 def json_to_lib(data):
@@ -214,7 +215,7 @@ def fromfile(filename):
     ctx = Context()
     with (fromfile_mode_as(True),
           activation_mode_as(False),
-          fromfile_caching(ctx)):
+          fromfile_caching_ctx(ctx)):
         data = json.load(open(filename))
         links = json_to_lib(data["lib"])
         m = ctx._manager
