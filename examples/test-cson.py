@@ -20,5 +20,5 @@ return inp
 import os
 ctx.tofile(os.path.splitext(__file__)[0] + ".seamless", backup=False)
 
-if not seamless.ipython:
-    seamless.mainloop()
+#if not seamless.ipython:
+#    seamless.mainloop()

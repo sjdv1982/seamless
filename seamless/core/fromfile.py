@@ -38,6 +38,8 @@ def find_sl(ctx, path):
 from .fromfile_manager import json_to_connections, json_to_registrar_items, \
  json_to_macro_objects, json_to_macro_listeners, json_to_registrar_cells, \
  json_to_registrar_listeners
+from .fromfile_caching import fromfile_caching
+
 
 def json_to_lib(data):
     #TODO: check for version conflicts; for now, don't overwrite lib
@@ -101,15 +103,19 @@ def json_to_cell(ctx, data, myname, ownerdict):
         #    import seamless.dtypes
         #    assert isinstance(seamless.dtypes.parse("json", data["data"],  False), (dict,list,str,int,float,None))
         cell.set(data["data"])
+    if "hash" in data:
+        cell.resource._hash = data["hash"]
     ctx._add_child(myname, cell)
 
     if "resource" in data:
-        #TODO: adapt behavior depending on mode
         d = data["resource"]
         r = cell.resource
         r.mode = d["mode"]
         r.lib = d["lib"] #NOTE: link will already be created in links_to_lib!
-        r.filename = d["filename"]
+        r.filepath = d["filepath"]
+        sp = d.get("save_policy", None)
+        if sp is not None:
+            r.save_policy = sp
         r.update()
 
     owner = data.get("owner", None)
@@ -175,25 +181,40 @@ def json_to_ctx(ctx, data, myname=None, ownerdict=None, pinlist=None):
             owner = find_sl(ctx, ownerpath)
             owner.own(sl)
 
-    for pinname, pinpath in sorted(data["pins"].items()):
-        pinlist.append((myctx, pinname, pinpath))
+    for pinname, pinpath0 in sorted(data["pins"].items()):
+        pinlist.append((myctx, pinname, pinpath0))
 
     if myname is None:
-        for myctx, pinname, pinpath in pinlist:
+        for myctx, pinname, pinpath0 in pinlist:
+            typename, pinpath = pinpath0
             pin = find_sl(ctx, pinpath)
             if isinstance(pin, InputPinBase):
+                assert typename == "ExportedInputPin"
                 myctx._pins[pinname] = ExportedInputPin(pin)
             elif isinstance(pin, OutputPinBase):
+                assert typename == "ExportedOutputPin"
                 myctx._pins[pinname] = ExportedOutputPin(pin)
             elif isinstance(pin, EditPinBase):
+                assert typename == "ExportedEditPin"
                 myctx._pins[pinname] = ExportedEditPin(pin)
+            elif isinstance(pin, Cell):
+                if typename == "ExportedInputPin":
+                    myctx._pins[pinname] = ExportedInputPin(pin)
+                elif typename == "ExportedOutputPin":
+                    myctx._pins[pinname] = ExportedOutputPin(pin)
+                elif typename == "ExportedEditPin":
+                    myctx._pins[pinname] = ExportedEditPin(pin)
+                else:
+                    raise TypeError(pin, type(pin), typename)
             else:
-                raise TypeError(pin)
+                raise TypeError(pin, type(pin))
 
 
 def fromfile(filename):
     ctx = Context()
-    with fromfile_mode_as(True):
+    with (fromfile_mode_as(True),
+          activation_mode_as(False),
+          fromfile_caching(ctx)):
         data = json.load(open(filename))
         links = json_to_lib(data["lib"])
         m = ctx._manager

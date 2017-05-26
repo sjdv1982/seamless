@@ -28,24 +28,47 @@ def worker_to_json(p):
     return d
 
 def resource_to_json(r):
-    return OrderedDict((
-        ("filename", r.filename),
+    result = OrderedDict((
+        ("filepath", r.filepath),
         ("lib", r.lib),
         ("mode", r.mode),
     ))
+    if r.save_policy > 0:
+        result["save_policy"] = r.save_policy
+    return result
 
 def cell_to_json(c):
     d = OrderedDict()
     store_data = True
+    store_hash = False
     if c._dependent:
         store_data = False
     d["dtype"] = c.dtype
     if c.dtype is None:
         d["dtype"] = "signal"
-    if c.resource is not None and c.resource.filename is not None:
-        d["resource"] = resource_to_json(c.resource)
-        if c.resource.mode == 1:
-            store_data = False
+    if c.resource is not None:
+        if c.resource.filepath is not None or c.resource.save_policy is not None:
+            d["resource"] = resource_to_json(c.resource)
+            if c.resource.mode == 1:
+                store_data = False
+
+        sp = c.resource.save_policy
+        if sp == 0:
+            pass
+        elif sp == 1:
+            pass
+        elif sp == 2: #TODO: MAX_SAVE bytes
+            if c.resource.filepath is None or c.resource.mode == 1:
+                store_data = True
+        elif sp == 3:
+            if c.resource.filepath is None or c.resource.mode == 1:
+                store_data = True
+        elif sp == 4:
+            store_data = True
+        if sp > 0:
+            if not store_data:
+                store_hash = True
+
     if store_data and c.data is not None:
         data = c.data
         is_json = (
@@ -56,6 +79,9 @@ def cell_to_json(c):
         if not is_json:
             data = dtypes.serialize(c.dtype, data)
         d["data"] = data
+    if store_hash and c.data is not None:
+        hash_ = c.resource.get_hash()
+        d["hash"] = hash_
     if c._owner is not None:
         d["owner"] = sl_print(c._owner())
     return d
@@ -77,7 +103,7 @@ def ctx_to_json(ctx):
         ("type", "context"),
         ("like_worker", ctx._like_worker),
         ("like_cell", ctx._like_cell),
-        ("pins", {pname: sl_print(p) for pname, p in ctx._pins.items()}),
+        ("pins", {pname: (p.__class__.__name__, sl_print(p)) for pname, p in ctx._pins.items()}),
         ("auto", [a for a in sorted(ctx._auto) if a in ctx._children]),
         ("children", children),
     ))

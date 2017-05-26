@@ -93,7 +93,7 @@
           "type": "str"
         }
       },
-      "module_name": "__mp_main__",
+      "module_name": "__main__",
       "func_name": "operator",
       "code": "@macro({\"formula\": {\"type\": \"str\", \"default\": \"return value*2\"}})\ndef operator(ctx, formula ):\n    from seamless import cell, transformer\n    tparams = ctx.tparams = cell(\"object\").set(\n    {\n      \"value\": {\n        \"pin\": \"input\",\n        \"dtype\": \"int\"\n      },\n      \"output\": {\n        \"pin\": \"output\",\n        \"dtype\": \"int\"\n      }\n    }\n    )\n\n    cont = ctx.cont = transformer(tparams)\n    c_code = cont.code.cell()\n    c_code.set(formula)\n    ctx.export(cont)\n"
     },
@@ -145,7 +145,7 @@
       },
       "module_name": "seamless.lib.gui.basic_display",
       "func_name": "basic_display",
-      "code": "@macro(OrderedDict((\n    (\"display_type\",\"str\"),\n    (\"title\",{\"type\": \"str\", \"default\": \"Basic display\"})\n)))\ndef basic_display(ctx, display_type, title):\n    from seamless import reactor\n\n    _displays = {\n      \"int\": {\n        \"code\": \"cell-basic_display_int.py\",\n        \"update\": \"cell-basic_display_UPDATE.py\",\n      },\n      \"float\": {\n        \"code\": \"cell-basic_display_float.py\",\n        \"update\": \"cell-basic_display_UPDATE.py\",\n      },\n      \"text\": {\n        \"code\": \"cell-basic_display_text.py\",\n        \"update\": \"cell-basic_display_text_UPDATE.py\",\n      },\n      (\"text\", \"html\"): {\n        \"code\": \"cell-basic_display_html.py\",\n        \"update\": \"cell-basic_display_html_UPDATE.py\",\n      },\n      \"json\": {\n        \"code\": \"cell-basic_display_json.py\",\n        \"update\": \"cell-basic_display_json_UPDATE.py\",\n      },\n    }\n\n    def _match_type(type, typelist):\n        typelist = list(typelist)\n        type2 = type\n        if isinstance(type, str):\n            type2 = (type,)\n        typelist2 = []\n        for t in typelist:\n            if isinstance(t, str):\n                typelist2.append((t,))\n            else:\n                typelist2.append(t)\n        matches = []\n        for n in range(len(typelist)):\n            ltype = typelist2[n]\n            k = min(len(type2), len(ltype))\n            if type2[:k] == ltype[:k]:\n                matches.append((n, k))\n        if not len(matches):\n            raise TypeError(\"Cannot find display for cell type '{0}'\".format(type))\n        matches.sort(key=lambda v: -v[1])\n        bestmatch = matches[0][0]\n        return typelist[bestmatch]\n\n    display_type = _match_type(display_type, _displays.keys())\n    pinparams = {\n      \"value\": {\n        \"pin\": \"input\",\n        \"dtype\": display_type\n      },\n      \"title\": {\n        \"pin\": \"input\",\n        \"dtype\": \"str\",\n      },\n    }\n    d = ctx.display = reactor(pinparams)\n    d.title.cell().set(title)\n    d.code_start.cell().fromfile(_displays[display_type][\"code\"])\n    d.code_stop.cell().set('w.destroy()')\n    upfile = _displays[display_type][\"update\"]\n    c_up = d.code_update.cell()\n    if upfile is not None:\n        c_up.fromfile(upfile)\n    else:\n        c_up.set(\"\")\n    ctx.export(d, forced=[\"title\"])\n"
+      "code": "@macro(OrderedDict((\n    (\"display_type\",\"str\"),\n    (\"title\",{\"type\": \"str\", \"default\": \"Basic display\"})\n)))\ndef basic_display(ctx, display_type, title):\n    from seamless import reactor\n\n    _displays = {\n      \"int\": {\n        \"code\": \"cell-basic_display_int.py\",\n        \"update\": \"cell-basic_display_UPDATE.py\",\n      },\n      \"float\": {\n        \"code\": \"cell-basic_display_float.py\",\n        \"update\": \"cell-basic_display_UPDATE.py\",\n      },\n      \"text\": {\n        \"code\": \"cell-basic_display_text.py\",\n        \"update\": \"cell-basic_display_text_UPDATE.py\",\n      },\n      \"str\": {\n        \"code\": \"cell-basic_display_text.py\",\n        \"update\": \"cell-basic_display_text_UPDATE.py\",\n      },\n      (\"text\", \"html\"): {\n        \"code\": \"cell-basic_display_html.py\",\n        \"update\": \"cell-basic_display_html_UPDATE.py\",\n      },\n      \"json\": {\n        \"code\": \"cell-basic_display_json.py\",\n        \"update\": \"cell-basic_display_json_UPDATE.py\",\n      },\n    }\n\n    def _match_type(type, typelist):\n        typelist = list(typelist)\n        type2 = type\n        if isinstance(type, str):\n            type2 = (type,)\n        typelist2 = []\n        for t in typelist:\n            if isinstance(t, str):\n                typelist2.append((t,))\n            else:\n                typelist2.append(t)\n        matches = []\n        for n in range(len(typelist)):\n            ltype = typelist2[n]\n            k = min(len(type2), len(ltype))\n            if type2[:k] == ltype[:k]:\n                matches.append((n, k))\n        if not len(matches):\n            raise TypeError(\"Cannot find display for cell type '{0}'\".format(type))\n        matches.sort(key=lambda v: -v[1])\n        bestmatch = matches[0][0]\n        return typelist[bestmatch]\n\n    display_type = _match_type(display_type, _displays.keys())\n    pinparams = {\n      \"value\": {\n        \"pin\": \"input\",\n        \"dtype\": display_type\n      },\n      \"title\": {\n        \"pin\": \"input\",\n        \"dtype\": \"str\",\n      },\n    }\n    d = ctx.display = reactor(pinparams)\n    d.title.cell().set(title)\n    d.code_start.cell().fromfile(_displays[display_type][\"code\"])\n    d.code_stop.cell().set('w.destroy()')\n    upfile = _displays[display_type][\"update\"]\n    c_up = d.code_update.cell()\n    if upfile is not None:\n        c_up.fromfile(upfile)\n    else:\n        c_up.set(\"\")\n    ctx.export(d, forced=[\"title\"])\n"
     },
     {
       "with_context": true,
@@ -175,18 +175,34 @@
     "children": {
       "c_data": {
         "dtype": "int",
+        "resource": {
+          "filepath": null,
+          "lib": null,
+          "mode": null
+        },
         "data": "5"
       },
       "c_output": {
-        "dtype": "int"
+        "dtype": "int",
+        "resource": {
+          "filepath": null,
+          "lib": null,
+          "mode": null
+        }
       },
       "ed1": {
         "type": "context",
         "like_worker": true,
         "like_cell": false,
         "pins": {
-          "title": "ed1.rc.title",
-          "value": "ed1.rc.value"
+          "title": [
+            "ExportedInputPin",
+            "ed1.rc.title"
+          ],
+          "value": [
+            "ExportedEditPin",
+            "ed1.rc.value"
+          ]
         },
         "auto": [
           "cell1",
@@ -197,6 +213,11 @@
         "children": {
           "cell1": {
             "dtype": "str",
+            "resource": {
+              "filepath": null,
+              "lib": null,
+              "mode": null
+            },
             "data": "Input"
           },
           "cell2": {
@@ -206,7 +227,7 @@
               "python"
             ],
             "resource": {
-              "filename": "/gui/cell-basic_editor_int.py",
+              "filepath": "/gui/cell-basic_editor_int.py",
               "lib": true,
               "mode": 2
             },
@@ -218,6 +239,11 @@
               "code",
               "python"
             ],
+            "resource": {
+              "filepath": null,
+              "lib": null,
+              "mode": null
+            },
             "data": "w.destroy()"
           },
           "cell4": {
@@ -227,7 +253,7 @@
               "python"
             ],
             "resource": {
-              "filename": "/gui/cell-basic_editor_UPDATE.py",
+              "filepath": "/gui/cell-basic_editor_UPDATE.py",
               "lib": true,
               "mode": 2
             },
@@ -256,8 +282,14 @@
         "like_worker": true,
         "like_cell": false,
         "pins": {
-          "title": "ed2.display.title",
-          "value": "ed2.display.value"
+          "title": [
+            "ExportedInputPin",
+            "ed2.display.title"
+          ],
+          "value": [
+            "ExportedInputPin",
+            "ed2.display.value"
+          ]
         },
         "auto": [
           "cell1",
@@ -268,6 +300,11 @@
         "children": {
           "cell1": {
             "dtype": "str",
+            "resource": {
+              "filepath": null,
+              "lib": null,
+              "mode": null
+            },
             "data": "Output"
           },
           "cell2": {
@@ -277,7 +314,7 @@
               "python"
             ],
             "resource": {
-              "filename": "/gui/cell-basic_display_int.py",
+              "filepath": "/gui/cell-basic_display_int.py",
               "lib": true,
               "mode": 2
             },
@@ -289,6 +326,11 @@
               "code",
               "python"
             ],
+            "resource": {
+              "filepath": null,
+              "lib": null,
+              "mode": null
+            },
             "data": "w.destroy()"
           },
           "cell4": {
@@ -298,7 +340,7 @@
               "python"
             ],
             "resource": {
-              "filename": "/gui/cell-basic_display_UPDATE.py",
+              "filepath": "/gui/cell-basic_display_UPDATE.py",
               "lib": true,
               "mode": 2
             },
@@ -326,8 +368,14 @@
         "like_worker": true,
         "like_cell": false,
         "pins": {
-          "title": "meta_ted.rc.title",
-          "value": "meta_ted.rc.value"
+          "title": [
+            "ExportedInputPin",
+            "meta_ted.rc.title"
+          ],
+          "value": [
+            "ExportedEditPin",
+            "meta_ted.rc.value"
+          ]
         },
         "auto": [
           "cell1",
@@ -338,6 +386,11 @@
         "children": {
           "cell1": {
             "dtype": "str",
+            "resource": {
+              "filepath": null,
+              "lib": null,
+              "mode": null
+            },
             "data": "Meta-editor"
           },
           "cell2": {
@@ -347,7 +400,7 @@
               "python"
             ],
             "resource": {
-              "filename": "/gui/cell-basic_editor_text.py",
+              "filepath": "/gui/cell-basic_editor_text.py",
               "lib": true,
               "mode": 2
             },
@@ -359,6 +412,11 @@
               "code",
               "python"
             ],
+            "resource": {
+              "filepath": null,
+              "lib": null,
+              "mode": null
+            },
             "data": "w.destroy()"
           },
           "cell4": {
@@ -368,7 +426,7 @@
               "python"
             ],
             "resource": {
-              "filename": "/gui/cell-basic_editor_text_UPDATE.py",
+              "filepath": "/gui/cell-basic_editor_text_UPDATE.py",
               "lib": true,
               "mode": 2
             },
@@ -397,8 +455,14 @@
         "like_worker": true,
         "like_cell": false,
         "pins": {
-          "output": "op.cont.output",
-          "value": "op.cont.value"
+          "output": [
+            "ExportedOutputPin",
+            "op.cont.output"
+          ],
+          "value": [
+            "ExportedInputPin",
+            "op.cont.value"
+          ]
         },
         "auto": [
           "cell1"
@@ -410,6 +474,11 @@
               "code",
               "python"
             ],
+            "resource": {
+              "filepath": null,
+              "lib": null,
+              "mode": null
+            },
             "data": "return value*3"
           },
           "cont": {
@@ -428,6 +497,11 @@
           },
           "tparams": {
             "dtype": "object",
+            "resource": {
+              "filepath": null,
+              "lib": null,
+              "mode": null
+            },
             "data": {
               "output": {
                 "dtype": "int",
@@ -446,8 +520,14 @@
         "like_worker": true,
         "like_cell": false,
         "pins": {
-          "title": "ted1.rc.title",
-          "value": "ted1.rc.value"
+          "title": [
+            "ExportedInputPin",
+            "ted1.rc.title"
+          ],
+          "value": [
+            "ExportedEditPin",
+            "ted1.rc.value"
+          ]
         },
         "auto": [
           "cell1",
@@ -458,6 +538,11 @@
         "children": {
           "cell1": {
             "dtype": "str",
+            "resource": {
+              "filepath": null,
+              "lib": null,
+              "mode": null
+            },
             "data": "Formula editor"
           },
           "cell2": {
@@ -467,7 +552,7 @@
               "python"
             ],
             "resource": {
-              "filename": "/gui/cell-basic_editor_text.py",
+              "filepath": "/gui/cell-basic_editor_text.py",
               "lib": true,
               "mode": 2
             },
@@ -479,6 +564,11 @@
               "code",
               "python"
             ],
+            "resource": {
+              "filepath": null,
+              "lib": null,
+              "mode": null
+            },
             "data": "w.destroy()"
           },
           "cell4": {
@@ -488,7 +578,7 @@
               "python"
             ],
             "resource": {
-              "filename": "/gui/cell-basic_editor_text_UPDATE.py",
+              "filepath": "/gui/cell-basic_editor_text_UPDATE.py",
               "lib": true,
               "mode": 2
             },
@@ -633,6 +723,7 @@
         "ted1.cell4",
         "ted1.rc.code_update"
       ]
-    ]
+    ],
+    "cell_cell_connections": []
   }
 }

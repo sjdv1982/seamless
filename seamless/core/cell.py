@@ -86,6 +86,8 @@ class Cell(Managed, CellLike):
             self._text_set(text_or_object, propagate, trusted=False)
         else:
             self._object_set(text_or_object, propagate, trusted=False)
+        self.resource.dirty = False
+        self.resource._hash = None
         return self
 
     def set(self, text_or_object):

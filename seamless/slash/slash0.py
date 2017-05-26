@@ -94,6 +94,7 @@ def slash0(ctx, code, extern_map = {}, **macro_args):
         name = "ctx_" + node["name"]
         if node["is_json"]:
             c = cell("json")
+            c.resource.save_policy = 2
         else:
             c = context()
         contexts[node["name"]] = c
@@ -101,6 +102,7 @@ def slash0(ctx, code, extern_map = {}, **macro_args):
     for node in ast["nodes"]["variable"]:
         name = "var_" + node["name"]
         c = cell("str")
+        c.resource.save_policy = 2
         variables[node["name"]] = c
         setattr(ctx, name, c)
         origin = node["origin"]
@@ -116,6 +118,7 @@ def slash0(ctx, code, extern_map = {}, **macro_args):
     for node in ast["nodes"]["doc"]:
         name = "doc_" + node["name"]
         c = cell("text")
+        c.resource.save_policy = 2
         docs[node["name"]] = c
         setattr(ctx, name, c)
         origin = node["origin"]

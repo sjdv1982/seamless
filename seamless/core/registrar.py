@@ -114,9 +114,7 @@ class RegistrarObject(Managed):
 
     def __init__(self, registrar, registered, data, data_name):
         from .macro import get_macro_mode
-        from .fromfile import get_fromfile_mode
         from .context import get_active_context
-        #if get_macro_mode() and not get_fromfile_mode():
         if get_macro_mode():
             ctx = get_active_context()
             ctx._add_new_registrar_object(self)

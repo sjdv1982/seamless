@@ -1,0 +1,7 @@
+#!/usr/local/bin/ipython -i
+import sys
+import seamless
+from seamless import context, cell, transformer
+from seamless.lib.filelink import link
+from seamless.lib.gui.basic_editor import edit
+ctx = seamless.fromfile(sys.argv[1])

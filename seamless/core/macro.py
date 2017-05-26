@@ -13,22 +13,20 @@ from ..dtypes.cson import cson2json
 #macros = weakref.WeakValueDictionary()
 _macros = {}
 
+_activation_mode = True
 _macro_mode = False
 _macro_registrar = []
 _activate = []
 
 def add_activate(obj):
-    if not _macro_mode:
+    if _activation_mode:
         obj.activate()
     else:
         _activate.append(obj)
 
-def get_macro_mode():
-    return _macro_mode
-
-def set_macro_mode(macro_mode):
-    global _macro_mode, _activate
-    if _macro_mode and not macro_mode:
+def set_activation_mode(activation_mode):
+    global _activation_mode
+    if activation_mode and not _activation_mode:
         try:
             for obj in _activate:
                 if obj._destroyed:
@@ -36,15 +34,26 @@ def set_macro_mode(macro_mode):
                 obj.activate()
         finally:
             _activate[:] = []
-    _macro_mode = macro_mode
+    _activation_mode = activation_mode
+
+def get_activation_mode():
+    return _activation_mode
+
+def get_macro_mode():
+    return _macro_mode
 
 @_pystdlib_contextmanager
-def macro_mode_as(macro_mode):
+def macro_mode_on():
     global _macro_mode
     old_macro_mode = _macro_mode
-    set_macro_mode(macro_mode)
-    yield
-    set_macro_mode(old_macro_mode)
+    old_activation_mode = _activation_mode
+    set_activation_mode(False)
+    _macro_mode = True
+    try:
+        yield
+    finally:
+        _macro_mode = old_macro_mode
+        set_activation_mode(old_activation_mode)
 
 class Macro:
     module_name = None
@@ -53,7 +62,7 @@ class Macro:
     dtype = ("text", "code", "python")
     registrar = None
 
-    def __init__(self, type=None, *, with_context=True, with_caching=False, 
+    def __init__(self, type=None, *, with_context=True, with_caching=False,
             registrar=None,func=None):
         self.with_context = with_context
         if with_caching: assert with_context == True
@@ -305,7 +314,7 @@ class Macro:
         if self.with_context:
             ctx = get_active_context()._new_subcontext()
             result = None
-            with active_context_as(ctx), macro_mode_as(True):
+            with active_context_as(ctx), macro_mode_on():
                 try:
                     ret = func(ctx, *resolved_args, **resolved_kwargs)
                     if ret is not None:
@@ -325,7 +334,7 @@ class Macro:
                     if result is None:
                         ctx.destroy()
         else:
-            with macro_mode_as(True):
+            with macro_mode_on():
                 result = func(*resolved_args, **resolved_kwargs)
                 assert (isinstance(result, CellLike) and result._like_cell) \
                        or (isinstance(result, WorkerLike) and result._like_worker) \
