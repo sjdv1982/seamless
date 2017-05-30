@@ -200,6 +200,7 @@ class Transformer(Worker):
         # TODO logging
         # TODO requires_function cleanup
 
+        updates_on_hold = 0
         while True:
             try:
                 self.output_semaphore.acquire()
@@ -210,7 +211,14 @@ class Transformer(Worker):
                 output_name, output_value = self.output_queue.popleft()
                 if output_name is None and output_value is not None:
                     updates_processed = output_value[0]
-                    self._pending_updates -= updates_processed
+                    if self._pending_updates < updates_processed:
+                        #This will not set the worker as stable
+                        self._pending_updates -= updates_processed
+                    else:
+                        # hold on to updates_processed for a while, we don't
+                        #  want to set the worker as stable before we have
+                        #  done a send_update
+                        updates_on_hold += updates_processed
                     continue
 
                 assert output_name == self._output_name
@@ -218,6 +226,9 @@ class Transformer(Worker):
                     self._pins[self._output_name].send_update(output_value)
                 else:
                     self._last_value = output_value
+                if updates_on_hold:
+                    self._pending_updates -= updates_on_hold
+                    updates_on_hold = 0
 
             except:
                 traceback.print_exc() #TODO: store it?

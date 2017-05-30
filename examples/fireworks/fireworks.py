@@ -149,7 +149,7 @@ ctx.gen_texture_im1.code.cell().set(
 """
 import numpy as np
 
-if 1:
+if 0:
     # Create a texture (random)
     im1 = np.ones(dtype=np.float32, shape=(2 * radius + 1, 2 * radius + 1, 3))
 else: ###
