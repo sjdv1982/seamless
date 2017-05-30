@@ -7,9 +7,9 @@ import numpy as np
 class TransportedArray:
     def __init__(self, array, store=None):
         assert isinstance(array, np.ndarray)
-        from .GLStore import GLStore
+        from .gl import GLStoreBase
         if store is not None:
-            assert isinstance(store, GLStore)
+            assert isinstance(store, GLStoreBase)
         self.array = array
         self.store = store
 

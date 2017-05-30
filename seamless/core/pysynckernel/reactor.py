@@ -66,7 +66,7 @@ class Reactor:
             self._update_from_start()
         self._active = True
 
-    def process_input(self, name, data):
+    def process_input(self, name, data, resource_name):
         #print("process_input", self.parent(), name, self._pending_inputs)
         if self.parent() is None:
             return
@@ -107,7 +107,7 @@ class Reactor:
         # instance of datatypes.objects.DataObject
 
         try:
-            data_object.parse(data)
+            data_object.parse(data, resource_name)
             data_object.validate()
 
         except Exception as exc:

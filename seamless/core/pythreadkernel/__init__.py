@@ -82,7 +82,7 @@ class Worker(metaclass=ABCMeta):
 
                 # If there is a registrar update later in the queue, bump it (= move it to the top)
                 bump = False
-                for message_id, name, data in list(self.input_queue):
+                for message_id, name, data, resource_name in list(self.input_queue):
                     if message_id in self._bumped:
                         continue
                     if name == "@REGISTRAR":
@@ -91,7 +91,7 @@ class Worker(metaclass=ABCMeta):
                         self.semaphore.release()
                         break
                 else:
-                    message_id, name, data = self.input_queue.popleft()  # QueueItem instance
+                    message_id, name, data, resource_name = self.input_queue.popleft()  # QueueItem instance
                     if message_id in self._bumped:
                         self._bumped.remove(message_id)
                         ack()
@@ -105,7 +105,8 @@ class Worker(metaclass=ABCMeta):
                 if name != "@REGISTRAR":
                     # It's cheaper to look-ahead for updates and wait until we process them instead
                     look_ahead = False
-                    for new_message_id, new_name, new_update in list(self.input_queue):
+                    for item in list(self.input_queue):
+                        new_name = item[1]
                         if new_name == name:
                             look_ahead = True
                             break
@@ -141,7 +142,7 @@ class Worker(metaclass=ABCMeta):
                     # instance of datatypes.objects.DataObject
 
                     try:
-                        data_object.parse(data)
+                        data_object.parse(data, resource_name)
                         data_object.validate()
 
                     except Exception as exc:

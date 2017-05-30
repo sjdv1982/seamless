@@ -68,7 +68,7 @@ class Worker(Managed, WorkerLike):
             manager.remove_registrar_listeners(self)
         super().destroy()
 
-    def receive_update(self, input_pin, value):
+    def receive_update(self, input_pin, value, resource_name):
         raise NotImplementedError
 
     def receive_registrar_update(self, registrar_name, key, namespace_name):
@@ -161,12 +161,12 @@ class InputPin(InputPinBase):
             self.own(my_cell)
         return my_cell
 
-    def receive_update(self, value):
+    def receive_update(self, value, resource_name):
         worker = self.worker_ref()
         if worker is None:
             return #Worker has died...
 
-        worker.receive_update(self.name, value)
+        worker.receive_update(self.name, value, resource_name)
 
     def destroy(self):
         if self._destroyed:
@@ -299,12 +299,12 @@ class EditPin(EditPinBase):
             self.own(my_cell)
         return my_cell
 
-    def receive_update(self, value):
+    def receive_update(self, value, resource_name):
         worker = self.worker_ref()
         if worker is None:
             return #Worker has died...
 
-        worker.receive_update(self.name, value)
+        worker.receive_update(self.name, value, resource_name)
 
     def send_update(self, value):
         manager = self._get_manager()

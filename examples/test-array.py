@@ -18,7 +18,7 @@ ctx.tf.code.cell().set("print('RUN');import numpy as np; return np.concatenate((
 ctx.equilibrate()
 print(ctx.tf.a3.cell().value)
 
-ctx.array1.enable_store("GL")
+ctx.array1.set_store("GL")
 ctx.rc = reactor({"a1": {"pin": "input", "dtype": "array"}})
 ctx.array1.connect(ctx.rc.a1)
 ctx.rc.code_start.cell().set("")

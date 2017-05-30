@@ -181,10 +181,11 @@ class Transformer(Worker):
             self._pins[p].set_context(context)
         return self
 
-    def receive_update(self, input_pin, value):
+    def receive_update(self, input_pin, value, resource_name):
         self._message_id += 1
         self._pending_updates += 1
-        self.transformer.input_queue.append((self._message_id, input_pin, value))
+        msg = (self._message_id, input_pin, value, resource_name)
+        self.transformer.input_queue.append(msg)
         self.transformer.semaphore.release()
 
     def receive_registrar_update(self, registrar_name, key, namespace_name):
@@ -192,7 +193,7 @@ class Transformer(Worker):
         self._message_id += 1
         self._pending_updates += 1
         value = registrar_name, key, namespace_name
-        self.transformer.input_queue.append((self._message_id, "@REGISTRAR", value))
+        self.transformer.input_queue.append((self._message_id, "@REGISTRAR", value, None))
         self.transformer.semaphore.release()
 
     def listen_output(self):

@@ -255,7 +255,7 @@ class Cell(Managed, CellLike):
         if incoming:
             if isinstance(pin, (OutputPinBase, Cell)):
                 self._dependent = False
-                if not self._destroyed:
+                if not self._destroyed and self.resource is not None:
                     self.resource.cache = False
             self._incoming_connections -= 1
         else:
@@ -498,12 +498,17 @@ class CsonCell(Cell):
 
 class ArrayCell(Cell):
     _store = None
-    def enable_store(self, mode):
-        assert mode == "GL", mode
-        from ..dtypes.GLStore import GLStore
+    def set_store(self, mode, *args, **kwargs):
+        assert mode in ("GL", "GLTex"), mode
+        from ..dtypes.gl import GLStore, GLTexStore
         if self._store is not None:
+            if mode == "GL": assert isinstance(self._store, GLStore)
+            if mode == "GLTex": assert isinstance(self._store, GLTexStore)
             return
-        self._store = GLStore(self)
+        if mode == "GL":
+            self._store = GLStore(self, *args, **kwargs)
+        elif mode == "GLTex":
+            self._store = GLTexStore(self, *args, **kwargs)
         self._store.set_dirty()
         self.touch()
     def _set(self, text_or_object,propagate):
@@ -511,6 +516,15 @@ class ArrayCell(Cell):
             self._store.set_dirty()
         result = super()._set(text_or_object, propagate)
         return result
+    def destroy(self):
+        if self._destroyed:
+            return
+        if self._store is not None:
+            # TODO: leads to segfault because there is no OpenGL context
+            #  but omitting it is a GPU memory leak...
+            #self._store.destroy()
+            pass ###
+        super().destroy()
 
 _handlers = {
     ("text", "code", "python"): PythonCell,

@@ -139,7 +139,7 @@ class MacroObject:
                 #destroy the remnants of the old context
                 if with_caching:
                     delattr(grandparent, "@TEMP_CONTEXT")
-                    parent.destroy()
+                parent.destroy()
 
                 #build new internal connections that didn't exist before
                 for con in sorted(new_internal_connections):

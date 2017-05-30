@@ -107,13 +107,13 @@ class Reactor(Worker):
             self._pins[p].set_context(context)
         return self
 
-    def receive_update(self, input_pin, value):
+    def receive_update(self, input_pin, value, resource_name):
         self._pending_updates += 1
         f = self.reactor.process_input
         if self._pins[input_pin].dtype == "signal":
-            f(input_pin, value)
+            f(input_pin, value, resource_name)
         else:
-            work = partial(f, input_pin, value)
+            work = partial(f, input_pin, value, resource_name)
             seamless.add_work(work)
 
     def receive_registrar_update(self, registrar_name, key, namespace_name):
