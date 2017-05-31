@@ -83,6 +83,7 @@ class Context(SeamlessBase, CellLike, WorkerLike):
     _auto = None
     _owned = []
     _owner = None
+    _exported_child = None
 
     def __init__(
         self,
@@ -115,6 +116,22 @@ class Context(SeamlessBase, CellLike, WorkerLike):
             set_active_context(self)
         from .registrar import RegistrarAccessor
         self.registrar = RegistrarAccessor(self)
+
+    def _shell(self, toplevel=True):
+        if self._exported_child is None:
+            raise AttributeError("""Context %s: no exported child has been set.
+You can only invoke shell() directly on one of its children""" % str(self))
+        child = self._exported_child._find_successor()
+        if child._destroyed:
+            raise AttributeError("""Context %s: exported child has been destroyed.
+You can only invoke shell() directly on one of its remaining children""" % str(self))
+        namespace, title = child._shell(toplevel=False)
+        if toplevel:
+            name = str(self)
+            if name == ".":
+                name = "<toplevel>"
+            title += " in context %s" % name
+        return namespace, title
 
     def __dir__(self):
         if self._destroyed:
@@ -458,6 +475,7 @@ When any of these cells change and the macro is re-executed, the child object wi
                 raise TypeError(pin)
 
         self._like_worker = True
+        self._exported_child = child
 
     def _part_of(self, ctx):
         assert isinstance(ctx, Context)

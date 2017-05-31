@@ -2,4 +2,4 @@
 GUI manager
 """
 
-from .pyshell import PyShell
+from .shell import shell

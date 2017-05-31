@@ -1,5 +1,40 @@
 {
-  "lib": {},
+  "lib": {
+    "/gui/cell-basic_editor_UPDATE.py": {
+      "data": "if PINS.value.updated:\n    b.setValue(PINS.value.get())\nif PINS.title.updated:\n    w.setWindowTitle(PINS.title.get())\n",
+      "links": [
+        "ed1.cell4",
+        "ed2.cell4"
+      ]
+    },
+    "/gui/cell-basic_editor_float.py": {
+      "data": "from seamless.qt.QtWidgets import QDoubleSpinBox, QWidget, QVBoxLayout\nfrom seamless.qt.QtCore import Qt\n\nw = QWidget()\n#w.setWindowFlags(Qt.WindowStaysOnTopHint)\nw.setAttribute(Qt.WA_ShowWithoutActivating)\nvbox = QVBoxLayout()\nvbox.addStretch(1)\nw.setLayout(vbox)\nw.resize(300,100)\nw.setWindowTitle(PINS.title.get())\nw.show()\nb = QDoubleSpinBox()\nb.setSingleStep(0.01)\nb.setDecimals(3)\nb.setMaximum(1000000)\nif PINS.value.defined:\n    b.setValue(PINS.value.get())\nvbox.addWidget(b)\nb.valueChanged.connect(PINS.value.set)\n",
+      "links": []
+    },
+    "/gui/cell-basic_editor_int.py": {
+      "data": "from seamless.qt.QtWidgets import QSpinBox, QWidget, QVBoxLayout\nfrom seamless.qt.QtCore import Qt\n\nw = QWidget()\n#w.setWindowFlags(Qt.WindowStaysOnTopHint)\nw.setAttribute(Qt.WA_ShowWithoutActivating)\nvbox = QVBoxLayout()\nvbox.addStretch(1)\nw.setLayout(vbox)\nw.resize(300,100)\nw.setWindowTitle(PINS.title.get())\nw.show()\nb = QSpinBox()\nb.setMaximum(1000000)\nif PINS.value.defined:\n    b.setValue(PINS.value.get())\nvbox.addWidget(b)\nb.valueChanged.connect(PINS.value.set)\n",
+      "links": [
+        "ed1.cell2",
+        "ed2.cell2"
+      ]
+    },
+    "/gui/cell-basic_editor_json.py": {
+      "data": "from seamless.qt.QtWidgets import QTextEdit, QWidget, QVBoxLayout\nfrom seamless.qt.QtCore import Qt\nfrom PyQt5.QtGui import QColor\nimport json\n\nw = QWidget()\n#w.setWindowFlags(Qt.WindowStaysOnTopHint)\nw.setAttribute(Qt.WA_ShowWithoutActivating)\nvbox = QVBoxLayout()\n#vbox.addStretch(1)\nw.resize(600,600)\nw.setLayout(vbox)\nw.setWindowTitle(PINS.title.get())\n\nclass MyTextEdit(QTextEdit):\n    def focusOutEvent(self, event):\n        PINS.value.set(self.toPlainText())\n        QTextEdit.focusOutEvent(self, event)\n\nw.show()\nb = MyTextEdit()\nb.setFontPointSize(15)\nif PINS.value.defined:\n    b.setText(json.dumps(PINS.value.get(), indent=2))\n#b.setFontItalic(True)\n#b.setTextColor(QColor(255,0,0))\nvbox.addWidget(b)\n",
+      "links": []
+    },
+    "/gui/cell-basic_editor_json_UPDATE.py": {
+      "data": "if PINS.value.updated:\n    b.setText(json.dumps(PINS.value.get(), indent=2))\nif PINS.title.updated:\n    w.setWindowTitle(PINS.title.get())\n",
+      "links": []
+    },
+    "/gui/cell-basic_editor_text.py": {
+      "data": "from seamless.qt.QtWidgets import QTextEdit, QWidget, QVBoxLayout\nfrom seamless.qt.QtCore import Qt\nfrom PyQt5.QtGui import QColor\n\nw = QWidget()\n#w.setWindowFlags(Qt.WindowStaysOnTopHint)\nw.setAttribute(Qt.WA_ShowWithoutActivating)\nvbox = QVBoxLayout()\n#vbox.addStretch(1)\nw.resize(600,600)\nw.setLayout(vbox)\nw.setWindowTitle(PINS.title.get())\n\nclass MyTextEdit(QTextEdit):\n    def focusOutEvent(self, event):\n        PINS.value.set(self.toPlainText())\n        QTextEdit.focusOutEvent(self, event)\n\nw.show()\nb = MyTextEdit()\nb.setFontPointSize(15)\nif PINS.value.defined:\n    b.setText(PINS.value.get())\n#b.setFontItalic(True)\n#b.setTextColor(QColor(255,0,0))\nvbox.addWidget(b)\n",
+      "links": []
+    },
+    "/gui/cell-basic_editor_text_UPDATE.py": {
+      "data": "if PINS.value.updated:\n    b.setText(PINS.value.get())\nif PINS.title.updated:\n    w.setWindowTitle(PINS.title.get())\n",
+      "links": []
+    }
+  },
   "macro": [
     {
       "with_context": false,
@@ -11,7 +46,7 @@
       "type_args": "int",
       "module_name": "__main__",
       "func_name": "add_all",
-      "code": "@macro(\"int\", with_context=False)\ndef add_all(inputs):\n    from seamless import transformer\n    pattern = \"inp\"\n    params = {\n        \"outp\": {\"pin\": \"output\", \"dtype\": \"int\"}\n    }\n    code = \"return \"\n    for n in range(inputs):\n        p = pattern + str(n+1)\n        params[p] = {\"pin\": \"input\", \"dtype\": \"int\"}\n        code += p + \"+ \"\n    code = code[:-2]\n    t = transformer(params)\n    t.code.cell().set(code)\n    return t\n"
+      "code": "@macro(\"int\", with_context=False)\ndef add_all(inputs):\n    from seamless import transformer\n    pattern = \"INP\"\n    params = {\n        \"outp\": {\"pin\": \"output\", \"dtype\": \"int\"}\n    }\n    code = \"return \"\n    for n in range(inputs):\n        p = pattern + str(n+1)\n        params[p] = {\"pin\": \"input\", \"dtype\": \"int\"}\n        code += p + \"+ \"\n    code = code[:-2]\n    t = transformer(params)\n    t.code.cell().set(code)\n    return t\n"
     },
     {
       "with_context": false,
@@ -44,6 +79,24 @@
       "module_name": "seamless.core.transformer",
       "func_name": "transformer",
       "code": "@macro(type=(\"json\", \"seamless\", \"transformer_params\"), with_context=False)\ndef transformer(kwargs):\n    from seamless.core.transformer import Transformer #code must be standalone\n    #TODO: remapping, e.g. output_finish, destroy, ...\n    return Transformer(kwargs)\n"
+    },
+    {
+      "with_context": true,
+      "dtype": [
+        "text",
+        "code",
+        "python"
+      ],
+      "type_args": {
+        "editor_type": "str",
+        "title": {
+          "default": "Basic editor",
+          "type": "str"
+        }
+      },
+      "module_name": "seamless.lib.gui.basic_editor",
+      "func_name": "basic_editor",
+      "code": "@macro(OrderedDict((\n    (\"editor_type\",\"str\"),\n    (\"title\",{\"type\": \"str\", \"default\": \"Basic editor\"})\n)))\ndef basic_editor(ctx, editor_type, title):\n    from seamless import reactor\n\n    _editors = {\n      \"int\": {\n        \"code\": \"cell-basic_editor_int.py\",\n        \"update\": \"cell-basic_editor_UPDATE.py\",\n      },\n      \"float\": {\n        \"code\": \"cell-basic_editor_float.py\",\n        \"update\": \"cell-basic_editor_UPDATE.py\",\n      },\n      \"text\": {\n        \"code\": \"cell-basic_editor_text.py\",\n        \"update\": \"cell-basic_editor_text_UPDATE.py\",\n      },\n      \"json\": {\n        \"code\": \"cell-basic_editor_json.py\",\n        \"update\": \"cell-basic_editor_json_UPDATE.py\",\n      },\n    }\n\n    def _match_type(type, typelist):\n        typelist = list(typelist)\n        type2 = type\n        if isinstance(type, str):\n            type2 = (type,)\n        typelist2 = []\n        for t in typelist:\n            if isinstance(t, str):\n                typelist2.append((t,))\n            else:\n                typelist2.append(t)\n        matches = []\n        for n in range(len(typelist)):\n            ltype = typelist2[n]\n            k = min(len(type2), len(ltype))\n            if type2[:k] == ltype[:k]:\n                matches.append((n, k))\n        if not len(matches):\n            raise TypeError(\"Cannot find editor for cell type '{0}'\".format(type))\n        matches.sort(key=lambda v: -v[1])\n        bestmatch = matches[0][0]\n        return typelist[bestmatch]\n\n    editor_type = _match_type(editor_type, _editors.keys())\n    pinparams = {\n      \"value\": {\n        \"pin\": \"edit\",\n        \"dtype\": editor_type,\n        \"must_be_defined\": False\n      },\n      \"title\": {\n        \"pin\": \"input\",\n        \"dtype\": \"str\",\n      },\n    }\n    rc = ctx.rc = reactor(pinparams)\n    rc.title.cell().set(title)\n    rc.code_start.cell().fromfile(_editors[editor_type][\"code\"])\n    rc.code_stop.cell().set('w.destroy()')\n    upfile = _editors[editor_type][\"update\"]\n    c_up = rc.code_update.cell(True)\n    if upfile is not None:\n        c_up.fromfile(upfile)\n    else:\n        c_up.set(\"\")\n    ctx.export(rc, forced=[\"title\"])\n"
     }
   ],
   "main": {
@@ -53,10 +106,15 @@
     "pins": {},
     "auto": [
       "cell1",
+      "cell10",
       "cell2",
       "cell3",
       "cell4",
-      "cell5"
+      "cell5",
+      "cell6",
+      "cell7",
+      "cell8",
+      "cell9"
     ],
     "children": {
       "c1": {
@@ -88,22 +146,26 @@
           "lib": null,
           "mode": null
         },
-        "data": "return inp1",
-        "owner": "t1"
+        "data": "return INP1+ INP2",
+        "owner": "t2"
       },
-      "cell2": {
-        "dtype": [
-          "text",
-          "code",
-          "python"
-        ],
+      "cell10": {
+        "dtype": "int",
         "resource": {
           "filepath": null,
           "lib": null,
           "mode": null
         },
-        "data": "return inp1+ inp2",
-        "owner": "t2"
+        "data": "30"
+      },
+      "cell2": {
+        "dtype": "int",
+        "resource": {
+          "filepath": null,
+          "lib": null,
+          "mode": null
+        },
+        "data": "10"
       },
       "cell3": {
         "dtype": "int",
@@ -132,11 +194,224 @@
         },
         "data": "30"
       },
+      "cell6": {
+        "dtype": "int",
+        "resource": {
+          "filepath": null,
+          "lib": null,
+          "mode": null
+        }
+      },
+      "cell7": {
+        "dtype": "int",
+        "resource": {
+          "filepath": null,
+          "lib": null,
+          "mode": null
+        }
+      },
+      "cell8": {
+        "dtype": [
+          "text",
+          "code",
+          "python"
+        ],
+        "resource": {
+          "filepath": null,
+          "lib": null,
+          "mode": null
+        },
+        "data": "return INP1",
+        "owner": "t1"
+      },
+      "cell9": {
+        "dtype": "int",
+        "resource": {
+          "filepath": null,
+          "lib": null,
+          "mode": null
+        },
+        "data": "20"
+      },
+      "ed1": {
+        "type": "context",
+        "like_worker": true,
+        "like_cell": false,
+        "pins": {
+          "title": [
+            "ExportedInputPin",
+            "ed1.rc.title"
+          ],
+          "value": [
+            "ExportedEditPin",
+            "ed1.rc.value"
+          ]
+        },
+        "auto": [
+          "cell1",
+          "cell2",
+          "cell3",
+          "cell4"
+        ],
+        "children": {
+          "cell1": {
+            "dtype": "str",
+            "resource": {
+              "filepath": null,
+              "lib": null,
+              "mode": null
+            },
+            "data": "Basic editor"
+          },
+          "cell2": {
+            "dtype": [
+              "text",
+              "code",
+              "python"
+            ],
+            "resource": {
+              "filepath": "/gui/cell-basic_editor_int.py",
+              "lib": true,
+              "mode": 2
+            },
+            "data": "from seamless.qt.QtWidgets import QSpinBox, QWidget, QVBoxLayout\nfrom seamless.qt.QtCore import Qt\n\nw = QWidget()\n#w.setWindowFlags(Qt.WindowStaysOnTopHint)\nw.setAttribute(Qt.WA_ShowWithoutActivating)\nvbox = QVBoxLayout()\nvbox.addStretch(1)\nw.setLayout(vbox)\nw.resize(300,100)\nw.setWindowTitle(PINS.title.get())\nw.show()\nb = QSpinBox()\nb.setMaximum(1000000)\nif PINS.value.defined:\n    b.setValue(PINS.value.get())\nvbox.addWidget(b)\nb.valueChanged.connect(PINS.value.set)\n"
+          },
+          "cell3": {
+            "dtype": [
+              "text",
+              "code",
+              "python"
+            ],
+            "resource": {
+              "filepath": null,
+              "lib": null,
+              "mode": null
+            },
+            "data": "w.destroy()"
+          },
+          "cell4": {
+            "dtype": [
+              "text",
+              "code",
+              "python"
+            ],
+            "resource": {
+              "filepath": "/gui/cell-basic_editor_UPDATE.py",
+              "lib": true,
+              "mode": 2
+            },
+            "data": "if PINS.value.updated:\n    b.setValue(PINS.value.get())\nif PINS.title.updated:\n    w.setWindowTitle(PINS.title.get())\n",
+            "owner": "ed1.rc.code_update"
+          },
+          "rc": {
+            "type": "reactor",
+            "mode": "sync",
+            "params": {
+              "title": {
+                "dtype": "str",
+                "pin": "input"
+              },
+              "value": {
+                "dtype": "int",
+                "must_be_defined": false,
+                "pin": "edit"
+              }
+            }
+          }
+        }
+      },
+      "ed2": {
+        "type": "context",
+        "like_worker": true,
+        "like_cell": false,
+        "pins": {
+          "title": [
+            "ExportedInputPin",
+            "ed2.rc.title"
+          ],
+          "value": [
+            "ExportedEditPin",
+            "ed2.rc.value"
+          ]
+        },
+        "auto": [
+          "cell1",
+          "cell2",
+          "cell3",
+          "cell4"
+        ],
+        "children": {
+          "cell1": {
+            "dtype": "str",
+            "resource": {
+              "filepath": null,
+              "lib": null,
+              "mode": null
+            },
+            "data": "Basic editor"
+          },
+          "cell2": {
+            "dtype": [
+              "text",
+              "code",
+              "python"
+            ],
+            "resource": {
+              "filepath": "/gui/cell-basic_editor_int.py",
+              "lib": true,
+              "mode": 2
+            },
+            "data": "from seamless.qt.QtWidgets import QSpinBox, QWidget, QVBoxLayout\nfrom seamless.qt.QtCore import Qt\n\nw = QWidget()\n#w.setWindowFlags(Qt.WindowStaysOnTopHint)\nw.setAttribute(Qt.WA_ShowWithoutActivating)\nvbox = QVBoxLayout()\nvbox.addStretch(1)\nw.setLayout(vbox)\nw.resize(300,100)\nw.setWindowTitle(PINS.title.get())\nw.show()\nb = QSpinBox()\nb.setMaximum(1000000)\nif PINS.value.defined:\n    b.setValue(PINS.value.get())\nvbox.addWidget(b)\nb.valueChanged.connect(PINS.value.set)\n"
+          },
+          "cell3": {
+            "dtype": [
+              "text",
+              "code",
+              "python"
+            ],
+            "resource": {
+              "filepath": null,
+              "lib": null,
+              "mode": null
+            },
+            "data": "w.destroy()"
+          },
+          "cell4": {
+            "dtype": [
+              "text",
+              "code",
+              "python"
+            ],
+            "resource": {
+              "filepath": "/gui/cell-basic_editor_UPDATE.py",
+              "lib": true,
+              "mode": 2
+            },
+            "data": "if PINS.value.updated:\n    b.setValue(PINS.value.get())\nif PINS.title.updated:\n    w.setWindowTitle(PINS.title.get())\n",
+            "owner": "ed2.rc.code_update"
+          },
+          "rc": {
+            "type": "reactor",
+            "mode": "sync",
+            "params": {
+              "title": {
+                "dtype": "str",
+                "pin": "input"
+              },
+              "value": {
+                "dtype": "int",
+                "must_be_defined": false,
+                "pin": "edit"
+              }
+            }
+          }
+        }
+      },
       "t1": {
         "type": "transformer",
         "mode": "thread",
         "params": {
-          "inp1": {
+          "INP1": {
             "dtype": "int",
             "pin": "input"
           },
@@ -150,11 +425,11 @@
         "type": "transformer",
         "mode": "thread",
         "params": {
-          "inp1": {
+          "INP1": {
             "dtype": "int",
             "pin": "input"
           },
-          "inp2": {
+          "INP2": {
             "dtype": "int",
             "pin": "input"
           },
@@ -208,27 +483,76 @@
     "registrar_items": [],
     "registrar_listeners": [],
     "registrar_cells": [],
-    "pin_cell_connections": [],
-    "cell_pin_connections": [
+    "pin_cell_connections": [
       [
-        "cell1",
-        "t1.code"
+        "t1.outp",
+        "cell6"
       ],
       [
-        "cell2",
+        "t2.outp",
+        "cell7"
+      ]
+    ],
+    "cell_pin_connections": [
+      [
+        "cell10",
+        "t2.INP2"
+      ],
+      [
+        "cell1",
         "t2.code"
       ],
       [
-        "cell3",
-        "t1.inp1"
+        "cell2",
+        "t1.INP1"
       ],
       [
-        "cell4",
-        "t2.inp1"
+        "cell6",
+        "ed1.rc.value"
       ],
       [
-        "cell5",
-        "t2.inp2"
+        "cell7",
+        "ed2.rc.value"
+      ],
+      [
+        "cell8",
+        "t1.code"
+      ],
+      [
+        "cell9",
+        "t2.INP1"
+      ],
+      [
+        "ed1.cell1",
+        "ed1.rc.title"
+      ],
+      [
+        "ed1.cell2",
+        "ed1.rc.code_start"
+      ],
+      [
+        "ed1.cell3",
+        "ed1.rc.code_stop"
+      ],
+      [
+        "ed1.cell4",
+        "ed1.rc.code_update"
+      ],
+      [
+        "ed2.cell1",
+        "ed2.rc.title"
+      ],
+      [
+        "ed2.cell2",
+        "ed2.rc.code_start"
+      ],
+      [
+        "ed2.cell3",
+        "ed2.rc.code_stop"
+      ],
+      [
+        "ed2.cell4",
+        "ed2.rc.code_update"
       ]
     ],
     "cell_cell_connections": []

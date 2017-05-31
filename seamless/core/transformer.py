@@ -157,6 +157,10 @@ class Transformer(Worker):
         from .macro import add_activate
         add_activate(self)
 
+    def _shell(self, toplevel=True):
+        p = self._find_successor()
+        return p.transformer.namespace, "Transformer %s" % str(self)
+
     def activate(self):
         if self.active:
             return

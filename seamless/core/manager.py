@@ -283,8 +283,7 @@ class Manager:
             value = TransportedArray(cell._data, cell._store)
         else:
             value = cell._data
-        if seamless.debug:
-            print("manager.update_from_code", cell, head(value))
+        #print("manager.update_from_code", cell, head(value))
         self._update(cell, cell.dtype, value, only_last=only_last)
         from .. import run_work
         from .macro import get_macro_mode
@@ -297,8 +296,7 @@ class Manager:
         cell = self.cells.get(cell_id, None)
         if cell is None:
             return #cell has died...
-        if seamless.debug:
-            print("manager.update_from_worker", cell, head(value), worker)
+        #print("manager.update_from_worker", cell, head(value), worker)
 
         if isinstance(cell, Signal):
             assert value is None

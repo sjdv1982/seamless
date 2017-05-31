@@ -91,6 +91,11 @@ class Reactor(Worker):
                 pin = self._pins[p]
                 if isinstance(pin, OutputPin):
                     pin.cell() #auto-create a cell
+
+    def _shell(self, toplevel=True):
+        p = self._find_successor()
+        return p.reactor.namespace, "Reactor %s" % str(self)
+
     @property
     def reactor_params(self):
         return self._reactor_params

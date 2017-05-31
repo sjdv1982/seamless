@@ -168,9 +168,18 @@
   ],
   "main": {
     "type": "context",
-    "like_worker": false,
+    "like_worker": true,
     "like_cell": false,
-    "pins": {},
+    "pins": {
+      "output": [
+        "ExportedOutputPin",
+        "op.cont.output"
+      ],
+      "value": [
+        "ExportedInputPin",
+        "op.cont.value"
+      ]
+    },
     "auto": [],
     "children": {
       "c_data": {

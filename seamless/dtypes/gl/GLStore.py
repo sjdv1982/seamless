@@ -253,8 +253,9 @@ class GLTexStore(GLStoreBase):
         if not len(self._dirty):
             return
         if self._id is None:
-            textures = (ctypes.c_uint*1)()
-            gl.glGenTextures(1, textures)
+            textures = (ctypes.c_uint*2)()
+            gl.glGenTextures(2, textures)
+            print("BIND0", textures[1])
             self._id = textures[0]
 
         #for now, recreate a new Texture object whenever something is dirty
