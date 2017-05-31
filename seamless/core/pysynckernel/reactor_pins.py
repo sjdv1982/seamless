@@ -19,7 +19,10 @@ class ReactorInputSignal:
     def __init__(self, parent, name):
         self._parent = weakref.ref(parent)
         self._name = name
+        self._clear = True
         self.updated = False
+    def unclear(self):
+        self._clear = False
 
 class ReactorOutput:
     _store = None

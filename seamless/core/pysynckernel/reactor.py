@@ -55,8 +55,9 @@ class Reactor:
             if up not in self.input_must_be_defined:
                 continue
             self.updated.add(up)
-        self.update(self.updated)
-        self.updated = set()
+        updated = set(self.updated)
+        self.updated.clear()
+        self.update(updated)
 
 
     def activate(self):
@@ -129,8 +130,9 @@ class Reactor:
 
         # With all inputs now present, we can issue updates
         if self._active and not self._pending_inputs:
-            self.update(self.updated)
-            self.updated = set()
+            updated = set(self.updated)
+            self.updated.clear()
+            self.update(updated)
 
         self._pending_updates -= updates_processed
         p = self.parent()
@@ -246,6 +248,8 @@ class Reactor:
                     pin._value = v.data
                     pin.defined = True
                     pin._store = v.store
+                else:
+                    v._clear = True
                 pin.updated = True
                 do_update = True
             else:
@@ -256,6 +260,12 @@ class Reactor:
 
         if do_update:
             self._code_update()
+
+        for name in self.inputs.keys():
+            pin = getattr(self.PINS, name)
+            if isinstance(pin, ReactorInputSignal) and pin._clear == False:
+                updated.add(name)
+                pin._clear = True
 
     def output_update(self, name, value):
         p = self.parent()

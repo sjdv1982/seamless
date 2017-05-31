@@ -1,3 +1,4 @@
+from collections import OrderedDict
 import numpy as np
 from OpenGL.arrays import vbo
 from OpenGL.GL import shaders
@@ -16,10 +17,11 @@ uniform_types = {}
 uniform_locations = {}
 uniform_values = {}
 uniform_dirty = set()
+texture_locations = OrderedDict()
 
 def init():
     global initialized, shader_program, renderer, uniform_types, \
-     glstate, glclear
+     glstate, glclear, texdict
     from seamless.dtypes.gl import GLStore, GLTexStore
 
     if initialized:
@@ -51,12 +53,17 @@ def init():
         assert isinstance(store, GLTexStore), ar #TODO: nicer error message
         #store.bind() #superfluous
         texdict[ar] = store
+        loc = gl.glGetUniformLocation(shader_program, ar)
+        if loc == -1:
+            print("WARNING: unknown texture '%s'" % ar)
+            continue
+        texture_locations[ar] = loc
 
     # Create renderer and set glstate
     render = program["render"]
     glstate = render["glstate"]
     glclear = glstate.pop("clear", True)
-    renderer = Renderer(render, shader_program, storedict, texdict)
+    renderer = Renderer(render, shader_program, storedict)
     renderer.bind()
 
     # Get uniform bindings
@@ -80,6 +87,14 @@ def paint():
         init()
     shaders.glUseProgram(shader_program)
 
+    #re-bind the textures every draw, to be safe
+    for texnr, tex in enumerate(texture_locations):
+        gl.glActiveTexture(gl.GL_TEXTURE0+texnr)
+        loc = texture_locations[tex]
+        gl.glUniform1i(loc, texnr)
+        store = texdict[tex]
+        store.bind()
+
     for uniform in list(uniform_dirty):
         if uniform not in uniform_locations:
             continue
@@ -102,16 +117,38 @@ def paint():
             glstate_module.clear(*glclear)
     renderer.draw()
     PINS.rendered.set()
+    #print("/DRAW")
 
 def do_update():
     global initialized
 
-    #NOTE: Except if "init" or "paint" has just been updated,
-    #  we are not guaranteed to have an active OpenGL context!!
-    # Therefore, we have to use "dirty" flags, rather than direct GL commands!
+    """
+    NOTE: Except if "init" or "paint" has just been updated, AND ONLY THOSE,
+        we are not guaranteed to have an active OpenGL context!!
+    This is because "init" and "paint" are fired from GLWindow/GLWidget's
+     .initializeGL or .paintGL, and signals are passed immediately (before the
+     function ends). However, if they are fired before the other pins have been
+     set, then it's the completion of those pins (outside .initializeGL/.paintGL,
+     so no active GL context) that triggers do_update, with PINS.init.updated as
+     true! If this happens, we have to unclear the "init"/"paint" signal, so that
+     it will be triggered later.
+
+    Outside of "init" and "pains", we have to use "dirty" flags,
+     rather than direct GL commands!
+    """
+    #NOTE:
+    #
+    # This is because "init" and "paint" may have been updated before some of
+    #  the pins have been set at all, and the
+    #
 
     arrays = PINS.program.get()["arrays"]
     textures = PINS.program.get().get("textures", [])
+
+    guaranteed_gl_context = True
+
+    if PINS.uniforms.updated or PINS.program.updated:
+        guaranteed_gl_context = False
 
     dirty_renderer = False
     repaint = False
@@ -120,11 +157,14 @@ def do_update():
         pin = getattr(PINS, attr)
         if pin.updated:
             dirty_renderer = True
+            guaranteed_gl_context = False
 
     if PINS.init.updated:
         initialized = False
-        init()
-        dirty_renderer = False
+        if guaranteed_gl_context:
+            init()
+        else:
+            PINS.init.unclear()
 
     if PINS.uniforms.updated:
         new_uniform_values = PINS.uniforms.get()
@@ -137,7 +177,10 @@ def do_update():
                 repaint = True
 
     if PINS.paint.updated:
-        paint()
+        if guaranteed_gl_context:
+            paint()
+        else:
+            PINS.paint.unclear()
 
     if PINS.program.updated:
         initialized = False

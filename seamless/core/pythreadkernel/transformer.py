@@ -23,25 +23,35 @@ class Transformer(Worker):
         super(Transformer, self).__init__(parent, inputs, **kwargs)
 
     def update(self, updated):
-        # Code data object
-        code_obj = self.values["code"]
-        func = code_obj.code
-        func_name = code_obj.func_name
-
-        # If code object is updated, recompile
-        if "code" in updated:
-            expr = "{0}()".format(func_name)
-            self.expression = compile(expr, self.name, "eval")
-            self.func_name = func_name
-            exec(func, self.namespace)
-
-        # Update namespace of inputs
-        for name in self.inputs.keys():
-            if name in updated:
-                self.namespace[name] = self.values[name].data
-
-        # Place result in output
-        result = eval(self.expression, self.namespace)
-        self.last_result = result
-        self.output_queue.append((self.output_name, result))
+        self.output_queue.append(("@START", None))
         self.output_semaphore.release()
+
+        ok = False
+        try:
+            # Code data object
+            code_obj = self.values["code"]
+            func = code_obj.code
+            func_name = code_obj.func_name
+
+            # If code object is updated, recompile
+            if "code" in updated:
+                expr = "{0}()".format(func_name)
+                self.expression = compile(expr, self.name, "eval")
+                self.func_name = func_name
+                exec(func, self.namespace)
+
+            # Update namespace of inputs
+            for name in self.inputs.keys():
+                if name in updated:
+                    self.namespace[name] = self.values[name].data
+
+            # Place result in output
+            result = eval(self.expression, self.namespace)
+            self.last_result = result
+            ok = True
+        finally:
+            self.output_queue.append(("@END", None))
+            self.output_semaphore.release()
+        if ok:
+            self.output_queue.append((self.output_name, result))
+            self.output_semaphore.release()

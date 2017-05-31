@@ -250,13 +250,12 @@ class GLTexStore(GLStoreBase):
         return self.parent().data.itemsize
 
     def bind(self):
+        if self._id is None:
+            self._id = gl.glGenTextures(1)
+
+        gl.glBindTexture(self._target, self._id)
         if not len(self._dirty):
             return
-        if self._id is None:
-            textures = (ctypes.c_uint*2)()
-            gl.glGenTextures(2, textures)
-            print("BIND0", textures[1])
-            self._id = textures[0]
 
         #for now, recreate a new Texture object whenever something is dirty
         arr = self.parent().data
@@ -266,6 +265,7 @@ class GLTexStore(GLStoreBase):
         self._state += 1
 
     def set_size(self, shape, format, internalformat, unsigned):
+        gl.glBindTexture(self._target, self._id)
         format = as_enum(format)
         internalformat = format if internalformat is None \
             else as_enum(internalformat)
@@ -322,7 +322,8 @@ class GLTexStore(GLStoreBase):
         # Upload
         if not data.flags['C_CONTIGUOUS']:
             data = data.copy('C')
-        p = data.ctypes.data_as(ctypes.POINTER(_ctypes[data.dtype]))
+        #p = data.ctypes.data_as(ctypes.POINTER(_ctypes[data.dtype]))
+        p = data.tobytes()
         args = (self._target, 0) + \
                 tuple(reversed(offset2)) + \
                 shape2 + \

@@ -19,6 +19,7 @@ glstate = dict(
     blend=True,
     blend_func=('src_alpha', 'one'),
     vertex_program_point_size=True,
+    point_sprite=True,
 )
 
 # Program
@@ -65,7 +66,6 @@ ctx.frag_shader.connect(p.fragment_shader)
 ctx.vert_shader.connect(p.vertex_shader)
 
 ctx.N = cell("int").set(10000)
-#ctx.N = cell("int").set(100) ###
 
 ctx.uniforms = cell("json").set(
   {
@@ -114,7 +114,6 @@ start = data['a_startPosition']
 end = data['a_endPosition']
 start_values = np.random.normal(0.0, 0.2, (N, 3))
 end_values = np.random.normal(0.0, 1.2, (N, 3))
-#end_values = np.random.normal(0.0, 0.2, (N, 3)) ###
 
 # The following does not work in Numpy:
 # start[:] = start_values
@@ -134,7 +133,7 @@ ctx.gen_texture_im1_params = cell(("json", "seamless", "transformer_params")).se
  {
   "radius": {
     "pin": "input",
-    "dtype": "int"
+    "dtype": "int",
   },
   "output": {
     "pin": "output",
@@ -149,10 +148,10 @@ ctx.gen_texture_im1.code.cell().set(
 """
 import numpy as np
 
-if 0:
+if 1:
     # Create a texture (random)
-    im1 = np.ones(dtype=np.float32, shape=(2 * radius + 1, 2 * radius + 1, 3))
-else: ###
+    im1 = 255 * np.ones(dtype=np.float32, shape=(2 * radius + 1, 2 * radius + 1, 3))
+else:
     # Create a texture (from image)
     from PIL import Image
     im = Image.open("orca.png")
@@ -163,6 +162,11 @@ else: ###
 L = np.linspace(-radius, radius, 2 * radius + 1)
 (X, Y) = np.meshgrid(L, L)
 im1 = im1 * np.array((X ** 2 + Y ** 2) <= radius * radius)[:,:,None]
+
+# Convert to float32 (optional)
+if 0:
+    im1 = np.array(im1, dtype="float32")/255
+
 return im1
 """
 )
