@@ -164,7 +164,7 @@ if qt_error is None:
         sys.excepthook = new_except_hook
     timer2 = QtCore.QTimer()
     timer2.setSingleShot(True)
-    timer2.timeout.connect(patch_excepthook)
+    #timer2.timeout.connect(patch_excepthook)
     timer2.start()
     patch_excepthook()
 
@@ -191,7 +191,7 @@ def add_opengl_context(context):
     _opengl_destructors[context] = []
 
 def remove_opengl_context(context):
-    print("REMOVE", context in _opengl_contexts)
+    #print("REMOVE", context in _opengl_contexts)
     if context in _opengl_contexts:
         _opengl_contexts.remove(context)
         for destructor in _opengl_destructors[context]:

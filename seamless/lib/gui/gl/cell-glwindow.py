@@ -6,10 +6,11 @@ class GLWidget(QOpenGLWidget):
     _initialized = False
     _destroyed = False
     def initializeGL(self):
+        super().initializeGL()
         if self._destroyed:
             return
         from PyQt5.QtGui import QOpenGLContext
-        print("INIT")
+        #print("INIT")
         ctx = self.context()
         assert ctx is QOpenGLContext.currentContext()
         #print("start initializeGL")
@@ -20,11 +21,13 @@ class GLWidget(QOpenGLWidget):
         #print("end initializeGL")
 
     def resizeGL(self, width, height):
+        super().resizeGL(width, height)
         if self._destroyed:
             return
         GL.glViewport(0, 0, width, height)
 
     def paintGL(self):
+        super().paintGL()
         if self._destroyed:
             return
         #print("start paintGL")
@@ -43,6 +46,8 @@ widget = GLWidget()
 #    print("on_resize", args, kwargs)
 
 def do_update():
+    import threading
+    assert threading.current_thread() is threading.main_thread()
     if PINS.update.updated:
         widget.update()
     if PINS.title.updated:

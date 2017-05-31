@@ -187,7 +187,6 @@ class GLStore(GLStoreBase):
         if not self._dirty:
             return
         if self._id is None:
-            print("REBIND")
             self._id = gl.glGenBuffers(1)
             context = QOpenGLContext.currentContext()
             self._opengl_context = context
@@ -204,7 +203,7 @@ class GLStore(GLStoreBase):
         self._state += 1
 
     def destroy(self):
-        print("GLStore DESTROY")
+        #print("GLStore DESTROY")
         try:
             sanity_check(None)
             if self._id is not None:
@@ -378,7 +377,7 @@ class GLTexStore(GLStoreBase):
         gl.glTexParameterf(self._target, gl.GL_TEXTURE_MAG_FILTER, mag)
 
     def destroy(self):
-        print("GLTexStore DESTROY")
+        #print("GLTexStore DESTROY")
         try:
             sanity_check(None)
             if self._id is not None:

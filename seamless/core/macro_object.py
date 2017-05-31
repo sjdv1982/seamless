@@ -72,7 +72,6 @@ class MacroObject:
             raise TypeError(type(parent))
 
         with macro_mode_on():
-            print("UPDATE")
             new_parent = self.macro.evaluate(self.args, self.kwargs, self)
             new_signature = None
             if with_caching:

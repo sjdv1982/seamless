@@ -125,7 +125,7 @@ ctx.uniforms.connect(p.uniforms)
 
 ctx.program.set(program2)
 ctx.array_indices.connect(p.array_indices)
-ctx.equilibrate(1)
+ctx.equilibrate()
 
 #Saving doesn't work: independent array cells, and we don't save stores...
 #import os

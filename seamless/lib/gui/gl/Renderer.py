@@ -206,6 +206,8 @@ class Renderer:
                 first_atname = atname
             if length != at.length:
                 raise ValueError((first_atname, length), (atname, at.length))
+        if length is None:
+            length = 0
         self.length = length
         self.vao = vao
         self.dirty = False

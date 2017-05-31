@@ -288,7 +288,7 @@ class Reactor:
                 p.output_update(name, value)
             else:
                 f = partial(p.output_update, name, value)
-                seamless.add_work(f)
+                seamless.add_work(f,priority=True)
                 run_work = True
         if run_work:
             seamless.run_work()

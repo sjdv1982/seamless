@@ -142,13 +142,19 @@ def do_update():
     #  the pins have been set at all, and the
     #
 
+    updated = set()
+    for attr in PINS.__dict__:
+        pin = getattr(PINS, attr)
+        if hasattr(pin, "updated") and pin.updated:
+            updated.add(attr)
+
+
     arrays = PINS.program.get()["arrays"]
     textures = PINS.program.get().get("textures", [])
 
-    guaranteed_gl_context = True
-
-    if PINS.uniforms.updated or PINS.program.updated:
-        guaranteed_gl_context = False
+    guaranteed_gl_context = False
+    if PINS.init.updated or PINS.paint.updated:
+        guaranteed_gl_context = True
 
     dirty_renderer = False
     repaint = False
@@ -182,16 +188,21 @@ def do_update():
         else:
             PINS.paint.unclear()
 
-    if PINS.program.updated:
-        initialized = False
-        repaint = True
-
-    # very strange, but this sometimes happens...
+    # Heisenbug!!!
     try:
         initialized
     except NameError:
-        print("A segmentation fault will now happen... no idea why, sorry")
+        import sys
+        msg = """seamless/lib/gui/cell-glprogram.py
+Something has gone wrong, PyQt has corrupted Python's memory
+A crash will now happen... no idea why, sorry
+"""
+        print(msg, file=sys.stderr)
         return
+
+    if PINS.program.updated:
+        initialized = False
+        repaint = True
 
     if initialized and dirty_renderer:
         renderer.set_dirty()
