@@ -186,6 +186,13 @@ def do_update():
         initialized = False
         repaint = True
 
+    # very strange, but this sometimes happens...
+    try:
+        initialized
+    except NameError:
+        print("A segmentation fault will now happen... no idea why, sorry")
+        return
+
     if initialized and dirty_renderer:
         renderer.set_dirty()
         repaint = True

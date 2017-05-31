@@ -1,5 +1,6 @@
-
+import threading
 import weakref
+from functools import partial
 from ...dtypes.objects import PythonReactorCodeObject
 from ...dtypes import data_type_to_data_object
 from ..worker import get_runtime_identifier
@@ -70,6 +71,8 @@ class Reactor:
     def process_input(self, name, data, resource_name):
         #print("process_input", self.parent(), name, self._pending_inputs)
         if self.parent() is None:
+            return
+        if self._destroyed:
             return
 
         self._pending_updates += 1
@@ -147,20 +150,24 @@ class Reactor:
 
     def _code_start(self):
         #print("CODE-START", self.parent())
+        assert threading.current_thread() is threading.main_thread()
         from ... import run_work
         assert not self._running
         try:
             self._spontaneous = True
             self.namespace["IDENTIFIER"] = get_runtime_identifier(self.parent())
             self._execute(self.code_start_block)
+            self._running = True
         finally:
             self._spontaneous = False
             run_work()
-        self._running = True
 
-    def _code_update(self):
+    def _code_update(self, updated):
+        assert threading.current_thread() is threading.main_thread()
         from ... import run_work
-        assert self._running
+        assert self._running, updated
+        #if not self._running:
+        #    self._code_start() #kludge, no idea why it is necessary...
         try:
             self._spontaneous = True
             self._execute(self.code_update_block)
@@ -169,6 +176,7 @@ class Reactor:
             run_work()
 
     def _code_stop(self):
+        assert threading.current_thread() is threading.main_thread()
         from ... import run_work
         if self._running:
             self._spontaneous = False
@@ -259,7 +267,7 @@ class Reactor:
             self._code_start()
 
         if do_update:
-            self._code_update()
+            self._code_update(updated)
 
         for name in self.inputs.keys():
             pin = getattr(self.PINS, name)
@@ -268,11 +276,21 @@ class Reactor:
                 pin._clear = True
 
     def output_update(self, name, value):
+        """Propagates a PINS.name.set in the reactor code to the seamless manager"""
+        import seamless
         p = self.parent()
+        run_work = self._spontaneous
+
+        # Normally, reactor code runs in the main thread, but not necessarily:
+        # the reactor code may launch its own threads!!
         if p is not None:
-            p.output_update(name, value)
-        if self._spontaneous:
-            import seamless
+            if threading.current_thread() is threading.main_thread():
+                p.output_update(name, value)
+            else:
+                f = partial(p.output_update, name, value)
+                seamless.add_work(f)
+                run_work = True
+        if run_work:
             seamless.run_work()
 
     def destroy(self):

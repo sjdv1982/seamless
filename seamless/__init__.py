@@ -182,13 +182,26 @@ else:
             run_work()
             time.sleep(FAILSAFE_WORK_LATENCY/1000)
 
+## GL related stuff... put this into its own file as soon as the API is stable
 _opengl_contexts = []
+_opengl_destructors = {}
 def add_opengl_context(context):
+    assert context not in _opengl_contexts
     _opengl_contexts.append(context)
+    _opengl_destructors[context] = []
 
 def remove_opengl_context(context):
+    print("REMOVE", context in _opengl_contexts)
     if context in _opengl_contexts:
         _opengl_contexts.remove(context)
+        for destructor in _opengl_destructors[context]:
+            destructor()
+        _opengl_destructors.pop(context)
+
+def add_opengl_destructor(context, destructor):
+    assert context in _opengl_destructors
+    assert callable(destructor)
+    _opengl_destructors[context].append(destructor)
 
 def opengl():
     return qt_error is None and len(_opengl_contexts) > 0

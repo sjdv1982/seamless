@@ -3,6 +3,7 @@ import threading
 import traceback
 import os
 import time
+from functools import partial
 
 from .macro import macro
 from .worker import Worker, InputPin, OutputPin
@@ -280,7 +281,11 @@ class Transformer(Worker):
 
                 assert output_name == self._output_name, item
                 if self._connected_output:
-                    self._pins[self._output_name].send_update(output_value)
+                    pin = self._pins[self._output_name]
+                    #pin.send_update(output_value) #we're not in the main thread!
+                    f = partial(pin.send_update, output_value)
+                    import seamless
+                    seamless.add_work(f)
                 else:
                     self._last_value = output_value
 

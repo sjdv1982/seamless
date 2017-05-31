@@ -1,81 +1,47 @@
 from seamless import cell, pythoncell, context, reactor, transformer
 from seamless.silk import Silk
 from seamless.lib.gui.basic_editor import edit
+from seamless.lib.gui.basic_display import display
 from seamless.lib.filelink import link
 from seamless.lib.gui.gl import glprogram
 
 ctx = context()
-ctx.silk_vertexdata = cell(("text", "code", "silk")).fromfile("vertexdata.silk")
+
+# Vertexdata Silk model
+ctx.silk_vertexdata = cell(("text", "code", "silk"))
+ctx.link_silk_vertexdata = link(ctx.silk_vertexdata, ".", "vertexdata.silk")
 ctx.registrar.silk.register(ctx.silk_vertexdata)
-#print(Silk.Vec3(1,2,3), ctx.registrar.silk.get("Vec3")(3,4,5))
 
-ctx.vert_shader = cell(("text", "code", "vertexshader")).fromfile("fireworks.vert")
-ctx.frag_shader = cell(("text", "code", "fragmentshader")).fromfile("fireworks.frag")
-
-glstate = dict(
-    clear=True,
-    clear_color='black',
-    depth_test=False,
-    blend=True,
-    blend_func=('src_alpha', 'one'),
-    vertex_program_point_size=True,
-    point_sprite=True,
-)
-
-# Program
-program_template = {
-  "arrays": ["vertexdata"],
-  "uniforms": {
-    "u_time": "float",
-    "u_centerPosition": "vec3",
-    "u_color": "vec4",
-  },
-  "textures": ["s_texture"],
-  "render": {
-    "command": "points",
-    "glstate": glstate,
-  },
-}
+# Shaders
+ctx.vert_shader = cell(("text", "code", "vertexshader"))
+ctx.frag_shader = cell(("text", "code", "fragmentshader"))
+ctx.link_vert_shader = link(ctx.vert_shader, ".", "vert_shader.glsl")
+ctx.link_frag_shader = link(ctx.frag_shader, ".", "frag_shader.glsl")
 
 
-ctx.program_template = cell("cson").set(program_template)
+# Program template
+ctx.program_template = cell("cson")
+ctx.link_program_template = link(ctx.program_template, ".", "program_template.cson")
 
+
+# Program and program generator
 ctx.program = cell("json")
+ctx.display_program = display(ctx.program)
 ctx.gen_program = transformer({"program_template": {"pin": "input", "dtype": "json"},
                                "program": {"pin": "output", "dtype": "json"}})
 ctx.registrar.silk.connect("VertexData", ctx.gen_program)
-ctx.gen_program.code.cell().set("""
-program = program_template
-attributes = {}
-for propname, prop in VertexData._props.items():
-    attributes[propname] = {
-        "dtype": prop["typename"].lower(),
-        "array": "vertexdata",
-        "rae": "['%s'][:]" % propname,
-    }
-program["render"]["attributes"] = attributes
-return program
-"""
-)
+ctx.link_gen_program = link(ctx.gen_program.code.cell(), ".", "cell-gen-program.py")
 ctx.program_template.connect(ctx.gen_program.program_template)
 ctx.gen_program.program.connect(ctx.program)
 
-ctx.equilibrate()
+#GL program
+ctx.equilibrate() #ctx.program has to be generated first
 p = ctx.glprogram = glprogram(ctx.program)
 ctx.frag_shader.connect(p.fragment_shader)
 ctx.vert_shader.connect(p.vertex_shader)
 
+# Vertexdata generator
 ctx.N = cell("int").set(10000)
-
-ctx.uniforms = cell("json").set(
-  {
-    "u_time": 0.5,
-    "u_centerPosition": (0,0,0),
-    "u_color": (1,1,1,0.5),
-  }
-)
-ctx.uniforms.connect(p.uniforms)
-
 ctx.params_gen_vertexdata = cell(("json", "seamless", "transformer_params")).set(
  {
   "N": {
@@ -176,6 +142,17 @@ ctx.gen_texture_im1.output.connect(ctx.im1)
 ctx.im1.connect(p.array_s_texture)
 
 
+#Uniforms
+ctx.uniforms = cell("json").set(
+  {
+    "u_time": 0.5,
+    "u_centerPosition": (0,0,0),
+    "u_color": (1,1,1,0.5),
+    "u_pointsize": 40
+  }
+)
+ctx.uniforms.connect(p.uniforms)
+
 ctx.params_gen_uniforms = cell(("json", "seamless", "transformer_params")).set({
  "N": {
    "pin": "input",
@@ -273,6 +250,7 @@ t = ctx.timer.trigger.cell()
 t.connect(ctx.gen_uniforms.reset)
 t.connect(ctx.gen_vertexdata.reset)
 
+ctx.gen_vertexdata.reset.cell().set()
 ctx.gen_uniforms.reset.cell().set()
 
 import tempfile, os
@@ -285,4 +263,4 @@ except FileExistsError:
 ctx.link_vert = link(ctx.vert_shader, tmpdir, "Vertex_shader.glsl")
 ctx.link_frag = link(ctx.frag_shader, tmpdir, "Fragment_shader.glsl")
 ctx.link_silk_vertexdata = link(ctx.silk_vertexdata, tmpdir, "vertexdata.silk")
-ctx.program_template = link(ctx.program_template, tmpdir, "program_template.cson")
+ctx.link_program_template = link(ctx.program_template, tmpdir, "program_template.cson")

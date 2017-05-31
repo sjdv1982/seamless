@@ -549,6 +549,7 @@ When any of these cells change and the macro is re-executed, the child object wi
                     break
             run_work()
             time.sleep(0.001)
+        run_work()
         #print("UNSTABLE", list(manager.unstable_workers))
 
     @property

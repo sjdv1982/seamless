@@ -233,6 +233,8 @@ class Manager:
 
 
     def _update(self, cell, dtype, value, *, worker=None, only_last=False):
+        import threading
+        assert threading.current_thread() is threading.main_thread()
         cell_id = self.get_cell_id(cell)
         macro_listeners = self.macro_listeners.get(cell_id, [])
 
@@ -294,7 +296,7 @@ class Manager:
         import seamless
         from .cell import Signal
         cell = self.cells.get(cell_id, None)
-        if cell is None:
+        if cell is None or cell._destroyed:
             return #cell has died...
         #print("manager.update_from_worker", cell, head(value), worker)
 

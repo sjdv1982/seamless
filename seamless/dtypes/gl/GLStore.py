@@ -4,11 +4,12 @@ import numpy as np
 import weakref
 import re
 import ctypes
+import threading
 from . import _ctypes
 from .gloo.glir import gl_types, gl_get_alignment, as_enum
 
 class GLStoreBase:
-    pass
+    _opengl_context = None
 
 class GLSubStore(GLStoreBase):
     regexp = re.compile("\[.*?\]")
@@ -119,6 +120,7 @@ class GLSubStore(GLStoreBase):
         self.parent().set_dirty()
 
     def bind(self):
+        assert threading.current_thread() is threading.main_thread()
         self.parent().bind()
 
     def _update(self):
@@ -180,10 +182,17 @@ class GLStore(GLStoreBase):
         return self.parent().data.itemsize
 
     def bind(self):
+        from PyQt5.QtGui import QOpenGLContext
+        sanity_check(self._opengl_context)
         if not self._dirty:
             return
         if self._id is None:
+            print("REBIND")
             self._id = gl.glGenBuffers(1)
+            context = QOpenGLContext.currentContext()
+            self._opengl_context = context
+            from seamless import add_opengl_destructor
+            add_opengl_destructor(context, self.destroy)
         elif self._state:
             gl.glBindBuffer(gl.GL_ARRAY_BUFFER, self._id)
             gl.glBufferData(gl.GL_ARRAY_BUFFER, 0, None, self.usage)
@@ -195,8 +204,15 @@ class GLStore(GLStoreBase):
         self._state += 1
 
     def destroy(self):
-        if self._id is not None:
-            gl.glDeleteBuffer(self._id)
+        print("GLStore DESTROY")
+        try:
+            sanity_check(None)
+            if self._id is not None:
+                gl.glDeleteBuffers(1, [self._id])
+        finally:
+            self._id = None
+            self._dirty = True
+            self._opengl_context = None
 
 class GLTexStore(GLStoreBase):
     def __init__(self, parent, dimensions, *args, **kwargs):
@@ -250,8 +266,14 @@ class GLTexStore(GLStoreBase):
         return self.parent().data.itemsize
 
     def bind(self):
+        from PyQt5.QtGui import QOpenGLContext
+        sanity_check(self._opengl_context)
         if self._id is None:
             self._id = gl.glGenTextures(1)
+            context = QOpenGLContext.currentContext()
+            self._opengl_context = context
+            from seamless import add_opengl_destructor
+            add_opengl_destructor(context, self.destroy)
 
         gl.glBindTexture(self._target, self._id)
         if not len(self._dirty):
@@ -265,6 +287,7 @@ class GLTexStore(GLStoreBase):
         self._state += 1
 
     def set_size(self, shape, format, internalformat, unsigned):
+        sanity_check(self._opengl_context)
         gl.glBindTexture(self._target, self._id)
         format = as_enum(format)
         internalformat = format if internalformat is None \
@@ -288,6 +311,7 @@ class GLTexStore(GLStoreBase):
 
 
     def set_data(self, offset, data):
+        sanity_check(self._opengl_context)
         gl.glBindTexture(self._target, self._id)
         shape, format, internalformat = self._shape_formats
 
@@ -335,6 +359,7 @@ class GLTexStore(GLStoreBase):
             gl.glPixelStorei(gl.GL_UNPACK_ALIGNMENT, 4)
 
     def set_wrapping(self, wrapping):
+        sanity_check(self._opengl_context)
         gl.glBindTexture(self._target, self._id)
         wrapping = [as_enum(w) for w in wrapping]
         if len(wrapping) == 3:
@@ -346,13 +371,30 @@ class GLTexStore(GLStoreBase):
         gl.glTexParameterf(self._target, gl.GL_TEXTURE_WRAP_T, wrapping[-1])
 
     def set_interpolation(self, min, mag):
+        sanity_check(self._opengl_context)
         gl.glBindTexture(self._target, self._id)
         min, mag = as_enum(min), as_enum(mag)
         gl.glTexParameterf(self._target, gl.GL_TEXTURE_MIN_FILTER, min)
         gl.glTexParameterf(self._target, gl.GL_TEXTURE_MAG_FILTER, mag)
 
     def destroy(self):
-        if self._id is not None:
-            gl.glDeleteTexture(self._id)
+        print("GLTexStore DESTROY")
+        try:
+            sanity_check(None)
+            if self._id is not None:
+                gl.glDeleteTextures(self._id)
+        finally:
+            self._id = None
+            self._dirty = set("data")
+            self._opengl_context = None
 
-#TODO: add destroy to cell
+def sanity_check(opengl_context):
+    from PyQt5.QtGui import QOpenGLContext
+    context = QOpenGLContext.currentContext()
+    assert context
+    assert threading.current_thread() is threading.main_thread()
+    if opengl_context is not None:
+        assert context is opengl_context
+
+
+#TODO: add nicer destroy

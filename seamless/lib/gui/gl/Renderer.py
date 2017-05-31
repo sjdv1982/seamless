@@ -3,6 +3,7 @@ from OpenGL import GL as gl
 import ctypes
 from collections import OrderedDict
 from seamless.dtypes.gl import GLSubStore
+import threading
 
 class VertexAttribute:
     def __init__(self, attribute, glsl_dtype, shader_program, store):
@@ -63,6 +64,7 @@ class VertexAttribute:
             raise TypeError(glsl_dtype, dtype, len(shape)) #TODO: other GLSL types
 
     def bind(self):
+        assert threading.current_thread() is threading.main_thread()
         if self.length:
             self.unbind()
         if self.glsl_dtype == "vec4":
@@ -92,6 +94,7 @@ class VertexAttribute:
         self.length = self.store.shape[0]
 
     def unbind(self):
+        assert threading.current_thread() is threading.main_thread()
         if self.enabled:
             loc = gl.glGetAttribLocation(self.shader_program, self.attribute)
             gl.glDisableVertexAttribArray(loc)
@@ -131,6 +134,7 @@ class IndexArray:
 
     def bind(self):
         #the bind will last indefinitely, not just until GL_ARRAY_BUFFER is re-bound
+        assert threading.current_thread() is threading.main_thread()
         if self.length:
             self.unbind()
         self.verify_dtype()
@@ -146,12 +150,13 @@ class IndexArray:
         self.length = self.store.shape[0]
 
     def unbind(self):
+        assert threading.current_thread() is threading.main_thread()
         gl.glBindBuffer(gl.GL_ELEMENT_ARRAY_BUFFER, 0)
 
 class Renderer:
     def __init__(self, render, shader_program, storedict):
         self.shader_program = shader_program
-        self.attributes = {}        
+        self.attributes = {}
         self.indices = None
         self.length = None
         self.command = render["command"]
@@ -187,6 +192,7 @@ class Renderer:
             self.attributes[atname] = vertex_attribute
 
     def bind(self):
+        assert threading.current_thread() is threading.main_thread()
         length = None
         first_atname = None
         vao = gl.glGenVertexArrays(1)
@@ -208,6 +214,7 @@ class Renderer:
         self.dirty = True
 
     def draw(self):
+        assert threading.current_thread() is threading.main_thread()
         if self.dirty or not self.vao:
             self.bind()
         gl.glBindVertexArray(self.vao)

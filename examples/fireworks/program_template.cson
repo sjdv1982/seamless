@@ -1,0 +1,28 @@
+{
+  "arrays": [
+    "vertexdata"
+  ],
+  "uniforms": {
+    "u_centerPosition": "vec3",
+    "u_time": "float",
+    "u_color": "vec4"
+  },
+  "textures": [
+    "s_texture"
+  ],
+  "render": {
+    "command": "points",
+    "glstate": {
+      "point_sprite": true,
+      "clear": true,
+      "depth_test": false,
+      "blend_func": [
+        "src_alpha",
+        "one"
+      ],
+      "vertex_program_point_size": true,
+      "clear_color": "black",
+      "blend": true
+    }
+  },
+}
