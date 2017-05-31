@@ -149,10 +149,9 @@ class IndexArray:
         gl.glBindBuffer(gl.GL_ELEMENT_ARRAY_BUFFER, 0)
 
 class Renderer:
-    def __init__(self, render, shader_program, storedict, texdict):
+    def __init__(self, render, shader_program, storedict):
         self.shader_program = shader_program
-        self.attributes = {}
-        self.texdict = texdict
+        self.attributes = {}        
         self.indices = None
         self.length = None
         self.command = render["command"]
@@ -186,11 +185,6 @@ class Renderer:
                 substore = GLSubStore(store, rae)
             vertex_attribute = VertexAttribute(atname, at["dtype"], shader_program, substore)
             self.attributes[atname] = vertex_attribute
-
-        for tex in self.texdict:
-            store = self.texdict[tex]
-            store.bind()
-            tex = store._texture
 
     def bind(self):
         length = None

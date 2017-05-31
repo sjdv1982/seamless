@@ -94,7 +94,7 @@ class Worker(metaclass=ABCMeta):
                     message_id, name, data, resource_name = self.input_queue.popleft()  # QueueItem instance
                     if message_id in self._bumped:
                         self._bumped.remove(message_id)
-                        ack()
+                        self._pending_updates -= 1
                         continue
 
                 if name == "@RESPONSIVE":
