@@ -30,9 +30,6 @@ def on_resize(*args, **kwargs):
     print("on_resize", args, kwargs)
 
 def do_update():
-    if PINS.show.updated:
-        print("SHOW")
-        widget.show()
     if PINS.update.updated:
         widget.update()
     if PINS.title.updated:
@@ -41,3 +38,4 @@ def do_update():
         widget.setGeometry(*PINS.geometry.get())
 
 do_update()
+widget.show()

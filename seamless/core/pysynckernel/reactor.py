@@ -55,8 +55,9 @@ class Reactor:
             if up not in self.input_must_be_defined:
                 continue
             self.updated.add(up)
-        self.update(self.updated)
-        self.updated = set()
+        updated = set(self.updated)
+        self.updated.clear()
+        self.update(updated)
 
 
     def activate(self):
@@ -66,7 +67,7 @@ class Reactor:
             self._update_from_start()
         self._active = True
 
-    def process_input(self, name, data):
+    def process_input(self, name, data, resource_name):
         #print("process_input", self.parent(), name, self._pending_inputs)
         if self.parent() is None:
             return
@@ -107,7 +108,7 @@ class Reactor:
         # instance of datatypes.objects.DataObject
 
         try:
-            data_object.parse(data)
+            data_object.parse(data, resource_name)
             data_object.validate()
 
         except Exception as exc:
@@ -129,8 +130,9 @@ class Reactor:
 
         # With all inputs now present, we can issue updates
         if self._active and not self._pending_inputs:
-            self.update(self.updated)
-            self.updated = set()
+            updated = set(self.updated)
+            self.updated.clear()
+            self.update(updated)
 
         self._pending_updates -= updates_processed
         p = self.parent()
@@ -245,6 +247,9 @@ class Reactor:
                 if v.data_type != "signal":
                     pin._value = v.data
                     pin.defined = True
+                    pin._store = v.store
+                else:
+                    v._clear = True
                 pin.updated = True
                 do_update = True
             else:
@@ -255,6 +260,12 @@ class Reactor:
 
         if do_update:
             self._code_update()
+
+        for name in self.inputs.keys():
+            pin = getattr(self.PINS, name)
+            if isinstance(pin, ReactorInputSignal) and pin._clear == False:
+                updated.add(name)
+                pin._clear = True
 
     def output_update(self, name, value):
         p = self.parent()

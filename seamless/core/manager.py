@@ -2,6 +2,7 @@ import json
 from ..dtypes.cson import cson2json
 import weakref
 from weakref import WeakKeyDictionary, WeakValueDictionary, WeakSet
+from ..dtypes import TransportedArray
 
 #TODO: disconnect method (see MacroObject for low-level implementation)
 
@@ -231,7 +232,8 @@ class Manager:
                         self.registrar_listeners.pop(registrar)
 
 
-    def _update(self, cell_id, dtype, value, *, worker=None, only_last=False):
+    def _update(self, cell, dtype, value, *, worker=None, only_last=False):
+        cell_id = self.get_cell_id(cell)
         macro_listeners = self.macro_listeners.get(cell_id, [])
 
         if not only_last:
@@ -252,6 +254,10 @@ class Manager:
         listeners = self.listeners.get(cell_id, [])
         if only_last:
             listeners = listeners[-1:]
+
+        resource_name0 = None
+        if cell.resource is not None:
+            resource_name0 = cell.resource.filepath
         for input_pin_ref in listeners:
             input_pin = input_pin_ref()
 
@@ -266,15 +272,19 @@ class Manager:
               (input_pin.dtype == "json" or input_pin.dtype[0] == "json"):
                 if isinstance(value, (str, bytes)):
                     value = cson2json(value)
-            input_pin.receive_update(value)
+            resource_name = "pin: " + str(input_pin)
+            if resource_name0 is not None:
+                resource_name = resource_name0 + " in " + resource_name
+            input_pin.receive_update(value, resource_name)
 
     def update_from_code(self, cell, only_last=False):
         import seamless
-        value = cell._data
-        cell_id = self.get_cell_id(cell)
-        if seamless.debug:
-            print("manager.update_from_code", cell, head(value))
-        self._update(cell_id, cell.dtype, value, only_last=only_last)
+        if cell.dtype == "array":
+            value = TransportedArray(cell._data, cell._store)
+        else:
+            value = cell._data
+        #print("manager.update_from_code", cell, head(value))
+        self._update(cell, cell.dtype, value, only_last=only_last)
         from .. import run_work
         from .macro import get_macro_mode
         if not get_macro_mode():
@@ -286,16 +296,17 @@ class Manager:
         cell = self.cells.get(cell_id, None)
         if cell is None:
             return #cell has died...
-        if seamless.debug:
-            print("manager.update_from_worker", cell, head(value), worker)
+        #print("manager.update_from_worker", cell, head(value), worker)
 
         if isinstance(cell, Signal):
             assert value is None
-            self._update(cell_id, None, None, worker=worker)
+            self._update(cell, None, None, worker=worker)
         else:
             changed = cell._update(value,propagate=False)
             if changed:
-                self._update(cell_id, cell.dtype, value, worker=worker)
+                if cell.dtype == "array":
+                    value = TransportedArray(value, cell._store)
+                self._update(cell, cell.dtype, value, worker=worker)
 
     def update_registrar_key(self, registrar, key):
         from .worker import Worker

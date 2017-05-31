@@ -2,6 +2,7 @@ from collections import deque, OrderedDict
 import threading
 import traceback
 import os
+import time
 
 from .macro import macro
 from .worker import Worker, InputPin, OutputPin
@@ -157,6 +158,10 @@ class Transformer(Worker):
         from .macro import add_activate
         add_activate(self)
 
+    def _shell(self, toplevel=True):
+        p = self._find_successor()
+        return p.transformer.namespace, "Transformer %s" % str(self)
+
     def activate(self):
         if self.active:
             return
@@ -181,10 +186,11 @@ class Transformer(Worker):
             self._pins[p].set_context(context)
         return self
 
-    def receive_update(self, input_pin, value):
+    def receive_update(self, input_pin, value, resource_name):
         self._message_id += 1
         self._pending_updates += 1
-        self.transformer.input_queue.append((self._message_id, input_pin, value))
+        msg = (self._message_id, input_pin, value, resource_name)
+        self.transformer.input_queue.append(msg)
         self.transformer.semaphore.release()
 
     def receive_registrar_update(self, registrar_name, key, namespace_name):
@@ -192,32 +198,103 @@ class Transformer(Worker):
         self._message_id += 1
         self._pending_updates += 1
         value = registrar_name, key, namespace_name
-        self.transformer.input_queue.append((self._message_id, "@REGISTRAR", value))
+        self.transformer.input_queue.append((self._message_id, "@REGISTRAR", value, None))
         self.transformer.semaphore.release()
 
     def listen_output(self):
         # TODO logging
         # TODO requires_function cleanup
 
+        # This code is very convoluted... networking expert wanted for cleanup!
+
+        def get_item():
+            self.output_semaphore.acquire()
+            if self.output_finish.is_set():
+                if not self.output_queue:
+                    return
+            output_name, output_value = self.output_queue.popleft()
+            return output_name, output_value
+
+        updates_on_hold = 0
         while True:
             try:
-                self.output_semaphore.acquire()
-                if self.output_finish.is_set():
-                    if not self.output_queue:
-                        break
+                if updates_on_hold:
+                    """
+                    Difficult situation. At the one hand, we can't hold on to
+                    these processed updates forever:
+                     It would keep the transformer marked as unstable, blocking
+                      equilibrate().
+                    On the other hand, an output_value could be just waiting
+                    for us. If we decrement _pending_updates too early, this may
+                    unblock equilibrate() while equilibrium has not been reached
+                    The solution is that the kernel must respond within 500 ms
+                    with an @START signal, and then a @END signal when the
+                    computation is complete, then within 500 ms with the value
+                    """
+                    for n in range(100): #100x5 ms
+                        ok = self.output_semaphore.acquire(blocking=False)
+                        if ok:
+                            self.output_semaphore.release()
+                            break
+                        time.sleep(0.005)
+                    else:
+                        self._pending_updates -= updates_on_hold
+                        updates_on_hold = 0
 
-                output_name, output_value = self.output_queue.popleft()
-                if output_name is None:
+                item = get_item()
+                if item is None:
+                    break
+                output_name, output_value = item
+                if output_name == "@START":
+                    item = get_item()
+                    if item is None:
+                        break
+                    output_name, output_value = item
+                    assert output_name == "@END"
+                    if updates_on_hold:
+                        for n in range(100): #100x5 ms
+                            ok = self.output_semaphore.acquire(blocking=False)
+                            if ok:
+                                self.output_semaphore.release()
+                                break
+                            time.sleep(0.005)
+                        else:
+                            self._pending_updates -= updates_on_hold
+                            updates_on_hold = 0
+                    item = get_item()
+                    if item is None:
+                        break
+                    output_name, output_value = item
+
+                if output_name is None and output_value is not None:
                     updates_processed = output_value[0]
-                    self._pending_updates -= updates_processed
+                    if self._pending_updates < updates_processed:
+                        #This will not set the worker as stable
+                        self._pending_updates -= updates_processed
+                    else:
+                        # hold on to updates_processed for a while, we don't
+                        #  want to set the worker as stable before we have
+                        #  done a send_update
+                        updates_on_hold += updates_processed
                     continue
 
-                assert output_name == self._output_name
+                assert output_name == self._output_name, item
                 if self._connected_output:
                     self._pins[self._output_name].send_update(output_value)
                 else:
                     self._last_value = output_value
 
+                item = get_item()
+                if item is None:
+                    break
+                output_name, output_value = item
+                assert output_name is None
+                updates_processed = output_value[0]
+                self._pending_updates -= updates_processed
+
+                if updates_on_hold:
+                    self._pending_updates -= updates_on_hold
+                    updates_on_hold = 0
             except:
                 traceback.print_exc() #TODO: store it?
 

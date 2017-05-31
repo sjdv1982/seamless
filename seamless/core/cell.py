@@ -15,7 +15,6 @@ from .worker import Managed
 from . import libmanager
 from .resource import Resource
 
-
 class CellLike(object):
     """Base class for cells and contexts
     CellLikes are captured by context.cells"""
@@ -42,7 +41,6 @@ class Cell(Managed, CellLike):
     _outgoing_connections = 0
 
     _resource = None
-
 
     def __init__(self, dtype, *, naming_pattern="cell"):
         """TODO: docstring."""
@@ -80,7 +78,7 @@ class Cell(Managed, CellLike):
         return self._dependent
 
     def _set(self, text_or_object,propagate):
-        """Update cell data from Python code in the main thread."""
+        """Generic method to update cell"""
         self._check_destroyed()
         if isinstance(text_or_object, (str, bytes)):
             self._text_set(text_or_object, propagate, trusted=False)
@@ -91,6 +89,7 @@ class Cell(Managed, CellLike):
         return self
 
     def set(self, text_or_object):
+        """Update cell data from Python code in the main thread."""
         result = self._set(text_or_object, propagate=True)
         if text_or_object is None:
             self.resource.cache = None
@@ -182,7 +181,7 @@ class Cell(Managed, CellLike):
 
     def _update(self, data, propagate=False):
         """Invoked when cell data is updated by a worker or an alias."""
-        #return self._text_set(data, propagate=False, trusted=True)
+        #result = self._text_set(data, propagate=False, trusted=True)
         result = self._set(data, propagate=propagate) #for now, workers can also set with non-text...
         if data is None:
             self.resource.cache = None
@@ -256,7 +255,7 @@ class Cell(Managed, CellLike):
         if incoming:
             if isinstance(pin, (OutputPinBase, Cell)):
                 self._dependent = False
-                if not self._destroyed:
+                if not self._destroyed and self.resource is not None:
                     self.resource.cache = False
             self._incoming_connections -= 1
         else:
@@ -448,10 +447,10 @@ class Signal(Cell):
     def fromfile(self, filename):
         raise AttributeError("fromfile")
 
-    def _text_set(self, propagate):
+    def _text_set(self, text, propagate, trusted):
         raise AttributeError
 
-    def _object_set(self, propagate):
+    def _object_set(self, object_, propagate, trusted):
         raise AttributeError
 
     def _update(self, data, propagate=False):
@@ -497,10 +496,41 @@ class CsonCell(Cell):
             data = json.dumps(data, indent=2)
         return super()._update(data, propagate)
 
+class ArrayCell(Cell):
+    _store = None
+    def set_store(self, mode, *args, **kwargs):
+        assert mode in ("GL", "GLTex"), mode
+        from ..dtypes.gl import GLStore, GLTexStore
+        if self._store is not None:
+            if mode == "GL": assert isinstance(self._store, GLStore)
+            if mode == "GLTex": assert isinstance(self._store, GLTexStore)
+            return
+        if mode == "GL":
+            self._store = GLStore(self, *args, **kwargs)
+        elif mode == "GLTex":
+            self._store = GLTexStore(self, *args, **kwargs)
+        self._store.set_dirty()
+        self.touch()
+    def _set(self, text_or_object,propagate):
+        if self._store is not None:
+            self._store.set_dirty()
+        result = super()._set(text_or_object, propagate)
+        return result
+    def destroy(self):
+        if self._destroyed:
+            return
+        if self._store is not None:
+            # TODO: leads to segfault because there is no OpenGL context
+            #  but omitting it is a GPU memory leak...
+            #self._store.destroy()
+            pass ###
+        super().destroy()
+
 _handlers = {
     ("text", "code", "python"): PythonCell,
     "signal": Signal,
-    "cson": CsonCell
+    "cson": CsonCell,
+    "array": ArrayCell
 }
 
 

@@ -156,6 +156,7 @@ class Resource:
         old_lib = self.lib
         if get_macro_mode():
             #TODO: this duplicates code from libmanager
+            # set filepath first to get the correct resource_name for pins
             x = inspect.currentframe()
             for n in range(frames_back):
                 x = x.f_back
@@ -173,24 +174,24 @@ class Resource:
                 sub_filedir = caller_filedir[len(seamless_lib_dir):]
                 sub_filedir = sub_filedir.replace(os.sep, "/")
                 new_filepath = sub_filedir + "/" + filepath
+                self.filepath = new_filepath
+                self.lib = True
+                self.mode = 2
                 if old_lib and new_filepath == old_filepath:
                     old_lib = False #nothing changes
                 else:
                     result = libmanager.fromfile(cell, new_filepath)
-                self.filepath = new_filepath
-                self.lib = True
-                self.mode = 2
             else:
                 new_filepath = caller_filedir + os.sep + filepath
-                result = cell.set(open(new_filepath, encoding="utf8").read())
                 self.filepath = new_filepath
                 self.lib = False
                 self.mode = 5
+                result = cell.set(open(new_filepath, encoding="utf8").read())
         else:
-            result = cell.set(open(filepath, encoding="utf8").read())
             self.filepath = filepath
             self.lib = False
             self.mode = 5
+            result = cell.set(open(filepath, encoding="utf8").read())
         if old_lib:
             libmanager.on_cell_destroy(self.parent(), old_filepath)
         self.cache = self.filepath

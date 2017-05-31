@@ -37,7 +37,6 @@ class MacroObject:
             cell.add_macro_object(self, k)
 
     def update_cell(self, cellname):
-        from .. import debug
         from .macro import macro_mode_on
         from .context import Context
         from .cell import Cell
@@ -139,7 +138,7 @@ class MacroObject:
                 #destroy the remnants of the old context
                 if with_caching:
                     delattr(grandparent, "@TEMP_CONTEXT")
-                    parent.destroy()
+                parent.destroy()
 
                 #build new internal connections that didn't exist before
                 for con in sorted(new_internal_connections):
@@ -155,8 +154,7 @@ class MacroObject:
                         pass
 
             for mode, source, dest, ext_path in external_connections:
-                if debug:
-                    print("CONNECTION: mode '{0}', source {1}, dest {2}".format(mode, source, dest))
+                #print("CONNECTION: mode '{0}', source {1}, dest {2}".format(mode, source, dest))
                 err = "Connection {0}::(mode {1}, source {2}, dest {3}) points to a destroyed external cell"
                 if mode in ("input", "rev_alias"):
                     if source._destroyed:

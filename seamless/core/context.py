@@ -83,6 +83,7 @@ class Context(SeamlessBase, CellLike, WorkerLike):
     _auto = None
     _owned = []
     _owner = None
+    _exported_child = None
 
     def __init__(
         self,
@@ -116,11 +117,35 @@ class Context(SeamlessBase, CellLike, WorkerLike):
         from .registrar import RegistrarAccessor
         self.registrar = RegistrarAccessor(self)
 
+    def _shell(self, toplevel=True):
+        if self._exported_child is None:
+            raise AttributeError("""Context %s: no exported child has been set.
+You can only invoke shell() directly on one of its children""" % str(self))
+        child = self._exported_child._find_successor()
+        if child._destroyed:
+            raise AttributeError("""Context %s: exported child has been destroyed.
+You can only invoke shell() directly on one of its remaining children""" % str(self))
+        namespace, title = child._shell(toplevel=False)
+        if toplevel:
+            name = str(self)
+            if name == ".":
+                name = "<toplevel>"
+            title += " in context %s" % name
+        return namespace, title
+
     def __dir__(self):
+        if self._destroyed:
+            successor = self._find_successor()
+            if successor:
+                return successor.__dir__()
         return self.METHODS + dir(self.PINS) + dir(self.CHILDREN)
 
     @property
     def METHODS(self):
+        if self._destroyed:
+            successor = self._find_successor()
+            if successor:
+                return successor.METHODS
         result = [k for k in super().__dir__() \
             if not k.startswith("_")]
         for name in ["fromfile", "export", "context"]:
@@ -129,10 +154,18 @@ class Context(SeamlessBase, CellLike, WorkerLike):
 
     @property
     def PINS(self):
+        if self._destroyed:
+            successor = self._find_successor()
+            if successor:
+                return successor.PINS
         return Wrapper(self._pins)
 
     @property
     def CHILDREN(self):
+        if self._destroyed:
+            successor = self._find_successor()
+            if successor:
+                return successor.CHILDREN
         return Wrapper(
             {k:v for k,v in self._children.items() \
              if k not in self._auto}
@@ -140,10 +173,18 @@ class Context(SeamlessBase, CellLike, WorkerLike):
 
     @property
     def ALL_CHILDREN(self):
+        if self._destroyed:
+            successor = self._find_successor()
+            if successor:
+                return successor.ALL_CHILDREN
         return Wrapper(self._children)
 
     @property
     def CELLS(self):
+        if self._destroyed:
+            successor = self._find_successor()
+            if successor:
+                return successor.CELLS
         from .cell import CellLike
         return Wrapper(
             {k:v for k,v in self._children.items() \
@@ -153,6 +194,10 @@ class Context(SeamlessBase, CellLike, WorkerLike):
 
     @property
     def AUTO_CELLS(self):
+        if self._destroyed:
+            successor = self._find_successor()
+            if successor:
+                return successor.AUTO_CELLS
         from .cell import CellLike
         return Wrapper(
             {k:v for k,v in self._children.items() \
@@ -162,6 +207,10 @@ class Context(SeamlessBase, CellLike, WorkerLike):
 
     @property
     def WORKERS(self):
+        if self._destroyed:
+            successor = self._find_successor()
+            if successor:
+                return successor.WORKERS
         return Wrapper(
             {k:v for k,v in self._children.items() \
              if isinstance(v, WorkerLike) and v._like_worker}
@@ -169,6 +218,10 @@ class Context(SeamlessBase, CellLike, WorkerLike):
 
     @property
     def CONTEXTS(self):
+        if self._destroyed:
+            successor = self._find_successor()
+            if successor:
+                return successor.CONTEXTS
         return Wrapper(
             {k:v for k,v in self._children.items() \
              if isinstance(v, Context) and \
@@ -177,6 +230,10 @@ class Context(SeamlessBase, CellLike, WorkerLike):
 
     @property
     def ALL_CONTEXTS(self):
+        if self._destroyed:
+            successor = self._find_successor()
+            if successor:
+                return successor.ALL_CONTEXTS
         return Wrapper(
             {k:v for k,v in self._children.items() \
              if isinstance(v, Context)}
@@ -418,6 +475,7 @@ When any of these cells change and the macro is re-executed, the child object wi
                 raise TypeError(pin)
 
         self._like_worker = True
+        self._exported_child = child
 
     def _part_of(self, ctx):
         assert isinstance(ctx, Context)

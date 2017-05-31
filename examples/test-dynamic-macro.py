@@ -27,16 +27,23 @@ ctx.t1.inp1.cell().set(10)
 ctx.t2.inp1.cell().set(20)
 ctx.t2.inp2.cell().set(30)
 
-#from seamless.lib.gui.basic_editor import edit
-#ctx.ed1 = edit(ctx.t1.outp.cell())
-#ctx.ed2 = edit(ctx.t2.outp.cell())
+from seamless.lib.gui.basic_editor import edit
+ctx.ed1 = edit(ctx.t1.outp.cell())
+ctx.ed2 = edit(ctx.t2.outp.cell())
 
-#code2 = ctx.t1.macro.macro.code.replace('"inp"', '"INP"')
-#ctx.t1.macro.macro.update_code(code2)
-#print(ctx.t2.INP2)
+code2 = ctx.t1.macro.macro.code.replace('"inp"', '"INP"')
+ctx.t1.macro.macro.update_code(code2)
+print(ctx.t2.INP2)
+ctx.t1.INP1.cell().set(10)
+ctx.t2.INP1.cell().set(20)
+ctx.t2.INP2.cell().set(30)
+print(ctx.t2.outp.cell().value)
 
 import os
 ctx.tofile(os.path.splitext(__file__)[0] + ".seamless", backup=False)
 #ctx.destroy()
 #ctx = seamless.fromfile(os.path.splitext(__file__)[0] + ".seamless")
 #ctx.c2.set(1)
+
+from seamless import shell
+shell(ctx.t2)

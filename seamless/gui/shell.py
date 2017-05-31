@@ -2,6 +2,7 @@ from qtconsole.rich_jupyter_widget import RichJupyterWidget
 from qtconsole.inprocess import InProcessKernelManager, QtInProcessKernelManager
 from ipykernel.inprocess.ipkernel import InProcessKernel
 from ipykernel.zmqshell import ZMQInteractiveShell
+from ..core import Worker, Context
 
 class MyInProcessKernel(InProcessKernel):
     #get rid of singleton shell instance!
@@ -20,7 +21,7 @@ class MyQtInProcessKernelManager(QtInProcessKernelManager):
 
 class PyShell:
     _dummy = False
-    def __init__(self, namespace):
+    def __init__(self, namespace, windowtitle=None):
         from .. import qt_error
         if qt_error is not None:
             self._dummy = True
@@ -34,6 +35,8 @@ class PyShell:
         self.control = control
         control.kernel_manager = self.kernel_manager
         control.kernel_client = self.kernel_client
+        if windowtitle is not None:
+            control.setWindowTitle("Seamless shell: " + windowtitle)
         control.show()
     def stop():
         if self._dummy:
@@ -41,3 +44,9 @@ class PyShell:
         self.kernel_manager.client().stop_channels()
         self.kernel_manager.shutdown_kernel()
         self.control.destroy()
+
+def shell(obj):
+    if not isinstance(obj, (Worker, Context)):
+        raise TypeError("Cannot create shell for %s" % type(obj))
+    shell_namespace, shell_title = obj._shell()
+    return PyShell(shell_namespace, shell_title)

@@ -186,4 +186,6 @@ When any of these cells change and the macro is re-executed, the owned object wi
         except:
             pass
 
-from . import pysynckernel, pythreadkernel
+from .cell import Cell
+from .worker import Worker
+from .context import Context

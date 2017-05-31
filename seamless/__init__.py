@@ -3,8 +3,6 @@ Seamless: framework for data-driven and live programming
 Copyright 2016-2017, Sjoerd de Vries
 """
 
-debug = False
-
 #pre-import some libraries that will be needed by transformer threads
 # better to import them in the main thread
 try:
@@ -32,7 +30,7 @@ import asyncio
 import atexit
 import contextlib
 
-FAILSAFE_WORK_LATENCY = 50#latency of run_work in ms
+FAILSAFE_WORK_LATENCY = 50 #latency of run_work in ms
 
 _work = deque()
 _priority_work = deque()
@@ -196,4 +194,5 @@ def opengl():
     return qt_error is None and len(_opengl_contexts) > 0
 
 from . import qt
-__all__ = (macro, context, cell, pythoncell, transformer, reactor, qt)
+from .gui import shell
+__all__ = (macro, context, cell, pythoncell, transformer, reactor, qt, shell)

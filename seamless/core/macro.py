@@ -227,10 +227,12 @@ class Macro:
         from ..dtypes import parse
 
         if isinstance(obj, Cell):
-            return parse(obj.dtype, obj._data, trusted=True)
-
+            result = parse(obj.dtype, obj._data, trusted=True)
+            if result is None:
+                raise Exception("Cell macro argument cannot be undefined")
         else:
-            return obj
+            result = obj
+        return result
 
     def resolve_type_args(self, args, kwargs):
         """

@@ -91,6 +91,11 @@ class Reactor(Worker):
             for pin in self._pins.values():
                 if isinstance(pin, OutputPin):
                     pin.cell() #auto-create a cell
+
+    def _shell(self, toplevel=True):
+        p = self._find_successor()
+        return p.reactor.namespace, "Reactor %s" % str(self)
+
     @property
     def reactor_params(self):
         return self._reactor_params
@@ -107,13 +112,13 @@ class Reactor(Worker):
             pin.set_context(context)
         return self
 
-    def receive_update(self, input_pin, value):
+    def receive_update(self, input_pin, value, resource_name):
         self._pending_updates += 1
 
         if self._pins[input_pin].dtype == "signal":
-            self.reactor.process_input(input_pin, value)
+            self.reactor.process_input(input_pin, value, resource_name)
         else:
-            work = partial(self.reactor.process_input, input_pin, value)
+            work = partial(self.reactor.process_input, input_pin, value, resource_name)
             seamless.add_work(work)
 
     def receive_registrar_update(self, registrar_name, key, namespace_name):

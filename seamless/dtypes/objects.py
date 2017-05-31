@@ -6,6 +6,7 @@ from . import parse, serialize
 from ..core.cached_compile import cached_compile
 
 class DataObject:
+    store = None
 
     def __init__(self, name, data_type, data = None):
         self.name = name
@@ -15,9 +16,10 @@ class DataObject:
         if data is not None:
             self.parse(data)
 
-    def parse(self, data):
+    def parse(self, data, resource_name):
         if self.data_type == "signal":
             return
+        # TODO: exception message that displays resource_name
         self.data = parse(self.data_type, data, trusted=True)
 
     def serialize(self):
@@ -33,9 +35,12 @@ class PythonCodeObject(DataObject, metaclass=ABCMeta):
     code = None
     ast = None
 
-    def parse(self, data):
+    def parse(self, data, resource_name):
         self.data = data
-        self.ast = cached_compile(data, self.name + "-%d" % id(self),
+        if resource_name is None:
+            resource_name = self.name + "-%d" % id(self)
+        self.resource_name = resource_name
+        self.ast = cached_compile(data, resource_name,
                                   "exec", PyCF_ONLY_AST)
 
     def serialize(self):
@@ -49,14 +54,14 @@ class PythonCodeObject(DataObject, metaclass=ABCMeta):
 class PythonExpressionObject(PythonCodeObject):
 
     def validate(self):
-        self.code = cached_compile(self.data, self.name + "-%d" % id(self),
+        self.code = cached_compile(self.data, self.resource_name,
                                    "eval")
 
 
 class PythonBlockObject(PythonCodeObject):
 
     def validate(self):
-        self.code = cached_compile(self.data, self.name + "-%d" % id(self),
+        self.code = cached_compile(self.data, self.resource_name,
                                    "exec")
 
 
@@ -70,7 +75,7 @@ class PythonTransformerCodeObject(PythonCodeObject):
                        isinstance(self.ast.body[0], FunctionDef))
 
         if is_function:
-            self.code = cached_compile(self.data, self.name + "-%d" % id(self),
+            self.code = cached_compile(self.data, self.resource_name,
                                        "exec")
             self.func_name = self.ast.body[0].name
 
@@ -85,13 +90,14 @@ class PythonTransformerCodeObject(PythonCodeObject):
               self.data.replace("\n", "\n    ").rstrip()
 
             self.code = cached_compile(patched_src,
-                                       self.name + "-%d" % id(self), "exec")
+                                       self.resource_name, "exec")
 
 class PythonReactorCodeObject(PythonTransformerCodeObject):
     func_name = None
+
     def validate(self):
         self.func_name = None
-        self.code = cached_compile(self.data, self.name + "-%d" % id(self),
+        self.code = cached_compile(self.data, self.resource_name,
                                    "exec")
 
         is_function = (len(self.ast.body) == 1 and
@@ -100,6 +106,13 @@ class PythonReactorCodeObject(PythonTransformerCodeObject):
         if is_function:
             self.func_name = self.ast.body[0].name
 
+class ArrayDataObject(DataObject):
+    def parse(self, data, resource_name):
+        from . import TransportedArray
+        assert isinstance(data, TransportedArray)
+        # TODO: exception message that displays resource_name
+        self.data = parse(self.data_type, data.array, trusted=True)
+        self.store = data.store
 
 def data_type_to_data_object(data_type):
     #TODO: stub!
@@ -107,6 +120,8 @@ def data_type_to_data_object(data_type):
     if isinstance(data_type, list):
         data_type = tuple(data_type)
     assert check_registered(data_type), data_type
+    if data_type == "array":
+        return ArrayDataObject
     return DataObject
 
     """

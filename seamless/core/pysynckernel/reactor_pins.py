@@ -1,6 +1,7 @@
 import weakref
 
 class ReactorInput:
+    _store = None
     def __init__(self, parent, dtype, name):
         self._parent = weakref.ref(parent)
         self._dtype = dtype
@@ -10,14 +11,21 @@ class ReactorInput:
         self.defined = False
     def get(self):
         return self._value
+    @property
+    def store(self):
+        return self._store
 
 class ReactorInputSignal:
     def __init__(self, parent, name):
         self._parent = weakref.ref(parent)
         self._name = name
+        self._clear = True
         self.updated = False
+    def unclear(self):
+        self._clear = False
 
 class ReactorOutput:
+    _store = None
     def __init__(self, parent, dtype, name):
         self._parent = weakref.ref(parent)
         self._dtype = dtype
@@ -27,6 +35,9 @@ class ReactorOutput:
         if p is None:
             return
         p.output_update(self._name, value)
+    @property
+    def store(self):
+        return self._store
 
 class ReactorOutputSignal:
     def __init__(self, parent, name):
@@ -39,6 +50,7 @@ class ReactorOutputSignal:
         p.output_update(self._name, None)
 
 class ReactorEdit:
+    _store = None
     def __init__(self, parent, dtype, name):
         self._parent = weakref.ref(parent)
         self._dtype = dtype
@@ -58,3 +70,6 @@ class ReactorEdit:
             p.values[self._name] = p.inputs[self._name]
         p.values[self._name].data = value
         p.output_update(self._name, value)
+    @property
+    def store(self):
+        return self._store
