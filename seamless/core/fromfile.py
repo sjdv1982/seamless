@@ -2,8 +2,29 @@ from .context import Context
 from .reactor import Reactor
 from .transformer import Transformer
 from .cell import Cell, cell as cell_factory
+from .macro import activation_mode_as
 import json
 from collections import OrderedDict
+from contextlib import contextmanager
+
+_fromfile_mode = False
+
+def get_fromfile_mode():
+    return _fromfile_mode
+
+def set_fromfile_mode(fromfile_mode):
+    global _fromfile_mode
+    _fromfile_mode = fromfile_mode
+
+
+@contextmanager
+def fromfile_mode_as(mode):
+    original_mode = get_fromfile_mode()
+    set_fromfile_mode(mode)
+    try:
+        yield
+    finally:
+        set_fromfile_mode(original_mode)
 
 def _get_sl(parent, path):
     if len(path) == 0:
@@ -18,7 +39,7 @@ def find_sl(ctx, path):
 from .fromfile_manager import json_to_connections, json_to_registrar_items, \
  json_to_macro_objects, json_to_macro_listeners, json_to_registrar_cells, \
  json_to_registrar_listeners
-from .fromfile_caching import fromfile_caching
+from .fromfile_caching import fromfile_caching_ctx
 
 
 def json_to_lib(data):
@@ -192,10 +213,9 @@ def json_to_ctx(ctx, data, myname=None, ownerdict=None, pinlist=None):
 
 def fromfile(filename):
     ctx = Context()
-    from .macro import get_activation_mode, set_activation_mode
-    old_activation_mode = get_activation_mode()
-    try:
-        set_activation_mode(False)
+    with (fromfile_mode_as(True),
+          activation_mode_as(False),
+          fromfile_caching_ctx(ctx)):
         data = json.load(open(filename))
         links = json_to_lib(data["lib"])
         m = ctx._manager
@@ -208,7 +228,4 @@ def fromfile(filename):
         json_to_macro_listeners(ctx, data["main"]["macro_listeners"], macro_objects)
         json_to_registrar_cells(ctx, data["main"]["registrar_cells"])
         json_to_connections(ctx, data["main"])
-    finally:
-        fromfile_caching(ctx)
-        set_activation_mode(old_activation_mode)
     return ctx

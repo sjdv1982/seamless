@@ -113,9 +113,11 @@ def cache_signature_transformer(tf, ctx_path, manager, known):
 
 
 def cache_signature(ctx, known=None):
-    if known is None: known = {}
+    if known is None:
+        known = {}
     if ctx in known:
         return known[ctx]
+
     known[ctx] = ctx.path #placeholder for infinite cycles
 
     from .context import Context
