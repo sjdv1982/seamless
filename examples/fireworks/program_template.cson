@@ -6,6 +6,9 @@
     "u_centerPosition": "vec3",
     "u_time": "float",
     "u_color": "vec4"
+    "u_gravity": "float",
+    "u_pointsize": "float",
+    "u_shrink_with_age": "bool",
   },
   "textures": [
     "s_texture"

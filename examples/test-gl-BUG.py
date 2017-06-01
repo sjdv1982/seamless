@@ -23,7 +23,7 @@ ctx.fragment_shader = cell(("text", "code", "fragmentshader")).set(fragment_code
 
 # Program
 program = {
-  "arrays": ["default"],
+  "arrays": [],
   "uniforms": {},
   "render": {
     "command": "points",
@@ -45,14 +45,7 @@ p.uniforms.cell().set({})
 ctx.vertex_shader.connect(p.vertex_shader)
 ctx.fragment_shader.connect(p.fragment_shader)
 
-data = np.zeros(4, [("position", np.float32, 2),
-                         ("color",    np.float32, 4)])
-ctx.data = cell("array")
-ctx.data.set(data)
-ctx.data.set_store("GL")
-ctx.data.connect(p.array_default)
-
-p.rendered.cell().connect(p.update)
+p.rendered.cell().connect(p.update) #if this connection is broken, no more crash!
 
 """
 BUG:
@@ -60,4 +53,17 @@ ctx.program.touch() will always re-create the window
 ctx.pre_program.touch() will once-in-a-while result in a Qt crash
 This is much more likely if ctx.program.touch() has not occurred yet,
  and if the GL window has not been killed beforehand
+
+PARTIAL SOLUTION: let Qt flush its event loop whenever work is done
+This solves the issue for the current program.
+But this does not solve the same issue in fireworks.py...
+Remove run_qt() in seamless/init.py:run_work to reproduce the bug
+
+FULL SOLUTION: in addition, forbid QOpenGLWidget to call self.update()
+ from within self.paintGL (._painting attribute to check this)
+See cell-glwindow.py in lib/gui/gl.
+This prevents all crashes, but it must be combined with the partial
+solution above, else the window will freeze.
+
+As of now, no more issues.
 """

@@ -1,6 +1,6 @@
-from seamless import macro, reactor
-from seamless.core.cell import Cell
-from seamless.core.resource import load_cell
+from .. import macro, reactor
+from ..core.cell import Cell
+from ..core.resource import load_cell
 
 #TODO: support for no-filename invocations (obtain filepath from resource API)
 #TODO: special-case seamless standard library cells (use resource/libmanager API)

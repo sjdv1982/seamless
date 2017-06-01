@@ -1,0 +1,35 @@
+{
+  "uniforms": {
+    "pin": "edit",
+    "must_be_defined": false,
+    "dtype": "json"
+  },
+  "updated": {
+    "pin": "output",
+    "dtype": "signal"
+  },
+  "N": {
+    "pin": "input",
+    "dtype": "int"
+  },
+  "reset": {
+    "pin": "input",
+    "dtype": "signal"
+  },
+  "pointsize": {
+    "pin": "input",
+    "dtype": "int"
+  },
+  "shrink_with_age": {
+    "pin": "input",
+    "dtype": "bool"
+  },
+  "update": {
+    "pin": "input",
+    "dtype": "signal"
+  },
+  "gravity": {
+    "pin": "input",
+    "dtype": "float"
+  }
+}

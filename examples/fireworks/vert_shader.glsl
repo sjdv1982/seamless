@@ -2,6 +2,9 @@
 
 uniform float u_time;
 uniform vec3 u_centerPosition;
+uniform float u_pointsize;
+uniform float u_gravity;
+uniform bool u_shrink_with_age;
 attribute float a_lifetime;
 attribute vec3 a_startPosition;
 attribute vec3 a_endPosition;
@@ -12,7 +15,7 @@ void main () {
   {
       gl_Position.xyz = a_startPosition + (u_time * a_endPosition);
       gl_Position.xyz += u_centerPosition;
-      gl_Position.y -= 1.0 * u_time * u_time;
+      gl_Position.y -= u_gravity * u_time * u_time;
       gl_Position.w = 1.0;
   }
   else
@@ -20,5 +23,9 @@ void main () {
 
   v_lifetime = 1.0 - (u_time / a_lifetime);
   v_lifetime = clamp(v_lifetime, 0.0, 1.0);
-  gl_PointSize = (v_lifetime * v_lifetime) * 40.0;
+  gl_PointSize = u_pointsize;
+
+  if (u_shrink_with_age)
+      gl_PointSize *= (v_lifetime * v_lifetime);
+
 }

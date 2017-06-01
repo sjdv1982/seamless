@@ -4,8 +4,9 @@ from collections import OrderedDict
 @macro(OrderedDict((
     ("program",{"type": "json"}),
     ("with_window", {"type": "bool", "default": True}),
+    ("window_title", {"type": "string", "default": "GLProgram"}),
 )))
-def glprogram(ctx, program, with_window):
+def glprogram(ctx, program, with_window, window_title):
     from seamless import cell, reactor, macro
     from seamless.core.worker import ExportedInputPin
     from seamless.lib.gui.gl.glwindow import glwindow
@@ -71,7 +72,7 @@ def glprogram(ctx, program, with_window):
     ctx.rc.program.cell().set(program)
 
     if with_window:
-        ctx.glwindow = glwindow()
+        ctx.glwindow = glwindow(window_title)
         ctx.glwindow.init.cell().connect(ctx.rc.init)
         ctx.glwindow.paint.cell().connect(ctx.rc.paint)
         ctx.rc.repaint.cell().connect(ctx.glwindow.update)

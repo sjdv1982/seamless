@@ -15,7 +15,6 @@ try:
 except ImportError:
     pass
 
-from . import lib
 from .core.macro import macro
 from .core.context import context
 from .core.cell import cell, pythoncell
@@ -60,6 +59,8 @@ def run_work():
     loop = asyncio.get_event_loop()
     loop.call_soon(lambda loop: loop.stop(), loop)
     loop.run_forever()
+
+    run_qt() # Necessary to prevent freezes in glwindow
     _running_work = False
 
 def asyncio_finish():
@@ -138,13 +139,13 @@ if qt_error is None:
     from PyQt5.QtCore import QTimer
     QtCore.Qt.AA_ShareOpenGLContexts = True
     qt_app = PyQt5.QtWidgets.QApplication(["  "])
+    event_loop = QtCore.QEventLoop(qt_app)
     for _m in list(sys.modules.keys()):
         if _m.startswith("PyQt5"):
             _m2 = _m.replace("PyQt5", "seamless.qt")
             sys.modules[_m2] = sys.modules[_m]
 
     timer = QTimer()
-
     #Failsafe: run accumulated work every 50 ms, should not be necessary at all
     timer.timeout.connect(run_work)
     timer.start(FAILSAFE_WORK_LATENCY)
@@ -164,7 +165,7 @@ if qt_error is None:
         sys.excepthook = new_except_hook
     timer2 = QtCore.QTimer()
     timer2.setSingleShot(True)
-    #timer2.timeout.connect(patch_excepthook)
+    timer2.timeout.connect(patch_excepthook)
     timer2.start()
     patch_excepthook()
 
@@ -206,6 +207,20 @@ def add_opengl_destructor(context, destructor):
 def opengl():
     return qt_error is None and len(_opengl_contexts) > 0
 
+_running_qt = False
+def run_qt():
+    global _running_qt
+    if _running_qt:
+        return
+    if qt_error is None:
+        #Whenever work is done, let Qt flush its event queue
+        # If you don't, segfaults happen (see test-gl-BUG.py)
+        # Even with this, they still happen, albeit more rarely
+        _running_qt = True
+        event_loop.processEvents()
+        _running_qt = False
+
 from . import qt
 from .gui import shell
+from . import lib
 __all__ = (macro, context, cell, pythoncell, transformer, reactor, qt, shell)

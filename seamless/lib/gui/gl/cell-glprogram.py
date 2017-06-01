@@ -18,6 +18,7 @@ uniform_locations = {}
 uniform_values = {}
 uniform_dirty = set()
 texture_locations = OrderedDict()
+warnings = []
 
 def init():
     global initialized, shader_program, renderer, uniform_types, \
@@ -82,10 +83,13 @@ def init():
     initialized = True
 
 def paint():
-    #print("DRAW")
+            #print("DRAW")
     if not initialized:
         init()
     shaders.glUseProgram(shader_program)
+
+    old_warnings = warnings[:]
+    warnings.clear()
 
     #re-bind the textures every draw, to be safe
     for texnr, tex in enumerate(texture_locations):
@@ -103,7 +107,7 @@ def paint():
         utype = uniform_types[uniform]
         value = uniform_values.get(uniform, None)
         if value is None:
-            print("WARNING: unset uniform '%s'", uniform)
+            warnings.append("WARNING: unset uniform '%s'" % uniform)
             continue
         loc = uniform_locations[uniform]
         set_uniform(value, utype, loc)
@@ -117,6 +121,16 @@ def paint():
             glstate_module.clear(*glclear)
     renderer.draw()
     PINS.rendered.set()
+
+    # Heisenbug!!! see below. Seems to be solved now
+    try:
+        warnings
+    except NameError:
+        return
+
+    if warnings != old_warnings:
+        for warning in warnings:
+            print(warning)
     #print("/DRAW")
 
 def do_update():
@@ -136,11 +150,6 @@ def do_update():
     Outside of "init" and "pains", we have to use "dirty" flags,
      rather than direct GL commands!
     """
-    #NOTE:
-    #
-    # This is because "init" and "paint" may have been updated before some of
-    #  the pins have been set at all, and the
-    #
 
     updated = set()
     for attr in PINS.__dict__:
@@ -185,10 +194,12 @@ def do_update():
     if PINS.paint.updated:
         if guaranteed_gl_context:
             paint()
+            repaint = False
         else:
-            PINS.paint.unclear()
+            repaint = True
 
-    # Heisenbug!!!
+    # Heisenbug!!! see test-gl-BUG.py
+    # As of now, seems to be solved, see cell-glwindow.py
     try:
         initialized
     except NameError:
@@ -199,6 +210,7 @@ A crash will now happen... no idea why, sorry
 """
         print(msg, file=sys.stderr)
         return
+    # /heisenbug
 
     if PINS.program.updated:
         initialized = False
@@ -208,5 +220,5 @@ A crash will now happen... no idea why, sorry
         renderer.set_dirty()
         repaint = True
 
-    if repaint and not PINS.paint.updated:
+    if repaint:
         PINS.repaint.set()

@@ -27,12 +27,17 @@ class GLWidget(QOpenGLWidget):
         GL.glViewport(0, 0, width, height)
 
     def paintGL(self):
+        self._painting = True
+        self._updating = False
         super().paintGL()
         if self._destroyed:
             return
         #print("start paintGL")
         PINS.paint.set()
         #print("end paintGL")
+        self._painting = False
+        if self._updating:
+            self.update()
 
     def destroy(self, *args, **kwargs):
         self._destroyed = True
@@ -48,7 +53,13 @@ widget = GLWidget()
 def do_update():
     import threading
     assert threading.current_thread() is threading.main_thread()
-    if PINS.update.updated:
+    if widget._destroyed:
+        return
+    if PINS.update.updated and not widget._painting:
+        # ... Check for widget._painting:
+        #   This seems to solve the Heisenbug in cell-program.py,
+        #    see also test-gl-BUG.py
+        # Still requires run_qt, else there are freezes
         widget.update()
     if PINS.title.updated:
         widget.setWindowTitle(PINS.title.get())

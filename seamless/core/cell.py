@@ -12,7 +12,6 @@ from enum import Enum
 from .. import dtypes
 from .utils import find_return_in_scope
 from .worker import Managed
-from . import libmanager
 from .resource import Resource
 
 class CellLike(object):

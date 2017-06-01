@@ -4,7 +4,6 @@ import os
 import inspect
 import importlib
 import sys
-from . import libmanager
 import hashlib
 
 def get_hash(value):
@@ -149,6 +148,7 @@ class Resource:
         return self._hash
 
     def fromfile(self, filepath, frames_back):
+        from . import libmanager
         cell = self.parent()
         from .macro import get_macro_mode
         import seamless
@@ -297,5 +297,6 @@ class Resource:
                 write_cell(parent, self.filepath)
 
     def destroy(self):
+        from . import libmanager
         if self.lib:
             libmanager.on_cell_destroy(self.parent(), self.filepath)
