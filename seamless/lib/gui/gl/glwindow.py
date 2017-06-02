@@ -29,6 +29,10 @@ def glwindow(title, size, position):
         "pin": "output",
         "dtype": "signal",
       },
+      "painted": {
+        "pin": "output",
+        "dtype": "signal"
+      },
     }
     rc = reactor(pinparams)
     rc.title.cell().set(title)

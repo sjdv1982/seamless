@@ -79,7 +79,7 @@ class BaseRegistrar:
         manager = ctx._manager
         try: ###
             manager.remove_registrar_item(self.name, self._register_type, data, data_name)
-        except:
+        except Exception:
             pass
 
 
@@ -129,7 +129,8 @@ class RegistrarObject(Managed):
         raise NotImplementedError
 
     def re_register(self, value):
-        raise NotImplementedError
+        self.data = value
+        return self
 
     def destroy(self):
         if self._destroyed:
@@ -162,6 +163,7 @@ class SilkRegistrarObject(RegistrarObject):
         self.registered = registered_types
         self.registrar.update(context, updated_keys2)
         self.registrar._register(self.data,self.data_name)
+        super().re_register(silkcode)
         return self
 
 class SilkRegistrar(BaseRegistrar):
@@ -210,6 +212,7 @@ class EvalRegistrarObject(RegistrarObject):
         self.data = pythoncode
         self.registered = registered_types
         self.registrar.update(context, updated_keys)
+        super().re_register(pythoncode)
         return self
 
 class EvalRegistrar(BaseRegistrar):
@@ -259,6 +262,7 @@ class GLShaderRegistrarObject(RegistrarObject):
     def re_register(self, gl_shader):
         self.destroy()
         self._parse(gl_shader)
+        super().re_register(gl_shader)
         return self
 
     def _parse(self, gl_shader):
@@ -296,4 +300,5 @@ def add_registrar(name, registrar):
     _registrars[name] = registrar
 
 add_registrar("silk", SilkRegistrar())
-add_registrar("hive", EvalRegistrar({}))
+#add_registrar("hive", EvalRegistrar({}))
+#TODO: shader registrar

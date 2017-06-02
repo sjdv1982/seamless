@@ -42,7 +42,7 @@ def write_cell(cell, filepath):
         with open(filepath, "wb") as f:
             f.write(cell._data)
     else:
-        with open(fpath, "w", encoding="utf-8") as f:
+        with open(filepath, "w", encoding="utf-8") as f:
             f.write(cell._data)
 
     if isinstance(dtype, tuple):
@@ -113,7 +113,7 @@ class Resource:
     """
     dirty is only True if, on startup, the cell was overwritten from file
     """
-    _save_policy = 0
+    _save_policy = 1
     _hash = None
 
     def __init__(self, parent):

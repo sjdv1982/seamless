@@ -30,11 +30,14 @@ def json_to_macro_objects(ctx, data):
         for argname, arg0 in d["cell_args"].items():
             arg = find_sl(ctx, arg0)
             try:
-                pos = order.index(argname)
+                argname = int(argname)
+                is_int = True
             except ValueError:
-                pos = None
-            if pos is not None and len(args) > pos:
-                args[pos] = arg
+                is_int = False
+            if is_int:
+                for n in range(len(args), argname+1):
+                    args.append(None)
+                args[argname] = arg
             else:
                 kwargs[argname] = arg
             cell_args[argname] = arg
@@ -112,7 +115,7 @@ def json_to_connections(ctx, data):
         target = find_sl(ctx, con[1])
         try:
             manager.connect(source, target)
-        except:
+        except Exception:
             print("SOURCE", source, "TARGET", target)
             raise
     for con in data["cell_pin_connections"] + \
@@ -121,6 +124,6 @@ def json_to_connections(ctx, data):
         target = find_sl(ctx, con[1])
         try:
             manager.connect(source, target)
-        except:
+        except Exception:
             print("SOURCE", source, "TARGET", target)
             raise

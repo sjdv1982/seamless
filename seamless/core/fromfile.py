@@ -106,6 +106,10 @@ def json_to_cell(ctx, data, myname, ownerdict):
         cell.set(data["data"])
     if "hash" in data:
         cell.resource._hash = data["hash"]
+    if "store" in data:
+        cell.set_store(data["store"]["mode"],
+                       **data["store"]["params"])
+
     ctx._add_child(myname, cell)
 
     if "resource" in data:
@@ -213,9 +217,9 @@ def json_to_ctx(ctx, data, myname=None, ownerdict=None, pinlist=None):
 
 def fromfile(filename):
     ctx = Context()
-    with (fromfile_mode_as(True),
-          activation_mode_as(False),
-          fromfile_caching_ctx(ctx)):
+    with fromfile_mode_as(True), \
+         activation_mode_as(False), \
+         fromfile_caching_ctx(ctx):
         data = json.load(open(filename))
         links = json_to_lib(data["lib"])
         m = ctx._manager
@@ -228,4 +232,8 @@ def fromfile(filename):
         json_to_macro_listeners(ctx, data["main"]["macro_listeners"], macro_objects)
         json_to_registrar_cells(ctx, data["main"]["registrar_cells"])
         json_to_connections(ctx, data["main"])
+    unstable = ctx.equilibrate(5)
+    if len(unstable):
+        print("WARNING: Loading '%s' before making connections, could not equilibrate within 5 seconds" % filename)
+    print("%s LOADED" % filename)
     return ctx

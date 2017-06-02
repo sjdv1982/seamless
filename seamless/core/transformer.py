@@ -300,7 +300,7 @@ class Transformer(Worker):
                 if updates_on_hold:
                     self._pending_updates -= updates_on_hold
                     updates_on_hold = 0
-            except:
+            except Exception:
                 traceback.print_exc() #TODO: store it?
 
     def _on_connect_output(self):

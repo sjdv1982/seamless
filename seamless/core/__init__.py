@@ -15,6 +15,8 @@ class SeamlessBase:
     def path(self):
         if self._context is None:
             return ()
+        elif self._context.path is None:
+            return ("<None>", self.name)
         else:
             return self._context.path + (self.name,)
 
@@ -37,12 +39,14 @@ class SeamlessBase:
             if p is None:
                 break
             subpath = [path.pop(-1)] + subpath
+        if p is None:
+            return None
         if not p._destroyed:
             for subp in subpath:
                 try:
                     p = getattr(p, subp)
                     assert not p._destroyed
-                except:
+                except Exception:
                     break
             else:
                 ok = True
@@ -151,6 +155,7 @@ When any of these cells change and the macro is re-executed, the owned object wi
         if self._destroyed:
             return
         self._destroyed = True
+        #print("DESTROY", self)
         ctx = self._context
         if ctx is not None:
             for childname, child in ctx._children.items():
@@ -163,7 +168,10 @@ When any of these cells change and the macro is re-executed, the owned object wi
 
 
     def __str__(self):
-        ret = "." + ".".join(self.path)
+        if self.path is None:
+            ret = "<None>"
+        else:
+            ret = "." + ".".join(self.path)
         if self._owner is not None:
             owner = self._owner()
             if owner is not None:
@@ -183,7 +191,7 @@ When any of these cells change and the macro is re-executed, the owned object wi
         #print("__del__", type(self), self.path, self._destroyed)
         try:
             self.destroy()
-        except:
+        except Exception:
             pass
 
 from .cell import Cell

@@ -74,7 +74,7 @@ def cson_constructor(data):
         try:
             result = json.dumps(data, indent=2)
             return result
-        except:
+        except Exception:
             return data
 
 def construct_array(data):
@@ -151,7 +151,7 @@ def construct(data_type, value):
         dtype = dtype[0]
     try:
         return _constructors[dtype](value)
-    except:
+    except Exception:
         raise ConstructionError(dtype)
 
 
@@ -173,7 +173,7 @@ def parse(data_type, value, trusted):
         return TypeError(data_type)
     try:
         return parser(value)
-    except:
+    except Exception:
         if len(val) > 100:
             raise ParseError(val[:50] + "..." + val[-50:])
         else:

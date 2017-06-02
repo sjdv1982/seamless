@@ -8,6 +8,9 @@ from .cell import Cell
 from .context import Context
 
 def sl_print(sl):
+    sl = sl._find_successor()
+    if sl is None:
+        return None
     return ".".join(sl.path)
 from .tofile_manager import manager_to_json
 
@@ -38,9 +41,7 @@ def resource_to_json(r):
     return result
 
 def cell_to_json(c):
-    if c.dtype == "array":
-        raise NotImplementedError("Saving array cells is not (yet?) supported")
-        #TODO: if we implement this, also implement saving/loading the store parameters
+    c = c._find_successor()
     d = OrderedDict()
     store_data = True
     store_hash = False
@@ -71,6 +72,8 @@ def cell_to_json(c):
         if sp > 0:
             if not store_data:
                 store_hash = True
+    if store_data and c.dtype == "array":
+        raise NotImplementedError("Saving array cell data is not (yet?) supported")
 
     if store_data and c.data is not None:
         data = c.data
@@ -87,6 +90,12 @@ def cell_to_json(c):
         d["hash"] = hash_
     if c._owner is not None:
         d["owner"] = sl_print(c._owner())
+    if c.dtype == "array":
+        if c._store is not None:
+            d["store"] = {
+              "mode": c._store_mode,
+              "params": c._store.init_params
+            }
     return d
 
 def registrar_object_to_json(ro):
@@ -112,19 +121,28 @@ def ctx_to_json(ctx):
     ))
     for childname, child in ctx._children.items():
         if isinstance(child, Context):
-            children[childname] = ctx_to_json(child)
+            dd = ctx_to_json(child)
         elif isinstance(child, Cell):
-            children[childname] = cell_to_json(child)
+            dd = cell_to_json(child)
         elif isinstance(child, Worker):
-            children[childname] = worker_to_json(child)
+            dd = worker_to_json(child)
         elif isinstance(child, RegistrarObject):
-            children[childname] = registrar_object_to_json(child)
+            dd = registrar_object_to_json(child)
         else:
             raise TypeError((str(child), type(child)))
+        children[childname] = dd
+        try:
+            json.dumps(dd)
+        except Exception as e:
+            raise Exception((e, childname, child))
+    json.dumps(d)
     if ctx.context is None or ctx._manager is not ctx.context._manager:
-        d.update(manager_to_json(ctx._manager))
+        dd = manager_to_json(ctx._manager)
+        json.dumps(dd)
+        d.update(dd)
     if ctx._owner is not None:
         d["owner"] = sl_print(ctx._owner())
+    json.dumps(d)
     return d
 
 def lib_to_json():
@@ -148,7 +166,8 @@ def macro_to_json():
         if macro.with_caching:
             m["with_caching"] = True
         m["dtype"] = macro.dtype
-        m["type_args"] = macro._type_args_unparsed
+        #m["type_args"] = macro._type_args_unparsed
+        m["type_args"] = macro._type_args_processed
         m["module_name"] = module_name
         m["func_name"] = func_name
         m["code"] = macro.code
@@ -169,6 +188,9 @@ def tofile(ctx, filename, backup=True):
     ordered_dictsort(data)
     #import pprint
     #pprint.pprint(  data, open(filename, "w"))
+    json.dumps(data["lib"])
+    json.dumps(data["macro"])
+    json.dumps(data["main"])
     jdata = json.dumps(data, indent=2)
     if backup and os.path.exists(filename):
         count = 1

@@ -69,7 +69,7 @@ def write_file(fpath):
             try:
                 stat = os.stat(fpath)
                 last_mtime = stat.st_mtime
-            except:
+            except Exception:
                 pass
 
 sleeptime = 0.01
@@ -90,7 +90,7 @@ def poll():
         if not os.path.exists(fpath):
             try:
                 write_file(fpath)
-            except:
+            except Exception:
                 exc = traceback.format_exc()
                 if exc != last_exc:
                     print(exc)
@@ -114,7 +114,7 @@ def poll():
                                 last_value = None
                                 last_serialized_value = data
                         last_mtime = stat.st_mtime
-                except:
+                except Exception:
                     exc = traceback.format_exc()
                     if exc != last_exc:
                         print(exc)

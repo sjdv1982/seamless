@@ -61,7 +61,7 @@ def add_doc(last_member, docstring, new_docstring):
         try:
             element = last_member.find("docstring")
 
-        except:
+        except Exception:
             element = E.docstring(new_docstring)
             last_member.append(element)
 

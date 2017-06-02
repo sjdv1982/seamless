@@ -24,12 +24,12 @@ def update(filename, data, to_disk):
     if to_disk:
         try:
             open(filename, "w").write(data)
-        except:
+        except Exception:
             print("Cannot write to {0}".format(filename))
     for cell in _links[filename]:
         try:
             cell.set(data)
-        except:
+        except Exception:
             pass #exceptions will be reported in another manner
 
 def on_cell_destroy(cell, filename):

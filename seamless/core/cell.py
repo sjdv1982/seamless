@@ -77,26 +77,26 @@ class Cell(Managed, CellLike):
         return self._dependent
 
     def _set(self, text_or_object,propagate):
-        """Generic method to update cell"""
+        """Generic method to update cell; returns True if cell was changed"""
         self._check_destroyed()
         if isinstance(text_or_object, (str, bytes)):
-            self._text_set(text_or_object, propagate, trusted=False)
+            result = self._text_set(text_or_object, propagate, trusted=False)
         else:
-            self._object_set(text_or_object, propagate, trusted=False)
+            result = self._object_set(text_or_object, propagate, trusted=False)
         self.resource.dirty = False
         self.resource._hash = None
-        return self
+        return result
 
     def set(self, text_or_object):
         """Update cell data from Python code in the main thread."""
-        result = self._set(text_or_object, propagate=True)
+        self._set(text_or_object, propagate=True)
         if text_or_object is None:
             self.resource.cache = None
         else:
             self.resource.cache = False
         import seamless
         seamless.run_work()
-        return result
+        return self
 
     def fromfile(self, filename):
         self._check_destroyed()
@@ -112,7 +112,7 @@ class Cell(Managed, CellLike):
                     and (data is self._data or data is self._data_last or
                          data == self._data or data == self._data_last):
                 return False
-        except:
+        except Exception:
             pass
 
         try:
@@ -239,7 +239,8 @@ class Cell(Managed, CellLike):
     def _on_connect(self, pin, worker, incoming):
         from .worker import OutputPinBase
         if incoming:
-            if self._dependent and isinstance(pin, (OutputPinBase, Cell)):
+            if self._dependent and isinstance(pin, (OutputPinBase, Cell)) \
+              and not isinstance(self, Signal):
                 raise Exception(
                  "Cell is already the output of another worker"
                 )
@@ -282,6 +283,7 @@ class Cell(Managed, CellLike):
         manager = self._get_manager()
         manager.remove_aliases(self)
         manager.remove_listeners_cell(self)
+        manager.remove_macro_listeners_cell(self)
 
     def destroy(self):
         if self._destroyed:
@@ -382,7 +384,7 @@ class PythonCell(Cell):
             code = inspect.getsource(object_)
             code = strip_source(code)
 
-        except:
+        except Exception:
             self._set_error_state(traceback.format_exc())
 
             if not trusted:
@@ -509,11 +511,12 @@ class ArrayCell(Cell):
         elif mode == "GLTex":
             self._store = GLTexStore(self, *args, **kwargs)
         self._store.set_dirty()
+        self._store_mode = mode
         self.touch()
     def _set(self, text_or_object,propagate):
-        if self._store is not None:
-            self._store.set_dirty()
         result = super()._set(text_or_object, propagate)
+        if result and self._store is not None:
+            self._store.set_dirty()
         return result
     def destroy(self):
         if self._destroyed:

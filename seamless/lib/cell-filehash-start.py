@@ -27,7 +27,7 @@ def read(fpath):
                         PINS.filehash.set(filehash)
                         last_filehash = filehash
                     last_mtime = stat.st_mtime
-    except:
+    except Exception:
         exc = traceback.format_exc()
         if exc != last_exc:
             print(exc)

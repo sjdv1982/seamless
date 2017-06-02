@@ -25,7 +25,7 @@ class SilkValidationError(SilkError):
             expr = p.group(0)[1:-1]
             try:
                 expr_result = str(eval(expr, glob, loc))
-            except:
+            except Exception:
                 expr_result = "{" + "".join(
                     traceback.format_exception_only(
                         *sys.exc_info()[:2]

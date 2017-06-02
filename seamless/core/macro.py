@@ -4,7 +4,6 @@ import sys
 import weakref
 from collections import OrderedDict
 from contextlib import contextmanager
-from contextlib import contextmanager as _pystdlib_contextmanager
 
 from .cached_compile import cached_compile
 from .context import get_active_context
@@ -34,6 +33,10 @@ def set_activation_mode(activation_mode):
             for obj in _activate:
                 if obj._destroyed:
                     continue
+                try:
+                    p = obj.parent()
+                except AttributeError:
+                    p = obj
                 obj.activate()
         finally:
             _activate[:] = []
@@ -56,7 +59,7 @@ def get_macro_mode():
     return _macro_mode
 
 
-@_pystdlib_contextmanager
+@contextmanager
 def macro_mode_on():
     global _macro_mode
     old_macro_mode = _macro_mode
@@ -86,6 +89,7 @@ class Macro:
         self.registrar = registrar
         self._type_args = None
         self._type_args_unparsed = type
+        self._type_args_processed = type
         self.macro_objects = weakref.WeakValueDictionary()  # "WeakList"
         if func is not None:
             assert callable(func)
@@ -102,6 +106,10 @@ class Macro:
             raise TypeError(type.__class__)
 
         self._type_args = self._get_type_args_from_dict(type)
+        type_args_processed = copy.deepcopy(type)
+        if isinstance(type, OrderedDict):
+            type_args_processed["_order"] = self._type_args.get("_order", [])
+        self._type_args_processed = type_args_processed
 
     @staticmethod
     def _get_type_args_from_dict(type):
@@ -229,7 +237,7 @@ class Macro:
         if isinstance(obj, Cell):
             result = parse(obj.dtype, obj._data, trusted=True)
             if result is None:
-                raise Exception("Cell macro argument cannot be undefined")
+                raise Exception("Cell macro argument '%s' cannot be undefined" % obj)
         else:
             result = obj
         return result
@@ -246,13 +254,12 @@ class Macro:
         resolved_kwargs = {k: self.resolve(v) for k, v in kwargs.items()}
 
         order = self._type_args["_order"]
-        assert len(resolved_args) <= len(order)
+        assert len(resolved_args) <= len(order), (order, args, kwargs)
 
         if self._type_args is None:
             return resolved_args, resolved_kwargs, None
 
         # TODO: take and adapt corresponding routine from Hive
-        cell_args = {}
         new_args, new_kwargs = [], {}
         positional_done = set()
 
@@ -273,19 +280,12 @@ class Macro:
             else:
                 new_kwargs[name] = arg
 
-            if isinstance(arg0, Cell):
-                cell_args[name] = arg0
-
         new_kwargs.update(resolved_kwargs)
 
         for name, arg in resolved_kwargs.items():
             assert not name.startswith("_"), name  # not supported
             assert name in self._type_args, (name, [v for v in self._type_args.keys() if not v.startswith("_")])
             # TODO: type validation
-            arg0 = kwargs[name]
-
-            if isinstance(arg0, Cell):
-                cell_args[name] = arg0
 
         default = self._type_args["_default"]
         required = self._type_args["_required"]
@@ -306,6 +306,14 @@ class Macro:
 
             arg_default = default.get(name, None)
             new_kwargs[name] = arg_default
+
+        cell_args = {}
+        for pos, arg0 in enumerate(args):
+            if isinstance(arg0, Cell):
+                cell_args[pos] = arg0
+        for name, arg0 in kwargs.items():
+            if isinstance(arg0, Cell):
+                cell_args[name] = arg0
 
         if cell_args:
             macro_object = MacroObject(self, args, kwargs, cell_args)

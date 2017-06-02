@@ -203,7 +203,7 @@ class Silk(SilkObject):
         # TODO: make a nice composite exception that stores all exceptions
         try:
             self._construct(prop_setter, *args, **kwargs)
-        except:
+        except Exception:
             if len(args) == 1 and len(kwargs) == 0:
                 try:
                     a = args[0]
@@ -220,7 +220,7 @@ class Silk(SilkObject):
                             self._construct(prop_setter, **d)
                         else:
                             raise TypeError
-                    except:
+                    except Exception:
                         if isinstance(a, dict):
                             self._construct(prop_setter, **a)
                         elif isinstance(a, str):
@@ -234,7 +234,7 @@ class Silk(SilkObject):
                             self._construct(prop_setter, **a.__dict__)
                         else:
                             raise TypeError(a)
-                except:
+                except Exception:
                     raise
             else:
                 raise

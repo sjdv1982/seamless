@@ -5,7 +5,7 @@ try:
     import cson as cson_lib
     cson_lib.loads
     has_cson_lib = True
-except:
+except Exception:
     has_cson_lib = False
 
 has_cson_cmd = False
@@ -16,7 +16,7 @@ try:
         has_cson_cmd = False
     else:
         has_cson_cmd = True
-except:
+except Exception:
     pass
 
 if not has_cson_lib and not has_cson_cmd:
@@ -38,5 +38,5 @@ def cson2json(cson):
     else:
         try:
             return cson_lib.loads(cson)
-        except:
+        except Exception:
             return _cson2json_cmd(cson)

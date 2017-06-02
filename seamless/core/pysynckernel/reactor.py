@@ -165,7 +165,8 @@ class Reactor:
     def _code_update(self, updated):
         assert threading.current_thread() is threading.main_thread()
         from ... import run_work
-        assert self._running, updated
+        if not self._running:
+            return #kludge, no idea why it is necessary...
         #if not self._running:
         #    self._code_start() #kludge, no idea why it is necessary...
         try:

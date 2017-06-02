@@ -15,6 +15,7 @@ class MacroObject:
         self.args = args
         self.kwargs = kwargs
         self.cell_args = weakref.WeakValueDictionary(cell_args)
+        self._last_cell_values = {k:v.value for k,v in cell_args.items()}
         max_key = 0
         mo = macro.macro_objects
         if len(mo):
@@ -36,6 +37,15 @@ class MacroObject:
             cell = self.cell_args[k]
             cell.add_macro_object(self, k)
 
+    def update_cell_args(self):
+        for k in self.cell_args.copy():
+            cell = self.cell_args[k]
+            new_cell = cell._find_successor()
+            if new_cell is not cell:
+                print("SUCESSOR!")
+                cell.add_macro_object(self, k)
+            self.cell_args[k] = new_cell
+
     def update_cell(self, cellname):
         from .macro import macro_mode_on
         from .context import Context
@@ -43,7 +53,19 @@ class MacroObject:
         from .worker import Worker, InputPinBase, OutputPinBase, EditPinBase
         from .cache_signature import cache_signature
         from .registrar import RegistrarObject
+
+        last_value = None
+        cell_arg = None
+        if cellname is not None:
+            cell_arg = self.cell_args[cellname]
+            last_value = self._last_cell_values[cellname]
+            if last_value == cell_arg.value:
+                return False
+            curr_value = cell_arg.value
+            self._last_cell_values[cellname] = curr_value
+
         parent = self._parent()
+        print("Macro object re-evaluation", cell_arg, cellname, parent)
         grandparent = parent.context
         assert isinstance(grandparent, Context), grandparent
         for parent_childname in grandparent._children:
@@ -71,6 +93,7 @@ class MacroObject:
         else:
             raise TypeError(type(parent))
 
+        #for con in external_connections: print(con[0], con[1], con[2])
         with macro_mode_on():
             new_parent = self.macro.evaluate(self.args, self.kwargs, self)
             new_signature = None
@@ -176,6 +199,9 @@ class MacroObject:
                 else:
                     #print("CONNECTION: mode '{0}', source {1}, dest {2}".format(mode, source, dest))
                     raise TypeError(mode)
+        if isinstance(new_parent, RegistrarObject):
+            assert new_parent.data == curr_value
+        return True
 
     def set_registrar_listeners(self, registrar_listeners):
         for registrar, manager, key in registrar_listeners:

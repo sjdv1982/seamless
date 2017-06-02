@@ -1,12 +1,16 @@
 from seamless.qt.QtWidgets import QOpenGLWidget
-from seamless import add_opengl_context, remove_opengl_context
+from seamless import add_opengl_context, remove_opengl_context, \
+ activate_opengl, deactivate_opengl
 from OpenGL import GL
 
 class GLWidget(QOpenGLWidget):
     _initialized = False
     _destroyed = False
+    _painting = False
+    _updating = False
     def initializeGL(self):
         super().initializeGL()
+        activate_opengl()
         if self._destroyed:
             return
         from PyQt5.QtGui import QOpenGLContext
@@ -19,6 +23,7 @@ class GLWidget(QOpenGLWidget):
             self._initialized = True
         PINS.init.set()
         #print("end initializeGL")
+        deactivate_opengl()
 
     def resizeGL(self, width, height):
         super().resizeGL(width, height)
@@ -27,17 +32,20 @@ class GLWidget(QOpenGLWidget):
         GL.glViewport(0, 0, width, height)
 
     def paintGL(self):
+        activate_opengl()
         self._painting = True
-        self._updating = False
         super().paintGL()
         if self._destroyed:
             return
         #print("start paintGL")
         PINS.paint.set()
+        #print("DRAW")
         #print("end paintGL")
+        #if self._updating:
+        #    self.update()
+        PINS.painted.set()
         self._painting = False
-        if self._updating:
-            self.update()
+        deactivate_opengl()
 
     def destroy(self, *args, **kwargs):
         self._destroyed = True
@@ -45,8 +53,11 @@ class GLWidget(QOpenGLWidget):
         remove_opengl_context(ctx)
         super().destroy(*args, **kwargs)
 
-widget = GLWidget()
+    def update(self):
+        #print("UPDATE")
+        super().update()
 
+widget = GLWidget()
 #def on_resize(*args, **kwargs):
 #    print("on_resize", args, kwargs)
 
@@ -55,11 +66,7 @@ def do_update():
     assert threading.current_thread() is threading.main_thread()
     if widget._destroyed:
         return
-    if PINS.update.updated and not widget._painting:
-        # ... Check for widget._painting:
-        #   This seems to solve the Heisenbug in cell-program.py,
-        #    see also test-gl-BUG.py
-        # Still requires run_qt, else there are freezes
+    if PINS.update.updated:
         widget.update()
     if PINS.title.updated:
         widget.setWindowTitle(PINS.title.get())

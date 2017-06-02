@@ -10,7 +10,7 @@ ctx.sender.code_update.cell().set("")
 ctx.sender.code_stop.cell().set("""
 try:
     widget.destroy()
-except:
+except Exception:
     pass
 """)
 ctx.signal = ctx.sender.outp.cell()

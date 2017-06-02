@@ -60,7 +60,7 @@ class Manager:
 
         try:
             rev_aliases = self.cell_rev_aliases[cell_id]
-            if source_ref not in aliases:
+            if source_ref not in rev_aliases:
                 rev_aliases.append(source_ref)
 
         except KeyError:
@@ -199,6 +199,11 @@ class Manager:
             if m in l:
                 l.remove(m)
 
+    def remove_macro_listeners_cell(self, cell):
+        cell_id = self.get_cell_id(cell)
+        listeners = self.macro_listeners.pop(cell_id, [])
+
+
     def add_registrar_listener(self, registrar, key, target, namespace_name):
         if registrar not in self.registrar_listeners:
             self.registrar_listeners[registrar] = {}
@@ -235,14 +240,15 @@ class Manager:
     def _update(self, cell, dtype, value, *, worker=None, only_last=False):
         import threading
         assert threading.current_thread() is threading.main_thread()
+        from .cell import Signal
         cell_id = self.get_cell_id(cell)
         macro_listeners = self.macro_listeners.get(cell_id, [])
 
         if not only_last:
             for macro_object, macro_arg in macro_listeners:
                 try:
-                    macro_object.update_cell(macro_arg)
-                except:
+                    updated = macro_object.update_cell(macro_arg)
+                except Exception:
                     #TODO: proper logging
                     import traceback
                     traceback.print_exc()
@@ -251,7 +257,11 @@ class Manager:
         for target_cell_ref in aliases:
             target_cell = target_cell_ref()
             if target_cell is not None:
-                target_cell._update(value, propagate=True)
+                if isinstance(target_cell, Signal):
+                    #print("cell-cell alias", cell, "=>", target_cell)
+                    self._update(target_cell, None, None, worker=worker, only_last=only_last)
+                else:
+                    target_cell._update(value, propagate=True)
 
         listeners = self.listeners.get(cell_id, [])
         if only_last:
@@ -369,7 +379,7 @@ class Manager:
                 else:
                     for ref in self.cell_to_output_pin[target]:
                         if ref() is source:
-                            self.cell_to_output_pin.remove(ref)
+                            self.cell_to_output_pin[target].remove(ref)
                             source._cell_ids.remove(cell_id)
                             ok = True
             if not ok:
@@ -379,12 +389,11 @@ class Manager:
                     self.cell_to_output_pin[target] = []
                 self.cell_to_output_pin[target].append(weakref.ref(source))
 
-            if isinstance(worker, Transformer):
-                worker._on_disconnect_output()
-
             worker = source.worker_ref()
             if worker is not None:
-                target._on_disconnect(source, worker)
+                if isinstance(worker, Transformer):
+                    worker._on_disconnect_output()
+                target._on_disconnect(source, worker, incoming = True)
 
         else:
             raise TypeError

@@ -274,7 +274,7 @@ class SilkArray(SilkObject):
                 self._construct_from_numpy(args[0],lengths=None)
             else:
                 raise TypeError("Not a numpy array")
-        except:
+        except Exception:
             try:
                 keep_trying = True
                 ok = False
@@ -298,13 +298,13 @@ class SilkArray(SilkObject):
                 else:
                     raise TypeError(args)
                 ok = True
-            except:
+            except Exception:
                 if not ok:
                     if not keep_trying:
                         raise
                     try:
                         self._construct(prop_setter, *args)
-                    except:
+                    except Exception:
                         raise
         self.validate()
         self._is_none = False

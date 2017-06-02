@@ -129,7 +129,7 @@ def _filter_json(json, obj=None):
                 sub_obj = getattr(obj, k)
                 if sub_obj is None:
                     continue
-            except:
+            except Exception:
                 sub_obj = None
             v = _filter_json(json[k], sub_obj)
             if v is not None:
@@ -144,7 +144,7 @@ def _filter_json(json, obj=None):
                 sub_obj = obj[knr]
                 if sub_obj is None:
                     continue
-            except:
+            except Exception:
                 sub_obj = None
             v = _filter_json(k, sub_obj)
             if v is not None:

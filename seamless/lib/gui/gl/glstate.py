@@ -32,6 +32,7 @@ __all__ = ('set_viewport', 'set_depth_range', 'set_front_face',  # noqa
 def as_enum(enum):
     """ Turn a possibly string enum into an integer enum.
     """
+    from seamless.dtypes.gl.gloo.glir import _internalformats
     if isinstance(enum, string_types):
         try:
             enum = getattr(gl, 'GL_' + enum.upper())

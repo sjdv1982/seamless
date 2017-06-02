@@ -46,14 +46,22 @@ def run_work():
         return
     if _running_work:
         return
+    from .core.macro import get_activation_mode
+    if not get_activation_mode():
+        return
     _running_work = True
+    #print("WORKING", len(_priority_work), len(_work))
+    work_count = 0
     for w in (_priority_work, _work):
         while len(w):
             work = w.popleft()
             try:
                 work()
-            except:
+            except Exception:
                 traceback.print_exc()
+            if work_count == 100:
+                run_qt() # Necessary to prevent freezes in glwindow
+                work_count = 0
 
     #Whenever work is done, do an asyncio flush
     loop = asyncio.get_event_loop()
@@ -204,8 +212,18 @@ def add_opengl_destructor(context, destructor):
     assert callable(destructor)
     _opengl_destructors[context].append(destructor)
 
+_opengl_active = True
+def activate_opengl():
+    global _opengl_active
+    _opengl_active = True
+
+def deactivate_opengl():
+    global _opengl_active
+    _opengl_active = False
+
 def opengl():
-    return qt_error is None and len(_opengl_contexts) > 0
+    return qt_error is None and _opengl_active
+
 
 _running_qt = False
 def run_qt():

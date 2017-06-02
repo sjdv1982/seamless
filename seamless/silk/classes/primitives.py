@@ -53,7 +53,7 @@ class String(str, SilkStringLike):
                 try:
                     astree = ast.parse(s)
                     s = list(ast.iter_fields(astree))[0][1][0].value.s
-                except:
+                except Exception:
                     pass
         ret = str.__new__(self, s)
         ret._validate()

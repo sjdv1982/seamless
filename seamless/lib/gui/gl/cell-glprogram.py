@@ -5,6 +5,7 @@ from OpenGL.GL import shaders
 from OpenGL.GL import *
 from OpenGL import GL as gl
 
+from seamless import opengl
 from seamless.lib.gui.gl.set_uniform import set_uniform
 
 from seamless.lib.gui.gl.Renderer import Renderer, VertexAttribute
@@ -48,6 +49,7 @@ def init():
 
     # Bind textures
     texdict = {}
+    texture_locations.clear()
     for ar in program.get("textures",[]):
         attr = "array_" + ar
         store = getattr( getattr(PINS, attr), "store", None)
@@ -120,7 +122,6 @@ def paint():
         else:
             glstate_module.clear(*glclear)
     renderer.draw()
-    PINS.rendered.set()
 
     # Heisenbug!!! see below. Seems to be solved now
     try:
@@ -137,17 +138,7 @@ def do_update():
     global initialized
 
     """
-    NOTE: Except if "init" or "paint" has just been updated, AND ONLY THOSE,
-        we are not guaranteed to have an active OpenGL context!!
-    This is because "init" and "paint" are fired from GLWindow/GLWidget's
-     .initializeGL or .paintGL, and signals are passed immediately (before the
-     function ends). However, if they are fired before the other pins have been
-     set, then it's the completion of those pins (outside .initializeGL/.paintGL,
-     so no active GL context) that triggers do_update, with PINS.init.updated as
-     true! If this happens, we have to unclear the "init"/"paint" signal, so that
-     it will be triggered later.
-
-    Outside of "init" and "pains", we have to use "dirty" flags,
+    Outside of "init" and "paint", we have to use "dirty" flags,
      rather than direct GL commands!
     """
 
@@ -161,9 +152,7 @@ def do_update():
     arrays = PINS.program.get()["arrays"]
     textures = PINS.program.get().get("textures", [])
 
-    guaranteed_gl_context = False
-    if PINS.init.updated or PINS.paint.updated:
-        guaranteed_gl_context = True
+    gl_context = opengl()
 
     dirty_renderer = False
     repaint = False
@@ -172,11 +161,10 @@ def do_update():
         pin = getattr(PINS, attr)
         if pin.updated:
             dirty_renderer = True
-            guaranteed_gl_context = False
 
     if PINS.init.updated:
         initialized = False
-        if guaranteed_gl_context:
+        if gl_context:
             init()
         else:
             PINS.init.unclear()
@@ -192,7 +180,7 @@ def do_update():
                 repaint = True
 
     if PINS.paint.updated:
-        if guaranteed_gl_context:
+        if gl_context:
             paint()
             repaint = False
         else:
@@ -212,7 +200,8 @@ A crash will now happen... no idea why, sorry
         return
     # /heisenbug
 
-    if PINS.program.updated:
+    if PINS.program.updated or \
+      PINS.vertex_shader.updated or PINS.fragment_shader.updated:
         initialized = False
         repaint = True
 

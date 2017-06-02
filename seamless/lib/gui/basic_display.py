@@ -97,6 +97,6 @@ def display(cell, title=None, own=True):
     if own:
         try:
             cell.own(d)
-        except:
+        except Exception:
             pass
     return d

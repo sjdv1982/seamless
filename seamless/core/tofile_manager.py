@@ -1,5 +1,6 @@
 from collections import OrderedDict
 from .tofile import sl_print
+import json
 
 def macro_object_to_json(macro_object):
     """Serializes a MacroObject
@@ -14,6 +15,10 @@ def macro_object_to_json(macro_object):
     else:
         assert not isinstance(target, RegistrarObject)
 
+    if target is None or sl_print(target) is None:
+        print("WARNING: macro object points to a dead cell, not saved!")
+        return None
+
     mo = OrderedDict()
     macro = macro_object.macro
     order = macro._type_args["_order"]
@@ -22,17 +27,18 @@ def macro_object_to_json(macro_object):
     kwargs = {}
     cell_args = {}
     for argnr, arg in enumerate(macro_object.args):
-        argname = order[argnr]
-        if argname in macro_object.cell_args:
-            cell_args[argname] = sl_print(arg)
+        if argnr in macro_object.cell_args:
+            cell_args[argnr] = sl_print(arg)
             args.append(None)
         else:
-            args.append(arg) #TODO: check that arg is serialisable
+            json.dumps(arg)
+            args.append(arg)
     for argname, arg in macro_object.kwargs.items():
         if argname in macro_object.cell_args:
             cell_args[argname] = sl_print(arg)
         else:
-            kwargs[argname] = arg #TODO: check that arg is serialisable
+            json.dumps(arg)
+            kwargs[argname] = arg
     mo["args"] = args
     mo["kwargs"] = kwargs
     mo["cell_args"] = cell_args
@@ -47,6 +53,7 @@ def macro_object_to_json(macro_object):
     mo["macro_func_name"] = macro.func_name
     mo["macro_order"] = order
     mo["target"] = sl_print(target)
+    json.dumps(mo)
     return mo
 
 def manager_to_json(m):
@@ -79,8 +86,18 @@ def manager_to_json(m):
             if pin is None:
                 continue
             ppath = sl_print(pin)
+            if ppath is None or cpath is None:
+                m1 = str(cell)
+                if cpath is None:
+                    m1 += " (dead)"
+                m2 = str(pin)
+                if ppath is None:
+                    m2 += " (dead)"
+                print("WARNING: dead connection, not saved: '%s' to '%s'" % (m2, m1))
+                continue
             pin_cell_connections.append((ppath, cpath))
     pin_cell_connections.sort(key=lambda v: v[0]+v[1])
+    json.dumps(pin_cell_connections)
 
     for cell_id, pins in m.listeners.items():
         ppaths = []
@@ -100,6 +117,7 @@ def manager_to_json(m):
         for ppath in ppaths:
             cell_pin_connections.append((cpath, ppath))
     cell_pin_connections.sort(key=lambda v: v[0]+v[1])
+    json.dumps(cell_pin_connections)
 
     for cell_id, aliases in m.cell_aliases.items():
         apaths = []
@@ -118,7 +136,7 @@ def manager_to_json(m):
         for apath in apaths:
             cell_cell_connections.append((cpath, apath))
     cell_cell_connections.sort(key=lambda v: v[0]+v[1])
-
+    json.dumps(cell_cell_connections)
 
     macro_obj_map = {}
     for cell_id in m.macro_listeners:
@@ -135,15 +153,22 @@ def manager_to_json(m):
                 mo = macro_object_to_json(macro_object)
                 macro_obj_map[macro_object] = mo
                 if mo is not None:
+                    json.dumps(mo)
                     macro_objects.append(mo)
+            macro_target = macro_object._parent()
+            if macro_target is None:
+                print("WARNING: dead macro object target (%s), not saved!" % cell)
+                continue
             i = OrderedDict()
             i["cell"] = sl_print(cell)
-            i["macro_target"] = sl_print(macro_object._parent())
+            i["macro_target"] = sl_print(macro_target)
             if mo is not None:
                 i["macro_arg"] = macro_arg
+                json.dumps(i)
                 macro_listeners.append(i)
             else:
                 i["registrar"] = macro_object.macro.registrar.name
+                json.dumps(i)
                 registrar_cells.append(i)
 
     for registrar_name, dtype, data, data_name in m.registrar_items:
@@ -153,6 +178,7 @@ def manager_to_json(m):
         i["dtype"] = dtype
         i["data"] = data #TODO: check that it is already serialized?
         i["data_name"] = data_name
+        json.dumps(i)
         registrar_items.append(i)
 
     for registrar in sorted(m.registrar_listeners.keys(),
@@ -181,7 +207,9 @@ def manager_to_json(m):
                     else:
                         mo = macro_object_to_json(macro_object)
                         macro_obj_map[macro_object] = mo
+                        json.dumps(mo)
                         macro_objects.append(mo)
                     i["target_macro_target"] = mo["target"]
+                json.dumps(i)
                 registrar_listeners.append(i)
     return ret

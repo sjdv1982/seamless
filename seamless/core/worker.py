@@ -98,7 +98,7 @@ class PinBase(Managed):
         if isinstance(name, str):
             name = (name,)
         if worker is None:
-            return (None,) + name
+            return ("<None>",) + name
         return worker.path + name
 
     @property
@@ -169,14 +169,15 @@ class InputPin(InputPinBase):
         worker.receive_update(self.name, value, resource_name)
 
     def destroy(self):
+        #print("PIN DESTROY", self)
         if self._destroyed:
             return
         context = self.context
         if context is None:
             return
-        super().destroy()
         manager = self._get_manager()
         manager.remove_listeners_pin(self)
+        super().destroy()
 
 
 class OutputPin(OutputPinBase):
@@ -189,6 +190,8 @@ class OutputPin(OutputPinBase):
         return self
 
     def send_update(self, value):
+        if self._destroyed:
+            return
         manager = self._get_manager()
         for cell_id in self._cell_ids:
             manager.update_from_worker(cell_id, value, self.worker_ref())
@@ -244,17 +247,17 @@ class OutputPin(OutputPinBase):
     def destroy(self):
         if self._destroyed:
             return
-        #print("OUTPUTPIN DESTROY")
+        #print("OUTPUTPIN DESTROY", self)
         context = self.context
         if context is None:
             return
-        super().destroy()
         manager = self._get_manager()
         for cell_id in list(self._cell_ids):
             cell = manager.cells.get(cell_id, None)
             if cell is None:
                 continue
-            cell._on_disconnect(self, self.worker_ref(), True)
+            manager.disconnect(self, cell)
+        super().destroy()
 
 class EditPinBase(PinBase):
     pass

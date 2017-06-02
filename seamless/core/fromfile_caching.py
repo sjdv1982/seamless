@@ -32,10 +32,13 @@ def _fromfile_caching_walk(ctx, clean_cells, transformers ):
 def fromfile_caching(ctx):
     """This function is to be invoked right after a context has been loaded
     Sets as stable those transformers for which all cells (input and output)
-    fulfill the following conditions
+     are clean.
+    Clean cells fulfill the following conditions
     - Its value was saved, and no resource filepath has been defined
     - Its value was saved, and loading the resource file did not overwrite it
     - A hash of its value has been saved, and the resource file was loaded with the same hash
+    Finally, macro objects that have only clean cells in their cell_args and their target
+     are similarly stabilized
     """
     clean_cells, transformers = set(), set()
     _fromfile_caching_walk(ctx, clean_cells, transformers)
@@ -67,7 +70,21 @@ def fromfile_caching(ctx):
         if stable:
             manager.set_stable(tf, True)
             tf.transformer.responsive = False
-            tf.receive_update("@RESPONSIVE", None)
+            tf.receive_update("@RESPONSIVE", None, None)
+
+    for cell_id in manager.macro_listeners:
+        if cell_id not in clean_cells:
+            continue
+        cell = manager.cells.get(cell_id, None)
+        if cell is None:
+            continue
+        listeners = manager.macro_listeners[cell_id]
+        for macro_object, macro_arg in listeners:
+            for cell_arg_name in macro_object.cell_args:
+                cell_arg = macro_object.cell_args[cell_arg_name]
+                cell_arg_id = manager.get_cell_id(cell_arg)
+                if cell_arg_id in clean_cells:
+                    macro_object._last_cell_values[cell_arg_name] = cell_arg.value
 
 
 @contextmanager

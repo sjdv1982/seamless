@@ -10,6 +10,16 @@ from .gloo.glir import gl_types, gl_get_alignment, as_enum
 
 class GLStoreBase:
     _opengl_context = None
+    def sanity_check(self):
+        from PyQt5.QtGui import QOpenGLContext
+        context = QOpenGLContext.currentContext()
+        assert context
+        assert threading.current_thread() is threading.main_thread()
+        if self._opengl_context is not None:
+            #assert context is self._opengl_context
+            if context is not self._opengl_context:
+                self.destroy()
+                self.create()
 
 class GLSubStore(GLStoreBase):
     regexp = re.compile("\[.*?\]")
@@ -132,7 +142,6 @@ class GLSubStore(GLStoreBase):
 
     def resolve(self):
         p = self.parent()
-        p.bind()
         parent_state = p._state
         if parent_state is None:
             self._state = None
@@ -144,6 +153,7 @@ class GLSubStore(GLStoreBase):
 
 class GLStore(GLStoreBase):
     usage = gl.GL_DYNAMIC_DRAW
+    init_params = {}
     def __init__(self, parent):
         self.parent = weakref.ref(parent)
         self._dirty = True
@@ -183,15 +193,11 @@ class GLStore(GLStoreBase):
 
     def bind(self):
         from PyQt5.QtGui import QOpenGLContext
-        sanity_check(self._opengl_context)
+        self.sanity_check()
         if not self._dirty:
             return
         if self._id is None:
-            self._id = gl.glGenBuffers(1)
-            context = QOpenGLContext.currentContext()
-            self._opengl_context = context
-            from seamless import add_opengl_destructor
-            add_opengl_destructor(context, self.destroy)
+            self.create()
         elif self._state:
             gl.glBindBuffer(gl.GL_ARRAY_BUFFER, self._id)
             gl.glBufferData(gl.GL_ARRAY_BUFFER, 0, None, self.usage)
@@ -202,10 +208,18 @@ class GLStore(GLStoreBase):
         self._dirty = False
         self._state += 1
 
+    def create(self):
+        from PyQt5.QtGui import QOpenGLContext
+        self._id = gl.glGenBuffers(1)
+        context = QOpenGLContext.currentContext()
+        self._opengl_context = context
+        from seamless import add_opengl_destructor
+        add_opengl_destructor(context, self.destroy)
+
     def destroy(self):
         #print("GLStore DESTROY")
         try:
-            sanity_check(None)
+            assert threading.current_thread() is threading.main_thread()
             if self._id is not None:
                 gl.glDeleteBuffers(1, [self._id])
         finally:
@@ -214,7 +228,8 @@ class GLStore(GLStoreBase):
             self._opengl_context = None
 
 class GLTexStore(GLStoreBase):
-    def __init__(self, parent, dimensions, *args, **kwargs):
+    def __init__(self, parent, dimensions):
+        self.init_params = {"dimensions": dimensions}
         from .gloo import Texture1D, Texture2D, Texture3D
         self.parent = weakref.ref(parent)
         if dimensions == 1:
@@ -264,15 +279,19 @@ class GLTexStore(GLStoreBase):
     def itemsize(self):
         return self.parent().data.itemsize
 
+    def create(self):
+        from PyQt5.QtGui import QOpenGLContext
+        self._id = gl.glGenTextures(1)
+        context = QOpenGLContext.currentContext()
+        self._opengl_context = context
+        from seamless import add_opengl_destructor
+        add_opengl_destructor(context, self.destroy)
+
     def bind(self):
         from PyQt5.QtGui import QOpenGLContext
-        sanity_check(self._opengl_context)
+        self.sanity_check()
         if self._id is None:
-            self._id = gl.glGenTextures(1)
-            context = QOpenGLContext.currentContext()
-            self._opengl_context = context
-            from seamless import add_opengl_destructor
-            add_opengl_destructor(context, self.destroy)
+            self.create()
 
         gl.glBindTexture(self._target, self._id)
         if not len(self._dirty):
@@ -286,7 +305,7 @@ class GLTexStore(GLStoreBase):
         self._state += 1
 
     def set_size(self, shape, format, internalformat, unsigned):
-        sanity_check(self._opengl_context)
+        self.sanity_check()
         gl.glBindTexture(self._target, self._id)
         format = as_enum(format)
         internalformat = format if internalformat is None \
@@ -310,7 +329,7 @@ class GLTexStore(GLStoreBase):
 
 
     def set_data(self, offset, data):
-        sanity_check(self._opengl_context)
+        self.sanity_check()
         gl.glBindTexture(self._target, self._id)
         shape, format, internalformat = self._shape_formats
 
@@ -358,7 +377,7 @@ class GLTexStore(GLStoreBase):
             gl.glPixelStorei(gl.GL_UNPACK_ALIGNMENT, 4)
 
     def set_wrapping(self, wrapping):
-        sanity_check(self._opengl_context)
+        self.sanity_check()
         gl.glBindTexture(self._target, self._id)
         wrapping = [as_enum(w) for w in wrapping]
         if len(wrapping) == 3:
@@ -370,7 +389,7 @@ class GLTexStore(GLStoreBase):
         gl.glTexParameterf(self._target, gl.GL_TEXTURE_WRAP_T, wrapping[-1])
 
     def set_interpolation(self, min, mag):
-        sanity_check(self._opengl_context)
+        self.sanity_check()
         gl.glBindTexture(self._target, self._id)
         min, mag = as_enum(min), as_enum(mag)
         gl.glTexParameterf(self._target, gl.GL_TEXTURE_MIN_FILTER, min)
@@ -379,7 +398,7 @@ class GLTexStore(GLStoreBase):
     def destroy(self):
         #print("GLTexStore DESTROY")
         try:
-            sanity_check(None)
+            assert threading.current_thread() is threading.main_thread()
             if self._id is not None:
                 gl.glDeleteTextures(self._id)
         finally:
@@ -387,13 +406,6 @@ class GLTexStore(GLStoreBase):
             self._dirty = set("data")
             self._opengl_context = None
 
-def sanity_check(opengl_context):
-    from PyQt5.QtGui import QOpenGLContext
-    context = QOpenGLContext.currentContext()
-    assert context
-    assert threading.current_thread() is threading.main_thread()
-    if opengl_context is not None:
-        assert context is opengl_context
 
 
 #TODO: add nicer destroy

@@ -361,10 +361,10 @@ When any of these cells change and the macro is re-executed, the child object wi
             #TODO: check that pin target is a child
             self._pins[attr] = value
             return
-        if attr in self._children and self._children[attr] is not value:
-            self._children[attr].destroy()
 
         assert isinstance(value, (Managed, CellLike, WorkerLike)), type(value)
+        if attr in self._children and self._children[attr] is not value:
+            self._children[attr].destroy()
         self._add_child(attr, value, force_detach=True)
 
     def __getattr__(self, attr):
@@ -525,7 +525,7 @@ When any of these cells change and the macro is re-executed, the child object wi
             child._validate_path(required_path + (childname,))
         return required_path
 
-    def equilibrate(self, timeout=None, report=2):
+    def equilibrate(self, timeout=None, report=0.5):
         """
         Run workers and cell updates until all workers are stable,
          i.e. they have no more updates to process
@@ -539,17 +539,24 @@ When any of these cells change and the macro is re-executed, the child object wi
         last_report_time = start_time
         run_work()
         manager = self._manager
+        last_unstable = []
         #print("UNSTABLE", list(manager.unstable_workers))
         while len(manager.unstable_workers):
             curr_time = time.time()
             if curr_time - last_report_time > report:
-                print("Waiting for:", self.unstable_workers)
+                unstable = list(manager.unstable_workers)
+                if last_unstable != unstable:
+                    last_unstable = unstable
+                    print("Waiting for:", self.unstable_workers)
+                last_report_time = curr_time
             if timeout is not None:
                 if curr_time - start_time > timeout:
                     break
             run_work()
             time.sleep(0.001)
+        unstable = list(manager.unstable_workers)
         run_work()
+        return unstable
         #print("UNSTABLE", list(manager.unstable_workers))
 
     @property

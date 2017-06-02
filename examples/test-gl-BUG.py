@@ -45,7 +45,7 @@ p.uniforms.cell().set({})
 ctx.vertex_shader.connect(p.vertex_shader)
 ctx.fragment_shader.connect(p.fragment_shader)
 
-p.rendered.cell().connect(p.update) #if this connection is broken, no more crash!
+p.painted.cell().connect(p.update) #if this connection is broken, no more crash!
 
 """
 BUG:
@@ -60,10 +60,13 @@ But this does not solve the same issue in fireworks.py...
 Remove run_qt() in seamless/init.py:run_work to reproduce the bug
 
 FULL SOLUTION: in addition, forbid QOpenGLWidget to call self.update()
- from within self.paintGL (._painting attribute to check this)
+ more than once from within self.paintGL (._painting attribute to check this)
 See cell-glwindow.py in lib/gui/gl.
 This prevents all crashes, but it must be combined with the partial
 solution above, else the window will freeze.
 
 As of now, no more issues.
+
+UPDATE: .rendered was renamed .painted and moved to glwindow from Renderer
+ This apparently eliminates the need for either solution, at least for this case
 """

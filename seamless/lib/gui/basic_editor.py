@@ -91,6 +91,6 @@ def edit(cell, title=None, own=False):
     if own:
         try:
             cell.own(ed)
-        except:
+        except Exception:
             pass
     return ed
