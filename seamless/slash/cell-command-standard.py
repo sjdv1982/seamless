@@ -110,7 +110,8 @@ try:
             if len(curr_stdout_data) and \
               curr_stdout_data != last_stdout_data:
                 if return_mode == "stdout" and process.stdout:
-                    return_preliminary(curr_stdout_data)
+                    if monitor_preliminary:
+                        return_preliminary(curr_stdout_data)
                 else:
                     sys.stdout.write(curr_stdout_data[len(last_stdout_data):])
                 last_stdout_data = curr_stdout_data
@@ -119,7 +120,8 @@ try:
             if len(curr_stderr_data) and \
               curr_stderr_data != last_stderr_data:
                 if return_mode == "stderr" and process.stderr:
-                    return_preliminary(curr_stderr_data)
+                    if monitor_preliminary:
+                        return_preliminary(curr_stderr_data)
                 else:
                     sys.stderr.write(curr_stderr_data[len(last_stderr_data):])
                 last_stderr_data = curr_stderr_data
