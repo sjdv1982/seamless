@@ -19,7 +19,6 @@ def slash0(ctx, code, extern_map = {}, **macro_args):
     contexts = {}
     filehashes = 0
 
-
     def make_cmd_std(cmd_params):
         nonlocal filehashes
         tf_params = {

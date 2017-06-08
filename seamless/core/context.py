@@ -541,7 +541,7 @@ When any of these cells change and the macro is re-executed, the child object wi
         manager = self._manager
         last_unstable = []
         #print("UNSTABLE", list(manager.unstable_workers))
-        while len(manager.unstable_workers):
+        while 1:
             curr_time = time.time()
             if curr_time - last_report_time > report:
                 unstable = list(manager.unstable_workers)
@@ -553,7 +553,12 @@ When any of these cells change and the macro is re-executed, the child object wi
                 if curr_time - start_time > timeout:
                     break
             run_work()
+            len1 = len(manager.unstable_workers)
             time.sleep(0.001)
+            run_work()
+            len2 = len(manager.unstable_workers)
+            if len1 == 0 and len2 == 0:
+                break
         unstable = list(manager.unstable_workers)
         run_work()
         return unstable

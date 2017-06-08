@@ -161,6 +161,9 @@ class InputPin(InputPinBase):
             self.own(my_cell)
         return my_cell
 
+    def set(self, *args, **kwargs):
+        return self.cell().set(*args, **kwargs)
+        
     def receive_update(self, value, resource_name):
         worker = self.worker_ref()
         if worker is None:
@@ -189,12 +192,13 @@ class OutputPin(OutputPinBase):
     def get_pin(self):
         return self
 
-    def send_update(self, value):
+    def send_update(self, value, *, preliminary=False):
         if self._destroyed:
             return
         manager = self._get_manager()
         for cell_id in self._cell_ids:
-            manager.update_from_worker(cell_id, value, self.worker_ref())
+            manager.update_from_worker(cell_id, value, self.worker_ref(),
+                preliminary=preliminary)
 
     def connect(self, target):
         manager = self._get_manager()
@@ -306,14 +310,16 @@ class EditPin(EditPinBase):
         worker = self.worker_ref()
         if worker is None:
             return #Worker has died...
-
         worker.receive_update(self.name, value, resource_name)
 
-    def send_update(self, value):
+    def send_update(self, value, *, preliminary=False):
+        if self._destroyed:
+            return
         manager = self._get_manager()
         curr_pin_to_cells = manager.pin_to_cells.get(self.get_pin_id(), [])
         for cell_id in curr_pin_to_cells:
-            manager.update_from_worker(cell_id, value, self.worker_ref())
+            manager.update_from_worker(cell_id, value, self.worker_ref(),
+                preliminary=preliminary)
 
     def destroy(self):
         if self._destroyed:

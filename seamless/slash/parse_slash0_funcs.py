@@ -43,6 +43,21 @@ def parse_variable_expression(cmd_index, word, lineno, l, nodes, noderefs):
             try:
                 node_index = find_node(varname, "variable", nodes)[1]
             except NameError:
+
+                if varname.isupper(): #environment variable
+                    node = {
+                        "name": varname
+                    }
+                    node_index = append_node(nodes, "env", node)
+                    noderef = {
+                        "command_index": cmd_index,
+                        "type": "env",
+                        "index": node_index,
+                    }
+                    noderefs.append(noderef)
+                    result += "{%d}" % (len(noderefs)-1)
+                    continue
+
                 msg = "Unknown variable name '%s'" % varname
                 syntax_error(lineno, l, msg)
             noderef = {
@@ -263,11 +278,32 @@ def cmd_export(line, nodes):
 ###############################
 
 def cmd_standard(cmd_index, line, nodes):
+    def parse_pragma(pragma0):
+        pnr = 0
+        pragma = []
+        while 1:
+            #TODO: use argparse
+            if pnr == len(pragma0): break
+            p = pragma0[pnr]
+            if p == "monitor":
+                pragma.append(p)
+                try:
+                    delay = float(pragma0[pnr+1])
+                    pnr += 1
+                except (ValueError, IndexError):
+                    delay = 2 #default monitor every 2 secs
+                pragma.append(delay)
+            else:
+                msg = "unknown pragma '%s'"
+                syntax_error(lineno, l, msg % p)
+            pnr += 1
+        pragma0[:] = pragma
     command, lineno, l, words = line
     noderefs = []
     parsed = []
     outputs = []
     capture = None
+    pragma = []
     mode = "command"
     capt_stdout, capt_stderr = False, False
     for word in words:
@@ -341,11 +377,19 @@ def cmd_standard(cmd_index, line, nodes):
                 })
             mode = "arg-redirect"
         elif mode == "arg-redirect":
+            if word.startswith("@"):
+                mode = "pragma"
+                word = word[1:].strip()
+                if len(word):
+                    pragma.append(word)
+                continue
             if capture:
                 msg = "Expected >, 2> or >&"
             else:
                 msg = "Expected >, 2>, >& or !>"
             syntax_error(lineno, l, msg)
+        elif mode == "pragma":
+            pragma.append(word)
         else:
             msg = "Malformed command"
             syntax_error(lineno, l, msg)
@@ -362,6 +406,9 @@ def cmd_standard(cmd_index, line, nodes):
     }
     if capture is not None:
         result["capture"] = capture
+    if len(pragma):
+        parse_pragma(pragma)
+        result["pragma"] = pragma
     return result
 
 def cmd_assign(cmd_index, line, nodes):

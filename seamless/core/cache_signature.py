@@ -74,6 +74,7 @@ def cache_signature_reactor(rc, ctx_path, manager, known):
     known[rc] = rc.path #placeholder for infinite cycles
     sig = {}
     manager = rc._get_manager()
+    all_cells = manager.cells
     for pinname, pindict in rc.reactor_params.items():
         if pindict["pin"] == "output":
             continue
@@ -84,8 +85,9 @@ def cache_signature_reactor(rc, ctx_path, manager, known):
             continue
         assert len(curr_pin_to_cells) == 1
         c = curr_pin_to_cells[0]
-        csig = cache_signature_cell(c, ctx_path, manager, known)
-        sig[pinname] = (pindict["pin"], pindict["dtype"], c.path, csig)
+        cell = all_cells[c] #should always exist (?)
+        csig = cache_signature_cell(cell, ctx_path, manager, known)
+        sig[pinname] = (pindict["pin"], pindict["dtype"], cell.path, csig)
     known[rc] = sig
     return sig
 

@@ -19,14 +19,12 @@ TODO:
 Technically-oriented releases are marked with *
 
 *0.1
-- OpenGL rendering
-- Sane pseudo-filename for transformer/editor code block
 - Make a sane status report system (missing inputs, undefined inputs, also in children)
 - Integrate protein viewer in browser
 - Demos: plotly, OpenGL, orca, slash+protein  
 
 0.2
-- Replace ctx.CHILDREN, ctx.CELLS etc. with ctx.self.children
+- Replace ctx.CHILDREN, ctx.CELLS etc. with ctx.self.children, ctx.self.cells, etc.
 - Get rid of seamless.qt
 - Composite (JSON) cells
 - Expand seamless shell language (slash)
@@ -36,7 +34,10 @@ Technically-oriented releases are marked with *
 - Update demos
 
 *0.3
-- Multiple code cells in transformers/editors
+- Multiple code cells in transformers/reactors
+- Preliminary outputpins (in transformers and reactors)
+- Preliminary inputpins (pins that accept preliminary values). Right now, all inputpins are preliminary!
+- Address shell() memory leak: IPython references may hold onto large amounts of data
 - Binary (struct) cells, active switches (connection level; workers don't see it, except that pin becomes undefined/changes value)
 - Silk: managing variable-length arrays with allocators (subclass ndarray), C header registrar, fix Bool default value bug
 - C interop

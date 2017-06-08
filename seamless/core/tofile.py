@@ -75,6 +75,10 @@ def cell_to_json(c):
     if store_data and c.dtype == "array":
         raise NotImplementedError("Saving array cell data is not (yet?) supported")
 
+    if c._preliminary:
+        store_data = False
+        store_hash = False
+
     if store_data and c.data is not None:
         data = c.data
         is_json = (

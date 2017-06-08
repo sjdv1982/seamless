@@ -1,4 +1,4 @@
-import os, subprocess, tempfile, shlex, glob
+import sys, os, subprocess, tempfile, shlex, glob
 result = None
 d = None
 
@@ -8,6 +8,7 @@ def format_msg(message, headline):
     return msg
 
 try:
+    print("RUN", PARAMS["source"])
     d = tempfile.mkdtemp(dir="/dev/shm")
     command_params = []
     created_files = []
@@ -37,7 +38,13 @@ try:
                 command_params.append(filename)
             elif typ == "varexp":
                 refs = ref["refs"]
-                ref_values = [globals()[r] for r in refs]
+                ref_values = []
+                for r in refs:
+                    if not r.startswith("$"):
+                        v = globals()[r]
+                    else: #env variable
+                        v = os.environ[r[1:]]
+                    ref_values.append(v)
                 value = value.format(*ref_values)
                 command_params.append(shlex.quote(value))
             else:
@@ -53,10 +60,12 @@ try:
     for output in PARAMS["output_refs"]:
         if output["type"] == "stdout":
             stdout = subprocess.PIPE
+            stderr = subprocess.PIPE
             print_stdout = False
             if output["name"] is not None:
                 return_mode.append("stdout")
         elif output["type"] == "stderr":
+            stdout = subprocess.PIPE
             stderr = subprocess.PIPE
             print_stderr = False
             if output["name"] is not None:
@@ -74,8 +83,49 @@ try:
         else:
             raise TypeError(output["type"])
     command = "cd %s;" % d + " ".join(command)
+    pragma = PARAMS.get("pragma", [])
+    monitor_delay = 2
+    monitor_preliminary = False
+    if "monitor" in pragma:
+        monitor_preliminary = True
+        monitor_delay = pragma[pragma.index("monitor")+1]
+
+    assert len(return_mode) <= 1, return_mode #TODO: stdout and stderr to different targets => return JSON
+    return_mode = return_mode[0] if len(return_mode) else None #TODO, see above
     process = subprocess.Popen(command, stdout=stdout, stderr=stderr, shell=True)
-    stdout_data, stderr_data = process.communicate()
+
+    last_stdout_data = b""
+    last_stderr_data = b""
+    while 1:
+        #print("MONITOR!")
+        try:
+            stdout_data, stderr_data = process.communicate(timeout=monitor_delay)
+            finished = True
+        except subprocess.TimeoutExpired:
+            finished = False
+            #TODO return_mode, see above
+            #dirty! but I don't know to do it better
+            stdout = process._fileobj2output[process.stdout]
+            curr_stdout_data = b''.join(stdout).decode("utf-8")
+            if len(curr_stdout_data) and \
+              curr_stdout_data != last_stdout_data:
+                if return_mode == "stdout" and process.stdout:
+                    return_preliminary(curr_stdout_data)
+                else:
+                    sys.stdout.write(curr_stdout_data[len(last_stdout_data):])
+                last_stdout_data = curr_stdout_data
+            stderr = process._fileobj2output[process.stderr]
+            curr_stderr_data = b''.join(stderr).decode("utf-8")
+            if len(curr_stderr_data) and \
+              curr_stderr_data != last_stderr_data:
+                if return_mode == "stderr" and process.stderr:
+                    return_preliminary(curr_stderr_data)
+                else:
+                    sys.stderr.write(curr_stderr_data[len(last_stderr_data):])
+                last_stderr_data = curr_stderr_data
+        if finished:
+            break
+
     if stdout_data is not None:
         stdout_data = stdout_data.decode("utf-8")
     if stderr_data is not None:
@@ -86,10 +136,10 @@ try:
         msg = format_msg(message, "Error message")
         raise Exception(msg)
     else:
-        if print_stdout and len(stdout_data):
+        if print_stdout and stdout_data is not None and len(stdout_data):
             print(format_msg(stdout_data, "Standard output"))
-        if print_stderr and len(stderr_data):
-            print(format_msg(stderr_data, "Standard error"))
+        #if print_stderr and len(stderr_data):
+        #    print(format_msg(stderr_data, "Standard error"))
     if capture:
         new_files = []
         for dirpath, dirnames, filenames in os.walk(d):
@@ -102,8 +152,7 @@ try:
             ff = f[len(d+"/"):]
             capture_data[ff] = open(f).read()
 
-    assert len(return_mode) <= 1, return_mode #TODO: stdout and stderr to different targets => return JSON
-    return_mode = return_mode[0] #TODO, see above
+    #TODO return_mode, see above
     if return_mode == "stdout":
         result = stdout_data
     elif return_mode == "stderr":
@@ -113,5 +162,4 @@ try:
 finally:
     if d is not None:
         os.system("rm -rf %s" % d)
-print("RUN", PARAMS["source"])
 return result

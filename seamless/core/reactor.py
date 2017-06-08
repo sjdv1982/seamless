@@ -27,7 +27,8 @@ silk.register(
 
 reactor_params = {
   "*": "silk.ReactorPin",
-}
+} #TODO: @shell
+
 dtypes.register(
   ("json", "seamless", "reactor_params"),
   typeschema = reactor_params, #("json", "typeschema")
@@ -42,6 +43,7 @@ class Reactor(Worker):
     This is the main-thread part of the worker
     """
     _required_code_type = PythonCell.CodeTypes.ANY
+    _shell_rae = None
 
     def __init__(self, reactor_params):
         super().__init__()
@@ -61,6 +63,13 @@ class Reactor(Worker):
                      }
         self._reactor_params = OrderedDict()
         for p in sorted(reactor_params.keys()):
+
+            if p == "@shell":
+                rae = reactor_params[p]
+                rae = rae.strip(".").split(".")
+                self._shell_rae = rae
+                continue
+
             #TODO: check that they don't overlap with reactor attributes (.path, .name, ...),
             #     ...and with code_start, code_update, code_stop, or is that allowed  (???)
             param = reactor_params[p]
@@ -94,7 +103,11 @@ class Reactor(Worker):
 
     def _shell(self, toplevel=True):
         p = self._find_successor()
-        return p.reactor.namespace, "Reactor %s" % str(self)
+        namespace = p.reactor.namespace
+        if self._shell_rae is not None:
+            for attr in self._shell_rae:
+                namespace = namespace[attr]
+        return namespace, "Reactor %s" % str(self)
 
     @property
     def reactor_params(self):

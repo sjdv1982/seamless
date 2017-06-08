@@ -2,6 +2,7 @@ from abc import ABCMeta, abstractmethod
 from collections import deque
 import threading
 import weakref
+import time
 
 def init():
     pass
@@ -161,9 +162,15 @@ class Worker(metaclass=ABCMeta):
                     self.updated.add(name)
 
                 # With all inputs now present, we can issue updates
+                time.sleep(0.01)
                 if not self._pending_inputs and self.responsive:
+                    # ...but not if there is still something in the queue for us
+                    if self.semaphore.acquire(blocking=False):
+                        self.semaphore.release() #undo the acquire
+                        ack(True)
+                        continue
                     try:
-                        self.update(self.updated)
+                        self.update(self.updated, self.semaphore)
                         self.updated = set()
 
                     except Exception as exc:

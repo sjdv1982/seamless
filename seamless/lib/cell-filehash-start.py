@@ -3,9 +3,10 @@ from threading import Thread, RLock, Event
 last_filehash = None
 last_mtime = None
 last_exc = None
+warned = False
 
 def read(fpath):
-    global last_time, last_mtime, last_filehash, last_exc
+    global last_time, last_mtime, last_filehash, last_exc, warned
     curr_time = time.time()
     last_time = curr_time
     try:
@@ -13,7 +14,9 @@ def read(fpath):
             if last_filehash is not None:
                 PINS.filehash.set(None)
                 last_filehash = None
-            raise Exception("File does not exist: '%s'" % fpath)
+            if not warned:
+                print("WARNING: File does not exist: '%s'" % fpath)
+                warned = True
         else:
             with lock:
                 stat = os.stat(fpath)

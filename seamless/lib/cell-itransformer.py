@@ -1,4 +1,4 @@
-from seamless.gui.pyshell import MyInProcessKernelManager
+from seamless.gui.shell import MyInProcessKernelManager
 kernel_manager = MyInProcessKernelManager()
 kernel_manager.start_kernel(globals())
 
@@ -45,6 +45,7 @@ def compile_code():
     kernel_manager.start_kernel(namespace)
     kernel = kernel_manager.kernel
     code = PINS.code.get()
+    namespace["code"] = code
     result = execute(code)
     if result:
         ok = True

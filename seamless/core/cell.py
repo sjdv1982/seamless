@@ -40,6 +40,7 @@ class Cell(Managed, CellLike):
     _outgoing_connections = 0
 
     _resource = None
+    _preliminary = False
 
     def __init__(self, dtype, *, naming_pattern="cell"):
         """TODO: docstring."""
@@ -76,13 +77,15 @@ class Cell(Managed, CellLike):
         self._check_destroyed()
         return self._dependent
 
-    def _set(self, text_or_object,propagate):
+    def _set(self, text_or_object,propagate,*,preliminary=False):
         """Generic method to update cell; returns True if cell was changed"""
         self._check_destroyed()
         if isinstance(text_or_object, (str, bytes)):
-            result = self._text_set(text_or_object, propagate, trusted=False)
+            result = self._text_set(text_or_object,
+                propagate=propagate,trusted=False, preliminary=preliminary)
         else:
-            result = self._object_set(text_or_object, propagate, trusted=False)
+            result = self._object_set(text_or_object,
+                propagate=propagate,trusted=False, preliminary=preliminary)
         self.resource.dirty = False
         self.resource._hash = None
         return result
@@ -106,7 +109,7 @@ class Cell(Managed, CellLike):
         self._check_destroyed()
         return self.resource.fromlibfile(lib, filename)
 
-    def _text_set(self, data, propagate, trusted):
+    def _text_set(self, data, *, propagate, trusted, preliminary):
         try:
             if self._status == self.__class__.StatusFlags.OK \
                     and (data is self._data or data is self._data_last or
@@ -127,6 +130,7 @@ class Cell(Managed, CellLike):
         else:
             self._data_last = data
             self._data = data
+            self._preliminary = preliminary
             self._status = self.__class__.StatusFlags.OK
 
             if not trusted and self._context is not None:
@@ -135,7 +139,7 @@ class Cell(Managed, CellLike):
                     manager.update_from_code(self)
         return True
 
-    def _object_set(self, object_, propagate, trusted):
+    def _object_set(self, object_, *, propagate, trusted, preliminary):
         if self._status == self.__class__.StatusFlags.OK:
             try:
                 if object_ == self._last_object:
@@ -161,6 +165,7 @@ class Cell(Managed, CellLike):
             data = dtypes.serialize(self._dtype, object_)
             # Normally no error here...
             self._data = data
+            self._preliminary = preliminary
             self._status = self.__class__.StatusFlags.OK
             self._last_object = copy.deepcopy(object_)
 
@@ -178,10 +183,10 @@ class Cell(Managed, CellLike):
             manager = self._get_manager()
             manager.update_from_code(self)
 
-    def _update(self, data, propagate=False):
+    def _update(self, data, *, propagate=False, preliminary=False):
         """Invoked when cell data is updated by a worker or an alias."""
-        #result = self._text_set(data, propagate=False, trusted=True)
-        result = self._set(data, propagate=propagate) #for now, workers can also set with non-text...
+        #result = self._text_set(data, propagate=False, trusted=True, preliminary=False)
+        result = self._set(data, propagate=propagate,preliminary=preliminary) #for now, workers can also set with non-text...
         if data is None:
             self.resource.cache = None
         elif self.dependent:
@@ -318,7 +323,7 @@ class PythonCell(Cell):
     _code_type = CodeTypes.ANY
     _required_code_type = CodeTypes.ANY
 
-    def _text_set(self, data, propagate, trusted):
+    def _text_set(self, data, *, propagate, trusted, preliminary):
         if data == self._data:
             return False
         try:
@@ -363,6 +368,7 @@ class PythonCell(Cell):
             self._code_type = self.CodeTypes.FUNCTION if is_function else \
                 self.CodeTypes.BLOCK
             self._set_error_state(None)
+            self._preliminary = preliminary
             self._status = self.StatusFlags.OK
 
             if not trusted and self._context is not None:
@@ -371,7 +377,7 @@ class PythonCell(Cell):
                     manager.update_from_code(self)
             return True
 
-    def _object_set(self, object_, propagate, trusted):
+    def _object_set(self, object_, *, propagate, trusted, preliminary):
         from .utils import strip_source
         try:
             """
@@ -394,6 +400,7 @@ class PythonCell(Cell):
             self._code_type = self.CodeTypes.FUNCTION
             oldcode = self._data
             self._data = code
+            self._preliminary = preliminary
             self._status = self.__class__.StatusFlags.OK
 
             if not trusted and self._context is not None:
@@ -448,13 +455,13 @@ class Signal(Cell):
     def fromfile(self, filename):
         raise AttributeError("fromfile")
 
-    def _text_set(self, text, propagate, trusted):
+    def _text_set(self, data, *, propagate, trusted, preliminary):
         raise AttributeError
 
-    def _object_set(self, object_, propagate, trusted):
+    def _object_set(self, object_, *, propagate, trusted, preliminary):
         raise AttributeError
 
-    def _update(self, data, propagate=False):
+    def _update(self, data, *, propagate=False, preliminary=False):
         raise AttributeError
 
     @property
@@ -491,11 +498,11 @@ class CsonCell(Cell):
         data = self._data
         from ..dtypes.cson import cson2json
         return cson2json(data)
-    def _update(self, data, propagate=False):
+    def _update(self, data, *, propagate=False, preliminary=False):
         """Invoked when cell data is updated by a worker."""
         if not isinstance(data, (str, bytes)):
             data = json.dumps(data, indent=2)
-        return super()._update(data, propagate)
+        return super()._update(data, propagate=propagate, preliminary=preliminary)
 
 class ArrayCell(Cell):
     _store = None

@@ -96,6 +96,7 @@ class Transformer(Worker):
         self._output_name = None
         self._connected_output = False
         self._last_value = None
+        self._last_value_preliminary = False
         self._message_id = 0
         _registrars = []
         self._transformer_params = OrderedDict()
@@ -167,11 +168,11 @@ class Transformer(Worker):
         if self.active:
             return
 
-        thread = threading.Thread(target=self.listen_output, daemon=True)
+        thread = threading.Thread(target=self.listen_output, daemon=True) #TODO: name
         self.output_thread = thread
         self.output_thread.start()
 
-        thread = threading.Thread(target=self.transformer.run, daemon=True)
+        thread = threading.Thread(target=self.transformer.run, daemon=True) #TODO: name
         self.transformer_thread = thread
         self.transformer_thread.start()
 
@@ -216,6 +217,19 @@ class Transformer(Worker):
             output_name, output_value = self.output_queue.popleft()
             return output_name, output_value
 
+        def receive_end():
+            nonlocal updates_on_hold
+            if updates_on_hold:
+                for n in range(100): #100x5 ms
+                    ok = self.output_semaphore.acquire(blocking=False)
+                    if ok:
+                        self.output_semaphore.release()
+                        break
+                    time.sleep(0.005)
+                else:
+                    self._pending_updates -= updates_on_hold
+                    updates_on_hold = 0
+
         updates_on_hold = 0
         while True:
             try:
@@ -230,7 +244,7 @@ class Transformer(Worker):
                     unblock equilibrate() while equilibrium has not been reached
                     The solution is that the kernel must respond within 500 ms
                     with an @START signal, and then a @END signal when the
-                    computation is complete, then within 500 ms with the value
+                    computation is complete
                     """
                     for n in range(100): #100x5 ms
                         ok = self.output_semaphore.acquire(blocking=False)
@@ -247,25 +261,19 @@ class Transformer(Worker):
                     break
                 output_name, output_value = item
                 if output_name == "@START":
+                    between_start_end = True
                     item = get_item()
                     if item is None:
                         break
                     output_name, output_value = item
-                    assert output_name == "@END"
-                    if updates_on_hold:
-                        for n in range(100): #100x5 ms
-                            ok = self.output_semaphore.acquire(blocking=False)
-                            if ok:
-                                self.output_semaphore.release()
-                                break
-                            time.sleep(0.005)
-                        else:
-                            self._pending_updates -= updates_on_hold
-                            updates_on_hold = 0
-                    item = get_item()
-                    if item is None:
-                        break
-                    output_name, output_value = item
+                    assert output_name in ("@PRELIMINARY", "@END"), output_name
+                    if output_name == "@END":
+                        between_start_end = False
+                        receive_end()
+                        item = get_item()
+                        if item is None:
+                            break
+                        output_name, output_value = item
 
                 if output_name is None and output_value is not None:
                     updates_processed = output_value[0]
@@ -279,15 +287,34 @@ class Transformer(Worker):
                         updates_on_hold += updates_processed
                     continue
 
+                preliminary = False
+                if output_name == "@PRELIMINARY":
+                    preliminary = True
+                    output_name, output_value = item[1]
+                elif between_start_end:
+                    assert output_name == "@END", output_name
+                    between_start_end = False
+                    receive_end()
+                    continue
+                    item = get_item()
+                    if item is None:
+                        break
+                    output_name, output_value = item
+
                 assert output_name == self._output_name, item
                 if self._connected_output:
                     pin = self._pins[self._output_name]
-                    #pin.send_update(output_value) #we're not in the main thread!
-                    f = partial(pin.send_update, output_value)
+                    #use .partial, we're not in the main thread!
+                    f = partial(pin.send_update, output_value,
+                        preliminary=preliminary)
                     import seamless
                     seamless.add_work(f)
                 else:
                     self._last_value = output_value
+                    self._last_value_preliminary = preliminary
+
+                if preliminary:
+                    continue
 
                 item = get_item()
                 if item is None:
@@ -307,7 +334,10 @@ class Transformer(Worker):
         last_value = self._last_value
         if last_value is not None:
             self._last_value = None
-            self._pins[self._output_name].send_update(last_value)
+            preliminary = self._last_value_preliminary
+            self._last_value_preliminary = False
+            self._pins[self._output_name].send_update(last_value,
+                preliminary=preliminary)
         self._connected_output = True
 
     def _on_disconnect_output(self):

@@ -8,6 +8,7 @@ def itransformer(ctx, params):
     params2["code"] = {"pin": "input",
                         "dtype": ("text", "code", "ipython")}
     params2["transformer_params"] = {"pin": "input", "dtype": "json"}
+    params2["@shell"] =  ".namespace"
     rc = ctx.rc = reactor(params2)
     rc.transformer_params.cell().set(params)
     rc.code_start.cell().fromfile("cell-itransformer.py")

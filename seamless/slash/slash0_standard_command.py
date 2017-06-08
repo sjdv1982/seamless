@@ -12,7 +12,7 @@ def make_cmd_params(command, nodes, env, sourcehash):
         "output_refs": output_refs,
         "inputs": inputs,
         "outputs": outputs,
-        "files": files
+        "files": files,
     }
     for noderef in command["noderefs"]:
         if noderef["type"] == "file":
@@ -33,10 +33,14 @@ def make_cmd_params(command, nodes, env, sourcehash):
         elif noderef["type"] == "varexp":
             subrefs = []
             for subnoderef in noderef["noderefs"]:
-                node = nodes["variable"][subnoderef["index"]]
-                name = node["name"]
-                subrefs.append(name)
-                inputs[name] = "variable"
+                if subnoderef["type"] == "variable":
+                    node = nodes["variable"][subnoderef["index"]]
+                    name = node["name"]
+                    subrefs.append(name)
+                    inputs[name] = "variable"
+                elif subnoderef["type"] == "env":
+                    envname = nodes["env"][subnoderef["index"]]["name"]
+                    subrefs.append("$" + envname)
             ref = {"type": "varexp", "value": noderef["value"], "refs": subrefs}
             refs.append(ref)
         else:
@@ -65,5 +69,8 @@ def make_cmd_params(command, nodes, env, sourcehash):
             outputs.append(name)
             output_refs.append({"type": type_, "name": name})
 
+    pragma = command.get("pragma", None)
+    if pragma is not None:
+        params["pragma"] = pragma
     params["command"] = command["parsed"]
     return params

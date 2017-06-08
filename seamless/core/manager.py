@@ -237,7 +237,8 @@ class Manager:
                         self.registrar_listeners.pop(registrar)
 
 
-    def _update(self, cell, dtype, value, *, worker=None, only_last=False):
+    def _update(self, cell, dtype, value, *,
+            worker=None, only_last=False):
         import threading
         assert threading.current_thread() is threading.main_thread()
         from .cell import Signal
@@ -259,7 +260,8 @@ class Manager:
             if target_cell is not None:
                 if isinstance(target_cell, Signal):
                     #print("cell-cell alias", cell, "=>", target_cell)
-                    self._update(target_cell, None, None, worker=worker, only_last=only_last)
+                    self._update(target_cell, None, None,
+                        worker=worker, only_last=only_last)
                 else:
                     target_cell._update(value, propagate=True)
 
@@ -302,7 +304,7 @@ class Manager:
         if not get_macro_mode():
             run_work()
 
-    def update_from_worker(self, cell_id, value, worker):
+    def update_from_worker(self, cell_id, value, worker, *, preliminary):
         import seamless
         from .cell import Signal
         cell = self.cells.get(cell_id, None)
@@ -314,7 +316,8 @@ class Manager:
             assert value is None
             self._update(cell, None, None, worker=worker)
         else:
-            changed = cell._update(value,propagate=False)
+            changed = cell._update(value,propagate=False,
+                preliminary=preliminary)
             if changed:
                 if cell.dtype == "array":
                     value = TransportedArray(value, cell._store)

@@ -45,10 +45,6 @@ if __name__ == "__main__":
 
     # ctx.c_output3 = cell("int")
     # ctx.cont2.output.connect(ctx.c_output3)
-
-    del ctx.cont
-    # this will sync the controller I/O threads before killing them
-    del ctx.cont2
-    # this will sync the controller I/O threads before killing them
+    ctx.equilibrate()
     print(ctx.c_data.data, "'" + ctx.c_code.data + "'", ctx.c_output.data)
     print(ctx.c_output2.data)
