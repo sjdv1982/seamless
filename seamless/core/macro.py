@@ -253,11 +253,11 @@ class Macro:
         resolved_args = [self.resolve(a) for a in args]
         resolved_kwargs = {k: self.resolve(v) for k, v in kwargs.items()}
 
-        order = self._type_args["_order"]
-        assert len(resolved_args) <= len(order), (order, args, kwargs)
-
         if self._type_args is None:
             return resolved_args, resolved_kwargs, None
+
+        order = self._type_args["_order"]
+        assert len(resolved_args) <= len(order), (order, args, kwargs)
 
         # TODO: take and adapt corresponding routine from Hive
         new_args, new_kwargs = [], {}

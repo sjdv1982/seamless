@@ -420,7 +420,14 @@ class Manager:
                 self.add_cell_alias(source, target)
                 target._on_connect(source, None, incoming = True)
                 if source._status == Cell.StatusFlags.OK:
-                    target._update(source._data,propagate=True)
+                    value = source._data
+                    if source.dtype is not None and \
+                      (source.dtype == "cson" or source.dtype[0] == "cson") and \
+                      target.dtype is not None and \
+                      (target.dtype == "json" or target.dtype[0] == "json"):
+                        if isinstance(value, (str, bytes)):
+                            value = cson2json(value)
+                    target._update(value,propagate=True)                    
 
                 return
             worker = target.worker_ref()
