@@ -10,5 +10,5 @@
 ./reduce.sh !pdbB > pdbrB
 python $ATTRACTTOOLS/randsearch.py 2 500 --fix-receptor > starting_structures
 $ATTRACTDIR/attract !starting_structures $ATTRACTDIR/../attract.par !pdbrA !pdbrB --vmax 20 > docking_structures @monitor 0.5
-grep "Energy" !docking_structures | awk '{print $3}' | sort -n > energies
+grep "Energy" !docking_structures | awk '$3 < 1000 {print $3}' | sort -n > energies
 @export energies
