@@ -163,7 +163,7 @@ class InputPin(InputPinBase):
 
     def set(self, *args, **kwargs):
         return self.cell().set(*args, **kwargs)
-        
+
     def receive_update(self, value, resource_name):
         worker = self.worker_ref()
         if worker is None:
@@ -383,7 +383,8 @@ class ExportedPinBase:
         return self._pin._get_manager()
 
     def destroy(self):
-        self._pin.destroy()
+        #self._pin.destroy() #DON'T destroy the underlying pin!
+        pass
 
 class ExportedOutputPin(ExportedPinBase, OutputPinBase):
     def __init__(self, pin):

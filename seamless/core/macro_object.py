@@ -1,4 +1,4 @@
-import weakref
+import weakref, gc
 from .connection_finder import find_external_connections, \
   find_external_connections_cell, find_external_connections_worker, \
   find_internal_connections
@@ -42,7 +42,6 @@ class MacroObject:
             cell = self.cell_args[k]
             new_cell = cell._find_successor()
             if new_cell is not cell:
-                print("SUCESSOR!")
                 cell.add_macro_object(self, k)
             self.cell_args[k] = new_cell
 
@@ -129,13 +128,22 @@ class MacroObject:
                 new_internal_connections = []
                 find_internal_connections(new_internal_connections, new_parent, None, None)
 
+                pin_paths = {}
+                mypath = new_parent.path
+                for pin_name in new_parent.PINS:
+                    pin = new_parent.PINS[pin_name]
+                    pin_path = pin._pin.path
+                    assert pin_path[:len(mypath)] == mypath
+                    pin_path = pin_path[len(mypath):]
+                    pin_paths[pin_name] = pin_path
+
                 #build a set of to-be-transplanted children
                 for childname, child in sorted(new_parent._children.items()):
                     assert not child._destroyed, childname
                     old_sig = signature.get(childname, None)
                     new_sig = new_signature[childname]
                     if old_sig == new_sig:
-                        transplanted[childname] = getattr(parent, childname)
+                        transplanted[childname] = parent._children[childname]
 
                 manager = parent._manager
 
@@ -176,8 +184,17 @@ class MacroObject:
                     else: #n_intern == 2 and equiv
                         pass
 
+                for pin_name in new_parent.PINS:
+                    pin = new_parent.PINS[pin_name]
+                    pin_path = pin_paths[pin_name]
+                    child = new_parent
+                    for a in pin_path:
+                        child = getattr(child, a)
+                    pin._pin = child
+
+            print("DONE DESTROY")
             for mode, source, dest, ext_path in external_connections:
-                #print("CONNECTION: mode '{0}', source {1}, dest {2}".format(mode, source, dest))
+                print("CONNECTION: mode '{0}', source {1}, dest {2}".format(mode, source, dest))
                 err = "Connection {0}::(mode {1}, source {2}, dest {3}) points to a destroyed external cell"
                 if mode in ("input", "rev_alias"):
                     if source._destroyed:
@@ -187,6 +204,8 @@ class MacroObject:
                     dest_target = resolve_path(new_parent, dest, 0)
                     if dest_target is not None:
                         source.connect(dest_target)
+                    else:
+                        print("ERROR:", err.format(new_parent.path, mode, ext_path, dest) + " (source, dead weakref)")
                 elif mode in ("output", "alias"):
                     if dest._destroyed:
                         print("ERROR:", err.format(new_parent.path, mode, source, ext_path) + " (dest)")
@@ -196,11 +215,21 @@ class MacroObject:
                     source_target = resolve_path(new_parent, source, 0)
                     if source_target is not None:
                         source_target.connect(dest)
+                    else:
+                        print("ERROR:", err.format(new_parent.path, mode, ext_path, dest) + " (source, dead weakref)")
                 else:
                     #print("CONNECTION: mode '{0}', source {1}, dest {2}".format(mode, source, dest))
                     raise TypeError(mode)
         if isinstance(new_parent, RegistrarObject):
             assert new_parent.data == curr_value
+
+        #Debug: to track down any errors in the reconstruction/transplanting
+        """
+        gc._SEAMLESS_COLLECTING = True
+        gc.collect()
+        del gc._SEAMLESS_COLLECTING
+        """
+        
         return True
 
     def set_registrar_listeners(self, registrar_listeners):
