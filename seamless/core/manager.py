@@ -263,7 +263,15 @@ class Manager:
                     self._update(target_cell, None, None,
                         worker=worker, only_last=only_last)
                 else:
-                    target_cell._update(value, propagate=True)
+                    value2 = value
+                    if dtype is not None and \
+                      (dtype == "cson" or dtype[0] == "cson") and \
+                      target_cell.dtype is not None and \
+                      (target_cell.dtype == "json" or target_cell.dtype[0] == "json"):
+                        if isinstance(value, (str, bytes)):
+                            value2 = cson2json(value)
+
+                    target_cell._update(value2, propagate=True)
 
         listeners = self.listeners.get(cell_id, [])
         if only_last:
@@ -280,16 +288,17 @@ class Manager:
 
             if worker is not None and input_pin.worker_ref() is worker:
                 continue
+            value2 = value
             if dtype is not None and \
               (dtype == "cson" or dtype[0] == "cson") and \
               input_pin.dtype is not None and \
               (input_pin.dtype == "json" or input_pin.dtype[0] == "json"):
                 if isinstance(value, (str, bytes)):
-                    value = cson2json(value)
+                    value2 = cson2json(value)
             resource_name = "pin: " + str(input_pin)
             if resource_name0 is not None:
                 resource_name = resource_name0 + " in " + resource_name
-            input_pin.receive_update(value, resource_name)
+            input_pin.receive_update(value2, resource_name)
 
     def update_from_code(self, cell, only_last=False):
         import seamless
@@ -427,7 +436,7 @@ class Manager:
                       (target.dtype == "json" or target.dtype[0] == "json"):
                         if isinstance(value, (str, bytes)):
                             value = cson2json(value)
-                    target._update(value,propagate=True)                    
+                    target._update(value,propagate=True)
 
                 return
             worker = target.worker_ref()

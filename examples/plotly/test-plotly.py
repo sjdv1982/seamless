@@ -4,7 +4,7 @@ from seamless.lib import link, browse
 from seamless.lib.plotly import plotly
 
 ctx = context()
-ctx.plotly = plotly()
+ctx.plotly = plotly(dynamic_html=True,mode="nxy")
 
 ctx.data = cell("text")
 ctx.link_data = link(ctx.data, ".", "data.csv")
@@ -17,6 +17,10 @@ ctx.data.connect(ctx.plotly.data)
 ctx.attrib.connect(ctx.plotly.attrib)
 ctx.layout.connect(ctx.plotly.layout)
 
-ctx.html = cell(("text", "html")).set("Hello world")
-#ctx.plotly.html.connect(ctx.html)
-ctx.browser_static = browse(ctx.html)
+ctx.html = cell(("text", "html"))
+ctx.plotly.html.connect(ctx.html)
+ctx.browser_static = browse(ctx.html, "Static HTML")
+
+ctx.dynamic_html = cell(("text", "html"))
+ctx.plotly.dynamic_html.connect(ctx.dynamic_html)
+ctx.browser_dynamic = browse(ctx.dynamic_html, "Dynamic HTML")

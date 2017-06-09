@@ -32,6 +32,23 @@ ctx.html = cell(("text", "html"))
 ctx.plotly.html.connect(ctx.html)
 ctx.browser_static = browse(ctx.html, "Plotly, static HTML")
 
+"""
 ctx.dynamic_html = cell(("text", "html"))
 ctx.plotly.dynamic_html.connect(ctx.dynamic_html)
 ctx.browser_dynamic = browse(ctx.dynamic_html, "Plotly, dynamic HTML")
+"""
+
+ctx.plotly_layout2 = cell("cson")
+ctx.link_plotly_layout2 = link(ctx.plotly_layout2, ".", "plotly_layout_rmsd.cson")
+
+ctx.plotly2 = plotly(dynamic_html=False,mode="nx")
+ctx.plotly_layout2.connect(ctx.plotly2.layout)
+ctx.plotly_attrib.connect(ctx.plotly2.attrib)
+ctx.rmsd = cell("text")
+ctx.slash.rmsd.connect(ctx.rmsd)
+ctx.rmsd.connect(ctx.plotly2.data)
+
+ctx.html2 = cell(("text", "html"))
+ctx.plotly2.html.connect(ctx.html2)
+ctx.browser_static2 = browse(ctx.html2, "iRMSD")
+display(ctx.rmsd, "iRMSD")

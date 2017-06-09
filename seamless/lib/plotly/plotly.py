@@ -1,7 +1,7 @@
 from seamless import macro
 
-@macro
-def plotly(ctx):
+@macro({"dynamic_html":"bool", "mode": "str"})
+def plotly(ctx, *, dynamic_html, mode):
     from seamless import context, cell, transformer
     from seamless.lib.templateer import templateer
     from seamless.core.worker import \
@@ -20,10 +20,12 @@ def plotly(ctx):
     # Templates
     ctx.templates.html_head_body = cell(("text", "html"))\
       .fromfile("template-html-head-body.jinja")
-    ctx.templates.body = cell("text")\
-      .fromfile("template-body.jinja")
     ctx.templates.head = cell("text")\
       .fromfile("template-head.jinja")
+    ctx.templates.body = cell("text")\
+      .fromfile("template-body.jinja")
+    ctx.templates.body_dynamic = cell("text")\
+      .fromfile("template-body-dynamic.jinja")
 
     # Values: here is where all authoritative state goes
     ctx.values.title = cell("str").set("Seamless Plotly")
@@ -36,7 +38,7 @@ def plotly(ctx):
     ctx.values.divname = cell("str").set("plotlydiv")
 
     # Input pins
-    ctx.title = ExportedInputPin(ctx.values.title) 
+    ctx.title = ExportedInputPin(ctx.values.title)
     ctx.data = ExportedInputPin(ctx.values.data) #csv
     ctx.attrib = ExportedInputPin(ctx.values.attrib)
     ctx.layout = ExportedInputPin(ctx.values.layout)
@@ -87,12 +89,103 @@ def plotly(ctx):
     ctx.temp_loaded_data.connect(ctx.integrate_data.data)
 
     # Pandas data loader
-    ctx.load_data_nxy = transformer({
+    ctx.load_data = transformer({
         "csv": {"pin": "input", "dtype": "text"},
         "data": {"pin": "output", "dtype": "json"},
     })
-    ctx.code.load_data_nxy = cell(("text", "code","python"))\
-      .fromfile("cell-load-data-nxy.py")
-    ctx.code.load_data_nxy.connect(ctx.load_data_nxy.code)
-    ctx.values.data.connect(ctx.load_data_nxy.csv)
-    ctx.load_data_nxy.data.connect(ctx.temp_loaded_data)
+    c = ctx.code.load_data = cell(("text", "code","python"))
+    if mode == "nxy":
+        c.fromfile("cell-load-data-nxy.py")
+    else: #nx
+        c.fromfile("cell-load-data-nx.py")
+    ctx.code.load_data.connect(ctx.load_data.code)
+    ctx.values.data.connect(ctx.load_data.csv)
+    ctx.load_data.data.connect(ctx.temp_loaded_data)
+
+    if not dynamic_html:
+        return
+
+    from seamless.lib.dynamic_html import dynamic_html
+
+    # Dynamic HTML output
+    ctx.values.dynamic_html = cell(("text", "html"))
+    ctx.dynamic_html = ExportedOutputPin(ctx.values.dynamic_html)
+
+    # Dynamic HTML: templateer_dynamic
+    ctx.params.templateer_dynamic = cell("json")
+    params =  {"environment": {"title": "text",
+                           "divname": "text",
+                           "width": "int",
+                           "height": "int",
+                           "dynamic_html": ("text","html")
+                          },
+            "templates": ["body", "head", "head_body"],
+            "result": "head_body"}
+    ctx.params.templateer_dynamic.set(params)
+    ctx.templateer_dynamic = templateer(ctx.params.templateer_dynamic)
+
+    ctx.values.height.connect(ctx.templateer_dynamic.height)
+    ctx.values.width.connect(ctx.templateer_dynamic.width)
+    ctx.values.divname.connect(ctx.templateer_dynamic.divname)
+    ctx.values.title.connect(ctx.templateer_dynamic.title)
+    ctx.templates.body_dynamic.connect(ctx.templateer_dynamic.body)
+    ctx.templates.head.connect(ctx.templateer_dynamic.head)
+    ctx.templates.html_head_body.connect(ctx.templateer_dynamic.head_body)
+    ctx.templateer_dynamic.RESULT.connect(ctx.values.dynamic_html)
+
+    # Dynamic HTML maker
+    ctx.params.dynamic_html_maker = cell("json")
+    dynamic_html_params = {
+        "divname": {"type": "var", "dtype": "str"},
+        "plotly_data": {"type": "var", "dtype": "json"},
+        "data": {"type": "var", "dtype": "json", "evals":["update_data"]},
+        "attrib": {"type": "var", "dtype": "json", "evals":["update_attrib"]},
+        "config": {"type": "var", "dtype": "json", "evals":["make_plot"]},
+        "layout": {"type": "var", "dtype": "json", "evals":["update_layout"]},
+        "update_data": {"type": "eval", "on_start": False},
+        "update_attrib": {"type": "eval", "on_start": False},
+        "update_layout": {"type": "eval", "on_start": False},
+        "make_plot": {"type": "eval", "on_start": True},
+    }
+    ctx.params.dynamic_html_maker.set(dynamic_html_params)
+    ctx.dynamic_html_maker = dynamic_html(ctx.params.dynamic_html_maker)
+    ctx.dynamic_html_maker.dynamic_html.cell().connect(
+        ctx.templateer_dynamic.dynamic_html
+    )
+
+    ctx.temp_plotly_data.connect(ctx.dynamic_html_maker.plotly_data)
+    ctx.temp_loaded_data.connect(ctx.dynamic_html_maker.data)
+    ctx.values.attrib.connect(ctx.dynamic_html_maker.attrib)
+    ctx.values.config.connect(ctx.dynamic_html_maker.config)
+    ctx.values.layout.connect(ctx.dynamic_html_maker.layout)
+
+    ctx.dynamic_html_maker.make_plot.cell().set("""
+Plotly.newPlot(divname, plotly_data, layout, config);
+    """)
+
+    ctx.dynamic_html_maker.update_data.cell().set("""
+var i, ii, subdata, update, attribname;
+for (i = 0; i < plotly_data.length; i++) {
+    subdata = data[i];
+    update = {};
+    for (var attribname in subdata) {
+        update[attribname] = [subdata[attribname]];
+    }
+    /*if (i==0) {
+        x = document.getElementById("echo");
+        x.innerHTML = "<pre>" + JSON.stringify(update) + "</pre>";
+    }*/
+    Plotly.restyle(divname, update, [i]);
+}
+    """)
+    ctx.dynamic_html_maker.update_attrib.cell().set("""
+var i;
+for (i = 0; i < plotly_data.length; i++) {
+    Plotly.restyle(divname, attrib[i], [i]);
+}
+    """)
+    ctx.dynamic_html_maker.update_layout.cell().set("""
+Plotly.relayout(divname, layout);
+    """)
+
+    ctx.values.divname.connect(ctx.dynamic_html_maker.divname)
