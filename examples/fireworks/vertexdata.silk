@@ -8,5 +8,4 @@ Type VertexData {
   Float a_lifetime
   Vec3 a_startPosition
   Vec3 a_endPosition
-  Vec3 a_color
 }

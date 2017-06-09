@@ -520,8 +520,9 @@ class ArrayCell(Cell):
         self._store.set_dirty()
         self._store_mode = mode
         self.touch()
-    def _set(self, text_or_object,propagate):
-        result = super()._set(text_or_object, propagate)
+    def _set(self, text_or_object,*,propagate,preliminary):
+        result = super()._set(text_or_object,
+          propagate=propagate,preliminary=preliminary)
         if result and self._store is not None:
             self._store.set_dirty()
         return result

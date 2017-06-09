@@ -8,9 +8,7 @@ uniform bool u_shrink_with_age;
 attribute float a_lifetime;
 attribute vec3 a_startPosition;
 attribute vec3 a_endPosition;
-attribute vec3 a_color;
 varying float v_lifetime;
-varying vec3 v_color;
 
 void main () {
   if (u_time <= a_lifetime)
@@ -29,5 +27,4 @@ void main () {
 
   if (u_shrink_with_age)
       gl_PointSize *= (v_lifetime * v_lifetime);
-  v_color = a_color;
 }

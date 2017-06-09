@@ -1,35 +1,35 @@
 {
-  "updated": {
-    "pin": "output",
-    "dtype": "signal"
-  },
-  "shrink_with_age": {
-    "pin": "input",
-    "dtype": "bool"
-  },
-  "pointsize": {
-    "pin": "input",
-    "dtype": "int"
-  },
-  "reset": {
-    "pin": "input",
-    "dtype": "signal"
-  },
-  "gravity": {
-    "pin": "input",
-    "dtype": "float"
-  },
   "uniforms": {
     "must_be_defined": false,
-    "pin": "edit",
-    "dtype": "json"
-  },
-  "N": {
-    "pin": "input",
-    "dtype": "int"
+    "dtype": "json",
+    "pin": "edit"
   },
   "update": {
-    "pin": "input",
-    "dtype": "signal"
+    "dtype": "signal",
+    "pin": "input"
+  },
+  "pointsize": {
+    "dtype": "int",
+    "pin": "input"
+  },
+  "N": {
+    "dtype": "int",
+    "pin": "input"
+  },
+  "gravity": {
+    "dtype": "float",
+    "pin": "input"
+  },
+  "updated": {
+    "dtype": "signal",
+    "pin": "output"
+  },
+  "reset": {
+    "dtype": "signal",
+    "pin": "input"
+  },
+  "shrink_with_age": {
+    "dtype": "bool",
+    "pin": "input"
   }
 }

@@ -165,15 +165,15 @@
         "python"
       ],
       "type_args": {
+        "_order": [
+          "display_type",
+          "title"
+        ],
         "display_type": "str",
         "title": {
           "default": "Basic display",
           "type": "str"
-        },
-        "_order": [
-          "display_type",
-          "title"
-        ]
+        }
       },
       "module_name": "seamless.lib.gui.basic_display",
       "func_name": "basic_display",
@@ -187,15 +187,15 @@
         "python"
       ],
       "type_args": {
+        "_order": [
+          "editor_type",
+          "title"
+        ],
         "editor_type": "str",
         "title": {
           "default": "Basic editor",
           "type": "str"
-        },
-        "_order": [
-          "editor_type",
-          "title"
-        ]
+        }
       },
       "module_name": "seamless.lib.gui.basic_editor",
       "func_name": "basic_editor",
@@ -209,22 +209,22 @@
         "python"
       ],
       "type_args": {
+        "_order": [
+          "program",
+          "with_window",
+          "window_title"
+        ],
         "program": {
           "type": "json"
-        },
-        "with_window": {
-          "default": true,
-          "type": "bool"
         },
         "window_title": {
           "default": "GLProgram",
           "type": "string"
         },
-        "_order": [
-          "program",
-          "with_window",
-          "window_title"
-        ]
+        "with_window": {
+          "default": true,
+          "type": "bool"
+        }
       },
       "module_name": "seamless.lib.gui.gl.glprogram",
       "func_name": "glprogram",
@@ -238,9 +238,17 @@
         "python"
       ],
       "type_args": {
-        "title": {
-          "default": "OpenGL window",
-          "type": "str"
+        "_order": [
+          "title",
+          "size",
+          "position"
+        ],
+        "position": {
+          "default": [
+            0,
+            0
+          ],
+          "type": "json"
         },
         "size": {
           "default": [
@@ -249,18 +257,10 @@
           ],
           "type": "json"
         },
-        "position": {
-          "default": [
-            0,
-            0
-          ],
-          "type": "json"
-        },
-        "_order": [
-          "title",
-          "size",
-          "position"
-        ]
+        "title": {
+          "default": "OpenGL window",
+          "type": "str"
+        }
       },
       "module_name": "seamless.lib.gui.gl.glwindow",
       "func_name": "glwindow",
@@ -280,7 +280,7 @@
       ],
       "module_name": "seamless.lib.itransformer",
       "func_name": "itransformer",
-      "code": "@macro(type=(\"json\", \"seamless\", \"transformer_params\"))\ndef itransformer(ctx, params):\n    from seamless import reactor\n    from seamless.core.worker import ExportedInputPin\n    params2 = params.copy()\n    params2[\"code\"] = {\"pin\": \"input\",\n                        \"dtype\": (\"text\", \"code\", \"ipython\")}\n    params2[\"transformer_params\"] = {\"pin\": \"input\", \"dtype\": \"json\"}\n    rc = ctx.rc = reactor(params2)\n    rc.transformer_params.cell().set(params)\n    rc.code_start.cell().fromfile(\"cell-itransformer.py\")\n    rc.code_update.cell().set(\"do_update()\")\n    rc.code_stop.cell().set(\"\")\n    ctx.export(ctx.rc)\n"
+      "code": "@macro(type=(\"json\", \"seamless\", \"transformer_params\"))\ndef itransformer(ctx, params):\n    from seamless import reactor\n    from seamless.core.worker import ExportedInputPin\n    params2 = params.copy()\n    params2[\"code\"] = {\"pin\": \"input\",\n                        \"dtype\": (\"text\", \"code\", \"ipython\")}\n    params2[\"transformer_params\"] = {\"pin\": \"input\", \"dtype\": \"json\"}\n    params2[\"@shell\"] =  \".namespace\"\n    rc = ctx.rc = reactor(params2)\n    rc.transformer_params.cell().set(params)\n    rc.code_start.cell().fromfile(\"cell-itransformer.py\")\n    rc.code_update.cell().set(\"do_update()\")\n    rc.code_stop.cell().set(\"\")\n    ctx.export(ctx.rc)\n"
     },
     {
       "with_context": true,
@@ -290,7 +290,10 @@
         "python"
       ],
       "type_args": {
-        "template_definition": "json",
+        "_order": [
+          "template_definition",
+          "output_type"
+        ],
         "output_type": {
           "default": [
             "text",
@@ -298,10 +301,7 @@
           ],
           "type": "dtype"
         },
-        "_order": [
-          "template_definition",
-          "output_type"
-        ]
+        "template_definition": "json"
       },
       "module_name": "seamless.lib.templateer",
       "func_name": "templateer",
@@ -315,13 +315,13 @@
         "python"
       ],
       "type_args": {
+        "_order": [
+          "period"
+        ],
         "period": {
           "default": 0,
           "type": "float"
-        },
-        "_order": [
-          "period"
-        ]
+        }
       },
       "module_name": "seamless.lib.timer",
       "func_name": "timer",
@@ -453,7 +453,7 @@
           "mode": 5,
           "save_policy": 1
         },
-        "data": "assert N > 0\nimport numpy as np\ndata = np.zeros(N, VertexData.dtype)\ndata['a_lifetime'] = np.random.normal(2.0, 0.5, (N,))\nstart = data['a_startPosition']\nend = data['a_endPosition']\nstart_values = np.random.normal(0.0, 0.2, (N, 3))\nend_values = np.random.normal(0.0, 1.2, (N, 3))\n\n# The following does not work in Numpy:\n# start[:] = start_values\n# end[:] = end_values\nfor n in range(3):\n    field = (\"x\",\"y\",\"z\")[n]\n    start[field] = start_values[:, n]\n    end[field] = end_values[:, n]\ndata = VertexDataArray.from_numpy(data, copy=False, validate=False)\nreturn data.numpy()\n"
+        "data": "assert N > 0\nimport numpy as np\ndata = np.zeros(N, VertexData.dtype)\ndata['a_lifetime'] = np.random.normal(2.0, 0.5, (N,))\nstart = data['a_startPosition']\nend = data['a_endPosition']\nstart_values = np.random.normal(0.0, 0.2, (N, 3))\nend_values = np.random.normal(0.0, 0.7, (N, 3))\n\n# The following does not work in Numpy:\n# start[:] = start_values\n# end[:] = end_values\nfor n in range(3):\n    field = (\"x\",\"y\",\"z\")[n]\n    start[field] = start_values[:, n]\n    end[field] = end_values[:, n]\ndata = VertexDataArray.from_numpy(data, copy=False, validate=False)\nreturn data.numpy()\n"
       },
       "cell15": {
         "dtype": "str",
@@ -844,7 +844,7 @@
           "mode": 5,
           "save_policy": 1
         },
-        "data": "#version 130\n\nprecision highp float;\nuniform sampler2D texture1;\nuniform vec4 u_color;\nvarying float v_lifetime;\nuniform highp sampler2D s_texture;\n\nvoid main()\n{\n    highp vec4 texColor;\n    texColor = texture2D(s_texture, gl_PointCoord);\n    gl_FragColor = vec4(u_color) * texColor;\n    gl_FragColor.a *= v_lifetime;\n}\n"
+        "data": "#version 130\n\nprecision highp float;\nuniform vec4 u_color;\nvarying float v_lifetime;\nuniform highp sampler2D s_texture;\n\nvoid main()\n{\n    highp vec4 texColor;\n    texColor = texture2D(s_texture, gl_PointCoord);\n    gl_FragColor = u_color * texColor;\n    gl_FragColor.a *= v_lifetime;\n\n}\n"
       },
       "gen_program": {
         "type": "transformer",
@@ -1043,7 +1043,7 @@
               "mode": null,
               "save_policy": 1
             },
-            "data": "{\n  \"arrays\": [\n    \"vertexdata\"\n  ],\n  \"textures\": [\n    \"s_texture\"\n  ],\n  \"uniforms\": {\n    \"u_color\": \"vec4\",\n    \"u_shrink_with_age\": \"bool\",\n    \"u_centerPosition\": \"vec3\",\n    \"u_pointsize\": \"float\",\n    \"u_time\": \"float\",\n    \"u_gravity\": \"float\"\n  },\n  \"render\": {\n    \"glstate\": {\n      \"depth_test\": false,\n      \"vertex_program_point_size\": true,\n      \"clear_color\": \"black\",\n      \"blend_func\": [\n        \"src_alpha\",\n        \"one\"\n      ],\n      \"blend\": true,\n      \"point_sprite\": true,\n      \"clear\": true\n    },\n    \"attributes\": {\n      \"a_endPosition\": {\n        \"array\": \"vertexdata\",\n        \"rae\": \"['a_endPosition']\",\n        \"dtype\": \"vec3\"\n      },\n      \"a_startPosition\": {\n        \"array\": \"vertexdata\",\n        \"rae\": \"['a_startPosition']\",\n        \"dtype\": \"vec3\"\n      },\n      \"a_lifetime\": {\n        \"array\": \"vertexdata\",\n        \"rae\": \"['a_lifetime']\",\n        \"dtype\": \"float\"\n      }\n    },\n    \"command\": \"points\"\n  }\n}"
+            "data": "{\n  \"arrays\": [\n    \"vertexdata\"\n  ],\n  \"uniforms\": {\n    \"u_shrink_with_age\": \"bool\",\n    \"u_gravity\": \"float\",\n    \"u_pointsize\": \"float\",\n    \"u_color\": \"vec4\",\n    \"u_time\": \"float\",\n    \"u_centerPosition\": \"vec3\"\n  },\n  \"textures\": [\n    \"s_texture\"\n  ],\n  \"render\": {\n    \"attributes\": {\n      \"a_endPosition\": {\n        \"array\": \"vertexdata\",\n        \"dtype\": \"vec3\",\n        \"rae\": \"['a_endPosition']\"\n      },\n      \"a_lifetime\": {\n        \"array\": \"vertexdata\",\n        \"dtype\": \"float\",\n        \"rae\": \"['a_lifetime']\"\n      },\n      \"a_startPosition\": {\n        \"array\": \"vertexdata\",\n        \"dtype\": \"vec3\",\n        \"rae\": \"['a_startPosition']\"\n      }\n    },\n    \"glstate\": {\n      \"vertex_program_point_size\": true,\n      \"clear_color\": \"black\",\n      \"blend_func\": [\n        \"src_alpha\",\n        \"one\"\n      ],\n      \"point_sprite\": true,\n      \"depth_test\": false,\n      \"blend\": true,\n      \"clear\": true\n    },\n    \"command\": \"points\"\n  }\n}"
           },
           "cell5": {
             "dtype": "str",
@@ -1200,7 +1200,7 @@
               "mode": null,
               "save_policy": 1
             },
-            "data": "{\n  \"repaint\": {\n    \"pin\": \"output\",\n    \"dtype\": \"signal\"\n  },\n  \"init\": {\n    \"pin\": \"input\",\n    \"dtype\": \"signal\"\n  },\n  \"fragment_shader\": {\n    \"pin\": \"input\",\n    \"dtype\": [\n      \"text\",\n      \"code\",\n      \"fragmentshader\"\n    ]\n  },\n  \"uniforms\": {\n    \"pin\": \"input\",\n    \"dtype\": \"json\"\n  },\n  \"array_vertexdata\": {\n    \"pin\": \"input\",\n    \"dtype\": \"array\"\n  },\n  \"array_s_texture\": {\n    \"pin\": \"input\",\n    \"dtype\": \"array\"\n  },\n  \"program\": {\n    \"pin\": \"input\",\n    \"dtype\": \"json\"\n  },\n  \"paint\": {\n    \"pin\": \"input\",\n    \"dtype\": \"signal\"\n  },\n  \"vertex_shader\": {\n    \"pin\": \"input\",\n    \"dtype\": [\n      \"text\",\n      \"code\",\n      \"vertexshader\"\n    ]\n  }\n}"
+            "data": "{\n  \"repaint\": {\n    \"dtype\": \"signal\",\n    \"pin\": \"output\"\n  },\n  \"uniforms\": {\n    \"dtype\": \"json\",\n    \"pin\": \"input\"\n  },\n  \"vertex_shader\": {\n    \"dtype\": [\n      \"text\",\n      \"code\",\n      \"vertexshader\"\n    ],\n    \"pin\": \"input\"\n  },\n  \"array_vertexdata\": {\n    \"dtype\": \"array\",\n    \"pin\": \"input\"\n  },\n  \"program\": {\n    \"dtype\": \"json\",\n    \"pin\": \"input\"\n  },\n  \"paint\": {\n    \"dtype\": \"signal\",\n    \"pin\": \"input\"\n  },\n  \"fragment_shader\": {\n    \"dtype\": [\n      \"text\",\n      \"code\",\n      \"fragmentshader\"\n    ],\n    \"pin\": \"input\"\n  },\n  \"array_s_texture\": {\n    \"dtype\": \"array\",\n    \"pin\": \"input\"\n  },\n  \"init\": {\n    \"dtype\": \"signal\",\n    \"pin\": \"input\"\n  }\n}"
           },
           "signal1": {
             "dtype": "signal",
@@ -2340,7 +2340,7 @@
           "mode": 5,
           "save_policy": 1
         },
-        "data": "{\n  \"output\": {\n    \"dtype\": \"array\",\n    \"pin\": \"output\"\n  },\n  \"radius\": {\n    \"dtype\": \"int\",\n    \"pin\": \"input\"\n  },\n  \"filename\": {\n    \"dtype\": \"str\",\n    \"pin\": \"input\"\n  },\n  \"as_float\": {\n    \"dtype\": \"bool\",\n    \"pin\": \"input\"\n  }\n}"
+        "data": "{\n  \"as_float\": {\n    \"pin\": \"input\",\n    \"dtype\": \"bool\"\n  },\n  \"filename\": {\n    \"pin\": \"input\",\n    \"dtype\": \"str\"\n  },\n  \"radius\": {\n    \"pin\": \"input\",\n    \"dtype\": \"int\"\n  },\n  \"output\": {\n    \"pin\": \"output\",\n    \"dtype\": \"array\"\n  }\n}"
       },
       "params_gen_uniforms": {
         "dtype": [
@@ -2354,7 +2354,7 @@
           "mode": 5,
           "save_policy": 1
         },
-        "data": "{\n  \"gravity\": {\n    \"dtype\": \"float\",\n    \"pin\": \"input\"\n  },\n  \"uniforms\": {\n    \"dtype\": \"json\",\n    \"must_be_defined\": false,\n    \"pin\": \"edit\"\n  },\n  \"update\": {\n    \"dtype\": \"signal\",\n    \"pin\": \"input\"\n  },\n  \"shrink_with_age\": {\n    \"dtype\": \"bool\",\n    \"pin\": \"input\"\n  },\n  \"N\": {\n    \"dtype\": \"int\",\n    \"pin\": \"input\"\n  },\n  \"pointsize\": {\n    \"dtype\": \"int\",\n    \"pin\": \"input\"\n  },\n  \"reset\": {\n    \"dtype\": \"signal\",\n    \"pin\": \"input\"\n  },\n  \"updated\": {\n    \"dtype\": \"signal\",\n    \"pin\": \"output\"\n  }\n}"
+        "data": "{\n  \"gravity\": {\n    \"pin\": \"input\",\n    \"dtype\": \"float\"\n  },\n  \"reset\": {\n    \"pin\": \"input\",\n    \"dtype\": \"signal\"\n  },\n  \"N\": {\n    \"pin\": \"input\",\n    \"dtype\": \"int\"\n  },\n  \"updated\": {\n    \"pin\": \"output\",\n    \"dtype\": \"signal\"\n  },\n  \"update\": {\n    \"pin\": \"input\",\n    \"dtype\": \"signal\"\n  },\n  \"shrink_with_age\": {\n    \"pin\": \"input\",\n    \"dtype\": \"bool\"\n  },\n  \"pointsize\": {\n    \"pin\": \"input\",\n    \"dtype\": \"int\"\n  },\n  \"uniforms\": {\n    \"pin\": \"edit\",\n    \"dtype\": \"json\",\n    \"must_be_defined\": false\n  }\n}"
       },
       "params_gen_vertexdata": {
         "dtype": [
@@ -2368,7 +2368,7 @@
           "mode": 5,
           "save_policy": 1
         },
-        "data": "{\n  \"output\": {\n    \"dtype\": \"array\",\n    \"pin\": \"output\"\n  },\n  \"N\": {\n    \"dtype\": \"int\",\n    \"pin\": \"input\"\n  },\n  \"reset\": {\n    \"dtype\": \"signal\",\n    \"pin\": \"input\"\n  }\n}"
+        "data": "{\n  \"N\": {\n    \"pin\": \"input\",\n    \"dtype\": \"int\"\n  },\n  \"output\": {\n    \"pin\": \"output\",\n    \"dtype\": \"array\"\n  },\n  \"reset\": {\n    \"pin\": \"input\",\n    \"dtype\": \"signal\"\n  }\n}"
       },
       "period": {
         "dtype": "float",
@@ -2398,7 +2398,7 @@
           "mode": null,
           "save_policy": 4
         },
-        "data": "{\n  \"arrays\": [\n    \"vertexdata\"\n  ],\n  \"textures\": [\n    \"s_texture\"\n  ],\n  \"uniforms\": {\n    \"u_color\": \"vec4\",\n    \"u_shrink_with_age\": \"bool\",\n    \"u_centerPosition\": \"vec3\",\n    \"u_pointsize\": \"float\",\n    \"u_time\": \"float\",\n    \"u_gravity\": \"float\"\n  },\n  \"render\": {\n    \"glstate\": {\n      \"depth_test\": false,\n      \"vertex_program_point_size\": true,\n      \"clear_color\": \"black\",\n      \"blend_func\": [\n        \"src_alpha\",\n        \"one\"\n      ],\n      \"blend\": true,\n      \"point_sprite\": true,\n      \"clear\": true\n    },\n    \"attributes\": {\n      \"a_endPosition\": {\n        \"array\": \"vertexdata\",\n        \"rae\": \"['a_endPosition']\",\n        \"dtype\": \"vec3\"\n      },\n      \"a_startPosition\": {\n        \"array\": \"vertexdata\",\n        \"rae\": \"['a_startPosition']\",\n        \"dtype\": \"vec3\"\n      },\n      \"a_lifetime\": {\n        \"array\": \"vertexdata\",\n        \"rae\": \"['a_lifetime']\",\n        \"dtype\": \"float\"\n      }\n    },\n    \"command\": \"points\"\n  }\n}"
+        "data": "{\n  \"arrays\": [\n    \"vertexdata\"\n  ],\n  \"uniforms\": {\n    \"u_shrink_with_age\": \"bool\",\n    \"u_gravity\": \"float\",\n    \"u_pointsize\": \"float\",\n    \"u_color\": \"vec4\",\n    \"u_time\": \"float\",\n    \"u_centerPosition\": \"vec3\"\n  },\n  \"textures\": [\n    \"s_texture\"\n  ],\n  \"render\": {\n    \"attributes\": {\n      \"a_endPosition\": {\n        \"array\": \"vertexdata\",\n        \"dtype\": \"vec3\",\n        \"rae\": \"['a_endPosition']\"\n      },\n      \"a_lifetime\": {\n        \"array\": \"vertexdata\",\n        \"dtype\": \"float\",\n        \"rae\": \"['a_lifetime']\"\n      },\n      \"a_startPosition\": {\n        \"array\": \"vertexdata\",\n        \"dtype\": \"vec3\",\n        \"rae\": \"['a_startPosition']\"\n      }\n    },\n    \"glstate\": {\n      \"vertex_program_point_size\": true,\n      \"point_sprite\": true,\n      \"clear_color\": \"black\",\n      \"blend_func\": [\n        \"src_alpha\",\n        \"one\"\n      ],\n      \"depth_test\": false,\n      \"blend\": true,\n      \"clear\": true\n    },\n    \"command\": \"points\"\n  }\n}"
       },
       "program_template": {
         "dtype": "cson",
@@ -2408,7 +2408,7 @@
           "mode": 5,
           "save_policy": 1
         },
-        "data": "{\n  \"arrays\": [\n    \"vertexdata\"\n  ],\n  \"uniforms\": {\n    \"u_centerPosition\": \"vec3\",\n    \"u_time\": \"float\",\n    \"u_color\": \"vec4\"\n    \"u_gravity\": \"float\",\n    \"u_pointsize\": \"float\",\n    \"u_shrink_with_age\": \"bool\",\n  },\n  \"textures\": [\n    \"s_texture\"\n  ],\n  \"render\": {\n    \"command\": \"points\",\n    \"glstate\": {\n      \"point_sprite\": true,\n      \"clear\": true,\n      \"depth_test\": false,\n      \"blend_func\": [\n        \"src_alpha\",\n        \"one\"\n      ],\n      \"vertex_program_point_size\": true,\n      \"clear_color\": \"black\",\n      \"blend\": true\n    }\n  },\n}\n"
+        "data": "{\n  \"arrays\": [\n    \"vertexdata\"\n  ],\n  \"uniforms\": {\n    \"u_centerPosition\": \"vec3\",\n    \"u_time\": \"float\",\n    \"u_color\": \"vec4\",\n    \"u_gravity\": \"float\",\n    \"u_pointsize\": \"float\",\n    \"u_shrink_with_age\": \"bool\",\n  },\n  \"textures\": [\n    \"s_texture\"\n  ],\n  \"render\": {\n    \"command\": \"points\",\n    \"glstate\": {\n      \"point_sprite\": true,\n      \"clear\": true,\n      \"depth_test\": false,\n      \"blend_func\": [\n        \"src_alpha\",\n        \"one\"\n      ],\n      \"vertex_program_point_size\": true,\n      \"clear_color\": \"black\",\n      \"blend\": true\n    }\n  },\n}\n"
       },
       "registrar_object1": {
         "registrar": "silk",
@@ -2515,7 +2515,8 @@
           "lib": null,
           "mode": null,
           "save_policy": 1
-        }
+        },
+        "data": "{\n  \"u_shrink_with_age\": true,\n  \"u_gravity\": 1.0,\n  \"u_pointsize\": 40,\n  \"u_color\": [\n    0.3966422494214815,\n    0.8482012226116498,\n    0.17820582258603868,\n    0.4786300923226383\n  ],\n  \"u_time\": 0.8022217750549316,\n  \"u_centerPosition\": [\n    -0.2318700430245656,\n    0.48940432684717283,\n    -0.42633128515928553\n  ]\n}"
       },
       "vert_shader": {
         "dtype": [
@@ -2529,7 +2530,7 @@
           "mode": 5,
           "save_policy": 1
         },
-        "data": "#version 130\n\nuniform float u_time;\nuniform vec3 u_centerPosition;\nuniform float u_pointsize;\nuniform float u_gravity;\nuniform bool u_shrink_with_age;\nattribute float a_lifetime;\nattribute vec3 a_startPosition;\nattribute vec3 a_endPosition;\nvarying float v_lifetime;\n\nvoid main () {\n  if (u_time <= a_lifetime)\n  {\n      gl_Position.xyz = a_startPosition + (u_time * a_endPosition);\n      gl_Position.xyz += u_centerPosition;\n      gl_Position.y -= u_gravity * u_time * u_time;\n      gl_Position.w = 1.0;\n  }\n  else\n      gl_Position = vec4(-1000, -1000, 0, 0);\n\n  v_lifetime = 1.0 - (u_time / a_lifetime);\n  v_lifetime = clamp(v_lifetime, 0.0, 1.0);\n  gl_PointSize = u_pointsize;\n\n  if (u_shrink_with_age)\n      gl_PointSize *= (v_lifetime * v_lifetime);\n\n}\n"
+        "data": "#version 130\n\nuniform float u_time;\nuniform vec3 u_centerPosition;\nuniform float u_pointsize;\nuniform float u_gravity;\nuniform bool u_shrink_with_age;\nattribute float a_lifetime;\nattribute vec3 a_startPosition;\nattribute vec3 a_endPosition;\nvarying float v_lifetime;\n\nvoid main () {\n  if (u_time <= a_lifetime)\n  {\n      gl_Position.xyz = a_startPosition + (u_time * a_endPosition);\n      gl_Position.xyz += u_centerPosition;\n      gl_Position.y -= u_gravity * u_time * u_time;\n      gl_Position.w = 1.0;\n  }\n  else\n      gl_Position = vec4(-1000, -1000, 0, 0);\n\n  v_lifetime = 1.0 - (u_time / a_lifetime);\n  v_lifetime = clamp(v_lifetime, 0.0, 1.0);\n  gl_PointSize = u_pointsize;\n\n  if (u_shrink_with_age)\n      gl_PointSize *= (v_lifetime * v_lifetime);\n}\n"
       },
       "vertexdata": {
         "dtype": "array",
@@ -2539,6 +2540,7 @@
           "mode": null,
           "save_policy": 1
         },
+        "hash": "28814aeaa1d78bc6b49d0f6e44aafea8",
         "store": {
           "mode": "GL",
           "params": {}
@@ -2546,6 +2548,58 @@
       }
     },
     "macro_objects": [
+      {
+        "args": [
+          null
+        ],
+        "kwargs": {},
+        "cell_args": {
+          "0": "params_gen_uniforms"
+        },
+        "macro_module_name": "seamless.core.reactor",
+        "macro_func_name": "reactor",
+        "macro_order": 0,
+        "target": "gen_uniforms"
+      },
+      {
+        "args": [
+          null
+        ],
+        "kwargs": {},
+        "cell_args": {
+          "0": "params_gen_texture"
+        },
+        "macro_module_name": "seamless.core.transformer",
+        "macro_func_name": "transformer",
+        "macro_order": 1,
+        "target": "gen_texture"
+      },
+      {
+        "args": [
+          null
+        ],
+        "kwargs": {},
+        "cell_args": {
+          "0": "period"
+        },
+        "macro_module_name": "seamless.lib.timer",
+        "macro_func_name": "timer",
+        "macro_order": 0,
+        "target": "timer"
+      },
+      {
+        "args": [
+          null
+        ],
+        "kwargs": {},
+        "cell_args": {
+          "0": "params_gen_vertexdata"
+        },
+        "macro_module_name": "seamless.core.transformer",
+        "macro_func_name": "transformer",
+        "macro_order": 0,
+        "target": "gen_vertexdata"
+      },
       {
         "args": [
           null
@@ -2571,71 +2625,14 @@
         },
         "macro_module_name": "seamless.core.reactor",
         "macro_func_name": "reactor",
-        "macro_order": 0,
+        "macro_order": 1,
         "target": "glprogram.rc"
-      },
-      {
-        "args": [
-          null
-        ],
-        "kwargs": {},
-        "cell_args": {
-          "0": "params_gen_texture"
-        },
-        "macro_module_name": "seamless.core.transformer",
-        "macro_func_name": "transformer",
-        "macro_order": 1,
-        "target": "gen_texture"
-      },
-      {
-        "args": [
-          null
-        ],
-        "kwargs": {},
-        "cell_args": {
-          "0": "params_gen_uniforms"
-        },
-        "macro_module_name": "seamless.core.reactor",
-        "macro_func_name": "reactor",
-        "macro_order": 1,
-        "target": "gen_uniforms"
-      },
-      {
-        "args": [
-          null
-        ],
-        "kwargs": {},
-        "cell_args": {
-          "0": "params_gen_vertexdata"
-        },
-        "macro_module_name": "seamless.core.transformer",
-        "macro_func_name": "transformer",
-        "macro_order": 0,
-        "target": "gen_vertexdata"
-      },
-      {
-        "args": [
-          null
-        ],
-        "kwargs": {},
-        "cell_args": {
-          "0": "period"
-        },
-        "macro_module_name": "seamless.lib.timer",
-        "macro_func_name": "timer",
-        "macro_order": 0,
-        "target": "timer"
       }
     ],
     "macro_listeners": [
       {
-        "cell": "program",
-        "macro_target": "glprogram",
-        "macro_arg": 0
-      },
-      {
-        "cell": "glprogram.rcparams",
-        "macro_target": "glprogram.rc",
+        "cell": "params_gen_uniforms",
+        "macro_target": "gen_uniforms",
         "macro_arg": 0
       },
       {
@@ -2644,8 +2641,8 @@
         "macro_arg": 0
       },
       {
-        "cell": "params_gen_uniforms",
-        "macro_target": "gen_uniforms",
+        "cell": "period",
+        "macro_target": "timer",
         "macro_arg": 0
       },
       {
@@ -2654,8 +2651,13 @@
         "macro_arg": 0
       },
       {
-        "cell": "period",
-        "macro_target": "timer",
+        "cell": "program",
+        "macro_target": "glprogram",
+        "macro_arg": 0
+      },
+      {
+        "cell": "glprogram.rcparams",
+        "macro_target": "glprogram.rc",
         "macro_arg": 0
       }
     ],
