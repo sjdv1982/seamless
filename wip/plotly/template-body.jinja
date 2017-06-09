@@ -1,0 +1,7 @@
+<div id="{{divname}}" style="width: {{width}}px; height: {{height}}px;"><!-- Plotly chart will be drawn inside this DIV --></div>
+<script id="javascript">
+  var data = {{plotly_data}};
+  var layout = {{layout}};
+  var config = {{config}};
+  Plotly.newPlot('{{divname}}', data, layout, config);
+</script>

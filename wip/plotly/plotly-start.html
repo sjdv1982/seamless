@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <script type="text/javascript" src="https://cdn.plot.ly/plotly-latest.js"></script>
+  <meta charset="utf-8">
+  <title>Plotly | Simple bar chart</title>
+</head>
+<body>
+  <div id="myDiv" style="width: 480px; height: 400px;"><!-- Plotly chart will be drawn inside this DIV --></div>
+  <script id="javascript">
+  var trace1 = {
+    x: ['giraffes', 'orangutans', 'monkeys'],
+    y: [20, 14, 23],
+    name: 'SF Zoo',
+    marker:{
+    color: [
+        "rgba(204,204,204,1)",
+        "rgba(222,45,38,0.8)",
+        "rgba(204,204,204,1)"
+      ]
+     },
+    type: 'bar',
+  };
+
+  var trace2 = {
+    x: ['giraffes', 'orangutans', 'monkeys'],
+    y: [12, 18, 29],
+    name: 'LA Zoo',
+    type: 'bar',
+  };
+
+  var data = [trace1, trace2];
+
+  var layout = {barmode: 'stack'};
+
+  Plotly.newPlot('myDiv', data, layout);
+  </script>
+</body>
+</html>

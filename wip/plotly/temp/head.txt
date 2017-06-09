@@ -1,0 +1,3 @@
+<script type="text/javascript" src="plotly-latest.js"></script>
+<meta charset="utf-8">
+<title>Plotly | Simple bar chart</title>

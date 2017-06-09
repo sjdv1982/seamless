@@ -1,0 +1,1 @@
+../plotly-latest.js

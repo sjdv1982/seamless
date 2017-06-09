@@ -1,0 +1,1057 @@
+{
+  "lib": {
+    "/cell-filelink-start.py": {
+      "data": "if __name__ == \"__main__\":\n    #test with ipython -i\n    import sys, os\n\n    class dummy:\n        pass\n\n    class EditPin:\n        def __init__(self, value):\n            self.value = value\n            self.defined = True\n        def set(self, value):\n            print(\"SET\", value)\n            self.value = value\n        def get(self):\n            return self.value\n\n    class Getter:\n        def __init__(self, arg):\n            self.arg = arg\n        def get(self):\n            return self.arg\n    PINS = dummy()\n    PINS.value = EditPin(\"test\")\n    directory = sys.argv[1]\n    filename = sys.argv[2]\n    PINS.filepath = Getter(os.path.join(directory, filename))\n    PINS.latency = Getter(float(sys.argv[3]))\n    def serializer(v):\n        return str(v.get())\n    print(\"Edit in \" + filepath.get())\nelse:\n    from seamless.dtypes import serialize\n    def serializer(v):\n        return serialize(v._dtype, v.get())\n\n\nimport os, time, functools, traceback\nfrom threading import Thread, RLock\nlast_value = None\nlast_serialized_value = None\nlast_exc = None\nlast_mtime = None\n\ndef write_file(fpath):\n    global last_mtime, last_value, last_serialized_value\n    if not PINS.value.defined:\n        last_mtime = -1 #will trigger a file read\n        return\n    if last_value == PINS.value.get():\n        return\n    val = serializer(PINS.value)\n    if last_serialized_value == val:\n        return\n    with lock:\n        if last_serialized_value != val:\n            #print(\"WRITE\", val)\n            with open(fpath, \"w\", encoding=\"utf-8\") as f:\n                f.write(val)\n                last_value = PINS.value.get()\n                last_serialized_value = val\n            last_time = time.time()\n            try:\n                stat = os.stat(fpath)\n                last_mtime = stat.st_mtime\n            except:\n                pass\n\ndef poll():\n    global last_time, last_mtime, last_value, last_serialized_value, last_exc\n    fpath = PINS.filepath.get()\n    while 1:\n        time.sleep(PINS.latency.get())\n        curr_time = time.time()\n        last_time = curr_time\n        if not os.path.exists(fpath):\n            try:\n                write_file(fpath)\n            except:\n                exc = traceback.format_exc()\n                if exc != last_exc:\n                    print(exc)\n                    last_exc = exc\n        else:\n            with lock:\n                stat = os.stat(fpath)\n                try:\n                    if last_mtime is None or stat.st_mtime > last_mtime:\n                        data = None\n                        with open(fpath, encoding=\"utf-8\") as f:\n                            data = f.read()\n                        if data is not None:\n                            if last_serialized_value != data:\n                                #print(\"LOAD\")\n                                PINS.value.set(data)\n                                last_value = None\n                                last_serialized_value = data\n                        last_mtime = stat.st_mtime\n                except:\n                    exc = traceback.format_exc()\n                    if exc != last_exc:\n                        print(exc)\n                        last_exc = exc\n\nt = Thread(target=poll)\nt.setDaemon(True)\nlock = RLock()\nwrite_file(PINS.filepath.get())\nt.start()\n",
+      "links": [
+        "links.html.cell1",
+        "links.template_html_head_body.cell1",
+        "links.params_templateer_static.cell1",
+        "links.temp_body.cell1",
+        "links.template_head.cell1",
+        "links.title.cell1"
+      ]
+    },
+    "/cell-templateer.py": {
+      "data": "import jinja2, jinja2.meta\n\nenv = {}\ndepsgraph = {}\ntemplates = []\njenv = jinja2.Environment()\n\nclass Node:\n    _ignore_deps = [\"range\"]\n    def __init__(self, name):\n        self.name = name\n        self.template = None\n        self.template_code = None\n        self.up_to_date = False\n        self.template_deps = []\n        self.env_deps = []\n        self.dependees = []\n\n    def render(self, visited=None):\n        if self.up_to_date:\n            return env[self.name]\n\n        if self.template is None:\n            raise RuntimeError(\"Cannot render template '{0}'\" % self.name)\n        if visited is None:\n            visited = []\n        if self.name in visited:\n            cycle = visited[visited.index(self.name):] + [self.name]\n            raise RuntimeError(\"Cyclic template dependency: {0}\".format(cycle))\n        visited.append(self.name)\n\n        for dep in sorted(self.template_deps):\n            #print(\"DEP\", self.name, dep)\n            depsgraph[dep].render(visited)\n        result = self.template.render(env)\n        self.up_to_date = True\n        #print(\"RENDER\", self.name)\n        env[self.name] = result\n        return result\n\n    def set_dirty(self):\n        self.up_to_date = False\n        for dependee in self.dependees:\n            depsgraph[dependee].set_dirty()\n\n    def set_template(self, template_code):\n        if template_code == self.template_code:\n            return\n        self.template_code = template_code\n        self.template = None\n        self.set_dirty()\n        ast = jenv.parse(template_code)\n        deps = jinja2.meta.find_undeclared_variables(ast)\n        new_env_deps = []\n        new_template_deps = []\n        for d in sorted(deps):\n            if d in env:\n                new_env_deps.append(d)\n            elif d in templates:\n                new_template_deps.append(d)\n            elif d in self._ignore_deps:\n                continue\n            else:\n                raise RuntimeError(\"Unknown dependency: '{0}'\".format(d))\n        self.template = jinja2.Template(ast)\n        for dep in self.template_deps + self.env_deps:\n            depsgraph[dep].dependees.remove(self.name)\n        self.env_deps = new_env_deps\n        self.template_deps = new_template_deps\n        for dep in self.template_deps  + self.env_deps:\n            depsgraph[dep].dependees.append(self.name)\n\ndef make_template():\n    global result_template\n    import jinja2\n    tempdef = PINS.TEMPLATE_DEFINITION.get()\n    if PINS.TEMPLATE_DEFINITION.updated:\n        env.clear()\n        depsgraph.clear()\n        templates[:] = tempdef[\"templates\"]\n        result_template = tempdef.get(\"result\", None)\n        if len(templates) > 1:\n            assert result_template is not None\n        else:\n            result_template = templates[0]\n        assert result_template in templates, (result_template, templates)\n\n    tempdef = PINS.TEMPLATE_DEFINITION.get()\n    environment = tempdef[\"environment\"]\n\n    env_updates = list()\n    for k, v in environment.items():\n        inp = getattr(PINS, k)\n        if inp.updated or k not in env:\n            val = inp.get()\n            env[k] = val\n            env_updates.append(k)\n\n    for k in env_updates:\n        if k not in depsgraph:\n            node = Node(k)\n            node.up_to_date = True\n            depsgraph[k] = node\n        for nodename in depsgraph[k].dependees:\n            depsgraph[nodename].set_dirty()\n\n    templ_updates = []\n    for t in templates:\n        template = getattr(PINS, t)\n        if template.updated or t not in depsgraph:\n            if t not in depsgraph:\n                node = Node(t)\n                depsgraph[t] = node\n            templ_updates.append(t)\n    for t in templ_updates:\n        template = getattr(PINS, t)\n        node = depsgraph[t]\n        node.set_template(template.get())\n\n    firstnode = depsgraph[result_template]\n    result = firstnode.render()\n\n    PINS.RESULT.set(result)\n",
+      "links": [
+        "templateer_static.cell3"
+      ]
+    },
+    "/gui/cell-browser.py": {
+      "data": "import os\nfrom seamless.qt.QtWebEngineWidgets import QWebEngineView\nfrom seamless.qt.Qt import QUrl\nfrom seamless.qt import QtWidgets, QtGui\n\nwidget = QWebEngineView()\nfake_url = QUrl.fromLocalFile(os.path.abspath(\"seamless.html\"))\nwidget.setWindowTitle(PINS.title.get())\nreloadAction = QtWidgets.QAction(QtGui.QIcon('exit.png'), '&Reload', widget)\nreloadAction.setShortcut('F5')\nreloadAction.setStatusTip('Reload')\nreloadAction.triggered.connect(widget.reload)\nwidget.addAction(reloadAction)\nwidget.setHtml(PINS.value.get())\nwidget.show()\n",
+      "links": [
+        "browser.cell2"
+      ]
+    },
+    "/gui/cell-browser_UPDATE.py": {
+      "data": "if PINS.value.defined:\n    widget.setHtml(PINS.value.get(), fake_url)\nif PINS.title.updated:\n    widget.setWindowTitle(PINS.title.get())\n",
+      "links": [
+        "browser.cell4"
+      ]
+    }
+  },
+  "macro": [
+    {
+      "with_context": false,
+      "dtype": [
+        "text",
+        "code",
+        "python"
+      ],
+      "type_args": [
+        "json",
+        "seamless",
+        "editor_params"
+      ],
+      "module_name": "seamless.core.editor",
+      "func_name": "editor",
+      "code": "@macro(type=(\"json\", \"seamless\", \"editor_params\"),with_context=False)\ndef editor(kwargs):\n    from seamless.core.editor import Editor #code must be standalone\n    #TODO: remapping, e.g. output_finish, destroy, ...\n    return Editor(kwargs)\n"
+    },
+    {
+      "with_context": false,
+      "dtype": [
+        "text",
+        "code",
+        "python"
+      ],
+      "type_args": [
+        "json",
+        "seamless",
+        "transformer_params"
+      ],
+      "module_name": "seamless.core.transformer",
+      "func_name": "transformer",
+      "code": "@macro(type=(\"json\", \"seamless\", \"transformer_params\"), with_context=False)\ndef transformer(kwargs):\n    from seamless.core.transformer import Transformer #code must be standalone\n    #TODO: remapping, e.g. output_finish, destroy, ...\n    return Transformer(kwargs)\n"
+    },
+    {
+      "with_context": true,
+      "dtype": [
+        "text",
+        "code",
+        "python"
+      ],
+      "type_args": "str",
+      "module_name": "seamless.lib.filelink",
+      "func_name": "filelink",
+      "code": "@macro(\"str\")\ndef filelink(ctx, cell_type):\n    cell_filelink_start = \"cell-filelink-start.py\" #repeat for inline\n    from seamless import editor\n    pinparams = {\n       \"value\": {\n         \"pin\": \"edit\",\n         \"dtype\": cell_type,\n         \"must_be_defined\": False\n       },\n       \"filepath\" : {\n         \"pin\": \"input\",\n         \"dtype\": \"str\"\n       },\n       \"latency\" : {\n         \"pin\": \"input\",\n         \"dtype\": \"float\"\n       },\n    }\n    ed = ctx.ed = editor(pinparams)\n    ed.code_start.cell().fromfile(cell_filelink_start)\n    ed.code_update.cell().set(\"write_file(PINS.filepath.get())\")\n    ed.code_stop.cell().set('t.join(0)')\n    ctx.export(ed)\n"
+    },
+    {
+      "with_context": true,
+      "dtype": [
+        "text",
+        "code",
+        "python"
+      ],
+      "type_args": {
+        "dtype": {
+          "default": [
+            "text",
+            "html"
+          ],
+          "type": "dtype"
+        },
+        "title": {
+          "default": "Browser",
+          "type": "str"
+        }
+      },
+      "module_name": "seamless.lib.gui.browser",
+      "func_name": "browser",
+      "code": "@macro(OrderedDict((\n    (\"dtype\",{\"type\": \"dtype\", \"default\": (\"text\", \"html\")}),\n    (\"title\",{\"type\": \"str\", \"default\": \"Browser\"})\n)))\ndef browser(ctx, dtype, title):\n    from seamless import editor\n    assert dtype[:2] == (\"text\", \"html\") #for now...\n    pinparams = {\n      \"value\": {\n        \"pin\": \"edit\",\n        \"dtype\": dtype\n      },\n      \"title\": {\n        \"pin\": \"input\",\n        \"dtype\": \"str\",\n      },\n    }\n    ed = ctx.ed = editor(pinparams)\n    ed.title.cell().set(title)\n    ed.code_start.cell().fromfile(\"cell-browser.py\")\n    ed.code_stop.cell().set('widget.destroy()')\n    c_up = ed.code_update.cell(True)\n    c_up.fromfile(\"cell-browser_UPDATE.py\")\n    ctx.export(ed, forced=[\"title\"])\n"
+    },
+    {
+      "with_context": true,
+      "dtype": [
+        "text",
+        "code",
+        "python"
+      ],
+      "type_args": {
+        "template_definition": "json",
+        "output_type": {
+          "default": [
+            "text",
+            "html"
+          ],
+          "type": "dtype"
+        }
+      },
+      "module_name": "seamless.lib.templateer",
+      "func_name": "templateer",
+      "code": "@macro(OrderedDict((\n  (\"template_definition\", \"json\"),\n  (\"output_type\", {\"type\": \"dtype\", \"default\": (\"text\", \"html\")}),\n)))\ndef templateer(ctx, template_definition, output_type):\n    from seamless import cell, editor\n    templates = template_definition[\"templates\"]\n    assert isinstance(templates, list)\n    environment = template_definition[\"environment\"]\n    ed_params = {}\n    for t in templates:\n        assert t not in ed_params, t\n        ed_params[t] = {\"pin\": \"input\", \"dtype\": \"text\"}\n    for k,v in environment.items():\n        assert k not in ed_params, k\n        ed_params[k] = {\"pin\": \"input\", \"dtype\": v}\n    ed_params[\"TEMPLATE_DEFINITION\"] = {\"pin\": \"input\", \"dtype\": \"json\"}\n    ed_params[\"RESULT\"] = {\"pin\": \"output\", \"dtype\": output_type}\n    ctx.ed = editor(ed_params)\n    ctx.ed.TEMPLATE_DEFINITION.cell().set(template_definition)\n    ctx.ed.code_start.cell().fromfile(\"cell-templateer.py\")\n    ctx.ed.code_update.cell().set(\"make_template()\")\n    ctx.ed.code_stop.cell().set(\"\")\n    ctx.export(ctx.ed)\n"
+    }
+  ],
+  "main": {
+    "type": "context",
+    "like_process": false,
+    "like_cell": false,
+    "pins": {},
+    "auto": [],
+    "children": {
+      "browser": {
+        "type": "context",
+        "like_process": true,
+        "like_cell": false,
+        "pins": {
+          "title": "browser.ed.title",
+          "value": "browser.ed.value"
+        },
+        "auto": [
+          "cell1",
+          "cell2",
+          "cell3",
+          "cell4"
+        ],
+        "children": {
+          "cell1": {
+            "dtype": "str",
+            "data": "Browser"
+          },
+          "cell2": {
+            "dtype": [
+              "text",
+              "code",
+              "python"
+            ],
+            "resource": {
+              "filename": "/gui/cell-browser.py",
+              "lib": true,
+              "mode": 2
+            },
+            "data": "import os\nfrom seamless.qt.QtWebEngineWidgets import QWebEngineView\nfrom seamless.qt.Qt import QUrl\nfrom seamless.qt import QtWidgets, QtGui\n\nwidget = QWebEngineView()\nfake_url = QUrl.fromLocalFile(os.path.abspath(\"seamless.html\"))\nwidget.setWindowTitle(PINS.title.get())\nreloadAction = QtWidgets.QAction(QtGui.QIcon('exit.png'), '&Reload', widget)\nreloadAction.setShortcut('F5')\nreloadAction.setStatusTip('Reload')\nreloadAction.triggered.connect(widget.reload)\nwidget.addAction(reloadAction)\nwidget.setHtml(PINS.value.get())\nwidget.show()\n"
+          },
+          "cell3": {
+            "dtype": [
+              "text",
+              "code",
+              "python"
+            ],
+            "data": "widget.destroy()"
+          },
+          "cell4": {
+            "dtype": [
+              "text",
+              "code",
+              "python"
+            ],
+            "resource": {
+              "filename": "/gui/cell-browser_UPDATE.py",
+              "lib": true,
+              "mode": 2
+            },
+            "data": "if PINS.value.defined:\n    widget.setHtml(PINS.value.get(), fake_url)\nif PINS.title.updated:\n    widget.setWindowTitle(PINS.title.get())\n",
+            "owner": "browser.ed.code_update"
+          },
+          "ed": {
+            "type": "editor",
+            "mode": "sync",
+            "params": {
+              "title": {
+                "dtype": "str",
+                "pin": "input"
+              },
+              "value": {
+                "dtype": [
+                  "text",
+                  "html"
+                ],
+                "pin": "edit"
+              }
+            }
+          }
+        }
+      },
+      "html": {
+        "dtype": [
+          "text",
+          "html"
+        ]
+      },
+      "links": {
+        "type": "context",
+        "like_process": false,
+        "like_cell": false,
+        "pins": {},
+        "auto": [],
+        "children": {
+          "html": {
+            "type": "context",
+            "like_process": true,
+            "like_cell": false,
+            "pins": {
+              "filepath": "links.html.ed.filepath",
+              "latency": "links.html.ed.latency",
+              "value": "links.html.ed.value"
+            },
+            "auto": [
+              "cell1",
+              "cell2",
+              "cell3"
+            ],
+            "children": {
+              "cell1": {
+                "dtype": [
+                  "text",
+                  "code",
+                  "python"
+                ],
+                "resource": {
+                  "filename": "/cell-filelink-start.py",
+                  "lib": true,
+                  "mode": 2
+                },
+                "data": "if __name__ == \"__main__\":\n    #test with ipython -i\n    import sys, os\n\n    class dummy:\n        pass\n\n    class EditPin:\n        def __init__(self, value):\n            self.value = value\n            self.defined = True\n        def set(self, value):\n            print(\"SET\", value)\n            self.value = value\n        def get(self):\n            return self.value\n\n    class Getter:\n        def __init__(self, arg):\n            self.arg = arg\n        def get(self):\n            return self.arg\n    PINS = dummy()\n    PINS.value = EditPin(\"test\")\n    directory = sys.argv[1]\n    filename = sys.argv[2]\n    PINS.filepath = Getter(os.path.join(directory, filename))\n    PINS.latency = Getter(float(sys.argv[3]))\n    def serializer(v):\n        return str(v.get())\n    print(\"Edit in \" + filepath.get())\nelse:\n    from seamless.dtypes import serialize\n    def serializer(v):\n        return serialize(v._dtype, v.get())\n\n\nimport os, time, functools, traceback\nfrom threading import Thread, RLock\nlast_value = None\nlast_serialized_value = None\nlast_exc = None\nlast_mtime = None\n\ndef write_file(fpath):\n    global last_mtime, last_value, last_serialized_value\n    if not PINS.value.defined:\n        last_mtime = -1 #will trigger a file read\n        return\n    if last_value == PINS.value.get():\n        return\n    val = serializer(PINS.value)\n    if last_serialized_value == val:\n        return\n    with lock:\n        if last_serialized_value != val:\n            #print(\"WRITE\", val)\n            with open(fpath, \"w\", encoding=\"utf-8\") as f:\n                f.write(val)\n                last_value = PINS.value.get()\n                last_serialized_value = val\n            last_time = time.time()\n            try:\n                stat = os.stat(fpath)\n                last_mtime = stat.st_mtime\n            except:\n                pass\n\ndef poll():\n    global last_time, last_mtime, last_value, last_serialized_value, last_exc\n    fpath = PINS.filepath.get()\n    while 1:\n        time.sleep(PINS.latency.get())\n        curr_time = time.time()\n        last_time = curr_time\n        if not os.path.exists(fpath):\n            try:\n                write_file(fpath)\n            except:\n                exc = traceback.format_exc()\n                if exc != last_exc:\n                    print(exc)\n                    last_exc = exc\n        else:\n            with lock:\n                stat = os.stat(fpath)\n                try:\n                    if last_mtime is None or stat.st_mtime > last_mtime:\n                        data = None\n                        with open(fpath, encoding=\"utf-8\") as f:\n                            data = f.read()\n                        if data is not None:\n                            if last_serialized_value != data:\n                                #print(\"LOAD\")\n                                PINS.value.set(data)\n                                last_value = None\n                                last_serialized_value = data\n                        last_mtime = stat.st_mtime\n                except:\n                    exc = traceback.format_exc()\n                    if exc != last_exc:\n                        print(exc)\n                        last_exc = exc\n\nt = Thread(target=poll)\nt.setDaemon(True)\nlock = RLock()\nwrite_file(PINS.filepath.get())\nt.start()\n"
+              },
+              "cell2": {
+                "dtype": [
+                  "text",
+                  "code",
+                  "python"
+                ],
+                "data": "write_file(PINS.filepath.get())"
+              },
+              "cell3": {
+                "dtype": [
+                  "text",
+                  "code",
+                  "python"
+                ],
+                "data": "t.join(0)"
+              },
+              "ed": {
+                "type": "editor",
+                "mode": "sync",
+                "params": {
+                  "filepath": {
+                    "dtype": "str",
+                    "pin": "input"
+                  },
+                  "latency": {
+                    "dtype": "float",
+                    "pin": "input"
+                  },
+                  "value": {
+                    "dtype": [
+                      "text",
+                      "html"
+                    ],
+                    "must_be_defined": false,
+                    "pin": "edit"
+                  }
+                }
+              }
+            }
+          },
+          "params_templateer_static": {
+            "type": "context",
+            "like_process": true,
+            "like_cell": false,
+            "pins": {
+              "filepath": "links.params_templateer_static.ed.filepath",
+              "latency": "links.params_templateer_static.ed.latency",
+              "value": "links.params_templateer_static.ed.value"
+            },
+            "auto": [
+              "cell1",
+              "cell2",
+              "cell3"
+            ],
+            "children": {
+              "cell1": {
+                "dtype": [
+                  "text",
+                  "code",
+                  "python"
+                ],
+                "resource": {
+                  "filename": "/cell-filelink-start.py",
+                  "lib": true,
+                  "mode": 2
+                },
+                "data": "if __name__ == \"__main__\":\n    #test with ipython -i\n    import sys, os\n\n    class dummy:\n        pass\n\n    class EditPin:\n        def __init__(self, value):\n            self.value = value\n            self.defined = True\n        def set(self, value):\n            print(\"SET\", value)\n            self.value = value\n        def get(self):\n            return self.value\n\n    class Getter:\n        def __init__(self, arg):\n            self.arg = arg\n        def get(self):\n            return self.arg\n    PINS = dummy()\n    PINS.value = EditPin(\"test\")\n    directory = sys.argv[1]\n    filename = sys.argv[2]\n    PINS.filepath = Getter(os.path.join(directory, filename))\n    PINS.latency = Getter(float(sys.argv[3]))\n    def serializer(v):\n        return str(v.get())\n    print(\"Edit in \" + filepath.get())\nelse:\n    from seamless.dtypes import serialize\n    def serializer(v):\n        return serialize(v._dtype, v.get())\n\n\nimport os, time, functools, traceback\nfrom threading import Thread, RLock\nlast_value = None\nlast_serialized_value = None\nlast_exc = None\nlast_mtime = None\n\ndef write_file(fpath):\n    global last_mtime, last_value, last_serialized_value\n    if not PINS.value.defined:\n        last_mtime = -1 #will trigger a file read\n        return\n    if last_value == PINS.value.get():\n        return\n    val = serializer(PINS.value)\n    if last_serialized_value == val:\n        return\n    with lock:\n        if last_serialized_value != val:\n            #print(\"WRITE\", val)\n            with open(fpath, \"w\", encoding=\"utf-8\") as f:\n                f.write(val)\n                last_value = PINS.value.get()\n                last_serialized_value = val\n            last_time = time.time()\n            try:\n                stat = os.stat(fpath)\n                last_mtime = stat.st_mtime\n            except:\n                pass\n\ndef poll():\n    global last_time, last_mtime, last_value, last_serialized_value, last_exc\n    fpath = PINS.filepath.get()\n    while 1:\n        time.sleep(PINS.latency.get())\n        curr_time = time.time()\n        last_time = curr_time\n        if not os.path.exists(fpath):\n            try:\n                write_file(fpath)\n            except:\n                exc = traceback.format_exc()\n                if exc != last_exc:\n                    print(exc)\n                    last_exc = exc\n        else:\n            with lock:\n                stat = os.stat(fpath)\n                try:\n                    if last_mtime is None or stat.st_mtime > last_mtime:\n                        data = None\n                        with open(fpath, encoding=\"utf-8\") as f:\n                            data = f.read()\n                        if data is not None:\n                            if last_serialized_value != data:\n                                #print(\"LOAD\")\n                                PINS.value.set(data)\n                                last_value = None\n                                last_serialized_value = data\n                        last_mtime = stat.st_mtime\n                except:\n                    exc = traceback.format_exc()\n                    if exc != last_exc:\n                        print(exc)\n                        last_exc = exc\n\nt = Thread(target=poll)\nt.setDaemon(True)\nlock = RLock()\nwrite_file(PINS.filepath.get())\nt.start()\n"
+              },
+              "cell2": {
+                "dtype": [
+                  "text",
+                  "code",
+                  "python"
+                ],
+                "data": "write_file(PINS.filepath.get())"
+              },
+              "cell3": {
+                "dtype": [
+                  "text",
+                  "code",
+                  "python"
+                ],
+                "data": "t.join(0)"
+              },
+              "ed": {
+                "type": "editor",
+                "mode": "sync",
+                "params": {
+                  "filepath": {
+                    "dtype": "str",
+                    "pin": "input"
+                  },
+                  "latency": {
+                    "dtype": "float",
+                    "pin": "input"
+                  },
+                  "value": {
+                    "dtype": "cson",
+                    "must_be_defined": false,
+                    "pin": "edit"
+                  }
+                }
+              }
+            }
+          },
+          "temp_body": {
+            "type": "context",
+            "like_process": true,
+            "like_cell": false,
+            "pins": {
+              "filepath": "links.temp_body.ed.filepath",
+              "latency": "links.temp_body.ed.latency",
+              "value": "links.temp_body.ed.value"
+            },
+            "auto": [
+              "cell1",
+              "cell2",
+              "cell3"
+            ],
+            "children": {
+              "cell1": {
+                "dtype": [
+                  "text",
+                  "code",
+                  "python"
+                ],
+                "resource": {
+                  "filename": "/cell-filelink-start.py",
+                  "lib": true,
+                  "mode": 2
+                },
+                "data": "if __name__ == \"__main__\":\n    #test with ipython -i\n    import sys, os\n\n    class dummy:\n        pass\n\n    class EditPin:\n        def __init__(self, value):\n            self.value = value\n            self.defined = True\n        def set(self, value):\n            print(\"SET\", value)\n            self.value = value\n        def get(self):\n            return self.value\n\n    class Getter:\n        def __init__(self, arg):\n            self.arg = arg\n        def get(self):\n            return self.arg\n    PINS = dummy()\n    PINS.value = EditPin(\"test\")\n    directory = sys.argv[1]\n    filename = sys.argv[2]\n    PINS.filepath = Getter(os.path.join(directory, filename))\n    PINS.latency = Getter(float(sys.argv[3]))\n    def serializer(v):\n        return str(v.get())\n    print(\"Edit in \" + filepath.get())\nelse:\n    from seamless.dtypes import serialize\n    def serializer(v):\n        return serialize(v._dtype, v.get())\n\n\nimport os, time, functools, traceback\nfrom threading import Thread, RLock\nlast_value = None\nlast_serialized_value = None\nlast_exc = None\nlast_mtime = None\n\ndef write_file(fpath):\n    global last_mtime, last_value, last_serialized_value\n    if not PINS.value.defined:\n        last_mtime = -1 #will trigger a file read\n        return\n    if last_value == PINS.value.get():\n        return\n    val = serializer(PINS.value)\n    if last_serialized_value == val:\n        return\n    with lock:\n        if last_serialized_value != val:\n            #print(\"WRITE\", val)\n            with open(fpath, \"w\", encoding=\"utf-8\") as f:\n                f.write(val)\n                last_value = PINS.value.get()\n                last_serialized_value = val\n            last_time = time.time()\n            try:\n                stat = os.stat(fpath)\n                last_mtime = stat.st_mtime\n            except:\n                pass\n\ndef poll():\n    global last_time, last_mtime, last_value, last_serialized_value, last_exc\n    fpath = PINS.filepath.get()\n    while 1:\n        time.sleep(PINS.latency.get())\n        curr_time = time.time()\n        last_time = curr_time\n        if not os.path.exists(fpath):\n            try:\n                write_file(fpath)\n            except:\n                exc = traceback.format_exc()\n                if exc != last_exc:\n                    print(exc)\n                    last_exc = exc\n        else:\n            with lock:\n                stat = os.stat(fpath)\n                try:\n                    if last_mtime is None or stat.st_mtime > last_mtime:\n                        data = None\n                        with open(fpath, encoding=\"utf-8\") as f:\n                            data = f.read()\n                        if data is not None:\n                            if last_serialized_value != data:\n                                #print(\"LOAD\")\n                                PINS.value.set(data)\n                                last_value = None\n                                last_serialized_value = data\n                        last_mtime = stat.st_mtime\n                except:\n                    exc = traceback.format_exc()\n                    if exc != last_exc:\n                        print(exc)\n                        last_exc = exc\n\nt = Thread(target=poll)\nt.setDaemon(True)\nlock = RLock()\nwrite_file(PINS.filepath.get())\nt.start()\n"
+              },
+              "cell2": {
+                "dtype": [
+                  "text",
+                  "code",
+                  "python"
+                ],
+                "data": "write_file(PINS.filepath.get())"
+              },
+              "cell3": {
+                "dtype": [
+                  "text",
+                  "code",
+                  "python"
+                ],
+                "data": "t.join(0)"
+              },
+              "ed": {
+                "type": "editor",
+                "mode": "sync",
+                "params": {
+                  "filepath": {
+                    "dtype": "str",
+                    "pin": "input"
+                  },
+                  "latency": {
+                    "dtype": "float",
+                    "pin": "input"
+                  },
+                  "value": {
+                    "dtype": "text",
+                    "must_be_defined": false,
+                    "pin": "edit"
+                  }
+                }
+              }
+            }
+          },
+          "template_head": {
+            "type": "context",
+            "like_process": true,
+            "like_cell": false,
+            "pins": {
+              "filepath": "links.template_head.ed.filepath",
+              "latency": "links.template_head.ed.latency",
+              "value": "links.template_head.ed.value"
+            },
+            "auto": [
+              "cell1",
+              "cell2",
+              "cell3"
+            ],
+            "children": {
+              "cell1": {
+                "dtype": [
+                  "text",
+                  "code",
+                  "python"
+                ],
+                "resource": {
+                  "filename": "/cell-filelink-start.py",
+                  "lib": true,
+                  "mode": 2
+                },
+                "data": "if __name__ == \"__main__\":\n    #test with ipython -i\n    import sys, os\n\n    class dummy:\n        pass\n\n    class EditPin:\n        def __init__(self, value):\n            self.value = value\n            self.defined = True\n        def set(self, value):\n            print(\"SET\", value)\n            self.value = value\n        def get(self):\n            return self.value\n\n    class Getter:\n        def __init__(self, arg):\n            self.arg = arg\n        def get(self):\n            return self.arg\n    PINS = dummy()\n    PINS.value = EditPin(\"test\")\n    directory = sys.argv[1]\n    filename = sys.argv[2]\n    PINS.filepath = Getter(os.path.join(directory, filename))\n    PINS.latency = Getter(float(sys.argv[3]))\n    def serializer(v):\n        return str(v.get())\n    print(\"Edit in \" + filepath.get())\nelse:\n    from seamless.dtypes import serialize\n    def serializer(v):\n        return serialize(v._dtype, v.get())\n\n\nimport os, time, functools, traceback\nfrom threading import Thread, RLock\nlast_value = None\nlast_serialized_value = None\nlast_exc = None\nlast_mtime = None\n\ndef write_file(fpath):\n    global last_mtime, last_value, last_serialized_value\n    if not PINS.value.defined:\n        last_mtime = -1 #will trigger a file read\n        return\n    if last_value == PINS.value.get():\n        return\n    val = serializer(PINS.value)\n    if last_serialized_value == val:\n        return\n    with lock:\n        if last_serialized_value != val:\n            #print(\"WRITE\", val)\n            with open(fpath, \"w\", encoding=\"utf-8\") as f:\n                f.write(val)\n                last_value = PINS.value.get()\n                last_serialized_value = val\n            last_time = time.time()\n            try:\n                stat = os.stat(fpath)\n                last_mtime = stat.st_mtime\n            except:\n                pass\n\ndef poll():\n    global last_time, last_mtime, last_value, last_serialized_value, last_exc\n    fpath = PINS.filepath.get()\n    while 1:\n        time.sleep(PINS.latency.get())\n        curr_time = time.time()\n        last_time = curr_time\n        if not os.path.exists(fpath):\n            try:\n                write_file(fpath)\n            except:\n                exc = traceback.format_exc()\n                if exc != last_exc:\n                    print(exc)\n                    last_exc = exc\n        else:\n            with lock:\n                stat = os.stat(fpath)\n                try:\n                    if last_mtime is None or stat.st_mtime > last_mtime:\n                        data = None\n                        with open(fpath, encoding=\"utf-8\") as f:\n                            data = f.read()\n                        if data is not None:\n                            if last_serialized_value != data:\n                                #print(\"LOAD\")\n                                PINS.value.set(data)\n                                last_value = None\n                                last_serialized_value = data\n                        last_mtime = stat.st_mtime\n                except:\n                    exc = traceback.format_exc()\n                    if exc != last_exc:\n                        print(exc)\n                        last_exc = exc\n\nt = Thread(target=poll)\nt.setDaemon(True)\nlock = RLock()\nwrite_file(PINS.filepath.get())\nt.start()\n"
+              },
+              "cell2": {
+                "dtype": [
+                  "text",
+                  "code",
+                  "python"
+                ],
+                "data": "write_file(PINS.filepath.get())"
+              },
+              "cell3": {
+                "dtype": [
+                  "text",
+                  "code",
+                  "python"
+                ],
+                "data": "t.join(0)"
+              },
+              "ed": {
+                "type": "editor",
+                "mode": "sync",
+                "params": {
+                  "filepath": {
+                    "dtype": "str",
+                    "pin": "input"
+                  },
+                  "latency": {
+                    "dtype": "float",
+                    "pin": "input"
+                  },
+                  "value": {
+                    "dtype": "text",
+                    "must_be_defined": false,
+                    "pin": "edit"
+                  }
+                }
+              }
+            }
+          },
+          "template_html_head_body": {
+            "type": "context",
+            "like_process": true,
+            "like_cell": false,
+            "pins": {
+              "filepath": "links.template_html_head_body.ed.filepath",
+              "latency": "links.template_html_head_body.ed.latency",
+              "value": "links.template_html_head_body.ed.value"
+            },
+            "auto": [
+              "cell1",
+              "cell2",
+              "cell3"
+            ],
+            "children": {
+              "cell1": {
+                "dtype": [
+                  "text",
+                  "code",
+                  "python"
+                ],
+                "resource": {
+                  "filename": "/cell-filelink-start.py",
+                  "lib": true,
+                  "mode": 2
+                },
+                "data": "if __name__ == \"__main__\":\n    #test with ipython -i\n    import sys, os\n\n    class dummy:\n        pass\n\n    class EditPin:\n        def __init__(self, value):\n            self.value = value\n            self.defined = True\n        def set(self, value):\n            print(\"SET\", value)\n            self.value = value\n        def get(self):\n            return self.value\n\n    class Getter:\n        def __init__(self, arg):\n            self.arg = arg\n        def get(self):\n            return self.arg\n    PINS = dummy()\n    PINS.value = EditPin(\"test\")\n    directory = sys.argv[1]\n    filename = sys.argv[2]\n    PINS.filepath = Getter(os.path.join(directory, filename))\n    PINS.latency = Getter(float(sys.argv[3]))\n    def serializer(v):\n        return str(v.get())\n    print(\"Edit in \" + filepath.get())\nelse:\n    from seamless.dtypes import serialize\n    def serializer(v):\n        return serialize(v._dtype, v.get())\n\n\nimport os, time, functools, traceback\nfrom threading import Thread, RLock\nlast_value = None\nlast_serialized_value = None\nlast_exc = None\nlast_mtime = None\n\ndef write_file(fpath):\n    global last_mtime, last_value, last_serialized_value\n    if not PINS.value.defined:\n        last_mtime = -1 #will trigger a file read\n        return\n    if last_value == PINS.value.get():\n        return\n    val = serializer(PINS.value)\n    if last_serialized_value == val:\n        return\n    with lock:\n        if last_serialized_value != val:\n            #print(\"WRITE\", val)\n            with open(fpath, \"w\", encoding=\"utf-8\") as f:\n                f.write(val)\n                last_value = PINS.value.get()\n                last_serialized_value = val\n            last_time = time.time()\n            try:\n                stat = os.stat(fpath)\n                last_mtime = stat.st_mtime\n            except:\n                pass\n\ndef poll():\n    global last_time, last_mtime, last_value, last_serialized_value, last_exc\n    fpath = PINS.filepath.get()\n    while 1:\n        time.sleep(PINS.latency.get())\n        curr_time = time.time()\n        last_time = curr_time\n        if not os.path.exists(fpath):\n            try:\n                write_file(fpath)\n            except:\n                exc = traceback.format_exc()\n                if exc != last_exc:\n                    print(exc)\n                    last_exc = exc\n        else:\n            with lock:\n                stat = os.stat(fpath)\n                try:\n                    if last_mtime is None or stat.st_mtime > last_mtime:\n                        data = None\n                        with open(fpath, encoding=\"utf-8\") as f:\n                            data = f.read()\n                        if data is not None:\n                            if last_serialized_value != data:\n                                #print(\"LOAD\")\n                                PINS.value.set(data)\n                                last_value = None\n                                last_serialized_value = data\n                        last_mtime = stat.st_mtime\n                except:\n                    exc = traceback.format_exc()\n                    if exc != last_exc:\n                        print(exc)\n                        last_exc = exc\n\nt = Thread(target=poll)\nt.setDaemon(True)\nlock = RLock()\nwrite_file(PINS.filepath.get())\nt.start()\n"
+              },
+              "cell2": {
+                "dtype": [
+                  "text",
+                  "code",
+                  "python"
+                ],
+                "data": "write_file(PINS.filepath.get())"
+              },
+              "cell3": {
+                "dtype": [
+                  "text",
+                  "code",
+                  "python"
+                ],
+                "data": "t.join(0)"
+              },
+              "ed": {
+                "type": "editor",
+                "mode": "sync",
+                "params": {
+                  "filepath": {
+                    "dtype": "str",
+                    "pin": "input"
+                  },
+                  "latency": {
+                    "dtype": "float",
+                    "pin": "input"
+                  },
+                  "value": {
+                    "dtype": [
+                      "text",
+                      "html"
+                    ],
+                    "must_be_defined": false,
+                    "pin": "edit"
+                  }
+                }
+              }
+            }
+          },
+          "title": {
+            "type": "context",
+            "like_process": true,
+            "like_cell": false,
+            "pins": {
+              "filepath": "links.title.ed.filepath",
+              "latency": "links.title.ed.latency",
+              "value": "links.title.ed.value"
+            },
+            "auto": [
+              "cell1",
+              "cell2",
+              "cell3"
+            ],
+            "children": {
+              "cell1": {
+                "dtype": [
+                  "text",
+                  "code",
+                  "python"
+                ],
+                "resource": {
+                  "filename": "/cell-filelink-start.py",
+                  "lib": true,
+                  "mode": 2
+                },
+                "data": "if __name__ == \"__main__\":\n    #test with ipython -i\n    import sys, os\n\n    class dummy:\n        pass\n\n    class EditPin:\n        def __init__(self, value):\n            self.value = value\n            self.defined = True\n        def set(self, value):\n            print(\"SET\", value)\n            self.value = value\n        def get(self):\n            return self.value\n\n    class Getter:\n        def __init__(self, arg):\n            self.arg = arg\n        def get(self):\n            return self.arg\n    PINS = dummy()\n    PINS.value = EditPin(\"test\")\n    directory = sys.argv[1]\n    filename = sys.argv[2]\n    PINS.filepath = Getter(os.path.join(directory, filename))\n    PINS.latency = Getter(float(sys.argv[3]))\n    def serializer(v):\n        return str(v.get())\n    print(\"Edit in \" + filepath.get())\nelse:\n    from seamless.dtypes import serialize\n    def serializer(v):\n        return serialize(v._dtype, v.get())\n\n\nimport os, time, functools, traceback\nfrom threading import Thread, RLock\nlast_value = None\nlast_serialized_value = None\nlast_exc = None\nlast_mtime = None\n\ndef write_file(fpath):\n    global last_mtime, last_value, last_serialized_value\n    if not PINS.value.defined:\n        last_mtime = -1 #will trigger a file read\n        return\n    if last_value == PINS.value.get():\n        return\n    val = serializer(PINS.value)\n    if last_serialized_value == val:\n        return\n    with lock:\n        if last_serialized_value != val:\n            #print(\"WRITE\", val)\n            with open(fpath, \"w\", encoding=\"utf-8\") as f:\n                f.write(val)\n                last_value = PINS.value.get()\n                last_serialized_value = val\n            last_time = time.time()\n            try:\n                stat = os.stat(fpath)\n                last_mtime = stat.st_mtime\n            except:\n                pass\n\ndef poll():\n    global last_time, last_mtime, last_value, last_serialized_value, last_exc\n    fpath = PINS.filepath.get()\n    while 1:\n        time.sleep(PINS.latency.get())\n        curr_time = time.time()\n        last_time = curr_time\n        if not os.path.exists(fpath):\n            try:\n                write_file(fpath)\n            except:\n                exc = traceback.format_exc()\n                if exc != last_exc:\n                    print(exc)\n                    last_exc = exc\n        else:\n            with lock:\n                stat = os.stat(fpath)\n                try:\n                    if last_mtime is None or stat.st_mtime > last_mtime:\n                        data = None\n                        with open(fpath, encoding=\"utf-8\") as f:\n                            data = f.read()\n                        if data is not None:\n                            if last_serialized_value != data:\n                                #print(\"LOAD\")\n                                PINS.value.set(data)\n                                last_value = None\n                                last_serialized_value = data\n                        last_mtime = stat.st_mtime\n                except:\n                    exc = traceback.format_exc()\n                    if exc != last_exc:\n                        print(exc)\n                        last_exc = exc\n\nt = Thread(target=poll)\nt.setDaemon(True)\nlock = RLock()\nwrite_file(PINS.filepath.get())\nt.start()\n"
+              },
+              "cell2": {
+                "dtype": [
+                  "text",
+                  "code",
+                  "python"
+                ],
+                "data": "write_file(PINS.filepath.get())"
+              },
+              "cell3": {
+                "dtype": [
+                  "text",
+                  "code",
+                  "python"
+                ],
+                "data": "t.join(0)"
+              },
+              "ed": {
+                "type": "editor",
+                "mode": "sync",
+                "params": {
+                  "filepath": {
+                    "dtype": "str",
+                    "pin": "input"
+                  },
+                  "latency": {
+                    "dtype": "float",
+                    "pin": "input"
+                  },
+                  "value": {
+                    "dtype": "text",
+                    "must_be_defined": false,
+                    "pin": "edit"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "params": {
+        "type": "context",
+        "like_process": false,
+        "like_cell": false,
+        "pins": {},
+        "auto": [
+          "cell1",
+          "cell10",
+          "cell2",
+          "cell3",
+          "cell4",
+          "cell5",
+          "cell6",
+          "cell7",
+          "cell8",
+          "cell9"
+        ],
+        "children": {
+          "cell1": {
+            "dtype": "str",
+            "data": "./params-templateer-static.cson"
+          },
+          "cell10": {
+            "dtype": "float",
+            "data": "0.2"
+          },
+          "cell2": {
+            "dtype": "float",
+            "data": "0.2"
+          },
+          "cell3": {
+            "dtype": "str",
+            "data": "temp/head.txt"
+          },
+          "cell4": {
+            "dtype": "float",
+            "data": "0.2"
+          },
+          "cell5": {
+            "dtype": "str",
+            "data": "temp/body.txt"
+          },
+          "cell6": {
+            "dtype": "float",
+            "data": "0.2"
+          },
+          "cell7": {
+            "dtype": "str",
+            "data": "./template-head.jinja"
+          },
+          "cell8": {
+            "dtype": "float",
+            "data": "0.2"
+          },
+          "cell9": {
+            "dtype": "str",
+            "data": "plotdata/title.txt"
+          },
+          "templateer_static": {
+            "dtype": "cson",
+            "data": "{\n  \"templates\": [\n    \"head\",\n    \"head_body\"\n  ],\n  \"result\": \"head_body\",\n  \"environment\": {\n    \"body\": \"text\",\n    \"title\": \"text\"\n  }\n}"
+          }
+        }
+      },
+      "temp_body": {
+        "dtype": "text",
+        "data": "<div id=\"myDiv\" style=\"width: 480px; height: 400px;\"><!-- Plotly chart will be drawn inside this DIV --></div>\n<script id=\"javascript\">\nvar trace1 = {\n  x: ['giraffes', 'orangutans', 'orcas'],\n  y: [20, 14, 23],\n  name: 'SF Zoo',\n  marker:{\n  color: [\n      \"rgba(204,204,204,1)\",\n      \"rgba(222,45,38,0.8)\",\n      \"rgba(204,204,204,1)\"\n    ]\n   },\n  type: 'bar',\n};\n\nvar trace2 = {\n  x: ['giraffes', 'orangutans', 'orcas'],\n  y: [12, 18, 29],\n  name: 'LA Zoo',\n  type: 'bar',\n};\n\nvar data = [trace1, trace2];\n\nvar layout = {barmode: 'stack'};\n\nPlotly.newPlot('myDiv', data, layout);\n</script>\n"
+      },
+      "templateer_static": {
+        "type": "context",
+        "like_process": true,
+        "like_cell": false,
+        "pins": {
+          "RESULT": "templateer_static.ed.RESULT",
+          "body": "templateer_static.ed.body",
+          "head": "templateer_static.ed.head",
+          "head_body": "templateer_static.ed.head_body",
+          "title": "templateer_static.ed.title"
+        },
+        "auto": [
+          "cell1",
+          "cell2",
+          "cell3",
+          "cell4",
+          "cell5"
+        ],
+        "children": {
+          "cell1": {
+            "dtype": [
+              "text",
+              "html"
+            ],
+            "owner": "templateer_static.ed"
+          },
+          "cell2": {
+            "dtype": "json",
+            "data": "{\n  \"templates\": [\n    \"head\",\n    \"head_body\"\n  ],\n  \"environment\": {\n    \"body\": \"text\",\n    \"title\": \"text\"\n  },\n  \"result\": \"head_body\"\n}"
+          },
+          "cell3": {
+            "dtype": [
+              "text",
+              "code",
+              "python"
+            ],
+            "resource": {
+              "filename": "/cell-templateer.py",
+              "lib": true,
+              "mode": 2
+            },
+            "data": "import jinja2, jinja2.meta\n\nenv = {}\ndepsgraph = {}\ntemplates = []\njenv = jinja2.Environment()\n\nclass Node:\n    _ignore_deps = [\"range\"]\n    def __init__(self, name):\n        self.name = name\n        self.template = None\n        self.template_code = None\n        self.up_to_date = False\n        self.template_deps = []\n        self.env_deps = []\n        self.dependees = []\n\n    def render(self, visited=None):\n        if self.up_to_date:\n            return env[self.name]\n\n        if self.template is None:\n            raise RuntimeError(\"Cannot render template '{0}'\" % self.name)\n        if visited is None:\n            visited = []\n        if self.name in visited:\n            cycle = visited[visited.index(self.name):] + [self.name]\n            raise RuntimeError(\"Cyclic template dependency: {0}\".format(cycle))\n        visited.append(self.name)\n\n        for dep in sorted(self.template_deps):\n            #print(\"DEP\", self.name, dep)\n            depsgraph[dep].render(visited)\n        result = self.template.render(env)\n        self.up_to_date = True\n        #print(\"RENDER\", self.name)\n        env[self.name] = result\n        return result\n\n    def set_dirty(self):\n        self.up_to_date = False\n        for dependee in self.dependees:\n            depsgraph[dependee].set_dirty()\n\n    def set_template(self, template_code):\n        if template_code == self.template_code:\n            return\n        self.template_code = template_code\n        self.template = None\n        self.set_dirty()\n        ast = jenv.parse(template_code)\n        deps = jinja2.meta.find_undeclared_variables(ast)\n        new_env_deps = []\n        new_template_deps = []\n        for d in sorted(deps):\n            if d in env:\n                new_env_deps.append(d)\n            elif d in templates:\n                new_template_deps.append(d)\n            elif d in self._ignore_deps:\n                continue\n            else:\n                raise RuntimeError(\"Unknown dependency: '{0}'\".format(d))\n        self.template = jinja2.Template(ast)\n        for dep in self.template_deps + self.env_deps:\n            depsgraph[dep].dependees.remove(self.name)\n        self.env_deps = new_env_deps\n        self.template_deps = new_template_deps\n        for dep in self.template_deps  + self.env_deps:\n            depsgraph[dep].dependees.append(self.name)\n\ndef make_template():\n    global result_template\n    import jinja2\n    tempdef = PINS.TEMPLATE_DEFINITION.get()\n    if PINS.TEMPLATE_DEFINITION.updated:\n        env.clear()\n        depsgraph.clear()\n        templates[:] = tempdef[\"templates\"]\n        result_template = tempdef.get(\"result\", None)\n        if len(templates) > 1:\n            assert result_template is not None\n        else:\n            result_template = templates[0]\n        assert result_template in templates, (result_template, templates)\n\n    tempdef = PINS.TEMPLATE_DEFINITION.get()\n    environment = tempdef[\"environment\"]\n\n    env_updates = list()\n    for k, v in environment.items():\n        inp = getattr(PINS, k)\n        if inp.updated or k not in env:\n            val = inp.get()\n            env[k] = val\n            env_updates.append(k)\n\n    for k in env_updates:\n        if k not in depsgraph:\n            node = Node(k)\n            node.up_to_date = True\n            depsgraph[k] = node\n        for nodename in depsgraph[k].dependees:\n            depsgraph[nodename].set_dirty()\n\n    templ_updates = []\n    for t in templates:\n        template = getattr(PINS, t)\n        if template.updated or t not in depsgraph:\n            if t not in depsgraph:\n                node = Node(t)\n                depsgraph[t] = node\n            templ_updates.append(t)\n    for t in templ_updates:\n        template = getattr(PINS, t)\n        node = depsgraph[t]\n        node.set_template(template.get())\n\n    firstnode = depsgraph[result_template]\n    result = firstnode.render()\n\n    PINS.RESULT.set(result)\n"
+          },
+          "cell4": {
+            "dtype": [
+              "text",
+              "code",
+              "python"
+            ],
+            "data": "make_template()"
+          },
+          "cell5": {
+            "dtype": [
+              "text",
+              "code",
+              "python"
+            ],
+            "data": ""
+          },
+          "ed": {
+            "type": "editor",
+            "mode": "sync",
+            "params": {
+              "RESULT": {
+                "dtype": [
+                  "text",
+                  "html"
+                ],
+                "pin": "output"
+              },
+              "TEMPLATE_DEFINITION": {
+                "dtype": "json",
+                "pin": "input"
+              },
+              "body": {
+                "dtype": "text",
+                "pin": "input"
+              },
+              "head": {
+                "dtype": "text",
+                "pin": "input"
+              },
+              "head_body": {
+                "dtype": "text",
+                "pin": "input"
+              },
+              "title": {
+                "dtype": "text",
+                "pin": "input"
+              }
+            }
+          }
+        }
+      },
+      "templates": {
+        "type": "context",
+        "like_process": false,
+        "like_cell": false,
+        "pins": {},
+        "auto": [
+          "cell1",
+          "cell2",
+          "cell3",
+          "cell4"
+        ],
+        "children": {
+          "cell1": {
+            "dtype": "str",
+            "data": "plotdata/plotly.html"
+          },
+          "cell2": {
+            "dtype": "float",
+            "data": "0.2"
+          },
+          "cell3": {
+            "dtype": "str",
+            "data": "./template-html-head-body.jinja"
+          },
+          "cell4": {
+            "dtype": "float",
+            "data": "0.2"
+          },
+          "head": {
+            "dtype": "text",
+            "data": "<script type=\"text/javascript\" src=\"plotly-latest.js\"></script>\n<!-- <script type=\"text/javascript\" src=\"plotly-latest.js\"></script> -->\n<meta charset=\"utf-8\">\n<title>{{title}}</title>\n"
+          },
+          "html_head_body": {
+            "dtype": [
+              "text",
+              "html"
+            ],
+            "data": "<!DOCTYPE html>\n<html>\n<head>\n{{head}}\n</head>\n<body>\n{{body}}\n</body>\n</html>\n"
+          }
+        }
+      },
+      "title": {
+        "dtype": "text",
+        "data": "My plot\n"
+      }
+    },
+    "macro_objects": [
+      {
+        "args": [
+          null
+        ],
+        "kwargs": {},
+        "cell_args": {
+          "template_definition": "params.templateer_static"
+        },
+        "macro_module_name": "seamless.lib.templateer",
+        "macro_func_name": "templateer",
+        "macro_order": 0,
+        "target": "templateer_static"
+      }
+    ],
+    "macro_listeners": [
+      {
+        "cell": "params.templateer_static",
+        "macro_target": "templateer_static",
+        "macro_arg": "template_definition"
+      }
+    ],
+    "registrar_items": [],
+    "registrar_listeners": [],
+    "registrar_cells": [],
+    "pin_cell_connections": [
+      [
+        "templateer_static.ed.RESULT",
+        "html"
+      ],
+      [
+        "templateer_static.ed.RESULT",
+        "templateer_static.cell1"
+      ]
+    ],
+    "cell_pin_connections": [
+      [
+        "browser.cell1",
+        "browser.ed.title"
+      ],
+      [
+        "browser.cell2",
+        "browser.ed.code_start"
+      ],
+      [
+        "browser.cell3",
+        "browser.ed.code_stop"
+      ],
+      [
+        "browser.cell4",
+        "browser.ed.code_update"
+      ],
+      [
+        "html",
+        "browser.ed.value"
+      ],
+      [
+        "html",
+        "links.html.ed.value"
+      ],
+      [
+        "links.html.cell1",
+        "links.html.ed.code_start"
+      ],
+      [
+        "links.html.cell2",
+        "links.html.ed.code_update"
+      ],
+      [
+        "links.html.cell3",
+        "links.html.ed.code_stop"
+      ],
+      [
+        "links.params_templateer_static.cell1",
+        "links.params_templateer_static.ed.code_start"
+      ],
+      [
+        "links.params_templateer_static.cell2",
+        "links.params_templateer_static.ed.code_update"
+      ],
+      [
+        "links.params_templateer_static.cell3",
+        "links.params_templateer_static.ed.code_stop"
+      ],
+      [
+        "links.temp_body.cell1",
+        "links.temp_body.ed.code_start"
+      ],
+      [
+        "links.temp_body.cell2",
+        "links.temp_body.ed.code_update"
+      ],
+      [
+        "links.temp_body.cell3",
+        "links.temp_body.ed.code_stop"
+      ],
+      [
+        "links.template_head.cell1",
+        "links.template_head.ed.code_start"
+      ],
+      [
+        "links.template_head.cell2",
+        "links.template_head.ed.code_update"
+      ],
+      [
+        "links.template_head.cell3",
+        "links.template_head.ed.code_stop"
+      ],
+      [
+        "links.template_html_head_body.cell1",
+        "links.template_html_head_body.ed.code_start"
+      ],
+      [
+        "links.template_html_head_body.cell2",
+        "links.template_html_head_body.ed.code_update"
+      ],
+      [
+        "links.template_html_head_body.cell3",
+        "links.template_html_head_body.ed.code_stop"
+      ],
+      [
+        "links.title.cell1",
+        "links.title.ed.code_start"
+      ],
+      [
+        "links.title.cell2",
+        "links.title.ed.code_update"
+      ],
+      [
+        "links.title.cell3",
+        "links.title.ed.code_stop"
+      ],
+      [
+        "params.cell10",
+        "links.title.ed.latency"
+      ],
+      [
+        "params.cell1",
+        "links.params_templateer_static.ed.filepath"
+      ],
+      [
+        "params.cell2",
+        "links.params_templateer_static.ed.latency"
+      ],
+      [
+        "params.cell5",
+        "links.temp_body.ed.filepath"
+      ],
+      [
+        "params.cell6",
+        "links.temp_body.ed.latency"
+      ],
+      [
+        "params.cell7",
+        "links.template_head.ed.filepath"
+      ],
+      [
+        "params.cell8",
+        "links.template_head.ed.latency"
+      ],
+      [
+        "params.cell9",
+        "links.title.ed.filepath"
+      ],
+      [
+        "params.templateer_static",
+        "links.params_templateer_static.ed.value"
+      ],
+      [
+        "temp_body",
+        "links.temp_body.ed.value"
+      ],
+      [
+        "temp_body",
+        "templateer_static.ed.body"
+      ],
+      [
+        "templateer_static.cell2",
+        "templateer_static.ed.TEMPLATE_DEFINITION"
+      ],
+      [
+        "templateer_static.cell3",
+        "templateer_static.ed.code_start"
+      ],
+      [
+        "templateer_static.cell4",
+        "templateer_static.ed.code_update"
+      ],
+      [
+        "templateer_static.cell5",
+        "templateer_static.ed.code_stop"
+      ],
+      [
+        "templates.cell1",
+        "links.html.ed.filepath"
+      ],
+      [
+        "templates.cell2",
+        "links.html.ed.latency"
+      ],
+      [
+        "templates.cell3",
+        "links.template_html_head_body.ed.filepath"
+      ],
+      [
+        "templates.cell4",
+        "links.template_html_head_body.ed.latency"
+      ],
+      [
+        "templates.head",
+        "links.template_head.ed.value"
+      ],
+      [
+        "templates.head",
+        "templateer_static.ed.head"
+      ],
+      [
+        "templates.html_head_body",
+        "links.template_html_head_body.ed.value"
+      ],
+      [
+        "templates.html_head_body",
+        "templateer_static.ed.head_body"
+      ],
+      [
+        "title",
+        "links.title.ed.value"
+      ],
+      [
+        "title",
+        "templateer_static.ed.title"
+      ]
+    ]
+  }
+}

@@ -1,0 +1,26 @@
+[
+  {
+    "x": [
+      "giraffes",
+      "orangutans",
+      "monkeys"
+    ],
+    "y": [
+      30,
+      14,
+      23
+    ]
+  },
+  {
+    "x": [
+      "giraffes",
+      "orangutans",
+      "monkeys"
+    ],
+    "y": [
+      12,
+      18,
+      29
+    ]
+  }
+]
