@@ -22,6 +22,10 @@ try:
     import pandas
 except ImportError:
     pass
+try:
+    import websockets
+except ImportError:
+    pass
 
 
 from .core.macro import macro
