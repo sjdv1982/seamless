@@ -1,0 +1,4 @@
+{
+  xaxis : {"title": "RMSD", type: 'log'},
+  yaxis : {"title": "Frequency"},
+}

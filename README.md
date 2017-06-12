@@ -1,6 +1,16 @@
 Seamless: a cell-based reactive programming framework
 Seamless was created on June 3rd, 2016
 
+The eight seamless constructs (sorted from good to ugly):
+1. context
+2. cell
+3. transformer
+4. pin
+5. reactor
+6. macro
+7. registrar
+8. observer (takes a Python function pointer; never serializable!)
+
 Seamless Zen
 
 Watch the state as it is now, don't watch the news.  
@@ -19,9 +29,11 @@ TODO:
 Technically-oriented releases are marked with *
 
 *0.1
-- Make a sane status report system (missing inputs, undefined inputs, also in children)
+- Make a sane status report system (missing inputs, undefined inputs, missing connections, also in children)
+- Python registrar
+- Eighth construct: observer
 - Integrate protein viewer in browser
-- Demos: plotly, OpenGL, orca, slash+protein  
+- Demos: plotly, OpenGL (code DONE), orca (code DONE), slash+protein  
 
 0.2
 - Replace ctx.CHILDREN, ctx.CELLS etc. with ctx.self.children, ctx.self.cells, etc.
@@ -35,7 +47,7 @@ Technically-oriented releases are marked with *
 
 *0.3
 - Multiple code cells in transformers/reactors
-- Preliminary outputpins (in transformers and reactors)
+- Preliminary outputpins (in transformers [as secondary output] and in reactors)
 - Preliminary inputpins (pins that accept preliminary values). Right now, all inputpins are preliminary!
 - Address shell() memory leak: IPython references may hold onto large amounts of data
 - Binary (struct) cells, active switches (connection level; workers don't see it, except that pin becomes undefined/changes value)
@@ -55,7 +67,8 @@ Technically-oriented releases are marked with *
 
 *0.5
 - Thread reactors, process reactors
-- Synchronous transformers, process transformers
+- Synchronous transformers (do we need this?)
+- Process transformers (now that execution is in a process, do we need this??)
 
 *0.6
 - Array cells, channels
