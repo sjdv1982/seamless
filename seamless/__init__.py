@@ -3,10 +3,18 @@ Seamless: framework for data-driven and live programming
 Copyright 2016-2017, Sjoerd de Vries
 """
 
-#pre-import some libraries that will be needed by transformer threads
-# better to import them in the main thread
+#Dependencies of seamless
+
+# 1. hard dependencies; without these, "import seamless" will fail. 
+# Still, if necessary, these dependencies could be removed, but seamless would have to be more minimalist in loading its lib
+
+#import PyOpenGL before PyQt5 to prevent the loading of the wrong OpenGL library that can happen on some systems. Introduces a hard dependency on PyOpenGL, TODO look into later"
+from OpenGL import GL 
+import PyQt5
+import numpy
+
+# 2. Soft dependencies: transformers may use these libraries
 try:
-    import numpy
     import scipy
 except ImportError:
     pass
@@ -14,6 +22,7 @@ try:
     import pandas
 except ImportError:
     pass
+
 
 from .core.macro import macro
 from .core.context import context
