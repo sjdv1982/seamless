@@ -36,10 +36,10 @@ ctx.filename.connect(ctx.load_ply.filename)
 #ctx.filename.set("suzanne.ply")
 #ctx.scale.set(3.0)
 
-#ctx.filename.set("lion-statue.ply")
-#ctx.scale.set(1.0)
+ctx.filename.set("lion-statue.ply")
+ctx.scale.set(1.0)
 
-ctx.filename.set("metallic-lucy-statue-stanford-scan.ply.zip")
-ctx.scale.set(5.0)
+#ctx.filename.set("metallic-lucy-statue-stanford-scan.ply.zip")
+#ctx.scale.set(5.0)
 
 print("In the 3D window, press key 1-4 to change the states")
