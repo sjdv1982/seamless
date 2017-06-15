@@ -61,6 +61,7 @@ class ReactorEdit:
     def get(self):
         return self._value
     def set(self, value):
+        #print("SET",self._parent().parent(), self._name)
         self._value = value
         self.defined = True
         p = self._parent()

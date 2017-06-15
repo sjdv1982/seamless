@@ -1,0 +1,31 @@
+subdivisions:
+  pin: "input"
+  dtype: "int"
+
+minimizations:
+  pin: "input"
+  dtype: "int"
+
+coordinates:
+  pin: "output"
+  dtype: "array"
+
+normals:
+  pin: "output"
+  dtype: "array"
+
+edges:
+  pin: "output"
+  dtype: "array"
+
+triangle_indices:
+  pin: "output"
+  dtype: "array"
+
+triangle_coordinates:
+  pin: "output"
+  dtype: "array"
+
+triangle_normals:
+  pin: "output"
+  dtype: "array"

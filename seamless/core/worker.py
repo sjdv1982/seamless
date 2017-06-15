@@ -184,6 +184,7 @@ class InputPin(InputPinBase):
 
 
 class OutputPin(OutputPinBase):
+    last_value = None
     def __init__(self, worker, name, dtype):
         OutputPinBase.__init__(self, worker, name)
         self.dtype = dtype
@@ -195,6 +196,7 @@ class OutputPin(OutputPinBase):
     def send_update(self, value, *, preliminary=False):
         if self._destroyed:
             return
+        self.last_value = value
         manager = self._get_manager()
         for cell_id in self._cell_ids:
             manager.update_from_worker(cell_id, value, self.worker_ref(),
@@ -267,6 +269,7 @@ class EditPinBase(PinBase):
     pass
 
 class EditPin(EditPinBase):
+    last_value = None
     def __init__(self, worker, name, dtype):
         InputPinBase.__init__(self, worker, name)
         self.dtype = dtype
@@ -315,6 +318,7 @@ class EditPin(EditPinBase):
     def send_update(self, value, *, preliminary=False):
         if self._destroyed:
             return
+        self.last_value = value
         manager = self._get_manager()
         curr_pin_to_cells = manager.pin_to_cells.get(self.get_pin_id(), [])
         for cell_id in curr_pin_to_cells:

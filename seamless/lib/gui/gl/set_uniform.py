@@ -7,6 +7,7 @@
 
 from OpenGL import GL as gl
 import numpy as np
+import ctypes
 
 from seamless.dtypes.gl import _ctypes, _gtypes
 

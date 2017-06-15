@@ -92,7 +92,7 @@ class Cell(Managed, CellLike):
 
     def set(self, text_or_object):
         """Update cell data from Python code in the main thread."""
-        self._set(text_or_object, propagate=True)
+        self._set(text_or_object, propagate=True, preliminary=False)
         if text_or_object is None:
             self.resource.cache = None
         else:
@@ -520,6 +520,7 @@ class ArrayCell(Cell):
         self._store.set_dirty()
         self._store_mode = mode
         self.touch()
+        return self
     def _set(self, text_or_object,*,propagate,preliminary):
         result = super()._set(text_or_object,
           propagate=propagate,preliminary=preliminary)

@@ -20,7 +20,7 @@ def basic_editor(ctx, editor_type, title):
     _editors = {
       "int": {
         "code": "cell-basic_editor_int.py",
-        "update": "cell-basic_editor_UPDATE.py",
+        "update": "cell-basic_editor_int_UPDATE.py",
       },
       "float": {
         "code": "cell-basic_editor_float.py",
@@ -71,8 +71,14 @@ def basic_editor(ctx, editor_type, title):
         "dtype": "str",
       },
     }
+    if editor_type == "int":
+        pinparams["maximum"] = {"pin": "input", "dtype": "int"}
     rc = ctx.rc = reactor(pinparams)
     rc.title.cell().set(title)
+    forced = ["title"]
+    if editor_type == "int":
+        rc.maximum.set(9999999)
+        forced.append("maximum")
     rc.code_start.cell().fromfile(_editors[editor_type]["code"])
     rc.code_stop.cell().set('w.destroy()')
     upfile = _editors[editor_type]["update"]
@@ -81,7 +87,7 @@ def basic_editor(ctx, editor_type, title):
         c_up.fromfile(upfile)
     else:
         c_up.set("")
-    ctx.export(rc, forced=["title"])
+    ctx.export(rc, forced=forced)
 
 def edit(cell, title=None, own=False):
     assert isinstance(cell, Cell)
