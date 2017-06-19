@@ -15,3 +15,7 @@ suzanne.ply: mascot model from Blender (www.blender.org)
 lion-statue.ply: created by Jason Shoumar, downloaded from https://clara.io/view/bb15ed37-2155-4964-98e0-f330b2e0a6ef#, public domain
 
 Metallic Lucy (Stanford scan): created by Ben Houston, downloaded from https://clara.io/view/454f1f28-0f63-4664-aeef-cf7aecd9cd40#, public domain
+
+
+
+Simple PDB viewer: test-atom.py

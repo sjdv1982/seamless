@@ -5,7 +5,6 @@
   "uniforms": {
     "u_mvp_matrix": "mat4",
     "u_modelview_matrix": "mat4",
-    "u_projection_matrix": "mat4",
     "u_normal_matrix": "mat3",
   },
   "render": {

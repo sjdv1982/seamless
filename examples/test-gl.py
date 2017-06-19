@@ -91,7 +91,7 @@ program2 = {
     "scale": "float",
   },
   "render": {
-    "command": "triangles_indexed",
+    "command": "triangles",
     "glstate": glstate,
     "attributes": {
       "position": {

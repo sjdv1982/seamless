@@ -5,10 +5,9 @@
   "uniforms": {
     "u_mvp_matrix": "mat4",
     "u_modelview_matrix": "mat4",
-    "u_projection_matrix": "mat4",
   },
   "render": {
-    "command": "lines_indexed",
+    "command": "lines",
     "attributes": {
       "a_position": {
         "dtype": "vec3",

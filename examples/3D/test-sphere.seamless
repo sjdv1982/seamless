@@ -635,7 +635,7 @@
               "mode": null,
               "save_policy": 1
             },
-            "hash": "6b4e21ab1da49c08dd8e9a6dbfb77b88"
+            "hash": "f0c37cdc328ce878b74858a2916903dd"
           },
           "cell25": {
             "dtype": "str",
@@ -695,7 +695,7 @@
               "mode": null,
               "save_policy": 1
             },
-            "hash": "f850912625e636287ca1443017938ebb",
+            "hash": "1f7694137181e6d29e0e220494c5659d",
             "owner": "gen_sphere"
           },
           "cell30": {
@@ -810,7 +810,7 @@
               "mode": null,
               "save_policy": 1
             },
-            "hash": "1f7694137181e6d29e0e220494c5659d",
+            "hash": "0286f070b51224719b7e62909ee34f5b",
             "owner": "gen_sphere"
           },
           "cell40": {
@@ -855,7 +855,7 @@
               "mode": null,
               "save_policy": 1
             },
-            "hash": "0286f070b51224719b7e62909ee34f5b",
+            "hash": "85c0b7a8d5c26bc01d795c4fa7432abc",
             "owner": "gen_sphere"
           },
           "cell6": {
@@ -866,7 +866,7 @@
               "mode": null,
               "save_policy": 1
             },
-            "hash": "e28a616dda5bba39cb87f6d465f02b41",
+            "hash": "85c0b7a8d5c26bc01d795c4fa7432abc",
             "owner": "gen_sphere"
           },
           "cell7": {
@@ -877,7 +877,7 @@
               "mode": null,
               "save_policy": 1
             },
-            "hash": "85c0b7a8d5c26bc01d795c4fa7432abc",
+            "hash": "e28a616dda5bba39cb87f6d465f02b41",
             "owner": "gen_sphere"
           },
           "cell8": {
@@ -888,7 +888,7 @@
               "mode": null,
               "save_policy": 1
             },
-            "hash": "85c0b7a8d5c26bc01d795c4fa7432abc",
+            "hash": "f850912625e636287ca1443017938ebb",
             "owner": "gen_sphere"
           },
           "cell9": {
@@ -1449,7 +1449,7 @@
               "mode": null,
               "save_policy": 1
             },
-            "data": "{\n  \"render\": {\n    \"command\": \"triangles\",\n    \"glstate\": {\n      \"clear_color\": \"black\",\n      \"depth_test\": true,\n      \"clear\": false,\n      \"cull_face\": true,\n      \"blend\": true\n    },\n    \"attributes\": {\n      \"a_position\": {\n        \"array\": \"coordinates\",\n        \"dtype\": \"vec3\"\n      },\n      \"a_normal\": {\n        \"array\": \"normals\",\n        \"dtype\": \"vec3\"\n      }\n    }\n  },\n  \"arrays\": [\n    \"coordinates\",\n    \"normals\"\n  ],\n  \"uniforms\": {\n    \"u_mvp_matrix\": \"mat4\",\n    \"u_modelview_matrix\": \"mat4\",\n    \"u_normal_matrix\": \"mat3\",\n    \"u_projection_matrix\": \"mat4\"\n  }\n}"
+            "data": "{\n  \"arrays\": [\n    \"coordinates\",\n    \"normals\"\n  ],\n  \"render\": {\n    \"attributes\": {\n      \"a_normal\": {\n        \"dtype\": \"vec3\",\n        \"array\": \"normals\"\n      },\n      \"a_position\": {\n        \"dtype\": \"vec3\",\n        \"array\": \"coordinates\"\n      }\n    },\n    \"command\": \"triangles\",\n    \"glstate\": {\n      \"blend\": true,\n      \"depth_test\": true,\n      \"cull_face\": true,\n      \"clear_color\": \"black\",\n      \"clear\": false\n    }\n  },\n  \"uniforms\": {\n    \"u_normal_matrix\": \"mat3\",\n    \"u_mvp_matrix\": \"mat4\",\n    \"u_modelview_matrix\": \"mat4\"\n  }\n}"
           },
           "rc": {
             "type": "reactor",
@@ -1509,7 +1509,7 @@
               "mode": null,
               "save_policy": 1
             },
-            "data": "{\n  \"uniforms\": {\n    \"pin\": \"input\",\n    \"dtype\": \"json\"\n  },\n  \"fragment_shader\": {\n    \"pin\": \"input\",\n    \"dtype\": [\n      \"text\",\n      \"code\",\n      \"fragmentshader\"\n    ]\n  },\n  \"paint\": {\n    \"pin\": \"input\",\n    \"dtype\": \"signal\"\n  },\n  \"init\": {\n    \"pin\": \"input\",\n    \"dtype\": \"signal\"\n  },\n  \"array_normals\": {\n    \"pin\": \"input\",\n    \"dtype\": \"array\"\n  },\n  \"repaint\": {\n    \"pin\": \"output\",\n    \"dtype\": \"signal\"\n  },\n  \"program\": {\n    \"pin\": \"input\",\n    \"dtype\": \"json\"\n  },\n  \"vertex_shader\": {\n    \"pin\": \"input\",\n    \"dtype\": [\n      \"text\",\n      \"code\",\n      \"vertexshader\"\n    ]\n  },\n  \"array_coordinates\": {\n    \"pin\": \"input\",\n    \"dtype\": \"array\"\n  }\n}"
+            "data": "{\n  \"repaint\": {\n    \"dtype\": \"signal\",\n    \"pin\": \"output\"\n  },\n  \"array_coordinates\": {\n    \"dtype\": \"array\",\n    \"pin\": \"input\"\n  },\n  \"paint\": {\n    \"dtype\": \"signal\",\n    \"pin\": \"input\"\n  },\n  \"init\": {\n    \"dtype\": \"signal\",\n    \"pin\": \"input\"\n  },\n  \"vertex_shader\": {\n    \"dtype\": [\n      \"text\",\n      \"code\",\n      \"vertexshader\"\n    ],\n    \"pin\": \"input\"\n  },\n  \"uniforms\": {\n    \"dtype\": \"json\",\n    \"pin\": \"input\"\n  },\n  \"array_normals\": {\n    \"dtype\": \"array\",\n    \"pin\": \"input\"\n  },\n  \"program\": {\n    \"dtype\": \"json\",\n    \"pin\": \"input\"\n  },\n  \"fragment_shader\": {\n    \"dtype\": [\n      \"text\",\n      \"code\",\n      \"fragmentshader\"\n    ],\n    \"pin\": \"input\"\n  }\n}"
           },
           "signal1": {
             "dtype": "signal",
@@ -1679,7 +1679,7 @@
               "mode": null,
               "save_policy": 1
             },
-            "data": "{\n  \"render\": {\n    \"command\": \"lines_indexed\",\n    \"glstate\": {\n      \"line_width\": 1,\n      \"blend\": true,\n      \"depth_test\": true,\n      \"clear\": true,\n      \"clear_color\": \"black\",\n      \"multisample\": true\n    },\n    \"indices\": {\n      \"array\": \"edges\",\n      \"dtype\": \"short\"\n    },\n    \"attributes\": {\n      \"a_position\": {\n        \"array\": \"coordinates\",\n        \"dtype\": \"vec3\"\n      }\n    }\n  },\n  \"arrays\": [\n    \"coordinates\",\n    \"edges\"\n  ],\n  \"uniforms\": {\n    \"u_mvp_matrix\": \"mat4\",\n    \"u_modelview_matrix\": \"mat4\",\n    \"u_projection_matrix\": \"mat4\"\n  }\n}"
+            "data": "{\n  \"arrays\": [\n    \"coordinates\",\n    \"edges\"\n  ],\n  \"render\": {\n    \"attributes\": {\n      \"a_position\": {\n        \"dtype\": \"vec3\",\n        \"array\": \"coordinates\"\n      }\n    },\n    \"command\": \"lines\",\n    \"glstate\": {\n      \"multisample\": true,\n      \"depth_test\": true,\n      \"clear_color\": \"black\",\n      \"clear\": true,\n      \"blend\": true,\n      \"line_width\": 1\n    },\n    \"indices\": {\n      \"array\": \"edges\",\n      \"dtype\": \"short\"\n    }\n  },\n  \"uniforms\": {\n    \"u_mvp_matrix\": \"mat4\",\n    \"u_modelview_matrix\": \"mat4\"\n  }\n}"
           },
           "rc": {
             "type": "reactor",
@@ -1739,7 +1739,7 @@
               "mode": null,
               "save_policy": 1
             },
-            "data": "{\n  \"uniforms\": {\n    \"pin\": \"input\",\n    \"dtype\": \"json\"\n  },\n  \"fragment_shader\": {\n    \"pin\": \"input\",\n    \"dtype\": [\n      \"text\",\n      \"code\",\n      \"fragmentshader\"\n    ]\n  },\n  \"paint\": {\n    \"pin\": \"input\",\n    \"dtype\": \"signal\"\n  },\n  \"init\": {\n    \"pin\": \"input\",\n    \"dtype\": \"signal\"\n  },\n  \"array_edges\": {\n    \"pin\": \"input\",\n    \"dtype\": \"array\"\n  },\n  \"repaint\": {\n    \"pin\": \"output\",\n    \"dtype\": \"signal\"\n  },\n  \"program\": {\n    \"pin\": \"input\",\n    \"dtype\": \"json\"\n  },\n  \"vertex_shader\": {\n    \"pin\": \"input\",\n    \"dtype\": [\n      \"text\",\n      \"code\",\n      \"vertexshader\"\n    ]\n  },\n  \"array_coordinates\": {\n    \"pin\": \"input\",\n    \"dtype\": \"array\"\n  }\n}"
+            "data": "{\n  \"repaint\": {\n    \"dtype\": \"signal\",\n    \"pin\": \"output\"\n  },\n  \"array_coordinates\": {\n    \"dtype\": \"array\",\n    \"pin\": \"input\"\n  },\n  \"paint\": {\n    \"dtype\": \"signal\",\n    \"pin\": \"input\"\n  },\n  \"init\": {\n    \"dtype\": \"signal\",\n    \"pin\": \"input\"\n  },\n  \"array_edges\": {\n    \"dtype\": \"array\",\n    \"pin\": \"input\"\n  },\n  \"vertex_shader\": {\n    \"dtype\": [\n      \"text\",\n      \"code\",\n      \"vertexshader\"\n    ],\n    \"pin\": \"input\"\n  },\n  \"uniforms\": {\n    \"dtype\": \"json\",\n    \"pin\": \"input\"\n  },\n  \"program\": {\n    \"dtype\": \"json\",\n    \"pin\": \"input\"\n  },\n  \"fragment_shader\": {\n    \"dtype\": [\n      \"text\",\n      \"code\",\n      \"fragmentshader\"\n    ],\n    \"pin\": \"input\"\n  }\n}"
           },
           "signal1": {
             "dtype": "signal",
@@ -2798,7 +2798,7 @@
               "mode": 5,
               "save_policy": 1
             },
-            "data": "{\n  \"arrays\": [\n    \"coordinates\", \"normals\"\n  ],\n  \"uniforms\": {\n    \"u_mvp_matrix\": \"mat4\",\n    \"u_modelview_matrix\": \"mat4\",\n    \"u_projection_matrix\": \"mat4\",\n    \"u_normal_matrix\": \"mat3\",\n  },\n  \"render\": {\n    \"command\": \"triangles\",\n    \"attributes\": {\n      \"a_position\": {\n        \"dtype\": \"vec3\",\n        \"array\": \"coordinates\"\n      },\n      \"a_normal\": {\n        \"dtype\": \"vec3\",\n        \"array\": \"normals\"\n      }\n    }\n    \"glstate\": {\n      \"cull_face\": true\n      \"clear\": false,\n      \"depth_test\": true\n      \"clear_color\": \"black\",\n      \"blend\": true,\n    }\n  },\n}\n"
+            "data": "{\n  \"arrays\": [\n    \"coordinates\", \"normals\"\n  ],\n  \"uniforms\": {\n    \"u_mvp_matrix\": \"mat4\",\n    \"u_modelview_matrix\": \"mat4\",\n    \"u_normal_matrix\": \"mat3\",\n  },\n  \"render\": {\n    \"command\": \"triangles\",\n    \"attributes\": {\n      \"a_position\": {\n        \"dtype\": \"vec3\",\n        \"array\": \"coordinates\"\n      },\n      \"a_normal\": {\n        \"dtype\": \"vec3\",\n        \"array\": \"normals\"\n      }\n    }\n    \"glstate\": {\n      \"cull_face\": true\n      \"clear\": false,\n      \"depth_test\": true\n      \"clear_color\": \"black\",\n      \"blend\": true,\n    }\n  },\n}\n"
           },
           "gen_sphere": {
             "dtype": [
@@ -2822,7 +2822,7 @@
               "mode": null,
               "save_policy": 1
             },
-            "data": "{\n  \"input\": {\n    \"pin\": \"input\",\n    \"dtype\": \"json\"\n  },\n  \"output\": {\n    \"pin\": \"output\",\n    \"dtype\": \"json\"\n  }\n}"
+            "data": "{\n  \"input\": {\n    \"dtype\": \"json\",\n    \"pin\": \"input\"\n  },\n  \"output\": {\n    \"dtype\": \"json\",\n    \"pin\": \"output\"\n  }\n}"
           },
           "lines": {
             "dtype": "cson",
@@ -2832,7 +2832,7 @@
               "mode": 5,
               "save_policy": 1
             },
-            "data": "{\n  \"arrays\": [\n    \"coordinates\", \"edges\"\n  ],\n  \"uniforms\": {\n    \"u_mvp_matrix\": \"mat4\",\n    \"u_modelview_matrix\": \"mat4\",\n    \"u_projection_matrix\": \"mat4\",\n  },\n  \"render\": {\n    \"command\": \"lines_indexed\",\n    \"attributes\": {\n      \"a_position\": {\n        \"dtype\": \"vec3\",\n        \"array\": \"coordinates\"\n      }\n    }\n    \"glstate\": {\n      \"clear\": true,\n      \"depth_test\": true\n      \"clear_color\": \"black\",\n      \"blend\": true,\n      \"multisample\": true\n      \"line_width\": 1,\n    }\n    \"indices\": {\n      \"array\": \"edges\",\n      \"dtype\": \"short\"\n    }\n  },\n}\n"
+            "data": "{\n  \"arrays\": [\n    \"coordinates\", \"edges\"\n  ],\n  \"uniforms\": {\n    \"u_mvp_matrix\": \"mat4\",\n    \"u_modelview_matrix\": \"mat4\",\n  },\n  \"render\": {\n    \"command\": \"lines\",\n    \"attributes\": {\n      \"a_position\": {\n        \"dtype\": \"vec3\",\n        \"array\": \"coordinates\"\n      }\n    }\n    \"glstate\": {\n      \"clear\": true,\n      \"depth_test\": true\n      \"clear_color\": \"black\",\n      \"blend\": true,\n      \"multisample\": true\n      \"line_width\": 1,\n    }\n    \"indices\": {\n      \"array\": \"edges\",\n      \"dtype\": \"short\"\n    }\n  },\n}\n"
           },
           "selector": {
             "dtype": [
@@ -2856,7 +2856,7 @@
               "mode": 5,
               "save_policy": 1
             },
-            "data": "{\n  \"arrays\": [\n    \"coordinates\", \"normals\", \"indices\"\n  ],\n  \"uniforms\": {\n    \"u_mvp_matrix\": \"mat4\",\n    \"u_modelview_matrix\": \"mat4\",\n    \"u_projection_matrix\": \"mat4\",\n    \"u_normal_matrix\": \"mat3\",\n  },\n  \"render\": {\n    \"command\": \"triangles_indexed\",\n    \"attributes\": {\n      \"a_position\": {\n        \"dtype\": \"vec3\",\n        \"array\": \"coordinates\"\n      },\n      \"a_normal\": {\n        \"dtype\": \"vec3\",\n        \"array\": \"normals\"\n      }\n    }\n    \"glstate\": {\n      \"clear\": false,\n      \"depth_test\": true\n      \"clear_color\": \"black\",\n      \"blend\": true,\n    },\n    \"indices\": {\n      \"array\": \"indices\",\n      \"dtype\": \"short\"\n    }\n  },\n}\n"
+            "data": "{\n  \"arrays\": [\n    \"coordinates\", \"normals\", \"indices\"\n  ],\n  \"uniforms\": {\n    \"u_mvp_matrix\": \"mat4\",\n    \"u_modelview_matrix\": \"mat4\",\n    \"u_normal_matrix\": \"mat3\",\n  },\n  \"render\": {\n    \"command\": \"triangles\",\n    \"attributes\": {\n      \"a_position\": {\n        \"dtype\": \"vec3\",\n        \"array\": \"coordinates\"\n      },\n      \"a_normal\": {\n        \"dtype\": \"vec3\",\n        \"array\": \"normals\"\n      }\n    }\n    \"glstate\": {\n      \"clear\": false,\n      \"depth_test\": true\n      \"clear_color\": \"black\",\n      \"blend\": true,\n    },\n    \"indices\": {\n      \"array\": \"indices\",\n      \"dtype\": \"short\"\n    }\n  },\n}\n"
           }
         }
       },
@@ -3025,7 +3025,7 @@
               "mode": null,
               "save_policy": 1
             },
-            "data": "{\n  \"render\": {\n    \"command\": \"triangles_indexed\",\n    \"glstate\": {\n      \"depth_test\": true,\n      \"clear\": false,\n      \"clear_color\": \"black\",\n      \"blend\": true\n    },\n    \"indices\": {\n      \"array\": \"indices\",\n      \"dtype\": \"short\"\n    },\n    \"attributes\": {\n      \"a_position\": {\n        \"array\": \"coordinates\",\n        \"dtype\": \"vec3\"\n      },\n      \"a_normal\": {\n        \"array\": \"normals\",\n        \"dtype\": \"vec3\"\n      }\n    }\n  },\n  \"arrays\": [\n    \"coordinates\",\n    \"normals\",\n    \"indices\"\n  ],\n  \"uniforms\": {\n    \"u_mvp_matrix\": \"mat4\",\n    \"u_modelview_matrix\": \"mat4\",\n    \"u_normal_matrix\": \"mat3\",\n    \"u_projection_matrix\": \"mat4\"\n  }\n}"
+            "data": "{\n  \"arrays\": [\n    \"coordinates\",\n    \"normals\",\n    \"indices\"\n  ],\n  \"render\": {\n    \"attributes\": {\n      \"a_normal\": {\n        \"dtype\": \"vec3\",\n        \"array\": \"normals\"\n      },\n      \"a_position\": {\n        \"dtype\": \"vec3\",\n        \"array\": \"coordinates\"\n      }\n    },\n    \"command\": \"triangles\",\n    \"glstate\": {\n      \"depth_test\": true,\n      \"blend\": true,\n      \"clear_color\": \"black\",\n      \"clear\": false\n    },\n    \"indices\": {\n      \"array\": \"indices\",\n      \"dtype\": \"short\"\n    }\n  },\n  \"uniforms\": {\n    \"u_normal_matrix\": \"mat3\",\n    \"u_mvp_matrix\": \"mat4\",\n    \"u_modelview_matrix\": \"mat4\"\n  }\n}"
           },
           "rc": {
             "type": "reactor",
@@ -3089,7 +3089,7 @@
               "mode": null,
               "save_policy": 1
             },
-            "data": "{\n  \"uniforms\": {\n    \"pin\": \"input\",\n    \"dtype\": \"json\"\n  },\n  \"fragment_shader\": {\n    \"pin\": \"input\",\n    \"dtype\": [\n      \"text\",\n      \"code\",\n      \"fragmentshader\"\n    ]\n  },\n  \"paint\": {\n    \"pin\": \"input\",\n    \"dtype\": \"signal\"\n  },\n  \"init\": {\n    \"pin\": \"input\",\n    \"dtype\": \"signal\"\n  },\n  \"array_normals\": {\n    \"pin\": \"input\",\n    \"dtype\": \"array\"\n  },\n  \"repaint\": {\n    \"pin\": \"output\",\n    \"dtype\": \"signal\"\n  },\n  \"program\": {\n    \"pin\": \"input\",\n    \"dtype\": \"json\"\n  },\n  \"vertex_shader\": {\n    \"pin\": \"input\",\n    \"dtype\": [\n      \"text\",\n      \"code\",\n      \"vertexshader\"\n    ]\n  },\n  \"array_indices\": {\n    \"pin\": \"input\",\n    \"dtype\": \"array\"\n  },\n  \"array_coordinates\": {\n    \"pin\": \"input\",\n    \"dtype\": \"array\"\n  }\n}"
+            "data": "{\n  \"repaint\": {\n    \"dtype\": \"signal\",\n    \"pin\": \"output\"\n  },\n  \"array_coordinates\": {\n    \"dtype\": \"array\",\n    \"pin\": \"input\"\n  },\n  \"paint\": {\n    \"dtype\": \"signal\",\n    \"pin\": \"input\"\n  },\n  \"init\": {\n    \"dtype\": \"signal\",\n    \"pin\": \"input\"\n  },\n  \"array_indices\": {\n    \"dtype\": \"array\",\n    \"pin\": \"input\"\n  },\n  \"vertex_shader\": {\n    \"dtype\": [\n      \"text\",\n      \"code\",\n      \"vertexshader\"\n    ],\n    \"pin\": \"input\"\n  },\n  \"uniforms\": {\n    \"dtype\": \"json\",\n    \"pin\": \"input\"\n  },\n  \"array_normals\": {\n    \"dtype\": \"array\",\n    \"pin\": \"input\"\n  },\n  \"program\": {\n    \"dtype\": \"json\",\n    \"pin\": \"input\"\n  },\n  \"fragment_shader\": {\n    \"dtype\": [\n      \"text\",\n      \"code\",\n      \"fragmentshader\"\n    ],\n    \"pin\": \"input\"\n  }\n}"
           },
           "signal1": {
             "dtype": "signal",
@@ -3171,7 +3171,7 @@
           "mode": null,
           "save_policy": 1
         },
-        "data": "{\n  \"distance\": 10.0,\n  \"projection_matrix\": [\n    [\n      1.7320506572723389,\n      0.0,\n      0.0,\n      0.0\n    ],\n    [\n      0.0,\n      2.309401035308838,\n      0.0,\n      0.0\n    ],\n    [\n      0.0,\n      0.0,\n      -1.0000019073486328,\n      -1.0\n    ],\n    [\n      0.0,\n      0.0,\n      -0.020000020042061806,\n      0.0\n    ]\n  ],\n  \"elevation\": 30,\n  \"modelview_matrix\": [\n    [\n      -0.7071067690849304,\n      -0.3535533547401428,\n      0.6123724579811096,\n      -0.0\n    ],\n    [\n      0.7071067690849304,\n      -0.3535533547401428,\n      0.6123724579811096,\n      0.0\n    ],\n    [\n      0.0,\n      0.866025447845459,\n      0.4999999701976776,\n      0.0\n    ],\n    [\n      0.0,\n      0.0,\n      -10.0,\n      1.0\n    ]\n  ],\n  \"normal_matrix\": [\n    [\n      -0.7071067690849304,\n      -0.3535533547401428,\n      0.6123724579811096\n    ],\n    [\n      0.7071067690849304,\n      -0.3535533547401428,\n      0.6123724579811096\n    ],\n    [\n      0.0,\n      0.866025447845459,\n      0.4999999701976776\n    ]\n  ],\n  \"fov\": 60,\n  \"azimuth\": 45,\n  \"mvp_matrix\": [\n    [\n      -1.2247447441552737,\n      -0.8164964834737987,\n      -0.6123736259888801,\n      -0.6123724579811096\n    ],\n    [\n      1.2247447441552737,\n      -0.8164964834737987,\n      -0.6123736259888801,\n      -0.6123724579811096\n    ],\n    [\n      0.0,\n      2.000000065858103,\n      -0.5000009238719372,\n      -0.4999999701976776\n    ],\n    [\n      0.0,\n      0.0,\n      9.980019053444266,\n      10.0\n    ]\n  ],\n  \"width\": 640,\n  \"height\": 480,\n  \"center\": [\n    0.0,\n    0.0,\n    0.0\n  ],\n  \"position\": [\n    6.123724356957946,\n    6.123724356957945,\n    4.999999999999999\n  ]\n}"
+        "data": "{\n  \"azimuth\": 45,\n  \"normal_matrix\": [\n    [\n      -0.7071067690849304,\n      -0.3535533547401428,\n      0.6123724579811096\n    ],\n    [\n      0.7071067690849304,\n      -0.3535533547401428,\n      0.6123724579811096\n    ],\n    [\n      0.0,\n      0.866025447845459,\n      0.4999999701976776\n    ]\n  ],\n  \"fov\": 60,\n  \"elevation\": 30,\n  \"modelview_matrix\": [\n    [\n      -0.7071067690849304,\n      -0.3535533547401428,\n      0.6123724579811096,\n      -0.0\n    ],\n    [\n      0.7071067690849304,\n      -0.3535533547401428,\n      0.6123724579811096,\n      0.0\n    ],\n    [\n      0.0,\n      0.866025447845459,\n      0.4999999701976776,\n      0.0\n    ],\n    [\n      0.0,\n      0.0,\n      -10.0,\n      1.0\n    ]\n  ],\n  \"center\": [\n    0.0,\n    0.0,\n    0.0\n  ],\n  \"position\": [\n    6.123724356957946,\n    6.123724356957945,\n    4.999999999999999\n  ],\n  \"mvp_matrix\": [\n    [\n      -1.2247447441552737,\n      -0.8164964834737987,\n      -0.6123736259888801,\n      -0.6123724579811096\n    ],\n    [\n      1.2247447441552737,\n      -0.8164964834737987,\n      -0.6123736259888801,\n      -0.6123724579811096\n    ],\n    [\n      0.0,\n      2.000000065858103,\n      -0.5000009238719372,\n      -0.4999999701976776\n    ],\n    [\n      0.0,\n      0.0,\n      9.980019053444266,\n      10.0\n    ]\n  ],\n  \"projection_matrix\": [\n    [\n      1.7320506572723389,\n      0.0,\n      0.0,\n      0.0\n    ],\n    [\n      0.0,\n      2.309401035308838,\n      0.0,\n      0.0\n    ],\n    [\n      0.0,\n      0.0,\n      -1.0000019073486328,\n      -1.0\n    ],\n    [\n      0.0,\n      0.0,\n      -0.020000020042061806,\n      0.0\n    ]\n  ],\n  \"height\": 480,\n  \"distance\": 10.0,\n  \"width\": 640\n}"
       },
       "window": {
         "type": "reactor",
@@ -3220,19 +3220,6 @@
         ],
         "kwargs": {},
         "cell_args": {
-          "0": "lines_program.rcparams"
-        },
-        "macro_module_name": "seamless.core.reactor",
-        "macro_func_name": "reactor",
-        "macro_order": 1,
-        "target": "lines_program.rc"
-      },
-      {
-        "args": [
-          null
-        ],
-        "kwargs": {},
-        "cell_args": {
           "0": "params.gen_uniforms"
         },
         "macro_module_name": "seamless.core.transformer",
@@ -3246,25 +3233,12 @@
         ],
         "kwargs": {},
         "cell_args": {
-          "0": "ftri_program.rcparams"
+          "0": "tri_program.rcparams"
         },
         "macro_module_name": "seamless.core.reactor",
         "macro_func_name": "reactor",
-        "macro_order": 3,
-        "target": "ftri_program.rc"
-      },
-      {
-        "args": [
-          null
-        ],
-        "kwargs": {},
-        "cell_args": {
-          "0": "params.selector"
-        },
-        "macro_module_name": "seamless.core.reactor",
-        "macro_func_name": "reactor",
-        "macro_order": 4,
-        "target": "selector"
+        "macro_order": 2,
+        "target": "tri_program.rc"
       },
       {
         "args": [
@@ -3287,27 +3261,38 @@
         ],
         "kwargs": {},
         "cell_args": {
+          "0": "lines_program.rcparams"
+        },
+        "macro_module_name": "seamless.core.reactor",
+        "macro_func_name": "reactor",
+        "macro_order": 1,
+        "target": "lines_program.rc"
+      },
+      {
+        "args": [
+          null
+        ],
+        "kwargs": {},
+        "cell_args": {
+          "0": "params.selector"
+        },
+        "macro_module_name": "seamless.core.reactor",
+        "macro_func_name": "reactor",
+        "macro_order": 4,
+        "target": "selector"
+      },
+      {
+        "args": [
+          null
+        ],
+        "kwargs": {},
+        "cell_args": {
           "0": "params.gen_sphere"
         },
         "macro_module_name": "seamless.core.reactor",
         "macro_func_name": "reactor",
         "macro_order": 0,
         "target": "gen_sphere"
-      },
-      {
-        "args": [
-          null
-        ],
-        "kwargs": {
-          "with_window": false
-        },
-        "cell_args": {
-          "0": "params.tri"
-        },
-        "macro_module_name": "seamless.lib.gui.gl.glprogram",
-        "macro_func_name": "glprogram",
-        "macro_order": 1,
-        "target": "tri_program"
       },
       {
         "args": [
@@ -3328,35 +3313,40 @@
         "args": [
           null
         ],
+        "kwargs": {
+          "with_window": false
+        },
+        "cell_args": {
+          "0": "params.tri"
+        },
+        "macro_module_name": "seamless.lib.gui.gl.glprogram",
+        "macro_func_name": "glprogram",
+        "macro_order": 1,
+        "target": "tri_program"
+      },
+      {
+        "args": [
+          null
+        ],
         "kwargs": {},
         "cell_args": {
-          "0": "tri_program.rcparams"
+          "0": "ftri_program.rcparams"
         },
         "macro_module_name": "seamless.core.reactor",
         "macro_func_name": "reactor",
-        "macro_order": 2,
-        "target": "tri_program.rc"
+        "macro_order": 3,
+        "target": "ftri_program.rc"
       }
     ],
     "macro_listeners": [
-      {
-        "cell": "lines_program.rcparams",
-        "macro_target": "lines_program.rc",
-        "macro_arg": 0
-      },
       {
         "cell": "params.gen_uniforms",
         "macro_target": "gen_uniforms",
         "macro_arg": 0
       },
       {
-        "cell": "ftri_program.rcparams",
-        "macro_target": "ftri_program.rc",
-        "macro_arg": 0
-      },
-      {
-        "cell": "params.selector",
-        "macro_target": "selector",
+        "cell": "tri_program.rcparams",
+        "macro_target": "tri_program.rc",
         "macro_arg": 0
       },
       {
@@ -3365,13 +3355,18 @@
         "macro_arg": 0
       },
       {
-        "cell": "params.gen_sphere",
-        "macro_target": "gen_sphere",
+        "cell": "lines_program.rcparams",
+        "macro_target": "lines_program.rc",
         "macro_arg": 0
       },
       {
-        "cell": "params.tri",
-        "macro_target": "tri_program",
+        "cell": "params.selector",
+        "macro_target": "selector",
+        "macro_arg": 0
+      },
+      {
+        "cell": "params.gen_sphere",
+        "macro_target": "gen_sphere",
         "macro_arg": 0
       },
       {
@@ -3380,8 +3375,13 @@
         "macro_arg": 0
       },
       {
-        "cell": "tri_program.rcparams",
-        "macro_target": "tri_program.rc",
+        "cell": "params.tri",
+        "macro_target": "tri_program",
+        "macro_arg": 0
+      },
+      {
+        "cell": "ftri_program.rcparams",
+        "macro_target": "ftri_program.rc",
         "macro_arg": 0
       }
     ],
@@ -3403,7 +3403,7 @@
       ],
       [
         "gen_sphere.coordinates",
-        "code.cell8"
+        "code.cell5"
       ],
       [
         "gen_sphere.coordinates",
@@ -3411,7 +3411,7 @@
       ],
       [
         "gen_sphere.edges",
-        "code.cell4"
+        "code.cell3"
       ],
       [
         "gen_sphere.edges",
@@ -3419,7 +3419,7 @@
       ],
       [
         "gen_sphere.normals",
-        "code.cell7"
+        "code.cell6"
       ],
       [
         "gen_sphere.normals",
@@ -3427,7 +3427,7 @@
       ],
       [
         "gen_sphere.triangle_coordinates",
-        "code.cell3"
+        "code.cell8"
       ],
       [
         "gen_sphere.triangle_coordinates",
@@ -3435,7 +3435,7 @@
       ],
       [
         "gen_sphere.triangle_indices",
-        "code.cell5"
+        "code.cell4"
       ],
       [
         "gen_sphere.triangle_indices",
@@ -3443,7 +3443,7 @@
       ],
       [
         "gen_sphere.triangle_normals",
-        "code.cell6"
+        "code.cell7"
       ],
       [
         "gen_sphere.triangle_normals",
@@ -3459,19 +3459,19 @@
       ],
       [
         "selector.paint_lines",
-        "code.signal4"
+        "code.signal5"
       ],
       [
         "selector.paint_triangles_flat",
-        "code.signal7"
-      ],
-      [
-        "selector.paint_triangles_smooth",
         "code.signal6"
       ],
       [
+        "selector.paint_triangles_smooth",
+        "code.signal4"
+      ],
+      [
         "selector.repaint",
-        "code.signal5"
+        "code.signal7"
       ],
       [
         "tri_program.rc.repaint",
@@ -3681,19 +3681,19 @@
       ],
       [
         "code.signal4",
-        "lines_program.rc.paint"
-      ],
-      [
-        "code.signal5",
-        "window.update"
-      ],
-      [
-        "code.signal6",
         "tri_program.rc.paint"
       ],
       [
-        "code.signal7",
+        "code.signal5",
+        "lines_program.rc.paint"
+      ],
+      [
+        "code.signal6",
         "ftri_program.rc.paint"
+      ],
+      [
+        "code.signal7",
+        "window.update"
       ],
       [
         "coordinates_prescale",
