@@ -176,7 +176,8 @@ class SilkArray(SilkObject):
             json = self.json()
             return cls.from_json(json)
         elif storage == "numpy":
-            numpydata, lengths = self.numpy()
+            numpydata = self.numpy()
+            lengths = self.lengths()
             return cls.from_numpy(numpydata, lengths, copy=False)
         else:
             raise ValueError(storage)

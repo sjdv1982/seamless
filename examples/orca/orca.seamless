@@ -1,0 +1,1755 @@
+{
+  "lib": {
+    "/cell-filelink-start.py": {
+      "data": "if __name__ == \"__main__\":\n    #test with ipython -i\n    import sys, os\n\n    class dummy:\n        pass\n\n    class EditPin:\n        def __init__(self, value):\n            self.value = value\n            self.defined = True\n        def set(self, value):\n            print(\"SET\", value)\n            self.value = value\n        def get(self):\n            return self.value\n\n    class Getter:\n        def __init__(self, arg):\n            self.arg = arg\n        def get(self):\n            return self.arg\n    PINS = dummy()\n    PINS.value = EditPin(\"test\")\n    directory = sys.argv[1]\n    filename = sys.argv[2]\n    PINS.filepath = Getter(os.path.join(directory, filename))\n    PINS.latency = Getter(float(sys.argv[3]))\n    def serializer(v):\n        return str(v.get())\n    print(\"Edit in \" + filepath.get())\nelse:\n    from seamless.dtypes import serialize\n    def serializer(v):\n        return serialize(v._dtype, v.get())\n\n\nimport os, time, functools, traceback\nfrom threading import Thread, RLock, Event\nlast_value = None\nlast_serialized_value = None\nlast_exc = None\nlast_mtime = None\n\ndef write_file(fpath):\n    global last_mtime, last_value, last_serialized_value\n    if not PINS.value.defined:\n        last_mtime = -1 #will trigger a file read\n        return\n    if last_value == PINS.value.get():\n        return\n    val = serializer(PINS.value)\n    if last_serialized_value == val:\n        return\n    with lock:\n        if last_serialized_value != val:\n            #print(\"WRITE\", val)\n            if PINS.value._dtype == \"object\":\n                with open(fpath, \"wb\") as f:\n                    f.write(val)\n                    last_value = PINS.value.get()\n                    last_serialized_value = val\n            else:\n                with open(fpath, \"w\", encoding=\"utf-8\") as f:\n                    f.write(val)\n                    last_value = PINS.value.get()\n                    last_serialized_value = val\n            last_time = time.time()\n            try:\n                stat = os.stat(fpath)\n                last_mtime = stat.st_mtime\n            except Exception:\n                pass\n\nsleeptime = 0.01\n\ndef poll():\n    global last_time, last_mtime, last_value, last_serialized_value, last_exc\n    fpath = PINS.filepath.get()\n    while 1:\n        sleeps = int(PINS.latency.get() / sleeptime + 0.9999)\n        for n in range(sleeps):\n            time.sleep(sleeptime)\n            if terminate.is_set():\n                break\n        if terminate.is_set():\n            break\n        curr_time = time.time()\n        last_time = curr_time\n        if not os.path.exists(fpath):\n            try:\n                write_file(fpath)\n            except Exception:\n                exc = traceback.format_exc()\n                if exc != last_exc:\n                    print(exc)\n                    last_exc = exc\n        else:\n            with lock:\n                stat = os.stat(fpath)\n                try:\n                    if last_mtime is None or stat.st_mtime > last_mtime:\n                        data = None\n                        if PINS.value._dtype == \"object\":\n                            with open(fpath, \"rb\") as f:\n                                data = f.read()\n                        else:\n                            with open(fpath, encoding=\"utf-8\") as f:\n                                data = f.read()\n                        if data is not None:\n                            if last_serialized_value != data:\n                                #print(\"LOAD\")\n                                PINS.value.set(data)\n                                last_value = None\n                                last_serialized_value = data\n                        last_mtime = stat.st_mtime\n                except Exception:\n                    exc = traceback.format_exc()\n                    if exc != last_exc:\n                        print(exc)\n                        last_exc = exc\n\nterminate = Event()\nt = Thread(target=poll)\nt.setDaemon(True)\nlock = RLock()\nwrite_file(PINS.filepath.get())\nt.start()\n",
+      "links": [
+        "link_points.cell1",
+        "ctx1.cell1",
+        "ctx2.cell1",
+        "ctx3.cell1",
+        "ctx4.cell1",
+        "ctx6.cell1",
+        "link_fin_generator_data.cell1"
+      ]
+    },
+    "/gui/cell-basic_display_UPDATE.py": {
+      "data": "if PINS.value.updated:\n    b.setValue(PINS.value.get())\nif PINS.title.updated:\n    w.setWindowTitle(PINS.title.get())\n",
+      "links": []
+    },
+    "/gui/cell-basic_display_float.py": {
+      "data": "from seamless.qt.QtWidgets import QDoubleSpinBox, QWidget, QVBoxLayout\nfrom seamless.qt.QtCore import Qt\n\nw = QWidget()\n#w.setWindowFlags(Qt.WindowStaysOnTopHint)\nw.setAttribute(Qt.WA_ShowWithoutActivating)\nvbox = QVBoxLayout()\nvbox.addStretch(1)\nw.setLayout(vbox)\nw.resize(300,100)\nw.setWindowTitle(PINS.title.get())\nw.show()\nb = QDoubleSpinBox()\nb.setSingleStep(0.1)\nb.setMaximum(1000000)\nb.setValue(PINS.value.get())\nvbox.addWidget(b)\n",
+      "links": []
+    },
+    "/gui/cell-basic_display_html.py": {
+      "data": "from seamless.qt.QtWidgets import QPlainTextEdit, QWidget, QVBoxLayout\nfrom seamless.qt.QtCore import Qt\nfrom PyQt5.QtGui import QColor\n\nw = QWidget()\n#w.setWindowFlags(Qt.WindowStaysOnTopHint)\nw.setAttribute(Qt.WA_ShowWithoutActivating)\nvbox = QVBoxLayout()\n#vbox.addStretch(1)\nw.resize(600,600)\nw.setLayout(vbox)\nw.setWindowTitle(PINS.title.get())\n\nw.show()\nb = QPlainTextEdit()\nb.setReadOnly(True)\n#b.setFontPointSize(15)\nb.setPlainText(PINS.value.get())\n#b.setFontItalic(True)\n#b.setTextColor(QColor(255,0,0))\nvbox.addWidget(b)\n",
+      "links": []
+    },
+    "/gui/cell-basic_display_html_UPDATE.py": {
+      "data": "if PINS.value.updated:\n    b.setPlainText(PINS.value.get())\nif PINS.title.updated:\n    w.setWindowTitle(PINS.title.get())\n",
+      "links": []
+    },
+    "/gui/cell-basic_display_int.py": {
+      "data": "from seamless.qt.QtWidgets import QSpinBox, QWidget, QVBoxLayout\nfrom seamless.qt.QtCore import Qt\n\nw = QWidget()\n#w.setWindowFlags(Qt.WindowStaysOnTopHint)\nw.setAttribute(Qt.WA_ShowWithoutActivating)\nvbox = QVBoxLayout()\nvbox.addStretch(1)\nw.setLayout(vbox)\nw.resize(300,100)\nw.setWindowTitle(PINS.title.get())\nw.show()\nb = QSpinBox()\nb.setMaximum(1000000)\nb.setValue(PINS.value.get())\nvbox.addWidget(b)\n",
+      "links": []
+    },
+    "/gui/cell-basic_display_json.py": {
+      "data": "from seamless.qt.QtWidgets import QTextEdit, QWidget, QVBoxLayout\nfrom seamless.qt.QtCore import Qt\nfrom PyQt5.QtGui import QColor\nimport json\n\nw = QWidget()\n#w.setWindowFlags(Qt.WindowStaysOnTopHint)\nw.setAttribute(Qt.WA_ShowWithoutActivating)\nvbox = QVBoxLayout()\n#vbox.addStretch(1)\nw.resize(600,600)\nw.setLayout(vbox)\nw.setWindowTitle(PINS.title.get())\n\nw.show()\nb = QTextEdit()\nb.setReadOnly(True)\nb.setFontPointSize(15)\nb.setText(json.dumps(PINS.value.get(), indent=2))\n#b.setFontItalic(True)\n#b.setTextColor(QColor(255,0,0))\nvbox.addWidget(b)\n",
+      "links": []
+    },
+    "/gui/cell-basic_display_json_UPDATE.py": {
+      "data": "if PINS.value.updated:\n    b.setText(json.dumps(PINS.value.get(), indent=2))\nif PINS.title.updated:\n    b.setWindowTitle(PINS.title.get())\n",
+      "links": []
+    },
+    "/gui/cell-basic_display_text.py": {
+      "data": "from seamless.qt.QtWidgets import QTextEdit, QWidget, QVBoxLayout\nfrom seamless.qt.QtCore import Qt\nfrom PyQt5.QtGui import QColor\n\nw = QWidget()\n#w.setWindowFlags(Qt.WindowStaysOnTopHint)\nw.setAttribute(Qt.WA_ShowWithoutActivating)\nvbox = QVBoxLayout()\n#vbox.addStretch(1)\nw.resize(600,600)\nw.setLayout(vbox)\nw.setWindowTitle(PINS.title.get())\n\nw.show()\nb = QTextEdit()\nb.setReadOnly(True)\nb.setFontPointSize(15)\nb.setText(PINS.value.get())\n#b.setFontItalic(True)\n#b.setTextColor(QColor(255,0,0))\nvbox.addWidget(b)\n",
+      "links": []
+    },
+    "/gui/cell-basic_display_text_UPDATE.py": {
+      "data": "if PINS.value.updated:\n    b.setText(PINS.value.get())\nif PINS.title.updated:\n    w.setWindowTitle(PINS.title.get())\n",
+      "links": []
+    },
+    "/gui/cell-basic_editor_UPDATE.py": {
+      "data": "if PINS.value.updated:\n    b.setValue(PINS.value.get())\nif PINS.title.updated:\n    w.setWindowTitle(PINS.title.get())\n",
+      "links": [
+        "ctx5.cell4"
+      ]
+    },
+    "/gui/cell-basic_editor_float.py": {
+      "data": "from seamless.qt.QtWidgets import QDoubleSpinBox, QWidget, QVBoxLayout\nfrom seamless.qt.QtCore import Qt\n\nw = QWidget()\n#w.setWindowFlags(Qt.WindowStaysOnTopHint)\nw.setAttribute(Qt.WA_ShowWithoutActivating)\nvbox = QVBoxLayout()\nvbox.addStretch(1)\nw.setLayout(vbox)\nw.resize(300,100)\nw.setWindowTitle(PINS.title.get())\nw.show()\nb = QDoubleSpinBox()\nb.setSingleStep(0.01)\nb.setDecimals(3)\nb.setMaximum(1000000)\nif PINS.value.defined:\n    b.setValue(PINS.value.get())\nvbox.addWidget(b)\nb.valueChanged.connect(PINS.value.set)\n",
+      "links": [
+        "ctx5.cell2"
+      ]
+    },
+    "/gui/cell-basic_editor_int.py": {
+      "data": "from seamless.qt.QtWidgets import QSpinBox, QWidget, QVBoxLayout\nfrom seamless.qt.QtCore import Qt\n\nw = QWidget()\n#w.setWindowFlags(Qt.WindowStaysOnTopHint)\nw.setAttribute(Qt.WA_ShowWithoutActivating)\nvbox = QVBoxLayout()\nvbox.addStretch(1)\nw.setLayout(vbox)\nw.resize(300,100)\nw.setWindowTitle(PINS.title.get())\nw.show()\nb = QSpinBox()\nb.setMaximum(1000000)\nif PINS.value.defined:\n    b.setValue(PINS.value.get())\nvbox.addWidget(b)\nb.valueChanged.connect(PINS.value.set)\n",
+      "links": []
+    },
+    "/gui/cell-basic_editor_int_UPDATE.py": {
+      "data": "if PINS.value.updated:\n    b.setValue(PINS.value.get())\nif PINS.title.updated:\n    w.setWindowTitle(PINS.title.get())\nif PINS.maximum.updated:\n    b.setMaximum(PINS.maximum.get())\n",
+      "links": []
+    },
+    "/gui/cell-basic_editor_json.py": {
+      "data": "from seamless.qt.QtWidgets import QTextEdit, QWidget, QVBoxLayout\nfrom seamless.qt.QtCore import Qt\nfrom PyQt5.QtGui import QColor\nimport json\n\nw = QWidget()\n#w.setWindowFlags(Qt.WindowStaysOnTopHint)\nw.setAttribute(Qt.WA_ShowWithoutActivating)\nvbox = QVBoxLayout()\n#vbox.addStretch(1)\nw.resize(600,600)\nw.setLayout(vbox)\nw.setWindowTitle(PINS.title.get())\n\nclass MyTextEdit(QTextEdit):\n    def focusOutEvent(self, event):\n        PINS.value.set(self.toPlainText())\n        QTextEdit.focusOutEvent(self, event)\n\nw.show()\nb = MyTextEdit()\nb.setFontPointSize(15)\nif PINS.value.defined:\n    b.setText(json.dumps(PINS.value.get(), indent=2))\n#b.setFontItalic(True)\n#b.setTextColor(QColor(255,0,0))\nvbox.addWidget(b)\n",
+      "links": []
+    },
+    "/gui/cell-basic_editor_json_UPDATE.py": {
+      "data": "if PINS.value.updated:\n    b.setText(json.dumps(PINS.value.get(), indent=2))\nif PINS.title.updated:\n    w.setWindowTitle(PINS.title.get())\n",
+      "links": []
+    },
+    "/gui/cell-basic_editor_text.py": {
+      "data": "from seamless.qt.QtWidgets import QTextEdit, QWidget, QVBoxLayout\nfrom seamless.qt.QtCore import Qt\nfrom PyQt5.QtGui import QColor\n\nw = QWidget()\n#w.setWindowFlags(Qt.WindowStaysOnTopHint)\nw.setAttribute(Qt.WA_ShowWithoutActivating)\nvbox = QVBoxLayout()\n#vbox.addStretch(1)\nw.resize(600,600)\nw.setLayout(vbox)\nw.setWindowTitle(PINS.title.get())\n\nclass MyTextEdit(QTextEdit):\n    def focusOutEvent(self, event):\n        PINS.value.set(self.toPlainText())\n        QTextEdit.focusOutEvent(self, event)\n\nw.show()\nb = MyTextEdit()\nb.setFontPointSize(15)\nif PINS.value.defined:\n    b.setText(PINS.value.get())\n#b.setFontItalic(True)\n#b.setTextColor(QColor(255,0,0))\nvbox.addWidget(b)\n",
+      "links": []
+    },
+    "/gui/cell-basic_editor_text_UPDATE.py": {
+      "data": "if PINS.value.updated:\n    b.setText(PINS.value.get())\nif PINS.title.updated:\n    w.setWindowTitle(PINS.title.get())\n",
+      "links": []
+    }
+  },
+  "macro": [
+    {
+      "with_context": false,
+      "dtype": [
+        "text",
+        "code",
+        "python"
+      ],
+      "type_args": [
+        "json",
+        "seamless",
+        "reactor_params"
+      ],
+      "module_name": "seamless.core.reactor",
+      "func_name": "reactor",
+      "code": "@macro(type=(\"json\", \"seamless\", \"reactor_params\"),with_context=False)\ndef reactor(kwargs):\n    \"\"\"Defines a reactor worker.\n\nReactors react upon changes in their input cells.\nReactors are connected to their input cells via input pins. In addition, reactors\n may manipulate output cells via output pins. Finally, a cell may be both an\n input cell and an output cell of the reactor, in which case it is connected via\n an edit pin.\n The pins are declared in the \"params\" parameter (see below).\n\nIn addition, all transformers have an implicit input pin named \"code\",\n which must be connected to a Python cell ( dtype=(\"text\", \"code\", \"python\") ).\nThe code must be a Python block that returns the result using a \"return\" statement.\nAll input values are injected directly into the code's namespace. The variable\n name of the input is the same as its pin name.\nPreliminary values can be returned using return_preliminary(value)\n(as of seamless 0.1, this does not require any special pin declaration)\n\nAs of seamless 0.1, all transformers are asynchronous, and they carry out\n their computation in a separate process (using multiprocessing).\nAs of seamless 0.1, transformers start their computation as soon as all inputs\n(including the code) has been defined, even if no output cell has been connected.\nWhenever the input data or code changes, a new computation is performed. If the\n previous computation is still in progress, it is canceled.\n\nInvoke transformer.status to get the current status of the transformer\nInvoke transformer.shell() to create an IPython shell of the transformer namespace\n\npin.connect(cell) connects an outputpin to a cell\ncell.connect(pin) connects a cell to an inputpin\npin.cell() returns or creates a cell that is connected to that pin\n\nparams:\n    A dictionary containing the reactor parameters.\n    As of seamless 0.1, each (name,value) item represents a reactor pin:\n      name (string): name of the pin\n      value: dictionary with the following items:\n        pin: must be \"input\", \"output\" or \"edit\".\n        dtype: describes the dtype of the cell(s) connected to the pin.\n          As of seamless 0.1, the following dtypes are understood:\n          \"int\", \"float\", \"bool\", \"str\", \"json\", \"cson\", \"array\", \"signal\",\n          \"text\", (\"text\", \"code\", \"python\"), (\"text\", \"code\", \"ipython\"),\n          (\"text\", \"code\", \"silk\"), (\"text\", \"code\", \"slash-0\"),\n          (\"text\", \"code\", \"vertexshader\"), (\"text\", \"code\", \"fragmentshader\"),\n          (\"text\", \"html\")\n        must_be_defined (bool, default True): In case of edit pins, if\n         must_be_defined is False, the reactor will start up  even if the\n         connected cell does not yet have a defined value.\n    Since \"reactor\" is a macro, the dictionary can also be provided in the\n     form of a cell of dtype (\"json\", \"seamless\", \"reactor_params\")\n\"\"\"\n    from seamless.core.reactor import Reactor #code must be standalone\n    return Reactor(kwargs)\n"
+    },
+    {
+      "with_context": false,
+      "dtype": [
+        "text",
+        "code",
+        "python"
+      ],
+      "type_args": [
+        "json",
+        "seamless",
+        "transformer_params"
+      ],
+      "module_name": "seamless.core.transformer",
+      "func_name": "transformer",
+      "code": "@macro(type=(\"json\", \"seamless\", \"transformer_params\"), with_context=False)\ndef transformer(params):\n    \"\"\"Defines a transformer worker.\n\nTransformers transform their input cells into an output result.\nTransformers are connected to their input cells via input pins, and their\n result is connected to an output cell via an output pin. There can be only one\n output pin. The pins are declared in the \"params\" parameter (see below).\n\nIn addition, all transformers have an implicit input pin named \"code\",\n which must be connected to a Python cell ( dtype=(\"text\", \"code\", \"python\") ).\nThe code must be a Python block that returns the result using a \"return\" statement.\nAll input values are injected directly into the code's namespace. The variable\n name of the input is the same as its pin name.\nPreliminary values can be returned using return_preliminary(value)\n(as of seamless 0.1, this does not require any special pin declaration)\n\nAs of seamless 0.1, all transformers are asynchronous, and they carry out\n their computation in a separate process (using multiprocessing).\nAs of seamless 0.1, transformers start their computation as soon as all inputs\n(including the code) has been defined, even if no output cell has been connected.\nWhenever the input data or code changes, a new computation is performed. If the\n previous computation is still in progress, it is canceled.\n\nInvoke transformer.status to get the current status of the transformer\nInvoke transformer.shell() to create an IPython shell of the transformer namespace\n\npin.connect(cell) connects an outputpin to a cell\ncell.connect(pin) connects a cell to an inputpin\npin.cell() returns or creates a cell that is connected to that pin\n\nparams:\n    A dictionary containing the transformer parameters.\n    As of seamless 0.1, each (name,value) item represents a transformer pin:\n      name (string): name of the pin\n      value: dictionary with the following items:\n        pin: must be \"input\" or \"output\". Only one output pin is allowed.\n        dtype: describes the dtype of the cell(s) connected to the pin.\n          As of seamless 0.1, the following dtypes are understood:\n          \"int\", \"float\", \"bool\", \"str\", \"json\", \"cson\", \"array\", \"signal\",\n          \"text\", (\"text\", \"code\", \"python\"), (\"text\", \"code\", \"ipython\"),\n          (\"text\", \"code\", \"silk\"), (\"text\", \"code\", \"slash-0\"),\n          (\"text\", \"code\", \"vertexshader\"), (\"text\", \"code\", \"fragmentshader\"),\n          (\"text\", \"html\")\n    Since \"transformer\" is a macro, the dictionary can also be provided in the\n     form of a cell of dtype (\"json\", \"seamless\", \"transformer_params\")\n\"\"\"\n    from seamless.core.transformer import Transformer #code must be standalone\n    return Transformer(params)\n"
+    },
+    {
+      "with_context": true,
+      "dtype": [
+        "text",
+        "code",
+        "python"
+      ],
+      "type_args": "json",
+      "module_name": "seamless.lib.dynamic_html",
+      "func_name": "dynamic_html",
+      "code": "@macro(\"json\")\ndef dynamic_html(ctx, params):\n    from seamless import reactor\n    from collections import OrderedDict\n    params2 = { \"vars\": OrderedDict(),\n                \"html\": OrderedDict(),\n                \"evals\": OrderedDict()\n              }\n    ed_params = {\n        \"DYNAMIC_HTML_PARAMS\": {\n            \"pin\": \"input\",\n            \"dtype\": \"json\"\n        },\n        \"DYNAMIC_HTML_TEMPLATE\": {\n            \"pin\": \"input\",\n            \"dtype\": \"text\"\n        },\n        \"dynamic_html\": {\n            \"pin\": \"output\",\n            \"dtype\": (\"text\", \"html\")\n        }\n    }\n    assert \"dynamic_html\" not in params\n    for k,v in params.items():\n        assert isinstance(v,dict), k\n        ed_param = {\"pin\": \"input\"}\n        type_ = v[\"type\"]\n        assert type_ in (\"var\", \"html\", \"eval\"), type_\n        if type_ == \"var\":\n            dtype = v.get(\"dtype\")\n            evals = v.get(\"evals\", [])\n            var = v.get(\"var\", k)\n            params2[\"vars\"][k] = (var, evals)\n            ed_param[\"dtype\"] = dtype\n        elif type_ == \"html\":\n            id_ = v.get(\"id\", k)\n            params2[\"html\"][k] = id_\n            ed_param[\"dtype\"] = (\"text\", \"html\")\n        else: #type_ = \"eval\"\n            on_start = v.get(\"on_start\", None)\n            params2[\"evals\"][k] = on_start\n            ed_param[\"dtype\"] = \"text\"\n        ed_params[k] = ed_param\n    for k,v in params2[\"vars\"].items():\n        var, evals = v\n        for e in evals:\n            assert e in params2[\"evals\"], (k, e, list(params2[\"evals\"].keys()))\n    rc = ctx.rc = reactor(ed_params)\n    rc.code_start.cell().fromfile(\"cell-dynamic-html-start.py\")\n    rc.code_update.cell().set(\"update(on_start=False)\")\n    rc.code_stop.cell().set(\"\")\n    rc.DYNAMIC_HTML_PARAMS.cell().set(params2)\n    rc.DYNAMIC_HTML_TEMPLATE.cell().fromfile(\"dynamic-html.jinja\")\n    ctx.export(rc)\n"
+    },
+    {
+      "with_context": true,
+      "dtype": [
+        "text",
+        "code",
+        "python"
+      ],
+      "type_args": "str",
+      "module_name": "seamless.lib.filelink",
+      "func_name": "filelink",
+      "code": "@macro(\"str\")\ndef filelink(ctx, cell_type):\n    cell_filelink_start = \"cell-filelink-start.py\" #repeat for inline\n    from seamless import reactor\n    pinparams = {\n       \"value\": {\n         \"pin\": \"edit\",\n         \"dtype\": cell_type,\n         \"must_be_defined\": False\n       },\n       \"filepath\" : {\n         \"pin\": \"input\",\n         \"dtype\": \"str\"\n       },\n       \"latency\" : {\n         \"pin\": \"input\",\n         \"dtype\": \"float\"\n       },\n    }\n    rc = ctx.rc = reactor(pinparams)\n    rc.code_start.cell().fromfile(cell_filelink_start)\n    rc.code_update.cell().set(\"write_file(PINS.filepath.get())\")\n    rc.code_stop.cell().set('terminate.set(); t.join()')\n    ctx.export(rc)\n"
+    },
+    {
+      "with_context": true,
+      "dtype": [
+        "text",
+        "code",
+        "python"
+      ],
+      "type_args": {
+        "display_type": "str",
+        "title": {
+          "default": "Basic display",
+          "type": "str"
+        },
+        "_order": [
+          "display_type",
+          "title"
+        ]
+      },
+      "module_name": "seamless.lib.gui.basic_display",
+      "func_name": "basic_display",
+      "code": "@macro(OrderedDict((\n    (\"display_type\",\"str\"),\n    (\"title\",{\"type\": \"str\", \"default\": \"Basic display\"})\n)))\ndef basic_display(ctx, display_type, title):\n    from seamless import reactor\n\n    _displays = {\n      \"int\": {\n        \"code\": \"cell-basic_display_int.py\",\n        \"update\": \"cell-basic_display_UPDATE.py\",\n      },\n      \"float\": {\n        \"code\": \"cell-basic_display_float.py\",\n        \"update\": \"cell-basic_display_UPDATE.py\",\n      },\n      \"text\": {\n        \"code\": \"cell-basic_display_text.py\",\n        \"update\": \"cell-basic_display_text_UPDATE.py\",\n      },\n      \"str\": {\n        \"code\": \"cell-basic_display_text.py\",\n        \"update\": \"cell-basic_display_text_UPDATE.py\",\n      },\n      (\"text\", \"html\"): {\n        \"code\": \"cell-basic_display_html.py\",\n        \"update\": \"cell-basic_display_html_UPDATE.py\",\n      },\n      \"json\": {\n        \"code\": \"cell-basic_display_json.py\",\n        \"update\": \"cell-basic_display_json_UPDATE.py\",\n      },\n    }\n\n    def _match_type(type, typelist):\n        typelist = list(typelist)\n        type2 = type\n        if isinstance(type, str):\n            type2 = (type,)\n        typelist2 = []\n        for t in typelist:\n            if isinstance(t, str):\n                typelist2.append((t,))\n            else:\n                typelist2.append(t)\n        matches = []\n        for n in range(len(typelist)):\n            ltype = typelist2[n]\n            k = min(len(type2), len(ltype))\n            if type2[:k] == ltype[:k]:\n                matches.append((n, k))\n        if not len(matches):\n            raise TypeError(\"Cannot find display for cell type '{0}'\".format(type))\n        matches.sort(key=lambda v: -v[1])\n        bestmatch = matches[0][0]\n        return typelist[bestmatch]\n\n    display_type = _match_type(display_type, _displays.keys())\n    pinparams = {\n      \"value\": {\n        \"pin\": \"input\",\n        \"dtype\": display_type\n      },\n      \"title\": {\n        \"pin\": \"input\",\n        \"dtype\": \"str\",\n      },\n    }\n    d = ctx.display = reactor(pinparams)\n    d.title.cell().set(title)\n    d.code_start.cell().fromfile(_displays[display_type][\"code\"])\n    d.code_stop.cell().set('w.destroy()')\n    upfile = _displays[display_type][\"update\"]\n    c_up = d.code_update.cell()\n    if upfile is not None:\n        c_up.fromfile(upfile)\n    else:\n        c_up.set(\"\")\n    ctx.export(d, forced=[\"title\"])\n"
+    },
+    {
+      "with_context": true,
+      "dtype": [
+        "text",
+        "code",
+        "python"
+      ],
+      "type_args": {
+        "editor_type": "str",
+        "title": {
+          "default": "Basic editor",
+          "type": "str"
+        },
+        "_order": [
+          "editor_type",
+          "title"
+        ]
+      },
+      "module_name": "seamless.lib.gui.basic_editor",
+      "func_name": "basic_editor",
+      "code": "@macro(OrderedDict((\n    (\"editor_type\",\"str\"),\n    (\"title\",{\"type\": \"str\", \"default\": \"Basic editor\"})\n)))\ndef basic_editor(ctx, editor_type, title):\n    from seamless import reactor\n\n    _editors = {\n      \"int\": {\n        \"code\": \"cell-basic_editor_int.py\",\n        \"update\": \"cell-basic_editor_int_UPDATE.py\",\n      },\n      \"float\": {\n        \"code\": \"cell-basic_editor_float.py\",\n        \"update\": \"cell-basic_editor_UPDATE.py\",\n      },\n      \"text\": {\n        \"code\": \"cell-basic_editor_text.py\",\n        \"update\": \"cell-basic_editor_text_UPDATE.py\",\n      },\n      \"json\": {\n        \"code\": \"cell-basic_editor_json.py\",\n        \"update\": \"cell-basic_editor_json_UPDATE.py\",\n      },\n    }\n\n    def _match_type(type, typelist):\n        typelist = list(typelist)\n        type2 = type\n        if isinstance(type, str):\n            type2 = (type,)\n        typelist2 = []\n        for t in typelist:\n            if isinstance(t, str):\n                typelist2.append((t,))\n            else:\n                typelist2.append(t)\n        matches = []\n        for n in range(len(typelist)):\n            ltype = typelist2[n]\n            k = min(len(type2), len(ltype))\n            if type2[:k] == ltype[:k]:\n                matches.append((n, k))\n        if not len(matches):\n            raise TypeError(\"Cannot find editor for cell type '{0}'\".format(type))\n        matches.sort(key=lambda v: -v[1])\n        bestmatch = matches[0][0]\n        return typelist[bestmatch]\n\n    editor_type = _match_type(editor_type, _editors.keys())\n    pinparams = {\n      \"value\": {\n        \"pin\": \"edit\",\n        \"dtype\": editor_type,\n        \"must_be_defined\": False\n      },\n      \"title\": {\n        \"pin\": \"input\",\n        \"dtype\": \"str\",\n      },\n    }\n    if editor_type == \"int\":\n        pinparams[\"maximum\"] = {\"pin\": \"input\", \"dtype\": \"int\"}\n    rc = ctx.rc = reactor(pinparams)\n    rc.title.cell().set(title)\n    forced = [\"title\"]\n    if editor_type == \"int\":\n        rc.maximum.set(9999999)\n        forced.append(\"maximum\")\n    rc.code_start.cell().fromfile(_editors[editor_type][\"code\"])\n    rc.code_stop.cell().set('w.destroy()')\n    upfile = _editors[editor_type][\"update\"]\n    c_up = rc.code_update.cell(True)\n    if upfile is not None:\n        c_up.fromfile(upfile)\n    else:\n        c_up.set(\"\")\n    ctx.export(rc, forced=forced)\n"
+    },
+    {
+      "with_context": true,
+      "dtype": [
+        "text",
+        "code",
+        "python"
+      ],
+      "type_args": {
+        "dtype": {
+          "default": [
+            "text",
+            "html"
+          ],
+          "type": "dtype"
+        },
+        "title": {
+          "default": "Browser",
+          "type": "str"
+        },
+        "_order": [
+          "dtype",
+          "title"
+        ]
+      },
+      "module_name": "seamless.lib.gui.browser",
+      "func_name": "browser",
+      "code": "@macro(OrderedDict((\n    (\"dtype\",{\"type\": \"dtype\", \"default\": (\"text\", \"html\")}),\n    (\"title\",{\"type\": \"str\", \"default\": \"Browser\"})\n)))\ndef browser(ctx, dtype, title):\n    from seamless import reactor\n    assert dtype[:2] == (\"text\", \"html\") #for now...\n    pinparams = {\n      \"value\": {\n        \"pin\": \"edit\",\n        \"dtype\": dtype\n      },\n      \"title\": {\n        \"pin\": \"input\",\n        \"dtype\": \"str\",\n      },\n    }\n    rc = ctx.rc = reactor(pinparams)\n    rc.title.cell().set(title)\n    rc.code_start.cell().fromfile(\"cell-browser.py\")\n    rc.code_stop.cell().set('widget.destroy()')\n    c_up = rc.code_update.cell(True)\n    c_up.fromfile(\"cell-browser_UPDATE.py\")\n    ctx.export(rc, forced=[\"title\"])\n"
+    },
+    {
+      "with_context": true,
+      "dtype": [
+        "text",
+        "code",
+        "python"
+      ],
+      "type_args": [
+        "json",
+        "seamless",
+        "transformer_params"
+      ],
+      "module_name": "seamless.lib.itransformer",
+      "func_name": "itransformer",
+      "code": "@macro(type=(\"json\", \"seamless\", \"transformer_params\"))\ndef itransformer(ctx, params):\n    from seamless import reactor\n    from seamless.core.worker import ExportedInputPin\n    params2 = params.copy()\n    params2[\"code\"] = {\"pin\": \"input\",\n                        \"dtype\": (\"text\", \"code\", \"ipython\")}\n    params2[\"transformer_params\"] = {\"pin\": \"input\", \"dtype\": \"json\"}\n    params2[\"@shell\"] =  \".namespace\"\n    rc = ctx.rc = reactor(params2)\n    rc.transformer_params.cell().set(params)\n    rc.code_start.cell().fromfile(\"cell-itransformer.py\")\n    rc.code_update.cell().set(\"do_update()\")\n    rc.code_stop.cell().set(\"\")\n    ctx.export(ctx.rc)\n"
+    },
+    {
+      "with_context": true,
+      "dtype": [
+        "text",
+        "code",
+        "python"
+      ],
+      "type_args": {
+        "template_definition": "json",
+        "output_type": {
+          "default": [
+            "text",
+            "html"
+          ],
+          "type": "dtype"
+        },
+        "_order": [
+          "template_definition",
+          "output_type"
+        ]
+      },
+      "module_name": "seamless.lib.templateer",
+      "func_name": "templateer",
+      "code": "@macro(OrderedDict((\n  (\"template_definition\", \"json\"),\n  (\"output_type\", {\"type\": \"dtype\", \"default\": (\"text\", \"html\")}),\n)))\ndef templateer(ctx, template_definition, output_type):\n    from seamless import cell, reactor\n    templates = template_definition[\"templates\"]\n    assert isinstance(templates, list)\n    environment = template_definition[\"environment\"]\n    ed_params = {}\n    for t in templates:\n        assert t not in ed_params, t\n        ed_params[t] = {\"pin\": \"input\", \"dtype\": \"text\"}\n    for k,v in environment.items():\n        assert k not in ed_params, k\n        ed_params[k] = {\"pin\": \"input\", \"dtype\": v}\n    ed_params[\"TEMPLATE_DEFINITION\"] = {\"pin\": \"input\", \"dtype\": \"json\"}\n    ed_params[\"RESULT\"] = {\"pin\": \"output\", \"dtype\": output_type}\n    ctx.rc = reactor(ed_params)\n    ctx.rc.TEMPLATE_DEFINITION.cell().set(template_definition)\n    ctx.rc.code_start.cell().fromfile(\"cell-templateer.py\")\n    ctx.rc.code_update.cell().set(\"make_template()\")\n    ctx.rc.code_stop.cell().set(\"\")\n    ctx.export(ctx.rc)\n"
+    },
+    {
+      "with_context": false,
+      "dtype": [
+        "text",
+        "code",
+        "python"
+      ],
+      "type_args": {
+        "period": {
+          "default": 0,
+          "type": "float"
+        },
+        "_order": [
+          "period"
+        ]
+      },
+      "module_name": "seamless.lib.timer",
+      "func_name": "timer",
+      "code": "@macro(OrderedDict((\n    (\"period\", {\"type\": \"float\", \"default\": 0}),\n)), with_context=False)\ndef timer(period):\n    from seamless import reactor\n    timer = reactor({\n        \"period\": {\"pin\": \"input\", \"dtype\": \"float\"},\n        \"trigger\": {\"pin\": \"output\", \"dtype\": \"signal\"}\n    })\n    timer.code_start.cell().fromfile(\"cell-timer.py\")\n    timer.code_update.cell().set(\"\")\n    timer.code_stop.cell().set(\"t.cancel(); dead = True\")\n    if period > 0:\n        timer.period.cell().set(period)\n    return timer\n"
+    }
+  ],
+  "main": {
+    "type": "context",
+    "like_worker": false,
+    "like_cell": false,
+    "pins": {},
+    "auto": [
+      "cell1",
+      "cell10",
+      "cell11",
+      "cell12",
+      "cell13",
+      "cell14",
+      "cell15",
+      "cell16",
+      "cell17",
+      "cell18",
+      "cell19",
+      "cell2",
+      "cell20",
+      "cell21",
+      "cell3",
+      "cell4",
+      "cell5",
+      "cell6",
+      "cell7",
+      "cell8",
+      "cell9",
+      "ctx1",
+      "ctx2",
+      "ctx3",
+      "ctx4",
+      "ctx5",
+      "ctx6",
+      "registrar_object1",
+      "registrar_object2"
+    ],
+    "children": {
+      "cell1": {
+        "dtype": "str",
+        "resource": {
+          "filepath": null,
+          "lib": null,
+          "mode": null,
+          "save_policy": 1
+        },
+        "data": "./sideview-points.json"
+      },
+      "cell10": {
+        "dtype": [
+          "text",
+          "code",
+          "python"
+        ],
+        "resource": {
+          "filepath": "./cell-view-start.py",
+          "lib": false,
+          "mode": 5,
+          "save_policy": 1
+        },
+        "data": "from seamless.qt.QtWidgets import QLabel\nfrom seamless.qt.QtGui import QPainter, QPixmap, QPen\nfrom seamless.qt.QtCore import Qt, QPoint, QRect, QUrl\nfrom seamless.qt import QtCore\nfrom math import asin, acos, pi, sqrt\nimport itertools\nimport random\nimport numpy as np\nimport time\ndisplacement = np.zeros((10000, 2))\n\nfrom PyQt5.QtMultimedia import QSoundEffect\nsound1 = QSoundEffect()\nsound1.setSource(QUrl.fromLocalFile(\"orca.wav\"))\nsound1.setVolume(0.09)\n\nsound2 = QSoundEffect()\nsound2.setSource(QUrl.fromLocalFile(\"orca2.wav\"))\nsound2.setVolume(0.09)\n\norca_sound = None\nsound3 = QSoundEffect()\nsound3.setSource(QUrl.fromLocalFile(\"underwater.wav\"))\nsound3.setVolume(0.20)\nall_circles = []\ndef build_circles():\n    global all_circles, lead_y\n    circles = sorted(\n      SideviewPointArray(PINS.circles.get()),\n      key=lambda p:-p.x\n    )\n    lead = circles[-1]\n    lead_y = (lead.ytop + lead.ybottom)/2\n\n    #3-fold interpolation\n    circles2 = []\n    split = 2\n    for n in range(len(circles)-1):\n        c1 = circles[n]\n        c2 = circles[n+1]\n        if c1.ybottom is None or c2.ybottom is None:\n            continue\n        circles2.append(c1)\n        for nn in range(split):\n            f = (nn+1.0)/(split+1)\n            x = (1-f) * c1.x + f * c2.x\n            ytop = (1-f) * c1.ytop + f * c2.ytop\n            ybottom = (1-f) * c1.ybottom + f * c2.ybottom\n            if len(c1.ysegments) == len(c2.ysegments):\n                ysegments = []\n                for nnn in range(len(c1.ysegments)):\n                    yseg = (1-f) * c1.ysegments[nnn] + f * c2.ysegments[nnn]\n                    ysegments.append(yseg)\n            else:\n                if f <= 0.5:\n                    ysegments = c1.ysegments\n                else:\n                    ysegments = c2.ysegments\n            p = SideviewPoint(x,ytop,ybottom=ybottom,ysegments=ysegments)\n            circles2.append(p)\n    circles2.append(circles[-1])\n\n\n    fincircles = FinCircleArray(PINS.fincircles.get())\n    all_circles = sorted(\n      itertools.chain(circles2, fincircles),\n      key=lambda p:-p.x\n    )\n\ndef draw_circle(painter, center, radius, ysegments):\n    painter.setBrush(Qt.black)\n    if not len(ysegments):\n        painter.drawEllipse(\n            QPoint(\n                center[0],\n                center[1]\n            ),\n            radius*ellipsity, radius\n        )\n    else:\n        angles = [0]\n        for y in ysegments:\n            ang = acos(max(min(y,1),-1))\n            angles.append(ang/pi*180)\n        for a in list(reversed(angles)):\n            angles.append(360-a)\n        for n in range(len(angles)-1):\n            start = 16 * (angles[n]+90) #0 = 3 o'clock, but we start at 12 o'clock\n            arc = 16 * (angles[n+1] - angles[n]) #Qt wants the size in 1/16 of a deg\n            painter.drawPie(\n                QRect(\n                    center[0] - radius * ellipsity,\n                    center[1] - radius,\n                    2 * radius * ellipsity,\n                    2* radius\n                ),\n                start, arc\n            )\n            if not n % 2:\n                painter.setBrush(Qt.white)\n            else:\n                painter.setBrush(Qt.black)\n\nclass MyWidget(QLabel):\n    _following = False\n    painter = None\n    def paintEvent(self, event):\n        super().paintEvent(event)\n        if not sound3.loopsRemaining():\n            sound3.play()\n        global curr_time\n        new_time = time.time()\n        d = new_time - curr_time\n        if d >= reaction_time:\n            displacement[:] = displacement[0]\n        else:\n            steps = int(d/reaction_time * len(displacement)+0.5)\n            if steps > 0:\n                displacement[steps:] = displacement[:-steps]\n                displacement[:steps] = displacement[0]\n        d = displacement[::20] - displacement[0]\n        if np.max(d*d) < 1:\n            timer.stop()\n        curr_time = new_time\n        qp = self.painter = QPainter()\n        qp.begin(self)\n        qp.setPen(Qt.NoPen)\n        w = self.size().width()\n        h = self.size().height()\n        for circle in all_circles:\n            qp.setBrush(Qt.black)\n            px = circle.x\n            depthfactor = depth**0.2 * depth**(-px)\n            dispos = int(px*len(displacement)+0.5)\n            dis = displacement[dispos]\n            if isinstance(circle, SideviewPoint):\n                if circle.ybottom is None:\n                    continue\n                mid = (circle.ytop + circle.ybottom) / 2\n                radius = abs((circle.ytop - circle.ybottom) / 2)\n                ysegments = [-(y-mid)/radius for y in circle.ysegments]\n                draw_circle(qp, (dis[0],(mid-lead_y)*h*depthfactor+dis[1]),\n                             radius*h*depthfactor, ysegments)\n            elif isinstance(circle, FinCircle):\n                mid = (circle.distance + circle.yradius) * depthfactor\n                #pr\n                qp.save()\n                qp.translate(dis[0],dis[1] + (circle.ycenter - lead_y) * h * depthfactor)\n                qp.rotate(180)\n                qp.rotate(circle.rotation)\n                qp.translate(0,mid*h)\n                qp.drawEllipse(\n                    QPoint(0,0),\n                    w*circle.xradius*depthfactor,\n                    h*circle.yradius*depthfactor\n                )\n                qp.restore()\n        self.painter.end()\n        if self._following:\n            self.follow()\n\n    def follow(self):\n        global orca_sound\n        if orca_sound is None or not orca_sound.loopsRemaining():\n            if random.random() < 0.5:\n                orca_sound = sound1\n            else:\n                orca_sound = sound2\n            orca_sound.play()\n        if not sound3.loopsRemaining():\n            sound3.play()\n        max_displ = max_speed / 1000 * \\\n            max(self.size().width(), self.size().height())\n        curr_displacement = displacement[0]\n        new_displacement = self.target\n        delta_displacement_sq = (curr_displacement[0]-new_displacement[0])**2 + \\\n          (curr_displacement[1]-new_displacement[1])**2\n        if delta_displacement_sq <= max_displ*max_displ:\n            displacement[0] = new_displacement\n            self._following = False\n        else:\n            frac = max_displ/sqrt(delta_displacement_sq)\n            displacement[0] = (\n                frac * new_displacement[0] + (1-frac) * curr_displacement[0],\n                frac * new_displacement[1] + (1-frac) * curr_displacement[1],\n            )\n            if not timer.isActive():\n                timer.start(20)\n            self._following = True\n\n    def leaveEvent(self, event):\n        self.target = (\n            0.5 * widget.size().width(),\n            0.7 * widget.size().height(),\n        )\n        self.follow()\n        super().leaveEvent(event)\n\n    def mouseMoveEvent(self, event):\n        self.target = (\n            event.x(),\n            event.y(),\n        )\n        self.follow()\n        super().mouseMoveEvent(event)\n\nwidget = MyWidget()\nwidget.setMouseTracking(True)\nmyPixmap = QPixmap('sea.jpeg')\nwidget.setPixmap(myPixmap)\nwidget.setScaledContents(True)\nwidget.setWindowTitle(\"Isaure's Orca Screensaver\")\ncurr_time = time.time()\nwidget.show()\ndisplacement[:] =(\n    0.5 * widget.size().width(),\n    0.7 * widget.size().height(),\n)\n\ntimer = QtCore.QTimer()\ntimer.timeout.connect(lambda: widget.repaint())\n"
+      },
+      "cell11": {
+        "dtype": "str",
+        "resource": {
+          "filepath": null,
+          "lib": null,
+          "mode": null,
+          "save_policy": 1
+        },
+        "data": "./cell-view-start.py"
+      },
+      "cell12": {
+        "dtype": "float",
+        "resource": {
+          "filepath": null,
+          "lib": null,
+          "mode": null,
+          "save_policy": 1
+        },
+        "data": "0.2"
+      },
+      "cell13": {
+        "dtype": [
+          "text",
+          "code",
+          "python"
+        ],
+        "resource": {
+          "filepath": "./cell-view-update.py",
+          "lib": false,
+          "mode": 5,
+          "save_policy": 1
+        },
+        "data": "\nif PINS.circles.updated or PINS.fincircles.updated:\n    build_circles()\n    widget.repaint()\n\nif PINS.ellipsity.updated:\n    ellipsity = PINS.ellipsity.get()\n    widget.repaint()\n\nif PINS.depth.updated:\n    depth = PINS.depth.get()\n    widget.repaint()\n\nif PINS.reaction_time.updated:\n    reaction_time = PINS.reaction_time.get()\n    widget.repaint()\n\nif PINS.max_speed.updated:\n    max_speed = PINS.max_speed.get()\n    widget.repaint()\n"
+      },
+      "cell14": {
+        "dtype": "str",
+        "resource": {
+          "filepath": null,
+          "lib": null,
+          "mode": null,
+          "save_policy": 1
+        },
+        "data": "./cell-view-update.py"
+      },
+      "cell15": {
+        "dtype": "float",
+        "resource": {
+          "filepath": null,
+          "lib": null,
+          "mode": null,
+          "save_policy": 1
+        },
+        "data": "0.2"
+      },
+      "cell16": {
+        "dtype": [
+          "text",
+          "code",
+          "python"
+        ],
+        "resource": {
+          "filepath": null,
+          "lib": null,
+          "mode": null,
+          "save_policy": 1
+        },
+        "data": "\nif widget.painter is not None and widget.painter.isActive():\n    widget.painter.end()\nwidget.destroy()\ndel timer\n"
+      },
+      "cell17": {
+        "dtype": [
+          "text",
+          "code",
+          "python"
+        ],
+        "resource": {
+          "filepath": "./cell-gen-fincircles.py",
+          "lib": false,
+          "mode": 5,
+          "save_policy": 1
+        },
+        "data": "from math import exp\nfins = []\n\ndef generate_fins_gauss(midx, width, step,\n                  distance, xradius, yradius, rotation):\n    result = []\n    x = midx - width\n    while x <= midx+ width:\n        if width == 0:\n            factor = 1\n        else:\n            sd = (x-midx)/width\n            factor = exp(-sd**2/0.5)\n        fin = FinCircle(\n            x=x,\n            ycenter=0.7,\n            distance=distance,\n            xradius=xradius,\n            yradius=yradius * factor,\n            rotation = rotation\n        )\n        result.append(fin)\n        x += step\n        if step == 0:\n            break\n    return result\n\nfin_gens = FinGeneratorArray(fin_generators)\nfor fin_gen in fin_gens:\n    for rotation in fin_gen.rotations:\n        if fin_gen.xwidth:\n            fins += generate_fins_gauss(\n                fin_gen.x, fin_gen.xwidth, fin_gen.xstep,\n                fin_gen.distance, fin_gen.xradius, fin_gen.yradius,\n                rotation)\n        else:\n            d = fin_gen.json()\n            d[\"rotation\"] = rotation\n            fin = FinCircle(d)\n            fins.append(fin)\nreturn FinCircleArray(fins)\n"
+      },
+      "cell18": {
+        "dtype": "str",
+        "resource": {
+          "filepath": null,
+          "lib": null,
+          "mode": null,
+          "save_policy": 1
+        },
+        "data": "./cell-gen-fincircles.py"
+      },
+      "cell19": {
+        "dtype": "float",
+        "resource": {
+          "filepath": null,
+          "lib": null,
+          "mode": null,
+          "save_policy": 1
+        },
+        "data": "0.2"
+      },
+      "cell2": {
+        "dtype": "float",
+        "resource": {
+          "filepath": null,
+          "lib": null,
+          "mode": null,
+          "save_policy": 1
+        },
+        "data": "0.2"
+      },
+      "cell20": {
+        "dtype": "str",
+        "resource": {
+          "filepath": null,
+          "lib": null,
+          "mode": null,
+          "save_policy": 1
+        },
+        "data": "./fingenerator.cson"
+      },
+      "cell21": {
+        "dtype": "float",
+        "resource": {
+          "filepath": null,
+          "lib": null,
+          "mode": null,
+          "save_policy": 1
+        },
+        "data": "0.2"
+      },
+      "cell3": {
+        "dtype": [
+          "text",
+          "code",
+          "python"
+        ],
+        "resource": {
+          "filepath": "./cell-ed-sideview-start.py",
+          "lib": false,
+          "mode": 5,
+          "save_policy": 1
+        },
+        "data": "from seamless.qt.QtWidgets import QLabel\nfrom seamless.qt.QtGui import QPainter, QPixmap, QPen\nfrom seamless.qt.QtCore import Qt, QPoint, QRectF\nfrom seamless.qt import QtGui, QtCore, QtWidgets\n\npoint_radius = 7\n\ndef draw_point(qp, w, h, x, y):\n    qp.drawEllipse(\n        QPoint(\n          x*w,\n          y*h,\n        ),\n        point_radius, point_radius\n    )\n\nmy_points = SideviewPointArray(PINS.points.get())\nmyPixmap = QPixmap('orca.png')\n\nclass active_point:\n    index = None\n    @classmethod\n    def reset(self):\n        ind = self.index\n        self.index = None\n        self.point_field = None\n        self.point_field_index = None\n        self.x = None\n        self.y = None\n        if ind is not None:\n            widget.repaint()\n\n    @classmethod\n    def find_point(self, x, y):\n        w = widget.size().width()\n        h = widget.size().height()\n        ex, ey = x, y\n        if y is None:\n            def is_close(px, py):\n                return (w*px-ex)**2<point_radius**2\n        else:\n            def is_close(px, py):\n                return (w*px-ex)**2+(h*py-ey)**2<point_radius**2\n        for pnr, p in enumerate(my_points):\n            if is_close(p.x, p.ytop):\n                self.index = pnr\n                self.point_field = \"ytop\"\n                break\n            elif y is None:\n                 continue\n            elif p.ybottom is not None and is_close(p.x, p.ybottom):\n                self.index = pnr\n                self.point_field = \"ybottom\"\n                break\n            else:\n                found = False\n                for ppnr, pp in enumerate(p.ysegments):\n                    if is_close(p.x, pp):\n                        self.index = pnr\n                        self.point_field = \"ysegments\"\n                        self.point_field_index = ppnr\n                        found = True\n                        break\n                if found:\n                    break\n\n    @classmethod\n    def update(self, x, y):\n        if self.index is None:\n            return\n        self.x, self.y = self.convert(x,y)\n\n    @classmethod\n    def convert(self, x, y):\n        w = widget.size().width()\n        h = widget.size().height()\n        return x/w,y/h\n\n    @classmethod\n    def commit(self):\n        if self.index is None:\n            return\n        p = my_points[self.index]\n        p.x = self.x\n        if self.point_field == \"ytop\":\n            p.ytop = self.y\n        elif self.point_field == \"ybottom\":\n            p.ybottom = self.y\n        elif self.point_field == \"ysegments\":\n            p.ysegments[self.point_field_index] = self.y\n        PINS.points.set(my_points)\n        self.reset()\n\nactive_point.reset()\n\n\nclass MyWidget(QLabel):\n    def paintEvent(self, event):\n        super().paintEvent(event)\n        qp = QPainter()\n        qp.begin(self)\n        qp.setBrush(Qt.red)\n        w = self.size().width()\n        h = self.size().height()\n        qp.save()\n        qp.setPen(Qt.red)\n        qp.setFont(QtGui.QFont('Arial', 14))\n        txt = \"\"\"Drag the points with the mouse to change the circles of the orca\nBlue points: top of the orca\nCyan points: bottom of the orca\nGreen points: border between black and white\nCyan and green points are linked to blue points\n\nShift+LClick creates a new blue point\nCtrl+LClick: adds a cyan point or a green point to a existing blue point\nCtrl+RClick, Shift+RClick: deletes a point\n\"\"\"\n        qp.drawText(QRectF(int(0.05*w),int(0.05*h), int(0.9*w), int(0.3 * h)), txt)\n        qp.restore()\n        ap = active_point\n        api = active_point.index\n        ap_pf = active_point.point_field\n        ap_pfi = active_point.point_field_index\n        for pointnr, point in enumerate(my_points):\n            px = point.x\n            if api == pointnr:\n                px = ap.x\n            qp.setBrush(Qt.blue)\n            if api == pointnr and ap_pf == \"ytop\":\n                draw_point(qp, w, h, px, ap.y)\n            else:\n                draw_point(qp, w, h, px, point.ytop)\n            if point.ybottom is not None:\n                qp.setBrush(Qt.cyan)\n                if api == pointnr and ap_pf == \"ybottom\":\n                    draw_point(qp, w, h, px, ap.y)\n                else:\n                    draw_point(qp, w, h, px, point.ybottom)\n            if point.ysegments:\n                qp.setBrush(Qt.green)\n            for ysegind, ysegment in enumerate(point.ysegments):\n                if api == pointnr and ap_pf == \"ysegments\" \\\n                  and ap_pfi ==  ysegind:\n                    draw_point(qp, w, h, px, ap.y)\n                else:\n                    draw_point(qp, w, h, px, ysegment)\n            if point.ysegments:\n                qp.setBrush(Qt.red)\n\n        qp.end()\n    def mousePressEvent(self, event):\n        global my_points\n        modifiers = QtWidgets.QApplication.keyboardModifiers()\n        x,y = (event.x(), event.y())\n        xx,yy = active_point.convert(x,y)\n        if event.buttons() == QtCore.Qt.LeftButton:\n            if modifiers == QtCore.Qt.ShiftModifier:\n                new_point = SideviewPoint((xx,yy))\n                my_points.append(new_point)\n                PINS.points.set(my_points)\n                self.update()\n            if modifiers == QtCore.Qt.ControlModifier:\n                active_point.find_point(x, None)\n                index = active_point.index\n                if index is not None:\n                    p = my_points[index]\n                    if p.ybottom is None:\n                        p.ybottom = yy\n                        PINS.points.set(my_points)\n                    else:\n                        p.ysegments.append(yy)\n                        p.ysegments = sorted(p.ysegments)\n                        PINS.points.set(my_points)\n                    self.update()\n                    active_point.index = None\n        elif event.buttons() == QtCore.Qt.RightButton:\n            if modifiers in (QtCore.Qt.ShiftModifier, QtCore.Qt.ControlModifier):\n                active_point.find_point(x,y)\n                index = active_point.index\n                if index is not None:\n                    if active_point.point_field == \"ytop\":\n                        my_points.pop(index)\n                        PINS.points.set(my_points)\n                    elif active_point.point_field == \"ybottom\":\n                        my_points[index].ybottom = None\n                        PINS.points.set(my_points)\n                    elif active_point.point_field == \"ysegments\":\n                        findex = active_point.point_field_index\n                        my_points[index].ysegments.pop(findex)\n                        PINS.points.set(my_points)\n                    active_point.index = None\n                    self.update()\n\n\n    def mouseMoveEvent(self, event):\n        #if event.buttons() == QtCore.Qt.NoButton:\n        #    print(\"Simple mouse motion\")\n        modifiers = QtWidgets.QApplication.keyboardModifiers()\n        if modifiers != QtCore.Qt.NoModifier:\n            return\n        if event.buttons() == QtCore.Qt.LeftButton:\n            x,y = (event.x(), event.y())\n            if active_point.index is None:\n                active_point.find_point(x,y)\n            active_point.update(x,y)\n            if active_point.index is not None:\n                self.repaint()\n        #elif event.buttons() == QtCore.Qt.RightButton:\n        #    print(\"Right click drag\")\n        super().mouseMoveEvent(event)\n\n    def mouseReleaseEvent(self, event):\n        #if event.buttons() == QtCore.Qt.LeftButton:\n        active_point.commit()\n        super().mouseReleaseEvent(event)\n\nwidget = MyWidget()\nwidget.setMouseTracking(True)\nwidget.setPixmap(myPixmap)\nwidget.setScaledContents(True)\nwidget.setWindowTitle(\"Orca sideview\")\nwidget.show()\n\nprint(\"START\")\n"
+      },
+      "cell4": {
+        "dtype": "str",
+        "resource": {
+          "filepath": null,
+          "lib": null,
+          "mode": null,
+          "save_policy": 1
+        },
+        "data": "./cell-ed-sideview-start.py"
+      },
+      "cell5": {
+        "dtype": "float",
+        "resource": {
+          "filepath": null,
+          "lib": null,
+          "mode": null,
+          "save_policy": 1
+        },
+        "data": "0.2"
+      },
+      "cell6": {
+        "dtype": [
+          "text",
+          "code",
+          "python"
+        ],
+        "resource": {
+          "filepath": "./cell-ed-sideview-update.py",
+          "lib": false,
+          "mode": 5,
+          "save_policy": 1
+        },
+        "data": "\nif PINS.points.updated:\n    my_points = SideviewPointArray(PINS.points.get())\n    widget.repaint()\n"
+      },
+      "cell7": {
+        "dtype": "str",
+        "resource": {
+          "filepath": null,
+          "lib": null,
+          "mode": null,
+          "save_policy": 1
+        },
+        "data": "./cell-ed-sideview-update.py"
+      },
+      "cell8": {
+        "dtype": "float",
+        "resource": {
+          "filepath": null,
+          "lib": null,
+          "mode": null,
+          "save_policy": 1
+        },
+        "data": "0.2"
+      },
+      "cell9": {
+        "dtype": [
+          "text",
+          "code",
+          "python"
+        ],
+        "resource": {
+          "filepath": null,
+          "lib": null,
+          "mode": null,
+          "save_policy": 1
+        },
+        "data": "widget.destroy()"
+      },
+      "ctx1": {
+        "type": "context",
+        "like_worker": true,
+        "like_cell": false,
+        "pins": {
+          "filepath": [
+            "ExportedInputPin",
+            "ctx1.rc.filepath"
+          ],
+          "latency": [
+            "ExportedInputPin",
+            "ctx1.rc.latency"
+          ],
+          "value": [
+            "ExportedEditPin",
+            "ctx1.rc.value"
+          ]
+        },
+        "auto": [
+          "cell1",
+          "cell2",
+          "cell3"
+        ],
+        "children": {
+          "cell1": {
+            "dtype": [
+              "text",
+              "code",
+              "python"
+            ],
+            "resource": {
+              "filepath": "/cell-filelink-start.py",
+              "lib": true,
+              "mode": 2,
+              "save_policy": 1
+            },
+            "data": "if __name__ == \"__main__\":\n    #test with ipython -i\n    import sys, os\n\n    class dummy:\n        pass\n\n    class EditPin:\n        def __init__(self, value):\n            self.value = value\n            self.defined = True\n        def set(self, value):\n            print(\"SET\", value)\n            self.value = value\n        def get(self):\n            return self.value\n\n    class Getter:\n        def __init__(self, arg):\n            self.arg = arg\n        def get(self):\n            return self.arg\n    PINS = dummy()\n    PINS.value = EditPin(\"test\")\n    directory = sys.argv[1]\n    filename = sys.argv[2]\n    PINS.filepath = Getter(os.path.join(directory, filename))\n    PINS.latency = Getter(float(sys.argv[3]))\n    def serializer(v):\n        return str(v.get())\n    print(\"Edit in \" + filepath.get())\nelse:\n    from seamless.dtypes import serialize\n    def serializer(v):\n        return serialize(v._dtype, v.get())\n\n\nimport os, time, functools, traceback\nfrom threading import Thread, RLock, Event\nlast_value = None\nlast_serialized_value = None\nlast_exc = None\nlast_mtime = None\n\ndef write_file(fpath):\n    global last_mtime, last_value, last_serialized_value\n    if not PINS.value.defined:\n        last_mtime = -1 #will trigger a file read\n        return\n    if last_value == PINS.value.get():\n        return\n    val = serializer(PINS.value)\n    if last_serialized_value == val:\n        return\n    with lock:\n        if last_serialized_value != val:\n            #print(\"WRITE\", val)\n            if PINS.value._dtype == \"object\":\n                with open(fpath, \"wb\") as f:\n                    f.write(val)\n                    last_value = PINS.value.get()\n                    last_serialized_value = val\n            else:\n                with open(fpath, \"w\", encoding=\"utf-8\") as f:\n                    f.write(val)\n                    last_value = PINS.value.get()\n                    last_serialized_value = val\n            last_time = time.time()\n            try:\n                stat = os.stat(fpath)\n                last_mtime = stat.st_mtime\n            except Exception:\n                pass\n\nsleeptime = 0.01\n\ndef poll():\n    global last_time, last_mtime, last_value, last_serialized_value, last_exc\n    fpath = PINS.filepath.get()\n    while 1:\n        sleeps = int(PINS.latency.get() / sleeptime + 0.9999)\n        for n in range(sleeps):\n            time.sleep(sleeptime)\n            if terminate.is_set():\n                break\n        if terminate.is_set():\n            break\n        curr_time = time.time()\n        last_time = curr_time\n        if not os.path.exists(fpath):\n            try:\n                write_file(fpath)\n            except Exception:\n                exc = traceback.format_exc()\n                if exc != last_exc:\n                    print(exc)\n                    last_exc = exc\n        else:\n            with lock:\n                stat = os.stat(fpath)\n                try:\n                    if last_mtime is None or stat.st_mtime > last_mtime:\n                        data = None\n                        if PINS.value._dtype == \"object\":\n                            with open(fpath, \"rb\") as f:\n                                data = f.read()\n                        else:\n                            with open(fpath, encoding=\"utf-8\") as f:\n                                data = f.read()\n                        if data is not None:\n                            if last_serialized_value != data:\n                                #print(\"LOAD\")\n                                PINS.value.set(data)\n                                last_value = None\n                                last_serialized_value = data\n                        last_mtime = stat.st_mtime\n                except Exception:\n                    exc = traceback.format_exc()\n                    if exc != last_exc:\n                        print(exc)\n                        last_exc = exc\n\nterminate = Event()\nt = Thread(target=poll)\nt.setDaemon(True)\nlock = RLock()\nwrite_file(PINS.filepath.get())\nt.start()\n"
+          },
+          "cell2": {
+            "dtype": [
+              "text",
+              "code",
+              "python"
+            ],
+            "resource": {
+              "filepath": null,
+              "lib": null,
+              "mode": null,
+              "save_policy": 1
+            },
+            "data": "write_file(PINS.filepath.get())"
+          },
+          "cell3": {
+            "dtype": [
+              "text",
+              "code",
+              "python"
+            ],
+            "resource": {
+              "filepath": null,
+              "lib": null,
+              "mode": null,
+              "save_policy": 1
+            },
+            "data": "terminate.set(); t.join()"
+          },
+          "rc": {
+            "type": "reactor",
+            "mode": "sync",
+            "params": {
+              "filepath": {
+                "dtype": "str",
+                "pin": "input"
+              },
+              "latency": {
+                "dtype": "float",
+                "pin": "input"
+              },
+              "value": {
+                "dtype": [
+                  "text",
+                  "code",
+                  "python"
+                ],
+                "must_be_defined": false,
+                "pin": "edit"
+              }
+            }
+          }
+        }
+      },
+      "ctx2": {
+        "type": "context",
+        "like_worker": true,
+        "like_cell": false,
+        "pins": {
+          "filepath": [
+            "ExportedInputPin",
+            "ctx2.rc.filepath"
+          ],
+          "latency": [
+            "ExportedInputPin",
+            "ctx2.rc.latency"
+          ],
+          "value": [
+            "ExportedEditPin",
+            "ctx2.rc.value"
+          ]
+        },
+        "auto": [
+          "cell1",
+          "cell2",
+          "cell3"
+        ],
+        "children": {
+          "cell1": {
+            "dtype": [
+              "text",
+              "code",
+              "python"
+            ],
+            "resource": {
+              "filepath": "/cell-filelink-start.py",
+              "lib": true,
+              "mode": 2,
+              "save_policy": 1
+            },
+            "data": "if __name__ == \"__main__\":\n    #test with ipython -i\n    import sys, os\n\n    class dummy:\n        pass\n\n    class EditPin:\n        def __init__(self, value):\n            self.value = value\n            self.defined = True\n        def set(self, value):\n            print(\"SET\", value)\n            self.value = value\n        def get(self):\n            return self.value\n\n    class Getter:\n        def __init__(self, arg):\n            self.arg = arg\n        def get(self):\n            return self.arg\n    PINS = dummy()\n    PINS.value = EditPin(\"test\")\n    directory = sys.argv[1]\n    filename = sys.argv[2]\n    PINS.filepath = Getter(os.path.join(directory, filename))\n    PINS.latency = Getter(float(sys.argv[3]))\n    def serializer(v):\n        return str(v.get())\n    print(\"Edit in \" + filepath.get())\nelse:\n    from seamless.dtypes import serialize\n    def serializer(v):\n        return serialize(v._dtype, v.get())\n\n\nimport os, time, functools, traceback\nfrom threading import Thread, RLock, Event\nlast_value = None\nlast_serialized_value = None\nlast_exc = None\nlast_mtime = None\n\ndef write_file(fpath):\n    global last_mtime, last_value, last_serialized_value\n    if not PINS.value.defined:\n        last_mtime = -1 #will trigger a file read\n        return\n    if last_value == PINS.value.get():\n        return\n    val = serializer(PINS.value)\n    if last_serialized_value == val:\n        return\n    with lock:\n        if last_serialized_value != val:\n            #print(\"WRITE\", val)\n            if PINS.value._dtype == \"object\":\n                with open(fpath, \"wb\") as f:\n                    f.write(val)\n                    last_value = PINS.value.get()\n                    last_serialized_value = val\n            else:\n                with open(fpath, \"w\", encoding=\"utf-8\") as f:\n                    f.write(val)\n                    last_value = PINS.value.get()\n                    last_serialized_value = val\n            last_time = time.time()\n            try:\n                stat = os.stat(fpath)\n                last_mtime = stat.st_mtime\n            except Exception:\n                pass\n\nsleeptime = 0.01\n\ndef poll():\n    global last_time, last_mtime, last_value, last_serialized_value, last_exc\n    fpath = PINS.filepath.get()\n    while 1:\n        sleeps = int(PINS.latency.get() / sleeptime + 0.9999)\n        for n in range(sleeps):\n            time.sleep(sleeptime)\n            if terminate.is_set():\n                break\n        if terminate.is_set():\n            break\n        curr_time = time.time()\n        last_time = curr_time\n        if not os.path.exists(fpath):\n            try:\n                write_file(fpath)\n            except Exception:\n                exc = traceback.format_exc()\n                if exc != last_exc:\n                    print(exc)\n                    last_exc = exc\n        else:\n            with lock:\n                stat = os.stat(fpath)\n                try:\n                    if last_mtime is None or stat.st_mtime > last_mtime:\n                        data = None\n                        if PINS.value._dtype == \"object\":\n                            with open(fpath, \"rb\") as f:\n                                data = f.read()\n                        else:\n                            with open(fpath, encoding=\"utf-8\") as f:\n                                data = f.read()\n                        if data is not None:\n                            if last_serialized_value != data:\n                                #print(\"LOAD\")\n                                PINS.value.set(data)\n                                last_value = None\n                                last_serialized_value = data\n                        last_mtime = stat.st_mtime\n                except Exception:\n                    exc = traceback.format_exc()\n                    if exc != last_exc:\n                        print(exc)\n                        last_exc = exc\n\nterminate = Event()\nt = Thread(target=poll)\nt.setDaemon(True)\nlock = RLock()\nwrite_file(PINS.filepath.get())\nt.start()\n"
+          },
+          "cell2": {
+            "dtype": [
+              "text",
+              "code",
+              "python"
+            ],
+            "resource": {
+              "filepath": null,
+              "lib": null,
+              "mode": null,
+              "save_policy": 1
+            },
+            "data": "write_file(PINS.filepath.get())"
+          },
+          "cell3": {
+            "dtype": [
+              "text",
+              "code",
+              "python"
+            ],
+            "resource": {
+              "filepath": null,
+              "lib": null,
+              "mode": null,
+              "save_policy": 1
+            },
+            "data": "terminate.set(); t.join()"
+          },
+          "rc": {
+            "type": "reactor",
+            "mode": "sync",
+            "params": {
+              "filepath": {
+                "dtype": "str",
+                "pin": "input"
+              },
+              "latency": {
+                "dtype": "float",
+                "pin": "input"
+              },
+              "value": {
+                "dtype": [
+                  "text",
+                  "code",
+                  "python"
+                ],
+                "must_be_defined": false,
+                "pin": "edit"
+              }
+            }
+          }
+        }
+      },
+      "ctx3": {
+        "type": "context",
+        "like_worker": true,
+        "like_cell": false,
+        "pins": {
+          "filepath": [
+            "ExportedInputPin",
+            "ctx3.rc.filepath"
+          ],
+          "latency": [
+            "ExportedInputPin",
+            "ctx3.rc.latency"
+          ],
+          "value": [
+            "ExportedEditPin",
+            "ctx3.rc.value"
+          ]
+        },
+        "auto": [
+          "cell1",
+          "cell2",
+          "cell3"
+        ],
+        "children": {
+          "cell1": {
+            "dtype": [
+              "text",
+              "code",
+              "python"
+            ],
+            "resource": {
+              "filepath": "/cell-filelink-start.py",
+              "lib": true,
+              "mode": 2,
+              "save_policy": 1
+            },
+            "data": "if __name__ == \"__main__\":\n    #test with ipython -i\n    import sys, os\n\n    class dummy:\n        pass\n\n    class EditPin:\n        def __init__(self, value):\n            self.value = value\n            self.defined = True\n        def set(self, value):\n            print(\"SET\", value)\n            self.value = value\n        def get(self):\n            return self.value\n\n    class Getter:\n        def __init__(self, arg):\n            self.arg = arg\n        def get(self):\n            return self.arg\n    PINS = dummy()\n    PINS.value = EditPin(\"test\")\n    directory = sys.argv[1]\n    filename = sys.argv[2]\n    PINS.filepath = Getter(os.path.join(directory, filename))\n    PINS.latency = Getter(float(sys.argv[3]))\n    def serializer(v):\n        return str(v.get())\n    print(\"Edit in \" + filepath.get())\nelse:\n    from seamless.dtypes import serialize\n    def serializer(v):\n        return serialize(v._dtype, v.get())\n\n\nimport os, time, functools, traceback\nfrom threading import Thread, RLock, Event\nlast_value = None\nlast_serialized_value = None\nlast_exc = None\nlast_mtime = None\n\ndef write_file(fpath):\n    global last_mtime, last_value, last_serialized_value\n    if not PINS.value.defined:\n        last_mtime = -1 #will trigger a file read\n        return\n    if last_value == PINS.value.get():\n        return\n    val = serializer(PINS.value)\n    if last_serialized_value == val:\n        return\n    with lock:\n        if last_serialized_value != val:\n            #print(\"WRITE\", val)\n            if PINS.value._dtype == \"object\":\n                with open(fpath, \"wb\") as f:\n                    f.write(val)\n                    last_value = PINS.value.get()\n                    last_serialized_value = val\n            else:\n                with open(fpath, \"w\", encoding=\"utf-8\") as f:\n                    f.write(val)\n                    last_value = PINS.value.get()\n                    last_serialized_value = val\n            last_time = time.time()\n            try:\n                stat = os.stat(fpath)\n                last_mtime = stat.st_mtime\n            except Exception:\n                pass\n\nsleeptime = 0.01\n\ndef poll():\n    global last_time, last_mtime, last_value, last_serialized_value, last_exc\n    fpath = PINS.filepath.get()\n    while 1:\n        sleeps = int(PINS.latency.get() / sleeptime + 0.9999)\n        for n in range(sleeps):\n            time.sleep(sleeptime)\n            if terminate.is_set():\n                break\n        if terminate.is_set():\n            break\n        curr_time = time.time()\n        last_time = curr_time\n        if not os.path.exists(fpath):\n            try:\n                write_file(fpath)\n            except Exception:\n                exc = traceback.format_exc()\n                if exc != last_exc:\n                    print(exc)\n                    last_exc = exc\n        else:\n            with lock:\n                stat = os.stat(fpath)\n                try:\n                    if last_mtime is None or stat.st_mtime > last_mtime:\n                        data = None\n                        if PINS.value._dtype == \"object\":\n                            with open(fpath, \"rb\") as f:\n                                data = f.read()\n                        else:\n                            with open(fpath, encoding=\"utf-8\") as f:\n                                data = f.read()\n                        if data is not None:\n                            if last_serialized_value != data:\n                                #print(\"LOAD\")\n                                PINS.value.set(data)\n                                last_value = None\n                                last_serialized_value = data\n                        last_mtime = stat.st_mtime\n                except Exception:\n                    exc = traceback.format_exc()\n                    if exc != last_exc:\n                        print(exc)\n                        last_exc = exc\n\nterminate = Event()\nt = Thread(target=poll)\nt.setDaemon(True)\nlock = RLock()\nwrite_file(PINS.filepath.get())\nt.start()\n"
+          },
+          "cell2": {
+            "dtype": [
+              "text",
+              "code",
+              "python"
+            ],
+            "resource": {
+              "filepath": null,
+              "lib": null,
+              "mode": null,
+              "save_policy": 1
+            },
+            "data": "write_file(PINS.filepath.get())"
+          },
+          "cell3": {
+            "dtype": [
+              "text",
+              "code",
+              "python"
+            ],
+            "resource": {
+              "filepath": null,
+              "lib": null,
+              "mode": null,
+              "save_policy": 1
+            },
+            "data": "terminate.set(); t.join()"
+          },
+          "rc": {
+            "type": "reactor",
+            "mode": "sync",
+            "params": {
+              "filepath": {
+                "dtype": "str",
+                "pin": "input"
+              },
+              "latency": {
+                "dtype": "float",
+                "pin": "input"
+              },
+              "value": {
+                "dtype": [
+                  "text",
+                  "code",
+                  "python"
+                ],
+                "must_be_defined": false,
+                "pin": "edit"
+              }
+            }
+          }
+        }
+      },
+      "ctx4": {
+        "type": "context",
+        "like_worker": true,
+        "like_cell": false,
+        "pins": {
+          "filepath": [
+            "ExportedInputPin",
+            "ctx4.rc.filepath"
+          ],
+          "latency": [
+            "ExportedInputPin",
+            "ctx4.rc.latency"
+          ],
+          "value": [
+            "ExportedEditPin",
+            "ctx4.rc.value"
+          ]
+        },
+        "auto": [
+          "cell1",
+          "cell2",
+          "cell3"
+        ],
+        "children": {
+          "cell1": {
+            "dtype": [
+              "text",
+              "code",
+              "python"
+            ],
+            "resource": {
+              "filepath": "/cell-filelink-start.py",
+              "lib": true,
+              "mode": 2,
+              "save_policy": 1
+            },
+            "data": "if __name__ == \"__main__\":\n    #test with ipython -i\n    import sys, os\n\n    class dummy:\n        pass\n\n    class EditPin:\n        def __init__(self, value):\n            self.value = value\n            self.defined = True\n        def set(self, value):\n            print(\"SET\", value)\n            self.value = value\n        def get(self):\n            return self.value\n\n    class Getter:\n        def __init__(self, arg):\n            self.arg = arg\n        def get(self):\n            return self.arg\n    PINS = dummy()\n    PINS.value = EditPin(\"test\")\n    directory = sys.argv[1]\n    filename = sys.argv[2]\n    PINS.filepath = Getter(os.path.join(directory, filename))\n    PINS.latency = Getter(float(sys.argv[3]))\n    def serializer(v):\n        return str(v.get())\n    print(\"Edit in \" + filepath.get())\nelse:\n    from seamless.dtypes import serialize\n    def serializer(v):\n        return serialize(v._dtype, v.get())\n\n\nimport os, time, functools, traceback\nfrom threading import Thread, RLock, Event\nlast_value = None\nlast_serialized_value = None\nlast_exc = None\nlast_mtime = None\n\ndef write_file(fpath):\n    global last_mtime, last_value, last_serialized_value\n    if not PINS.value.defined:\n        last_mtime = -1 #will trigger a file read\n        return\n    if last_value == PINS.value.get():\n        return\n    val = serializer(PINS.value)\n    if last_serialized_value == val:\n        return\n    with lock:\n        if last_serialized_value != val:\n            #print(\"WRITE\", val)\n            if PINS.value._dtype == \"object\":\n                with open(fpath, \"wb\") as f:\n                    f.write(val)\n                    last_value = PINS.value.get()\n                    last_serialized_value = val\n            else:\n                with open(fpath, \"w\", encoding=\"utf-8\") as f:\n                    f.write(val)\n                    last_value = PINS.value.get()\n                    last_serialized_value = val\n            last_time = time.time()\n            try:\n                stat = os.stat(fpath)\n                last_mtime = stat.st_mtime\n            except Exception:\n                pass\n\nsleeptime = 0.01\n\ndef poll():\n    global last_time, last_mtime, last_value, last_serialized_value, last_exc\n    fpath = PINS.filepath.get()\n    while 1:\n        sleeps = int(PINS.latency.get() / sleeptime + 0.9999)\n        for n in range(sleeps):\n            time.sleep(sleeptime)\n            if terminate.is_set():\n                break\n        if terminate.is_set():\n            break\n        curr_time = time.time()\n        last_time = curr_time\n        if not os.path.exists(fpath):\n            try:\n                write_file(fpath)\n            except Exception:\n                exc = traceback.format_exc()\n                if exc != last_exc:\n                    print(exc)\n                    last_exc = exc\n        else:\n            with lock:\n                stat = os.stat(fpath)\n                try:\n                    if last_mtime is None or stat.st_mtime > last_mtime:\n                        data = None\n                        if PINS.value._dtype == \"object\":\n                            with open(fpath, \"rb\") as f:\n                                data = f.read()\n                        else:\n                            with open(fpath, encoding=\"utf-8\") as f:\n                                data = f.read()\n                        if data is not None:\n                            if last_serialized_value != data:\n                                #print(\"LOAD\")\n                                PINS.value.set(data)\n                                last_value = None\n                                last_serialized_value = data\n                        last_mtime = stat.st_mtime\n                except Exception:\n                    exc = traceback.format_exc()\n                    if exc != last_exc:\n                        print(exc)\n                        last_exc = exc\n\nterminate = Event()\nt = Thread(target=poll)\nt.setDaemon(True)\nlock = RLock()\nwrite_file(PINS.filepath.get())\nt.start()\n"
+          },
+          "cell2": {
+            "dtype": [
+              "text",
+              "code",
+              "python"
+            ],
+            "resource": {
+              "filepath": null,
+              "lib": null,
+              "mode": null,
+              "save_policy": 1
+            },
+            "data": "write_file(PINS.filepath.get())"
+          },
+          "cell3": {
+            "dtype": [
+              "text",
+              "code",
+              "python"
+            ],
+            "resource": {
+              "filepath": null,
+              "lib": null,
+              "mode": null,
+              "save_policy": 1
+            },
+            "data": "terminate.set(); t.join()"
+          },
+          "rc": {
+            "type": "reactor",
+            "mode": "sync",
+            "params": {
+              "filepath": {
+                "dtype": "str",
+                "pin": "input"
+              },
+              "latency": {
+                "dtype": "float",
+                "pin": "input"
+              },
+              "value": {
+                "dtype": [
+                  "text",
+                  "code",
+                  "python"
+                ],
+                "must_be_defined": false,
+                "pin": "edit"
+              }
+            }
+          }
+        }
+      },
+      "ctx5": {
+        "type": "context",
+        "like_worker": true,
+        "like_cell": false,
+        "pins": {
+          "title": [
+            "ExportedInputPin",
+            "ctx5.rc.title"
+          ],
+          "value": [
+            "ExportedEditPin",
+            "ctx5.rc.value"
+          ]
+        },
+        "auto": [
+          "cell1",
+          "cell2",
+          "cell3",
+          "cell4"
+        ],
+        "children": {
+          "cell1": {
+            "dtype": "str",
+            "resource": {
+              "filepath": null,
+              "lib": null,
+              "mode": null,
+              "save_policy": 1
+            },
+            "data": "Ellipsity"
+          },
+          "cell2": {
+            "dtype": [
+              "text",
+              "code",
+              "python"
+            ],
+            "resource": {
+              "filepath": "/gui/cell-basic_editor_float.py",
+              "lib": true,
+              "mode": 2,
+              "save_policy": 1
+            },
+            "data": "from seamless.qt.QtWidgets import QDoubleSpinBox, QWidget, QVBoxLayout\nfrom seamless.qt.QtCore import Qt\n\nw = QWidget()\n#w.setWindowFlags(Qt.WindowStaysOnTopHint)\nw.setAttribute(Qt.WA_ShowWithoutActivating)\nvbox = QVBoxLayout()\nvbox.addStretch(1)\nw.setLayout(vbox)\nw.resize(300,100)\nw.setWindowTitle(PINS.title.get())\nw.show()\nb = QDoubleSpinBox()\nb.setSingleStep(0.01)\nb.setDecimals(3)\nb.setMaximum(1000000)\nif PINS.value.defined:\n    b.setValue(PINS.value.get())\nvbox.addWidget(b)\nb.valueChanged.connect(PINS.value.set)\n"
+          },
+          "cell3": {
+            "dtype": [
+              "text",
+              "code",
+              "python"
+            ],
+            "resource": {
+              "filepath": null,
+              "lib": null,
+              "mode": null,
+              "save_policy": 1
+            },
+            "data": "w.destroy()"
+          },
+          "cell4": {
+            "dtype": [
+              "text",
+              "code",
+              "python"
+            ],
+            "resource": {
+              "filepath": "/gui/cell-basic_editor_UPDATE.py",
+              "lib": true,
+              "mode": 2,
+              "save_policy": 1
+            },
+            "data": "if PINS.value.updated:\n    b.setValue(PINS.value.get())\nif PINS.title.updated:\n    w.setWindowTitle(PINS.title.get())\n",
+            "owner": "ctx5.rc.code_update"
+          },
+          "rc": {
+            "type": "reactor",
+            "mode": "sync",
+            "params": {
+              "title": {
+                "dtype": "str",
+                "pin": "input"
+              },
+              "value": {
+                "dtype": "float",
+                "must_be_defined": false,
+                "pin": "edit"
+              }
+            }
+          }
+        }
+      },
+      "ctx6": {
+        "type": "context",
+        "like_worker": true,
+        "like_cell": false,
+        "pins": {
+          "filepath": [
+            "ExportedInputPin",
+            "ctx6.rc.filepath"
+          ],
+          "latency": [
+            "ExportedInputPin",
+            "ctx6.rc.latency"
+          ],
+          "value": [
+            "ExportedEditPin",
+            "ctx6.rc.value"
+          ]
+        },
+        "auto": [
+          "cell1",
+          "cell2",
+          "cell3"
+        ],
+        "children": {
+          "cell1": {
+            "dtype": [
+              "text",
+              "code",
+              "python"
+            ],
+            "resource": {
+              "filepath": "/cell-filelink-start.py",
+              "lib": true,
+              "mode": 2,
+              "save_policy": 1
+            },
+            "data": "if __name__ == \"__main__\":\n    #test with ipython -i\n    import sys, os\n\n    class dummy:\n        pass\n\n    class EditPin:\n        def __init__(self, value):\n            self.value = value\n            self.defined = True\n        def set(self, value):\n            print(\"SET\", value)\n            self.value = value\n        def get(self):\n            return self.value\n\n    class Getter:\n        def __init__(self, arg):\n            self.arg = arg\n        def get(self):\n            return self.arg\n    PINS = dummy()\n    PINS.value = EditPin(\"test\")\n    directory = sys.argv[1]\n    filename = sys.argv[2]\n    PINS.filepath = Getter(os.path.join(directory, filename))\n    PINS.latency = Getter(float(sys.argv[3]))\n    def serializer(v):\n        return str(v.get())\n    print(\"Edit in \" + filepath.get())\nelse:\n    from seamless.dtypes import serialize\n    def serializer(v):\n        return serialize(v._dtype, v.get())\n\n\nimport os, time, functools, traceback\nfrom threading import Thread, RLock, Event\nlast_value = None\nlast_serialized_value = None\nlast_exc = None\nlast_mtime = None\n\ndef write_file(fpath):\n    global last_mtime, last_value, last_serialized_value\n    if not PINS.value.defined:\n        last_mtime = -1 #will trigger a file read\n        return\n    if last_value == PINS.value.get():\n        return\n    val = serializer(PINS.value)\n    if last_serialized_value == val:\n        return\n    with lock:\n        if last_serialized_value != val:\n            #print(\"WRITE\", val)\n            if PINS.value._dtype == \"object\":\n                with open(fpath, \"wb\") as f:\n                    f.write(val)\n                    last_value = PINS.value.get()\n                    last_serialized_value = val\n            else:\n                with open(fpath, \"w\", encoding=\"utf-8\") as f:\n                    f.write(val)\n                    last_value = PINS.value.get()\n                    last_serialized_value = val\n            last_time = time.time()\n            try:\n                stat = os.stat(fpath)\n                last_mtime = stat.st_mtime\n            except Exception:\n                pass\n\nsleeptime = 0.01\n\ndef poll():\n    global last_time, last_mtime, last_value, last_serialized_value, last_exc\n    fpath = PINS.filepath.get()\n    while 1:\n        sleeps = int(PINS.latency.get() / sleeptime + 0.9999)\n        for n in range(sleeps):\n            time.sleep(sleeptime)\n            if terminate.is_set():\n                break\n        if terminate.is_set():\n            break\n        curr_time = time.time()\n        last_time = curr_time\n        if not os.path.exists(fpath):\n            try:\n                write_file(fpath)\n            except Exception:\n                exc = traceback.format_exc()\n                if exc != last_exc:\n                    print(exc)\n                    last_exc = exc\n        else:\n            with lock:\n                stat = os.stat(fpath)\n                try:\n                    if last_mtime is None or stat.st_mtime > last_mtime:\n                        data = None\n                        if PINS.value._dtype == \"object\":\n                            with open(fpath, \"rb\") as f:\n                                data = f.read()\n                        else:\n                            with open(fpath, encoding=\"utf-8\") as f:\n                                data = f.read()\n                        if data is not None:\n                            if last_serialized_value != data:\n                                #print(\"LOAD\")\n                                PINS.value.set(data)\n                                last_value = None\n                                last_serialized_value = data\n                        last_mtime = stat.st_mtime\n                except Exception:\n                    exc = traceback.format_exc()\n                    if exc != last_exc:\n                        print(exc)\n                        last_exc = exc\n\nterminate = Event()\nt = Thread(target=poll)\nt.setDaemon(True)\nlock = RLock()\nwrite_file(PINS.filepath.get())\nt.start()\n"
+          },
+          "cell2": {
+            "dtype": [
+              "text",
+              "code",
+              "python"
+            ],
+            "resource": {
+              "filepath": null,
+              "lib": null,
+              "mode": null,
+              "save_policy": 1
+            },
+            "data": "write_file(PINS.filepath.get())"
+          },
+          "cell3": {
+            "dtype": [
+              "text",
+              "code",
+              "python"
+            ],
+            "resource": {
+              "filepath": null,
+              "lib": null,
+              "mode": null,
+              "save_policy": 1
+            },
+            "data": "terminate.set(); t.join()"
+          },
+          "rc": {
+            "type": "reactor",
+            "mode": "sync",
+            "params": {
+              "filepath": {
+                "dtype": "str",
+                "pin": "input"
+              },
+              "latency": {
+                "dtype": "float",
+                "pin": "input"
+              },
+              "value": {
+                "dtype": [
+                  "text",
+                  "code",
+                  "python"
+                ],
+                "must_be_defined": false,
+                "pin": "edit"
+              }
+            }
+          }
+        }
+      },
+      "ed_sideview": {
+        "type": "reactor",
+        "mode": "sync",
+        "params": {
+          "points": {
+            "dtype": "json",
+            "pin": "edit"
+          }
+        }
+      },
+      "ellipsity": {
+        "dtype": "float",
+        "resource": {
+          "filepath": null,
+          "lib": null,
+          "mode": null,
+          "save_policy": 1
+        },
+        "data": "1.15"
+      },
+      "fin_generator_data": {
+        "dtype": "cson",
+        "resource": {
+          "filepath": "./fingenerator.cson",
+          "lib": false,
+          "mode": 5,
+          "save_policy": 1
+        },
+        "data": "[\n  { #midfin\n    x: 0.44\n    xwidth: 0.06\n    xstep: 0.01\n    ycenter: 0.7\n    distance: 0.1\n    xradius: 0.015\n    yradius: 0.25\n    rotations: [0]\n  },\n  { #side fins\n    x: 0.20\n    ycenter: 0.7\n    distance: 0.05\n    xradius: 0.02\n    yradius: 0.14\n    rotations: [120, 240]\n  },\n  { #tail fins\n    x: 0.91\n    ycenter: 0.90\n    distance: 0.0\n    xradius: 0.035\n    yradius: 0.15\n    rotations: [145, 215]\n  },\n]\n"
+      },
+      "fincircles": {
+        "dtype": "json",
+        "resource": {
+          "filepath": null,
+          "lib": null,
+          "mode": null,
+          "save_policy": 1
+        }
+      },
+      "gen_fincircles": {
+        "type": "transformer",
+        "mode": "thread",
+        "params": {
+          "fin_generators": {
+            "dtype": "json",
+            "pin": "input"
+          },
+          "fincircles": {
+            "dtype": "json",
+            "pin": "output"
+          }
+        }
+      },
+      "link_fin_generator_data": {
+        "type": "context",
+        "like_worker": true,
+        "like_cell": false,
+        "pins": {
+          "filepath": [
+            "ExportedInputPin",
+            "link_fin_generator_data.rc.filepath"
+          ],
+          "latency": [
+            "ExportedInputPin",
+            "link_fin_generator_data.rc.latency"
+          ],
+          "value": [
+            "ExportedEditPin",
+            "link_fin_generator_data.rc.value"
+          ]
+        },
+        "auto": [
+          "cell1",
+          "cell2",
+          "cell3"
+        ],
+        "children": {
+          "cell1": {
+            "dtype": [
+              "text",
+              "code",
+              "python"
+            ],
+            "resource": {
+              "filepath": "/cell-filelink-start.py",
+              "lib": true,
+              "mode": 2,
+              "save_policy": 1
+            },
+            "data": "if __name__ == \"__main__\":\n    #test with ipython -i\n    import sys, os\n\n    class dummy:\n        pass\n\n    class EditPin:\n        def __init__(self, value):\n            self.value = value\n            self.defined = True\n        def set(self, value):\n            print(\"SET\", value)\n            self.value = value\n        def get(self):\n            return self.value\n\n    class Getter:\n        def __init__(self, arg):\n            self.arg = arg\n        def get(self):\n            return self.arg\n    PINS = dummy()\n    PINS.value = EditPin(\"test\")\n    directory = sys.argv[1]\n    filename = sys.argv[2]\n    PINS.filepath = Getter(os.path.join(directory, filename))\n    PINS.latency = Getter(float(sys.argv[3]))\n    def serializer(v):\n        return str(v.get())\n    print(\"Edit in \" + filepath.get())\nelse:\n    from seamless.dtypes import serialize\n    def serializer(v):\n        return serialize(v._dtype, v.get())\n\n\nimport os, time, functools, traceback\nfrom threading import Thread, RLock, Event\nlast_value = None\nlast_serialized_value = None\nlast_exc = None\nlast_mtime = None\n\ndef write_file(fpath):\n    global last_mtime, last_value, last_serialized_value\n    if not PINS.value.defined:\n        last_mtime = -1 #will trigger a file read\n        return\n    if last_value == PINS.value.get():\n        return\n    val = serializer(PINS.value)\n    if last_serialized_value == val:\n        return\n    with lock:\n        if last_serialized_value != val:\n            #print(\"WRITE\", val)\n            if PINS.value._dtype == \"object\":\n                with open(fpath, \"wb\") as f:\n                    f.write(val)\n                    last_value = PINS.value.get()\n                    last_serialized_value = val\n            else:\n                with open(fpath, \"w\", encoding=\"utf-8\") as f:\n                    f.write(val)\n                    last_value = PINS.value.get()\n                    last_serialized_value = val\n            last_time = time.time()\n            try:\n                stat = os.stat(fpath)\n                last_mtime = stat.st_mtime\n            except Exception:\n                pass\n\nsleeptime = 0.01\n\ndef poll():\n    global last_time, last_mtime, last_value, last_serialized_value, last_exc\n    fpath = PINS.filepath.get()\n    while 1:\n        sleeps = int(PINS.latency.get() / sleeptime + 0.9999)\n        for n in range(sleeps):\n            time.sleep(sleeptime)\n            if terminate.is_set():\n                break\n        if terminate.is_set():\n            break\n        curr_time = time.time()\n        last_time = curr_time\n        if not os.path.exists(fpath):\n            try:\n                write_file(fpath)\n            except Exception:\n                exc = traceback.format_exc()\n                if exc != last_exc:\n                    print(exc)\n                    last_exc = exc\n        else:\n            with lock:\n                stat = os.stat(fpath)\n                try:\n                    if last_mtime is None or stat.st_mtime > last_mtime:\n                        data = None\n                        if PINS.value._dtype == \"object\":\n                            with open(fpath, \"rb\") as f:\n                                data = f.read()\n                        else:\n                            with open(fpath, encoding=\"utf-8\") as f:\n                                data = f.read()\n                        if data is not None:\n                            if last_serialized_value != data:\n                                #print(\"LOAD\")\n                                PINS.value.set(data)\n                                last_value = None\n                                last_serialized_value = data\n                        last_mtime = stat.st_mtime\n                except Exception:\n                    exc = traceback.format_exc()\n                    if exc != last_exc:\n                        print(exc)\n                        last_exc = exc\n\nterminate = Event()\nt = Thread(target=poll)\nt.setDaemon(True)\nlock = RLock()\nwrite_file(PINS.filepath.get())\nt.start()\n"
+          },
+          "cell2": {
+            "dtype": [
+              "text",
+              "code",
+              "python"
+            ],
+            "resource": {
+              "filepath": null,
+              "lib": null,
+              "mode": null,
+              "save_policy": 1
+            },
+            "data": "write_file(PINS.filepath.get())"
+          },
+          "cell3": {
+            "dtype": [
+              "text",
+              "code",
+              "python"
+            ],
+            "resource": {
+              "filepath": null,
+              "lib": null,
+              "mode": null,
+              "save_policy": 1
+            },
+            "data": "terminate.set(); t.join()"
+          },
+          "rc": {
+            "type": "reactor",
+            "mode": "sync",
+            "params": {
+              "filepath": {
+                "dtype": "str",
+                "pin": "input"
+              },
+              "latency": {
+                "dtype": "float",
+                "pin": "input"
+              },
+              "value": {
+                "dtype": "cson",
+                "must_be_defined": false,
+                "pin": "edit"
+              }
+            }
+          }
+        }
+      },
+      "link_points": {
+        "type": "context",
+        "like_worker": true,
+        "like_cell": false,
+        "pins": {
+          "filepath": [
+            "ExportedInputPin",
+            "link_points.rc.filepath"
+          ],
+          "latency": [
+            "ExportedInputPin",
+            "link_points.rc.latency"
+          ],
+          "value": [
+            "ExportedEditPin",
+            "link_points.rc.value"
+          ]
+        },
+        "auto": [
+          "cell1",
+          "cell2",
+          "cell3"
+        ],
+        "children": {
+          "cell1": {
+            "dtype": [
+              "text",
+              "code",
+              "python"
+            ],
+            "resource": {
+              "filepath": "/cell-filelink-start.py",
+              "lib": true,
+              "mode": 2,
+              "save_policy": 1
+            },
+            "data": "if __name__ == \"__main__\":\n    #test with ipython -i\n    import sys, os\n\n    class dummy:\n        pass\n\n    class EditPin:\n        def __init__(self, value):\n            self.value = value\n            self.defined = True\n        def set(self, value):\n            print(\"SET\", value)\n            self.value = value\n        def get(self):\n            return self.value\n\n    class Getter:\n        def __init__(self, arg):\n            self.arg = arg\n        def get(self):\n            return self.arg\n    PINS = dummy()\n    PINS.value = EditPin(\"test\")\n    directory = sys.argv[1]\n    filename = sys.argv[2]\n    PINS.filepath = Getter(os.path.join(directory, filename))\n    PINS.latency = Getter(float(sys.argv[3]))\n    def serializer(v):\n        return str(v.get())\n    print(\"Edit in \" + filepath.get())\nelse:\n    from seamless.dtypes import serialize\n    def serializer(v):\n        return serialize(v._dtype, v.get())\n\n\nimport os, time, functools, traceback\nfrom threading import Thread, RLock, Event\nlast_value = None\nlast_serialized_value = None\nlast_exc = None\nlast_mtime = None\n\ndef write_file(fpath):\n    global last_mtime, last_value, last_serialized_value\n    if not PINS.value.defined:\n        last_mtime = -1 #will trigger a file read\n        return\n    if last_value == PINS.value.get():\n        return\n    val = serializer(PINS.value)\n    if last_serialized_value == val:\n        return\n    with lock:\n        if last_serialized_value != val:\n            #print(\"WRITE\", val)\n            if PINS.value._dtype == \"object\":\n                with open(fpath, \"wb\") as f:\n                    f.write(val)\n                    last_value = PINS.value.get()\n                    last_serialized_value = val\n            else:\n                with open(fpath, \"w\", encoding=\"utf-8\") as f:\n                    f.write(val)\n                    last_value = PINS.value.get()\n                    last_serialized_value = val\n            last_time = time.time()\n            try:\n                stat = os.stat(fpath)\n                last_mtime = stat.st_mtime\n            except Exception:\n                pass\n\nsleeptime = 0.01\n\ndef poll():\n    global last_time, last_mtime, last_value, last_serialized_value, last_exc\n    fpath = PINS.filepath.get()\n    while 1:\n        sleeps = int(PINS.latency.get() / sleeptime + 0.9999)\n        for n in range(sleeps):\n            time.sleep(sleeptime)\n            if terminate.is_set():\n                break\n        if terminate.is_set():\n            break\n        curr_time = time.time()\n        last_time = curr_time\n        if not os.path.exists(fpath):\n            try:\n                write_file(fpath)\n            except Exception:\n                exc = traceback.format_exc()\n                if exc != last_exc:\n                    print(exc)\n                    last_exc = exc\n        else:\n            with lock:\n                stat = os.stat(fpath)\n                try:\n                    if last_mtime is None or stat.st_mtime > last_mtime:\n                        data = None\n                        if PINS.value._dtype == \"object\":\n                            with open(fpath, \"rb\") as f:\n                                data = f.read()\n                        else:\n                            with open(fpath, encoding=\"utf-8\") as f:\n                                data = f.read()\n                        if data is not None:\n                            if last_serialized_value != data:\n                                #print(\"LOAD\")\n                                PINS.value.set(data)\n                                last_value = None\n                                last_serialized_value = data\n                        last_mtime = stat.st_mtime\n                except Exception:\n                    exc = traceback.format_exc()\n                    if exc != last_exc:\n                        print(exc)\n                        last_exc = exc\n\nterminate = Event()\nt = Thread(target=poll)\nt.setDaemon(True)\nlock = RLock()\nwrite_file(PINS.filepath.get())\nt.start()\n"
+          },
+          "cell2": {
+            "dtype": [
+              "text",
+              "code",
+              "python"
+            ],
+            "resource": {
+              "filepath": null,
+              "lib": null,
+              "mode": null,
+              "save_policy": 1
+            },
+            "data": "write_file(PINS.filepath.get())"
+          },
+          "cell3": {
+            "dtype": [
+              "text",
+              "code",
+              "python"
+            ],
+            "resource": {
+              "filepath": null,
+              "lib": null,
+              "mode": null,
+              "save_policy": 1
+            },
+            "data": "terminate.set(); t.join()"
+          },
+          "rc": {
+            "type": "reactor",
+            "mode": "sync",
+            "params": {
+              "filepath": {
+                "dtype": "str",
+                "pin": "input"
+              },
+              "latency": {
+                "dtype": "float",
+                "pin": "input"
+              },
+              "value": {
+                "dtype": "json",
+                "must_be_defined": false,
+                "pin": "edit"
+              }
+            }
+          }
+        }
+      },
+      "points": {
+        "dtype": "json",
+        "resource": {
+          "filepath": "./sideview-points.json",
+          "lib": false,
+          "mode": 5,
+          "save_policy": 1
+        },
+        "data": "[\n  {\n    \"ysegments\": [\n      0.6938461538461539\n    ],\n    \"ybottom\": 0.7430769230769231,\n    \"ytop\": 0.6523076923076923,\n    \"x\": 0.01328125\n  },\n  {\n    \"ysegments\": [\n      0.6907692307692308\n    ],\n    \"ybottom\": 0.7630769230769231,\n    \"ytop\": 0.6215384615384615,\n    \"x\": 0.03046875\n  },\n  {\n    \"ysegments\": [\n      0.6938461538461539\n    ],\n    \"ybottom\": 0.7676923076923077,\n    \"ytop\": 0.5953846153846154,\n    \"x\": 0.04921875\n  },\n  {\n    \"ysegments\": [\n      0.7076923076923077\n    ],\n    \"ybottom\": 0.7784615384615384,\n    \"ytop\": 0.5753846153846154,\n    \"x\": 0.07109375\n  },\n  {\n    \"ysegments\": [\n      0.6507692307692308,\n      0.6892307692307692,\n      0.7230769230769231\n    ],\n    \"ybottom\": 0.7876923076923077,\n    \"ytop\": 0.5584615384615385,\n    \"x\": 0.09140625\n  },\n  {\n    \"ysegments\": [\n      0.6369230769230769,\n      0.7,\n      0.7292307692307692\n    ],\n    \"ybottom\": 0.796923076923077,\n    \"ytop\": 0.5415384615384615,\n    \"x\": 0.1125\n  },\n  {\n    \"ysegments\": [\n      0.6384615384615384,\n      0.7076923076923077,\n      0.7353846153846154\n    ],\n    \"ybottom\": 0.803076923076923,\n    \"ytop\": 0.5246153846153846,\n    \"x\": 0.13125\n  },\n  {\n    \"ysegments\": [\n      0.6507692307692308,\n      0.7092307692307692,\n      0.7430769230769231\n    ],\n    \"ybottom\": 0.8107692307692308,\n    \"ytop\": 0.5169230769230769,\n    \"x\": 0.14921875\n  },\n  {\n    \"ysegments\": [\n      0.6569230769230769,\n      0.7046153846153846,\n      0.7538461538461538\n    ],\n    \"ybottom\": 0.8184615384615385,\n    \"ytop\": 0.5061538461538462,\n    \"x\": 0.16328125\n  },\n  {\n    \"ysegments\": [\n      0.6661538461538462,\n      0.6923076923076923,\n      0.7707692307692308\n    ],\n    \"ybottom\": 0.8261538461538461,\n    \"ytop\": 0.49230769230769234,\n    \"x\": 0.18125\n  },\n  {\n    \"ysegments\": [\n      0.7846153846153846\n    ],\n    \"ybottom\": 0.8292307692307692,\n    \"ytop\": 0.47846153846153844,\n    \"x\": 0.2078125\n  },\n  {\n    \"ysegments\": [\n      0.7984615384615384\n    ],\n    \"ybottom\": 0.8323076923076923,\n    \"ytop\": 0.46923076923076923,\n    \"x\": 0.22890625\n  },\n  {\n    \"ysegments\": [\n      0.8061538461538461\n    ],\n    \"ybottom\": 0.8338461538461538,\n    \"ytop\": 0.4584615384615385,\n    \"x\": 0.2515625\n  },\n  {\n    \"ysegments\": [\n      0.8123076923076923\n    ],\n    \"ybottom\": 0.8307692307692308,\n    \"ytop\": 0.4492307692307692,\n    \"x\": 0.2734375\n  },\n  {\n    \"ysegments\": [\n      0.8107692307692308\n    ],\n    \"ybottom\": 0.8338461538461538,\n    \"ytop\": 0.4430769230769231,\n    \"x\": 0.28828125\n  },\n  {\n    \"ysegments\": [\n      0.8092307692307692\n    ],\n    \"ybottom\": 0.8338461538461538,\n    \"ytop\": 0.4338461538461538,\n    \"x\": 0.3046875\n  },\n  {\n    \"ysegments\": [\n      0.8123076923076923\n    ],\n    \"ybottom\": 0.8353846153846154,\n    \"ytop\": 0.42153846153846153,\n    \"x\": 0.325\n  },\n  {\n    \"ysegments\": [\n      0.8061538461538461\n    ],\n    \"ybottom\": 0.8338461538461538,\n    \"ytop\": 0.4153846153846154,\n    \"x\": 0.34296875\n  },\n  {\n    \"ysegments\": [\n      0.7984615384615384\n    ],\n    \"ybottom\": 0.8307692307692308,\n    \"ytop\": 0.40615384615384614,\n    \"x\": 0.3609375\n  },\n  {\n    \"ysegments\": [\n      0.7923076923076923\n    ],\n    \"ybottom\": 0.8307692307692308,\n    \"ytop\": 0.3984615384615385,\n    \"x\": 0.38359375\n  },\n  {\n    \"ysegments\": [\n      0.7846153846153846\n    ],\n    \"ybottom\": 0.8323076923076923,\n    \"ytop\": 0.39076923076923076,\n    \"x\": 0.40234375\n  },\n  {\n    \"ysegments\": [\n      0.7738461538461539\n    ],\n    \"ybottom\": 0.823076923076923,\n    \"ytop\": 0.3861538461538462,\n    \"x\": 0.42265625\n  },\n  {\n    \"ysegments\": [\n      0.7569230769230769\n    ],\n    \"ybottom\": 0.8184615384615385,\n    \"ytop\": 0.3861538461538462,\n    \"x\": 0.44296875\n  },\n  {\n    \"ysegments\": [\n      0.7307692307692307\n    ],\n    \"ybottom\": 0.8153846153846154,\n    \"ytop\": 0.3861538461538462,\n    \"x\": 0.4609375\n  },\n  {\n    \"ysegments\": [\n      0.7076923076923077\n    ],\n    \"ybottom\": 0.8107692307692308,\n    \"ytop\": 0.3892307692307692,\n    \"x\": 0.4796875\n  },\n  {\n    \"ysegments\": [\n      0.6846153846153846\n    ],\n    \"ybottom\": 0.8107692307692308,\n    \"ytop\": 0.3984615384615385,\n    \"x\": 0.49765625\n  },\n  {\n    \"ysegments\": [\n      0.6707692307692308\n    ],\n    \"ybottom\": 0.8015384615384615,\n    \"ytop\": 0.40615384615384614,\n    \"x\": 0.51640625\n  },\n  {\n    \"ysegments\": [\n      0.6538461538461539\n    ],\n    \"ybottom\": 0.7984615384615384,\n    \"ytop\": 0.40923076923076923,\n    \"x\": 0.53359375\n  },\n  {\n    \"ysegments\": [\n      0.6430769230769231\n    ],\n    \"ybottom\": 0.7938461538461539,\n    \"ytop\": 0.42,\n    \"x\": 0.553125\n  },\n  {\n    \"ysegments\": [\n      0.64,\n      0.7738461538461539\n    ],\n    \"ybottom\": 0.7846153846153846,\n    \"ytop\": 0.4276923076923077,\n    \"x\": 0.56953125\n  },\n  {\n    \"ysegments\": [\n      0.6369230769230769,\n      0.7615384615384615\n    ],\n    \"ybottom\": 0.7753846153846153,\n    \"ytop\": 0.44,\n    \"x\": 0.5875\n  },\n  {\n    \"ysegments\": [\n      0.6353846153846154,\n      0.7538461538461538\n    ],\n    \"ybottom\": 0.7646153846153846,\n    \"ytop\": 0.45076923076923076,\n    \"x\": 0.6078125\n  },\n  {\n    \"ysegments\": [\n      0.6369230769230769,\n      0.7476923076923077\n    ],\n    \"ybottom\": 0.7584615384615384,\n    \"ytop\": 0.4676923076923077,\n    \"x\": 0.63125\n  },\n  {\n    \"ysegments\": [\n      0.6492307692307693,\n      0.7430769230769231\n    ],\n    \"ybottom\": 0.7584615384615384,\n    \"ytop\": 0.4846153846153846,\n    \"x\": 0.65390625\n  },\n  {\n    \"ysegments\": [\n      0.6738461538461539,\n      0.7276923076923076\n    ],\n    \"ybottom\": 0.7569230769230769,\n    \"ytop\": 0.49846153846153846,\n    \"x\": 0.6703125\n  },\n  {\n    \"ybottom\": 0.7584615384615384,\n    \"ytop\": 0.5169230769230769,\n    \"x\": 0.69296875\n  },\n  {\n    \"ybottom\": 0.7692307692307693,\n    \"ytop\": 0.536923076923077,\n    \"x\": 0.71484375\n  },\n  {\n    \"ybottom\": 0.7830769230769231,\n    \"ytop\": 0.556923076923077,\n    \"x\": 0.73515625\n  },\n  {\n    \"ybottom\": 0.8153846153846154,\n    \"ytop\": 0.6061538461538462,\n    \"x\": 0.77734375\n  },\n  {\n    \"ybottom\": 0.8307692307692308,\n    \"ytop\": 0.6323076923076923,\n    \"x\": 0.79609375\n  },\n  {\n    \"ybottom\": 0.8569230769230769,\n    \"ytop\": 0.6569230769230769,\n    \"x\": 0.81796875\n  },\n  {\n    \"ybottom\": 0.8692307692307693,\n    \"ytop\": 0.683076923076923,\n    \"x\": 0.8359375\n  },\n  {\n    \"ysegments\": [\n      0.8446153846153847\n    ],\n    \"ybottom\": 0.8876923076923077,\n    \"ytop\": 0.72,\n    \"x\": 0.85546875\n  },\n  {\n    \"ysegments\": [\n      0.8553846153846154\n    ],\n    \"ybottom\": 0.9,\n    \"ytop\": 0.7507692307692307,\n    \"x\": 0.8765625\n  },\n  {\n    \"ysegments\": [\n      0.8753846153846154\n    ],\n    \"ybottom\": 0.9030769230769231,\n    \"ytop\": 0.796923076923077,\n    \"x\": 0.8921875\n  },\n  {\n    \"ybottom\": 0.9092307692307692,\n    \"ytop\": 0.8461538461538461,\n    \"x\": 0.91328125\n  },\n  {\n    \"ybottom\": 0.7984615384615384,\n    \"ytop\": 0.5815384615384616,\n    \"x\": 0.75703125\n  }\n]"
+      },
+      "registrar_object1": {
+        "registrar": "silk",
+        "registered": [
+          "SideviewPoint"
+        ],
+        "data": "Type SideviewPoint {\n  Float x\n  Float ytop\n  *Float ybottom\n  FloatArray ysegments = []\n}\n",
+        "data_name": null
+      },
+      "registrar_object2": {
+        "registrar": "silk",
+        "registered": [
+          "FinCircle",
+          "FinGenerator"
+        ],
+        "data": "Type FinCircle {\n  Float x\n  Float ycenter\n  Float distance\n  Float xradius\n  Float yradius\n  Float rotation\n}\n\nType FinGenerator {\n  Float x\n  Float ycenter\n  Float distance\n  Float xradius\n  Float yradius\n  FloatArray rotations\n  *Float xwidth\n  *Float xstep\n}\n",
+        "data_name": null
+      },
+      "silk_fincircle": {
+        "dtype": [
+          "text",
+          "code",
+          "silk"
+        ],
+        "resource": {
+          "filepath": "fincircle.silk",
+          "lib": false,
+          "mode": 5,
+          "save_policy": 1
+        },
+        "data": "Type FinCircle {\n  Float x\n  Float ycenter\n  Float distance\n  Float xradius\n  Float yradius\n  Float rotation\n}\n\nType FinGenerator {\n  Float x\n  Float ycenter\n  Float distance\n  Float xradius\n  Float yradius\n  FloatArray rotations\n  *Float xwidth\n  *Float xstep\n}\n"
+      },
+      "silk_sideviewpoint": {
+        "dtype": [
+          "text",
+          "code",
+          "silk"
+        ],
+        "resource": {
+          "filepath": "sideviewpoint.silk",
+          "lib": false,
+          "mode": 5,
+          "save_policy": 1
+        },
+        "data": "Type SideviewPoint {\n  Float x\n  Float ytop\n  *Float ybottom\n  FloatArray ysegments = []\n}\n"
+      },
+      "view": {
+        "type": "reactor",
+        "mode": "sync",
+        "params": {
+          "circles": {
+            "dtype": "json",
+            "pin": "input"
+          },
+          "ellipsity": {
+            "dtype": "float",
+            "pin": "input"
+          },
+          "fincircles": {
+            "dtype": "json",
+            "pin": "input"
+          }
+        }
+      }
+    },
+    "macro_objects": [],
+    "macro_listeners": [],
+    "registrar_items": [
+      {
+        "registrar_name": "silk",
+        "dtype": [
+          "text",
+          "code",
+          "silk"
+        ],
+        "data": "Type SideviewPoint {\n  Float x\n  Float ytop\n  *Float ybottom\n  FloatArray ysegments = []\n}\n",
+        "data_name": null
+      },
+      {
+        "registrar_name": "silk",
+        "dtype": [
+          "text",
+          "code",
+          "silk"
+        ],
+        "data": "Type FinCircle {\n  Float x\n  Float ycenter\n  Float distance\n  Float xradius\n  Float yradius\n  Float rotation\n}\n\nType FinGenerator {\n  Float x\n  Float ycenter\n  Float distance\n  Float xradius\n  Float yradius\n  FloatArray rotations\n  *Float xwidth\n  *Float xstep\n}\n",
+        "data_name": null
+      }
+    ],
+    "registrar_listeners": [
+      {
+        "registrar": "silk",
+        "key": "FinCircle",
+        "target_type": "worker",
+        "target_worker": "view",
+        "namespace_name": "FinCircle"
+      },
+      {
+        "registrar": "silk",
+        "key": "FinCircle",
+        "target_type": "worker",
+        "target_worker": "gen_fincircles",
+        "namespace_name": "FinCircle"
+      },
+      {
+        "registrar": "silk",
+        "key": "FinCircleArray",
+        "target_type": "worker",
+        "target_worker": "view",
+        "namespace_name": "FinCircleArray"
+      },
+      {
+        "registrar": "silk",
+        "key": "FinCircleArray",
+        "target_type": "worker",
+        "target_worker": "gen_fincircles",
+        "namespace_name": "FinCircleArray"
+      },
+      {
+        "registrar": "silk",
+        "key": "FinGenerator",
+        "target_type": "worker",
+        "target_worker": "gen_fincircles",
+        "namespace_name": "FinGenerator"
+      },
+      {
+        "registrar": "silk",
+        "key": "FinGeneratorArray",
+        "target_type": "worker",
+        "target_worker": "gen_fincircles",
+        "namespace_name": "FinGeneratorArray"
+      },
+      {
+        "registrar": "silk",
+        "key": "SideviewPoint",
+        "target_type": "worker",
+        "target_worker": "ed_sideview",
+        "namespace_name": "SideviewPoint"
+      },
+      {
+        "registrar": "silk",
+        "key": "SideviewPoint",
+        "target_type": "worker",
+        "target_worker": "view",
+        "namespace_name": "SideviewPoint"
+      },
+      {
+        "registrar": "silk",
+        "key": "SideviewPointArray",
+        "target_type": "worker",
+        "target_worker": "ed_sideview",
+        "namespace_name": "SideviewPointArray"
+      },
+      {
+        "registrar": "silk",
+        "key": "SideviewPointArray",
+        "target_type": "worker",
+        "target_worker": "view",
+        "namespace_name": "SideviewPointArray"
+      }
+    ],
+    "registrar_cells": [
+      {
+        "cell": "silk_sideviewpoint",
+        "macro_target": "registrar_object1",
+        "registrar": "silk"
+      },
+      {
+        "cell": "silk_fincircle",
+        "macro_target": "registrar_object2",
+        "registrar": "silk"
+      }
+    ],
+    "pin_cell_connections": [
+      [
+        "gen_fincircles.fincircles",
+        "fincircles"
+      ]
+    ],
+    "cell_pin_connections": [
+      [
+        "cell10",
+        "ctx3.rc.value"
+      ],
+      [
+        "cell10",
+        "view.code_start"
+      ],
+      [
+        "cell11",
+        "ctx3.rc.filepath"
+      ],
+      [
+        "cell12",
+        "ctx3.rc.latency"
+      ],
+      [
+        "cell13",
+        "ctx4.rc.value"
+      ],
+      [
+        "cell13",
+        "view.code_update"
+      ],
+      [
+        "cell14",
+        "ctx4.rc.filepath"
+      ],
+      [
+        "cell15",
+        "ctx4.rc.latency"
+      ],
+      [
+        "cell16",
+        "view.code_stop"
+      ],
+      [
+        "cell17",
+        "ctx6.rc.value"
+      ],
+      [
+        "cell17",
+        "gen_fincircles.code"
+      ],
+      [
+        "cell18",
+        "ctx6.rc.filepath"
+      ],
+      [
+        "cell19",
+        "ctx6.rc.latency"
+      ],
+      [
+        "cell1",
+        "link_points.rc.filepath"
+      ],
+      [
+        "cell20",
+        "link_fin_generator_data.rc.filepath"
+      ],
+      [
+        "cell21",
+        "link_fin_generator_data.rc.latency"
+      ],
+      [
+        "cell2",
+        "link_points.rc.latency"
+      ],
+      [
+        "cell3",
+        "ctx1.rc.value"
+      ],
+      [
+        "cell3",
+        "ed_sideview.code_start"
+      ],
+      [
+        "cell4",
+        "ctx1.rc.filepath"
+      ],
+      [
+        "cell5",
+        "ctx1.rc.latency"
+      ],
+      [
+        "cell6",
+        "ctx2.rc.value"
+      ],
+      [
+        "cell6",
+        "ed_sideview.code_update"
+      ],
+      [
+        "cell7",
+        "ctx2.rc.filepath"
+      ],
+      [
+        "cell8",
+        "ctx2.rc.latency"
+      ],
+      [
+        "cell9",
+        "ed_sideview.code_stop"
+      ],
+      [
+        "ctx1.cell1",
+        "ctx1.rc.code_start"
+      ],
+      [
+        "ctx1.cell2",
+        "ctx1.rc.code_update"
+      ],
+      [
+        "ctx1.cell3",
+        "ctx1.rc.code_stop"
+      ],
+      [
+        "ctx2.cell1",
+        "ctx2.rc.code_start"
+      ],
+      [
+        "ctx2.cell2",
+        "ctx2.rc.code_update"
+      ],
+      [
+        "ctx2.cell3",
+        "ctx2.rc.code_stop"
+      ],
+      [
+        "ctx3.cell1",
+        "ctx3.rc.code_start"
+      ],
+      [
+        "ctx3.cell2",
+        "ctx3.rc.code_update"
+      ],
+      [
+        "ctx3.cell3",
+        "ctx3.rc.code_stop"
+      ],
+      [
+        "ctx4.cell1",
+        "ctx4.rc.code_start"
+      ],
+      [
+        "ctx4.cell2",
+        "ctx4.rc.code_update"
+      ],
+      [
+        "ctx4.cell3",
+        "ctx4.rc.code_stop"
+      ],
+      [
+        "ctx5.cell1",
+        "ctx5.rc.title"
+      ],
+      [
+        "ctx5.cell2",
+        "ctx5.rc.code_start"
+      ],
+      [
+        "ctx5.cell3",
+        "ctx5.rc.code_stop"
+      ],
+      [
+        "ctx5.cell4",
+        "ctx5.rc.code_update"
+      ],
+      [
+        "ctx6.cell1",
+        "ctx6.rc.code_start"
+      ],
+      [
+        "ctx6.cell2",
+        "ctx6.rc.code_update"
+      ],
+      [
+        "ctx6.cell3",
+        "ctx6.rc.code_stop"
+      ],
+      [
+        "ellipsity",
+        "ctx5.rc.value"
+      ],
+      [
+        "ellipsity",
+        "view.ellipsity"
+      ],
+      [
+        "fin_generator_data",
+        "gen_fincircles.fin_generators"
+      ],
+      [
+        "fin_generator_data",
+        "link_fin_generator_data.rc.value"
+      ],
+      [
+        "fincircles",
+        "view.fincircles"
+      ],
+      [
+        "link_fin_generator_data.cell1",
+        "link_fin_generator_data.rc.code_start"
+      ],
+      [
+        "link_fin_generator_data.cell2",
+        "link_fin_generator_data.rc.code_update"
+      ],
+      [
+        "link_fin_generator_data.cell3",
+        "link_fin_generator_data.rc.code_stop"
+      ],
+      [
+        "link_points.cell1",
+        "link_points.rc.code_start"
+      ],
+      [
+        "link_points.cell2",
+        "link_points.rc.code_update"
+      ],
+      [
+        "link_points.cell3",
+        "link_points.rc.code_stop"
+      ],
+      [
+        "points",
+        "ed_sideview.points"
+      ],
+      [
+        "points",
+        "link_points.rc.value"
+      ],
+      [
+        "points",
+        "view.circles"
+      ]
+    ],
+    "cell_cell_connections": []
+  }
+}

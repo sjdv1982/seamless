@@ -12,6 +12,9 @@ class ReactorInput:
     def get(self):
         return self._value
     @property
+    def value(self):
+        return self.get()
+    @property
     def store(self):
         return self._store
 
@@ -60,6 +63,9 @@ class ReactorEdit:
         self.defined = False
     def get(self):
         return self._value
+    @property
+    def value(self):
+        return self.get()
     def set(self, value):
         #print("SET",self._parent().parent(), self._name)
         self._value = value

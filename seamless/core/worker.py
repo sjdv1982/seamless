@@ -27,6 +27,8 @@ class Worker(Managed, WorkerLike):
         from .context import get_active_context
         if get_macro_mode():
             ctx = get_active_context()
+            if ctx is None:
+                raise AssertionError("Workers can only be defined when there is an active context")
             assert self._context is None, self
             name = ctx._add_new_worker(self)
 

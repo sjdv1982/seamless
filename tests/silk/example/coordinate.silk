@@ -1,0 +1,98 @@
+Type Coordinate {
+  """Class for 3D (x,y,z) coordinates"""
+  Float x
+  Float y
+  Float z
+  form {
+    x.default = 0
+    y.default = 0
+    z.default = 0
+    x.digits = 3
+    y.digits = 3
+    z.digits = 3
+  }
+  def __mul__(self, a):
+      """Multiplication with either:
+        a Float (scaling)
+        a Coordinate (dot product)
+        or an AxisSystem (vector-matrix multiplication)
+      """
+      types = (Float, Coordinate, AxisSystem)
+      for t in types:
+          try:
+              a = t(a)
+          except:
+              continue
+          break
+      else:
+          raise TypeError("Unknown type")
+      if t == Float: #scale
+          return Coordinate(a*self.x,a*self.y, a*self.z)
+      elif t == Coordinate: #dot product
+          return a.x*self.x+a.y*self.y+a.z*self.z
+      elif t == AxisSystem: #vector-matrix multiplication
+          ret = Coordinate(a.origin)
+          ret += self.x * a.x
+          ret += self.y * a.y
+          ret += self.z * a.z
+          return ret
+  def __rmul__(self, a):
+      """Inline multiplication"""
+      return self * a
+  def __truediv__(self, a):
+      """Division by Float: equivalent to 1/a multiplication"""
+      a = Float(a)
+      return self * (1/a)
+  def __div__(self, a):
+      """Division by Float: equivalent to 1/a multiplication"""
+      a = Float(a)
+      return self * (1/a)
+  def __rtruediv__(self, a):
+      """Inline division by Float"""
+      a = Float(a)
+      return self * (1/a)
+  def __rdiv__(self, a):
+      """Inline division by Float"""
+      a = Float(a)
+      return self * (1/a)
+  def size(self):
+      """The scalar length of the Coordinate"""
+      from math import sqrt
+      return sqrt(self.x**2+self.y**2+self.z**2)
+  def normalize(self):
+      """Re-scale the Coordinate length to 1
+      returns Vector"""
+      v = Coordinate(self)
+      size = v.size()
+      if size > 0: v /= size
+      else: v = (1,0,0)
+      return Vector(v)
+  def crossproduct(self, v):
+      """Returns a Coordinate perpendicular both to this one and to v"""
+      v = Coordinate(v)
+      x = self.y * v.z - self.z * v.y
+      y = self.z * v.x - self.x * v.z
+      z = self.x * v.y - self.y * v.x
+      return Coordinate(x,y,z).normalize()
+  def __xor__(self,v): ## ^, cross product
+      """Symbol ^, equivalent to crossproduct"""
+      return self.crossproduct(v)
+  def __neg__(self):
+      """Negation, returns -self"""
+      return type(self)(-self.x,-self.y,-self.z)
+  def __add__(self, a):
+      """Addition of another Coordinate"""
+      a = Coordinate(a)
+      return Coordinate(self.x+a.x, self.y+a.y, self.z+a.z)
+  def __iadd__(self,a):
+      """Inline addition"""
+      self = type(self)(self + a)
+      return self
+  def __sub__(self,a):
+      """Subtraction of another Coordinate"""
+      return self + -a
+  def __isub__(self,a):
+      """Inline subtraction"""
+      self = type(self)(self - a)
+      return self
+}

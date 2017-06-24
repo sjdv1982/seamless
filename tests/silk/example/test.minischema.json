@@ -1,0 +1,24 @@
+{
+	"type": "Test",
+	"properties": {
+		"x": {
+			"properties": {
+					"b":"Float",
+					"a":"Float"
+			},
+			"order": ["b", "a"]
+		},
+		"y": {
+			"properties": {
+					"c": {"Enum": ["one","two","three"]},
+					"d": "Bool"
+			},
+			"order": ["c", "d"]
+		},
+		"z": "String",
+		"q": "CoordinateArray",
+		"ax": "AxisSystem"
+	},
+	"required": ["x", "y", "q"],
+	"order": ["x", "y", "z", "q", "ax"]
+}

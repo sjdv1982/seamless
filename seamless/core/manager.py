@@ -439,6 +439,7 @@ class Manager:
                     target._update(value,propagate=True)
 
                 return
+            assert not isinstance(target, Context) #TODO?
             worker = target.worker_ref()
             assert worker is not None #weakref may not be dead
             source._on_connect(target, worker, incoming = False)

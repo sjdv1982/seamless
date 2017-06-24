@@ -31,7 +31,7 @@ _known_types = [
   "json",
   "cson",
   "xml",
-  "silk",
+  #"silk",
   "array",
   "signal"
 ]

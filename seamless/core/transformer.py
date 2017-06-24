@@ -14,63 +14,27 @@ from .. import dtypes
 from .. import silk
 
 transformer_param_docson = {
-  "pin": "Required. Can be \"inputpin\", \"outputpin\", \"bufferpin\"",
-  "pinclass": """Optional for inputpin, used to indicate a code inputpin
-   or a volatile inputpin.
-Required for bufferpin, used to indicate the kind of bufferpin
-For inputpin:
-  if defined, can be "codefunction", "codeblock"  or "volatile" (other)
-  "codefunction" : the code must return a value (contain a return statement)
-  "codeblock" : the code is just executed
-For inputpin or outputpin:
-  "volatile": the cell may change during the transform. Transform code may
-   request the volatile value using ()
-For bufferpin:
-  can be "read", "write" or "modify" """,
-  "order": """Optional, only for codeblock inputpins.
-Indicates the order of codeblock evaluations (codeblocks with a lower order
-get executed first; order must be a positive integer)
-Necessary if there are multiple codeblock inputpins.
-Changing a codeblock re-executes the codeblock and all codeblocks with a higher
-order (unless checkpoint dependencies are defined)""",
+  "pin": "Required. Can be \"input\" or \"output\"",
   "dtype": "Optional, must be registered with types if defined"
 }
+
+"""
 currdir = os.path.dirname(__file__)
 silk.register(
   open(os.path.join(currdir, "transformer.silk")).read(),
   doc = "Transformer pin parameters",
   docson = transformer_param_docson  #("json", "docson")
 )
+"""
 
 transformer_params = {
   "*": "silk.SeamlessTransformerPin",
-  "_use_codeblock_checkpoints": {
-    "dtype": bool,
-    "default": False,
-  },
-  "_codeblock_deps": {
-    "dtype": dict,
-    "default": {},
-  }
 }
 dtypes.register(
   ("json", "seamless", "transformer_params"),
   typeschema = transformer_params, #("json", "typeschema")
   docson = {
     "*": "Transformer pin parameters",
-    "_use_codeblock_checkpoints": """Optional. If defined, indicates
-that the code kernel global namespace is saved before each codeblock
-evaluation. When there are codeblocks that have changed, the checkpoint
-of the lowest-order changed codeblock is restored before all subsequent
-codeblocks are evaluated""",
-    "_codeblock_deps": """Optional. If defined, must be a dict of lists
-indicating the dependencies between codeblocks. The keys of the dict are
-codeblock inputpin names, and so are the items in the lists. For each codeblock,
-the dependency list must be a subset of all codeblocks with a lower "order"
-value (by default, the dependency list consists of all of those codeblocks)
-Defining _codeblock_deps also changes the codeblock checkpoints from a
-linear stack to a dependency tree of sub-checkpoints that are merged.
-"""
   },
   doc = "Transformer parameters"
 )
@@ -399,9 +363,54 @@ class Transformer(Worker):
 
 # @macro takes nothing, a type, or a dict of types
 @macro(type=("json", "seamless", "transformer_params"), with_context=False)
-def transformer(kwargs):
+def transformer(params):
+    """Defines a transformer worker.
+
+Transformers transform their input cells into an output result.
+Transformers are connected to their input cells via input pins, and their
+ result is connected to an output cell via an output pin. There can be only one
+ output pin. The pins are declared in the "params" parameter (see below).
+
+In addition, all transformers have an implicit input pin named "code",
+ which must be connected to a Python cell ( dtype=("text", "code", "python") ).
+The code must be a Python block that returns the result using a "return" statement.
+All input values are injected directly into the code's namespace. The variable
+ name of the input is the same as its pin name.
+Preliminary values can be returned using return_preliminary(value)
+(as of seamless 0.1, this does not require any special pin declaration)
+
+As of seamless 0.1, all transformers are asynchronous (non-blocking),
+ and they carry out their computation in a separate process
+ (using multiprocessing).
+As of seamless 0.1, transformers start their computation as soon as all inputs
+(including the code) has been defined, even if no output cell has been connected.
+Whenever the input data or code changes, a new computation is performed. If the
+ previous computation is still in progress, it is canceled.
+
+Invoke transformer.status to get the current status of the transformer
+Invoke transformer.shell() to create an IPython shell of the transformer namespace
+
+pin.connect(cell) connects an outputpin to a cell
+cell.connect(pin) connects a cell to an inputpin
+pin.cell() returns or creates a cell that is connected to that pin
+
+params:
+    A dictionary containing the transformer parameters.
+    As of seamless 0.1, each (name,value) item represents a transformer pin:
+      name (string): name of the pin
+      value: dictionary with the following items:
+        pin: must be "input" or "output". Only one output pin is allowed.
+        dtype: describes the dtype of the cell(s) connected to the pin.
+          As of seamless 0.1, the following dtypes are understood:
+          "int", "float", "bool", "str", "json", "cson", "array", "signal",
+          "text", ("text", "code", "python"), ("text", "code", "ipython"),
+          ("text", "code", "silk"), ("text", "code", "slash-0"),
+          ("text", "code", "vertexshader"), ("text", "code", "fragmentshader"),
+          ("text", "html")
+    Since "transformer" is a macro, the dictionary can also be provided in the
+     form of a cell of dtype ("json", "seamless", "transformer_params")
+"""
     from seamless.core.transformer import Transformer #code must be standalone
-    #TODO: remapping, e.g. output_finish, destroy, ...
-    return Transformer(kwargs)
+    return Transformer(params)
 
 from .context import Context

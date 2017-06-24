@@ -1,6 +1,10 @@
 Seamless: a cell-based reactive programming framework
 Seamless was created on June 3rd, 2016
 
+Requirements: Python 3.5+, PyQt5, numpy, PyOpenGL
+Recommended: scipy, pandas, websockets
+NOTE: Seamless scripts are meant to be executed within IPython
+
 The eight seamless constructs (sorted from good to ugly):
 1. context
 2. cell
@@ -24,16 +28,36 @@ Edit all state, then edit the editor
 Code execution is repeatable; if it is not repeatable, you throw away the code, and keep its result.
 Transform lazily, react eagerly.
 
+
 TODO:
 
 Technically-oriented releases are marked with *
 
 *0.1
-- Make a sane status report system (missing inputs, undefined inputs, missing connections, also in children)
-- Python registrar
+- Basic documentation:
+  - Docstring for each of the eight constructs (check that @macro keeps docstring!):
+    - context (DONE)
+    - cell (DONE)
+    - transformer (DONE)
+    - pin (import PinBase as pin in seamless)
+    - reactor (DONE)
+    - macro (DONE)
+    - registrar (DONE, in context)
+    - observer
+  - In README.md:
+    - a short summary
+    - a reference to help(...) for each construct
+    - a short example, and a link to the examples directory + zip file / test directory
+    - fix the format (.md)
 - Eighth construct: observer
+- Make a sane status report system (missing inputs, undefined inputs, missing connections, also in children)
 - Integrate protein viewer in browser
-- Demos: plotly, OpenGL (code DONE), orca (code DONE), slash+protein
+- Demos:
+    - plotly (code DONE)
+    - OpenGL fireworks (code DONE)
+    - orca (code DONE, but some kind of error)
+    - docking (code DONE, except browser protein viewer, and README)
+    - OpenGL 3D (code DONE)
 
 0.2
 - Replace ctx.CHILDREN, ctx.CELLS etc. with ctx.self.children, ctx.self.cells, etc.
@@ -42,7 +66,7 @@ Technically-oriented releases are marked with *
 - Expand seamless shell language (slash)
 - Logging + dtype/worker documentation.resource system (using composite cells)
 - Error message logging system (using composite cells)
-- Overhaul dtypes, docson/type registration API, integrate with logging/documentation system
+- Overhaul dtypes, docson/type registration API, integrate with logging/documentation system. "array" and "json" are no longer dtypes.
 - Update demos
 
 *0.3
@@ -50,17 +74,20 @@ Technically-oriented releases are marked with *
 - Preliminary outputpins (in transformers [as secondary output] and in reactors)
 - Preliminary inputpins (pins that accept preliminary values). Right now, all inputpins are preliminary!
 - Address shell() memory leak: IPython references may hold onto large amounts of data
-- Binary (struct) cells, active switches (connection level; workers don't see it, except that pin becomes undefined/changes value)
-- Silk: managing variable-length arrays with allocators (subclass ndarray), C header registrar, fix Bool default value bug
+- Address GLstore memory leak: stores may not be freed (?)
+- Binary (struct) cells, implemented as "array" cells with dtype/shape/ndim
+- Active switches (connection level; workers don't see it, except that pin becomes undefined/changes value)
+- Silk: managing variable-length arrays with allocators (subclass ndarray), C header registrar, fix Bool default value bug + bug in examples/silk/test.py
 - C interop
 - Game of Life demo with Cython and C
-- Update OpenGL demo
+- Update OpenGL demos
 
 0.4
 - Finalize context graph format and their names, update tofile/fromfile accordingly
 - Finalize resource management
 - Finalize basic API, also how to change macros
 - Cleanup code layout
+- Document tofile/fromfile, saving options and seamless file format
 - Code documentation + dtype/worker documentation system
 - Set up user library directory and robogit
 - Update demos
@@ -71,7 +98,7 @@ Technically-oriented releases are marked with *
 - Process transformers (now that execution is in a process, do we need this??)
 
 *0.6
-- Array cells, channels
+- Cell arrays, channels, GUI-widget cells
 - GPU computing (OpenCL)
 - Update Game of Life demo
 

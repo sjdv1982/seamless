@@ -1,0 +1,14 @@
+
+@input_doc pdb
+@input_var atom
+@input_var nhead
+@input_var res
+@intern_json pdbsplit
+@intern headatoms
+@intern resatoms
+grep $atom !pdb | head -$nhead > headatoms
+grep $res !headatoms > resatoms
+$ATTRACTTOOLS/splitmodel !pdb "model" >NULL !> pdbsplit
+@export pdbsplit
+@export headatoms
+@export resatoms

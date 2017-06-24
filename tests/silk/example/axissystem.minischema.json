@@ -1,0 +1,11 @@
+{
+	"type": "AxisSystem",
+	"properties": {
+		"origin": "Coordinate",
+		"x": "Coordinate",
+		"y": "Coordinate",
+		"z": "Coordinate"
+	},
+	"required": ["origin", "x", "y", "z"],
+	"order": ["origin", "x", "y", "z"]
+}

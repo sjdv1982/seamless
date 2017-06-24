@@ -1,0 +1,6 @@
+Type SideviewPoint {
+  Float x
+  Float ytop
+  *Float ybottom
+  FloatArray ysegments = []
+}

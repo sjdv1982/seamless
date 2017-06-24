@@ -5,23 +5,31 @@ Copyright 2016-2017, Sjoerd de Vries
 
 #Dependencies of seamless
 
-# 1. hard dependencies; without these, "import seamless" will fail. 
+# 1. hard dependencies; without these, "import seamless" will fail.
 # Still, if necessary, these dependencies could be removed, but seamless would have to be more minimalist in loading its lib
 
-#import PyOpenGL before PyQt5 to prevent the loading of the wrong OpenGL library that can happen on some systems. Introduces a hard dependency on PyOpenGL, TODO look into later"
-from OpenGL import GL 
-import PyQt5
 import numpy
+#import PyOpenGL before PyQt5 to prevent the loading of the wrong OpenGL library that can happen on some systems. Introduces a hard dependency on PyOpenGL, TODO look into later"
+from OpenGL import GL
+import PyQt5
 
 # 2. Soft dependencies: transformers may use these libraries
+"""
+#as of seamless 0.1, scipy is not yet used in libraries...
 try:
     import scipy
 except ImportError:
-    pass
+    print("WARNING: scipy not found, some seamless library constructs may fail")
+"""
 try:
     import pandas
 except ImportError:
-    pass
+    print("WARNING: pandas not found, some seamless library constructs may fail")
+
+try:
+    import websockets
+except ImportError:
+    print("WARNING: websockets not found, some seamless library constructs may fail")
 
 
 from .core.macro import macro
