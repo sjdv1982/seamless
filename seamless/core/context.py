@@ -92,12 +92,36 @@ class Context(SeamlessBase, CellLike, WorkerLike):
         active_context=True,
     ):
         """Construct a new context.
+A context can contain cells, workers (= transformers and reactors), and
+ other contexts
 
-        Args:
-            context (optional): parent context
-            active_context (default: True): Sets the newly constructed context
-                as the active context. New seamless objects are automatically
-                parented to the active context
+Arguments:
+    context (optional): parent context
+    active_context (default: True): Sets the newly constructed context
+        as the active context. New seamless objects are automatically
+        parented to the active context
+
+Important methods and attributes:
+    .tofile(), .fromfile(), .equilibrate(), .status
+
+In addition, the .registrar attribute contains the registrars
+  For cells with the correct dtype, use registrar.register(cell) to
+   register them.
+As of seamless 0.1, there are two global registrars:
+
+  - The Python registrar: for pythoncells
+    Simply registers all Python objects in the Python code's globals.
+    Use registrar.python.connect(name_of_python_object, worker) to use
+     the data model in a worker
+    See examples/test-python-registrar.py for an example.
+
+  - The silk registrar: for cells with dtype ("text", "code", "silk")
+    This registers all Silk data models in the cell.
+    Use registrar.silk.connect(name_of_datamodel, worker) to use
+     the data model in a worker
+    As of seamless 0.1, Silk is not yet documented:
+      see examples/test-macro.py or examples/fireworks/fireworks.py
+      for examples on how to work with Silk data models
         """
         super().__init__()
         n = name
@@ -116,6 +140,9 @@ class Context(SeamlessBase, CellLike, WorkerLike):
             set_active_context(self)
         from .registrar import RegistrarAccessor
         self.registrar = RegistrarAccessor(self)
+
+    def _get_manager(self):
+        return self._manager
 
     def _shell(self, toplevel=True):
         if self._exported_child is None:
@@ -360,6 +387,7 @@ When any of these cells change and the macro is re-executed, the child object wi
         if isinstance(value, pintypes):
             #TODO: check that pin target is a child
             self._pins[attr] = value
+            self._pins[attr]._set_context(self, attr)
             return
 
         assert isinstance(value, (Managed, CellLike, WorkerLike)), type(value)
@@ -467,10 +495,13 @@ When any of these cells change and the macro is re-executed, the child object wi
             pin = child._pins[pinname]
             if isinstance(pin, InputPinBase):
                 self._pins[pinname] = ExportedInputPin(pin)
+                self._pins[pinname]._set_context(self, pinname)
             elif isinstance(pin, OutputPinBase):
                 self._pins[pinname] = ExportedOutputPin(pin)
+                self._pins[pinname]._set_context(self, pinname)
             elif isinstance(pin, EditPinBase):
                 self._pins[pinname] = ExportedEditPin(pin)
+                self._pins[pinname]._set_context(self, pinname)
             else:
                 raise TypeError(pin)
 
@@ -500,11 +531,23 @@ When any of these cells change and the macro is re-executed, the child object wi
         return owns
 
     def tofile(self, filename, backup=True):
+        """Saves the context to a file
+        Arguments:
+            filename: name of the file to save to
+            backup (bool, default=True):
+              If the file already exists, rename the old file
+               to filename + str(N), where N is the lowest number
+               possible such that filename + str(N) does not exist
+        """
         from .tofile import tofile
         tofile(self, filename, backup)
 
     @classmethod
     def fromfile(cls, filename):
+        """Class method. Loads a context from file
+        Arguments:
+            filename: name of the file to load
+        """
         from .io import fromfile
         return fromfile(cls, filename)
 
@@ -596,12 +639,11 @@ When any of these cells change and the macro is re-executed, the child object wi
                 continue
             child = self._children.pop(a)
             child.destroy()
-            print("CLEANUP", self, a)
             self._auto.remove(a)
 
 
 
 def context(**kwargs):
-    """Return a new Context object."""
     ctx = Context(**kwargs)
     return ctx
+context.__doc__ = Context.__init__.__doc__

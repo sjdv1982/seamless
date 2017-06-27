@@ -300,5 +300,4 @@ def add_registrar(name, registrar):
     _registrars[name] = registrar
 
 add_registrar("silk", SilkRegistrar())
-#add_registrar("hive", EvalRegistrar({}))
-#TODO: shader registrar
+add_registrar("python", EvalRegistrar({}))

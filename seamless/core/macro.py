@@ -80,7 +80,7 @@ class Macro:
     dtype = ("text", "code", "python")
     registrar = None
 
-    def __init__(self, type=None, *, with_context=True, with_caching=False,
+    def __init__(self, type=None, *args, with_context=True, with_caching=False,
                  registrar=None, func=None):
         self.with_context = with_context
         if with_caching: assert with_context == True
@@ -100,7 +100,15 @@ class Macro:
 
         if isinstance(type, tuple) or isinstance(type, str):
             self._type_args = {'_order': ["_arg1"], '_required': ["_arg1"], '_default': {}, '_arg1': type}
+            if len(args):
+                for tnr, t in enumerate(args):
+                    assert isinstance(t, tuple) or isinstance(t, str), t
+                    a = "_arg" + str(tnr+2)
+                    self._type_args["_order"].append(a)
+                    self._type_args["_required"].append(a)
+                    self._type_args[a] = t
             return
+        assert not len(args)
 
         if not isinstance(type, dict):
             raise TypeError(type.__class__)
@@ -419,74 +427,83 @@ class Macro:
 def macro(*args, **kwargs):
     """Macro decorator,  wraps a macro function
 
-    Any cell arguments to the function are automatically converted to their
-     value, and a live macro object is created: whenever one of the cells
-     changes value, the macro function is re-executed
-    IMPORTANT:
-    The macro function object is never executed directly: instead, its source
-     code is extracted and used to build a new function object
-    This is so that macro source can be included when the context is saved.
-    Therefore, the function source MUST be self-contained, i.e. not rely on
-     other variables defined or imported elsewhere in its module.
-    Only registrar methods deviate from this rule, since registrar code is
-     never stored in the saved context. The "registrar" parameter indicates
-     that the macro is a registrar method.
+Macro functions construct new seamless objects (contexts, cells, workers).
+In their code, macro functions may themselves invoke macros.
+Macro function arguments can be either values or cells.
 
-    Macros are identified by the name of the module (in sys.modules) that
-     defined them, and the name of the macro function.
-    If a new macro is defined with the same module name and function name,
-     the old macro is updated and returned instead
+If any argument to the the macro function is a cell, then all cell arguments
+ are automatically converted to their values, and a live macro object is created:
+ whenever one of the cells changes value, the macro function is re-executed
 
-    type: a single type tuple, or a dict/OrderedDict
-      if type is a dict, then
-        every key is a parameter name
-        every value is either a type tuple, or
-         a dict, where:
-            "type" is the type tuple,
-            "optional" (optional) is a boolean
-            "default" (optional) is a default value
-        the type dict is parsed from **kwargs (keyword arguments)
-        unspecified optional arguments default to None, unless "default" is
-         specified
-      if type is an OrderedDict, then
-       as above, but
-       the type dict is parsed from *args (positional arguments)
-        and **kwargs (keyword arguments)
+The macro function object is never executed directly: instead, its source
+ code is extracted and used to build a new function object
+This is so that macro source can be included when the context is saved.
+Therefore, the function source MUST be self-contained, i.e. not rely on
+ other variables defined or imported by code outside the function.
+Only registrar methods deviate from this rule, since registrar code is
+ never stored in the saved context. The "registrar" parameter indicates
+ that the macro is a registrar method.
 
-    As an additional value for type tuple, "self" is allowed. This indicates
-     that the macro is a method decorator, and the first argument
-     is a bound object. In this case, the macro source is never stored
+Macros are identified by the name of the module (in sys.modules) that
+ defined them, and the name of the macro function.
+If a new macro is defined with the same module name and function name,
+ the old macro is updated and returned instead
 
-    with_context: bool
-      if True, the function is passed a context object as additional
-       first parameter, and is expected to return None
-      if False, the function is expected to return a cell or worker.
-       This cell or worker (together with any other cells or workers
-       created by the macro) is automatically added to the active context.
+Arguments:
 
-    with_caching: bool
-        if True, when the macro is re-invoked, it tries to salvage as much as
-        possible from the previously created context
-        Requires that with_context is True
+type: a single type tuple, a list of type tuples, or a dict/OrderedDict
+  if type is a dict, then
+    every key is a parameter name
+    every value is either a dtype, or
+     a dict, where:
+        "type" is the dtype,
+        "optional" (optional) is a boolean
+        "default" (optional) is a default value
+    the type dict is parsed from **kwargs (keyword arguments)
+    unspecified optional arguments default to None, unless "default" is
+     specified
+  if type is an OrderedDict, then
+   as above, but
+   the type dict is parsed from *args (positional arguments)
+    and **kwargs (keyword arguments)
 
-    Example 1:
-    @macro
-    defines a macro with with_context = True, no type checking
+As an additional value for dtype, "self" is allowed. This indicates
+ that the macro is a method decorator, and the first argument
+ is a bound object. In this case, the macro source is never stored
+Currently, macro method decorators are only used for registrar methods
 
-    Example 2:
-    @macro("str")
-    defines a macro with a single argument, which must be of type "str",
-     and with_context is True.
+with_context: bool
+  if True, the function is passed a context object as additional
+   first parameter, and is expected to return None
+  if False, the function is expected to return a cell or worker.
+   This cell or worker (together with any other cells or workers
+   created by the macro) is automatically added to the active context.
+   As of seamless 0.1, there are no macros that return a cell, i.e. this is untested!
 
-    Example 2:
-    @macro({
-      "spam": { "type":"str", "optional":True },
-      "ham": ("code", "python"),
-      "eggs": "int"
-    })
-    defines a macro with a three arguments. The arguments must be defined as
-     keyword arguments, and "spam" is optional
-    """
+with_caching: bool
+    if True, when the macro is re-invoked, it tries to salvage as much as
+    possible from the previously created context
+    Requires that with_context is True
+    As of seamless 0.1, only the slash0 macro has with_caching
+
+Example 1:
+@macro
+defines a macro with with_context = True, no type checking
+
+Example 2:
+@macro("str")
+defines a macro with a single argument, which must be of type "str",
+ and with_context is True.
+
+Example 2:
+@macro({
+  "spam": { "type":"str", "optional":True },
+  "ham": ("code", "python"),
+  "eggs": "int"
+})
+defines a macro with a three arguments. The arguments must be defined as
+ keyword arguments, and "spam" is optional
+"""
     if len(args) == 1 and not kwargs:
         arg, = args
         if callable(arg):

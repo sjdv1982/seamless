@@ -17,17 +17,18 @@ import seamless
 
 #TODO: on_disconnect? don't do anything if self._destroyed
 
-reactor_param_docson = {} #TODO, adapt from transformer and from reactor.silk
+reactor_param_docson = {} #TODO, adapt from transformer
 currdir = os.path.dirname(__file__)
+"""
 silk.register(
   open(os.path.join(currdir, "reactor.silk")).read(),
   doc = "Reactor pin parameters",
   docson = reactor_param_docson  #("json", "docson")
 )
-
+"""
 reactor_params = {
   "*": "silk.ReactorPin",
-} #TODO: @shell
+}
 
 dtypes.register(
   ("json", "seamless", "reactor_params"),
@@ -139,7 +140,7 @@ class Reactor(Worker):
         self._pending_updates += 1
         f = self.reactor.process_input
         value = registrar_name, key, namespace_name
-        work = partial(f, "@REGISTRAR", value)
+        work = partial(f, "@REGISTRAR", value, None)
         seamless.add_work(work, priority=True)
 
     def __dir__(self):
@@ -175,9 +176,74 @@ class Reactor(Worker):
 
 # @macro takes nothing, a type, or a dict of types
 @macro(type=("json", "seamless", "reactor_params"),with_context=False)
-def reactor(kwargs):
+def reactor(params):
+    """Defines a reactor worker.
+
+Reactors react upon changes in their input cells.
+Reactors are connected to their input cells via inputpins. In addition, reactors
+ may manipulate output cells via outputpins. Finally, a cell may be both an
+ input and an output of the reactor, by connecting it via an editpin.
+ The pins are declared in the "params" parameter (see below).
+
+In addition, all reactors have three implicit inputpins named "code_start", "code_update"
+ and "code_stop". Each pin must be connected to a Python cell
+ ( dtype=("text", "code", "python") ), containing a code block.
+The reactor will start as soon as all input cells (including the three code cells)
+ have been defined. The startup of the reactor will trigger the execution of the
+ code in the code_start cell. Any change in the inputpins (including at startup)
+ will trigger the execution of the code_update cell. The code_stop cell is
+ invoked when the reactor is destroyed.
+ As of seamless 0.1, macro re-evaluation destroys and re-creates all reactors
+ created by the macro, unless the macro has caching enabled.
+ All three code cells are executed in the same namespace. The namespace contains
+ an object called "PINS". This object can be queried for pin objects: a pin
+ called "spam" is accessible as pin object "PINS.spam".
+ Every inputpin and editpin object contains a get() method that returns the value.
+ As of seamless 0.1, the "value" property is identical to pin.get().
+ Every inputpin and editpin object has a property "updated", which is True if
+ the pin has been updated since the last time code_update was executed.
+ Every outputpin and editpin has a set(value) method.
+ In case of a signal outputpin, set() is to be invoked without argument.
+ Invoking set() on a signal outputpin will propagate the signal as fast as possible:
+    - If set from the main thread: immediately. Downstream workers are
+      notified and activated (if synchronous) before set() returns
+    - If set from another thread: as soon as run_work is called. Then,
+      Downstream workers are notified and activated before any other
+      non-signal notification.
+
+As of seamless 0.1, all reactors are synchronous (blocking): their code is
+ executed in the main thread. Therefore, seamless and IPython are non-responsive
+ while reactor code is executing, and reactor code should return as soon as
+ possible. Therefore, if they perform long computations, reactors should spawn
+ their own threads or processes from within their code.
+
+Invoke reactor.status to get the current status of the reactor
+Invoke reactor.shell() to create an IPython shell of the reactor namespace
+
+pin.connect(cell) connects an outputpin to a cell
+cell.connect(pin) connects a cell to an inputpin
+pin.cell() returns or creates a cell that is connected to that pin
+
+params:
+    A dictionary containing the reactor parameters.
+    As of seamless 0.1, each (name,value) item represents a reactor pin:
+      name (string): name of the pin
+      value: dictionary with the following items:
+        pin: must be "input", "output" or "edit".
+        dtype: describes the dtype of the cell(s) connected to the pin.
+          As of seamless 0.1, the following dtypes are understood:
+          "int", "float", "bool", "str", "json", "cson", "array", "signal",
+          "text", ("text", "code", "python"), ("text", "code", "ipython"),
+          ("text", "code", "silk"), ("text", "code", "slash-0"),
+          ("text", "code", "vertexshader"), ("text", "code", "fragmentshader"),
+          ("text", "html")
+        must_be_defined (bool, default True): In case of edit pins, if
+         must_be_defined is False, the reactor will start up  even if the
+         connected cell does not yet have a defined value.
+    Since "reactor" is a macro, the dictionary can also be provided in the
+     form of a cell of dtype ("json", "seamless", "reactor_params")
+"""
     from seamless.core.reactor import Reactor #code must be standalone
-    #TODO: remapping, e.g. output_finish, destroy, ...
-    return Reactor(kwargs)
+    return Reactor(params)
 
 from .context import Context

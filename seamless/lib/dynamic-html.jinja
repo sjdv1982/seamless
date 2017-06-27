@@ -1,5 +1,5 @@
 <script>
-{% for var in vars %}
+{% for var in vars_full %}
     var {{var}} = null;
 {% endfor %}
     var ws = new WebSocket("ws://127.0.0.1:{% raw %}{{socket}}{% endraw %}/");

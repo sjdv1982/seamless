@@ -3,9 +3,21 @@ import jinja2
 params = PINS.DYNAMIC_HTML_PARAMS.get()
 tmpl = PINS.DYNAMIC_HTML_TEMPLATE.get()
 vars_ = []
+vars_full = []
 for var_name, v in params["vars"].items():
-    vars_.append(v[0])
-dynamic_html0 = jinja2.Template(tmpl).render({"vars": vars_})
+    vv = v[0]
+    vars_.append(vv)
+    chars = ".[]{}"
+    full_var = True
+    for char in chars:
+        if char in vv:
+            full_var = False
+            break
+    if full_var:
+        vars_full.append(vv)
+dynamic_html0 = jinja2.Template(tmpl).render(
+    {"vars": vars_, "vars_full": vars_full}
+)
 
 from seamless.websocketserver import websocketserver
 websocketserver.start() #no-op if the websocketserver has already started

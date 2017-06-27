@@ -78,7 +78,20 @@ class MessageSendServer(BaseWebSocketServer):
                 if len(events) > self.CACHE_EVENTS_FIRST + self.CACHE_EVENTS_LAST:
                     events = events[:self.CACHE_EVENTS_FIRST] + \
                         events[-self.CACHE_EVENTS_LAST:]
-                for e in events:
+                for enr, e in enumerate(events):
+                    if e.get("type", None) == "var":
+                        varname = e.get("var", None)
+                        swallow = False
+                        if varname is not None:
+                            for e2 in events[enr+1:]:
+                                if e2.get("type", None) != "var":
+                                    continue
+                                if e2.get("var", None) != varname:
+                                    continue
+                                swallow = True
+                                break
+                    if swallow:
+                        continue
                     myqueue.put_nowait(e)
                     pmqueue.put_nowait(e) #put the events back
             if connection_id not in self._message_queue_lists:

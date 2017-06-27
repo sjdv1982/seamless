@@ -43,7 +43,8 @@ class Cell(Managed, CellLike):
     _preliminary = False
 
     def __init__(self, dtype, *, naming_pattern="cell"):
-        """TODO: docstring."""
+        """Creates
+        """
         super().__init__()
 
         from .macro import get_macro_mode
@@ -92,7 +93,7 @@ class Cell(Managed, CellLike):
 
     def set(self, text_or_object):
         """Update cell data from Python code in the main thread."""
-        self._set(text_or_object, propagate=True)
+        self._set(text_or_object, propagate=True, preliminary=False)
         if text_or_object is None:
             self.resource.cache = None
         else:
@@ -300,12 +301,14 @@ class Cell(Managed, CellLike):
 
 
 class PythonCell(Cell):
-    """
-    A cell containing Python code.
+    """A cell containing Python code.
 
-    Python cells may contain either a code block or a function
+    Python cells have dtype ("text", "code", "python")
+    Python cells may contain either a code block or a function.
+    In both cases, the cell contains text, not a Python code object!
+
     Workers that are connected to it may require either a code block or a
-     function
+     function.
     Mismatch between the two is not a problem, unless:
           Connected workers have conflicting block/function requirements
         OR
@@ -317,8 +320,7 @@ class PythonCell(Cell):
     """
 
     CodeTypes = Enum('CodeTypes', ('ANY', 'FUNCTION', 'BLOCK'))
-
-    _dtype = ("text", "python")
+    _dtype = ("text", "code", "python")
 
     _code_type = CodeTypes.ANY
     _required_code_type = CodeTypes.ANY
@@ -382,7 +384,7 @@ class PythonCell(Cell):
         try:
             """
             Try to retrieve the source code
-            Will only work if code is a function
+            Will only work if object_ is a function object
             """
             if not inspect.isfunction(object_):
                 raise Exception("Python object must be a function")
@@ -434,8 +436,15 @@ class PythonCell(Cell):
 
 
 class Signal(Cell):
+    """ A cell that does not contain any data
+    When a signal is set, it is propagated as fast as possible:
+      - If set from the main thread: immediately. Downstream workers are
+         notified and activated (if synchronous) before set() returns
+      - If set from another thread: as soon as run_work is called. Then,
+         Downstream workers are notified and activated before any other
+         non-signal notification.
+    """
     def __init__(self, dtype, *, naming_pattern="signal"):
-        """TODO: docstring."""
         assert dtype == "signal"
         Managed.__init__(self)
 
@@ -490,6 +499,10 @@ class Signal(Cell):
         Managed.destroy(self)
 
 class CsonCell(Cell):
+    """A cell in CoffeeScript Object Notation (CSON) format
+    When necessary, the contents of a CSON cell are automatically converted
+    to JSON.
+    """
     @property
     def value(self):
         """
@@ -505,8 +518,18 @@ class CsonCell(Cell):
         return super()._update(data, propagate=propagate, preliminary=preliminary)
 
 class ArrayCell(Cell):
+    """A cell that contains a NumPy array"""
     _store = None
     def set_store(self, mode, *args, **kwargs):
+        """
+        Specify a store to be bound to the data, i.e. to hold an additional
+         copy of the data in a different form
+        Calling the store's bind() method will (re-)bind the data if it has
+         changed, else it is a no-op
+        mode:
+            "GL": stores the data as an OpenGL buffer
+            "GLTex": stores the data as an OpenGL texture
+        """
         assert mode in ("GL", "GLTex"), mode
         from ..dtypes.gl import GLStore, GLTexStore
         if self._store is not None:
@@ -520,6 +543,7 @@ class ArrayCell(Cell):
         self._store.set_dirty()
         self._store_mode = mode
         self.touch()
+        return self
     def _set(self, text_or_object,*,propagate,preliminary):
         result = super()._set(text_or_object,
           propagate=propagate,preliminary=preliminary)
@@ -545,14 +569,34 @@ _handlers = {
 
 
 def cell(dtype):
-    """Factory function for a Cell object."""
+    """Creates and returns a Cell object.
+    Arguments:
+      dtype (string or tuple of strings): specifies the data type of the cell
+        As of seamless 0.1, the following data types are understood:
+          "int", "float", "bool", "str", "json", "cson", "array", "signal",
+          "text", ("text", "code", "python"), ("text", "code", "ipython"),
+          ("text", "code", "silk"), ("text", "code", "slash-0"),
+          ("text", "code", "vertexshader"), ("text", "code", "fragmentshader"),
+          ("text", "html"),
+          ("json", "seamless", "transformer_params"),
+          ("cson", "seamless", "transformer_params"),
+          ("json", "seamless", "reactor_params"),
+          ("cson", "seamless", "reactor_params")
+
+    Cells can be connected to input pins, edit pins, and other cells
+    Output pins and edit pins can be connected to cells
+
+    Use Cell.set() to set a cell's value
+    Use Cell.value to get its value
+    Use Cell.status to get its status
+    """
     cell_cls = Cell
     if dtype in _handlers:
         cell_cls = _handlers[dtype]
 
     newcell = cell_cls(dtype)
     return newcell
-
+cell.__doc__ += Cell.__doc__
 
 def pythoncell():
     """Factory function for a PythonCell object."""

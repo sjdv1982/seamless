@@ -31,7 +31,7 @@ _known_types = [
   "json",
   "cson",
   "xml",
-  "silk",
+  #"silk",
   "array",
   "signal"
 ]
@@ -216,5 +216,8 @@ class ConstructionError(Exception):
 def register(type, *args, **kwargs):
     #STUB!
     _known_types.append(type)
+    if isinstance(type, tuple) and type[0] == "json":
+        cson_type = ("cson",) + type[1:]
+        _known_types.append(cson_type)
 
 from .objects import data_type_to_data_object

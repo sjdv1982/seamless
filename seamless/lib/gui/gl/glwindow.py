@@ -21,6 +21,11 @@ def glwindow(title, size, position):
         "pin": "input",
         "dtype": "signal"
       },
+      "camera": {
+        "pin": "edit",
+        "dtype": "json",
+        "must_be_defined": False
+      },
       "init": {
         "pin": "output",
         "dtype": "signal",
@@ -33,6 +38,10 @@ def glwindow(title, size, position):
         "pin": "output",
         "dtype": "signal"
       },
+      "last_key": {
+        "pin": "output",
+        "dtype": "str"
+      }
     }
     rc = reactor(pinparams)
     rc.title.cell().set(title)

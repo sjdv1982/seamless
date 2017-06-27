@@ -5,6 +5,7 @@ from ...dtypes import data_type_to_data_object
 from .killable_thread import KillableThread
 from multiprocessing import Process
 import functools
+import time
 
 USE_PROCESSES = True
 if USE_PROCESSES:

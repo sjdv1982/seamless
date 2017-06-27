@@ -6,11 +6,13 @@ from seamless.dtypes.gl import GLSubStore
 import threading
 
 class VertexAttribute:
-    def __init__(self, attribute, glsl_dtype, shader_program, store):
+    def __init__(self, attribute, glsl_dtype, shader_program, store, *,
+            instanced=False):
         self.attribute = attribute
         self.glsl_dtype = glsl_dtype
         self.shader_program = shader_program
         self.store = store
+        self.instanced = instanced
         self.length = None
         self.enabled = False
 
@@ -90,6 +92,8 @@ class VertexAttribute:
             gl.glEnableVertexAttribArray(loc)
             gl.glBindBuffer(gl.GL_ARRAY_BUFFER, buf)
             gl.glVertexAttribPointer(loc, size, dtype, False, stride, ctypes.c_void_p(offset))
+            if self.instanced:
+                gl.glVertexAttribDivisor(loc,1)
             self.enabled = True
         self.length = self.store.shape[0]
 
@@ -162,13 +166,14 @@ class Renderer:
         self.command = render["command"]
         self.vao = None
         self.dirty = False
+        self.instanced = False
         assert self.command in (
-            "points", "points_indexed",
-            "lines", "lines_indexed",
-            "triangles", "triangles_indexed",
+            "points",
+            "lines",
+            "triangles",
             "triangle_strip", "triangle_fan"
             )
-        if self.command.endswith("indexed"):
+        if "indices" in render:
             assert "indices" in render
             at = render["indices"]
             store = storedict[at["array"]]
@@ -178,36 +183,52 @@ class Renderer:
             else:
                 substore = GLSubStore(ar, rae)
             self.indices = IndexArray(at["dtype"], shader_program, substore)
-        else:
-            assert "indices" not in render
+        if "instanced" in render:
+            self.instanced = render["instanced"]
 
         for atname, at in render["attributes"].items():
             store = storedict[at["array"]]
             rae = at.get("rae", None)
+            instanced = at.get("instanced", False)
+            if instanced:
+                assert self.instanced
             if rae is None:
                 substore = store
             else:
                 substore = GLSubStore(store, rae)
-            vertex_attribute = VertexAttribute(atname, at["dtype"], shader_program, substore)
+            vertex_attribute = VertexAttribute(atname, at["dtype"],
+              shader_program, substore, instanced=instanced)
             self.attributes[atname] = vertex_attribute
 
     def bind(self):
         assert threading.current_thread() is threading.main_thread()
         length = None
         first_atname = None
+        if self.instanced:
+            instances = None
+            instanced_first_atname = None
         vao = gl.glGenVertexArrays(1)
         gl.glBindVertexArray(vao)
         if self.indices:
             self.indices.bind()
         for atname, at in self.attributes.items():
             at.bind()
-            if length is None:
-                length = at.length
-                first_atname = atname
-            if length != at.length:
-                raise ValueError((first_atname, length), (atname, at.length))
+            if at.instanced:
+                if instances is None:
+                    instances = at.length
+                    instanced_first_atname = atname
+                if instances != at.length:
+                    raise ValueError((instanced_first_atname, instances), (atname, at.length))
+            else:
+                if length is None:
+                    length = at.length
+                    first_atname = atname
+                if length != at.length:
+                    raise ValueError((first_atname, length), (atname, at.length))
         if length is None:
             length = 0
+        if self.instanced:
+            self.instances = instances
         self.length = length
         self.vao = vao
         self.dirty = False
@@ -220,24 +241,29 @@ class Renderer:
         if self.dirty or not self.vao:
             self.bind()
         gl.glBindVertexArray(self.vao)
+        indexed = (self.indices is not None)
         if self.command == "points":
-            gl.glDrawArrays(gl.GL_POINTS, 0, self.length)
-        elif self.command == "points_indexed":
-            gl.glDrawElements(gl.GL_POINTS, self.indices.length,
-              self.indices.gl_dtype, ctypes.c_void_p(self.indices.offset))
+            mode = gl.GL_POINTS
         elif self.command == "lines":
-            gl.glDrawArrays(gl.GL_LINES, 0, self.length)
-        elif self.command == "lines_indexed":
-            gl.glDrawElements(gl.GL_LINES, self.indices.length,
-              self.indices.gl_dtype, ctypes.c_void_p(self.indices.offset))
+            mode = gl.GL_LINES
         elif self.command == "triangles":
-            gl.glDrawArrays(gl.GL_TRIANGLES, 0, self.length)
-        elif self.command == "triangles_indexed":
-            gl.glDrawElements(gl.GL_TRIANGLES, self.indices.length,
-              self.indices.gl_dtype, ctypes.c_void_p(self.indices.offset))
+            mode = gl.GL_TRIANGLES
         elif self.command == "triangle_strip":
-            gl.glDrawArrays(gl.GL_TRIANGLE_STRIP, 0, self.length)
+            mode = gl.GL_TRIANGLE_STRIP
         elif self.command == "triangle_fan":
-            gl.glDrawArrays(gl.GL_TRIANGLE_FAN, 0, self.length)
+            mode = gl.GL_TRIANGLE_FAN
         else:
             raise ValueError(self.command)
+        if not indexed:
+            if not self.instanced:
+                gl.glDrawArrays(mode, 0, self.length)
+            else:
+                gl.glDrawArraysInstanced(mode, 0, self.length, self.instances)
+        else:
+            if not self.instanced:
+                gl.glDrawElements(mode, self.indices.length,
+                  self.indices.gl_dtype, ctypes.c_void_p(self.indices.offset))
+            else:
+                gl.glDrawElementsInstanced(mode, self.indices.length,
+                  self.indices.gl_dtype, ctypes.c_void_p(self.indices.offset),
+                  self.instances)

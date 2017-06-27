@@ -1,0 +1,19 @@
+Type FinCircle {
+  Float x
+  Float ycenter
+  Float distance
+  Float xradius
+  Float yradius
+  Float rotation
+}
+
+Type FinGenerator {
+  Float x
+  Float ycenter
+  Float distance
+  Float xradius
+  Float yradius
+  FloatArray rotations
+  *Float xwidth
+  *Float xstep
+}

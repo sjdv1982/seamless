@@ -8,7 +8,7 @@ def format_msg(message, headline):
     return msg
 
 try:
-    print("RUN", PARAMS["source"])
+    #print("RUN", PARAMS["source"])
     d = tempfile.mkdtemp(dir="/dev/shm")
     command_params = []
     created_files = []

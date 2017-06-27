@@ -439,6 +439,7 @@ class Manager:
                     target._update(value,propagate=True)
 
                 return
+            assert not isinstance(target, Context) #TODO?
             worker = target.worker_ref()
             assert worker is not None #weakref may not be dead
             source._on_connect(target, worker, incoming = False)
@@ -446,6 +447,13 @@ class Manager:
 
             if source._status == Cell.StatusFlags.OK:
                 self.update_from_code(source, only_last=True)
+            else:
+                if isinstance(target, EditPinBase) and target.last_value is not None:
+                    self.update_from_worker(
+                        self.get_cell_id(source),
+                        target.last_value,
+                        worker, preliminary=False
+                    )
 
         elif isinstance(source, OutputPinBase):
             assert isinstance(target, CellLike) and target._like_cell
@@ -469,6 +477,14 @@ class Manager:
 
             if isinstance(worker, Transformer):
                 worker._on_connect_output()
+            elif source.last_value is not None:
+                self.update_from_worker(
+                    cell_id,
+                    source.last_value,
+                    worker,
+                    preliminary=False
+                )
+
 
         else:
             raise TypeError

@@ -7,12 +7,12 @@
     "dtype": "bool",
     "pin": "input"
   },
-  "output": {
-    "dtype": "array",
-    "pin": "output"
-  },
   "filename": {
     "dtype": "str",
     "pin": "input"
+  },
+  "output": {
+    "dtype": "array",
+    "pin": "output"
   }
 }

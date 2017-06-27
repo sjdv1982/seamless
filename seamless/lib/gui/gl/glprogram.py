@@ -8,7 +8,8 @@ from collections import OrderedDict
 )))
 def glprogram(ctx, program, with_window, window_title):
     from seamless import cell, reactor, macro
-    from seamless.core.worker import ExportedInputPin, ExportedOutputPin
+    from seamless.core.worker import ExportedInputPin, ExportedOutputPin, \
+      ExportedEditPin
     from seamless.lib.gui.gl.glwindow import glwindow
 
     arrays = program["arrays"]
@@ -52,7 +53,6 @@ def glprogram(ctx, program, with_window, window_title):
         "dtype": "json"
       }
     }
-
     for ar in arrays:
         rcparams["array_" + ar] = {"pin": "input","dtype": "array"}
 
@@ -74,4 +74,6 @@ def glprogram(ctx, program, with_window, window_title):
         ctx.rc.repaint.cell().connect(ctx.glwindow.update)
         ctx.update = ExportedInputPin(ctx.glwindow.update)
         ctx.painted = ExportedOutputPin(ctx.glwindow.painted)
+        ctx.camera = ExportedEditPin(ctx.glwindow.camera)
+        ctx.last_key = ExportedOutputPin(ctx.glwindow.last_key)
     ctx.export(ctx.rc)
