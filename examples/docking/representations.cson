@@ -1,0 +1,11 @@
+
+[
+  {
+    color: "red"
+    sele: ":A"
+  }
+  {
+    color: "blue"
+    sele: ":B/0"
+  }
+]

@@ -1,14 +1,31 @@
 @input_doc pdbA
 @input_doc pdbB
-@intern pdbrA
-@intern pdbrB
-@intern starting_structures
-@intern docking_structures
+@input_var nstruc
+@input_var vmax
+@intern result
+@intern pdbAr
+@intern pdbBr
+@intern pdb
+@intern startstruc
+@intern dockstruc
+@intern dockstruc0
 @intern energies
+@intern nstrucdone
+@intern poses
 
-./reduce.sh !pdbA > pdbrA
-./reduce.sh !pdbB > pdbrB
-python $ATTRACTTOOLS/randsearch.py 2 500 --fix-receptor > starting_structures
-$ATTRACTDIR/attract !starting_structures $ATTRACTDIR/../attract.par !pdbrA !pdbrB --vmax 20 > docking_structures @monitor 0.5
-grep "Energy" !docking_structures | awk '$3 < 100 {print $3}' | sort -n > energies
+./scripts/reduce.sh !pdbA > pdbAr
+./scripts/reduce.sh !pdbB > pdbBr
+python $ATTRACTTOOLS/randsearch.py 2 $nstruc --fix-receptor  > startstruc
+$ATTRACTDIR/attract !startstruc $ATTRACTDIR/../attract.par !pdbAr !pdbBr --fix-receptor --vmax $vmax > dockstruc0 @ monitor 0.5
+python ./scripts/defray-structures.py !dockstruc0 > dockstruc
+grep 'Energy' !dockstruc0 | awk '-v' 'm=20' '{v=$3; if (v>m)v=m; print v}' | sort -n > energies
+python ./scripts/count-structures.py !dockstruc > nstrucdone
+$ATTRACTDIR/collect !dockstruc !pdbA !pdbB > pdb
+python ./scripts/euler2rotmat.py !dockstruc > poses
+cat !poses > result
+
+@export pdb
 @export energies
+@export result
+@export nstrucdone
+@export poses

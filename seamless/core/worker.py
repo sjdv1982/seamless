@@ -90,9 +90,6 @@ class PinBase(Managed):
         super().__init__()
         self.name = name
 
-    def _set_context(self, context, childname, force_detach=False):
-        pass
-
     @property
     def path(self):
         worker = self.worker_ref()
@@ -120,10 +117,12 @@ class PinBase(Managed):
         raise TypeError(type(self))
 
 class InputPinBase(PinBase):
-    pass
+    def _set_context(self, context, childname, force_detach=False):
+        pass
 
 class OutputPinBase(PinBase):
-    pass
+    def _set_context(self, context, childname, force_detach=False):
+        pass
 
 class InputPin(InputPinBase):
 
@@ -268,7 +267,8 @@ class OutputPin(OutputPinBase):
         super().destroy()
 
 class EditPinBase(PinBase):
-    pass
+    def _set_context(self, context, childname, force_detach=False):
+        pass
 
 class EditPin(EditPinBase):
     last_value = None
@@ -352,6 +352,9 @@ class ExportedPinBase:
     def __init__(self, pin):
         self._pin = pin
 
+    def _set_context(self, context, childname, force_detach=False):
+        self.name = childname
+
     def get_pin_id(self):
         from .cell import CellLike
         if isinstance(self._pin, CellLike):
@@ -367,9 +370,6 @@ class ExportedPinBase:
     def __getattr__(self, attr):
         return getattr(self._pin, attr)
 
-    def _set_context(self, context, childname, force_detach=False):
-        pass
-
     @property
     def context(self):
         return self._pin.context
@@ -377,10 +377,6 @@ class ExportedPinBase:
     @property
     def path(self):
         return self._pin.path
-
-    @property
-    def name(self):
-        return self._pin.name
 
     def own(self, *args, **kwargs):
         return self._pin.own(*args, **kwargs)

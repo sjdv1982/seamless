@@ -255,7 +255,38 @@ def run_qt():
         event_loop.processEvents()
         _running_qt = False
 
+def export(pin, dtype=None):
+    from .core.context import get_active_context
+    ctx = get_active_context()
+    assert ctx is not None
+    from .core.worker import PinBase, InputPinBase, OutputPinBase, EditPinBase
+    from .core.cell import cell
+    assert isinstance(pin, PinBase)
+    if not hasattr(ctx, pin.name):
+        if dtype is None:
+            dtype = pin.dtype
+        assert dtype is not None
+        c = cell(dtype)
+        setattr(ctx, pin.name, c)
+        print(c)
+    else:
+        c = getattr(ctx, pin.name)
+        if dtype is not None:
+            cdtype = c.dtype
+            if isinstance(cdtype, str) and isinstance(dtype, tuple):
+                cdtype = (cdtype,)
+            elif isinstance(cdtype, tuple) and isinstance(dtype, str):
+                cdtype = cdtype[0]
+            if dtype != cdtype:
+                c = cell(dtype)
+                setattr(ctx, pin.name, c)
+    if isinstance(pin, (InputPinBase, EditPinBase)):
+        c.connect(pin)
+    else: #OutputPinBase
+        pin.connect(c)
+    return c
+
 from . import qt
 from .gui import shell
 from . import lib
-__all__ = (macro, context, cell, pythoncell, transformer, reactor, qt, shell)
+__all__ = (macro, context, cell, pythoncell, transformer, reactor, qt, shell, export)

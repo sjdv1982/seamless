@@ -387,6 +387,7 @@ When any of these cells change and the macro is re-executed, the child object wi
         if isinstance(value, pintypes):
             #TODO: check that pin target is a child
             self._pins[attr] = value
+            self._pins[attr]._set_context(self, attr)
             return
 
         assert isinstance(value, (Managed, CellLike, WorkerLike)), type(value)
@@ -494,10 +495,13 @@ When any of these cells change and the macro is re-executed, the child object wi
             pin = child._pins[pinname]
             if isinstance(pin, InputPinBase):
                 self._pins[pinname] = ExportedInputPin(pin)
+                self._pins[pinname]._set_context(self, pinname)
             elif isinstance(pin, OutputPinBase):
                 self._pins[pinname] = ExportedOutputPin(pin)
+                self._pins[pinname]._set_context(self, pinname)
             elif isinstance(pin, EditPinBase):
                 self._pins[pinname] = ExportedEditPin(pin)
+                self._pins[pinname]._set_context(self, pinname)
             else:
                 raise TypeError(pin)
 

@@ -1,6 +1,6 @@
 from seamless import macro
 
-@macro({"dynamic_html":"bool", "mode": "str"})
+@macro({"dynamic_html":{"type": "bool", "default": False}, "mode": "str"})
 def plotly(ctx, *, dynamic_html, mode):
     from seamless import context, cell, transformer
     from seamless.lib.templateer import templateer

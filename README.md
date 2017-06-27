@@ -5,15 +5,16 @@ Requirements: Python 3.5+, PyQt5, numpy, PyOpenGL
 Recommended: scipy, pandas, websockets
 NOTE: Seamless scripts are meant to be executed within IPython
 
-The eight seamless constructs (sorted from good to ugly):
+The nine seamless constructs (sorted from good to ugly):
 1. context
 2. cell
 3. transformer
 4. pin
 5. reactor
 6. macro
-7. registrar
-8. observer (takes a Python function pointer; never serializable!)
+7. export
+8. registrar
+9. observer (takes a Python function pointer; never serializable!)
 
 Seamless Zen
 
@@ -42,6 +43,7 @@ Technically-oriented releases are marked with *
     - pin (import PinBase as pin in seamless)
     - reactor (DONE)
     - macro (DONE)
+    - export
     - registrar (DONE, in context)
     - observer
   - In README.md:
@@ -49,15 +51,15 @@ Technically-oriented releases are marked with *
     - a reference to help(...) for each construct
     - a short example, and a link to the examples directory + zip file / test directory
     - fix the format (.md)
-- Eighth construct: observer
+- Ninth construct: observer
 - Make a sane status report system (missing inputs, undefined inputs, missing connections, also in children)
-- Integrate protein viewer in browser
-- Demos:
+- Demos (all of them need README):
     - plotly (code DONE)
     - OpenGL fireworks (code DONE)
     - orca (code DONE, but some kind of error)
-    - docking (code DONE, except browser protein viewer, and README)
+    - docking (code DONE)
     - OpenGL 3D (code DONE)
+- Make PyPI package
 
 0.2
 - Replace ctx.CHILDREN, ctx.CELLS etc. with ctx.self.children, ctx.self.cells, etc.

@@ -80,7 +80,7 @@ class Macro:
     dtype = ("text", "code", "python")
     registrar = None
 
-    def __init__(self, type=None, *, with_context=True, with_caching=False,
+    def __init__(self, type=None, *args, with_context=True, with_caching=False,
                  registrar=None, func=None):
         self.with_context = with_context
         if with_caching: assert with_context == True
@@ -100,7 +100,15 @@ class Macro:
 
         if isinstance(type, tuple) or isinstance(type, str):
             self._type_args = {'_order': ["_arg1"], '_required': ["_arg1"], '_default': {}, '_arg1': type}
+            if len(args):
+                for tnr, t in enumerate(args):
+                    assert isinstance(t, tuple) or isinstance(t, str), t
+                    a = "_arg" + str(tnr+2)
+                    self._type_args["_order"].append(a)
+                    self._type_args["_required"].append(a)
+                    self._type_args[a] = t
             return
+        assert not len(args)
 
         if not isinstance(type, dict):
             raise TypeError(type.__class__)
@@ -443,7 +451,7 @@ If a new macro is defined with the same module name and function name,
 
 Arguments:
 
-type: a single type tuple, or a dict/OrderedDict
+type: a single type tuple, a list of type tuples, or a dict/OrderedDict
   if type is a dict, then
     every key is a parameter name
     every value is either a dtype, or
