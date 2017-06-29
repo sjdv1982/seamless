@@ -1,0 +1,39 @@
+@input_var clust_cutoff
+@input_var ntop
+
+@intern pdbAr
+@intern pdbBr
+@intern pdbAr2
+@intern starting_structures
+@intern docking_structures
+@intern docking_structures0
+@intern sorted_structures
+@intern top_structures
+@intern energies
+@intern irmsds
+@intern clusters
+@intern mat
+@intern grid
+@intern nstrucdone
+
+./scripts/reduce.sh ./1AVXA.pdb > pdbAr
+./scripts/reduce.sh ./1AVXB.pdb > pdbBr
+./scripts/make-grid.sh !pdbAr $ATTRACTDIR/../attract.par 5 7 > grid
+gawk 'ARGIND==2' !grid !pdbAr > pdbAr2
+
+python $ATTRACTTOOLS/randsearch.py 2 10000 80 --fix-receptor > starting_structures
+$ATTRACTDIR/attract !starting_structures $ATTRACTDIR/../attract.par !pdbAr2 !pdbBr  --fix-receptor --grid 1 /dev/shm/grid > docking_structures0 @monitor 3
+
+python ./scripts/defray-structures.py !docking_structures0 > docking_structures
+python ./scripts/count-structures.py !docking_structures > nstrucdone
+python $ATTRACTTOOLS/sort.py !docking_structures > sorted_structures
+$ATTRACTTOOLS/top !sorted_structures $ntop > top_structures
+grep "Energy" !top_structures | awk '{print $3}' > energies
+python $ATTRACTDIR/irmsd.py !top_structures ./1AVXA.pdb ./1AVXA.pdb ./1AVXB.pdb ./1AVXB.pdb > irmsds
+$ATTRACTDIR/matrix-lrmsd !top_structures ./1AVXA.pdb ./1AVXB.pdb > mat
+$ATTRACTDIR/cluster_struc !mat $clust_cutoff 3 > clusters
+
+@export energies
+@export irmsds
+@export clusters
+@export nstrucdone

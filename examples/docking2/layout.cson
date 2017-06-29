@@ -1,0 +1,20 @@
+{
+  title: "Score vs RMSD"
+  xaxis: {
+    title: "interface RMSD [A]"
+    range: [0, 20]
+  }
+  yaxis: {
+    title: "Score"
+    range: [-40, -10]
+  }
+  showlegend: true
+  font: {
+    size: 20
+  }
+  legend: {
+    font: {
+      size: 25
+    }
+  }
+}

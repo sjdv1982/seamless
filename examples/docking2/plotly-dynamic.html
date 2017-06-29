@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script type="text/javascript" src="plotly-latest.js"></script>
+<!-- <script type="text/javascript" src="plotly-latest.js"></script> -->
+<meta charset="utf-8">
+<title>Seamless Plotly</title>
+</head>
+<body>
+<div id="echo"></div>
+<div id="plotlydiv" style="width: 800px; height: 600px;"><!-- Plotly chart will be drawn inside this DIV --></div>
+<script>
+
+    var attrib = null;
+
+    var config = null;
+
+    var divname = null;
+
+    var plotly_data = null;
+
+    var data = null;
+
+    var layout = null;
+
+    var ws = new WebSocket("ws://127.0.0.1:5678/");
+    ws.onopen = function () {
+        ws.send(".plotly.dynamic_html_maker.rc");
+    }
+    ws.onmessage = function (event) {
+        var message = JSON.parse(event.data);
+        if (message.type == "var") {
+          if (0) {}
+          
+          else if (message.var == "attrib") {
+            attrib = message.value;
+          }
+          
+          else if (message.var == "config") {
+            config = message.value;
+          }
+          
+          else if (message.var == "divname") {
+            divname = message.value;
+          }
+          
+          else if (message.var == "plotly_data") {
+            plotly_data = message.value;
+          }
+          
+          else if (message.var == "data") {
+            data = message.value;
+          }
+          
+          else if (message.var == "layout") {
+            layout = message.value;
+          }
+          
+        }
+        else if (message.type == "html") {
+          var ele = document.getElementById(message.id);
+          ele.innerHTML = message.value;
+        }
+        else if (message.type == "eval") {
+          eval(message.value);
+        }
+    };
+</script>
+</body>
+</html>

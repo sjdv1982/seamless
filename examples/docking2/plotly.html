@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script type="text/javascript" src="plotly-latest.js"></script>
+<!-- <script type="text/javascript" src="plotly-latest.js"></script> -->
+<meta charset="utf-8">
+<title>Seamless Plotly</title>
+</head>
+<body>
+<div id="plotlydiv" style="width: 800px; height: 600px;"><!-- Plotly chart will be drawn inside this DIV --></div>
+<script id="javascript">
+  var data = [
+  {
+    "marker": {
+      "size": 7,
+      "color": "green"
+    },
+    "type": "scatter",
+    "name": "Cluster 1",
+    "y": [
+      -18.598,
+      -18.517,
+      -18.387,
+      -18.102,
+      -17.21,
+      -16.883,
+      -16.584
+    ],
+    "mode": "markers",
+    "textfont": {
+      "size": 50
+    },
+    "x": [
+      22.295,
+      22.286,
+      22.051,
+      22.244,
+      22.318,
+      22.602,
+      21.92
+    ]
+  },
+  {
+    "marker": {
+      "symbol": "triangle-up",
+      "size": 15,
+      "color": "green"
+    },
+    "error_y": {
+      "type": "constant",
+      "value": 0.7782557158053345,
+      "color": "green"
+    },
+    "y": [
+      -17.75442857142857
+    ],
+    "error_x": {
+      "type": "constant",
+      "value": 0.2000788620029817,
+      "color": "green"
+    },
+    "showlegend": false,
+    "mode": "markers",
+    "x": [
+      22.24514285714286
+    ]
+  },
+  {
+    "marker": {
+      "size": 7,
+      "color": "blue"
+    },
+    "type": "scatter",
+    "name": "Cluster 2",
+    "y": [
+      -18.011,
+      -17.737,
+      -17.447,
+      -17.034,
+      -16.993,
+      -16.711,
+      -16.665
+    ],
+    "mode": "markers",
+    "textfont": {
+      "size": 50
+    },
+    "x": [
+      16.755,
+      17.431,
+      17.177,
+      15.899,
+      15.982,
+      17.892,
+      16.767
+    ]
+  },
+  {
+    "marker": {
+      "symbol": "triangle-up",
+      "size": 15,
+      "color": "blue"
+    },
+    "error_y": {
+      "type": "constant",
+      "value": 0.47768032175914305,
+      "color": "blue"
+    },
+    "y": [
+      -17.22828571428571
+    ],
+    "error_x": {
+      "type": "constant",
+      "value": 0.6765117915318498,
+      "color": "blue"
+    },
+    "showlegend": false,
+    "mode": "markers",
+    "x": [
+      16.843285714285713
+    ]
+  },
+  {
+    "marker": {
+      "size": 7,
+      "color": "cyan"
+    },
+    "type": "scatter",
+    "name": "Cluster 3",
+    "y": [
+      -33.021,
+      -33.187,
+      -33.098,
+      -32.638,
+      -32.348,
+      -24.67
+    ],
+    "mode": "markers",
+    "textfont": {
+      "size": 50
+    },
+    "x": [
+      1.008,
+      1.253,
+      1.346,
+      1.291,
+      1.388,
+      1.401
+    ]
+  },
+  {
+    "marker": {
+      "symbol": "triangle-up",
+      "size": 15,
+      "color": "cyan"
+    },
+    "error_y": {
+      "type": "constant",
+      "value": 3.065284688609235,
+      "color": "cyan"
+    },
+    "y": [
+      -31.493666666666666
+    ],
+    "error_x": {
+      "type": "constant",
+      "value": 0.13259388707210032,
+      "color": "cyan"
+    },
+    "showlegend": false,
+    "mode": "markers",
+    "x": [
+      1.2811666666666666
+    ]
+  },
+  {
+    "marker": {
+      "size": 7,
+      "color": "red"
+    },
+    "type": "scatter",
+    "name": "Cluster 4",
+    "y": [
+      -20.686,
+      -23.069,
+      -18.597,
+      -18.138,
+      -16.733
+    ],
+    "mode": "markers",
+    "textfont": {
+      "size": 50
+    },
+    "x": [
+      15.815,
+      14.795,
+      15.516,
+      15.699,
+      15.714
+    ]
+  },
+  {
+    "marker": {
+      "symbol": "triangle-up",
+      "size": 15,
+      "color": "red"
+    },
+    "error_y": {
+      "type": "constant",
+      "value": 2.211594592143867,
+      "color": "red"
+    },
+    "y": [
+      -19.4446
+    ],
+    "error_x": {
+      "type": "constant",
+      "value": 0.3692150592811729,
+      "color": "red"
+    },
+    "showlegend": false,
+    "mode": "markers",
+    "x": [
+      15.5078
+    ]
+  },
+  {
+    "marker": {
+      "size": 7,
+      "color": "pink"
+    },
+    "type": "scatter",
+    "name": "Cluster 5",
+    "y": [
+      -18.675,
+      -17.445,
+      -17.424,
+      -17.418
+    ],
+    "mode": "markers",
+    "textfont": {
+      "size": 50
+    },
+    "x": [
+      16.942,
+      17.08,
+      17.162,
+      17.164
+    ]
+  },
+  {
+    "marker": {
+      "symbol": "triangle-up",
+      "size": 15,
+      "color": "pink"
+    },
+    "error_y": {
+      "type": "constant",
+      "value": 0.5396269544787403,
+      "color": "pink"
+    },
+    "y": [
+      -17.7405
+    ],
+    "error_x": {
+      "type": "constant",
+      "value": 0.09031611151948479,
+      "color": "pink"
+    },
+    "showlegend": false,
+    "mode": "markers",
+    "x": [
+      17.087
+    ]
+  },
+  {
+    "marker": {
+      "size": 7,
+      "color": "magenta"
+    },
+    "type": "scatter",
+    "name": "Cluster 6",
+    "y": [
+      -17.773,
+      -17.764,
+      -17.583,
+      -17.112
+    ],
+    "mode": "markers",
+    "textfont": {
+      "size": 50
+    },
+    "x": [
+      15.748,
+      15.755,
+      17.634,
+      17.174
+    ]
+  },
+  {
+    "marker": {
+      "symbol": "triangle-up",
+      "size": 15,
+      "color": "magenta"
+    },
+    "error_y": {
+      "type": "constant",
+      "value": 0.26842224199942943,
+      "color": "magenta"
+    },
+    "y": [
+      -17.558
+    ],
+    "error_x": {
+      "type": "constant",
+      "value": 0.8421075866538669,
+      "color": "magenta"
+    },
+    "showlegend": false,
+    "mode": "markers",
+    "x": [
+      16.57775
+    ]
+  },
+  {
+    "marker": {
+      "size": 7,
+      "color": "black"
+    },
+    "type": "scatter",
+    "name": "Cluster 7",
+    "y": [
+      -25.999,
+      -25.861,
+      -17.914
+    ],
+    "mode": "markers",
+    "textfont": {
+      "size": 50
+    },
+    "x": [
+      10.512,
+      10.494,
+      12.015
+    ]
+  },
+  {
+    "marker": {
+      "symbol": "triangle-up",
+      "size": 15,
+      "color": "black"
+    },
+    "error_y": {
+      "type": "constant",
+      "value": 3.7791985922944025,
+      "color": "black"
+    },
+    "y": [
+      -23.258
+    ],
+    "error_x": {
+      "type": "constant",
+      "value": 0.7128015151499051,
+      "color": "black"
+    },
+    "showlegend": false,
+    "mode": "markers",
+    "x": [
+      11.007
+    ]
+  },
+  {
+    "marker": {
+      "size": 7,
+      "color": "grey"
+    },
+    "type": "scatter",
+    "name": "Cluster 8",
+    "y": [
+      -22.638,
+      -18.161,
+      -17.202
+    ],
+    "mode": "markers",
+    "textfont": {
+      "size": 50
+    },
+    "x": [
+      12.6,
+      14.45,
+      12.602
+    ]
+  },
+  {
+    "marker": {
+      "symbol": "triangle-up",
+      "size": 15,
+      "color": "grey"
+    },
+    "error_y": {
+      "type": "constant",
+      "value": 2.369090449002645,
+      "color": "grey"
+    },
+    "y": [
+      -19.33366666666667
+    ],
+    "error_x": {
+      "type": "constant",
+      "value": 0.8716273413691322,
+      "color": "grey"
+    },
+    "showlegend": false,
+    "mode": "markers",
+    "x": [
+      13.217333333333334
+    ]
+  },
+  {
+    "marker": {
+      "size": 7,
+      "color": "sandybrown"
+    },
+    "type": "scatter",
+    "name": "Cluster 9",
+    "y": [
+      -21.929,
+      -21.035,
+      -18.646
+    ],
+    "mode": "markers",
+    "textfont": {
+      "size": 50
+    },
+    "x": [
+      13.353,
+      14.004,
+      12.027
+    ]
+  },
+  {
+    "marker": {
+      "symbol": "triangle-up",
+      "size": 15,
+      "color": "sandybrown"
+    },
+    "error_y": {
+      "type": "constant",
+      "value": 1.3858269091853497,
+      "color": "sandybrown"
+    },
+    "y": [
+      -20.536666666666665
+    ],
+    "error_x": {
+      "type": "constant",
+      "value": 0.8226384381974868,
+      "color": "sandybrown"
+    },
+    "showlegend": false,
+    "mode": "markers",
+    "x": [
+      13.128
+    ]
+  },
+  {
+    "marker": {
+      "size": 7,
+      "color": "plum"
+    },
+    "type": "scatter",
+    "name": "Cluster 10",
+    "y": [
+      -21.251,
+      -20.448,
+      -17.645
+    ],
+    "mode": "markers",
+    "textfont": {
+      "size": 50
+    },
+    "x": [
+      23.061,
+      23.253,
+      23.42
+    ]
+  },
+  {
+    "marker": {
+      "symbol": "triangle-up",
+      "size": 15,
+      "color": "plum"
+    },
+    "error_y": {
+      "type": "constant",
+      "value": 1.5457775461631675,
+      "color": "plum"
+    },
+    "y": [
+      -19.781333333333333
+    ],
+    "error_x": {
+      "type": "constant",
+      "value": 0.14667954488915316,
+      "color": "plum"
+    },
+    "showlegend": false,
+    "mode": "markers",
+    "x": [
+      23.24466666666667
+    ]
+  },
+  {
+    "marker": {
+      "size": 7,
+      "color": "turquoise"
+    },
+    "type": "scatter",
+    "name": "Cluster 11",
+    "y": [
+      -20.967,
+      -18.94,
+      -16.482
+    ],
+    "mode": "markers",
+    "textfont": {
+      "size": 50
+    },
+    "x": [
+      12.056,
+      12.19,
+      13.051
+    ]
+  },
+  {
+    "marker": {
+      "symbol": "triangle-up",
+      "size": 15,
+      "color": "turquoise"
+    },
+    "error_y": {
+      "type": "constant",
+      "value": 1.8338095745075482,
+      "color": "turquoise"
+    },
+    "y": [
+      -18.796333333333333
+    ],
+    "error_x": {
+      "type": "constant",
+      "value": 0.4408706033394484,
+      "color": "turquoise"
+    },
+    "showlegend": false,
+    "mode": "markers",
+    "x": [
+      12.432333333333332
+    ]
+  },
+  {
+    "marker": {
+      "size": 7,
+      "color": "olivedrab"
+    },
+    "type": "scatter",
+    "name": "Cluster 12",
+    "y": [
+      -19.807,
+      -19.794,
+      -18.695
+    ],
+    "mode": "markers",
+    "textfont": {
+      "size": 50
+    },
+    "x": [
+      19.982,
+      19.966,
+      19.75
+    ]
+  },
+  {
+    "marker": {
+      "symbol": "triangle-up",
+      "size": 15,
+      "color": "olivedrab"
+    },
+    "error_y": {
+      "type": "constant",
+      "value": 0.5211647212414385,
+      "color": "olivedrab"
+    },
+    "y": [
+      -19.432
+    ],
+    "error_x": {
+      "type": "constant",
+      "value": 0.1057964502660127,
+      "color": "olivedrab"
+    },
+    "showlegend": false,
+    "mode": "markers",
+    "x": [
+      19.899333333333335
+    ]
+  },
+  {
+    "marker": {
+      "size": 7,
+      "color": "lightsteelblue"
+    },
+    "type": "scatter",
+    "name": "Cluster 13",
+    "y": [
+      -18.66,
+      -19.231,
+      -16.649
+    ],
+    "mode": "markers",
+    "textfont": {
+      "size": 50
+    },
+    "x": [
+      11.851,
+      11.08,
+      13.104
+    ]
+  },
+  {
+    "marker": {
+      "symbol": "triangle-up",
+      "size": 15,
+      "color": "lightsteelblue"
+    },
+    "error_y": {
+      "type": "constant",
+      "value": 1.1073936367284523,
+      "color": "lightsteelblue"
+    },
+    "y": [
+      -18.180000000000003
+    ],
+    "error_x": {
+      "type": "constant",
+      "value": 0.8340680760918469,
+      "color": "lightsteelblue"
+    },
+    "showlegend": false,
+    "mode": "markers",
+    "x": [
+      12.011666666666665
+    ]
+  },
+  {
+    "marker": {
+      "size": 7,
+      "color": "orchid"
+    },
+    "type": "scatter",
+    "name": "Cluster 14",
+    "y": [
+      -18.269,
+      -18.15,
+      -16.841
+    ],
+    "mode": "markers",
+    "textfont": {
+      "size": 50
+    },
+    "x": [
+      14.09,
+      13.638,
+      14.531
+    ]
+  },
+  {
+    "marker": {
+      "symbol": "triangle-up",
+      "size": 15,
+      "color": "orchid"
+    },
+    "error_y": {
+      "type": "constant",
+      "value": 0.646943755068569,
+      "color": "orchid"
+    },
+    "y": [
+      -17.753333333333334
+    ],
+    "error_x": {
+      "type": "constant",
+      "value": 0.36457494276059227,
+      "color": "orchid"
+    },
+    "showlegend": false,
+    "mode": "markers",
+    "x": [
+      14.086333333333334
+    ]
+  },
+  {
+    "marker": {
+      "size": 7,
+      "color": "mediumblue"
+    },
+    "type": "scatter",
+    "name": "Cluster 15",
+    "y": [
+      -18.155,
+      -17.399,
+      -16.493
+    ],
+    "mode": "markers",
+    "textfont": {
+      "size": 50
+    },
+    "x": [
+      20.534,
+      20.4,
+      20.741
+    ]
+  },
+  {
+    "marker": {
+      "symbol": "triangle-up",
+      "size": 15,
+      "color": "mediumblue"
+    },
+    "error_y": {
+      "type": "constant",
+      "value": 0.6794291721732306,
+      "color": "mediumblue"
+    },
+    "y": [
+      -17.349
+    ],
+    "error_x": {
+      "type": "constant",
+      "value": 0.14027195807509907,
+      "color": "mediumblue"
+    },
+    "showlegend": false,
+    "mode": "markers",
+    "x": [
+      20.558333333333334
+    ]
+  },
+  {
+    "marker": {
+      "size": 7,
+      "color": "midnightblue"
+    },
+    "type": "scatter",
+    "name": "Cluster 16",
+    "y": [
+      -17.386,
+      -19.066,
+      -16.77
+    ],
+    "mode": "markers",
+    "textfont": {
+      "size": 50
+    },
+    "x": [
+      10.945,
+      10.727,
+      10.573
+    ]
+  },
+  {
+    "marker": {
+      "symbol": "triangle-up",
+      "size": 15,
+      "color": "midnightblue"
+    },
+    "error_y": {
+      "type": "constant",
+      "value": 0.9703076259047376,
+      "color": "midnightblue"
+    },
+    "y": [
+      -17.740666666666666
+    ],
+    "error_x": {
+      "type": "constant",
+      "value": 0.15261571202060273,
+      "color": "midnightblue"
+    },
+    "showlegend": false,
+    "mode": "markers",
+    "x": [
+      10.748333333333335
+    ]
+  }
+];
+  var layout = {
+  "xaxis": {
+    "title": "interface RMSD [A]",
+    "range": [
+      0,
+      20
+    ]
+  },
+  "title": "Score vs RMSD",
+  "font": {
+    "size": 20
+  },
+  "showlegend": true,
+  "yaxis": {
+    "title": "Score",
+    "range": [
+      -40,
+      -10
+    ]
+  },
+  "legend": {
+    "font": {
+      "size": 25
+    }
+  }
+};
+  var config = {};
+  Plotly.newPlot('plotlydiv', data, layout, config);
+</script>
+</body>
+</html>

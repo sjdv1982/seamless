@@ -1,11 +1,16 @@
 from seamless import macro
 
-@macro({"dynamic_html":{"type": "bool", "default": False}, "mode": "str"})
+@macro({"dynamic_html":{"type": "bool", "default": False},
+        "mode": {"type": "str", "default": "manual"}}
+    )
 def plotly(ctx, *, dynamic_html, mode):
     from seamless import context, cell, transformer
     from seamless.lib.templateer import templateer
     from seamless.core.worker import \
       ExportedInputPin, ExportedOutputPin
+
+    assert mode in ("nx", "nxy", "manual"), mode
+    data_dtype = "json" if mode == "manual" else "text" #csv
 
     # Subcontexts
     ctx.values = context()
@@ -29,7 +34,7 @@ def plotly(ctx, *, dynamic_html, mode):
 
     # Values: here is where all authoritative state goes
     ctx.values.title = cell("str").set("Seamless Plotly")
-    ctx.values.data = cell("text") #csv
+    ctx.values.data = cell(data_dtype)
     ctx.values.attrib = cell("json")
     ctx.values.layout = cell("json")
     ctx.values.config = cell("json").set({})
@@ -39,7 +44,7 @@ def plotly(ctx, *, dynamic_html, mode):
 
     # Input pins
     ctx.title = ExportedInputPin(ctx.values.title)
-    ctx.data = ExportedInputPin(ctx.values.data) #csv
+    ctx.data = ExportedInputPin(ctx.values.data)
     ctx.attrib = ExportedInputPin(ctx.values.attrib)
     ctx.layout = ExportedInputPin(ctx.values.layout)
     ctx.config = ExportedInputPin(ctx.values.config)
@@ -84,23 +89,27 @@ def plotly(ctx, *, dynamic_html, mode):
     ctx.values.attrib.connect(ctx.integrate_data.attrib)
     ctx.integrate_data.plotly_data.connect(ctx.temp_plotly_data)
 
-    #loaded_data temporary
-    ctx.temp_loaded_data = cell("json")
-    ctx.temp_loaded_data.connect(ctx.integrate_data.data)
 
-    # Pandas data loader
-    ctx.load_data = transformer({
-        "csv": {"pin": "input", "dtype": "text"},
-        "data": {"pin": "output", "dtype": "json"},
-    })
-    c = ctx.code.load_data = cell(("text", "code","python"))
-    if mode == "nxy":
-        c.fromfile("cell-load-data-nxy.py")
-    else: #nx
-        c.fromfile("cell-load-data-nx.py")
-    ctx.code.load_data.connect(ctx.load_data.code)
-    ctx.values.data.connect(ctx.load_data.csv)
-    ctx.load_data.data.connect(ctx.temp_loaded_data)
+    if mode != "manual":
+        #loaded_data temporary
+        ctx.temp_loaded_data = cell("json")
+        ctx.temp_loaded_data.connect(ctx.integrate_data.data)
+
+        # Pandas data loader
+        ctx.load_data = transformer({
+            "csv": {"pin": "input", "dtype": "text"},
+            "data": {"pin": "output", "dtype": "json"},
+        })
+        c = ctx.code.load_data = cell(("text", "code","python"))
+        if mode == "nxy":
+            c.fromfile("cell-load-data-nxy.py")
+        elif mode == "nx":
+            c.fromfile("cell-load-data-nx.py")
+        ctx.code.load_data.connect(ctx.load_data.code)
+        ctx.values.data.connect(ctx.load_data.csv)
+        ctx.load_data.data.connect(ctx.temp_loaded_data)
+    else:
+        ctx.values.data.connect(ctx.integrate_data.data)
 
     if not dynamic_html:
         return
@@ -134,14 +143,19 @@ def plotly(ctx, *, dynamic_html, mode):
     ctx.templateer_dynamic.RESULT.connect(ctx.values.dynamic_html)
 
     # Dynamic HTML maker
+    # TODO: more efficient plot regeneration
     ctx.params.dynamic_html_maker = cell("json")
     dynamic_html_params = {
         "divname": {"type": "var", "dtype": "str"},
-        "plotly_data": {"type": "var", "dtype": "json"},
-        "data": {"type": "var", "dtype": "json", "evals":["update_data"]},
-        "attrib": {"type": "var", "dtype": "json", "evals":["update_attrib"]},
+        "plotly_data": {"type": "var", "dtype": "json", "evals":["make_plot"]},
+        #"data": {"type": "var", "dtype": "json", "evals":["update_data"]},
+        #"attrib": {"type": "var", "dtype": "json", "evals":["update_attrib"]},
+        #"layout": {"type": "var", "dtype": "json", "evals":["update_layout"]},
+        "data": {"type": "var", "dtype": "json"},
+        "attrib": {"type": "var", "dtype": "json", "evals":["make_plot"]},
+        "layout": {"type": "var", "dtype": "json", "evals":["make_plot"]},
+
         "config": {"type": "var", "dtype": "json", "evals":["make_plot"]},
-        "layout": {"type": "var", "dtype": "json", "evals":["update_layout"]},
         "update_data": {"type": "eval", "on_start": False},
         "update_attrib": {"type": "eval", "on_start": False},
         "update_layout": {"type": "eval", "on_start": False},
@@ -154,7 +168,10 @@ def plotly(ctx, *, dynamic_html, mode):
     )
 
     ctx.temp_plotly_data.connect(ctx.dynamic_html_maker.plotly_data)
-    ctx.temp_loaded_data.connect(ctx.dynamic_html_maker.data)
+    if mode == "manual":
+        ctx.values.data.connect(ctx.dynamic_html_maker.data)
+    else:
+        ctx.temp_loaded_data.connect(ctx.dynamic_html_maker.data)
     ctx.values.attrib.connect(ctx.dynamic_html_maker.attrib)
     ctx.values.config.connect(ctx.dynamic_html_maker.config)
     ctx.values.layout.connect(ctx.dynamic_html_maker.layout)
