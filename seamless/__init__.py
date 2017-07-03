@@ -6,12 +6,14 @@ Copyright 2016-2017, Sjoerd de Vries
 #Dependencies of seamless
 
 # 1. hard dependencies; without these, "import seamless" will fail.
-# Still, if necessary, these dependencies could be removed, but seamless would have to be more minimalist in loading its lib
+# Still, if necessary, some of these dependencies could be removed, but seamless would have to be more minimalist in loading its lib
 
 import numpy
 #import PyOpenGL before PyQt5 to prevent the loading of the wrong OpenGL library that can happen on some systems. Introduces a hard dependency on PyOpenGL, TODO look into later"
 from OpenGL import GL
-import PyQt5
+import PyQt5, PyQt5.QtWebEngineWidgets
+from cson import loads as _
+del _
 
 # 2. Soft dependencies: transformers may use these libraries
 """
@@ -34,7 +36,7 @@ except ImportError:
 
 from .core.macro import macro
 from .core.context import context
-from .core.cell import cell, pythoncell
+from .core.cell import cell, pythoncell, csoncell, arraycell, signal
 from .core.transformer import transformer
 from .core.reactor import reactor
 from .core.fromfile import fromfile
@@ -250,12 +252,18 @@ def run_qt():
     if qt_error is None:
         #Whenever work is done, let Qt flush its event queue
         # If you don't, segfaults happen (see test-gl-BUG.py)
-        # Even with this, they still happen, albeit more rarely
         _running_qt = True
         event_loop.processEvents()
         _running_qt = False
 
 def export(pin, dtype=None):
+    """Exports a pin from a worker or subcontext into the active context ctx
+    For a pin named subcontext.pinname, a cell called ctx.pinname is created.
+    The dtype of the created cell is the pin's dtype, unless dtype is explicitly
+     provided as argument
+    If the cell already exists, it is checked that it is of the correct dtype
+    Finally, the cell and the pin are connected
+    """
     from .core.context import get_active_context
     ctx = get_active_context()
     assert ctx is not None
@@ -278,15 +286,29 @@ def export(pin, dtype=None):
             elif isinstance(cdtype, tuple) and isinstance(dtype, str):
                 cdtype = cdtype[0]
             if dtype != cdtype:
-                c = cell(dtype)
-                setattr(ctx, pin.name, c)
+                msg = """Cell %s already exists, but it is of the wrong dtype:
+                %s, should be %s""" % (c, c.dtype, dtype)
+                raise TypeError(msg)
     if isinstance(pin, (InputPinBase, EditPinBase)):
         c.connect(pin)
     else: #OutputPinBase
         pin.connect(c)
     return c
 
+
 from . import qt
 from .gui import shell
 from . import lib
-__all__ = (macro, context, cell, pythoncell, transformer, reactor, qt, shell, export)
+from .core.worker import InputPin, OutputPin, EditPin
+from .core.observer import observer
+__all__ = (
+    context,
+    cell, pythoncell, csoncell, arraycell, signal,
+    transformer,
+    InputPin, OutputPin, EditPin,
+    reactor,
+    export,
+    macro,
+    observer,
+    shell
+)

@@ -1,7 +1,7 @@
 Seamless: a cell-based reactive programming framework
 Seamless was created on June 3rd, 2016
 
-Requirements: Python 3.5+, PyQt5, numpy, PyOpenGL
+Requirements: Python 3.5+, PyQt5 (including QWebEngine), numpy, PyOpenGL, cson
 Recommended: scipy, pandas, websockets
 NOTE: Seamless scripts are meant to be executed within IPython
 
@@ -14,7 +14,7 @@ The nine seamless constructs (sorted from good to ugly):
 6. macro
 7. export
 8. registrar
-9. observer (takes a Python function pointer; never serializable!)
+9. observer
 
 Seamless Zen
 
@@ -36,39 +36,34 @@ Technically-oriented releases are marked with *
 
 *0.1
 - Basic documentation:
-  - Docstring for each of the eight constructs (check that @macro keeps docstring!):
-    - context (DONE)
-    - cell (DONE)
-    - transformer (DONE)
-    - pin (import PinBase as pin in seamless)
-    - reactor (DONE)
-    - macro (DONE)
-    - export
-    - registrar (DONE, in context)
-    - observer
   - In README.md:
     - a short summary
     - a reference to help(...) for each construct
     - a short example, and a link to the examples directory + zip file / test directory
     - fix the format (.md)
-- Ninth construct: observer
-- Make a sane status report system (missing inputs, undefined inputs, missing connections, also in children)
-- Demos (all of them need README):
-    - plotly (code DONE)
-    - OpenGL fireworks (code DONE)
-    - orca (code DONE, but some kind of error)
-    - docking (code DONE)
-    - OpenGL 3D (code DONE)
+- Short documentation for each of the demos:
+    - plotly
+    - OpenGL fireworks
+    - docking (2 examples)
+    - OpenGL 3D
 - Make PyPI package
 
+After release, make videos:
+  Basic example: consensus between test-editor and test-editor-lib, then macro
+  Fireworks
+  3D
+  Docking
+  Orca (add example code back in)
+
 0.2
+- Replace the use of killable threads with processes... gives a problem with Orca example
 - Replace ctx.CHILDREN, ctx.CELLS etc. with ctx.self.children, ctx.self.cells, etc.
 - Get rid of seamless.qt
 - Composite (JSON) cells
-- Expand seamless shell language (slash)
+- Expand and document seamless shell language (slash)
 - Logging + dtype/worker documentation.resource system (using composite cells)
 - Error message logging system (using composite cells)
-- Overhaul dtypes, docson/type registration API, integrate with logging/documentation system. "array" and "json" are no longer dtypes.
+- Overhaul dtypes, docson/type registration API, integrate with logging/documentation system. "array" and "json" are no longer dtypes, but formats
 - Update demos
 
 *0.3
@@ -80,6 +75,7 @@ Technically-oriented releases are marked with *
 - Binary (struct) cells, implemented as "array" cells with dtype/shape/ndim
 - Active switches (connection level; workers don't see it, except that pin becomes undefined/changes value)
 - Silk: managing variable-length arrays with allocators (subclass ndarray), C header registrar, fix Bool default value bug + bug in examples/silk/test.py
+- Document Silk
 - C interop
 - Game of Life demo with Cython and C
 - Update OpenGL demos
@@ -109,7 +105,7 @@ Technically-oriented releases are marked with *
 - Update demos
 
 0.8
-- ATC, fold/unfold switches, Silk GUI generation, Silk mvcc hooked up with error message hook API
+- ATC, fold/unfold switches, Silk GUI generation
 - More demos (tetris?)
 
 *0.9

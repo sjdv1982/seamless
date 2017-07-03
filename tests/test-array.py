@@ -25,10 +25,11 @@ ctx.rc.code_start.cell().set("")
 ctx.rc.code_stop.cell().set("")
 ctx.rc.code_update.cell().set("""
 store = PINS.a1.store
-store.bind() #We won't get an actual OpenGL ID since there is no OpenGL context...
-print("OpenGL ID", store.opengl_id, "State", store._state, store.shape)
-print(PINS.a1.get())
-print("OK")
+print("We won't get an actual OpenGL ID since there is no OpenGL context... error message:")
+store.bind()
+#print("OpenGL ID", store.opengl_id, "State", store._state, store.shape)
+#print(PINS.a1.get())
+#print("OK")
 """)
 
 ctx.equilibrate(0.5)

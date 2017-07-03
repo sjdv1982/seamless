@@ -46,6 +46,17 @@ class PyShell:
         self.control.destroy()
 
 def shell(obj):
+    """
+    Creates an IPython shell to examine and manipulate the namespace of a worker
+     (reactor or transformer) where its code blocks are executed
+    As of seamless 0.1, this works only for in-process workers
+    As of seamless 0.1, transformers use multiprocessing, so changes to the
+     namespace while a transformation is running will not affect the current
+     transformation, only the next one
+    As of seamless 0.1, manipulations are reset for a reactor upon code_start,
+     and never for a transformer (except input pin value manipulations, which are
+      reset as soon as the input pin changes).
+    """
     if not isinstance(obj, (Worker, Context)):
         raise TypeError("Cannot create shell for %s" % type(obj))
     shell_namespace, shell_title = obj._shell()

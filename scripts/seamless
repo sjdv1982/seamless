@@ -14,9 +14,10 @@ else:
     assert len(sys.argv) == 2 #syntax: seamless file.seamless
     f = sys.argv[1]
     if f.endswith(".seamless"):
-        cmd += "ctx = seamless.fromfile('%s')" % f
+        cmd += "ctx = seamless.fromfile('{0}')".format(f)
     else:
         cmd += "ctx = context()\n"
+        cmd += "__file__ = '{0}'\n".format(f)
         cmd += open(f).read()
 sys.argv = [sys.argv[0], "-c", cmd, "-i"]
 

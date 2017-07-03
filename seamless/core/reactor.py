@@ -146,6 +146,26 @@ class Reactor(Worker):
     def __dir__(self):
         return object.__dir__(self) + list(self._pins.keys())
 
+    def status(self):
+        """The computation status of the reactor
+        Returns a dictionary containing the status of all pins that are not OK.
+        If all pins are OK, returns the status of the reactor itself: OK or pending
+        """
+        result = {}
+        for pinname, pin in self._pins.items():
+            s = pin.status()
+            if s != self.StatusFlags.OK.name:
+                result[pinname] = s
+        rc = self.reactor
+        for pinname in rc._pending_inputs:
+            if pinname not in result:
+                result[pinname] = self.StatusFlags.PENDING.name
+        if len(result):
+            return result
+        if rc._pending_updates:
+            return self.StatusFlags.PENDING.name
+        return self.StatusFlags.OK.name
+
     def destroy(self):
         if self._destroyed:
             return
@@ -217,8 +237,8 @@ As of seamless 0.1, all reactors are synchronous (blocking): their code is
  possible. Therefore, if they perform long computations, reactors should spawn
  their own threads or processes from within their code.
 
-Invoke reactor.status to get the current status of the reactor
-Invoke reactor.shell() to create an IPython shell of the reactor namespace
+Invoke reactor.status() to get the current status of the reactor
+Invoke shell(reactor) to create an IPython shell of the reactor namespace
 
 pin.connect(cell) connects an outputpin to a cell
 cell.connect(pin) connects a cell to an inputpin

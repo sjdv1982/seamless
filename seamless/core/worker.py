@@ -1,16 +1,7 @@
 #stub, TODO: refactor, document
 import weakref
 from weakref import WeakValueDictionary, WeakKeyDictionary
-from . import SeamlessBase
-
-class Managed(SeamlessBase):
-    def _get_manager(self):
-        context = self.context
-        if context is None:
-            raise Exception(
-             "Cannot carry out requested operation without a context"
-            )
-        return context._manager
+from . import Managed
 
 class WorkerLike:
     """Base class for workers and contexts"""
@@ -84,7 +75,6 @@ class Worker(Managed, WorkerLike):
 
 
 class PinBase(Managed):
-
     def __init__(self, worker, name):
         self.worker_ref = weakref.ref(worker)
         super().__init__()
@@ -125,12 +115,19 @@ class OutputPinBase(PinBase):
         pass
 
 class InputPin(InputPinBase):
+    """Connects cells to workers (transformers and reactor)
+
+    cell.connect(pin) connects a cell to an inputpin
+    pin.cell() returns or creates a cell that is connected to the inputpin
+    """
 
     def __init__(self, worker, name, dtype):
+        """Private"""
         InputPinBase.__init__(self, worker, name)
         self.dtype = dtype
 
     def cell(self, own=False):
+        """Returns or creates a cell connected to the inputpin"""
         from .cell import cell
         from .context import active_owner_as, get_active_context
         from .macro import get_macro_mode
@@ -163,9 +160,11 @@ class InputPin(InputPinBase):
         return my_cell
 
     def set(self, *args, **kwargs):
+        """Sets the value of the connected cell"""
         return self.cell().set(*args, **kwargs)
 
     def receive_update(self, value, resource_name):
+        """Private"""
         worker = self.worker_ref()
         if worker is None:
             return #Worker has died...
@@ -173,6 +172,7 @@ class InputPin(InputPinBase):
         worker.receive_update(self.name, value, resource_name)
 
     def destroy(self):
+        """Private"""
         #print("PIN DESTROY", self)
         if self._destroyed:
             return
@@ -183,18 +183,36 @@ class InputPin(InputPinBase):
         manager.remove_listeners_pin(self)
         super().destroy()
 
+    def status(self):
+        manager = self.context._manager
+        curr_pin_to_cells = manager.pin_to_cells.get(self.get_pin_id(), [])
+        if len(curr_pin_to_cells):
+            my_cell = manager._childids[curr_pin_to_cells[0]]
+            return my_cell.status()
+        else:
+            return self.StatusFlags.UNCONNECTED.name
 
 class OutputPin(OutputPinBase):
+    """Connects the output of workers (transformers and reactors) to cells
+
+    outputpin.connect(cell) connects an outputpin to a cell
+    outputpin.cell() returns or creates a cell that is connected to the outputpin
+    outputpin.disconnect(cell) breaks an existing connection
+    """
+
     last_value = None
     def __init__(self, worker, name, dtype):
+        """Private"""
         OutputPinBase.__init__(self, worker, name)
         self.dtype = dtype
         self._cell_ids = []
 
     def get_pin(self):
+        """Private"""
         return self
 
     def send_update(self, value, *, preliminary=False):
+        """Private"""
         if self._destroyed:
             return
         self.last_value = value
@@ -204,14 +222,17 @@ class OutputPin(OutputPinBase):
                 preliminary=preliminary)
 
     def connect(self, target):
+        """connects to a target cell"""
         manager = self._get_manager()
         manager.connect(self, target)
 
     def disconnect(self, target):
+        """breaks an existing connection to a target cell"""
         manager = self._get_manager()
         manager.disconnect(self, target)
 
     def cell(self, own=False):
+        """returns or creates a cell that is connected to the pin"""
         from .cell import cell
         from .context import active_owner_as, get_active_context
         from .macro import get_macro_mode
@@ -246,12 +267,14 @@ class OutputPin(OutputPinBase):
         return my_cell
 
     def cells(self):
+        """Returns all cells connected to the outputpin"""
         context = self.context
         manager = context._manager
-        cells = [c for c in context.cells if manager.get_cell_id(c) in self._cell_ids]
+        cells = [c for c in manager.cells if manager.get_cell_id(c) in self._cell_ids]
         return cells
 
     def destroy(self):
+        """Private"""
         if self._destroyed:
             return
         #print("OUTPUTPIN DESTROY", self)
@@ -266,20 +289,40 @@ class OutputPin(OutputPinBase):
             manager.disconnect(self, cell)
         super().destroy()
 
+    def status(self):
+        manager = self.context._manager
+        l = [c for c in manager.cells if c in self._cell_ids]
+        if len(l):
+            my_cell = cell = manager.cells[l[0]]
+            return my_cell.status()
+        else:
+            return self.StatusFlags.UNCONNECTED.name
+
 class EditPinBase(PinBase):
     def _set_context(self, context, childname, force_detach=False):
         pass
 
 class EditPin(EditPinBase):
+    """Connects a cell as both the input and output of a reactor
+
+    editpin.connect(cell), cell.connect(editpin):
+      connects the editpin to a cell
+    editpin.cell() returns or creates a cell that is connected to the editpin
+    outputpin.disconnect(cell) breaks an existing connection
+    """
+
     last_value = None
     def __init__(self, worker, name, dtype):
+        """Private"""
         InputPinBase.__init__(self, worker, name)
         self.dtype = dtype
 
     def get_pin(self):
+        """Private"""
         return self
 
     def cell(self, own=False):
+        """returns or creates a cell that is connected to the pin"""
         from .cell import cell
         from .context import active_owner_as, get_active_context
         from .macro import get_macro_mode
@@ -312,12 +355,14 @@ class EditPin(EditPinBase):
         return my_cell
 
     def receive_update(self, value, resource_name):
+        """Private"""
         worker = self.worker_ref()
         if worker is None:
             return #Worker has died...
         worker.receive_update(self.name, value, resource_name)
 
     def send_update(self, value, *, preliminary=False):
+        """Private"""
         if self._destroyed:
             return
         self.last_value = value
@@ -328,6 +373,7 @@ class EditPin(EditPinBase):
                 preliminary=preliminary)
 
     def destroy(self):
+        """Private"""
         if self._destroyed:
             return
         context = self.context
@@ -339,14 +385,23 @@ class EditPin(EditPinBase):
 
 
     def connect(self, target):
+        """connects to-and-from a target cell"""
         manager = self._get_manager()
         manager.connect(self, target)
 
     def disconnect(self, target):
+        """breaks an existing connection to-and-from a target cell"""
         manager = self._get_manager()
         manager.disconnect(self, target)
 
-
+    def status(self):
+        manager = self.context._manager
+        curr_pin_to_cells = manager.pin_to_cells.get(self.get_pin_id(), [])
+        if len(curr_pin_to_cells):
+            my_cell = manager.cells[curr_pin_to_cells[0]]
+            return my_cell.status()
+        else:
+            return self.StatusFlags.UNCONNECTED.name
 
 class ExportedPinBase:
     def __init__(self, pin):
@@ -396,18 +451,21 @@ class ExportedOutputPin(ExportedPinBase, OutputPinBase):
     @property
     def _cell_ids(self):
         return self._pin._cell_ids
+ExportedOutputPin.__doc__ = OutputPin.__doc__
 
 class ExportedInputPin(ExportedPinBase, InputPinBase):
     def __init__(self, pin):
         from .cell import CellLike
         assert isinstance(pin, (InputPinBase, CellLike))
         super().__init__(pin)
+ExportedInputPin.__doc__ = InputPin.__doc__
 
 class ExportedEditPin(ExportedPinBase, EditPinBase):
     def __init__(self, pin):
         from .cell import CellLike
         assert isinstance(pin, (EditPinBase, CellLike))
         super().__init__(pin)
+ExportedEditPin.__doc__ = EditPin.__doc__
 
 _runtime_identifiers = WeakValueDictionary()
 _runtime_identifiers_rev = WeakKeyDictionary()

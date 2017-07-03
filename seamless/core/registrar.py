@@ -3,7 +3,7 @@ from .macro import macro
 import weakref, ast
 import types
 from collections import OrderedDict
-from .worker import Managed
+from . import Managed
 
 #TODO: ability to inherit from _registrars for subcontexts
 #TODO: when cells are registered as ctx.registrar.x.register, they must be a

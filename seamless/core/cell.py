@@ -11,7 +11,7 @@ from enum import Enum
 
 from .. import dtypes
 from .utils import find_return_in_scope
-from .worker import Managed
+from . import Managed
 from .resource import Resource
 
 class CellLike(object):
@@ -23,16 +23,20 @@ class Cell(Managed, CellLike):
     """Default class for cells.
 
     Cells contain all the state in text form
-    """
 
-    StatusFlags = Enum('StatusFlags', ('UNINITIALISED', 'ERROR', 'OK'))
+    Cells can be connected to input pins, edit pins, and other cells
+    Output pins and edit pins can be connected to cells
+
+    Use Cell.set() to set a cell's value
+    Use Cell.value to get its value
+    Use Cell.status() to get its status
+    """
 
     _dtype = None
     _data = None  # data, always in text format
     _data_last = None
 
     _error_message = None
-    _status = StatusFlags.UNINITIALISED
 
     _dependent = False
 
@@ -43,8 +47,6 @@ class Cell(Managed, CellLike):
     _preliminary = False
 
     def __init__(self, dtype, *, naming_pattern="cell"):
-        """Creates
-        """
         super().__init__()
 
         from .macro import get_macro_mode
@@ -103,10 +105,15 @@ class Cell(Managed, CellLike):
         return self
 
     def fromfile(self, filename):
+        """Sets a file from filename.
+        Also sets the filename as a resource:
+          When the context is saved and re-loaded, the cell is again loaded
+          from file"""
         self._check_destroyed()
         return self.resource.fromfile(filename, frames_back=2)
 
     def fromlibfile(self, lib, filename):
+        """TODO: document"""
         self._check_destroyed()
         return self.resource.fromlibfile(lib, filename)
 
@@ -177,6 +184,8 @@ class Cell(Managed, CellLike):
         return True
 
     def touch(self):
+        """Forces a cell update, even though the value stays the same
+        This triggers all workers that are connected to the cell"""
         self._check_destroyed()
         if self._status != self.__class__.StatusFlags.OK:
             return
@@ -224,7 +233,6 @@ class Cell(Managed, CellLike):
             return None
         return dtypes.parse(self._dtype, self._data, trusted=True)
 
-    @property
     def status(self):
         """The cell's current status."""
         self._check_destroyed()
@@ -269,7 +277,7 @@ class Cell(Managed, CellLike):
 
     def _set_error_state(self, error_message=None):
         if error_message is not None:
-            self._status = self.StatusFlags.ERROR
+            self._status = self.StatusFlags.INVALID
             if error_message != self._error_message:
                 print(error_message)
         self._error_message = error_message
@@ -290,8 +298,10 @@ class Cell(Managed, CellLike):
         manager.remove_aliases(self)
         manager.remove_listeners_cell(self)
         manager.remove_macro_listeners_cell(self)
+        manager.remove_observers_cell(self)
 
     def destroy(self):
+        """Removes the cell from its parent context"""
         if self._destroyed:
             return
         #print("CELL DESTROY", self)
@@ -486,12 +496,15 @@ class Signal(Cell):
         return None
 
     def add_macro_object(self, macro_object, macro_arg):
+        """Private; raises an error"""
         raise AttributeError
 
     def remove_macro_object(self, macro_object, macro_arg):
+        """Private; raises an error"""
         raise AttributeError
 
     def destroy(self):
+        """Removes the cell from its parent context"""
         if self._destroyed:
             return
         #print("CELL DESTROY", self)
@@ -583,12 +596,6 @@ def cell(dtype):
           ("json", "seamless", "reactor_params"),
           ("cson", "seamless", "reactor_params")
 
-    Cells can be connected to input pins, edit pins, and other cells
-    Output pins and edit pins can be connected to cells
-
-    Use Cell.set() to set a cell's value
-    Use Cell.value to get its value
-    Use Cell.status to get its status
     """
     cell_cls = Cell
     if dtype in _handlers:
@@ -601,3 +608,19 @@ cell.__doc__ += Cell.__doc__
 def pythoncell():
     """Factory function for a PythonCell object."""
     return cell(("text", "code", "python"))
+pythoncell.__doc__ += "\n\nPythonCell:" + PythonCell.__doc__
+
+def arraycell():
+    """Factory function for a ArrayCell object."""
+    return cell("array")
+arraycell.__doc__ += "\n\nArrayCell:" + ArrayCell.__doc__
+
+def csoncell():
+    """Factory function for a CsonCell object."""
+    return cell("cson")
+csoncell.__doc__ += "\n\nCsonCell:" + CsonCell.__doc__
+
+def signal():
+    """Factory function for a Signal object."""
+    return cell("signal")
+signal.__doc__ += "\n\nSignal:" + Signal.__doc__

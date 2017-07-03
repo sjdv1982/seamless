@@ -6,7 +6,6 @@ ctx = context()
 ctx.server = reactor({"socket": {"pin": "output", "dtype": "int"}})
 ctx.servercode = ctx.server.code_start.cell()
 link(ctx.servercode, ".", "test-websockets_pycell.py")
-#ctx.servercode.fromfile("test-websockets_pycell.py")
 ctx.server.code_update.cell().set("")
 ctx.server.code_stop.cell().set("""
 server.close()

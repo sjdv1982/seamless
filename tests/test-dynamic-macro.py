@@ -47,3 +47,4 @@ ctx.tofile(os.path.splitext(__file__)[0] + ".seamless", backup=False)
 
 from seamless import shell
 shell(ctx.t2)
+print("Type INP1 or INP2 in the QtConsole")

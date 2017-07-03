@@ -79,9 +79,9 @@ class MessageSendServer(BaseWebSocketServer):
                     events = events[:self.CACHE_EVENTS_FIRST] + \
                         events[-self.CACHE_EVENTS_LAST:]
                 for enr, e in enumerate(events):
+                    swallow = False
                     if e.get("type", None) == "var":
                         varname = e.get("var", None)
-                        swallow = False
                         if varname is not None:
                             for e2 in events[enr+1:]:
                                 if e2.get("type", None) != "var":

@@ -4,6 +4,7 @@ import sys
 import weakref
 from collections import OrderedDict
 from contextlib import contextmanager
+import functools
 
 from .cached_compile import cached_compile
 from .context import get_active_context
@@ -507,14 +508,27 @@ defines a macro with a three arguments. The arguments must be defined as
     if len(args) == 1 and not kwargs:
         arg, = args
         if callable(arg):
-            return Macro(func=arg)
-            # TODO: functools.wraps/update_wrapper on new_macro
+            result = Macro(func=arg)
+            functools.update_wrapper(result, arg)
+            return result
 
     new_macro = Macro(*args, **kwargs)
+    if new_macro.registrar is not None:
+        def func_macro_wrapper_registrar(func):
+            new_macro2 = new_macro.set_func(func)
+            return new_macro2
+        return func_macro_wrapper_registrar
 
     def func_macro_wrapper(func):
         new_macro2 = new_macro.set_func(func)
-        # TODO: functools.wraps/update_wrapper on new_macro2
-        return new_macro2
+
+        # The following does not work:
+        #functools.update_wrapper(new_macro2, func)
+        #return new_macro2
+
+        @functools.wraps(func)
+        def macro_caller(*args, **kwargs):
+            return new_macro(*args, **kwargs )
+        return macro_caller
 
     return func_macro_wrapper

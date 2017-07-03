@@ -6,10 +6,11 @@ from .killable_thread import KillableThread
 from multiprocessing import Process
 import functools
 import time
+from ...silk.classes import SilkObject
 
 USE_PROCESSES = True
 if USE_PROCESSES:
-    from multiprocessing import Queue
+    from multiprocessing import JoinableQueue as Queue
     Executor = Process
 else:
     from queue import Queue
@@ -29,7 +30,11 @@ def execute(name, expression, namespace, result_queue):
         exc = traceback.format_exc()
         result_queue.put((1, exc))
     else:
+        if isinstance(result, SilkObject):
+            result = result.json()
         result_queue.put((0, result))
+    result_queue.close()
+    result_queue.join()
 
 class Transformer(Worker):
     name = "transformer"

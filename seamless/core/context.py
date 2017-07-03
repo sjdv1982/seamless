@@ -1,9 +1,9 @@
 """Module for Context class."""
 from weakref import WeakValueDictionary
 from collections import OrderedDict
-from . import SeamlessBase
+from . import SeamlessBase, Managed
 from .cell import Cell, CellLike
-from .worker import Managed, Worker, WorkerLike,  \
+from .worker import Worker, WorkerLike,  \
   InputPinBase, ExportedInputPin, OutputPinBase, ExportedOutputPin, \
   EditPinBase, ExportedEditPin
 from contextlib import contextmanager as _pystdlib_contextmanager
@@ -105,8 +105,8 @@ Important methods and attributes:
     .tofile(), .fromfile(), .equilibrate(), .status
 
 In addition, the .registrar attribute contains the registrars
-  For cells with the correct dtype, use registrar.register(cell) to
-   register them.
+For cells with the correct dtype, use registrar.register(cell) to
+  register them.
 As of seamless 0.1, there are two global registrars:
 
   - The Python registrar: for pythoncells
@@ -552,6 +552,11 @@ When any of these cells change and the macro is re-executed, the child object wi
         return fromfile(cls, filename)
 
     def destroy(self):
+        """
+        Destroys a context
+        Detaches the context from its parent context, if any
+        Destroys all children
+        """
         if self._destroyed:
             return
         #print("CONTEXT DESTROY", self, list(self._children.keys()))
@@ -609,6 +614,7 @@ When any of these cells change and the macro is re-executed, the child object wi
 
     @property
     def unstable_workers(self):
+        """All unstable workers (not in equilibrium)"""
         result = list(self._manager.unstable_workers)
         return PrintableList(sorted(result, key=lambda p:str(p)))
 
@@ -641,6 +647,21 @@ When any of these cells change and the macro is re-executed, the child object wi
             child.destroy()
             self._auto.remove(a)
 
+    def status(self):
+        """The computation status of the context
+        Returns a dictionary containing the status of all children that are not OK.
+        If all children are OK, returns OK
+        """
+        result = {}
+        for childname, child in self._children.items():
+            if childname in self._auto:
+                continue
+            s = child.status()
+            if s != self.StatusFlags.OK.name:
+                result[childname] = s
+        if len(result):
+            return result
+        return self.StatusFlags.OK.name
 
 
 def context(**kwargs):

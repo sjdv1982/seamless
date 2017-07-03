@@ -16,6 +16,7 @@ class Manager:
         self.cell_aliases = {}
         self.cell_rev_aliases = {}
         self.macro_listeners = {}
+        self.observers = {}
         self.registrar_listeners = WeakKeyDictionary()
         self.rev_registrar_listeners = WeakKeyDictionary()
         self.pin_to_cells = {}
@@ -237,14 +238,46 @@ class Manager:
                         self.registrar_listeners.pop(registrar)
 
 
+    def add_observer(self, cell, observer):
+        cell_id = self.get_cell_id(cell)
+        obs_ref = weakref.ref(observer)
+
+        try:
+            observers = self.observers[cell_id]
+            assert obs_ref not in observers
+            observers.append(obs_ref)
+        except KeyError:
+            self.observers[cell_id] = [obs_ref]
+        if cell_id not in self.cells:
+            self.cells[cell_id] = cell
+
+    def remove_observer(self, cell, observer):
+        cell_id = self.get_cell_id(cell)
+        obs_ref = weakref.ref(observer)
+
+        if cell_id in self.observers:
+            l = self.observers[cell_id]
+            if obs_ref in l:
+                l.remove(obs_ref)
+
+    def remove_observers_cell(self, cell):
+        cell_id = self.get_cell_id(cell)
+        listeners = self.observers.pop(cell_id, [])
+
     def _update(self, cell, dtype, value, *,
             worker=None, only_last=False):
         import threading
         assert threading.current_thread() is threading.main_thread()
         from .cell import Signal
         cell_id = self.get_cell_id(cell)
-        macro_listeners = self.macro_listeners.get(cell_id, [])
 
+        observers = self.observers.get(cell_id, [])
+        for observer in observers:
+            obs = observer()
+            if obs is not None:
+                obs(value)
+
+        macro_listeners = self.macro_listeners.get(cell_id, [])
         if not only_last:
             for macro_object, macro_arg in macro_listeners:
                 try:

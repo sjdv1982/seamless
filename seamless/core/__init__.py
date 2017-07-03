@@ -1,4 +1,5 @@
 import weakref
+from enum import Enum
 
 class SeamlessBase:
     _destroyed = False
@@ -6,6 +7,9 @@ class SeamlessBase:
     _context = None
     _last_context = None
     name = None
+
+    StatusFlags = Enum('StatusFlags', ('OK', 'PENDING', 'INVALID', 'UNDEFINED', 'UNCONNECTED'))
+    _status = StatusFlags.UNDEFINED
 
     def __init__(self):
         self._owned = []
@@ -75,6 +79,8 @@ class SeamlessBase:
         return self._context
 
     def own(self, obj):
+        """Gives ownership of another construct "obj" to this construct.
+        If this construct is destroyed, so is "obj"."""
         from .cell import Cell
         from .context import Context
         from .worker import Worker
@@ -152,6 +158,7 @@ When any of these cells change and the macro is re-executed, the owned object wi
 
 
     def destroy(self):
+        """Removes the construct from its parent context"""
         if self._destroyed:
             return
         self._destroyed = True
@@ -183,6 +190,7 @@ When any of these cells change and the macro is re-executed, the owned object wi
 
     @property
     def macro(self):
+        """Returns the macro object associated with this construct"""
         return self._macro_object
     def _set_macro_object(self, macro_object):
         self._macro_object = macro_object
@@ -193,6 +201,15 @@ When any of these cells change and the macro is re-executed, the owned object wi
             self.destroy()
         except Exception:
             pass
+
+class Managed(SeamlessBase):
+    def _get_manager(self):
+        context = self.context
+        if context is None:
+            raise Exception(
+             "Cannot carry out requested operation without a context"
+            )
+        return context._manager
 
 from .cell import Cell
 from .worker import Worker

@@ -361,6 +361,26 @@ class Transformer(Worker):
         else:
             self.transformer.registrars = None
 
+    def status(self):
+        """The computation status of the transformer
+        Returns a dictionary containing the status of all pins that are not OK.
+        If all pins are OK, returns the status of the transformer itself: OK or pending
+        """
+        result = {}
+        for pinname, pin in self._pins.items():
+            s = pin.status()
+            if s != self.StatusFlags.OK.name:
+                result[pinname] = s
+        t = self.transformer
+        for pinname in t._pending_inputs:
+            if pinname not in result:
+                result[pinname] = self.StatusFlags.PENDING.name
+        if len(result):
+            return result
+        if t._pending_updates:
+            return self.StatusFlags.PENDING.name
+        return self.StatusFlags.OK.name
+
 # @macro takes nothing, a type, or a dict of types
 @macro(type=("json", "seamless", "transformer_params"), with_context=False)
 def transformer(params):
@@ -388,7 +408,7 @@ Whenever the input data or code changes, a new computation is performed. If the
  previous computation is still in progress, it is canceled.
 
 Invoke transformer.status to get the current status of the transformer
-Invoke transformer.shell() to create an IPython shell of the transformer namespace
+Invoke shell(transformer.shell) to create an IPython shell of the transformer namespace
 
 pin.connect(cell) connects an outputpin to a cell
 cell.connect(pin) connects a cell to an inputpin

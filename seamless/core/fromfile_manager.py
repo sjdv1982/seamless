@@ -77,7 +77,7 @@ def json_to_macro_listeners(ctx, data, macro_objects):
     pass #redundant: macro object.connect(target) creates the listener
 
 def json_to_registrar_cells(ctx, data):
-    from .macro import _macros
+    from .macro import _macros, Macro
     from .registrar import RegistrarObject
     from .macro_object import MacroObject
     m = ctx._manager
