@@ -33,7 +33,6 @@ try:
 except ImportError:
     print("WARNING: websockets not found, some seamless library constructs may fail")
 
-
 from .core.macro import macro
 from .core.context import context
 from .core.cell import cell, pythoncell, csoncell, arraycell, signal
