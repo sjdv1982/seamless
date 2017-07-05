@@ -257,12 +257,14 @@ def run_qt():
         _running_qt = False
 
 def export(pin, dtype=None):
-    """Exports a pin from a worker or subcontext into the active context ctx
+    """Exports a pin from a worker or subcontext into the active context.
+
     For a pin named subcontext.pinname, a cell called ctx.pinname is created.
-    The dtype of the created cell is the pin's dtype, unless dtype is explicitly
-     provided as argument
-    If the cell already exists, it is checked that it is of the correct dtype
-    Finally, the cell and the pin are connected
+    The dtype of the created cell is the pin's dtype, unless `dtype`
+    is explicitly provided as argument.
+    If the cell already exists, it is checked that it is of the correct dtype.
+
+    Finally, the cell and the pin are connected.
     """
     from .core.context import get_active_context
     ctx = get_active_context()
