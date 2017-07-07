@@ -66,7 +66,7 @@ def link(cell, directory=None, filename=None, *,
         cell.resource.filepath = filepath
         cell.resource.lib = False
         cell.resource.mode = 5
-    if cell.status == "UNINITIALISED" :
+    if cell.status() in ("UNDEFINED", "UNCONNECTED") :
         if filepath is not None and not os.path.exists(filepath):
             fh = open(filepath, "w")
             fh.close()
