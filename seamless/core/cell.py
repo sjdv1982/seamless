@@ -22,15 +22,20 @@ class CellLike(object):
 class Cell(Managed, CellLike):
     """Default class for cells.
 
-    Cells contain all the state in text form
+Cells contain all the state in text form
 
-    Cells can be connected to input pins, edit pins, and other cells
-    Output pins and edit pins can be connected to cells
+Cells can be connected to inputpins, editpins, and other cells.
+``cell.connect(pin)`` connects a cell to an inputpin or editpin
 
-    Use Cell.set() to set a cell's value
-    Use Cell.value to get its value
-    Use Cell.status() to get its status
-    """
+Output pins and edit pins can be connected to cells.
+``pin.connect(cell)`` connects an outputpin or editpin to a cell
+
+Use ``Cell.set()`` to set a cell's value.
+
+Use ``Cell.value`` to get its value.
+
+Use ``Cell.status()`` to get its status.
+"""
 
     _dtype = None
     _data = None  # data, always in text format
@@ -583,27 +588,33 @@ _handlers = {
 
 def cell(dtype):
     """Creates and returns a Cell object.
-    Arguments:
-      dtype (string or tuple of strings): specifies the data type of the cell
-        As of seamless 0.1, the following data types are understood:
-          "int", "float", "bool", "str", "json", "cson", "array", "signal",
-          "text", ("text", "code", "python"), ("text", "code", "ipython"),
-          ("text", "code", "silk"), ("text", "code", "slash-0"),
-          ("text", "code", "vertexshader"), ("text", "code", "fragmentshader"),
-          ("text", "html"),
-          ("json", "seamless", "transformer_params"),
-          ("cson", "seamless", "transformer_params"),
-          ("json", "seamless", "reactor_params"),
-          ("cson", "seamless", "reactor_params")
 
-    """
+{0}
+
+Parameters
+----------
+
+dtype: string or tuple of strings
+    specifies the data type of the cell.
+    As of seamless 0.1, the following data types are understood:
+
+    -   "int", "float", "bool", "str", "json", "cson", "array", "signal"
+    -   "text", ("text", "code", "python"), ("text", "code", "ipython")
+    -   ("text", "code", "silk"), ("text", "code", "slash-0")
+    -   ("text", "code", "vertexshader"), ("text", "code", "fragmentshader"),
+    -   ("text", "html"),
+    -   ("json", "seamless", "transformer_params"),
+        ("cson", "seamless", "transformer_params"),
+    -   ("json", "seamless", "reactor_params"),
+        ("cson", "seamless", "reactor_params")
+"""
     cell_cls = Cell
     if dtype in _handlers:
         cell_cls = _handlers[dtype]
 
     newcell = cell_cls(dtype)
     return newcell
-cell.__doc__ += Cell.__doc__
+cell.__doc__ = cell.__doc__.format(Cell.__doc__)
 
 def pythoncell():
     """Factory function for a PythonCell object."""

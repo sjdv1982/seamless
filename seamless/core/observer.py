@@ -2,13 +2,19 @@ import weakref
 
 class Observer:
     """Observer class to observe cells from external Python code.
-    Whenever a cell changes value, the observer callback is notified
-    Observers are never saved by context.tofile(). Therefore, unlike macro
-     functions, observer callbacks can be arbitrary Python callables.
-    Arguments:
-        cell: Seamless cell to observe
-        callback: callback to be called whenever the cell changes.
-         It must be a callable that takes one argument, the value of the cell
+
+Whenever a cell changes value, the observer callback is notified.
+Observers are never saved by ``context.tofile()``. Therefore, unlike macro
+functions, observer callbacks can be arbitrary Python callables.
+
+Parameters
+----------
+
+    cell: cell
+      Seamless cell to observe
+    callback: callable
+      callback to be called whenever the cell changes.
+      It must be a callable that takes one argument, the value of the cell
     """
     _callback = None
     def __init__(self, cell, callback):

@@ -12,7 +12,8 @@ ctx.code = context()
 
 #for now, gen_sphere must be a reactor, because it has multiple outputs
 #TODO: make it a transformer in a future version of seamless
-c = ctx.params.gen_sphere = cell(("cson", "seamless", "reactor_params"))
+#c = ctx.params.gen_sphere = cell(("cson", "seamless", "reactor_params"))
+c = ctx.params.gen_sphere = cell("text")
 ctx.links.params_gen_sphere = link(c, ".", "params-gen-sphere.cson")
 rc = ctx.gen_sphere = reactor(c)
 c = ctx.code.gen_sphere = cell(("text", "code", "python"))

@@ -12,7 +12,7 @@
       "links": []
     },
     "/gui/cell-basic_display_float.py": {
-      "data": "from seamless.qt.QtWidgets import QDoubleSpinBox, QWidget, QVBoxLayout\nfrom seamless.qt.QtCore import Qt\n\nw = QWidget()\n#w.setWindowFlags(Qt.WindowStaysOnTopHint)\nw.setAttribute(Qt.WA_ShowWithoutActivating)\nvbox = QVBoxLayout()\nvbox.addStretch(1)\nw.setLayout(vbox)\nw.resize(300,100)\nw.setWindowTitle(PINS.title.get())\nw.show()\nb = QDoubleSpinBox()\nb.setSingleStep(0.1)\nb.setMaximum(1000000)\nb.setValue(PINS.value.get())\nvbox.addWidget(b)\n",
+      "data": "from seamless.qt.QtWidgets import QDoubleSpinBox, QWidget, QVBoxLayout\nfrom seamless.qt.QtCore import Qt\n\nw = QWidget()\n#w.setWindowFlags(Qt.WindowStaysOnTopHint)\nw.setAttribute(Qt.WA_ShowWithoutActivating)\nvbox = QVBoxLayout()\nvbox.addStretch(1)\nw.setLayout(vbox)\nw.resize(300,100)\nw.setWindowTitle(PINS.title.get())\nw.show()\nb = QDoubleSpinBox()\nb.setReadOnly(True)\nb.setSingleStep(0.1)\nb.setMaximum(1000000)\nb.setValue(PINS.value.get())\nvbox.addWidget(b)\n",
       "links": []
     },
     "/gui/cell-basic_display_html.py": {
@@ -24,7 +24,7 @@
       "links": []
     },
     "/gui/cell-basic_display_int.py": {
-      "data": "from seamless.qt.QtWidgets import QSpinBox, QWidget, QVBoxLayout\nfrom seamless.qt.QtCore import Qt\n\nw = QWidget()\n#w.setWindowFlags(Qt.WindowStaysOnTopHint)\nw.setAttribute(Qt.WA_ShowWithoutActivating)\nvbox = QVBoxLayout()\nvbox.addStretch(1)\nw.setLayout(vbox)\nw.resize(300,100)\nw.setWindowTitle(PINS.title.get())\nw.show()\nb = QSpinBox()\nb.setMaximum(1000000)\nb.setValue(PINS.value.get())\nvbox.addWidget(b)\n",
+      "data": "from seamless.qt.QtWidgets import QSpinBox, QWidget, QVBoxLayout\nfrom seamless.qt.QtCore import Qt\n\nw = QWidget()\n#w.setWindowFlags(Qt.WindowStaysOnTopHint)\nw.setAttribute(Qt.WA_ShowWithoutActivating)\nvbox = QVBoxLayout()\nvbox.addStretch(1)\nw.setLayout(vbox)\nw.resize(300,100)\nw.setWindowTitle(PINS.title.get())\nw.show()\nb = QSpinBox()\nb.setReadOnly(True)\nb.setMaximum(1000000)\nb.setValue(PINS.value.get())\nvbox.addWidget(b)\n",
       "links": []
     },
     "/gui/cell-basic_display_json.py": {
@@ -45,9 +45,7 @@
     },
     "/gui/cell-basic_editor_UPDATE.py": {
       "data": "if PINS.value.updated:\n    b.setValue(PINS.value.get())\nif PINS.title.updated:\n    w.setWindowTitle(PINS.title.get())\n",
-      "links": [
-        "ed_number.cell4"
-      ]
+      "links": []
     },
     "/gui/cell-basic_editor_float.py": {
       "data": "from seamless.qt.QtWidgets import QDoubleSpinBox, QWidget, QVBoxLayout\nfrom seamless.qt.QtCore import Qt\n\nw = QWidget()\n#w.setWindowFlags(Qt.WindowStaysOnTopHint)\nw.setAttribute(Qt.WA_ShowWithoutActivating)\nvbox = QVBoxLayout()\nvbox.addStretch(1)\nw.setLayout(vbox)\nw.resize(300,100)\nw.setWindowTitle(PINS.title.get())\nw.show()\nb = QDoubleSpinBox()\nb.setSingleStep(0.01)\nb.setDecimals(3)\nb.setMaximum(1000000)\nif PINS.value.defined:\n    b.setValue(PINS.value.get())\nvbox.addWidget(b)\nb.valueChanged.connect(PINS.value.set)\n",
@@ -56,7 +54,13 @@
     "/gui/cell-basic_editor_int.py": {
       "data": "from seamless.qt.QtWidgets import QSpinBox, QWidget, QVBoxLayout\nfrom seamless.qt.QtCore import Qt\n\nw = QWidget()\n#w.setWindowFlags(Qt.WindowStaysOnTopHint)\nw.setAttribute(Qt.WA_ShowWithoutActivating)\nvbox = QVBoxLayout()\nvbox.addStretch(1)\nw.setLayout(vbox)\nw.resize(300,100)\nw.setWindowTitle(PINS.title.get())\nw.show()\nb = QSpinBox()\nb.setMaximum(1000000)\nif PINS.value.defined:\n    b.setValue(PINS.value.get())\nvbox.addWidget(b)\nb.valueChanged.connect(PINS.value.set)\n",
       "links": [
-        "ed_number.cell2"
+        "ed_number.cell3"
+      ]
+    },
+    "/gui/cell-basic_editor_int_UPDATE.py": {
+      "data": "if PINS.value.updated:\n    b.setValue(PINS.value.get())\nif PINS.title.updated:\n    w.setWindowTitle(PINS.title.get())\nif PINS.maximum.updated:\n    b.setMaximum(PINS.maximum.get())\n",
+      "links": [
+        "ed_number.cell5"
       ]
     },
     "/gui/cell-basic_editor_json.py": {
@@ -95,7 +99,7 @@
       ],
       "module_name": "seamless.core.reactor",
       "func_name": "reactor",
-      "code": "@macro(type=(\"json\", \"seamless\", \"reactor_params\"),with_context=False)\ndef reactor(kwargs):\n    from seamless.core.reactor import Reactor #code must be standalone\n    #TODO: remapping, e.g. output_finish, destroy, ...\n    return Reactor(kwargs)\n"
+      "code": "@macro(type=(\"json\", \"seamless\", \"reactor_params\"),with_context=False)\ndef reactor(params):\n    \"\"\"Defines a reactor worker.\n\nReactors react upon changes in their input cells.\nReactors are connected to their input cells via inputpins. In addition, reactors\nmay manipulate output cells via outputpins. Finally, a cell may be both an\ninput and an output of the reactor, by connecting it via an editpin.\nThe pins are declared in the `params` parameter (see below).\n\nIn addition, all reactors have three implicit inputpins named `code_start`,\n`code_update` and `code_stop`. Each pin must be connected to a Python cell\n( `dtype=(\"text\", \"code\", \"python\")` ), containing a code block.\n\nThe reactor will start as soon as all input cells (including the three code cells)\nhave been defined. The startup of the reactor will trigger the execution of the\ncode in the `code_start` cell.\n\nAny change in the inputpins (including at startup)\nwill trigger the execution of the `code_update` cell. The `code_stop` cell is\ninvoked when the reactor is destroyed.\n\nAs of seamless 0.1, macro re-evaluation destroys and re-creates all reactors\ncreated by the macro, unless the macro has caching enabled.\n\nAll three code cells are executed in the same namespace. The namespace contains\nan object called `PINS`. This object can be queried for pin objects: a pin\ncalled `spam` is accessible as pin object ``PINS.spam``.\n\nEvery inputpin and editpin object contains a ``get()`` method that\nreturns the value.\nAs of seamless 0.1, the `value` property is identical to ``pin.get()``.\n\nEvery inputpin and editpin object has a property `updated`, which is True if\nthe pin has been updated since the last time `code_update` was executed.\n\nEvery outputpin and editpin has a ``set(value)`` method.\nIn case of a signal outputpin, ``set()`` is to be invoked without argument.\nInvoking ``set()`` on a signal outputpin will propagate the signal as fast as possible:\n    - If set from the main thread: immediately. Downstream workers are\n      notified and activated (if synchronous) before set() returns\n    - If set from another thread: as soon as ``seamless.run_work`` is called.\n      Then, downstream workers are notified and activated before any other\n      non-signal notification.\n\nAs of seamless 0.1, all reactors are synchronous (blocking): their code is\nexecuted in the main thread. Therefore, seamless and IPython are non-responsive\nwhile reactor code is executing, and reactor code should return as soon as\npossible. Therefore, if they perform long computations, reactors should spawn\ntheir own threads or processes from within their code.\n\nInvoke ``reactor.status()`` to get the current status of the reactor\n\nInvoke ``shell(reactor)`` to create an IPython shell of the reactor namespace\n\n``pin.connect(cell)`` connects an outputpin to a cell\n\n``cell.connect(pin)`` connects a cell to an inputpin\n\n``pin.cell()`` returns or creates a cell that is connected to that pin\n\nParameters\n----------\n\n    params: dict\n        A dictionary containing the reactor parameters.\n        As of seamless 0.1, each (name,value) item represents a reactor pin:\n\n        -  name: string\n            name of the pin\n\n        -  value: dict\n            with the following items:\n\n            - pin: string\n                must be \"input\", \"output\" or \"edit\"\n            - dtype: string or tuple of strings\n                Describes the dtype of the cell(s) connected to the pin.\n                As of seamless 0.1, the following data types are understood:\n\n                -   \"int\", \"float\", \"bool\", \"str\", \"json\", \"cson\", \"array\", \"signal\"\n                -   \"text\", (\"text\", \"code\", \"python\"), (\"text\", \"code\", \"ipython\")\n                -   (\"text\", \"code\", \"silk\"), (\"text\", \"code\", \"slash-0\")\n                -   (\"text\", \"code\", \"vertexshader\"), (\"text\", \"code\", \"fragmentshader\"),\n                -   (\"text\", \"html\"),\n                -   (\"json\", \"seamless\", \"transformer_params\"),\n                    (\"cson\", \"seamless\", \"transformer_params\"),\n                -   (\"json\", \"seamless\", \"reactor_params\"),\n                    (\"cson\", \"seamless\", \"reactor_params\")\n\n            - must_be_defined: bool\n               default = True\n\n               In case of edit pins, if `must_be_defined` is False, the reactor\n               will start up  even if the connected cell does not yet have a\n               defined value.\n\n        Since \"reactor\" is a macro, the dictionary can also be provided\n        in the form of a cell of dtype (\"json\", \"seamless\", \"reactor_params\")\n\"\"\"\n    from seamless.core.reactor import Reactor #code must be standalone\n    return Reactor(params)\n"
     },
     {
       "with_context": false,
@@ -111,7 +115,7 @@
       ],
       "module_name": "seamless.core.transformer",
       "func_name": "transformer",
-      "code": "@macro(type=(\"json\", \"seamless\", \"transformer_params\"), with_context=False)\ndef transformer(kwargs):\n    from seamless.core.transformer import Transformer #code must be standalone\n    #TODO: remapping, e.g. output_finish, destroy, ...\n    return Transformer(kwargs)\n"
+      "code": "@macro(type=(\"json\", \"seamless\", \"transformer_params\"), with_context=False)\ndef transformer(params):\n    \"\"\"Defines a transformer worker.\n\nTransformers transform their input cells into an output result.\nTransformers are connected to their input cells via input pins, and their\nresult is connected to an output cell via an output pin. There can be only one\noutput pin. The pins are declared in the `params` parameter (see below).\n\nIn addition, all transformers have an implicit input pin named \"code\",\nwhich must be connected to a Python cell ( `dtype=(\"text\", \"code\", \"python\")` ).\nThe code must be a Python block that returns the result using a \"return\" statement.\nAll input values are injected directly into the code's namespace. The variable\nname of the input is the same as its pin name.\n\nAs of seamless 0.1, all transformers are asynchronous (non-blocking),\nand they carry out their computation in a separate process\n(using ``multiprocessing``).\n\nAs of seamless 0.1, transformers start their computation as soon as all inputs\n(including the code) has been defined, even if no output cell has been connected.\nWhenever the input data or code changes, a new computation is performed. If the\nprevious computation is still in progress, it is canceled.\n\nInside the transformer code, preliminary values can be returned using\n``return_preliminary(value)``.\nAs of seamless 0.1, this does not require any special pin declaration.\n\nInvoke ``transformer.status()`` to get the current status of the transformer.\n\nInvoke ``shell(transformer)`` to create an IPython shell\nof the transformer namespace.\n\n``pin.connect(cell)`` connects an outputpin to a cell.\n\n``cell.connect(pin)`` connects a cell to an inputpin.\n\n``pin.cell()`` returns or creates a cell that is connected to that pin.\n\nParameters\n----------\n\n    params: dict\n        A dictionary containing the transformer parameters.\n\n        As of seamless 0.1, each (name,value) item represents a transformer pin:\n\n        -  name: string\n            name of the pin\n\n        -  value: dict\n            with the following items:\n\n            - pin: string\n                must be \"input\" or \"output\". Only one output pin is allowed.\n            - dtype: string or tuple of strings\n                Describes the dtype of the cell(s) connected to the pin.\n                As of seamless 0.1, the following data types are understood:\n\n                -   \"int\", \"float\", \"bool\", \"str\", \"json\", \"cson\", \"array\", \"signal\"\n                -   \"text\", (\"text\", \"code\", \"python\"), (\"text\", \"code\", \"ipython\")\n                -   (\"text\", \"code\", \"silk\"), (\"text\", \"code\", \"slash-0\")\n                -   (\"text\", \"code\", \"vertexshader\"), (\"text\", \"code\", \"fragmentshader\"),\n                -   (\"text\", \"html\"),\n                -   (\"json\", \"seamless\", \"transformer_params\"),\n                    (\"cson\", \"seamless\", \"transformer_params\"),\n                -   (\"json\", \"seamless\", \"reactor_params\"),\n                    (\"cson\", \"seamless\", \"reactor_params\")\n\n        Since \"transformer\" is a macro, the dictionary can also be provided\n        in the form of a cell of dtype (\"json\", \"seamless\", \"transformer_params\")\n\"\"\"\n    from seamless.core.transformer import Transformer #code must be standalone\n    return Transformer(params)\n"
     },
     {
       "with_context": true,
@@ -179,7 +183,35 @@
       },
       "module_name": "seamless.lib.gui.basic_editor",
       "func_name": "basic_editor",
-      "code": "@macro(OrderedDict((\n    (\"editor_type\",\"str\"),\n    (\"title\",{\"type\": \"str\", \"default\": \"Basic editor\"})\n)))\ndef basic_editor(ctx, editor_type, title):\n    from seamless import reactor\n\n    _editors = {\n      \"int\": {\n        \"code\": \"cell-basic_editor_int.py\",\n        \"update\": \"cell-basic_editor_UPDATE.py\",\n      },\n      \"float\": {\n        \"code\": \"cell-basic_editor_float.py\",\n        \"update\": \"cell-basic_editor_UPDATE.py\",\n      },\n      \"text\": {\n        \"code\": \"cell-basic_editor_text.py\",\n        \"update\": \"cell-basic_editor_text_UPDATE.py\",\n      },\n      \"json\": {\n        \"code\": \"cell-basic_editor_json.py\",\n        \"update\": \"cell-basic_editor_json_UPDATE.py\",\n      },\n    }\n\n    def _match_type(type, typelist):\n        typelist = list(typelist)\n        type2 = type\n        if isinstance(type, str):\n            type2 = (type,)\n        typelist2 = []\n        for t in typelist:\n            if isinstance(t, str):\n                typelist2.append((t,))\n            else:\n                typelist2.append(t)\n        matches = []\n        for n in range(len(typelist)):\n            ltype = typelist2[n]\n            k = min(len(type2), len(ltype))\n            if type2[:k] == ltype[:k]:\n                matches.append((n, k))\n        if not len(matches):\n            raise TypeError(\"Cannot find editor for cell type '{0}'\".format(type))\n        matches.sort(key=lambda v: -v[1])\n        bestmatch = matches[0][0]\n        return typelist[bestmatch]\n\n    editor_type = _match_type(editor_type, _editors.keys())\n    pinparams = {\n      \"value\": {\n        \"pin\": \"edit\",\n        \"dtype\": editor_type,\n        \"must_be_defined\": False\n      },\n      \"title\": {\n        \"pin\": \"input\",\n        \"dtype\": \"str\",\n      },\n    }\n    rc = ctx.rc = reactor(pinparams)\n    rc.title.cell().set(title)\n    rc.code_start.cell().fromfile(_editors[editor_type][\"code\"])\n    rc.code_stop.cell().set('w.destroy()')\n    upfile = _editors[editor_type][\"update\"]\n    c_up = rc.code_update.cell(True)\n    if upfile is not None:\n        c_up.fromfile(upfile)\n    else:\n        c_up.set(\"\")\n    ctx.export(rc, forced=[\"title\"])\n"
+      "code": "@macro(OrderedDict((\n    (\"editor_type\",\"str\"),\n    (\"title\",{\"type\": \"str\", \"default\": \"Basic editor\"})\n)))\ndef basic_editor(ctx, editor_type, title):\n    from seamless import reactor\n\n    _editors = {\n      \"int\": {\n        \"code\": \"cell-basic_editor_int.py\",\n        \"update\": \"cell-basic_editor_int_UPDATE.py\",\n      },\n      \"float\": {\n        \"code\": \"cell-basic_editor_float.py\",\n        \"update\": \"cell-basic_editor_UPDATE.py\",\n      },\n      \"text\": {\n        \"code\": \"cell-basic_editor_text.py\",\n        \"update\": \"cell-basic_editor_text_UPDATE.py\",\n      },\n      \"json\": {\n        \"code\": \"cell-basic_editor_json.py\",\n        \"update\": \"cell-basic_editor_json_UPDATE.py\",\n      },\n    }\n\n    def _match_type(type, typelist):\n        typelist = list(typelist)\n        type2 = type\n        if isinstance(type, str):\n            type2 = (type,)\n        typelist2 = []\n        for t in typelist:\n            if isinstance(t, str):\n                typelist2.append((t,))\n            else:\n                typelist2.append(t)\n        matches = []\n        for n in range(len(typelist)):\n            ltype = typelist2[n]\n            k = min(len(type2), len(ltype))\n            if type2[:k] == ltype[:k]:\n                matches.append((n, k))\n        if not len(matches):\n            raise TypeError(\"Cannot find editor for cell type '{0}'\".format(type))\n        matches.sort(key=lambda v: -v[1])\n        bestmatch = matches[0][0]\n        return typelist[bestmatch]\n\n    editor_type = _match_type(editor_type, _editors.keys())\n    pinparams = {\n      \"value\": {\n        \"pin\": \"edit\",\n        \"dtype\": editor_type,\n        \"must_be_defined\": False\n      },\n      \"title\": {\n        \"pin\": \"input\",\n        \"dtype\": \"str\",\n      },\n    }\n    if editor_type == \"int\":\n        pinparams[\"maximum\"] = {\"pin\": \"input\", \"dtype\": \"int\"}\n    rc = ctx.rc = reactor(pinparams)\n    rc.title.cell().set(title)\n    forced = [\"title\"]\n    if editor_type == \"int\":\n        rc.maximum.set(9999999)\n        forced.append(\"maximum\")\n    rc.code_start.cell().fromfile(_editors[editor_type][\"code\"])\n    rc.code_stop.cell().set('w.destroy()')\n    upfile = _editors[editor_type][\"update\"]\n    c_up = rc.code_update.cell(True)\n    if upfile is not None:\n        c_up.fromfile(upfile)\n    else:\n        c_up.set(\"\")\n    ctx.export(rc, forced=forced)\n"
+    },
+    {
+      "with_context": true,
+      "dtype": [
+        "text",
+        "code",
+        "python"
+      ],
+      "type_args": {
+        "dtype": {
+          "default": [
+            "text",
+            "html"
+          ],
+          "type": "dtype"
+        },
+        "title": {
+          "default": "Browser",
+          "type": "str"
+        },
+        "_order": [
+          "dtype",
+          "title"
+        ]
+      },
+      "module_name": "seamless.lib.gui.browser",
+      "func_name": "browser",
+      "code": "@macro(OrderedDict((\n    (\"dtype\",{\"type\": \"dtype\", \"default\": (\"text\", \"html\")}),\n    (\"title\",{\"type\": \"str\", \"default\": \"Browser\"})\n)))\ndef browser(ctx, dtype, title):\n    from seamless import reactor\n    assert dtype[:2] == (\"text\", \"html\") #for now...\n    pinparams = {\n      \"value\": {\n        \"pin\": \"edit\",\n        \"dtype\": dtype\n      },\n      \"title\": {\n        \"pin\": \"input\",\n        \"dtype\": \"str\",\n      },\n    }\n    rc = ctx.rc = reactor(pinparams)\n    rc.title.cell().set(title)\n    rc.code_start.cell().fromfile(\"cell-browser.py\")\n    rc.code_stop.cell().set('widget.destroy()')\n    c_up = rc.code_update.cell(True)\n    c_up.fromfile(\"cell-browser_UPDATE.py\")\n    ctx.export(rc, forced=[\"title\"])\n"
     },
     {
       "with_context": true,
@@ -195,7 +227,7 @@
       ],
       "module_name": "seamless.lib.itransformer",
       "func_name": "itransformer",
-      "code": "@macro(type=(\"json\", \"seamless\", \"transformer_params\"))\ndef itransformer(ctx, params):\n    from seamless import reactor\n    from seamless.core.worker import ExportedInputPin\n    params2 = params.copy()\n    params2[\"code\"] = {\"pin\": \"input\",\n                        \"dtype\": (\"text\", \"code\", \"ipython\")}\n    params2[\"transformer_params\"] = {\"pin\": \"input\", \"dtype\": \"json\"}\n    rc = ctx.rc = reactor(params2)\n    rc.transformer_params.cell().set(params)\n    rc.code_start.cell().fromfile(\"cell-itransformer.py\")\n    rc.code_update.cell().set(\"do_update()\")\n    rc.code_stop.cell().set(\"\")\n    ctx.export(ctx.rc)\n"
+      "code": "@macro(type=(\"json\", \"seamless\", \"transformer_params\"))\ndef itransformer(ctx, params):\n    from seamless import reactor\n    from seamless.core.worker import ExportedInputPin\n    params2 = params.copy()\n    params2[\"code\"] = {\"pin\": \"input\",\n                        \"dtype\": (\"text\", \"code\", \"ipython\")}\n    params2[\"transformer_params\"] = {\"pin\": \"input\", \"dtype\": \"json\"}\n    params2[\"@shell\"] =  \".namespace\"\n    rc = ctx.rc = reactor(params2)\n    rc.transformer_params.cell().set(params)\n    rc.code_start.cell().fromfile(\"cell-itransformer.py\")\n    rc.code_update.cell().set(\"do_update()\")\n    rc.code_stop.cell().set(\"\")\n    ctx.export(ctx.rc)\n"
     },
     {
       "with_context": true,
@@ -283,7 +315,7 @@
           "mode": null,
           "save_policy": 1
         },
-        "data": "/tmp/text.txt"
+        "data": "./text.txt"
       },
       "cell4": {
         "dtype": "float",
@@ -300,6 +332,10 @@
         "like_worker": true,
         "like_cell": false,
         "pins": {
+          "maximum": [
+            "ExportedInputPin",
+            "ed_number.rc.maximum"
+          ],
           "title": [
             "ExportedInputPin",
             "ed_number.rc.title"
@@ -313,7 +349,8 @@
           "cell1",
           "cell2",
           "cell3",
-          "cell4"
+          "cell4",
+          "cell5"
         ],
         "children": {
           "cell1": {
@@ -327,6 +364,16 @@
             "data": "Number"
           },
           "cell2": {
+            "dtype": "int",
+            "resource": {
+              "filepath": null,
+              "lib": null,
+              "mode": null,
+              "save_policy": 1
+            },
+            "data": "9999999"
+          },
+          "cell3": {
             "dtype": [
               "text",
               "code",
@@ -340,7 +387,7 @@
             },
             "data": "from seamless.qt.QtWidgets import QSpinBox, QWidget, QVBoxLayout\nfrom seamless.qt.QtCore import Qt\n\nw = QWidget()\n#w.setWindowFlags(Qt.WindowStaysOnTopHint)\nw.setAttribute(Qt.WA_ShowWithoutActivating)\nvbox = QVBoxLayout()\nvbox.addStretch(1)\nw.setLayout(vbox)\nw.resize(300,100)\nw.setWindowTitle(PINS.title.get())\nw.show()\nb = QSpinBox()\nb.setMaximum(1000000)\nif PINS.value.defined:\n    b.setValue(PINS.value.get())\nvbox.addWidget(b)\nb.valueChanged.connect(PINS.value.set)\n"
           },
-          "cell3": {
+          "cell4": {
             "dtype": [
               "text",
               "code",
@@ -354,25 +401,29 @@
             },
             "data": "w.destroy()"
           },
-          "cell4": {
+          "cell5": {
             "dtype": [
               "text",
               "code",
               "python"
             ],
             "resource": {
-              "filepath": "/gui/cell-basic_editor_UPDATE.py",
+              "filepath": "/gui/cell-basic_editor_int_UPDATE.py",
               "lib": true,
               "mode": 2,
               "save_policy": 1
             },
-            "data": "if PINS.value.updated:\n    b.setValue(PINS.value.get())\nif PINS.title.updated:\n    w.setWindowTitle(PINS.title.get())\n",
+            "data": "if PINS.value.updated:\n    b.setValue(PINS.value.get())\nif PINS.title.updated:\n    w.setWindowTitle(PINS.title.get())\nif PINS.maximum.updated:\n    b.setMaximum(PINS.maximum.get())\n",
             "owner": "ed_number.rc.code_update"
           },
           "rc": {
             "type": "reactor",
             "mode": "sync",
             "params": {
+              "maximum": {
+                "dtype": "int",
+                "pin": "input"
+              },
               "title": {
                 "dtype": "str",
                 "pin": "input"
@@ -664,12 +715,11 @@
       "text": {
         "dtype": "text",
         "resource": {
-          "filepath": "/tmp/text.txt",
+          "filepath": "./text.txt",
           "lib": false,
           "mode": 5,
           "save_policy": 1
-        },
-        "data": "Lorem ipsum"
+        }
       }
     },
     "macro_objects": [],
@@ -701,14 +751,18 @@
       ],
       [
         "ed_number.cell2",
-        "ed_number.rc.code_start"
+        "ed_number.rc.maximum"
       ],
       [
         "ed_number.cell3",
-        "ed_number.rc.code_stop"
+        "ed_number.rc.code_start"
       ],
       [
         "ed_number.cell4",
+        "ed_number.rc.code_stop"
+      ],
+      [
+        "ed_number.cell5",
         "ed_number.rc.code_update"
       ],
       [

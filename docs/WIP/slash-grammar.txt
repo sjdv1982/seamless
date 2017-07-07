@@ -1,11 +1,13 @@
-Bash replacement
+Slash: a bash replacement
+
+Two dialects: slash-0 (lower-level) and slash-0
+STATUS: as of seamless 0.1, only a part of slash-0 has been implemented
 
 take-home message:
 - Caching is absolutely unnecessary for seamless; just create more cells!
 - You DO want "caching" (well, dependency tracking) when a macro context is
  recreated; you may want to keep (copy/move over) cell contents and worker state
-- Two dialects:
-    slash-0
+ - Slash-0:
   - has dynamic variables (static ones must be pre-substituted)
   - has no doc expressions, only doc names => no dynamic docs
   - has doc lists, but only static-length
@@ -20,7 +22,6 @@ take-home message:
  lib.slash.slash0.command
  aux functions:
  - register a normal worker as slash command
-
 
 Glossary:
 
@@ -90,7 +91,7 @@ argument lookup:
    "bar", 'bar': literal
    bar: looks for an alias called "bar".
     If none is found, slash doesn't know if a literal or a doc
-    expression is meant, so an error is raised.
+    expression or a variable expression is meant, so an error is raised.
    $bar is a variable expression. It looks for the variable "bar" and
     substitutes its value
    $bar-1: looks for the variable "bar" and appends "-1".
@@ -107,7 +108,7 @@ result lookup:
     Is a doc expression (see above), the ! is optional.
     In slash-0, all doc expressions must be just doc names.
 
-|, 2> bar, 2>&1 bar: as expected
+|, 2> bar, 2>&1 bar: as in bash (except that "bar" is now a doc)
 NULL is substituted with /dev/null, else stderr and stdout are printed on screen
 !> bar: captures all files created by the command into a capturing context "bar".
 *******
@@ -271,12 +272,12 @@ The loop has to assign to "bar" exactly once.
 EXAMPLE
 #####################################
 
-script1:
+script1 (slash-1):
 @input_doc pdb
 $ATTRACTTOOLS/splitmodel !pdb "model" > NULL !> pdbsplit
 @export pdbsplit
 
-script2:
+script2 (slash-1):
 @macro_context pdbsplit
 @input_var atom1
 @macro_var atom2
@@ -330,12 +331,12 @@ grep 'CB' !pdbsplit/model-3 > c-CB[2]
 #####################################
 ALTERNATIVE EXAMPLE (more bash style, copy files in and out of the context)
 #####################################
-script1:
+script1 (slash-1):
 @load ~/data/complex.pdb pdb
 $ATTRACTTOOLS/splitmodel !pdb "model" > NULL !> pdbsplit
 @export pdbsplit
 
-script2:
+script2 (slash-1):
 @macro_context pdbsplit
 @glob pdbsplit x
 atom1=N
@@ -388,7 +389,6 @@ grep 'CA' pdbsplit/model-3 | head -20 > model-3/CA
 grep 'N' pdbsplit/model-3 > model-3/ATOM1
 grep 'CB' pdbsplit/model-3 > model-3/CB
 @map . ~/splitpdb
-
 
 
 Slash-1 parsing:

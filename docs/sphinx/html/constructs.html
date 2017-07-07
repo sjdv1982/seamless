@@ -1,0 +1,533 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Seamless core API &#8212; seamless 0.1 documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="Welcome to seamless’s documentation!" href="index.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="seamless-core-api">
+<h1>Seamless core API<a class="headerlink" href="#seamless-core-api" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="context">
+<h2>context<a class="headerlink" href="#context" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="seamless.context">
+<code class="descclassname">seamless.</code><code class="descname">context</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seamless/core/context.html#context"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#seamless.context" title="Permalink to this definition">¶</a></dt>
+<dd><p>Construct a new context.</p>
+<p>A context can contain cells, workers (= transformers and reactors),
+and other contexts.</p>
+<dl class="docutils">
+<dt><strong>Important methods and attributes</strong>:</dt>
+<dd><code class="docutils literal"><span class="pre">.tofile()</span></code>, <code class="docutils literal"><span class="pre">.fromfile()</span></code>, <code class="docutils literal"><span class="pre">.equilibrate()</span></code>, <code class="docutils literal"><span class="pre">.status()</span></code></dd>
+</dl>
+<p>In addition, the <code class="docutils literal"><span class="pre">.registrar</span></code> attribute contains the registrars.</p>
+<p>For cells with the correct <cite>dtype</cite>, use <code class="docutils literal"><span class="pre">registrar.register(cell)</span></code>
+to register them.
+As of seamless 0.1, there are two global registrars:</p>
+<blockquote>
+<div><ul>
+<li><p class="first">The Python registrar: for pythoncells</p>
+<p>Simply registers all Python objects in the Python code’s globals.</p>
+<p>Use registrar.python.connect(name_of_python_object, worker) to use the
+data model in a worker.
+See examples/test-python-registrar.py for an example.</p>
+</li>
+<li><p class="first">The silk registrar: for cells with dtype (“text”, “code”, “silk”)</p>
+<p>This registers all Silk data models in the cell.</p>
+<p>Use <code class="docutils literal"><span class="pre">registrar.silk.connect(name_of_datamodel,</span> <span class="pre">worker)</span></code> to use
+the data model in a worker.
+As of seamless 0.1, Silk is not yet documented: see examples/test-macro.py
+or examples/fireworks/fireworks.py for examples on how to work with Silk
+data models.</p>
+</li>
+</ul>
+</div></blockquote>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>context</strong> (<a class="reference internal" href="#seamless.context" title="seamless.context"><em>context</em></a><em> or </em><em>None</em>) – parent context</li>
+<li><strong>active_context</strong> (<em>bool</em><em> (</em><em>default = True</em><em>)</em>) – Sets the newly constructed context as the active context (default is True)
+New seamless objects are automatically parented to the active context.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="cell">
+<h2>cell<a class="headerlink" href="#cell" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="seamless.cell">
+<code class="descclassname">seamless.</code><code class="descname">cell</code><span class="sig-paren">(</span><em>dtype</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seamless/core/cell.html#cell"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#seamless.cell" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates and returns a Cell object.</p>
+<p>Default class for cells.</p>
+<p>Cells contain all the state in text form</p>
+<p>Cells can be connected to inputpins, editpins, and other cells.
+<code class="docutils literal"><span class="pre">cell.connect(pin)</span></code> connects a cell to an inputpin or editpin</p>
+<p>Output pins and edit pins can be connected to cells.
+<code class="docutils literal"><span class="pre">pin.connect(cell)</span></code> connects an outputpin or editpin to a cell</p>
+<p>Use <code class="docutils literal"><span class="pre">Cell.set()</span></code> to set a cell’s value.</p>
+<p>Use <code class="docutils literal"><span class="pre">Cell.value</span></code> to get its value.</p>
+<p>Use <code class="docutils literal"><span class="pre">Cell.status()</span></code> to get its status.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>dtype</strong> (<em>string</em><em> or </em><em>tuple of strings</em>) – <p>specifies the data type of the cell.
+As of seamless 0.1, the following data types are understood:</p>
+<ul class="simple">
+<li>”int”, “float”, “bool”, “str”, “json”, “cson”, “array”, “signal”</li>
+<li>”text”, (“text”, “code”, “python”), (“text”, “code”, “ipython”)</li>
+<li>(“text”, “code”, “silk”), (“text”, “code”, “slash-0”)</li>
+<li>(“text”, “code”, “vertexshader”), (“text”, “code”, “fragmentshader”),</li>
+<li>(“text”, “html”),</li>
+<li>(“json”, “seamless”, “transformer_params”),
+(“cson”, “seamless”, “transformer_params”),</li>
+<li>(“json”, “seamless”, “reactor_params”),
+(“cson”, “seamless”, “reactor_params”)</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="transformer">
+<h2>transformer<a class="headerlink" href="#transformer" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="seamless.transformer">
+<code class="descclassname">seamless.</code><code class="descname">transformer</code><span class="sig-paren">(</span><em>params</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seamless/core/transformer.html#transformer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#seamless.transformer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Defines a transformer worker.</p>
+<p>Transformers transform their input cells into an output result.
+Transformers are connected to their input cells via input pins, and their
+result is connected to an output cell via an output pin. There can be only one
+output pin. The pins are declared in the <cite>params</cite> parameter (see below).</p>
+<p>In addition, all transformers have an implicit input pin named “code”,
+which must be connected to a Python cell ( <cite>dtype=(“text”, “code”, “python”)</cite> ).
+The code must be a Python block that returns the result using a “return” statement.
+All input values are injected directly into the code’s namespace. The variable
+name of the input is the same as its pin name.
+Preliminary values can be returned using return_preliminary(value)
+(as of seamless 0.1, this does not require any special pin declaration)</p>
+<p>As of seamless 0.1, all transformers are asynchronous (non-blocking),
+and they carry out their computation in a separate process
+(using multiprocessing).</p>
+<p>As of seamless 0.1, transformers start their computation as soon as all inputs
+(including the code) has been defined, even if no output cell has been connected.
+Whenever the input data or code changes, a new computation is performed. If the
+previous computation is still in progress, it is canceled.</p>
+<p>Invoke <code class="docutils literal"><span class="pre">transformer.status()</span></code> to get the current status of the transformer</p>
+<p>Invoke <code class="docutils literal"><span class="pre">shell(transformer.shell)</span></code> to create an IPython shell
+of the transformer namespace</p>
+<p><code class="docutils literal"><span class="pre">pin.connect(cell)</span></code> connects an outputpin to a cell</p>
+<p><code class="docutils literal"><span class="pre">cell.connect(pin)</span></code> connects a cell to an inputpin</p>
+<p><code class="docutils literal"><span class="pre">pin.cell()</span></code> returns or creates a cell that is connected to that pin</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>params</strong> (<em>dict</em>) – <p>A dictionary containing the transformer parameters.</p>
+<p>As of seamless 0.1, each (name,value) item represents a transformer pin:</p>
+<ul class="simple">
+<li><dl class="first docutils">
+<dt>name: string</dt>
+<dd>name of the pin</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>value: dict</dt>
+<dd>with the following items:<ul class="last">
+<li><dl class="first docutils">
+<dt>pin: string</dt>
+<dd>must be “input” or “output”. Only one output pin is allowed.</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>dtype: string or tuple of strings</dt>
+<dd>Describes the dtype of the cell(s) connected to the pin.
+As of seamless 0.1, the following data types are understood:<ul class="last">
+<li>”int”, “float”, “bool”, “str”, “json”, “cson”, “array”, “signal”</li>
+<li>”text”, (“text”, “code”, “python”), (“text”, “code”, “ipython”)</li>
+<li>(“text”, “code”, “silk”), (“text”, “code”, “slash-0”)</li>
+<li>(“text”, “code”, “vertexshader”), (“text”, “code”, “fragmentshader”),</li>
+<li>(“text”, “html”),</li>
+<li>(“json”, “seamless”, “transformer_params”),
+(“cson”, “seamless”, “transformer_params”),</li>
+<li>(“json”, “seamless”, “reactor_params”),
+(“cson”, “seamless”, “reactor_params”)</li>
+</ul>
+</dd>
+</dl>
+</li>
+</ul>
+</dd>
+</dl>
+</li>
+</ul>
+<p>Since “transformer” is a macro, the dictionary can also be provided
+in the form of a cell of dtype (“json”, “seamless”, “transformer_params”)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="reactor">
+<h2>reactor<a class="headerlink" href="#reactor" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="seamless.reactor">
+<code class="descclassname">seamless.</code><code class="descname">reactor</code><span class="sig-paren">(</span><em>params</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seamless/core/reactor.html#reactor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#seamless.reactor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Defines a reactor worker.</p>
+<p>Reactors react upon changes in their input cells.
+Reactors are connected to their input cells via inputpins. In addition, reactors
+may manipulate output cells via outputpins. Finally, a cell may be both an
+input and an output of the reactor, by connecting it via an editpin.
+The pins are declared in the <cite>params</cite> parameter (see below).</p>
+<p>In addition, all reactors have three implicit inputpins named <cite>code_start</cite>,
+<cite>code_update</cite> and <cite>code_stop</cite>. Each pin must be connected to a Python cell
+( <cite>dtype=(“text”, “code”, “python”)</cite> ), containing a code block.</p>
+<p>The reactor will start as soon as all input cells (including the three code cells)
+have been defined. The startup of the reactor will trigger the execution of the
+code in the code_start cell.</p>
+<p>Any change in the inputpins (including at startup)
+will trigger the execution of the code_update cell. The code_stop cell is
+invoked when the reactor is destroyed.</p>
+<p>As of seamless 0.1, macro re-evaluation destroys and re-creates all reactors
+created by the macro, unless the macro has caching enabled.</p>
+<p>All three code cells are executed in the same namespace. The namespace contains
+an object called <cite>PINS</cite>. This object can be queried for pin objects: a pin
+called <cite>spam</cite> is accessible as pin object <code class="docutils literal"><span class="pre">PINS.spam</span></code>.</p>
+<p>Every inputpin and editpin object contains a <code class="docutils literal"><span class="pre">get()</span></code> method that
+returns the value.
+As of seamless 0.1, the “value” property is identical to <code class="docutils literal"><span class="pre">pin.get()</span></code>.</p>
+<p>Every inputpin and editpin object has a property <cite>updated</cite>, which is True if
+the pin has been updated since the last time <cite>code_update</cite> was executed.</p>
+<p>Every outputpin and editpin has a <code class="docutils literal"><span class="pre">set(value)</span></code> method.
+In case of a signal outputpin, set() is to be invoked without argument.
+Invoking set() on a signal outputpin will propagate the signal as fast as possible:</p>
+<blockquote>
+<div><ul class="simple">
+<li>If set from the main thread: immediately. Downstream workers are
+notified and activated (if synchronous) before set() returns</li>
+<li>If set from another thread: as soon as run_work is called. Then,
+downstream workers are notified and activated before any other
+non-signal notification.</li>
+</ul>
+</div></blockquote>
+<p>As of seamless 0.1, all reactors are synchronous (blocking): their code is
+executed in the main thread. Therefore, seamless and IPython are non-responsive
+while reactor code is executing, and reactor code should return as soon as
+possible. Therefore, if they perform long computations, reactors should spawn
+their own threads or processes from within their code.</p>
+<p>Invoke <code class="docutils literal"><span class="pre">reactor.status()</span></code> to get the current status of the reactor</p>
+<p>Invoke <code class="docutils literal"><span class="pre">shell(reactor)</span></code> to create an IPython shell of the reactor namespace</p>
+<p><code class="docutils literal"><span class="pre">pin.connect(cell)</span></code> connects an outputpin to a cell</p>
+<p><code class="docutils literal"><span class="pre">cell.connect(pin)</span></code> connects a cell to an inputpin</p>
+<p><code class="docutils literal"><span class="pre">pin.cell()</span></code> returns or creates a cell that is connected to that pin</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>params</strong> (<em>dict</em>) – <p>A dictionary containing the reactor parameters.
+As of seamless 0.1, each (name,value) item represents a reactor pin:</p>
+<ul>
+<li><dl class="first docutils">
+<dt>name: string</dt>
+<dd>name of the pin</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>value: dict</dt>
+<dd>with the following items:<ul class="last">
+<li><dl class="first docutils">
+<dt>pin: string</dt>
+<dd>must be “input”, “output” or “edit”</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>dtype: string or tuple of strings</dt>
+<dd>Describes the dtype of the cell(s) connected to the pin.
+As of seamless 0.1, the following data types are understood:<ul class="last simple">
+<li>”int”, “float”, “bool”, “str”, “json”, “cson”, “array”, “signal”</li>
+<li>”text”, (“text”, “code”, “python”), (“text”, “code”, “ipython”)</li>
+<li>(“text”, “code”, “silk”), (“text”, “code”, “slash-0”)</li>
+<li>(“text”, “code”, “vertexshader”), (“text”, “code”, “fragmentshader”),</li>
+<li>(“text”, “html”),</li>
+<li>(“json”, “seamless”, “transformer_params”),
+(“cson”, “seamless”, “transformer_params”),</li>
+<li>(“json”, “seamless”, “reactor_params”),
+(“cson”, “seamless”, “reactor_params”)</li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>must_be_defined: bool</dt>
+<dd>default = True<p class="last">In case of edit pins, if <cite>must_be_defined</cite> is False, the reactor
+will start up  even if the connected cell does not yet have a
+defined value.</p>
+</dd>
+</dl>
+</li>
+</ul>
+</dd>
+</dl>
+</li>
+</ul>
+<p>Since “reactor” is a macro, the dictionary can also be provided
+in the form of a cell of dtype (“json”, “seamless”, “reactor_params”)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="macro">
+<h2>macro<a class="headerlink" href="#macro" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="seamless.macro">
+<code class="descclassname">seamless.</code><code class="descname">macro</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seamless/core/macro.html#macro"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#seamless.macro" title="Permalink to this definition">¶</a></dt>
+<dd><p>Macro decorator,  wraps a macro function</p>
+<p>Macro functions construct new seamless objects (contexts, cells, workers).</p>
+<p>In their code, macro functions may themselves invoke macros.</p>
+<p>Macro function arguments can be either values or cells.</p>
+<p>If any argument to the the macro function is a cell, then all cell arguments
+are automatically converted to their values, and a live macro object is created:
+whenever one of the cells changes value, the macro function is re-executed</p>
+<p>The macro function object is never executed directly: instead, its source
+code is extracted and used to build a new function object.
+This is so that macro source can be included when the context is saved.
+Therefore, the function source MUST be self-contained, i.e. not rely on
+other variables defined or imported by code outside the function.
+Only registrar methods deviate from this rule, since registrar code is
+never stored in the saved context. The “registrar” parameter indicates
+that the macro is a registrar method.</p>
+<p>Macros are identified by the name of the module (in sys.modules) that
+defined them, and the name of the macro function.
+If a new macro is defined with the same module name and function name,
+the old macro is updated and returned instead</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>type</strong> (<em>a single type tuple</em><em>, </em><em>a list of type tuples</em><em>, or </em><em>a dict/OrderedDict</em>) – <p>if type is a dict, then:</p>
+<blockquote>
+<div><ul>
+<li>every key is a parameter name</li>
+<li>every value is either a dtype, or a dict, where:<blockquote>
+<div><ul>
+<li><cite>type</cite> is the dtype,</li>
+<li><cite>optional</cite> (optional) is a boolean</li>
+<li><cite>default</cite> (optional) is a default value</li>
+</ul>
+</div></blockquote>
+</li>
+</ul>
+<p>The type dict is parsed from <cite>**kwargs</cite> (keyword arguments)
+Unspecified optional arguments default to <code class="docutils literal"><span class="pre">None</span></code>, unless <cite>default</cite> is
+specified</p>
+</div></blockquote>
+<dl class="docutils">
+<dt>if type is an OrderedDict, then:</dt>
+<dd>as above, but the type dict is parsed from <cite>*args</cite> (positional arguments)
+and <cite>**kwargs</cite> (keyword arguments)</dd>
+</dl>
+<p>As an additional value for <cite>dtype</cite>, “self” is allowed. This indicates
+that the macro is a method decorator, and the first argument
+is a bound object. In this case, the macro source is never stored.</p>
+<p>Currently, macro method decorators are only used for registrar methods</p>
+</li>
+<li><strong>with_context</strong> (<em>bool</em>) – <p>if True, the function is passed a context object as additional
+first parameter, and is expected to return None</p>
+<p>if False, the function is expected to return a cell or worker.
+This cell or worker (together with any other cells or workers
+created by the macro) is automatically added to the active context.</p>
+<p>As of seamless 0.1, there are no macros that return a cell, i.e. this is untested!</p>
+</li>
+<li><strong>with_caching</strong> (<em>bool</em>) – <p>if True, when the macro is re-invoked, it tries to salvage as much as
+possible from the previously created context</p>
+<p>Requires that with_context is True</p>
+<p>As of seamless 0.1, only the slash0 macro has with_caching</p>
+</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Examples</p>
+<p>Example 1:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="nd">@macro</span>
+</pre></div>
+</div>
+<p>Defines a macro with <code class="docutils literal"><span class="pre">with_context=True</span></code>, no type checking</p>
+<p>Example 2:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="nd">@macro</span><span class="p">(</span><span class="s2">&quot;str&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Defines a macro with a single argument, which must be of type <cite>str</cite>,
+and <code class="docutils literal"><span class="pre">with_context=True</span></code>.</p>
+<p>Example 3:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="nd">@macro</span><span class="p">({</span>
+  <span class="s2">&quot;spam&quot;</span><span class="p">:</span> <span class="p">{</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span><span class="s2">&quot;str&quot;</span><span class="p">,</span> <span class="s2">&quot;optional&quot;</span><span class="p">:</span><span class="kc">True</span> <span class="p">},</span>
+  <span class="s2">&quot;ham&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;code&quot;</span><span class="p">,</span> <span class="s2">&quot;python&quot;</span><span class="p">),</span>
+  <span class="s2">&quot;eggs&quot;</span><span class="p">:</span> <span class="s2">&quot;int&quot;</span>
+<span class="p">})</span>
+</pre></div>
+</div>
+<p>Defines a macro with a three arguments. The arguments must be defined as
+keyword arguments, and <cite>spam</cite> is optional</p>
+</dd></dl>
+
+</div>
+<div class="section" id="export">
+<h2>export<a class="headerlink" href="#export" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="seamless.export">
+<code class="descclassname">seamless.</code><code class="descname">export</code><span class="sig-paren">(</span><em>pin</em>, <em>dtype=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seamless.html#export"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#seamless.export" title="Permalink to this definition">¶</a></dt>
+<dd><p>Exports a pin from a worker or subcontext into the active context ctx.</p>
+<p>For a pin named subcontext.pinname, a cell called ctx.pinname is created.
+The dtype of the created cell is the pin’s dtype, unless <cite>dtype</cite>
+is explicitly provided as argument.
+If the cell already exists, it is checked that it is of the correct dtype.</p>
+<p>Finally, the cell and the pin are connected.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="observer">
+<h2>observer<a class="headerlink" href="#observer" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="seamless.observer">
+<code class="descclassname">seamless.</code><code class="descname">observer</code><span class="sig-paren">(</span><em>cell</em>, <em>callback</em><span class="sig-paren">)</span><a class="headerlink" href="#seamless.observer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Observer class to observe cells from external Python code.</p>
+<p>Whenever a cell changes value, the observer callback is notified.
+Observers are never saved by <code class="docutils literal"><span class="pre">context.tofile()</span></code>. Therefore, unlike macro
+functions, observer callbacks can be arbitrary Python callables.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>cell</strong> (<a class="reference internal" href="#seamless.cell" title="seamless.cell"><em>cell</em></a>) – Seamless cell to observe</li>
+<li><strong>callback</strong> (<em>callable</em>) – callback to be called whenever the cell changes.
+It must be a callable that takes one argument, the value of the cell</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">seamless</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Seamless core API</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#context">context</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#cell">cell</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#transformer">transformer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#reactor">reactor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#macro">macro</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#export">export</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#observer">observer</a></li>
+</ul>
+</li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="index.html" title="previous chapter">Welcome to seamless’s documentation!</a></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2016-2017, Sjoerd de Vries.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.3</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+      |
+      <a href="_sources/constructs.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

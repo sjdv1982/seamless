@@ -388,47 +388,71 @@ def transformer(params):
 
 Transformers transform their input cells into an output result.
 Transformers are connected to their input cells via input pins, and their
- result is connected to an output cell via an output pin. There can be only one
- output pin. The pins are declared in the "params" parameter (see below).
+result is connected to an output cell via an output pin. There can be only one
+output pin. The pins are declared in the `params` parameter (see below).
 
 In addition, all transformers have an implicit input pin named "code",
- which must be connected to a Python cell ( dtype=("text", "code", "python") ).
+which must be connected to a Python cell ( `dtype=("text", "code", "python")` ).
 The code must be a Python block that returns the result using a "return" statement.
 All input values are injected directly into the code's namespace. The variable
- name of the input is the same as its pin name.
-Preliminary values can be returned using return_preliminary(value)
-(as of seamless 0.1, this does not require any special pin declaration)
+name of the input is the same as its pin name.
 
 As of seamless 0.1, all transformers are asynchronous (non-blocking),
- and they carry out their computation in a separate process
- (using multiprocessing).
+and they carry out their computation in a separate process
+(using ``multiprocessing``).
+
 As of seamless 0.1, transformers start their computation as soon as all inputs
 (including the code) has been defined, even if no output cell has been connected.
 Whenever the input data or code changes, a new computation is performed. If the
- previous computation is still in progress, it is canceled.
+previous computation is still in progress, it is canceled.
 
-Invoke transformer.status to get the current status of the transformer
-Invoke shell(transformer.shell) to create an IPython shell of the transformer namespace
+Inside the transformer code, preliminary values can be returned using
+``return_preliminary(value)``.
+As of seamless 0.1, this does not require any special pin declaration.
 
-pin.connect(cell) connects an outputpin to a cell
-cell.connect(pin) connects a cell to an inputpin
-pin.cell() returns or creates a cell that is connected to that pin
+Invoke ``transformer.status()`` to get the current status of the transformer.
 
-params:
-    A dictionary containing the transformer parameters.
-    As of seamless 0.1, each (name,value) item represents a transformer pin:
-      name (string): name of the pin
-      value: dictionary with the following items:
-        pin: must be "input" or "output". Only one output pin is allowed.
-        dtype: describes the dtype of the cell(s) connected to the pin.
-          As of seamless 0.1, the following dtypes are understood:
-          "int", "float", "bool", "str", "json", "cson", "array", "signal",
-          "text", ("text", "code", "python"), ("text", "code", "ipython"),
-          ("text", "code", "silk"), ("text", "code", "slash-0"),
-          ("text", "code", "vertexshader"), ("text", "code", "fragmentshader"),
-          ("text", "html")
-    Since "transformer" is a macro, the dictionary can also be provided in the
-     form of a cell of dtype ("json", "seamless", "transformer_params")
+Invoke ``shell(transformer)`` to create an IPython shell
+of the transformer namespace.
+
+``pin.connect(cell)`` connects an outputpin to a cell.
+
+``cell.connect(pin)`` connects a cell to an inputpin.
+
+``pin.cell()`` returns or creates a cell that is connected to that pin.
+
+Parameters
+----------
+
+    params: dict
+        A dictionary containing the transformer parameters.
+
+        As of seamless 0.1, each (name,value) item represents a transformer pin:
+
+        -  name: string
+            name of the pin
+
+        -  value: dict
+            with the following items:
+
+            - pin: string
+                must be "input" or "output". Only one output pin is allowed.
+            - dtype: string or tuple of strings
+                Describes the dtype of the cell(s) connected to the pin.
+                As of seamless 0.1, the following data types are understood:
+
+                -   "int", "float", "bool", "str", "json", "cson", "array", "signal"
+                -   "text", ("text", "code", "python"), ("text", "code", "ipython")
+                -   ("text", "code", "silk"), ("text", "code", "slash-0")
+                -   ("text", "code", "vertexshader"), ("text", "code", "fragmentshader"),
+                -   ("text", "html"),
+                -   ("json", "seamless", "transformer_params"),
+                    ("cson", "seamless", "transformer_params"),
+                -   ("json", "seamless", "reactor_params"),
+                    ("cson", "seamless", "reactor_params")
+
+        Since "transformer" is a macro, the dictionary can also be provided
+        in the form of a cell of dtype ("json", "seamless", "transformer_params")
 """
     from seamless.core.transformer import Transformer #code must be standalone
     return Transformer(params)

@@ -429,81 +429,106 @@ def macro(*args, **kwargs):
     """Macro decorator,  wraps a macro function
 
 Macro functions construct new seamless objects (contexts, cells, workers).
+
 In their code, macro functions may themselves invoke macros.
+
 Macro function arguments can be either values or cells.
 
 If any argument to the the macro function is a cell, then all cell arguments
- are automatically converted to their values, and a live macro object is created:
- whenever one of the cells changes value, the macro function is re-executed
+are automatically converted to their values, and a live macro object is created:
+whenever one of the cells changes value, the macro function is re-executed.
 
 The macro function object is never executed directly: instead, its source
- code is extracted and used to build a new function object
+code is extracted and used to build a new function object.
 This is so that macro source can be included when the context is saved.
 Therefore, the function source MUST be self-contained, i.e. not rely on
- other variables defined or imported by code outside the function.
+other variables defined or imported by code outside the function.
 Only registrar methods deviate from this rule, since registrar code is
- never stored in the saved context. The "registrar" parameter indicates
- that the macro is a registrar method.
+never stored in the saved context. The `registrar` parameter indicates
+that the macro is a registrar method.
 
-Macros are identified by the name of the module (in sys.modules) that
- defined them, and the name of the macro function.
+Macros are identified by the name of the module (in ``sys.modules``) that
+defined them, and the name of the macro function.
 If a new macro is defined with the same module name and function name,
- the old macro is updated and returned instead
+the old macro is updated and returned instead.
 
-Arguments:
+Parameters
+----------
 
 type: a single type tuple, a list of type tuples, or a dict/OrderedDict
-  if type is a dict, then
-    every key is a parameter name
-    every value is either a dtype, or
-     a dict, where:
-        "type" is the dtype,
-        "optional" (optional) is a boolean
-        "default" (optional) is a default value
-    the type dict is parsed from **kwargs (keyword arguments)
-    unspecified optional arguments default to None, unless "default" is
-     specified
-  if type is an OrderedDict, then
-   as above, but
-   the type dict is parsed from *args (positional arguments)
-    and **kwargs (keyword arguments)
+  if type is a dict, then:
 
-As an additional value for dtype, "self" is allowed. This indicates
- that the macro is a method decorator, and the first argument
- is a bound object. In this case, the macro source is never stored
-Currently, macro method decorators are only used for registrar methods
+    - every key is a parameter name
+    - every value is either a dtype, or a dict, where:
+
+        - `type` is the dtype
+        - `optional` (optional) is a boolean
+        - `default` (optional) is a default value.
+
+    The type dict is parsed from `**kwargs` (keyword arguments)
+    Unspecified optional arguments default to ``None``, unless `default` is
+    specified.
+  if type is an OrderedDict, then:
+    as above, but the type dict is parsed from `*args` (positional arguments)
+    and `**kwargs` (keyword arguments).
+
+  As an additional value for `dtype`, "self" is allowed. This indicates
+  that the macro is a method decorator, and the first argument
+  is a bound object. In this case, the macro source is never stored.
+
+  Currently, macro method decorators are only used for registrar methods.
 
 with_context: bool
-  if True, the function is passed a context object as additional
-   first parameter, and is expected to return None
-  if False, the function is expected to return a cell or worker.
-   This cell or worker (together with any other cells or workers
-   created by the macro) is automatically added to the active context.
-   As of seamless 0.1, there are no macros that return a cell, i.e. this is untested!
+  if `ctx` is True, the function is passed a context object `ctx` as additional
+  first parameter, and is expected to return None.
+
+  The macro may invoke ``ctx.export(w)``, where `w` is one of the workers
+  of `ctx`. In that case, all unconnected pins of `w` are exported, and `ctx`
+  becomes a worker-like context, for the purposes of ``shell``
+  for example. ``ctx.export(w, force)`` forces the export of all pins in
+  `force`.
+
+  if `ctx` is False, the function is expected to return a cell or worker.
+  This cell or worker (together with any other cells or workers
+  created by the macro) is automatically added to the active context.
+
+  As of seamless 0.1, there are no macros that return a cell,
+  i.e. this is untested!
 
 with_caching: bool
-    if True, when the macro is re-invoked, it tries to salvage as much as
-    possible from the previously created context
-    Requires that with_context is True
-    As of seamless 0.1, only the slash0 macro has with_caching
+  if True, whenever the macro is re-invoked, it tries to salvage as much as
+  possible from the previously created context.
 
-Example 1:
-@macro
-defines a macro with with_context = True, no type checking
+  Requires that `with_context` is True.
 
-Example 2:
-@macro("str")
-defines a macro with a single argument, which must be of type "str",
- and with_context is True.
+  As of seamless 0.1, only the slash0 macro has `with_caching` enabled.
 
-Example 2:
-@macro({
-  "spam": { "type":"str", "optional":True },
-  "ham": ("code", "python"),
-  "eggs": "int"
-})
-defines a macro with a three arguments. The arguments must be defined as
- keyword arguments, and "spam" is optional
+Examples
+--------
+
+Example 1::
+
+    @macro
+
+Defines a macro with ``with_context=True``, no type checking.
+
+Example 2::
+
+    @macro("str")
+
+Defines a macro with a single argument, which must be of type `str`,
+and ``with_context=True``.
+
+Example 3::
+
+    @macro({
+      "spam": { "type":"str", "optional":True },
+      "ham": ("code", "python"),
+      "eggs": "int"
+    }, with_context=False)
+
+Defines a macro with a three arguments. The arguments must be defined as
+keyword arguments, `spam` is optional,and ``with_context=False``.
 """
     if len(args) == 1 and not kwargs:
         arg, = args

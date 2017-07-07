@@ -92,37 +92,48 @@ class Context(SeamlessBase, CellLike, WorkerLike):
         active_context=True,
     ):
         """Construct a new context.
-A context can contain cells, workers (= transformers and reactors), and
- other contexts
 
-Arguments:
-    context (optional): parent context
-    active_context (default: True): Sets the newly constructed context
-        as the active context. New seamless objects are automatically
-        parented to the active context
+A context can contain cells, workers (= transformers and reactors),
+and other contexts.
 
-Important methods and attributes:
-    .tofile(), .fromfile(), .equilibrate(), .status
+**Important methods and attributes**:
+    ``.tofile()``, ``.fromfile()``, ``.equilibrate()``, ``.status()``
 
-In addition, the .registrar attribute contains the registrars
-For cells with the correct dtype, use registrar.register(cell) to
-  register them.
+In addition, the ``.registrar`` attribute contains the registrars.
+
+For cells with the correct `dtype`, use ``registrar.register(cell)``
+to register them.
 As of seamless 0.1, there are two global registrars:
 
-  - The Python registrar: for pythoncells
+  - The Python registrar: for pythoncells.
+
     Simply registers all Python objects in the Python code's globals.
-    Use registrar.python.connect(name_of_python_object, worker) to use
-     the data model in a worker
+
+    Use ``registrar.python.connect(name_of_python_object, worker)`` to use the
+    data model in a worker.
+
     See examples/test-python-registrar.py for an example.
 
   - The silk registrar: for cells with dtype ("text", "code", "silk")
+
     This registers all Silk data models in the cell.
-    Use registrar.silk.connect(name_of_datamodel, worker) to use
-     the data model in a worker
-    As of seamless 0.1, Silk is not yet documented:
-      see examples/test-macro.py or examples/fireworks/fireworks.py
-      for examples on how to work with Silk data models
-        """
+
+    Use ``registrar.silk.connect(name_of_datamodel, worker)`` to use
+    the data model in a worker.
+
+    As of seamless 0.1, Silk is not yet documented: see examples/test-macro.py
+    or examples/fireworks/fireworks.py for examples on how to work with Silk
+    data models.
+
+Parameters
+----------
+context : context or None
+    parent context
+active_context: bool (default = True)
+    Sets the newly constructed context as the active context (default is True).
+    New seamless objects are automatically parented to the active context.
+
+"""
         super().__init__()
         n = name
         if context is not None and context._name is not None:

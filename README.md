@@ -1,118 +1,108 @@
 Seamless: a cell-based reactive programming framework
-Seamless was created on June 3rd, 2016
+=====================================================
 
-Requirements: Python 3.5+, PyQt5 (including QWebEngine), numpy, PyOpenGL, cson
-Recommended: scipy, pandas, websockets
-NOTE: Seamless scripts are meant to be executed within IPython
+Seamless is a framework to set up computations (and visualizations) that respond
+to changes in cells. Cells contain the input data as well as the source code of
+the computations, and all cells can be edited live.
 
-The nine seamless constructs (sorted from good to ugly):
-1. context
-2. cell
-3. transformer
-4. pin
-5. reactor
-6. macro
-7. export
-8. registrar
-9. observer
+The main application domains are scientific protocols, data visualization, and
+live code development (shaders, algorithms, and GUIs).
 
-Seamless Zen
+**Installation**: pip install seamless-framework
 
-Watch the state as it is now, don't watch the news.
-All state is in cells, unless it is local.
-Always be prepared to rebuild from cells.
-Cells are good, files are bad.
-Importing external libraries is good, importing project code is bad.
-Namespaces are good, classes less so.
-GUIs are good, unless they hide the state.
-Edit all state, then edit the editor
-Code execution is repeatable; if it is not repeatable, you throw away the code, and keep its result.
-Transform lazily, react eagerly.
+**Requirements**: Python 3.5+, IPython, PyQt5 (including QWebEngine),
+ numpy, cson, PyOpenGL
+*Recommended*: scipy, pandas, websockets, cython
 
+**NOTE: For live programming, seamless must be run interactively within
+IPython (from the command line: ipython -i script.py)**
 
-TODO:
+For convenience, a command line tool ``seamless`` is provided, that starts up
+IPython and also imports the seamless API.
 
-Technically-oriented releases are marked with *
+Documentation: <http://...>
+Download examples: <http://...>
+Download tests: <http://...>
 
-*0.1
-- Basic documentation:
-  - In README.md:
-    - a short summary
-    - a reference to help(...) for each construct
-    - a short example, and a link to the examples directory + zip file / test directory
-    - fix the format (.md)
-- Short documentation for each of the demos:
-    - plotly
-    - OpenGL fireworks
-    - docking (2 examples)
-    - OpenGL 3D
-- Make PyPI package
+Basic example
+=============
 
-After release, make videos:
-  Basic example: consensus between test-editor and test-editor-lib, then macro
-  Fireworks
-  3D
-  Docking
-  Orca (add example code back in)
+Sets up a seamless transformer that computes a result based on two inputs
+The input and the transformation code is edited live in a GUI
 
-0.2
-- Replace the use of killable threads with processes... gives a problem with Orca example
-- Replace ctx.CHILDREN, ctx.CELLS etc. with ctx.self.children, ctx.self.cells, etc.
-- Get rid of seamless.qt
-- Composite (JSON) cells
-- Expand and document seamless shell language (slash)
-- Logging + dtype/worker documentation.resource system (using composite cells)
-- Error message logging system (using composite cells)
-- Overhaul dtypes, docson/type registration API, integrate with logging/documentation system. "array" and "json" are no longer dtypes, but formats
-- Update demos
+```python
+from seamless import context, cell, pythoncell, transformer
+from seamless.lib import edit, display
 
-*0.3
-- Multiple code cells in transformers/reactors
-- Preliminary outputpins (in transformers [as secondary output] and in reactors)
-- Preliminary inputpins (pins that accept preliminary values). Right now, all inputpins are preliminary!
-- Address shell() memory leak: IPython references may hold onto large amounts of data
-- Address GLstore memory leak: stores may not be freed (?)
-- Binary (struct) cells, implemented as "array" cells with dtype/shape/ndim
-- Active switches (connection level; workers don't see it, except that pin becomes undefined/changes value)
-- Silk: managing variable-length arrays with allocators (subclass ndarray), C header registrar, fix Bool default value bug + bug in examples/silk/test.py
-- Document Silk
-- C interop
-- Game of Life demo with Cython and C
-- Update OpenGL demos
+ctx = context()
 
-0.4
-- Finalize context graph format and their names, update tofile/fromfile accordingly
-- Finalize resource management
-- Finalize basic API, also how to change macros
-- Cleanup code layout
-- Document tofile/fromfile, saving options and seamless file format
-- Code documentation + dtype/worker documentation system
-- Set up user library directory and robogit
-- Update demos
+# Create 3 int cells: a=2, b=3, and result
+ctx.a = cell("int").set(2)
+ctx.b = cell("int").set(3)
+ctx.result = cell("int")
 
-*0.5
-- Thread reactors, process reactors
-- Synchronous transformers (do we need this?)
-- Process transformers (now that execution is in a process, do we need this??)
+# Set up a transformer that computes "result" as a function of "a" and "b"
+t = ctx.transform = transformer({
+    "a": {"pin": "input", "dtype": "int"},
+    "b": {"pin": "input", "dtype": "int"},
+    "result": {"pin": "output", "dtype": "int"}
+})
 
-*0.6
-- Cell arrays, channels, GUI-widget cells
-- GPU computing (OpenCL)
-- Update Game of Life demo
+# Connect the cells to the transformer pins
+ctx.a.connect(t.a)
+ctx.b.connect(t.b)
+t.result.connect(ctx.result)
 
-0.7
-- Hook API and GUI for cell creation
-- Update demos
+# Every transformer has an implicit extra input pin, called "code"
+# It must be connected to a Python cell
+ctx.code = pythoncell().set("return a + b")
+ctx.code.connect(t.code)
 
-0.8
-- ATC, fold/unfold switches, Silk GUI generation
-- More demos (tetris?)
+# Transformers execute asynchronously; ctx.equilibrate() will wait until all
+#  transformations have finished
+ctx.equilibrate()
 
-*0.9
-- Python debugging, code editor (WIP)
+# The result cell will now have been computed
+print(ctx.result.value)  # 5
 
-*0.10
-- Collaborative protocol / delegated computing
+# Updating either input automatically recomputes the result
+ctx.a.set(10)
+ctx.b.set(20)
+ctx.equilibrate()
+print(ctx.result.value)  # 30
 
-*1.0
-- Lazy evaluation, GPU-GPU triggering
+# Updating the code also automatically recomputes the result
+ctx.code.set("""
+def fibonacci(n):
+    def fib(n):
+        if n <= 1:
+            return [1]
+        elif n == 2:
+            return [1, 1]
+        else:
+            fib0 = fib(n-1)
+            return fib0 + [ fib0[-1] + fib0[-2] ]
+    fib0 = fib(n)
+    return fib0[-1]
+return fibonacci(a) + fibonacci(b)
+""")
+ctx.equilibrate()
+print(ctx.result.value)  # 6820
+
+# The inputs and the result and code can be edited/shown in a GUI
+#  This automatically recomputes the result
+ctx.gui = context()  # Create a subcontext to organize our cells better
+ctx.gui.a = edit(ctx.a, "Input a")
+ctx.gui.b = edit(ctx.b, "Input b")
+ctx.gui.result = display(ctx.result, "Result")
+
+# Same for the code, this creates a text editor
+# In this case, the code is updated as soon as you click outside the window
+ctx.gui.code = edit(ctx.code, "Transformer code")
+
+# The source code of each editor is itself a seamless cell that can be edited
+# Editing its source code (and clicking outside the window)
+#  immediately changes the other editor window!
+text_editor_code = ctx.gui.code.rc.code_start.cell()
+ctx.gui.text_editor = edit(text_editor_code, "Text editor source code")
+```

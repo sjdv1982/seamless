@@ -8,7 +8,7 @@ ctx.itf = itransformer({
     "i": {"pin": "input", "dtype": "int"},
     "outp": {"pin": "output", "dtype": "json"},
 })
-link(ctx.itf.code.cell(), ".", "test-itransformer_pycell.py")
+link(ctx.itf.code.cell(), ".", "cell-test-itransformer.ipy")
 link(ctx.itf.rc.code_start.cell())
 display(ctx.itf.outp.cell())
 edit(ctx.itf.i.cell().set(100))

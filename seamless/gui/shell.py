@@ -45,19 +45,23 @@ class PyShell:
         self.kernel_manager.shutdown_kernel()
         self.control.destroy()
 
-def shell(obj):
-    """
-    Creates an IPython shell to examine and manipulate the namespace of a worker
-     (reactor or transformer) where its code blocks are executed
-    As of seamless 0.1, this works only for in-process workers
-    As of seamless 0.1, transformers use multiprocessing, so changes to the
-     namespace while a transformation is running will not affect the current
-     transformation, only the next one
-    As of seamless 0.1, manipulations are reset for a reactor upon code_start,
-     and never for a transformer (except input pin value manipulations, which are
-      reset as soon as the input pin changes).
-    """
-    if not isinstance(obj, (Worker, Context)):
-        raise TypeError("Cannot create shell for %s" % type(obj))
-    shell_namespace, shell_title = obj._shell()
+def shell(worker_like):
+    """Creates an IPython shell (QtConsole).
+
+The shell is connected to the namespace of a worker (reactor
+or transformer, or a context that has a worker exported)
+where its code blocks are executed.
+
+This works only for in-process workers. As of seamless 0.1, all workers are
+in-process. However, transformers use ``multiprocessing``. Therefore, changes
+to the namespace while a transformation is running will not affect the current
+transformation, only the next.
+
+As of seamless 0.1, a reactor's namespace is reset upon ``code_start``.
+A transformer's namespace is never reset (except for input pin variables, which
+are updated as soon as the input pin changes).
+"""
+    if not isinstance(worker_like, (Worker, Context)):
+        raise TypeError("Cannot create shell for %s" % type(worker_like))
+    shell_namespace, shell_title = worker_like._shell()
     return PyShell(shell_namespace, shell_title)
