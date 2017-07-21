@@ -4,15 +4,14 @@ Technically-oriented releases are marked with *
 - Basic documentation:
   - In README.md:
     - fix the format (.md)
-  - Sphinx: library
 - Short README.txt for each of the examples:
     - plotly
     - OpenGL fireworks
     - docking (2 examples)
     - OpenGL 3D
 - Make zips for the examples and tests
-- Set up gitpage
-- Fix documentation links in README.md, sphinx/examples.rst
+- Set up gitpage for sphinx documentation
+- Fix documentation links in README.md, sphinx/examples.rst (also for zips)
 - Make PyPI package
 
 After release, make videos:
@@ -20,10 +19,10 @@ After release, make videos:
   Fireworks
   3D
   Docking
-  Orca (add example code back in)
+  Orca (don't show the code)
 
 0.2
-- Replace the use of killable threads with processes... gives a problem with Orca example
+- Replace the use of killable threads with processes... gives a problem with Orca example (fixed now ?)
 - Replace ctx.CHILDREN, ctx.CELLS etc. with ctx.self.children, ctx.self.cells, etc.
 - Get rid of seamless.qt
 - Composite (JSON) cells

@@ -42,20 +42,18 @@
             
   <div class="section" id="standard-library">
 <h1>Standard library<a class="headerlink" href="#standard-library" title="Permalink to this headline">¶</a></h1>
-<p><strong>As of seamless 0.1, the standard library is highlu unstable
-and under development.</strong></p>
-<p><em>There is no formal documentation of the standard library yet. Check the
-examples and tests to see how to use the standard library as it is now.</em></p>
-<p><em>Below is a short description of each component of the current standard
-library (as of seamless 0.1):</em></p>
+<p><strong>As of seamless 0.1, the standard library is in a very early stage.
+Documentation is incomplete.</strong></p>
+<p><cite>Beyond the documentation below, check the examples and tests to see how to use
+the standard library (as it is now).</cite></p>
 <div class="section" id="link">
 <h2>link<a class="headerlink" href="#link" title="Permalink to this headline">¶</a></h2>
 <dl class="docutils">
 <dt><strong>link</strong> (<cite>cell</cite>, <cite>directory=None</cite>, <cite>filename=None</cite>, *,</dt>
 <dd><cite>latency=0.2</cite>, <cite>file_dominant=False</cite> ).</dd>
 </dl>
-<p>Continuously synchronizes the value of <cite>cell</cite> and <cite>directory/filename</cite>.</p>
-<p><cite>directory</cite> and <cite>filename</cite> are optional if the cell has a .resource.filepath
+<p>Continuously synchronizes the value of <cite>cell</cite> and <cite>./directory/filename</cite>.</p>
+<p><cite>directory</cite> and <cite>filename</cite> are optional if the cell has a <cite>.resource.filepath</cite>
 defined (e.g. using <code class="docutils literal"><span class="pre">cell.fromfile(...)</span></code>).</p>
 <p><cite>latency</cite>: how often the file is polled, in seconds (default 0.2).</p>
 <dl class="docutils">
@@ -71,15 +69,15 @@ by the cell.</li>
 <div class="section" id="edit">
 <h2>edit<a class="headerlink" href="#edit" title="Permalink to this headline">¶</a></h2>
 <p><strong>edit</strong> (<cite>cell</cite>)</p>
-<p>Creates a reactor rc that contains PyQt5 GUI code to edit <cite>cell</cite></p>
+<p>Creates a reactor <cite>.rc</cite> that contains PyQt5 GUI code to edit <cite>cell</cite></p>
 <p>As of seamless 0.1, <cite>cell</cite> may have the following data types:
 int, float, str, json</p>
-<dl class="docutils">
-<dt>The reactor is wrapped in a context::</dt>
-<dd>e = edit(cell)
-e.rc   # =&gt; reactor
-e.rc.code_start.cell()  # =&gt; reactor source code</dd>
-</dl>
+<p>The reactor is wrapped in a context:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">e</span> <span class="o">=</span> <span class="n">edit</span><span class="p">(</span><span class="n">cell</span><span class="p">)</span>
+<span class="n">e</span><span class="o">.</span><span class="n">rc</span>   <span class="c1"># =&gt; reactor</span>
+<span class="n">e</span><span class="o">.</span><span class="n">rc</span><span class="o">.</span><span class="n">code_start</span><span class="o">.</span><span class="n">cell</span><span class="p">()</span>  <span class="c1"># =&gt; reactor source code</span>
+</pre></div>
+</div>
 <p>As of seamless 0.1, the PyQt5 code cells are very minimalist.
 Contributions are most welcomed.</p>
 </div>
@@ -107,7 +105,7 @@ Contributions are most welcomed.</p>
 <p>Same as <strong>display</strong>, but displays the cell’s content in a window containing a
 minimal PyQt5 browser widget.</p>
 <p>As of seamless 0.1, the cell must be of dtype (“text”, “html”).</p>
-<p>As of seamless 0.1, the browser code cells is very minimalist.
+<p>As of seamless 0.1, the browser code cells are very minimalist.
 Contributions are most welcomed.</p>
 </div>
 <div class="section" id="init">
@@ -141,35 +139,221 @@ Jinja templates.</p>
 <li><cite>environment</cite>. A dict of (<cite>name</cite>, <cite>dtype</cite>) items.
 Each item becomes an inputpin.</li>
 <li><cite>templates</cite>. A list of <cite>template_name</cite> strings.
-Every template name becomes a text inputpin, containing a Jinja template.</li>
-<li><cite>result</cite>. The string that describes which template is to be evaluated
-to generate the result.</li>
+Each template name becomes a text inputpin, containing a Jinja template.</li>
+<li><cite>result</cite>. The string that describes which of the templates is to be
+evaluated to generate the result.
+The generated text is available on the <cite>RESULT</cite> outputpin.</li>
 </ul>
 </dd>
 </dl>
-<p>Each template has access to the environment and the evaluated value of
+<p>Each template has access to the environment and to the evaluated value of
 each other template. By analyzing the template text, templateer builds
 a dependency tree of the templates.</p>
-<p>The generated text is available on the <cite>RESULT</cite> outputpin.</p>
-<p>See lib/plotly for example on how templateer can be used.</p>
+<p>See lib/plotly for an example on how templateer can be used.</p>
 </div>
 <div class="section" id="dynamic-html">
 <h2>dynamic_html<a class="headerlink" href="#dynamic-html" title="Permalink to this headline">¶</a></h2>
-<p>TODO</p>
+<p><strong>dynamic_html</strong> ( <cite>params</cite>) sets up a Seamless-to-browser bridge.</p>
+<p>dynamic_html generates JavaScript that listens to the seamless websocketserver.
+This JavaScript should be placed inside the body of an HTML file</p>
+<p>As of seamless 0.1, dynamic_html only supports unidirectional communication
+<cite>seamless =&gt; browser</cite>, not yet <cite>browser =&gt; seamless</cite>.</p>
+<p><cite>params</cite> is a dict of (name, value) items, each of which becomes
+an inputpin of that name. ‘value’ is a dict with the following items:</p>
+<ul>
+<li><p class="first"><cite>type</cite>: can be “HTML”, “eval” or “var” (variable).</p>
+<p>Inputpin cells of type
+“HTML” must contain HTML, those of type “var” must contain JSON, and
+those of type “eval” must contain JavaScript.</p>
+</li>
+<li><p class="first"><cite>id</cite> (only if <cite>type</cite> is “HTML”): the div element name of the item. Whenever
+the inputpin changes, the HTML value of the div element is updated.</p>
+</li>
+<li><p class="first"><cite>var</cite> (only if <cite>type</cite> is “var”): the JavaScript name of the variable</p>
+</li>
+<li><p class="first"><cite>dtype</cite> (only if <cite>type</cite> is “var”): the dtype of the variable</p>
+</li>
+<li><p class="first"><cite>evals</cite> (only if <cite>type</cite> is “var”): a list of inputpin names of type “eval”.
+Whenever the variable is updated, the JavaScript code of each inputpin
+in <cite>evals</cite> is executed in order.</p>
+</li>
+</ul>
+<p>The generated JavaScript is available under the <cite>RESULT</cite> outputpin.
+It contains the value of IDENTIFIER, which is unique for every dynamic_html
+instance (and indeed, for every reactor instance). The Seamless websocketserver
+waits for clients to identify themselves with an IDENTIFIER, and will forward
+every message that was sent to it by a dynamic_html reactor under that
+IDENTIFIER. This way, multiple clients can listen to the same dynamic_html,
+and all dynamic_html reactors use the same websocketserver. The seamless
+websocket is by default 5678, but if it is already in use, the next socket is
+used. This, too, is reflected in the generated JavaScript.</p>
+<p>see test/dynamic-html-lib.py for a simple example.
+dynamic_html is used by lib.plotly and lib.ngl</p>
 </div>
 <div class="section" id="plotly">
 <h2>plotly<a class="headerlink" href="#plotly" title="Permalink to this headline">¶</a></h2>
-<p>TODO</p>
+<p><strong>plotly</strong> ( <cite>*</cite>, <cite>dynamic_html</cite>, <cite>mode</cite>)</p>
+<p>An interface to the plotly.js plotting library. The plotly macro generates
+static Plotly HTML that is to be displayed in a browser.</p>
+<p>Only the macro that provides the Plotly interface is documented here. For
+documentation on Plotly itself, see the plotly.js website.</p>
+<p><strong>NOTE</strong>: in Plotly, the <cite>data</cite> dict contains a list of data series, and each
+series contains both the data itself (x/y/z) and its presentation details
+(plotting modes, marker colors, symbols, legends, etc).
+In contrast, as of seamless 0.1, the plotly macro expects only the data
+itself in <cite>data</cite>,
+and all presentation details in <cite>attrib</cite>. Moreover, the format of the data
+depends on the <cite>mode</cite> parameter. All of this may undergo small or large changes
+in future versions of seamless.</p>
+<div class="section" id="parameters">
+<h3>Parameters<a class="headerlink" href="#parameters" title="Permalink to this headline">¶</a></h3>
+<ul>
+<li><p class="first"><cite>dynamic_html</cite> (keyword-only, default=False): If True, generates dynamic HTML
+that reflects updates in the cells without the need of a browser reload.
+See lib.dynamic_html for more details.</p>
+<p>NOTE: as of seamless 0.1, this does not work very well for Plotly.</p>
+</li>
+<li><p class="first"><cite>mode</cite> (keyword-only, default=”manual”): Determines the data format of the
+<cite>data</cite> inputpin. As of seamless 0.1, it can be “manual”, “nx” or “nxy”.</p>
+<p>See below for more details.</p>
+</li>
+</ul>
+</div>
+<div class="section" id="input-pins">
+<h3>Input pins<a class="headerlink" href="#input-pins" title="Permalink to this headline">¶</a></h3>
+<ul>
+<li><p class="first"><cite>title</cite> (str): Title of the plot</p>
+</li>
+<li><p class="first"><cite>data</cite>: Contains the data of the plot, essentially the x/y/z data. The format
+depends on the <cite>mode</cite> parameter.</p>
+<p>If <cite>mode</cite> is “manual”, <cite>data</cite> is in JSON format, with the same schema
+as Plotly uses:</p>
+<blockquote>
+<div><ul class="simple">
+<li><cite>data</cite> is a list of data series dicts</li>
+<li>Each of those dicts contains <cite>x</cite>, <cite>y</cite> and/or <cite>z</cite> attributes</li>
+<li>Each of those attributes is a list of values.</li>
+</ul>
+</div></blockquote>
+<p>If <cite>mode</cite> is “nx”, <cite>data</cite> is in text (CSV) format. Every column must be
+a separate data series that only has an <cite>x</cite> value. There are no headers.</p>
+<p>If <cite>mode</cite> is “nxy”, <cite>data</cite> is in text (CSV) format. Every column must describe
+a separate variable, and every row must describe a separate observation (data
+series). The first line must be a header that contains the variable names for
+each column. Data series names are defined elsewhere in <cite>attrib</cite>.</p>
+</li>
+<li><p class="first"><cite>attrib</cite> (JSON): The presentation details of the data, i.e. everything
+that is in the Plotly <cite>data</cite> dict except x/y/z.</p>
+</li>
+<li><p class="first"><cite>layout</cite> (JSON): The Plotly <cite>layout</cite> dict.</p>
+</li>
+<li><p class="first"><cite>config</cite> (JSON): The Plotly <cite>config</cite> dict.</p>
+</li>
+</ul>
+</div>
+<div class="section" id="output-pins">
+<h3>Output pins<a class="headerlink" href="#output-pins" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li><cite>html</cite> : the outputpin that contains the generated static HTML, to be
+displayed in a browser.</li>
+<li><cite>dynamic_html</cite> : the outputpin that contains the generated dynamic HTML, to be
+displayed in a browser. Is only generated if <code class="docutils literal"><span class="pre">dynamic_html=True</span></code></li>
+</ul>
+</div>
 </div>
 <div class="section" id="ngl">
 <h2>ngl<a class="headerlink" href="#ngl" title="Permalink to this headline">¶</a></h2>
-<p>TODO</p>
+<p>Sets up dynamic HTML code to view molecules using the NGL molecular viewer</p>
+<p>See examples/docking/docking.py for an example.</p>
+<div class="section" id="id1">
+<h3>Parameters<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h3>
+<blockquote>
+<div><ul>
+<li><p class="first"><cite>molnames</cite>: either a list of molecule names (molnames) or a
+dict of <cite>(molname, dataformat)</cite> items, where <cite>dataformat</cite> is any
+format understood by <code class="docutils literal"><span class="pre">NGL.Stage.loadFile()</span></code>.</p>
+<p>See:</p>
+<ul class="simple">
+<li><a class="reference external" href="http://arose.github.io/ngl/api/manual/usage/file-formats.html">http://arose.github.io/ngl/api/manual/usage/file-formats.html</a></li>
+<li><a class="reference external" href="http://arose.github.io/ngl/api/Stage.html">http://arose.github.io/ngl/api/Stage.html</a></li>
+</ul>
+<p>If <cite>molname</cite> is a list, the dataformat for all molecules is PDB.</p>
+</li>
+</ul>
+</div></blockquote>
+</div>
+<div class="section" id="id2">
+<h3>Input pins<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h3>
+<blockquote>
+<div><ul>
+<li><p class="first"><cite>data_X</cite> (where X is each molname): A text pin for the molecule data.
+As of seamless 0.1, only text is supported</p>
+</li>
+<li><dl class="first docutils">
+<dt><cite>transformation_X</cite>: A JSON cell for the molecule rotation+translation matrix.</dt>
+<dd><p class="first">Must be a 4x4 matrix in JSON format (list of lists)</p>
+<p class="last">Default: identity matrix</p>
+</dd>
+</dl>
+</li>
+<li><p class="first"><cite>representations</cite>: A JSON pin containing the molecular representations.
+The representations are a list of dicts, with each dict containing the
+following keys:</p>
+<blockquote>
+<div><ul class="simple">
+<li><cite>repr</cite>: the representation, as understood by NGL.
+Examples: “cartoon”, “spacefill”, “ball+stick”, “licorice”
+See <a class="reference external" href="http://arose.github.io/ngl/api/manual/usage/molecular-representations.html">http://arose.github.io/ngl/api/manual/usage/molecular-representations.html</a></li>
+<li><cite>obj</cite>: Optional. A molname of list of molnames to which the
+representation applies. Default: all molnames</li>
+</ul>
+<dl class="docutils">
+<dt>All other keys are passed directly to <code class="docutils literal"><span class="pre">NGL.Stage.addRepresentation()</span></code></dt>
+<dd><p class="first">Examples of keys:</p>
+<ul class="last">
+<li><dl class="first docutils">
+<dt>color, colorScheme:</dt>
+<dd><p class="first">Examples:</p>
+<p><code class="docutils literal"><span class="pre">&quot;color&quot;:</span> <span class="pre">&quot;red&quot;</span></code></p>
+<p><code class="docutils literal"><span class="pre">&quot;colorScheme&quot;:</span> <span class="pre">&quot;bfactor&quot;</span></code></p>
+<p><code class="docutils literal"><span class="pre">&quot;colorScheme&quot;:</span> <span class="pre">&quot;element&quot;</span></code></p>
+<p class="last">See: <a class="reference external" href="http://arose.github.io/ngl/api/manual/usage/coloring.html">http://arose.github.io/ngl/api/manual/usage/coloring.html</a></p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>sele:</dt>
+<dd><p class="first">Examples: “73-77”, “:A”, “LYS”</p>
+<p class="last">See: <a class="reference external" href="http://arose.github.io/ngl/api/manual/usage/selection-language.html">http://arose.github.io/ngl/api/manual/usage/selection-language.html</a></p>
+</dd>
+</dl>
+</li>
+</ul>
+</dd>
+</dl>
+</div></blockquote>
+</li>
+</ul>
+</div></blockquote>
+</div>
+<div class="section" id="id3">
+<h3>Output pins<a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h3>
+<blockquote>
+<div><ul>
+<li><p class="first"><cite>html</cite>: output pin containing the generated dynamic HTML, to be visualized</p>
+<p>As of seamless 0.1, requires that a copy or link to ngl.js is present in
+the current directory</p>
+</li>
+</ul>
+</div></blockquote>
+</div>
 </div>
 <div class="section" id="slash">
 <h2>slash<a class="headerlink" href="#slash" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="lib-slash-slash0">
 <h3>lib.slash.slash0<a class="headerlink" href="#lib-slash-slash0" title="Permalink to this headline">¶</a></h3>
-<p>Slash is a bash replacement. Requires Linux/OSX.</p>
+<p>Slash is a bash (shell script) replacement. Requires Linux.
+OSX should work too, but has not currently been tested.</p>
 <p>Examples of slash can be seen in the docking examples (requires ATTRACT to be
 installed: <a class="reference external" href="http://www.attract.ph.tum.de">http://www.attract.ph.tum.de</a>).</p>
 <p>A very preliminary documentation of slash is in docs/WIP/</p>
@@ -177,16 +361,13 @@ installed: <a class="reference external" href="http://www.attract.ph.tum.de">htt
 </div>
 <div class="section" id="glprogram">
 <h2>glprogram<a class="headerlink" href="#glprogram" title="Permalink to this headline">¶</a></h2>
-</div>
 <div class="section" id="lib-gl-glprogram">
-<h2>lib.gl.glprogram<a class="headerlink" href="#lib-gl-glprogram" title="Permalink to this headline">¶</a></h2>
+<h3>lib.gl.glprogram<a class="headerlink" href="#lib-gl-glprogram" title="Permalink to this headline">¶</a></h3>
 <p><strong>glprogram</strong> (<cite>program</cite>, <cite>with_window=True</cite>, <cite>window_title=”GLProgram”</cite>):</p>
 <p>Creates an OpenGL rendering program.</p>
 <p>Below is <strong>an incomplete summary of the essential features</strong> .
 Examples can be found in the fireworks example and the 3D example directory.
 For the complete details, study the glprogram source code.</p>
-<p>Each glprogram has <cite>vertex_shader</cite> and <cite>fragment_shader</cite> inputpins for the
-shader code.</p>
 <p>The <cite>program</cite> parameter is a dictionary. The following examples of program
 parameter dicts are available in the examples/3D folder:</p>
 <blockquote>
@@ -211,6 +392,8 @@ structured numpy array with a member “ham”.</li>
 </ul>
 </dd>
 </dl>
+<p>Each glprogram has <cite>vertex_shader</cite> and <cite>fragment_shader</cite> inputpins for the
+shader code.</p>
 <p>Buffers linked to the array pins must be array cells with <code class="docutils literal"><span class="pre">.set_store(&quot;GL&quot;)</span></code>
 (for vertex buffers) or <code class="docutils literal"><span class="pre">.set_store(&quot;GLTex&quot;,</span> <span class="pre">N)</span></code> (for N-dimensional textures).</p>
 <p>If <code class="docutils literal"><span class="pre">with_window=True</span></code> (the default), the glprogram sets up its own Qt OpenGL
@@ -221,6 +404,7 @@ Qt OpenGL window. External windows can be wrapped in a <strong>glwindow</strong>
 also has a <code class="docutils literal"><span class="pre">.camera</span></code> outputpin that provides modelview/projection matrices
 that adapt to mouse-click movements.
 For more information, see examples/3D/test-atom.py, or study the glwindow source.</p>
+</div>
 </div>
 </div>
 
@@ -263,7 +447,6 @@ For more information, see examples/3D/test-atom.py, or study the glwindow source
 <li class="toctree-l2"><a class="reference internal" href="#ngl">ngl</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#slash">slash</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#glprogram">glprogram</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#lib-gl-glprogram">lib.gl.glprogram</a></li>
 </ul>
 </li>
 </ul>

@@ -264,7 +264,9 @@
 
 <span class="sd">All three code cells are executed in the same namespace. The namespace contains</span>
 <span class="sd">an object called `PINS`. This object can be queried for pin objects: a pin</span>
-<span class="sd">called `spam` is accessible as pin object ``PINS.spam``.</span>
+<span class="sd">called `spam` is accessible as pin object ``PINS.spam``. The namespace also</span>
+<span class="sd">contains IDENTIFIER, which is guaranteed to be unique for each reactor</span>
+<span class="sd">instance.</span>
 
 <span class="sd">Every inputpin and editpin object contains a ``get()`` method that</span>
 <span class="sd">returns the value.</span>

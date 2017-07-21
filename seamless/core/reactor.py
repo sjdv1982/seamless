@@ -222,7 +222,9 @@ created by the macro, unless the macro has caching enabled.
 
 All three code cells are executed in the same namespace. The namespace contains
 an object called `PINS`. This object can be queried for pin objects: a pin
-called `spam` is accessible as pin object ``PINS.spam``.
+called `spam` is accessible as pin object ``PINS.spam``. The namespace also
+contains IDENTIFIER, which is guaranteed to be unique for each reactor
+instance.
 
 Every inputpin and editpin object contains a ``get()`` method that
 returns the value.

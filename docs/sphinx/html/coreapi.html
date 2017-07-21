@@ -238,7 +238,9 @@ invoked when the reactor is destroyed.</p>
 created by the macro, unless the macro has caching enabled.</p>
 <p>All three code cells are executed in the same namespace. The namespace contains
 an object called <cite>PINS</cite>. This object can be queried for pin objects: a pin
-called <cite>spam</cite> is accessible as pin object <code class="docutils literal"><span class="pre">PINS.spam</span></code>.</p>
+called <cite>spam</cite> is accessible as pin object <code class="docutils literal"><span class="pre">PINS.spam</span></code>. The namespace also
+contains IDENTIFIER, which is guaranteed to be unique for each reactor
+instance.</p>
 <p>Every inputpin and editpin object contains a <code class="docutils literal"><span class="pre">get()</span></code> method that
 returns the value.
 As of seamless 0.1, the <cite>value</cite> property is identical to <code class="docutils literal"><span class="pre">pin.get()</span></code>.</p>
