@@ -5,7 +5,7 @@ Technically-oriented releases are marked with *
   - In README.md:
     - fix the format (.md)
 - Short README.txt for each of the examples:
-    - plotly
+    - plotly (DONE)
     - OpenGL fireworks
     - docking (2 examples)
     - OpenGL 3D

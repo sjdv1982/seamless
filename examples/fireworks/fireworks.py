@@ -69,7 +69,7 @@ ctx.registrar.silk.connect("VertexDataArray", ctx.gen_vertexdata)
 # ctx.registrar.silk.connect("VertexDataArray", ctx) #?
 
 ctx.vertexdata = cell("array")
-ctx.vertexdata.set_store("GL")
+ctx.vertexdata.set_store("GL") #OpenGL buffer store
 ctx.link_gen_vertexdata = link(ctx.gen_vertexdata.code.cell(), ".",
   "cell-gen-vertexdata.py", file_dominant=file_dominant)
 ctx.gen_vertexdata.output.connect(ctx.vertexdata)
@@ -79,7 +79,7 @@ ctx.params_gen_texture = cell(("json", "seamless", "transformer_params"))
 ctx.link_params_gen_texture = link(ctx.params_gen_texture,
     ".", "params_gen_texture.json", file_dominant=file_dominant)
 ctx.texture = cell("array")
-ctx.texture.set_store("GLTex", 2)
+ctx.texture.set_store("GLTex", 2) #OpenGL texture store, 2D texture
 ctx.equilibrate()
 ctx.gen_texture = transformer(ctx.params_gen_texture)
 ctx.link_gen_texture = link(ctx.gen_texture.code.cell(),
@@ -96,7 +96,7 @@ ctx.texture.connect(p.array_s_texture)
 #Uniforms
 ctx.uniforms = cell("json")
 ctx.uniforms.connect(p.uniforms)
-ctx.params_gen_uniforms = cell(("json", "seamless", "transformer_params"))
+ctx.params_gen_uniforms = cell(("json", "seamless", "reactor_params"))
 ctx.link_params_gen_uniforms = link(ctx.params_gen_uniforms, ".",
 "params_gen_uniforms.json", file_dominant=file_dominant)
 ctx.equilibrate()

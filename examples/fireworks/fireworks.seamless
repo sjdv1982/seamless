@@ -2394,7 +2394,7 @@
         "dtype": [
           "json",
           "seamless",
-          "transformer_params"
+          "reactor_params"
         ],
         "resource": {
           "filepath": "./params_gen_uniforms.json",
