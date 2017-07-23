@@ -422,6 +422,7 @@ class Macro:
         return result
 
     def __call__(self, *args, **kwargs):
+        assert hasattr(self, "func"), (self.module_name, self.func_name)
         return self.evaluate(args, kwargs, None)
 
 
@@ -553,7 +554,7 @@ keyword arguments, `spam` is optional,and ``with_context=False``.
 
         @functools.wraps(func)
         def macro_caller(*args, **kwargs):
-            return new_macro(*args, **kwargs )
+            return new_macro2(*args, **kwargs )
         return macro_caller
 
     return func_macro_wrapper
