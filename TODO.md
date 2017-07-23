@@ -6,7 +6,7 @@ Technically-oriented releases are marked with *
     - fix the format (.md)
 - Short README.txt for each of the examples:
     - plotly (DONE)
-    - OpenGL fireworks
+    - OpenGL fireworks (DONE)
     - docking (2 examples)
     - OpenGL 3D
 - Make zips for the examples and tests
