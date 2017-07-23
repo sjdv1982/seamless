@@ -1,10 +1,10 @@
 {
-  "N": {
-    "dtype": "int",
-    "pin": "input"
-  },
   "reset": {
     "dtype": "signal",
+    "pin": "input"
+  },
+  "N": {
+    "dtype": "int",
     "pin": "input"
   },
   "output": {

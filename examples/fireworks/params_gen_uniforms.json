@@ -1,26 +1,25 @@
 {
-  "uniforms": {
-    "dtype": "json",
-    "must_be_defined": false,
-    "pin": "edit"
+  "updated": {
+    "dtype": "signal",
+    "pin": "output"
   },
   "reset": {
     "dtype": "signal",
     "pin": "input"
   },
-  "gravity": {
-    "dtype": "float",
+  "N": {
+    "dtype": "int",
     "pin": "input"
   },
   "shrink_with_age": {
     "dtype": "bool",
     "pin": "input"
   },
-  "updated": {
-    "dtype": "signal",
-    "pin": "output"
+  "gravity": {
+    "dtype": "float",
+    "pin": "input"
   },
-  "N": {
+  "pointsize": {
     "dtype": "int",
     "pin": "input"
   },
@@ -28,8 +27,9 @@
     "dtype": "signal",
     "pin": "input"
   },
-  "pointsize": {
-    "dtype": "int",
-    "pin": "input"
+  "uniforms": {
+    "must_be_defined": false,
+    "dtype": "json",
+    "pin": "edit"
   }
 }

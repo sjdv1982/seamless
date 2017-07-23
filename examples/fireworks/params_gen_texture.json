@@ -1,4 +1,8 @@
 {
+  "output": {
+    "dtype": "array",
+    "pin": "output"
+  },
   "radius": {
     "dtype": "int",
     "pin": "input"
@@ -10,9 +14,5 @@
   "filename": {
     "dtype": "str",
     "pin": "input"
-  },
-  "output": {
-    "dtype": "array",
-    "pin": "output"
   }
 }
