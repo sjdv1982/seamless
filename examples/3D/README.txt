@@ -1,7 +1,7 @@
 Example demonstrating the use of seamless in 3D rendering.
 
 The example will be demonstrated in a video tutorial on
-www.youtube.com/sjdv1982.
+https://www.youtube.com/playlist?list=PL6WSTyQSLz08_GQqj-NyshaWnoIZMsqTK .
 This video tutorial is planned for August - September 2017.
 
 

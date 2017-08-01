@@ -6,7 +6,7 @@ Adapted from the Vispy gallery.
 Original file: fireworks-ORIGINAL.py (does not use seamless; requires vispy)
 
 This seamless example will be demonstrated in a video tutorial
-on www.youtube.com/sjdv1982.
+on https://www.youtube.com/playlist?list=PL6WSTyQSLz08_GQqj-NyshaWnoIZMsqTK
 This video tutorial is planned for August - September 2017.
 
 How to run/edit the example

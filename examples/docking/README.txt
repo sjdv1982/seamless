@@ -7,7 +7,7 @@ invoked via a slash (*) script
 
 This seamless example requires Linux (OSX might work, but untested),
 and a working installation of ATTRACT.
-It will be demonstrated in a video tutorial on www.youtube.com/sjdv1982.
+It will be demonstrated in a video tutorial on https://www.youtube.com/playlist?list=PL6WSTyQSLz08_GQqj-NyshaWnoIZMsqTK
 This video tutorial is planned for August - September 2017.
 
 Protein structure files in Protein Data Bank (PDB) format are available in
