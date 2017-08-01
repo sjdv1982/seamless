@@ -23,6 +23,7 @@ IPython and also imports the seamless API.
 Documentation: http://sjdv1982.github.io/seamless
 
 Download examples: http://sjdv1982.github.io/seamless/downloads/examples.zip
+
 Download tests: http://sjdv1982.github.io/seamless/downloads/tests.zip
 
 Basic example
