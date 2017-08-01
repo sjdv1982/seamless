@@ -7,8 +7,8 @@ Technically-oriented releases are marked with *
 - Short README.txt for each of the examples:
     - plotly (DONE)
     - OpenGL fireworks (DONE)
-    - docking (2 examples)
-    - OpenGL 3D
+    - docking (2 examples) (DONE)
+    - OpenGL 3D (DONE)
 - Make zips for the examples and tests
 - Set up gitpage for sphinx documentation
 - Fix documentation links in README.md, sphinx/examples.rst (also for zips)

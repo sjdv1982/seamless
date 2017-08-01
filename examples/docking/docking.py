@@ -4,6 +4,7 @@ from seamless.slash import slash0
 import sys
 
 #Stage 1
+# Concatenate PDBs
 
 ctx = context()
 ctx.attract = cell(("text", "code", "slash-0"))
@@ -71,7 +72,7 @@ ctx.representations.set("""
 # reduce, randsearch, attract
 #   result <= .dat file
 # collect
-#  pdb  <= collected pdb
+#   pdb  <= collected pdb
 # representation: cycle through models
 # add fix-receptor
 
@@ -265,14 +266,14 @@ link(h, ".", "view-complex.html")
 # !google-chrome view-complex.html &
 ctx.selected_pose.connect(v.transformation_ligand)
 
-## Stage 10
+## Stage 9
 # playcontrol
 from seamless.lib.gui.playcontrol import playcontrol
 pc = ctx.playcontrol = playcontrol("Select structure")
 pc.value.connect(ctx.struc)
 ctx.nstrucdone.connect(pc.max)
 
-## Stage 11
+## Stage 10
 # parameterize nstruc, vmax
 ctx.attract.set("""
 @input_doc pdbA
