@@ -12,6 +12,7 @@ live code development (shaders, algorithms, and GUIs).
 
 **Requirements**: Python 3.5+, IPython, PyQt5 (including QWebEngine),
  numpy, cson, PyOpenGL
+
 *Recommended*: scipy, pandas, websockets, cython
 
 **NOTE: For live programming, seamless must be run interactively within
