@@ -20,9 +20,10 @@ IPython (from the command line: ipython -i script.py)**
 For convenience, a command line tool ``seamless`` is provided, that starts up
 IPython and also imports the seamless API.
 
-Documentation: <http://...>
-Download examples: <http://...>
-Download tests: <http://...>
+Documentation: http://sjdv1982.github.io/seamless
+
+Download examples: http://sjdv1982.github.io/seamless/downloads/examples.zip
+Download tests: http://sjdv1982.github.io/seamless/downloads/tests.zip
 
 Basic example
 =============

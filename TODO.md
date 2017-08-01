@@ -2,15 +2,7 @@ Technically-oriented releases are marked with *
 
 \*0.1
 - Basic documentation:
-  - In README.md:
-    - fix the format (.md)
-- Short README.txt for each of the examples:
-    - plotly (DONE)
-    - OpenGL fireworks (DONE)
-    - docking (2 examples) (DONE)
-    - OpenGL 3D (DONE)
 - Make zips for the examples and tests
-- Set up gitpage for sphinx documentation
 - Fix documentation links in README.md, sphinx/examples.rst (also for zips)
 - Make PyPI package
 
