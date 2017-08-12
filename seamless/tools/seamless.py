@@ -1,8 +1,5 @@
-#!/usr/bin/env python3
-
 import sys
 from argparse import ArgumentParser
-
 
 
 SCRIPT_FILE_TEMPLATE = """ctx = context()
