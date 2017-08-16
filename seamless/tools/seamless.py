@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import os.path
 import sys
 
 
@@ -15,12 +16,13 @@ from seamless.gui import shell
 
     else:
         assert len(sys.argv) == 2  # syntax: seamless file.seamless
-        f = sys.argv[1]
+        f = os.path.abspath(sys.argv[1])
+
         if f.endswith(".seamless"):
             cmd += "ctx = seamless.fromfile('{0}')".format(f)
         else:
             cmd += "ctx = context()\n"
-            cmd += "__file__ = '{0}'\n".format(f)
+            cmd += "__file__ = {!r}\n".format(f)
             cmd += open(f).read()
     sys.argv = [sys.argv[0], "-c", cmd, "-i"]
 
