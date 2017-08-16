@@ -51,7 +51,7 @@ setup(
         'recommended': ['scipy', 'pandas', 'websockets', 'cython'],
     },
 
-    entry_points={'console_scripts': ['seamless=seamless.tools.seamless:main']},
+    entry_points={'console_scripts': ['seamless=seamless_console_scripts.seamless:main']},
 
     python_requires='>=3.5',
 )
