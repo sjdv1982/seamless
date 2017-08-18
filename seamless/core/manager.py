@@ -331,7 +331,12 @@ class Manager:
             resource_name = "pin: " + str(input_pin)
             if resource_name0 is not None:
                 resource_name = resource_name0 + " in " + resource_name
-            input_pin.receive_update(value2, resource_name)
+            try:  
+                input_pin.receive_update(value2, resource_name)
+            except Exception:
+                #TODO: proper logging
+                import traceback
+                traceback.print_exc()
 
     def update_from_code(self, cell, only_last=False):
         import seamless
