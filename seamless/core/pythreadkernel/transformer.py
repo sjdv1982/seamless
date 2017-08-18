@@ -8,7 +8,7 @@ import functools
 import time
 from ...silk.classes import SilkObject
 
-USE_PROCESSES = True
+USE_PROCESSES = False
 if USE_PROCESSES:
     from multiprocessing import JoinableQueue as Queue
     Executor = Process
@@ -33,7 +33,8 @@ def execute(name, expression, namespace, result_queue):
         if isinstance(result, SilkObject):
             result = result.json()
         result_queue.put((0, result))
-    result_queue.close()
+    if USE_PROCESSES:
+        result_queue.close()
     result_queue.join()
 
 class Transformer(Worker):
