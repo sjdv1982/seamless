@@ -103,7 +103,7 @@ In addition, the ``.registrar`` attribute contains the registrars.
 
 For cells with the correct `dtype`, use ``registrar.register(cell)``
 to register them.
-As of seamless 0.1, there are two global registrars:
+As of seamless 0.2, there are three global registrars:
 
   - The Python registrar: for pythoncells.
 
@@ -113,6 +113,16 @@ As of seamless 0.1, there are two global registrars:
     data model in a worker.
 
     See examples/test-python-registrar.py for an example.
+
+  - The IPython registrar: for cells with dtype ("text", "code", "ipython")
+
+    Executes the code under IPython, including magics.
+    Then, simply registers all IPython objects in the IPython code's globals.
+
+    Use ``registrar.ipython.connect(name_of_python_object, worker)`` to use the
+    data model in a worker.
+
+    See examples/test-ipython-registrar.py for an example.
 
   - The silk registrar: for cells with dtype ("text", "code", "silk")
 
