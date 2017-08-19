@@ -89,13 +89,13 @@ class Worker(metaclass=ABCMeta):
                     if name == "@REGISTRAR":
                         bump = True
                         self._bumped.add(message_id)
-                        self.semaphore.release()
                         break
                 else:
                     message_id, name, data, resource_name = self.input_queue.popleft()  # QueueItem instance
                     if message_id in self._bumped:
                         self._bumped.remove(message_id)
                         self._pending_updates -= 1
+                        self.semaphore.release()
                         continue
 
                 if name == "@RESPONSIVE":
