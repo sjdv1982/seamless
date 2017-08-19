@@ -71,7 +71,11 @@ def link(cell, directory=None, filename=None, *,
             fh = open(filepath, "w")
             fh.close()
         elif filepath is not None:
-            load_cell(cell, filepath)
+            try:
+                load_cell(cell, filepath)
+            except:
+                import traceback
+                traceback.print_exc()
 
     fl = filelink(cell.dtype)
     if file_dominant:

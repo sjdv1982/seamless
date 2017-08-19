@@ -63,7 +63,7 @@ class VertexAttribute:
                 if dtype == np.int32:
                     ok = True
         if not ok:
-            raise TypeError(glsl_dtype, dtype, len(shape)) #TODO: other GLSL types
+            raise TypeError(self.attribute, glsl_dtype, dtype, len(shape)) #TODO: other GLSL types
 
     def bind(self):
         assert threading.current_thread() is threading.main_thread()
