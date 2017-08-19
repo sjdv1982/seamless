@@ -93,28 +93,6 @@ filehash
 Similar to **link**, but it works unidirectionally (files are monitored, but
 not written to), and instead of its value, the file's md5 hash is returned.
 
-
-itransformer
-^^^^^^^^^^^^^^^^^^^^
-Works like a standard transformer, except that the `code` inputpin is for
-an IPython cell ( `dtype=("text", "code", "ipython")` ).
-
-The itransformer namespace contains a function last_cell(), which
-returns the last output cell (equivalent to _ in an IPython shell).
-
-The itransformer namespace does not contain return_preliminary.
-
-The itransformer has an implicit additional outputpin called `html`. If,
-after execution, the itransformer code has defined a variable `html`,
-the outputpin will be set to its value.
-
-Note that as of seamless 0.1, itransformer is implemented synchronously, i.e.
-the seamless IPython shell blocks while the itransformer executes.
-
-See tests/test-itransformer.py for an example where an itransformer is used to
-compile and execute Cython code.
-
-
 templateer
 ^^^^^^^^^^^^^^^^^^^^
 
