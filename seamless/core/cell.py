@@ -500,6 +500,9 @@ class Signal(Cell):
     def value(self):
         return None
 
+    def status(self):
+        return self.StatusFlags.OK.name
+
     def add_macro_object(self, macro_object, macro_arg):
         """Private; raises an error"""
         raise AttributeError

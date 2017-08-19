@@ -663,9 +663,12 @@ When any of these cells change and the macro is re-executed, the child object wi
         Returns a dictionary containing the status of all children that are not OK.
         If all children are OK, returns OK
         """
+        from .registrar import RegistrarObject
         result = {}
         for childname, child in self._children.items():
             if childname in self._auto:
+                continue
+            if isinstance(child, RegistrarObject):
                 continue
             s = child.status()
             if s != self.StatusFlags.OK.name:

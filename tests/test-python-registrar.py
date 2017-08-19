@@ -23,4 +23,4 @@ tf.code.cell().set("print( 'transform', MyClass(1,2,3) ); return")
 
 ctx.equilibrate()
 ctx.code.set(ctx.code.value + " ")
-print(ctx.equilibrate(2))
+ctx.equilibrate()
