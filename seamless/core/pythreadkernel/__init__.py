@@ -83,7 +83,7 @@ class Worker(metaclass=ABCMeta):
 
                 # If there is a registrar update later in the queue, bump it (= move it to the top)
                 bump = False
-                for message_id, name, data, resource_name in list(self.input_queue):
+                for message_id, name, data, resource_name in list(self.input_queue)[1:]:
                     if message_id in self._bumped:
                         continue
                     if name == "@REGISTRAR":

@@ -1,4 +1,4 @@
-from seamless import context, cell, pythoncell, reactor
+from seamless import context, cell, pythoncell, reactor, transformer
 
 ctx = context()
 ctx.code = pythoncell().set("""
@@ -13,6 +13,14 @@ class MyClass:
 ctx.registrar.python.register(ctx.code)
 rc = ctx.rc = reactor({})
 ctx.registrar.python.connect("MyClass", rc)
-rc.code_start.cell().set("print( MyClass(1,2,3) )")
-rc.code_update.cell().set("")
-rc.code_stop.cell().set("")
+rc.code_start.cell().set("print( 'start', MyClass(1,2,3) )")
+rc.code_update.cell().set("print( 'update', MyClass(1,2,3) )")
+rc.code_stop.cell().set("print('stop')")
+
+tf = ctx.tf = transformer({})
+ctx.registrar.python.connect("MyClass", tf)
+tf.code.cell().set("print( 'transform', MyClass(1,2,3) ); return")
+
+ctx.equilibrate()
+ctx.code.set(ctx.code.value + " ")
+print(ctx.equilibrate(2))

@@ -384,6 +384,7 @@ class Manager:
                 target.update_cell((registrar.name, key))
             else:
                 raise TypeError(target)
+                
     @classmethod
     def get_cell_id(cls, cell):
         return id(cell)

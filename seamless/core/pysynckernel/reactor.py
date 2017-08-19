@@ -58,8 +58,7 @@ class Reactor:
             self.updated.add(up)
         updated = set(self.updated)
         self.updated.clear()
-        self.update(updated)
-
+        self.update(updated, force_start=True)
 
     def activate(self):
         if self._active:
@@ -104,6 +103,12 @@ class Reactor:
                 self.exception = exc
                 import traceback
                 traceback.print_exc()
+
+            updates_processed = self._pending_updates
+            self._pending_updates = 0
+            p = self.parent()
+            if p is not None:
+                p.updates_processed(updates_processed)
 
             return
 
@@ -225,7 +230,7 @@ class Reactor:
 
         self.namespace.update(self.registrar_namespace)
 
-    def update(self, updated):
+    def update(self, updated, force_start=False):
 
         # If any code object is updated, recompile
 
@@ -264,10 +269,10 @@ class Reactor:
             else:
                 pin.updated = False
 
-        if "code_start" in updated:
+        if "code_start" in updated or force_start:
             self._code_start()
 
-        if do_update:
+        if do_update or force_start:
             self._code_update(updated)
 
         for name in self.inputs.keys():
