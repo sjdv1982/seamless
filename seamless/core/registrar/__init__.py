@@ -146,6 +146,8 @@ def add_registrar(name, registrar):
 
 from .silkregistrar import SilkRegistrar
 from .evalregistrar import EvalRegistrar
+from .ipythonregistrar import IPythonRegistrar
 
 add_registrar("silk", SilkRegistrar())
 add_registrar("python", EvalRegistrar({}))
+add_registrar("ipython", IPythonRegistrar({}))
