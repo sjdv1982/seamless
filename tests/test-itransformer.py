@@ -2,6 +2,7 @@ from seamless import context
 from seamless.lib.filelink import link
 from seamless.lib.itransformer import itransformer
 from seamless.lib.gui.basic_display import display
+from seamless.lib.gui.browser import browse
 from seamless.lib.gui.basic_editor import edit
 ctx = context()
 ctx.itf = itransformer({
@@ -9,6 +10,6 @@ ctx.itf = itransformer({
     "outp": {"pin": "output", "dtype": "json"},
 })
 link(ctx.itf.code.cell(), ".", "cell-test-itransformer.ipy")
-link(ctx.itf.rc.code_start.cell())
-display(ctx.itf.outp.cell())
-edit(ctx.itf.i.cell().set(100))
+display(ctx.itf.outp.cell(), "outp")
+edit(ctx.itf.i.cell().set(100), "i")
+browse(ctx.itf.html.cell(), "Cython code")

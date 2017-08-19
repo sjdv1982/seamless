@@ -6,7 +6,24 @@ params = PINS.transformer_params.get()
 inp_names = [p for p,pin in params.items() if pin["pin"] == "input"]
 outp_name = [p for p,pin in params.items() if pin["pin"] == "output"][0]
 
+
 namespace = {}
+exec("""
+def last_cell():
+    import inspect
+    frame = inspect.currentframe()
+    while "_" not in frame.f_globals:
+        frame = frame.f_back
+    _ = frame.f_globals["_"]
+    if _ is None:
+        return None
+    elif isinstance(_, str):
+        return _
+    else:
+        return _.data
+""", namespace)
+namespace0 = namespace.copy()
+
 import json, inspect
 from IPython.core.inputsplitter import IPythonInputSplitter
 
@@ -14,7 +31,6 @@ def execute(code):
     isp = IPythonInputSplitter()
 
     def do_execute():
-        #print("CELL", cell )
         result = kernel.shell.run_cell(cell, False)
         if result.error_before_exec is not None:
             err = result.error_before_exec
@@ -33,6 +49,7 @@ def execute(code):
         cell = isp.source_reset()
         if not do_execute():
             return False
+        isp.push(line.strip("\n"))
     cell = isp.source_reset()
     if len(cell):
         return do_execute()
@@ -40,13 +57,14 @@ def execute(code):
         return True
 
 def compile_code():
-    global kernel, code_expression
-    namespace.clear()
+    global kernel, code_expression, namespace
+    namespace = namespace0.copy()
     kernel_manager.start_kernel(namespace)
     kernel = kernel_manager.kernel
     code = PINS.code.get()
     namespace["code"] = code
     result = execute(code)
+    ok = False
     if result:
         ok = True
         if "transform" not in namespace:
@@ -64,8 +82,8 @@ def compile_code():
                     signature.bind()
                 except TypeError:
                     ok = False
-        if not ok:
-            raise Exception("Code must create a function 'transform' that can be invoked with zero arguments")
+    if not ok:
+        raise Exception("Code must create a function 'transform' that can be invoked with zero arguments")
 
     for name in inp_names:
         pin = getattr(PINS, name)
@@ -75,6 +93,8 @@ def compile_code():
 def run():
     namespace["_"] = None
     result = eval("transform()", namespace)
+    if "html" not in params and "html" in namespace:
+        PINS.html.set(namespace["html"])
     getattr(PINS, outp_name).set(result)
 
 def do_update():
@@ -86,6 +106,3 @@ def do_update():
             if pin.updated:
                 namespace[name] = pin.get()
     run()
-
-#compile_code()
-#do_update()

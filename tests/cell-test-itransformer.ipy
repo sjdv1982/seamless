@@ -1,8 +1,8 @@
 %load_ext Cython
 
-%%cython
+%%cython -a
 from libc.math cimport log
-def func(i):
+def func(int i):
     cdef int n
     cdef int nn
     cdef double s = 0
@@ -11,6 +11,7 @@ def func(i):
             s += log(n*nn+1)
     return s
 
+html = last_cell()
 
 def transform():
     return func(i)
