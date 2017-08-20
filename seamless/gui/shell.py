@@ -57,9 +57,8 @@ in-process. However, transformers use ``multiprocessing``. Therefore, changes
 to the namespace while a transformation is running will not affect the current
 transformation, only the next.
 
-As of seamless 0.1, a reactor's namespace is reset upon ``code_start``.
-A transformer's namespace is never reset (except for input pin variables, which
-are updated as soon as the input pin changes).
+As of seamless 0.2, a reactor's namespace is reset upon ``code_start``.
+A transformer's namespace is reset upon every execution.
 """
     if not isinstance(worker_like, (Worker, Context)):
         raise TypeError("Cannot create shell for %s" % type(worker_like))
