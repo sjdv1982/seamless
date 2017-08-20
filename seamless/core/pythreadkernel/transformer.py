@@ -37,6 +37,7 @@ def execute(name, expression, namespace, result_queue):
         if "__transformer_frame__" in namespace:
             tl = namespace["__transformer_frame__"].f_locals
             namespace.update(tl)
+            del namespace["__transformer_frame__"]
     if USE_PROCESSES:
         result_queue.close()
     result_queue.join()
