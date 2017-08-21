@@ -1,11 +1,6 @@
 Technically-oriented releases are marked with *
 
 \*0.1
-- Basic documentation:
-- Make zips for the examples and tests
-- Fix documentation links in README.md, sphinx/examples.rst (also for zips)
-- Make PyPI package
-
 After release, make videos:
   Basic example, based on examples/basic.py, then examples/basic-macro.py
   Fireworks
@@ -14,6 +9,22 @@ After release, make videos:
   Orca (don't show the code)
 
 0.2
+
+- macros
+I am not quite happy with how macros are being used. The direct import method
+(defined macro "spam" in "eggs.py", "from eggs import spam") is fine for the
+core macros, but it hampers live programming on other macros (though it isn't
+prevented completely ; see test-dynamic-macro.py for an API example),
+since it prohibits the link between macro <=> cell <=> file.
+To solve that, a function .load_macro("spam", "eggs.py") is needed, that creates
+a macro with a .cell attribute, with .cell.resource.filepath
+(and .resource.lib) set properly. The .cell can be link()'ed as usual.
+In addition, the function .load_block_macro("ham", "ham.py") loads ham.py as a
+code block, i.e. adding "@macro", a def, and indenting the code.
+ham.py can thus be a main script, like the ones in tests and examples.
+For all main scripts in tests and examples, the "ctx = " and ctx.tofile
+must be made conditional on __name__ == "__main__"
+
 - Replace the use of killable threads with processes... gives a problem with Orca example (fixed now ?)
 - Replace ctx.CHILDREN, ctx.CELLS etc. with ctx.self.children, ctx.self.cells, etc.
 - Get rid of seamless.qt
