@@ -25,7 +25,7 @@ ham.py can thus be a main script, like the ones in tests and examples.
 For all main scripts in tests and examples, the "ctx = " and ctx.tofile
 must be made conditional on __name__ == "__main__"
 
-- Replace the use of killable threads with processes... gives a problem with Orca example (fixed now ?)
+- Replace the use of killable threads with processes... gives a problem with Orca example (fixed now ?), docking example (?), see Github issue
 - Replace ctx.CHILDREN, ctx.CELLS etc. with ctx.self.children, ctx.self.cells, etc.
 - Get rid of seamless.qt
 - Composite (JSON) cells
@@ -41,10 +41,10 @@ must be made conditional on __name__ == "__main__"
 - Preliminary inputpins (pins that accept preliminary values). Right now, all inputpins are preliminary!
 - Address shell() memory leak: IPython references may hold onto large amounts of data
 - Address GLstore memory leak: stores may not be freed (?)
-- Binary (struct) cells, implemented as "array" cells with dtype/shape/ndim
+- Binary (struct) cells, implemented as structured "array" cells with dtype/shape/ndim (with functionality similarly to composite cells)
 - Active switches (connection level; workers don't see it, except that pin becomes undefined/changes value)
 - Silk: managing variable-length arrays with allocators (subclass ndarray), C header registrar, fix Bool default value bug + bug in examples/silk/test.py
-- Document Silk
+- Document Silk, make it an official (supported) part of seamless
 - C interop
 - Game of Life demo with Cython and C
 - Update OpenGL demos
@@ -52,7 +52,7 @@ must be made conditional on __name__ == "__main__"
 0.4
 - Finalize context graph format and their names, update tofile/fromfile accordingly
 - Finalize resource management
-- Finalize basic API, also how to change macros
+- Finalize basic API, also how to change macros (SEE ABOVE)
 - Cleanup code layout
 - Document tofile/fromfile, saving options and seamless file format
 - Code documentation + dtype/worker documentation system
@@ -63,24 +63,22 @@ must be made conditional on __name__ == "__main__"
 - Thread reactors, process reactors
 - Synchronous transformers (do we need this?)
 - Process transformers (now that execution is in a process, do we need this??)
-
-\*0.6
 - Cell arrays, channels, GUI-widget cells
 - GPU computing (OpenCL)
 - Update Game of Life demo
 
-0.7
+0.6
 - Hook API and GUI for cell creation
 - Update demos
 
-0.8
+0.7
 - ATC, fold/unfold switches, Silk GUI generation
 - More demos (tetris?)
 
-\*0.9
+\*0.8
 - Python debugging, code editor (WIP)
 
-\*0.10
+\*0.9
 - Collaborative protocol / delegated computing
 
 \*1.0
