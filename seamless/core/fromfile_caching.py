@@ -62,7 +62,7 @@ def fromfile_caching(ctx):
                 if len(curr_pin_to_cells) == 0:
                     continue
                 assert len(curr_pin_to_cells) == 1
-                c = curr_pin_to_cells[0]
+                c = curr_pin_to_cells[0][0]
                 if c not in clean_cells:
                     #print("UNCLEAN", all_cells.get(c, None))
                     stable = False

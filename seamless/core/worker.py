@@ -152,7 +152,7 @@ class InputPin(InputPinBase):
                 ctx._add_new_cell(my_cell)
             my_cell.connect(self)
         elif l == 1:
-            my_cell = manager._childids[curr_pin_to_cells[0]]
+            my_cell = manager._childids[curr_pin_to_cells[0][0]]
         elif l > 1:
             raise TypeError("cell() is ambiguous, multiple cells are connected")
         if own:
@@ -187,7 +187,7 @@ class InputPin(InputPinBase):
         manager = self.context._manager
         curr_pin_to_cells = manager.pin_to_cells.get(self.get_pin_id(), [])
         if len(curr_pin_to_cells):
-            my_cell = manager._childids[curr_pin_to_cells[0]]
+            my_cell = manager._childids[curr_pin_to_cells[0][0]]
             return my_cell.status()
         else:
             return self.StatusFlags.UNCONNECTED.name
@@ -347,7 +347,7 @@ class EditPin(EditPinBase):
                 ctx._add_new_cell(my_cell)
             my_cell.connect(self)
         elif l == 1:
-            my_cell = manager._childids[curr_pin_to_cells[0]]
+            my_cell = manager._childids[curr_pin_to_cells[0][0]]
         elif l > 1:
             raise TypeError("cell() is ambiguous, multiple cells are connected")
         if own:
@@ -368,7 +368,7 @@ class EditPin(EditPinBase):
         self.last_value = value
         manager = self._get_manager()
         curr_pin_to_cells = manager.pin_to_cells.get(self.get_pin_id(), [])
-        for cell_id in curr_pin_to_cells:
+        for cell_id, con_id in curr_pin_to_cells:
             manager.update_from_worker(cell_id, value, self.worker_ref(),
                 preliminary=preliminary)
 
@@ -398,7 +398,7 @@ class EditPin(EditPinBase):
         manager = self.context._manager
         curr_pin_to_cells = manager.pin_to_cells.get(self.get_pin_id(), [])
         if len(curr_pin_to_cells):
-            my_cell = manager.cells[curr_pin_to_cells[0]]
+            my_cell = manager.cells[curr_pin_to_cells[0][0]]
             return my_cell.status()
         else:
             return self.StatusFlags.UNCONNECTED.name

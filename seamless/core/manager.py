@@ -25,7 +25,12 @@ class Manager:
         self._childids = WeakValueDictionary()
         self.registrar_items = []
         self.unstable_workers = WeakSet()
+        self._last_connection_id = -1
         super().__init__()
+
+    def _connection_id(self):
+        self._last_connection_id += 1
+        return self._last_connection_id
 
     def set_stable(self, worker, value):
         assert value in (True, False), value
@@ -86,35 +91,44 @@ class Manager:
         item = registrar_name, dtype, data, data_name
         self.registrar_items.remove(item)
 
-    def add_listener(self, cell, input_pin):
+    def add_listener(self, cell, input_pin, con_id=None):
         cell_id = self.get_cell_id(cell)
         pin_ref = weakref.ref(input_pin)
 
+        if con_id is None:
+            con_id = self._connection_id()
         try:
             listeners = self.listeners[cell_id]
-            assert pin_ref not in listeners
-            # TODO: tolerate (silently ignore) a connection that exists already?
-            listeners.append(pin_ref)
-
         except KeyError:
-            self.listeners[cell_id] = [pin_ref]
+            self.listeners[cell_id] = [(pin_ref, con_id)]
+        else:
+            for lnr, listener in enumerate(listeners):
+                assert listener[0] != pin_ref
+                # TODO: tolerate (silently ignore) a connection that exists already?
+                if con_id < listener[1]:
+                    listeners.insert(lnr, (pin_ref, con_id))
+                    break
+            else:
+                listeners.append((pin_ref, con_id))
 
         try:
             curr_pin_to_cells = self.pin_to_cells[input_pin.get_pin_id()]
-            assert cell_id not in curr_pin_to_cells
+            assert cell_id not in [c[0] for c in curr_pin_to_cells]
             # TODO: tolerate (append) multiple inputs?
-            curr_pin_to_cells.append(cell_id)
+            curr_pin_to_cells.append((cell_id, con_id))
 
         except KeyError:
-            self.pin_to_cells[input_pin.get_pin_id()] = [cell_id]
+            self.pin_to_cells[input_pin.get_pin_id()] = [(cell_id, con_id)]
 
         if cell_id not in self.cells:
             self.cells[cell_id] = cell
 
+        return con_id
+
     def _remove_listener(self, cell_id, input_pin, worker):
         input_pin_id = input_pin.get_pin_id()
         l = self.listeners[cell_id]
-        l[:] = [ref for ref in l if ref().get_pin_id() != input_pin_id]
+        l[:] = [ref for ref in l if ref[0]().get_pin_id() != input_pin_id]
         if not len(l):
             self.listeners.pop(cell_id)
             cell = self.cells.get(cell_id, None)
@@ -124,14 +138,14 @@ class Manager:
     def remove_listener(self, cell, input_pin):
         worker = input_pin.worker_ref()
         input_pin_id = input_pin.get_pin_id()
-        cell_ids = self.pin_to_cells.pop(input_pin_id, [])
+        self.pin_to_cells.pop(input_pin_id, [])
         cell_id = self.get_cell_id(cell)
         self._remove_listener(cell_id, input_pin, worker)
 
     def remove_listeners_pin(self, input_pin):
         worker = input_pin.worker_ref()
         cell_ids = self.pin_to_cells.pop(input_pin.get_pin_id(), [])
-        for cell_id in cell_ids:
+        for cell_id, con_id in cell_ids:
             self._remove_listener(cell_id, input_pin, worker)
 
     def remove_aliases(self, cell):
@@ -167,14 +181,14 @@ class Manager:
         cell_id = self.get_cell_id(cell)
         listeners = self.listeners.pop(cell_id, [])
         for listener in listeners:
-            pin = listener()
+            pin = listener[0]()
             if pin is None:
                 continue
             pin_id = pin.get_pin_id()
             if pin_id not in self.pin_to_cells:
                 continue
             self.pin_to_cells[pin_id][:] = \
-                [c for c in self.pin_to_cells[pin_id] if c != cell_id ]
+                [c for c in self.pin_to_cells[pin_id] if c[0] != cell_id ]
 
 
     def add_macro_listener(self, cell, macro_object, macro_arg):
@@ -214,28 +228,25 @@ class Manager:
         d[key].append((weakref.ref(target), namespace_name))
 
         if target not in self.rev_registrar_listeners:
-            self.rev_registrar_listeners[target] = {}
+            self.rev_registrar_listeners[target] = []
         r = self.rev_registrar_listeners[target]
-        if key not in r:
-            r[key] = []
-        r[key].append(weakref.ref(registrar))
+        r.append((weakref.ref(registrar), key))
 
     def remove_registrar_listeners(self, target):
         if target not in self.rev_registrar_listeners:
             return
         rev = self.rev_registrar_listeners.pop(target)
-        for key in rev:
-            for registrar_ref in rev[key]:
-                registrar = registrar_ref()
-                if registrar not in self.registrar_listeners:
-                    continue
-                r = self.registrar_listeners[registrar]
-                t = r[key]
-                t[:] = [tt for tt in t if tt[0]() is not None and tt[0]() is not target]
-                if not len(t):
-                    r.pop(key)
-                    if not len(r):
-                        self.registrar_listeners.pop(registrar)
+        for registrar_ref, key in rev:
+            registrar = registrar_ref()
+            if registrar not in self.registrar_listeners:
+                continue
+            r = self.registrar_listeners[registrar]
+            t = r[key]
+            t[:] = [tt for tt in t if tt[0]() is not None and tt[0]() is not target]
+            if not len(t):
+                r.pop(key)
+                if not len(r):
+                    self.registrar_listeners.pop(registrar)
 
 
     def add_observer(self, cell, observer):
@@ -314,7 +325,7 @@ class Manager:
         if cell.resource is not None:
             resource_name0 = cell.resource.filepath
         for input_pin_ref in listeners:
-            input_pin = input_pin_ref()
+            input_pin = input_pin_ref[0]()
 
             if input_pin is None:
                 continue #TODO: error?
@@ -331,7 +342,7 @@ class Manager:
             resource_name = "pin: " + str(input_pin)
             if resource_name0 is not None:
                 resource_name = resource_name0 + " in " + resource_name
-            try:  
+            try:
                 input_pin.receive_update(value2, resource_name)
             except Exception:
                 #TODO: proper logging
@@ -389,7 +400,7 @@ class Manager:
                 target.update_cell((registrar.name, key))
             else:
                 raise TypeError(target)
-                
+
     @classmethod
     def get_cell_id(cls, cell):
         return id(cell)
@@ -428,17 +439,14 @@ class Manager:
                 if cell_id not in source._cell_ids:
                     ok = False
                 else:
-                    for ref in self.cell_to_output_pin[target]:
+                    for ref, con_id in self.cell_to_output_pin[target]:
                         if ref() is source:
-                            self.cell_to_output_pin[target].remove(ref)
                             source._cell_ids.remove(cell_id)
                             ok = True
+                    o = self.cell_to_output_pin[target]
+                    o[:] = [oo for oo in o if oo[0] != ref]
             if not ok:
                 raise ValueError("Connection does not exist")
-
-                if target not in self.cell_to_output_pin:
-                    self.cell_to_output_pin[target] = []
-                self.cell_to_output_pin[target].append(weakref.ref(source))
 
             worker = source.worker_ref()
             if worker is not None:
@@ -449,7 +457,7 @@ class Manager:
         else:
             raise TypeError
 
-    def connect(self, source, target):
+    def _connect(self, source, target, con_id):
         from .transformer import Transformer
         from .cell import Cell, CellLike
         from .context import Context
@@ -482,7 +490,7 @@ class Manager:
             worker = target.worker_ref()
             assert worker is not None #weakref may not be dead
             source._on_connect(target, worker, incoming = False)
-            self.add_listener(source, target)
+            self.add_listener(source, target, con_id)
 
             if source._status == Cell.StatusFlags.OK:
                 self.update_from_code(source, only_last=True)
@@ -510,9 +518,22 @@ class Manager:
 
             if cell_id not in source._cell_ids:
                 source._cell_ids.append(cell_id)
+                if con_id is None:
+                    self._connection_id()
+                new_item = (weakref.ref(source), con_id)
                 if target not in self.cell_to_output_pin:
-                    self.cell_to_output_pin[target] = []
-                self.cell_to_output_pin[target].append(weakref.ref(source))
+                    self.cell_to_output_pin[target] = [new_item]
+                else:
+                    for itemnr, item in enumerate(
+                      self.cell_to_output_pin[target]
+                    ):
+                        if con_id > item[1]:
+                            self.cell_to_output_pin[target].insert(
+                                itemnr, new_item
+                            )
+                            break
+                    else:
+                        self.cell_to_output_pin[target].append(new_item)
 
             if isinstance(worker, Transformer):
                 worker._on_connect_output()
@@ -527,3 +548,6 @@ class Manager:
 
         else:
             raise TypeError
+
+    def connect(self, source, target):
+        self._connect(source, target, None)

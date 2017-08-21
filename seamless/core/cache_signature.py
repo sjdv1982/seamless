@@ -17,7 +17,7 @@ def cache_signature_cell(cell, ctx_path, manager, known):
         wsigs = []
         incons = manager.cell_to_output_pin.get(cell, [])
         pins = []
-        for incon in incons:
+        for incon, con_id in incons:
             output_pin = incon()
             if output_pin is None:
                 continue
@@ -84,7 +84,7 @@ def cache_signature_reactor(rc, ctx_path, manager, known):
         if len(curr_pin_to_cells) == 0:
             continue
         assert len(curr_pin_to_cells) == 1
-        c = curr_pin_to_cells[0]
+        c = curr_pin_to_cells[0][0]
         cell = all_cells[c] #should always exist (?)
         csig = cache_signature_cell(cell, ctx_path, manager, known)
         sig[pinname] = (pindict["pin"], pindict["dtype"], cell.path, csig)
@@ -106,7 +106,7 @@ def cache_signature_transformer(tf, ctx_path, manager, known):
         if len(curr_pin_to_cells) == 0:
             continue
         assert len(curr_pin_to_cells) == 1
-        c = curr_pin_to_cells[0]
+        c = curr_pin_to_cells[0][0]
         cell = all_cells[c] #should always exist
         csig = cache_signature_cell(cell, ctx_path, manager, known)
         sig[pinname] = (pindict["pin"], pindict["dtype"], cell.path, csig)

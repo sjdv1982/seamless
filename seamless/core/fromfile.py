@@ -215,7 +215,7 @@ def json_to_ctx(ctx, data, myname=None, ownerdict=None, pinlist=None):
                 raise TypeError(pin, type(pin))
 
 
-def fromfile(filename):
+def fromfile(filename, equilibrate=5):
     ctx = Context()
     with fromfile_mode_as(True), \
          activation_mode_as(False), \
@@ -232,7 +232,7 @@ def fromfile(filename):
         json_to_macro_listeners(ctx, data["main"]["macro_listeners"], macro_objects)
         json_to_registrar_cells(ctx, data["main"]["registrar_cells"])
         json_to_connections(ctx, data["main"])
-    unstable = ctx.equilibrate(5)
+    unstable = ctx.equilibrate(equilibrate)
     if len(unstable):
         print("WARNING: Loading '%s' before making connections, could not equilibrate within 5 seconds" % filename)
     print("%s LOADED" % filename)
