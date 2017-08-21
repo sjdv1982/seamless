@@ -222,28 +222,25 @@ class Manager:
         d[key].append((weakref.ref(target), namespace_name))
 
         if target not in self.rev_registrar_listeners:
-            self.rev_registrar_listeners[target] = {}
+            self.rev_registrar_listeners[target] = []
         r = self.rev_registrar_listeners[target]
-        if key not in r:
-            r[key] = []
-        r[key].append(weakref.ref(registrar))
+        r.append((weakref.ref(registrar), key))
 
     def remove_registrar_listeners(self, target):
         if target not in self.rev_registrar_listeners:
             return
         rev = self.rev_registrar_listeners.pop(target)
-        for key in rev:
-            for registrar_ref in rev[key]:
-                registrar = registrar_ref()
-                if registrar not in self.registrar_listeners:
-                    continue
-                r = self.registrar_listeners[registrar]
-                t = r[key]
-                t[:] = [tt for tt in t if tt[0]() is not None and tt[0]() is not target]
-                if not len(t):
-                    r.pop(key)
-                    if not len(r):
-                        self.registrar_listeners.pop(registrar)
+        for registrar_ref, key in rev:
+            registrar = registrar_ref()
+            if registrar not in self.registrar_listeners:
+                continue
+            r = self.registrar_listeners[registrar]
+            t = r[key]
+            t[:] = [tt for tt in t if tt[0]() is not None and tt[0]() is not target]
+            if not len(t):
+                r.pop(key)
+                if not len(r):
+                    self.registrar_listeners.pop(registrar)
 
 
     def add_observer(self, cell, observer):

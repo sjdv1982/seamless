@@ -217,6 +217,11 @@ class MacroObject:
                         source_target.connect(dest)
                     else:
                         print("ERROR:", err.format(new_parent.path, mode, ext_path, dest) + " (source, dead weakref)")
+                elif mode == "registrar":
+                    registrar = getattr(grandparent.registrar, source)
+                    key = ext_path
+                    dest_target = resolve_path(new_parent, dest, 0)
+                    registrar.connect(key, dest_target)
                 else:
                     #print("CONNECTION: mode '{0}', source {1}, dest {2}".format(mode, source, dest))
                     raise TypeError(mode)
@@ -229,7 +234,7 @@ class MacroObject:
         gc.collect()
         del gc._SEAMLESS_COLLECTING
         """
-        
+
         return True
 
     def set_registrar_listeners(self, registrar_listeners):

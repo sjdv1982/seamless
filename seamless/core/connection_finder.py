@@ -67,7 +67,7 @@ def find_external_connections_worker(external_connections, worker, path, parent_
                 cell = manager.cells.get(c, None)
                 if cell is None:
                     continue
-                for ref, con_id in self.cell_to_output_pin[cell]:
+                for ref, con_id in manager.cell_to_output_pin[cell]:
                     if ref() is pin:
                         con.append((c, con_id))
         else:
@@ -86,6 +86,13 @@ def find_external_connections_worker(external_connections, worker, path, parent_
                 external_connections.append(("input", cell, path2, cell.path))
             else:
                 external_connections.append(("output", path2, cell, cell.path))
+    manager = worker._get_manager()
+    rev = manager.rev_registrar_listeners.get(worker, [])
+    for registrar_ref, key in rev:
+        registrar = registrar_ref()
+        if registrar is None:
+            continue
+        external_connections.append(("registrar", registrar.name, path, key ))
 
 def find_external_connections(external_connections, ctx, path, parent_path, parent_owns):
     from .context import Context
