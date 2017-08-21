@@ -394,7 +394,7 @@ class Macro:
                         pin_id = pin.get_pin_id()
 
                         if isinstance(pin, (InputPinBase, EditPinBase)):
-                            cell_ids = manager.pin_to_cells.get(pin_id, [])
+                            cell_ids = [c[0] for c in manager.pin_to_cells.get(pin_id, [])]
 
                         elif isinstance(pin, OutputPinBase):
                             cell_ids = pin._cell_ids

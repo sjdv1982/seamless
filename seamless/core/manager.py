@@ -96,25 +96,28 @@ class Manager:
         pin_ref = weakref.ref(input_pin)
 
         try:
+            con_id = self._connection_id()
             listeners = self.listeners[cell_id]
             assert pin_ref not in listeners
             # TODO: tolerate (silently ignore) a connection that exists already?
-            listeners.append((pin_ref, self._connection_id()))
+            listeners.append((pin_ref, con_id))
 
         except KeyError:
-            self.listeners[cell_id] = [(pin_ref, self._connection_id())]
+            self.listeners[cell_id] = [(pin_ref, con_id)]
 
         try:
             curr_pin_to_cells = self.pin_to_cells[input_pin.get_pin_id()]
-            assert cell_id not in curr_pin_to_cells
+            assert cell_id not in [c[0] for c in curr_pin_to_cells]
             # TODO: tolerate (append) multiple inputs?
-            curr_pin_to_cells.append(cell_id)
+            curr_pin_to_cells.append((cell_id, con_id))
 
         except KeyError:
-            self.pin_to_cells[input_pin.get_pin_id()] = [cell_id]
+            self.pin_to_cells[input_pin.get_pin_id()] = [(cell_id, con_id)]
 
         if cell_id not in self.cells:
             self.cells[cell_id] = cell
+
+        return con_id
 
     def _remove_listener(self, cell_id, input_pin, worker):
         input_pin_id = input_pin.get_pin_id()
@@ -129,14 +132,14 @@ class Manager:
     def remove_listener(self, cell, input_pin):
         worker = input_pin.worker_ref()
         input_pin_id = input_pin.get_pin_id()
-        cell_ids = self.pin_to_cells.pop(input_pin_id, [])
+        self.pin_to_cells.pop(input_pin_id, [])
         cell_id = self.get_cell_id(cell)
         self._remove_listener(cell_id, input_pin, worker)
 
     def remove_listeners_pin(self, input_pin):
         worker = input_pin.worker_ref()
         cell_ids = self.pin_to_cells.pop(input_pin.get_pin_id(), [])
-        for cell_id in cell_ids:
+        for cell_id, con_id in cell_ids:
             self._remove_listener(cell_id, input_pin, worker)
 
     def remove_aliases(self, cell):
@@ -179,7 +182,7 @@ class Manager:
             if pin_id not in self.pin_to_cells:
                 continue
             self.pin_to_cells[pin_id][:] = \
-                [c for c in self.pin_to_cells[pin_id] if c != cell_id ]
+                [c for c in self.pin_to_cells[pin_id] if c[0] != cell_id ]
 
 
     def add_macro_listener(self, cell, macro_object, macro_arg):
@@ -433,17 +436,14 @@ class Manager:
                 if cell_id not in source._cell_ids:
                     ok = False
                 else:
-                    for ref in self.cell_to_output_pin[target]:
+                    for ref, con_id in self.cell_to_output_pin[target]:
                         if ref() is source:
-                            self.cell_to_output_pin[target].remove(ref)
                             source._cell_ids.remove(cell_id)
                             ok = True
+                    o = self.cell_to_output_pin[target]
+                    o[:] = [oo for oo in o if oo[0] != ref]
             if not ok:
                 raise ValueError("Connection does not exist")
-
-                if target not in self.cell_to_output_pin:
-                    self.cell_to_output_pin[target] = []
-                self.cell_to_output_pin[target].append(weakref.ref(source))
 
             worker = source.worker_ref()
             if worker is not None:
@@ -517,7 +517,8 @@ class Manager:
                 source._cell_ids.append(cell_id)
                 if target not in self.cell_to_output_pin:
                     self.cell_to_output_pin[target] = []
-                self.cell_to_output_pin[target].append(weakref.ref(source))
+                item = (weakref.ref(source), self._connection_id())
+                self.cell_to_output_pin[target].append(item)
 
             if isinstance(worker, Transformer):
                 worker._on_connect_output()

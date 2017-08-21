@@ -81,7 +81,7 @@ def manager_to_json(m):
 
     for cell, pins in m.cell_to_output_pin.items():
         cpath = sl_print(cell)
-        for pin0 in pins:
+        for pin0, con_id in pins:
             pin = pin0()
             if pin is None:
                 continue
