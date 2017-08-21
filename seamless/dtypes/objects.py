@@ -5,6 +5,12 @@ from ..core.utils import find_return_in_scope
 from . import parse, serialize
 from ..core.cached_compile import cached_compile
 
+transformer_patch = """
+import inspect
+def {0}():
+    global __transformer_frame__
+    __transformer_frame__ = inspect.currentframe()
+"""
 class DataObject:
     store = None
 
@@ -86,9 +92,8 @@ class PythonTransformerCodeObject(PythonCodeObject):
             except ValueError:
                 raise SyntaxError("Block must contain return statement(s)")
 
-            patched_src = "def {0}():\n    ".format(self.func_name) + \
-              self.data.replace("\n", "\n    ").rstrip()
-
+            patched_src = transformer_patch.format(self.func_name) + \
+              "    " + self.data.replace("\n", "\n    ").rstrip()
             self.code = cached_compile(patched_src,
                                        self.resource_name, "exec")
 

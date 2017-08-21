@@ -33,6 +33,11 @@ def execute(name, expression, namespace, result_queue):
         if isinstance(result, SilkObject):
             result = result.json()
         result_queue.put((0, result))
+    finally:
+        if "__transformer_frame__" in namespace:
+            tl = namespace["__transformer_frame__"].f_locals
+            namespace.update(tl)
+            del namespace["__transformer_frame__"]
     if USE_PROCESSES:
         result_queue.close()
     result_queue.join()
@@ -78,12 +83,12 @@ class Transformer(Worker):
                 expr = "{0}()".format(func_name)
                 self.expression = compile(expr, self.name, "eval")
                 self.func_name = func_name
-                exec(func, self.namespace)
 
             # Update namespace of inputs
+            self.namespace.clear()
+            exec(func, self.namespace)
             for name in self.inputs.keys():
-                if name in updated:
-                    self.namespace[name] = self.values[name].data
+                self.namespace[name] = self.values[name].data
             queue = Queue()
             args = (str(self.parent()), self.expression, self.namespace, queue)
             executor = Executor(target=execute,args=args, daemon=True) #TODO: name
