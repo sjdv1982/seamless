@@ -25,7 +25,12 @@ class Manager:
         self._childids = WeakValueDictionary()
         self.registrar_items = []
         self.unstable_workers = WeakSet()
+        self._last_connection_id = -1
         super().__init__()
+
+    def _connection_id(self):
+        self._last_connection_id += 1
+        return self._last_connection_id
 
     def set_stable(self, worker, value):
         assert value in (True, False), value
@@ -94,10 +99,10 @@ class Manager:
             listeners = self.listeners[cell_id]
             assert pin_ref not in listeners
             # TODO: tolerate (silently ignore) a connection that exists already?
-            listeners.append(pin_ref)
+            listeners.append((pin_ref, self._connection_id()))
 
         except KeyError:
-            self.listeners[cell_id] = [pin_ref]
+            self.listeners[cell_id] = [(pin_ref, self._connection_id())]
 
         try:
             curr_pin_to_cells = self.pin_to_cells[input_pin.get_pin_id()]
@@ -114,7 +119,7 @@ class Manager:
     def _remove_listener(self, cell_id, input_pin, worker):
         input_pin_id = input_pin.get_pin_id()
         l = self.listeners[cell_id]
-        l[:] = [ref for ref in l if ref().get_pin_id() != input_pin_id]
+        l[:] = [ref for ref in l if ref[0]().get_pin_id() != input_pin_id]
         if not len(l):
             self.listeners.pop(cell_id)
             cell = self.cells.get(cell_id, None)
@@ -167,7 +172,7 @@ class Manager:
         cell_id = self.get_cell_id(cell)
         listeners = self.listeners.pop(cell_id, [])
         for listener in listeners:
-            pin = listener()
+            pin = listener[0]()
             if pin is None:
                 continue
             pin_id = pin.get_pin_id()
@@ -314,7 +319,7 @@ class Manager:
         if cell.resource is not None:
             resource_name0 = cell.resource.filepath
         for input_pin_ref in listeners:
-            input_pin = input_pin_ref()
+            input_pin = input_pin_ref[0]()
 
             if input_pin is None:
                 continue #TODO: error?
@@ -331,7 +336,7 @@ class Manager:
             resource_name = "pin: " + str(input_pin)
             if resource_name0 is not None:
                 resource_name = resource_name0 + " in " + resource_name
-            try:  
+            try:
                 input_pin.receive_update(value2, resource_name)
             except Exception:
                 #TODO: proper logging
@@ -389,7 +394,7 @@ class Manager:
                 target.update_cell((registrar.name, key))
             else:
                 raise TypeError(target)
-                
+
     @classmethod
     def get_cell_id(cls, cell):
         return id(cell)

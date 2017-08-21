@@ -385,7 +385,7 @@ class Macro:
 
                     out_pins = manager.listeners[result]
                     for out_pin in out_pins:
-                        worker = out_pin.worker_ref()
+                        worker = out_pin[0]().worker_ref()
                         result.own(worker)
 
                 elif isinstance(result, Worker):

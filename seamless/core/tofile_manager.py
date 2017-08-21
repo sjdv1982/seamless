@@ -102,7 +102,7 @@ def manager_to_json(m):
     for cell_id, pins in m.listeners.items():
         ppaths = []
         for pin0 in pins:
-            pin = pin0()
+            pin = pin0[0]()
             if pin is None:
                 continue
             ppath = sl_print(pin)
