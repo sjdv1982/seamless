@@ -16,7 +16,7 @@ def find_external_connections_cell(external_connections, cell, path, parent_path
         if parent_path is not None:
             if output_pin.path[:len(parent_path)] == parent_path:
                 continue
-        external_connections.append(("input", output_pin, path, output_pin.path))
+        external_connections.append(("input", output_pin, path, output_pin.path, con_id))
     outcons = manager.listeners.get(cell_id, [])
     for input_pin_ref, con_id in outcons:
         input_pin = input_pin_ref()
@@ -29,7 +29,7 @@ def find_external_connections_cell(external_connections, cell, path, parent_path
             if input_pin.path[:len(parent_path)] == parent_path:
                 continue
         assert len(input_pin.path)
-        external_connections.append(("output", path, input_pin, input_pin.path))
+        external_connections.append(("output", path, input_pin, input_pin.path, con_id))
     aliases = manager.cell_aliases.get(cell_id, [])
     for other_cell_ref in aliases:
         other_cell = other_cell_ref()
@@ -37,7 +37,7 @@ def find_external_connections_cell(external_connections, cell, path, parent_path
             continue
         if other_cell.path[:len(parent_path)] == parent_path:
             continue
-        external_connections.append(("alias", path, other_cell, other_cell.path))
+        external_connections.append(("alias", path, other_cell, other_cell.path, None))
     rev_aliases = manager.cell_rev_aliases.get(cell_id, [])
     for other_cell_ref in rev_aliases:
         other_cell = other_cell_ref()
@@ -45,7 +45,7 @@ def find_external_connections_cell(external_connections, cell, path, parent_path
             continue
         if other_cell.path[:len(parent_path)] == parent_path:
             continue
-        external_connections.append(("rev_alias", other_cell, path, other_cell.path))
+        external_connections.append(("rev_alias", other_cell, path, other_cell.path, None))
 
 def find_external_connections_worker(external_connections, worker, path, parent_path, parent_owns):
     from .worker import Worker, InputPinBase, OutputPinBase, EditPinBase
@@ -83,16 +83,16 @@ def find_external_connections_worker(external_connections, worker, path, parent_
                     continue
             path2 = path + (pinname,)
             if is_incoming:
-                external_connections.append(("input", cell, path2, cell.path))
+                external_connections.append(("input", cell, path2, cell.path, con_id))
             else:
-                external_connections.append(("output", path2, cell, cell.path))
+                external_connections.append(("output", path2, cell, cell.path, con_id))
     manager = worker._get_manager()
     rev = manager.rev_registrar_listeners.get(worker, [])
     for registrar_ref, key in rev:
         registrar = registrar_ref()
         if registrar is None:
             continue
-        external_connections.append(("registrar", registrar.name, path, key ))
+        external_connections.append(("registrar", registrar.name, path, key, None))
 
 def find_external_connections(external_connections, ctx, path, parent_path, parent_owns):
     from .context import Context

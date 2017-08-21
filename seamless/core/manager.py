@@ -91,19 +91,25 @@ class Manager:
         item = registrar_name, dtype, data, data_name
         self.registrar_items.remove(item)
 
-    def add_listener(self, cell, input_pin):
+    def add_listener(self, cell, input_pin, con_id=None):
         cell_id = self.get_cell_id(cell)
         pin_ref = weakref.ref(input_pin)
 
-        try:
+        if con_id is None:
             con_id = self._connection_id()
+        try:
             listeners = self.listeners[cell_id]
-            assert pin_ref not in listeners
-            # TODO: tolerate (silently ignore) a connection that exists already?
-            listeners.append((pin_ref, con_id))
-
         except KeyError:
             self.listeners[cell_id] = [(pin_ref, con_id)]
+        else:
+            for lnr, listener in enumerate(listeners):
+                assert listener[0] != pin_ref
+                # TODO: tolerate (silently ignore) a connection that exists already?
+                if con_id < listener[1]:
+                    listeners.insert(lnr, (pin_ref, con_id))
+                    break
+            else:
+                listeners.append((pin_ref, con_id))
 
         try:
             curr_pin_to_cells = self.pin_to_cells[input_pin.get_pin_id()]
@@ -451,7 +457,7 @@ class Manager:
         else:
             raise TypeError
 
-    def connect(self, source, target):
+    def _connect(self, source, target, con_id):
         from .transformer import Transformer
         from .cell import Cell, CellLike
         from .context import Context
@@ -484,7 +490,7 @@ class Manager:
             worker = target.worker_ref()
             assert worker is not None #weakref may not be dead
             source._on_connect(target, worker, incoming = False)
-            self.add_listener(source, target)
+            self.add_listener(source, target, con_id)
 
             if source._status == Cell.StatusFlags.OK:
                 self.update_from_code(source, only_last=True)
@@ -512,10 +518,22 @@ class Manager:
 
             if cell_id not in source._cell_ids:
                 source._cell_ids.append(cell_id)
+                if con_id is None:
+                    self._connection_id()
+                new_item = (weakref.ref(source), con_id)
                 if target not in self.cell_to_output_pin:
-                    self.cell_to_output_pin[target] = []
-                item = (weakref.ref(source), self._connection_id())
-                self.cell_to_output_pin[target].append(item)
+                    self.cell_to_output_pin[target] = [new_item]
+                else:
+                    for itemnr, item in enumerate(
+                      self.cell_to_output_pin[target]
+                    ):
+                        if con_id > item[1]:
+                            self.cell_to_output_pin[target].insert(
+                                itemnr, new_item
+                            )
+                            break
+                    else:
+                        self.cell_to_output_pin[target].append(new_item)
 
             if isinstance(worker, Transformer):
                 worker._on_connect_output()
@@ -530,3 +548,6 @@ class Manager:
 
         else:
             raise TypeError
+
+    def connect(self, source, target):
+        self._connect(source, target, None)

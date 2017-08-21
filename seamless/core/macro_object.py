@@ -193,7 +193,8 @@ class MacroObject:
                     pin._pin = child
 
             print("DONE DESTROY")
-            for mode, source, dest, ext_path in external_connections:
+            manager = parent._manager
+            for mode, source, dest, ext_path, con_id in external_connections:
                 print("CONNECTION: mode '{0}', source {1}, dest {2}".format(mode, source, dest))
                 err = "Connection {0}::(mode {1}, source {2}, dest {3}) points to a destroyed external cell"
                 if mode in ("input", "rev_alias"):
@@ -203,7 +204,10 @@ class MacroObject:
                         continue
                     dest_target = resolve_path(new_parent, dest, 0)
                     if dest_target is not None:
-                        source.connect(dest_target)
+                        if con_id is None:
+                            source.connect(dest_target)
+                        else:
+                            manager._connect(source, dest_target, con_id)
                     else:
                         print("ERROR:", err.format(new_parent.path, mode, ext_path, dest) + " (source, dead weakref)")
                 elif mode in ("output", "alias"):
@@ -214,7 +218,10 @@ class MacroObject:
                         continue
                     source_target = resolve_path(new_parent, source, 0)
                     if source_target is not None:
-                        source_target.connect(dest)
+                        if con_id is None:
+                            source_target.connect(dest)
+                        else:
+                            manager._connect(source_target, dest, con_id)
                     else:
                         print("ERROR:", err.format(new_parent.path, mode, ext_path, dest) + " (source, dead weakref)")
                 elif mode == "registrar":
