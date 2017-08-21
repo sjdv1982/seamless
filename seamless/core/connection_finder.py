@@ -19,7 +19,8 @@ def find_external_connections_cell(external_connections, cell, path, parent_path
         external_connections.append(("input", output_pin, path, output_pin.path))
     outcons = manager.listeners.get(cell_id, [])
     for outcon in outcons:
-        input_pin, con_id = outcon()
+        input_pin_ref, con_id = outcon
+        input_pin = input_pin_ref()
         if input_pin is None:
             continue
         worker = input_pin.worker_ref()
@@ -127,7 +128,8 @@ def find_internal_connections_cell(internal_connections, cell, path, parent_path
 
     outcons = manager.listeners.get(cell_id, [])
     for outcon in outcons:
-        input_pin, con_id = outcon()
+        input_pin_ref, con_id = outcon
+        input_pin = input_pin_ref()
         if input_pin is None:
             continue
         worker = input_pin.worker_ref()
