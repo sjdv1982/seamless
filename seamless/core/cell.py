@@ -471,9 +471,17 @@ class Signal(Cell):
             ctx._add_new_cell(self, naming_pattern)
 
     def set(self):
-        self._status = self.__class__.StatusFlags.OK
-        self.touch()
-        import seamless
+        import seamless, threading
+        if threading.current_thread() is not threading.main_thread():
+            seamless.add_work(self.set,priority=True)
+            return
+
+        try:
+            seamless._signal_processing += 1
+            self._status = self.__class__.StatusFlags.OK
+            self.touch()
+        finally:
+            seamless._signal_processing -= 1
         seamless.run_work()
 
     def fromfile(self, filename):

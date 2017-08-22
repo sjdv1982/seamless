@@ -4,6 +4,7 @@ import ctypes
 from collections import OrderedDict
 from seamless.dtypes.gl import GLSubStore
 import threading
+from seamless.opengl import add_opengl_destructor, opengl_current_context
 
 class VertexAttribute:
     def __init__(self, attribute, glsl_dtype, shader_program, store, *,
@@ -202,6 +203,9 @@ class Renderer:
 
     def bind(self):
         assert threading.current_thread() is threading.main_thread()
+        context = opengl_current_context()
+        assert context is not None
+        add_opengl_destructor(context, self.set_dirty)
         length = None
         first_atname = None
         if self.instanced:
@@ -232,6 +236,7 @@ class Renderer:
         self.length = length
         self.vao = vao
         self.dirty = False
+        self.context = context
 
     def set_dirty(self):
         self.dirty = True
@@ -240,6 +245,7 @@ class Renderer:
         assert threading.current_thread() is threading.main_thread()
         if self.dirty or not self.vao:
             self.bind()
+        assert opengl_current_context() == self.context, "Cannot invoke Renderer from a different OpenGL context"
         gl.glBindVertexArray(self.vao)
         indexed = (self.indices is not None)
         if self.command == "points":
@@ -267,3 +273,4 @@ class Renderer:
                 gl.glDrawElementsInstanced(mode, self.indices.length,
                   self.indices.gl_dtype, ctypes.c_void_p(self.indices.offset),
                   self.instances)
+        #print("DRAW", self.vao)

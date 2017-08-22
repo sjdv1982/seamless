@@ -7,19 +7,19 @@ import ctypes
 import threading
 from . import _ctypes
 from .gloo.glir import gl_types, gl_get_alignment, as_enum
+from ...opengl import opengl_current_context
 
 class GLStoreBase:
     _opengl_context = None
     def sanity_check(self):
-        from PyQt5.QtGui import QOpenGLContext
-        context = QOpenGLContext.currentContext()
+        context = opengl_current_context()
         assert context
         assert threading.current_thread() is threading.main_thread()
         if self._opengl_context is not None:
-            #assert context is self._opengl_context
-            if context is not self._opengl_context:
-                self.destroy()
-                self.create()
+            assert context is self._opengl_context, "Can't bind GLStore %s to different OpenGL contexts" % self.parent()
+            #if context is not self._opengl_context:
+            #    self.destroy()
+            #    self.create()
 
 class GLSubStore(GLStoreBase):
     regexp = re.compile("\[.*?\]")
@@ -192,10 +192,10 @@ class GLStore(GLStoreBase):
         return self.parent().data.itemsize
 
     def bind(self):
-        from PyQt5.QtGui import QOpenGLContext
         self.sanity_check()
         if not self._dirty:
             return
+        #print("BIND", self.parent())
         if self._id is None:
             self.create()
         elif self._state:
@@ -209,15 +209,13 @@ class GLStore(GLStoreBase):
         self._state += 1
 
     def create(self):
-        from PyQt5.QtGui import QOpenGLContext
         self._id = gl.glGenBuffers(1)
-        context = QOpenGLContext.currentContext()
+        context = opengl_current_context()
         self._opengl_context = context
-        from seamless import add_opengl_destructor
+        from seamless.opengl import add_opengl_destructor
         add_opengl_destructor(context, self.destroy)
 
     def destroy(self):
-        #print("GLStore DESTROY")
         try:
             assert threading.current_thread() is threading.main_thread()
             if self._id is not None:
@@ -284,7 +282,7 @@ class GLTexStore(GLStoreBase):
         self._id = gl.glGenTextures(1)
         context = QOpenGLContext.currentContext()
         self._opengl_context = context
-        from seamless import add_opengl_destructor
+        from seamless.opengl import add_opengl_destructor
         add_opengl_destructor(context, self.destroy)
 
     def bind(self):

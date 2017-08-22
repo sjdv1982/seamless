@@ -58,6 +58,7 @@ def add_work(work, priority=False):
         _work.append(work)
 
 _running_work = False
+_signal_processing = 0
 def run_work():
     global _running_work
     if threading.current_thread() is not threading.main_thread():
@@ -69,24 +70,29 @@ def run_work():
         return
     _running_work = True
     #print("WORKING", len(_priority_work), len(_work))
-    work_count = 0
-    for w in (_priority_work, _work):
+    #work_count = 0
+    works = (_priority_work, _work)
+    if _signal_processing > 0:
+        works = (_priority_work,)
+    for w in works:
         while len(w):
             work = w.popleft()
             try:
                 work()
+                #work_count += 1
             except Exception:
                 traceback.print_exc()
-            if work_count == 100:
-                run_qt() # Necessary to prevent freezes in glwindow
-                work_count = 0
+            #if work_count == 100 and not _signal_processing:
+            #    run_qt() # Necessary to prevent freezes in glwindow
+            #    work_count = 0
 
     #Whenever work is done, do an asyncio flush
     loop = asyncio.get_event_loop()
     loop.call_soon(lambda loop: loop.stop(), loop)
     loop.run_forever()
 
-    run_qt() # Necessary to prevent freezes in glwindow
+    if _signal_processing == 0:
+        run_qt() # Necessary to prevent freezes in glwindow
     _running_work = False
 
 def asyncio_finish():
@@ -163,7 +169,7 @@ if qt_error is None:
     import PyQt5.QtWebEngineWidgets
     from PyQt5 import QtGui, QtCore
     from PyQt5.QtCore import QTimer
-    QtCore.Qt.AA_ShareOpenGLContexts = True
+    #QtCore.Qt.AA_ShareOpenGLContexts = True
     qt_app = PyQt5.QtWidgets.QApplication(["  "])
     event_loop = QtCore.QEventLoop(qt_app)
     for _m in list(sys.modules.keys()):

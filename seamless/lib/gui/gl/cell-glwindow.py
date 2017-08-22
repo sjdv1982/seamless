@@ -2,8 +2,8 @@ from seamless.qt.QtWidgets import QOpenGLWidget, QApplication
 from seamless.qt.QtCore import Qt
 from seamless.qt import QtGui
 
-from seamless import add_opengl_context, remove_opengl_context, \
- activate_opengl, deactivate_opengl
+from seamless.opengl import add_opengl_context, remove_opengl_context, \
+ activate_opengl, deactivate_opengl, opengl_current_context
 from OpenGL import GL
 import numpy as np
 from math import *
@@ -188,24 +188,31 @@ class GLWidget(QOpenGLWidget):
         self.camera = Camera()
 
     def initializeGL(self):
-        super().initializeGL()
-        self.camera.width = self.width()
-        self.camera.height = self.height()
-        self.camera._write()
-        activate_opengl()
+        import seamless
+        from PyQt5.QtGui import QOpenGLContext
         if self._destroyed:
             return
-        from PyQt5.QtGui import QOpenGLContext
-        #print("INIT")
-        ctx = self.context()
-        assert ctx is QOpenGLContext.currentContext()
-        #print("start initializeGL")
-        if not self._initialized:
-            add_opengl_context(ctx)
-            self._initialized = True
-        PINS.init.set()
-        #print("end initializeGL")
-        deactivate_opengl()
+        try:
+            old_running_qt = seamless._running_qt
+            seamless._running_qt = True
+            activate_opengl()
+            ctx = self.context()
+            assert ctx is QOpenGLContext.currentContext()
+            #print("start initializeGL")
+            if not self._initialized:
+                add_opengl_context(ctx)
+                self._initialized = True
+            self.camera.width = self.width()
+            self.camera.height = self.height()
+            self.camera._write()
+            #print("INIT")
+            PINS.init.set()
+            #print("end initializeGL")
+        finally:
+            seamless._running_qt = old_running_qt
+            deactivate_opengl()
+        super().initializeGL()
+        seamless.run_work()
 
     def resizeGL(self, width, height):
         super().resizeGL(width, height)
@@ -218,15 +225,25 @@ class GLWidget(QOpenGLWidget):
         self.update()
 
     def paintGL(self):
-        activate_opengl()
+        import seamless
         self._painting = True
         super().paintGL()
         if self._destroyed:
             return
-        PINS.paint.set()
-        PINS.painted.set()
-        self._painting = False
-        deactivate_opengl()
+        assert self._initialized
+        try:
+            old_running_qt = seamless._running_qt
+            seamless._running_qt = True
+            activate_opengl()
+            #print("PAINT")
+            PINS.paint.set()
+            PINS.painted.set()
+            self._painting = False
+        finally:
+            #print("/PAINT")
+            seamless._running_qt = old_running_qt
+            deactivate_opengl()
+        seamless.run_work()
 
     def mousePressEvent(self, ev):
         self._mousePos = ev.pos()

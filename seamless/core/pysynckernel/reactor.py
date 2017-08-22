@@ -133,6 +133,7 @@ class Reactor:
         if name in self.registrar_namespace:
             self.registrar_namespace.remove(name)
         self.updated.add(name)
+        updated_now = name
 
         updates_processed = self._pending_updates
 
@@ -140,7 +141,7 @@ class Reactor:
         if self._active and not self._pending_inputs:
             updated = set(self.updated)
             self.updated.clear()
-            self.update(updated)
+            self.update(updated, updated_now=updated_now)
 
         self._pending_updates -= updates_processed
         p = self.parent()
@@ -230,7 +231,7 @@ class Reactor:
 
         self.namespace.update(self.registrar_namespace)
 
-    def update(self, updated, force_start=False):
+    def update(self, updated, *, force_start=False, updated_now = None):
 
         # If any code object is updated, recompile
 
@@ -263,10 +264,14 @@ class Reactor:
                     pin.defined = True
                     pin._store = v.store
                 else:
+                    pin.updated_now = False
                     v._clear = True
+                    if name == updated_now:
+                        pin.updated_now = True
                 pin.updated = True
                 do_update = True
             else:
+                pin.updated_now = False
                 pin.updated = False
 
         if "code_start" in updated or force_start:
@@ -280,6 +285,7 @@ class Reactor:
             if isinstance(pin, ReactorInputSignal) and pin._clear == False:
                 updated.add(name)
                 pin._clear = True
+
 
     def output_update(self, name, value):
         """Propagates a PINS.name.set in the reactor code to the seamless manager"""

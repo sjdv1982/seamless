@@ -5,15 +5,16 @@ from OpenGL.GL import shaders
 from OpenGL.GL import *
 from OpenGL import GL as gl
 
-from seamless import opengl
 from seamless.lib.gui.gl.set_uniform import set_uniform
 
 from seamless.lib.gui.gl.Renderer import Renderer, VertexAttribute
 from seamless.lib.gui.gl import glstate as glstate_module
 
+from seamless.opengl import opengl_current_context
+
 initialized = False
 shader_program = None
-renderer = False
+renderer = None
 uniform_types = {}
 uniform_locations = {}
 uniform_values = {}
@@ -64,7 +65,7 @@ def init():
 
     # Create renderer and set glstate
     render = program["render"]
-    glstate = render["glstate"]
+    glstate = render["glstate"].copy()
     glclear = glstate.pop("clear", True)
     renderer = Renderer(render, shader_program, storedict)
     renderer.bind()
@@ -152,7 +153,10 @@ def do_update():
     arrays = PINS.program.get()["arrays"]
     textures = PINS.program.get().get("textures", [])
 
-    gl_context = opengl()
+    gl_context = PINS.init.updated_now or PINS.paint.updated_now
+    if gl_context:
+        context = opengl_current_context()
+        assert context is not None
 
     dirty_renderer = False
     repaint = False
@@ -164,10 +168,13 @@ def do_update():
 
     if PINS.init.updated:
         initialized = False
+        if renderer is not None:
+            renderer.set_dirty()
         if gl_context:
             init()
         else:
-            PINS.init.unclear()
+            if not gl_context:
+                PINS.init.unclear()
 
     if PINS.uniforms.updated:
         new_uniform_values = PINS.uniforms.get()
@@ -180,6 +187,7 @@ def do_update():
                 repaint = True
 
     if PINS.paint.updated:
+        #print("PAINT", gl_context, IDENTIFIER)
         if gl_context:
             paint()
             repaint = False

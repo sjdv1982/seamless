@@ -24,6 +24,7 @@ class ReactorInputSignal:
         self._name = name
         self._clear = True
         self.updated = False
+        self.updated_now = False
     def unclear(self):
         self._clear = False
 
