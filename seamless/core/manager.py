@@ -276,7 +276,7 @@ class Manager:
         listeners = self.observers.pop(cell_id, [])
 
     def _update(self, cell, dtype, value, *,
-            worker=None, only_last=False):
+            worker=None, last_con_id=None):
         import threading
         assert threading.current_thread() is threading.main_thread()
         from .cell import Signal
@@ -289,7 +289,7 @@ class Manager:
                 obs(value)
 
         macro_listeners = self.macro_listeners.get(cell_id, [])
-        if not only_last:
+        if last_con_id is None:
             for macro_object, macro_arg in macro_listeners:
                 try:
                     updated = macro_object.update_cell(macro_arg)
@@ -305,7 +305,7 @@ class Manager:
                 if isinstance(target_cell, Signal):
                     #print("cell-cell alias", cell, "=>", target_cell)
                     self._update(target_cell, None, None,
-                        worker=worker, only_last=only_last)
+                        worker=worker, last_con_id=last_con_id)
                 else:
                     value2 = value
                     if dtype is not None and \
@@ -318,8 +318,8 @@ class Manager:
                     target_cell._update(value2, propagate=True)
 
         listeners = self.listeners.get(cell_id, [])
-        if only_last:
-            listeners = listeners[-1:]
+        if last_con_id:
+            listeners = [l for l in listeners if l[1] == last_con_id]
 
         resource_name0 = None
         if cell.resource is not None:
@@ -349,14 +349,14 @@ class Manager:
                 import traceback
                 traceback.print_exc()
 
-    def update_from_code(self, cell, only_last=False):
+    def update_from_code(self, cell, last_con_id=None):
         import seamless
         if cell.dtype == "array":
             value = TransportedArray(cell._data, cell._store)
         else:
             value = cell._data
         #print("manager.update_from_code", cell, head(value))
-        self._update(cell, cell.dtype, value, only_last=only_last)
+        self._update(cell, cell.dtype, value, last_con_id=last_con_id)
         from .. import run_work
         from .macro import get_macro_mode
         if not get_macro_mode():
@@ -493,7 +493,7 @@ class Manager:
             self.add_listener(source, target, con_id)
 
             if source._status == Cell.StatusFlags.OK:
-                self.update_from_code(source, only_last=True)
+                self.update_from_code(source, last_con_id=con_id)
             else:
                 if isinstance(target, EditPinBase) and target.last_value is not None:
                     self.update_from_worker(
