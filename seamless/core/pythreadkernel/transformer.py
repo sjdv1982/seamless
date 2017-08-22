@@ -86,6 +86,7 @@ class Transformer(Worker):
 
             # Update namespace of inputs
             self.namespace.clear()
+            self.namespace.update(self.registrar_namespace)
             exec(func, self.namespace)
             for name in self.inputs.keys():
                 self.namespace[name] = self.values[name].data

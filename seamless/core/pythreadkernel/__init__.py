@@ -40,6 +40,7 @@ class Worker(metaclass=ABCMeta):
     def __init__(self, parent, inputs, event_cls=threading.Event, semaphore_cls=threading.Semaphore):
         self.parent = weakref.ref(parent)
         self.namespace = {}
+        self.registrar_namespace = {}
         self.registrars = None #to be set by parent
         self.inputs = inputs
         self.input_queue = deque()
@@ -118,7 +119,7 @@ class Worker(metaclass=ABCMeta):
                 if name == "@REGISTRAR":
                     if self.registrars is None:
                         err = "ERROR: cannot update registrar {0}, registrars have not been set"
-                        print(err.format(value))
+                        print(err.format(data))
                     try:
                         registrar_name, key, namespace_name = data
                         registrar = getattr(self.registrars, registrar_name)
@@ -126,9 +127,9 @@ class Worker(metaclass=ABCMeta):
                             registrar_value = registrar.get(key)
                         except KeyError:
                             raise
-                            self._pending_inputs.add(namespace_name)
+                            #self._pending_inputs.add(namespace_name)
                         else:
-                            self.namespace[namespace_name] = registrar_value
+                            self.registrar_namespace[namespace_name] = registrar_value
                             if namespace_name in self._pending_inputs:
                                 self._pending_inputs.remove(namespace_name)
                     except Exception as exc:
