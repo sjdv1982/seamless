@@ -5,11 +5,11 @@ from os import path
 setup(
     name='seamless-framework',
 
-    version='0.1',
+    version='0.2',
 
     description='a cell-based reactive programming framework',
 
-    long_description="""Seamless is a framework to set up computations (and visualizations) that respond to changes in cells. Cells contain the input data as well as the source code of the computations, and all cells can be edited live. The main application domains are scientific protocols, data visualization, and live code development (shaders, algorithms, and GUIs).""",
+    long_description="""Seamless is a framework to set up computations (and visualizations) that respond live to changes in cells. Cells contain the input data as well as the source code of the computations, and all cells can be edited interactively. The main application domains are scientific protocols, data visualization, and interactive code development (shaders, algorithms, and GUIs).""",
 
     url='https://github.com/sjdv1982/seamless',
 
@@ -41,7 +41,7 @@ setup(
         'Programming Language :: Python :: 3.6',
     ],
 
-    keywords='live reactive programming visualization',
+    keywords='live reactive interactive programming visualization',
 
     packages=find_packages(),
 
