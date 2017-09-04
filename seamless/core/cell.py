@@ -9,6 +9,7 @@ import json
 import weakref
 from enum import Enum
 
+from . import IpyString
 from .. import dtypes
 from .utils import find_return_in_scope
 from . import Managed
@@ -248,13 +249,16 @@ Use ``Cell.status()`` to get its status.
         return self._status.name
 
     @property
-    def error_message(self):
+    def error(self):
         """The cell's current error message.
 
         Returns None is there is no error
         """
         self._check_destroyed()
-        return self._error_message
+        err = self._error_message
+        if err is None:
+            return None
+        return IpyString(err)
 
     def cell(self):
         return self
@@ -286,7 +290,7 @@ Use ``Cell.status()`` to get its status.
 
     def _set_error_state(self, error_message=None):
         if error_message is not None:
-            self._status = self.StatusFlags.INVALID
+            self._status = self.StatusFlags.ERROR
             if error_message != self._error_message:
                 print(error_message)
         self._error_message = error_message

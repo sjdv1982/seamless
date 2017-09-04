@@ -12,7 +12,7 @@ class SeamlessBase:
     _last_context = None
     name = None
 
-    StatusFlags = Enum('StatusFlags', ('OK', 'PENDING', 'INVALID', 'UNDEFINED', 'UNCONNECTED', 'ERROR'))
+    StatusFlags = Enum('StatusFlags', ('OK', 'PENDING', 'UNDEFINED', 'UNCONNECTED', 'ERROR'))
     _status = StatusFlags.UNDEFINED
 
     def __init__(self):
