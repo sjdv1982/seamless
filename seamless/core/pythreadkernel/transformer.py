@@ -91,7 +91,7 @@ class Transformer(Worker):
             for name in self.inputs.keys():
                 self.namespace[name] = self.values[name].data
             queue = Queue()
-            args = (str(self.parent()), self.expression, self.namespace, queue)
+            args = (self.parent().format_path(), self.expression, self.namespace, queue)
             executor = Executor(target=execute,args=args, daemon=True) #TODO: name
             executor.start()
             dead_time = 0

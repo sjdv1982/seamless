@@ -66,6 +66,10 @@ Use ``Cell.status()`` to get its status.
             ctx = get_active_context()
             ctx._add_new_cell(self, naming_pattern)
 
+    def __str__(self):
+        ret = "Seamless cell: " + self.format_path()
+        return ret
+
     def _check_destroyed(self):
         if self._destroyed:
             raise AttributeError("Cell has been destroyed")
@@ -345,7 +349,7 @@ class PythonCell(Cell):
             return False
         try:
             """Check if the code is valid Python syntax"""
-            ast_tree = compile(data, str(self), "exec", ast.PyCF_ONLY_AST)
+            ast_tree = compile(data, self.format_path(), "exec", ast.PyCF_ONLY_AST)
 
         except SyntaxError:
             if not trusted:

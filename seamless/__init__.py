@@ -283,7 +283,6 @@ def export(pin, dtype=None):
         assert dtype is not None
         c = cell(dtype)
         setattr(ctx, pin.name, c)
-        print(c)
     else:
         c = getattr(ctx, pin.name)
         if dtype is not None:
