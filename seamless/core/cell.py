@@ -620,6 +620,8 @@ dtype: string or tuple of strings
         ("cson", "seamless", "reactor_params")
 """
     cell_cls = Cell
+    if isinstance(dtype, type):
+        dtype = dtype.__name__
     if dtype in _handlers:
         cell_cls = _handlers[dtype]
 
