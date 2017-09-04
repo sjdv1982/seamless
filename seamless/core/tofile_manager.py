@@ -87,10 +87,10 @@ def manager_to_json(m):
                 continue
             ppath = sl_print(pin)
             if ppath is None or cpath is None:
-                m1 = str(cell)
+                m1 = cell.format_path()
                 if cpath is None:
                     m1 += " (dead)"
-                m2 = str(pin)
+                m2 = pin.format_path()
                 if ppath is None:
                     m2 += " (dead)"
                 print("WARNING: dead connection, not saved: '%s' to '%s'" % (m2, m1))

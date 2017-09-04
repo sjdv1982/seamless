@@ -124,6 +124,7 @@ ctx.uniforms = cell("json").set({"scale": 1.0})
 ctx.uniforms.connect(p.uniforms)
 
 ctx.program.set(program2)
+ctx.equilibrate()
 ctx.array_indices.connect(p.array_indices)
 ctx.equilibrate()
 

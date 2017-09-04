@@ -328,10 +328,10 @@ class Manager:
               (input_pin.dtype == "json" or input_pin.dtype[0] == "json"):
                 if isinstance(value, (str, bytes)):
                     value2 = cson2json(value)
-            resource_name = "pin: " + str(input_pin)
+            resource_name = "pin: " + input_pin.format_path()
             if resource_name0 is not None:
                 resource_name = resource_name0 + " in " + resource_name
-            try:  
+            try:
                 input_pin.receive_update(value2, resource_name)
             except Exception:
                 #TODO: proper logging
@@ -389,7 +389,7 @@ class Manager:
                 target.update_cell((registrar.name, key))
             else:
                 raise TypeError(target)
-                
+
     @classmethod
     def get_cell_id(cls, cell):
         return id(cell)

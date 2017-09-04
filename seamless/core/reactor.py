@@ -102,13 +102,17 @@ class Reactor(Worker):
                 if isinstance(pin, OutputPin):
                     pin.cell() #auto-create a cell
 
+    def __str__(self):
+        ret = "Seamless reactor: " + self.format_path()
+        return ret
+
     def _shell(self, toplevel=True):
         p = self._find_successor()
         namespace = p.reactor.namespace
         if self._shell_rae is not None:
             for attr in self._shell_rae:
                 namespace = namespace[attr]
-        return namespace, "Reactor %s" % str(self)
+        return namespace, str(self)
 
     @property
     def reactor_params(self):

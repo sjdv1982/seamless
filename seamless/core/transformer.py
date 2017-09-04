@@ -124,9 +124,13 @@ class Transformer(Worker):
         from .macro import add_activate
         add_activate(self)
 
+    def __str__(self):
+        ret = "Seamless transformer: " + self.format_path()
+        return ret
+
     def _shell(self, toplevel=True):
         p = self._find_successor()
-        return p.transformer.namespace, "Transformer %s" % str(self)
+        return p.transformer.namespace, str(self)
 
     def activate(self):
         if self.active:

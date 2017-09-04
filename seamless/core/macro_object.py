@@ -64,7 +64,7 @@ class MacroObject:
             self._last_cell_values[cellname] = curr_value
 
         parent = self._parent()
-        print("Macro object re-evaluation", cell_arg, cellname, parent)
+        print("Macro object re-evaluation", cell_arg, cellname, parent.format_path())
         grandparent = parent.context
         assert isinstance(grandparent, Context), grandparent
         for parent_childname in grandparent._children:
@@ -229,7 +229,7 @@ class MacroObject:
         gc.collect()
         del gc._SEAMLESS_COLLECTING
         """
-        
+
         return True
 
     def set_registrar_listeners(self, registrar_listeners):

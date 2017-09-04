@@ -263,7 +263,7 @@ class Resource:
             same = check_cell(parent, self.filepath)
             if same == False and not write:
                 msg = "WARNING, cell '%s' is different from '%s'"
-                print(msg % (str(parent), self.filepath),file=sys.stderr)
+                print(msg % (parent.format_path(), self.filepath),file=sys.stderr)
         if load:
             if self.lib:
                 lib_data = _lib[self.filepath]
@@ -275,7 +275,7 @@ class Resource:
                 else:
                     same = (lib_data == current_data)
                 if not same:
-                    print("Updating %s from lib filepath %s" % (parent, self.filepath))
+                    print("Updating %s from lib filepath %s" % (parent.format_path(), self.filepath))
                     parent.set(lib_data)
                     self.dirty = True
                     self.cache = self.filepath
@@ -284,13 +284,13 @@ class Resource:
                 load_cell(parent, self.filepath) #also sets self._hash to None
                 if check and same == False:
                     msg = "WARNING, cell '%s' is different from '%s'"
-                    print(msg % (str(parent), self.filepath),file=sys.stderr)
+                    print(msg % (parent.format_path(), self.filepath),file=sys.stderr)
                     self.dirty = True
                 elif curr_hash is not None:
                     new_hash = self.get_hash()
                     if new_hash != curr_hash:
                         msg = "WARNING, cell '%s' is different from '%s'"
-                        print(msg % (str(parent), self.filepath),file=sys.stderr)
+                        print(msg % (parent.format_path(), self.filepath),file=sys.stderr)
                         self.dirty = True
         elif write:
             if not check or not (same == False):

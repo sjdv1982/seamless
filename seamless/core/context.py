@@ -14,7 +14,7 @@ _active_owner = None
 
 class PrintableList(list):
     def __str__(self):
-        return str([str(v) for v in self])
+        return str([v.format_path() for v in self])
 
 def set_active_context(ctx):
     global _active_context
@@ -137,7 +137,7 @@ active_context: bool (default = True)
         super().__init__()
         n = name
         if context is not None and context._name is not None:
-            n = context._name + "." + str(n)
+            n = context._name + "." + n.format_path()
         self._name = name
         self._pins = {}
         self._children = {}
@@ -152,20 +152,27 @@ active_context: bool (default = True)
         from .registrar import RegistrarAccessor
         self.registrar = RegistrarAccessor(self)
 
+    def __str__(self):
+        p = self.format_path()
+        if p == ".":
+            p = "<toplevel>"
+        ret = "Seamless context: " + p
+        return ret
+
     def _get_manager(self):
         return self._manager
 
     def _shell(self, toplevel=True):
         if self._exported_child is None:
             raise AttributeError("""Context %s: no exported child has been set.
-You can only invoke shell() directly on one of its children""" % str(self))
+You can only invoke shell() directly on one of its children""" % self.format_path())
         child = self._exported_child._find_successor()
         if child._destroyed:
             raise AttributeError("""Context %s: exported child has been destroyed.
-You can only invoke shell() directly on one of its remaining children""" % str(self))
+You can only invoke shell() directly on one of its remaining children""" % self.format_path())
         namespace, title = child._shell(toplevel=False)
         if toplevel:
-            name = str(self)
+            name = self.format_path()
             if name == ".":
                 name = "<toplevel>"
             title += " in context %s" % name
@@ -295,7 +302,7 @@ You can only invoke shell() directly on one of its remaining children""" % str(s
         if not get_macro_mode() and \
          macro_control is not None and macro_control is not child_macro_control:
             macro_cells = macro_control._macro_object.cell_args.values()
-            macro_cells = sorted([str(c) for c in macro_cells])
+            macro_cells = sorted([c.format_path() for c in macro_cells])
             macro_cells = "\n  " + "\n  ".join(macro_cells)
             child_path = "." + ".".join(child.path)
             if get_active_owner() is not None:
@@ -627,7 +634,7 @@ When any of these cells change and the macro is re-executed, the child object wi
     def unstable_workers(self):
         """All unstable workers (not in equilibrium)"""
         result = list(self._manager.unstable_workers)
-        return PrintableList(sorted(result, key=lambda p:str(p)))
+        return PrintableList(sorted(result, key=lambda p:p.format_path()))
 
     def _cleanup_auto(self):
         #TODO: test better, or delete? disable for now
