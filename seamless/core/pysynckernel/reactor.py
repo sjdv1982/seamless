@@ -1,3 +1,4 @@
+import sys, traceback
 import threading
 import weakref
 from functools import partial
@@ -100,8 +101,7 @@ class Reactor:
                     self._update_from_start()
 
             except Exception as exc:
-                self.exception = exc
-                import traceback
+                self.exception = exc, sys.exc_info()[2]
                 traceback.print_exc()
 
             updates_processed = self._pending_updates
@@ -120,8 +120,7 @@ class Reactor:
             data_object.validate()
 
         except Exception as exc:
-            self.exception = exc
-            import traceback
+            self.exception = exc, sys.exc_info()[2]
             traceback.print_exc()
             return
 
@@ -140,7 +139,14 @@ class Reactor:
         if self._active and not self._pending_inputs:
             updated = set(self.updated)
             self.updated.clear()
-            self.update(updated)
+
+            try:
+                self.update(updated, updated_now=updated_now)
+            except Exception as exc:
+                self.exception = exc, sys.exc_info()[2]
+                traceback.print_exc()
+            else:
+                self.exception = None
 
         self._pending_updates -= updates_processed
         p = self.parent()

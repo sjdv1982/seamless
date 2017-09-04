@@ -179,6 +179,9 @@ class Worker(metaclass=ABCMeta):
                         import traceback
                         traceback.print_exc()
 
+                    else:
+                        self.exception = None
+
                 ack(True)
 
         finally:
