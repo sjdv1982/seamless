@@ -1,6 +1,10 @@
 import weakref
 from enum import Enum
 
+class IpyString(str):
+    def _repr_pretty_(self, p, cycle):
+        return p.text(str(self))
+
 class SeamlessBase:
     _destroyed = False
     _macro_object = None # macro object that CREATED this instance
@@ -8,7 +12,7 @@ class SeamlessBase:
     _last_context = None
     name = None
 
-    StatusFlags = Enum('StatusFlags', ('OK', 'PENDING', 'INVALID', 'UNDEFINED', 'UNCONNECTED'))
+    StatusFlags = Enum('StatusFlags', ('OK', 'PENDING', 'INVALID', 'UNDEFINED', 'UNCONNECTED', 'ERROR'))
     _status = StatusFlags.UNDEFINED
 
     def __init__(self):

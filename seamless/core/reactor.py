@@ -11,6 +11,7 @@ from .cell import Cell, PythonCell
 from .pysynckernel import Reactor as KernelReactor
 from ..dtypes.objects import PythonBlockObject
 
+from . import IpyString
 from .. import dtypes
 from .. import silk
 import seamless
@@ -150,6 +151,18 @@ class Reactor(Worker):
     def __dir__(self):
         return object.__dir__(self) + list(self._pins.keys())
 
+    @property
+    def error(self):
+        """Returns a text representation of any exception (with traceback)
+        that occurred during reactor execution"""
+        import traceback
+        if self.reactor.exception is None:
+            return None
+        else:
+            exc, tb = self.reactor.exception
+            tbstr = "".join(traceback.format_exception(type(exc), exc, tb))
+            return IpyString(tbstr)
+
     def status(self):
         """The computation status of the reactor
         Returns a dictionary containing the status of all pins that are not OK.
@@ -168,6 +181,8 @@ class Reactor(Worker):
             return result
         if rc._pending_updates:
             return self.StatusFlags.PENDING.name
+        if self.error is not None:
+            return self.StatusFlags.ERROR.name            
         return self.StatusFlags.OK.name
 
     def destroy(self):
