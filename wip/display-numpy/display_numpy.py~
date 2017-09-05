@@ -1,0 +1,17 @@
+# IPython log file
+
+ctx.array = cell("array")
+ctx.display_numpy = reactor({"array": {"pin": "input", "dtype": "array"}})
+get_ipython().magic('logstart display_numpy.py')
+ctx.array.connect(ctx.display_numpy.array)
+ctx.display_numpy.code_update.set("update()")
+ctx.display_numpy.code_stop.set("destroy()")
+ctx.code = pythoncell()
+ctx.code.connect(ctx.display_numpy.code_start)
+ctx.status()
+ctx.gen_array = transformer({"array": {"pin": "output", "dtype": "array"}})
+ctx.gen_array.array.connect(ctx.array)
+link(ctx.gen_array.code.cell(), ".", "cell-gen-array.py")
+ctx.status()
+link(ctx.code, ".", "cell-display-numpy.py")
+shell(ctx.display_numpy)

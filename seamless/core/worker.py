@@ -471,7 +471,7 @@ _runtime_identifiers = WeakValueDictionary()
 _runtime_identifiers_rev = WeakKeyDictionary()
 
 def get_runtime_identifier(worker):
-    identifier = str(worker)
+    identifier = worker.format_path()
     holder = _runtime_identifiers.get(identifier, None)
     if holder is None:
         _runtime_identifiers[identifier] = worker

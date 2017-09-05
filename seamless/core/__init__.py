@@ -1,6 +1,10 @@
 import weakref
 from enum import Enum
 
+class IpyString(str):
+    def _repr_pretty_(self, p, cycle):
+        return p.text(str(self))
+
 class SeamlessBase:
     _destroyed = False
     _macro_object = None # macro object that CREATED this instance
@@ -8,7 +12,7 @@ class SeamlessBase:
     _last_context = None
     name = None
 
-    StatusFlags = Enum('StatusFlags', ('OK', 'PENDING', 'INVALID', 'UNDEFINED', 'UNCONNECTED'))
+    StatusFlags = Enum('StatusFlags', ('OK', 'PENDING', 'UNDEFINED', 'UNCONNECTED', 'ERROR'))
     _status = StatusFlags.UNDEFINED
 
     def __init__(self):
@@ -105,7 +109,7 @@ class SeamlessBase:
             if not get_macro_mode() and \
               macro_control is not None and macro_control is not obj._macro_control():
                 macro_cells = macro_control._macro_object.cell_args.values()
-                macro_cells = sorted([str(c) for c in macro_cells])
+                macro_cells = sorted([c.format_path() for c in macro_cells])
                 macro_cells = "\n  " + "\n  ".join(macro_cells)
                 if macro_control is self:
                     print("""***********************************************************************************************************************
@@ -135,7 +139,7 @@ When any of these cells change and the macro is re-executed, the owned object wi
         if done is None:
             done = []
         if self in done:
-            msg = "Ownership circle:\n    " + "\n    ".join([str(x) for x in done])
+            msg = "Ownership circle:\n    " + "\n    ".join([x.format_path() for x in done])
             raise Exception(msg)
         done.append(self)
 
@@ -174,7 +178,7 @@ When any of these cells change and the macro is re-executed, the owned object wi
             obj.destroy()
 
 
-    def __str__(self):
+    def format_path(self):
         if self.path is None:
             ret = "<None>"
         else:
@@ -182,7 +186,11 @@ When any of these cells change and the macro is re-executed, the owned object wi
         if self._owner is not None:
             owner = self._owner()
             if owner is not None:
-                ret += ", owned by " + str(owner)
+                ret += ", owned by " + owner.format_path()
+        return ret
+
+    def __str__(self):
+        ret = "Seamless object: " + self.format_path()
         return ret
 
     def __repr__(self):

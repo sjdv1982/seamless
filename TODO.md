@@ -25,6 +25,13 @@ ham.py can thus be a main script, like the ones in tests and examples.
 For all main scripts in tests and examples, the "ctx = " and ctx.tofile
 must be made conditional on __name__ == "__main__"
 
+- Overhaul dtypes.objects, in particular the Python code blocks
+  Allow Python blocks to be parsed by the transformer without return.
+  Transformer execution is still prohibited without return, unless the transformer has no outputpin.
+- Give a .as_cell() method every worker and context. This cell will contain a text representation
+  (essentially invoking X_to_json).
+  In the Python register, allow transformer.as_cell() to be registered as a Python function,
+  and context/reactor.as_cell() as a Python class
 - Replace the use of killable threads with processes... gives a problem with Orca example (fixed now ?), docking example (?), see Github issue
 - Replace ctx.CHILDREN, ctx.CELLS etc. with ctx.self.children, ctx.self.cells, etc.
 - Get rid of seamless.qt

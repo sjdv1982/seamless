@@ -10,6 +10,7 @@ from .worker import Worker, InputPin, OutputPin
 from .cell import Cell, PythonCell
 from .pythreadkernel import Transformer as KernelTransformer
 
+from . import IpyString
 from .. import dtypes
 from .. import silk
 
@@ -124,9 +125,13 @@ class Transformer(Worker):
         from .macro import add_activate
         add_activate(self)
 
+    def __str__(self):
+        ret = "Seamless transformer: " + self.format_path()
+        return ret
+
     def _shell(self, toplevel=True):
         p = self._find_successor()
-        return p.transformer.namespace, "Transformer %s" % str(self)
+        return p.transformer.namespace, str(self)
 
     def activate(self):
         if self.active:
@@ -361,6 +366,15 @@ class Transformer(Worker):
         else:
             self.transformer.registrars = None
 
+    @property
+    def error(self):
+        """Returns a text representation of any exception (with traceback)
+        that occurred during transformer execution"""
+        if self.transformer.exception is None:
+            return None
+        else:
+            return IpyString(self.transformer.exception)
+
     def status(self):
         """The computation status of the transformer
         Returns a dictionary containing the status of all pins that are not OK.
@@ -379,6 +393,8 @@ class Transformer(Worker):
             return result
         if t._pending_updates:
             return self.StatusFlags.PENDING.name
+        if self.error is not None:
+            return self.StatusFlags.ERROR.name
         return self.StatusFlags.OK.name
 
 # @macro takes nothing, a type, or a dict of types

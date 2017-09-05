@@ -17,8 +17,9 @@ def ipython_execute(code, title):
         else:
             err = result.error_in_exec
         if not result.success:
-            for tb in kernel.shell._last_traceback:
-                print(tb) #TODO: log
+            if kernel.shell._last_traceback:
+                for tb in kernel.shell._last_traceback:
+                    print(tb) #TODO: log
 
     for line in code.splitlines():
         if isp.push_accepts_more():
