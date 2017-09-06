@@ -34,6 +34,14 @@ Sets up a seamless transformer that computes a result based on two inputs
 The input and the transformation code is edited live in a GUI
 
 ```python
+#!/usr/bin/env ipython
+
+"""Basic example
+
+Sets up a transformer that computes a result based on two inputs
+The input and the transformation code is edited live in a GUI
+"""
+
 from seamless import context, cell, pythoncell, transformer
 from seamless.lib import edit, display
 
@@ -58,8 +66,8 @@ t.result.connect(ctx.result)
 
 # Every transformer has an implicit extra input pin, called "code"
 # It must be connected to a Python cell
-ctx.code = pythoncell().set("return a + b")
-ctx.code.connect(t.code)
+ctx.formula = pythoncell().set("return a + b")
+ctx.formula.connect(t.code)
 
 # Transformers execute asynchronously; ctx.equilibrate() will wait until all
 #  transformations have finished
@@ -75,7 +83,7 @@ ctx.equilibrate()
 print(ctx.result.value)  # 30
 
 # Updating the code also automatically recomputes the result
-ctx.code.set("""
+ctx.formula.set("""
 def fibonacci(n):
     def fib(n):
         if n <= 1:
@@ -100,12 +108,11 @@ ctx.gui.b = edit(ctx.b, "Input b")
 ctx.gui.result = display(ctx.result, "Result")
 
 # Same for the code, this creates a text editor
-# In this case, the code is updated as soon as you click outside the window
-ctx.gui.code = edit(ctx.code, "Transformer code")
+# In this case, the code is updated as soon as you press Ctrl+S or click "Save"
+ctx.gui.formula = edit(ctx.formula, "Transformer code")
 
 # The source code of each editor is itself a seamless cell that can be edited
-# Editing its source code (and clicking outside the window)
-#  immediately changes the other editor window!
-text_editor_code = ctx.gui.code.rc.code_start.cell()
+# Editing its source code immediately changes the other window!
+text_editor_code = ctx.gui.formula.rc.code_start.cell()
 ctx.gui.text_editor = edit(text_editor_code, "Text editor source code")
 ```
