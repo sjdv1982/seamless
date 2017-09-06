@@ -21,6 +21,8 @@ IPython (from the command line: ipython -i script.py)**
 For convenience, a command line tool ``seamless`` is provided, that starts up
 IPython and also imports the seamless API.
 
+Notebook tutorials: https://github.com/sjdv1982/seamless/tree/stable/docs/notebooks
+
 Documentation: http://sjdv1982.github.io/seamless
 
 Download examples: http://sjdv1982.github.io/seamless/downloads/examples.zip
