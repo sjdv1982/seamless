@@ -109,10 +109,16 @@ class PinBase(Managed):
 class InputPinBase(PinBase):
     def _set_context(self, context, childname, force_detach=False):
         pass
+    def __str__(self):
+        ret = "Seamless input pin: " + self.format_path()
+        return ret
 
 class OutputPinBase(PinBase):
     def _set_context(self, context, childname, force_detach=False):
         pass
+    def __str__(self):
+        ret = "Seamless output pin: " + self.format_path()
+        return ret
 
 class InputPin(InputPinBase):
     """Connects cells to workers (transformers and reactor)
