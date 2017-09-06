@@ -141,7 +141,7 @@ class Reactor:
             self.updated.clear()
 
             try:
-                self.update(updated, updated_now=updated_now)
+                self.update(updated)
             except Exception as exc:
                 self.exception = exc, sys.exc_info()[2]
                 traceback.print_exc()
