@@ -2,11 +2,11 @@ Seamless: a cell-based reactive programming framework
 =====================================================
 
 Seamless is a framework to set up computations (and visualizations) that respond
-live to changes in cells. Cells contain the input data as well as the
-source code of the computations, and all cells can be edited interactively.
+to changes in cells. Cells contain the input data as well as the source code of
+the computations, and all cells can be edited live.
 
 The main application domains are scientific protocols, data visualization, and
-interactive code development (algorithms, GUIs and shaders).
+live code development (shaders, algorithms, and GUIs).
 
 **Installation**: pip install seamless-framework
 
