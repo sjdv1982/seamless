@@ -193,7 +193,8 @@ class MacroObject:
                     pin._pin = child
 
             print("DONE DESTROY")
-            manager = parent._manager
+            if len(external_connections): #not a RegistrarObject
+                manager = parent._manager
             for mode, source, dest, ext_path, con_id in external_connections:
                 print("CONNECTION: mode '{0}', source {1}, dest {2}".format(mode, source, dest))
                 err = "Connection {0}::(mode {1}, source {2}, dest {3}) points to a destroyed external cell"
