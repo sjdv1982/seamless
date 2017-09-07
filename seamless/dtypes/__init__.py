@@ -188,8 +188,7 @@ def serialize(data_type, value):
     if dtype == "object":
         return value
     elif dtype == "array":
-        assert isinstance(value, np.ndarray)
-        return value
+        return construct_array(value)
     elif dtype == "dtype":
         return construct_dtype(value)
     elif dtype == "json":
