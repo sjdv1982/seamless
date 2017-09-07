@@ -566,8 +566,8 @@ When any of these cells change and the macro is re-executed, the child object wi
         Arguments:
             filename: name of the file to load
         """
-        from .io import fromfile
-        return fromfile(cls, filename)
+        from .fromfile import fromfile
+        return fromfile(filename)
 
     def destroy(self):
         """

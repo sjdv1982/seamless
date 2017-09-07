@@ -73,7 +73,12 @@ def cell_to_json(c):
             if not store_data:
                 store_hash = True
     if store_data and c.dtype == "array":
-        raise NotImplementedError("Saving array cell data is not (yet?) supported")
+        if c.data is None or c._preliminary:
+            warn = "WARNING: Saving independent array cell {0} is only possible \
+because it is empty; saving data is not (yet) supported"
+            print(warn.format(c.format_path()))
+        else:
+            raise NotImplementedError("Saving data of array cell {0} is not (yet?) supported" % c.format_path())
 
     if c._preliminary:
         store_data = False
