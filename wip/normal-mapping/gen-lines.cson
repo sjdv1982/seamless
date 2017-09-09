@@ -1,0 +1,19 @@
+coordinates:
+  pin: "input"
+  dtype: "array"
+  
+edges:
+  pin: "input"
+  dtype: "array"
+
+normals:
+  pin: "input"
+  dtype: "array"
+
+tangents:
+  pin: "input"
+  dtype: "array"
+
+lines:
+  pin: "output"
+  dtype: "array"

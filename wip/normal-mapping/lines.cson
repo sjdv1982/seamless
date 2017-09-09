@@ -1,0 +1,32 @@
+{
+  "arrays": [
+    "lines"
+  ],
+  "uniforms": {
+    "u_mvp_matrix": "mat4",
+    "u_modelview_matrix": "mat4",
+  },
+  "render": {
+    "command": "lines",
+    "attributes": {
+      "a_position": {
+        "dtype": "vec3",
+        "array": "lines"
+        "rae": "position"
+      }
+      "a_color": {
+        "dtype": "vec3",
+        "array": "lines"
+        "rae": "color"
+      }
+    }
+    "glstate": {
+      "clear": true,
+      "depth_test": true
+      "clear_color": "black",
+      "blend": true,
+      "multisample": true
+      "line_width": 1,
+    }
+  },
+}

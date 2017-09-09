@@ -1,0 +1,36 @@
+{
+  "arrays": [
+    "coordinates",
+    "normals",
+    "texture_coords"
+  ],
+  "uniforms": {
+    "u_normal_matrix": "mat3",
+    "u_mvp_matrix": "mat4",
+    "u_modelview_matrix": "mat4"
+  },
+  "render": {
+    "attributes": {
+      "a_position": {
+        "array": "coordinates",
+        "dtype": "vec3"
+      },
+      "a_normal": {
+        "array": "normals",
+        "dtype": "vec3"
+      },
+      "a_uv": {
+        "array": "texture_coords",
+        "dtype": "vec2"
+      }
+    },
+    "glstate": {
+      "clear": false,
+      "blend": true,
+      "cull_face": true,
+      "depth_test": true,
+      "clear_color": "black"
+    },
+    "command": "triangles"
+  }
+}
