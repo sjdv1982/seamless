@@ -145,7 +145,10 @@ class MacroObject:
                     if old_sig == new_sig:
                         transplanted[childname] = parent._children[childname]
 
-                manager = parent._manager
+                try:
+                    manager = parent._manager
+                except AttributeError:
+                    manager = parent._get_manager()
 
                 #destroy internal connections that are no longer used
                 for con in old_internal_connections:
@@ -194,7 +197,10 @@ class MacroObject:
 
             print("DONE DESTROY")
             if len(external_connections): #not a RegistrarObject
-                manager = parent._manager
+                try:
+                    manager = parent._manager
+                except AttributeError:
+                    manager = parent._get_manager()
             for mode, source, dest, ext_path, con_id in external_connections:
                 print("CONNECTION: mode '{0}', source {1}, dest {2}".format(mode, source, dest))
                 err = "Connection {0}::(mode {1}, source {2}, dest {3}) points to a destroyed external cell"
