@@ -23,6 +23,8 @@ IPython and also imports the seamless API.
 
 Notebook tutorials: https://github.com/sjdv1982/seamless/tree/stable/docs/notebooks
 
+Video tutorals: https://www.youtube.com/playlist?list=PL6WSTyQSLz08_GQqj-NyshaWnoIZMsqTK
+
 Documentation: http://sjdv1982.github.io/seamless
 
 Download examples: http://sjdv1982.github.io/seamless/downloads/examples.zip
