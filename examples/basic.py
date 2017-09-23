@@ -79,3 +79,9 @@ ctx.gui.formula = edit(ctx.formula, "Transformer code")
 # Editing its source code immediately changes the other window!
 text_editor_code = ctx.gui.formula.rc.code_start.cell()
 ctx.gui.text_editor = edit(text_editor_code, "Text editor source code")
+
+# The entire context can be saved in a file
+ctx.tofile("basic.seamless")
+
+# The context can later be loaded with:
+#   ctx = seamless.fromfile("basic.seamless")
