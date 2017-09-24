@@ -293,12 +293,6 @@ class Manager:
         from .cell import Signal
         cell_id = self.get_cell_id(cell)
 
-        observers = self.observers.get(cell_id, [])
-        for observer in observers:
-            obs = observer()
-            if obs is not None:
-                obs(value)
-
         macro_listeners = self.macro_listeners.get(cell_id, [])
         if not only_last:
             for macro_object, macro_arg in macro_listeners:
@@ -359,6 +353,14 @@ class Manager:
                 #TODO: proper logging
                 import traceback
                 traceback.print_exc()
+
+        observers = self.observers.get(cell_id, [])
+        new_value = cell.value
+        for observer in observers:
+            obs = observer()
+            if obs is not None:
+                obs(new_value)
+
 
     def update_from_code(self, cell, only_last=False):
         import seamless
