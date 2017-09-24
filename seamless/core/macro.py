@@ -182,7 +182,10 @@ class Macro:
         else:
             raise ValueError  # module is not in sys.modules...
         func_name = func.__name__
-        if (module_name, func_name) in _macros:
+        ### live macro update currently disabled
+        #TODO: fix! gives a bug in advanced seamless notebook
+        #if (module_name, func_name) in _macros :
+        if 0:
             ret = _macros[module_name, func_name]
             ret.update_code(code)
         else:
