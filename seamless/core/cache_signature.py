@@ -37,7 +37,7 @@ def cache_signature_cell(cell, ctx_path, manager, known):
                 raise TypeError(worker)
             wsigs.append(wsig)
 
-        aliases = manager.cell_aliases.get(cell_id, [])
+        aliases = manager.cell_rev_aliases.get(cell_id, [])
         other_cells = []
         for other_cell_ref in aliases:
             other_cell = other_cell_ref()
@@ -48,7 +48,7 @@ def cache_signature_cell(cell, ctx_path, manager, known):
             if other_cell.path[:len(ctx_path)] != ctx_path: #extern!
                 continue
             else:
-                wsig0 = cache_signature_cell(other_cell)
+                wsig0 = cache_signature_cell(other_cell, ctx_path, manager, known)
                 wsig = (other_cell.path, "alias", wsig0)
             wsigs.append(wsig)
 
@@ -86,6 +86,8 @@ def cache_signature_reactor(rc, ctx_path, manager, known):
         assert len(curr_pin_to_cells) == 1
         c = curr_pin_to_cells[0][0]
         cell = all_cells[c] #should always exist (?)
+        if cell.path[:len(ctx_path)] != ctx_path: #extern!
+            continue
         csig = cache_signature_cell(cell, ctx_path, manager, known)
         sig[pinname] = (pindict["pin"], pindict["dtype"], cell.path, csig)
     known[rc] = sig
@@ -108,6 +110,8 @@ def cache_signature_transformer(tf, ctx_path, manager, known):
         assert len(curr_pin_to_cells) == 1
         c = curr_pin_to_cells[0][0]
         cell = all_cells[c] #should always exist
+        if cell.path[:len(ctx_path)] != ctx_path: #extern!
+            continue
         csig = cache_signature_cell(cell, ctx_path, manager, known)
         sig[pinname] = (pindict["pin"], pindict["dtype"], cell.path, csig)
     known[tf] = sig
