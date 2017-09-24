@@ -148,6 +148,28 @@ class Manager:
         for cell_id, con_id in cell_ids:
             self._remove_listener(cell_id, input_pin, worker)
 
+    def remove_alias(self, cell1, cell2):
+        cell1_id = self.get_cell_id(cell1)
+        cell1_ref = weakref.ref(cell1)
+        cell2_id = self.get_cell_id(cell2)
+        cell2_ref = weakref.ref(cell2)
+
+        try:
+            cell1._on_disconnect(cell2, None, incoming=False)
+        except: #TODO: catch specific exception
+            pass
+
+        try:
+            cell2._on_disconnect(cell1, None, incoming=True)
+        except: #TODO: catch specific exception
+            pass
+
+        r = self.cell_aliases[cell1_id]
+        r[:] = [rr for rr in r if rr is not cell2_ref]
+        r = self.cell_rev_aliases[cell2_id]
+        r[:] = [rr for rr in r if rr is not cell1_ref]
+
+
     def remove_aliases(self, cell):
         cell_id = self.get_cell_id(cell)
         cell_ref = weakref.ref(cell)
@@ -419,10 +441,13 @@ class Manager:
             if isinstance(source, Context):
                 assert "_output" in source._pins
                 source = source._pins["_output"]
-            self.remove_listener(source, target)
-            worker = target.worker_ref()
-            if worker is not None:
-                source._on_disconnect(target, worker, incoming = False)
+            if isinstance(target, Cell):
+                self.remove_alias(source, target)
+            else:
+                self.remove_listener(source, target)
+                worker = target.worker_ref()
+                if worker is not None:
+                    source._on_disconnect(target, worker, incoming = False)
 
         elif isinstance(source, OutputPinBase):
             if isinstance(target, Context):
