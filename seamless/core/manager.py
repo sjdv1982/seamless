@@ -3,6 +3,7 @@ from ..dtypes.cson import cson2json
 import weakref
 from weakref import WeakKeyDictionary, WeakValueDictionary, WeakSet
 from ..dtypes import TransportedArray
+from .registrar import RegistrarObject
 
 #TODO: disconnect method (see MacroObject for low-level implementation)
 
@@ -222,10 +223,24 @@ class Manager:
             if m in l:
                 l.remove(m)
 
+        p = macro_object._parent
+        if p is None: return
+        p = p()
+        if p is None: return
+        if isinstance(p, RegistrarObject):
+            p.destroy()
+
+
     def remove_macro_listeners_cell(self, cell):
         cell_id = self.get_cell_id(cell)
         listeners = self.macro_listeners.pop(cell_id, [])
-
+        for macro_object, macro_arg in listeners:
+            p =  macro_object._parent
+            if p is None: continue
+            p = p()
+            if p is None: continue
+            if isinstance(p, RegistrarObject):
+                p.destroy()
 
     def add_registrar_listener(self, registrar, key, target, namespace_name):
         if registrar not in self.registrar_listeners:

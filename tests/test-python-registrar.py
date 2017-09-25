@@ -10,7 +10,16 @@ class MyClass:
     def __str__(self):
         return "MyClass: {0} {1} {2}".format(self.a, self.b, self.c)
 """)
+ro = ctx.registrar.python.register(ctx.code)
+
+# Repeated registration
+v = ctx.code.value
+#ctx.code.destroy() # Should not be necessary
+#ro.destroy() # Should not be necessary
+ctx.code = pythoncell().set(v)
 ctx.registrar.python.register(ctx.code)
+ctx.equilibrate()
+
 rc = ctx.rc = reactor({})
 ctx.registrar.python.connect("MyClass", rc)
 rc.code_start.cell().set("print( 'start', MyClass(1,2,3) )")
