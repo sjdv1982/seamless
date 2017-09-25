@@ -258,6 +258,10 @@ class MacroObject:
     def __del__(self):
         if self._parent is None:
             return
-        for k in self.cell_args:
-            cell = self.cell_args[k]
+        cell_args = []
+        try:
+            cell_args =  list(self.cell_args.items())
+        except TypeError:
+            pass
+        for k,cell in cell_args:
             cell.remove_macro_object(self, k)
