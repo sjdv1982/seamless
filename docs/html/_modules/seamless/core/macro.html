@@ -154,7 +154,7 @@
         <span class="k">assert</span> <span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="nb">type</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="nb">type</span><span class="o">.</span><span class="n">__class__</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="nb">type</span><span class="o">.</span><span class="vm">__class__</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_type_args</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_type_args_from_dict</span><span class="p">(</span><span class="nb">type</span><span class="p">)</span>
         <span class="n">type_args_processed</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="nb">type</span><span class="p">)</span>
@@ -223,8 +223,11 @@
                 <span class="k">break</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span>  <span class="c1"># module is not in sys.modules...</span>
-        <span class="n">func_name</span> <span class="o">=</span> <span class="n">func</span><span class="o">.</span><span class="n">__name__</span>
-        <span class="k">if</span> <span class="p">(</span><span class="n">module_name</span><span class="p">,</span> <span class="n">func_name</span><span class="p">)</span> <span class="ow">in</span> <span class="n">_macros</span><span class="p">:</span>
+        <span class="n">func_name</span> <span class="o">=</span> <span class="n">func</span><span class="o">.</span><span class="vm">__name__</span>
+        <span class="c1">### live macro update currently disabled</span>
+        <span class="c1">#TODO: fix! gives a bug in advanced seamless notebook</span>
+        <span class="c1">#if (module_name, func_name) in _macros :</span>
+        <span class="k">if</span> <span class="mi">0</span><span class="p">:</span>
             <span class="n">ret</span> <span class="o">=</span> <span class="n">_macros</span><span class="p">[</span><span class="n">module_name</span><span class="p">,</span> <span class="n">func_name</span><span class="p">]</span>
             <span class="n">ret</span><span class="o">.</span><span class="n">update_code</span><span class="p">(</span><span class="n">code</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>

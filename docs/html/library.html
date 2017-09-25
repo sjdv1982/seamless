@@ -126,6 +126,14 @@ not written to), and instead of its value, the file’s md5 hash is returned.</p
 <h2>itransformer<a class="headerlink" href="#itransformer" title="Permalink to this headline">¶</a></h2>
 <p>Works like a standard transformer, except that the <cite>code</cite> inputpin is for
 an IPython cell ( <cite>dtype=(“text”, “code”, “ipython”)</cite> ).</p>
+<p>The itransformer namespace contains a function last_cell(), which
+returns the last output cell (equivalent to _ in an IPython shell).</p>
+<p>The itransformer namespace does not contain return_preliminary.</p>
+<p>The itransformer has an implicit additional outputpin called <cite>html</cite>. If,
+after execution, the itransformer code has defined a variable <cite>html</cite>,
+the outputpin will be set to its value.</p>
+<p>Note that as of seamless 0.1, itransformer is implemented synchronously, i.e.
+the seamless IPython shell blocks while the itransformer executes.</p>
 <p>See tests/test-itransformer.py for an example where an itransformer is used to
 compile and execute Cython code.</p>
 </div>

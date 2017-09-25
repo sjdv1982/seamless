@@ -52,6 +52,7 @@
 <span class="kn">from</span> <span class="nn">.cell</span> <span class="k">import</span> <span class="n">Cell</span><span class="p">,</span> <span class="n">PythonCell</span>
 <span class="kn">from</span> <span class="nn">.pythreadkernel</span> <span class="k">import</span> <span class="n">Transformer</span> <span class="k">as</span> <span class="n">KernelTransformer</span>
 
+<span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">IpyString</span>
 <span class="kn">from</span> <span class="nn">..</span> <span class="k">import</span> <span class="n">dtypes</span>
 <span class="kn">from</span> <span class="nn">..</span> <span class="k">import</span> <span class="n">silk</span>
 
@@ -93,7 +94,7 @@
 
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">transformer_params</span><span class="p">):</span>
         <span class="kn">from</span> <span class="nn">.context</span> <span class="k">import</span> <span class="n">get_active_context</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">__init__</span><span class="p">()</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">code</span> <span class="o">=</span> <span class="n">InputPin</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;code&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;text&quot;</span><span class="p">,</span> <span class="s2">&quot;code&quot;</span><span class="p">,</span> <span class="s2">&quot;python&quot;</span><span class="p">))</span>
         <span class="n">thread_inputs</span> <span class="o">=</span> <span class="p">{}</span>
@@ -166,9 +167,13 @@
         <span class="kn">from</span> <span class="nn">.macro</span> <span class="k">import</span> <span class="n">add_activate</span>
         <span class="n">add_activate</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
 
+    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">ret</span> <span class="o">=</span> <span class="s2">&quot;Seamless transformer: &quot;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">format_path</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">ret</span>
+
     <span class="k">def</span> <span class="nf">_shell</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">toplevel</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
         <span class="n">p</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_find_successor</span><span class="p">()</span>
-        <span class="k">return</span> <span class="n">p</span><span class="o">.</span><span class="n">transformer</span><span class="o">.</span><span class="n">namespace</span><span class="p">,</span> <span class="s2">&quot;Transformer </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">p</span><span class="o">.</span><span class="n">transformer</span><span class="o">.</span><span class="n">namespace</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">activate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">active</span><span class="p">:</span>
@@ -392,7 +397,7 @@
             <span class="k">pass</span>
 
     <span class="k">def</span> <span class="nf">__dir__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="nb">object</span><span class="o">.</span><span class="n">__dir__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">+</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_pins</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+        <span class="k">return</span> <span class="nb">object</span><span class="o">.</span><span class="fm">__dir__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">+</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_pins</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
 
     <span class="k">def</span> <span class="nf">_set_context</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">context</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">force_detach</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">_set_context</span><span class="p">(</span><span class="n">context</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">force_detach</span><span class="p">)</span>
@@ -402,6 +407,15 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">transformer</span><span class="o">.</span><span class="n">registrars</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">registrar</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">transformer</span><span class="o">.</span><span class="n">registrars</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">error</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns a text representation of any exception (with traceback)</span>
+<span class="sd">        that occurred during transformer execution&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">transformer</span><span class="o">.</span><span class="n">exception</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">IpyString</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">transformer</span><span class="o">.</span><span class="n">exception</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">status</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;The computation status of the transformer</span>
@@ -421,6 +435,8 @@
             <span class="k">return</span> <span class="n">result</span>
         <span class="k">if</span> <span class="n">t</span><span class="o">.</span><span class="n">_pending_updates</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">StatusFlags</span><span class="o">.</span><span class="n">PENDING</span><span class="o">.</span><span class="n">name</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">error</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">StatusFlags</span><span class="o">.</span><span class="n">ERROR</span><span class="o">.</span><span class="n">name</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">StatusFlags</span><span class="o">.</span><span class="n">OK</span><span class="o">.</span><span class="n">name</span>
 
 <span class="c1"># @macro takes nothing, a type, or a dict of types</span>
