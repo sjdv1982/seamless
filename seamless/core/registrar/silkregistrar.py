@@ -5,7 +5,7 @@ class SilkRegistrarObject(RegistrarObject):
     def unregister(self):
         from seamless import silk
         silk.unregister(self.registered)
-        self.registrar._unregister(self.data, self.data_name)
+        self.registrar._unregister(self.context, self.data, self.data_name)
 
     def re_register(self, silkcode):
         context = self.context

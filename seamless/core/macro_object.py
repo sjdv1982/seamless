@@ -9,6 +9,7 @@ class MacroObject:
     kwargs = {}
     cell_args = {}
     _parent = None
+    _destroyed = False
 
     def __init__(self, macro, args, kwargs, cell_args):
         self.macro = macro
@@ -255,9 +256,15 @@ class MacroObject:
         for registrar, manager, key in registrar_listeners:
             manager.add_registrar_listener(registrar, key, self, None)
 
-    def __del__(self):
+    def destroy(self):
+        if self._destroyed:
+            return
+        self._destroyed = True
         if self._parent is None:
             return
+        p = self._parent()
+        if p is not None:
+            p.destroy()
         cell_args = []
         try:
             cell_args =  list(self.cell_args.items())
@@ -265,3 +272,6 @@ class MacroObject:
             pass
         for k,cell in cell_args:
             cell.remove_macro_object(self, k)
+
+    def __del__(self):
+        self.destroy()

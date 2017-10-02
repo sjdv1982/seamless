@@ -8,7 +8,7 @@ class EvalRegistrarObject(RegistrarObject):
         for t in self.registered:
             if t in namespace:
                 del namespace[t]
-        self.registrar._unregister(self.data, self.data_name)
+        self.registrar._unregister(self.context, self.data, self.data_name)
 
     def re_register(self, pythoncode):
         context = self.context

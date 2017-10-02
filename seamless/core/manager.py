@@ -237,24 +237,20 @@ class Manager:
             if m in l:
                 l.remove(m)
 
-        p = macro_object._parent
-        if p is None: return
-        p = p()
-        if p is None: return
-        if isinstance(p, RegistrarObject):
-            p.destroy()
-
+        #For now:
+        #unconditionally destroy the MacroObject, even if there are other
+        #cells that connect to it
+        # TODO: make macro objects (or a front end/wrapper around them)
+        # behave more like workers (connect/disconnect API)
+        macro_object.destroy()
 
     def remove_macro_listeners_cell(self, cell):
         cell_id = self.get_cell_id(cell)
         listeners = self.macro_listeners.pop(cell_id, [])
         for macro_object, macro_arg in listeners:
-            p =  macro_object._parent
-            if p is None: continue
-            p = p()
-            if p is None: continue
-            if isinstance(p, RegistrarObject):
-                p.destroy()
+            #For now:
+            #unconditionally destroy the MacroObject (see above)
+            macro_object.destroy()
 
     def add_registrar_listener(self, registrar, key, target, namespace_name):
         if registrar not in self.registrar_listeners:

@@ -71,17 +71,9 @@ class BaseRegistrar:
         manager = ctx._manager
         manager.add_registrar_item(self.name, self._register_type, data, data_name)
 
-    def _unregister(self, data, data_name):
-        from ..context import get_active_context
-        ctx = get_active_context()
-        if ctx is None:
-            return
-        manager = ctx._manager
-        try: ###
-            manager.remove_registrar_item(self.name, self._register_type, data, data_name)
-        except Exception:
-            pass
-
+    def _unregister(self, context, data, data_name):
+        manager = context._manager
+        manager.remove_registrar_item(self.name, self._register_type, data, data_name)
 
     def update(self, context, update_keys):
         manager = context._manager
