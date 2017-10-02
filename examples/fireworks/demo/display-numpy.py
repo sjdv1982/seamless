@@ -1,8 +1,4 @@
 # Ugly piece of code to display a numpy array texture
-try:
-    ctx.display_numpy.destroy()
-except AttributeError:
-    pass
 c = ctx.display_numpy = context()
 c.title = cell("str").set("Numpy array")
 c.aspect_layout = pythoncell().fromfile("AspectLayout.py")
@@ -18,4 +14,6 @@ c.display_numpy.code_stop.set("destroy()")
 c.code = pythoncell()
 c.code.connect(c.display_numpy.code_start)
 c.code.fromfile("cell-display-numpy.py")
+c.array = cell("array")
+c.array.connect(c.display_numpy.array)
 # /Ugly piece of code to display a texture
