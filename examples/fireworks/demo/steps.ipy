@@ -5,4 +5,10 @@
 %run -i display-numpy.py
 ctx.im.connect(ctx.display_numpy.array)
 
-#ctx.im.disconnect(ctx.display_numpy.array)
+
+%run -i step2.py
+ctx.im.disconnect(ctx.display_numpy.array)
+ctx.program.set(open("program-step2.cson").read())
+ctx.vert_shader.set(open("vert_shader-step2.glsl").read())
+ctx.frag_shader.set(open("frag_shader-step2.glsl").read())
+ctx.equilibrate()
