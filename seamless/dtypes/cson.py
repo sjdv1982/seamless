@@ -31,6 +31,8 @@ def _cson2json_cmd(cson):
     return json.decode("utf-8")
 
 def cson2json(cson):
+    if cson is None:
+        return None
     if has_cson_lib and not has_cson_cmd:
         return cson_lib.loads(cson)
     elif has_cson_cmd and not has_cson_lib:
