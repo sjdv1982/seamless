@@ -29,7 +29,7 @@ def update():
         arr = arr.reshape((len(arr), 1))
     if arr.ndim == 3:
         if arr.shape[-1] == 4:
-            arr = arr[:,:,:3]
+            arr = np.ascontiguousarray(arr[:,:,:3])
         assert arr.shape[-1] == 3
         if arr.dtype == np.uint8:
             arr_norm_255 = arr

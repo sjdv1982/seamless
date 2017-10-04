@@ -1,0 +1,101 @@
+#  Step 0
+%run -i step0.py
+
+#  Step 1: display image
+%run -i step1.py
+%run -i display-numpy.py
+%run -i display-numpy.py
+# after:
+ctx.im.connect(ctx.display_numpy.array)
+
+#  Step 2: OpenGL
+%run -i step2.py
+ctx.im.disconnect(ctx.display_numpy.array)
+ctx.program.set(open("program-step2.cson").read())
+ctx.vert_shader.set(open("vert_shader-step2.glsl").read())
+ctx.frag_shader.set(open("frag_shader-step2.glsl").read())
+
+#  Step 3: generate vertexdata using a transformer
+%run -i step3.py
+ctx.equilibrate()
+ctx.params_gen_vertexdata.set(open("params_gen_vertexdata-step3.cson").read() )
+# after:
+ctx.N.connect(ctx.gen_vertexdata.N)
+ctx.gen_vertexdata.output.connect(ctx.vertexdata)
+
+#  Step 4: larger points
+ctx.gen_vertexdata.code.set(open("cell-gen-vertexdata-step4.py").read())
+ctx.vert_shader.set(open("vert_shader-step4.glsl").read())
+ctx.program.set(open("program-step4.cson").read())
+#  equivalent to: glEnable(GL_VERTEX_PROGRAM_POINT_SIZE)
+
+#  Step 5
+ctx.program.set(open("program-step5.cson").read())
+ctx.frag_shader.set(open("frag_shader-step5.glsl").read())
+
+#  Step 6: animation
+%run -i step6.py
+ctx.params_gen_uniforms.set(open("params_gen_uniforms-step6.cson").read() )
+ctx.gen_uniforms.uniforms.connect(ctx.uniforms)
+ctx.gen_uniforms.code_start.cell().set(open("cell-gen-uniforms-start-step6.py").read())
+ctx.gen_uniforms.code_update.cell().set(open("cell-gen-uniforms-update-empty.py").read())
+ctx.program.set(open("program-step6.cson").read())
+ctx.vert_shader.set(open("vert_shader-step6.glsl").read())
+
+# Step 7: auto-redraw
+ctx.params_gen_uniforms.set(open("params_gen_uniforms-step7.cson").read() )
+ctx.gen_uniforms.code_start.cell().set(open("cell-gen-uniforms-start-step7.py").read())
+ctx.gen_uniforms.code_update.cell().set(open("cell-gen-uniforms-update-step7.py").read())
+%run -i step7.py
+
+# Step 8: signalling for repeated explosions
+ctx.params_gen_uniforms.set(open("params_gen_uniforms-step8.cson").read() )
+ctx.gen_uniforms.code_update.cell().set(open("cell-gen-uniforms-update-step8.py").read())
+ctx.params_gen_vertexdata.set(open("params_gen_vertexdata-step8.cson").read() )
+%run -i step8.py
+
+# Step 9: generate the texture
+%run -i step9a.py
+%run -i step9b.py
+# After:
+ctx.im.disconnect(ctx.display_numpy.array)
+ctx.texture.connect(ctx.display_numpy.array)
+
+# Step 10: use the texture
+ctx.program.set(open("program-step10.cson").read())
+# In between:
+ctx.texture.connect(p.array_s_texture)
+# /In between
+ctx.frag_shader.set(open("frag_shader-step10.glsl").read())
+
+# Step 11:
+#   First:  N + color in gen-uniforms (connect N), program + frag shader
+#   Then:   centerPosition in gen-uniforms, program + vert shader
+#   Then:   same for gravity (connect)
+#   Then:   same for pointsize (connect)
+ctx.params_gen_uniforms.set(open("params_gen_uniforms-step11.cson").read() )
+ctx.gen_uniforms.code_start.cell().set(open("cell-gen-uniforms-start-step11.py").read())
+# In between:
+ctx.N.connect(ctx.gen_uniforms.N)
+ctx.gravity = ctx.gen_uniforms.gravity.cell().set(1)
+ctx.pointsize = ctx.gen_uniforms.pointsize.cell().set(10)
+# /In between
+ctx.program.set(open("program-step11.cson").read())
+ctx.vert_shader.set(open("vert_shader-step11.glsl").read())
+ctx.frag_shader.set(open("frag_shader-step11.glsl").read())
+
+# Step 12: startPosition and endPosition
+ctx.gen_vertexdata.code.set(open("cell-gen-vertexdata-step12.py").read())
+ctx.program.set(open("program-step12.cson").read())
+ctx.vert_shader.set(open("vert_shader-step12.glsl").read())
+
+
+# Step 13: Silk
+
+# Step 14: lifetime
+
+# Step 15: shrink_with_age
+
+# finally: confetti (color attribute), bubbles
+
+print("OK")

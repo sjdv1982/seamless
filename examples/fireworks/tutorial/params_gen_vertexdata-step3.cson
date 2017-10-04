@@ -1,0 +1,10 @@
+{
+  "N": {
+    "pin": "input",
+    "dtype": "int"
+  },
+  "output": {
+    "pin": "output",
+    "dtype": "array"
+  },
+}

@@ -3,7 +3,7 @@ from PyQt5.QtGui import QImage, QPixmap
 from PyQt5.QtCore import Qt, QSize
 import numpy as np
 
-w = QMainWindow(size=QSize(400, 400))
+w = QMainWindow(size=QSize(640, 640))
 ww = QWidget()
 w.setCentralWidget(ww)
 asp = AspectLayout(1.0)
@@ -29,7 +29,7 @@ def update():
         arr = arr.reshape((len(arr), 1))
     if arr.ndim == 3:
         if arr.shape[-1] == 4:
-            arr = arr[:,:,:3]
+            arr = np.ascontiguousarray(arr[:,:,:3])
         assert arr.shape[-1] == 3
         if arr.dtype == np.uint8:
             arr_norm_255 = arr
