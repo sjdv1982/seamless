@@ -480,9 +480,14 @@ class Signal(Cell):
 
     def set(self):
         self._status = self.__class__.StatusFlags.OK
-        self.touch()
+        Cell.touch(self)
         import seamless
         seamless.run_work()
+
+    def touch(self):
+        """Forces a cell update, even though the value stays the same
+        This triggers all workers that are connected to the cell"""
+        self.set()
 
     def fromfile(self, filename):
         raise AttributeError("fromfile")
