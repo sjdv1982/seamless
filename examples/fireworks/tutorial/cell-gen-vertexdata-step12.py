@@ -1,4 +1,5 @@
 # Generate three-dimensional points (even though we will ignore Z)
+assert N > 0
 import numpy as np
 
 dtype = np.dtype([

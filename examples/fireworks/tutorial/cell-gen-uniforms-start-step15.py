@@ -19,6 +19,9 @@ def new_explosion():
     color = np.random.uniform(0.1, 0.9, (3,))
     uniforms['u_color'] = tuple(color) + (alpha,)
 
+    gravity = PINS.gravity.get()
+    uniforms['u_gravity'] = gravity
+
     start_time = time.time()
     uniforms['u_time'] = 0
     PINS.uniforms.set(uniforms)
@@ -33,9 +36,4 @@ def update():
     uniforms['u_pointsize'] = pointsize
     shrink_with_age = PINS.shrink_with_age.get()
     uniforms['u_shrink_with_age'] = shrink_with_age
-    gravity = PINS.gravity.get()
-    uniforms['u_gravity'] = gravity
-   
     PINS.uniforms.set(uniforms)
-
-   

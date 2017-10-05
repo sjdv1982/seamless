@@ -1,41 +1,46 @@
 {
-  "arrays": [
-    "vertexdata"
-  ]
-  "textures": [
-    "s_texture"
-  ],
-  "uniforms": {
-    "u_centerPosition": "vec3",
-    "u_time": "float",
-    "u_color": "vec4",
-    "u_gravity": "float",
-    "u_pointsize": "float",
-  },
   "render": {
+    "command": "points",
     "attributes": {
-      "a_startPosition": {
-        "dtype": "vec3"
-        "array": "vertexdata"
-        "rae": "['a_startPosition']"
-      }
+      "a_lifetime": {
+        "rae": "['a_lifetime']",
+        "array": "vertexdata",
+        "dtype": "float"
+      },
       "a_endPosition": {
+        "rae": "['a_endPosition']",
+        "array": "vertexdata",
         "dtype": "vec3"
-        "array": "vertexdata"
-        "rae": "['a_endPosition']"
+      },
+      "a_startPosition": {
+        "rae": "['a_startPosition']",
+        "array": "vertexdata",
+        "dtype": "vec3"
       }
-    }
+    },
     "glstate": {
+      "point_sprite": true,
+      "depth_test": false,
       "clear_color": "black",
-      "vertex_program_point_size": true,
-      "depth_test": false
-      "blend": true
       "blend_func": [
         "src_alpha",
         "one"
       ],
-      "point_sprite": true,
+      "blend": true,
+      "vertex_program_point_size": true
     }
-    "command": "points"
+  },
+  "textures": [
+    "s_texture"
+  ],
+  "arrays": [
+    "vertexdata"
+  ],
+  "uniforms": {
+    "u_color": "vec4",
+    "u_gravity": "float",
+    "u_centerPosition": "vec3",
+    "u_time": "float",
+    "u_pointsize": "float"
   }
 }
