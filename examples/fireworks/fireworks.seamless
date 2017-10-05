@@ -20,7 +20,7 @@
     "/cell-timer.py": {
       "data": "from threading import Timer\ndead = False\ndef trigger():\n    global t\n    if dead:\n        return\n    PINS.trigger.set()\n    t = Timer(PINS.period.get(), trigger)\n    t.setDaemon(True)\n    t.start()\nt = Timer(PINS.period.get(), trigger)\nt.setDaemon(True)\nt.start()\n",
       "links": [
-        "cell33"
+        "display_texture.cell13"
       ]
     },
     "/gui/cell-basic_display_UPDATE.py": {
@@ -84,7 +84,7 @@
       "links": []
     },
     "/gui/cell-basic_editor_text.py": {
-      "data": "from seamless.qt.QtWidgets import QTextEdit, QWidget, QVBoxLayout\nfrom seamless.qt.QtCore import Qt\nfrom PyQt5.QtGui import QColor\n\nw = QWidget()\n#w.setWindowFlags(Qt.WindowStaysOnTopHint)\nw.setAttribute(Qt.WA_ShowWithoutActivating)\nvbox = QVBoxLayout()\n#vbox.addStretch(1)\nw.resize(600,600)\nw.setLayout(vbox)\nw.setWindowTitle(PINS.title.get())\n\nclass MyTextEdit(QTextEdit):\n    def focusOutEvent(self, event):\n        PINS.value.set(self.toPlainText())\n        QTextEdit.focusOutEvent(self, event)\n\nw.show()\nb = MyTextEdit()\nb.setFontPointSize(15)\nif PINS.value.defined:\n    b.setText(PINS.value.get())\n#b.setFontItalic(True)\n#b.setTextColor(QColor(255,0,0))\nvbox.addWidget(b)\n",
+      "data": "from seamless.qt.QtWidgets import QTextEdit, QMainWindow, QAction\nfrom seamless.qt.QtCore import Qt\nfrom PyQt5.QtGui import QColor\n\nw = QMainWindow()\n#w.setWindowFlags(Qt.WindowStaysOnTopHint)\nw.setAttribute(Qt.WA_ShowWithoutActivating)\nw.resize(600,600)\nw.setWindowTitle(PINS.title.get())\n\nclass MyTextEdit(QTextEdit):\n    def focusOutEvent(self, event):\n        PINS.value.set(self.toPlainText())\n        QTextEdit.focusOutEvent(self, event)\n\nw.show()\nb = MyTextEdit()\nb.setFontPointSize(15)\nw.setCentralWidget(b)\n\nsaveAction = QAction('&Save', w)\nsaveAction.setShortcut('Ctrl+S')\nsaveAction.setStatusTip('Save')\nsaveAction.triggered.connect(lambda: PINS.value.set(b.toPlainText()))\nw.menuBar().addAction(saveAction)\n\nif PINS.value.defined:\n    b.setText(PINS.value.get())\n#b.setFontItalic(True)\n#b.setTextColor(QColor(255,0,0))\n",
       "links": []
     },
     "/gui/cell-basic_editor_text_UPDATE.py": {
@@ -92,13 +92,13 @@
       "links": []
     },
     "/gui/gl/cell-glprogram.py": {
-      "data": "from collections import OrderedDict\nimport numpy as np\nfrom OpenGL.arrays import vbo\nfrom OpenGL.GL import shaders\nfrom OpenGL.GL import *\nfrom OpenGL import GL as gl\n\nfrom seamless import opengl\nfrom seamless.lib.gui.gl.set_uniform import set_uniform\n\nfrom seamless.lib.gui.gl.Renderer import Renderer, VertexAttribute\nfrom seamless.lib.gui.gl import glstate as glstate_module\n\ninitialized = False\nshader_program = None\nrenderer = False\nuniform_types = {}\nuniform_locations = {}\nuniform_values = {}\nuniform_dirty = set()\ntexture_locations = OrderedDict()\nwarnings = []\n\ndef init():\n    global initialized, shader_program, renderer, uniform_types, \\\n     glstate, glclear, texdict\n    from seamless.dtypes.gl import GLStore, GLTexStore\n\n    if initialized:\n        return\n\n    # Compile shaders\n    vertex_code = PINS.vertex_shader.get()\n    fragment_code = PINS.fragment_shader.get()\n    vertex_shader = shaders.compileShader(vertex_code, GL_VERTEX_SHADER)\n    fragment_shader = shaders.compileShader(fragment_code, GL_FRAGMENT_SHADER)\n    shader_program = shaders.compileProgram(vertex_shader, fragment_shader)\n\n    program = PINS.program.get()\n\n    # Bind vertex attributes\n    storedict = {}\n    for ar in program[\"arrays\"]:\n        attr = \"array_\" + ar\n        store = getattr( getattr(PINS, attr), \"store\", None)\n        assert isinstance(store, GLStore), ar #TODO: nicer error message\n        #store.bind() #superfluous\n        storedict[ar] = store\n\n    # Bind textures\n    texdict = {}\n    texture_locations.clear()\n    for ar in program.get(\"textures\",[]):\n        attr = \"array_\" + ar\n        store = getattr( getattr(PINS, attr), \"store\", None)\n        assert isinstance(store, GLTexStore), ar #TODO: nicer error message\n        #store.bind() #superfluous\n        texdict[ar] = store\n        loc = gl.glGetUniformLocation(shader_program, ar)\n        if loc == -1:\n            print(\"WARNING: unknown texture '%s'\" % ar)\n            continue\n        texture_locations[ar] = loc\n\n    # Create renderer and set glstate\n    render = program[\"render\"]\n    glstate = render[\"glstate\"]\n    glclear = glstate.pop(\"clear\", True)\n    renderer = Renderer(render, shader_program, storedict)\n    renderer.bind()\n\n    # Get uniform bindings\n    shaders.glUseProgram(shader_program)\n    uniform_locations.clear()\n    uniform_dirty.clear()\n    uniform_types = program.get(\"uniforms\", {})\n    for uniform in uniform_types:\n        loc = gl.glGetUniformLocation(shader_program, uniform)\n        if loc == -1:\n            print(\"WARNING: unknown uniform '%s'\" % uniform)\n            continue\n        uniform_locations[uniform] = loc\n        uniform_dirty.add(uniform)\n\n    initialized = True\n\ndef paint():\n            #print(\"DRAW\")\n    if not initialized:\n        init()\n    shaders.glUseProgram(shader_program)\n\n    old_warnings = warnings[:]\n    warnings.clear()\n\n    #re-bind the textures every draw, to be safe\n    for texnr, tex in enumerate(texture_locations):\n        gl.glActiveTexture(gl.GL_TEXTURE0+texnr)\n        loc = texture_locations[tex]\n        gl.glUniform1i(loc, texnr)\n        store = texdict[tex]\n        store.bind()\n\n    for uniform in list(uniform_dirty):\n        if uniform not in uniform_locations:\n            continue\n        if uniform not in uniform_types:\n            continue\n        utype = uniform_types[uniform]\n        value = uniform_values.get(uniform, None)\n        if value is None:\n            warnings.append(\"WARNING: unset uniform '%s'\" % uniform)\n            continue\n        loc = uniform_locations[uniform]\n        set_uniform(value, utype, loc)\n        uniform_dirty.remove(uniform)\n\n    glstate_module.set_state(**glstate)\n    if glclear not in (None, False):\n        if glclear == True:\n            glstate_module.clear()\n        else:\n            glstate_module.clear(*glclear)\n    renderer.draw()\n\n    # Heisenbug!!! see below. Seems to be solved now\n    try:\n        warnings\n    except NameError:\n        return\n\n    if warnings != old_warnings:\n        for warning in warnings:\n            print(warning)\n    #print(\"/DRAW\")\n\ndef do_update():\n    global initialized\n\n    \"\"\"\n    Outside of \"init\" and \"paint\", we have to use \"dirty\" flags,\n     rather than direct GL commands!\n    \"\"\"\n\n    updated = set()\n    for attr in PINS.__dict__:\n        pin = getattr(PINS, attr)\n        if hasattr(pin, \"updated\") and pin.updated:\n            updated.add(attr)\n\n\n    arrays = PINS.program.get()[\"arrays\"]\n    textures = PINS.program.get().get(\"textures\", [])\n\n    gl_context = opengl()\n\n    dirty_renderer = False\n    repaint = False\n    for ar in arrays + textures:\n        attr = \"array_\" + ar\n        pin = getattr(PINS, attr)\n        if pin.updated:\n            dirty_renderer = True\n\n    if PINS.init.updated:\n        initialized = False\n        if gl_context:\n            init()\n        else:\n            PINS.init.unclear()\n\n    if PINS.uniforms.updated:\n        new_uniform_values = PINS.uniforms.get()\n        for uniform in new_uniform_values:\n            v_old = uniform_values.get(uniform, None)\n            v_new = new_uniform_values.get(uniform, None)\n            if v_old != v_new:\n                uniform_values[uniform] = v_new\n                uniform_dirty.add(uniform)\n                repaint = True\n\n    if PINS.paint.updated:\n        if gl_context:\n            paint()\n            repaint = False\n        else:\n            repaint = True\n\n    # Heisenbug!!! see test-gl-BUG.py\n    # As of now, seems to be solved, see cell-glwindow.py\n    try:\n        initialized\n    except NameError:\n        import sys\n        msg = \"\"\"seamless/lib/gui/cell-glprogram.py\nSomething has gone wrong, PyQt has corrupted Python's memory\nA crash will now happen... no idea why, sorry\n\"\"\"\n        print(msg, file=sys.stderr)\n        return\n    # /heisenbug\n\n    if PINS.program.updated or \\\n      PINS.vertex_shader.updated or PINS.fragment_shader.updated:\n        initialized = False\n        repaint = True\n\n    if initialized and dirty_renderer:\n        renderer.set_dirty()\n        repaint = True\n\n    if repaint:\n        PINS.repaint.set()\n",
+      "data": "from collections import OrderedDict\nimport numpy as np\nfrom OpenGL.arrays import vbo\nfrom OpenGL.GL import shaders\nfrom OpenGL.GL import *\nfrom OpenGL import GL as gl\n\nfrom seamless.lib.gui.gl.set_uniform import set_uniform\n\nfrom seamless.lib.gui.gl.Renderer import Renderer, VertexAttribute\nfrom seamless.lib.gui.gl import glstate as glstate_module\n\nfrom seamless.opengl import opengl_current_context\n\ninitialized = False\nshader_program = None\nrenderer = None\nuniform_types = {}\nuniform_locations = {}\nuniform_values = {}\nuniform_dirty = set()\ntexture_locations = OrderedDict()\nwarnings = []\n\ndef init():\n    global initialized, shader_program, renderer, uniform_types, \\\n     glstate, glclear, texdict\n    from seamless.dtypes.gl import GLStore, GLTexStore\n\n    if initialized:\n        return\n\n    # Compile shaders\n    vertex_code = PINS.vertex_shader.get()\n    fragment_code = PINS.fragment_shader.get()\n    vertex_shader = shaders.compileShader(vertex_code, GL_VERTEX_SHADER)\n    fragment_shader = shaders.compileShader(fragment_code, GL_FRAGMENT_SHADER)\n    shader_program = shaders.compileProgram(vertex_shader, fragment_shader)\n\n    program = PINS.program.get()\n\n    # Bind vertex attributes\n    storedict = {}\n    for ar in program[\"arrays\"]:\n        attr = \"array_\" + ar\n        store = getattr( getattr(PINS, attr), \"store\", None)\n        assert isinstance(store, GLStore), ar #TODO: nicer error message\n        #store.bind() #superfluous\n        storedict[ar] = store\n\n    # Bind textures\n    texdict = {}\n    texture_locations.clear()\n    for ar in program.get(\"textures\",[]):\n        attr = \"array_\" + ar\n        store = getattr( getattr(PINS, attr), \"store\", None)\n        assert isinstance(store, GLTexStore), ar #TODO: nicer error message\n        #store.bind() #superfluous\n        texdict[ar] = store\n        loc = gl.glGetUniformLocation(shader_program, ar)\n        if loc == -1:\n            print(\"WARNING: unknown texture '%s'\" % ar)\n            continue\n        texture_locations[ar] = loc\n\n    # Create renderer and set glstate\n    render = program[\"render\"]\n    glstate = render[\"glstate\"].copy()\n    glclear = glstate.pop(\"clear\", True)\n    renderer = Renderer(render, shader_program, storedict)\n    renderer.bind()\n\n    # Get uniform bindings\n    shaders.glUseProgram(shader_program)\n    uniform_locations.clear()\n    uniform_dirty.clear()\n    uniform_types = program.get(\"uniforms\", {})\n    for uniform in uniform_types:\n        loc = gl.glGetUniformLocation(shader_program, uniform)\n        if loc == -1:\n            print(\"WARNING: unknown uniform '%s'\" % uniform)\n            continue\n        uniform_locations[uniform] = loc\n        uniform_dirty.add(uniform)\n\n    initialized = True\n\ndef paint():\n            #print(\"DRAW\")\n    if not initialized:\n        init()\n    shaders.glUseProgram(shader_program)\n\n    old_warnings = warnings[:]\n    warnings.clear()\n\n    #re-bind the textures every draw, to be safe\n    for texnr, tex in enumerate(texture_locations):\n        gl.glActiveTexture(gl.GL_TEXTURE0+texnr)\n        loc = texture_locations[tex]\n        gl.glUniform1i(loc, texnr)\n        store = texdict[tex]\n        store.bind()\n\n    for uniform in list(uniform_dirty):\n        if uniform not in uniform_locations:\n            continue\n        if uniform not in uniform_types:\n            continue\n        utype = uniform_types[uniform]\n        value = uniform_values.get(uniform, None)\n        if value is None:\n            warnings.append(\"WARNING: unset uniform '%s'\" % uniform)\n            continue\n        loc = uniform_locations[uniform]\n        set_uniform(value, utype, loc)\n        uniform_dirty.remove(uniform)\n\n    glstate_module.set_state(**glstate)\n    if glclear not in (None, False):\n        if glclear == True:\n            glstate_module.clear()\n        else:\n            glstate_module.clear(*glclear)\n    renderer.draw()\n\n    # Heisenbug!!! see below. Seems to be solved now\n    try:\n        warnings\n    except NameError:\n        return\n\n    if warnings != old_warnings:\n        for warning in warnings:\n            print(warning)\n    #print(\"/DRAW\")\n\ndef do_update():\n    global initialized\n\n    \"\"\"\n    Outside of \"init\" and \"paint\", we have to use \"dirty\" flags,\n     rather than direct GL commands!\n    \"\"\"\n\n    updated = set()\n    for attr in PINS.__dict__:\n        pin = getattr(PINS, attr)\n        if hasattr(pin, \"updated\") and pin.updated:\n            updated.add(attr)\n\n\n    arrays = PINS.program.get()[\"arrays\"]\n    textures = PINS.program.get().get(\"textures\", [])\n\n    gl_context = PINS.init.updated_now or PINS.paint.updated_now\n    if gl_context:\n        context = opengl_current_context()\n        assert context is not None\n\n    dirty_renderer = False\n    repaint = False\n    for ar in arrays + textures:\n        attr = \"array_\" + ar\n        pin = getattr(PINS, attr)\n        if pin.updated:\n            dirty_renderer = True\n\n    if PINS.init.updated:\n        initialized = False\n        if renderer is not None:\n            renderer.set_dirty()\n        if gl_context:\n            init()\n        else:\n            if not gl_context:\n                PINS.init.unclear()\n\n    if PINS.uniforms.updated:\n        new_uniform_values = PINS.uniforms.get()\n        for uniform in new_uniform_values:\n            v_old = uniform_values.get(uniform, None)\n            v_new = new_uniform_values.get(uniform, None)\n            if v_old != v_new:\n                uniform_values[uniform] = v_new\n                uniform_dirty.add(uniform)\n                repaint = True\n\n    if PINS.paint.updated:\n        #print(\"PAINT\", gl_context, IDENTIFIER)\n        if gl_context:\n            paint()\n            repaint = False\n        else:\n            repaint = True\n\n    # Heisenbug!!! see test-gl-BUG.py\n    # As of now, seems to be solved, see cell-glwindow.py\n    try:\n        initialized\n    except NameError:\n        import sys\n        msg = \"\"\"seamless/lib/gui/cell-glprogram.py\nSomething has gone wrong, PyQt has corrupted Python's memory\nA crash will now happen... no idea why, sorry\n\"\"\"\n        print(msg, file=sys.stderr)\n        return\n    # /heisenbug\n\n    if PINS.program.updated or \\\n      PINS.vertex_shader.updated or PINS.fragment_shader.updated:\n        initialized = False\n        repaint = True\n\n    if initialized and dirty_renderer:\n        renderer.set_dirty()\n        repaint = True\n\n    if repaint:\n        PINS.repaint.set()\n",
       "links": [
         "glprogram.cell1"
       ]
     },
     "/gui/gl/cell-glwindow.py": {
-      "data": "from seamless.qt.QtWidgets import QOpenGLWidget, QApplication\nfrom seamless.qt.QtCore import Qt\nfrom seamless.qt import QtGui\n\nfrom seamless import add_opengl_context, remove_opengl_context, \\\n activate_opengl, deactivate_opengl\nfrom OpenGL import GL\nimport numpy as np\nfrom math import *\n\ndef length(vec):\n    return sqrt(np.sum(vec*vec))\n\ndef normalize(vec):\n    return vec / length(vec\n    )\n# Camera class, uses code from the camera routines in pyqtgraph's GLViewWidget\nclass Camera:\n    center = np.zeros(3,dtype=\"float\")     ## will always appear at the center of the widget\n    distance = 10.0          ## distance of camera from center\n    fov =  60                ## horizontal field of view in degrees\n    elevation =  30          ## camera's angle of elevation in degrees\n    azimuth = 45             ## camera's azimuthal angle in degrees\n    width = None\n    height = None\n    _loading = False\n\n    #authoritative attributes\n    _attrs1 = ( \"center\", \"distance\", \"fov\",\n              \"elevation\", \"azimuth\", \"width\", \"height\")\n\n    #derived attributes\n    _attrs2 = (\"projection_matrix\", \"modelview_matrix\",\n        \"mvp_matrix\", \"normal_matrix\", \"position\")\n\n    @property\n    def projection_matrix(self):\n        # Xw = (Xnd + 1) * width/2 + X\n        region = (0, 0, self.width, self.height)\n\n        viewport = region #for now\n        x0, y0, w, h = viewport\n        dist = self.distance\n        fov = self.fov\n        nearClip = dist * 0.001\n        farClip = dist * 1000.\n\n        r = nearClip * np.tan(fov * 0.5 * np.pi / 180.)\n        t = r * h / w\n\n        # convert screen coordinates (region) to normalized device coordinates\n        # Xnd = (Xw - X0) * 2/width - 1\n        ## Note that X0 and width in these equations must be the values used in viewport\n        left  = r * ((region[0]-x0) * (2.0/w) - 1)\n        right = r * ((region[0]+region[2]-x0) * (2.0/w) - 1)\n        bottom = t * ((region[1]-y0) * (2.0/h) - 1)\n        top    = t * ((region[1]+region[3]-y0) * (2.0/h) - 1)\n\n        tr = QtGui.QMatrix4x4()\n        tr.frustum(left, right, bottom, top, nearClip, farClip)\n        return np.array(tr.data()).reshape((4,4))\n\n    @property\n    def _modelview_matrix(self):\n        tr = QtGui.QMatrix4x4()\n        tr.translate( 0.0, 0.0, -self.distance)\n        tr.rotate(self.elevation-90, 1, 0, 0)\n        tr.rotate(self.azimuth+90, 0, 0, -1)\n        center = self.center\n        tr.translate(-center[0], -center[1], -center[2])\n        return tr\n\n    @property\n    def modelview_matrix(self):\n        tr = self._modelview_matrix\n        return np.array(tr.data()).reshape((4,4))\n\n    @property\n    def normal_matrix(self):\n        tr = self._modelview_matrix\n        return np.array(tr.normalMatrix().data()).reshape((3,3))\n\n    @property\n    def mvp_matrix(self):\n        mv = self.modelview_matrix\n        p = self.projection_matrix\n        return mv.dot(p)\n\n    @property\n    def position(self):\n        \"\"\"Return current position of camera based on center, dist, elevation, and azimuth\"\"\"\n        center = self.center\n        dist = self.distance\n        elev = self.elevation * pi/180.\n        azim = self.azimuth * pi/180.\n\n        pos = np.array((\n            center[0] + dist * cos(elev) * cos(azim),\n            center[1] + dist * cos(elev) * sin(azim),\n            center[2]  + dist * sin(elev)\n        ))\n        return pos\n\n\n    def __init__(self):\n        self.center = np.zeros(3)\n\n    def _write(self):\n        if self._loading:\n            return\n        data = {}\n        for attr in self._attrs1 + self._attrs2:\n            v = getattr(self, attr)\n            if isinstance(v, np.ndarray):\n                v = v.tolist()\n            data[attr] = v\n        self._data = data\n        PINS.camera.set(data)\n\n    def orbit(self, azim, elev):\n        \"\"\"Orbits the camera around the center position. *azim* and *elev* are given in degrees.\"\"\"\n        self.azimuth += azim\n        self.elevation = float(np.clip(self.elevation + elev, -90, 90))\n        self._write()\n\n    def pan(self, dx, dy, dz, relative=False):\n        \"\"\"\n        Moves the center (look-at) position while holding the camera in place.\n\n        If relative=True, then the coordinates are interpreted such that x\n        if in the global xy plane and points to the right side of the view, y is\n        in the global xy plane and orthogonal to x, and z points in the global z\n        direction. Distances are scaled roughly such that a value of 1.0 moves\n        by one pixel on screen.\n\n        \"\"\"\n        if not relative:\n            self.center += dx, dy, dz\n        else:\n            cPos = self.position\n            cVec = self.center - cPos\n            dist = length(cVec)  ## distance from camera to center\n            xDist = dist * 2. * tan(0.5 * self.fov * pi / 180.)  ## approx. width of view at distance of center point\n            xScale = xDist / self.width\n            zVec = np.array((0,0,1.))\n            xVec = normalize(np.cross(zVec, cVec))\n            yVec = normalize(np.cross(xVec, zVec))\n            self.center += xScale * (xVec * dx + yVec * dy + zVec * dz)\n        self._write()\n\n    def resize(self, width, height):\n        self.width, self.height = width, height\n        self._write()\n\n    def load(self, data):\n        dif = {}\n        try:\n            self._loading = True\n            for at in self._attrs1:\n                curr = getattr(self, at)\n                new = data.get(at, None)\n                if new is not None:\n                    if isinstance(curr, np.ndarray):\n                        curr = curr.tolist()\n                    if curr != new:\n                        dif[at] = new\n        finally:\n            self._loading = False\n        if len(dif):\n            for at in dif:\n                v = dif[at]\n                curr = getattr(self,at)\n                if isinstance(curr, np.ndarray):\n                    curr[:] = np.array(v)\n                else:\n                    setattr(self, at, float(v))\n            self._write()\n\nclass GLWidget(QOpenGLWidget):\n    _initialized = False\n    _destroyed = False\n    _painting = False\n    _updating = False\n    _mousePos = None\n\n    def __init__(self, *args, **kwargs):\n        super().__init__(*args, **kwargs)\n        self.camera = Camera()\n\n    def initializeGL(self):\n        super().initializeGL()\n        self.camera.width = self.width()\n        self.camera.height = self.height()\n        self.camera._write()\n        activate_opengl()\n        if self._destroyed:\n            return\n        from PyQt5.QtGui import QOpenGLContext\n        #print(\"INIT\")\n        ctx = self.context()\n        assert ctx is QOpenGLContext.currentContext()\n        #print(\"start initializeGL\")\n        if not self._initialized:\n            add_opengl_context(ctx)\n            self._initialized = True\n        PINS.init.set()\n        #print(\"end initializeGL\")\n        deactivate_opengl()\n\n    def resizeGL(self, width, height):\n        super().resizeGL(width, height)\n        if self._destroyed:\n            return\n        GL.glViewport(0, 0, width, height)\n        self.camera.width = width\n        self.camera.height = height\n        self.camera._write()\n        self.update()\n\n    def paintGL(self):\n        activate_opengl()\n        self._painting = True\n        super().paintGL()\n        if self._destroyed:\n            return\n        PINS.paint.set()\n        PINS.painted.set()\n        self._painting = False\n        deactivate_opengl()\n\n    def mousePressEvent(self, ev):\n        self._mousePos = ev.pos()\n\n    def mouseMoveEvent(self, ev):\n        if self._mousePos is None:\n            self._mousePos = ev.pos()\n            return\n        diff = ev.pos() - self._mousePos\n        self._mousePos = ev.pos()\n\n        if ev.buttons() == Qt.LeftButton:\n            self.camera.orbit(-diff.x(), diff.y())\n        elif ev.buttons() == Qt.MidButton:\n            if (ev.modifiers() & Qt.ControlModifier):\n                self.camera.pan(diff.x(), 0, diff.y(), relative=True)\n            else:\n                self.camera.pan(diff.x(), diff.y(), 0, relative=True)\n\n    def keyPressEvent(self, event):\n        key = int(event.key())\n        k = None\n\n        if key >= 32 and key <= 127:\n            k = chr(key)\n        else:\n            for attr in dir(Qt):\n                if not attr.startswith(\"Key_\"):\n                    continue\n                code = getattr(Qt, attr)\n                if code == key:\n                    k = attr[4:]\n                    break\n        if k is None:\n            return\n        PINS.last_key.set(k)\n\n    def destroy(self, *args, **kwargs):\n        self._destroyed = True\n        ctx = self.context()\n        remove_opengl_context(ctx)\n        super().destroy(*args, **kwargs)\n\n    def update(self):\n        #print(\"UPDATE\")\n        super().update()\n\nwidget = GLWidget()\n\ndef do_update():\n    import threading\n    assert threading.current_thread() is threading.main_thread()\n    if widget._destroyed:\n        return\n    if PINS.camera.updated:\n        widget.camera.load(PINS.camera.get())\n    if PINS.update.updated:\n        widget.update()\n    if PINS.title.updated:\n        widget.setWindowTitle(PINS.title.get())\n    if PINS.geometry.updated:\n        widget.setGeometry(*PINS.geometry.get())\n\ndo_update()\nwidget.setMouseTracking(True)\nwidget.show()\n",
+      "data": "from seamless.qt.QtWidgets import QOpenGLWidget, QApplication\nfrom seamless.qt.QtCore import Qt\nfrom seamless.qt import QtGui\n\nfrom seamless.opengl import add_opengl_context, remove_opengl_context, \\\n activate_opengl, deactivate_opengl, opengl_current_context\nfrom OpenGL import GL\nimport numpy as np\nfrom math import *\n\ndef length(vec):\n    return sqrt(np.sum(vec*vec))\n\ndef normalize(vec):\n    return vec / length(vec\n    )\n# Camera class, uses code from the camera routines in pyqtgraph's GLViewWidget\nclass Camera:\n    center = np.zeros(3,dtype=\"float\")     ## will always appear at the center of the widget\n    distance = 10.0          ## distance of camera from center\n    fov =  60                ## horizontal field of view in degrees\n    elevation =  30          ## camera's angle of elevation in degrees\n    azimuth = 45             ## camera's azimuthal angle in degrees\n    width = None\n    height = None\n    _loading = False\n\n    #authoritative attributes\n    _attrs1 = ( \"center\", \"distance\", \"fov\",\n              \"elevation\", \"azimuth\", \"width\", \"height\")\n\n    #derived attributes\n    _attrs2 = (\"projection_matrix\", \"modelview_matrix\",\n        \"mvp_matrix\", \"normal_matrix\", \"position\")\n\n    @property\n    def projection_matrix(self):\n        # Xw = (Xnd + 1) * width/2 + X\n        region = (0, 0, self.width, self.height)\n\n        viewport = region #for now\n        x0, y0, w, h = viewport\n        dist = self.distance\n        fov = self.fov\n        nearClip = dist * 0.001\n        farClip = dist * 1000.\n\n        r = nearClip * np.tan(fov * 0.5 * np.pi / 180.)\n        t = r * h / w\n\n        # convert screen coordinates (region) to normalized device coordinates\n        # Xnd = (Xw - X0) * 2/width - 1\n        ## Note that X0 and width in these equations must be the values used in viewport\n        left  = r * ((region[0]-x0) * (2.0/w) - 1)\n        right = r * ((region[0]+region[2]-x0) * (2.0/w) - 1)\n        bottom = t * ((region[1]-y0) * (2.0/h) - 1)\n        top    = t * ((region[1]+region[3]-y0) * (2.0/h) - 1)\n\n        tr = QtGui.QMatrix4x4()\n        tr.frustum(left, right, bottom, top, nearClip, farClip)\n        return np.array(tr.data()).reshape((4,4))\n\n    @property\n    def _modelview_matrix(self):\n        tr = QtGui.QMatrix4x4()\n        tr.translate( 0.0, 0.0, -self.distance)\n        tr.rotate(self.elevation-90, 1, 0, 0)\n        tr.rotate(self.azimuth+90, 0, 0, -1)\n        center = self.center\n        tr.translate(-center[0], -center[1], -center[2])\n        return tr\n\n    @property\n    def modelview_matrix(self):\n        tr = self._modelview_matrix\n        return np.array(tr.data()).reshape((4,4))\n\n    @property\n    def normal_matrix(self):\n        tr = self._modelview_matrix\n        return np.array(tr.normalMatrix().data()).reshape((3,3))\n\n    @property\n    def mvp_matrix(self):\n        mv = self.modelview_matrix\n        p = self.projection_matrix\n        return mv.dot(p)\n\n    @property\n    def position(self):\n        \"\"\"Return current position of camera based on center, dist, elevation, and azimuth\"\"\"\n        center = self.center\n        dist = self.distance\n        elev = self.elevation * pi/180.\n        azim = self.azimuth * pi/180.\n\n        pos = np.array((\n            center[0] + dist * cos(elev) * cos(azim),\n            center[1] + dist * cos(elev) * sin(azim),\n            center[2]  + dist * sin(elev)\n        ))\n        return pos\n\n\n    def __init__(self):\n        self.center = np.zeros(3)\n\n    def _write(self):\n        if self._loading:\n            return\n        data = {}\n        for attr in self._attrs1 + self._attrs2:\n            v = getattr(self, attr)\n            if isinstance(v, np.ndarray):\n                v = v.tolist()\n            data[attr] = v\n        self._data = data\n        PINS.camera.set(data)\n\n    def orbit(self, azim, elev):\n        \"\"\"Orbits the camera around the center position. *azim* and *elev* are given in degrees.\"\"\"\n        self.azimuth += azim\n        self.elevation = float(np.clip(self.elevation + elev, -90, 90))\n        self._write()\n\n    def pan(self, dx, dy, dz, relative=False):\n        \"\"\"\n        Moves the center (look-at) position while holding the camera in place.\n\n        If relative=True, then the coordinates are interpreted such that x\n        if in the global xy plane and points to the right side of the view, y is\n        in the global xy plane and orthogonal to x, and z points in the global z\n        direction. Distances are scaled roughly such that a value of 1.0 moves\n        by one pixel on screen.\n\n        \"\"\"\n        if not relative:\n            self.center += dx, dy, dz\n        else:\n            cPos = self.position\n            cVec = self.center - cPos\n            dist = length(cVec)  ## distance from camera to center\n            xDist = dist * 2. * tan(0.5 * self.fov * pi / 180.)  ## approx. width of view at distance of center point\n            xScale = xDist / self.width\n            zVec = np.array((0,0,1.))\n            xVec = normalize(np.cross(zVec, cVec))\n            yVec = normalize(np.cross(xVec, zVec))\n            self.center += xScale * (xVec * dx + yVec * dy + zVec * dz)\n        self._write()\n\n    def resize(self, width, height):\n        self.width, self.height = width, height\n        self._write()\n\n    def load(self, data):\n        dif = {}\n        try:\n            self._loading = True\n            for at in self._attrs1:\n                curr = getattr(self, at)\n                new = data.get(at, None)\n                if new is not None:\n                    if isinstance(curr, np.ndarray):\n                        curr = curr.tolist()\n                    if curr != new:\n                        dif[at] = new\n        finally:\n            self._loading = False\n        if len(dif):\n            for at in dif:\n                v = dif[at]\n                curr = getattr(self,at)\n                if isinstance(curr, np.ndarray):\n                    curr[:] = np.array(v)\n                else:\n                    setattr(self, at, float(v))\n            self._write()\n\nclass GLWidget(QOpenGLWidget):\n    _initialized = False\n    _destroyed = False\n    _painting = False\n    _updating = False\n    _mousePos = None\n\n    def __init__(self, *args, **kwargs):\n        super().__init__(*args, **kwargs)\n        self.camera = Camera()\n\n    def initializeGL(self):\n        import seamless\n        from PyQt5.QtGui import QOpenGLContext\n        if self._destroyed:\n            return\n        try:\n            old_running_qt = seamless._running_qt\n            seamless._running_qt = True\n            activate_opengl()\n            ctx = self.context()\n            assert ctx is QOpenGLContext.currentContext()\n            #print(\"start initializeGL\")\n            if not self._initialized:\n                add_opengl_context(ctx)\n                self._initialized = True\n            self.camera.width = self.width()\n            self.camera.height = self.height()\n            self.camera._write()\n            #print(\"INIT\")\n            PINS.init.set()\n            #print(\"end initializeGL\")\n        finally:\n            seamless._running_qt = old_running_qt\n            deactivate_opengl()\n        super().initializeGL()\n        seamless.run_work()\n\n    def resizeGL(self, width, height):\n        super().resizeGL(width, height)\n        if self._destroyed:\n            return\n        GL.glViewport(0, 0, width, height)\n        self.camera.width = width\n        self.camera.height = height\n        self.camera._write()\n        self.update()\n\n    def paintGL(self):\n        import seamless\n        self._painting = True\n        super().paintGL()\n        if self._destroyed:\n            return\n        assert self._initialized\n        try:\n            old_running_qt = seamless._running_qt\n            seamless._running_qt = True\n            activate_opengl()\n            #print(\"PAINT\")\n            PINS.paint.set()\n            PINS.painted.set()\n            self._painting = False\n        finally:\n            #print(\"/PAINT\")\n            seamless._running_qt = old_running_qt\n            deactivate_opengl()\n        seamless.run_work()\n\n    def mousePressEvent(self, ev):\n        self._mousePos = ev.pos()\n\n    def mouseMoveEvent(self, ev):\n        if self._mousePos is None:\n            self._mousePos = ev.pos()\n            return\n        diff = ev.pos() - self._mousePos\n        self._mousePos = ev.pos()\n\n        if ev.buttons() == Qt.LeftButton:\n            self.camera.orbit(-diff.x(), diff.y())\n        elif ev.buttons() == Qt.MidButton:\n            if (ev.modifiers() & Qt.ControlModifier):\n                self.camera.pan(diff.x(), 0, diff.y(), relative=True)\n            else:\n                self.camera.pan(diff.x(), diff.y(), 0, relative=True)\n\n    def keyPressEvent(self, event):\n        key = int(event.key())\n        k = None\n\n        if key >= 32 and key <= 127:\n            k = chr(key)\n        else:\n            for attr in dir(Qt):\n                if not attr.startswith(\"Key_\"):\n                    continue\n                code = getattr(Qt, attr)\n                if code == key:\n                    k = attr[4:]\n                    break\n        if k is None:\n            return\n        PINS.last_key.set(k)\n\n    def destroy(self, *args, **kwargs):\n        self._destroyed = True\n        ctx = self.context()\n        remove_opengl_context(ctx)\n        super().destroy(*args, **kwargs)\n\n    def update(self):\n        #print(\"UPDATE\")\n        super().update()\n\nwidget = GLWidget()\n\ndef do_update():\n    import threading\n    assert threading.current_thread() is threading.main_thread()\n    if widget._destroyed:\n        return\n    if PINS.camera.updated:\n        widget.camera.load(PINS.camera.get())\n    if PINS.update.updated:\n        widget.update()\n    if PINS.title.updated:\n        widget.setWindowTitle(PINS.title.get())\n    if PINS.geometry.updated:\n        widget.setGeometry(*PINS.geometry.get())\n\ndo_update()\nwidget.setMouseTracking(True)\nwidget.show()\n",
       "links": [
         "glprogram.cell8"
       ]
@@ -305,22 +305,6 @@
         "code",
         "python"
       ],
-      "type_args": [
-        "json",
-        "seamless",
-        "transformer_params"
-      ],
-      "module_name": "seamless.lib.itransformer",
-      "func_name": "itransformer",
-      "code": "@macro(type=(\"json\", \"seamless\", \"transformer_params\"))\ndef itransformer(ctx, params):\n    from seamless import reactor\n    from seamless.core.worker import ExportedInputPin\n    params2 = params.copy()\n    params2[\"code\"] = {\"pin\": \"input\",\n                        \"dtype\": (\"text\", \"code\", \"ipython\")}\n    params2[\"transformer_params\"] = {\"pin\": \"input\", \"dtype\": \"json\"}\n    params2[\"@shell\"] =  \".namespace\"\n    rc = ctx.rc = reactor(params2)\n    rc.transformer_params.cell().set(params)\n    rc.code_start.cell().fromfile(\"cell-itransformer.py\")\n    rc.code_update.cell().set(\"do_update()\")\n    rc.code_stop.cell().set(\"\")\n    ctx.export(ctx.rc)\n"
-    },
-    {
-      "with_context": true,
-      "dtype": [
-        "text",
-        "code",
-        "python"
-      ],
       "type_args": {
         "template_definition": "json",
         "output_type": {
@@ -381,36 +365,14 @@
       "cell20",
       "cell21",
       "cell22",
-      "cell23",
-      "cell24",
-      "cell25",
-      "cell26",
-      "cell27",
-      "cell28",
-      "cell29",
       "cell3",
-      "cell30",
-      "cell31",
-      "cell32",
-      "cell33",
-      "cell34",
-      "cell35",
-      "cell36",
-      "cell37",
-      "cell38",
-      "cell39",
       "cell4",
-      "cell40",
-      "cell41",
       "cell5",
       "cell6",
       "cell7",
       "cell8",
       "cell9",
-      "registrar_object1",
-      "signal1",
-      "signal2",
-      "signal3"
+      "registrar_object1"
     ],
     "children": {
       "N": {
@@ -581,84 +543,6 @@
         },
         "data": "True"
       },
-      "cell23": {
-        "dtype": "str",
-        "resource": {
-          "filepath": null,
-          "lib": null,
-          "mode": null,
-          "save_policy": 1
-        },
-        "data": "./params_gen_uniforms.json"
-      },
-      "cell24": {
-        "dtype": "float",
-        "resource": {
-          "filepath": null,
-          "lib": null,
-          "mode": null,
-          "save_policy": 1
-        },
-        "data": "0.2"
-      },
-      "cell25": {
-        "dtype": [
-          "text",
-          "code",
-          "python"
-        ],
-        "resource": {
-          "filepath": "./cell-gen-uniforms-start.py",
-          "lib": false,
-          "mode": 5,
-          "save_policy": 1
-        },
-        "data": "import time\nimport numpy as np\nstart_time = None\n\ndef new_explosion():\n    global start_time\n    N = PINS.N.get()\n    if PINS.uniforms.defined:\n        uniforms = PINS.uniforms.get()\n    else:\n        uniforms = {}\n\n    # New centerpos\n    centerpos = np.random.uniform(-0.5, 0.5, (3,))\n    uniforms['u_centerPosition'] = tuple(centerpos)\n\n    alpha = 1.0 / N ** 0.08\n    color = np.random.uniform(0.1, 0.9, (3,))\n    uniforms['u_color'] = tuple(color) + (alpha,)\n\n    gravity = PINS.gravity.get()\n    uniforms['u_gravity'] = gravity\n\n    shrink_with_age = PINS.shrink_with_age.get()\n    uniforms['u_shrink_with_age'] = shrink_with_age\n\n    start_time = time.time()\n    uniforms['u_time'] = 0\n    PINS.uniforms.set(uniforms)\n\ndef update():\n    if start_time is None:\n        return\n    uniforms = PINS.uniforms.get()\n    curr_time = time.time() - start_time\n    uniforms['u_time'] = curr_time\n    pointsize = PINS.pointsize.get()\n    uniforms['u_pointsize'] = pointsize\n    PINS.uniforms.set(uniforms)\n    PINS.updated.set()\n"
-      },
-      "cell26": {
-        "dtype": "str",
-        "resource": {
-          "filepath": null,
-          "lib": null,
-          "mode": null,
-          "save_policy": 1
-        },
-        "data": "./cell-gen-uniforms-start.py"
-      },
-      "cell27": {
-        "dtype": "float",
-        "resource": {
-          "filepath": null,
-          "lib": null,
-          "mode": null,
-          "save_policy": 1
-        },
-        "data": "0.2"
-      },
-      "cell28": {
-        "dtype": [
-          "text",
-          "code",
-          "python"
-        ],
-        "resource": {
-          "filepath": "./cell-gen-uniforms-update.py",
-          "lib": false,
-          "mode": 5,
-          "save_policy": 1
-        },
-        "data": "if PINS.N.updated or PINS.reset.updated or start_time is None:\n    new_explosion()\nif PINS.update.updated or PINS.pointsize.updated:\n    update()\n"
-      },
-      "cell29": {
-        "dtype": "str",
-        "resource": {
-          "filepath": null,
-          "lib": null,
-          "mode": null,
-          "save_policy": 1
-        },
-        "data": "./cell-gen-uniforms-update.py"
-      },
       "cell3": {
         "dtype": "str",
         "resource": {
@@ -669,109 +553,6 @@
         },
         "data": "./vert_shader.glsl"
       },
-      "cell30": {
-        "dtype": "float",
-        "resource": {
-          "filepath": null,
-          "lib": null,
-          "mode": null,
-          "save_policy": 1
-        },
-        "data": "0.2"
-      },
-      "cell31": {
-        "dtype": [
-          "text",
-          "code",
-          "python"
-        ],
-        "resource": {
-          "filepath": null,
-          "lib": null,
-          "mode": null,
-          "save_policy": 1
-        },
-        "data": "start_time = None"
-      },
-      "cell32": {
-        "dtype": "signal"
-      },
-      "cell33": {
-        "dtype": [
-          "text",
-          "code",
-          "python"
-        ],
-        "resource": {
-          "filepath": "/cell-timer.py",
-          "lib": true,
-          "mode": 2,
-          "save_policy": 1
-        },
-        "data": "from threading import Timer\ndead = False\ndef trigger():\n    global t\n    if dead:\n        return\n    PINS.trigger.set()\n    t = Timer(PINS.period.get(), trigger)\n    t.setDaemon(True)\n    t.start()\nt = Timer(PINS.period.get(), trigger)\nt.setDaemon(True)\nt.start()\n",
-        "owner": "timer"
-      },
-      "cell34": {
-        "dtype": [
-          "text",
-          "code",
-          "python"
-        ],
-        "resource": {
-          "filepath": null,
-          "lib": null,
-          "mode": null,
-          "save_policy": 1
-        },
-        "data": "",
-        "owner": "timer"
-      },
-      "cell35": {
-        "dtype": [
-          "text",
-          "code",
-          "python"
-        ],
-        "resource": {
-          "filepath": null,
-          "lib": null,
-          "mode": null,
-          "save_policy": 1
-        },
-        "data": "t.cancel(); dead = True",
-        "owner": "timer"
-      },
-      "cell36": {
-        "dtype": "float",
-        "resource": {
-          "filepath": null,
-          "lib": null,
-          "mode": null,
-          "save_policy": 1
-        },
-        "data": "1.5",
-        "owner": "timer"
-      },
-      "cell37": {
-        "dtype": "signal"
-      },
-      "cell38": {
-        "dtype": "signal"
-      },
-      "cell39": {
-        "dtype": [
-          "text",
-          "code",
-          "python"
-        ],
-        "resource": {
-          "filepath": null,
-          "lib": null,
-          "mode": null,
-          "save_policy": 1
-        },
-        "data": "PINS.trigger.set()"
-      },
       "cell4": {
         "dtype": "float",
         "resource": {
@@ -781,34 +562,6 @@
           "save_policy": 1
         },
         "data": "0.2"
-      },
-      "cell40": {
-        "dtype": [
-          "text",
-          "code",
-          "python"
-        ],
-        "resource": {
-          "filepath": null,
-          "lib": null,
-          "mode": null,
-          "save_policy": 1
-        },
-        "data": ""
-      },
-      "cell41": {
-        "dtype": [
-          "text",
-          "code",
-          "python"
-        ],
-        "resource": {
-          "filepath": null,
-          "lib": null,
-          "mode": null,
-          "save_policy": 1
-        },
-        "data": ""
       },
       "cell5": {
         "dtype": "str",
@@ -863,6 +616,353 @@
           "save_policy": 1
         },
         "data": "program = program_template\nattributes = {}\nfor propname, prop in VertexData._props.items():\n    attributes[propname] = {\n        \"dtype\": prop[\"typename\"].lower(),\n        \"array\": \"vertexdata\",\n        \"rae\": \"['%s']\" % propname,\n    }\nprogram[\"render\"][\"attributes\"] = attributes\nreturn program\n"
+      },
+      "display_texture": {
+        "type": "context",
+        "like_worker": false,
+        "like_cell": false,
+        "pins": {},
+        "auto": [
+          "cell1",
+          "cell10",
+          "cell11",
+          "cell12",
+          "cell13",
+          "cell14",
+          "cell15",
+          "cell16",
+          "cell17",
+          "cell18",
+          "cell19",
+          "cell2",
+          "cell20",
+          "cell21",
+          "cell3",
+          "cell4",
+          "cell5",
+          "cell6",
+          "cell7",
+          "cell8",
+          "cell9",
+          "registrar_object1",
+          "signal1",
+          "signal2",
+          "signal3"
+        ],
+        "children": {
+          "aspect_layout": {
+            "dtype": [
+              "text",
+              "code",
+              "python"
+            ],
+            "resource": {
+              "filepath": "AspectLayout.py",
+              "lib": false,
+              "mode": 5,
+              "save_policy": 1
+            },
+            "data": "# Sjoerd de Vries, 2017\n# partially based on code ported from https://gist.github.com/pavel-perina/1324ff064aedede0e01311aab315f83d, copyright (c) 2017 Pavel Perina\n\n\"\"\"\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n\"\"\"\n\nfrom PyQt5.QtWidgets import QLayout\nfrom PyQt5.QtCore import Qt, QSize\n\nclass AspectLayout(QLayout):\n    def __init__(self, aspect):\n        self.aspect = aspect\n        self.item = None\n        super().__init__()\n        self.setContentsMargins(0,0,0,0)\n\n    def addItem(self, item):\n        assert self.item is None, \"AspectLayout can contain only 1 widget\"\n        self.item = item\n\n    def itemAt(self, index):\n        if index != 0:\n            return None\n        if self.item is None:\n            return None\n        return self.item\n\n    def takeAt(self, index):\n        if index != 0:\n            return None\n        if self.item is None:\n            return None\n        result = self.item\n        self.item = None\n        return result\n\n    def setGeometry(self, rect):\n        super().setGeometry(rect)\n        margins = self.getContentsMargins()\n        if self.item is not None:\n            availW = rect.width() - margins[1] - margins[3]\n            availH = rect.height() - margins[0] - margins[2]\n            h = availH\n            w = h * self.aspect\n            if w > availW:\n                x = margins[1]\n                w = availW\n                h = w/self.aspect\n                if self.item.alignment() &  Qt.AlignTop:\n                    y = margins[0]\n                elif self.item.alignment() &  Qt.AlignBottom:\n                    y = rect.height() - margins[2] - h\n                else:\n                    y = margins[0] + (availH-h) / 2\n            else:\n                y = margins[0]\n                if self.item.alignment() &  Qt.AlignLeft:\n                    x = margins[1]\n                elif self.item.alignment() &  Qt.AlignRight:\n                    x = rect.width() - margins[3] - w\n                else:\n                    x = margins[1] + (availW-w) / 2\n            self.item.widget().setGeometry(\n                rect.x() + x,\n                rect.y() + y,\n                w, h)\n\n    def sizeHint(self):\n        margins = self.getContentsMargins()\n        if self.item is None:\n            return QSize(margins[0]+margins[2],margins[1]+margins[3])\n        s = self.item.sizeHint()\n        w, h = s.width(), s.height()\n        return QSize(margins[0]+margins[2] + w, margins[1]+margins[3] + h)\n\n    def minimumSize(self):\n        margins = self.getContentsMargins()\n        if self.item is None:\n            return QSize(margins[0]+margins[2],margins[1]+margins[3])\n        s = self.item.minimumSize()\n        w, h = s.width(), s.height()\n        return QSize(margins[0]+margins[2] + w, margins[1]+margins[3] + h)\n\n    def expandingDirections(self):\n       return Qt.Horizontal | Qt.Vertical\n\n    def hasHeightForWidth(self):\n        return True\n\n    def count(self):\n        if self.item is None:\n            return 0\n        else:\n            return 1\n\n    def heightForWidth(self, width):\n        margins = self.getContentsMargins()\n        height = (width - margins[1] - margins[3]) / self.aspect\n        height += margins[0] + margins[2]\n        return int(height)\n"
+          },
+          "cell1": {
+            "dtype": [
+              "text",
+              "code",
+              "python"
+            ],
+            "resource": {
+              "filepath": null,
+              "lib": null,
+              "mode": null,
+              "save_policy": 1
+            },
+            "data": "update()"
+          },
+          "cell10": {
+            "dtype": "float",
+            "resource": {
+              "filepath": null,
+              "lib": null,
+              "mode": null,
+              "save_policy": 1
+            },
+            "data": "0.2"
+          },
+          "cell11": {
+            "dtype": [
+              "text",
+              "code",
+              "python"
+            ],
+            "resource": {
+              "filepath": null,
+              "lib": null,
+              "mode": null,
+              "save_policy": 1
+            },
+            "data": "start_time = None"
+          },
+          "cell12": {
+            "dtype": "signal"
+          },
+          "cell13": {
+            "dtype": [
+              "text",
+              "code",
+              "python"
+            ],
+            "resource": {
+              "filepath": "/cell-timer.py",
+              "lib": true,
+              "mode": 2,
+              "save_policy": 1
+            },
+            "data": "from threading import Timer\ndead = False\ndef trigger():\n    global t\n    if dead:\n        return\n    PINS.trigger.set()\n    t = Timer(PINS.period.get(), trigger)\n    t.setDaemon(True)\n    t.start()\nt = Timer(PINS.period.get(), trigger)\nt.setDaemon(True)\nt.start()\n",
+            "owner": "timer"
+          },
+          "cell14": {
+            "dtype": [
+              "text",
+              "code",
+              "python"
+            ],
+            "resource": {
+              "filepath": null,
+              "lib": null,
+              "mode": null,
+              "save_policy": 1
+            },
+            "data": "",
+            "owner": "timer"
+          },
+          "cell15": {
+            "dtype": [
+              "text",
+              "code",
+              "python"
+            ],
+            "resource": {
+              "filepath": null,
+              "lib": null,
+              "mode": null,
+              "save_policy": 1
+            },
+            "data": "t.cancel(); dead = True",
+            "owner": "timer"
+          },
+          "cell16": {
+            "dtype": "float",
+            "resource": {
+              "filepath": null,
+              "lib": null,
+              "mode": null,
+              "save_policy": 1
+            },
+            "data": "1.5",
+            "owner": "timer"
+          },
+          "cell17": {
+            "dtype": "signal"
+          },
+          "cell18": {
+            "dtype": "signal"
+          },
+          "cell19": {
+            "dtype": [
+              "text",
+              "code",
+              "python"
+            ],
+            "resource": {
+              "filepath": null,
+              "lib": null,
+              "mode": null,
+              "save_policy": 1
+            },
+            "data": "PINS.trigger.set()"
+          },
+          "cell2": {
+            "dtype": [
+              "text",
+              "code",
+              "python"
+            ],
+            "resource": {
+              "filepath": null,
+              "lib": null,
+              "mode": null,
+              "save_policy": 1
+            },
+            "data": "destroy()"
+          },
+          "cell20": {
+            "dtype": [
+              "text",
+              "code",
+              "python"
+            ],
+            "resource": {
+              "filepath": null,
+              "lib": null,
+              "mode": null,
+              "save_policy": 1
+            },
+            "data": ""
+          },
+          "cell21": {
+            "dtype": [
+              "text",
+              "code",
+              "python"
+            ],
+            "resource": {
+              "filepath": null,
+              "lib": null,
+              "mode": null,
+              "save_policy": 1
+            },
+            "data": ""
+          },
+          "cell3": {
+            "dtype": "str",
+            "resource": {
+              "filepath": null,
+              "lib": null,
+              "mode": null,
+              "save_policy": 1
+            },
+            "data": "./params_gen_uniforms.json"
+          },
+          "cell4": {
+            "dtype": "float",
+            "resource": {
+              "filepath": null,
+              "lib": null,
+              "mode": null,
+              "save_policy": 1
+            },
+            "data": "0.2"
+          },
+          "cell5": {
+            "dtype": [
+              "text",
+              "code",
+              "python"
+            ],
+            "resource": {
+              "filepath": "./cell-gen-uniforms-start.py",
+              "lib": false,
+              "mode": 5,
+              "save_policy": 1
+            },
+            "data": "import time\nimport numpy as np\nstart_time = None\n\ndef new_explosion():\n    global start_time\n    N = PINS.N.get()\n    if PINS.uniforms.defined:\n        uniforms = PINS.uniforms.get()\n    else:\n        uniforms = {}\n\n    # New centerpos\n    centerpos = np.random.uniform(-0.5, 0.5, (3,))\n    uniforms['u_centerPosition'] = tuple(centerpos)\n\n    alpha = 1.0 / N ** 0.08\n    color = np.random.uniform(0.1, 0.9, (3,))\n    uniforms['u_color'] = tuple(color) + (alpha,)\n\n    gravity = PINS.gravity.get()\n    uniforms['u_gravity'] = gravity\n\n    shrink_with_age = PINS.shrink_with_age.get()\n    uniforms['u_shrink_with_age'] = shrink_with_age\n\n    start_time = time.time()\n    uniforms['u_time'] = 0\n    PINS.uniforms.set(uniforms)\n\ndef update():\n    if start_time is None:\n        return\n    uniforms = PINS.uniforms.get()\n    curr_time = time.time() - start_time\n    uniforms['u_time'] = curr_time\n    pointsize = PINS.pointsize.get()\n    uniforms['u_pointsize'] = pointsize\n    PINS.uniforms.set(uniforms)\n    PINS.updated.set()\n"
+          },
+          "cell6": {
+            "dtype": "str",
+            "resource": {
+              "filepath": null,
+              "lib": null,
+              "mode": null,
+              "save_policy": 1
+            },
+            "data": "./cell-gen-uniforms-start.py"
+          },
+          "cell7": {
+            "dtype": "float",
+            "resource": {
+              "filepath": null,
+              "lib": null,
+              "mode": null,
+              "save_policy": 1
+            },
+            "data": "0.2"
+          },
+          "cell8": {
+            "dtype": [
+              "text",
+              "code",
+              "python"
+            ],
+            "resource": {
+              "filepath": "./cell-gen-uniforms-update.py",
+              "lib": false,
+              "mode": 5,
+              "save_policy": 1
+            },
+            "data": "if PINS.N.updated or PINS.reset.updated or start_time is None:\n    new_explosion()\nif PINS.update.updated or PINS.pointsize.updated:\n    update()\n"
+          },
+          "cell9": {
+            "dtype": "str",
+            "resource": {
+              "filepath": null,
+              "lib": null,
+              "mode": null,
+              "save_policy": 1
+            },
+            "data": "./cell-gen-uniforms-update.py"
+          },
+          "code": {
+            "dtype": [
+              "text",
+              "code",
+              "python"
+            ],
+            "resource": {
+              "filepath": "cell-display-numpy.py",
+              "lib": false,
+              "mode": 5,
+              "save_policy": 1
+            },
+            "data": "from PyQt5.QtWidgets import QMainWindow, QLabel, QWidget, QFrame, QSizePolicy\nfrom PyQt5.QtGui import QImage, QPixmap\nfrom PyQt5.QtCore import Qt, QSize\nimport numpy as np\n\nw = QMainWindow(size=QSize(400, 400))\nww = QWidget()\nw.setCentralWidget(ww)\nasp = AspectLayout(1.0)\nww.setLayout(asp)\nw.setWindowFlags(Qt.WindowStaysOnTopHint)\n\nl = QLabel()\nl.setScaledContents(True)\nl.setSizePolicy(QSizePolicy(QSizePolicy.Maximum, QSizePolicy.Maximum))\nasp.addWidget(l)\nl.setParent(ww)\nl.setFrameStyle(QFrame.NoFrame)\nw.show()\n\ndef update():\n    if PINS.title.updated:\n        w.setWindowTitle(PINS.title.get())\n    global arr\n    arr = PINS.array.get()\n    assert arr.dtype in (float, np.float32, np.uint8), arr.dtype\n    arr = np.ascontiguousarray(arr)\n    if arr.ndim == 1:\n        arr = arr.reshape((len(arr), 1))\n    if arr.ndim == 3:\n        assert arr.shape[-1] in (3, 4)\n        img_format = QImage.Format_RGBA8888 if arr.shape[-1] == 4 else QImage.Format_RGB888\n        if arr.dtype == np.uint8:\n            arr_norm_255 = arr\n        else:\n            amin = arr[:,:,:3].min()\n            amax = arr[:,:,:3].max()\n            print(amin, amax)\n            arange = np.maximum(amax-amin, 1e-12)\n            arr_norm = (arr - amin) / arange\n            arr_norm_255 = ((arr_norm- 1e-6)*256).astype(np.uint8)\n            if arr.shape[-1] == 4:\n                arr_norm_255[:,:,3] = 255\n                arr_norm_255[:,:,:3] = 0\n        width, height = arr.shape[1], arr.shape[0]\n        im = QImage(arr_norm_255, width, height, width*3, img_format)\n    elif arr.ndim == 2:\n        if arr.dtype == np.uint8:\n            arr_norm_255 = arr\n        else:\n            amin = arr.min()\n            amax = arr.max()\n            arange = np.maximum(amax-amin, 1e-12)\n            arr_norm = (arr - amin) / arange\n            arr_norm_255 = ((arr_norm- 1e-6)*256).astype(np.uint8)\n        arr_color = np.zeros((arr.shape) + (3,), dtype=np.uint8)\n        arr_color[:,:,0] = arr_norm_255\n        arr_color[:,:,1] = 128 - np.abs(arr_norm_255.astype(int)-128)\n        arr_color[:,:,2] = 255 - arr_norm_255\n        width, height = arr_color.shape[1], arr_color.shape[0]\n        im = QImage(arr_color, width, height, width*3, QImage.Format_RGB888)\n\n    pm = QPixmap.fromImage(im)\n    aspect = width / height\n    asp.aspect = aspect\n    cwidth, cheight = w.size().width(), w.size().height()\n    l.setPixmap(pm)\n    l.setMinimumSize(1,1)\n    scalex = width/cwidth\n    scaley = height/cheight\n    scale = max(scalex, scaley)\n    if scale > 1:\n        w.resize(width/scale, height/scale)\n    w.updateGeometry()\ndef destroy():\n    global w, l\n    del l\n    del w\n\n#update()\n"
+          },
+          "display_numpy": {
+            "type": "reactor",
+            "mode": "sync",
+            "params": {
+              "array": {
+                "dtype": "array",
+                "pin": "input"
+              },
+              "title": {
+                "dtype": "str",
+                "pin": "input"
+              }
+            }
+          },
+          "registrar_object1": {
+            "registrar": "python",
+            "registered": [
+              "Qt",
+              "QLayout",
+              "AspectLayout",
+              "QSize"
+            ],
+            "data": "# Sjoerd de Vries, 2017\n# partially based on code ported from https://gist.github.com/pavel-perina/1324ff064aedede0e01311aab315f83d, copyright (c) 2017 Pavel Perina\n\n\"\"\"\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n\"\"\"\n\nfrom PyQt5.QtWidgets import QLayout\nfrom PyQt5.QtCore import Qt, QSize\n\nclass AspectLayout(QLayout):\n    def __init__(self, aspect):\n        self.aspect = aspect\n        self.item = None\n        super().__init__()\n        self.setContentsMargins(0,0,0,0)\n\n    def addItem(self, item):\n        assert self.item is None, \"AspectLayout can contain only 1 widget\"\n        self.item = item\n\n    def itemAt(self, index):\n        if index != 0:\n            return None\n        if self.item is None:\n            return None\n        return self.item\n\n    def takeAt(self, index):\n        if index != 0:\n            return None\n        if self.item is None:\n            return None\n        result = self.item\n        self.item = None\n        return result\n\n    def setGeometry(self, rect):\n        super().setGeometry(rect)\n        margins = self.getContentsMargins()\n        if self.item is not None:\n            availW = rect.width() - margins[1] - margins[3]\n            availH = rect.height() - margins[0] - margins[2]\n            h = availH\n            w = h * self.aspect\n            if w > availW:\n                x = margins[1]\n                w = availW\n                h = w/self.aspect\n                if self.item.alignment() &  Qt.AlignTop:\n                    y = margins[0]\n                elif self.item.alignment() &  Qt.AlignBottom:\n                    y = rect.height() - margins[2] - h\n                else:\n                    y = margins[0] + (availH-h) / 2\n            else:\n                y = margins[0]\n                if self.item.alignment() &  Qt.AlignLeft:\n                    x = margins[1]\n                elif self.item.alignment() &  Qt.AlignRight:\n                    x = rect.width() - margins[3] - w\n                else:\n                    x = margins[1] + (availW-w) / 2\n            self.item.widget().setGeometry(\n                rect.x() + x,\n                rect.y() + y,\n                w, h)\n\n    def sizeHint(self):\n        margins = self.getContentsMargins()\n        if self.item is None:\n            return QSize(margins[0]+margins[2],margins[1]+margins[3])\n        s = self.item.sizeHint()\n        w, h = s.width(), s.height()\n        return QSize(margins[0]+margins[2] + w, margins[1]+margins[3] + h)\n\n    def minimumSize(self):\n        margins = self.getContentsMargins()\n        if self.item is None:\n            return QSize(margins[0]+margins[2],margins[1]+margins[3])\n        s = self.item.minimumSize()\n        w, h = s.width(), s.height()\n        return QSize(margins[0]+margins[2] + w, margins[1]+margins[3] + h)\n\n    def expandingDirections(self):\n       return Qt.Horizontal | Qt.Vertical\n\n    def hasHeightForWidth(self):\n        return True\n\n    def count(self):\n        if self.item is None:\n            return 0\n        else:\n            return 1\n\n    def heightForWidth(self, width):\n        margins = self.getContentsMargins()\n        height = (width - margins[1] - margins[3]) / self.aspect\n        height += margins[0] + margins[2]\n        return int(height)\n",
+            "data_name": null
+          },
+          "signal1": {
+            "dtype": "signal",
+            "owner": "gen_uniforms"
+          },
+          "signal2": {
+            "dtype": "signal",
+            "owner": "timer"
+          },
+          "signal3": {
+            "dtype": "signal",
+            "owner": "init"
+          },
+          "title": {
+            "dtype": "str",
+            "resource": {
+              "filepath": null,
+              "lib": null,
+              "mode": null,
+              "save_policy": 1
+            },
+            "data": "Texture"
+          }
+        }
       },
       "frag_shader": {
         "dtype": [
@@ -1046,7 +1146,7 @@
               "mode": 2,
               "save_policy": 1
             },
-            "data": "from collections import OrderedDict\nimport numpy as np\nfrom OpenGL.arrays import vbo\nfrom OpenGL.GL import shaders\nfrom OpenGL.GL import *\nfrom OpenGL import GL as gl\n\nfrom seamless import opengl\nfrom seamless.lib.gui.gl.set_uniform import set_uniform\n\nfrom seamless.lib.gui.gl.Renderer import Renderer, VertexAttribute\nfrom seamless.lib.gui.gl import glstate as glstate_module\n\ninitialized = False\nshader_program = None\nrenderer = False\nuniform_types = {}\nuniform_locations = {}\nuniform_values = {}\nuniform_dirty = set()\ntexture_locations = OrderedDict()\nwarnings = []\n\ndef init():\n    global initialized, shader_program, renderer, uniform_types, \\\n     glstate, glclear, texdict\n    from seamless.dtypes.gl import GLStore, GLTexStore\n\n    if initialized:\n        return\n\n    # Compile shaders\n    vertex_code = PINS.vertex_shader.get()\n    fragment_code = PINS.fragment_shader.get()\n    vertex_shader = shaders.compileShader(vertex_code, GL_VERTEX_SHADER)\n    fragment_shader = shaders.compileShader(fragment_code, GL_FRAGMENT_SHADER)\n    shader_program = shaders.compileProgram(vertex_shader, fragment_shader)\n\n    program = PINS.program.get()\n\n    # Bind vertex attributes\n    storedict = {}\n    for ar in program[\"arrays\"]:\n        attr = \"array_\" + ar\n        store = getattr( getattr(PINS, attr), \"store\", None)\n        assert isinstance(store, GLStore), ar #TODO: nicer error message\n        #store.bind() #superfluous\n        storedict[ar] = store\n\n    # Bind textures\n    texdict = {}\n    texture_locations.clear()\n    for ar in program.get(\"textures\",[]):\n        attr = \"array_\" + ar\n        store = getattr( getattr(PINS, attr), \"store\", None)\n        assert isinstance(store, GLTexStore), ar #TODO: nicer error message\n        #store.bind() #superfluous\n        texdict[ar] = store\n        loc = gl.glGetUniformLocation(shader_program, ar)\n        if loc == -1:\n            print(\"WARNING: unknown texture '%s'\" % ar)\n            continue\n        texture_locations[ar] = loc\n\n    # Create renderer and set glstate\n    render = program[\"render\"]\n    glstate = render[\"glstate\"]\n    glclear = glstate.pop(\"clear\", True)\n    renderer = Renderer(render, shader_program, storedict)\n    renderer.bind()\n\n    # Get uniform bindings\n    shaders.glUseProgram(shader_program)\n    uniform_locations.clear()\n    uniform_dirty.clear()\n    uniform_types = program.get(\"uniforms\", {})\n    for uniform in uniform_types:\n        loc = gl.glGetUniformLocation(shader_program, uniform)\n        if loc == -1:\n            print(\"WARNING: unknown uniform '%s'\" % uniform)\n            continue\n        uniform_locations[uniform] = loc\n        uniform_dirty.add(uniform)\n\n    initialized = True\n\ndef paint():\n            #print(\"DRAW\")\n    if not initialized:\n        init()\n    shaders.glUseProgram(shader_program)\n\n    old_warnings = warnings[:]\n    warnings.clear()\n\n    #re-bind the textures every draw, to be safe\n    for texnr, tex in enumerate(texture_locations):\n        gl.glActiveTexture(gl.GL_TEXTURE0+texnr)\n        loc = texture_locations[tex]\n        gl.glUniform1i(loc, texnr)\n        store = texdict[tex]\n        store.bind()\n\n    for uniform in list(uniform_dirty):\n        if uniform not in uniform_locations:\n            continue\n        if uniform not in uniform_types:\n            continue\n        utype = uniform_types[uniform]\n        value = uniform_values.get(uniform, None)\n        if value is None:\n            warnings.append(\"WARNING: unset uniform '%s'\" % uniform)\n            continue\n        loc = uniform_locations[uniform]\n        set_uniform(value, utype, loc)\n        uniform_dirty.remove(uniform)\n\n    glstate_module.set_state(**glstate)\n    if glclear not in (None, False):\n        if glclear == True:\n            glstate_module.clear()\n        else:\n            glstate_module.clear(*glclear)\n    renderer.draw()\n\n    # Heisenbug!!! see below. Seems to be solved now\n    try:\n        warnings\n    except NameError:\n        return\n\n    if warnings != old_warnings:\n        for warning in warnings:\n            print(warning)\n    #print(\"/DRAW\")\n\ndef do_update():\n    global initialized\n\n    \"\"\"\n    Outside of \"init\" and \"paint\", we have to use \"dirty\" flags,\n     rather than direct GL commands!\n    \"\"\"\n\n    updated = set()\n    for attr in PINS.__dict__:\n        pin = getattr(PINS, attr)\n        if hasattr(pin, \"updated\") and pin.updated:\n            updated.add(attr)\n\n\n    arrays = PINS.program.get()[\"arrays\"]\n    textures = PINS.program.get().get(\"textures\", [])\n\n    gl_context = opengl()\n\n    dirty_renderer = False\n    repaint = False\n    for ar in arrays + textures:\n        attr = \"array_\" + ar\n        pin = getattr(PINS, attr)\n        if pin.updated:\n            dirty_renderer = True\n\n    if PINS.init.updated:\n        initialized = False\n        if gl_context:\n            init()\n        else:\n            PINS.init.unclear()\n\n    if PINS.uniforms.updated:\n        new_uniform_values = PINS.uniforms.get()\n        for uniform in new_uniform_values:\n            v_old = uniform_values.get(uniform, None)\n            v_new = new_uniform_values.get(uniform, None)\n            if v_old != v_new:\n                uniform_values[uniform] = v_new\n                uniform_dirty.add(uniform)\n                repaint = True\n\n    if PINS.paint.updated:\n        if gl_context:\n            paint()\n            repaint = False\n        else:\n            repaint = True\n\n    # Heisenbug!!! see test-gl-BUG.py\n    # As of now, seems to be solved, see cell-glwindow.py\n    try:\n        initialized\n    except NameError:\n        import sys\n        msg = \"\"\"seamless/lib/gui/cell-glprogram.py\nSomething has gone wrong, PyQt has corrupted Python's memory\nA crash will now happen... no idea why, sorry\n\"\"\"\n        print(msg, file=sys.stderr)\n        return\n    # /heisenbug\n\n    if PINS.program.updated or \\\n      PINS.vertex_shader.updated or PINS.fragment_shader.updated:\n        initialized = False\n        repaint = True\n\n    if initialized and dirty_renderer:\n        renderer.set_dirty()\n        repaint = True\n\n    if repaint:\n        PINS.repaint.set()\n"
+            "data": "from collections import OrderedDict\nimport numpy as np\nfrom OpenGL.arrays import vbo\nfrom OpenGL.GL import shaders\nfrom OpenGL.GL import *\nfrom OpenGL import GL as gl\n\nfrom seamless.lib.gui.gl.set_uniform import set_uniform\n\nfrom seamless.lib.gui.gl.Renderer import Renderer, VertexAttribute\nfrom seamless.lib.gui.gl import glstate as glstate_module\n\nfrom seamless.opengl import opengl_current_context\n\ninitialized = False\nshader_program = None\nrenderer = None\nuniform_types = {}\nuniform_locations = {}\nuniform_values = {}\nuniform_dirty = set()\ntexture_locations = OrderedDict()\nwarnings = []\n\ndef init():\n    global initialized, shader_program, renderer, uniform_types, \\\n     glstate, glclear, texdict\n    from seamless.dtypes.gl import GLStore, GLTexStore\n\n    if initialized:\n        return\n\n    # Compile shaders\n    vertex_code = PINS.vertex_shader.get()\n    fragment_code = PINS.fragment_shader.get()\n    vertex_shader = shaders.compileShader(vertex_code, GL_VERTEX_SHADER)\n    fragment_shader = shaders.compileShader(fragment_code, GL_FRAGMENT_SHADER)\n    shader_program = shaders.compileProgram(vertex_shader, fragment_shader)\n\n    program = PINS.program.get()\n\n    # Bind vertex attributes\n    storedict = {}\n    for ar in program[\"arrays\"]:\n        attr = \"array_\" + ar\n        store = getattr( getattr(PINS, attr), \"store\", None)\n        assert isinstance(store, GLStore), ar #TODO: nicer error message\n        #store.bind() #superfluous\n        storedict[ar] = store\n\n    # Bind textures\n    texdict = {}\n    texture_locations.clear()\n    for ar in program.get(\"textures\",[]):\n        attr = \"array_\" + ar\n        store = getattr( getattr(PINS, attr), \"store\", None)\n        assert isinstance(store, GLTexStore), ar #TODO: nicer error message\n        #store.bind() #superfluous\n        texdict[ar] = store\n        loc = gl.glGetUniformLocation(shader_program, ar)\n        if loc == -1:\n            print(\"WARNING: unknown texture '%s'\" % ar)\n            continue\n        texture_locations[ar] = loc\n\n    # Create renderer and set glstate\n    render = program[\"render\"]\n    glstate = render[\"glstate\"].copy()\n    glclear = glstate.pop(\"clear\", True)\n    renderer = Renderer(render, shader_program, storedict)\n    renderer.bind()\n\n    # Get uniform bindings\n    shaders.glUseProgram(shader_program)\n    uniform_locations.clear()\n    uniform_dirty.clear()\n    uniform_types = program.get(\"uniforms\", {})\n    for uniform in uniform_types:\n        loc = gl.glGetUniformLocation(shader_program, uniform)\n        if loc == -1:\n            print(\"WARNING: unknown uniform '%s'\" % uniform)\n            continue\n        uniform_locations[uniform] = loc\n        uniform_dirty.add(uniform)\n\n    initialized = True\n\ndef paint():\n            #print(\"DRAW\")\n    if not initialized:\n        init()\n    shaders.glUseProgram(shader_program)\n\n    old_warnings = warnings[:]\n    warnings.clear()\n\n    #re-bind the textures every draw, to be safe\n    for texnr, tex in enumerate(texture_locations):\n        gl.glActiveTexture(gl.GL_TEXTURE0+texnr)\n        loc = texture_locations[tex]\n        gl.glUniform1i(loc, texnr)\n        store = texdict[tex]\n        store.bind()\n\n    for uniform in list(uniform_dirty):\n        if uniform not in uniform_locations:\n            continue\n        if uniform not in uniform_types:\n            continue\n        utype = uniform_types[uniform]\n        value = uniform_values.get(uniform, None)\n        if value is None:\n            warnings.append(\"WARNING: unset uniform '%s'\" % uniform)\n            continue\n        loc = uniform_locations[uniform]\n        set_uniform(value, utype, loc)\n        uniform_dirty.remove(uniform)\n\n    glstate_module.set_state(**glstate)\n    if glclear not in (None, False):\n        if glclear == True:\n            glstate_module.clear()\n        else:\n            glstate_module.clear(*glclear)\n    renderer.draw()\n\n    # Heisenbug!!! see below. Seems to be solved now\n    try:\n        warnings\n    except NameError:\n        return\n\n    if warnings != old_warnings:\n        for warning in warnings:\n            print(warning)\n    #print(\"/DRAW\")\n\ndef do_update():\n    global initialized\n\n    \"\"\"\n    Outside of \"init\" and \"paint\", we have to use \"dirty\" flags,\n     rather than direct GL commands!\n    \"\"\"\n\n    updated = set()\n    for attr in PINS.__dict__:\n        pin = getattr(PINS, attr)\n        if hasattr(pin, \"updated\") and pin.updated:\n            updated.add(attr)\n\n\n    arrays = PINS.program.get()[\"arrays\"]\n    textures = PINS.program.get().get(\"textures\", [])\n\n    gl_context = PINS.init.updated_now or PINS.paint.updated_now\n    if gl_context:\n        context = opengl_current_context()\n        assert context is not None\n\n    dirty_renderer = False\n    repaint = False\n    for ar in arrays + textures:\n        attr = \"array_\" + ar\n        pin = getattr(PINS, attr)\n        if pin.updated:\n            dirty_renderer = True\n\n    if PINS.init.updated:\n        initialized = False\n        if renderer is not None:\n            renderer.set_dirty()\n        if gl_context:\n            init()\n        else:\n            if not gl_context:\n                PINS.init.unclear()\n\n    if PINS.uniforms.updated:\n        new_uniform_values = PINS.uniforms.get()\n        for uniform in new_uniform_values:\n            v_old = uniform_values.get(uniform, None)\n            v_new = new_uniform_values.get(uniform, None)\n            if v_old != v_new:\n                uniform_values[uniform] = v_new\n                uniform_dirty.add(uniform)\n                repaint = True\n\n    if PINS.paint.updated:\n        #print(\"PAINT\", gl_context, IDENTIFIER)\n        if gl_context:\n            paint()\n            repaint = False\n        else:\n            repaint = True\n\n    # Heisenbug!!! see test-gl-BUG.py\n    # As of now, seems to be solved, see cell-glwindow.py\n    try:\n        initialized\n    except NameError:\n        import sys\n        msg = \"\"\"seamless/lib/gui/cell-glprogram.py\nSomething has gone wrong, PyQt has corrupted Python's memory\nA crash will now happen... no idea why, sorry\n\"\"\"\n        print(msg, file=sys.stderr)\n        return\n    # /heisenbug\n\n    if PINS.program.updated or \\\n      PINS.vertex_shader.updated or PINS.fragment_shader.updated:\n        initialized = False\n        repaint = True\n\n    if initialized and dirty_renderer:\n        renderer.set_dirty()\n        repaint = True\n\n    if repaint:\n        PINS.repaint.set()\n"
           },
           "cell10": {
             "dtype": [
@@ -1099,7 +1199,7 @@
               "mode": null,
               "save_policy": 1
             },
-            "data": "{\n  \"textures\": [\n    \"s_texture\"\n  ],\n  \"uniforms\": {\n    \"u_gravity\": \"float\",\n    \"u_shrink_with_age\": \"bool\",\n    \"u_centerPosition\": \"vec3\",\n    \"u_pointsize\": \"float\",\n    \"u_time\": \"float\",\n    \"u_color\": \"vec4\"\n  },\n  \"arrays\": [\n    \"vertexdata\"\n  ],\n  \"render\": {\n    \"command\": \"points\",\n    \"glstate\": {\n      \"blend\": true,\n      \"point_sprite\": true,\n      \"depth_test\": false,\n      \"vertex_program_point_size\": true,\n      \"clear\": true,\n      \"clear_color\": \"black\",\n      \"blend_func\": [\n        \"src_alpha\",\n        \"one\"\n      ]\n    },\n    \"attributes\": {\n      \"a_lifetime\": {\n        \"array\": \"vertexdata\",\n        \"dtype\": \"float\",\n        \"rae\": \"['a_lifetime']\"\n      },\n      \"a_startPosition\": {\n        \"array\": \"vertexdata\",\n        \"dtype\": \"vec3\",\n        \"rae\": \"['a_startPosition']\"\n      },\n      \"a_endPosition\": {\n        \"array\": \"vertexdata\",\n        \"dtype\": \"vec3\",\n        \"rae\": \"['a_endPosition']\"\n      }\n    }\n  }\n}"
+            "data": "{\n  \"arrays\": [\n    \"vertexdata\"\n  ],\n  \"uniforms\": {\n    \"u_gravity\": \"float\",\n    \"u_pointsize\": \"float\",\n    \"u_shrink_with_age\": \"bool\",\n    \"u_centerPosition\": \"vec3\",\n    \"u_time\": \"float\",\n    \"u_color\": \"vec4\"\n  },\n  \"render\": {\n    \"attributes\": {\n      \"a_lifetime\": {\n        \"array\": \"vertexdata\",\n        \"dtype\": \"float\",\n        \"rae\": \"['a_lifetime']\"\n      },\n      \"a_endPosition\": {\n        \"array\": \"vertexdata\",\n        \"dtype\": \"vec3\",\n        \"rae\": \"['a_endPosition']\"\n      },\n      \"a_startPosition\": {\n        \"array\": \"vertexdata\",\n        \"dtype\": \"vec3\",\n        \"rae\": \"['a_startPosition']\"\n      }\n    },\n    \"glstate\": {\n      \"point_sprite\": true,\n      \"blend\": true,\n      \"blend_func\": [\n        \"src_alpha\",\n        \"one\"\n      ],\n      \"clear_color\": \"black\",\n      \"vertex_program_point_size\": true,\n      \"clear\": true,\n      \"depth_test\": false\n    },\n    \"command\": \"points\"\n  },\n  \"textures\": [\n    \"s_texture\"\n  ]\n}"
           },
           "cell5": {
             "dtype": "str",
@@ -1145,7 +1245,7 @@
               "mode": 2,
               "save_policy": 1
             },
-            "data": "from seamless.qt.QtWidgets import QOpenGLWidget, QApplication\nfrom seamless.qt.QtCore import Qt\nfrom seamless.qt import QtGui\n\nfrom seamless import add_opengl_context, remove_opengl_context, \\\n activate_opengl, deactivate_opengl\nfrom OpenGL import GL\nimport numpy as np\nfrom math import *\n\ndef length(vec):\n    return sqrt(np.sum(vec*vec))\n\ndef normalize(vec):\n    return vec / length(vec\n    )\n# Camera class, uses code from the camera routines in pyqtgraph's GLViewWidget\nclass Camera:\n    center = np.zeros(3,dtype=\"float\")     ## will always appear at the center of the widget\n    distance = 10.0          ## distance of camera from center\n    fov =  60                ## horizontal field of view in degrees\n    elevation =  30          ## camera's angle of elevation in degrees\n    azimuth = 45             ## camera's azimuthal angle in degrees\n    width = None\n    height = None\n    _loading = False\n\n    #authoritative attributes\n    _attrs1 = ( \"center\", \"distance\", \"fov\",\n              \"elevation\", \"azimuth\", \"width\", \"height\")\n\n    #derived attributes\n    _attrs2 = (\"projection_matrix\", \"modelview_matrix\",\n        \"mvp_matrix\", \"normal_matrix\", \"position\")\n\n    @property\n    def projection_matrix(self):\n        # Xw = (Xnd + 1) * width/2 + X\n        region = (0, 0, self.width, self.height)\n\n        viewport = region #for now\n        x0, y0, w, h = viewport\n        dist = self.distance\n        fov = self.fov\n        nearClip = dist * 0.001\n        farClip = dist * 1000.\n\n        r = nearClip * np.tan(fov * 0.5 * np.pi / 180.)\n        t = r * h / w\n\n        # convert screen coordinates (region) to normalized device coordinates\n        # Xnd = (Xw - X0) * 2/width - 1\n        ## Note that X0 and width in these equations must be the values used in viewport\n        left  = r * ((region[0]-x0) * (2.0/w) - 1)\n        right = r * ((region[0]+region[2]-x0) * (2.0/w) - 1)\n        bottom = t * ((region[1]-y0) * (2.0/h) - 1)\n        top    = t * ((region[1]+region[3]-y0) * (2.0/h) - 1)\n\n        tr = QtGui.QMatrix4x4()\n        tr.frustum(left, right, bottom, top, nearClip, farClip)\n        return np.array(tr.data()).reshape((4,4))\n\n    @property\n    def _modelview_matrix(self):\n        tr = QtGui.QMatrix4x4()\n        tr.translate( 0.0, 0.0, -self.distance)\n        tr.rotate(self.elevation-90, 1, 0, 0)\n        tr.rotate(self.azimuth+90, 0, 0, -1)\n        center = self.center\n        tr.translate(-center[0], -center[1], -center[2])\n        return tr\n\n    @property\n    def modelview_matrix(self):\n        tr = self._modelview_matrix\n        return np.array(tr.data()).reshape((4,4))\n\n    @property\n    def normal_matrix(self):\n        tr = self._modelview_matrix\n        return np.array(tr.normalMatrix().data()).reshape((3,3))\n\n    @property\n    def mvp_matrix(self):\n        mv = self.modelview_matrix\n        p = self.projection_matrix\n        return mv.dot(p)\n\n    @property\n    def position(self):\n        \"\"\"Return current position of camera based on center, dist, elevation, and azimuth\"\"\"\n        center = self.center\n        dist = self.distance\n        elev = self.elevation * pi/180.\n        azim = self.azimuth * pi/180.\n\n        pos = np.array((\n            center[0] + dist * cos(elev) * cos(azim),\n            center[1] + dist * cos(elev) * sin(azim),\n            center[2]  + dist * sin(elev)\n        ))\n        return pos\n\n\n    def __init__(self):\n        self.center = np.zeros(3)\n\n    def _write(self):\n        if self._loading:\n            return\n        data = {}\n        for attr in self._attrs1 + self._attrs2:\n            v = getattr(self, attr)\n            if isinstance(v, np.ndarray):\n                v = v.tolist()\n            data[attr] = v\n        self._data = data\n        PINS.camera.set(data)\n\n    def orbit(self, azim, elev):\n        \"\"\"Orbits the camera around the center position. *azim* and *elev* are given in degrees.\"\"\"\n        self.azimuth += azim\n        self.elevation = float(np.clip(self.elevation + elev, -90, 90))\n        self._write()\n\n    def pan(self, dx, dy, dz, relative=False):\n        \"\"\"\n        Moves the center (look-at) position while holding the camera in place.\n\n        If relative=True, then the coordinates are interpreted such that x\n        if in the global xy plane and points to the right side of the view, y is\n        in the global xy plane and orthogonal to x, and z points in the global z\n        direction. Distances are scaled roughly such that a value of 1.0 moves\n        by one pixel on screen.\n\n        \"\"\"\n        if not relative:\n            self.center += dx, dy, dz\n        else:\n            cPos = self.position\n            cVec = self.center - cPos\n            dist = length(cVec)  ## distance from camera to center\n            xDist = dist * 2. * tan(0.5 * self.fov * pi / 180.)  ## approx. width of view at distance of center point\n            xScale = xDist / self.width\n            zVec = np.array((0,0,1.))\n            xVec = normalize(np.cross(zVec, cVec))\n            yVec = normalize(np.cross(xVec, zVec))\n            self.center += xScale * (xVec * dx + yVec * dy + zVec * dz)\n        self._write()\n\n    def resize(self, width, height):\n        self.width, self.height = width, height\n        self._write()\n\n    def load(self, data):\n        dif = {}\n        try:\n            self._loading = True\n            for at in self._attrs1:\n                curr = getattr(self, at)\n                new = data.get(at, None)\n                if new is not None:\n                    if isinstance(curr, np.ndarray):\n                        curr = curr.tolist()\n                    if curr != new:\n                        dif[at] = new\n        finally:\n            self._loading = False\n        if len(dif):\n            for at in dif:\n                v = dif[at]\n                curr = getattr(self,at)\n                if isinstance(curr, np.ndarray):\n                    curr[:] = np.array(v)\n                else:\n                    setattr(self, at, float(v))\n            self._write()\n\nclass GLWidget(QOpenGLWidget):\n    _initialized = False\n    _destroyed = False\n    _painting = False\n    _updating = False\n    _mousePos = None\n\n    def __init__(self, *args, **kwargs):\n        super().__init__(*args, **kwargs)\n        self.camera = Camera()\n\n    def initializeGL(self):\n        super().initializeGL()\n        self.camera.width = self.width()\n        self.camera.height = self.height()\n        self.camera._write()\n        activate_opengl()\n        if self._destroyed:\n            return\n        from PyQt5.QtGui import QOpenGLContext\n        #print(\"INIT\")\n        ctx = self.context()\n        assert ctx is QOpenGLContext.currentContext()\n        #print(\"start initializeGL\")\n        if not self._initialized:\n            add_opengl_context(ctx)\n            self._initialized = True\n        PINS.init.set()\n        #print(\"end initializeGL\")\n        deactivate_opengl()\n\n    def resizeGL(self, width, height):\n        super().resizeGL(width, height)\n        if self._destroyed:\n            return\n        GL.glViewport(0, 0, width, height)\n        self.camera.width = width\n        self.camera.height = height\n        self.camera._write()\n        self.update()\n\n    def paintGL(self):\n        activate_opengl()\n        self._painting = True\n        super().paintGL()\n        if self._destroyed:\n            return\n        PINS.paint.set()\n        PINS.painted.set()\n        self._painting = False\n        deactivate_opengl()\n\n    def mousePressEvent(self, ev):\n        self._mousePos = ev.pos()\n\n    def mouseMoveEvent(self, ev):\n        if self._mousePos is None:\n            self._mousePos = ev.pos()\n            return\n        diff = ev.pos() - self._mousePos\n        self._mousePos = ev.pos()\n\n        if ev.buttons() == Qt.LeftButton:\n            self.camera.orbit(-diff.x(), diff.y())\n        elif ev.buttons() == Qt.MidButton:\n            if (ev.modifiers() & Qt.ControlModifier):\n                self.camera.pan(diff.x(), 0, diff.y(), relative=True)\n            else:\n                self.camera.pan(diff.x(), diff.y(), 0, relative=True)\n\n    def keyPressEvent(self, event):\n        key = int(event.key())\n        k = None\n\n        if key >= 32 and key <= 127:\n            k = chr(key)\n        else:\n            for attr in dir(Qt):\n                if not attr.startswith(\"Key_\"):\n                    continue\n                code = getattr(Qt, attr)\n                if code == key:\n                    k = attr[4:]\n                    break\n        if k is None:\n            return\n        PINS.last_key.set(k)\n\n    def destroy(self, *args, **kwargs):\n        self._destroyed = True\n        ctx = self.context()\n        remove_opengl_context(ctx)\n        super().destroy(*args, **kwargs)\n\n    def update(self):\n        #print(\"UPDATE\")\n        super().update()\n\nwidget = GLWidget()\n\ndef do_update():\n    import threading\n    assert threading.current_thread() is threading.main_thread()\n    if widget._destroyed:\n        return\n    if PINS.camera.updated:\n        widget.camera.load(PINS.camera.get())\n    if PINS.update.updated:\n        widget.update()\n    if PINS.title.updated:\n        widget.setWindowTitle(PINS.title.get())\n    if PINS.geometry.updated:\n        widget.setGeometry(*PINS.geometry.get())\n\ndo_update()\nwidget.setMouseTracking(True)\nwidget.show()\n",
+            "data": "from seamless.qt.QtWidgets import QOpenGLWidget, QApplication\nfrom seamless.qt.QtCore import Qt\nfrom seamless.qt import QtGui\n\nfrom seamless.opengl import add_opengl_context, remove_opengl_context, \\\n activate_opengl, deactivate_opengl, opengl_current_context\nfrom OpenGL import GL\nimport numpy as np\nfrom math import *\n\ndef length(vec):\n    return sqrt(np.sum(vec*vec))\n\ndef normalize(vec):\n    return vec / length(vec\n    )\n# Camera class, uses code from the camera routines in pyqtgraph's GLViewWidget\nclass Camera:\n    center = np.zeros(3,dtype=\"float\")     ## will always appear at the center of the widget\n    distance = 10.0          ## distance of camera from center\n    fov =  60                ## horizontal field of view in degrees\n    elevation =  30          ## camera's angle of elevation in degrees\n    azimuth = 45             ## camera's azimuthal angle in degrees\n    width = None\n    height = None\n    _loading = False\n\n    #authoritative attributes\n    _attrs1 = ( \"center\", \"distance\", \"fov\",\n              \"elevation\", \"azimuth\", \"width\", \"height\")\n\n    #derived attributes\n    _attrs2 = (\"projection_matrix\", \"modelview_matrix\",\n        \"mvp_matrix\", \"normal_matrix\", \"position\")\n\n    @property\n    def projection_matrix(self):\n        # Xw = (Xnd + 1) * width/2 + X\n        region = (0, 0, self.width, self.height)\n\n        viewport = region #for now\n        x0, y0, w, h = viewport\n        dist = self.distance\n        fov = self.fov\n        nearClip = dist * 0.001\n        farClip = dist * 1000.\n\n        r = nearClip * np.tan(fov * 0.5 * np.pi / 180.)\n        t = r * h / w\n\n        # convert screen coordinates (region) to normalized device coordinates\n        # Xnd = (Xw - X0) * 2/width - 1\n        ## Note that X0 and width in these equations must be the values used in viewport\n        left  = r * ((region[0]-x0) * (2.0/w) - 1)\n        right = r * ((region[0]+region[2]-x0) * (2.0/w) - 1)\n        bottom = t * ((region[1]-y0) * (2.0/h) - 1)\n        top    = t * ((region[1]+region[3]-y0) * (2.0/h) - 1)\n\n        tr = QtGui.QMatrix4x4()\n        tr.frustum(left, right, bottom, top, nearClip, farClip)\n        return np.array(tr.data()).reshape((4,4))\n\n    @property\n    def _modelview_matrix(self):\n        tr = QtGui.QMatrix4x4()\n        tr.translate( 0.0, 0.0, -self.distance)\n        tr.rotate(self.elevation-90, 1, 0, 0)\n        tr.rotate(self.azimuth+90, 0, 0, -1)\n        center = self.center\n        tr.translate(-center[0], -center[1], -center[2])\n        return tr\n\n    @property\n    def modelview_matrix(self):\n        tr = self._modelview_matrix\n        return np.array(tr.data()).reshape((4,4))\n\n    @property\n    def normal_matrix(self):\n        tr = self._modelview_matrix\n        return np.array(tr.normalMatrix().data()).reshape((3,3))\n\n    @property\n    def mvp_matrix(self):\n        mv = self.modelview_matrix\n        p = self.projection_matrix\n        return mv.dot(p)\n\n    @property\n    def position(self):\n        \"\"\"Return current position of camera based on center, dist, elevation, and azimuth\"\"\"\n        center = self.center\n        dist = self.distance\n        elev = self.elevation * pi/180.\n        azim = self.azimuth * pi/180.\n\n        pos = np.array((\n            center[0] + dist * cos(elev) * cos(azim),\n            center[1] + dist * cos(elev) * sin(azim),\n            center[2]  + dist * sin(elev)\n        ))\n        return pos\n\n\n    def __init__(self):\n        self.center = np.zeros(3)\n\n    def _write(self):\n        if self._loading:\n            return\n        data = {}\n        for attr in self._attrs1 + self._attrs2:\n            v = getattr(self, attr)\n            if isinstance(v, np.ndarray):\n                v = v.tolist()\n            data[attr] = v\n        self._data = data\n        PINS.camera.set(data)\n\n    def orbit(self, azim, elev):\n        \"\"\"Orbits the camera around the center position. *azim* and *elev* are given in degrees.\"\"\"\n        self.azimuth += azim\n        self.elevation = float(np.clip(self.elevation + elev, -90, 90))\n        self._write()\n\n    def pan(self, dx, dy, dz, relative=False):\n        \"\"\"\n        Moves the center (look-at) position while holding the camera in place.\n\n        If relative=True, then the coordinates are interpreted such that x\n        if in the global xy plane and points to the right side of the view, y is\n        in the global xy plane and orthogonal to x, and z points in the global z\n        direction. Distances are scaled roughly such that a value of 1.0 moves\n        by one pixel on screen.\n\n        \"\"\"\n        if not relative:\n            self.center += dx, dy, dz\n        else:\n            cPos = self.position\n            cVec = self.center - cPos\n            dist = length(cVec)  ## distance from camera to center\n            xDist = dist * 2. * tan(0.5 * self.fov * pi / 180.)  ## approx. width of view at distance of center point\n            xScale = xDist / self.width\n            zVec = np.array((0,0,1.))\n            xVec = normalize(np.cross(zVec, cVec))\n            yVec = normalize(np.cross(xVec, zVec))\n            self.center += xScale * (xVec * dx + yVec * dy + zVec * dz)\n        self._write()\n\n    def resize(self, width, height):\n        self.width, self.height = width, height\n        self._write()\n\n    def load(self, data):\n        dif = {}\n        try:\n            self._loading = True\n            for at in self._attrs1:\n                curr = getattr(self, at)\n                new = data.get(at, None)\n                if new is not None:\n                    if isinstance(curr, np.ndarray):\n                        curr = curr.tolist()\n                    if curr != new:\n                        dif[at] = new\n        finally:\n            self._loading = False\n        if len(dif):\n            for at in dif:\n                v = dif[at]\n                curr = getattr(self,at)\n                if isinstance(curr, np.ndarray):\n                    curr[:] = np.array(v)\n                else:\n                    setattr(self, at, float(v))\n            self._write()\n\nclass GLWidget(QOpenGLWidget):\n    _initialized = False\n    _destroyed = False\n    _painting = False\n    _updating = False\n    _mousePos = None\n\n    def __init__(self, *args, **kwargs):\n        super().__init__(*args, **kwargs)\n        self.camera = Camera()\n\n    def initializeGL(self):\n        import seamless\n        from PyQt5.QtGui import QOpenGLContext\n        if self._destroyed:\n            return\n        try:\n            old_running_qt = seamless._running_qt\n            seamless._running_qt = True\n            activate_opengl()\n            ctx = self.context()\n            assert ctx is QOpenGLContext.currentContext()\n            #print(\"start initializeGL\")\n            if not self._initialized:\n                add_opengl_context(ctx)\n                self._initialized = True\n            self.camera.width = self.width()\n            self.camera.height = self.height()\n            self.camera._write()\n            #print(\"INIT\")\n            PINS.init.set()\n            #print(\"end initializeGL\")\n        finally:\n            seamless._running_qt = old_running_qt\n            deactivate_opengl()\n        super().initializeGL()\n        seamless.run_work()\n\n    def resizeGL(self, width, height):\n        super().resizeGL(width, height)\n        if self._destroyed:\n            return\n        GL.glViewport(0, 0, width, height)\n        self.camera.width = width\n        self.camera.height = height\n        self.camera._write()\n        self.update()\n\n    def paintGL(self):\n        import seamless\n        self._painting = True\n        super().paintGL()\n        if self._destroyed:\n            return\n        assert self._initialized\n        try:\n            old_running_qt = seamless._running_qt\n            seamless._running_qt = True\n            activate_opengl()\n            #print(\"PAINT\")\n            PINS.paint.set()\n            PINS.painted.set()\n            self._painting = False\n        finally:\n            #print(\"/PAINT\")\n            seamless._running_qt = old_running_qt\n            deactivate_opengl()\n        seamless.run_work()\n\n    def mousePressEvent(self, ev):\n        self._mousePos = ev.pos()\n\n    def mouseMoveEvent(self, ev):\n        if self._mousePos is None:\n            self._mousePos = ev.pos()\n            return\n        diff = ev.pos() - self._mousePos\n        self._mousePos = ev.pos()\n\n        if ev.buttons() == Qt.LeftButton:\n            self.camera.orbit(-diff.x(), diff.y())\n        elif ev.buttons() == Qt.MidButton:\n            if (ev.modifiers() & Qt.ControlModifier):\n                self.camera.pan(diff.x(), 0, diff.y(), relative=True)\n            else:\n                self.camera.pan(diff.x(), diff.y(), 0, relative=True)\n\n    def keyPressEvent(self, event):\n        key = int(event.key())\n        k = None\n\n        if key >= 32 and key <= 127:\n            k = chr(key)\n        else:\n            for attr in dir(Qt):\n                if not attr.startswith(\"Key_\"):\n                    continue\n                code = getattr(Qt, attr)\n                if code == key:\n                    k = attr[4:]\n                    break\n        if k is None:\n            return\n        PINS.last_key.set(k)\n\n    def destroy(self, *args, **kwargs):\n        self._destroyed = True\n        ctx = self.context()\n        remove_opengl_context(ctx)\n        super().destroy(*args, **kwargs)\n\n    def update(self):\n        #print(\"UPDATE\")\n        super().update()\n\nwidget = GLWidget()\n\ndef do_update():\n    import threading\n    assert threading.current_thread() is threading.main_thread()\n    if widget._destroyed:\n        return\n    if PINS.camera.updated:\n        widget.camera.load(PINS.camera.get())\n    if PINS.update.updated:\n        widget.update()\n    if PINS.title.updated:\n        widget.setWindowTitle(PINS.title.get())\n    if PINS.geometry.updated:\n        widget.setGeometry(*PINS.geometry.get())\n\ndo_update()\nwidget.setMouseTracking(True)\nwidget.show()\n",
             "owner": "glprogram.glwindow"
           },
           "cell9": {
@@ -1260,7 +1360,7 @@
               "mode": null,
               "save_policy": 1
             },
-            "data": "{\n  \"init\": {\n    \"pin\": \"input\",\n    \"dtype\": \"signal\"\n  },\n  \"fragment_shader\": {\n    \"pin\": \"input\",\n    \"dtype\": [\n      \"text\",\n      \"code\",\n      \"fragmentshader\"\n    ]\n  },\n  \"vertex_shader\": {\n    \"pin\": \"input\",\n    \"dtype\": [\n      \"text\",\n      \"code\",\n      \"vertexshader\"\n    ]\n  },\n  \"repaint\": {\n    \"pin\": \"output\",\n    \"dtype\": \"signal\"\n  },\n  \"program\": {\n    \"pin\": \"input\",\n    \"dtype\": \"json\"\n  },\n  \"paint\": {\n    \"pin\": \"input\",\n    \"dtype\": \"signal\"\n  },\n  \"array_s_texture\": {\n    \"pin\": \"input\",\n    \"dtype\": \"array\"\n  },\n  \"array_vertexdata\": {\n    \"pin\": \"input\",\n    \"dtype\": \"array\"\n  },\n  \"uniforms\": {\n    \"pin\": \"input\",\n    \"dtype\": \"json\"\n  }\n}"
+            "data": "{\n  \"paint\": {\n    \"pin\": \"input\",\n    \"dtype\": \"signal\"\n  },\n  \"array_s_texture\": {\n    \"pin\": \"input\",\n    \"dtype\": \"array\"\n  },\n  \"repaint\": {\n    \"pin\": \"output\",\n    \"dtype\": \"signal\"\n  },\n  \"array_vertexdata\": {\n    \"pin\": \"input\",\n    \"dtype\": \"array\"\n  },\n  \"vertex_shader\": {\n    \"pin\": \"input\",\n    \"dtype\": [\n      \"text\",\n      \"code\",\n      \"vertexshader\"\n    ]\n  },\n  \"uniforms\": {\n    \"pin\": \"input\",\n    \"dtype\": \"json\"\n  },\n  \"program\": {\n    \"pin\": \"input\",\n    \"dtype\": \"json\"\n  },\n  \"init\": {\n    \"pin\": \"input\",\n    \"dtype\": \"signal\"\n  },\n  \"fragment_shader\": {\n    \"pin\": \"input\",\n    \"dtype\": [\n      \"text\",\n      \"code\",\n      \"fragmentshader\"\n    ]\n  }\n}"
           },
           "signal1": {
             "dtype": "signal",
@@ -2400,7 +2500,7 @@
           "mode": 5,
           "save_policy": 1
         },
-        "data": "{\n  \"radius\": {\n    \"dtype\": \"int\",\n    \"pin\": \"input\"\n  },\n  \"as_float\": {\n    \"dtype\": \"bool\",\n    \"pin\": \"input\"\n  },\n  \"filename\": {\n    \"dtype\": \"str\",\n    \"pin\": \"input\"\n  },\n  \"output\": {\n    \"dtype\": \"array\",\n    \"pin\": \"output\"\n  }\n}"
+        "data": "{\n  \"radius\": {\n    \"dtype\": \"int\",\n    \"pin\": \"input\"\n  },\n  \"as_float\": {\n    \"dtype\": \"bool\",\n    \"pin\": \"input\"\n  },\n  \"output\": {\n    \"dtype\": \"array\",\n    \"pin\": \"output\"\n  },\n  \"filename\": {\n    \"dtype\": \"str\",\n    \"pin\": \"input\"\n  }\n}"
       },
       "params_gen_uniforms": {
         "dtype": [
@@ -2414,7 +2514,7 @@
           "mode": 5,
           "save_policy": 1
         },
-        "data": "{\n  \"uniforms\": {\n    \"dtype\": \"json\",\n    \"must_be_defined\": false,\n    \"pin\": \"edit\"\n  },\n  \"reset\": {\n    \"dtype\": \"signal\",\n    \"pin\": \"input\"\n  },\n  \"gravity\": {\n    \"dtype\": \"float\",\n    \"pin\": \"input\"\n  },\n  \"shrink_with_age\": {\n    \"dtype\": \"bool\",\n    \"pin\": \"input\"\n  },\n  \"updated\": {\n    \"dtype\": \"signal\",\n    \"pin\": \"output\"\n  },\n  \"N\": {\n    \"dtype\": \"int\",\n    \"pin\": \"input\"\n  },\n  \"update\": {\n    \"dtype\": \"signal\",\n    \"pin\": \"input\"\n  },\n  \"pointsize\": {\n    \"dtype\": \"int\",\n    \"pin\": \"input\"\n  }\n}"
+        "data": "{\n  \"reset\": {\n    \"dtype\": \"signal\",\n    \"pin\": \"input\"\n  },\n  \"update\": {\n    \"dtype\": \"signal\",\n    \"pin\": \"input\"\n  },\n  \"updated\": {\n    \"dtype\": \"signal\",\n    \"pin\": \"output\"\n  },\n  \"N\": {\n    \"dtype\": \"int\",\n    \"pin\": \"input\"\n  },\n  \"uniforms\": {\n    \"must_be_defined\": false,\n    \"pin\": \"edit\",\n    \"dtype\": \"json\"\n  },\n  \"pointsize\": {\n    \"dtype\": \"int\",\n    \"pin\": \"input\"\n  },\n  \"gravity\": {\n    \"dtype\": \"float\",\n    \"pin\": \"input\"\n  },\n  \"shrink_with_age\": {\n    \"dtype\": \"bool\",\n    \"pin\": \"input\"\n  }\n}"
       },
       "params_gen_vertexdata": {
         "dtype": [
@@ -2428,7 +2528,7 @@
           "mode": 5,
           "save_policy": 1
         },
-        "data": "{\n  \"N\": {\n    \"dtype\": \"int\",\n    \"pin\": \"input\"\n  },\n  \"reset\": {\n    \"dtype\": \"signal\",\n    \"pin\": \"input\"\n  },\n  \"output\": {\n    \"dtype\": \"array\",\n    \"pin\": \"output\"\n  }\n}"
+        "data": "{\n  \"reset\": {\n    \"dtype\": \"signal\",\n    \"pin\": \"input\"\n  },\n  \"output\": {\n    \"dtype\": \"array\",\n    \"pin\": \"output\"\n  },\n  \"N\": {\n    \"dtype\": \"int\",\n    \"pin\": \"input\"\n  }\n}"
       },
       "period": {
         "dtype": "float",
@@ -2458,7 +2558,7 @@
           "mode": null,
           "save_policy": 4
         },
-        "data": "{\n  \"textures\": [\n    \"s_texture\"\n  ],\n  \"arrays\": [\n    \"vertexdata\"\n  ],\n  \"render\": {\n    \"command\": \"points\",\n    \"glstate\": {\n      \"blend\": true,\n      \"point_sprite\": true,\n      \"clear\": true,\n      \"vertex_program_point_size\": true,\n      \"depth_test\": false,\n      \"clear_color\": \"black\",\n      \"blend_func\": [\n        \"src_alpha\",\n        \"one\"\n      ]\n    },\n    \"attributes\": {\n      \"a_lifetime\": {\n        \"array\": \"vertexdata\",\n        \"dtype\": \"float\",\n        \"rae\": \"['a_lifetime']\"\n      },\n      \"a_startPosition\": {\n        \"array\": \"vertexdata\",\n        \"dtype\": \"vec3\",\n        \"rae\": \"['a_startPosition']\"\n      },\n      \"a_endPosition\": {\n        \"array\": \"vertexdata\",\n        \"dtype\": \"vec3\",\n        \"rae\": \"['a_endPosition']\"\n      }\n    }\n  },\n  \"uniforms\": {\n    \"u_gravity\": \"float\",\n    \"u_shrink_with_age\": \"bool\",\n    \"u_time\": \"float\",\n    \"u_pointsize\": \"float\",\n    \"u_centerPosition\": \"vec3\",\n    \"u_color\": \"vec4\"\n  }\n}"
+        "data": "{\n  \"arrays\": [\n    \"vertexdata\"\n  ],\n  \"uniforms\": {\n    \"u_gravity\": \"float\",\n    \"u_centerPosition\": \"vec3\",\n    \"u_shrink_with_age\": \"bool\",\n    \"u_pointsize\": \"float\",\n    \"u_time\": \"float\",\n    \"u_color\": \"vec4\"\n  },\n  \"render\": {\n    \"attributes\": {\n      \"a_lifetime\": {\n        \"array\": \"vertexdata\",\n        \"dtype\": \"float\",\n        \"rae\": \"['a_lifetime']\"\n      },\n      \"a_endPosition\": {\n        \"array\": \"vertexdata\",\n        \"dtype\": \"vec3\",\n        \"rae\": \"['a_endPosition']\"\n      },\n      \"a_startPosition\": {\n        \"array\": \"vertexdata\",\n        \"dtype\": \"vec3\",\n        \"rae\": \"['a_startPosition']\"\n      }\n    },\n    \"glstate\": {\n      \"point_sprite\": true,\n      \"clear\": true,\n      \"blend_func\": [\n        \"src_alpha\",\n        \"one\"\n      ],\n      \"clear_color\": \"black\",\n      \"vertex_program_point_size\": true,\n      \"blend\": true,\n      \"depth_test\": false\n    },\n    \"command\": \"points\"\n  },\n  \"textures\": [\n    \"s_texture\"\n  ]\n}"
       },
       "program_template": {
         "dtype": "cson",
@@ -2491,18 +2591,6 @@
           "save_policy": 1
         },
         "data": "True"
-      },
-      "signal1": {
-        "dtype": "signal",
-        "owner": "gen_uniforms"
-      },
-      "signal2": {
-        "dtype": "signal",
-        "owner": "timer"
-      },
-      "signal3": {
-        "dtype": "signal",
-        "owner": "init"
       },
       "silk_vertexdata": {
         "dtype": [
@@ -2576,7 +2664,7 @@
           "mode": null,
           "save_policy": 1
         },
-        "data": "{\n  \"u_gravity\": 1.0,\n  \"u_shrink_with_age\": true,\n  \"u_time\": 2.7894973754882812e-05,\n  \"u_pointsize\": 40,\n  \"u_centerPosition\": [\n    -0.2599857179253616,\n    0.42244891166052945,\n    0.2073124342884931\n  ],\n  \"u_color\": [\n    0.7145399248325013,\n    0.31490569787878836,\n    0.290660172323826,\n    0.4786300923226383\n  ]\n}"
+        "data": "{\n  \"u_gravity\": 1.0,\n  \"u_centerPosition\": [\n    -0.2679395645620891,\n    -0.25389932120881875,\n    0.040467283740344695\n  ],\n  \"u_shrink_with_age\": true,\n  \"u_pointsize\": 40,\n  \"u_color\": [\n    0.5585791285096882,\n    0.42063257481959293,\n    0.425563173006796,\n    0.4786300923226383\n  ],\n  \"u_time\": 2.4557113647460938e-05\n}"
       },
       "vert_shader": {
         "dtype": [
@@ -2611,14 +2699,16 @@
         "args": [
           null
         ],
-        "kwargs": {},
-        "cell_args": {
-          "0": "params_gen_texture"
+        "kwargs": {
+          "window_title": "Seamless fireworks demo"
         },
-        "macro_module_name": "seamless.core.transformer",
-        "macro_func_name": "transformer",
-        "macro_order": 1,
-        "target": "gen_texture"
+        "cell_args": {
+          "0": "program"
+        },
+        "macro_module_name": "seamless.lib.gui.gl.glprogram",
+        "macro_func_name": "glprogram",
+        "macro_order": 0,
+        "target": "glprogram"
       },
       {
         "args": [
@@ -2626,12 +2716,12 @@
         ],
         "kwargs": {},
         "cell_args": {
-          "0": "params_gen_vertexdata"
+          "0": "glprogram.rcparams"
         },
-        "macro_module_name": "seamless.core.transformer",
-        "macro_func_name": "transformer",
+        "macro_module_name": "seamless.core.reactor",
+        "macro_func_name": "reactor",
         "macro_order": 0,
-        "target": "gen_vertexdata"
+        "target": "glprogram.rc"
       },
       {
         "args": [
@@ -2652,27 +2742,12 @@
         ],
         "kwargs": {},
         "cell_args": {
-          "0": "glprogram.rcparams"
+          "0": "params_gen_uniforms"
         },
         "macro_module_name": "seamless.core.reactor",
         "macro_func_name": "reactor",
-        "macro_order": 0,
-        "target": "glprogram.rc"
-      },
-      {
-        "args": [
-          null
-        ],
-        "kwargs": {
-          "window_title": "Seamless fireworks demo"
-        },
-        "cell_args": {
-          "0": "program"
-        },
-        "macro_module_name": "seamless.lib.gui.gl.glprogram",
-        "macro_func_name": "glprogram",
-        "macro_order": 0,
-        "target": "glprogram"
+        "macro_order": 1,
+        "target": "gen_uniforms"
       },
       {
         "args": [
@@ -2680,28 +2755,31 @@
         ],
         "kwargs": {},
         "cell_args": {
-          "0": "params_gen_uniforms"
+          "0": "params_gen_vertexdata"
         },
-        "macro_module_name": "seamless.core.reactor",
-        "macro_func_name": "reactor",
+        "macro_module_name": "seamless.core.transformer",
+        "macro_func_name": "transformer",
+        "macro_order": 0,
+        "target": "gen_vertexdata"
+      },
+      {
+        "args": [
+          null
+        ],
+        "kwargs": {},
+        "cell_args": {
+          "0": "params_gen_texture"
+        },
+        "macro_module_name": "seamless.core.transformer",
+        "macro_func_name": "transformer",
         "macro_order": 1,
-        "target": "gen_uniforms"
+        "target": "gen_texture"
       }
     ],
     "macro_listeners": [
       {
-        "cell": "params_gen_texture",
-        "macro_target": "gen_texture",
-        "macro_arg": 0
-      },
-      {
-        "cell": "params_gen_vertexdata",
-        "macro_target": "gen_vertexdata",
-        "macro_arg": 0
-      },
-      {
-        "cell": "period",
-        "macro_target": "timer",
+        "cell": "program",
+        "macro_target": "glprogram",
         "macro_arg": 0
       },
       {
@@ -2710,13 +2788,23 @@
         "macro_arg": 0
       },
       {
-        "cell": "program",
-        "macro_target": "glprogram",
+        "cell": "period",
+        "macro_target": "timer",
         "macro_arg": 0
       },
       {
         "cell": "params_gen_uniforms",
         "macro_target": "gen_uniforms",
+        "macro_arg": 0
+      },
+      {
+        "cell": "params_gen_vertexdata",
+        "macro_target": "gen_vertexdata",
+        "macro_arg": 0
+      },
+      {
+        "cell": "params_gen_texture",
+        "macro_target": "gen_texture",
         "macro_arg": 0
       }
     ],
@@ -2730,9 +2818,26 @@
         ],
         "data": "Type Vec3 {\n  Float x\n  Float y\n  Float z\n}\n\nType VertexData {\n  Float a_lifetime\n  Vec3 a_startPosition\n  Vec3 a_endPosition\n}\n",
         "data_name": null
+      },
+      {
+        "registrar_name": "python",
+        "dtype": [
+          "text",
+          "code",
+          "python"
+        ],
+        "data": "# Sjoerd de Vries, 2017\n# partially based on code ported from https://gist.github.com/pavel-perina/1324ff064aedede0e01311aab315f83d, copyright (c) 2017 Pavel Perina\n\n\"\"\"\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n\"\"\"\n\nfrom PyQt5.QtWidgets import QLayout\nfrom PyQt5.QtCore import Qt, QSize\n\nclass AspectLayout(QLayout):\n    def __init__(self, aspect):\n        self.aspect = aspect\n        self.item = None\n        super().__init__()\n        self.setContentsMargins(0,0,0,0)\n\n    def addItem(self, item):\n        assert self.item is None, \"AspectLayout can contain only 1 widget\"\n        self.item = item\n\n    def itemAt(self, index):\n        if index != 0:\n            return None\n        if self.item is None:\n            return None\n        return self.item\n\n    def takeAt(self, index):\n        if index != 0:\n            return None\n        if self.item is None:\n            return None\n        result = self.item\n        self.item = None\n        return result\n\n    def setGeometry(self, rect):\n        super().setGeometry(rect)\n        margins = self.getContentsMargins()\n        if self.item is not None:\n            availW = rect.width() - margins[1] - margins[3]\n            availH = rect.height() - margins[0] - margins[2]\n            h = availH\n            w = h * self.aspect\n            if w > availW:\n                x = margins[1]\n                w = availW\n                h = w/self.aspect\n                if self.item.alignment() &  Qt.AlignTop:\n                    y = margins[0]\n                elif self.item.alignment() &  Qt.AlignBottom:\n                    y = rect.height() - margins[2] - h\n                else:\n                    y = margins[0] + (availH-h) / 2\n            else:\n                y = margins[0]\n                if self.item.alignment() &  Qt.AlignLeft:\n                    x = margins[1]\n                elif self.item.alignment() &  Qt.AlignRight:\n                    x = rect.width() - margins[3] - w\n                else:\n                    x = margins[1] + (availW-w) / 2\n            self.item.widget().setGeometry(\n                rect.x() + x,\n                rect.y() + y,\n                w, h)\n\n    def sizeHint(self):\n        margins = self.getContentsMargins()\n        if self.item is None:\n            return QSize(margins[0]+margins[2],margins[1]+margins[3])\n        s = self.item.sizeHint()\n        w, h = s.width(), s.height()\n        return QSize(margins[0]+margins[2] + w, margins[1]+margins[3] + h)\n\n    def minimumSize(self):\n        margins = self.getContentsMargins()\n        if self.item is None:\n            return QSize(margins[0]+margins[2],margins[1]+margins[3])\n        s = self.item.minimumSize()\n        w, h = s.width(), s.height()\n        return QSize(margins[0]+margins[2] + w, margins[1]+margins[3] + h)\n\n    def expandingDirections(self):\n       return Qt.Horizontal | Qt.Vertical\n\n    def hasHeightForWidth(self):\n        return True\n\n    def count(self):\n        if self.item is None:\n            return 0\n        else:\n            return 1\n\n    def heightForWidth(self, width):\n        margins = self.getContentsMargins()\n        height = (width - margins[1] - margins[3]) / self.aspect\n        height += margins[0] + margins[2]\n        return int(height)\n",
+        "data_name": null
       }
     ],
     "registrar_listeners": [
+      {
+        "registrar": "python",
+        "key": "AspectLayout",
+        "target_type": "worker",
+        "target_worker": "display_texture.display_numpy",
+        "namespace_name": "AspectLayout"
+      },
       {
         "registrar": "silk",
         "key": "VertexData",
@@ -2757,6 +2862,11 @@
     ],
     "registrar_cells": [
       {
+        "cell": "display_texture.aspect_layout",
+        "macro_target": "display_texture.registrar_object1",
+        "registrar": "python"
+      },
+      {
         "cell": "silk_vertexdata",
         "macro_target": "registrar_object1",
         "registrar": "silk"
@@ -2773,7 +2883,7 @@
       ],
       [
         "gen_uniforms.updated",
-        "signal1"
+        "display_texture.signal1"
       ],
       [
         "gen_vertexdata.output",
@@ -2781,7 +2891,7 @@
       ],
       [
         "glprogram.glwindow.init",
-        "glprogram.signal2"
+        "glprogram.signal4"
       ],
       [
         "glprogram.glwindow.last_key",
@@ -2789,11 +2899,11 @@
       ],
       [
         "glprogram.glwindow.painted",
-        "cell32"
+        "display_texture.cell12"
       ],
       [
         "glprogram.glwindow.painted",
-        "glprogram.signal4"
+        "glprogram.signal3"
       ],
       [
         "glprogram.glwindow.painted",
@@ -2801,7 +2911,7 @@
       ],
       [
         "glprogram.glwindow.paint",
-        "glprogram.signal3"
+        "glprogram.signal2"
       ],
       [
         "glprogram.rc.repaint",
@@ -2809,11 +2919,11 @@
       ],
       [
         "init.trigger",
-        "signal3"
+        "display_texture.signal3"
       ],
       [
         "timer.trigger",
-        "signal2"
+        "display_texture.signal2"
       ]
     ],
     "cell_pin_connections": [
@@ -2890,96 +3000,12 @@
         "gen_texture.as_float"
       ],
       [
-        "cell23",
-        "link_params_gen_uniforms.rc.filepath"
-      ],
-      [
-        "cell24",
-        "link_params_gen_uniforms.rc.latency"
-      ],
-      [
-        "cell25",
-        "gen_uniforms.code_start"
-      ],
-      [
-        "cell25",
-        "link_gen_uniforms_start.rc.value"
-      ],
-      [
-        "cell26",
-        "link_gen_uniforms_start.rc.filepath"
-      ],
-      [
-        "cell27",
-        "link_gen_uniforms_start.rc.latency"
-      ],
-      [
-        "cell28",
-        "gen_uniforms.code_update"
-      ],
-      [
-        "cell28",
-        "link_gen_uniforms_update.rc.value"
-      ],
-      [
-        "cell29",
-        "link_gen_uniforms_update.rc.filepath"
-      ],
-      [
         "cell2",
         "link_silk_vertexdata.rc.latency"
       ],
       [
-        "cell30",
-        "link_gen_uniforms_update.rc.latency"
-      ],
-      [
-        "cell31",
-        "gen_uniforms.code_stop"
-      ],
-      [
-        "cell32",
-        "gen_uniforms.update"
-      ],
-      [
-        "cell33",
-        "timer.code_start"
-      ],
-      [
-        "cell34",
-        "timer.code_update"
-      ],
-      [
-        "cell35",
-        "timer.code_stop"
-      ],
-      [
-        "cell36",
-        "timer.period"
-      ],
-      [
-        "cell37",
-        "gen_uniforms.reset"
-      ],
-      [
-        "cell38",
-        "gen_vertexdata.reset"
-      ],
-      [
-        "cell39",
-        "init.code_start"
-      ],
-      [
         "cell3",
         "link_vert_shader.rc.filepath"
-      ],
-      [
-        "cell40",
-        "init.code_update"
-      ],
-      [
-        "cell41",
-        "init.code_stop"
       ],
       [
         "cell4",
@@ -3008,6 +3034,106 @@
       [
         "cell9",
         "link_gen_program.rc.value"
+      ],
+      [
+        "display_texture.cell10",
+        "link_gen_uniforms_update.rc.latency"
+      ],
+      [
+        "display_texture.cell11",
+        "gen_uniforms.code_stop"
+      ],
+      [
+        "display_texture.cell12",
+        "gen_uniforms.update"
+      ],
+      [
+        "display_texture.cell13",
+        "timer.code_start"
+      ],
+      [
+        "display_texture.cell14",
+        "timer.code_update"
+      ],
+      [
+        "display_texture.cell15",
+        "timer.code_stop"
+      ],
+      [
+        "display_texture.cell16",
+        "timer.period"
+      ],
+      [
+        "display_texture.cell17",
+        "gen_uniforms.reset"
+      ],
+      [
+        "display_texture.cell18",
+        "gen_vertexdata.reset"
+      ],
+      [
+        "display_texture.cell19",
+        "init.code_start"
+      ],
+      [
+        "display_texture.cell1",
+        "display_texture.display_numpy.code_update"
+      ],
+      [
+        "display_texture.cell20",
+        "init.code_update"
+      ],
+      [
+        "display_texture.cell21",
+        "init.code_stop"
+      ],
+      [
+        "display_texture.cell2",
+        "display_texture.display_numpy.code_stop"
+      ],
+      [
+        "display_texture.cell3",
+        "link_params_gen_uniforms.rc.filepath"
+      ],
+      [
+        "display_texture.cell4",
+        "link_params_gen_uniforms.rc.latency"
+      ],
+      [
+        "display_texture.cell5",
+        "gen_uniforms.code_start"
+      ],
+      [
+        "display_texture.cell5",
+        "link_gen_uniforms_start.rc.value"
+      ],
+      [
+        "display_texture.cell6",
+        "link_gen_uniforms_start.rc.filepath"
+      ],
+      [
+        "display_texture.cell7",
+        "link_gen_uniforms_start.rc.latency"
+      ],
+      [
+        "display_texture.cell8",
+        "gen_uniforms.code_update"
+      ],
+      [
+        "display_texture.cell8",
+        "link_gen_uniforms_update.rc.value"
+      ],
+      [
+        "display_texture.cell9",
+        "link_gen_uniforms_update.rc.filepath"
+      ],
+      [
+        "display_texture.code",
+        "display_texture.display_numpy.code_start"
+      ],
+      [
+        "display_texture.title",
+        "display_texture.display_numpy.title"
       ],
       [
         "frag_shader",
@@ -3059,11 +3185,11 @@
       ],
       [
         "glprogram.signal2",
-        "glprogram.rc.init"
+        "glprogram.rc.paint"
       ],
       [
-        "glprogram.signal3",
-        "glprogram.rc.paint"
+        "glprogram.signal4",
+        "glprogram.rc.init"
       ],
       [
         "gravity",
@@ -3255,6 +3381,10 @@
       ],
       [
         "texture",
+        "display_texture.display_numpy.array"
+      ],
+      [
+        "texture",
         "glprogram.rc.array_s_texture"
       ],
       [
@@ -3280,24 +3410,24 @@
     ],
     "cell_cell_connections": [
       [
+        "display_texture.signal2",
+        "display_texture.cell17"
+      ],
+      [
+        "display_texture.signal2",
+        "display_texture.cell18"
+      ],
+      [
+        "display_texture.signal3",
+        "display_texture.cell17"
+      ],
+      [
+        "display_texture.signal3",
+        "display_texture.cell18"
+      ],
+      [
         "repaint",
         "glprogram.signal1"
-      ],
-      [
-        "signal2",
-        "cell37"
-      ],
-      [
-        "signal2",
-        "cell38"
-      ],
-      [
-        "signal3",
-        "cell37"
-      ],
-      [
-        "signal3",
-        "cell38"
       ]
     ]
   }

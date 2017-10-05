@@ -7,7 +7,7 @@ Original file: fireworks-ORIGINAL.py (does not use seamless; requires vispy)
 
 This seamless example will be demonstrated in a video tutorial
 on https://www.youtube.com/playlist?list=PL6WSTyQSLz08_GQqj-NyshaWnoIZMsqTK
-This video tutorial is planned for August - September 2017.
+This video tutorial is planned for October 2017.
 
 How to run/edit the example
 ===========================
@@ -101,3 +101,8 @@ orcabubbles.seamless
 - no longer makes points fade with age
 - displays an orca image inside each point
 - reduced gravity, increased point size, points no longer shrink with age
+
+demo/ directory
+===============
+
+This constructs the demo step-by-step

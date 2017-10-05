@@ -1,0 +1,11 @@
+Type Vec3 {
+  Float x
+  Float y
+  Float z
+}
+
+Type VertexData {
+  Float a_lifetime
+  Vec3 a_startPosition
+  Vec3 a_endPosition
+}

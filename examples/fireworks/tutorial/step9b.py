@@ -1,0 +1,6 @@
+ctx.tex_radius = ctx.gen_texture.radius.cell()
+ctx.tex_radius.set(32)
+ctx.tex_filename = ctx.gen_texture.filename.cell()
+ctx.tex_filename.set("")
+ctx.gen_texture.as_float.cell().set(True)
+ctx.gen_texture.output.connect(ctx.texture)

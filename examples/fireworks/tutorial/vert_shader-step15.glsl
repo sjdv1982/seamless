@@ -16,6 +16,7 @@ void main () {
       gl_Position.xyz = a_startPosition + (u_time * a_endPosition);
       gl_Position.xyz += u_centerPosition;
       gl_Position.y -= u_gravity * u_time * u_time;
+      gl_Position.z = 0.0;
       gl_Position.w = 1.0;
   }
   else
@@ -29,4 +30,5 @@ void main () {
   if (u_shrink_with_age)
       f = v_lifetime;
       gl_PointSize = u_pointsize * f;
+
 }

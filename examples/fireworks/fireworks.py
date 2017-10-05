@@ -60,13 +60,8 @@ ctx.link_params_gen_vertexdata = link(
 ctx.equilibrate()
 ctx.gen_vertexdata = transformer(ctx.params_gen_vertexdata)
 ctx.N.connect(ctx.gen_vertexdata.N)
-# does not work with live macro cells:
-# ctx.registrar.silk.connect("VertexData", ctx.gen_vertexdata)
-# ctx.registrar.silk.connect("VertexDataArray", ctx.gen_vertexdata)
 ctx.registrar.silk.connect("VertexData", ctx.gen_vertexdata)
 ctx.registrar.silk.connect("VertexDataArray", ctx.gen_vertexdata)
-# ctx.registrar.silk.connect("VertexData", ctx) #?
-# ctx.registrar.silk.connect("VertexDataArray", ctx) #?
 
 ctx.vertexdata = cell("array")
 ctx.vertexdata.set_store("GL") #OpenGL buffer store
@@ -75,6 +70,7 @@ ctx.link_gen_vertexdata = link(ctx.gen_vertexdata.code.cell(), ".",
 ctx.gen_vertexdata.output.connect(ctx.vertexdata)
 ctx.vertexdata.connect(p.array_vertexdata)
 
+# Texture generator
 ctx.params_gen_texture = cell(("json", "seamless", "transformer_params"))
 ctx.link_params_gen_texture = link(ctx.params_gen_texture,
     ".", "params_gen_texture.json", file_dominant=file_dominant)
@@ -91,6 +87,25 @@ ctx.tex_filename.set("")
 ctx.gen_texture.as_float.cell().set(True)
 ctx.gen_texture.output.connect(ctx.texture)
 ctx.texture.connect(p.array_s_texture)
+
+# Ugly piece of code to display a numpy array texture
+c = ctx.display_texture = context()
+c.title = cell("str").set("Texture")
+c.aspect_layout = pythoncell().fromfile("AspectLayout.py")
+c.registrar.python.register(c.aspect_layout)
+c.display_numpy = reactor({
+    "array": {"pin": "input", "dtype": "array"},
+    "title": {"pin": "input", "dtype": "str"},
+})
+c.registrar.python.connect("AspectLayout", c.display_numpy)
+ctx.texture.connect(c.display_numpy.array)
+c.title.connect(c.display_numpy.title)
+c.display_numpy.code_update.set("update()")
+c.display_numpy.code_stop.set("destroy()")
+c.code = pythoncell()
+c.code.connect(c.display_numpy.code_start)
+c.code.fromfile("cell-display-numpy.py")
+# /Ugly piece of code to display a texture
 
 
 #Uniforms

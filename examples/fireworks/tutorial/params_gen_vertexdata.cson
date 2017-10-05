@@ -1,0 +1,18 @@
+{
+  "reset": {
+    "dtype": "signal",
+    "pin": "input"
+  }
+  "N": {
+    "pin": "input",
+    "dtype": "int"
+  },
+  "mask": {
+    "pin": "input",
+    "dtype": "array"
+  },
+  "output": {
+    "pin": "output",
+    "dtype": "array"
+  },
+}
