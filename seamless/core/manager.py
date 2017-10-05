@@ -85,6 +85,8 @@ class Manager:
 
     def remove_registrar_item(self, registrar_name, dtype, data, data_name):
         item = registrar_name, dtype, data, data_name
+        if item not in self.registrar_items:
+            return   #TODO: for now, silently ignore
         self.registrar_items.remove(item)
 
     def add_listener(self, cell, input_pin):
