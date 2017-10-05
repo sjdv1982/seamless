@@ -107,6 +107,7 @@ class Transformer(Worker):
                         raise Exception #executor died without result or exception
                 while not queue.empty():
                     status, msg = queue.get()
+                    queue.task_done()
                     if status == -1:
                         prelim = msg
                     elif status == 0:
