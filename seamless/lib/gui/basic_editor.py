@@ -35,6 +35,7 @@ def basic_editor(ctx, editor_type, title):
         "update": "cell-basic_editor_json_UPDATE.py",
       },
     }
+    _editors["cson"] = _editors["text"]
 
     def _match_type(type, typelist):
         typelist = list(typelist)
