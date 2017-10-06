@@ -42,6 +42,7 @@ def basic_display(ctx, display_type, title):
         "update": "cell-basic_display_json_UPDATE.py",
       },
     }
+    _displays["cson"] = _displays["text"]
 
     def _match_type(type, typelist):
         typelist = list(typelist)
