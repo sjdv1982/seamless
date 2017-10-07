@@ -10,12 +10,18 @@ ctx.im.connect(ctx.display_numpy.array)
 
 #  Step 2: OpenGL points
 %run -i step2.py
-ctx.im.disconnect(ctx.display_numpy.array)
 ctx.program.set(open("program-step2.cson").read())
 ctx.vert_shader.set(open("vert_shader-step2.glsl").read())
 ctx.frag_shader.set(open("frag_shader-step2.glsl").read())
 # after:
 ctx.vertexdata.connect(p.array_vertexdata)
+# Demonstrate that ctx.program can be edited, and its GUI also:
+"""
+edit_program = edit(ctx.program)
+cson_editor_code = edit_program.rc.code_start.cell()
+edit(cson_editor_code, "CSON editor source code")
+"""
+
 
 #  Step 3: generate vertexdata using a transformer
 %run -i step3.py
@@ -129,10 +135,37 @@ ctx.shrink_with_age = ctx.gen_uniforms.shrink_with_age.cell().set(True)
 ctx.gen_uniforms.code_start.cell().set(open("cell-gen-uniforms-start-step15.py").read())
 ctx.vert_shader.set(open("vert_shader-step15.glsl").read())
 
+"""
+TODO
+
+create a fireworks notebook in docs/notebook
+add a cell that downloads fireworks.seamless
+also a cell that downloads orca.png
+
+dashboard cells
+
+ugly code cell to draw text
+
+code snippet cell to make exploding letters
+
+widget to set text
+
+Make a video
+- dashboard/shader settings for confetti and orcabubbles (also: see below)
+- exploding letters
+Instructions:
+- Where to download the notebook
+- Tell them to give it is own directory
+- Tell them where the .seamless file was built (examples directory), you can study the examples code
+- To learn the code step-by-step, look into the fireworks/tutorial/ directory
+- Also, you can learn the tutorial step-by-step by watching the three-part video tutorial
+"""
+
 # End of the tutorial, and the beginning of the video
 # Demonstrate:
+# - dashboard
 # - confetti (color attribute)
-# - bubbles (gravity ipywidget)
+# - bubbles 
 # - exploding letters:
 #   - draw text onto array
 #   - give array as mask to gen_vertexdata
@@ -175,7 +208,7 @@ def traitlink(c, t):
     return result
 """
 # Gravity ipywidget:
-# 2. widget; don't forget to change cell-gen-uniforms, start AND update, to update gravity every frame 
+# 2. widget; don't forget to change cell-gen-uniforms, start AND update, to update gravity every frame
 """
 from ipywidgets import FloatSlider
 w_gravity = FloatSlider(min=0, max=5, description = "Gravity")
