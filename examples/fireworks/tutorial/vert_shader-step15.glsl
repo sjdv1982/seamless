@@ -27,8 +27,8 @@ void main () {
   gl_PointSize = u_pointsize;
 
   float f;
-  if (u_shrink_with_age)
+  if (u_shrink_with_age) {
       f = v_lifetime;
       gl_PointSize = u_pointsize * f;
-
+  }
 }
