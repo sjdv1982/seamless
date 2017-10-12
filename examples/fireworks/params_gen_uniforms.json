@@ -1,22 +1,18 @@
 {
-  "updated": {
-    "dtype": "signal",
-    "pin": "output"
-  },
-  "reset": {
-    "dtype": "signal",
-    "pin": "input"
-  },
-  "N": {
-    "dtype": "int",
-    "pin": "input"
-  },
   "shrink_with_age": {
     "dtype": "bool",
     "pin": "input"
   },
   "gravity": {
     "dtype": "float",
+    "pin": "input"
+  },
+  "updated": {
+    "dtype": "signal",
+    "pin": "output"
+  },
+  "reset": {
+    "dtype": "signal",
     "pin": "input"
   },
   "pointsize": {
@@ -27,9 +23,13 @@
     "dtype": "signal",
     "pin": "input"
   },
+  "N": {
+    "dtype": "int",
+    "pin": "input"
+  },
   "uniforms": {
-    "must_be_defined": false,
     "dtype": "json",
+    "must_be_defined": false,
     "pin": "edit"
   }
 }
