@@ -5,7 +5,7 @@ from os import path
 setup(
     name='seamless-framework',
 
-    version='0.1.3',
+    version='0.1.4',
 
     description='a cell-based reactive programming framework',
 
