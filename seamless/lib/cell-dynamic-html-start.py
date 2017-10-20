@@ -24,7 +24,8 @@ websocketserver.start() #no-op if the websocketserver has already started
 
 dynamic_html = jinja2.Template(dynamic_html0).render({
     "IDENTIFIER": IDENTIFIER,
-    "socket": websocketserver.socket,
+    "WEBSOCKETSERVER_ADDRESS": websocketserver.public_address,
+    "WEBSOCKETSERVER_PORT": websocketserver.public_port,
 })
 PINS.dynamic_html.set(dynamic_html)
 

@@ -7,6 +7,8 @@ import time
 from seamless.websocketserver import websocketserver
 websocketserver.start() #no-op if the websocketserver has already started
 
+assert websocketserver.port == 5678
+
 ctx = context()
 
 import jinja2
@@ -32,7 +34,11 @@ tmpl = """
 """
 html_tmpl = jinja2.Template(tmpl).render({"body": body})
 identifier = "test-dynamic-html"
-html = jinja2.Template(html_tmpl).render({"IDENTIFIER": identifier, "socket": websocketserver.socket})
+html = jinja2.Template(html_tmpl).render({
+    "IDENTIFIER": identifier,
+    "WEBSOCKETSERVER_ADDRESS": websocketserver.public_address,
+    "WEBSOCKETSERVER_PORT": websocketserver.public_port,
+})
 
 open("test-dynamic-html.html", "w").write(html)
 ctx.html = cell(("text", "html")).set(html)

@@ -4,11 +4,11 @@ from asyncio.queues import Queue, QueueEmpty
 from threading import Lock, Event
 import json
 import copy
-
+import warnings
 
 class BaseWebSocketServer:
     address = '127.0.0.1'
-    DEFAULT_SOCKET = 5678
+    DEFAULT_PORT = 5678
 
     #when new connections are opened,
     # they receive the first 50 and the last 50 events
@@ -16,8 +16,11 @@ class BaseWebSocketServer:
     CACHE_EVENTS_LAST = 50
 
     def __init__(self):
-        self.socket = None
+        self.port = None
         self._server = None
+        self._public_address = None
+        self._public_port = None
+        self._started = False
 
     async def _serve(self, websocket, path):
         raise NotImplementedError
@@ -26,20 +29,59 @@ class BaseWebSocketServer:
         import websockets
         if self._server is not None:
             return
-        socket = self.DEFAULT_SOCKET
+        port = self.DEFAULT_PORT
         while 1:
             try:
-                server = await websockets.serve(self._serve, self.address, socket)
+                server = await websockets.serve(self._serve, self.address, port)
                 break
             except OSError:
-                socket += 1
-        print("Opened a server at socket {0}".format(socket))
+                port += 1
+        print("Opened the seamless websocketserver at port {0}".format(port))
         self._server = server
-        self.socket = socket
+        self.port = port
 
-    def start(self):
+    def start(self, address = None):
+        self._started = True
+        if address is not None:
+            self.address = address
         loop = asyncio.get_event_loop()
         loop.run_until_complete(self.start_async())
+        self._started = False
+
+    @property
+    def public_address(self):
+        """Returns the server's public address
+        By default, it is the same as the (internal) address"""
+        if self._public_address is not None:
+            return self._public_address
+        else:
+            return self.address
+    @public_address.setter
+    def public_address(self, value):
+        """Sets the server's public address (after NAT)
+        By default, it is the same as the (internal) address"""
+        if self._started:
+            warnings.warn("""Changed the seamless websocketserver's public address after its has started.
+            As of seamless 0.2, this will not auto-update any workers (notably dynamic_html) that use this value""")
+        self._public_address = value
+
+    @property
+    def public_port(self):
+        """Returns the server's public port
+        By default, it is the same as the (internal) port"""
+        if self._public_port is not None:
+            return self._public_port
+        else:
+            return self.port
+
+    @public_port.setter
+    def public_port(self, value):
+        """Sets the server's public port (after NAT)
+        By default, it is the same as the (internal) port"""
+        if self._started:
+            warnings.warn("""Changed the seamless websocketserver's public port after its has started.
+            As of seamless 0.2, this will not auto-update any workers (notably dynamic_html) that use this value""")
+        self._public_address = value
 
     def close(self):
         if self._server is None:
