@@ -15,7 +15,7 @@
     </style>
 </head>
 <body>
-    <script src="ngl.js"></script>
+    <script id="script_ngl" src="{{ngl_dir}}ngl.js"></script>
     <script>
 
     //Cell state variables
@@ -68,6 +68,7 @@
       var t = mol.transformation;
       if (t==null) return;
       var comp = mol.component;
+      if (comp==null) return;
       var tt = t[0].concat(t[1], t[2], t[3]);
       var m = new NGL.Matrix4().fromArray(tt).transpose();
       comp.setTransform( m );
@@ -77,6 +78,7 @@
       if (!(molname in molstate)) return;
       var mol = molstate[molname];
       var comp = mol.component;
+      if (comp==null) return;
       var rep = mol.representations;
       if (comp.reprList) {
         comp.removeAllRepresentations();
@@ -91,10 +93,15 @@
     };
 
     function load_data(molname) {
+        if (stage == null) {
+          return document.addEventListener( "DOMContentLoaded", function(){
+            load_data(molname);
+          });
+        };
         var mol = molstate[molname];
-        var stringBlob = new Blob( [ mol.data ], { type: 'text/plain'} );
         var comp = mol.component;
         if (comp != null) stage.removeComponent(comp);
+        var stringBlob = new Blob( [ mol.data ], { type: 'text/plain'} );
         return Promise.all( [
             stage.loadFile( stringBlob, { ext: mol.dataformat } )
         ] ).then( function( ol ){
@@ -106,6 +113,7 @@
         });
     };
 
+    //document.getElementById('script_ngl').addEventListener('load', ...)
     document.addEventListener( "DOMContentLoaded", function(){
         stage = new NGL.Stage( "viewport" );
 

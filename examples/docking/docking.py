@@ -36,7 +36,7 @@ display(ctx.result, "Result")
 # Visualize PDB
 
 from seamless.lib.ngl import ngl
-v = ctx.view_pdb = ngl(["pdb"])
+v = ctx.view_pdb = ngl(["pdb"]) #False if ngl.js in local dir
 ctx.pdb.connect(v.data_pdb)
 export(v.representations, "cson")
 # !touch "representations.cson"
@@ -46,6 +46,7 @@ link(ctx.representations)
 h = ctx.view_pdb_html = export(v.html)
 link(h, ".", "view-pdb.html")
 # !google-chrome view-pdb.html &
+browse(h)
 
 ### Stage 3
 # Improve representation
@@ -257,7 +258,7 @@ ctx.select_pose.code.cell().set("return poses[struc-1][1]")
 export(ctx.select_pose.struc).set(1)
 edit(ctx.struc, "Selected structure")
 
-v = ctx.view_complex = ngl(["receptor", "ligand"])
+v = ctx.view_complex = ngl(["receptor", "ligand"], remote_ngl=True) #False if ngl.js in local dir
 v.data_receptor.cell().fromfile("unbound/1AVXA.pdb")
 v.data_ligand.cell().fromfile("unbound/1AVXB.pdb")
 ctx.representations.connect(v.representations)

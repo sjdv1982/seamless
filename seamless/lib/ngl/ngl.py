@@ -1,7 +1,11 @@
 from seamless import macro
+from collections import OrderedDict
 
-@macro("json")
-def ngl(ctx, molnames):
+@macro(OrderedDict([
+    ("molnames", "json"),
+    ("remote_ngl", {"type": "bool", "default": True}),
+]))
+def ngl(ctx, molnames, remote_ngl):
     """
     Sets up dynamic HTML code to view molecules using the NGL viewer
 
@@ -32,6 +36,7 @@ def ngl(ctx, molnames):
       html: output pin containing the generated dynamic HTML, to be visualized
         As of seamless 0.1, requires that a copy or link to ngl.js is present in
          the current directory
+        TODO: remote_ngl
 
     Macro arguments:
        molnames: is either a list of molecule names in PDB format, or a
@@ -44,7 +49,6 @@ def ngl(ctx, molnames):
     from seamless.lib.dynamic_html import dynamic_html
     from seamless.lib.templateer import templateer
     from seamless.core.worker import ExportedInputPin, ExportedOutputPin
-
 
     ctx.tmpl = cell("text").fromfile("ngl-html.jinja")
 
@@ -86,7 +90,9 @@ def ngl(ctx, molnames):
         params.update(newparams)
 
     ctx.dynamic = dynamic_html(params)
-    ctx.templateer = templateer({"templates": ["tmpl"], "environment": {"dynamic": ("text", "html")}})
+    ctx.templateer = templateer({"templates": ["tmpl"], "environment": {"dynamic": ("text", "html"), "ngl_dir": "text"}})
+    ngl_dir = "https://cdn.rawgit.com/arose/ngl/v0.10.3/dist/" if remote_ngl else ""
+    ctx.templateer.ngl_dir.cell().set(ngl_dir)
     ctx.tmpl.connect(ctx.templateer.tmpl)
     ctx.dynamic.dynamic_html.cell().connect(ctx.templateer.dynamic)
 

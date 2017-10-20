@@ -15,7 +15,7 @@
     </style>
 </head>
 <body>
-    <script src="ngl.js"></script>
+    <script src="https://cdn.rawgit.com/arose/ngl/v0.10.3/dist/ngl.js"></script>
     <script>
 
     //Cell state variables
@@ -68,6 +68,7 @@
       var t = mol.transformation;
       if (t==null) return;
       var comp = mol.component;
+      if (comp==null) return;
       var tt = t[0].concat(t[1], t[2], t[3]);
       var m = new NGL.Matrix4().fromArray(tt).transpose();
       comp.setTransform( m );
@@ -77,6 +78,7 @@
       if (!(molname in molstate)) return;
       var mol = molstate[molname];
       var comp = mol.component;
+      if (comp==null) return;
       var rep = mol.representations;
       if (comp.reprList) {
         comp.removeAllRepresentations();
@@ -91,10 +93,15 @@
     };
 
     function load_data(molname) {
+        if (stage == null) {
+          return document.addEventListener( "DOMContentLoaded", function(){
+            load_data(molname);
+          });
+        };
         var mol = molstate[molname];
-        var stringBlob = new Blob( [ mol.data ], { type: 'text/plain'} );
         var comp = mol.component;
         if (comp != null) stage.removeComponent(comp);
+        var stringBlob = new Blob( [ mol.data ], { type: 'text/plain'} );
         return Promise.all( [
             stage.loadFile( stringBlob, { ext: mol.dataformat } )
         ] ).then( function( ol ){
@@ -148,7 +155,7 @@
 </script>
 <script>
 
-    var ws = new WebSocket("ws://127.0.0.1:5678/");
+    var ws = new WebSocket("ws://127.0.0.1:5679/");
     ws.onopen = function () {
         ws.send(".view_pdb.dynamic.rc");
     }
@@ -157,12 +164,12 @@
         if (message.type == "var") {
           if (0) {}
           
-          else if (message.var == "update.transformation_pdb") {
-            update.transformation_pdb = message.value;
-          }
-          
           else if (message.var == "update.data_pdb") {
             update.data_pdb = message.value;
+          }
+          
+          else if (message.var == "update.transformation_pdb") {
+            update.transformation_pdb = message.value;
           }
           
           else if (message.var == "update.dataformat_pdb") {
