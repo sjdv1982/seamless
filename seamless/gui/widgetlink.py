@@ -2,27 +2,26 @@ import traitlets
 from collections import namedtuple
 import traceback
 
-def traitlink(c, t):
+def widgetlink(c, w):
     from ..core import Cell
     from .. import observer
     assert isinstance(c, Cell)
-    assert isinstance(t, tuple) and len(t) == 2
-    assert isinstance(t[0], traitlets.HasTraits)
-    assert t[0].has_trait(t[1])
+    assert isinstance(w, traitlets.HasTraits)
+    assert w.has_trait("value")
     handler = lambda d: c.set(d["new"])
     value = c.value
     if value is not None:
-        setattr(t[0], t[1], value)
+        w.value = value
     else:
-        c.set(getattr(t[0], t[1]))
+        c.set(w.value)
     def set_traitlet(value):
         try:
-            setattr(t[0], t[1], value)
+            w.value = value
         except:
             traceback.print_exc()
-    t[0].observe(handler, names=[t[1]])
+    w.observe(handler, names=["value"])
     obs = observer(c, set_traitlet )
-    result = namedtuple('Traitlink', ["unobserve"])
+    result = namedtuple('Widgetlink', ["unobserve"])
     def unobserve():
         nonlocal obs
         t[0].unobserve(handler)
