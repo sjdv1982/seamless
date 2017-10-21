@@ -15,9 +15,8 @@
     </style>
 </head>
 <body>
-    <script id="script_ngl" src="{{ngl_dir}}ngl.js"></script>
-    <script>
-
+  <script src="{{ngl_dir}}ngl.js"></script>
+  <script>
     //Cell state variables
     var update = {};
     var molstate = {};
@@ -25,6 +24,59 @@
     // Create NGL Stage object
     var stage;
 
+    function init_NGL(){
+      var viewport = document.getElementById('viewport');
+      if (viewport == null) {
+        return document.addEventListener( "DOMContentLoaded", function(){
+          init_NGL();
+        });
+      };
+
+      stage = new NGL.Stage(viewport);
+
+      // create tooltip element and add to the viewer canvas
+      var tooltip = document.createElement( "div" );
+      Object.assign( tooltip.style, {
+          display: "none",
+          position: "absolute",
+          zIndex: 10,
+          pointerEvents: "none",
+          backgroundColor: "rgba( 0, 0, 0, 0.6 )",
+          color: "lightgrey",
+          padding: "0.5em",
+          fontFamily: "sans-serif"
+      } );
+      stage.viewer.container.appendChild( tooltip );
+
+      // listen to `hovered` signal to move tooltip around and change its text
+      stage.signals.hovered.add( function( pickingProxy ){
+          if( pickingProxy && ( pickingProxy.atom || pickingProxy.bond ) ){
+              var atom = pickingProxy.atom || pickingProxy.closestBondAtom;
+              var cp = pickingProxy.canvasPosition;
+              tooltip.innerText = "ATOM: " + atom.qualifiedName();
+              tooltip.style.bottom = cp.y + 3 + "px";
+              tooltip.style.left = cp.x + 3 + "px";
+              tooltip.style.display = "block";
+          }else{
+              tooltip.style.display = "none";
+          }
+      } );
+
+      // Handle window resizing
+      window.addEventListener( "resize", function( event ){
+          stage.handleResize();
+      }, false );
+
+      var evt = new CustomEvent('init_NGL');
+      window.dispatchEvent(evt);
+    }
+    init_NGL();
+  </script>
+  <script>
+
+    function wait_for_ngl(callback) {
+
+    }
     function init_mol(molname) {
       if (molname in molstate) return;
       var mol = {
@@ -63,6 +115,13 @@
     }
 
     function set_transformation(molname) {
+      if (stage == null) {
+        function load_set_transformation() {
+          window.removeEventListener(load_set_transformation);
+          load_set_transformation(molname);
+        }
+        window.addEventListener('init_NGL', load_set_transformation);
+      };
       if (!(molname in molstate)) return;
       var mol = molstate[molname];
       var t = mol.transformation;
@@ -75,6 +134,13 @@
     }
 
     function load_representations(molname) {
+      if (stage == null) {
+        function load_set_representations() {
+          window.removeEventListener(load_set_representations);
+          load_set_representations(molname);
+        }
+        window.addEventListener('init_NGL', load_set_representations);
+      };
       if (!(molname in molstate)) return;
       var mol = molstate[molname];
       var comp = mol.component;
@@ -94,9 +160,11 @@
 
     function load_data(molname) {
         if (stage == null) {
-          return document.addEventListener( "DOMContentLoaded", function(){
+          function load_data_listen() {
+            window.removeEventListener(load_data_listen);
             load_data(molname);
-          });
+          }
+          window.addEventListener('init_NGL', load_data_listen);
         };
         var mol = molstate[molname];
         var comp = mol.component;
@@ -113,45 +181,6 @@
         });
     };
 
-    //document.getElementById('script_ngl').addEventListener('load', ...)
-    document.addEventListener( "DOMContentLoaded", function(){
-        stage = new NGL.Stage( "viewport" );
-
-        // create tooltip element and add to the viewer canvas
-        var tooltip = document.createElement( "div" );
-        Object.assign( tooltip.style, {
-            display: "none",
-            position: "absolute",
-            zIndex: 10,
-            pointerEvents: "none",
-            backgroundColor: "rgba( 0, 0, 0, 0.6 )",
-            color: "lightgrey",
-            padding: "0.5em",
-            fontFamily: "sans-serif"
-        } );
-        stage.viewer.container.appendChild( tooltip );
-
-        // listen to `hovered` signal to move tooltip around and change its text
-        stage.signals.hovered.add( function( pickingProxy ){
-            if( pickingProxy && ( pickingProxy.atom || pickingProxy.bond ) ){
-                var atom = pickingProxy.atom || pickingProxy.closestBondAtom;
-                var cp = pickingProxy.canvasPosition;
-                tooltip.innerText = "ATOM: " + atom.qualifiedName();
-                tooltip.style.bottom = cp.y + 3 + "px";
-                tooltip.style.left = cp.x + 3 + "px";
-                tooltip.style.display = "block";
-            }else{
-                tooltip.style.display = "none";
-            }
-        } );
-
-        // Handle window resizing
-        window.addEventListener( "resize", function( event ){
-            stage.handleResize();
-        }, false );
-
-
-    });
 
 </script>
 {{dynamic}}
