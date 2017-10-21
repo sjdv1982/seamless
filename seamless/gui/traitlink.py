@@ -2,7 +2,7 @@ import traitlets
 from collections import namedtuple
 import traceback
 
-def traitlink(c, t):
+def traitlink(c, t, as_data=False):
     from ..core import Cell
     from .. import observer
     assert isinstance(c, Cell)
@@ -10,7 +10,7 @@ def traitlink(c, t):
     assert isinstance(t[0], traitlets.HasTraits)
     assert t[0].has_trait(t[1])
     handler = lambda d: c.set(d["new"])
-    value = c.value
+    value = c.data if as_data else c.value
     if value is not None:
         setattr(t[0], t[1], value)
     else:
@@ -21,7 +21,7 @@ def traitlink(c, t):
         except:
             traceback.print_exc()
     t[0].observe(handler, names=[t[1]])
-    obs = observer(c, set_traitlet )
+    obs = observer(c, set_traitlet, as_data = as_data )
     result = namedtuple('Traitlink', ["unobserve"])
     def unobserve():
         nonlocal obs

@@ -15,19 +15,25 @@ Parameters
     callback: callable
       callback to be called whenever the cell changes.
       It must be a callable that takes one argument, the value of the cell
+    as_data: bool (default: False)
+      If True, the callback is called with cell.data, rather than cell.value
     """
     _callback = None
-    def __init__(self, cell, callback):
+    def __init__(self, cell, callback, as_data=False ):
+        self.cell = cell
         assert callable(callback)
         self._callback = callback
-        self._set_cell(cell)
+        self._as_data = as_data
+        self._update()
 
-    def _set_cell(self, cell):
-        from .cell import Cell
-        assert isinstance(cell, Cell)
-        self._cell = weakref.ref(cell)
-        manager = cell._get_manager()
-        manager.add_observer(cell, self._callback)
+    def _update(self):
+        self._remove_callback()
+        callback = self._callback
+        if callback is not None:
+            cell = self.cell
+            if cell is not None:
+                manager = cell._get_manager()
+                manager.add_observer(cell, callback, self._as_data)
 
     def _remove_callback(self):
         if self._callback is not None:
@@ -45,21 +51,26 @@ Parameters
             return cell()
     @cell.setter
     def cell(self, cell):
-        self._remove_callback()
-        self._set_cell(cell)
+        from .cell import Cell
+        assert isinstance(cell, Cell)
+        self._cell = weakref.ref(cell)
+        self._update()
 
     @property
     def callback(self):
         return self._callback
     @callback.setter
     def callback(self, callback):
-        self._remove_callback()
         self._callback = callback
-        if callback is not None:
-            cell = self.cell
-            if cell is not None:
-                manager = cell._get_manager()
-                manager.add_observer(cell, callback)
+        self._update()
+
+    @property
+    def as_data(self):
+        return self._as_data
+    @as_data.setter
+    def as_data(self, as_data):
+        self._as_data = as_data
+        self._update()
 
     def __del__(self):
         try:

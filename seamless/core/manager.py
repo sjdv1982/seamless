@@ -284,16 +284,16 @@ class Manager:
                     self.registrar_listeners.pop(registrar)
 
 
-    def add_observer(self, cell, observer):
+    def add_observer(self, cell, observer, as_data):
         cell_id = self.get_cell_id(cell)
         obs_ref = weakref.ref(observer)
 
         try:
             observers = self.observers[cell_id]
             assert obs_ref not in observers
-            observers.append(obs_ref)
+            observers.append((obs_ref, as_data))
         except KeyError:
-            self.observers[cell_id] = [obs_ref]
+            self.observers[cell_id] = [(obs_ref, as_data)]
         if cell_id not in self.cells:
             self.cells[cell_id] = cell
 
@@ -303,8 +303,7 @@ class Manager:
 
         if cell_id in self.observers:
             l = self.observers[cell_id]
-            if obs_ref in l:
-                l.remove(obs_ref)
+            l[:] = [ll for ll in l if ll[0] != obs_ref]
 
     def remove_observers_cell(self, cell):
         cell_id = self.get_cell_id(cell)
@@ -380,10 +379,14 @@ class Manager:
 
         observers = self.observers.get(cell_id, [])
         new_value = cell.value
-        for observer in observers:
+        new_data = cell.data
+        for observer, as_data in observers:
             obs = observer()
             if obs is not None:
-                obs(new_value)
+                if as_data:
+                    obs(new_data)
+                else:
+                    obs(new_value)
 
     def update_from_code(self, cell, last_con_id=None):
         import seamless
