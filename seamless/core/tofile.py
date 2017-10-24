@@ -78,7 +78,7 @@ def cell_to_json(c):
 because it is empty; saving data is not (yet) supported"
             print(warn.format(c.format_path()))
         else:
-            raise NotImplementedError("Saving data of array cell {0} is not (yet?) supported" % c.format_path())
+            raise NotImplementedError("Saving data of array cell {0} is not (yet?) supported".format(c.format_path()))
 
     if c._preliminary:
         store_data = False
