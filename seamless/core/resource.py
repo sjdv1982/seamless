@@ -123,7 +123,7 @@ class Resource:
     def save_policy(self):
         """Governs the saving policy if the cell is dependent
         can be:
-         0 (save nothing, default)
+         0 (save nothing, default; can be set for independent cells too)
          1 (save only hash)
          2 (save value if no filepath resource with mode > 1, and up to MAX_SAVE bytes, else save only hash)
          3 (save value if no filepath resource with mode > 1, else save only hash)

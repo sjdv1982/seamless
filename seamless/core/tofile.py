@@ -58,7 +58,7 @@ def cell_to_json(c):
 
         sp = c.resource.save_policy
         if sp == 0:
-            pass
+            store_data = False
         elif sp == 1:
             pass
         elif sp == 2: #TODO: MAX_SAVE bytes
