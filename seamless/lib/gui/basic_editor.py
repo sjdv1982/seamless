@@ -26,6 +26,10 @@ def basic_editor(ctx, editor_type, title):
         "code": "cell-basic_editor_float.py",
         "update": "cell-basic_editor_UPDATE.py",
       },
+      "str": {
+        "code": "cell-basic_editor_str.py",
+        "update": "cell-basic_editor_str_UPDATE.py",
+      },
       "text": {
         "code": "cell-basic_editor_text.py",
         "update": "cell-basic_editor_text_UPDATE.py",
