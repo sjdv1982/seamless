@@ -45,7 +45,7 @@ setup(
 
     packages=find_packages(),
 
-    install_requires=['ipython', 'pyqt5', 'numpy', 'cson', 'PyOpenGL'],
+    install_requires=['ipython', 'pyqt5', 'numpy', 'cson', 'PyOpenGL', 'lxml', 'qtconsole'],
 
     extras_require={
         'recommended': ['scipy', 'pandas', 'websockets', 'cython'],
