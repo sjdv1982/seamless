@@ -3,7 +3,7 @@ a Silk schema will always validate against JSON schema too, if in plain form,
 and if converted as below.
 
 Seamless will implement its own $ref resolver for $refs that start with
-SEAMLESS. These are provided by the central schema registrar.
+SEAMLESS. These are provided by the central schema register
 These can be used for both full-blown schemas AND new basic types
 (still refer to them using $ref instead of using {"type": ...} )
 
@@ -16,6 +16,11 @@ On top of JSON schema
 (1) indicates object-only, (2) indicates array-only
 
 ## storage
+Note: in addition to being normative (schema) values,
+these are also descriptive (actual) values that are carried by Silk
+for each instance. As a simple value, the schema describes the
+required value.
+Full-blown schematics (e.g. anyOf) should also be supported.
 
 ### form
 "plain": instance must be stored as a list, dictionary or plain scalar
@@ -25,7 +30,7 @@ objects, an Numpy array for arrays.
 Default: "any"
 
 ### (note on *form*)
-The *actual* form of an instance is one of *four* values:
+The *actual* (carried) form of an instance is one of *four* values:
 "pure-plain": plain, and does not contain binary (grand)children
 "pure-binary": binary, and does not contain plain (grand)children
 "mixed-plain": plain, but contains binary (grand)children
@@ -34,20 +39,23 @@ The *actual* form of an instance is one of *four* values:
 
 These *actual* forms exist only in the context of Silk wrapper instances,
 not Silk-based schema validation.
-
-Pure plain instances can be serialized as JSON, pure binary instances as Numpy arrays.
-Mixed instances need special serialization.
-For all schemas, Cython classes/structs can be generated. For any schema that is
-not fixed-binary (see below), a Python object is filled in. (Fixed-length
-  arrays of non-fixed-binary schemas are represented as (np.object, <length>) fields
-  in the dtype; in Cython, this becomes a memoryview, for which size information
-  is not as of yet supported)
-Only for fixed-binary schemas, C struct headers can be generated.
-
 Every Silk wrapper instance carries a descriptor of its own actual form
 (serialized)
 and a tuple of four counts, counting the number of forms for the children
 (regenerated).
+
+Pure plain instances can be serialized as JSON, pure binary instances as Numpy arrays
+(or, in the case of objects, as singleton structured-array scalars).
+Mixed instances need special serialization.
+Only for fixed-binary schemas, C struct headers can be generated.
+For all schemas, Cython classes/structs can be generated. For any schema that is
+not fixed-binary (see below), a Python object is filled in.
+  (NOTE: Nested arrays (not shapedarrays/vararrays) simply become 1D np.object arrays.
+  Other fixed-length arrays of non-fixed-binary schemas are represented
+  as (np.object, <length>) fields in the dtype;
+  in Cython, this becomes a memoryview, for which size information
+  is not as of yet supported)
+
 ### /(note on *form*)
 
 ### dtype (only for scalars)
@@ -71,9 +79,9 @@ See below.
 ## policy
 
 For each policy field that is absent, the parent schema is queried.
-If there is no parent schema, it is looked up in the global config.
+If there is no parent schema, it is looked up in the global Silk config.
 (optimization: every Silk instance holds a ref to the nearest parent policy dict)
-Default values are indicated for the Silk global config
+Default values are indicated for the Silk global config.
 
 Every infer_XXX property has a corresponding set_XXX function in the Silk API,
  which does the inference retroactively based on the current value(s).
@@ -83,7 +91,10 @@ Every set_XXX has a "recursive" parameter.
 What to do with extra properties/items when plain is converted to binary
 - Error
 - Silently discard them
-- Incorporate them as Python object fields (invalidates Cython/C headers generated from the schema)
+- Incorporate them in the dtype.
+  For object: as additional Python object fields.
+  For array: change the dtype to "object" (if not already) and add them as extra Python object counts
+  In any case, this invalidates Cython/C headers generated from the schema)
 Default: Error
 
 ### infer_property (2)
@@ -92,16 +103,23 @@ If False, the returned Silk object will be schema-less (and policy-less)
 For arrays, this has no meaning by itself, but still can be provided to govern the behavior of items
 Default: True
 
+### infer_item (1)
+What happens if a new item is assigned:
+"uniform": all items have the same schema. For the first item, an empty schema is created when it is first accessed via Silk.
+"pluriform": all items have their own schema.  For each item, an empty schema is created when it is first accessed via Silk.
+False: If a new item is accessed via Silk, the returned Silk object will be schema-less (and policy-less)
+Default: uniform
+
 ### infer_type
 Silk will replace a "any" or absent "type" value with the type of the first assigned value
-For shaped arrays, this will write the type of the scalar base item in the schema
-For non-shaped arrays, this has no meaning by itself, but still can be provided to govern the behavior of items
 Default: True
 
 ### infer_dtype
 Whenever an instance enters binary form (but not mixed-binary form),
 the dtype is assigned based on the current value.
-Default: Fakse
+Instance must be a standalone scalar (parent is an object) or an array's scalar base instance
+(item [0] in a single-schema items list)
+Default: False
 
 ### infer_dtype_mixed
 Same as above, but also for mixed-binary
@@ -144,27 +162,6 @@ Stack traces, exceptions and whatnot are stored in the error log.
 In Silk, error logs are observable, both for appends and for clear events.
 (error log can be cleared by API)
 Default: True
-
-### infer_item (1)
-What happens if a new item is assigned:
-"uniform": all items have the same schema. For the first item, an empty schema is created when it is first accessed via Silk.
-"pluriform": all items have their own schema.  For each item, an empty schema is created when it is first accessed via Silk.
-"none": If a new item is accessed via Silk, the returned Silk object will be schema-less (and policy-less)
-Default: uniform
-
-## infer_shape (1)
-Whenever a Numpy array is assigned to an array, its shape parameters are imprinted on the array schema.
-This turns the array schema into a fixed-shape schema.
-The imprinting is done *after* the array is validated against the existing schema: so if the array was already fixed-shape,
-re-imprinting is likely to fail.
-For objects, this has no meaning by itself, but still can be provided to govern the behavior of properties
-Default: False
-
-## re_infer_shape (1)
-Same as above, but existing shape-constraint schema parameters are first removed. This is useful if e.g. OpenCL/CUDA code needs to
-be regenerated whenever the array shape changes.
-Shape validators are not removed, so constraints on the shape can be encoded there.
-Default: False
 
 ### infer_contents
 New properties/items can be auto-created via Silk access
@@ -217,8 +214,9 @@ Fixed-binary schemas are:
 - array schemas with a fixed length and containing a single schema, which is
   itself a non-array fixed-binary schema.
 - construct schemas that declare themselves fixed-binary  
-This means that nested array schemas are *never* fixed-binary schemas.
-shapedarrays can easily be fixed-binary, though.
+This means that nested array schemas (not shapedarrays/vararrays)
+are *never* fixed-binary schemas.
+shapedarrays and vararrays can easily be fixed-binary, though.
 
 
 # Constructs
@@ -227,13 +225,15 @@ Constructs are schemas where:
   "type" : "construct"
   "construct": <one of the registered constructs>
 
-For Silk schema validation, every construct must register three functions:
+For Silk schema validation, every construct must register four functions:
 1. From the "construct" schema dict, generate a schema for plain instances,
 and another for binary/mixed-binary instances. If the construct schema is overall
 invalid, this must be reported here (return None / exceptions).
 2. From the instance, generate a construct instance descriptor.
 This construct instance descriptor is validated using construct validators.
 3. A function that returns if the binary schema is a pure-binary schema or not.
+4. A function to do type inference. Returns if the received value is suitable.
+(some priority must be established here)
 
 Note that a construct defines *extra* fields: the functions have access to all
 other schema fields.
@@ -252,7 +252,15 @@ The shape construct is a straightforward construct around an N-dimensional Numpy
 or an equivalent nested-list plain representation. The Numpy array is space-efficient,
 but not easy to grow or shrink.
 
+The shapedarray type inferencer accepts Numpy arrays and suitable nested-lists.
+(=> {"type":  "construct", "construct": "shapedarray"})
+It has a lower priority than the generic "array" type inferencer => {"type": "array"},
+which accepts one-dimensional Numpy arrays and normal lists.
+
 ## extra fields:
+
+### dtype
+computed from/to base_item.dtype
 
 ### shape
 A list of items that are one of the following:
@@ -268,9 +276,6 @@ The array must have ndim dimensions. Must match with "shape", if defined.
 Schema of the scalar base item.
 Base may be undefined, in which case the scalar base item is simply a Python
 object.
-
-### dtype
-The binary storage data type (of the scalar base item) of the shaped array.
 
 ### c_contiguous
 If form is binary, array must be c_contiguous
@@ -289,11 +294,25 @@ The shapedarray construct instance descriptor contains:
 
 ## /extra items
 
-## Shapedarray pure-binary schema
-shaped array schemas are pure-binary schemas if
-- shaped array schemas h
-- array schemas that are both *fully-shaped* (fixed-length in all dimensions)
-   and whose items are all pure-binary schemas
+## policies
+
+### infer_shape (1)
+Whenever a Numpy array is assigned to an array, its shape parameters are imprinted on the array schema.
+The imprinting is done *after* the array is validated against the existing schema: so if there was already a shape,
+re-imprinting is likely to fail.
+For non-shapedarrays, this has no meaning by itself, but still can be provided to govern the behavior of children.
+Default: False
+
+### re_infer_shape (1)
+Same as above, but existing shape-constraint schema parameters are first removed. This is useful if e.g. OpenCL/CUDA code needs to
+be regenerated whenever the array shape changes.
+Shape validators are not removed, so constraints on the shape can be encoded there.
+Default: False
+
+## /policies
+
+shaped array schemas are pure-binary schemas if they are both *fully-shaped* (fixed-length in all dimensions)
+and whose base item is a pure-binary schema
 
 # /shapedarray construct
 
