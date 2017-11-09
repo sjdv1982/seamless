@@ -354,3 +354,23 @@ pure-binary schema.
 (typed) sets, (typed) maps/hash tables, linked lists, ...
 "Internal" lookup-accelerating structures etc. can be stored as well, by policy,
  as long as they use indices and not raw pointers.
+
+
+# C headers, revisited
+
+Written above is that C-headers can only be generated for fixed-binary schemas.
+This is not actually true. C headers can also be generated for shapedarrays if
+ndims, but not shape, is known in advance (and the base item is fixed-binary).
+They will then be exposed to C as a pointer + *shape object* (similar to memoryview)
+
+However, this complicates the use of C code in a transformer.
+No problem if such a non-fixed shapearray is just an input (or editpin).
+But if it is an *output*, then the memory must be pre-allocated by Python, which
+is not trivial for non-fixed-binary schemas. In that case, the schema must contain
+a *shape computer* (or multiple ones). A shape computer receives the data and the
+shape objects of the inputs, and the partial shape objects of the output. After all shape
+computers have run, the output shape objects must be complete.
+(Alternatively, in Seamless, since schemas are themselves cells,
+you can directly connect them using a transformer. This will make the output fixed-binary
+(no shape object, just fixed-size C arrays), and will re-generate the C header every time
+the shape changes.
