@@ -1,3 +1,41 @@
+# Silk objects
+
+A Silk object doesn't hold state itself. It is only a *wrapper* around:  
+- an *data instance* (data object)
+- an associated Silk schema
+- a form dict that describes the form:
+   The data instance is plain (list/dict), binary (Numpy), or a mix of the two.
+   For more details, (see *form* below)
+
+A Silk object provides protected access to the instance:
+- Accessing a Silk object returns either a scalar or a Silk sub-object. This
+sub-object is constructed on-the-fly, wrapping a sub-instance and a Silk sub-schema and a form sub-dict.
+- Silk object provides and API that supports both .property and ["property"].
+- Silk object provides an identical API no matter the form of the instance. For example, if the
+Silk schema indicates an array of ints, and the instance is either [5,2,1] or np.array([5,2,1])
+then silkobject[0] will return 5 (int).
+- Assigning to a Silk object attribute will check that the modified instance validates against
+  the Silk schema. Typically, the first attribute assignment will modify the Silk schema too (type inference).
+- Note that a data instance may only ever contain plain and binary data.
+  Assigning an arbitrary Python object to a under-defined schema (i.e. an object schema without any properties)
+  will do a recursive isinstance(obj, (np.ndarray, dict, list, tuple, <scalar>) ) check, building the form dict
+  in the process. Moreover, dicts, lists and unhashable tuples will be deep-copied (after recursion).
+  Numpy arrays and hashable tuples (after recursion) will simply be assigned to the data (sub-)instance.
+  Numpy arrays will be recursed if their dtype contains Python objects.
+- In a data instance, hashable tuples will be converted to lists upon (i.e. right before) modification.
+- You can always get access to the raw data (plain, binary or mixed). Obviously, this allows you to create invalid
+  (non-schema-validating) data instances, so you may want to backup (deep-copy) your data instance first.
+  However, it is guaranteed that raw data access is the *only* way to create invalid instances (assuming the schema
+    remains constant).
+- Numpy form and raw binary form may not exactly be the same. For example, for a vararray in binary form
+  of length 2 and space 5, the raw binary form would be binary-encoded {"data": np.array([1,2,0,0,0]) "length": 2}
+  whereas the numpy form would be np.array([1,2]), with the same underlying memory pointer as "data" but a different shape.
+
+In very advanced future versions of Silk, it will be possible to bootstrap the Silk object API itself using Silk.
+i.e. the entire Silk object method API is just another Python text cell that is live-interpreted.
+
+# Silk schemas
+
 Silk schemas are a superset of JSON schema. A schema that validates against
 a Silk schema will always validate against JSON schema too, if in plain form,
 and if converted as below.
@@ -9,11 +47,20 @@ These can be used for both full-blown schemas AND new basic types
 
 Conversion to JSON schema:
 - SEAMLESS $refs are re-written
-- constructs are replaced with their plain-form-generated schema
+- Silk schema "constructs" are replaced with their plain-form-generated schema
+- Python validators are preserved, although JSON schema implementations won't know what to do with them.
 
 # extra schema fields
 On top of JSON schema
 (1) indicates object-only, (2) indicates array-only
+
+## not_required (2)
+It is possible to explicitly annotate properties as not_required.
+In a later version of Silk, there will be an annoying Microsoft-Office-paperclip
+assistant who will ask all kind of annoying questions
+
+## order (2)
+Tells the order of properties, which helps in building \*args constructors.
 
 ## storage
 Note: in addition to being normative (schema) values,

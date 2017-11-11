@@ -1,3 +1,5 @@
+!!! SOMEWHAT OUTDATED !!!
+
 the schema is accessible as cell.self.schema
 all dicts inside schemas are wrapped in dot notation. At any level, .self gains access to the underlying dict methods
 
@@ -16,6 +18,8 @@ dtype: for array. Any basic Numpy scalar.
 gpu: replaces set_store
 validators: list of Python texts.
 
+
+!!! VERY OUTDATED !!!
 
 Everything is a (sub)cell or a pin! (these are rather isomorphic)
 Every subcell/outputpin can be assigned to a variable (which is copied, except for numpy arrays)
@@ -93,7 +97,7 @@ cells, which may then become invalid), and it is authoritative for the schema
 above the property level.
 
 A cell in "slave" mode can only be connected to an input pin, not an output pin or edit pin.
-Array cells can only be in "pack" mode if their length is fixed (or can become fixed).
+Array cells can only be in "master" mode if their length is fixed (or can become fixed).
 
 If an object cell or array cell is in "master" mode, itself holds the authoritative representations,
 and cell.a is merely a subcell.
