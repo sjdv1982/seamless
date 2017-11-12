@@ -40,6 +40,8 @@ Silk schemas are a superset of JSON schema. A schema that validates against
 a Silk schema will always validate against JSON schema too, if in plain form,
 and if converted as below.
 
+NO SUPPORT FOR "default", THIS IS NOT PART OF SILK SCHEMA!
+
 Seamless will implement its own $ref resolver for $refs that start with
 SEAMLESS. These are provided by the central schema register
 These can be used for both full-blown schemas AND new basic types

@@ -258,3 +258,51 @@ the proxy is used to assign to (=> inp) or to assign from (=> outp).
 Works very much like the auto transformer, except that there are three code objects,
 the output object is now composite just like the input object, and there is a dict
 that indicates which pins are edit pins.
+
+## UPDATE
+The text above talks a lot about connections and links.
+On a second thought, it is clear that the old 0.1 connections are not flexible enough,
+that there needs to be a new connection API that describes how two cells are connected.
+Traditional 0.1 inputpins and outputpins accommodate connections that are message-based
+(copying values), except Numpy arrays which are state-shared.
+0.1 editpins are also message-based, but bidirectional (including for Numpy arrays).
+Cells expose a stateful bidirectional pin. Such a pin can accommodate one incoming
+connection and multiple outgoing ones.  In principle, all of those connections
+could also be state-sharing, as long as the cell gets notified of state changes.
+Structs and managers typically expose pins for connections that are message-based.
+In the text above, structs and managers also expose what is called "links" up above, which means two
+different things:
+- "Links" for the rewriting of messages. This describes the link between
+an "output" struct and its children.
+- "Links" for direct state-sharing.  This describes the link between a manager
+and its storage cells, where the storage cells lend their state,
+and receive back a notification that the state has been modified.
+Note that "input" structs in fact do hold state. They require a single state-sharing
+connection, or separate state-sharing connections for each children. They support
+outgoing connections that are either state-shared or message-based.
+At the high level:
+- The original plan was to have all standard ctx methods, such as ".tofile", also in a
+  "self" attribute so that they wouldn't become completely shadowed away by attributes.
+  This must become the other way around. ctx.a may be shadowed away by some API method,
+  whereas ctx.self.a is guaranteed to return the attribute.
+- There must also be an API on connections, i.e. to reverse a connection or
+to change its sharing.
+- There must be a lot of API/proxy magic on top of the assign operator.
+For example, ctx.a = ctx.b.state_shared would create a state-shared connection,
+ctx.a = ctx.b.message_based would create a message-based connection.  
+- Likewise, if ctx.tf is a transformer, then ctx.tf.self.input would be its input
+auto cell. You may assign ctx.a = ctx.tf.self.input and then reverse the connection.
+By default, this would be state-sharing.
+You could the modify the connection so that only the schema is state-shared, but
+the value connection is message-based. Then, you would have the following usage
+patterns:
+- ctx.a.spam = 5 is *example-based programming*. By giving example data, Seamless
+  can infer the schema. In addition, it provides a *unit test* for ctx.tf.
+- ctx.tf.spam (=> ctx.tf.self.spam) provides a *default value*.
+What you do is that you configure ctx so that assignment to ctx is re-written
+as assignment to ctx.tf. You configure ctx.tf as copy-upon-assignment. You save
+ctx as "tf.seamless". In the main program, you do:
+  ctx.mytf = seamless.fromfile("tf.seamless")
+Now you have imported a fresh copy of ctx.tf as "mytf". mytf.spam is initally 5,
+but you can assign it to any other constant, or to a cell. In both cases, the
+default 5 will be overwritten.
