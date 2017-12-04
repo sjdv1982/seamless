@@ -6,7 +6,7 @@ from .killable_thread import KillableThread
 from multiprocessing import Process
 import functools
 import time
-from ...silk.classes import SilkObject
+#from ...silk.classes import SilkObject ###
 
 USE_PROCESSES = False
 if USE_PROCESSES:
@@ -30,7 +30,7 @@ def execute(name, expression, namespace, result_queue):
         exc = traceback.format_exc()
         result_queue.put((1, exc))
     else:
-        if isinstance(result, SilkObject):
+        if isinstance(result, SilkObject): ###
             result = result.json()
         result_queue.put((0, result))
     finally:

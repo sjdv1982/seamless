@@ -79,7 +79,7 @@ Still there, although probably a bit harder to work with
 Low-level macros are simplified. They take at most one argument, a "mixed" cell.
 The argument *must* be a cell: taking constants is not supported.
 To construct a macro, provide the macro factory with a name, a code string and a dict
-with a few options (caching; one or zero arguments; code language).
+with a few options (caching; one or zero arguments; macro code language).
 The macro decorator is a simple wrapper around the macro factory.
 However, the resulting macro becomes a direct child of the context
 (possibly anonymously) and can be only called as such.
@@ -92,6 +92,22 @@ context and its subcontexts must be copy-upon-assignment instead of rename-upon-
 Macros always create a context. Transformers and reactors are no longer macros.
 As before, macros implement reconnection machinery and optional caching.
 Registrar macros will be eliminated.
+UPDATE:
+- No name. Macros are anonymous members of a context until they are specifically assigned
+to a context attribute. Subsequent assignments result in a copy of the macro
+- The macro factory can also create a macro that accepts a context argument
+(in addition to the mixed cell). The macro code will receive a copy of the context
+argument. There are two modes of using it:
+1. The macro code receives it as a separate argument. This is for "decorating" a
+context. For example, a generic command-line-tool context could wrap a specific
+context (that does the work), and analyze its input and output arguments to
+build an argparse instance.
+2. It replaces the empty context that the macro code normally receives and
+modifies. This is for embedding Seamless primitives (not just cells; for cells,
+pins would work fine) in another framework or language that has some semantic
+concept of them. For example, a Haskell embedder could wrap transformers and
+reactors in IO and then accept a Haskell code cell that connects them.
+
 
 ## struct
 A struct is a manager (but *not* a container!) for structured data.
