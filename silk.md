@@ -43,7 +43,7 @@ and if converted as below.
 NO SUPPORT FOR "default", THIS IS NOT PART OF SILK SCHEMA!
 
 Seamless will implement its own $ref resolver for $refs that start with
-SEAMLESS. These are provided by the central schema register
+SEAMLESS. These are provided by the central schema registry
 These can be used for both full-blown schemas AND new basic types
 (still refer to them using $ref instead of using {"type": ...} )
 
@@ -55,11 +55,11 @@ Conversion to JSON schema:
 # extra schema fields
 On top of JSON schema
 (1) indicates object-only, (2) indicates array-only
+In a later version of Silk, there will be an annoying Microsoft-Office-paperclip
+assistant who will ask all kind of annoying questions
 
 ## not_required (2)
 It is possible to explicitly annotate properties as not_required.
-In a later version of Silk, there will be an annoying Microsoft-Office-paperclip
-assistant who will ask all kind of annoying questions
 
 ## order (2)
 Tells the order of properties, which helps in building \*args constructors.
@@ -70,6 +70,8 @@ these are also descriptive (actual) values that are carried by Silk
 for each instance. As a simple value, the schema describes the
 required value.
 Full-blown schematics (e.g. anyOf) should also be supported.
+UPDATE: for now, descriptive values are not carried but re-computed on demand
+(possibly with some kind of caching)
 
 ### form
 "plain": instance must be stored as a list, dictionary or plain scalar
@@ -146,6 +148,14 @@ What to do with extra properties/items when plain is converted to binary
   In any case, this invalidates Cython/C headers generated from the schema)
 Default: Error
 
+### accept_missing_binary_optional
+What to do with binary forms that lack one or more columns of optional properties
+- True: accept them. This can be practical for backwards compatibility with an earlier schema where
+  the optional property was lacking.
+  However, this invalidates Cython/C headers generated from the schema
+- False: raise an error.
+Default: True
+
 ### infer_property (2)
 If a new property is accessed via Silk, an (empty) schema for that property is inserted under "properties"
 If False, the returned Silk object will be schema-less (and policy-less)
@@ -161,20 +171,34 @@ Default: uniform
 
 ### infer_type
 Silk will replace a "any" or absent "type" value with the type of the first assigned value
+Lists and dicts are not recursively inferred, but simply set to "object" / "array"
+When assigned to a Silk type, the schema is copied.
 Default: True
+
+### infer_shapedarray
+Whenever a Numpy array is assigned, the instance is inferred to be a shapedarray,
+fixing ndims. If infer_dtype is True, this will fix the dtype as well.
 
 ### infer_dtype
 Whenever an instance enters binary form (but not mixed-binary form),
 the dtype is assigned based on the current value.
 Instance must be a standalone scalar (parent is an object) or an array's scalar base instance
-(item [0] in a single-schema items list)
-Default: False
+(item [0] in a single-schema items list).
+If infer_shapedarray, the instance may also be a numpy array.
+Default: True
 
 ### infer_dtype_mixed
 Same as above, but also for mixed-binary
 Default: False
 
 ### force_valid_schema
+UPDATE: this is too complicated. Instead, use "with fork: ..." .
+When a fork is created, the data (and schema?) are copied
+While a Silk object is forked, validation is off
+When the fork ends, the fork is validated.
+If successful, the fork state becomes the main state
+A Silk object can be forked multiple times
+/UPDATE
 Disallow manipulations of the schema that create an invalid schema, or that invalidate the data. If this happens,
 the schema is error-buffered, if schema error buffering is enabled.
 If force_valid_schema is disabled:
@@ -185,6 +209,7 @@ If there is neither an error log nor error buffering, force_valid_schema has no 
 Default: True
 
 ### error_buffer (2)
+UPDATE: this is too complicated. Use a fork instead. /UPDATE
 Error-buffer the data.
 Only works in plain form, disabled in binary form. Conversion to binary form will raise an exception if there is anything
 in the error buffer.
@@ -203,6 +228,7 @@ If not enabled, an exception will be raised for illegal data manipulations
 Default: True
 
 ### error_buffer_schema
+UPDATE: this is too complicated. Use a fork instead. /UPDATE
 Error-buffer all manipulations of the schema properties (see above).
 
 ## error_log
@@ -212,11 +238,7 @@ In Silk, error logs are observable, both for appends and for clear events.
 (error log can be cleared by API)
 Default: True
 
-### infer_contents
-New properties/items can be auto-created via Silk access
-Default: True
-
-### walk_tree
+### infer_recursive
 Arrays and objects are always tree structures. If a value is assigned to the array or object, walk the entire tree
 of the assigned value and add a schema for each item.
 Default: False
@@ -227,6 +249,7 @@ If False:
 Default: True ( => not skipped)
 
 ### schema_undo_buffer
+UPDATE: this is too complicated. Use a fork instead. /UPDATE
 Allows you to undo schema manipulations (automatic and manual) that you didn't want to happen.
 Works similar to the schema error buffer.
 To-be-determined on what level the undo buffer will be stored (globally?), and the atomicity.
@@ -310,6 +333,7 @@ which accepts one-dimensional Numpy arrays and normal lists.
 
 ### dtype
 computed from/to base_item.dtype
+UPDATE: computed from "items.dtype" instead
 
 ### shape
 A list of items that are one of the following:
@@ -325,6 +349,7 @@ The array must have ndim dimensions. Must match with "shape", if defined.
 Schema of the scalar base item.
 Base may be undefined, in which case the scalar base item is simply a Python
 object.
+UPDATE: this is called "items" instead
 
 ### c_contiguous
 If form is binary, array must be c_contiguous

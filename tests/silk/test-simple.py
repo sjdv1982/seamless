@@ -99,13 +99,11 @@ print(type(s2.arr), type(arr))
 print(s2.arr[2], arr[2])
 print(type(s2.arr[2]), type(arr[2]))
 
-schema = s2.arr.schema
-schema["type"] = "array"
+s2.arr.schema["type"] = "array"
 item = Silk().set(5)
 #item.schema["type"] = "integer"
 def func(self):
     assert self > 0
 item.add_validator(func)
-schema["items"] = item.schema
-print(schema)
+s2.arr.schema["items"] = item.schema
 s2.validate()

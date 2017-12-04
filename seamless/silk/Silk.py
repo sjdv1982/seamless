@@ -12,6 +12,7 @@ class Silk(SilkBase):
             "_parent", "data", "schema",
             "_policy", "_fork"
     ]
+    # TODO: append method that may also create a schema, depending on policy.infer_item
 
     def __init__(self, schema = None, *, parent = None, data = None,
       policy = 0):
@@ -120,6 +121,7 @@ class Silk(SilkBase):
             if isinstance(value, Silk):
                 value = value.data
             data[attr] = value
+            # TODO: make conditional upon policy.infer_property
 
         if self._fork is None or not self._fork.validate:
             self.validate()
