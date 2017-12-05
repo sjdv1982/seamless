@@ -444,7 +444,47 @@ is not trivial for non-fixed-binary schemas. In that case, the schema must conta
 a *shape computer* (or multiple ones). A shape computer receives the data and the
 shape objects of the inputs, and the partial shape objects of the output. After all shape
 computers have run, the output shape objects must be complete.
-(Alternatively, in Seamless, since schemas are themselves cells,
+Alternatively, in Seamless, since schemas are themselves cells,
 you can directly connect them using a transformer. This will make the output fixed-binary
 (no shape object, just fixed-size C arrays), and will re-generate the C header every time
 the shape changes.
+UPDATE: after some deliberation: cancel the shape computers, use transformers! However,
+because of timing effects, the computing of the output schema must be well-integrated
+in the transformer, because it must be complete before the computation starts
+=> transformer under macro control by the schema (which it already should be, so no problem!)
+
+# UPDATE: object-oriented programming
+
+Silk structures are perfectly usable for traditional object-oriented programming.
+Everything is stored in the .data struct, and you have to use fork() and/or
+ program by example, but the end result is pretty much the same. You can even use
+ class-statement syntax if using a Silk-based metaclass (see test-meta.py)
+
+What is obviously missing is a constructor. What can be built is a universal
+constructor factory, that takes a Silk schema and returns a constructor. The
+constructor will be usable in the same way as the old Spyder constructors, i.e.
+they accept keyword/value, list, and copy (both naked dict and Silk-wrapped).
+Specialized versions are available as constructor attributes:
+
+Example:
+schema = {"properties": "a": {"type": "integer"}, "b": {"type": "integer"}, "order" : ["a", "b"]}
+constructor = constructor_factory(schema)
+instance = constructor(1,b=2)
+instance = constructor([1,2]) #requires "order" in schema
+data = {"a": 1, "b": 2}
+s = Silk(data=data, schema=schema)
+instance = constructor(data)
+instance = constructor(s)
+instance = constructor.fromvalues(1,b=2)
+instance = constructor.fromlist([1,2])
+instance = constructor.fromdict(data)
+instance = constructor.fromcopy(s)
+
+*NOTE*: "default" entries in the schema will be honored by the constructor.
+
+As before, schemas can be degenerate, therefore it is recommended to use the
+specialized .fromXXX sub-constructors.
+
+In all cases, the constructor returns a naked dict that conforms to the schema.
+However, no kind of validation is performed by the constructor!
+The dict can be wrapped trivially in a Silk instance, which will perform validation.
