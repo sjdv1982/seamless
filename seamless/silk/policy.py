@@ -13,3 +13,7 @@ default_policy = {
     "infer_shape":  False,
     "re_infer_shape":  False,
 }
+
+#TODO: by default, if a property or item is a scalar,
+#  Silk returns the naked scalar, not the Silk-wrapped scalar
+# This can be turned off, or be made conditional on the presence of methods/validators

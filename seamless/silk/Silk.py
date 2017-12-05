@@ -1,16 +1,20 @@
 import inspect, sys
 from types import MethodType
 from .SilkBase import SilkBase, compile_function, AlphabeticDict
-from .validation import schema_validator, Scalar, scalar_conv, run_validators
-from copy import copy
+from .validation import schema_validator, Scalar, scalar_conv, _types
+from copy import copy, deepcopy
 
 POLICY_NO_METHODS = 1
 POLICY_NO_VALIDATION = 2
 
+_underscore_attribute_names =  "__array_struct__", "__array_interface__"
+# A set of magic names where it is expected that they raise NotImplementedError if
+# not implemented, rather than returning NotImplemented
+
 class Silk(SilkBase):
     __slots__ = [
             "_parent", "data", "schema",
-            "_policy", "_fork"
+            "_policy", "_forks"
     ]
     # TODO: append method that may also create a schema, depending on policy.infer_item
 
@@ -18,7 +22,7 @@ class Silk(SilkBase):
       policy = 0):
         self._parent = parent
         self._policy = policy
-        self._fork = None
+        self._forks = None
         self.data = data
         assert not isinstance(data, Silk)
         if schema is None:
@@ -33,7 +37,10 @@ class Silk(SilkBase):
         return self._parent.get()
 
     def set(self, value):
-        if isinstance(value, Scalar):
+        if self.data is None:
+            #TODO: type inference
+            self.data = value
+        elif isinstance(value, Scalar):
             assert self._parent is None #MUST be independent
             self.data = value
         elif isinstance(value, _types["array"]):
@@ -50,7 +57,8 @@ class Silk(SilkBase):
         return self
 
     def _get(self, attr):
-        if attr in ("validate", "add_validator", "set", "parent") or \
+        if attr in ("validate", "add_validator", "set", "parent", "fork",
+            "__array__") or \
           (attr.startswith("_") and not attr.startswith("__")):
             return super().__getattribute__(attr)
         data = super().__getattribute__("data")
@@ -67,7 +75,7 @@ class Silk(SilkBase):
                 if isinstance(m, dict):
                     getter = m.get("getter", None)
                     if getter is not None:
-                        fget = compile_function(getter)
+                        fget = compile_function(getter, "property-getter")
                         return fget(self)
                 else:
                     method = compile_function(m)
@@ -78,18 +86,22 @@ class Silk(SilkBase):
         if hasattr(type(data), attr):
             return getattr(data, attr)
         if attr.startswith("__"):
-            return NotImplemented
+            if attr in _underscore_attribute_names:
+                raise NotImplementedError
+            else:
+                return NotImplemented
         raise AttributeError(attr)
 
     def __getattribute__(self, attr):
-        #TODO: set context so that only 1 exception is reported
         try:
             return super().__getattribute__("_get")(attr)
         except (TypeError, KeyError, AttributeError, IndexError) as exc:
             try:
                 return super().__getattribute__("_access_data")(attr)
             except (TypeError, KeyError, AttributeError, IndexError):
-                raise AttributeError
+                raise AttributeError from None
+            except:
+                raise exc from None
 
     def __setattr__(self, attr, value):
         if attr in type(self).__slots__:
@@ -119,12 +131,33 @@ class Silk(SilkBase):
                 data = AlphabeticDict()
                 self.data = data
             if isinstance(value, Silk):
-                value = value.data
+                value, value_schema = value.data, value.schema
+                if attr not in schema["property"]:
+                    schema["property"][attr] = value_schema
+                    #TODO: infer_property check
             data[attr] = value
             # TODO: make conditional upon policy.infer_property
 
-        if self._fork is None or not self._fork.validate:
+        if self._forks is None or self._forks[-1].validate:
             self.validate()
+
+    def __setitem__(self, item, value):
+        data = super().__getattribute__("data")
+        schema = super().__getattribute__("schema")
+        if data is None:
+            assert self._parent is None # MUST be independent
+            assert isinstance(item, str)
+            data = AlphabeticDict()
+            self.data = data
+        if isinstance(value, Silk):
+            value = value.data
+            # TODO: infer_item check
+        data[item] = value
+        # TODO: make conditional upon policy.infer_item
+
+        if self._forks is None or self._forks[-1].validate:
+            self.validate()
+
 
     def _access_data(self, item):
         data = super().__getattribute__("data")
@@ -171,8 +204,13 @@ class Silk(SilkBase):
         if isinstance(item, str):
             try:
                 return self._access_data(item)
-            except (TypeError, KeyError, AttributeError, IndexError):
-                return self._get(item)
+            except (TypeError, KeyError, AttributeError) as exc:
+                try:
+                    return self._get(item)
+                except (TypeError, KeyError, AttributeError) as exc2:
+                    raise exc2 from None
+                else:
+                    raise exc from None
         else:
             return self._access_data(item)
 
@@ -247,9 +285,14 @@ class Silk(SilkBase):
                 schema = super().__getattribute__("schema")
                 assert isinstance(schema, dict)
                 validators = schema.get("validators", [])
-                run_validators(self, validators)
+                for validator_code in validators:
+                    validator_func = compile_function(validator_code)
+                    validator_func(self)
         if self._parent is not None:
             self.parent.validate()
+
+    def fork(self):
+        return _SilkFork(self)
 
 class _SilkParent:
     """Helper class to provide a path to parent data"""
@@ -264,3 +307,42 @@ class _SilkParent:
 
 class _SilkFork:
     validate = False
+    _joined = False
+
+    def __init__(self, parent):
+        self.parent = parent
+        self.data = deepcopy(parent.data)
+        self.schema = deepcopy(parent.schema)
+        if parent._forks is None:
+            parent._forks = []
+        parent._forks.append(self)
+
+    def _join(self, exception):
+        parent = self.parent
+        ok = False
+        try:
+            if exception is None:
+                parent.validate()
+                ok = True
+        finally:
+            if not ok:
+                parent.data = self.data
+                parent.schema = self.schema
+            parent._forks.pop(-1) #should return self
+            if not len(parent._forks):
+                parent._forks = None
+            self._joined = True
+
+    def join(self):
+        self._join(None)
+
+    def __enter__(self):
+        yield parent
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self._join(exc_value)
+
+    def __del__(self):
+        if self._joined:
+            return
+        self._join(None)

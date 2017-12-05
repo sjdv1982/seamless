@@ -1,5 +1,5 @@
 #from seamless.silk import Silk
-from silk import Silk
+from silk import Silk, ValidationError
 
 def adder(self, other):
     return other + self.x
@@ -107,3 +107,71 @@ def func(self):
 item.add_validator(func)
 s2.arr.schema["items"] = item.schema
 s2.validate()
+
+s2.arr[0] = 5
+print(s2.arr)
+
+s = Silk()
+s.x = 1.0
+s.y = 0.0
+s.z = 0.0
+def func(self):
+    assert abs(self.x**2+self.y**2+self.z**2 - 1) < 0.001
+s.add_validator(func)
+# s.y = 1.0   #  would fail
+try:
+    with s.fork():
+        s.x = 0.0
+        s.y = 0.0
+        s.z = 1.0
+        try:
+            with s.fork():
+                s.x = 0.0
+                s.y = 1.0
+                s.z = 0.0
+                #s.y = 2.0 # restores to [0,0,1]
+        except ValidationError:
+            pass
+        #s.z = 2.0 # restores to [1,0,0]
+except ValidationError:
+    pass
+print(s)
+
+import numpy as np
+a = Silk()
+a.coor = [0,0,1]
+print(np.array(a.coor))
+def func(self):
+    import numpy as np
+    arr = np.array(self)
+    assert abs(np.sum(arr**2) - 1) < 0.01
+a.coor.add_validator(func)
+
+c = Silk()
+c.set([None,None,None])
+c.schema = a.coor.schema
+def set_x(self, value):
+    self[0] = value
+c.x = property(lambda self: self[0], set_x)
+def set_y(self, value):
+    self[1] = value
+c.y = property(lambda self: self[1], set_y)
+def set_z(self, value):
+    self[2] = value
+c.z = property(lambda self: self[2], set_z)
+
+def set_xyz(self, xyz):
+    x,y,z = xyz
+    with self.fork():
+        self.x = x
+        self.y = y
+        self.z = z
+c.xyz = property(lambda self: tuple(self.data), set_xyz)
+
+with c.fork():
+    c.x = 0.2
+    c.y = -0.3
+    c.z = 0.93
+print(c)
+c.xyz = -1,0,0
+print(c, c.xyz)

@@ -1,4 +1,6 @@
 from functools import partialmethod
+import json
+import textwrap
 
 class SilkBase:
 
@@ -22,7 +24,6 @@ class SilkBase:
         # TODO: proper string representation
         data = super().__getattribute__("data")
         return repr(data)
-
 
 def silk_unary_method(self, name):
     method = self._get(name)
@@ -93,6 +94,7 @@ from functools import lru_cache
 
 @lru_cache(10000)
 def compile_function(code, mode="method"):
+    code = textwrap.dedent(code)
     #import astdump
     #print(astdump.indented(code))
     ast_tree = compile(code, "<string>", "exec", ast.PyCF_ONLY_AST)
@@ -129,3 +131,5 @@ def compile_function(code, mode="method"):
 class AlphabeticDict(dict):
     def __iter__(self):
         return iter(sorted(super().__iter__()))
+    def __str__(self):
+        return json.dumps(self, sort_keys=True, indent=2)
