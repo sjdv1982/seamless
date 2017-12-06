@@ -1,27 +1,32 @@
 import inspect, sys
 from types import MethodType
 from .SilkBase import SilkBase, compile_function, AlphabeticDict
-from .validation import schema_validator, Scalar, scalar_conv, _types
+from .validation import schema_validator, Scalar, scalar_conv, _types, infer_type
 from copy import copy, deepcopy
 
-POLICY_NO_METHODS = 1
-POLICY_NO_VALIDATION = 2
 
-_underscore_attribute_names =  "__array_struct__", "__array_interface__"
+from .policy import default_policy
+SILK_NO_METHODS = 1
+SILK_NO_VALIDATION = 2
+
+
+
+_underscore_attribute_names =  set(["__array_struct__", "__array_interface__", "__array__"])
 # A set of magic names where it is expected that they raise NotImplementedError if
 # not implemented, rather than returning NotImplemented
 
 class Silk(SilkBase):
     __slots__ = [
             "_parent", "data", "schema",
-            "_policy", "_forks"
+            "_policy", "_modifier", "_forks"
     ]
     # TODO: append method that may also create a schema, depending on policy.infer_item
 
     def __init__(self, schema = None, *, parent = None, data = None,
-      policy = 0):
+      modifier = 0):
         self._parent = parent
-        self._policy = policy
+        self._policy = None
+        self._modifier = modifier
         self._forks = None
         self.data = data
         assert not isinstance(data, Silk)
@@ -29,6 +34,25 @@ class Silk(SilkBase):
             schema = {}
         assert isinstance(schema, dict)
         self.schema = schema
+
+    def __call__(self, *args, **kwargs):
+        data = super().__getattribute__("data")
+        schema = super().__getattribute__("schema")
+        methods = schema.get("methods", {})
+        if data is None:
+            constructor_code = methods.get("__init__", None)
+            if constructor_code is None:
+                raise AttributeError("__init__")
+            constructor = compile_function(constructor_code)
+            result = constructor(self, *args, **kwargs)
+            assert result is None # __init__ must return None
+            return self
+        else:
+            call_code = methods.get("__call__", None)
+            if call_code is None:
+                raise AttributeError("__call__")
+            call = compile_function(call_code)
+            return call(self, *args, **kwargs)
 
     @property
     def parent(self):
@@ -57,8 +81,7 @@ class Silk(SilkBase):
         return self
 
     def _get(self, attr):
-        if attr in ("validate", "add_validator", "set", "parent", "fork",
-            "__array__") or \
+        if attr in ("validate", "add_validator", "set", "parent", "fork") or \
           (attr.startswith("_") and not attr.startswith("__")):
             return super().__getattribute__(attr)
         data = super().__getattribute__("data")
@@ -67,9 +90,9 @@ class Silk(SilkBase):
         if attr == "self":
             return Silk(data = data,
                         schema = schema,
-                        policy = POLICY_NO_METHODS)
+                        modifier = SILK_NO_METHODS)
 
-        if not self._policy & POLICY_NO_METHODS:
+        if not self._modifier & SILK_NO_METHODS:
             m = schema.get("methods", {}).get(attr, None)
             if m is not None:
                 if isinstance(m, dict):
@@ -93,6 +116,7 @@ class Silk(SilkBase):
         raise AttributeError(attr)
 
     def __getattribute__(self, attr):
+        #print("__getattribute__", attr)
         try:
             return super().__getattribute__("_get")(attr)
         except (TypeError, KeyError, AttributeError, IndexError) as exc:
@@ -114,7 +138,7 @@ class Silk(SilkBase):
         schema = super().__getattribute__("schema")
         assert isinstance(schema, dict)
         m = schema.get("methods", {}).get(attr, None)
-        if not (self._policy & POLICY_NO_METHODS) and m is not None:
+        if not (self._modifier & SILK_NO_METHODS) and m is not None:
             if isinstance(m, dict):
                 setter = m.get("setter", None)
                 if setter is not None:
@@ -126,16 +150,32 @@ class Silk(SilkBase):
                 raise TypeError(attr) #method cannot be assigned to
         else:
             data = super().__getattribute__("data")
+            policy = self._policy
+            if policy is None:
+                #TODO: implement lookup hierarchy wrapper that also looks at parent
+                policy = default_policy
             if data is None:
                 assert self._parent is None # MUST be independent
                 data = AlphabeticDict()
                 self.data = data
             if isinstance(value, Silk):
                 value, value_schema = value.data, value.schema
-                if attr not in schema["property"]:
-                    schema["property"][attr] = value_schema
+                if "properties" not in schema:
+                    schema["properties"] = {}
+                if attr not in schema["properties"]:
+                    schema["properties"][attr] = value_schema
                     #TODO: infer_property check
             data[attr] = value
+
+            if policy["infer_type"]:
+                if "properties" not in schema:
+                    schema["properties"] = {}
+                if attr not in schema["properties"]:
+                    schema["properties"][attr] = {}
+                if "type" not in schema["properties"][attr]:
+                    type_ = infer_type(value)
+                    schema["properties"][attr]["type"] = type_
+
             # TODO: make conditional upon policy.infer_property
 
         if self._forks is None or self._forks[-1].validate:
@@ -174,7 +214,7 @@ class Silk(SilkBase):
                 parent= _SilkParent(self),
                 data=d,
                 schema=schema,
-                policy = POLICY_NO_VALIDATION,
+                modifier = SILK_NO_VALIDATION,
             )
 
         if isinstance(item, int):
@@ -278,7 +318,7 @@ class Silk(SilkBase):
                     schema["validators"] = old_validators
 
     def validate(self, full = True):
-        if not self._policy & POLICY_NO_VALIDATION:
+        if not self._modifier & SILK_NO_VALIDATION:
             if full:
                 schema_validator(self.schema).validate(self.data)
             else:

@@ -26,6 +26,7 @@ class SilkBase:
         return repr(data)
 
 def silk_unary_method(self, name):
+    #print("METHOD", name)
     method = self._get(name)
     if method is NotImplemented:
         return NotImplemented
@@ -36,7 +37,7 @@ unary_special_method_names = (
     "__neg__", "__pos__", "__abs__",
     "__invert__", "__complex__",
     "__int__", "__float__",
-    "__round__"
+    "__round__",
 )
 
 for name in unary_special_method_names:
@@ -45,6 +46,7 @@ for name in unary_special_method_names:
 
 
 def silk_unary_method_optional(self, name):
+    #print("METHOD", name)
     try:
         method = self._get(name)
     except AttributeError:
@@ -53,7 +55,7 @@ def silk_unary_method_optional(self, name):
 
 unary_special_method_names_optional = (
     "__length_hint__", "__index__",
-    "__iter__", "__reversed__", "__bool__",
+    "__iter__", "__reversed__", "__bool__"
 )
 
 for name in unary_special_method_names_optional:
@@ -62,6 +64,7 @@ for name in unary_special_method_names_optional:
 
 
 def silk_binary_method(self, other, name):
+    #print("METHOD", name)
     method = self._get(name)
     if method is NotImplemented:
         return NotImplemented
@@ -86,6 +89,10 @@ binary_special_method_names = (
 for name in binary_special_method_names:
     m = partialmethod(silk_binary_method, name=name)
     setattr(SilkBase, name, m)
+
+#TODO: methods that modify the data:
+# - append, insert, pop, etc.
+# These must be followed by .validate()
 
 ####
 

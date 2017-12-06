@@ -1,5 +1,7 @@
+import sys
 #from seamless.silk import Silk
 from silk import Silk, ValidationError
+from pprint import pprint
 
 def adder(self, other):
     return other + self.x
@@ -31,7 +33,7 @@ def xx_get(self):
     return self.x * self.x
 def xx_set(self, xx):
     import math
-    self.x = math.sqrt(xx)
+    self.x = int(math.sqrt(xx))
 
 s.x = 3
 s.xx = property(xx_get, xx_set)
@@ -47,10 +49,7 @@ sz = s.z
 print(sz.q, sz.r)
 s.z.r = 25
 print(sz.q, sz.r)
-#s.z.qr = property(lambda self: self.q * self.r) # TODO: does not work yet
-def qr(self):
-    return self.q * self.r
-s.z.qr = property(qr)
+s.z.qr = property(lambda self: self.q * self.r)
 print(s.z.qr)
 
 def validate_z(self):
@@ -99,9 +98,9 @@ print(type(s2.arr), type(arr))
 print(s2.arr[2], arr[2])
 print(type(s2.arr[2]), type(arr[2]))
 
-s2.arr.schema["type"] = "array"
+#s2.arr.schema["type"] = "array"  #  inferred
 item = Silk().set(5)
-#item.schema["type"] = "integer"
+#item.schema["type"] = "integer"  #  inferred
 def func(self):
     assert self > 0
 item.add_validator(func)
@@ -140,6 +139,9 @@ print(s)
 import numpy as np
 a = Silk()
 a.coor = [0,0,1]
+print(a.coor)
+print("START")
+np.array(a.coor)
 print(np.array(a.coor))
 def func(self):
     import numpy as np
@@ -175,3 +177,17 @@ with c.fork():
 print(c)
 c.xyz = -1,0,0
 print(c, c.xyz)
+
+
+Test = Silk()
+def __init__(self, a, b):
+    self.a = a
+    self.b = b
+def __call__(self, c):
+    return self.a + self.b + c
+Test.__init__ = __init__
+Test.__call__ = __call__
+test = Test(7,8)
+print(test)
+print(test(5))
+pprint(test.schema)

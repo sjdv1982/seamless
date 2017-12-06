@@ -488,3 +488,6 @@ specialized .fromXXX sub-constructors.
 In all cases, the constructor returns a naked dict that conforms to the schema.
 However, no kind of validation is performed by the constructor!
 The dict can be wrapped trivially in a Silk instance, which will perform validation.
+
+UPDATE: Silk instances are now callable. If data is None, this invokes the __init__
+method, else the __call__ method
