@@ -65,9 +65,23 @@ class Silk(SilkBase):
             value_schema = value.schema.dict
             value = value.data
         if self.data is None:
-            #TODO: type inference
             self.data = value
-            if isinstance(value, _types["array"]):
+            schema = self._schema
+            if (schema is None or schema == {}) and value_schema is not None:
+                if schema is None:
+                    schema = value_schema
+                    self._schema = schema
+                else:
+                    schema.update(value_schema)
+            policy = schema.get("policy", None)
+            if policy is None or not len(policy):
+                #TODO: implement lookup hierarchy wrapper that also looks at parent
+                policy = default_policy
+            if policy["infer_type"]:
+                if "type" not in schema:
+                    type_ = infer_type(value)
+                    schema["type"] = type_
+            if isinstance(value, _types["array"]) and len(self.data) > 0:
                 self._infer_list_item(value_schema)
         elif isinstance(value, Scalar):
             assert self._parent is None #MUST be independent
@@ -325,25 +339,42 @@ class Silk(SilkBase):
             schema["methods"] = methods
         methods[attribute] = m
 
-    def _add_validator(self, func):
+    def _add_validator(self, func, attr):
         assert callable(func)
         code = inspect.getsource(func)
         v = {"code": code, "language": "python"}
         compile_function(v)
 
         schema = self._schema
+        if isinstance(attr, int):
+            items_schema = schema.get("items", None)
+            if items_schema is None:
+                #TODO: check for uniform/pluriform
+                items_schema = {}
+                schema["items"] = items_schema
+            schema = items_schema
+        elif isinstance(attr, str):
+            prop_schema = schema.get("properties", None)
+            if prop_schema is None:
+                prop_schema = {}
+                schema["properties"] = prop_schema
+            attr_schema = prop_schema.get(attr, None)
+            if attr_schema is None:
+                attr_schema = {}
+                prop_schema[attr] = attr_schema
+            schema = attr_schema
         validators = schema.get("validators", None)
         if validators is None:
             validators = []
             schema["validators"] = validators
         validators.append(v)
 
-    def add_validator(self, func):
+    def add_validator(self, func, attr=None):
         schema = self._schema
         old_validators = copy(schema.get("validators", None))
         ok = False
         try:
-            self._add_validator(func)
+            self._add_validator(func, attr)
             self.validate(full = False)
             ok = True
         finally:

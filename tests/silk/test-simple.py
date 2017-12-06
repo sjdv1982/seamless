@@ -199,5 +199,3 @@ test.l = []
 l = test.l
 l.append("bla")
 l.append(10)
-print()
-print(l.schema, l, type(l))
