@@ -5,7 +5,7 @@ import textwrap
 class SilkBase:
 
     def __delitem__(self, item):
-        data = super().__getattribute__("data")
+        data = self.data
         return data.__delitem__(item)
 
     def __contains__(self, item):
@@ -17,12 +17,12 @@ class SilkBase:
 
     def __str__(self):
         # TODO: proper string representation
-        data = super().__getattribute__("data")
+        data = self.data
         return str(data)
 
     def __repr__(self):
         # TODO: proper string representation
-        data = super().__getattribute__("data")
+        data = self.data
         return repr(data)
 
 def silk_unary_method(self, name):

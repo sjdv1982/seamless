@@ -1,7 +1,6 @@
 import sys
 #from seamless.silk import Silk
 from silk import Silk, ValidationError
-from pprint import pprint
 
 def adder(self, other):
     return other + self.x
@@ -14,11 +13,11 @@ print(s.x)
 print(s.bla(5))
 print(s+5)
 
-s2 = Silk(s.schema)
+s2 = Silk(s.schema.dict)
 s2.x = 10
 print(s2+5)
 
-s3 = Silk(s2.schema)
+s3 = Silk(s2.schema.dict)
 s3.x = 10
 print(s3+25)
 
@@ -61,7 +60,7 @@ try:
 except:
     print(s.schema)
 
-pprint(s.schema)
+print(s.schema)
 
 s.lis = [1,2,3]
 s.lis.append(10)
@@ -101,13 +100,13 @@ print(type(s2.arr), type(arr))
 print(s2.arr[2], arr[2])
 print(type(s2.arr[2]), type(arr[2]))
 
-#s2.arr.schema["type"] = "array"  #  inferred
+#s2.arr.schema.type = "array"  #  inferred
 item = Silk().set(5)
-#item.schema["type"] = "integer"  #  inferred
+#item.schema.type = "integer"  #  inferred
 def func(self):
     assert self > 0
 item.add_validator(func)
-s2.arr.schema["items"] = item.schema
+s2.arr.schema.items = item.schema
 s2.validate()
 
 s2.arr[0] = 5
@@ -193,4 +192,4 @@ Test.__call__ = __call__
 test = Test(7,8)
 print(test)
 print(test(5))
-pprint(test.schema)
+print(test.schema)
