@@ -28,6 +28,7 @@ def xy(self):
 s.x = 1
 s.y = 2
 s.xy = property(xy)
+print(s.xy)
 
 def xx_get(self):
     return self.x * self.x
@@ -59,6 +60,8 @@ try:
     s.z.add_validator(validate_z)
 except:
     print(s.schema)
+
+pprint(s.schema)
 
 s.lis = [1,2,3]
 s.lis.append(10)

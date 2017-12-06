@@ -99,8 +99,14 @@ for name in binary_special_method_names:
 import ast
 from functools import lru_cache
 
+def compile_function(code_dict, mode="method"):
+    assert isinstance(code_dict, dict)
+    assert code_dict["language"] == "python"
+    code = code_dict["code"]
+    return compile_function_(code, mode)
+
 @lru_cache(10000)
-def compile_function(code, mode="method"):
+def compile_function_(code, mode):
     code = textwrap.dedent(code)
     #import astdump
     #print(astdump.indented(code))

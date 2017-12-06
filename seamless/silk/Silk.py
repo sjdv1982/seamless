@@ -95,10 +95,11 @@ class Silk(SilkBase):
         if not self._modifier & SILK_NO_METHODS:
             m = schema.get("methods", {}).get(attr, None)
             if m is not None:
-                if isinstance(m, dict):
+                if m.get("property", False):
                     getter = m.get("getter", None)
                     if getter is not None:
-                        fget = compile_function(getter, "property-getter")
+                        mm = {"code": getter, "language": m["language"]}
+                        fget = compile_function(mm, "property-getter")
                         return fget(self)
                 else:
                     method = compile_function(m)
@@ -139,10 +140,11 @@ class Silk(SilkBase):
         assert isinstance(schema, dict)
         m = schema.get("methods", {}).get(attr, None)
         if not (self._modifier & SILK_NO_METHODS) and m is not None:
-            if isinstance(m, dict):
+            if m.get("property", False):
                 setter = m.get("setter", None)
                 if setter is not None:
-                    fset = compile_function(setter)
+                    mm = {"code": setter, "language": m["language"]}
+                    fset = compile_function(mm)
                     fset(self, value)
                 else:
                     raise TypeError(attr) #read-only property cannot be assigned to
@@ -257,14 +259,16 @@ class Silk(SilkBase):
     def _set_property(self, attribute, prop):
         assert (not attribute.startswith("_")) or attribute.startswith("__"), attribute
         assert isinstance(prop, property)
-        m = {}
+        m = {"property": True, "language": "python"}
         getter_code = inspect.getsource(prop.fget)
         m["getter"] = getter_code
-        compile_function(getter_code, mode="property-getter")
+        mm = {"code": getter_code, "language": "python"}
+        compile_function(mm, mode="property-getter")
         if prop.fset is not None:
             setter_code = inspect.getsource(prop.fset)
             m["setter"] = setter_code
-            compile_function(setter_code, mode="property-getter")
+            mm = {"code": setter_code, "language": "python"}
+            compile_function(mm)
         # TODO: deleter
 
         schema = super().__getattribute__("schema")
@@ -279,7 +283,8 @@ class Silk(SilkBase):
         assert (not attribute.startswith("_")) or attribute.startswith("__"), attribute
         assert callable(func)
         code = inspect.getsource(func)
-        compile_function(code)
+        m = {"code": code, "language": "python"}
+        compile_function(m)
 
         schema = super().__getattribute__("schema")
         assert isinstance(schema, dict)
@@ -287,12 +292,13 @@ class Silk(SilkBase):
         if methods is None:
             methods = {}
             schema["methods"] = methods
-        methods[attribute] = code
+        methods[attribute] = m
 
     def _add_validator(self, func):
         assert callable(func)
         code = inspect.getsource(func)
-        compile_function(code)
+        v = {"code": code, "language": "python"}
+        compile_function(v)
 
         schema = super().__getattribute__("schema")
         assert isinstance(schema, dict)
@@ -300,7 +306,7 @@ class Silk(SilkBase):
         if validators is None:
             validators = []
             schema["validators"] = validators
-        validators.append(code)
+        validators.append(v)
 
     def add_validator(self, func):
         schema = super().__getattribute__("schema")
