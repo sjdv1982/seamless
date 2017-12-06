@@ -1,9 +1,10 @@
 import inspect, sys
 from types import MethodType
+from copy import copy, deepcopy
+
 from .SilkBase import SilkBase, compile_function, AlphabeticDict
 from .validation import schema_validator, Scalar, scalar_conv, _types, infer_type
 from .schemawrapper import SchemaWrapper
-from copy import copy, deepcopy
 
 from .policy import default_policy
 SILK_NO_METHODS = 1
@@ -59,15 +60,24 @@ class Silk(SilkBase):
         return self._parent.get()
 
     def set(self, value):
+        value_schema = None
+        if isinstance(value, Silk):
+            value_schema = value.schema.dict
+            value = value.data
         if self.data is None:
             #TODO: type inference
             self.data = value
+            if isinstance(value, _types["array"]):
+                self._infer_list_item(value_schema)
         elif isinstance(value, Scalar):
             assert self._parent is None #MUST be independent
             self.data = value
         elif isinstance(value, _types["array"]):
             #invalidates all Silk objects constructed from items
+            empty_list == (len(self.data) == 0)
             self.data[:] = value
+            if empty_list:
+                self._infer_list_item(value_schema)
         elif isinstance(value, dict):
             #invalidates all Silk objects constructed from items
             old_data = self.data.copy()
@@ -75,13 +85,20 @@ class Silk(SilkBase):
                 raise TypeError #  better be strict for now
             self.data.clear()
             self.data.update(value)
-        self.validate()
+        if self._forks is None or self._forks[-1].validate:
+            self.validate()
         return self
 
-    def _get(self, attr):
+    def _get(self, attr, skip_modify_methods = False):
         if attr in ("validate", "add_validator", "set", "parent", "fork") or \
           (attr.startswith("_") and not attr.startswith("__")):
             return super().__getattribute__(attr)
+
+        if not skip_modify_methods:
+            is_modifying_method, result = try_modify_methods(self, attr)
+            if is_modifying_method:
+                return result
+
         data, schema = self.data, self._schema
         if attr == "self":
             return Silk(data = data,
@@ -133,7 +150,7 @@ class Silk(SilkBase):
         if attr == "schema":
             if isinstance(value, SchemaWrapper):
                 value = value.dict
-            return super().__setattr__(attr, value) 
+            return super().__setattr__(attr, value)
         if isinstance(value, property):
             return self._set_property(attr, value)
         if callable(value):
@@ -194,13 +211,30 @@ class Silk(SilkBase):
             self.data = data
         if isinstance(value, Silk):
             value = value.data
-            # TODO: infer_item check
         data[item] = value
-        # TODO: make conditional upon policy.infer_item
 
         if self._forks is None or self._forks[-1].validate:
             self.validate()
 
+    def _infer_list_item(self, item_schema):
+        schema = self._schema
+        policy = schema.get("policy", None)
+        if policy is None or not len(policy):
+            #TODO: implement lookup hierarchy wrapper that also looks at parent
+            policy = default_policy
+        infer_item = policy["infer_item"]
+        if infer_item != "uniform":
+            raise NotImplementedError(infer_item)
+            # TODO: if "pluriform", need a new method:
+            #   _infer_additional_list_item must be called for each .append
+            #   In addition, deletion/[:] can become quite tricky: ignore?
+        assert len(self.data) > 0
+        if item_schema is None:
+            item = self.data[0]
+            s = Silk()
+            s.item = item
+            item_schema = s.schema.properties.item.dict
+        schema["items"] = item_schema
 
     def _access_data(self, item):
         data, schema = self.data, self._schema
@@ -386,3 +420,5 @@ class _SilkFork:
         if self._joined:
             return
         self._join(None)
+
+from .modify_methods import try_modify_methods

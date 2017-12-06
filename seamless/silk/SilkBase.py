@@ -90,10 +90,6 @@ for name in binary_special_method_names:
     m = partialmethod(silk_binary_method, name=name)
     setattr(SilkBase, name, m)
 
-#TODO: methods that modify the data:
-# - append, insert, pop, etc.
-# These must be followed by .validate()
-
 ####
 
 import ast

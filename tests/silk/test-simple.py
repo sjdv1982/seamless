@@ -152,7 +152,7 @@ def func(self):
 a.coor.add_validator(func)
 
 c = Silk()
-c.set([None,None,None])
+c.set( [0.0, 0.0, 0.0] )
 c.schema = a.coor.schema
 def set_x(self, value):
     self[0] = value
@@ -179,7 +179,7 @@ with c.fork():
 print(c)
 c.xyz = -1,0,0
 print(c, c.xyz)
-
+print(c.schema)
 
 Test = Silk()
 def __init__(self, a, b):
@@ -193,3 +193,11 @@ test = Test(7,8)
 print(test)
 print(test(5))
 print(test.schema)
+
+print("START")
+test.l = []
+l = test.l
+l.append("bla")
+l.append(10)
+print()
+print(l.schema, l, type(l))
