@@ -11,6 +11,9 @@ class Coordinate(metaclass=meta):
     # Note that the schema is only built *after* the class statement is complete
     #  but the direct schema manipulations are evaluated *first*
 
+    def __init__(self, a):
+        self.a = a
+
     def aa(self):
         return(self.a+1)
 
@@ -26,11 +29,12 @@ class Coordinate(metaclass=meta):
     def a2(self, value):
         self.a = value - 1000
 
-c = Silk(schema=Coordinate)
+c = Coordinate(3)
 print(c.schema)
+print(c)
 c.a = 10
 print(c.aa())
 print(c.a2)
 c.a2 = 1002
 print(c.a)
-c.a = 11 # Error
+#c.a = 11 # Error

@@ -16,7 +16,7 @@ def meta(name, bases, d):
             else:
                 setattr(s, key, value)
 
-    return s.schema.dict
+    return Silk(schema=s.schema.dict)
 
 def prep(name, bases):
     return {
