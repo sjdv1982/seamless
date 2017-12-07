@@ -101,8 +101,8 @@ print(s2.arr[2], arr[2])
 print(type(s2.arr[2]), type(arr[2]))
 
 #s2.arr.schema.type = "array"  #  inferred
-item = Silk().set(5)
-#item.schema.type = "integer"  #  inferred
+item = Silk().set(5.0)
+#item.schema.type = "number"  #  inferred
 def func(self):
     assert self > 0
 item.add_validator(func)
@@ -198,4 +198,4 @@ print("START")
 test.l = []
 l = test.l
 l.append("bla")
-l.append(10)
+l.append(10) #Error

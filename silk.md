@@ -6,6 +6,7 @@ A Silk object doesn't hold state itself. It is only a *wrapper* around:
 - a form dict that describes the form:
    The data instance is plain (list/dict), binary (Numpy), or a mix of the two.
    For more details, (see *form* below)
+UPDATE: scrap the form dict
 
 A Silk object provides protected access to the instance:
 - Accessing a Silk object returns either a scalar or a Silk sub-object. This
@@ -13,7 +14,7 @@ sub-object is constructed on-the-fly, wrapping a sub-instance and a Silk sub-sch
 - Silk object provides and API that supports both .property and ["property"].
 - Silk object provides an identical API no matter the form of the instance. For example, if the
 Silk schema indicates an array of ints, and the instance is either [5,2,1] or np.array([5,2,1])
-then silkobject[0] will return 5 (int).
+then silkobject[0] will return 5 (int). (UPDATE: only at the level of scalars. Not .append() etc.)
 - Assigning to a Silk object attribute will check that the modified instance validates against
   the Silk schema. Typically, the first attribute assignment will modify the Silk schema too (type inference).
 - Note that a data instance may only ever contain plain and binary data.
@@ -22,17 +23,21 @@ then silkobject[0] will return 5 (int).
   in the process. Moreover, dicts, lists and unhashable tuples will be deep-copied (after recursion).
   Numpy arrays and hashable tuples (after recursion) will simply be assigned to the data (sub-)instance.
   Numpy arrays will be recursed if their dtype contains Python objects.
+  UPDATE: scrap the form dict
 - In a data instance, hashable tuples will be converted to lists upon (i.e. right before) modification.
 - You can always get access to the raw data (plain, binary or mixed). Obviously, this allows you to create invalid
   (non-schema-validating) data instances, so you may want to backup (deep-copy) your data instance first.
+  UPDATE: use forks
   However, it is guaranteed that raw data access is the *only* way to create invalid instances (assuming the schema
     remains constant).
 - Numpy form and raw binary form may not exactly be the same. For example, for a vararray in binary form
   of length 2 and space 5, the raw binary form would be binary-encoded {"data": np.array([1,2,0,0,0]) "length": 2}
   whereas the numpy form would be np.array([1,2]), with the same underlying memory pointer as "data" but a different shape.
+  UPDATE: now they *are* the same. Use constructs to manage vararrays etc.
 
 In very advanced future versions of Silk, it will be possible to bootstrap the Silk object API itself using Silk.
 i.e. the entire Silk object method API is just another Python text cell that is live-interpreted.
+UPDATE: This is already possible, except for __get/setitem__ , __get/setattr__. This can be tackled with construct registration.
 
 # Silk schemas
 
@@ -41,6 +46,8 @@ a Silk schema will always validate against JSON schema too, if in plain form,
 and if converted as below.
 
 NO SUPPORT FOR "default", THIS IS NOT PART OF SILK SCHEMA!
+UPDATE: Silk.constructor will generate a constructor based on a schema, including
+"default" and "order"
 
 Seamless will implement its own $ref resolver for $refs that start with
 SEAMLESS. These are provided by the central schema registry
@@ -52,17 +59,21 @@ Conversion to JSON schema:
 - Silk schema "constructs" are replaced with their plain-form-generated schema
 - Python validators are preserved, although JSON schema implementations won't know what to do with them.
 
+UPDATE:
+- Now include methods as well as validators (each with "language" annotation)
+- No formal "conversion" at all. Tools are of course free to convert/compile/transpile
+  from one Silk schema into another. Also, a "purify" method to rip all Silk-specific entries
+- Generic mechanism to resolve $ref (jsonschema library already has this?)
+
 # extra schema fields
 On top of JSON schema
 (1) indicates object-only, (2) indicates array-only
 In a later version of Silk, there will be an annoying Microsoft-Office-paperclip
 assistant who will ask all kind of annoying questions
 
-## not_required (2)
-It is possible to explicitly annotate properties as not_required.
-
 ## order (2)
-Tells the order of properties, which helps in building \*args constructors.
+Tells the order of properties, which helps in building \*args constructors
+(as does "default").
 
 ## storage
 Note: in addition to being normative (schema) values,
@@ -107,6 +118,10 @@ not fixed-binary (see below), a Python object is filled in.
   in Cython, this becomes a memoryview, for which size information
   is not as of yet supported)
 
+UPDATE: do not store this on the instance, compute this at runtime, possibly cached
+(same as methods)
+
+
 ### /(note on *form*)
 
 ### dtype (only for scalars)
@@ -120,6 +135,10 @@ Examples:
 - N-dimensional OpenGL texture
 - OpenCL, CUDA
 - Pointer to the GPU data (carried by Silk)
+UPDATE:
+Abandon. Make separate system for Numpy->OpenGL, Numpy->CUDA/OpenCL sync
+The pointer should be enough to retrieve a GPU representation
+
 
 ## /storage
 
@@ -156,6 +175,12 @@ What to do with binary forms that lack one or more columns of optional propertie
 - False: raise an error.
 Default: True
 
+##infer_default
+Every first assignment is assigned to "default".
+Can be handy in class statements (class variables are faked by default variables )
+Default: False
+UPDATE: in the future, maybe lookup scope for default dict to save memory.
+
 ### infer_property (2)
 If a new property is accessed via Silk, an (empty) schema for that property is inserted under "properties"
 If False, the returned Silk object will be schema-less (and policy-less)
@@ -189,6 +214,10 @@ Default: True
 
 ### infer_dtype_mixed
 Same as above, but also for mixed-binary
+Default: False
+
+### infer_required (2)
+A new inferred property is automatically added to the required properties
 Default: False
 
 ### force_valid_schema
@@ -234,12 +263,12 @@ Error-buffer all manipulations of the schema properties (see above).
 ## error_log
 Errors (data-schema mismatches) are logged, rather than raising exceptions immediately.
 Stack traces, exceptions and whatnot are stored in the error log.
-In Silk, error logs are observable, both for appends and for clear events.
+Error logs are observable, both for appends and for clear events.
 (error log can be cleared by API)
-Default: True
+Default: False
 
 ### infer_recursive
-Arrays and objects are always tree structures. If a value is assigned to the array or object, walk the entire tree
+Arrays and objects are tree structures. If a value is assigned to the array or object, walk the entire tree
 of the assigned value and add a schema for each item.
 Default: False
 
@@ -254,6 +283,11 @@ Allows you to undo schema manipulations (automatic and manual) that you didn't w
 Works similar to the schema error buffer.
 To-be-determined on what level the undo buffer will be stored (globally?), and the atomicity.
 
+### wrap_scalar
+If False:
+  If a property or item is a scalar, Silk returns the naked scalar, not the Silk-wrapped scalar
+Default: False (scalars are not wrapped)
+
 # Validators
 Array of strings containing Python code. Each of them will be executed as an
 eval'ed function.
@@ -265,7 +299,7 @@ transformer.
 In any case, in its local namespace, the validator gets access to the object
 in Silk form as "self", and to all properties as variables (same as for Spyder).
 (Special case for construct validators: they get access to the construct instance descriptor instead)
-
+UPDATE: just access to self.
 
 # Fixed-binary schemas
 
@@ -315,6 +349,7 @@ For Silk wrapping, a construct must also define the following:
 For example, the shape construct API contains .append(), which does very different things
 for plain or binary form instances.
 2. A top-level converter between plain and binary form.
+UPDATE: the API is defined in the usual way (method section). Drop the converter.
 
 Normally, constructs also have a specialized generation routines for C struct headers
 and Cython class headers generation.
@@ -328,6 +363,7 @@ The shapedarray type inferencer accepts Numpy arrays and suitable nested-lists.
 (=> {"type":  "construct", "construct": "shapedarray"})
 It has a lower priority than the generic "array" type inferencer => {"type": "array"},
 which accepts one-dimensional Numpy arrays and normal lists.
+UPDATE: or a higher priority? policy option...
 
 ## extra fields:
 
@@ -359,12 +395,16 @@ Default: False
 If form is binary, array must be f_contiguous
 Default: False
 
+UPDATE: single "contiguous" parameter: "any", "c", "fortran"
+
 ### validators
 Construct validators for the shapedarray construct.
 The shapedarray construct instance descriptor contains:
    .shape, .ndim, .dtype, .type (mapped from .dtype)
     .c_contiguous, .f_contiguous;
     in case of a Numpy array / Python buffer: .strides and some flags.
+UPDATE: if the construct API is just added on top of the normal API, then there is no
+need for a special validator category.
 
 ## /extra items
 
@@ -490,4 +530,8 @@ However, no kind of validation is performed by the constructor!
 The dict can be wrapped trivially in a Silk instance, which will perform validation.
 
 UPDATE: Silk instances are now callable. If data is None, this invokes the __init__
-method, else the __call__ method
+method, else the __call__ method.
+
+UPDATE: traditional class syntax is supported via metaclass. The metaclass builds
+the Silk schema after the class statement has finished, not during (would be too clever).
+Silk class decorators are probably not a good idea (inheritance would never work!).
