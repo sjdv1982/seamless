@@ -339,7 +339,7 @@ class Silk(SilkBase):
             schema["methods"] = methods
         methods[attribute] = m
 
-    def _add_validator(self, func, attr):
+    def _add_validator(self, func, attr, *, from_meta):
         assert callable(func)
         code = inspect.getsource(func)
         v = {"code": code, "language": "python"}
@@ -374,7 +374,7 @@ class Silk(SilkBase):
         old_validators = copy(schema.get("validators", None))
         ok = False
         try:
-            self._add_validator(func, attr)
+            self._add_validator(func, attr, from_meta=False)
             self.validate(full = False)
             ok = True
         finally:

@@ -113,6 +113,7 @@ def compile_function_(code, mode):
     if isinstance(func, ast.FunctionDef):
         func_name = ast_tree.body[0].name
         namespace = {}
+        ast_tree.body[0].decorator_list.clear()
         code = compile(ast_tree, "<string>", "exec")
         exec(code, namespace)
         return namespace[func_name]
