@@ -6,12 +6,33 @@ from jsonschema.exceptions import FormatError, ValidationError
 _types = jsonschema.Draft4Validator.DEFAULT_TYPES.copy()
 _integer_types =  (int, np.int8, np.int16, np.int32, np.int64, np.uint8, np.uint16, np.uint32, np.uint64)
 _float_types = (float, np.float16, np.float32, np.float64, np.float128)
-_types["array"] = (list, tuple, np.ndarray)
+_array_types = (list, tuple, np.ndarray)
+_string_types = (str, bytes)
+_types["array"] = _array_types
 _types["integer"] = _integer_types
 _types["number"] = _integer_types + _float_types
 
 Scalar = (type(None), bool, str, bytes) + _integer_types + _float_types
 import traceback
+
+def infer_type(value):
+    if isinstance(value, dict):
+        type_ = "object"
+    elif isinstance(value, _array_types):
+        type_ = "array"
+    elif isinstance(value, _integer_types):
+        type_ = "integer"
+    elif isinstance(value, _float_types):
+        type_ = "number"
+    elif isinstance(value, _string_types):
+        type_ = "string"
+    elif isinstance(value, bool):
+        type_ = "boolean"
+    elif value is None:
+        type_ = "null"
+    else:
+        raise TypeError(type(value))
+    return type_
 
 def scalar_conv(value):
     if value is None:

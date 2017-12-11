@@ -5,7 +5,7 @@ import textwrap
 class SilkBase:
 
     def __delitem__(self, item):
-        data = super().__getattribute__("data")
+        data = self.data
         return data.__delitem__(item)
 
     def __contains__(self, item):
@@ -17,15 +17,16 @@ class SilkBase:
 
     def __str__(self):
         # TODO: proper string representation
-        data = super().__getattribute__("data")
+        data = self.data
         return str(data)
 
     def __repr__(self):
         # TODO: proper string representation
-        data = super().__getattribute__("data")
+        data = self.data
         return repr(data)
 
 def silk_unary_method(self, name):
+    #print("METHOD", name)
     method = self._get(name)
     if method is NotImplemented:
         return NotImplemented
@@ -36,7 +37,7 @@ unary_special_method_names = (
     "__neg__", "__pos__", "__abs__",
     "__invert__", "__complex__",
     "__int__", "__float__",
-    "__round__"
+    "__round__",
 )
 
 for name in unary_special_method_names:
@@ -45,6 +46,7 @@ for name in unary_special_method_names:
 
 
 def silk_unary_method_optional(self, name):
+    #print("METHOD", name)
     try:
         method = self._get(name)
     except AttributeError:
@@ -53,7 +55,7 @@ def silk_unary_method_optional(self, name):
 
 unary_special_method_names_optional = (
     "__length_hint__", "__index__",
-    "__iter__", "__reversed__", "__bool__",
+    "__iter__", "__reversed__", "__bool__"
 )
 
 for name in unary_special_method_names_optional:
@@ -62,6 +64,7 @@ for name in unary_special_method_names_optional:
 
 
 def silk_binary_method(self, other, name):
+    #print("METHOD", name)
     method = self._get(name)
     if method is NotImplemented:
         return NotImplemented
@@ -92,8 +95,14 @@ for name in binary_special_method_names:
 import ast
 from functools import lru_cache
 
+def compile_function(code_dict, mode="method"):
+    assert isinstance(code_dict, dict)
+    assert code_dict["language"] == "python"
+    code = code_dict["code"]
+    return compile_function_(code, mode)
+
 @lru_cache(10000)
-def compile_function(code, mode="method"):
+def compile_function_(code, mode):
     code = textwrap.dedent(code)
     #import astdump
     #print(astdump.indented(code))
@@ -104,6 +113,7 @@ def compile_function(code, mode="method"):
     if isinstance(func, ast.FunctionDef):
         func_name = ast_tree.body[0].name
         namespace = {}
+        ast_tree.body[0].decorator_list.clear()
         code = compile(ast_tree, "<string>", "exec")
         exec(code, namespace)
         return namespace[func_name]
