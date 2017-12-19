@@ -81,7 +81,7 @@ class BaseWebSocketServer:
         if self._started:
             warnings.warn("""Changed the seamless websocketserver's public port after its has started.
             As of seamless 0.2, this will not auto-update any workers (notably dynamic_html) that use this value""")
-        self._public_address = value
+        self._public_port = value
 
     def close(self):
         if self._server is None:
