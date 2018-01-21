@@ -1,3 +1,42 @@
+UPDATE:
+This roadmap is outdated by the new conception of Silk as a schema language,
+and the new high-level API
+The topics are either:
+- Explicitly covered by Silk/the high level API (see the docs there)
+- Easily implemented at the library level, thanks to the high level API.
+- Mechanics-based, and therefore unchanged (e.g. thread-based/process-based,
+  sync/async workers)
+That leaves three things to take care of:
+(1) Macros that take a context argument (but I think this is documented already?)
+(2) Event streams
+(3) Equilibrium contexts.
+
+(2) Event streams receive event values, or a "undo" signal, which means that all previous
+values are invalid. Event streams may send back a "send again" signal, which means
+that they want again all values that were previously sent to them. (This is for example if a transformer adds 5 to an event stream; if 5 is changed to 6, either in a input cell or by a change in the source code, the transformer will send a "send again" signal upstream).
+Reactors may choose to cache events so to avoid sending this signal when one of their other inputs changes.
+Finally, there are the "initialize" and "disconnect" signals.
+Event stream inputpins are in a state where they accept a new value, or they don't. Force-feeding is possible, in that case the values are buffered up by seamless itself.
+Workers must always declare explicitly a pin as event stream.
+Transformers don't need any change in their code. However, if one or more of their inputs is an event stream, so must be their output (vice versa is not required, but if all inputs are cells, a transformer that has an event stream as output must return a list, which is force-fed into the event stream after sending an "initialize" signal).
+Reactors must push/pull new event stream values in an explicit API:
+  - blocking waits for it
+  - non-blocking essentially sets to event stream input pin to "accept input" (input) or force-feeds (output)
+  - By default, input is blocking while output is non-blocking
+
+
+(3) Transformers are guaranteed not to send anything (be it cell values or events) on their primary output until execution has finished (which means they are in equilibrium).
+In addition, transformers are guaranteed not to accept any events while not in equilibrium.
+This is obviously not so for reactors, and it is also not so for contexts that contain reactors (or multiple transformers that are not arranged linearly) connected to context outputs.
+It is possible to declare contexts as "equilibrium contexts". In that case, they have the same guarantees as transformers have: sending cell updates or events to the outside world is
+delayed until equilibrium is reached, and so is the acceptance of new events. This allows contexts to perform atomic computations, reducing the number of glitches.
+It is possible to declare some of the outputs (and event stream inputs) as "secondary", which means that they escape this guarantee (for example, for logging purposes).
+
+
+
+
+
+
 Technically-oriented releases are marked with *
 
 \*0.1
