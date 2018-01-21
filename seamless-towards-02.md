@@ -63,6 +63,8 @@ The method dict may contain any special method (__xxx__).
 Context's __getattribute__ sets a flag whenever a special method gets invoked.
 As long as the flag is set (i.e. until the end of the API code cell execution),
 special methods on ctx are no longer looked up first in the API method dict.
+## UPDATE
+Also do symlinks: context child that has name A but points to name B. Essential for slash0 transformers!
 
 ## registrars
 Will disappear. There will be dedicated Silk cells for registering stuff.
@@ -136,7 +138,7 @@ If the mode is "edit", that link is bidirectional.
 If the mode is "input", a link is created from the child to (part of) the parent.
 The parent will hold a weakref, which is returned on subsequent access.
 The weakref will be hardened when the child builds connections, and re-softened
-when the child has no more.
+when the child has no more.  (UPDATE: hold a path instead)
 A struct must receive exactly one link. The schemas must match.
 "input" structs may receive one connection.
 Alternatively, "input" structs may receive zero links/connections but have *all* of its children received a link/connection
@@ -296,6 +298,7 @@ and receive back a notification that the state has been modified.
 Note that "input" structs in fact do hold state. They require a single state-sharing
 connection, or separate state-sharing connections for each children. They support
 outgoing connections that are either state-shared or message-based.
+
 At the high level:
 - The original plan was to have all standard ctx methods, such as ".tofile", also in a
   "self" attribute so that they wouldn't become completely shadowed away by attributes.
@@ -322,3 +325,98 @@ ctx as "tf.seamless". In the main program, you do:
 Now you have imported a fresh copy of ctx.tf as "mytf". mytf.spam is initally 5,
 but you can assign it to any other constant, or to a cell. In both cases, the
 default 5 will be overwritten.
+
+## UPDATE: Towards flexible and cloud-compatible evaluation
+All (low-level) transformers and reactors will have a hidden JSON input pin "(sl_)evaluation".
+For (low-level) macros, the presence or absence of "evaluation" is meta-parameter.
+"evaluation" contains evaluation strategies. These are irrelevant to the *outcome* of the computation:
+ the same result will be obtained no matter the evaluation strategy.
+Seamless understands this, and merely a change in evaluation will not trigger a recompute.
+The most obvious parameters are "synchronous"/"asynchronous", "process/thread", and the shared
+state of Numpy arrays (binary data) and of plain-form data.
+Less obvious ones: number of processors, force local (non-service) evaluation, force service evaluation
+There will be a global fallback "evaluation" dict as well.
+
+New cell type: cache cell.
+All (low-level) workers (transformers/reactors/macros) may take (up to) one pin of type "cache".
+If they take such a pin, they may raise a CacheError. This will clear the cache, and put the worker
+in "CacheError" state. CacheErrors are meant to detect *stale* caches: workers are forbidden to raise CacheError if the cache is empty.
+Dirty cache cells do not trigger re-evaluation of downstream workers, unless those are
+in "CacheError" state.
+Special transformers are "caching transformers", they have a "cache" cell as output.
+Caching transformers are triggered when their input changes *or* their cache output is cleared.
+Cache clearing counts as a signal in seamless, which means that the subsequent triggering of the caching transformers has the highest evaluation priority.
+Workers in "CacheError" state are re-evaluated whenever their cache input changes.
+If the cache input stays cleared, and the context is in equilibrium, they are nevertheless evaluated with
+empty cache (and the CacheError state is removed).
+
+In addition, seamless will have the core concept of *network services*.
+Seamless has a universal network service handler: it receives a protocol (REST, websocket, etc.),
+a URI, a port, and JSON data. Data is sent, the result is returned.
+Registering a network service takes the following parameters:
+- type: can be "transformer", "reactor" or "macro"
+- code: the code string that is serviced. The code string contains the source code of the transformer or macro. In case of "reactor", a dict of the three code strings. Also contains the language of the source code (default: Python)
+- parameter pin dict. Must match the pin parameters of the transformer/reactor (equivalent for macro).
+- adapter: code string (+ language) of the function that converts the input into parameters for the handler.
+- schema_adapter: same, but receives the schema of the input instead (and also the code).
+- handler_parameters: hard-coded parameters for the handler
+- post_adapter: Another code string (+ language) to convert the handler results to pins. Optional for transformers/macros.
+Adapter, schema_adapter must each return a dict, or raise an ServiceException if they decide that the service is not suitable based on the schema/the data.
+The handler_parameters dict is updated by the schema_adapter result dict, then updated by the adapter result
+dict, then sent to the handler. The result of the handler is passed to the post_adapter.
+Note that if a ServiceException is raised, or for
+It is possible to set in the "evaluation" dict some flag that forces service evaluation: however, this is
+should not influence the result! The local code must be correct!
+
+On top of this, network service macros can be implemented, that take slightly different parameters.
+For example: named REST service handler, taking the following parameters:
+- name: name of the REST service
+- code: transformer code to be evaluated locally if the REST service is not found
+  The REST schema_handler will
+
+Example: raw network service handler. Receives a URL + port + data. Sends data, returns the result.
+Another: raw REST service handler. Same, but HTTP REST protocol.
+Another: named network service handler. Receives not a URL but the *name* of a network service. Relies on a registry to convert this name into some kind of network call (could also be docker).
+Remember that seamless assumes that the result of a computation is constant, regardless of service. So changing a service registry will not automatically re-evaluate the computation!
+Now, the adapters also receive the "evaluation" parameter, so this can be forwarded to the handler!
+Likewise, the adapters may combine this with its own "evaluation" analysis, based on what they receive.
+For example, you may inform the ATTRACT grid computation service that your are planning to send 1 trillion
+docking energy evaluations to the ATTRACT grid. A dumb ATTRACT grid service would build the grid on one machine,
+and return some kind of session ID. This session ID is stored as cache in both the input and the result
+"evaluation".
+The session ID in the result "evaluation" can then be used to query the ATTRACT service with structures
+(to make this work, the )
+
+NOTE: context pins should be possible as well, e.g. to modify a live context
+
+The seamless collaborative protocol
+===================================
+
+Whereas network services are wrappers around transformers, the collaborative protocol is a means to share *cells*, like dynamic_html, but then bidirectionally
+The idea is that a cell is bound to a unique "cell channel", so that two programs or web browsers can pub/sub to the channel
+At the core, there is a single Seamless router (Crossbar instance) at the RPBS. Websocketserver is gone: seamless looks for the router
+ when it is initialized, or launches a "pocket router".
+Every seamless kernel has its own ID, every context has its own ID, and every cell has its own ID. This triple of IDs forms the channel ID.
+Seamless IDs are read from os.environ, else it is 0.
+Seamless can expose its cell (for read or read/write) by registering itself as a channel with the Seamless router.
+This opens an WAMP channels "seamless-host-{channelID}", "seamless-guest-{channelID}" and an RPC "seamless-state-{channelID}".
+The seamless instance who registered the channel becomes the *host*, other clients can become *guests*
+A guest can subscribe as follows:
+- It subscribes to the *host* channel. Messages over the host channel are marked with a number N
+- The guest invokes the state RPC, receiving back the state, and a number M, indicating the number of messages that were used to generate the state
+- The guest can now  listen to messages. If the message N is not equal to M+1, the guest has to re-request the state (so packet loss is in principle possible!)  
+- If read/write, the guest can now also publish to the *guest* channel. Only the host is subscribed to the guest channel.
+The host sends every state change (both endogenous and those coming from the guest channel) over the host channel, and marks them with a number N. Guest channel messages are not numbered.
+
+The web publisher channels
+===========================
+Seamless will include a pocket web publisher. Each publisher can be made available on the Seamless router as a pair of RPCs: one to submit a web page under a path (providing some kind of
+  authorization) and another to retrieve the page
+- Static publisher: takes an HTML template and a host channel ID. The host channel ID is substituted into the HTML. The HTML is supposed to contact the channel via WAMP. If the channel comes
+  from seamless, there will be a seamless collaborative sync protocol behind it: dynamic_html, or direct cell synchronization
+  The static publisher does not take any arguments
+- Dynamic publisher: takes an HTML template and a factory channel. The factory channel is invoked (without arguments) and returns a host channel ID.
+A web server can serve the static publisher directly. The dynamic publisher should be accessible in two ways:
+- Launcher: web page ID is in the request, no further arguments. Invokes the factory, redirects to the Retriever, with the host channel ID as parameter
+- Retriever: web page ID in the request, host channel ID as parameter. Takes the HTML template, fills in the host channel and returns the HTML.
+  As long as the host channel is open, the Retriever link will be universally accessible (no private browser connections).
