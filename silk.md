@@ -124,6 +124,7 @@ not fixed-binary (see below), a Python object is filled in.
 
 UPDATE: do not store this on the instance, compute this at runtime, possibly cached
 (same as methods)
+UPDATE2: "mixed" classes take care of this now
 
 
 ### /(note on *form*)
