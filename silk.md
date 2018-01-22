@@ -3,10 +3,9 @@
 A Silk object doesn't hold state itself. It is only a *wrapper* around:  
 - an *data instance* (data object)
 - an associated Silk schema
-- a form dict that describes the form:
+- Optionally, a form dict that describes the form:
    The data instance is plain (list/dict), binary (Numpy), or a mix of the two.
    For more details, (see *form* below)
-UPDATE: scrap the form dict
 
 A Silk object provides protected access to the instance:
 - Accessing a Silk object returns either a scalar or a Silk sub-object. This
@@ -85,6 +84,11 @@ UPDATE: for now, descriptive values are not carried but re-computed on demand
 (possibly with some kind of caching)
 
 ### form
+Forms are only used if the data is an instance of SilkHasForm.
+In that case, data.\_get_silk_form() is invoked on the data,
+ and the Silk form_validator is invoked on the form, validated against the schema
+The only known subclass of SilkHasForm is the Seamless Mixed class.
+
 "plain": instance must be stored as a list, dictionary or plain scalar
 "binary": instance is in binary form. This is a Numpy structured scalar for
 objects, an Numpy array for arrays.

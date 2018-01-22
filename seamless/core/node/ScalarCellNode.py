@@ -59,7 +59,7 @@ class ScalarCellNode(Node):
         nodeid = self._id[1]
         cell = self._manager.cells[self._cell_id]
         return {
-            "type": "ScalarCellNode",
+            "NodeClass": "ScalarCellNode",
             "cell": cell.path,
             "id": nodeid,
         }
@@ -81,3 +81,5 @@ class ScalarCellNode(Node):
             return
         manager.observe_cell(self._cell_id, self._id)
         manager.unregister(self._id)
+
+#TODO: register NodeClass with context deserializer

@@ -37,12 +37,15 @@ Conventions for serialization:
 - When created, each node registers itself with the manager, receiving a node ID
   The node may already have a node ID from serialization. In that case, the node must
   provide this ID to the manager, who will check that the node ID is unique for the context
-  When registering, the node must also indicate whether it will send
+  When registering, the node must also indicate whether it will send state/messages
 - Upstream API invokes serialization/deserialization
   Macros must keep track of the nodes that they create
   In a context, nodes are deserialized at the very last, after cells and connections
 - Each node only holds its own state. The manager holds all link serialization.
   Each node can query the manager for links using its node ID.
+- Nodes must contain an item "NodeClass" in their JSON dict, so that
+the context deserializer can find the correct class. Node classes must
+register themselves for this reason.
 
 Bidirectional links are not directly supported, but you can create two links.
 Nodes are not supposed to re-inform the manager of state updates triggered by
@@ -84,9 +87,8 @@ class Node(ABC):
     def to_json(self):
         pass
 
-    @classmethod
     @abstractmethod
-    def from_json(cls, data, context):
+    def from_json(self, data, context):
         pass
 
 Link = namedtuple(typename="Link", field_names=(

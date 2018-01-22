@@ -49,15 +49,9 @@ def scalar_conv(value):
 
 from .SilkBase import compile_function
 
-"""
 def validator_storage(validator, storage, instance, schema):
-    if "form" in storage:
-        if not validator.is_type(instance, "object") and not validator.is_type(instance, "array"):
-            return
-        # TODO: get the internal Silk form descriptor for effiency
-        if not isinstance(instance, np.ndarray):
-            yield ValidationError("Should be numpy")
-"""
+    raise NotImplementedError
+
 def validator_validators(validator, validators, instance, schema):
     if not len(validators):
         return
@@ -75,6 +69,9 @@ validator0 = type("validator", (jsonschema.Draft4Validator,), {"DEFAULT_TYPES": 
 schema_validator = jsonschema.validators.extend(validator0, {
     #"object": validator_object
     #"items": validator_items
-    #"storage": validator_storage,
     "validators": validator_validators
+})
+
+form_validator = jsonschema.validators.extend(validator0, {
+    "storage": validator_storage,
 })
