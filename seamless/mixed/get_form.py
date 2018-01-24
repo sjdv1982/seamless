@@ -32,6 +32,7 @@ def get_typedef_scalar(value):
 
 
 def visit_typedef_numpy_items(item_typedef, data):
+    #numpy items of mixed-binary storage
     identical = True
     items = item_typedef
     items2 = []
@@ -39,12 +40,13 @@ def visit_typedef_numpy_items(item_typedef, data):
         item_typedef_curr = deepcopy(item_typedef)
         _ = visit_typedef_numpy("mixed-binary", item_typedef_curr, d)
         items2.append(item_typedef_curr)
+    items = items2[0]
     for item_typedef_curr in items2[1:]:
         if item_typedef_curr != items2[0]:
             identical = False
             items = items2
             break
-    return identical, items
+    return items, identical
 
 def visit_typedef_numpy_tuple(storage0, typedef, data):
     # An Numpy tuple field of mixed-binary
@@ -69,17 +71,17 @@ def visit_typedef_numpy_struct(storage0, typedef, data):
             continue
         subdata = data[k]
         substorage0 = subtypedef["storage"]
-        substorage = visit_typedef_numpy(substorage0, typedef, subdata)
+        substorage = visit_typedef_numpy(substorage0, subtypedef, subdata)
         assert substorage in ("pure-plain", "mixed-plain", "mixed-binary"), substorage
         subtypedef["storage"] = substorage
     return storage0
 
 def visit_typedef_numpy(storage0, typedef, data):
     #visit and fill in mixed-binary typedefs
-    assert isinstance(data, ndarray), type(data)
     if storage0 is None: #typedef of a Python object inside Numpy
-        if isinstance(typedef, dict):
-            assert typedef["item"] is None
+        assert not isinstance(data, (ndarray, void)), type(data)
+        if isinstance(typedef, dict) and "items" in typedef:
+            assert typedef["items"] is None
             storage = "mixed-binary"
             if typedef["type"] in ("array", "tuple"): # Numpy array of Python objects
                 if typedef["type"] == "tuple": # Numpy multi-element field of Python objects
@@ -104,8 +106,11 @@ def visit_typedef_numpy(storage0, typedef, data):
             else:
                 raise TypeError(typedef["type"])
         else: # Python object inside a Numpy structured dtype
-            storage, typedef = get_form_python_inside_numpy(data)  #plain storage
+            storage, typedef2 = get_form_python_inside_numpy(data)  #plain storage
+            typedef.clear()
+            typedef.update(typedef2)
     elif storage0 == "mixed-binary":
+        assert isinstance(data, (ndarray, void)), type(data)
         assert isinstance(typedef, dict), type(typedef)
         if typedef["type"] == "object":
             return visit_typedef_numpy_struct(storage0, typedef, data)
@@ -116,7 +121,7 @@ def visit_typedef_numpy(storage0, typedef, data):
         else:
             raise TypeError(typedef["type"])
     else:
-        raise ValueError(storage)
+        raise ValueError(storage0)
     return storage
 
 def get_form_python_inside_numpy(data):
@@ -129,7 +134,7 @@ def get_form_python_inside_numpy(data):
     elif data is None:
         return "pure-plain", "null"
     else:
-        raise TypeError(type(data))
+        raise TypeError(type(data)) #must be list, dict, string or None
 
 def get_tform_numpy_pyobject(dt):
     if dt.ndim:
@@ -198,7 +203,7 @@ def get_tform_numpy_struct(dt):
             if cstorage == "pure-binary":
                 continue
             ctypedef = props[fieldname]
-            if isinstance(ctypedef, str):
+            if ctypedef is None or isinstance(ctypedef, str):
                 ctypedef = {"type": ctypedef}
                 props[fieldname] = ctypedef
             ctypedef["storage"] = cstorage
@@ -332,6 +337,9 @@ def get_form_list(data):
         }
     elif isinstance(data, _array_types):
         storage, items, identical = get_form_items_list_plain(data)
+        extra = {
+            "shape": (len(data),),
+        }
     elif isinstance(data, dict):
         raise TypeError
     elif isinstance(data, Scalar):
@@ -355,7 +363,8 @@ def get_form_list_plain(data):
     typedef = {
         "type": "array",
         "items": items,
-        "identical": identical
+        "identical": identical,
+        "shape": (len(data),),
     }
     return storage, typedef
 
