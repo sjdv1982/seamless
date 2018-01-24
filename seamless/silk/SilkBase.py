@@ -144,7 +144,7 @@ class AlphabeticDict(dict):
     def __str__(self):
         return json.dumps(self, sort_keys=True, indent=2)
 
-from collections import ABC, abstractmethod
+from abc import ABC, abstractmethod
 class SilkHasForm(ABC):
     @abstractmethod
     def _get_silk_form(self):

@@ -1,7 +1,7 @@
 from numpy import void
-from abc import MutableMapping
+from collections.abc import MutableMapping
 from . import MixedBase, Scalar, _array_types
-from .get_form import get_form_dict, get_form_numpy
+from .get_form import get_form_dict
 
 class MixedDict(MixedBase,  MutableMapping):
     def __init__(self, data, form = None, parent = None):

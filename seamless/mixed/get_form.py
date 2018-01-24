@@ -1,27 +1,29 @@
 """
 Paradigm:
 - get_form_XXX as long as the data is in plain storage mode
-- When we encounter a numpy array Q, we are in binary storage mode:
+- When we encounter a numpy array Q, we go into binary storage mode:
     - First determine the form based on dtype: get_tform_XXX
     - Skip Python objects inside the dtype (storage = None)
-    - Then, fill in those Python objects using the data: visit_typedef_XXX
+    - Then, visit (= fill in) those Python objects using the data: visit_typedef_XXX
     - Re-enter plain mode as soon as we encounter these Python objects: get_form_XXX
     - After each Python object, leave plain-mode and return to binary
     - After finishing the Numpy array Q, leave binary mode and return to plain
 """
 from numpy import ndarray, void
 from copy import deepcopy
-from . import Scalar, _array_types, _integer_types, _float_types, _string_types
+from . import ( Scalar,
+  _array_types, _integer_types, _float_types, _string_types, _unsigned_types
+)
 
-def get_typedef_scalar(scalar):
-    if isinstance(value, _integer_types):
+def get_typedef_scalar(value):
+    if isinstance(value, bool):
+        typedef = "boolean"
+    elif isinstance(value, _integer_types):
         typedef = "integer"
     elif isinstance(value, _float_types):
         typedef = "number"
     elif isinstance(value, _string_types):
         typedef = "string"
-    elif isinstance(value, bool):
-        typedef = "boolean"
     elif value is None:
         typedef = "null"
     else:
@@ -35,7 +37,7 @@ def visit_typedef_numpy_items(item_typedef, data):
     items2 = []
     for d in data:
         item_typedef_curr = deepcopy(item_typedef)
-        _ = visit_typedef_numpy(item_typedef_curr, d)
+        _ = visit_typedef_numpy("mixed-binary", item_typedef_curr, d)
         items2.append(item_typedef_curr)
     for item_typedef_curr in items2[1:]:
         if item_typedef_curr != items2[0]:
@@ -147,17 +149,24 @@ def get_tform_numpy_builtin(dt):
         return get_tform_numpy_pyobject(dt)
 
     storage = "pure-binary"
-    if any([dt == t for t in _integer_types]):
-        typedef = "integer"
+    if dt == bool:
+        typedef0 = "boolean"
+    elif any([dt == t for t in _integer_types]):
+        typedef0 = "integer"
     elif any([dt == t for t in _float_types]):
-        typedef = "number"
+        typedef0 = "number"
     elif any([dt == t for t in _string_types]):
-        typedef = "string"
-    elif dt == bool:
-        typedef = "boolean"
+        typedef0 = "string"
     else:
         raise TypeError(dt)
 
+    typedef = {
+        "type": typedef0,
+        "bytes": dt.itemsize,
+    }
+    if typedef0 == "integer":
+        unsigned = any([dt == t for t in _unsigned_types])
+        typedef["unsigned"] = unsigned
     if dt.ndim:
         typedef = {
             "type": "tuple",
@@ -173,12 +182,13 @@ def get_tform_numpy_struct(dt):
     if not dt.isnative:
         raise TypeError("Composite dtypes must be native")
     storages = {}
-    typedef = {"type": "object"}
+    props = {}
+    typedef = {"type": "object", "properties": props}
     for fieldname in dt.fields:
         cstorage, ctypedef = get_tform_numpy(dt[fieldname])
         storages[fieldname] = cstorage
-        typedef[fieldname] = ctypedef
-    storage_set = set(storages.keys())
+        props[fieldname] = ctypedef
+    storage_set = set(storages.values())
     if len(storage_set) == 1 and storage_set.pop() == "pure-binary":
         storage = "pure-binary"
     else:
@@ -187,11 +197,11 @@ def get_tform_numpy_struct(dt):
             cstorage = storages[fieldname]
             if cstorage == "pure-binary":
                 continue
-            ctypedef = typedef[fieldname]
+            ctypedef = props[fieldname]
             if isinstance(ctypedef, str):
                 ctypedef = {"type": ctypedef}
-                ctypedef[fieldname] = ctypedef
-            ctypedef[fieldname]["storage"] = cstorage
+                props[fieldname] = ctypedef
+            ctypedef["storage"] = cstorage
     if dt.ndim:
         typedef["storage"] = storage
         typedef = {
@@ -213,23 +223,23 @@ def get_form_dict_plain(data):
     props = typedef["properties"]
     storages = {}
     for k,v in data.items():
-        cstorage, ctypedef = get_form(data)
-        props[k] = ctype_
+        cstorage, ctypedef = get_form(v)
+        props[k] = ctypedef
         storages[k] = cstorage
-    storage_set = set(storages.keys())
+    storage_set = set(storages.values())
     if len(storage_set) == 1 and storage_set.pop() == "pure-plain":
         storage = "pure-plain"
     else:
         storage = "mixed-plain"
-        for fieldname in dt.fields:
+        for fieldname in data:
             cstorage = storages[fieldname]
             if cstorage == "pure-plain":
                 continue
             ctypedef = props[fieldname]
             if isinstance(ctypedef, str):
                 ctypedef = {"type": ctypedef}
-                ctypedef[fieldname] = ctypedef
-            props[fieldname]["storage"] = cstorage
+                props[fieldname] = ctypedef
+            ctypedef["storage"] = cstorage
     return storage, typedef
 
 def get_form_dict(data):
@@ -277,32 +287,56 @@ def get_form_items_list_plain(data):
         different = True
     else:
         different = False
-        for item_typedef in items[1:]:
-            if item_typedef != items[0]:
+        for item_typedef in items2[1:]:
+            if item_typedef != items2[0]:
                 different = True
                 break
     if different:
+        items = items2
         identical = False
         if len(storage_set) == 1 and storage_set.pop() == "pure-plain":
             storage = "pure-plain"
         else:
             storage = "mixed-plain"
+        for n in range(len(data)):
+            s = storages[n]
+            if s == "pure-plain":
+                continue
+            ctypedef = items[n]
+            if isinstance(ctypedef, str):
+                ctypedef = {"type": ctypedef}
+                items[n] = ctypedef
+            items[n]["storage"] = s
     else:
         items = items2[0]
-        storage = storages[0]
-
+        child_storage = storages[0]
+        if child_storage == "pure-plain":
+            storage = "pure-plain"
+        else:
+            storage = "mixed-plain"
+            if isinstance(items, str):
+                items = {"type": items}
+            items["storage"] = child_storage
     return storage, items, identical
 
 def get_form_list(data):
-    if isinstance(data, Scalar):
-        raise TypeError
-    elif isinstance(data, void):
-        raise TypeError
-    elif isinstance(data, ndarray):
+    extra = {}
+    if isinstance(data, ndarray):
+        dt = data.dtype
+        if not dt.isnative:
+            raise TypeError("dtypes must be native")
         storage, items, identical = get_form_items_numpy(data)
+        extra = {
+            "shape": data.shape,
+            "strides": data.strides,
+        }
     elif isinstance(data, _array_types):
         storage, items, identical = get_form_items_list_plain(data)
     elif isinstance(data, dict):
+        raise TypeError
+    elif isinstance(data, Scalar):
+        raise TypeError
+    elif isinstance(data, void):
         raise TypeError
     else:
         raise TypeError
@@ -312,10 +346,32 @@ def get_form_list(data):
         "items": items,
         "identical": identical
     }
+    typedef.update(extra)
     return storage, typedef
 
 def get_form_list_plain(data):
-    raise NotImplementedError
+    #data must be a plain list
+    storage, items, identical = get_form_items_list_plain(data)
+    typedef = {
+        "type": "array",
+        "items": items,
+        "identical": identical
+    }
+    return storage, typedef
+
 
 def get_form(data):
-    raise NotImplementedError
+    if isinstance(data, Scalar):
+        storage, typedef = "pure-plain", get_typedef_scalar(data)
+    elif isinstance(data, void):
+        dt = data.dtype
+        storage, typedef = get_tform_numpy(dt)
+        if storage in (None, "mixed-binary"):
+            storage = visit_typedef_numpy(storage, typedef, data)
+    elif isinstance(data, _array_types):
+        storage, typedef = get_form_list(data)
+    elif isinstance(data, dict):
+        storage, typedef = get_form_dict_plain(data)
+    else:
+        raise TypeError
+    return storage, typedef

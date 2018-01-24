@@ -5,6 +5,7 @@ import numpy as np
 from jsonschema.exceptions import FormatError, ValidationError
 _types = jsonschema.Draft4Validator.DEFAULT_TYPES.copy()
 _integer_types =  (int, np.int8, np.int16, np.int32, np.int64, np.uint8, np.uint16, np.uint32, np.uint64)
+_unsigned_types = (np.uint8, np.uint16, np.uint32, np.uint64)
 _float_types = (float, np.float16, np.float32, np.float64, np.float128)
 _array_types = (list, tuple, np.ndarray)
 _string_types = (str, bytes)
@@ -20,14 +21,14 @@ def infer_type(value):
         type_ = "object"
     elif isinstance(value, _array_types):
         type_ = "array"
+    elif isinstance(value, bool):
+        type_ = "boolean"
     elif isinstance(value, _integer_types):
         type_ = "integer"
     elif isinstance(value, _float_types):
         type_ = "number"
     elif isinstance(value, _string_types):
         type_ = "string"
-    elif isinstance(value, bool):
-        type_ = "boolean"
     elif value is None:
         type_ = "null"
     else:
