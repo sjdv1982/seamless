@@ -10,17 +10,44 @@ In a typedict, a child's "storage" is stored by the parent into a child typedict
    1) the child is not pure; or 2) the child is binary and the parent is plain (or vice versa)
 """
 
+import numpy as np
 from ..silk.SilkBase import SilkHasForm
 from ..silk.validation import (
   _array_types, _integer_types, _float_types, _string_types, _unsigned_types,
-  Scalar
-)  
+  _allowed_types, Scalar
+)
+
+scalars = ("boolean", "integer", "number", "string")
+
+
+def is_np_struct(data):
+    return isinstance(data, np.void) and not data.dtype.isbuiltin and len(data.dtype.fields)
 
 class MixedBase(SilkHasForm):
+    def __init__(self, _monitor, _path):
+        self._monitor = _monitor
+        self._path = _path
+    @property
+    def value(self):
+        data = self._monitor.get_data(self._path)
+        return data
+    @property
+    def form(self):
+        return self._monitor.get_form(self._path)
+    @property
+    def storage(self):
+        return self._monitor.get_storage(self._path)
+    def set(self, value):
+        self._monitor.set_path(self._path, value)
     def _get_silk_form(self):
-        return self._form
+        return self.form
 
+class MixedLeaf(MixedBase):
+    def __init__(self, _monitor, _path, data):
+        super().__init__(_monitor, _path)
+        self._data = data
+    @property
+    def value(self):
+        return self._data
 
-
-
-from .MixedDict import MixedDict
+from .MixedDict import MixedDict, mixed_dict

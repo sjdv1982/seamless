@@ -14,6 +14,8 @@ _types["integer"] = _integer_types
 _types["number"] = _integer_types + _float_types
 
 Scalar = (type(None), bool, str, bytes) + _integer_types + _float_types
+_allowed_types = Scalar + _array_types + (np.void, dict)
+
 import traceback
 
 def infer_type(value):
