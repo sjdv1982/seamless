@@ -1,21 +1,20 @@
 from numpy import ndarray, void
 from .get_form import get_form
-from .MixedDict import MixedDict
-from . import MixedLeaf, Scalar,  scalars, is_np_struct, _allowed_types
+from . import MixedScalar, Scalar,  scalars, is_np_struct, _allowed_types
 
 def get_subpath(data, form, path):
     type_ = form["type"]
     if not len(path):
         assert type_ in scalars
         result = data, form, None
-        return None, result
+        return result
     attr = path[0]
     if type_ == "object":
         assert isinstance(attr, str), attr
         subdata = data[attr]
         subform = form["properties"][attr]
         result = subdata, subform, None
-        return path[1:], result
+        return result
     elif type_ in ("array", "tuple"):
         assert isinstance(attr, int), attr
         subdata = data[attr]
@@ -24,7 +23,7 @@ def get_subpath(data, form, path):
         else:
             subform = form["items"][attr]
         result = subdata, subform, None
-        return path[1:], result
+        return result
     elif type_ in scalars:
         raise TypeError
     else:
@@ -49,16 +48,19 @@ class Monitor:
             type_ = subform["type"]
         if type_ == "object":
             if isinstance(subdata, void) and subform.get("storage") == "pure-binary":
-                return MixedLeaf(self, path, subdata) #ndarray items have an immutable type
+                return MixedNumpyStruct(self, path)
             else:
                 return MixedDict(self, path)
         elif type_ == "array":
             if isinstance(subdata, ndarray) and subform.get("storage") == "pure-binary":
-                return MixedLeaf(self, path, subdata) #ndarray has an immutable type
+                return MixedNumpyArray(self, path) #ndarray has an immutable type
             else:
-                raise NotImplementedError #TODO: MixedList
+                return MixedList(self, path)
         elif type_ in scalars:
-            return MixedLeaf(self, path, subdata) #scalars are all immutable
+            return MixedScalar(self, path) #scalars are all immutable
+
+    def _get_parent_path(self, path, child_data):
+        return self._get_path(path[:-1])
 
     def _get_path(self, path):
         if not len(path):
@@ -66,13 +68,21 @@ class Monitor:
             return result
         result = self.pathcache.get(path)
         if result is None:
-            remaining_path = path
             subdata, subform = self.data, self.form
-            while len(remaining_path):
-                new_remaining_path, result = get_subpath(subdata, subform, remaining_path)
-                self.pathcache[remaining_path] = result
-                subdata, subform, _ = result
-                remaining_path = new_remaining_path
+            start = 0
+            for start in range(len(path)-1, 0, -1):
+                cached_path = path[:start]
+                part_result = self.pathcache.get(cached_path)
+                if part_result is not None:
+                    subdata, subform, _ = part_result
+                    break
+            for n in range(start, len(path)):
+                cached_path = path[:n+1]
+                remaining_path = path[n:]
+                part_result = get_subpath(subdata, subform, remaining_path)
+                self.pathcache[cached_path] = part_result
+                subdata, subform, _ = part_result
+            result = part_result
         return result
 
     def get_path(self, path):
@@ -93,7 +103,7 @@ class Monitor:
         if len(path) == 1:
             parent_storage = self.storage
         else:
-            parent_subdata, parent_subform, _ = self._get_path(path[:-1])
+            parent_subdata, parent_subform, _ = self._get_path(path[1:])
             parent_storage = parent_subform.get("storage")
             if parent_storage is None:
                 if isinstance(parent_subdata, (void, ndarray)):
@@ -101,7 +111,9 @@ class Monitor:
                 else:
                     parent_storage = "pure-plain"
         subdata, subform, _ = self._get_path(path)
-        storage = subform.get("storage")
+        storage = None
+        if isinstance(subform, dict):
+            storage = subform.get("storage")
         if storage is None:
             if parent_storage.endswith("binary"):
                 return "pure-binary"
@@ -147,7 +159,7 @@ class Monitor:
             else:
                 raise TypeError(type_)
         else:
-            parent_subdata, parent_subform, trigger = self._get_path(path[:-1])
+            parent_subdata, parent_subform, trigger = self._get_parent_path(path, subdata)
             if isinstance(parent_subform, str):
                 type_ = parent_subform
             else:
@@ -157,12 +169,48 @@ class Monitor:
                 assert isinstance(attr, str), attr
                 parent_subdata[attr] = subdata
             elif type_ in ("array", "tuple"):
-                assert isinstance(attr, str), int
+                assert isinstance(attr, int), attr
                 parent_subdata[attr] = subdata
             elif type_ in scalars:
                 raise TypeError(type_)
             else:
                 raise TypeError(type_)
+        # Recompute the entire form
+        self.pathcache.clear()
+        self.storage, self.form = get_form(self.data)
+
+    def insert_path(self, path, subdata):
+        """
+        Inserts subdata right before the insertion point "path"
+        The insertion point must be a list item
+        Then, updates the form
+        TODO: use triggers for efficiency
+        For now, just update the data and recompute the entire form
+        """
+        if not isinstance(subdata, _allowed_types):
+            raise TypeError(type(subdata))
+        if not len(path):
+            raise TypeError
+        if not isinstance(path[-1], int):
+            raise TypeError(path)
+
+        parent_subdata, parent_subform, trigger = self._get_path(path[:-1])
+        if isinstance(parent_subform, str):
+            type_ = parent_subform
+        else:
+            type_ = parent_subform["type"]
+        item = path[-1]
+        if type_ == "object":
+            raise TypeError(type_)
+        elif type_ == "tuple":
+            raise TypeError(type_)
+        elif type_ == "array":
+            assert isinstance(item, int), item
+            parent_subdata.insert(item, subdata)
+        elif type_ in scalars:
+            raise TypeError(type_)
+        else:
+            raise TypeError(type_)
         # Recompute the entire form
         self.pathcache.clear()
         self.storage, self.form = get_form(self.data)
@@ -197,3 +245,7 @@ class Monitor:
         # Recompute the entire form
         self.pathcache.clear()
         self.storage, self.form = get_form(self.data)
+
+
+from .MixedDict import MixedDict, MixedNumpyStruct
+from .MixedList import MixedList, MixedNumpyArray

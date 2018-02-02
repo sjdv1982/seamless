@@ -42,12 +42,7 @@ class MixedBase(SilkHasForm):
     def _get_silk_form(self):
         return self.form
 
-class MixedLeaf(MixedBase):
-    def __init__(self, _monitor, _path, data):
-        super().__init__(_monitor, _path)
-        self._data = data
-    @property
-    def value(self):
-        return self._data
+class MixedScalar(MixedBase):
+    pass
 
 from .MixedDict import MixedDict, mixed_dict
