@@ -40,6 +40,7 @@ Mid-level:
   and returns a big low-level context.
 High-level:
 Everything is a Silk structure: cells, contexts, transformers, reactors, observers, macros.
+But they will be heavily-modified subclasses of Silk. (maybe less modification in the future)
 Lots of hooks in the vein "what happens when something assigns to me"
 Normally, ctx.a = 2 will create a cell, but it could create a constant too.
 "ctx.c = ctx.a + ctx.b" will normally create ctx.c as an operator_add object.
