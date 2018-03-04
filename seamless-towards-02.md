@@ -1,3 +1,87 @@
+*******************************************
+GREAT UPDATE
+*******************************************
+
+Seamless will consist of three parts:
+- A high-level Silk API
+- A mid-level execution graph format
+- A low-level direct API
+Only the mid-level will have a formal data format. The other two are informal
+(for now) APIs tied to the Python language (for now).
+The low-level is at is now, but with important simplifications:
+- The context may only ever grow. Explicit removal of cells/constructs/subcontexts
+  is not supported. Only low-level macro re-execution will replace a subcontext.
+  All low-level macros will be cached, and always generate a context.
+- No more registrars/injection (goes to the mid-level)
+- There will be cells and signals, but otherwise, no cell types whatsoever.
+  Any type checking will be via Silk schemas attached to cells. Detailed schemas
+  are more to validate transformer output, since authoritative inputs should have
+  already been validated at the high level.
+  If there is no schema, cells may contain raw Python objects (discouraged), and
+  cannot be serialized.
+- Symlinks still needed.
+- status() will go. Instead, context will have a hook registration API that can be configured to link registration
+  names to particular context children.
+Mid-level:
+- Knows about context hierarchy, data cells (with types), code cells (with language),
+  transformers (with language and execution semantics), reactors (same), code injection
+  (with language). Code injection + hierarchy replaces registrars. Data must be "injected"
+  via the normal pin mechanism.
+- Also knows about operators such as add, mult, etc.  
+- Does not know about high-level macros
+- No observers (to high-level). But a hook definition language to define correspondences,
+  between high-level and mid-level. Hooks can be informative (mid-level simply can report
+  status and value) OR may trigger the re-computation of the entire execution graph
+  (if the cell is an input of a high-level macro)
+- There will be a special library contexts of low-level macros that recognize mid-level graph constructs
+  and return low-level contexts.
+  These contexts are expected to accept connections straightforwardly, and to have hook registration configured.
+  The "big low-level macro" (only invoked by the top context) reads in a mid-level graph + such a library,
+  and returns a big low-level context.
+High-level:
+Everything is a Silk structure: cells, contexts, transformers, reactors, observers, macros.
+Lots of hooks in the vein "what happens when something assigns to me"
+Normally, ctx.a = 2 will create a cell, but it could create a constant too.
+"ctx.c = ctx.a + ctx.b" will normally create ctx.c as an operator_add object.
+This object will be stored in the data dict.
+A Silk context has a single "big high-level macro" to generate a mid-level graph.
+This is done by the top-level context (may invoke subcontexts recursively)
+It is done again and again whenever a new cell/context/... is added or removed.
+(Not when the value is changed, though, unless there is a high-level macro connected to it)
+
+Macros
+High-level macros use the high-level API and generate a high-level context.
+Low-level macros use the low-level (direct-mode) API and generate a low-level context.
+  They can be embedded in the mid-level graph (specifying Python as the language)
+Some high-level contexts can be configured as *libraries*:
+- To be also available to any macro inside any child context of their parent, if the macro asks for it
+- To be also available as low-level Silk struct, inside low-level macros
+Such contexts will replace the standard library and registrars.
+All macros have four parts:
+- execution code
+- loading code (imports)
+- library requirements (see above)
+- configuration (language, what happens when you assign to it)
+Symlinks are also very important to tie a cell to a library cell.
+
+Serialization
+Each level is serialized on its own.
+On the high-level, the topology is stored, but only the value of authoritative cells.
+Mid-level is usually not serialized at all, since generating it is fast.
+Low-level by default does not store anything, but cell values (not topology) can be cached
+either as hashes or as full values.
+Libraries requested by a macro will be included into the serialization (this can be configured to contain
+only the name + hash, to save space; requires the library to be present when the serialization is loaded)
+Symlinks defined at the interactive level cause only the symlinked item to be included.
+
+Workflow of code development
+Standard is to put the code in a context, make one or more unit tests, and to configure the context
+that only the code is copied or linked when assigned to.
+Todo: some smart tool (based on pyshell) that can launch unit tests in a kernel,
+tie a IPython instance to the kernel, and tie a editing window to the kernel for tab completion
+(eventually, with breakpoints too).
+
+*******************************************
 # Towards seamless 0.2
 
 Seamless will be divided into high-level and low-level.
