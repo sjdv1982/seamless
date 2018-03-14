@@ -1,6 +1,6 @@
 import sys
 import numpy as np
-from seamless.mixed.mixed_dict import mixed_dict
+from seamless.mixed.MixedDict import mixed_dict
 from seamless.mixed.OverlayMonitor import OverlayMonitor
 
 import json
@@ -13,5 +13,9 @@ def print(*args):
 
 data, storage, form = {}, {}, {}
 
-d = mixed_dict(data, storage, OverlayMonitor)
+inchannels = {}
+d = mixed_dict(data, storage, MonitorClass=OverlayMonitor, inchannels=inchannels)
 monitor = d._monitor
+
+d["a"] = 10
+#monitor.set_path(("a",), 10)

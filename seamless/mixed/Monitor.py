@@ -63,6 +63,7 @@ class Monitor:
         return self._get_path(path[:-1])
 
     def _get_path(self, path):
+        print("_get_path?", path, self.form)
         if not len(path):
             result = self.data, self.form, None
             return result
