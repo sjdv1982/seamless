@@ -1,13 +1,9 @@
 #stub, TODO: refactor, document
 import weakref
 from weakref import WeakValueDictionary, WeakKeyDictionary
-from . import Managed
+from . import SeamlessBase
 
-class WorkerLike:
-    """Base class for workers and contexts"""
-    _like_worker = True
-
-class Worker(Managed, WorkerLike):
+class Worker(SeamlessBase):
     """Base class for all workers."""
     _pins = None
 

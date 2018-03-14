@@ -31,31 +31,6 @@ class SeamlessBase:
             assert self.path == required_path, (self.path, required_path)
         return required_path
 
-    def _find_successor(self):
-        path = list(self.path)
-        p = self
-        subpath = []
-        ok = False
-        while p._destroyed:
-            if not len(path):
-                break
-            p = p._last_context
-            if p is None:
-                break
-            subpath = [path.pop(-1)] + subpath
-        if p is None:
-            return None
-        if not p._destroyed:
-            for subp in subpath:
-                try:
-                    p = getattr(p, subp)
-                    assert not p._destroyed
-                except Exception:
-                    break
-            else:
-                ok = True
-        if ok:
-            return p
 
     def _set_context(self, context, name, force_detach=False):
         from .context import Context
