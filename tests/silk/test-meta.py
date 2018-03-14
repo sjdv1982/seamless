@@ -29,6 +29,7 @@ class Coordinate(metaclass=meta):
     def a2(self, value):
         self.a = value - 1000
 
+print(Coordinate.schema)
 c = Coordinate(3)
 print(c.schema)
 print(c)
