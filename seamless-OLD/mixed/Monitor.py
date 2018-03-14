@@ -30,7 +30,7 @@ def get_subpath(data, form, path):
         raise TypeError(type_)
 
 class Monitor:
-    def __init__(self, data, storage, form):
+    def __init__(self, data, storage, form, **kwargs):
         self.data = data
         self.storage = storage
         self.form = form

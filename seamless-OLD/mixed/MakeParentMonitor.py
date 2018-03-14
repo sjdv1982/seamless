@@ -1,20 +1,21 @@
 from .Monitor import Monitor
 from . import _allowed_types, scalars
+from .get_form import get_form
 from numpy import ndarray, void
 
 def get_subpath_insert(data, form, remaining_path):
     type_ = form["type"]
-    if not len(path):
+    if not len(remaining_path):
         assert type_ in scalars
         result = data, form, None
         return False, result
-    attr = path[0]
+    attr = remaining_path[0]
     if type_ == "object":
         assert isinstance(attr, str), attr
         try:
             subdata = data[attr]
-        except AttributeError:
-            data[attr] = subdata
+        except KeyError:
+            data[attr] = {}
             return True, None
         subform = form["properties"][attr]
         result = subdata, subform, None
@@ -30,7 +31,7 @@ def get_subpath_insert(data, form, remaining_path):
                 assert attr >= 0, attr
                 for n in range(len(data), attr):
                     data.append(None)
-                data.append(subdata)
+                data.append([])
                 return True, None
         if form["identical"]:
             subform = form["items"]

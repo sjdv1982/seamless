@@ -42,17 +42,17 @@ class OverlayMonitor(MakeParentMonitor):
             else:
                 if cpath[:l0] == path:
                     breaking = True
-        if breaking:
-            warn("Disconnecting inchannel %s" % path)
-            self.inchannels.pop(cpath)
+            if breaking:
+                warn("Disconnecting inchannel %s" % path)
+                self.inchannels.pop(cpath)
         self.inchannels[path] = False
 
     def receive_inchannel_value(self, path, value):
         assert path in self.inchannels, path
-        super().set_path(self, path, value)
+        super().set_path(path, value)
         self.inchannels[path] = True
 
-    def _check_policy(self, path, p, deletion):
+    def _check_policy(self, path, p, authoritative, deletion):
         if deletion:
             if p in (1,2,3,4):
                 warn("inchannel %s exists, disconnected" % path)
@@ -66,10 +66,14 @@ class OverlayMonitor(MakeParentMonitor):
         if p == 1:
             raise Exception(path) #inchannel exists
         elif p == 2:
-            warn("inchannel %s exists, update rejected" % path)
-            return False
+            if authoritative:
+                warn("inchannel %s exists, update rejected" % path)
+                return False
+            else:
+                return True
         elif p == 3:
-            warn("inchannel %s exists, value overwritten" % path)
+            if authoritative:
+                warn("inchannel %s exists, value overwritten" % path)
             return True
         elif p == 4:
             warn("inchannel %s exists, disconnected" % path)
@@ -83,7 +87,8 @@ class OverlayMonitor(MakeParentMonitor):
 
     def _check_inchannels(self, path, *, deletion):
         if path in self.inchannels:
-            return self._check_policy(path, self.policy_path, deletion)
+            authoritative = self.inchannels[path]
+            return self._check_policy(path, self.policy_path, authoritative, deletion)
         else:
             l0 = len(path)
             p = self.policy_parent_child_path
@@ -97,7 +102,8 @@ class OverlayMonitor(MakeParentMonitor):
                     if cpath[:l0] == path:
                         exists = True
                 if exists:
-                    result = self._check_policy(path, p, deletion)
+                    authoritative = self.inchannels[cpath]
+                    result = self._check_policy(path, p, authoritative, deletion)
                     if not result:
                         return False
             return True
