@@ -2,6 +2,7 @@ print("STUB: macro.py")
 
 from contextlib import contextmanager
 
+_macro_mode = False
 def get_macro_mode():
     return _macro_mode
 

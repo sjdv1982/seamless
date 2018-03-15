@@ -7,13 +7,10 @@ from .manager import Manager
 #from .worker import Worker,  \
 #  InputPinBase, ExportedInputPin, OutputPinBase, ExportedOutputPin, \
 #  EditPinBase, ExportedEditPin ###
-from macro import get_macro_mode
+from .macro import get_macro_mode
 from contextlib import contextmanager as _pystdlib_contextmanager
-_active_context = None
 
-class PrintableList(list):
-    def __str__(self):
-        return str([v.format_path() for v in self])
+_active_context = None
 
 def set_active_context(ctx):
     global _active_context
@@ -31,24 +28,6 @@ def active_context_as(ctx):
         yield
     finally:
         set_active_context(previous_context)
-
-class Wrapper:
-    def __init__(self, wrapped):
-        self._wrapped = wrapped
-    def __getattr__(self, attr):
-        if attr not in self._wrapped:
-            raise AttributeError(attr)
-        return self._wrapped[attr]
-    def __getitem__(self, attr):
-        return self.__getattr__(attr)
-    def __iter__(self):
-        return iter(self._wrapped.keys())
-    def __dir__(self):
-        return self._wrapped.keys()
-    def __str__(self):
-        return str(sorted(list(self._wrapped.keys())))
-    def _repr_pretty_(self, p, cycle):
-        p.text(str(self))
 
 class Context(SeamlessBase):
     """Context class. Organizes your cells and workers hierarchically.
@@ -320,8 +299,9 @@ active_context: bool (default = True)
     @property
     def unstable_workers(self):
         """All unstable workers (not in equilibrium)"""
+        from . import SeamlessBaseList
         result = list(self._manager.unstable_workers)
-        return PrintableList(sorted(result, key=lambda p:p.format_path()))
+        return SeamlessBaseList(sorted(result, key=lambda p:p.format_path()))
 
     def status(self):
         """The computation status of the context

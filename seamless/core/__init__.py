@@ -31,7 +31,6 @@ class SeamlessBase:
             assert self.path == required_path, (self.path, required_path)
         return required_path
 
-
     def _set_context(self, context, name, force_detach=False):
         from .context import Context
         assert isinstance(context, Context)
@@ -52,7 +51,6 @@ class SeamlessBase:
     @property
     def context(self):
         return self._context
-
 
     def _macro_control(self):
         if self._macro_object is not None:
@@ -82,8 +80,13 @@ class SeamlessBase:
     def macro(self):
         """Returns the macro object associated with this construct"""
         return self._macro_object
+
     def _set_macro_object(self, macro_object):
         self._macro_object = macro_object
+
+class SeamlessBaseList(list):
+    def __str__(self):
+        return str([v.format_path() for v in self])
 
 #from .cell import Cell ###
 #from .worker import Worker ###
