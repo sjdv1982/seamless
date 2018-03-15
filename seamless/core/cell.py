@@ -13,10 +13,12 @@ submodes = {
 from . import SeamlessBase
 from .macro import get_macro_mode
 from copy import deepcopy
+import hashlib
 
 class CellBase(SeamlessBase):
     _exception = None
     _val = None
+    _last_checksum = None
     def __init__(self, naming_pattern):
         assert get_macro_mode()
         super().__init__()
@@ -31,7 +33,7 @@ class CellBase(SeamlessBase):
 
     @property.setter
     def _value(self, value):
-        """Should only ever be set by the manager, since it bypasses validation, status flags, etc."""
+        """Should only ever be set by the manager, since it bypasses validation, last checksum, status flags, etc."""
         self._value = value
 
     @property
@@ -66,8 +68,10 @@ class CellBase(SeamlessBase):
         assert submode is None, submode
         if value is None:
             self._val = None
+            self._last_checksum = None
             self._status = self.StatusFlags.UNDEFINED
         self._validate(value)
+        self._last_checksum = None
         self._deserialize(value, mode, submode)
 
     @property
@@ -94,6 +98,16 @@ class CellBase(SeamlessBase):
     def _deserialize(self, value, mode, submode=None):
         raise NotImplementedError
 
+    def _checksum(self, value):
+        raise NotImplementedError
+
+    def checksum(self):
+        assert self.status() == "OK"
+        if self._last_checksum is not None:
+            return self._last_checksum
+        result = self._checksum(self._val)
+        self._last_checksum = result
+        return result
 
 class Cell(CellBase):
     """Default class for cells.
@@ -110,6 +124,10 @@ Use ``Cell.value`` to get its value.
 
 Use ``Cell.status()`` to get its status.
 """
+
+    def _checksum(self, value):
+        return hashlib.md5(str(value).encode("utf-8")).hexdigest()
+
     def _validate(self, value):
         pass
 
@@ -125,6 +143,9 @@ Use ``Cell.status()`` to get its status.
 class PythonCell(Cell):
     """A cell containing Python code.
     """
+    def _checksum(self, value):
+        raise NotImplementedError
+
     def _validate(self, value):
         raise NotImplementedError
 
@@ -137,6 +158,9 @@ class PythonCell(Cell):
 
 class JsonCell(Cell):
     """A cell in JSON format (monolithic)"""
+
+    def _checksum(self, value):
+        raise NotImplementedError
 
     def _validate(self, value):
         raise NotImplementedError
@@ -152,6 +176,9 @@ class CsonCell(Cell):
     When necessary, the contents of a CSON cell are automatically converted
     to JSON.
     """
+
+    def _checksum(self, value):
+        raise NotImplementedError
 
     def _validate(self, value):
         raise NotImplementedError
@@ -171,8 +198,12 @@ class Signal(Cell):
          Downstream workers are notified and activated before any other
          non-signal notification.
     """
+
+    def _checksum(self, value):
+        return None
+
     def _validate(self, value):
-        raise NotImplementedError
+        pass
 
     def _serialize(self, mode, submode=None):
         raise NotImplementedError
@@ -182,16 +213,5 @@ class Signal(Cell):
 
 def cell(*args, **kwargs):
     return Cell(*args, **kwargs)
-    assert mode in modes, mode
-    if submode is not None:
-        assert submode in submodes[mode], (mode, submode)
-    if mode == "signal":
-        if naming_pattern is None:
-            naming_pattern = "signal"
-        return Signal(naming_pattern)
-    if submode is None:
-        if naming_pattern is None:
-            naming_pattern = "cell"
-        return Cell(naming_pattern, mode)
-    else:
-        raise NotImplementedError(mode, submode)
+
+print("TODO cell: struct cell, silk cell!")
