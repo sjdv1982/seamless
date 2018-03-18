@@ -2,32 +2,7 @@
 from weakref import WeakValueDictionary
 from collections import OrderedDict
 from . import SeamlessBase
-from .manager import Manager
-#from .cell import Cell ###
-#from .worker import Worker,  \
-#  InputPinBase, ExportedInputPin, OutputPinBase, ExportedOutputPin, \
-#  EditPinBase, ExportedEditPin ###
 from .macro import get_macro_mode
-from contextlib import contextmanager as _pystdlib_contextmanager
-
-_active_context = None
-
-def set_active_context(ctx):
-    global _active_context
-    assert ctx is None or isinstance(ctx, Context)
-    _active_context = ctx
-
-def get_active_context():
-    return _active_context
-
-@_pystdlib_contextmanager
-def active_context_as(ctx):
-    previous_context = get_active_context()
-    try:
-        set_active_context(ctx)
-        yield
-    finally:
-        set_active_context(previous_context)
 
 class Context(SeamlessBase):
     """Context class. Organizes your cells and workers hierarchically.
@@ -38,12 +13,14 @@ class Context(SeamlessBase):
     _manager = None
     _pins = []
     _auto = None
+    _toplevel = False
+    _naming_pattern = "ctx"
 
     def __init__(
-        self,
+        self, *,
         name=None,
         context=None,
-        active_context=True,
+        toplevel=False,
     ):
         """Construct a new context.
 
@@ -55,27 +32,31 @@ and other contexts.
 
 Parameters
 ----------
+name: str
+    name of the context within the parent context
 context : context or None
     parent context
-active_context: bool (default = True)
-    Sets the newly constructed context as the active context (default is True).
-    New seamless objects are automatically parented to the active context.
-
 """
         assert get_macro_mode()
         super().__init__()
-        n = name
-        if context is not None and context._name is not None:
-            n = context._name + "." + n.format_path()
-        self._name = name
+        if context is not None:
+            self._set_context(context, name)
+        if toplevel:
+            assert context is None
+            self._toplevel = True
+            self._manager = Manager(self)
+
         self._pins = {}
         self._children = {}
         self._auto = set()
-        self._manager = Manager()
-        if active_context:
-            set_active_context(self)
+
+    def _set_context(self, context, name):
+        super()._set_context(context, name)
+        self._name = context._name + (name,)
+        self._manager = Manager(self)
 
     def _get_manager(self):
+        assert self._toplevel or self._context is not None  #context must have a parent, or be toplevel
         return self._manager
 
     def __str__(self):
@@ -85,47 +66,49 @@ active_context: bool (default = True)
         ret = "Seamless context: " + p
         return ret
 
-    def _add_child(self, childname, child, force_detach=False):
+    def _add_child(self, childname, child):
         from .macro import get_macro_mode
-        child._set_context(self, childname, force_detach)
+        assert get_macro_mode()
+        assert isinstance(child, (Context, Worker, Cell))
+        child._set_context(self, childname)
         self._children[childname] = child
+        self._manager.notify_attach_child(childname, child)
 
-    def _add_new_cell(self, cell, naming_pattern="cell"):
-        from .cell import Cell
+    def _add_new_cell(self, cell):
         assert isinstance(cell, Cell)
         assert cell._context is None
         count = 0
         while 1:
             count += 1
-            cell_name = naming_pattern + str(count)
+            cell_name = cell._naming_pattern + str(count)
             if not self._hasattr(cell_name):
                 break
         self._auto.add(cell_name)
         self._add_child(cell_name, cell)
         return cell_name
 
-    def _add_new_worker(self, worker, naming_pattern="worker"):
+    def _add_new_worker(self, worker):
         from .worker import Worker
         assert isinstance(worker, Worker)
         assert worker._context is None
         count = 0
         while 1:
             count += 1
-            worker_name = naming_pattern + str(count)
+            worker_name = worker._naming_pattern + str(count)
             if not self._hasattr(worker_name):
                 break
         self._auto.add(worker_name)
         self._add_child(worker_name, worker)
         return worker_name
 
-    def _new_subcontext(self, naming_pattern="ctx"):
+    def _add_new_subcontext(self, ctx):
+        assert isinstance(ctx, Context)
         count = 0
         while 1:
             count += 1
-            context_name = naming_pattern + str(count)
+            context_name = ctx._naming_pattern + str(count)
             if not self._hasattr(context_name):
                 break
-        ctx = context(context=self, active_context=False)
         self._auto.add(context_name)
         self._add_child(context_name, ctx)
         return ctx
@@ -136,7 +119,7 @@ active_context: bool (default = True)
             return object.__setattr__(self, attr, value)
         if attr in self._pins:
             raise AttributeError(
-             "Cannot assign to pin ''%s'" % attr)
+             "Cannot assign to pin '%s'" % attr)
         from .worker import ExportedInputPin, ExportedOutputPin, \
           ExportedEditPin
         pintypes = (ExportedInputPin, ExportedOutputPin, ExportedEditPin)
@@ -146,10 +129,10 @@ active_context: bool (default = True)
             self._pins[attr]._set_context(self, attr)
             return
 
-        assert isinstance(value, SeamlessBase), type(value)
         if attr in self._children and self._children[attr] is not value:
-            self._children[attr].destroy()
-        self._add_child(attr, value, force_detach=True)
+            raise AttributeError(
+             "Cannot assign to child '%s'" % attr)
+        self._add_child(attr, value)
 
     def __getattr__(self, attr):
         if attr in self._pins:
@@ -264,7 +247,11 @@ active_context: bool (default = True)
          "timeout" seconds
         Report the workers that are not stable every "report" seconds
         """
-        raise NotImplementedError ###
+        print("WARNING: equilibrate not yet implemented")
+        import time
+        time.sleep(0.2)
+        return
+        ###
         from .. import run_work
         import time
         start_time = time.time()
@@ -323,3 +310,11 @@ def context(**kwargs):
     ctx = Context(**kwargs)
     return ctx
 context.__doc__ = Context.__init__.__doc__
+
+print("context: TODO symlinks (can be cells/workers/contexts outside this context)")
+
+from .cell import Cell
+from .worker import Worker,  \
+  InputPinBase, ExportedInputPin, OutputPinBase, ExportedOutputPin, \
+  EditPinBase, ExportedEditPin
+from .manager import Manager

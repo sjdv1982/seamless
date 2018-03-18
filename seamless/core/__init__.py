@@ -31,26 +31,18 @@ class SeamlessBase:
             assert self.path == required_path, (self.path, required_path)
         return required_path
 
-    def _set_context(self, context, name, force_detach=False):
+    def _set_context(self, context, name):
         from .context import Context
         assert isinstance(context, Context)
-        if self._context is not None:
-            assert self.name is not None
-            if context is not self._context or force_detach:
-                childname = self.name
-                assert self._context._children[childname] is self
-                self._context._children.pop(childname)
-                if childname in self._context._auto:
-                    self._context._auto.remove(childname)
-        if context is not None:
-            self._last_context = context
+        assert self._context is None
+        self._last_context = context
         self._context = context
         self.name = name
         return self
 
-    @property
-    def context(self):
-        return self._context
+    def _get_manager(self):
+        assert self._context is not None #worker/cell must have a context
+        return self._context._get_manager()
 
     def _macro_control(self):
         if self._macro_object is not None:
@@ -88,6 +80,7 @@ class SeamlessBaseList(list):
     def __str__(self):
         return str([v.format_path() for v in self])
 
-#from .cell import Cell ###
-#from .worker import Worker ###
-from .context import Context, context ###
+from .cell import Cell, cell, pytransformercell
+from .context import Context, context
+from .worker import Worker
+from .transformer import Transformer, transformer

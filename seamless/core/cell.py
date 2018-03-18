@@ -7,7 +7,7 @@ At the mid-level, the modes would be annotations/hints (i.e. not core),
 modes = ["copy", "ref", "signal"]
 submodes = {
     "copy": ["json", "cson", "silk"],
-    "ref": ["pythoncode"]
+    "ref": ["pythoncode", "json", "silk"]
 }
 
 from . import SeamlessBase
@@ -15,23 +15,36 @@ from .macro import get_macro_mode
 from copy import deepcopy
 import hashlib
 
+from ast import PyCF_ONLY_AST, FunctionDef
+from .utils import find_return_in_scope
+from .cached_compile import cached_compile
+
+transformer_patch = """
+import inspect
+def {0}():
+    global __transformer_frame__
+    __transformer_frame__ = inspect.currentframe()
+"""
+
 class CellBase(SeamlessBase):
     _exception = None
     _val = None
     _last_checksum = None
-    def __init__(self, naming_pattern):
+    _naming_pattern = "cell"
+    _prelim_val = None
+    def __init__(self):
         assert get_macro_mode()
         super().__init__()
-        ctx = get_active_context()
-        if ctx is None:
-            raise AssertionError("Cells can only be defined when there is an active context")
-        ctx._add_new_cell(self, naming_pattern)
+
+    def status(self):
+        """The cell's current status."""
+        return self._status.name
 
     @property
     def _value(self):
         return self._val
 
-    @property.setter
+    @_value.setter
     def _value(self, value):
         """Should only ever be set by the manager, since it bypasses validation, last checksum, status flags, etc."""
         self._value = value
@@ -50,22 +63,25 @@ class CellBase(SeamlessBase):
         This triggers all workers that are connected to the cell"""
         manager = self._get_manager()
         manager.touch_cell(self)
+        return self
 
     def set(self, value):
         """Update cell data from Python code in the main thread."""
-        manager = self._get_manager()
-        manager.set_cell(self, value)
+        if self._context is None:
+            self._prelim_val = value
+        else:
+            manager = self._get_manager()
+            manager.set_cell(self, value)
+        return self
 
     def serialize(self, mode, submode=None):
         self._check_mode(mode, submode)
-        assert submode is None, submode
         assert self.status() == "OK", self.status()
         return self._serialize(mode, submode)
 
     def deserialize(self, value, mode, submode=None):
         """Should normally be invoked by the manager, since it does not notify the manager"""
         self._check_mode(mode, submode)
-        assert submode is None, submode
         if value is None:
             self._val = None
             self._last_checksum = None
@@ -73,6 +89,8 @@ class CellBase(SeamlessBase):
         self._validate(value)
         self._last_checksum = None
         self._deserialize(value, mode, submode)
+        self._status = self.StatusFlags.OK
+        return self
 
     @property
     def exception(self):
@@ -83,6 +101,7 @@ class CellBase(SeamlessBase):
         return self._exception
 
     def _set_exception(self, exception):
+        """Should normally be invoked by the manager, since it does not notify the manager"""
         if exception is not None:
             self._status = self.StatusFlags.ERROR
             tb, exc, value = exception #to validate
@@ -109,6 +128,15 @@ class CellBase(SeamlessBase):
         self._last_checksum = result
         return result
 
+    def connect(self, target):
+        """connects to a target cell"""
+        assert get_macro_mode() #or connection overlay mode, TODO
+        manager = self._get_manager()
+        manager.connect_cell(self, target)
+
+    def as_text(self):
+        raise NotImplementedError
+
 class Cell(CellBase):
     """Default class for cells.
 
@@ -124,6 +152,8 @@ Use ``Cell.value`` to get its value.
 
 Use ``Cell.status()`` to get its status.
 """
+    def __init__(self):
+        super().__init__()
 
     def _checksum(self, value):
         return hashlib.md5(str(value).encode("utf-8")).hexdigest()
@@ -140,24 +170,49 @@ Use ``Cell.status()`` to get its status.
     def _deserialize(self, value, mode, submode=None):
         self._val = value
 
-class PythonCell(Cell):
-    """A cell containing Python code.
-    """
-    def _checksum(self, value):
-        raise NotImplementedError
+    def as_text(self):
+        if self._val is None:
+            return None
+        try:
+            return str(self._val)
+        except:
+            return "<Cannot be rendered as text>"
+
+class PyTransformerCell(Cell):
+    """Python code object used for transformers (accepts one argument)"""
+    _naming_pattern = "pythoncell"
 
     def _validate(self, value):
-        raise NotImplementedError
+        self.ast = cached_compile(value, "transformer",
+                                  "exec", PyCF_ONLY_AST)
+        is_function = (len(self.ast.body) == 1 and
+                       isinstance(self.ast.body[0], FunctionDef))
+
+        if is_function:
+            self.code = cached_compile(value, "transformer",
+                                       "exec")
+            self.func_name = self.ast.body[0].name
+        else:
+            self.func_name = "transform"
+            try:
+                return_node = find_return_in_scope(self.ast)
+            except ValueError:
+                raise SyntaxError("Block must contain return statement(s)")
+
+            patched_src = transformer_patch.format(self.func_name) + \
+              "    " + value.replace("\n", "\n    ").rstrip()
+            self.code = cached_compile(patched_src,
+                                       "transformer", "exec")
 
     def _serialize(self, mode, submode=None):
-        raise NotImplementedError
+        assert mode == "ref" and submode == "pythoncode"
+        return self
 
-    def _deserialize(self, value, mode, submode=None):
-        raise NotImplementedError
 
 
 class JsonCell(Cell):
     """A cell in JSON format (monolithic)"""
+    #also provides copy+silk and ref+silk transport, but with an empty schema, and text form
 
     def _checksum(self, value):
         raise NotImplementedError
@@ -169,6 +224,9 @@ class JsonCell(Cell):
         raise NotImplementedError
 
     def _deserialize(self, value, mode, submode=None):
+        raise NotImplementedError
+
+    def as_text(self):
         raise NotImplementedError
 
 class CsonCell(Cell):
@@ -198,6 +256,7 @@ class Signal(Cell):
          Downstream workers are notified and activated before any other
          non-signal notification.
     """
+    _naming_pattern = "signal"
 
     def _checksum(self, value):
         return None
@@ -214,4 +273,14 @@ class Signal(Cell):
 def cell(*args, **kwargs):
     return Cell(*args, **kwargs)
 
-print("TODO cell: struct cell, silk cell!")
+def pytransformercell(*args, **kwargs):
+    return PyTransformerCell(*args, **kwargs)
+
+print("TODO cell: pythoncell")  #generic code block...
+print("TODO cell: JSON cell")
+print("TODO cell: CSON cell")
+print("TODO cell: silk construct") #(silk construct = schema + form + cell, providing support for copy+silk and ref+silk transport)
+# silk construct can be applied to JSON cells or other cells
+# silk construct to be implemented with .mixed.overlay;  inchannels are maintained by the manager. This is fully distinct from the high-level data structures!!
+# silk construct allows subconnections, but not dynamically: schema must have supplied at construction time!
+#...and TODO: cache cell, evaluation cell, event stream

@@ -1,6 +1,20 @@
 *******************************************
-GREAT UPDATE
+GREAT REFACTOR
 *******************************************
+
+###
+NOTES:
+- Only authoritative cells should be changed from code at runtime.
+  Anything else gives a warning, and another warning when restored from a worker.
+- Editpins do not lend authority! A cell can have multiple editpins, and an outputpin
+  A cell that receives a value from an editpin is as if it comes from code.
+- Connection layers: depend on one or multiple contexts (and other inputs) and a code cell.
+  Code cell is executed as if a macro, but can only add connections.
+  Whenever one connection layer of a context becomes dirty, all of them become dirty. Other input contexts also become dirty in their connection layers.
+- Renaming is very hard to cache. So the low-level macro cache function can receive (from the high level) a renaming key.
+  This renaming key changes the current (sub-)context against which the renamed context is evaluated.
+  Normally, every renaming triggers a mid-level-to-low-level translation, so there should be only renaming key.
+###
 
 Seamless will consist of three parts:
 - A high-level Silk API
@@ -13,7 +27,7 @@ The low-level is at is now, but with important simplifications:
   is not supported. Only low-level macro re-execution will replace a subcontext.
   All low-level macros will be cached, and always generate a context.
 - No more registrars/injection (goes to the mid-level)
-- There will be cells and signals, but otherwise, no cell types whatsoever.
+- There will be cells and signals, but otherwise, no cell types whatsoever. UPDATE: cells will differ in the supported transport protocols
   Any type checking will be via Silk schemas attached to cells. Detailed schemas
   are more to validate transformer output, since authoritative inputs should have
   already been validated at the high level.
@@ -21,7 +35,10 @@ The low-level is at is now, but with important simplifications:
   cannot be serialized.
 - Symlinks still needed.
 - status() will go. Instead, context will have a hook registration API that can be configured to link registration
-  names to particular context children.
+  names to particular context children. UPDATE: it remains here for now, something to do for 0.3 or so
+- Essentially zero runtime support. Small API is essentially for construction time (inside macros). .checksum() stays because its implementation is cell-dependent.
+  Beyond that, cells are to be manipulated via managers.
+- Managers are more decentralized: one manager per context.
 Mid-level:
 - Knows about context hierarchy, data cells (with types), code cells (with language),
   transformers (with language and execution semantics), reactors (same), code injection
@@ -83,6 +100,42 @@ tie a IPython instance to the kernel, and tie a editing window to the kernel for
 (eventually, with breakpoints too).
 
 *******************************************
+
+Low-level macro caching
+=======================
+When a low-level macro is re-evaluated, it would be a terrible waste of computation to just build and re-execute everything.
+Therefore, low-level macro caching will re-use the existing macro result as much as possible.
+This builds upon a similar mechanism in seamless 0.1.
+- The first thing to do is to put all managers in a halting state. This freezes all worker updates, so copying (substitution) is safe. Sub-macros still get executed.
+- For the existing context, a graph is built. The graph of a context consists of a *dependency dict* of input/edit pins,
+  the graphs of its children, and the connections. The graph of a worker or macro consists of just the dependency dict (and a type string).
+  A dependency of an authoritative cell is the md5sum of its value.
+  A dependency of a non-authoritative cell is the dependency graph of the worker that generated it.
+  Cells may have only one input, this is strictly enforced.
+- Then, the macro is (re-)executed as normal, but again, with all managers in a halting state. For the generated context, a graph is built. Each cell and worker
+  in the generated context is checked against the current context, and substituted if possible. (clean = substitution, dirty = no substitution).
+  substitution rules are as follows:
+  - Workers and cells with different dependency dicts (compared to the cache) are dirty
+  - Authoritative cells with the same md5sum are clean
+  - Workers and cells where all dependencies are clean, are clean
+  - Workers and cells that are part of any kind of cycle are dirty
+  - Cache cells and evaluation cells may be dirty, yet the workers that depend on them are clean (except workers not in equilibrium, see below, and whatever depends on them)
+  - Otherwise, workers and cells with any dirty dependency, are dirty
+- A special rule applies to workers that are not in equilibrium.
+    (This includes workers that depend on non-empty event streams)
+    They must be "hyper-clean": evaluation cells and cache cells are now also taken into account
+    If they are hyper-clean, their kernel is substituted with the kernel from the current context (which is performing the computation)
+    Else, they are dirty.
+- Reactors that are clean receive a special mark, because whenever they receive an update, the "start" code must be executed, not the "update" code.
+- Dirty workers are marked with their last previous output and the hashes of their last previous inputs. This gives still a chance for a caching hit if the hashes match.
+  These marks persist for the next low-level caching
+  Otherwise, the marks are deleted whenever all inputs have been defined.
+
+NOTE: The only thing you can't have, with this kind of caching, is constructing a worker, then constructing a sub-macro that depends on the worker's output,
+ and expect elements of that sub-macro to be cached also. Sub-macros will execute immediately when they have their inputs, but all workers will be halted.
+ You may call equilibrate() to (temporarily) lift the halting, this may solve the issue.  (TODO: fine-grained .equilibrate())
+
+******************************************
 # Towards seamless 0.2
 
 Seamless will be divided into high-level and low-level.
@@ -421,21 +474,34 @@ The most obvious parameters are "synchronous"/"asynchronous", "process/thread", 
 state of Numpy arrays (binary data) and of plain-form data.
 Less obvious ones: number of processors, force local (non-service) evaluation, force service evaluation
 There will be a global fallback "evaluation" dict as well.
+# UPDATE:
+Don't follow exactly this scheme. Pins will now have simple evaluation parameters in their arguments.
+Low-level macro caching will know that they don't matter.
+In addition, a new cell type "evaluation cell" will be treated likewise.
+This is just for the purpose of dependency tracking, though, not cache substitition (see above).
+Evaluation cells may contain more complex evaluation parameters.
+Their semantic meaning is at the high level, no low-level support or core mid-level support.
 
+Runtime caching
+===============
 New cell type: cache cell.
-All (low-level) workers (transformers/reactors/macros) may take (up to) one pin of type "cache".
+All (low-level) workers (transformers/reactors/macros) may take (up to) one pin of type "cache" as inputpin (not editpin).
 If they take such a pin, they may raise a CacheError. This will clear the cache, and put the worker
 in "CacheError" state. CacheErrors are meant to detect *stale* caches: workers are forbidden to raise CacheError if the cache is empty.
 Dirty cache cells do not trigger re-evaluation of downstream workers, unless those are
 in "CacheError" state.
 Special transformers are "caching transformers", they have a "cache" cell as output.
 Caching transformers are triggered when their input changes *or* their cache output is cleared.
+Caching transformers alone can have multiple cache inputs, and have an API to clear them individually.
 Cache clearing counts as a signal in seamless, which means that the subsequent triggering of the caching transformers has the highest evaluation priority.
 Workers in "CacheError" state are re-evaluated whenever their cache input changes.
 If the cache input stays cleared, and the context is in equilibrium, they are nevertheless evaluated with
 empty cache (and the CacheError state is removed).
 
-In addition, seamless will have the core concept of *network services*.
+Network services (high level)
+=============================
+UPDATE: slightly outdated. Will be mostly implemented as high-level macros.
+Seamless will have the core concept of *network services*.
 Seamless has a universal network service handler: it receives a protocol (REST, websocket, etc.),
 a URI, a port, and JSON data. Data is sent, the result is returned.
 Registering a network service takes the following parameters:
@@ -474,8 +540,8 @@ The session ID in the result "evaluation" can then be used to query the ATTRACT 
 
 NOTE: context pins should be possible as well, e.g. to modify a live context
 
-The seamless collaborative protocol
-===================================
+The seamless collaborative protocol (high level)
+================================================
 
 Whereas network services are wrappers around transformers, the collaborative protocol is a means to share *cells*, like dynamic_html, but then bidirectionally
 The idea is that a cell is bound to a unique "cell channel", so that two programs or web browsers can pub/sub to the channel

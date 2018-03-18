@@ -7,7 +7,7 @@ from .cell import modes as cell_modes, submodes as cell_submodes
 Evaluation modes for workers
 They are the same as at mid-level
 More fancy stuff (such as services and seamless-to-seamless communication
- over the network) has to be organized at the high level 
+ over the network) has to be organized at the high level
 """
 mode = ["sync", "async"]
 submode = {
@@ -18,15 +18,12 @@ submode = {
 class Worker(SeamlessBase):
     """Base class for all workers."""
     _pins = None
+    _naming_pattern = "worker"
 
     def __init__(self):
         assert get_macro_mode()
         super().__init__()
         self._pending_updates_value = 0
-        ctx = get_active_context()
-        if ctx is None:
-            raise AssertionError("Workers can only be defined when there is an active context")
-        name = ctx._add_new_worker(self)
 
     @property
     def _pending_updates(self):
@@ -59,11 +56,14 @@ class Worker(SeamlessBase):
 
 
 class PinBase(SeamlessBase):
+    submode = None
     def __init__(self, worker, name, mode, submode=None):
         self.worker_ref = weakref.ref(worker)
         super().__init__()
         self.name = name
         self.mode = mode
+        if submode is not None:
+            self.submode = submode
 
     @property
     def path(self):
@@ -86,14 +86,14 @@ class PinBase(SeamlessBase):
         return self
 
 class InputPinBase(PinBase):
-    def _set_context(self, context, childname, force_detach=False):
+    def _set_context(self, context, childname):
         pass
     def __str__(self):
         ret = "Seamless input pin: " + self.format_path()
         return ret
 
 class OutputPinBase(PinBase):
-    def _set_context(self, context, childname, force_detach=False):
+    def _set_context(self, context, childname):
         pass
     def __str__(self):
         ret = "Seamless output pin: " + self.format_path()
@@ -165,8 +165,9 @@ class OutputPin(OutputPinBase):
 
     def connect(self, target):
         """connects to a target cell"""
+        assert get_macro_mode() #or connection overlay mode, TODO
         manager = self._get_manager()
-        manager.connect(self, target)
+        manager.connect_pin(self, target)
 
     def cell(self, own=False):
         """returns or creates a cell that is connected to the pin"""
@@ -202,7 +203,7 @@ class OutputPin(OutputPinBase):
             return self.StatusFlags.UNCONNECTED.name
 
 class EditPinBase(PinBase):
-    def _set_context(self, context, childname, force_detach=False):
+    def _set_context(self, context, childname):
         pass
 
 class EditPin(EditPinBase):
@@ -238,6 +239,12 @@ class EditPin(EditPinBase):
         """Sets the value of the connected cell"""
         return self.cell().set(*args, **kwargs)
 
+    def connect(self, target):
+        """connects to a target cell"""
+        assert get_macro_mode() #or connection overlay mode, TODO
+        manager = self._get_manager()
+        manager.connect_pin(self, target)
+
     def send_update(self, value, *, preliminary=False):
         """Private"""
         self.last_value = value
@@ -264,7 +271,7 @@ class ExportedPinBase:
     def __init__(self, pin):
         self._pin = pin
 
-    def _set_context(self, context, childname, force_detach=False):
+    def _set_context(self, context, childname):
         self.name = childname
 
     def __getattr__(self, attr):

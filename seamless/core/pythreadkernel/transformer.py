@@ -1,12 +1,11 @@
 import traceback
 from . import Worker
-from ...dtypes.objects import PythonTransformerCodeObject
-from ...dtypes import data_type_to_data_object
+###from ...dtypes.objects import PythonTransformerCodeObject
+###from ...dtypes import data_type_to_data_object
 from .killable_thread import KillableThread
 from multiprocessing import Process
 import functools
 import time
-#from ...silk.classes import SilkObject ###
 
 USE_PROCESSES = False
 if USE_PROCESSES:
@@ -30,8 +29,6 @@ def execute(name, expression, namespace, result_queue):
         exc = traceback.format_exc()
         result_queue.put((1, exc))
     else:
-        if isinstance(result, SilkObject): ###
-            result = result.json()
         result_queue.put((0, result))
     finally:
         if "__transformer_frame__" in namespace:
@@ -45,10 +42,7 @@ def execute(name, expression, namespace, result_queue):
 class Transformer(Worker):
     name = "transformer"
 
-    def __init__(self, parent, input_data_types, output_name, output_queue, output_semaphore, **kwargs):
-        assert "code" not in input_data_types
-
-        self.input_data_types = input_data_types
+    def __init__(self, parent, inputs, output_name, output_queue, output_semaphore, **kwargs):
         self.output_name = output_name
         self.output_queue = output_queue
         self.output_semaphore = output_semaphore
@@ -57,9 +51,6 @@ class Transformer(Worker):
         self.expression = None
         self.last_result = None
         self.running_thread = None
-
-        inputs = {name: data_type_to_data_object(value)(name, value) for name, value in input_data_types.items()}
-        inputs["code"] = PythonTransformerCodeObject("code", ("text", "code", "python"))
 
         super(Transformer, self).__init__(parent, inputs, **kwargs)
 
@@ -86,10 +77,9 @@ class Transformer(Worker):
 
             # Update namespace of inputs
             self.namespace.clear()
-            self.namespace.update(self.registrar_namespace)
             exec(func, self.namespace)
-            for name in self.inputs.keys():
-                self.namespace[name] = self.values[name].data
+            for name in self.inputs:
+                self.namespace[name] = self.values[name]
             queue = Queue()
             args = (self.parent().format_path(), self.expression, self.namespace, queue)
             executor = Executor(target=execute,args=args, daemon=True) #TODO: name

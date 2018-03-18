@@ -23,13 +23,12 @@ Reactors must push/pull new event stream values in an explicit API:
   - blocking waits for it
   - non-blocking essentially sets to event stream input pin to "accept input" (input) or force-feeds (output)
   - By default, input is blocking while output is non-blocking
-
+Event streams can never be authoritative, they must depend on a worker.
 
 (3) Transformers are guaranteed not to send anything (be it cell values or events) on their primary output until execution has finished (which means they are in equilibrium).
 In addition, transformers are guaranteed not to accept any events while not in equilibrium.
 This is obviously not so for reactors, and it is also not so for contexts that contain reactors (or multiple transformers that are not arranged linearly) connected to context outputs.
-It is possible to declare contexts as "equilibrium contexts". In that case, they have the same guarantees as transformers have: sending cell updates or events to the outside world is
-delayed until equilibrium is reached, and so is the acceptance of new events. This allows contexts to perform atomic computations, reducing the number of glitches.
+It is possible to declare contexts as "equilibrium contexts". In that case, they have the same guarantees as transformers have: sending cell updates or events to the outside world is delayed until equilibrium is reached, and so is the acceptance of new events. This allows contexts to perform atomic computations, reducing the number of glitches.
 It is possible to declare some of the outputs (and event stream inputs) as "secondary", which means that they escape this guarantee (for example, for logging purposes).
 
 
