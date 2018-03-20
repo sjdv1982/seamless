@@ -14,6 +14,19 @@ NOTES:
 - Renaming is very hard to cache. So the low-level macro cache function can receive (from the high level) a renaming key.
   This renaming key changes the current (sub-)context against which the renamed context is evaluated.
   Normally, every renaming triggers a mid-level-to-low-level translation, so there should be only renaming key.
+- If you .set() a cell and then connect to it (making it non-authoritative), a warning is printed.
+  Use .set_default() to avoid this warning.
+- There will be a runtime API to control the low-level from the mid-level. This is just another kind of caching; the low-level could as well be regenerated.
+  The runtime API can be done automatically, if all mid-level-to-low-level core macros defines cell-to-cell correspondences. These core macros understand all
+  mid-level nodes. It will "just work" for embedded low-level macro nodes too.
+  Authoritative cells can be set directly from the mid-level. Setting non-authoritative cells will generate the usual warning. Setting cells that control (low-level)
+  macros will re-execute them (with proper caching).
+- There will be an option to sync cells to a file. This must be done in macro mode.
+  The sync can be one-way or two-way (only for authoritative cells). When a cell is updated from a  
+  A context can be synced to a directory.
+  Cell/context symlinks will become Unix file/directory symlinks.
+  When a cell/context is destroyed, the file is cleaned up. This can be prevented by a low-level-macro-caching hit.
+
 ###
 
 Seamless will consist of three parts:

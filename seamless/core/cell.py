@@ -178,9 +178,19 @@ Use ``Cell.status()`` to get its status.
         except:
             return "<Cannot be rendered as text>"
 
-class PyTransformerCell(Cell):
-    """Python code object used for transformers (accepts one argument)"""
+class PythonCell(Cell):
+    """Python code object, used for reactors and macros"""
     _naming_pattern = "pythoncell"
+
+    def _validate(self, value):
+        raise NotImplementedError #TODO
+
+    def _serialize(self, mode, submode=None):
+        assert mode == "ref" and submode == "pythoncode"
+        return self
+
+class PyTransformerCell(PythonCell):
+    """Python code object used for transformers (accepts one argument)"""
 
     def _validate(self, value):
         self.ast = cached_compile(value, "transformer",
@@ -203,12 +213,6 @@ class PyTransformerCell(Cell):
               "    " + value.replace("\n", "\n    ").rstrip()
             self.code = cached_compile(patched_src,
                                        "transformer", "exec")
-
-    def _serialize(self, mode, submode=None):
-        assert mode == "ref" and submode == "pythoncode"
-        return self
-
-
 
 class JsonCell(Cell):
     """A cell in JSON format (monolithic)"""
@@ -273,14 +277,12 @@ class Signal(Cell):
 def cell(*args, **kwargs):
     return Cell(*args, **kwargs)
 
+def pythoncell(*args, **kwargs):
+    return PythonCell(*args, **kwargs)
+
 def pytransformercell(*args, **kwargs):
     return PyTransformerCell(*args, **kwargs)
 
-print("TODO cell: pythoncell")  #generic code block...
 print("TODO cell: JSON cell")
 print("TODO cell: CSON cell")
-print("TODO cell: silk construct") #(silk construct = schema + form + cell, providing support for copy+silk and ref+silk transport)
-# silk construct can be applied to JSON cells or other cells
-# silk construct to be implemented with .mixed.overlay;  inchannels are maintained by the manager. This is fully distinct from the high-level data structures!!
-# silk construct allows subconnections, but not dynamically: schema must have supplied at construction time!
 #...and TODO: cache cell, evaluation cell, event stream

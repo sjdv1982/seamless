@@ -213,11 +213,8 @@ class Transformer(Worker):
                     #use .partial, we're not in the main thread!
                     f = partial(pin.send_update, output_value,
                         preliminary=preliminary)
-                    raise NotImplementedError #refactor add_work
-                    import seamless
-                    seamless.add_work(f)
+                    self._get_manager().workqueue.append(f)
                 else:
-                    print("OK!!", output_value)
                     self._last_value = output_value
                     self._last_value_preliminary = preliminary
 
@@ -247,7 +244,6 @@ class Transformer(Worker):
             self._pins[self._output_name].send_update(last_value,
                 preliminary=preliminary)
         self._connected_output = True
-
 
     def destroy(self):
         if self._destroyed:

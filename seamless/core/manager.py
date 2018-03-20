@@ -15,9 +15,14 @@ class Manager:
     def __init__(self, ctx):
         self.ctx = ctx
         self.sub_managers = {}
-        self.cell_to_pin = {}
+        self.cell_to_pins = {}
+        self.cell_from_pin = {}
+        self.pin_to_cells = {}
         self._ids = 0
         self.unstable = set()
+        #for now, just a single global workqueue
+        from .mainloop import workqueue
+        self.workqueue = workqueue
 
     def set_stable(self, worker, value):
         if value:
@@ -60,7 +65,7 @@ class Manager:
             target.receive_update(value)
         else:
             if isinstance(target, EditPinBase) and target.last_value is not None:
-                raise NotImplementedError ### output *to* the cell!
+                raise NotImplementedError ### also output *to* the cell!
                 """
                 self.update_from_worker(
                     self.get_cell_id(source),
@@ -70,58 +75,56 @@ class Manager:
                 """
 
         if isinstance(target, EditPinBase):
-            raise NotImplementedError ###
+            raise NotImplementedError ### also output *to* the cell!
 
+        if cell not in self.cell_to_pins:
+            self.cell_to_pins[cell] = []
+        self.cell_to_pins[cell].append(connection)
 
     def connect_pin(self, pin, target):
-        raise NotImplementedError
-        ###
-        assert isinstance(target, CellLike) and target._like_cell
-        if isinstance(target, Context):
-            assert "_input" in target._pins
-            target = target._pins["_input"]
-        if isinstance(source, ExportedOutputPin):
-            source = source.get_pin()
-        worker = source.worker_ref()
+        assert isinstance(target, Cell)
+        if isinstance(pin, ExportedOutputPin):
+            pin = pin.get_pin()
+        worker = pin.worker_ref()
         assert worker is not None #weakref may not be dead
-        target._on_connect(source, worker, incoming = True)
-        cell_id = self.get_cell_id(target)
-        if cell_id not in self.cells:
-            self.cells[cell_id] = target
+        if isinstance(pin, EditPinBase):
+            raise NotImplementedError ### also output *from* the cell!
 
-        if cell_id not in source._cell_ids:
-            source._cell_ids.append(cell_id)
-            if con_id is None:
-                self._connection_id()
-            new_item = (weakref.ref(source), con_id)
-            if target not in self.cell_to_output_pin:
-                self.cell_to_output_pin[target] = [new_item]
-            else:
-                for itemnr, item in enumerate(
-                  self.cell_to_output_pin[target]
-                ):
-                    if con_id > item[1]:
-                        self.cell_to_output_pin[target].insert(
-                            itemnr, new_item
-                        )
-                        break
-                else:
-                    self.cell_to_output_pin[target].append(new_item)
+        if target in self.cell_from_pin:
+            raise Exception #TODO: authority message
+
+        target._check_mode(pin.mode, pin.submode)
+        con_id = self.get_id()
+        connection = (con_id, target)
+        rev_connection = (con_id, pin)
+
+        if pin not in self.pin_to_cells:
+            self.pin_to_cells[pin] = []
+        self.pin_to_cells[pin].append(connection)
+        self.cell_from_pin[target] = rev_connection
 
         if isinstance(worker, Transformer):
             worker._on_connect_output()
-        elif source.last_value is not None:
+            if worker._last_value is not None:
+                raise NotImplementedError
+        elif pin.last_value is not None:
+            raise NotImplementedError #previously unconnected reactor output
+            """
             self.update_from_worker(
                 cell_id,
                 source.last_value,
                 worker,
                 preliminary=False
             )
-
+            """
 
     def set_cell(self, cell, value):
         assert isinstance(cell, Cell)
         cell.deserialize(value, "ref", None)
+        for con_id, pin in self.cell_to_pins.get(cell, []):
+            value = cell.serialize(pin.mode, pin.submode)
+            pin.receive_update(value)
+
 
     def notify_attach_child(self, childname, child):
         if isinstance(child, Context):
@@ -135,7 +138,15 @@ class Manager:
             child.activate()
         #then, trigger hook (not implemented)
 
+    def pin_send_update(self, pin, value, preliminary):
+        #TODO: explicit support for preliminary values
+        if pin in self.pin_to_cells:
+            for con_id, cell in self.pin_to_cells[pin]:
+                cell.deserialize(value, pin.mode, pin.submode)
+
+
 from .context import Context
 from .cell import Cell
 from .worker import Worker, InputPin, EditPin, InputPinBase, EditPinBase, \
  ExportedInputPin, ExportedOutputPin
+from .transformer import Transformer

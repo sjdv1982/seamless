@@ -16,6 +16,13 @@ with macro_mode_on():
     ctx.cell2.connect(ctx.tf.b)
     ctx.code = pytransformercell().set("return a + b")
     ctx.code.connect(ctx.tf.code)
-    #ctx.tf.c.connect(ctx.result) #errors...
+    ctx.tf.c.connect(ctx.result)
 
 ctx.equilibrate()
+print(ctx.result.value)
+ctx.cell1.set(10)
+ctx.equilibrate()
+print(ctx.result.value)
+ctx.code.set("return a + b + 1000")
+ctx.equilibrate()
+print(ctx.result.value)

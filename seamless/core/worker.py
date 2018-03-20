@@ -76,11 +76,11 @@ class PinBase(SeamlessBase):
         return worker.path + name
 
     @property
-    def context(self):
+    def _context(self):
         worker = self.worker_ref()
         if worker is None:
             return None
-        return worker.context
+        return worker._context
 
     def get_pin(self):
         return self
@@ -307,3 +307,8 @@ class ExportedEditPin(ExportedPinBase, EditPinBase):
         assert isinstance(pin, EditPinBase)
         super().__init__(pin)
 ExportedEditPin.__doc__ = EditPin.__doc__
+
+print("TODO cell: silk pin") #(silk construct = schema sub-pin + form sub-pin + data sub-pin, providing support for copy+silk and ref+silk transport)
+# Data pin is connected from JSON cells or other cells
+# silk construct to be implemented with .mixed.overlay;  inchannels are maintained by the manager. This is fully distinct from the high-level data structures!!
+# silk construct allows subconnections, but not dynamically: schema must have supplied at construction time!

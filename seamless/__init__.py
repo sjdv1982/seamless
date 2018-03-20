@@ -75,8 +75,8 @@ def opengl():
 import sys
 import traceback
 import atexit
-from . import _mainloop
-from ._mainloop import mainloop, asyncio_finish, run_work
+from .core import mainloop as _mainloop
+from .core.mainloop import mainloop, asyncio_finish, workqueue
 atexit.register(asyncio_finish)
 
 ipython = None
@@ -109,8 +109,8 @@ if qt_error is None:
 
     timer = QTimer()
     #Failsafe: run accumulated work every 50 ms, should not be necessary at all
-    timer.timeout.connect(run_work)
-    timer.start(_mainloop.FAILSAFE_WORK_LATENCY)
+    timer.timeout.connect(workqueue.flush)
+    timer.start(workqueue.FAILSAFE_FLUSH_LATENCY)
 
     import sys
     import traceback
@@ -137,3 +137,4 @@ if qt_error is None:
 else:
     sys.stderr.write("    " + qt_error + "\n")
     sys.stderr.write("    Call seamless.mainloop() to process cell updates\n")
+    _mainloop._run_qt = False

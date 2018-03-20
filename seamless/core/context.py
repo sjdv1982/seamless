@@ -247,9 +247,9 @@ context : context or None
          "timeout" seconds
         Report the workers that are not stable every "report" seconds
         """
-        print("WARNING: equilibrate not yet implemented")
-        import time
-        time.sleep(0.2)
+        print("WARNING: equilibrate not yet implemented; for now, 100 ms wait + workqueue flush")
+        import time; time.sleep(0.1)
+        self._get_manager().workqueue.flush()
         return
         ###
         from .. import run_work

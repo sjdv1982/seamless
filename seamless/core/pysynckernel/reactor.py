@@ -1,3 +1,6 @@
+raise NotImplementedError
+#so far, literal copy from 0.1
+
 import sys, traceback
 import threading
 import weakref
@@ -305,6 +308,7 @@ class Reactor:
                 p.output_update(name, value)
             else:
                 f = partial(p.output_update, name, value)
+                raise NotImplementedError #manager workqueue... but we don't have access to manager !?
                 seamless.add_work(f,priority=True)
                 run_work = True
         if run_work:

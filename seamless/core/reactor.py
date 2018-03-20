@@ -1,3 +1,7 @@
+raise NotImplementedError
+#so far, literal copy from 0.1
+#TODO: add_work => workqueue, among other things...
+
 #totally synchronous, for GUI
 
 import os
@@ -182,7 +186,7 @@ class Reactor(Worker):
         if rc._pending_updates:
             return self.StatusFlags.PENDING.name
         if self.error is not None:
-            return self.StatusFlags.ERROR.name            
+            return self.StatusFlags.ERROR.name
         return self.StatusFlags.OK.name
 
     def destroy(self):
