@@ -55,7 +55,7 @@ class Worker(SeamlessBase):
             pin._validate_path(required_path + (pin_name,))
         return required_path
 
-    def shell(self):
+    def shell(self, subshell=None):
         """Creates an IPython shell (QtConsole).
 
         The shell is connected to the namespace of a worker (reactor
@@ -69,9 +69,14 @@ class Worker(SeamlessBase):
 
         As of seamless 0.2, a reactor's namespace is reset upon ``code_start``.
         A transformer's namespace is reset upon every execution.
+
+        TODO: further description
+        subshell must be None for transformers, "start"/"update"/"stop" for reactors
         """
-        shell_namespace, shell_title = self._shell()
-        return PyShell(shell_namespace, shell_title)
+        #TODO: for serialization, store associated shells
+
+        shell_namespace, inputpin, shell_title = self._shell(subshell)
+        return PyShell(shell_namespace, inputpin, shell_title)
 
 
 class PinBase(SeamlessBase):
@@ -129,18 +134,15 @@ class InputPin(InputPinBase):
         """Returns or creates a cell connected to the inputpin"""
         from .cell import cell
         manager = self._get_manager()
-        my_cells = manager.inputpin_to_cells(self)
-        l = len(my_cells)
-        if l == 0:
+        my_cell = manager.pin_from_cell.get(self)
+        if my_cell is None:
             worker = self.worker_ref()
             if worker is None:
                 raise ValueError("Worker has died")
             my_cell = cell()
             my_cell.connect(self)
-        elif l == 1:
-            my_cell = my_cells[0]
-        elif l > 1:
-            raise TypeError("cell() is ambiguous, multiple cells are connected")
+        else:
+            my_cell = my_cell[1]
         return my_cell
 
     def set(self, *args, **kwargs):

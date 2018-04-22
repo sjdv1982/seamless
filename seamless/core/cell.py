@@ -16,7 +16,6 @@ from copy import deepcopy
 import hashlib
 
 from ast import PyCF_ONLY_AST, FunctionDef
-from .utils import find_return_in_scope
 from .cached_compile import cached_compile
 
 transformer_patch = """
@@ -243,6 +242,19 @@ class PythonCell(Cell):
     """Python code object, used for reactors and macros"""
     _naming_pattern = "pythoncell"
 
+    _accept_shell_append = True
+
+    #TODO: for serialization, store ._accept_shell_append
+    #TODO: for GUI, make ._accept_shell_append editable as cell
+
+    def _shell_append(self, text):
+        if not self._accept_shell_append:
+            return
+        if self._val is None:
+            return
+        new_value = self._val + "\n" + text
+        self.set(new_value)
+
     def _validate(self, value):
         raise NotImplementedError #TODO
 
@@ -254,26 +266,16 @@ class PyTransformerCell(PythonCell):
     """Python code object used for transformers (accepts one argument)"""
 
     def _validate(self, value):
-        self.ast = cached_compile(value, "transformer",
-                                  "exec", PyCF_ONLY_AST)
-        is_function = (len(self.ast.body) == 1 and
-                       isinstance(self.ast.body[0], FunctionDef))
+        ast = cached_compile(value, "transformer", "exec", PyCF_ONLY_AST)
+        is_function = (len(ast.body) == 1 and
+                       isinstance(ast.body[0], FunctionDef))
 
         if is_function:
-            self.code = cached_compile(value, "transformer",
-                                       "exec")
-            self.func_name = self.ast.body[0].name
+            self.func_name = ast.body[0].name
         else:
             self.func_name = "transform"
-            try:
-                return_node = find_return_in_scope(self.ast)
-            except ValueError:
-                raise SyntaxError("Block must contain return statement(s)")
 
-            patched_src = transformer_patch.format(self.func_name) + \
-              "    " + value.replace("\n", "\n    ").rstrip()
-            self.code = cached_compile(patched_src,
-                                       "transformer", "exec")
+        self.is_function = is_function
 
 class JsonCell(Cell):
     """A cell in JSON format (monolithic)"""

@@ -14,9 +14,8 @@ with macro_mode_on():
     })
     ctx.cell1.connect(ctx.tf.a)
     ctx.cell2.connect(ctx.tf.b)
-    ctx.code = pytransformercell()
+    ctx.code = pytransformercell().set("c = a + b")
     ctx.code.connect(ctx.tf.code)
     ctx.tf.c.connect(ctx.result)
-    ctx.code.set("return a + b")
 
 shell = ctx.tf.shell()

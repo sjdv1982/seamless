@@ -21,25 +21,31 @@ class MyQtInProcessKernelManager(QtInProcessKernelManager):
 
 class PyShell:
     _dummy = False
-    def __init__(self, namespace, windowtitle=None):
+    def __init__(self, namespace, inputpin, windowtitle=None):
         assert isinstance(namespace, dict), namespace
         from . import qt_error
         if qt_error is not None:
             self._dummy = True
             return
         self.namespace = namespace
+        self.inputpin = inputpin
         self.kernel_manager = MyQtInProcessKernelManager()
         self.kernel_manager.start_kernel(namespace)
-        return
         self.kernel_client = self.kernel_manager.client()
         self.kernel_client.start_channels()
+        shell = self.kernel_manager.kernel.shell
+        shell.events.register('post_run_cell', self._on_execute)
         control = RichJupyterWidget()
         self.control = control
         control.kernel_manager = self.kernel_manager
         control.kernel_client = self.kernel_client
         if windowtitle is not None:
-            control.setWindowTitle("Seamless shell: " + windowtitle)
+            control.setWindowTitle(windowtitle)
         control.show()
+    def _on_execute(self, result):
+        text = result.info.raw_cell
+        cell = self.inputpin.cell()
+        cell._shell_append(text)
     def stop():
         if self._dummy:
             return

@@ -19,17 +19,22 @@ def return_preliminary(result_queue, value):
     #print("return_preliminary", value)
     result_queue.put((-1, value))
 
-def execute(name, expression, namespace, result_queue):
+def execute(name, expression, namespace, output_name, result_queue):
     namespace["return_preliminary"] = functools.partial(
         return_preliminary, result_queue
     )
     try:
-        result = eval(expression, namespace)
+        namespace.pop(output_name, None)
+        exec(expression, namespace)
     except:
         exc = traceback.format_exc()
         result_queue.put((1, exc))
     else:
-        result_queue.put((0, result))
+        try:
+            result = namespace[output_name]
+            result_queue.put((0, result))
+        except KeyError:
+            result_queue.put((1, "Output variable name '%s' undefined" % output_name))
     finally:
         if "__transformer_frame__" in namespace:
             tl = namespace["__transformer_frame__"].f_locals
@@ -52,6 +57,11 @@ class Transformer(Worker):
         self.last_result = None
         self.running_thread = None
 
+        self.function_expr_template = "%%s\n%s  = {0}(" % self.output_name
+        for inp in sorted(list(inputs)):
+            self.function_expr_template += "%s=%s," % (inp, inp)
+        self.function_expr_template = self.function_expr_template[:-1] + ")"
+
         all_inputs = list(inputs) + ["code"]
         super(Transformer, self).__init__(parent, all_inputs, **kwargs)
 
@@ -68,24 +78,27 @@ class Transformer(Worker):
         try:
             # Code data object
             code_obj = self.values["code"]
-            func = code_obj.code
-            func_name = code_obj.func_name
 
             # If code object is updated, recompile
             if "code" in updated:
-                expr = "{0}()".format(func_name)
-                self.expression = compile(expr, self.name, "eval")
-                self.func_name = func_name
-
+                code = code_obj.value
+                func_name = code_obj.func_name
+                if code_obj.is_function:
+                    expr = self.function_expr_template.format(code, func_name)
+                    self.expression = compile(expr, self.name, "exec")
+                    self.func_name = func_name
+                else:
+                    self.expression = compile(code, self.name, "exec")
             # Update namespace of inputs
+            keep = {k:v for k,v in self.namespace.items() if k.startswith("_")}
             self.namespace.clear()
+            self.namespace.update(keep)
             self.namespace["__name__"] = self.name
-            exec(func, self.namespace)
             for name in self.inputs:
                 self.namespace[name] = self.values[name]
             queue = Queue()
-            args = (self.parent().format_path(), self.expression, self.namespace, queue)
-            executor = Executor(target=execute,args=args, daemon=True) #TODO: name
+            args = (self.parent().format_path(), self.expression, self.namespace, self.output_name, queue)
+            executor = Executor(target=execute,args=args, daemon=True)
             executor.start()
             dead_time = 0
             while 1:

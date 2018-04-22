@@ -3,7 +3,9 @@ from seamless.core.macro import macro_mode_on
 from seamless.core import context, cell, transformer, pytransformercell
 
 with macro_mode_on():
-    ctx = context(toplevel=True)
+    topctx = context(toplevel=True)
+    ctx = topctx.sub = context(toplevel=False, context=topctx, name="sub")
+    assert topctx.sub is ctx
     ctx.cell1 = cell().set(1)
     ctx.cell2 = cell().set(2)
     ctx.result = cell()
@@ -18,12 +20,12 @@ with macro_mode_on():
     ctx.code.connect(ctx.tf.code)
     ctx.tf.c.connect(ctx.result)
 
-ctx.equilibrate()
+topctx.equilibrate()
 print(ctx.result.value)
 ctx.cell1.set(10)
-ctx.equilibrate()
+topctx.equilibrate()
 print(ctx.result.value)
 ctx.code.set("c = a + b + 1000")
-ctx.equilibrate()
+topctx.equilibrate()
 print(ctx.result.value)
 print(ctx.status())

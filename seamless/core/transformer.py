@@ -244,8 +244,9 @@ class Transformer(Worker):
                 preliminary=preliminary)
         self._connected_output = True
 
-    def _shell(self):
-        return self.transformer.namespace, str(self)
+    def _shell(self, submode):
+        assert submode is None
+        return self.transformer.namespace, self.code, str(self)
 
     def destroy(self):
         if self._destroyed:

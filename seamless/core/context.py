@@ -46,6 +46,8 @@ context : context or None
             assert context is None
             self._toplevel = True
             self._manager = Manager(self)
+        else:
+            assert context is not None
 
         self._pins = {}
         self._children = {}
@@ -53,7 +55,10 @@ context : context or None
 
     def _set_context(self, context, name):
         super()._set_context(context, name)
-        self._name = context._name + (name,)
+        context_name = context._name
+        if context_name is None:
+            context_name = ()
+        self._name = context_name + (name,)
         self._manager = Manager(self)
 
     def _get_manager(self):
@@ -71,7 +76,10 @@ context : context or None
         from .macro import get_macro_mode
         assert get_macro_mode()
         assert isinstance(child, (Context, Worker, Cell))
-        child._set_context(self, childname)
+        if isinstance(child, Context):
+            assert child._context is self
+        else:
+            child._set_context(self, childname)
         self._children[childname] = child
         self._manager.notify_attach_child(childname, child)
 
@@ -240,6 +248,17 @@ context : context or None
 
         self._exported_child = child
 
+    def _flush_workqueue(self):
+        manager = self._get_manager()
+        manager.workqueue.flush()
+        finished = True
+        for childname, child in self._children.items():
+            if isinstance(child, Context):
+                remaining = child.equilibrate(0.001)
+                if len(remaining):
+                    finished = False
+        return finished
+
     def equilibrate(self, timeout=None, report=0.5):
         """
         Run workers and cell updates until all workers are stable,
@@ -250,7 +269,7 @@ context : context or None
         """
         start_time = time.time()
         last_report_time = start_time
-        self._get_manager().workqueue.flush()
+        self._flush_workqueue()
         last_unstable = []
         while 1:
             if self._destroyed:
@@ -266,19 +285,20 @@ context : context or None
             if timeout is not None:
                 if curr_time - start_time > timeout:
                     break
-            manager = self._get_manager()
-            manager.workqueue.flush()
+            finished1 = self._flush_workqueue()
             if self._destroyed:
                 return []
+            manager = self._get_manager()
             len1 = len(manager.unstable)
             time.sleep(0.001)
-            manager = self._get_manager()
-            manager.workqueue.flush()
+            finished2 = self._flush_workqueue()
             if self._destroyed:
                 return []
+            manager = self._get_manager()
             len2 = len(manager.unstable)
-            if len1 == 0 and len2 == 0:
-                break
+            if finished1 and finished2:
+                if len1 == 0 and len2 == 0:
+                    break
         if self._destroyed:
             return []
         manager = self._get_manager()
