@@ -22,7 +22,7 @@ NOTES:
   Authoritative cells can be set directly from the mid-level. Setting non-authoritative cells will generate the usual warning. Setting cells that control (low-level)
   macros will re-execute them (with proper caching).
 - There will be an option to sync cells to a file. This must be done in macro mode.
-  The sync can be one-way or two-way (only for authoritative cells). When a cell is updated from a  
+  The sync can be one-way or two-way (only for authoritative cells). When a cell is updated from a file, it is as if it was done using .set()
   A context can be synced to a directory.
   Cell/context symlinks will become Unix file/directory symlinks.
   When a cell/context is destroyed, the file is cleaned up. This can be prevented by a low-level-macro-caching hit.

@@ -2,6 +2,7 @@ import weakref
 from . import SeamlessBase
 from .macro import get_macro_mode
 from .cell import modes as cell_modes, submodes as cell_submodes
+from ..shell import PyShell
 
 """
 Evaluation modes for workers
@@ -53,6 +54,24 @@ class Worker(SeamlessBase):
         for pin_name, pin in self._pins.items():
             pin._validate_path(required_path + (pin_name,))
         return required_path
+
+    def shell(self):
+        """Creates an IPython shell (QtConsole).
+
+        The shell is connected to the namespace of a worker (reactor
+        or transformer, or a context that has a worker exported)
+        where its code blocks are executed.
+
+        This works only for in-process workers. As of seamless 0.1, all workers are
+        in-process. However, transformers use ``multiprocessing``. Therefore, changes
+        to the namespace while a transformation is running will not affect the current
+        transformation, only the next.
+
+        As of seamless 0.2, a reactor's namespace is reset upon ``code_start``.
+        A transformer's namespace is reset upon every execution.
+        """
+        shell_namespace, shell_title = self._shell()
+        return PyShell(shell_namespace, shell_title)
 
 
 class PinBase(SeamlessBase):
@@ -137,9 +156,9 @@ class InputPin(InputPinBase):
 
     def status(self):
         manager = self._get_manager()
-        my_cells = manager.inputpin_to_cells(self)
-        if len(curr_pin_to_cells):
-            my_cell = my_cells[0]
+        my_cell = manager.pin_from_cell.get(self)
+        if my_cell is not None:
+            my_cell = my_cell[1]
             return my_cell.status()
         else:
             return self.StatusFlags.UNCONNECTED.name
@@ -195,9 +214,9 @@ class OutputPin(OutputPinBase):
 
     def status(self):
         manager = self._get_manager()
-        my_cells = manager.inputpin_to_cells(self)
-        if len(curr_pin_to_cells):
-            my_cell = my_cells[0]
+        my_cells = manager.pin_to_cells.get(self, [])
+        if len(my_cells):
+            my_cell = my_cells[0][1]
             return my_cell.status()
         else:
             return self.StatusFlags.UNCONNECTED.name
@@ -260,9 +279,9 @@ class EditPin(EditPinBase):
 
     def status(self):
         manager = self._get_manager()
-        my_cells = manager.editpin_to_cells(self)
-        if len(curr_pin_to_cells):
-            my_cell = my_cells[0]
+        my_cells = manager.pin_to_cells.get(self, [])
+        if len(my_cells):
+            my_cell = my_cells[0][1]
             return my_cell.status()
         else:
             return self.StatusFlags.UNCONNECTED.name

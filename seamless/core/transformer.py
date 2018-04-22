@@ -74,7 +74,6 @@ class Transformer(Worker):
           (other than the deques and semaphores, which could as well be
            implemented using network sockets)
         - It must run async from the main thread
-        TODO: in case of process, synchronize registrars (use execnet?)
         """
 
         self.transformer = KernelTransformer(
@@ -245,6 +244,9 @@ class Transformer(Worker):
                 preliminary=preliminary)
         self._connected_output = True
 
+    def _shell(self):
+        return self.transformer.namespace, str(self)
+
     def destroy(self):
         if self._destroyed:
             return
@@ -288,7 +290,7 @@ class Transformer(Worker):
             return result
         if t._pending_updates:
             return self.StatusFlags.PENDING.name
-        if self.error is not None:
+        if self.transformer.exception is not None:
             return self.StatusFlags.ERROR.name
         return self.StatusFlags.OK.name
 

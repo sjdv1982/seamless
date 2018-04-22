@@ -15,9 +15,10 @@ class Manager:
     def __init__(self, ctx):
         self.ctx = ctx
         self.sub_managers = {}
-        self.cell_to_pins = {}
-        self.cell_from_pin = {}
-        self.pin_to_cells = {}
+        self.cell_to_pins = {} #cell => inputpins
+        self.cell_from_pin = {} #cell => outputpin
+        self.pin_from_cell = {} #inputpin => cell
+        self.pin_to_cells = {} #outputpin => cells
         self._ids = 0
         self.unstable = set()
         #for now, just a single global workqueue
@@ -60,6 +61,8 @@ class Manager:
         con_id = self.get_id()
 
         connection = (con_id, target)
+        rev_connection = (con_id, cell)
+
         if cell._status == Cell.StatusFlags.OK:
             value = cell.serialize(target.mode, target.submode)
             target.receive_update(value)
@@ -80,6 +83,7 @@ class Manager:
         if cell not in self.cell_to_pins:
             self.cell_to_pins[cell] = []
         self.cell_to_pins[cell].append(connection)
+        self.pin_from_cell[target] = rev_connection
 
     def connect_pin(self, pin, target):
         assert isinstance(target, Cell)
@@ -89,9 +93,10 @@ class Manager:
         assert worker is not None #weakref may not be dead
         if isinstance(pin, EditPinBase):
             raise NotImplementedError ### also output *from* the cell!
+        assert isinstance(pin, OutputPinBase)
 
-        if target in self.cell_from_pin:
-            raise Exception #TODO: authority message
+        if not target.authoritative:
+            raise Exception("%s: is non-authoritative (already dependent on another worker)" % target)
 
         target._check_mode(pin.mode, pin.submode)
         con_id = self.get_id()
@@ -101,7 +106,8 @@ class Manager:
         if pin not in self.pin_to_cells:
             self.pin_to_cells[pin] = []
         self.pin_to_cells[pin].append(connection)
-        self.cell_from_pin[target] = rev_connection
+        self.cell_from_pin[target] = connection
+        target._authoritative = False
 
         if isinstance(worker, Transformer):
             worker._on_connect_output()
@@ -118,12 +124,15 @@ class Manager:
             )
             """
 
-    def set_cell(self, cell, value):
+    def set_cell(self, cell, value, default, cosmetic):
         assert isinstance(cell, Cell)
-        cell.deserialize(value, "ref", None)
-        for con_id, pin in self.cell_to_pins.get(cell, []):
-            value = cell.serialize(pin.mode, pin.submode)
-            pin.receive_update(value)
+        cell.deserialize(value, "ref", None,
+          from_pin=False, default=default, cosmetic=cosmetic
+        )
+        if not cosmetic:
+            for con_id, pin in self.cell_to_pins.get(cell, []):
+                value = cell.serialize(pin.mode, pin.submode)
+                pin.receive_update(value)
 
 
     def notify_attach_child(self, childname, child):
@@ -131,22 +140,26 @@ class Manager:
             assert isinstance(child._manager, Manager)
             self.sub_managers[childname] = child._manager
         elif isinstance(child, Cell):
-            if child._prelim_val:
-                self.set_cell(child, child._prelim_val)
+            if child._prelim_val is not None:
+                value, default = child._prelim_val
+                self.set_cell(child, value, default, cosmetic=False)
                 child._prelim_val = None
         elif isinstance(child, Worker):
             child.activate()
-        #then, trigger hook (not implemented)
+        #then, trigger hook (not implemented) #TODO
 
     def pin_send_update(self, pin, value, preliminary):
         #TODO: explicit support for preliminary values
+        #TODO: edit pins => from_pin = "edit"
         if pin in self.pin_to_cells:
             for con_id, cell in self.pin_to_cells[pin]:
-                cell.deserialize(value, pin.mode, pin.submode)
+                cell.deserialize(value, pin.mode, pin.submode,
+                  from_pin=True, default=False, cosmetic=False
+                )
 
 
 from .context import Context
 from .cell import Cell
 from .worker import Worker, InputPin, EditPin, InputPinBase, EditPinBase, \
- ExportedInputPin, ExportedOutputPin
+ OutputPinBase, ExportedInputPin, ExportedOutputPin
 from .transformer import Transformer

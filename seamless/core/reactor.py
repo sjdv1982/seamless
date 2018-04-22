@@ -1,7 +1,6 @@
 raise NotImplementedError
 #so far, literal copy from 0.1
 #TODO: add_work => workqueue, among other things...
-
 #totally synchronous, for GUI
 
 import os

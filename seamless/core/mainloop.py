@@ -11,6 +11,7 @@ from collections import deque
 import threading
 import asyncio
 import contextlib
+import traceback
 
 class WorkQueue:
     FAILSAFE_FLUSH_LATENCY = 50 #latency of flush in ms

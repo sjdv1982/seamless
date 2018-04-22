@@ -36,6 +36,7 @@ class Worker(metaclass=ABCMeta):
     def __init__(self, parent, inputs, event_cls=threading.Event, semaphore_cls=threading.Semaphore):
         self.parent = weakref.ref(parent)
         self.namespace = {}
+        self.namespace["__name__"] = self.name
         self.inputs = inputs
         self.input_queue = deque()
         self.semaphore = semaphore_cls(0)

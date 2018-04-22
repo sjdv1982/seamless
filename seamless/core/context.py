@@ -3,6 +3,7 @@ from weakref import WeakValueDictionary
 from collections import OrderedDict
 from . import SeamlessBase
 from .macro import get_macro_mode
+import time
 
 class Context(SeamlessBase):
     """Context class. Organizes your cells and workers hierarchically.
@@ -247,23 +248,17 @@ context : context or None
          "timeout" seconds
         Report the workers that are not stable every "report" seconds
         """
-        print("WARNING: equilibrate not yet implemented; for now, 100 ms wait + workqueue flush")
-        import time; time.sleep(0.1)
-        self._get_manager().workqueue.flush()
-        return
-        ###
-        from .. import run_work
-        import time
         start_time = time.time()
         last_report_time = start_time
-        run_work()
-        manager = self._manager
+        self._get_manager().workqueue.flush()
         last_unstable = []
-        #print("UNSTABLE", list(manager.unstable_workers))
         while 1:
+            if self._destroyed:
+                return []
             curr_time = time.time()
             if curr_time - last_report_time > report:
-                unstable = list(manager.unstable_workers)
+                manager = self._get_manager()
+                unstable = list(manager.unstable)
                 if last_unstable != unstable:
                     last_unstable = unstable
                     print("Waiting for:", self.unstable_workers)
@@ -271,23 +266,33 @@ context : context or None
             if timeout is not None:
                 if curr_time - start_time > timeout:
                     break
-            run_work()
-            len1 = len(manager.unstable_workers)
+            manager = self._get_manager()
+            manager.workqueue.flush()
+            if self._destroyed:
+                return []
+            len1 = len(manager.unstable)
             time.sleep(0.001)
-            run_work()
-            len2 = len(manager.unstable_workers)
+            manager = self._get_manager()
+            manager.workqueue.flush()
+            if self._destroyed:
+                return []
+            len2 = len(manager.unstable)
             if len1 == 0 and len2 == 0:
                 break
-        unstable = list(manager.unstable_workers)
-        run_work()
+        if self._destroyed:
+            return []
+        manager = self._get_manager()
+        manager.workqueue.flush()
+        if self._destroyed:
+            return []
+        unstable = list(manager.unstable)
         return unstable
-        #print("UNSTABLE", list(manager.unstable_workers))
 
     @property
     def unstable_workers(self):
         """All unstable workers (not in equilibrium)"""
         from . import SeamlessBaseList
-        result = list(self._manager.unstable_workers)
+        result = list(self._manager.unstable)
         return SeamlessBaseList(sorted(result, key=lambda p:p.format_path()))
 
     def status(self):

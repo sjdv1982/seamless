@@ -30,8 +30,11 @@ class CellBase(SeamlessBase):
     _exception = None
     _val = None
     _last_checksum = None
+    _alternative_checksums = None #alternative checksums resulting from cosmetic updates
     _naming_pattern = "cell"
     _prelim_val = None
+    _authoritative = True
+    _overruled = False #a non-authoritative cell that has previously received a value
     def __init__(self):
         assert get_macro_mode()
         super().__init__()
@@ -41,12 +44,16 @@ class CellBase(SeamlessBase):
         return self._status.name
 
     @property
+    def authoritative(self):
+        return self._authoritative
+
+    @property
     def _value(self):
         return self._val
 
     @_value.setter
     def _value(self, value):
-        """Should only ever be set by the manager, since it bypasses validation, last checksum, status flags, etc."""
+        """Should only ever be set by the manager, since it bypasses validation, last checksum, status flags, authority, etc."""
         self._value = value
 
     @property
@@ -68,10 +75,31 @@ class CellBase(SeamlessBase):
     def set(self, value):
         """Update cell data from Python code in the main thread."""
         if self._context is None:
-            self._prelim_val = value
+            self._prelim_val = value, False #non-default-value prelim
         else:
             manager = self._get_manager()
-            manager.set_cell(self, value)
+            manager.set_cell(self, value, default=False, cosmetic=False)
+        return self
+
+    def set_default(self, value):
+        """Provides a default value for the cell
+        This value can be overwritten by workers"""
+        if self._context is None:
+            self._prelim_val = value, True #default-value prelim
+        else:
+            manager = self._get_manager()
+            manager.set_cell(self, value, default=True, cosmetic=False)
+        return self
+
+    def set_cosmetic(self, value):
+        """Provides a cosmetic update to the cell
+        that has no effect on its value"""
+        if self._context is None:
+            return
+        if self._val is None:
+            return
+        manager = self._get_manager()
+        manager.set_cell(self, value, default=False, cosmetic=True)
         return self
 
     def serialize(self, mode, submode=None):
@@ -79,18 +107,51 @@ class CellBase(SeamlessBase):
         assert self.status() == "OK", self.status()
         return self._serialize(mode, submode)
 
-    def deserialize(self, value, mode, submode=None):
-        """Should normally be invoked by the manager, since it does not notify the manager"""
+    def deserialize(self, value, mode, submode=None, *, from_pin, default, cosmetic):
+        """Should normally be invoked by the manager, since it does not notify the manager
+        from_pin: can be True (normal pin that has authority), False (from code) or "edit" (edit pin)
+        default: indicates a default value (pins may overwrite it)
+        cosmetic: declares that the new value is equivalent to the old one (e.g. by adding a comment to a source code cell)
+        """
+        assert from_pin in (True, False, "edit")
         self._check_mode(mode, submode)
         if value is None:
             self._val = None
             self._last_checksum = None
             self._status = self.StatusFlags.UNDEFINED
         self._validate(value)
+        if cosmetic:
+            cs = self._last_checksum
+            if cs is not None:
+                if self._alternative_checksums is None:
+                    self._alternative_checksums = []
+                self._alternative_checksums.append(cs)
         self._last_checksum = None
         self._deserialize(value, mode, submode)
+        if from_pin == True:
+            assert not self._authoritative
+            self._un_overrule()
+        elif from_pin == "edit":
+            if not self._authoritative:
+                self._overrule()
+            else:
+                self._un_overrule()
+        elif from_pin == False:
+            if not default and not self._authoritative:
+                self._overrule()
         self._status = self.StatusFlags.OK
         return self
+
+    def _overrule(self):
+        if not self._overruled:
+            print("Warning: overruling (setting value for non-authoritative cell) %s" % self.format_path())
+            self._overruled = True
+
+    def _un_overrule(self):
+        if self._overruled:
+            print("Warning: cell %s was formerly overruled, now updated by dependency" % self.format_path())
+            self._overruled = False
+
 
     @property
     def exception(self):
@@ -285,4 +346,5 @@ def pytransformercell(*args, **kwargs):
 
 print("TODO cell: JSON cell")
 print("TODO cell: CSON cell")
+print("TODO cell: PyImport cell") #cell that does imports, executed already upon code definition; code injection causes an exec()
 #...and TODO: cache cell, evaluation cell, event stream

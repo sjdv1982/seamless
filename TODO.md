@@ -1,5 +1,29 @@
+UPDATE OF THE UPDATE
+Great Refactor is underway (see seamless-toward-02.md).
+Most of the text below is out of date.
+Current status: simplest low-level example works.
+Most urgent things to do:
+- GUI for transformer+IPython shell
+Things to do (all low level) :
+- subcontexts
+- Mount cells/contexts to the file system
+- JSON / structured cells / silk cells. Think of code layout of folder "mixed"
+- Simple macros (no caching)
+- cson cells
+- aliases and symlinks
+- Reactors
+- "Active" switch of managers, workers, connections
+- PyImport cells and code injection
+- Status dict, also as a structured cell
+- Signatures/checksums and macro caching. NOTE: take care of the alternative checksums caused by "cosmetic updates"
+Then, slowly move to the mid-level data structure:
+- manager observers
+- low-level-to-mid-level mapping (as observers)
+- apply to slash-0
+- design mid-level, including old resources, also serialization
+
 UPDATE:
-This roadmap is outdated by the new conception of Silk as a schema language,
+The following roadmap is outdated by the new conception of Silk as a schema language,
 and the new high-level API
 The topics are either:
 - Explicitly covered by Silk/the high level API (see the docs there)

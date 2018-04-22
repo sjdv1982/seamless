@@ -52,7 +52,9 @@ class Transformer(Worker):
         self.last_result = None
         self.running_thread = None
 
-        super(Transformer, self).__init__(parent, inputs, **kwargs)
+        all_inputs = list(inputs) + ["code"]
+        super(Transformer, self).__init__(parent, all_inputs, **kwargs)
+
 
     def return_preliminary(self, value):
         #print("return_preliminary", value)
@@ -77,6 +79,7 @@ class Transformer(Worker):
 
             # Update namespace of inputs
             self.namespace.clear()
+            self.namespace["__name__"] = self.name
             exec(func, self.namespace)
             for name in self.inputs:
                 self.namespace[name] = self.values[name]
