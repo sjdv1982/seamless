@@ -4,19 +4,21 @@ These are specific for the low-level.
 At the mid-level, the modes would be annotations/hints (i.e. not core),
  and the submodes would be cell languages: JSON, CSON, Silk, Python
 """
-modes = ["copy", "ref", "signal"]
+modes = ["buffer", "copy", "ref", "signal"]
 submodes = {
     "copy": ["json", "cson", "silk"],
     "ref": ["pythoncode", "json", "silk"]
 }
 
 from . import SeamlessBase
-from .macro import get_macro_mode
+from .macro import get_macro_mode, macro_register
 from copy import deepcopy
 import hashlib
 
 from ast import PyCF_ONLY_AST, FunctionDef
 from .cached_compile import cached_compile
+
+from .mount import MountItem
 
 transformer_patch = """
 import inspect
@@ -24,6 +26,8 @@ def {0}():
     global __transformer_frame__
     __transformer_frame__ = inspect.currentframe()
 """
+
+cell_counter = 0
 
 class CellBase(SeamlessBase):
     _exception = None
@@ -34,9 +38,19 @@ class CellBase(SeamlessBase):
     _prelim_val = None
     _authoritative = True
     _overruled = False #a non-authoritative cell that has previously received a value
+    _mount = None
+    _mount_kwargs = None
+
     def __init__(self):
+        global cell_counter
         assert get_macro_mode()
         super().__init__()
+        cell_counter += 1
+        self._counter = cell_counter
+        macro_register.add(self)
+
+    def __hash__(self):
+        return self._counter
 
     def status(self):
         """The cell's current status."""
@@ -77,7 +91,7 @@ class CellBase(SeamlessBase):
             self._prelim_val = value, False #non-default-value prelim
         else:
             manager = self._get_manager()
-            manager.set_cell(self, value, default=False, cosmetic=False)
+            manager.set_cell(self, value)
         return self
 
     def set_default(self, value):
@@ -87,7 +101,18 @@ class CellBase(SeamlessBase):
             self._prelim_val = value, True #default-value prelim
         else:
             manager = self._get_manager()
-            manager.set_cell(self, value, default=True, cosmetic=False)
+            manager.set_cell(self, value, default=True)
+        return self
+
+    def set_from_buffer(self, value, checksum=None):
+        """Sets a cell from a buffer value"""
+        if self._context is None:
+            self._prelim_val = value, False #non-default-value prelim
+        else:
+            manager = self._get_manager()
+            manager.set_cell(self, value, from_buffer=True)
+            if checksum is not None:
+                self._last_checksum = checksum
         return self
 
     def set_cosmetic(self, value):
@@ -98,7 +123,7 @@ class CellBase(SeamlessBase):
         if self._val is None:
             return
         manager = self._get_manager()
-        manager.set_cell(self, value, default=False, cosmetic=True)
+        manager.set_cell(self, value, cosmetic=True)
         return self
 
     def serialize(self, mode, submode=None):
@@ -151,7 +176,6 @@ class CellBase(SeamlessBase):
             print("Warning: cell %s was formerly overruled, now updated by dependency" % self.format_path())
             self._overruled = False
 
-
     @property
     def exception(self):
         """The cell's current exception, as returned by sys.exc_info
@@ -177,7 +201,7 @@ class CellBase(SeamlessBase):
     def _deserialize(self, value, mode, submode=None):
         raise NotImplementedError
 
-    def _checksum(self, value):
+    def _checksum(self, value, buffer=False):
         raise NotImplementedError
 
     def checksum(self):
@@ -197,6 +221,23 @@ class CellBase(SeamlessBase):
     def as_text(self):
         raise NotImplementedError
 
+    def mount(self, path, mode="rw", authority="cell"):
+        """Performs a "lazy mount"; cell is mounted to the file when macro mode ends
+        path: file path
+        mode: "r", "w" or "rw"
+        authority: "cell", "file" or "file-strict"
+        """
+        if self._mount_kwargs is None:
+            raise NotImplementedError #cannot mount this type of cell
+        kwargs = self._mount_kwargs
+        self._mount = {
+            "path": path,
+            "mode": mode,
+            "authority": authority
+        }
+        self._mount.update(self._mount_kwargs)
+        MountItem(None, self,  **self._mount) #to validate parameters
+
 class Cell(CellBase):
     """Default class for cells.
 
@@ -215,19 +256,23 @@ Use ``Cell.status()`` to get its status.
     def __init__(self):
         super().__init__()
 
-    def _checksum(self, value):
+    def _checksum(self, value, buffer=False):
         return hashlib.md5(str(value).encode("utf-8")).hexdigest()
 
     def _validate(self, value):
         pass
 
     def _serialize(self, mode, submode=None):
-        if mode == "copy":
+        if mode == "buffer":
+            raise Exception("Cell '%s' cannot be serialized as buffer, use TextCell or JsonCell instead" % self.format_path())
+        elif mode == "copy":
             return deepcopy(self._val)
         else:
             return self._val
 
     def _deserialize(self, value, mode, submode=None):
+        if mode == "buffer":
+            raise Exception("Cell '%s' cannot be de-serialized as buffer, use TextCell or JsonCell instead" % self.format_path())
         self._val = value
 
     def as_text(self):
@@ -238,8 +283,26 @@ Use ``Cell.status()`` to get its status.
         except:
             return "<Cannot be rendered as text>"
 
+class TextCell(Cell):
+    _mount_kwargs = {"encoding": "utf-8", "binary": False}
+    def _serialize(self, mode, submode=None):
+        if mode in ("buffer", "copy"):
+            return deepcopy(self._val)
+        else:
+            return self._val
+
+    def _deserialize(self, value, mode, submode=None):
+        self._val = str(value)
+
+    def as_text(self):
+        if self._val is None:
+            return None
+        return str(self._val)
+
+
 class PythonCell(Cell):
     """Python code object, used for reactors and macros"""
+    _mount_kwargs = {"encoding": "utf-8", "binary": False}
     _naming_pattern = "pythoncell"
 
     _accept_shell_append = True
@@ -259,8 +322,13 @@ class PythonCell(Cell):
         raise NotImplementedError #TODO
 
     def _serialize(self, mode, submode=None):
-        assert mode == "ref" and submode == "pythoncode"
+        if mode == "buffer":
+            return deepcopy(self._val)
+        assert mode == "ref" and submode == "pythoncode", (mode, submode)
         return self
+
+    def _deserialize(self, value, mode, submode=None):
+        self._val = str(value)
 
 class PyTransformerCell(PythonCell):
     """Python code object used for transformers (accepts one argument)"""
@@ -281,7 +349,7 @@ class JsonCell(Cell):
     """A cell in JSON format (monolithic)"""
     #also provides copy+silk and ref+silk transport, but with an empty schema, and text form
 
-    def _checksum(self, value):
+    def _checksum(self, value, buffer=False):
         raise NotImplementedError
 
     def _validate(self, value):
@@ -302,7 +370,7 @@ class CsonCell(Cell):
     to JSON.
     """
 
-    def _checksum(self, value):
+    def _checksum(self, value, buffer=False):
         raise NotImplementedError
 
     def _validate(self, value):
@@ -325,7 +393,7 @@ class Signal(Cell):
     """
     _naming_pattern = "signal"
 
-    def _checksum(self, value):
+    def _checksum(self, value, buffer=False):
         return None
 
     def _validate(self, value):
@@ -339,6 +407,9 @@ class Signal(Cell):
 
 def cell(*args, **kwargs):
     return Cell(*args, **kwargs)
+
+def textcell(*args, **kwargs):
+    return TextCell(*args, **kwargs)
 
 def pythoncell(*args, **kwargs):
     return PythonCell(*args, **kwargs)

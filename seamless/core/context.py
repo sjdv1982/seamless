@@ -2,7 +2,8 @@
 from weakref import WeakValueDictionary
 from collections import OrderedDict
 from . import SeamlessBase
-from .macro import get_macro_mode
+from .mount import MountItem
+from .macro import get_macro_mode, macro_register
 import time
 
 class Context(SeamlessBase):
@@ -16,6 +17,7 @@ class Context(SeamlessBase):
     _auto = None
     _toplevel = False
     _naming_pattern = "ctx"
+    _mount = None
 
     def __init__(
         self, *,
@@ -52,6 +54,7 @@ context : context or None
         self._pins = {}
         self._children = {}
         self._auto = set()
+        macro_register.add(self)
 
     def _set_context(self, context, name):
         super()._set_context(context, name)
@@ -257,6 +260,7 @@ context : context or None
                 remaining = child.equilibrate(0.001)
                 if len(remaining):
                     finished = False
+        manager.mountmanager.tick()
         return finished
 
     def equilibrate(self, timeout=None, report=0.5):
@@ -330,6 +334,20 @@ context : context or None
         if len(result):
             return result
         return self.StatusFlags.OK.name
+
+    def mount(self, path, mode="rw", authority="cell"):
+        """Performs a "lazy mount"; context is mounted to the directory path when macro mode ends
+        math: directory path
+        mode: "r", "w" or "rw" (passed on to children)
+        authority: "cell", "file" or "file-strict" (passed on to children)
+        """
+        self._mount = {
+            "path": path,
+            "mode": mode,
+            "authority": authority
+        }
+        MountItem(None, self,  **self._mount) #to validate parameters
+
 
 def context(**kwargs):
     ctx = Context(**kwargs)

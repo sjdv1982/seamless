@@ -16,7 +16,7 @@ Things to do (all low level) :
 Then, slowly move to the mid-level data structure:
 - manager observers
 - low-level-to-mid-level mapping (as observers)
-- apply to slash-0
+- apply to slash-0 (see mount.py:filehash)
 - design mid-level, including old resources
 Finally, the high level:
 - serialization (take care of shells also)

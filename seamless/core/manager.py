@@ -1,5 +1,3 @@
-print("STUB: manager.py")
-
 """
 All runtime access to cells and workers goes via the manager
 also something like .touch(), .set().
@@ -8,8 +6,12 @@ Connecting to a cell with a value (making it non-authoritative), will likewise r
 Cells can have only one outputpin writing to them, this is strictly enforced.
 
 The manager has a notion of the managers of the subcontexts
-The manager can maintain a value dict and an exception dict (in text form; the cells themselves hold the Python objects)
+manager.set_cell and manager.pin_send_update are thread-safe (can be invoked from any thread)
+TODO: The manager can maintain a value dict and an exception dict (in text/cell form; the cells themselves hold the Python objects)
 """
+
+import threading
+import functools
 
 class Manager:
     def __init__(self, ctx):
@@ -24,6 +26,9 @@ class Manager:
         #for now, just a single global workqueue
         from .mainloop import workqueue
         self.workqueue = workqueue
+        #for now, just a single global mountmanager
+        from .mount import mountmanager
+        self.mountmanager = mountmanager
 
     def set_stable(self, worker, value):
         if value:
@@ -124,16 +129,25 @@ class Manager:
             )
             """
 
-    def set_cell(self, cell, value, default, cosmetic):
+    def set_cell(self, cell, value, *, default=False, cosmetic=False, from_buffer=False):
         assert isinstance(cell, Cell)
-        cell.deserialize(value, "ref", None,
+        if threading.current_thread() != threading.main_thread():
+            work = functools.partial(
+              self.set_cell, cell, value,
+              default=default, cosmetic=cosmetic, from_buffer=from_buffer
+            )
+            self.workqueue.append(work)
+            return
+        mode = "buffer" if from_buffer else "ref"
+        cell.deserialize(value, mode, None,
           from_pin=False, default=default, cosmetic=cosmetic
         )
+        if cell._mount is not None:
+            self.mountmanager.add_cell_update(cell)
         if not cosmetic:
             for con_id, pin in self.cell_to_pins.get(cell, []):
                 value = cell.serialize(pin.mode, pin.submode)
                 pin.receive_update(value)
-
 
     def notify_attach_child(self, childname, child):
         if isinstance(child, Context):
@@ -142,7 +156,7 @@ class Manager:
         elif isinstance(child, Cell):
             if child._prelim_val is not None:
                 value, default = child._prelim_val
-                self.set_cell(child, value, default, cosmetic=False)
+                self.set_cell(child, value, default=default, cosmetic=False)
                 child._prelim_val = None
         elif isinstance(child, Worker):
             child.activate()
@@ -151,11 +165,20 @@ class Manager:
     def pin_send_update(self, pin, value, preliminary):
         #TODO: explicit support for preliminary values
         #TODO: edit pins => from_pin = "edit"
+        if threading.current_thread() != threading.main_thread():
+            work = functools.partial(
+              self.pin_send_update, pin, value, preliminary
+            )
+            self.workqueue.append(work)
+            return
         if pin in self.pin_to_cells:
             for con_id, cell in self.pin_to_cells[pin]:
                 cell.deserialize(value, pin.mode, pin.submode,
                   from_pin=True, default=False, cosmetic=False
                 )
+                if cell._mount is not None:
+                    self.mountmanager.add_cell_update(cell)
+
 
 
 from .context import Context
