@@ -48,7 +48,6 @@ class MakeParentMonitor(Monitor):
     """Subclass of Monitor that inserts non-existing parent paths when paths are set
     NOTE: unlike the standard Monitor, MakeParentMonitor can be initialized with
      data is None. The first path assigment sets it to the correct type
-    TODO: some mechanism to pass this new .data on to the cell that holds it
     """
 
     def _get_parent_path(self, path, subdata):
@@ -56,13 +55,12 @@ class MakeParentMonitor(Monitor):
             if len(path):
                 first = path[0]
                 if isinstance(first, attr):
-                    self.data = {}
+                    self.data = self._data_hook({})
                 elif isinstance(first, int):
-                    self.data = []
+                    self.data = self._data_hook([])
             else:
-                self.data = subdata
-            self.pathcache.clear()
-            self.storage, self.form = get_form(self.data)
+                self.data = self._data_hook(subdata)
+            self.recompute_form(path)
 
         parent_path = path[:-1]
         if not len(parent_path):
@@ -85,8 +83,7 @@ class MakeParentMonitor(Monitor):
                 if inserted:
                     # We had to insert a parent value => restart
                     #TODO: something less crude...
-                    self.pathcache.clear()
-                    self.storage, self.form = get_form(self.data)
+                    self.recompute_form()
                     return self._get_parent_path(path, subdata)
                 self.pathcache[cached_path] = part_result
                 subdata, subform, _ = part_result

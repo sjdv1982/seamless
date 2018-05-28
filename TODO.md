@@ -1,10 +1,10 @@
 UPDATE OF THE UPDATE
 Great Refactor is underway (see seamless-toward-02.md).
-Most of the text below is out of date.
+Most of the text below the FIRST section is out of date.
 Current status: simplest low-level example works.
 Things to do (all low level) :
-- Mount cells/contexts to the file system (read or read/write; for a context, warn if there are other files already)
-- JSON / structured cells / silk cells. Think of code layout of folder "mixed"
+- More refactor:structured_cell tests
+- Silk buffering (adapt structured_cell also)
 - Simple macros (no caching)
 - cson cells
 - aliases and symlinks
@@ -19,7 +19,17 @@ Then, slowly move to the mid-level data structure:
 - apply to slash-0 (see mount.py:filehash)
 - design mid-level, including old resources
 Finally, the high level:
-- serialization (take care of shells also)
+- serialization (take care of shells also).
+- Buffering Silk structure:
+Note that at all times, data under Monitor control is valid; illegal updates
+will simply be rejected. If some kind of buffering is necessary (i.e.,
+update A + update B that are legal only in combination) then the data should
+be a dumb mixed structure that is copied-by-reference to a Silk structure
+under smart validation control. If that copy fails, and there are previously
+buffered updates, then a direct modification of the Silk structure should be
+attempted.
+
+/FIRST section, beyond here is mostly out of date
 
 UPDATE:
 The following roadmap is outdated by the new conception of Silk as a schema language,

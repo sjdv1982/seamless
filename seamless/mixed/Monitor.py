@@ -1,6 +1,7 @@
 from numpy import ndarray, void
 from .get_form import get_form
 from . import MixedScalar, Scalar,  scalars, is_np_struct, _allowed_types
+import json
 
 def get_subpath(data, form, path):
     type_ = form["type"]
@@ -30,9 +31,23 @@ def get_subpath(data, form, path):
         raise TypeError(type_)
 
 class Monitor:
-    def __init__(self, data, storage, form, **kwargs):
+    def __init__(self, data, storage, form, *, plain=False, **kwargs):
+        if "data_hook" in kwargs:
+            self._data_hook = kwargs["data_hook"]
         self.data = data
-        self.storage = storage
+        if plain:
+            assert storage is None
+        else:
+            if storage is None:
+                assert "storage_hook" in kwargs
+            self.storage = storage
+        if "storage_hook" in kwargs:
+            self._storage_hook = kwargs["storage_hook"]
+        self.plain = plain
+        if form is None:
+            assert "form_hook" in kwargs
+        if "form_hook" in kwargs:
+            self._form_hook = kwargs["form_hook"]
         self.form = form
         self.pathcache = {} #path cache; key is a path. value consist of a tuple:
         # (subdata, subform, trigger) where trigger is None or (triggertype, parentpath)
@@ -63,7 +78,6 @@ class Monitor:
         return self._get_path(path[:-1])
 
     def _get_path(self, path):
-        print("_get_path?", path, self.form)
         if not len(path):
             result = self.data, self.form, None
             return result
@@ -86,25 +100,27 @@ class Monitor:
             result = part_result
         return result
 
-    def get_path(self, path):
+    def get_path(self, path=()):
         subdata, subform, trigger = self._get_path(path)
         return self.get_instance(subform, subdata, path)
 
-    def get_data(self, path):
+    def get_data(self, path=()):
         subdata, subform, trigger = self._get_path(path)
         return subdata
 
-    def get_form(self, path):
+    def get_form(self, path=()):
         subdata, subform, trigger = self._get_path(path)
         return subform
 
-    def get_storage(self, path):
+    def get_storage(self, path=()):
+        if self.plain:
+            return "pure-plain"
         if not len(path):
             return self.storage
         if len(path) == 1:
             parent_storage = self.storage
         else:
-            parent_subdata, parent_subform, _ = self._get_path(path[1:])
+            parent_subdata, parent_subform, _ = self._get_path(path[:-1])
             parent_storage = parent_subform.get("storage")
             if parent_storage is None:
                 if isinstance(parent_subdata, (void, ndarray)):
@@ -127,13 +143,15 @@ class Monitor:
         """
         Updates the data under path with the value "subdata"
         Then, updates the form
-        TODO: use triggers for efficiency
-        For now, just update the data and recompute the entire form
         """
         if not isinstance(subdata, _allowed_types):
             raise TypeError(type(subdata))
+        if self.plain:
+            json.dumps(subdata)
         if not len(path):
-            if isinstance(self.form, str):
+            if self.form is None:
+                type_ = None
+            elif isinstance(self.form, str):
                 type_ = self.form
             else:
                 type_ = self.form["type"]
@@ -155,8 +173,8 @@ class Monitor:
                     self.data[:] = subdata
                 else:
                     raise TypeError(type_, type(self.data), type(subdata))
-            elif type_ in scalars:
-                raise TypeError(type_)
+            elif type_ is None or type_ in scalars:
+                self.data = self._data_hook(subdata)
             else:
                 raise TypeError(type_)
         else:
@@ -176,9 +194,37 @@ class Monitor:
                 raise TypeError(type_)
             else:
                 raise TypeError(type_)
-        # Recompute the entire form
+        self.recompute_form(path)
+
+    def recompute_form(self, subpath=None):
+        """
+        TODO: use triggers for efficiency, based on subpath
+        For now, just update the data and recompute the entire form
+        """
         self.pathcache.clear()
-        self.storage, self.form = get_form(self.data)
+        storage, form = get_form(self.data)
+        if self.form is None:
+            self.form = self._form_hook(form)
+        else:
+            if isinstance(self.form, dict):
+                self.form.clear()
+                self.form.update(form)
+            elif isinstance(self.form, list):
+                self.form[:] = form
+            else:
+                self._form_hook(form)
+        if not self.plain:
+            if self.storage is None:
+                self.storage = storage
+                self._storage_hook(storage)
+            else:
+                if isinstance(self.storage, dict):
+                    self.storage.clear()
+                    self.storage.update(storage)
+                elif isinstance(self.storage, list):
+                    self.storage[:] = storage
+                else:
+                    self._storage_hook(storage)
 
     def insert_path(self, path, subdata):
         """
@@ -212,9 +258,7 @@ class Monitor:
             raise TypeError(type_)
         else:
             raise TypeError(type_)
-        # Recompute the entire form
-        self.pathcache.clear()
-        self.storage, self.form = get_form(self.data)
+        self.recompute_form(path)
 
     def del_path(self, path):
         """
@@ -243,9 +287,7 @@ class Monitor:
                 raise TypeError(type_)
             else:
                 raise TypeError(type_)
-        # Recompute the entire form
-        self.pathcache.clear()
-        self.storage, self.form = get_form(self.data)
+        self.recompute_form(path)
 
 
 from .MixedDict import MixedDict, MixedNumpyStruct

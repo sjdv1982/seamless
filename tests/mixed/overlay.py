@@ -12,22 +12,28 @@ def print(*args):
 
 data = {}
 storage, form = get_form_dict(data)
-inchannels = {}
+inchannels = [
+    ("b","c"),
+]
+
+def out(value):
+    print("New value of b: %s" % value)
+
+def out2(value):
+    print("New value of data: %s" % value)
 
 d = mixed_dict(data, storage, form,
-    inchannels=inchannels, MonitorClass=OverlayMonitor)
+    inchannels=inchannels,
+    outchannels={("b",): out, (): out2},
+    MonitorClass=OverlayMonitor
+)
 monitor = d._monitor
 
 d["a"] = 10
 print(data)
 
-monitor.add_inchannel(("b","c"))
 monitor.receive_inchannel_value(("b","c"), 80)
 print(data)
 
-d["b"] = 6
-print(data)
-
-monitor.add_inchannel(("b","c"))
 d["b"] = 6
 print(data)

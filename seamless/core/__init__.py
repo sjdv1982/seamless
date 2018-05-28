@@ -87,3 +87,4 @@ from .context import Context, context
 from .worker import Worker
 from .transformer import Transformer, transformer
 from .mount import mountmanager
+from .structured_cell import StructuredCell

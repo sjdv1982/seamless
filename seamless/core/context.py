@@ -78,7 +78,7 @@ context : context or None
     def _add_child(self, childname, child):
         from .macro import get_macro_mode
         assert get_macro_mode()
-        assert isinstance(child, (Context, Worker, Cell))
+        assert isinstance(child, (Context, Worker, CellLikeBase))
         if isinstance(child, Context):
             assert child._context is self
         else:
@@ -356,7 +356,7 @@ context.__doc__ = Context.__init__.__doc__
 
 print("context: TODO symlinks (can be cells/workers/contexts outside this context)")
 
-from .cell import Cell
+from .cell import Cell, CellLikeBase
 from .worker import Worker,  \
   InputPinBase, ExportedInputPin, OutputPinBase, ExportedOutputPin, \
   EditPinBase, ExportedEditPin

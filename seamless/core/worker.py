@@ -201,7 +201,7 @@ class OutputPin(OutputPinBase):
             if worker is None:
                 raise ValueError("Worker has died")
             my_cell = cell()
-            my_cell.connect(self)
+            self.connect(my_cell)
         elif l == 1:
             my_cell = my_cells[0]
         elif l > 1:

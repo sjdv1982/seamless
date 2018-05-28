@@ -30,5 +30,5 @@ def macro_mode_on():
         yield
     finally:
         _macro_mode = old_macro_mode
-        curr_macro_register = macro_register.pop()
-        mount.resolve_register(curr_macro_register)
+    curr_macro_register = macro_register.pop()
+    mount.resolve_register(curr_macro_register)

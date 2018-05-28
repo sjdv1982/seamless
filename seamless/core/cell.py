@@ -13,12 +13,14 @@ submodes = {
 from . import SeamlessBase
 from .macro import get_macro_mode, macro_register
 from copy import deepcopy
+import json
 import hashlib
 
 from ast import PyCF_ONLY_AST, FunctionDef
 from .cached_compile import cached_compile
 
 from .mount import MountItem
+from ..silk import Silk
 
 transformer_patch = """
 import inspect
@@ -29,18 +31,7 @@ def {0}():
 
 cell_counter = 0
 
-class CellBase(SeamlessBase):
-    _exception = None
-    _val = None
-    _last_checksum = None
-    _alternative_checksums = None #alternative checksums resulting from cosmetic updates
-    _naming_pattern = "cell"
-    _prelim_val = None
-    _authoritative = True
-    _overruled = False #a non-authoritative cell that has previously received a value
-    _mount = None
-    _mount_kwargs = None
-
+class CellLikeBase(SeamlessBase):
     def __init__(self):
         global cell_counter
         assert get_macro_mode()
@@ -51,6 +42,21 @@ class CellBase(SeamlessBase):
 
     def __hash__(self):
         return self._counter
+
+
+class CellBase(CellLikeBase):
+    _exception = None
+    _val = None
+    _last_checksum = None
+    _alternative_checksums = None #alternative checksums resulting from cosmetic updates
+    _naming_pattern = "cell"
+    _prelim_val = None
+    _authoritative = True
+    _overruled = False #a non-authoritative cell that has previously received a value
+    _mount = None
+    _mount_kwargs = None
+    _slave = False   #Slave cells. Cannot be written to by API, do not accept connections, and mounting is write-only
+
 
     def status(self):
         """The cell's current status."""
@@ -87,6 +93,7 @@ class CellBase(SeamlessBase):
 
     def set(self, value):
         """Update cell data from Python code in the main thread."""
+        assert not self._slave #slave cells are read-only
         if self._context is None:
             self._prelim_val = value, False #non-default-value prelim
         else:
@@ -131,13 +138,16 @@ class CellBase(SeamlessBase):
         assert self.status() == "OK", self.status()
         return self._serialize(mode, submode)
 
-    def deserialize(self, value, mode, submode=None, *, from_pin, default, cosmetic):
+    def deserialize(self, value, mode, submode=None, *, from_pin, default, cosmetic, force=False):
         """Should normally be invoked by the manager, since it does not notify the manager
         from_pin: can be True (normal pin that has authority), False (from code) or "edit" (edit pin)
         default: indicates a default value (pins may overwrite it)
         cosmetic: declares that the new value is equivalent to the old one (e.g. by adding a comment to a source code cell)
+        force: force deserialization, even if slave (normally, force is invoked only by structured_cell)
         """
         assert from_pin in (True, False, "edit")
+        if not force:
+            assert not self._slave
         self._check_mode(mode, submode)
         if value is None:
             self._val = None
@@ -253,9 +263,6 @@ Use ``Cell.value`` to get its value.
 
 Use ``Cell.status()`` to get its status.
 """
-    def __init__(self):
-        super().__init__()
-
     def _checksum(self, value, buffer=False):
         return hashlib.md5(str(value).encode("utf-8")).hexdigest()
 
@@ -266,6 +273,7 @@ Use ``Cell.status()`` to get its status.
         if mode == "buffer":
             raise Exception("Cell '%s' cannot be serialized as buffer, use TextCell or JsonCell instead" % self.format_path())
         elif mode == "copy":
+            assert submode is None, (mode, submode)
             return deepcopy(self._val)
         else:
             return self._val
@@ -273,6 +281,7 @@ Use ``Cell.status()`` to get its status.
     def _deserialize(self, value, mode, submode=None):
         if mode == "buffer":
             raise Exception("Cell '%s' cannot be de-serialized as buffer, use TextCell or JsonCell instead" % self.format_path())
+        assert submode is None, (mode, submode)
         self._val = value
 
     def as_text(self):
@@ -287,11 +296,13 @@ class TextCell(Cell):
     _mount_kwargs = {"encoding": "utf-8", "binary": False}
     def _serialize(self, mode, submode=None):
         if mode in ("buffer", "copy"):
+            assert submode is None, (mode, submode)
             return deepcopy(self._val)
         else:
             return self._val
 
     def _deserialize(self, value, mode, submode=None):
+        assert submode is None, (mode, submode)
         self._val = str(value)
 
     def as_text(self):
@@ -323,11 +334,17 @@ class PythonCell(Cell):
 
     def _serialize(self, mode, submode=None):
         if mode == "buffer":
+            assert submode is None, (mode, submode)
             return deepcopy(self._val)
         assert mode == "ref" and submode == "pythoncode", (mode, submode)
         return self
 
     def _deserialize(self, value, mode, submode=None):
+        if mode == "ref":
+            self._val = value
+            return
+        assert mode in ("buffer", "copy"), mode
+        assert submode is None, (mode, submode)
         self._val = str(value)
 
 class PyTransformerCell(PythonCell):
@@ -349,20 +366,49 @@ class JsonCell(Cell):
     """A cell in JSON format (monolithic)"""
     #also provides copy+silk and ref+silk transport, but with an empty schema, and text form
 
+    _mount_kwargs = {"encoding": "utf-8", "binary": False}
+    def _to_json(self):
+        if self._val is None:
+            return None
+        return json.dumps(self._val)
+
     def _checksum(self, value, buffer=False):
-        raise NotImplementedError
+        if buffer:
+            return super()._checksum(value)
+        j = json.dumps(value)
+        return super()._checksum(j)
 
     def _validate(self, value):
-        raise NotImplementedError
+        json.dumps(value)
 
     def _serialize(self, mode, submode=None):
-        raise NotImplementedError
+        if mode == "buffer":
+            return self._to_json()
+        elif mode == "copy":
+            if submode == "silk":
+                data = deepcopy(self._val)
+                return Silk(data=data)
+            elif submode == "cson":
+                return self._to_json()
+            else:
+                return deepcopy(self._val)
+        elif mode == "ref":
+            assert submode in ("json", "silk", None)
+            if submode == "silk":
+                return Silk(data=self._val)
+            else:
+                return self._val
+        else:
+            return self._val
 
     def _deserialize(self, value, mode, submode=None):
-        raise NotImplementedError
+        if mode == "buffer":
+            self._val = json.loads(value)
+        else:
+            self._val = value
 
     def as_text(self):
-        raise NotImplementedError
+        return self._to_json()
 
 class CsonCell(Cell):
     """A cell in CoffeeScript Object Notation (CSON) format
@@ -405,19 +451,29 @@ class Signal(Cell):
     def _deserialize(self, value, mode, submode=None):
         raise NotImplementedError
 
-def cell(*args, **kwargs):
-    return Cell(*args, **kwargs)
+def cell(celltype=None):
+    if celltype == "text":
+        return TextCell()
+    elif celltype == "python":
+        return PythonCell()
+    elif celltype == "pytransformer":
+        return PyTransformerCell()
+    elif celltype == "json":
+        return JsonCell()
+    elif celltype == "cson":
+        return CsonCell()
+    else:
+        return Cell()
 
-def textcell(*args, **kwargs):
-    return TextCell(*args, **kwargs)
+def textcell():
+    return TextCell()
 
-def pythoncell(*args, **kwargs):
-    return PythonCell(*args, **kwargs)
+def pythoncell():
+    return PythonCell()
 
-def pytransformercell(*args, **kwargs):
-    return PyTransformerCell(*args, **kwargs)
+def pytransformercell():
+    return PyTransformerCell()
 
-print("TODO cell: JSON cell")
 print("TODO cell: CSON cell")
 print("TODO cell: PyImport cell") #cell that does imports, executed already upon code definition; code injection causes an exec()
 #...and TODO: cache cell, evaluation cell, event stream

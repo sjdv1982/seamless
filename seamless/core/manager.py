@@ -129,18 +129,21 @@ class Manager:
             )
             """
 
-    def set_cell(self, cell, value, *, default=False, cosmetic=False, from_buffer=False):
-        assert isinstance(cell, Cell)
+    def set_cell(self, cell, value, *,
+      default=False, cosmetic=False, from_buffer=False, force=False
+    ):
+        assert isinstance(cell, CellLikeBase)
         if threading.current_thread() != threading.main_thread():
             work = functools.partial(
               self.set_cell, cell, value,
-              default=default, cosmetic=cosmetic, from_buffer=from_buffer
+              default=default, cosmetic=cosmetic, from_buffer=from_buffer,
+              force=force
             )
             self.workqueue.append(work)
             return
         mode = "buffer" if from_buffer else "ref"
         cell.deserialize(value, mode, None,
-          from_pin=False, default=default, cosmetic=cosmetic
+          from_pin=False, default=default, cosmetic=cosmetic,force=force
         )
         if cell._mount is not None:
             self.mountmanager.add_cell_update(cell)
@@ -182,7 +185,8 @@ class Manager:
 
 
 from .context import Context
-from .cell import Cell
+from .cell import Cell, CellLikeBase
 from .worker import Worker, InputPin, EditPin, InputPinBase, EditPinBase, \
  OutputPinBase, ExportedInputPin, ExportedOutputPin
 from .transformer import Transformer
+from .structured_cell import MixedOutchannel

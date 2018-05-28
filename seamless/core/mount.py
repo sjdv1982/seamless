@@ -146,7 +146,7 @@ class MountItem:
         checksum = cell.checksum()
         if self.last_checksum != checksum:
             value = cell.serialize("buffer")
-            assert cell._checksum(value) == checksum, cell.format_path()
+            assert cell._checksum(value, buffer=True) == checksum, cell.format_path()
             with self.lock:
                 self._write(value)
                 self._after_write(checksum)
@@ -260,6 +260,7 @@ class MountManager:
 def resolve_register(reg):
     from .context import Context
     from .cell import Cell
+    from .structured_cell import MixedOutchannel
     contexts = set([r for r in reg if isinstance(r, Context)])
     cells = set([r for r in reg if isinstance(r, Cell)])
     mounts = {}
@@ -268,14 +269,19 @@ def resolve_register(reg):
             return mounts[c]
         if c._mount is not None:
             result = c._mount
+        elif isinstance(c, MixedOutchannel):
+            result = None
         elif isinstance(c, Context) and c._toplevel:
             result = None
         else:
             parent = c._context
             assert parent is not None, c
-            result = find_mount(parent).copy()
-            result["path"] += "/" + c.name
-        mounts[c] = result
+            result = find_mount(parent)
+            if result is not None:
+                result = result.copy()
+                result["path"] += "/" + c.name
+        if result is not None:
+            mounts[c] = result
         return result
     for r in reg:
         find_mount(r)
@@ -316,6 +322,11 @@ def resolve_register(reg):
                 print("Warning: Unable to mount file path '%s': cannot mount this type of cell" % path)
                 continue
             mount.update(cell._mount_kwargs)
+            if cell._slave:
+                if mount.get("mode") == "r":
+                    continue
+                else:
+                    mount["mode"] = "w"
             cell._mount = mount
             mountmanager.add_mount(cell, **mount)
 
