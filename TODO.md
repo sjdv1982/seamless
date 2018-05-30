@@ -9,13 +9,15 @@ Things to do (all low level) :
 - cson cells
 - aliases and symlinks
 - Reactors (think of IPython stuff in the namespace, not properly addressed in 0.1; copy from 0.2 transformers)
-- "Active" switch of managers, workers, connections
+- "Active" switch of managers, workers, connections; persistent/serialized or not??
 - PyImport cells and code injection
 - Status dict, also as a structured cell  (also policies like .accept_shell_append)
 - Signatures/checksums and macro caching. NOTE: take care of the alternative checksums caused by "cosmetic updates"
+  (NOTE: macro caching is a low-level thing, because at the high-level, it is just a change-of-value of the macro parameter, no topology change!)
 Then, slowly move to the mid-level data structure:
-- manager observers
-- low-level-to-mid-level mapping (as observers)
+UPDATE: maybe elide the middle level, dynamically generate at time of low-level generation/serialization??
+- manager observers (not needed ?)
+- low-level-to-mid-level mapping (as observers) (not needed ?)
 - apply to slash-0 (see mount.py:filehash)
 - design mid-level, including old resources
 Finally, the high level:
