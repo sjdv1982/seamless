@@ -2,7 +2,9 @@ from .cell import CellLikeBase, Cell, JsonCell
 #from .worker import InputPin, OutputPin
 from ..mixed import OverlayMonitor
 from .macro import get_macro_mode
+from ..silk import Silk
 import weakref
+
 
 class Inchannel(CellLikeBase):
     _authoritative = True
@@ -76,13 +78,18 @@ class Outchannel(CellLikeBase):
     def _check_mode(self, mode, submode):
         if mode == "copy":
             print("TODO: Outchannel, copy data")
-        if mode not in ("copy", None) or submode is not None:
+        if mode not in ("copy", None):
+            raise NotImplementedError
+        if submode not in ("silk", "json", None):
             raise NotImplementedError
 
     def serialize(self, mode, submode):
         structured_cell = self.structured_cell()
         assert structured_cell is not None
-        return structured_cell.monitor.get_data(self.outchannel)
+        data = structured_cell.monitor.get_data(self.outchannel)
+        if submode == "silk" and not structured_cell._silk:
+            data = Silk(data=data)
+        return data
 
     def deserialize(self, *args, **kwargs):
         pass
@@ -147,6 +154,7 @@ class StructuredCell(CellLikeBase):
             self._plain = True
         else:
             assert isinstance(storage, JsonCell)
+            storage._slave = True
             self._plain = False
         self.storage = storage
 
@@ -252,3 +260,5 @@ class StructuredCell(CellLikeBase):
     @property
     def handle(self):
         return self.monitor.get_path()
+
+#TODO: schema is not a slave, it may be updated from elsewhere; need to listen for that

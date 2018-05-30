@@ -154,7 +154,7 @@ class Silk(SilkBase):
             try:
                 return super().__getattribute__("_access_data")(attr)
             except (TypeError, KeyError, AttributeError, IndexError):
-                raise AttributeError from None
+                raise AttributeError(attr) from None
             except:
                 raise exc from None
 
