@@ -4,6 +4,8 @@ from . import MixedScalar, Scalar,  scalars, is_np_struct, _allowed_types
 import json
 
 def get_subpath(data, form, path):
+    if data is None:
+        return None, None, None
     type_ = form["type"]
     if not len(path):
         assert type_ in scalars
@@ -12,12 +14,17 @@ def get_subpath(data, form, path):
     attr = path[0]
     if type_ == "object":
         assert isinstance(attr, str), attr
+        if attr not in data:
+            return None, None, None
         subdata = data[attr]
         subform = form["properties"][attr]
         result = subdata, subform, None
         return result
     elif type_ in ("array", "tuple"):
         assert isinstance(attr, int), attr
+        assert attr >= 0
+        if len(data) <= attr:
+            return None, None, None
         subdata = data[attr]
         if form["identical"]:
             subform = form["items"]
@@ -57,6 +64,8 @@ class Monitor:
         # TODO, triggers. For now, just recalculate the entire form on every change
 
     def get_instance(self, subform, subdata, path):
+        if subdata is None:
+            return None
         if isinstance(subform, str):
             type_ = subform
         else:

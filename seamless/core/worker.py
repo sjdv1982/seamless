@@ -130,7 +130,7 @@ class InputPin(InputPinBase):
     pin.cell() returns or creates a cell that is connected to the inputpin
     """
 
-    def cell(self, own=False):
+    def cell(self, celltype=None):
         """Returns or creates a cell connected to the inputpin"""
         from .cell import cell
         manager = self._get_manager()
@@ -139,7 +139,8 @@ class InputPin(InputPinBase):
             worker = self.worker_ref()
             if worker is None:
                 raise ValueError("Worker has died")
-            my_cell = cell()
+            my_cell = cell(celltype)
+            worker._context._add_new_cell(my_cell)
             my_cell.connect(self)
         else:
             my_cell = my_cell[1]
@@ -190,7 +191,7 @@ class OutputPin(OutputPinBase):
         manager = self._get_manager()
         manager.connect_pin(self, target)
 
-    def cell(self, own=False):
+    def cell(self, celltype=None):
         """returns or creates a cell that is connected to the pin"""
         from .cell import cell
         manager = self._get_manager()
@@ -200,7 +201,7 @@ class OutputPin(OutputPinBase):
             worker = self.worker_ref()
             if worker is None:
                 raise ValueError("Worker has died")
-            my_cell = cell()
+            my_cell = cell(celltype)
             self.connect(my_cell)
         elif l == 1:
             my_cell = my_cells[0]
@@ -238,7 +239,7 @@ class EditPin(EditPinBase):
 
     last_value = None
 
-    def cell(self, own=False):
+    def cell(self, celltype=None):
         """Returns or creates a cell connected to the inputpin"""
         from .cell import cell
         manager = self._get_manager()
@@ -248,7 +249,7 @@ class EditPin(EditPinBase):
             worker = self.worker_ref()
             if worker is None:
                 raise ValueError("Worker has died")
-            my_cell = cell()
+            my_cell = cell(celltype)
             my_cell.connect(self)
         elif l == 1:
             my_cell = my_cells[0]

@@ -269,6 +269,10 @@ Use ``Cell.status()`` to get its status.
     def _validate(self, value):
         pass
 
+    def _check_mode(self, mode, submode=None):
+        super()._check_mode(mode, submode)
+        assert (mode, submode) != ("ref", "pythoncode") #TODO
+
     def _serialize(self, mode, submode=None):
         if mode == "buffer":
             raise Exception("Cell '%s' cannot be serialized as buffer, use TextCell or JsonCell instead" % self.format_path())
@@ -320,6 +324,9 @@ class PythonCell(Cell):
 
     #TODO: for serialization, store ._accept_shell_append
     #TODO: for GUI, make ._accept_shell_append editable as cell
+
+    def _check_mode(self, mode, submode=None):
+        CellBase._check_mode(self, mode, submode)
 
     def _shell_append(self, text):
         if not self._accept_shell_append:

@@ -260,7 +260,7 @@ class MountManager:
 def resolve_register(reg):
     from .context import Context
     from .cell import Cell
-    from .structured_cell import MixedOutchannel
+    from .structured_cell import MixedInchannel, MixedOutchannel
     contexts = set([r for r in reg if isinstance(r, Context)])
     cells = set([r for r in reg if isinstance(r, Cell)])
     mounts = {}
@@ -269,7 +269,7 @@ def resolve_register(reg):
             return mounts[c]
         if c._mount is not None:
             result = c._mount
-        elif isinstance(c, MixedOutchannel):
+        elif isinstance(c, (MixedInchannel, MixedOutchannel)):
             result = None
         elif isinstance(c, Context) and c._toplevel:
             result = None

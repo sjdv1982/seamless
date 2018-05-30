@@ -65,9 +65,11 @@ class OverlayMonitor(MakeParentMonitor):
 
     def _update_outchannels(self, path):
         for outpath, func in self.outchannels.items():
-            if path[:len(outpath)] == outpath:
+            m = min(len(outpath), len(path))
+            if m == 0 or path[:m] == outpath[:m]:
                 data = self.get_path(outpath)
-                func(data.value)
+                value = None if data is None else data.value
+                func(value)
 
     def set_path(self, path, subdata):
         self._check_inchannels(path)

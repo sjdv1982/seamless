@@ -41,6 +41,9 @@ class Manager:
         return self._ids
 
     def connect_cell(self, cell, target):
+        assert isinstance(cell, CellLikeBase)
+        assert cell._get_manager() is self
+        other = target._get_manager()
         assert isinstance(target, (InputPinBase, EditPinBase, Cell))
         if isinstance(target, ExportedInputPin):
             target = target.get_pin()
@@ -88,10 +91,12 @@ class Manager:
         if cell not in self.cell_to_pins:
             self.cell_to_pins[cell] = []
         self.cell_to_pins[cell].append(connection)
-        self.pin_from_cell[target] = rev_connection
+        other.pin_from_cell[target] = rev_connection
 
     def connect_pin(self, pin, target):
-        assert isinstance(target, Cell)
+        assert pin._get_manager() is self
+        other = target._get_manager()
+        assert isinstance(target, CellLikeBase)
         if isinstance(pin, ExportedOutputPin):
             pin = pin.get_pin()
         worker = pin.worker_ref()
@@ -111,7 +116,7 @@ class Manager:
         if pin not in self.pin_to_cells:
             self.pin_to_cells[pin] = []
         self.pin_to_cells[pin].append(connection)
-        self.cell_from_pin[target] = connection
+        other.cell_from_pin[target] = connection
         target._authoritative = False
 
         if isinstance(worker, Transformer):

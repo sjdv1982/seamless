@@ -1,24 +1,62 @@
 from .cell import CellLikeBase, Cell, JsonCell
-from .worker import InputPin, OutputPin
+#from .worker import InputPin, OutputPin
 from ..mixed import OverlayMonitor
 from .macro import get_macro_mode
 import weakref
 
-class MixedInchannel(InputPin):
-    """
-    Behaves like inputpins
-    'worker_ref' actually is a reference to structured_cell
-    """
-    def __init__(self, structured_cell, inchannel):
-        name = inchannel if inchannel != () else "self"
-        super().__init__(structured_cell, name, "sync")
+class MixedInchannel(CellLikeBase):
+    _authoritative = True
+    _mount = None
 
-    def receive_update(self, value):
-        """Private"""
-        structured_cell = self.worker_ref()
+    def __init__(self, structured_cell, inchannel):
+        self.structured_cell = weakref.ref(structured_cell)
+        self.inchannel = inchannel
+        name = inchannel if inchannel != () else "self"
+        self.name = name
+        super().__init__()
+
+    def _check_mode(self, mode, submode):
+        if mode == "copy":
+            print("TODO: MixedInchannel, copy data")
+        if mode not in ("copy", None) or submode is not None:
+            raise NotImplementedError
+
+    def deserialize(self, value, mode, submode, **kwargs):
+        if value is None:
+            self._status = self.StatusFlags.UNDEFINED
+        else:
+            self._status = self.StatusFlags.OK
+        structured_cell = self.structured_cell()
         if structured_cell is None:
-            return #structured_cell has died...
-        structured_cell.monitor.receive_inchannel_value(self.name, value)
+            return
+        structured_cell.monitor.receive_inchannel_value(self.inchannel, value)
+
+    @property
+    def authoritative(self):
+        return self._authoritative
+
+    @property
+    def path(self):
+        structured_cell = self.structured_cell()
+        name = self.name
+        if isinstance(name, str):
+            name = (name,)
+        if structured_cell is None:
+            return ("<None>",) + name
+        return structured_cell.path + name
+
+    def status(self):
+        """The cell's current status."""
+        return self._status.name
+
+    @property
+    def _context(self):
+        return self.structured_cell().data._context
+
+    @property
+    def value(self):
+        return self.structured_cell().monitor.get_data(self.inchannel)
+
 
 class MixedOutchannel(CellLikeBase):
     """
@@ -26,6 +64,8 @@ class MixedOutchannel(CellLikeBase):
     'worker_ref' actually is a reference to structured_cell
     """
     _mount = None
+    mode = "copy"
+    submode = None
     def __init__(self, structured_cell, outchannel):
         self.structured_cell = weakref.ref(structured_cell)
         self.outchannel = outchannel
@@ -42,17 +82,22 @@ class MixedOutchannel(CellLikeBase):
     def serialize(self, mode, submode):
         structured_cell = self.structured_cell()
         assert structured_cell is not None
-        return structured_cell.monitor.get_path(self.outchannel).value
+        return structured_cell.monitor.get_data(self.outchannel)
 
     def deserialize(self, *args, **kwargs):
         pass
 
     def send_update(self, value):
+        if value is None:
+            self._status = self.StatusFlags.UNDEFINED
+        else:
+            self._status = self.StatusFlags.OK
         structured_cell = self.structured_cell()
         assert structured_cell is not None
         data = structured_cell.data
         manager = data._get_manager()
         manager.set_cell(self, value)
+        return value
 
     @property
     def path(self):
@@ -64,6 +109,17 @@ class MixedOutchannel(CellLikeBase):
             return ("<None>",) + name
         return structured_cell.path + name
 
+    def status(self):
+        """The cell's current status."""
+        return self._status.name
+
+    @property
+    def _context(self):
+        return self.structured_cell().data._context
+
+    @property
+    def value(self):
+        return self.structured_cell().monitor.get_data(self.outchannel)
 
 class StructuredCell(CellLikeBase):
     _mount = None
@@ -152,13 +208,19 @@ class StructuredCell(CellLikeBase):
 
     def connect_inchannel(self, source, inchannel):
         ic = self.inchannels[inchannel]
-        manager = self.data._get_manager()
-        manager.connect_cell(source, ic)
+        manager = source._get_manager()
+        manager.connect_pin(source, ic)
+        v = self.monitor.get_path(inchannel)
+        status = ic.StatusFlags.OK if v is not None else ic.StatusFlags.UNDEFINED
+        ic._status = status
 
     def connect_outchannel(self, outchannel, target):
         oc = self.outchannels[outchannel]
         manager = self.data._get_manager()
         manager.connect_cell(oc, target)
+        v = self.monitor.get_path(outchannel)
+        status = oc.StatusFlags.OK if v is not None else oc.StatusFlags.UNDEFINED
+        oc._status = status
 
     def _data_hook(self, value):
         cell = self.data
@@ -177,3 +239,7 @@ class StructuredCell(CellLikeBase):
         manager = cell._get_manager()
         manager.set_cell(cell, value, force=True)
         return self.storage._val
+
+    @property
+    def value(self):
+        return self.monitor.get_data()

@@ -54,7 +54,7 @@ class MakeParentMonitor(Monitor):
         if self.data is None:
             if len(path):
                 first = path[0]
-                if isinstance(first, attr):
+                if isinstance(first, str):
                     self.data = self._data_hook({})
                 elif isinstance(first, int):
                     self.data = self._data_hook([])
