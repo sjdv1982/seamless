@@ -47,7 +47,7 @@ with macro_mode_on():
         "y": "input",
         "z": "output"
     })
-    ctx.tf2.code.cell("pytransformer").set("z = y + 1000")
+    ctx.tf2.code.cell().set("z = y + 1000")
     ctx.z = cell("json")
     ctx.result.connect_outchannel(("y",), ctx.tf2.y)
     ctx.tf2.z.connect(ctx.z)

@@ -9,6 +9,7 @@ submodes = {
     "copy": ["json", "cson", "silk"],
     "ref": ["pythoncode", "json", "silk"]
 }
+celltypes = ("text", "python", "pytransformer", "json", "cson")
 
 from . import SeamlessBase
 from .macro import get_macro_mode, macro_register

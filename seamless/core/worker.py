@@ -78,14 +78,21 @@ class Worker(SeamlessBase):
         shell_namespace, inputpin, shell_title = self._shell(subshell)
         return PyShell(shell_namespace, inputpin, shell_title)
 
+from .cell import modes as cell_modes, submodes as cell_submodes, celltypes
 
 class PinBase(SeamlessBase):
     submode = None
-    def __init__(self, worker, name, mode, submode=None):
+    def __init__(self, worker, name, mode, submode=None, celltype=None):
         self.worker_ref = weakref.ref(worker)
         super().__init__()
+        assert mode in cell_modes, (mode, cell_modes)
+        if submode is not None:
+            assert submode in cell_submodes[mode], (mode, cell_submodes)
         self.name = name
         self.mode = mode
+        if celltype is not None:
+            assert celltype in celltypes, (celltype, celltypes)
+        self.celltype = celltype
         if submode is not None:
             self.submode = submode
 
@@ -135,6 +142,8 @@ class InputPin(InputPinBase):
         from .cell import cell
         manager = self._get_manager()
         my_cell = manager.pin_from_cell.get(self)
+        if celltype is None:
+            celltype = self.celltype
         if my_cell is None:
             worker = self.worker_ref()
             if worker is None:
@@ -196,6 +205,8 @@ class OutputPin(OutputPinBase):
         from .cell import cell
         manager = self._get_manager()
         my_cells = manager.outputpin_to_cells(self)
+        if celltype is None:
+            celltype = self.celltype
         l = len(my_cells)
         if l == 0:
             worker = self.worker_ref()
@@ -244,6 +255,8 @@ class EditPin(EditPinBase):
         from .cell import cell
         manager = self._get_manager()
         my_cells = manager.editpin_to_cells(self)
+        if celltype is None:
+            celltype = self.celltype
         l = len(my_cells)
         if l == 0:
             worker = self.worker_ref()

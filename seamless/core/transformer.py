@@ -21,7 +21,7 @@ class Transformer(Worker):
     def __init__(self, transformer_params):
         super().__init__()
         self.state = {}
-        self.code = InputPin(self, "code", "ref", "pythoncode")
+        self.code = InputPin(self, "code", "ref", "pythoncode", "pytransformer")
         thread_inputs = []
         self._io_attrs = ["code"]
         self._pins = {"code":self.code}
