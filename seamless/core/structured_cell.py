@@ -242,6 +242,13 @@ class StructuredCell(CellLikeBase):
         manager.set_cell(cell, value, force=True)
         return self.storage._val
 
+    def set(self, value):
+        self.monitor.set_path((), value)
+
     @property
     def value(self):
         return self.monitor.get_data()
+
+    @property
+    def handle(self):
+        return self.monitor.get_path()

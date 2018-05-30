@@ -313,15 +313,19 @@ def get_form_items_list_plain(data):
                 items[n] = ctypedef
             items[n]["storage"] = s
     else:
-        items = items2[0]
-        child_storage = storages[0]
-        if child_storage == "pure-plain":
+        if not len(items2):
             storage = "pure-plain"
+            items = None
         else:
-            storage = "mixed-plain"
-            if isinstance(items, str):
-                items = {"type": items}
-            items["storage"] = child_storage
+            items = items2[0]
+            child_storage = storages[0]
+            if child_storage == "pure-plain":
+                storage = "pure-plain"
+            else:
+                storage = "mixed-plain"
+                if isinstance(items, str):
+                    items = {"type": items}
+                items["storage"] = child_storage
     return storage, items, identical
 
 def get_form_list(data):

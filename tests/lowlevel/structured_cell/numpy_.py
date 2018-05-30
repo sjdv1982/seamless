@@ -33,21 +33,21 @@ with macro_mode_on():
     ctx.result = cell("mixed")
     ctx.tf.c.connect(ctx.result)
 
-
-
-    #ctx.mount("/tmp/mount-test")
+    ctx.mount("/tmp/mount-test")
 
 ctx.equilibrate()
 print(ctx.tf.status())
 print(ctx.result.value)
 
-ctx.inp.monitor.set_path((), {})
-inp = ctx.inp.monitor.get_path()
-print(type(inp))
-inp.a = 10
-#ctx.inp.monitor.set_path(("a",), 10) ###
+#ctx.inp.set({})
+inp = ctx.inp.handle
+inp["a"] = 10
+inp["b"] = 12
+inp["data"] = np.arange(100)
 
 ctx.equilibrate()
 print(ctx.tf.status())
+
+print(ctx.result.value)
 
 #shell = ctx.tf.shell()

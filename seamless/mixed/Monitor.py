@@ -65,6 +65,9 @@ class Monitor:
 
     def get_instance(self, subform, subdata, path):
         if subdata is None:
+            if not len(path):
+                assert self._data_hook is not None
+                return MixedObject(self, path)
             return None
         if isinstance(subform, str):
             type_ = subform
@@ -299,5 +302,6 @@ class Monitor:
         self.recompute_form(path)
 
 
+from .MixedObject import MixedObject
 from .MixedDict import MixedDict, MixedNumpyStruct
 from .MixedList import MixedList, MixedNumpyArray

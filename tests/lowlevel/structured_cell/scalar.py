@@ -33,7 +33,9 @@ with macro_mode_on():
 ctx.equilibrate()
 print(ctx.result.value)
 
-a = ctx.a.monitor
-a.set_path((), 1)
+ctx.a.set(1)
+
+ctx.equilibrate()
+print(ctx.result.value)
 
 #shell = ctx.tf.shell()

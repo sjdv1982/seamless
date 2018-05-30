@@ -13,6 +13,10 @@ class MixedList(MixedBase, MutableSequence):
     def insert(self, item, value):
         path = self._path + (item,)
         self._monitor.insert_path(path, value)
+    def append(self, value):
+        item = len(self)
+        path = self._path + (item,)
+        self._monitor.insert_path(path, value)
     def __delitem__(self, item):
         path = self._path + (item,)
         self._monitor.del_path(path)

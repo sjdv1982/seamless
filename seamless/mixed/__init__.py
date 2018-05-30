@@ -41,6 +41,13 @@ class MixedBase(SilkHasForm):
         self._monitor.set_path(self._path, value)
     def _get_silk_form(self):
         return self.form
+    def __setattr__(self, attr, value):
+        if attr.startswith("_"):
+            return super().__setattr__(attr, value)
+        if attr in dir(self):
+            return super().__setattr__(attr, value)
+        raise AttributeError(attr)
+
 
 class MixedScalar(MixedBase):
     pass

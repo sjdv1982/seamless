@@ -20,7 +20,6 @@ with macro_mode_on():
         inchannels = None,
         outchannels = [("a",), ("b",)]
     )
-    ctx.inp.monitor.set_path((), {"a": 10})
     ctx.inp.connect_outchannel(("a",), ctx.tf.a)
     ctx.inp.connect_outchannel(("b",), ctx.tf.b)
 
@@ -54,7 +53,9 @@ with macro_mode_on():
 
     #ctx.mount("/tmp/mount-test")
 
-ctx.inp.monitor.set_path(("b",), 20)
+inp = ctx.inp.handle
+inp["a"] = 10
+inp["b"] = 20
 ctx.equilibrate()
 print(ctx.result.value)
 
@@ -63,7 +64,7 @@ print(ctx.tf.status())
 print(ctx.tf2.status())
 print(ctx.z.value)
 
-ctx.inp.monitor.set_path(("b",), 25)
+inp["b"] = 25
 ctx.equilibrate()
 print(ctx.z.value)
 
