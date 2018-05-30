@@ -9,7 +9,7 @@ submodes = {
     "copy": ["json", "cson", "silk"],
     "ref": ["pythoncode", "json", "silk"]
 }
-celltypes = ("text", "python", "pytransformer", "json", "cson")
+celltypes = ("text", "python", "pytransformer", "json", "cson", "mixed")
 
 from . import SeamlessBase
 from .macro import get_macro_mode, macro_register
@@ -297,6 +297,10 @@ Use ``Cell.status()`` to get its status.
         except:
             return "<Cannot be rendered as text>"
 
+class MixedCell(Cell):
+    def _serialize(self, mode, submode=None):
+        raise NotImplementedError #TODO
+
 class TextCell(Cell):
     _mount_kwargs = {"encoding": "utf-8", "binary": False}
     def _serialize(self, mode, submode=None):
@@ -470,6 +474,8 @@ def cell(celltype=None):
         return JsonCell()
     elif celltype == "cson":
         return CsonCell()
+    elif celltype == "mixed":
+        return MixedCell()
     else:
         return Cell()
 

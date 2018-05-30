@@ -25,16 +25,29 @@ with macro_mode_on():
         "c": "output"
     })
 
+    ctx.inp.connect_outchannel(("a",), ctx.tf.a)
+    ctx.inp.connect_outchannel(("b",), ctx.tf.b)
+    ctx.inp.connect_outchannel(("data",), ctx.tf.data)
+    ctx.tf.code.cell().set("c = a * data + b")
+
+    ctx.result = cell("mixed")
+    ctx.tf.c.connect(ctx.result)
+
+
+
     #ctx.mount("/tmp/mount-test")
 
 ctx.equilibrate()
+print(ctx.tf.status())
 print(ctx.result.value)
 
-a = ctx.a.monitor
-a.set_path((), {})
-aa = a.get_data()
-aa.a = 10
-aa.b = 20
-aa.data = np.
+ctx.inp.monitor.set_path((), {})
+inp = ctx.inp.monitor.get_path()
+print(type(inp))
+inp.a = 10
+#ctx.inp.monitor.set_path(("a",), 10) ###
+
+ctx.equilibrate()
+print(ctx.tf.status())
 
 #shell = ctx.tf.shell()

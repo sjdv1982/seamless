@@ -194,4 +194,4 @@ from .cell import Cell, CellLikeBase
 from .worker import Worker, InputPin, EditPin, InputPinBase, EditPinBase, \
  OutputPinBase, ExportedInputPin, ExportedOutputPin
 from .transformer import Transformer
-from .structured_cell import MixedOutchannel
+from .structured_cell import Outchannel

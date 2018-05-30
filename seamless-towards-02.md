@@ -14,13 +14,14 @@ NOTES:
 - Renaming is very hard to cache. So the low-level macro cache function can receive (from the high level) a renaming key.
   This renaming key changes the current (sub-)context against which the renamed context is evaluated.
   Normally, every renaming triggers a mid-level-to-low-level translation, so there should be only renaming key.
+  UPDATE: don't cache this. Cache code cell hash + input hashes + transformer/reactor/macro declaration dict
 - If you .set() a cell and then connect to it (making it non-authoritative), a warning is printed.
   Use .set_default() to avoid this warning.
 - There will be a runtime API to control the low-level from the mid-level. This is just another kind of caching; the low-level could as well be regenerated.
-  The runtime API can be done automatically, if all mid-level-to-low-level core macros defines cell-to-cell correspondences. These core macros understand all
-  mid-level nodes. It will "just work" for embedded low-level macro nodes too.
-  Authoritative cells can be set directly from the mid-level. Setting non-authoritative cells will generate the usual warning. Setting cells that control (low-level)
-  macros will re-execute them (with proper caching).
+  The runtime API can be done automatically, if all mid-level-to-low-level core macros defines cell-to-cell correspondences. These core macros understand all mid-level nodes. It will "just work" for embedded low-level macro nodes too.
+  Authoritative cells can be set directly from the mid-level. Setting non-authoritative cells will generate the usual warning. Setting cells that control (low-level) macros will re-execute them (with proper caching).
+  UPDATE: better to have the mid-level contain explicit pointers to low-level authoritative data. This way, modifying the low level
+    auto-modifies the mid level.  
 - There will be an option to sync cells to a file. This must be done in macro mode.
   The sync can be one-way or two-way (only for authoritative cells). When a cell is updated from a file, it is as if it was done using .set()
   A context can be synced to a directory.
@@ -31,11 +32,11 @@ NOTES:
 
 Seamless will consist of three parts:
 - A high-level Silk API
-- A mid-level execution graph format
+- A mid-level execution graph format (SLGraph?)
 - A low-level direct API
 Only the mid-level will have a formal data format. The other two are informal
 (for now) APIs tied to the Python language (for now).
-The low-level is at is now, but with important simplifications:
+The low-level is as it is now, but with important simplifications:
 - The context may only ever grow. Explicit removal of cells/constructs/subcontexts
   is not supported. Only low-level macro re-execution will replace a subcontext.
   All low-level macros will be cached, and always generate a context.
@@ -45,7 +46,7 @@ The low-level is at is now, but with important simplifications:
   are more to validate transformer output, since authoritative inputs should have
   already been validated at the high level.
   If there is no schema, cells may contain raw Python objects (discouraged), and
-  cannot be serialized.
+  cannot be serialized. UPDATE: slightly less radical: there is still text,json,cson,python cells
 - Symlinks still needed.
 - status() will go. Instead, context will have a hook registration API that can be configured to link registration
   names to particular context children. UPDATE: it remains here for now, something to do for 0.3 or so
@@ -63,11 +64,12 @@ Mid-level:
   between high-level and mid-level. Hooks can be informative (mid-level simply can report
   status and value) OR may trigger the re-computation of the entire execution graph
   (if the cell is an input of a high-level macro)
+  UPDATE: no need for this, since mid-level is only manipulated from high-level. Results of computations do not confer authority!
 - There will be a special library contexts of low-level macros that recognize mid-level graph constructs
   and return low-level contexts.
   These contexts are expected to accept connections straightforwardly, and to have hook registration configured.
   The "big low-level macro" (only invoked by the top context) reads in a mid-level graph + such a library,
-  and returns a big low-level context.
+  and returns a big low-level context (mid-to-low-level translation).
 High-level:
 Everything is a Silk structure: cells, contexts, transformers, reactors, observers, macros.
 But they will be heavily-modified subclasses of Silk. (maybe less modification in the future)
@@ -76,12 +78,16 @@ Normally, ctx.a = 2 will create a cell, but it could create a constant too.
 "ctx.c = ctx.a + ctx.b" will normally create ctx.c as an operator_add object.
 This object will be stored in the data dict.
 A Silk context has a single "big high-level macro" to generate a mid-level graph.
+(UPDATE: or simply manipulate the graph directly using high-level API...)
 This is done by the top-level context (may invoke subcontexts recursively)
 It is done again and again whenever a new cell/context/... is added or removed.
-(Not when the value is changed, though, unless there is a high-level macro connected to it)
+(Not when the value is changed, though, unless there is a high-level macro connected to it
+  UPDATE: not even then. A high-level macro is nothing but a macro that returns a mid-level graph structure.
+  The default language is the Python-Seamless high-level API, but it can be any language)
 
 Macros
 High-level macros use the high-level API and generate a high-level context.
+(UPDATE: or a mid-level graph structure!)
 Low-level macros use the low-level (direct-mode) API and generate a low-level context.
   They can be embedded in the mid-level graph (specifying Python as the language)
 Some high-level contexts can be configured as *libraries*:
@@ -125,6 +131,7 @@ This builds upon a similar mechanism in seamless 0.1.
   A dependency of an authoritative cell is the md5sum of its value.
   A dependency of a non-authoritative cell is the dependency graph of the worker that generated it.
   Cells may have only one input, this is strictly enforced.
+  UPDATE: just of the direct children may be enough.... until you reach authoritative cells
 - Then, the macro is (re-)executed as normal, but again, with all managers in a halting state. For the generated context, a graph is built. Each cell and worker
   in the generated context is checked against the current context, and substituted if possible. (clean = substitution, dirty = no substitution).
   substitution rules are as follows:
@@ -491,7 +498,7 @@ There will be a global fallback "evaluation" dict as well.
 Don't follow exactly this scheme. Pins will now have simple evaluation parameters in their arguments.
 Low-level macro caching will know that they don't matter.
 In addition, a new cell type "evaluation cell" will be treated likewise.
-This is just for the purpose of dependency tracking, though, not cache substitition (see above).
+This is just for the purpose of dependency tracking, though, not cache substitution (see above).
 Evaluation cells may contain more complex evaluation parameters.
 Their semantic meaning is at the high level, no low-level support or core mid-level support.
 

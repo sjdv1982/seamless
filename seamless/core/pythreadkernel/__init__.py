@@ -95,8 +95,11 @@ class Worker(metaclass=ABCMeta):
                     continue
 
                 # If we have missing values, and this input is currently default, it's no longer missing
-                if self._pending_inputs and self.values[name] is None:
-                    self._pending_inputs.remove(name)
+                if data is not None:
+                    if self._pending_inputs and self.values[name] is None:
+                        self._pending_inputs.remove(name)
+                else:
+                    self._pending_inputs.add(name)
 
                 self.values[name] = data
                 self.updated.add(name)

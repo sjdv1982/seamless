@@ -4,7 +4,7 @@ from ..mixed import OverlayMonitor
 from .macro import get_macro_mode
 import weakref
 
-class MixedInchannel(CellLikeBase):
+class Inchannel(CellLikeBase):
     _authoritative = True
     _mount = None
 
@@ -17,7 +17,7 @@ class MixedInchannel(CellLikeBase):
 
     def _check_mode(self, mode, submode):
         if mode == "copy":
-            print("TODO: MixedInchannel, copy data")
+            print("TODO: Inchannel, copy data")
         if mode not in ("copy", None) or submode is not None:
             raise NotImplementedError
 
@@ -58,7 +58,7 @@ class MixedInchannel(CellLikeBase):
         return self.structured_cell().monitor.get_data(self.inchannel)
 
 
-class MixedOutchannel(CellLikeBase):
+class Outchannel(CellLikeBase):
     """
     Behaves like cells
     'worker_ref' actually is a reference to structured_cell
@@ -75,7 +75,7 @@ class MixedOutchannel(CellLikeBase):
 
     def _check_mode(self, mode, submode):
         if mode == "copy":
-            print("TODO: MixedOutchannel, copy data")
+            print("TODO: Outchannel, copy data")
         if mode not in ("copy", None) or submode is not None:
             raise NotImplementedError
 
@@ -88,6 +88,8 @@ class MixedOutchannel(CellLikeBase):
         pass
 
     def send_update(self, value):
+        if value is None and self._status == self.StatusFlags.UNDEFINED:
+           return
         if value is None:
             self._status = self.StatusFlags.UNDEFINED
         else:
@@ -170,11 +172,11 @@ class StructuredCell(CellLikeBase):
         self.inchannels = {}
         if inchannels is not None:
             for inchannel in inchannels:
-                self.inchannels[inchannel] = MixedInchannel(self, inchannel)
+                self.inchannels[inchannel] = Inchannel(self, inchannel)
         self.outchannels = {}
         if outchannels is not None:
             for outchannel in outchannels:
-                self.outchannels[outchannel] = MixedOutchannel(self, outchannel)
+                self.outchannels[outchannel] = Outchannel(self, outchannel)
 
         monitor_data = self.data._val
         if self._silk:
