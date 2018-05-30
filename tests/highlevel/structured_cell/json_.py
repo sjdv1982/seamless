@@ -24,10 +24,12 @@ ctx.tf2 = ctx.c + 1000
 def func(c):
     return c + 1000
 ctx.tf2 = func
+ctx.tftype = "simple"  #input and output are not Silk cells
 ctx.tf2.c = ctx.c #or ctx.tf2.input.c = ctx.c
 #or:
 code = "cc = c + 1000"
 ctx.tf2 = seamless.Transformer(lang="python")
+ctx.tftype = "simple"  #input and output are not Silk cells
 ctx.tf2.set(code) #ctx.tf2.self.set(code)
 ctx.tf2.self.output_name = "cc"
 ctx.tf2.self.assignment = "output" #is default?
