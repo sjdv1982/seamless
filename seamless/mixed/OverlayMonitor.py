@@ -47,7 +47,8 @@ class OverlayMonitor(MakeParentMonitor):
 
     def _check_inchannels(self, path):
         if path in self.inchannels:
-            warn("inchannel %s exists, value overwritten" % path)
+            ppath = path if len(path) else "()"
+            warn("inchannel %s exists, value overwritten" % ppath)
         else:
             l0 = len(path)
             for cpath in self.inchannels:
@@ -60,7 +61,7 @@ class OverlayMonitor(MakeParentMonitor):
                     if cpath[:l0] == path:
                         exists = True
                 if exists:
-                    warn("inchannel %s exists, value overwritten" % path)
+                    warn("inchannel %s exists, value overwritten" % cpath)
                     break
 
     def _update_outchannels(self, path):
@@ -71,10 +72,12 @@ class OverlayMonitor(MakeParentMonitor):
                 value = None if data is None else data.value
                 func(value)
 
-    def set_path(self, path, subdata):
-        self._check_inchannels(path)
+    def set_path(self, path, subdata, from_pin=False):
+        if not from_pin:
+            self._check_inchannels(path)
         super().set_path(path, subdata)
-        self._update_outchannels(path)
+        if not from_pin:
+            self._update_outchannels(path)
 
     def insert_path(self, path, subdata):
         self._check_inchannels(path)

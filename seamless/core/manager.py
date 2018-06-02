@@ -8,6 +8,9 @@ Cells can have only one outputpin writing to them, this is strictly enforced.
 The manager has a notion of the managers of the subcontexts
 manager.set_cell and manager.pin_send_update are thread-safe (can be invoked from any thread)
 TODO: The manager can maintain a value dict and an exception dict (in text/cell form; the cells themselves hold the Python objects)
+
+TODO: once reactors arrive (or any kind of sync evaluation), keep a stack of cells that have been updated since the current sync action
+ this to break a single unresponsive endless feedback cycle into lots of cycles with one-update-per-cycle
 """
 
 import threading
@@ -18,9 +21,11 @@ class Manager:
         self.ctx = ctx
         self.sub_managers = {}
         self.cell_to_pins = {} #cell => inputpins
+        self.cell_to_cells = {} #cell => (index, alias target cell, alias mode) list
         self.cell_from_pin = {} #cell => outputpin
-        self.pin_from_cell = {} #inputpin => cell
-        self.pin_to_cells = {} #outputpin => cells
+        self.cell_from_cell = {} #alias target cell => (index, source cell, alias mode)
+        self.pin_from_cell = {} #inputpin => (index, cell)
+        self.pin_to_cells = {} #outputpin => (index, cell) list
         self._ids = 0
         self.unstable = set()
         #for now, just a single global workqueue
@@ -40,29 +45,56 @@ class Manager:
         self._ids += 1
         return self._ids
 
-    def connect_cell(self, cell, target):
+    def _update_cell_from_cell(self, cell, target, alias_mode):
+        #TODO: negotiate proper serialization protocol (see cell.py, end of file)
+        assert cell._get_manager() is self
+        mode, submode = alias_mode, None
+        value = cell.serialize(mode, submode)
+        different = target.deserialize(value, mode, submode,
+          #from_pin is set to True, also for aliases...
+          from_pin=True, default=False, cosmetic=False
+        )
+        other = target._get_manager()
+        if target._mount is not None:
+            other.mountmanager.add_cell_update(target)
+        if different:
+            other.cell_send_update(target)
+
+    def _connect_cell_to_cell(self, cell, target, alias_mode):
+
+        if not target.authoritative:
+            raise Exception("%s: is non-authoritative (already dependent on another worker/cell)" % target)
+        other = target._get_manager()
+
+        con_id = self.get_id()
+        connection = (con_id, target, alias_mode)
+        rev_connection = (con_id, cell, alias_mode)
+
+        if cell not in self.cell_to_cells:
+            self.cell_to_cells[cell] = []
+        self.cell_to_cells[cell].append(connection)
+        other.cell_from_cell[target] = rev_connection
+        target._authoritative = False
+
+        if cell._status == Cell.StatusFlags.OK:
+            self._update_cell_from_cell(cell, target, alias_mode)
+
+
+    def connect_cell(self, cell, target, alias_mode=None):
+        if alias_mode is None:
+            alias_mode = "copy" ###
         assert isinstance(cell, CellLikeBase)
+        assert not isinstance(cell, Inchannel)
         assert cell._get_manager() is self
         other = target._get_manager()
-        assert isinstance(target, (InputPinBase, EditPinBase, Cell))
+        assert isinstance(target, (InputPinBase, EditPinBase, CellLikeBase))
         if isinstance(target, ExportedInputPin):
             target = target.get_pin()
 
-        if isinstance(target, Cell):
-            raise NotImplementedError
-            """
-            self.add_cell_alias(source, target)
-            target._on_connect(source, None, incoming = True)
-            if source._status == Cell.StatusFlags.OK:
-                value = source._data
-                if source.dtype is not None and \
-                  (source.dtype == "cson" or source.dtype[0] == "cson") and \
-                  target.dtype is not None and \
-                  (target.dtype == "json" or target.dtype[0] == "json"):
-                    if isinstance(value, (str, bytes)):
-                        value = cson2json(value)
-                target._update(value,propagate=True)
-            """
+        if isinstance(target, CellLikeBase):
+            assert not isinstance(target, Outchannel)
+            return self._connect_cell_to_cell(cell, target, alias_mode)
+
         worker = target.worker_ref()
         assert worker is not None #weakref may not be dead
         cell._check_mode(target.mode, target.submode)
@@ -99,14 +131,14 @@ class Manager:
         assert isinstance(target, CellLikeBase)
         if isinstance(pin, ExportedOutputPin):
             pin = pin.get_pin()
-        worker = pin.worker_ref()
-        assert worker is not None #weakref may not be dead
         if isinstance(pin, EditPinBase):
             raise NotImplementedError ### also output *from* the cell!
         assert isinstance(pin, OutputPinBase)
+        worker = pin.worker_ref()
+        assert worker is not None #weakref may not be dead
 
         if not target.authoritative:
-            raise Exception("%s: is non-authoritative (already dependent on another worker)" % target)
+            raise Exception("%s: is non-authoritative (already dependent on another worker/cell)" % target)
 
         target._check_mode(pin.mode, pin.submode)
         con_id = self.get_id()
@@ -116,7 +148,7 @@ class Manager:
         if pin not in self.pin_to_cells:
             self.pin_to_cells[pin] = []
         self.pin_to_cells[pin].append(connection)
-        other.cell_from_pin[target] = connection
+        other.cell_from_pin[target] = rev_connection
         target._authoritative = False
 
         if isinstance(worker, Transformer):
@@ -138,6 +170,7 @@ class Manager:
       default=False, cosmetic=False, from_buffer=False, force=False
     ):
         assert isinstance(cell, CellLikeBase)
+        assert cell._get_manager() is self
         if threading.current_thread() != threading.main_thread():
             work = functools.partial(
               self.set_cell, cell, value,
@@ -147,15 +180,17 @@ class Manager:
             self.workqueue.append(work)
             return
         mode = "buffer" if from_buffer else "ref"
-        cell.deserialize(value, mode, None,
+        different = cell.deserialize(value, mode, None,
           from_pin=False, default=default, cosmetic=cosmetic,force=force
         )
-        if cell._mount is not None:
-            self.mountmanager.add_cell_update(cell)
         if not cosmetic:
             for con_id, pin in self.cell_to_pins.get(cell, []):
                 value = cell.serialize(pin.mode, pin.submode)
                 pin.receive_update(value)
+        if cell._mount is not None:
+            self.mountmanager.add_cell_update(cell)
+        if different:
+            self.cell_send_update(cell)
 
     def notify_attach_child(self, childname, child):
         if isinstance(child, Context):
@@ -179,13 +214,23 @@ class Manager:
             )
             self.workqueue.append(work)
             return
-        if pin in self.pin_to_cells:
-            for con_id, cell in self.pin_to_cells[pin]:
-                cell.deserialize(value, pin.mode, pin.submode,
-                  from_pin=True, default=False, cosmetic=False
-                )
-                if cell._mount is not None:
-                    self.mountmanager.add_cell_update(cell)
+        for con_id, cell in self.pin_to_cells.get(pin,[]):
+            different = cell.deserialize(value, pin.mode, pin.submode,
+              from_pin=True, default=False, cosmetic=False
+            )
+            other = cell._get_manager()
+            if cell._mount is not None:
+                other.mountmanager.add_cell_update(cell)
+            if different:
+                other.cell_send_update(cell)
+
+    def cell_send_update(self, cell):
+        #Activates aliases
+        assert threading.current_thread() == threading.main_thread()
+        assert isinstance(cell, CellLikeBase)
+        for con_id, target, alias_mode in self.cell_to_cells.get(cell, []):
+            #from_pin is set to True, also for aliases
+            self._update_cell_from_cell(cell, target, alias_mode)
 
 
 
@@ -194,4 +239,4 @@ from .cell import Cell, CellLikeBase
 from .worker import Worker, InputPin, EditPin, InputPinBase, EditPinBase, \
  OutputPinBase, ExportedInputPin, ExportedOutputPin
 from .transformer import Transformer
-from .structured_cell import Outchannel
+from .structured_cell import Inchannel, Outchannel

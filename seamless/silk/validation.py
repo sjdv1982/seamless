@@ -2,16 +2,18 @@ import jsonschema
 import inspect
 import sys
 import numpy as np
+#from collections.abc import MutableSequence, MutableMapping
 from jsonschema.exceptions import FormatError, ValidationError
 _types = jsonschema.Draft4Validator.DEFAULT_TYPES.copy()
 _integer_types =  (int, np.int8, np.int16, np.int32, np.int64, np.uint8, np.uint16, np.uint32, np.uint64)
 _unsigned_types = (np.uint8, np.uint16, np.uint32, np.uint64)
 _float_types = (float, np.float16, np.float32, np.float64, np.float128)
-_array_types = (list, tuple, np.ndarray)
+_array_types = (list, tuple, np.ndarray) #don't add MutableSequence for now..,
 _string_types = (str, bytes)
 _types["array"] = _array_types
 _types["integer"] = _integer_types
 _types["number"] = _integer_types + _float_types
+#_types["object"] = (dict, MutableMapping) #don't do, for now..
 
 Scalar = (type(None), bool, str, bytes) + _integer_types + _float_types
 _allowed_types = Scalar + _array_types + (np.void, dict)
@@ -59,6 +61,8 @@ def validator_validators(validator, validators, instance, schema):
     if not len(validators):
         return
     from .Silk import Silk
+    if isinstance(instance, Silk):
+        instance = instance.self.data
     silkobject = Silk(data=instance, schema=schema) #containing the methods
     for validator_code in validators:
         validator_func = compile_function(validator_code)

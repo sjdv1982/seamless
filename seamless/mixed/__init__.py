@@ -11,7 +11,10 @@ In a typedict, a child's "storage" is stored by the parent into a child typedict
 """
 
 import numpy as np
-from ..silk.SilkBase import SilkHasForm
+from functools import partialmethod
+
+from ..silk.SilkBase import SilkHasForm, binary_special_method_names
+
 from ..silk.validation import (
   _array_types, _integer_types, _float_types, _string_types, _unsigned_types,
   _allowed_types, Scalar
@@ -44,13 +47,48 @@ class MixedBase(SilkHasForm):
     def __setattr__(self, attr, value):
         if attr.startswith("_"):
             return super().__setattr__(attr, value)
-        if attr in dir(self):
-            return super().__setattr__(attr, value)
+        if self._monitor.attribute_access:
+            return self.__setitem__(attr, value)
         raise AttributeError(attr)
+    def __getattr__(self, attr):
+        if attr.startswith("_"):
+            raise AttributeError(attr)
+        if self._monitor.attribute_access:
+            return self.__getitem__(attr)
+        raise AttributeError(attr)
+    def __str__(self):
+        return str(self.value)
+    def __repr__(self):
+        return str(self.value)
+    def _get_state(self):
+        #TODO: more economic => save just the path substate
+        return self._monitor._monitor_get_state()
+    def _set_state(self, state):
+        return self._monitor._monitor_set_state(state)
 
+def mixed_scalar_binary_method(self, other, name):
+    if isinstance(other, MixedBase):
+        other = other.value
+    return getattr(self.value,name)(other)
+
+def mixed_scalar_binary_method_inplace(self, other, name2):
+    result = getattr(self.value,name2)(other)
+    if result is NotImplemented:
+        return NotImplemented
+    self._monitor.set_path(self._path, result)
+    return result
 
 class MixedScalar(MixedBase):
     pass
+
+for name in binary_special_method_names:
+    if name.startswith("__i"):
+        name2 = "__" + name[3:]
+        m = partialmethod(mixed_scalar_binary_method_inplace, name2=name2)
+    else:
+        m = partialmethod(mixed_scalar_binary_method, name=name)
+    setattr(MixedScalar, name, m)
+
 
 from .MixedDict import MixedDict, mixed_dict
 from .Monitor import Monitor

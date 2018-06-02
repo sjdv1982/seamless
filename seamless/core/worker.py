@@ -204,7 +204,7 @@ class OutputPin(OutputPinBase):
         """returns or creates a cell that is connected to the pin"""
         from .cell import cell
         manager = self._get_manager()
-        my_cells = manager.outputpin_to_cells(self)
+        my_cells = manager.pin_to_cells.get(self, [])
         if celltype is None:
             celltype = self.celltype
         l = len(my_cells)
@@ -218,13 +218,13 @@ class OutputPin(OutputPinBase):
             my_cell = my_cells[0]
         elif l > 1:
             raise TypeError("cell() is ambiguous, multiple cells are connected")
-        return my_cell
+        return my_cell[1]
 
     def cells(self):
         """Returns all cells connected to the outputpin"""
         manager = self._get_manager()
-        my_cells = manager.outputpin_to_cells(self)
-        return my_cells[:]
+        my_cells = manager.pin_to_cells.get(self, [])
+        return [c[1] for c in my_cells]
 
     def status(self):
         manager = self._get_manager()

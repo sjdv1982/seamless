@@ -64,7 +64,6 @@ for name in unary_special_method_names_optional:
 
 
 def silk_binary_method(self, other, name):
-    #print("METHOD", name)
     method = self._get(name)
     if method is NotImplemented:
         return NotImplemented
@@ -142,7 +141,10 @@ class AlphabeticDict(dict):
     def __iter__(self):
         return iter(sorted(super().__iter__()))
     def __str__(self):
-        return json.dumps(self, sort_keys=True, indent=2)
+        print("TODO: AlphabeticDict.__str__")
+        #return json.dumps(self, sort_keys=True, indent=2) #doesn't work for numpy
+        return super().__str__() ###
+
 
 from abc import ABC, abstractmethod
 class SilkHasForm(ABC):

@@ -7,10 +7,7 @@ class MixedObject(MixedBase, MutableMapping, MutableSequence):
         if isinstance(proxy, MixedObject):
             raise AttributeError
         return proxy
-    def __getitem__(self, item):
-        proxy = self._proxy()
-        return proxy.__getitem__(item)
-    def __setitem__(self, item, value):
+    def _proxy2(self, item):
         proxy = self._monitor.get_path(self._path)
         if isinstance(proxy, MixedObject):
             if isinstance(item, int):
@@ -20,6 +17,12 @@ class MixedObject(MixedBase, MutableMapping, MutableSequence):
             else:
                 raise TypeError(item)
             proxy = self._proxy()
+        return proxy
+    def __getitem__(self, item):
+        proxy = self._proxy2(item)
+        return proxy.__getitem__(item)
+    def __setitem__(self, item, value):
+        proxy = self._proxy2(item)
         return proxy.__setitem__(item, value)
     def __delitem__(self, item):
         proxy = self._proxy()

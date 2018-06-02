@@ -150,7 +150,9 @@ class CellBase(CellLikeBase):
         if not force:
             assert not self._slave
         self._check_mode(mode, submode)
+        old_status = self._status
         if value is None:
+            different = (self._last_checksum is not None)
             self._val = None
             self._last_checksum = None
             self._status = self.StatusFlags.UNDEFINED
@@ -161,6 +163,10 @@ class CellBase(CellLikeBase):
                 if self._alternative_checksums is None:
                     self._alternative_checksums = []
                 self._alternative_checksums.append(cs)
+        if not cosmetic and value is not None:
+            old_checksum = None
+            if old_status == self.StatusFlags.OK:     
+                old_checksum = self.checksum()
         self._last_checksum = None
         self._deserialize(value, mode, submode)
         if from_pin == True:
@@ -175,7 +181,13 @@ class CellBase(CellLikeBase):
             if not default and not self._authoritative:
                 self._overrule()
         self._status = self.StatusFlags.OK
-        return self
+        if cosmetic:
+            different = False
+        elif value is not None:
+            different = (self.checksum() != old_checksum)
+        else:
+            pass #"different" has already been set
+        return different
 
     def _overrule(self):
         if not self._overruled:
@@ -491,3 +503,9 @@ def pytransformercell():
 print("TODO cell: CSON cell")
 print("TODO cell: PyImport cell") #cell that does imports, executed already upon code definition; code injection causes an exec()
 #...and TODO: cache cell, evaluation cell, event stream
+
+#TODO: a serialization protocol to establish data transfer over a cell-to-cell (alias) connection
+# it depends on three variables:
+# - the alias mode (argument to manager.connect_cell)
+# - the type / some attribute of the source cell
+# - the type / some attribute of the target cell

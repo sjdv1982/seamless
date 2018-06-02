@@ -1,10 +1,11 @@
 from numpy import ndarray, void
 from .get_form import get_form
-from . import MixedScalar, Scalar,  scalars, is_np_struct, _allowed_types
+from . import MixedScalar, MixedBase, Scalar,  scalars, is_np_struct, _allowed_types
 import json
+from copy import deepcopy
 
 def get_subpath(data, form, path):
-    if data is None:
+    if data is None or silk.is_none(data):
         return None, None, None
     type_ = form["type"]
     if not len(path):
@@ -38,7 +39,9 @@ def get_subpath(data, form, path):
         raise TypeError(type_)
 
 class Monitor:
-    def __init__(self, data, storage, form, *, plain=False, **kwargs):
+    def __init__(self, data, storage, form, *, attribute_access=False, plain=False, **kwargs):
+        self.attribute_access = attribute_access #does the underlying data support data.attr instead of just data["attr"]?
+            #(even if true, only supported for attrs that do not start with _, and are not list/dict attrs/methods)
         if "data_hook" in kwargs:
             self._data_hook = kwargs["data_hook"]
         self.data = data
@@ -64,11 +67,13 @@ class Monitor:
         # TODO, triggers. For now, just recalculate the entire form on every change
 
     def get_instance(self, subform, subdata, path):
-        if subdata is None:
+        if subdata is None or silk.is_none(subdata):
             if not len(path):
                 assert self._data_hook is not None
+            if self._data_hook is not None:
                 return MixedObject(self, path)
-            return None
+            else:
+                return None
         if isinstance(subform, str):
             type_ = subform
         else:
@@ -85,6 +90,8 @@ class Monitor:
                 return MixedList(self, path)
         elif type_ in scalars:
             return MixedScalar(self, path) #scalars are all immutable
+        else:
+            raise TypeError(type_)
 
     def _get_parent_path(self, path, child_data):
         return self._get_path(path[:-1])
@@ -103,11 +110,13 @@ class Monitor:
                 if part_result is not None:
                     subdata, subform, _ = part_result
                     break
+            else:
+                start = 0
             for n in range(start, len(path)):
                 cached_path = path[:n+1]
                 remaining_path = path[n:]
                 part_result = get_subpath(subdata, subform, remaining_path)
-                self.pathcache[cached_path] = part_result
+                self.pathcache[cached_path] = part_result #TODO: restore
                 subdata, subform, _ = part_result
             result = part_result
         return result
@@ -151,11 +160,13 @@ class Monitor:
         else:
             return storage
 
-    def set_path(self, path, subdata):
+    def set_path(self, path, subdata, from_pin=False):
         """
         Updates the data under path with the value "subdata"
         Then, updates the form
         """
+        if isinstance(subdata, MixedBase):
+            subdata = subdata.value
         if not isinstance(subdata, _allowed_types):
             raise TypeError(type(subdata))
         if self.plain:
@@ -301,7 +312,22 @@ class Monitor:
                 raise TypeError(type_)
         self.recompute_form(path)
 
+    def _monitor_get_state(self):
+        memo = {}
+        data = deepcopy(self.data, memo)
+        storage = deepcopy(self.storage, memo)
+        form = deepcopy(self.form, memo)
+        return data, storage, form
+
+    def _monitor_set_state(self, state):
+        data, storage, form = state
+        self.data = data
+        self.storage = storage
+        self.form = form
+        self.pathcache.clear()
+
 
 from .MixedObject import MixedObject
 from .MixedDict import MixedDict, MixedNumpyStruct
 from .MixedList import MixedList, MixedNumpyArray
+from .. import silk

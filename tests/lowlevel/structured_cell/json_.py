@@ -54,6 +54,8 @@ with macro_mode_on():
     #ctx.mount("/tmp/mount-test")
 
 inp = ctx.inp.handle
+#print(inp["q"])
+inp["q"]["r"]["x"] = "test"
 inp["a"] = 10
 inp["b"] = 20
 ctx.equilibrate()
@@ -65,7 +67,9 @@ print(ctx.tf2.status())
 print(ctx.z.value)
 
 inp["b"] = 25
+print(inp)
 ctx.equilibrate()
 print(ctx.z.value)
+
 
 #shell = ctx.tf.shell()

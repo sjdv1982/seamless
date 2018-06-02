@@ -3,17 +3,27 @@ from types import MethodType
 from copy import copy, deepcopy
 
 from .SilkBase import SilkBase, SilkHasForm, compile_function, AlphabeticDict
-from .validation import schema_validator, Scalar, scalar_conv, _types, infer_type
+from .validation import schema_validator, form_validator, Scalar, scalar_conv, _types, infer_type
 from .schemawrapper import SchemaWrapper
 
 from .policy import default_policy
 SILK_NO_METHODS = 1
 SILK_NO_VALIDATION = 2
 
-
 _underscore_attribute_names =  set(["__array_struct__", "__array_interface__", "__array__"])
 # A set of magic names where it is expected that they raise NotImplementedError if
 # not implemented, rather than returning NotImplemented
+_underscore_attribute_names2 =  set(["__deepcopy__"])
+# A set of magic names where it is expected that they raise AttributeError
+# not implemented, rather than returning NotImplemented
+
+
+def is_none(obj):
+    if obj is None:
+        return True
+    if not isinstance(obj, Silk):
+        return False
+    return obj.data is None
 
 class Silk(SilkBase):
     __slots__ = [
@@ -26,13 +36,27 @@ class Silk(SilkBase):
       modifier = 0):
         self._parent = parent
         self._modifier = modifier
-        self._forks = None
+        self._forks = []
         self.data = data
         assert not isinstance(data, Silk)
         if schema is None:
             schema = {}
-        assert isinstance(schema, dict)
+        assert isinstance(schema, dict) #for now, no smart wrappers around schema are allowed
+                                        # as this complicates forking and external upaates to schema.
+                                        # see the note in structured_cell:"schema could become not a slave"
         self._schema = schema
+
+    """
+    def __deepcopy__(self, memo):
+        data = deepcopy(self.data, memo)
+        forks = deepcopy(self._forks, memo)
+        schema = deepcopy(self._schema, memo)
+        result = type(self)(
+          schema, parent=self._parent, data=data, modifier=self._modifier
+        )
+        result._forks = forks
+        return result
+    """
 
     def __call__(self, *args, **kwargs):
         data = self.data
@@ -94,12 +118,20 @@ class Silk(SilkBase):
                 self._infer_list_item(value_schema)
         elif isinstance(value, dict):
             #invalidates all Silk objects constructed from items
-            old_data = self.data.copy()
-            if not isinstance(self.data, dict):
-                raise TypeError #  better be strict for now
-            self.data.clear()
-            self.data.update(value)
-        if self._forks is None or self._forks[-1].validate:
+            data = self.data
+            if isinstance(data, MixedBase): #hackish, but necessary
+                data = data.value
+            if isinstance(data, Silk):
+                data = data.data
+            if not isinstance(data, dict):
+                if isinstance(self.data, MixedBase):
+                    self.data.set(value)
+                else:
+                    raise TypeError(type(data)) #  better be strict for now
+            else:
+                data.clear()
+                data.update(value)
+        if not len(self._forks) or self._forks[-1].validate:
             self.validate()
         return self
 
@@ -139,6 +171,8 @@ class Silk(SilkBase):
         if attr.startswith("__"):
             if attr in _underscore_attribute_names:
                 raise NotImplementedError
+            elif attr in _underscore_attribute_names2:
+                raise AttributeError(attr)
             else:
                 return NotImplemented
         raise AttributeError(attr)
@@ -152,11 +186,42 @@ class Silk(SilkBase):
             return super().__getattribute__("_get")(attr)
         except (TypeError, KeyError, AttributeError, IndexError) as exc:
             try:
-                return super().__getattribute__("_access_data")(attr)
+                return super().__getattribute__("_getitem")(attr)
             except (TypeError, KeyError, AttributeError, IndexError):
                 raise AttributeError(attr) from None
             except:
                 raise exc from None
+
+    def _setitem(self, attr, value):
+        data, schema = self.data, self._schema
+        policy = schema.get("policy", None)
+        if policy is None or not len(policy):
+            #TODO: implement lookup hierarchy wrapper that also looks at parent
+            policy = default_policy
+        if data is None:
+            assert self._parent is None # MUST be independent
+            data = AlphabeticDict()
+            self.data = data
+        if isinstance(value, Silk):
+            value, value_schema = value.data, value._schema
+            if "properties" not in schema:
+                schema["properties"] = {}
+            if attr not in schema["properties"]:
+                schema["properties"][attr] = value_schema
+                #TODO: infer_property check
+        data[attr] = value
+
+        if policy["infer_type"]:
+            if "properties" not in schema:
+                schema["properties"] = {}
+            if attr not in schema["properties"]:
+                schema["properties"][attr] = {}
+            if "type" not in schema["properties"][attr]:
+                type_ = infer_type(value)
+                schema["properties"][attr]["type"] = type_
+
+        # TODO: make conditional upon policy.infer_property
+
 
     def __setattr__(self, attr, value):
         if attr in type(self).__slots__:
@@ -184,50 +249,13 @@ class Silk(SilkBase):
             else:
                 raise TypeError(attr) #method cannot be assigned to
         else:
-            data, schema = self.data, self._schema
-            policy = schema.get("policy", None)
-            if policy is None or not len(policy):
-                #TODO: implement lookup hierarchy wrapper that also looks at parent
-                policy = default_policy
-            if data is None:
-                assert self._parent is None # MUST be independent
-                data = AlphabeticDict()
-                self.data = data
-            if isinstance(value, Silk):
-                value, value_schema = value.data, value._schema
-                if "properties" not in schema:
-                    schema["properties"] = {}
-                if attr not in schema["properties"]:
-                    schema["properties"][attr] = value_schema
-                    #TODO: infer_property check
-            data[attr] = value
-
-            if policy["infer_type"]:
-                if "properties" not in schema:
-                    schema["properties"] = {}
-                if attr not in schema["properties"]:
-                    schema["properties"][attr] = {}
-                if "type" not in schema["properties"][attr]:
-                    type_ = infer_type(value)
-                    schema["properties"][attr]["type"] = type_
-
-            # TODO: make conditional upon policy.infer_property
-
-        if self._forks is None or self._forks[-1].validate:
+            self._setitem(attr, value)
+        if not len(self._forks) or self._forks[-1].validate:
             self.validate()
 
     def __setitem__(self, item, value):
-        data, schema = self.data, self._schema
-        if data is None:
-            assert self._parent is None # MUST be independent
-            assert isinstance(item, str)
-            data = AlphabeticDict()
-            self.data = data
-        if isinstance(value, Silk):
-            value = value.data
-        data[item] = value
-
-        if self._forks is None or self._forks[-1].validate:
+        self._setitem(item, value)
+        if not len(self._forks) or self._forks[-1].validate:
             self.validate()
 
     def _infer_list_item(self, item_schema):
@@ -250,7 +278,7 @@ class Silk(SilkBase):
             item_schema = s.schema.properties.item.dict
         schema["items"] = item_schema
 
-    def _access_data(self, item):
+    def _getitem(self, item):
         data, schema = self.data, self._schema
         if isinstance(item, str) and hasattr(data, item):
             return getattr(data, item)
@@ -292,7 +320,7 @@ class Silk(SilkBase):
     def __getitem__(self, item):
         if isinstance(item, str):
             try:
-                return self._access_data(item)
+                return self._getitem(item)
             except (TypeError, KeyError, AttributeError) as exc:
                 try:
                     return self._get(item)
@@ -301,7 +329,7 @@ class Silk(SilkBase):
                 else:
                     raise exc from None
         else:
-            return self._access_data(item)
+            return self._getitem(item)
 
     def _set_property(self, attribute, prop):
         assert (not attribute.startswith("_")) or attribute.startswith("__"), attribute
@@ -386,16 +414,35 @@ class Silk(SilkBase):
     def validate(self, full = True):
         if not self._modifier & SILK_NO_VALIDATION:
             if full:
+                data = self.data
+                if isinstance(data, MixedBase):
+                    # This is hackish, to special-case MixedBase so
+                    # But there is really no alternative, except to add
+                    #  MutableXXX bases classes to ./validation.py
+                    #  and even then, MixedObject is polymorphic:
+                    #   it can be dict/list/scalar/None
+                    # Better to validate the underlying value
+                    #  (wrapped by MixedBase) instead
+                    data = data.value
                 if isinstance(self.data, SilkHasForm):
                     form = self.data._get_silk_form()
                     form_validator(self._schema).validate(form)
-                schema_validator(self._schema).validate(self.data)
+                schema_validator(self._schema).validate(data)
             else:
                 schema = self._schema
+                proxy = self
+                if isinstance(self.data, MixedBase): #hackish, see above
+                    data = self.data.value
+                    if isinstance(data, Silk):
+                        data = data.data
+                    proxy = type(self)(
+                      schema, parent=self._parent, data=data, modifier=self._modifier,
+                    )
+                    proxy._forks = self._forks
                 validators = schema.get("validators", [])
                 for validator_code in validators:
                     validator_func = compile_function(validator_code)
-                    validator_func(self)
+                    validator_func(proxy)
         if self._parent is not None:
             self.parent.validate()
 
@@ -416,13 +463,18 @@ class _SilkParent:
 class _SilkFork:
     validate = False
     _joined = False
-
+    _stateful = False
     def __init__(self, parent):
         self.parent = parent
-        self.data = deepcopy(parent.data)
+         #for now, no smart wrappers around schema are allowed; see above
+        assert isinstance(parent._schema, dict), type(parent._schema)
+        try:
+            state = parent.data._get_state()
+            self._stateful = True
+            self.data_state = state
+        except:
+            self.data = deepcopy(parent.data)
         self._schema = deepcopy(parent._schema)
-        if parent._forks is None:
-            parent._forks = []
         parent._forks.append(self)
 
     def _join(self, exception):
@@ -434,11 +486,14 @@ class _SilkFork:
                 ok = True
         finally:
             if not ok:
-                parent.data = self.data
-                parent._schema = self._schema
-            parent._forks.pop(-1) #should return self
-            if not len(parent._forks):
-                parent._forks = None
+                if self._stateful:
+                    parent.data._set_state(self.data_state)
+                else:
+                    parent.data = self.data
+                parent._schema.clear()
+                parent._schema.update(self._schema)
+            if len(parent._forks): #could be, because of exception
+                parent._forks.pop(-1) #should return self
             self._joined = True
 
     def join(self):
@@ -456,3 +511,4 @@ class _SilkFork:
         self._join(None)
 
 from .modify_methods import try_modify_methods
+from ..mixed import MixedBase
