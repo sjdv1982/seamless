@@ -1,6 +1,6 @@
-from silk import Silk
+from seamless.silk import Silk
 from functools import partial
-from silk.meta import meta, validator
+from seamless.silk.meta import meta, validator
 class Coordinate(metaclass=meta):
 
     a = 10 # not a class default, but a type inference!

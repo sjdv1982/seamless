@@ -61,7 +61,7 @@ class MixedBase(SilkHasForm):
     def __repr__(self):
         return str(self.value)
     def _get_state(self):
-        #TODO: more economic => save just the path substate
+        #TODO: more economic => save just the path sub-state
         return self._monitor._monitor_get_state()
     def _set_state(self, state):
         return self._monitor._monitor_set_state(state)

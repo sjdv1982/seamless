@@ -1,6 +1,7 @@
 import seamless
 from seamless.core.macro import macro_mode_on
 from seamless.core import context, cell, transformer, StructuredCell
+from seamless.core.structured_cell import BufferWrapper
 
 with macro_mode_on():
     ctx = context(toplevel=True)
@@ -9,19 +10,24 @@ with macro_mode_on():
     ctx.hub_struc.storage = cell("text")
     ctx.hub_struc.form = cell("json")
     ctx.hub_struc.schema = cell("json")
-    ctx.hub_struc.buffer = cell("json")
+    ctx.hub_struc.buffer_data = cell("json")
+    ctx.hub_struc.buffer_storage = cell("text")
+    ctx.hub_struc.buffer_form = cell("json")
+    bufferwrapper = BufferWrapper(
+        ctx.hub_struc.buffer_data,
+        ctx.hub_struc.buffer_storage,
+        ctx.hub_struc.buffer_form
+    )
     ctx.hub = StructuredCell(
         "hub",
         ctx.hub_struc.data,
         storage = ctx.hub_struc.storage,
         form = ctx.hub_struc.form,
         schema = ctx.hub_struc.schema,
-        #buffer = ctx.hub_struc.buffer,
+        buffer = bufferwrapper,
         inchannels = [("m1",), ("m2",)],
         outchannels = [()]
     )
-    print("TODO: next line should not be necessary (Silk-specific)")
-    ctx.hub.handle.set({}) ###
 
     ctx.code = cell("pytransformer").set("z = x * y")
 
@@ -58,36 +64,39 @@ with macro_mode_on():
     ctx.result_struc.storage = cell("text")
     ctx.result_struc.form = cell("json")
     ctx.result_struc.schema = cell("json")
-    ctx.result_struc.buffer = cell("json")
+    ctx.result_struc.buffer_data = cell("json")
+    ctx.result_struc.buffer_storage = cell("text")
+    ctx.result_struc.buffer_form = cell("json")
+    bufferwrapper = BufferWrapper(
+        ctx.result_struc.buffer_data,
+        ctx.result_struc.buffer_storage,
+        ctx.result_struc.buffer_form
+    )
     ctx.result = StructuredCell(
         "result",
         ctx.result_struc.data,
         storage = ctx.result_struc.storage,
         form = ctx.result_struc.form,
         schema = ctx.result_struc.schema,
-        #buffer = ctx.result_struc.buffer,
+        buffer = bufferwrapper,
         inchannels = [("hub",), ("herring",)],
         outchannels = [("herring",)]
     )
 
-    print("TODO: next line should not be necessary (it is Silk-specific)")
-    ctx.result.handle.set({}) ###
-
     ctx.result.connect_inchannel(ctx.hub_cell, ("hub",))
 
-    ctx.herring = cell("text").set("herring")
+    ctx.herring = cell("text").set("herring!!")
     ctx.result.connect_inchannel(ctx.herring, ("herring",))
 
     ctx.tf_herring = transformer({
         "herring": "input",
         "whatever": "output",
     })
-    ctx.tf_herring.code.cell().set("""print("HERRING")
+    ctx.tf_herring.code.cell().set("""print("HERRING", herring)
 whatever = None
 """)
 
     ctx.result.connect_outchannel(("herring",), ctx.tf_herring.herring)
-
 
 ctx.equilibrate()
 print(ctx.result.handle)
@@ -100,7 +109,6 @@ def func(self):
 
 hub.add_validator(func)
 
-
 print("STAGE 0")
 #this will fail
 try:
@@ -108,36 +116,55 @@ try:
 except:
     import traceback
     traceback.print_exc()
+print(ctx.hub.value, ctx.hub.handle)
+ctx.equilibrate()
 print(ctx.result.handle)
+hub.m1 = 24 ##restore
 
 print("STAGE 0a")
 #this will succeed
 with hub.fork():
     hub.m1 = 16
     hub.m2 = 16
-print(ctx.result.handle)
+ctx.equilibrate()
+print(ctx.result.value)
 
 print("STAGE 0b")
 #this will succeed
 with hub.fork():
     hub.m1 = 24
     hub.m2 = 24
-print(ctx.result.handle)
-
+print(ctx.result.value)
 
 print("STAGE 1")
-#this will fail
+#this will fail (but will be repaired)
 ctx.a.set(-8)
-import time; time.sleep(0.1)
+ctx.equilibrate()
+print(hub, ctx.hub.value)
 ctx.b.set(3)
 ctx.equilibrate()
-print(ctx.result.handle)
+print(hub, ctx.hub.value)
+print(ctx.result.value)
+
 
 print("STAGE 2")
-#TODO: this should succeed, need buffer
+#this will fail (but will be repaired)
+hub.m1 = 80
+ctx.equilibrate()
+print(hub, ctx.hub.value)
+print(ctx.result.value)
+print("set m2...")
+hub.m2 = 80
+ctx.equilibrate()
+print(ctx.hub_cell.value)
+print(ctx.result.value)
+
+
+print("STAGE 2a")
+#this will fail (but will be repaired)
 ctx.a.set(5)
 ctx.b.set(12)
 ctx.c.set(10)
 ctx.d.set(6)
 ctx.equilibrate()
-print(ctx.result.handle)
+print(ctx.result.value)

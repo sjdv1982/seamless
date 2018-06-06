@@ -1,4 +1,4 @@
-from silk import Silk
+from seamless.silk import Silk
 
 #s = Silk().set(1)
 #s.set(2.0)
@@ -9,7 +9,7 @@ from silk import Silk
 
 s = Silk().set({})
 s.b = 12
-s["b"] = "test"
+#s["b"] = "test"
 
 
 s = Silk().set( [] )

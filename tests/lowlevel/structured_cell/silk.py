@@ -10,14 +10,13 @@ with macro_mode_on():
     ctx.inp_struc.storage = cell("text")
     ctx.inp_struc.form = cell("json")
     ctx.inp_struc.schema = cell("json")
-    ctx.inp_struc.buffer = cell("json")
     ctx.inp = StructuredCell(
         "inp",
         ctx.inp_struc.data,
         storage = ctx.inp_struc.storage,
         form = ctx.inp_struc.form,
         schema = ctx.inp_struc.schema,
-        #buffer = ctx.inp_struc.buffer,
+        buffer = None,
         inchannels = [("a",)],
         outchannels = [()]
     )
@@ -43,7 +42,6 @@ print(ctx.tf.status())
 print(ctx.result.value)
 
 inp = ctx.inp.handle
-
 #inp.a = {"x": 10}
 inp.b = 100
 inp.a.x = 11
@@ -60,7 +58,7 @@ print(ctx.inp.value)
 print(inp.schema, inp)
 ctx.a.set({"x": 12})
 print("START")
-ctx.a.set(1)
+ctx.a.set(1) #error
 ctx.equilibrate()
 print(ctx.inp.value)
 print(ctx.result.value)

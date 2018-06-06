@@ -17,6 +17,7 @@ with macro_mode_on():
         storage = None,
         form = ctx.inp_struc.form,
         schema = None,
+        buffer = None,
         inchannels = None,
         outchannels = [("a",), ("b",)]
     )
@@ -32,6 +33,7 @@ with macro_mode_on():
         storage = None,
         form = ctx.result_struc.form,
         schema = None,
+        buffer = None,
         inchannels = [("x",), ("y",)],
         outchannels = [("y",)]
     )
@@ -40,7 +42,7 @@ with macro_mode_on():
     ctx.code = pytransformercell().set("c = a + b")
     ctx.code.connect(ctx.tf.code)
     ctx.result.connect_inchannel(ctx.tf.c, ("y",))
-    ###ctx.result.connect_inchannel(ctx.x, ("x",)) #TODO: cell-cell
+    ctx.result.connect_inchannel(ctx.x, ("x",))
 
     ctx.tf2 = transformer({
         "y": "input",
@@ -53,12 +55,17 @@ with macro_mode_on():
 
     #ctx.mount("/tmp/mount-test")
 
+ctx.x.set("x")
+
 inp = ctx.inp.handle
 #print(inp["q"])
 inp["q"]["r"]["x"] = "test"
 inp["a"] = 10
 inp["b"] = 20
 ctx.equilibrate()
+result = ctx.result.handle
+result["x"] = 100
+ctx.x.set("x")
 print(ctx.result.value)
 
 #print(ctx.inp.outchannels[("a",)].status())

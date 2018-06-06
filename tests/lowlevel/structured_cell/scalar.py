@@ -18,6 +18,7 @@ with macro_mode_on():
         storage = None,
         form = ctx.a_form,
         schema = None,
+        buffer = None,
         inchannels = None,
         outchannels = [()]
     )

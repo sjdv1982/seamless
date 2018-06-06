@@ -88,3 +88,7 @@ class OverlayMonitor(MakeParentMonitor):
         self._check_inchannels(path)
         super().del_path(path)
         self._update_outchannels(path)
+
+    def _monitor_set_state(self, state):
+        super()._monitor_set_state(state)
+        self._update_outchannels(())

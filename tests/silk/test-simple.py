@@ -1,6 +1,5 @@
 import sys
-#from seamless.silk import Silk
-from silk import Silk, ValidationError
+from seamless.silk import Silk, ValidationError
 
 def adder(self, other):
     return other + self.x

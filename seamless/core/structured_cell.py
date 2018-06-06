@@ -1,10 +1,17 @@
 from .cell import CellLikeBase, Cell, JsonCell, TextCell
-from ..mixed import MixedBase, OverlayMonitor
+from ..mixed import MixedBase, OverlayMonitor, MakeParentMonitor
 from .macro import get_macro_mode
 from ..silk import Silk
 import weakref
 import traceback
 from copy import deepcopy
+
+"""
+OverlayMonitor warns if an inchannel is overwritten via handle
+ and again when the inchannel overwrites it back
+But if the StructuredCell is buffered, this warning is lost
+"""
+
 
 class Inchannel(CellLikeBase):
     _authoritative = True
@@ -33,16 +40,22 @@ class Inchannel(CellLikeBase):
         if structured_cell is None:
             return
         monitor = structured_cell.monitor
-        if structured_cell._silk:
-            handle = structured_cell.handle
-            try:
-                with handle.fork():
-                    assert isinstance(handle.data, MixedBase)
-                    monitor.set_path(self.inchannel, value, from_pin=True)
-                monitor._update_outchannels(self.inchannel)
-            except:
-                traceback.print_exc(0)
-                return False
+        if structured_cell._is_silk:
+            handle = structured_cell._silk
+            if structured_cell.buffer is not None:
+                bufmonitor = structured_cell.bufmonitor
+                assert isinstance(handle.data, MixedBase)
+                bufmonitor.set_path(self.inchannel, value, from_pin=True)
+                handle.validate()
+            else:
+                try:
+                    with handle.fork():
+                        assert isinstance(handle.data, MixedBase)
+                        monitor.set_path(self.inchannel, value, from_pin=True)
+                    monitor._update_outchannels(self.inchannel)
+                except:
+                    traceback.print_exc(0)
+                    return False
         else:
             monitor.receive_inchannel_value(self.inchannel, value)
         different = True #TODO: keep checksum etc. to see if value really changed
@@ -83,12 +96,16 @@ class Outchannel(CellLikeBase):
     _mount = None
     mode = "copy"
     submode = None
+    _buffered = False
+    _last_value = None ###TODO: use checksums; for now, only used for buffered
     def __init__(self, structured_cell, outchannel):
         self.structured_cell = weakref.ref(structured_cell)
         self.outchannel = outchannel
         name = outchannel if outchannel != () else "self"
         self.name = name
         super().__init__()
+        if structured_cell.buffer is not None:
+            self._buffered = True
 
     def _check_mode(self, mode, submode):
         if mode == "copy":
@@ -104,7 +121,8 @@ class Outchannel(CellLikeBase):
         data = structured_cell.monitor.get_data(self.outchannel)
         data = deepcopy(data) ###TODO: rethink a bit; note that deepcopy also casts data from Silk to dict!
         if submode == "silk":
-            data = Silk(data=data)
+            #Schema-less silk; just for attribute access syntax
+            data = Silk(data=data, stateful=isinstance(data, MixedBase))
         return data
 
     def deserialize(self, *args, **kwargs):
@@ -117,6 +135,10 @@ class Outchannel(CellLikeBase):
             self._status = self.StatusFlags.UNDEFINED
         else:
             self._status = self.StatusFlags.OK
+        if self._buffered:
+            if value == self._last_value:
+                return value
+            self._last_value = deepcopy(value)
         structured_cell = self.structured_cell()
         assert structured_cell is not None
         data = structured_cell.data
@@ -146,6 +168,12 @@ class Outchannel(CellLikeBase):
     def value(self):
         return self.structured_cell().monitor.get_data(self.outchannel)
 
+class BufferWrapper:
+    def __init__(self, data, storage, form):
+        self.data = data
+        self.storage = storage
+        self.form = form
+
 class StructuredCell(CellLikeBase):
     _mount = None
     def __init__(
@@ -154,6 +182,7 @@ class StructuredCell(CellLikeBase):
       data,
       storage,
       form,
+      buffer,
       schema,
       inchannels,
       outchannels
@@ -181,7 +210,7 @@ class StructuredCell(CellLikeBase):
         self.form = form
 
         if schema is None:
-            self._silk = False
+            self._is_silk = False
         else:
             assert isinstance(schema, JsonCell)
             val = schema._val
@@ -190,9 +219,25 @@ class StructuredCell(CellLikeBase):
                 manager.set_cell(schema, {})
                 val = schema._val
             assert isinstance(val, dict)
-            self._silk = True
+            self._is_silk = True
             schema._slave = True
         self.schema = schema
+
+        if buffer is not None:
+            assert self._is_silk
+            assert isinstance(buffer, BufferWrapper)
+            if self._plain:
+                assert isinstance(buffer.data, JsonCell)
+                buffer.data._slave = True
+                assert buffer.storage is None
+            else:
+                assert isinstance(buffer.data, Cell)
+                buffer.data._slave = True
+                assert isinstance(buffer.storage, TextCell)
+                buffer.storage._slave = True
+            assert isinstance(buffer.form, JsonCell)
+            buffer.form._slave = True
+        self.buffer = buffer
 
         self.inchannels = {}
         if inchannels is not None:
@@ -204,6 +249,7 @@ class StructuredCell(CellLikeBase):
                 self.outchannels[outchannel] = Outchannel(self, outchannel)
 
         monitor_data = self.data._val
+        assert not isinstance(monitor_data, MixedBase)
         monitor_storage = self.storage._val if self.storage is not None else None
         monitor_form = self.form._val
         monitor_inchannels = list(self.inchannels.keys())
@@ -214,14 +260,9 @@ class StructuredCell(CellLikeBase):
         form_hook = None
         if not isinstance(monitor_form, (list, dict)):
             form_hook = self._form_hook
-        storage_hook = None
-        if not isinstance(monitor_storage, (list, dict)):
-            storage_hook = self._storage_hook
-        if self._silk:
-            monitor_schema = self.schema._val
-            monitor_data = Silk(monitor_schema,data=monitor_data)
+        storage_hook = self._storage_hook
 
-        self.monitor = OverlayMonitor (
+        self.monitor = OverlayMonitor(
             data=monitor_data,
             storage=monitor_storage,
             form=monitor_form,
@@ -231,8 +272,40 @@ class StructuredCell(CellLikeBase):
             data_hook=data_hook,
             form_hook=form_hook,
             storage_hook=storage_hook,
-            attribute_access=self._silk,
+            attribute_access=self._is_silk,
         )
+
+        if self._is_silk:
+            silk_buffer = None
+            if buffer is not None:
+                monitor_buffer_data = buffer.data._val
+                monitor_buffer_storage = self.buffer.storage._val if self.buffer.storage is not None else None
+                monitor_buffer_form = self.buffer.form._val
+                buffer_data_hook = None
+                if not isinstance(monitor_buffer_data, (list, dict)):
+                    buffer_data_hook = self._buffer_data_hook
+                buffer_form_hook = None
+                if not isinstance(monitor_buffer_form, (list, dict)):
+                    buffer_form_hook = self._buffer_form_hook
+                buffer_storage_hook = self._buffer_storage_hook
+                self.bufmonitor = MakeParentMonitor(
+                  data=monitor_buffer_data,
+                  storage=monitor_buffer_storage,
+                  form=monitor_buffer_form,
+                  plain=self._plain,
+                  data_hook=buffer_data_hook,
+                  form_hook=buffer_form_hook,
+                  storage_hook=buffer_storage_hook,
+                  attribute_access=True,
+                )
+                silk_buffer = self.bufmonitor.get_path()
+            self._silk = Silk(
+                schema=schema._val,
+                data=self.monitor.get_path(),
+                buffer=silk_buffer,
+                stateful=True,
+            )
+
 
     def connect_inchannel(self, source, inchannel):
         ic = self.inchannels[inchannel]
@@ -258,9 +331,6 @@ class StructuredCell(CellLikeBase):
         manager = cell._get_manager()
         manager.set_cell(cell, value, force=True)
         result = self.data._val
-        if self._silk:
-            monitor_schema = self.schema._val
-            result = Silk(monitor_schema).set(result) #validates, infers schema, and wraps
         return result
 
     def _form_hook(self, value):
@@ -275,31 +345,65 @@ class StructuredCell(CellLikeBase):
         manager.set_cell(cell, value, force=True)
         return self.storage._val
 
+    def _buffer_data_hook(self, value):
+        cell = self.buffer.data
+        manager = cell._get_manager()
+        manager.set_cell(cell, value, force=True)
+        result = self.buffer.data._val
+        return result
+
+    def _buffer_form_hook(self, value):
+        cell = self.buffer.form
+        manager = cell._get_manager()
+        manager.set_cell(cell, value, force=True)
+        return self.buffer.form._val
+
+    def _buffer_storage_hook(self, value):
+        cell = self.buffer.storage
+        manager = cell._get_manager()
+        manager.set_cell(cell, value, force=True)
+        return self.buffer.storage._val
+
     def set(self, value):
-        if self._silk:
-            result = Silk(self.schema._val, data=self.handle)
-            if isinstance(self.monitor.data, Silk):
-                #Silk wrapping MixedObject wrapping Silk
-                result._forks = self.monitor.data._forks
-            result.set(value)
+        if self._is_silk:
+            self._silk.set(value)
         else:
             self.monitor.set_path((), value)
 
     @property
     def value(self):
+        """
+        Returns the current value
+        Unless the schema has changed, this value always conforms
+         to schema, even for buffered StructuredCells
+        """
         result = self.monitor.get_data()
         return result
 
     @property
     def handle(self):
-        result = self.monitor.get_path()
-        if self._silk:
-            result = Silk(self.schema._val, data=result)
-            if isinstance(self.monitor.data, Silk):
-                #Silk wrapping MixedObject wrapping Silk
-                result._forks = self.monitor.data._forks
+        """
+        Returns handle for manipulation
+        For buffered StructuredCells, its value may be against schema
+        """
+        if self._is_silk:
+            result = self._silk
+        else:
+            monitor = self.monitor
+            result = monitor.get_path()
         return result
 
+"""
+TODO (long-term): a mechanism to overrule checksum computation
+_slave takes away the checksum responsibility, this now lies with StructuredCell
+By default: serialize the entire value (still to do), and calc a checksum of that
+However, this is terribly inefficient if:
+ there is a data structure that consists of part X and part Y
+ where X is huge and unchanging, and Y is small and changes all the time
+In that case, it is much better to delegate the checksum computation to X and Y and
+ to return some checksum-of-checksums
+The configuration of checksum calculation should probably be another cell
+"""
 
 #TODO: schema could become not a slave
 # but then, it may be updated from elsewhere; need to listen for that

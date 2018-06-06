@@ -15,7 +15,7 @@ a = np.array(t)
 print(a, type(a), a.shape)
 
 
-from silk import Silk
+from seamless.silk import Silk
 s = Silk().set([10,20,30])
 aa = np.array(s)
 print(aa, type(aa), aa.shape)

@@ -15,6 +15,7 @@ with macro_mode_on():
         storage = ctx.inp_struc.storage,
         form = ctx.inp_struc.form,
         schema = None,
+        buffer = None,
         inchannels = None,
         outchannels = [()]
     )

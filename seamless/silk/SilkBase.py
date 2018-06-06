@@ -10,7 +10,7 @@ class SilkBase:
 
     def __contains__(self, item):
         try:
-            method = self._get("__contains__")
+            method = self._get_special("__contains__")
         except AttributeError:
             return NotImplementedError
         return method(item)
@@ -18,6 +18,8 @@ class SilkBase:
     def __str__(self):
         # TODO: proper string representation
         data = self.data
+        if self._buffer is not None:
+            data = self._buffer
         return str(data)
 
     def __repr__(self):
@@ -27,7 +29,7 @@ class SilkBase:
 
 def silk_unary_method(self, name):
     #print("METHOD", name)
-    method = self._get(name)
+    method = self._get_special(name)
     if method is NotImplemented:
         return NotImplemented
     return method()
@@ -48,7 +50,7 @@ for name in unary_special_method_names:
 def silk_unary_method_optional(self, name):
     #print("METHOD", name)
     try:
-        method = self._get(name)
+        method = self._get_special(name)
     except AttributeError:
         return NotImplementedError
     return method()
@@ -64,7 +66,7 @@ for name in unary_special_method_names_optional:
 
 
 def silk_binary_method(self, other, name):
-    method = self._get(name)
+    method = self._get_special(name)
     if method is NotImplemented:
         return NotImplemented
     return method(other)

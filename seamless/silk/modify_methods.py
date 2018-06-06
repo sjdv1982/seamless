@@ -16,10 +16,10 @@ def list_grow_method(self, name, *args, **kwargs):
         if isinstance(item, Silk):
             item_schema = item.schema.dict
 
-    method = self._get(name, skip_modify_methods = True)
+    method = self._get_special(name, skip_modify_methods = True)
 
     result = method(*args, **kwargs)
-    if self._forks is None or self._forks[-1].validate:
+    if not len(self._forks):
         self.validate()
     if empty_list:
         self._infer_list_item(item_schema)
@@ -28,17 +28,17 @@ def list_grow_method(self, name, *args, **kwargs):
 def list_modify_method(self, name, *args, **kwargs):
     #TODO: special case for numpy arrays, including resize() if needed,
     #   but need a path from the parent!
-    method = self._get(name, skip_modify_methods = True)
+    method = self._get_special(name, skip_modify_methods = True)
     result = method(*args, **kwargs)
-    if self._forks is None or self._forks[-1].validate:
+    if not len(self._forks):
         self.validate()
 
 def dict_modify_method(self, name, *args, **kwargs):
     #TODO: special case for numpy arrays, including astype() if needed,
     #   but need a path from the parent!
-    method = self._get(name, skip_modify_methods = True)
+    method = self._get_special(name, skip_modify_methods = True)
     result = method(*args, **kwargs)
-    if self._forks is None or self._forks[-1].validate:
+    if not len(self._forks):
         self.validate()
 
 _list_grow_method_names = set(("append", "extend", "insert"))

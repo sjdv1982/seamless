@@ -321,9 +321,18 @@ class Monitor:
 
     def _monitor_set_state(self, state):
         data, storage, form = state
-        self.data = data
-        self.storage = storage
-        self.form = form
+        if self._data_hook is not None:
+            self.data = self._data_hook(data)
+        else:
+            self.data = data
+        if self._storage_hook is not None:
+            self.storage = self._storage_hook(storage)
+        else:
+            self.storage = storage
+        if self._form_hook is not None:
+            self.form = self._form_hook(form)
+        else:
+            self.form = form
         self.pathcache.clear()
 
 

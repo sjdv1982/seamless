@@ -42,3 +42,9 @@ class MixedObject(MixedBase, MutableMapping, MutableSequence):
             self._monitor.set_path(self._path, [])
             proxy = self._proxy()
         return proxy.append(value)
+    def update(self, value):
+        proxy = self._monitor.get_path(self._path)
+        if isinstance(proxy, MixedObject):
+            self._monitor.set_path(self._path, {})
+            proxy = self._proxy()
+        return proxy.update(value)
