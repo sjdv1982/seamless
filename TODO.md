@@ -3,7 +3,6 @@ Great Refactor is underway (see seamless-toward-02.md).
 Most of the text below the FIRST section is out of date.
 Current status: simplest low-level example works.
 Things to do (all low level) :
-- manager.touch_cell / touch_worker
 - mixedcell serialization
 - symlinks  (may be exported; eliminate ExportedPin)
 - cson cells
@@ -19,7 +18,7 @@ Things to do (all low level) :
    are evaluated for cache hits (value hits).
 - Reactors (think of IPython stuff in the namespace, not properly addressed in 0.1; copy from 0.2 transformers)
   (also think of \_pending_inputs: add a name back in, if sent as None (like transformers))
-- "Active" switch of managers, workers, connections; persistent/serialized or not??
+- "Active" switch of managers, workers, connections; persistent/serialized or not?? => maybe export switches, and add to connection layer
 - PyImport cells and code injection
 - Status dict, also as a structured cell  (also policies like .accept_shell_append)
 - Signatures/checksums and macro caching. NOTE: take care of the alternative checksums caused by "cosmetic updates"

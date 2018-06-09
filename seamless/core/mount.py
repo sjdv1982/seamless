@@ -67,7 +67,7 @@ class MountItem:
                             print("Warning: File path '%s' has a different value, overwriting cell" % self.path) #TODO: log warning
                     self._after_read(file_checksum)
                 if update_file:
-                    cell.set_from_buffer(filevalue, checksum=file_checksum)
+                    self.set(filevalue, checksum=file_checksum)
             elif self.authority == "file-strict":
                 raise Exception("File path '%s' does not exist, but authority is 'file-strict'" % self.path)
             else:
@@ -96,8 +96,17 @@ class MountItem:
                     with self.lock:
                         filevalue = self._read()
                         file_checksum = cell._checksum(filevalue, buffer=True)
-                        cell.set_from_buffer(filevalue, checksum=file_checksum)
+                        self.set(filevalue, checksum=file_checksum)
                         self._after_read(file_checksum)
+
+    def set(self, filevalue, checksum):
+        cell = self.cell()
+        if cell is None:
+            return
+        if cell._mount_setter is not None:
+            cell._mount_setter(filevalue, checksum)
+        else:
+            cell.set_from_buffer(filevalue, checksum=checksum)
 
     @property
     def lock(self):
@@ -156,6 +165,7 @@ class MountItem:
         if mtime is None:
             stat = os.stat(self.path)
             mtime = stat.st_mtime
+        self.last_mtime = mtime
 
     def conditional_read(self):
         if not "r" in self.mode:
@@ -171,11 +181,11 @@ class MountItem:
             file_checksum = None
             if self.last_mtime is None or mtime > self.last_mtime:
                 filevalue = self._read()
-                file_checksum = cell._checksum(filevalue)
+                file_checksum = cell._checksum(filevalue, buffer=True)
                 self._after_read(file_checksum, mtime=mtime)
         cell_checksum = cell.checksum()
         if file_checksum is not None and file_checksum != cell_checksum:
-            cell.set_from_buffer(filevalue, checksum=file_checksum)
+            self.set(filevalue, checksum=file_checksum)
 
 class MountManager:
     _running = False
@@ -323,7 +333,7 @@ def resolve_register(reg):
                 print("Warning: Unable to mount file path '%s': cannot mount this type of cell" % path)
                 continue
             mount.update(cell._mount_kwargs)
-            if cell._slave:
+            if cell._slave and (cell._mount_setter is None):
                 if mount.get("mode") == "r":
                     continue
                 else:
@@ -331,7 +341,7 @@ def resolve_register(reg):
             cell._mount = mount
             mountmanager.add_mount(cell, **mount)
 
-mountmanager = MountManager(0.2)
+mountmanager = MountManager(0.2) #TODO: latency in config cell
 mountmanager.start()
 
 def get_extension(c):
@@ -344,7 +354,7 @@ def get_extension(c):
 """
 *****
 TODO: filehash option (cell stores hash of the file, necessary for slash-0)
-TODO: remount option (different cell, same path, for caching)
+TODO: remount option (different [but same-value] cell, same path, for caching)
 TODO: cleanup option (remove file when mount is destroyed; also for contexts!)
 *****
 """

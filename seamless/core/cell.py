@@ -56,6 +56,7 @@ class CellBase(CellLikeBase):
     _overruled = False #a non-authoritative cell that has previously received a value
     _mount = None
     _mount_kwargs = None
+    _mount_setter = None
     _slave = False   #Slave cells. Cannot be written to by API, do not accept connections, and mounting is write-only
 
 
@@ -320,6 +321,9 @@ Use ``Cell.status()`` to get its status.
 class MixedCell(Cell):
     def _serialize(self, mode, submode=None):
         raise NotImplementedError #TODO
+    def _from_buffer(self, value):
+        print("TODO: mixed cell serialization for non-JSON")
+        return json.loads(value)
     def __str__(self):
         ret = "Seamless mixed cell: " + self.format_path()
         return ret
@@ -355,7 +359,7 @@ class PythonCell(Cell):
     _accept_shell_append = True
 
     #TODO: for serialization, store ._accept_shell_append
-    #TODO: for GUI, make ._accept_shell_append editable as cell
+    # OR: make ._accept_shell_append editable as cell
 
     def _check_mode(self, mode, submode=None):
         CellBase._check_mode(self, mode, submode)
@@ -444,9 +448,12 @@ class JsonCell(Cell):
         else:
             return self._val
 
+    def _from_buffer(self, value):
+        return json.loads(value)
+
     def _deserialize(self, value, mode, submode=None):
         if mode == "buffer":
-            self._val = json.loads(value)
+            self._val = self._from_buffer(value)
         else:
             self._val = value
 

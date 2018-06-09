@@ -10,7 +10,7 @@ with macro_mode_on():
     ctx.hub_struc.storage = cell("text")
     ctx.hub_struc.form = cell("json")
     ctx.hub_struc.schema = cell("json")
-    ctx.hub_struc.buffer_data = cell("json")
+    ctx.hub_struc.buffer_data = cell("mixed")
     ctx.hub_struc.buffer_storage = cell("text")
     ctx.hub_struc.buffer_form = cell("json")
     bufferwrapper = BufferWrapper(
@@ -64,7 +64,7 @@ with macro_mode_on():
     ctx.result_struc.storage = cell("text")
     ctx.result_struc.form = cell("json")
     ctx.result_struc.schema = cell("json")
-    ctx.result_struc.buffer_data = cell("json")
+    ctx.result_struc.buffer_data = cell("mixed")
     ctx.result_struc.buffer_storage = cell("text")
     ctx.result_struc.buffer_form = cell("json")
     bufferwrapper = BufferWrapper(
@@ -97,6 +97,8 @@ whatever = None
 """)
 
     ctx.result.connect_outchannel(("herring",), ctx.tf_herring.herring)
+
+    ctx.mount("/tmp/mount-test")
 
 ctx.equilibrate()
 print(ctx.result.handle)

@@ -227,7 +227,6 @@ class StructuredCell(CellLikeBase):
                 val = schema._val
             assert isinstance(val, dict)
             self._is_silk = True
-            schema._slave = True
         self.schema = schema
 
         if buffer is not None:
@@ -322,7 +321,13 @@ class StructuredCell(CellLikeBase):
                 stateful=True,
                 schema_update_hook=schema_update_hook,
             )
-
+        if self.buffer is not None:
+            mountcell = self.buffer.data
+        else:
+            mountcell = self.data
+        mountcell._mount_setter = self._set_from_mounted_file
+        if self.schema is not None:
+            self.schema._mount_setter = self._set_schema_from_mounted_file
 
     def connect_inchannel(self, source, inchannel):
         ic = self.inchannels[inchannel]
@@ -380,6 +385,18 @@ class StructuredCell(CellLikeBase):
         manager = cell._get_manager()
         manager.set_cell(cell, value, force=True)
         return self.buffer.storage._val
+
+    def _set_from_mounted_file(self, filebuffer, checksum):
+        cell = self.buffer.data if self.buffer is not None else self.data
+        value = cell._from_buffer(filebuffer)
+        self.set(value)
+
+    def _set_schema_from_mounted_file(self, filebuffer, checksum):
+        cell = self.schema
+        value = cell._from_buffer(filebuffer)
+        cell._val.update(value)
+        self._silk.validate()
+
 
     def set(self, value):
         if self._is_silk:
