@@ -2,7 +2,6 @@ print("STUB: macro.py")
 
 from weakref import WeakSet
 from contextlib import contextmanager
-from . import mount
 
 class MacroRegister:
     def __init__(self):
@@ -32,3 +31,5 @@ def macro_mode_on():
         _macro_mode = old_macro_mode
     curr_macro_register = macro_register.pop()
     mount.resolve_register(curr_macro_register)
+
+from . import mount

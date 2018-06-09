@@ -53,7 +53,7 @@ with macro_mode_on():
     ctx.result.connect_outchannel(("y",), ctx.tf2.y)
     ctx.tf2.z.connect(ctx.z)
 
-    #ctx.mount("/tmp/mount-test")
+    ctx.mount("/tmp/mount-test")
 
 ctx.x.set("x")
 

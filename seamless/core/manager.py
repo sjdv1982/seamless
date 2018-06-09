@@ -88,8 +88,8 @@ class Manager:
         assert cell._get_manager() is self
         other = target._get_manager()
         assert isinstance(target, (InputPinBase, EditPinBase, CellLikeBase))
-        if isinstance(target, ExportedInputPin):
-            target = target.get_pin()
+        ###if isinstance(target, ExportedInputPin):
+        ###    target = target.get_pin()
 
         if isinstance(target, CellLikeBase):
             assert not isinstance(target, Outchannel)
@@ -129,8 +129,8 @@ class Manager:
         assert pin._get_manager() is self
         other = target._get_manager()
         assert isinstance(target, CellLikeBase)
-        if isinstance(pin, ExportedOutputPin):
-            pin = pin.get_pin()
+        ###if isinstance(pin, ExportedOutputPin):
+        ###    pin = pin.get_pin()
         if isinstance(pin, EditPinBase):
             raise NotImplementedError ### also output *from* the cell!
         assert isinstance(pin, OutputPinBase)
@@ -192,6 +192,34 @@ class Manager:
         if different:
             self.cell_send_update(cell)
 
+    def touch_cell(self, cell):
+        assert isinstance(cell, CellLikeBase)
+        assert cell._get_manager() is self
+        if threading.current_thread() != threading.main_thread():
+            work = functools.partial(
+              self.touch_cell, cell
+            )
+            self.workqueue.append(work)
+            return
+
+        for con_id, pin in self.cell_to_pins.get(cell, []):
+            value = cell.serialize(pin.mode, pin.submode)
+            pin.receive_update(value)
+        self.cell_send_update(cell)
+        if cell._mount is not None:
+            self.mountmanager.add_cell_update(cell)
+
+    def touch_worker(self, worker):
+        assert isinstance(worker, Worker)
+        assert worker._get_manager() is self
+        if threading.current_thread() != threading.main_thread():
+            work = functools.partial(
+              self.touch_worker, worker
+            )
+            self.workqueue.append(work)
+            return
+        worker._touch()
+
     def notify_attach_child(self, childname, child):
         if isinstance(child, Context):
             assert isinstance(child._manager, Manager)
@@ -237,6 +265,6 @@ class Manager:
 from .context import Context
 from .cell import Cell, CellLikeBase
 from .worker import Worker, InputPin, EditPin, InputPinBase, EditPinBase, \
- OutputPinBase, ExportedInputPin, ExportedOutputPin
+ OutputPinBase#, ExportedInputPin, ExportedOutputPin
 from .transformer import Transformer
 from .structured_cell import Inchannel, Outchannel

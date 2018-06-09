@@ -101,12 +101,18 @@ class Transformer(Worker):
         self.active = True
 
 
-    def receive_update(self, input_pin, value):
+    def _send_message(self, msg):
         self._message_id += 1
         self._pending_updates += 1
-        msg = (self._message_id, input_pin, value)
-        self.transformer.input_queue.append(msg)
+        labeled_msg = (self._message_id,) + msg
+        self.transformer.input_queue.append(labeled_msg)
         self.transformer.semaphore.release()
+
+    def receive_update(self, input_pin, value):
+        self._send_message( (input_pin, value) )
+
+    def _touch(self):
+        self._send_message( ("@TOUCH", None) )
 
     def listen_output(self):
         # TODO logging

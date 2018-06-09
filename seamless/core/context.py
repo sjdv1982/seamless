@@ -132,6 +132,7 @@ context : context or None
         if attr in self._pins:
             raise AttributeError(
              "Cannot assign to pin '%s'" % attr)
+        '''
         from .worker import ExportedInputPin, ExportedOutputPin, \
           ExportedEditPin
         pintypes = (ExportedInputPin, ExportedOutputPin, ExportedEditPin)
@@ -140,6 +141,7 @@ context : context or None
             self._pins[attr] = value
             self._pins[attr]._set_context(self, attr)
             return
+        '''
 
         if attr in self._children and self._children[attr] is not value:
             raise AttributeError(
@@ -171,7 +173,7 @@ context : context or None
             return False
         else:
             return self._context._part_of(ctx)
-
+    '''
     def export(self, child, forced=[], skipped=[]):
         """Exports all unconnected inputs and outputs of a child
 
@@ -250,6 +252,7 @@ context : context or None
                 raise TypeError(pin)
 
         self._exported_child = child
+    '''
 
     def _flush_workqueue(self):
         manager = self._get_manager()
@@ -348,6 +351,20 @@ context : context or None
         }
         MountItem(None, self,  **self._mount) #to validate parameters
 
+    def __dir__(self):
+        result = []
+        result[:] = self._methods
+        for k in self._children:
+            if k not in result:
+                result.append(k)
+        return result
+
+    @property
+    def self(self):
+        return _ContextWrapper(self)
+
+Context._methods = [m for m in Context.__dict__ if not m.startswith("_") \
+      and m != "StatusFlags"]
 
 def context(**kwargs):
     ctx = Context(**kwargs)
@@ -356,8 +373,26 @@ context.__doc__ = Context.__init__.__doc__
 
 print("context: TODO symlinks (can be cells/workers/contexts outside this context)")
 
+class _ContextWrapper:
+    _methods = [m for m in Context.__dict__ if not m.startswith("_") \
+      and m not in ("self", "StatusFlags")]
+    def __init__(self, wrapped):
+        super().__setattr__("_wrapped", wrapped)
+    def __getattr__(self, attr):
+        if attr not in self._methods:
+            raise AttributeError(attr)
+        return getattr(self._wrapped, attr)
+    def __dir__(self):
+        return self._methods
+    def __setattr__(self, attr, value):
+        raise AttributeError("_ContextWrapper is read-only")
+
 from .cell import Cell, CellLikeBase
+'''
 from .worker import Worker,  \
   InputPinBase, ExportedInputPin, OutputPinBase, ExportedOutputPin, \
   EditPinBase, ExportedEditPin
+'''
+from .worker import Worker, InputPinBase, OutputPinBase, EditPinBase
+
 from .manager import Manager

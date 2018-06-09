@@ -39,6 +39,8 @@ def get_subpath(data, form, path):
         raise TypeError(type_)
 
 class Monitor:
+    _data_update_hook = None
+    _form_update_hook = None
     def __init__(self, data, storage, form, *, attribute_access=False, plain=False, **kwargs):
         self.attribute_access = attribute_access #does the underlying data support data.attr instead of just data["attr"]?
             #(even if true, only supported for attrs that do not start with _, and are not list/dict attrs/methods)
@@ -58,6 +60,10 @@ class Monitor:
             assert "form_hook" in kwargs
         if "form_hook" in kwargs:
             self._form_hook = kwargs["form_hook"]
+        if "data_update_hook" in kwargs:
+            self._data_update_hook = kwargs["data_update_hook"]
+        if "form_update_hook" in kwargs:
+            self._form_update_hook = kwargs["form_update_hook"]
         self.form = form
         self.pathcache = {} #path cache; key is a path. value consist of a tuple:
         # (subdata, subform, trigger) where trigger is None or (triggertype, parentpath)
@@ -217,6 +223,8 @@ class Monitor:
                 raise TypeError(type_)
             else:
                 raise TypeError(type_)
+        if self._data_update_hook is not None:
+            self._data_update_hook()
         self.recompute_form(path)
 
     def recompute_form(self, subpath=None):
@@ -248,6 +256,8 @@ class Monitor:
                     self.storage[:] = storage
                 else:
                     self._storage_hook(storage)
+        if self._form_update_hook is not None:
+            self._form_update_hook()
 
     def insert_path(self, path, subdata):
         """

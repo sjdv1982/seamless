@@ -139,6 +139,10 @@ class CellBase(CellLikeBase):
         assert self.status() == "OK", self.status()
         return self._serialize(mode, submode)
 
+    def _reset_checksums(self):
+        self._last_checksum = None
+        self._alternative_checksums = None
+
     def deserialize(self, value, mode, submode=None, *, from_pin, default, cosmetic, force=False):
         """Should normally be invoked by the manager, since it does not notify the manager
         from_pin: can be True (normal pin that has authority), False (from code) or "edit" (edit pin)
@@ -154,7 +158,7 @@ class CellBase(CellLikeBase):
         if value is None:
             different = (self._last_checksum is not None)
             self._val = None
-            self._last_checksum = None
+            self._reset_checksums()
             self._status = self.StatusFlags.UNDEFINED
         self._validate(value)
         if cosmetic:
@@ -165,9 +169,9 @@ class CellBase(CellLikeBase):
                 self._alternative_checksums.append(cs)
         if not cosmetic and value is not None:
             old_checksum = None
-            if old_status == self.StatusFlags.OK:     
+            if old_status == self.StatusFlags.OK:
                 old_checksum = self.checksum()
-        self._last_checksum = None
+        self._reset_checksums()
         self._deserialize(value, mode, submode)
         if from_pin == True:
             assert not self._authoritative
@@ -301,6 +305,10 @@ Use ``Cell.status()`` to get its status.
         assert submode is None, (mode, submode)
         self._val = value
 
+    def __str__(self):
+        ret = "Seamless cell: " + self.format_path()
+        return ret
+
     def as_text(self):
         if self._val is None:
             return None
@@ -312,6 +320,9 @@ Use ``Cell.status()`` to get its status.
 class MixedCell(Cell):
     def _serialize(self, mode, submode=None):
         raise NotImplementedError #TODO
+    def __str__(self):
+        ret = "Seamless mixed cell: " + self.format_path()
+        return ret
 
 class TextCell(Cell):
     _mount_kwargs = {"encoding": "utf-8", "binary": False}
@@ -330,6 +341,10 @@ class TextCell(Cell):
         if self._val is None:
             return None
         return str(self._val)
+
+    def __str__(self):
+        ret = "Seamless text cell: " + self.format_path()
+        return ret
 
 
 class PythonCell(Cell):
@@ -371,6 +386,10 @@ class PythonCell(Cell):
         assert submode is None, (mode, submode)
         self._val = str(value)
 
+    def __str__(self):
+        ret = "Seamless Python cell: " + self.format_path()
+        return ret
+
 class PyTransformerCell(PythonCell):
     """Python code object used for transformers (accepts one argument)"""
 
@@ -394,12 +413,12 @@ class JsonCell(Cell):
     def _to_json(self):
         if self._val is None:
             return None
-        return json.dumps(self._val)
+        return json.dumps(self._val, sort_keys=True, indent=2)
 
     def _checksum(self, value, buffer=False):
         if buffer:
             return super()._checksum(value)
-        j = json.dumps(value)
+        j = self._to_json()
         return super()._checksum(j)
 
     def _validate(self, value):
@@ -434,6 +453,11 @@ class JsonCell(Cell):
     def as_text(self):
         return self._to_json()
 
+    def __str__(self):
+        ret = "Seamless JSON cell: " + self.format_path()
+        return ret
+
+
 class CsonCell(Cell):
     """A cell in CoffeeScript Object Notation (CSON) format
     When necessary, the contents of a CSON cell are automatically converted
@@ -451,6 +475,10 @@ class CsonCell(Cell):
 
     def _deserialize(self, value, mode, submode=None):
         raise NotImplementedError
+
+    def __str__(self):
+        ret = "Seamless CSON cell: " + self.format_path()
+        return ret
 
 class Signal(Cell):
     """ A cell that does not contain any data
@@ -474,6 +502,10 @@ class Signal(Cell):
 
     def _deserialize(self, value, mode, submode=None):
         raise NotImplementedError
+
+    def __str__(self):
+        ret = "Seamless signal: " + self.format_path()
+        return ret
 
 def cell(celltype=None):
     if celltype == "text":
@@ -499,6 +531,13 @@ def pythoncell():
 
 def pytransformercell():
     return PyTransformerCell()
+
+extensions = {
+    TextCell: ".txt",
+    JsonCell: ".json",
+    CsonCell: ".cson",
+    PythonCell: ".py"
+}
 
 print("TODO cell: CSON cell")
 print("TODO cell: PyImport cell") #cell that does imports, executed already upon code definition; code injection causes an exec()

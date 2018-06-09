@@ -34,8 +34,7 @@ with macro_mode_on():
     ctx.result = cell("mixed")
     ctx.tf.c.connect(ctx.result)
 
-    print("TODO: tests/.../silk.py: error in mount")
-    ###ctx.mount("/tmp/mount-test")
+    ctx.mount("/tmp/mount-test")
 
 ctx.equilibrate()
 print(ctx.tf.status())

@@ -34,15 +34,19 @@ Buffering:
   in an unbuffered Silk structure.
 """
 
+#TODO: .self property that becomes a SilkWrapper?
+#TODO: .data => _data + data property + ( .self._data in structured_cell)
+
 class Silk(SilkBase):
     __slots__ = [
             "_parent", "data", "_schema",
-            "_modifier", "_forks", "_buffer", "_stateful", "_buffer_nosync"
+            "_modifier", "_forks", "_buffer", "_stateful", "_buffer_nosync",
+            "_schema_update_hook"
     ]
     # TODO: append method that may also create a schema, depending on policy.infer_item
 
     def __init__(self, schema = None, *, parent = None, data = None,
-      modifier = 0, buffer = None, stateful = False):
+      modifier = 0, buffer = None, stateful = False, schema_update_hook = None):
         self._parent = parent
         self._modifier = modifier
         self._forks = []
@@ -53,10 +57,13 @@ class Silk(SilkBase):
         assert not isinstance(data, Silk)
         if schema is None:
             schema = {}
-        assert isinstance(schema, dict) #for now, no smart wrappers around schema are allowed
-                                        # as this complicates forking and external upaates to schema.
-                                        # see the note in structured_cell:"schema could become not a slave"
+        assert isinstance(schema, dict) #  Silk provides its own smart wrapper around schema
+                                        #   for now, no other wrappers are allowed
+                                        #   as this complicates forking and external upaates to schema.
+                                        #   see the note in structured_cell:"schema could become not a slave"
+                                        #   But: a schema update hook is supported
         self._schema = schema
+        self._schema_update_hook = schema_update_hook
 
     """
     def __deepcopy__(self, memo):
@@ -154,6 +161,8 @@ class Silk(SilkBase):
                         self._schema = schema
                     else:
                         schema.update(value_schema)
+                        if self._schema_update_hook is not None:
+                            self._schema_update_hook()
                 policy = schema.get("policy", None)
                 if policy is None or not len(policy):
                     #TODO: implement lookup hierarchy wrapper that also looks at parent
@@ -162,6 +171,8 @@ class Silk(SilkBase):
                     if "type" not in schema:
                         type_ = infer_type(value)
                         schema["type"] = type_
+                        if self._schema_update_hook is not None:
+                            self._schema_update_hook()
                 if isinstance(value, _types["array"]) and len(self.data) > 0:
                     self._infer_list_item(value_schema)
         elif isinstance(value, Scalar):
@@ -218,6 +229,8 @@ class Silk(SilkBase):
             if attr not in schema["properties"]:
                 schema["properties"][attr] = value_schema
                 #TODO: infer_property check
+                if self._schema_update_hook is not None:
+                    self._schema_update_hook()
 
         if policy["infer_type"]:
             if "properties" not in schema:
@@ -227,6 +240,8 @@ class Silk(SilkBase):
             if "type" not in schema["properties"][attr]:
                 type_ = infer_type(value)
                 schema["properties"][attr]["type"] = type_
+                if self._schema_update_hook is not None:
+                    self._schema_update_hook()
 
         # TODO: make conditional upon policy.infer_property
 
@@ -238,7 +253,7 @@ class Silk(SilkBase):
             raise AttributeError(attr) #Silk method
         if attr == "schema":
             if isinstance(value, SchemaWrapper):
-                value = value.dict
+                value = value._dict
             return super().__setattr__(attr, value)
         if isinstance(value, property):
             return self._set_property(attr, value)
@@ -289,6 +304,9 @@ class Silk(SilkBase):
             methods = {}
             schema["methods"] = methods
         methods[attribute] = m
+        if self._schema_update_hook is not None:
+            self._schema_update_hook()
+
 
     def _set_method(self, attribute, func):
         assert (not attribute.startswith("_")) or attribute.startswith("__"), attribute
@@ -303,6 +321,8 @@ class Silk(SilkBase):
             methods = {}
             schema["methods"] = methods
         methods[attribute] = m
+        if self._schema_update_hook is not None:
+            self._schema_update_hook()
 
     def _add_validator(self, func, attr, *, from_meta):
         assert callable(func)
@@ -333,6 +353,8 @@ class Silk(SilkBase):
             validators = []
             schema["validators"] = validators
         validators.append(v)
+        if self._schema_update_hook is not None:
+            self._schema_update_hook()
 
     def add_validator(self, func, attr=None):
         schema = self._schema
@@ -367,6 +389,8 @@ class Silk(SilkBase):
             s.item = item
             item_schema = s.schema.properties.item.dict
         schema["items"] = item_schema
+        if self._schema_update_hook is not None:
+            self._schema_update_hook()
 
     #***************************************************
     #*  methods for getting
@@ -432,7 +456,11 @@ class Silk(SilkBase):
         if attr in ("data", "_buffer"):
             return super().__getattribute__(attr)
         if attr == "schema":
-            return SchemaWrapper(super().__getattribute__("_schema"))
+            return SchemaWrapper(
+                self,
+                super().__getattribute__("_schema"),
+                super().__getattribute__("_schema_update_hook"),
+             )
         try:
             return super().__getattribute__("_get_special")(attr)
         except (TypeError, KeyError, AttributeError, IndexError) as exc:
@@ -470,6 +498,8 @@ class Silk(SilkBase):
             if schema_items is None:
                 schema_items = {}
                 schema["items"] = schema_items
+                if self._schema_update_hook is not None:
+                    self._schema_update_hook()
             elif isinstance(schema_items, list):
                 child_schema = schema_items[item]
         else:
@@ -477,10 +507,14 @@ class Silk(SilkBase):
             if schema_props is None:
                 schema_props = {}
                 schema["properties"] = schema_props
+                if self._schema_update_hook is not None:
+                    self._schema_update_hook()
             child_schema = schema_props.get(item, None)
             if child_schema is None:
                 child_schema = {}
                 schema_props[item] = child_schema
+                if self._schema_update_hook is not None:
+                    self._schema_update_hook()
 
         return Silk(
           parent=self,
@@ -614,6 +648,8 @@ class _SilkFork:
                     parent._set(self.data, lowlevel=True, buffer=False)
                 parent._schema.clear()
                 parent._schema.update(self._schema)
+                if parent._schema_update_hook is not None:
+                    parent._schema_update_hook()
             if len(parent._forks): #could be, because of exception
                 parent._forks.pop(-1) #should return self
             self._joined = True
@@ -671,10 +707,11 @@ class _BufferedSilkFork(_SilkFork):
                         parent._set(self._buffer, lowlevel=True, buffer=True)
                 parent._schema.clear()
                 parent._schema.update(self._schema)
+                if parent._schema_update_hook is not None:
+                    parent._schema_update_hook()
             if len(parent._forks): #could be, because of exception
                 parent._forks.pop(-1) #should return self
             self._joined = True
-
 
 from .modify_methods import try_modify_methods
 from ..mixed import MixedBase

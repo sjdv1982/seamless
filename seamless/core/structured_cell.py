@@ -5,6 +5,7 @@ from ..silk import Silk
 import weakref
 import traceback
 from copy import deepcopy
+import functools
 
 """
 OverlayMonitor warns if an inchannel is overwritten via handle
@@ -12,6 +13,7 @@ OverlayMonitor warns if an inchannel is overwritten via handle
 But if the StructuredCell is buffered, this warning is lost
 """
 
+# TODO: re-think mount + slave: read-only?  re-direct to different cell?
 
 class Inchannel(CellLikeBase):
     _authoritative = True
@@ -174,6 +176,11 @@ class BufferWrapper:
         self.storage = storage
         self.form = form
 
+def update_hook(cell):
+    cell._reset_checksums()
+    if cell._mount is not None:
+        cell._get_manager().mountmanager.add_cell_update(cell)
+
 class StructuredCell(CellLikeBase):
     _mount = None
     def __init__(
@@ -261,6 +268,8 @@ class StructuredCell(CellLikeBase):
         if not isinstance(monitor_form, (list, dict)):
             form_hook = self._form_hook
         storage_hook = self._storage_hook
+        data_update_hook = functools.partial(update_hook, self.data)
+        form_update_hook = functools.partial(update_hook, self.form)
 
         self.monitor = OverlayMonitor(
             data=monitor_data,
@@ -269,13 +278,16 @@ class StructuredCell(CellLikeBase):
             inchannels=monitor_inchannels,
             outchannels=monitor_outchannels,
             plain=self._plain,
+            attribute_access=self._is_silk,
             data_hook=data_hook,
             form_hook=form_hook,
             storage_hook=storage_hook,
-            attribute_access=self._is_silk,
+            data_update_hook=data_update_hook,
+            form_update_hook=form_update_hook,
         )
 
         if self._is_silk:
+            schema_update_hook = functools.partial(update_hook, self.schema)
             silk_buffer = None
             if buffer is not None:
                 monitor_buffer_data = buffer.data._val
@@ -288,15 +300,19 @@ class StructuredCell(CellLikeBase):
                 if not isinstance(monitor_buffer_form, (list, dict)):
                     buffer_form_hook = self._buffer_form_hook
                 buffer_storage_hook = self._buffer_storage_hook
+                buffer_data_update_hook = functools.partial(update_hook, self.buffer.data)
+                buffer_form_update_hook = functools.partial(update_hook, self.buffer.form)
                 self.bufmonitor = MakeParentMonitor(
                   data=monitor_buffer_data,
                   storage=monitor_buffer_storage,
                   form=monitor_buffer_form,
                   plain=self._plain,
+                  attribute_access=True,
                   data_hook=buffer_data_hook,
                   form_hook=buffer_form_hook,
                   storage_hook=buffer_storage_hook,
-                  attribute_access=True,
+                  form_update_hook=buffer_form_update_hook,
+                  data_update_hook=buffer_data_update_hook,
                 )
                 silk_buffer = self.bufmonitor.get_path()
             self._silk = Silk(
@@ -304,6 +320,7 @@ class StructuredCell(CellLikeBase):
                 data=self.monitor.get_path(),
                 buffer=silk_buffer,
                 stateful=True,
+                schema_update_hook=schema_update_hook,
             )
 
 
@@ -369,6 +386,9 @@ class StructuredCell(CellLikeBase):
             self._silk.set(value)
         else:
             self.monitor.set_path((), value)
+
+    def status(self):
+        return self.data.status()
 
     @property
     def value(self):

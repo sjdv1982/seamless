@@ -280,6 +280,7 @@ def resolve_register(reg):
             if result is not None:
                 result = result.copy()
                 result["path"] += "/" + c.name
+                result["path"] += get_extension(c)
         if result is not None:
             mounts[c] = result
         return result
@@ -332,6 +333,13 @@ def resolve_register(reg):
 
 mountmanager = MountManager(0.2)
 mountmanager.start()
+
+def get_extension(c):
+    from .cell import extensions
+    for k,v in extensions.items():
+        if isinstance(c, k):
+            return v
+    return ""
 
 """
 *****

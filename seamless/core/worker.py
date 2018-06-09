@@ -49,6 +49,10 @@ class Worker(SeamlessBase):
     def receive_update(self, input_pin, value):
         raise NotImplementedError
 
+    def touch(self):
+        manager = self._get_manager()
+        manager.touch_worker(self)
+
     def _validate_path(self, required_path=None):
         required_path = super()._validate_path(required_path)
         for pin_name, pin in self._pins.items():
@@ -174,6 +178,9 @@ class InputPin(InputPinBase):
             return my_cell.status()
         else:
             return self.StatusFlags.UNCONNECTED.name
+
+    def _touch(self):
+        raise NotImplementedError
 
 class OutputPin(OutputPinBase):
     """Connects the output of workers (transformers and reactors) to cells
@@ -302,6 +309,7 @@ class EditPin(EditPinBase):
         else:
             return self.StatusFlags.UNCONNECTED.name
 
+'''
 class ExportedPinBase:
     def __init__(self, pin):
         self._pin = pin
@@ -342,8 +350,4 @@ class ExportedEditPin(ExportedPinBase, EditPinBase):
         assert isinstance(pin, EditPinBase)
         super().__init__(pin)
 ExportedEditPin.__doc__ = EditPin.__doc__
-
-print("TODO cell: silk pin") #(silk construct = schema sub-pin + form sub-pin + data sub-pin, providing support for copy+silk and ref+silk transport)
-# Data pin is connected from JSON cells or other cells
-# silk construct to be implemented with .mixed.overlay;  inchannels are maintained by the manager. This is fully distinct from the high-level data structures!!
-# silk construct allows subconnections, but not dynamically: schema must have supplied at construction time!
+'''

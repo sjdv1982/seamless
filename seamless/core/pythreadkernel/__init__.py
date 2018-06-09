@@ -82,27 +82,33 @@ class Worker(metaclass=ABCMeta):
                     self.responsive = True
                     ack(True)
                     continue
-
-                # It's cheaper to look-ahead for updates and wait until we process them instead
-                look_ahead = False
-                for item in list(self.input_queue):
-                    new_name = item[1]
-                    if new_name == name:
-                        look_ahead = True
-                        break
-                if look_ahead:
-                    ack()
+                elif name == "@TOUCH":
+                    pass
+                elif name.startswith("@"):
+                    print("*********** PROTOCOL ERROR in transformer %s: unknown message name **************" % (self.parent(), name ) )
                     continue
 
-                # If we have missing values, and this input is currently default, it's no longer missing
-                if data is not None:
-                    if self._pending_inputs and self.values[name] is None:
-                        self._pending_inputs.remove(name)
-                else:
-                    self._pending_inputs.add(name)
+                if not name.startswith("@"):
+                    # It's cheaper to look-ahead for updates and wait until we process them instead
+                    look_ahead = False
+                    for item in list(self.input_queue):
+                        new_name = item[1]
+                        if new_name == name:
+                            look_ahead = True
+                            break
+                    if look_ahead:
+                        ack()
+                        continue
 
-                self.values[name] = data
-                self.updated.add(name)
+                    # If we have missing values, and this input is currently default, it's no longer missing
+                    if data is not None:
+                        if self._pending_inputs and self.values[name] is None:
+                            self._pending_inputs.remove(name)
+                    else:
+                        self._pending_inputs.add(name)
+
+                    self.values[name] = data
+                    self.updated.add(name)
 
                 # With all inputs now present, we can issue updates
                 time.sleep(0.01)
