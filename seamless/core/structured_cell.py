@@ -7,6 +7,10 @@ import traceback
 from copy import deepcopy
 import threading, functools
 
+"""NOTE: data and schema can be edited via mount
+If there is buffering, only the buffer can be edit via mount
+"""
+
 """
 OverlayMonitor warns if an inchannel is overwritten via handle
  and again when the inchannel overwrites it back

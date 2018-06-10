@@ -65,6 +65,7 @@ def visit_typedef_numpy_tuple(storage0, typedef, data):
 def visit_typedef_numpy_struct(storage0, typedef, data):
     assert "properties" in typedef ##since type is "object"
     props = typedef["properties"]
+    storage = "pure-binary"
     for k in props:
         subtypedef = props[k]
         if not "storage" in subtypedef:
@@ -72,14 +73,23 @@ def visit_typedef_numpy_struct(storage0, typedef, data):
         subdata = data[k]
         substorage0 = subtypedef["storage"]
         substorage = visit_typedef_numpy(substorage0, subtypedef, subdata)
-        assert substorage in ("pure-plain", "mixed-plain", "mixed-binary"), substorage
+        if substorage0 is None or substorage != "pure-binary":
+            storage = "mixed-binary"
         subtypedef["storage"] = substorage
-    return storage0
+    if storage == "mixed-binary":
+        for k in props:
+            subtypedef = props[k]
+            substorage = subtypedef.get("storage")
+            if substorage is None:
+                subtypedef["storage"] = "pure-binary"
+            elif substorage == "mixed-binary":
+                subtypedef.pop("storage")
+    return storage
 
 def visit_typedef_numpy(storage0, typedef, data):
     #visit and fill in mixed-binary typedefs
     if storage0 is None: #typedef of a Python object inside Numpy
-        assert not isinstance(data, (ndarray, void)), type(data)
+        assert not isinstance(data, void), type(data)
         if isinstance(typedef, dict) and "items" in typedef:
             assert typedef["items"] is None
             storage = "mixed-binary"
@@ -106,9 +116,15 @@ def visit_typedef_numpy(storage0, typedef, data):
             else:
                 raise TypeError(typedef["type"])
         else: # Python object inside a Numpy structured dtype
-            storage, typedef2 = get_form_python_inside_numpy(data)  #plain storage
-            typedef.clear()
-            typedef.update(typedef2)
+            if isinstance(data, ndarray):
+                storage, typedef2 = get_form_list(data)  #plain storage
+            else:
+                storage, typedef2 = get_form_python_inside_numpy(data)  #plain storage
+            if isinstance(typedef2, dict):
+                typedef.clear()
+                typedef.update(typedef2)
+            else:
+                typedef = typedef2
     elif storage0 == "mixed-binary":
         assert isinstance(data, (ndarray, void)), type(data)
         assert isinstance(typedef, dict), type(typedef)
