@@ -212,7 +212,9 @@ class Silk(SilkBase):
             #TODO: implement lookup hierarchy wrapper that also looks at parent
             policy = default_policy
 
+        data_was_none = False
         if self._buffer is None and data is None:
+            data_was_none = True
             assert self._parent is None # MUST be independent
             data = AlphabeticDict()
             self._set_value_dict(data, buffer=False)
@@ -233,6 +235,12 @@ class Silk(SilkBase):
                     self._schema_update_hook()
 
         if policy["infer_type"]:
+            if data_was_none:
+                if "type" not in schema:
+                    type_ = infer_type(self.data)
+                    schema["type"] = type_
+                    if self._schema_update_hook is not None:
+                        self._schema_update_hook()
             if "properties" not in schema:
                 schema["properties"] = {}
             if attr not in schema["properties"]:
@@ -557,7 +565,13 @@ class Silk(SilkBase):
                     data = data.value
                 if isinstance(self.data, SilkHasForm):
                     form = self.data._get_silk_form()
-                    form_validator(self._schema).validate(form)
+                    """
+                    ###TODO: extract the relevant form bits from the schema
+                    (=> formschema) and send that to the form_validator
+                    (also TODO)
+                    """
+                    ### form_schema = get_form_schema(self._schema)
+                    ###form_validator(formschema).validate(form)
                 schema_validator(self._schema).validate(data)
             else:
                 schema = self._schema
@@ -715,3 +729,4 @@ class _BufferedSilkFork(_SilkFork):
 
 from .modify_methods import try_modify_methods
 from ..mixed import MixedBase
+print("TODO: Silk form_validator") #see above

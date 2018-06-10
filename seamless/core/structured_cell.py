@@ -5,7 +5,7 @@ from ..silk import Silk
 import weakref
 import traceback
 from copy import deepcopy
-import functools
+import threading, functools
 
 """
 OverlayMonitor warns if an inchannel is overwritten via handle
@@ -388,11 +388,27 @@ class StructuredCell(CellLikeBase):
 
     def _set_from_mounted_file(self, filebuffer, checksum):
         cell = self.buffer.data if self.buffer is not None else self.data
+        if threading.current_thread() != threading.main_thread():
+            work = functools.partial(
+              self._set_from_mounted_file,
+              filebuffer=filebuffer, checksum=checksum
+            )
+            manager = cell._get_manager()
+            manager.workqueue.append(work)
+            return
         value = cell._from_buffer(filebuffer)
         self.set(value)
 
     def _set_schema_from_mounted_file(self, filebuffer, checksum):
         cell = self.schema
+        if threading.current_thread() != threading.main_thread():
+            work = functools.partial(
+              self._set_schema_from_mounted_file,
+              filebuffer=filebuffer, checksum=checksum
+            )
+            manager = cell._get_manager()
+            manager.workqueue.append(work)
+            return
         value = cell._from_buffer(filebuffer)
         cell._val.update(value)
         self._silk.validate()

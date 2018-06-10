@@ -45,13 +45,15 @@ a Silk schema will always validate against JSON schema too, if in plain form,
 and if converted as below.
 
 NO SUPPORT FOR "default", THIS IS NOT PART OF SILK SCHEMA!
-UPDATE: Silk.constructor will generate a constructor based on a schema, including
+UPDATE: Silk.constructor (TODO) will generate a constructor based on a schema, including
 "default" and "order"
 
 Seamless will implement its own $ref resolver for $refs that start with
 SEAMLESS. These are provided by the central schema registry
 These can be used for both full-blown schemas AND new basic types
 (still refer to them using $ref instead of using {"type": ...} )
+UPDATE: Every Silk class has its own schema registry.
+For Seamless StructuredCells, add a facility where schema cells can be injected
 
 Conversion to JSON schema:
 - SEAMLESS $refs are re-written
@@ -226,7 +228,7 @@ A new inferred property is automatically added to the required properties
 Default: False
 
 ### force_valid_schema
-UPDATE: this is too complicated. Instead, use "with fork: ..." .
+UPDATE: this is too complicated. Instead, use "with fork: ..." . /UPDATE
 When a fork is created, the data (and schema?) are copied
 While a Silk object is forked, validation is off
 When the fork ends, the fork is validated.
@@ -266,6 +268,7 @@ UPDATE: this is too complicated. Use a fork instead. /UPDATE
 Error-buffer all manipulations of the schema properties (see above).
 
 ## error_log
+UPDATE: no longer needed
 Errors (data-schema mismatches) are logged, rather than raising exceptions immediately.
 Stack traces, exceptions and whatnot are stored in the error log.
 Error logs are observable, both for appends and for clear events.

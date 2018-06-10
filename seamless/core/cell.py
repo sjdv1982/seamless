@@ -22,6 +22,7 @@ from .cached_compile import cached_compile
 
 from .mount import MountItem
 from ..silk import Silk
+import numpy as np
 
 transformer_patch = """
 import inspect
@@ -57,8 +58,12 @@ class CellBase(CellLikeBase):
     _mount = None
     _mount_kwargs = None
     _mount_setter = None
-    _slave = False   #Slave cells. Cannot be written to by API, do not accept connections, and mounting is write-only
-
+    _slave = False   #Slave cells. Cannot be written to by API, do not accept connections,
+                     #  and mounting is write-only unless there is a mount_setter.
+                     # Slave cells are controlled by StructuredCell.
+                     # TODO: make StructuredCell a bit less tyrannical, and allow slave
+                     #  cells to be controlled by workers/macros external to the StructuredCell
+                     # This will require a listener in the vein of mount_setter
 
     def status(self):
         """The cell's current status."""
@@ -120,8 +125,6 @@ class CellBase(CellLikeBase):
         else:
             manager = self._get_manager()
             manager.set_cell(self, value, from_buffer=True)
-            if checksum is not None:
-                self._last_checksum = checksum
         return self
 
     def set_cosmetic(self, value):
@@ -144,6 +147,20 @@ class CellBase(CellLikeBase):
         self._last_checksum = None
         self._alternative_checksums = None
 
+    def _assign(self, value):
+        v = self._val
+        if not issubclass(type(value), type(v)):
+            self._val = value
+            return
+        if isinstance(v, dict):
+            v.clear()
+            v.update(value)
+        elif isinstance(v, (list, np.ndarray)):
+            v[:] = value
+        else:
+            self._val = value
+
+
     def deserialize(self, value, mode, submode=None, *, from_pin, default, cosmetic, force=False):
         """Should normally be invoked by the manager, since it does not notify the manager
         from_pin: can be True (normal pin that has authority), False (from code) or "edit" (edit pin)
@@ -161,6 +178,10 @@ class CellBase(CellLikeBase):
             self._val = None
             self._reset_checksums()
             self._status = self.StatusFlags.UNDEFINED
+        if not cosmetic and value is not None:
+            old_checksum = None
+            if old_status == self.StatusFlags.OK:
+                old_checksum = self.checksum()
         self._validate(value)
         if cosmetic:
             cs = self._last_checksum
@@ -168,10 +189,6 @@ class CellBase(CellLikeBase):
                 if self._alternative_checksums is None:
                     self._alternative_checksums = []
                 self._alternative_checksums.append(cs)
-        if not cosmetic and value is not None:
-            old_checksum = None
-            if old_status == self.StatusFlags.OK:
-                old_checksum = self.checksum()
         self._reset_checksums()
         self._deserialize(value, mode, submode)
         if from_pin == True:
@@ -233,7 +250,8 @@ class CellBase(CellLikeBase):
         raise NotImplementedError
 
     def checksum(self):
-        assert self.status() == "OK"
+        if self.status() != "OK":
+            return None
         if self._last_checksum is not None:
             return self._last_checksum
         result = self._checksum(self._val)
@@ -304,7 +322,7 @@ Use ``Cell.status()`` to get its status.
         if mode == "buffer":
             raise Exception("Cell '%s' cannot be de-serialized as buffer, use TextCell or JsonCell instead" % self.format_path())
         assert submode is None, (mode, submode)
-        self._val = value
+        self._assign(value)
 
     def __str__(self):
         ret = "Seamless cell: " + self.format_path()
@@ -319,14 +337,80 @@ Use ``Cell.status()`` to get its status.
             return "<Cannot be rendered as text>"
 
 class MixedCell(Cell):
-    def _serialize(self, mode, submode=None):
-        raise NotImplementedError #TODO
+    _mount_kwargs = {"binary": True}
+    def __init__(self, storage_cell, form_cell):
+        super().__init__()
+        self.storage_cell = storage_cell
+        self.form_cell = form_cell
+
     def _from_buffer(self, value):
-        print("TODO: mixed cell serialization for non-JSON")
-        return json.loads(value)
+        storage = self.storage_cell.value
+        if storage == "pure-plain":
+            return json.loads(value)
+        elif storage is None: #initial file read
+            if value[:9] != bytes("SEAMLESS" + chr(1), "utf-8"):
+                return json.loads(value)
+            else:
+                raise NotImplementedError
+        else:
+            raise NotImplementedError
+
+    def _value_to_bytes(self, value):
+        if value is None:
+            return None
+        if self.storage_cell.value == "pure-plain":
+            j = json.dumps(value, sort_keys=True, indent=2)
+            return j.encode("utf-8")
+        else:
+            raise NotImplementedError(self.storage_cell.value, value)
+
+    def _to_bytes(self):
+        return self._value_to_bytes(self._val)
+
+    def _checksum(self, value, buffer=False):
+        if buffer:
+            b = value
+        elif self.storage_cell.value is None:
+            b = str(value).encode("utf-8")
+        else:
+            b = self._value_to_bytes(value)
+        return hashlib.md5(b).hexdigest()
+
+    def _validate(self, value):
+        return ###TODO: how to validate?? check that value conforms to form?
+
+    def _serialize(self, mode, submode=None):
+        if mode == "buffer":
+            return self._to_bytes()
+        elif mode == "copy":
+            if submode == "silk":
+                data = deepcopy(self._val)
+                return Silk(data=data)
+            elif submode == "cson":
+                raise NotImplementedError
+            else:
+                return deepcopy(self._val)
+        elif mode == "ref":
+            assert submode in ("json", "silk", None)
+            if submode == "silk":
+                return Silk(data=self._val)
+            else:
+                return self._val
+        else:
+            return self._val
+
+    def _deserialize(self, value, mode, submode=None):
+        if mode == "buffer":
+            self._assign(self._from_buffer(value))
+        else:
+            self._assign(value)
+
     def __str__(self):
         ret = "Seamless mixed cell: " + self.format_path()
         return ret
+
+
+
 
 class TextCell(Cell):
     _mount_kwargs = {"encoding": "utf-8", "binary": False}
@@ -414,15 +498,20 @@ class JsonCell(Cell):
     #also provides copy+silk and ref+silk transport, but with an empty schema, and text form
 
     _mount_kwargs = {"encoding": "utf-8", "binary": False}
-    def _to_json(self):
-        if self._val is None:
+
+    @staticmethod
+    def _json(value):
+        if value is None:
             return None
-        return json.dumps(self._val, sort_keys=True, indent=2)
+        return json.dumps(value, sort_keys=True, indent=2)
+
+    def _to_json(self):
+        return self._json(self.value)
 
     def _checksum(self, value, buffer=False):
         if buffer:
             return super()._checksum(value)
-        j = self._to_json()
+        j = self._json(value)
         return super()._checksum(j)
 
     def _validate(self, value):
@@ -453,9 +542,9 @@ class JsonCell(Cell):
 
     def _deserialize(self, value, mode, submode=None):
         if mode == "buffer":
-            self._val = self._from_buffer(value)
+            self._assign(self._from_buffer(value))
         else:
-            self._val = value
+            self._assign(value)
 
     def as_text(self):
         return self._to_json()
@@ -514,21 +603,21 @@ class Signal(Cell):
         ret = "Seamless signal: " + self.format_path()
         return ret
 
-def cell(celltype=None):
+def cell(celltype=None, **kwargs):
     if celltype == "text":
         return TextCell()
     elif celltype == "python":
-        return PythonCell()
+        return PythonCell(**kwargs)
     elif celltype == "pytransformer":
-        return PyTransformerCell()
+        return PyTransformerCell(**kwargs)
     elif celltype == "json":
-        return JsonCell()
+        return JsonCell(**kwargs)
     elif celltype == "cson":
-        return CsonCell()
+        return CsonCell(**kwargs)
     elif celltype == "mixed":
-        return MixedCell()
+        return MixedCell(**kwargs)
     else:
-        return Cell()
+        return Cell(**kwargs)
 
 def textcell():
     return TextCell()
@@ -543,7 +632,8 @@ extensions = {
     TextCell: ".txt",
     JsonCell: ".json",
     CsonCell: ".cson",
-    PythonCell: ".py"
+    PythonCell: ".py",
+    MixedCell: ".mixed",
 }
 
 print("TODO cell: CSON cell")

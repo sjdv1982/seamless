@@ -19,8 +19,30 @@ class SchemaWrapper:
                 raise AttributeError(attribute)
             child = props.get(attribute, None)
             if child is None:
-                raise AttributeError(child)
+                raise AttributeError(attribute)
         return SchemaWrapper(self._parent(), child, self._update_hook)
+
+    def pop(self, attribute):
+        child = self._dict.get(attribute, None)
+        if child is None:
+            props = self._dict.get("properties", None)
+            if props is None:
+                raise AttributeError(attribute)
+            child = props.get(attribute, None)
+            if child is None:
+                raise AttributeError(attribute)
+            result = props.pop(attribute)
+        else:
+            result = self._dict.pop(attribute)
+        parent = self._parent()
+        if parent is not None:
+            parent.validate()
+        if self._update_hook is not None:
+            self._update_hook()
+        return result
+
+    def __delattr__(self, attribute):
+        self.pop(attribute)
 
     def __setattr__(self, attribute, value):
         if isinstance(value, SchemaWrapper):
@@ -38,6 +60,8 @@ class SchemaWrapper:
     def __getattribute__(self, attribute):
         if attribute == "dict":
             return super().__getattribute__("_dict")
+        if attribute == "pop":
+            return super().__getattribute__("pop")
         if isinstance(attribute, str) and attribute.startswith("_"):
             return super().__getattribute__(attribute)
         return self._get(attribute)

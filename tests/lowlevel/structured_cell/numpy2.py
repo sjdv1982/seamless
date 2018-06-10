@@ -6,9 +6,12 @@ import numpy as np
 with macro_mode_on():
     ctx = context(toplevel=True)
     ctx.inp_struc = context(name="inp_struc",context=ctx)
-    ctx.inp_struc.data = cell("mixed")
     ctx.inp_struc.storage = cell("text")
     ctx.inp_struc.form = cell("json")
+    ctx.inp_struc.data = cell("mixed",
+        form_cell = ctx.inp_struc.form,
+        storage_cell = ctx.inp_struc.storage,
+    )
     ctx.inp = StructuredCell(
         "inp",
         ctx.inp_struc.data,

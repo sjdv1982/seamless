@@ -6,13 +6,19 @@ from seamless.core.structured_cell import BufferWrapper
 with macro_mode_on():
     ctx = context(toplevel=True)
     ctx.hub_struc = context(name="hub_struc",context=ctx)
-    ctx.hub_struc.data = cell("mixed")
     ctx.hub_struc.storage = cell("text")
     ctx.hub_struc.form = cell("json")
+    ctx.hub_struc.data = cell("mixed",
+        form_cell = ctx.hub_struc.form,
+        storage_cell = ctx.hub_struc.storage,
+    )
     ctx.hub_struc.schema = cell("json")
-    ctx.hub_struc.buffer_data = cell("mixed")
     ctx.hub_struc.buffer_storage = cell("text")
     ctx.hub_struc.buffer_form = cell("json")
+    ctx.hub_struc.buffer_data = cell("mixed",
+        form_cell = ctx.hub_struc.buffer_form,
+        storage_cell = ctx.hub_struc.buffer_storage,
+    )
     bufferwrapper = BufferWrapper(
         ctx.hub_struc.buffer_data,
         ctx.hub_struc.buffer_storage,
@@ -60,13 +66,19 @@ with macro_mode_on():
     ctx.hub.connect_outchannel((), ctx.hub_cell)
 
     ctx.result_struc = context(name="result_struc",context=ctx)
-    ctx.result_struc.data = cell("mixed")
     ctx.result_struc.storage = cell("text")
     ctx.result_struc.form = cell("json")
+    ctx.result_struc.data = cell("mixed",
+        form_cell = ctx.result_struc.form,
+        storage_cell = ctx.result_struc.storage,
+    )
     ctx.result_struc.schema = cell("json")
-    ctx.result_struc.buffer_data = cell("mixed")
     ctx.result_struc.buffer_storage = cell("text")
     ctx.result_struc.buffer_form = cell("json")
+    ctx.result_struc.buffer_data = cell("mixed",
+        form_cell = ctx.result_struc.buffer_form,
+        storage_cell = ctx.result_struc.buffer_storage,
+    )
     bufferwrapper = BufferWrapper(
         ctx.result_struc.buffer_data,
         ctx.result_struc.buffer_storage,
@@ -170,3 +182,5 @@ ctx.c.set(10)
 ctx.d.set(6)
 ctx.equilibrate()
 print(ctx.result.value)
+
+#ctx.herring.set("herring123")

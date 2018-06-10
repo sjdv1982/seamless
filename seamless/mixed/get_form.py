@@ -224,8 +224,11 @@ def get_tform_numpy(dt):
     return get_tform_numpy_struct(dt)
 
 def get_form_dict_plain(data):
-    typedef = {"type": "object", "properties": {}}
-    props = typedef["properties"]
+    typedef = {"type": "object"}
+    if not len(data):
+        return "pure-plain", typedef
+    props = {}
+    typedef["properties"] = props
     storages = {}
     for k,v in data.items():
         cstorage, ctypedef = get_form(v)
