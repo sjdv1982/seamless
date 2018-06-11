@@ -24,6 +24,7 @@ Things to do (all low level) :
 
 Then:
    - cson cells; also structured_cell in plain mode must be able to accommodate
+    - a cson's checksum is the checksum of the JSON representation; if you don't want that, connect a text cell downstream of it
    - Reactors (think of IPython stuff in the namespace, not properly addressed in 0.1; copy from 0.2 transformers)
      (also think of \_pending_inputs: add a name back in, if sent as None (like transformers))
    - Tie up loose ends of transfer protocol (copy, ref etc.)
@@ -34,12 +35,14 @@ Then:
 
 Then, slowly move to the mid-level data structure:
 UPDATE: maybe elide the middle level, dynamically generate at time of low-level generation/serialization??
+- mid-to-low level translation macros (with caching)
 - manager observers (not needed ?)
 - low-level-to-mid-level mapping (as observers) (not needed ?)
 - apply to slash-0 (see mount.py:filehash)
 - design mid-level, including old resources
 Finally, the high level:
 - serialization (take care of shells also).
+- high-level macros. They have, as an extra input, (a copy of) the high-level translation policies that were in effect at the time of creation
 
 /FIRST section, beyond here is mostly out of date
 
