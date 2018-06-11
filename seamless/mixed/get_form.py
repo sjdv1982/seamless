@@ -150,7 +150,7 @@ def get_form_python_inside_numpy(data):
     elif data is None:
         return "pure-plain", "null"
     else:
-        raise TypeError(type(data)) #must be list, dict, string or None
+        raise TypeError(type(data)) #must be list, dict, string or None; scalar Python objects not allowed
 
 def get_tform_numpy_pyobject(dt):
     if dt.ndim:
@@ -166,20 +166,21 @@ def get_tform_numpy_pyobject(dt):
     return storage, typedef
 
 def get_tform_numpy_builtin(dt):
-    if dt == object:
+    dtb = dt.base
+    if dtb == object:
         return get_tform_numpy_pyobject(dt)
 
     storage = "pure-binary"
-    if dt == bool:
+    if dtb == bool:
         typedef0 = "boolean"
-    elif any([dt == t for t in _integer_types]):
+    elif any([dtb == t for t in _integer_types]):
         typedef0 = "integer"
-    elif any([dt == t for t in _float_types]):
+    elif any([dtb == t for t in _float_types]):
         typedef0 = "number"
-    elif any([dt == t for t in _string_types]):
+    elif any([dtb == t for t in _string_types]):
         typedef0 = "string"
     else:
-        raise TypeError(dt)
+        raise TypeError(dtb)
 
     typedef = {
         "type": typedef0,
@@ -235,7 +236,7 @@ def get_tform_numpy_struct(dt):
 
 
 def get_tform_numpy(dt):
-    if dt.isbuiltin:
+    if dt.base.isbuiltin:
         return get_tform_numpy_builtin(dt)
     return get_tform_numpy_struct(dt)
 

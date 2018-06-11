@@ -348,7 +348,7 @@ class MixedCell(Cell):
         if storage == "pure-plain":
             return json.loads(value)
         elif storage is None: #initial file read
-            if value[:9] != bytes("SEAMLESS" + chr(1), "utf-8"):
+            if value[:12] !=  MAGIC_SEAMLESS:
                 return json.loads(value)
             else:
                 raise NotImplementedError
@@ -635,6 +635,7 @@ extensions = {
     PythonCell: ".py",
     MixedCell: ".mixed",
 }
+from ..mixed import MAGIC_SEAMLESS
 
 print("TODO cell: CSON cell")
 print("TODO cell: PyImport cell") #cell that does imports, executed already upon code definition; code injection causes an exec()

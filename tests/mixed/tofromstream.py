@@ -7,12 +7,6 @@ from seamless.mixed.to_stream import to_stream
 
 import json
 
-_print = print
-def print(*args):
-    for a in args:
-        _print(json.dumps(a, indent=2, sort_keys=True), end=" ")
-    _print()
-
 arr = np.zeros(10)
 
 dt = np.dtype([
@@ -43,7 +37,6 @@ data["d"] = np.arange(-6, 0)
 
 storage, form = get_form(data)
 print(form, storage); print()
-to_stream(data, storage, form)
-#arr:80, arr2:16, v:8 => embedded data: 104
-#data main: 32,  d: 24 => total 160
-print(data["d"].nbytes)
+print("stream")
+stream = to_stream(data, storage, form)
+print(stream)
