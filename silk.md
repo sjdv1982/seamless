@@ -73,8 +73,8 @@ In a later version of Silk, there will be an annoying Microsoft-Office-paperclip
 assistant who will ask all kind of annoying questions
 
 ## order (2)
-Tells the order of properties, which helps in building \*args constructors
-(as does "default").
+Tells the order of properties, which helps in building \*args constructors (as does "default").
+Necessary for binary storage (the order of fields)
 
 ## storage
 Note: in addition to being normative (schema) values,

@@ -3,7 +3,7 @@
 import sys
 import numpy as np
 from seamless.mixed.get_form import get_form
-from seamless.mixed.to_stream import to_stream
+from seamless.mixed.io import to_stream, from_stream
 
 import json
 
@@ -39,4 +39,14 @@ storage, form = get_form(data)
 print(form, storage); print()
 print("stream")
 stream = to_stream(data, storage, form)
-print(stream)
+#print(stream)
+newdata = from_stream(stream, storage, form)
+print(newdata["a"] == data["a"])
+print(newdata["b"]["arr"].tobytes() == data["b"]["arr"].tobytes())
+print(newdata["b"]["arr2"].tobytes() == data["b"]["arr2"].tobytes())
+print(newdata["b"]["v"].tobytes() == data["b"]["v"].tobytes())
+print(newdata["b"]["z"] == data["b"]["z"])
+print(newdata["c"] == data["c"])
+print(newdata["d"].tobytes() == data["d"].tobytes())
+print(newdata["e"] == data["e"])
+print(newdata.dtype == data.dtype)

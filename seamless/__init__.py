@@ -8,7 +8,7 @@ Copyright 2016-2017, Sjoerd de Vries
 # 1. hard dependencies; without these, "import seamless" will fail.
 # Still, if necessary, some of these dependencies could be removed, but seamless would have to be more minimalist in loading its lib
 
-import numpy
+import numpy as np
 """
 #import PyOpenGL before PyQt5 to prevent the loading of the wrong OpenGL library that can happen on some systems. Introduces a hard dependency on PyOpenGL, TODO look into later"
 from OpenGL import GL
@@ -17,7 +17,8 @@ from cson import loads as _
 del _
 """
 
-
+if np.dtype(np.object).itemsize != 8:
+    raise ImportError("Seamless requires a 64-bit system")
 
 # 2. Soft dependencies: transformers may use these libraries
 # TODO: should be in the "imports" section of code cells!

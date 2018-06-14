@@ -1,7 +1,7 @@
 import sys
 import numpy as np
 from seamless.mixed.get_form import get_form
-from seamless.mixed.to_stream import to_stream
+from seamless.mixed.io import to_stream, from_stream
 
 dt1 = np.dtype([
     ("a", int),
@@ -33,7 +33,14 @@ storage2, form2 = get_form(d2)
 print(storage1, form1)
 print(storage2, form2)
 
-buf1 = to_stream(d1, storage1, form1)
-print(buf1)
-buf2 = to_stream(d2, storage2, form2)
-print(buf2)
+stream1 = to_stream(d1, storage1, form1)
+#print(stream1)
+stream2 = to_stream(d2, storage2, form2)
+#print(stream2)
+
+newd1 = from_stream(stream1, storage1, form1)
+print(newd1.tobytes() == d1.tobytes())
+newd2 = from_stream(stream2, storage2, form2)
+print(newd2["a"] == d2["a"])
+print(newd2["b"] == d2["b"])
+print(newd2["c"].tobytes() == d2["c"].tobytes())

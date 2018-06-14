@@ -3,7 +3,10 @@ Great Refactor is underway (see seamless-toward-02.md).
 Most of the text below the FIRST section is out of date.
 Current status: simplest low-level example works.
 Things to do (all low level) :
-- mixedcell serialization: on the cell side, it is mostly done; TODO still on the mixed side (tofile/fromfile, tofromfile test)
+- mixedcell serialization:
+      on the cell side, it is mostly done;
+      TODO still on the mixed side:
+         (tostream works, fromfile TODO, tofromstream test to adapt accordingly)
 - Mount: monitor write-only mount cells as well (give a warning, and re-write)
 - exporting (any cell or pin; eliminate ExportedPin)
 - symlinks  (may be exported)
@@ -24,7 +27,7 @@ Things to do (all low level) :
 
 Then:
    - cson cells; also structured_cell in plain mode must be able to accommodate
-    - a cson's checksum is the checksum of the JSON representation; if you don't want that, connect a text cell downstream of it
+      a cson's checksum is the checksum of the JSON representation; if you don't want that, connect a text cell downstream of it
    - Reactors (think of IPython stuff in the namespace, not properly addressed in 0.1; copy from 0.2 transformers)
      (also think of \_pending_inputs: add a name back in, if sent as None (like transformers))
    - Tie up loose ends of transfer protocol (copy, ref etc.)

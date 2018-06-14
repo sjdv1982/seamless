@@ -205,7 +205,8 @@ def get_tform_numpy_struct(dt):
         raise TypeError("Composite dtypes must be native")
     storages = {}
     props = {}
-    typedef = {"type": "object", "properties": props}
+    typedef = {"type": "object", "properties": props, "bytes": dt.itemsize}
+    typedef["order"] = list(dt.fields)
     for fieldname in dt.fields:
         cstorage, ctypedef = get_tform_numpy(dt[fieldname])
         storages[fieldname] = cstorage
@@ -358,6 +359,7 @@ def get_form_list(data):
         extra = {
             "shape": data.shape,
             "strides": data.strides,
+            "bytes": dt.itemsize,
         }
     elif isinstance(data, _array_types):
         storage, items, identical = get_form_items_list_plain(data)
