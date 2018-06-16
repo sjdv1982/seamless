@@ -192,17 +192,25 @@ class Monitor:
                     arr = np.array(self.data)
                     arr[0] = subdata
                 else:
-                    raise TypeError(type_, type(self.data), type(subdata))
+                    self.recompute_form(data=subdata)
+                    self.data = self._data_hook(subdata)
+                    #raise TypeError(type_, type(self.data), type(subdata))
             elif type_ == "array":
                 if isinstance(self.data, list) and isinstance(subdata, list):
                     self.data[:] = subdata
                 elif isinstance(self.data, ndarray) and isinstance(subdata, ndarray):
                     if self.data.shape != subdata.shape:
-                        raise TypeError(self.data.shape, subdata.shape)
-                    self.data[:] = subdata
+                        self.recompute_form(data=subdata)
+                        self.data = self._data_hook(subdata)
+                        #raise TypeError(self.data.shape, subdata.shape)
+                    else:
+                        self.data[:] = subdata
                 else:
-                    raise TypeError(type_, type(self.data), type(subdata))
+                    self.recompute_form(data=subdata)
+                    self.data = self._data_hook(subdata)
+                    #raise TypeError(type_, type(self.data), type(subdata))
             elif type_ is None or type_ in scalars:
+                self.recompute_form(data=subdata)
                 self.data = self._data_hook(subdata)
             else:
                 raise TypeError(type_)
@@ -227,13 +235,15 @@ class Monitor:
             self._data_update_hook()
         self.recompute_form(path)
 
-    def recompute_form(self, subpath=None):
+    def recompute_form(self, subpath=None, data=None):
         """
         TODO: use triggers for efficiency, based on subpath
         For now, just update the data and recompute the entire form
         """
         self.pathcache.clear()
-        storage, form = get_form(self.data)
+        if data is None:
+            data = self.data
+        storage, form = get_form(data)
         if self.form is None:
             self.form = self._form_hook(form)
         else:
@@ -245,17 +255,9 @@ class Monitor:
             else:
                 self._form_hook(form)
         if not self.plain:
-            if self.storage is None:
+            if self.storage is None or self.storage != storage:
                 self.storage = storage
                 self._storage_hook(storage)
-            else:
-                if isinstance(self.storage, dict):
-                    self.storage.clear()
-                    self.storage.update(storage)
-                elif isinstance(self.storage, list):
-                    self.storage[:] = storage
-                else:
-                    self._storage_hook(storage)
         if self._form_update_hook is not None:
             self._form_update_hook()
 

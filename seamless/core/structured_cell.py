@@ -141,11 +141,12 @@ class Outchannel(CellLikeBase):
             self._status = self.StatusFlags.UNDEFINED
         else:
             self._status = self.StatusFlags.OK
-        if self._buffered:
-            if value == self._last_value:
-                return value
-            self._last_value = deepcopy(value)
         structured_cell = self.structured_cell()
+        if self._buffered:
+            if structured_cell._plain or structured_cell.storage.value == "pure-plain":
+                if value == self._last_value:
+                    return value
+            self._last_value = deepcopy(value)
         assert structured_cell is not None
         data = structured_cell.data
         manager = data._get_manager()
@@ -449,6 +450,9 @@ class StructuredCell(CellLikeBase):
             monitor = self.monitor
             result = monitor.get_path()
         return result
+
+print("TODO: Runtime wrapper around StructuredCell that protects against .foo = bar\
+ where .handle.foo = bar is intended")
 
 """
 TODO (long-term): a mechanism to overrule checksum computation

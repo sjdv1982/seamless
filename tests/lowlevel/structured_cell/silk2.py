@@ -2,6 +2,7 @@ import seamless
 from seamless.core.macro import macro_mode_on
 from seamless.core import context, cell, transformer, StructuredCell
 from seamless.core.structured_cell import BufferWrapper
+import numpy as np
 
 with macro_mode_on():
     ctx = context(toplevel=True)
@@ -62,7 +63,7 @@ with macro_mode_on():
     ctx.hub.connect_inchannel(ctx.mixer1.z, ("m1",))
     ctx.hub.connect_inchannel(ctx.mixer2.z, ("m2",))
 
-    ctx.hub_cell = cell("json")
+    ctx.hub_cell = cell()
     ctx.hub.connect_outchannel((), ctx.hub_cell)
 
     ctx.result_struc = context(name="result_struc",context=ctx)
@@ -117,6 +118,11 @@ print(ctx.result.handle)
 
 print("START")
 hub = ctx.hub.handle
+
+dt = np.dtype([("m1", int),("m2",int)],align=True)
+d = np.zeros(1,dt)[0]
+ctx.hub.set(d)
+print(hub)
 
 def func(self):
     assert abs(self.m1) == abs(self.m2), self

@@ -1,6 +1,7 @@
 import inspect, sys, traceback
 from types import MethodType
 from copy import copy, deepcopy
+import numpy as np
 
 from .SilkBase import SilkBase, SilkHasForm, compile_function, AlphabeticDict
 from .validation import schema_validator, form_validator, Scalar, scalar_conv, _types, infer_type
@@ -127,7 +128,7 @@ class Silk(SilkBase):
             wdata = wdata.value
         if isinstance(wdata, Silk):
             wdata = wdata.data
-        if not isinstance(wdata, dict):
+        if not isinstance(wdata, dict) or not isinstance(value, dict):
             if self._stateful:
                 data.set(value)
             elif data is None:
@@ -191,12 +192,17 @@ class Silk(SilkBase):
                 else:
                     self.data[:] = value
             if not lowlevel and not self._buffer_nosync:
-                empty_list == (len(self.data) == 0)
+                if buffer:
+                    empty_list = (len(self._buffer) == 0)
+                else:
+                    empty_list = (len(self.data) == 0)
                 if empty_list:
                     self._infer_list_item(value_schema)
-        elif isinstance(value, dict):
+        elif isinstance(value, (dict, np.generic)):
             #invalidates all Silk objects constructed from items
             self._set_value_dict(value, buffer)
+        else:
+            raise TypeError(type(value))
 
     def set(self, value):
         buffer = (self._buffer is not None)

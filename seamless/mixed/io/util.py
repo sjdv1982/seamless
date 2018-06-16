@@ -80,8 +80,6 @@ def get_buffersize(storage, form, binary_parent=None):
         )
     return result
 
-
-
 def get_buffersize_debug(data, storage, form, binary_parent=None):
     if storage.endswith("binary"):
         dtype_from_form = form_to_dtype(form, storage)

@@ -76,6 +76,11 @@ def opengl():
 import sys
 import traceback
 import atexit
+
+#silk must be imported before mixed
+from . import silk
+from . import mixed
+
 from .core import mainloop as _mainloop
 from .core.mainloop import mainloop, asyncio_finish, workqueue
 atexit.register(asyncio_finish)

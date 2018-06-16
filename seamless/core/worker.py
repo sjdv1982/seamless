@@ -2,7 +2,6 @@ import weakref
 from . import SeamlessBase
 from .macro import get_macro_mode
 from .cell import modes as cell_modes, submodes as cell_submodes
-from ..shell import PyShell
 
 """
 Evaluation modes for workers
@@ -79,6 +78,7 @@ class Worker(SeamlessBase):
         """
         #TODO: for serialization, store associated shells
 
+        from ..shell import PyShell
         shell_namespace, inputpin, shell_title = self._shell(subshell)
         return PyShell(shell_namespace, inputpin, shell_title)
 

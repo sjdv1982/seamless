@@ -23,7 +23,7 @@ class Context(SeamlessBase):
         self, *,
         name=None,
         context=None,
-        toplevel=False,
+        toplevel=False
     ):
         """Construct a new context.
 

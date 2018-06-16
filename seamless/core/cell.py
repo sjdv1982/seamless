@@ -13,6 +13,7 @@ celltypes = ("text", "python", "pytransformer", "json", "cson", "mixed")
 
 from . import SeamlessBase
 from .macro import get_macro_mode, macro_register
+from ..mixed import io as mixed_io
 from copy import deepcopy
 import json
 import hashlib
@@ -148,6 +149,7 @@ class CellBase(CellLikeBase):
         self._alternative_checksums = None
 
     def _assign(self, value):
+        assert value is not None
         v = self._val
         if not issubclass(type(value), type(v)):
             self._val = value
@@ -155,8 +157,8 @@ class CellBase(CellLikeBase):
         if isinstance(v, dict):
             v.clear()
             v.update(value)
-        elif isinstance(v, (list, np.ndarray)):
-            v[:] = value
+        elif isinstance(v, list):
+            v[:] = value #not for ndarray, since they must have the same shape
         else:
             self._val = value
 
@@ -178,8 +180,9 @@ class CellBase(CellLikeBase):
             self._val = None
             self._reset_checksums()
             self._status = self.StatusFlags.UNDEFINED
+            return
+        old_checksum = None
         if not cosmetic and value is not None:
-            old_checksum = None
             if old_status == self.StatusFlags.OK:
                 old_checksum = self.checksum()
         self._validate(value)
@@ -205,8 +208,10 @@ class CellBase(CellLikeBase):
         self._status = self.StatusFlags.OK
         if cosmetic:
             different = False
+        elif old_checksum is None: #old checksum failed
+            different = True
         elif value is not None:
-            different = (self.checksum() != old_checksum)
+            different = (self.checksum(may_fail=True) != old_checksum)
         else:
             pass #"different" has already been set
         return different
@@ -246,15 +251,16 @@ class CellBase(CellLikeBase):
     def _deserialize(self, value, mode, submode=None):
         raise NotImplementedError
 
-    def _checksum(self, value, buffer=False):
+    def _checksum(self, value, *, buffer=False, may_fail=False):
         raise NotImplementedError
 
-    def checksum(self):
+    def checksum(self, *, may_fail=False):
         if self.status() != "OK":
             return None
+        assert self._val is not None
         if self._last_checksum is not None:
             return self._last_checksum
-        result = self._checksum(self._val)
+        result = self._checksum(self._val, may_fail=may_fail)
         self._last_checksum = result
         return result
 
@@ -299,7 +305,7 @@ Use ``Cell.value`` to get its value.
 
 Use ``Cell.status()`` to get its status.
 """
-    def _checksum(self, value, buffer=False):
+    def _checksum(self, value, *, buffer=False, may_fail=False):
         return hashlib.md5(str(value).encode("utf-8")).hexdigest()
 
     def _validate(self, value):
@@ -344,36 +350,36 @@ class MixedCell(Cell):
         self.form_cell = form_cell
 
     def _from_buffer(self, value):
-        storage = self.storage_cell.value
-        if storage == "pure-plain":
-            return json.loads(value)
-        elif storage is None: #initial file read
-            if value[:12] !=  MAGIC_SEAMLESS:
-                return json.loads(value)
-            else:
-                raise NotImplementedError
-        else:
-            raise NotImplementedError
-
-    def _value_to_bytes(self, value):
         if value is None:
             return None
-        if self.storage_cell.value == "pure-plain":
-            j = json.dumps(value, sort_keys=True, indent=2)
-            return j.encode("utf-8")
-        else:
-            raise NotImplementedError(self.storage_cell.value, value)
+        storage = self.storage_cell.value
+        form = self.form_cell.value
+        return mixed_io.from_stream(value, storage, form)
+
+    def _value_to_bytes(self, value, storage, form):
+        if value is None:
+            return None
+        return mixed_io.to_stream(value, storage, form)
 
     def _to_bytes(self):
-        return self._value_to_bytes(self._val)
+        storage = self.storage_cell.value
+        form = self.form_cell.value
+        return self._value_to_bytes(self._val, storage, form)
 
-    def _checksum(self, value, buffer=False):
+    def _checksum(self, value, *, buffer=False, may_fail=False):
         if buffer:
             b = value
-        elif self.storage_cell.value is None:
-            b = str(value).encode("utf-8")
         else:
-            b = self._value_to_bytes(value)
+            #assumes that storage and form are correct!
+            storage = self.storage_cell.value
+            form = self.form_cell.value
+            if may_fail:
+                try:
+                    b = self._value_to_bytes(value, storage, form)
+                except:
+                    return None
+            else:
+                b = self._value_to_bytes(value, storage, form)
         return hashlib.md5(b).hexdigest()
 
     def _validate(self, value):
@@ -508,13 +514,14 @@ class JsonCell(Cell):
     def _to_json(self):
         return self._json(self.value)
 
-    def _checksum(self, value, buffer=False):
+    def _checksum(self, value, *, buffer=False, may_fail=False):
         if buffer:
             return super()._checksum(value)
         j = self._json(value)
         return super()._checksum(j)
 
     def _validate(self, value):
+        #TODO: store validation errors
         json.dumps(value)
 
     def _serialize(self, mode, submode=None):
@@ -560,7 +567,7 @@ class CsonCell(Cell):
     to JSON.
     """
 
-    def _checksum(self, value, buffer=False):
+    def _checksum(self, value, *, buffer=False, may_fail=False):
         raise NotImplementedError
 
     def _validate(self, value):
@@ -587,7 +594,7 @@ class Signal(Cell):
     """
     _naming_pattern = "signal"
 
-    def _checksum(self, value, buffer=False):
+    def _checksum(self, value, *, buffer=False, may_fail=False):
         return None
 
     def _validate(self, value):
