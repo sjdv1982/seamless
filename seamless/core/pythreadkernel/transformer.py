@@ -19,13 +19,13 @@ def return_preliminary(result_queue, value):
     #print("return_preliminary", value)
     result_queue.put((-1, value))
 
-def execute(name, expression, namespace, output_name, result_queue):
+def execute(name, code_object, namespace, output_name, result_queue):
     namespace["return_preliminary"] = functools.partial(
         return_preliminary, result_queue
     )
     try:
         namespace.pop(output_name, None)
-        exec(expression, namespace)
+        exec(code_object, namespace)
     except:
         exc = traceback.format_exc()
         result_queue.put((1, exc))
@@ -35,11 +35,6 @@ def execute(name, expression, namespace, output_name, result_queue):
             result_queue.put((0, result))
         except KeyError:
             result_queue.put((1, "Output variable name '%s' undefined" % output_name))
-    finally:
-        if "__transformer_frame__" in namespace:
-            tl = namespace["__transformer_frame__"].f_locals
-            namespace.update(tl)
-            del namespace["__transformer_frame__"]
     if USE_PROCESSES:
         result_queue.close()
     result_queue.join()
@@ -53,7 +48,7 @@ class Transformer(Worker):
         self.output_semaphore = output_semaphore
 
         self.func_name = None
-        self.expression = None
+        self.code_object = None
         self.last_result = None
         self.running_thread = None
 
@@ -85,10 +80,10 @@ class Transformer(Worker):
                 func_name = code_obj.func_name
                 if code_obj.is_function:
                     expr = self.function_expr_template.format(code, func_name)
-                    self.expression = compile(expr, self.name, "exec")
+                    self.code_object = compile(expr, self.name, "exec")
                     self.func_name = func_name
                 else:
-                    self.expression = compile(code, self.name, "exec")
+                    self.code_object = compile(code, self.name, "exec")
             # Update namespace of inputs
             keep = {k:v for k,v in self.namespace.items() if k.startswith("_")}
             self.namespace.clear()
@@ -97,7 +92,7 @@ class Transformer(Worker):
             for name in self.inputs:
                 self.namespace[name] = self.values[name]
             queue = Queue()
-            args = (self.parent().format_path(), self.expression, self.namespace, self.output_name, queue)
+            args = (self.parent().format_path(), self.code_object, self.namespace, self.output_name, queue)
             executor = Executor(target=execute,args=args, daemon=True)
             executor.start()
             dead_time = 0

@@ -7,7 +7,6 @@ class IpyString(str):
 
 class SeamlessBase:
     _destroyed = False
-    _macro_object = None # macro object that CREATED this instance
     _context = None
     _last_context = None
     name = None
@@ -44,16 +43,6 @@ class SeamlessBase:
         assert self._context is not None #worker/cell must have a context
         return self._context._get_manager()
 
-    def _macro_control(self):
-        if self._macro_object is not None:
-            return self
-
-        ret = None
-        if self.context is not None:
-            ret = self.context._macro_control()
-        else:
-            return None
-
     def format_path(self):
         if self.path is None:
             ret = "<None>"
@@ -67,11 +56,6 @@ class SeamlessBase:
 
     def __repr__(self):
         return self.__str__()
-
-    @property
-    def macro(self):
-        """Returns the macro object associated with this construct"""
-        return self._macro_object
 
     def _set_macro_object(self, macro_object):
         self._macro_object = macro_object
@@ -88,3 +72,4 @@ from .worker import Worker
 from .transformer import Transformer, transformer
 from .mount import mountmanager
 from .structured_cell import StructuredCell
+from .macro import macro

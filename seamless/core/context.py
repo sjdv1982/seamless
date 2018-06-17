@@ -363,6 +363,9 @@ context : context or None
     def self(self):
         return _ContextWrapper(self)
 
+    def destroy(self):
+        print("TODO: implement destroy, for macro re-evaluation (also remove mounts!)")
+
 Context._methods = [m for m in Context.__dict__ if not m.startswith("_") \
       and m != "StatusFlags"]
 

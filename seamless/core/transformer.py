@@ -44,6 +44,8 @@ class Transformer(Worker):
                     mode = param[1]
                 if len(param) > 2:
                     submode = param[2]
+            else:
+                raise ValueError((p, param))                    
             if io == "input":
                 pin = InputPin(self, p, mode, submode)
                 thread_inputs.append(p)

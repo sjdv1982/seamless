@@ -12,7 +12,6 @@ submodes = {
 celltypes = ("text", "python", "pytransformer", "json", "cson", "mixed")
 
 from . import SeamlessBase
-from .macro import get_macro_mode, macro_register
 from ..mixed import io as mixed_io
 from copy import deepcopy
 import json
@@ -25,17 +24,11 @@ from .mount import MountItem
 from ..silk import Silk
 import numpy as np
 
-transformer_patch = """
-import inspect
-def {0}():
-    global __transformer_frame__
-    __transformer_frame__ = inspect.currentframe()
-"""
-
 cell_counter = 0
 
 class CellLikeBase(SeamlessBase):
     def __init__(self):
+        from .macro import get_macro_mode, macro_register
         global cell_counter
         assert get_macro_mode()
         super().__init__()
@@ -266,6 +259,7 @@ class CellBase(CellLikeBase):
 
     def connect(self, target):
         """connects to a target cell"""
+        from .macro import get_macro_mode, macro_register
         assert get_macro_mode() #or connection overlay mode, TODO
         manager = self._get_manager()
         manager.connect_cell(self, target)
@@ -485,7 +479,8 @@ class PythonCell(Cell):
         return ret
 
 class PyTransformerCell(PythonCell):
-    """Python code object used for transformers (accepts one argument)"""
+    """Python code object used for transformers or macros
+    Each input will be an argument"""
 
     def _validate(self, value):
         ast = cached_compile(value, "transformer", "exec", PyCF_ONLY_AST)
