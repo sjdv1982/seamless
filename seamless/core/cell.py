@@ -20,6 +20,7 @@ import hashlib
 from ast import PyCF_ONLY_AST, FunctionDef
 from .cached_compile import cached_compile
 
+from . import get_macro_mode, macro_register
 from .mount import MountItem
 from ..silk import Silk
 import numpy as np
@@ -28,7 +29,6 @@ cell_counter = 0
 
 class CellLikeBase(SeamlessBase):
     def __init__(self):
-        from .macro import get_macro_mode, macro_register
         global cell_counter
         assert get_macro_mode()
         super().__init__()
@@ -259,7 +259,6 @@ class CellBase(CellLikeBase):
 
     def connect(self, target):
         """connects to a target cell"""
-        from .macro import get_macro_mode, macro_register
         assert get_macro_mode() #or connection overlay mode, TODO
         manager = self._get_manager()
         manager.connect_cell(self, target)

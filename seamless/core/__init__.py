@@ -64,6 +64,7 @@ class SeamlessBaseList(list):
     def __str__(self):
         return str([v.format_path() for v in self])
 
+from .macro_mode import get_macro_mode, macro_register, macro_mode_on
 from . import cell as cell_module
 from .cell import Cell, cell, textcell, pytransformercell
 from . import context as context_module

@@ -1,5 +1,5 @@
 import seamless
-from seamless.core.macro import macro_mode_on
+from seamless.core import macro_mode_on
 from seamless.core import context, cell, transformer, StructuredCell
 from seamless.core.structured_cell import BufferWrapper
 import numpy as np

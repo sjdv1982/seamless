@@ -3,7 +3,7 @@ from weakref import WeakValueDictionary
 from collections import OrderedDict
 from . import SeamlessBase
 from .mount import MountItem
-from .macro import get_macro_mode, macro_register
+from . import get_macro_mode, macro_register
 import time
 
 class Context(SeamlessBase):
@@ -76,7 +76,6 @@ context : context or None
         return ret
 
     def _add_child(self, childname, child):
-        from .macro import get_macro_mode
         assert get_macro_mode()
         assert isinstance(child, (Context, Worker, CellLikeBase))
         if isinstance(child, Context):
@@ -365,6 +364,13 @@ context : context or None
 
     def destroy(self):
         print("TODO: implement destroy, for macro re-evaluation (also remove mounts!)")
+        self._manager.destroy()
+
+    def full_destroy(self):
+        #all work buffers (work queue and manager work buffers) are now empty
+        # time to free memory
+        print("TODO: implement full destroy")
+        return
 
 Context._methods = [m for m in Context.__dict__ if not m.startswith("_") \
       and m != "StatusFlags"]

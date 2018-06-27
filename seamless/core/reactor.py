@@ -19,6 +19,8 @@ from .. import dtypes
 from .. import silk
 import seamless
 
+from . import get_macro_mode, macro_register
+
 #TODO: on_disconnect? don't do anything if self._destroyed
 
 reactor_param_docson = {} #TODO, adapt from transformer
@@ -53,7 +55,6 @@ class Reactor(Worker):
     def __init__(self, reactor_params):
         super().__init__()
 
-        from .macro import get_macro_mode
         self.state = {}
         self.outputs = {}
         self.code_start = InputPin(self, "code_start", ("text", "code", "python"))

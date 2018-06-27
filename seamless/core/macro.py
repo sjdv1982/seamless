@@ -1,42 +1,12 @@
-from weakref import WeakSet
-from contextlib import contextmanager
 from collections import OrderedDict
 import traceback
-
-class MacroRegister:
-    def __init__(self):
-        self.stack = []
-    def push(self):
-        self.stack.append(WeakSet())
-    def pop(self):
-        return self.stack.pop()
-    def add(self, item):
-        self.stack[-1].add(item)
-
-macro_register = MacroRegister()
-
-_macro_mode = False
-def get_macro_mode():
-    return _macro_mode
-
-@contextmanager
-def macro_mode_on():
-    global _macro_mode
-    old_macro_mode = _macro_mode
-    _macro_mode = True
-    macro_register.push()
-    try:
-        yield
-    finally:
-        _macro_mode = old_macro_mode
-    curr_macro_register = macro_register.pop()
-    mount.resolve_register(curr_macro_register)
 
 from .worker import Worker, InputPin, OutputPin
 
 class Macro(Worker):
     active = False
     exception = None
+    secondary_exception = None
     def __init__(self, macro_params):
         super().__init__()
         self.gen_context = None
@@ -73,6 +43,7 @@ class Macro(Worker):
         return ret
 
     def execute(self):
+        from .macro_mode import macro_mode_on
         from .context import context
         #TODO: macro caching!!!
         assert self._context is not None
@@ -80,6 +51,9 @@ class Macro(Worker):
         ctx = None
         try:
             self._pending_updates += 1
+            if self.gen_context is not None:
+                self.gen_context._manager.deactivate()
+            self.exception = 1
             with macro_mode_on():
                 ctx = context(context=self._context, name=macro_context_name)
                 self.namespace = self.default_namespace.copy()
@@ -88,15 +62,42 @@ class Macro(Worker):
                 exec(self.code_object, self.namespace)
                 self._context._add_child(macro_context_name, ctx)
             self.exception = None
+            '''
+            Caching (TODO) has to happen here
+            The old context (gen_context) is deactivated, but the workers have still been running,
+             and sending updates that are accumulated in the work queue (global and manager-buffered)
+            Now it is time to re-assign those worker kernels and cell values (replacing them with dummies)
+             that are cache hits.
+            Then, for all cells and workers, a successor must be assigned
+            '''
             if self.gen_context is not None:
                 self.gen_context.destroy()
+                self.gen_context._manager.flush()
+                self.gen_context.full_destroy()
             self.gen_context = ctx
         except Exception as exc:
             traceback.print_exc()
             if self.exception is not None:
                 self.exception = traceback.format_exc()
-                if ctx is not None:
-                    ctx.destroy()
+                self.secondary_exception = None
+                try:
+                    if ctx is not None:
+                        ctx.destroy() #unnecessary?? depends on mount...
+                        ctx.full_destroy()
+                    if self.gen_context is not None:
+                        with macro_mode_on():
+                            self._context._add_child(macro_context_name, self.gen_context)
+                        self.gen_context._manager.activate()
+                except Exception as exc2:
+                    traceback.print_exc()
+                    self.secondary_exception = traceback.format_exc()
+            else:
+                # new context was constructed successfully
+                # but something went wrong in cleaning up the old context
+                # pretend that nothing happened...
+                # but store the exception as secondary exception, just in case
+                self.gen_context = ctx
+                self.secondary_exception = traceback.format_exc()
         finally:
             self._pending_updates -= 1
 
@@ -154,9 +155,8 @@ class Macro(Worker):
 def macro(params):
     return Macro(params)
 
-from . import mount
-
-from . import cell, transformer, context
+from . import cell, transformer
+from .context import context
 names = "cell", "transformer", "context"
 names = names + ("macro",)
 Macro.default_namespace = {n:globals()[n] for n in names}

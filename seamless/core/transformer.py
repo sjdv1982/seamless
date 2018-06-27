@@ -45,7 +45,7 @@ class Transformer(Worker):
                 if len(param) > 2:
                     submode = param[2]
             else:
-                raise ValueError((p, param))                    
+                raise ValueError((p, param))
             if io == "input":
                 pin = InputPin(self, p, mode, submode)
                 thread_inputs.append(p)
@@ -217,10 +217,8 @@ class Transformer(Worker):
                 assert output_name == self._output_name, item
                 if self._connected_output:
                     pin = self._pins[self._output_name]
-                    #use .partial, we're not in the main thread!
-                    f = partial(pin.send_update, output_value,
-                        preliminary=preliminary)
-                    self._get_manager().workqueue.append(f)
+                    #we're not in the main thread, but the manager takes care of it                    
+                    pin.send_update(output_value, preliminary=preliminary)
                 else:
                     self._last_value = output_value
                     self._last_value_preliminary = preliminary

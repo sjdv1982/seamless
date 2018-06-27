@@ -1,6 +1,6 @@
 from .cell import CellLikeBase, Cell, JsonCell, TextCell
 from ..mixed import MixedBase, OverlayMonitor, MakeParentMonitor
-from .macro import get_macro_mode
+from . import get_macro_mode
 from ..silk import Silk
 import weakref
 import traceback

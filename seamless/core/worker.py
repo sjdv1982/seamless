@@ -1,6 +1,6 @@
 import weakref
 from . import SeamlessBase
-from .macro import get_macro_mode
+from . import get_macro_mode
 from .cell import modes as cell_modes, submodes as cell_submodes
 
 """
