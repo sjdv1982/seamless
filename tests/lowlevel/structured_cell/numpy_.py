@@ -34,7 +34,7 @@ with macro_mode_on():
     ctx.inp.connect_outchannel(("data",), ctx.tf.data)
     ctx.tf.code.cell().set("c = a * data + b")
 
-    ctx.result = cell("mixed")
+    ctx.result = cell("array")
     ctx.tf.c.connect(ctx.result)
 
     ctx.mount("/tmp/mount-test")

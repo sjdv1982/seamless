@@ -1,3 +1,5 @@
+#TODO: not all cell types support all submodes, check this! do a text <=> binary copy!
+
 """
 modes and submodes that a *pin* can have, and that must be supported by a cell
 These are specific for the low-level.
@@ -16,6 +18,7 @@ from ..mixed import io as mixed_io
 from copy import deepcopy
 import json
 import hashlib
+from io import BytesIO
 
 from ast import PyCF_ONLY_AST, FunctionDef
 from .cached_compile import cached_compile
@@ -335,6 +338,62 @@ Use ``Cell.status()`` to get its status.
         except:
             return "<Cannot be rendered as text>"
 
+class ArrayCell(Cell):
+    """A cell in binary array (Numpy) format"""
+    #also provides copy+silk and ref+silk transport, but with an empty schema, and text form
+
+    _mount_kwargs = {"binary": True}
+
+    def _checksum(self, value, *, buffer=False, may_fail=False):
+        if buffer:
+            return super()._checksum(value)
+        assert isinstance(value, np.ndarray)
+        b = self._value_to_bytes(value)
+        return super()._checksum(b, buffer=True)
+
+    def _value_to_bytes(self, value):
+        b = BytesIO()
+        np.save(b, value, allow_pickle=False)
+        return b.getvalue()
+
+    def _validate(self, value):
+        assert isinstance(value, np.ndarray)
+
+    def _serialize(self, mode, submode=None):
+        #TODO: proper checks
+        if mode == "buffer":
+            return self._value_to_bytes(self._val)
+        elif mode == "copy":
+            if submode == "silk":
+                data = deepcopy(self._val)
+                return Silk(data=data)
+            else:
+                return deepcopy(self._val)
+        elif mode == "ref":
+            assert submode in ("json", "silk", None)
+            if submode == "silk":
+                return Silk(data=self._val)
+            else:
+                return self._val
+        else:
+            return self._val
+
+    def _from_buffer(self, value):
+        if value is None:
+            return None
+        b = BytesIO(value)
+        return np.load(b)
+
+    def _deserialize(self, value, mode, submode=None):
+        if mode == "buffer":
+            self._assign(self._from_buffer(value))
+        else:
+            self._assign(value)
+
+    def __str__(self):
+        ret = "Seamless array cell: " + self.format_path()
+        return ret
+
 class MixedCell(Cell):
     _mount_kwargs = {"binary": True}
     def __init__(self, storage_cell, form_cell):
@@ -615,10 +674,15 @@ def cell(celltype=None, **kwargs):
         return JsonCell(**kwargs)
     elif celltype == "cson":
         return CsonCell(**kwargs)
+    elif celltype == "array":
+        return ArrayCell(**kwargs)
     elif celltype == "mixed":
         return MixedCell(**kwargs)
     else:
         return Cell(**kwargs)
+
+def arraycell():
+    return ArrayCell()
 
 def textcell():
     return TextCell()
@@ -635,6 +699,7 @@ extensions = {
     CsonCell: ".cson",
     PythonCell: ".py",
     MixedCell: ".mixed",
+    ArrayCell: ".npy",
 }
 from ..mixed import MAGIC_SEAMLESS
 
