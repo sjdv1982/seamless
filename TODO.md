@@ -2,7 +2,6 @@ UPDATE OF THE UPDATE
 Great Refactor is underway (see seamless-toward-02.md).
 Most of the text below the FIRST section is out of date.
 Things to do (all low level) :
-- Bug: tests/structured_cell/numpy*.py: cannot load back from disk
 - Finish destroy (see 0.1), for the sake of macro re-evaluation
 - Proper exception reporting within exec (at least within IPython!)
 - Mount: monitor write-only mount cells as well (give a warning, and re-write)

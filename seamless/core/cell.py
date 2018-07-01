@@ -121,7 +121,7 @@ class CellBase(CellLikeBase):
             self._prelim_val = value, False #non-default-value prelim
         else:
             manager = self._get_manager()
-            manager.set_cell(self, value, from_buffer=True)
+            manager.set_cell(self, value, from_buffer=True, force=True)
         return self
 
     def set_cosmetic(self, value):
@@ -149,7 +149,7 @@ class CellBase(CellLikeBase):
         v = self._val
         if not issubclass(type(value), type(v)):
             self._val = value
-            return
+            return value
         if isinstance(v, dict):
             v.clear()
             v.update(value)
@@ -157,6 +157,7 @@ class CellBase(CellLikeBase):
             v[:] = value #not for ndarray, since they must have the same shape
         else:
             self._val = value
+        return value
 
 
     def deserialize(self, value, mode, submode=None, *, from_pin, default, cosmetic, force=False):
@@ -181,7 +182,6 @@ class CellBase(CellLikeBase):
         if not cosmetic and value is not None:
             if old_status == self.StatusFlags.OK:
                 old_checksum = self.checksum()
-        self._validate(value)
         if cosmetic:
             cs = self._last_checksum
             if cs is not None:
@@ -189,7 +189,8 @@ class CellBase(CellLikeBase):
                     self._alternative_checksums = []
                 self._alternative_checksums.append(cs)
         self._reset_checksums()
-        self._deserialize(value, mode, submode)
+        parsed_value = self._deserialize(value, mode, submode)
+        self._validate(parsed_value)
         if from_pin == True:
             assert not self._authoritative
             self._un_overrule()
@@ -214,7 +215,7 @@ class CellBase(CellLikeBase):
 
     def _overrule(self):
         if not self._overruled:
-            print("Warning: overruling (setting value for non-authoritative cell) %s" % self.format_path())
+            print("Warning: overruling (setting value for non-source cell) %s" % self.format_path())
             self._overruled = True
 
     def _un_overrule(self):
@@ -324,7 +325,7 @@ Use ``Cell.status()`` to get its status.
         if mode == "buffer":
             raise Exception("Cell '%s' cannot be de-serialized as buffer, use TextCell or JsonCell instead" % self.format_path())
         assert submode is None, (mode, submode)
-        self._assign(value)
+        return self._assign(value)
 
     def __str__(self):
         ret = "Seamless cell: " + self.format_path()
@@ -386,9 +387,9 @@ class ArrayCell(Cell):
 
     def _deserialize(self, value, mode, submode=None):
         if mode == "buffer":
-            self._assign(self._from_buffer(value))
+            return self._assign(self._from_buffer(value))
         else:
-            self._assign(value)
+            return self._assign(value)
 
     def __str__(self):
         ret = "Seamless array cell: " + self.format_path()
@@ -459,9 +460,9 @@ class MixedCell(Cell):
 
     def _deserialize(self, value, mode, submode=None):
         if mode == "buffer":
-            self._assign(self._from_buffer(value))
+            return self._assign(self._from_buffer(value))
         else:
-            self._assign(value)
+            return self._assign(value)
 
     def __str__(self):
         ret = "Seamless mixed cell: " + self.format_path()
@@ -481,7 +482,9 @@ class TextCell(Cell):
 
     def _deserialize(self, value, mode, submode=None):
         assert submode is None, (mode, submode)
-        self._val = str(value)
+        v = str(value)
+        self._val = v
+        return v
 
     def as_text(self):
         if self._val is None:
@@ -527,10 +530,12 @@ class PythonCell(Cell):
     def _deserialize(self, value, mode, submode=None):
         if mode == "ref":
             self._val = value
-            return
+            return value
         assert mode in ("buffer", "copy"), mode
         assert submode is None, (mode, submode)
-        self._val = str(value)
+        v = str(value)
+        self._val = v
+        return v
 
     def __str__(self):
         ret = "Seamless Python cell: " + self.format_path()
@@ -602,9 +607,9 @@ class JsonCell(Cell):
 
     def _deserialize(self, value, mode, submode=None):
         if mode == "buffer":
-            self._assign(self._from_buffer(value))
+            return self._assign(self._from_buffer(value))
         else:
-            self._assign(value)
+            return self._assign(value)
 
     def as_text(self):
         return self._to_json()

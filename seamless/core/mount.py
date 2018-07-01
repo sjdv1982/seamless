@@ -52,12 +52,12 @@ class MountItem:
         cell = self.cell()
         if cell is None:
             return
-        exists = self._exists()
+        exists = self._exists(on_init=True)
         cell_empty = (cell.status() != "OK")
         if self.authority in ("file", "file-strict"):
             if exists:
                 with self.lock:
-                    filevalue = self._read()
+                    filevalue = self._read(on_init=True)
                     update_file = True
                     if not cell_empty:
                         file_checksum = cell._checksum(filevalue, buffer=True)
@@ -81,9 +81,10 @@ class MountItem:
             if not cell_empty:
                 checksum = cell.checksum()
                 value = cell.serialize("buffer")
-                if "r" in self.mode and self._exists():
+                #if "r" in self.mode and self._exists():  #comment out, must read in storage
+                if exists:
                     with self.lock:
-                        filevalue = self._read()
+                        filevalue = self._read(on_init=True)
                         file_checksum = cell._checksum(filevalue, buffer=True)
                         if file_checksum != checksum:
                             print("Warning: File path '%s' has a different value, overwriting file" % self.path) #TODO: log warning
@@ -92,9 +93,10 @@ class MountItem:
                     self._write(value)
                     self._after_write(checksum)
             else:
-                if "r" in self.mode and self._exists():
+                #if "r" in self.mode and self._exists():
+                if exists:
                     with self.lock:
-                        filevalue = self._read()
+                        filevalue = self._read(on_init=True)
                         file_checksum = cell._checksum(filevalue, buffer=True)
                         self.set(filevalue, checksum=file_checksum)
                         self._after_read(file_checksum)
@@ -113,8 +115,9 @@ class MountItem:
         assert self.parent is not None
         return self.parent().lock
 
-    def _read(self):
-        assert "r" in self.mode
+    def _read(self, on_init=False):
+        if not on_init:
+            assert "r" in self.mode
         binary = self.kwargs["binary"]
         encoding = self.kwargs.get("encoding")
         filemode = "rb" if binary else "r"
@@ -129,8 +132,8 @@ class MountItem:
         with open(self.path.replace("/", os.sep), filemode, encoding=encoding) as f:
             f.write(filevalue)
 
-    def _exists(self):
-        if not "r" in self.mode:
+    def _exists(self, on_init=False):
+        if not on_init and not "r" in self.mode:
             return False
         return os.path.exists(self.path.replace("/", os.sep))
 
