@@ -217,7 +217,7 @@ class Transformer(Worker):
                 assert output_name == self._output_name, item
                 if self._connected_output:
                     pin = self._pins[self._output_name]
-                    #we're not in the main thread, but the manager takes care of it                    
+                    #we're not in the main thread, but the manager takes care of it
                     pin.send_update(output_value, preliminary=preliminary)
                 else:
                     self._last_value = output_value

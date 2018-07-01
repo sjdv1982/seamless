@@ -270,11 +270,12 @@ class CellBase(CellLikeBase):
     def as_text(self):
         raise NotImplementedError
 
-    def mount(self, path, mode="rw", authority="cell"):
+    def mount(self, path=None, mode="rw", authority="cell", persistent=False):
         """Performs a "lazy mount"; cell is mounted to the file when macro mode ends
-        path: file path
+        path: file path (can be None if an ancestor context has been mounted)
         mode: "r", "w" or "rw"
         authority: "cell", "file" or "file-strict"
+        persistent: whether or not the file persists after the context has been destroyed
         """
         if self._mount_kwargs is None:
             raise NotImplementedError #cannot mount this type of cell
@@ -282,10 +283,12 @@ class CellBase(CellLikeBase):
         self._mount = {
             "path": path,
             "mode": mode,
-            "authority": authority
+            "authority": authority,
+            "persistent": persistent
         }
         self._mount.update(self._mount_kwargs)
         MountItem(None, self,  **self._mount) #to validate parameters
+
 
 class Cell(CellBase):
     """Default class for cells.
@@ -709,7 +712,7 @@ extensions = {
 from ..mixed import MAGIC_SEAMLESS
 
 print("TODO cell: CSON cell")
-print("TODO cell: PyImport cell") #cell that does imports, executed already upon code definition; code injection causes an exec()
+print("TODO cell: PyModule cell") #cell that does imports, executed already upon code definition, as a module; code injection causes an import of this module
 #...and TODO: cache cell, evaluation cell, event stream
 
 #TODO: a serialization protocol to establish data transfer over a cell-to-cell (alias) connection

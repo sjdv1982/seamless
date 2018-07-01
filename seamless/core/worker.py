@@ -153,7 +153,10 @@ class InputPin(InputPinBase):
             if worker is None:
                 raise ValueError("Worker has died")
             my_cell = cell(celltype)
-            worker._context._add_new_cell(my_cell)
+            ctx = worker._context
+            assert ctx is not None
+            ctx = ctx()
+            ctx._add_new_cell(my_cell)
             my_cell.connect(self)
         else:
             my_cell = my_cell[1]

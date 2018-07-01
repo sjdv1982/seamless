@@ -55,12 +55,12 @@ class Macro(Worker):
                 self.gen_context._manager.deactivate()
             self.exception = 1
             with macro_mode_on():
-                ctx = context(context=self._context, name=macro_context_name)
+                ctx = context(context=self._context(), name=macro_context_name)
                 self.namespace = self.default_namespace.copy()
                 self.namespace["ctx"] = ctx
                 self.namespace.update(self._values)
                 exec(self.code_object, self.namespace)
-                self._context._add_child(macro_context_name, ctx)
+                self._context()._add_child(macro_context_name, ctx)
             self.exception = None
             '''
             Caching (TODO) has to happen here
@@ -86,7 +86,7 @@ class Macro(Worker):
                         ctx.full_destroy()
                     if self.gen_context is not None:
                         with macro_mode_on():
-                            self._context._add_child(macro_context_name, self.gen_context)
+                            self._context()._add_child(macro_context_name, self.gen_context)
                         self.gen_context._manager.activate()
                 except Exception as exc2:
                     traceback.print_exc()

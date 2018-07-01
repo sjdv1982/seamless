@@ -8,7 +8,7 @@ class IpyString(str):
 class SeamlessBase:
     _destroyed = False
     _context = None
-    _last_context = None
+    _fallback_path = None
     name = None
 
     StatusFlags = Enum('StatusFlags', ('OK', 'PENDING', 'UNDEFINED', 'UNCONNECTED', 'ERROR'))
@@ -18,10 +18,12 @@ class SeamlessBase:
     def path(self):
         if self._context is None:
             return ()
-        elif self._context.path is None:
+        elif self._fallback_path is not None:
+            return self._fallback_path
+        elif self._context().path is None:
             return ("<None>", self.name)
         else:
-            return self._context.path + (self.name,)
+            return self._context().path + (self.name,)
 
     def _validate_path(self, required_path=None):
         if required_path is None:
@@ -34,14 +36,14 @@ class SeamlessBase:
         from .context import Context
         assert isinstance(context, Context)
         assert self._context is None
-        self._last_context = context
-        self._context = context
+        ctx = weakref.ref(context)
+        self._context = ctx
         self.name = name
         return self
 
     def _get_manager(self):
         assert self._context is not None #worker/cell must have a context
-        return self._context._get_manager()
+        return self._context()._get_manager()
 
     def format_path(self):
         if self.path is None:
@@ -59,6 +61,9 @@ class SeamlessBase:
 
     def _set_macro_object(self, macro_object):
         self._macro_object = macro_object
+
+    def destroy(self):
+        self._destroyed = True        
 
 class SeamlessBaseList(list):
     def __str__(self):

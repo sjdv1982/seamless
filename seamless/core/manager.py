@@ -15,6 +15,7 @@ TODO: once reactors arrive (or any kind of sync evaluation), keep a stack of cel
 
 import threading
 import functools
+import weakref
 
 def main_thread_buffered(func):
     def main_thread_buffered_wrapper(self, *args, **kwargs):
@@ -70,7 +71,7 @@ class Manager:
     successor = None
     flushing = False
     def __init__(self, ctx):
-        self.ctx = ctx
+        self.ctx = weakref.proxy(ctx)
         self.sub_managers = {}
         self.cell_to_pins = {} #cell => inputpins
         self.cell_to_cells = {} #cell => (index, alias target cell, alias mode) list
@@ -143,7 +144,7 @@ class Manager:
         self.destroyed = True
         for childname, child in self.ctx._children.items():
             if isinstance(child, Context):
-                child.destroy()
+                child.destroy(cells=False)
         #all of the children are now dead
         #  only in the buffered_work and the work queue there is still some function calls to the children
 
@@ -372,7 +373,11 @@ class Manager:
             #from_pin is set to True, also for aliases
             self._update_cell_from_cell(cell, target, alias_mode)
 
-
+    def destroy_cell(self, cell):
+        assert isinstance(cell, CellLikeBase)
+        assert cell._get_manager() is self
+        if cell._mount is not None:
+            self.mountmanager.unmount(cell._mount["path"])
 
 from .context import Context
 from .cell import Cell, CellLikeBase

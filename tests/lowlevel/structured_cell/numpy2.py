@@ -5,6 +5,7 @@ import numpy as np
 
 with macro_mode_on():
     ctx = context(toplevel=True)
+    ctx.mount("/tmp/mount-test", persistent=None) #directory remains, but empty
     ctx.inp_struc = context(name="inp_struc",context=ctx)
     ctx.inp_struc.storage = cell("text")
     ctx.inp_struc.form = cell("json")
@@ -32,8 +33,6 @@ with macro_mode_on():
 
     ctx.result = cell("array")
     ctx.tf.c.connect(ctx.result)
-
-    ctx.mount("/tmp/mount-test")
 
 ctx.equilibrate()
 print(ctx.tf.status())

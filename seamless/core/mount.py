@@ -17,26 +17,34 @@ _init() is invoked at startup:
    If not, this may invoke _read(), but only if the file exists
 Periodically, conditional_read() and conditional_write() are invoked,
  that check if a read/write is necessary, and if so, invoke _read()/_write()
+
+NOTE: resolve_register returns immediately if there has been an exception raised
 """
 
 from weakref import WeakValueDictionary, WeakKeyDictionary, ref
 from threading import Thread, RLock, Event
-from collections import deque
-import os
+from collections import deque, OrderedDict
+import sys, os
 import time
 import traceback
+import copy
+from contextlib import contextmanager
 
 class MountItem:
     last_exc = None
     parent = None
-    def __init__(self, parent, cell, path, mode, authority, **kwargs):
+    _destroyed = False
+    def __init__(self, parent, cell, path, mode, authority, persistent, *, dummy=False, **kwargs):
         if parent is not None:
             self.parent = ref(parent)
         self.path = path
         self.cell = ref(cell)
         assert mode in ("r", "w", "rw"), mode #read from file, write to file, or both
         self.mode = mode
+        assert persistent in (True, False, None)
         assert authority in ("cell", "file", "file-strict"), authority
+        if authority == "file-strict":
+            assert persistent
         if authority == "cell":
             assert "w" in self.mode, (authority, mode)
         elif authority in ("file", "file-strict"):
@@ -46,8 +54,12 @@ class MountItem:
         self.last_checksum = None
         self.last_time = None
         self.last_mtime = None
+        self.persistent = persistent
+        self.dummy = dummy
 
     def init(self):
+        if self._destroyed:
+            return
         assert self.parent is not None
         cell = self.cell()
         if cell is None:
@@ -102,6 +114,8 @@ class MountItem:
                         self._after_read(file_checksum)
 
     def set(self, filevalue, checksum):
+        if self._destroyed:
+            return
         cell = self.cell()
         if cell is None:
             return
@@ -148,6 +162,8 @@ class MountItem:
             pass
 
     def conditional_write(self):
+        if self._destroyed:
+            return
         if not "w" in self.mode:
             return
         cell = self.cell()
@@ -171,6 +187,8 @@ class MountItem:
         self.last_mtime = mtime
 
     def conditional_read(self):
+        if self._destroyed:
+            return
         if not "r" in self.mode:
             return
         cell = self.cell()
@@ -190,6 +208,19 @@ class MountItem:
         if file_checksum is not None and file_checksum != cell_checksum:
             self.set(filevalue, checksum=file_checksum)
 
+    def destroy(self):
+        if self._destroyed:
+            return
+        self._destroyed = True
+        if self.dummy:
+            return
+        if self.persistent == False and os.path.exists(self.path):
+            #print("remove", self.path)
+            os.unlink(self.path)
+
+    def __del__(self):
+        self.destroy()
+
 class MountManager:
     _running = False
     _last_run = None
@@ -198,22 +229,104 @@ class MountManager:
         self.latency = latency
         self.path_to_cell = WeakValueDictionary()
         self.mounts = WeakKeyDictionary()
+        self.nonpersistent_dirpaths = set()
         self.lock = RLock()
         self.cell_updates = deque()
         self._tick = Event()
+        self.reorganizing = False
+        self.limbo = []
+        self.limbo_dirpaths = set()
+        self.handles = 0
+        self.contextpath_to_dirpath = {}
 
-    def add_mount(self, cell, path, mode, authority, **kwargs):
+    @contextmanager
+    def reorganize(self):
+        """Puts the manager in reorganize mode
+        - Cells are not read from file at init
+        - Unmounting is now possible; mountitems are put in limbo, cleanup actions are deferred
+        - Remounting is now possible; this takes a mountitem from limbo and attaches a new cell to it (with the same value)
+        """
+        if self.reorganizing:
+            return
+        self.reorganizing = True
+        try:
+            yield
+        finally:
+            for path, cell in self.limbo:
+                self._unmount(path, cell)
+            self.limbo.clear()
+            dirpaths = sorted(self.limbo_dirpaths,key=lambda l:-len(l))
+            for dirpath in dirpaths:
+                self._unmount_dirpath(dirpath)
+            self.limbo_dirpaths.clear()
+
+    def add_mount(self, cell, path, mode, authority, persistent, **kwargs):
         assert path not in self.path_to_cell
         self.path_to_cell[path] = cell
-        self.mounts[cell] = MountItem(self, cell, path, mode, authority, **kwargs)
+        self.mounts[cell] = MountItem(self, cell, path, mode, authority, persistent, **kwargs)
         self.mounts[cell].init()
+
+    def _unmount(self, path, cell=None):
+        try:
+            cell0 = self.path_to_cell.pop(path)
+            if cell is not None:
+                assert cell is cell0
+            cell = cell0
+        except KeyError:
+            assert cell is not None #must be in __del__ territory...
+        if cell is not None:
+            try:
+                mountitem = self.mounts.pop(cell)
+            except KeyError:
+                return
+        else:
+            mountitem = self.mounts.pop(cell)
+        mountitem.destroy()
+
+    def unmount(self, path, cell=None):
+        if self.reorganizing:
+            self.limbo.append((path, cell))
+        else:
+            self._unmount(path, cell)
+
+    def _unmount_dirpath(self, dirpath):
+        self.nonpersistent_dirpaths.remove(dirpath)
+        try:
+            #print("rmdir", dirpath)
+            os.rmdir(dirpath)
+        except:
+            raise ###
+            print("Error: cannot remove directory %s" % dirpath)
+
+    def unmount_dirpath(self, dirpath):
+        if dirpath not in self.nonpersistent_dirpaths:
+            return
+        if self.reorganizing:
+            self.limbo_dirpaths.append(dirpath)
+        else:
+            self._unmount_dirpath(dirpath)
+
+    def unmount_context(self, context):
+        path = context.path
+        try:
+            dirpath = self.contextpath_to_dirpath.pop(path)
+        except KeyError: #this context was probably never mounted anyway (bug encountered during macro_mode)
+            return
+        self.unmount_dirpath(dirpath)
+
+    def add_context(self, context, dirpath, persistent):
+        self.contextpath_to_dirpath[context.path] = dirpath
+        if persistent == False:
+            self.nonpersistent_dirpaths.add(dirpath)
+        if not os.path.exists(dirpath):
+            os.mkdir(dirpath)
 
     def add_cell_update(self, cell):
         assert cell in self.mounts
         self.cell_updates.append(cell)
 
     def _run(self):
-        for cell, mount_item in self.mounts.items():
+        for cell, mount_item in list(self.mounts.items()):
             if cell in self.cell_updates:
                 continue
             try:
@@ -270,6 +383,17 @@ class MountManager:
         self._tick.clear()
         self._tick.wait()
 
+    def destroy(self):
+        for path in list(self.mounts.keys()):
+            self._unmount(path)
+        dirpaths = self.nonpersistent_dirpaths | self.limbo_dirpaths
+        dirpaths = sorted(dirpaths,key=lambda l:-len(l))
+        for dirpath in dirpaths:
+            self._unmount_dirpath(dirpath)
+
+    def __del__(self):
+        self.destroy()
+
 def resolve_register(reg):
     from .context import Context
     from .cell import Cell
@@ -277,11 +401,23 @@ def resolve_register(reg):
     contexts = set([r for r in reg if isinstance(r, Context)])
     cells = set([r for r in reg if isinstance(r, Cell)])
     mounts = {}
-    def find_mount(c):
+    if sys.exc_info()[0] is not None:
+        return #No mounting if there is an exception
+    def find_mount(c, as_parent=False, child=None):
+        if as_parent:
+            assert child is not None
         if c in mounts:
-            return mounts[c]
-        if c._mount is not None:
-            result = c._mount
+            result = mounts[c]
+        elif c._mount is not None:
+            result = c._mount.copy()
+            if result["path"] is None:
+                parent = c._context
+                assert parent is not None, c
+                parent = parent()
+                parent_result = find_mount(parent, as_parent=True,child=c)
+                if parent_result is None:
+                    raise Exception("No path provided for mount of %s, but no ancestor context is mounted" % c)
+                result["path"] = parent_result["path"]
         elif isinstance(c, (Inchannel, Outchannel)):
             result = None
         elif isinstance(c, Context) and c._toplevel:
@@ -289,25 +425,29 @@ def resolve_register(reg):
         else:
             parent = c._context
             assert parent is not None, c
-            result = find_mount(parent)
-            if result is not None:
-                result = result.copy()
-                result["path"] += "/" + c.name
-                result["path"] += get_extension(c)
-        if result is not None:
-            mounts[c] = result
+            parent = parent()
+            result = find_mount(parent, as_parent=True,child=c)
+        mounts[c] = result
+        if as_parent and result is not None:
+            result = copy.deepcopy(result)
+            if result["persistent"] is None:
+                result["persistent"] = False
+            result["path"] += "/" + child.name
+            result["path"] += get_extension(child)
         return result
     for r in reg:
         find_mount(r)
 
     done_contexts = set()
-    def create_dir(context):  #TODO: this is currently hard-coded, need to be adapted for databases etc.
+    mount_contexts = {}
+    def create_dir(context):  #TODO: this is currently hard-coded (os.path.exists), need to be adapted for databases etc.
         if not context in mounts:
             return
         if context in done_contexts:
             return
         parent = context._context
         if parent is not None:
+            parent = parent()
             create_dir(parent)
         mount = mounts[context]
         path = mount["path"].replace("/", os.sep)
@@ -316,18 +456,13 @@ def resolve_register(reg):
                 print("Warning: Directory path '%s' already exists" % path) #TODO: log warning
         elif mount["authority"] == "file-strict":
             raise Exception("Directory path '%s' does not exist, but authority is 'file-strict'" % path)
-        else:
-            os.mkdir(path)
+        mount_contexts[context] = path,  mount["persistent"]
         done_contexts.add(context)
 
-    all_cells = []
     for context in contexts:
         create_dir(context)
-        for child in context._children:
-            if isinstance(child, Cell) and cell not in cells:
-                all_cells.append(child)
-    all_cells += list(cells)
 
+    mount_cells = []
     for cell in cells:
         if cell in mounts:
             mount = mounts[cell]
@@ -341,8 +476,22 @@ def resolve_register(reg):
                     continue
                 else:
                     mount["mode"] = "w"
+            if mount["persistent"]:
+                p = cell._context
+                while p is not None:
+                    p = p()
+                    if p not in contexts:
+                        break
+                    v = mount_contexts[p]
+                    mount_contexts[p] = v[0], True  #make persistent
+                    p = p._context
             cell._mount = mount
-            mountmanager.add_mount(cell, **mount)
+            mount_cells.append((cell, mount))
+    for context, v in mount_contexts.items():
+        path, persistent = v
+        mountmanager.add_context(context, path, persistent)
+    for cell, mount in mount_cells:
+        mountmanager.add_mount(cell, **mount)
 
 mountmanager = MountManager(0.2) #TODO: latency in config cell
 mountmanager.start()
@@ -357,7 +506,6 @@ def get_extension(c):
 """
 *****
 TODO: filehash option (cell stores hash of the file, necessary for slash-0)
-TODO: remount option (different [but same-value] cell, same path, for caching)
-TODO: cleanup option (remove file when mount is destroyed; also for contexts!)
+TODO: remount option (different [but same-value] cell, same path, for caching); must be in reorganize mode
 *****
 """

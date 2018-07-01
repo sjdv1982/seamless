@@ -79,7 +79,7 @@ context : context or None
         assert get_macro_mode()
         assert isinstance(child, (Context, Worker, CellLikeBase))
         if isinstance(child, Context):
-            assert child._context is self
+            assert child._context() is self
         else:
             child._set_context(self, childname)
         self._children[childname] = child
@@ -171,7 +171,7 @@ context : context or None
         elif self._context is None:
             return False
         else:
-            return self._context._part_of(ctx)
+            return self._context()._part_of(ctx)
     '''
     def export(self, child, forced=[], skipped=[]):
         """Exports all unconnected inputs and outputs of a child
@@ -337,18 +337,22 @@ context : context or None
             return result
         return self.StatusFlags.OK.name
 
-    def mount(self, path, mode="rw", authority="cell"):
+    def mount(self, path=None, mode="rw", authority="cell", persistent=False):
         """Performs a "lazy mount"; context is mounted to the directory path when macro mode ends
-        math: directory path
+        math: directory path (can be None if an ancestor context has been mounted)
         mode: "r", "w" or "rw" (passed on to children)
         authority: "cell", "file" or "file-strict" (passed on to children)
+        persistent: whether or not the directory persists after the context has been destroyed
+                    The same setting is applied to all children
+                    May also be None, in which case the directory is emptied, but remains
         """
         self._mount = {
             "path": path,
             "mode": mode,
-            "authority": authority
+            "authority": authority,
+            "persistent": persistent
         }
-        MountItem(None, self,  **self._mount) #to validate parameters
+        MountItem(None, self, dummy=True, **self._mount) #to validate parameters
 
     def __dir__(self):
         result = []
@@ -362,15 +366,36 @@ context : context or None
     def self(self):
         return _ContextWrapper(self)
 
-    def destroy(self):
-        print("TODO: implement destroy, for macro re-evaluation (also remove mounts!)")
-        self._manager.destroy()
+    def destroy(self, from_del=False):
+        # Precarious circmumstances if called by __del___
+        if self._destroyed:
+            return
+        object.__setattr__(self, "_destroyed", True)
+        path = self.path
+        mountmanager = self._manager.mountmanager
+        for childname, child in self._children.items():
+            if from_del:
+                object.__setattr__(child, "_fallback_path",  path + (childname,))
+            if isinstance(child, Cell):
+                if child._mount is not None:
+                    mountmanager.unmount(child._mount["path"], child)
+        for childname, child in self._children.items():
+            if from_del:
+                object.__setattr__(child, "_fallback_path",  path + (childname,))
+            if isinstance(child, Context):
+                child.destroy()
+
+        mountmanager.unmount_context(self) #in case we are mounted...
 
     def full_destroy(self):
         #all work buffers (work queue and manager work buffers) are now empty
         # time to free memory
         print("TODO: implement full destroy")
         return
+
+    def __del__(self):
+        self.destroy(from_del=True)
+
 
 Context._methods = [m for m in Context.__dict__ if not m.startswith("_") \
       and m != "StatusFlags"]

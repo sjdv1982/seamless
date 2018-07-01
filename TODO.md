@@ -30,15 +30,20 @@ Then:
       a cson's checksum is the checksum of the JSON representation; if you don't want that, connect a text cell downstream of it
    - Reactors (think of IPython stuff in the namespace, not properly addressed in 0.1; copy from 0.2 transformers)
      (also think of \_pending_inputs: add a name back in, if sent as None (like transformers))
+     NOTE: reactors give a cache hit not just if the value of all cells are the same, but also:
+       - if the connection topology stays the same, and
+       - the value of all three code cells stays the same
+       In that case, the regeneration of the reactor essentially becomes and update() event
    - Tie up loose ends of transfer protocol (copy, ref etc.)
    - "Active" switch of managers, workers, connections; may also be exported, and may be activated in a connection layer.
       UPDATE: partially done (for managers), extend to fine-grained level (maintain by manager)
    - Dynamic connection layers: are tied to a context, and take as input direct children of the context (cells or child contexts); may also set active switches
-   - PyImport cells and code injection
+   - PyModule cells and code injection (PyModule cell becomes a module)
    - Status dict, also as a structured cell  (also policies like .accept_shell_append)
    - Dynamic connection layers: a special macro that has one or more contexts as input (among other inputs), which must be (grand)children
       Builds connections within/between those contexts.
       No other connections may be built. In a later version, also support the addition of new cells (although these will never be cached)
+    - Terminology: authority => source. "only_source" option in mounting context, mounting only source cells
 
 Then, slowly move to the mid-level data structure:
 Mostly elide the middle level, dynamically generate at time of low-level generation/serialization.

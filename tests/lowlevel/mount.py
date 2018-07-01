@@ -17,7 +17,7 @@ with macro_mode_on():
     ctx.code = pytransformercell().set("c = float(a) + float(b)")
     ctx.code.connect(ctx.tf.code)
     ctx.tf.c.connect(ctx.result)
-    ctx.result.mount("/tmp/mount-test/myresult")
+    ctx.result.mount("/tmp/mount-test/myresult", persistent=True)
     ctx.mount("/tmp/mount-test")
     ctx.sub = context(toplevel=False, context=ctx, name="sub")
     ctx.sub.mycell = textcell().set("This is my cell\nend")
