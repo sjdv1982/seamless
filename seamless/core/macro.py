@@ -149,6 +149,9 @@ class Macro(Worker):
             return self.StatusFlags.ERROR.name
         return self.StatusFlags.OK.name
 
+    def full_destroy(self,from_del=False):
+        pass
+        
     def activate(self):
         pass
 

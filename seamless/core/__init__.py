@@ -39,6 +39,7 @@ class SeamlessBase:
         ctx = weakref.ref(context)
         self._context = ctx
         self.name = name
+        self._fallback_path =  self.path
         return self
 
     def _get_manager(self):
@@ -63,7 +64,7 @@ class SeamlessBase:
         self._macro_object = macro_object
 
     def destroy(self):
-        self._destroyed = True        
+        self._destroyed = True
 
 class SeamlessBaseList(list):
     def __str__(self):

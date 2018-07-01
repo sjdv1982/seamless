@@ -61,7 +61,7 @@ context : context or None
         context_name = context._name
         if context_name is None:
             context_name = ()
-        self._name = context_name + (name,)
+        self._name = context_name + (name,)        
         self._manager = Manager(self)
 
     def _get_manager(self):
@@ -374,14 +374,10 @@ context : context or None
         path = self.path
         mountmanager = self._manager.mountmanager
         for childname, child in self._children.items():
-            if from_del:
-                object.__setattr__(child, "_fallback_path",  path + (childname,))
             if isinstance(child, Cell):
                 if child._mount is not None:
                     mountmanager.unmount(child._mount["path"], child)
         for childname, child in self._children.items():
-            if from_del:
-                object.__setattr__(child, "_fallback_path",  path + (childname,))
             if isinstance(child, Context):
                 child.destroy()
 
@@ -392,8 +388,6 @@ context : context or None
         # time to free memory
         path = self.path
         for childname, child in self._children.items():
-            if from_del:
-                object.__setattr__(child, "_fallback_path",  path + (childname,))
             if isinstance(child, Worker):
                 child.full_destroy(from_del=from_del)
             if isinstance(child, Context):
