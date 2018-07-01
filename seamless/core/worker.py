@@ -82,6 +82,9 @@ class Worker(SeamlessBase):
         shell_namespace, inputpin, shell_title = self._shell(subshell)
         return PyShell(shell_namespace, inputpin, shell_title)
 
+    def full_destroy(self, from_del=False):
+        raise NotImplementedError
+
 from .cell import modes as cell_modes, submodes as cell_submodes, celltypes
 
 class PinBase(SeamlessBase):

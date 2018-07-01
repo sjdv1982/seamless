@@ -387,14 +387,21 @@ context : context or None
 
         mountmanager.unmount_context(self) #in case we are mounted...
 
-    def full_destroy(self):
+    def full_destroy(self, from_del=False):
         #all work buffers (work queue and manager work buffers) are now empty
         # time to free memory
-        print("TODO: implement full destroy")
-        return
+        path = self.path
+        for childname, child in self._children.items():
+            if from_del:
+                object.__setattr__(child, "_fallback_path",  path + (childname,))
+            if isinstance(child, Worker):
+                child.full_destroy(from_del=from_del)
+            if isinstance(child, Context):
+                child.full_destroy(from_del=from_del)
 
     def __del__(self):
         self.destroy(from_del=True)
+        self.full_destroy(from_del=True)
 
 
 Context._methods = [m for m in Context.__dict__ if not m.startswith("_") \

@@ -254,7 +254,9 @@ class Transformer(Worker):
         assert submode is None
         return self.transformer.namespace, self.code, str(self)
 
-    def destroy(self):
+    def destroy(self, from_del=False):
+        if not self.active:
+            return
         if self._destroyed:
             return
 
@@ -262,8 +264,9 @@ class Transformer(Worker):
         if self.transformer_thread is not None:
             self.transformer.finish.set()
             self.transformer.semaphore.release() # to unblock the .finish event
-            self.transformer.finished.wait()
-            self.transformer_thread.join()
+            if not from_del:
+                self.transformer.finished.wait()
+                self.transformer_thread.join()
             del self.transformer_thread
             self.transformer_thread = None
 
@@ -271,9 +274,13 @@ class Transformer(Worker):
         if self.output_thread is not None:
             self.output_finish.set()
             self.output_semaphore.release() # to unblock for the output_finish
-            self.output_thread.join()
+            if not from_del:
+                self.output_thread.join()
             del self.output_thread
             self.output_thread = None
+
+    def full_destroy(self,from_del=False):
+        self.destroy(from_del=from_del)
 
     def __dir__(self):
         return object.__dir__(self) + list(self._pins.keys())
