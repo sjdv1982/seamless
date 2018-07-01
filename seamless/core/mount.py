@@ -441,7 +441,7 @@ def resolve_register(reg):
     done_contexts = set()
     mount_contexts = {}
     def create_dir(context):  #TODO: this is currently hard-coded (os.path.exists), need to be adapted for databases etc.
-        if not context in mounts:
+        if not context in mounts or mounts[context] is None:
             return
         if context in done_contexts:
             return
@@ -464,7 +464,7 @@ def resolve_register(reg):
 
     mount_cells = []
     for cell in cells:
-        if cell in mounts:
+        if cell in mounts and mounts[cell] is not None:
             mount = mounts[cell]
             path = mount["path"]
             if cell._mount_kwargs is None:
