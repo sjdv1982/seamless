@@ -19,7 +19,7 @@ class Macro(Worker):
         self._macro_params = OrderedDict()
         self._values = {}
         self.code_object = None
-        self.namespace = None
+        self.namespace = {}
         self.function_expr_template = "{0}(ctx=ctx,"
         for p in sorted(macro_params.keys()):
             param = macro_params[p]
@@ -62,7 +62,11 @@ class Macro(Worker):
             with mountmanager.reorganize(self.gen_context):
                 with macro_mode_on():
                     ctx = context(context=self._context(), name=macro_context_name)
-                    self.namespace = self.default_namespace.copy()
+                    keep = {k:v for k,v in self.namespace.items() if k.startswith("_")}
+                    self.namespace.clear()
+                    self.namespace["__name__"] = self.name
+                    self.namespace.update(keep)
+                    self.namespace.update( self.default_namespace.copy())
                     self.namespace["ctx"] = ctx
                     self.namespace.update(self._values)
                     try:
@@ -166,9 +170,6 @@ class Macro(Worker):
         return self.StatusFlags.OK.name
 
     def full_destroy(self,from_del=False):
-        pass
-
-    def activate(self):
         pass
 
 def macro(params):

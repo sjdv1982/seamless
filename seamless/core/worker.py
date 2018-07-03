@@ -25,6 +25,11 @@ class Worker(SeamlessBase):
         super().__init__()
         self._pending_updates_value = 0
 
+    def activate(self):
+        from ..shell import update_shells
+        shell_namespace, inputpin, _ = self._shell(None)
+        update_shells(inputpin, shell_namespace)
+
     @property
     def _pending_updates(self):
         return self._pending_updates_value

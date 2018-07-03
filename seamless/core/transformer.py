@@ -89,6 +89,7 @@ class Transformer(Worker):
         return ret
 
     def activate(self):
+        super().activate()
         if self.active:
             return
 
