@@ -28,6 +28,9 @@ def macro_mode_on():
     finally:
         _macro_mode = old_macro_mode
     curr_macro_register = macro_register.pop()
-    mount.resolve_register(curr_macro_register)
+    if not _macro_mode:
+        mount.resolve_register(curr_macro_register)
+    else:
+        macro_register.stack[-1].update(curr_macro_register)
 
 from . import mount

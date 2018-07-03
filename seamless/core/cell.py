@@ -277,6 +277,7 @@ class CellBase(CellLikeBase):
         authority: "cell", "file" or "file-strict"
         persistent: whether or not the file persists after the context has been destroyed
         """
+        assert self._mount is None #Only the mountmanager may modify this further!
         if self._mount_kwargs is None:
             raise NotImplementedError #cannot mount this type of cell
         kwargs = self._mount_kwargs
@@ -287,7 +288,7 @@ class CellBase(CellLikeBase):
             "persistent": persistent
         }
         self._mount.update(self._mount_kwargs)
-        MountItem(None, self,  **self._mount) #to validate parameters
+        MountItem(None, self, dummy=True, **self._mount) #to validate parameters
 
 
 class Cell(CellBase):

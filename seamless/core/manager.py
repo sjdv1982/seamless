@@ -71,7 +71,7 @@ class Manager:
     successor = None
     flushing = False
     def __init__(self, ctx):
-        self.ctx = weakref.proxy(ctx)
+        self.ctx = weakref.ref(ctx)
         self.sub_managers = {}
         self.cell_to_pins = {} #cell => inputpins
         self.cell_to_cells = {} #cell => (index, alias target cell, alias mode) list
@@ -101,21 +101,21 @@ class Manager:
 
     def activate(self):
         self.active = True
-        for childname, child in self.ctx._children.items():
+        for childname, child in self.ctx()._children.items():
             if isinstance(child, Context):
                 child._manager.activate()
         self.flush()
 
     def deactivate(self):
         self.active = False
-        for childname, child in self.ctx._children.items():
+        for childname, child in self.ctx()._children.items():
             if isinstance(child, Context):
                 child._manager.deactivate()
 
 
     def stop_flushing(self):
         self.flushing = False
-        for childname, child in self.ctx._children.items():
+        for childname, child in self.ctx()._children.items():
             if isinstance(child, Context):
                 child._manager.stop_flushing()
 
@@ -123,7 +123,7 @@ class Manager:
         assert threading.current_thread() == threading.main_thread()
         assert self.active or self.destroyed
         self.flushing = True
-        for childname, child in self.ctx._children.items():
+        for childname, child in self.ctx()._children.items():
             if isinstance(child, Context):
                 child._manager.flush(from_parent=True) # need to flush only once
                                             # with self.active or self.destroyed, work buffer shouldn't accumulate
@@ -140,11 +140,15 @@ class Manager:
             if not from_parent:
                 self.stop_flushing()
 
-    def destroy(self):
+    def destroy(self,from_del=False):
+        if self.destroyed:
+            return
         self.destroyed = True
-        for childname, child in self.ctx._children.items():
+        if from_del and self.ctx() is None:
+            return
+        for childname, child in self.ctx()._children.items():
             if isinstance(child, Context):
-                child.destroy(cells=False)
+                child.destroy(from_del=from_del)
         #all of the children are now dead
         #  only in the buffered_work and the work queue there is still some function calls to the children
 
@@ -372,12 +376,6 @@ class Manager:
         for con_id, target, alias_mode in self.cell_to_cells.get(cell, []):
             #from_pin is set to True, also for aliases
             self._update_cell_from_cell(cell, target, alias_mode)
-
-    def destroy_cell(self, cell):
-        assert isinstance(cell, CellLikeBase)
-        assert cell._get_manager() is self
-        if cell._mount is not None:
-            self.mountmanager.unmount(cell._mount["path"])
 
 from .context import Context
 from .cell import Cell, CellLikeBase

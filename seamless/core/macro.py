@@ -2,6 +2,9 @@ from collections import OrderedDict
 import traceback
 
 from .worker import Worker, InputPin, OutputPin
+from .cached_compile import cached_compile
+
+class ExecError(Exception): pass
 
 class Macro(Worker):
     active = False
@@ -49,43 +52,63 @@ class Macro(Worker):
         assert self._context is not None
         macro_context_name = "macro_gen_" + self.name
         ctx = None
+        mountmanager = self._context()._manager.mountmanager
         try:
             self._pending_updates += 1
             if self.gen_context is not None:
+                assert self.gen_context._manager.mountmanager is mountmanager
                 self.gen_context._manager.deactivate()
             self.exception = 1
-            with macro_mode_on():
-                ctx = context(context=self._context(), name=macro_context_name)
-                self.namespace = self.default_namespace.copy()
-                self.namespace["ctx"] = ctx
-                self.namespace.update(self._values)
-                exec(self.code_object, self.namespace)
-                self._context()._add_child(macro_context_name, ctx)
-            self.exception = None
-            '''
-            Caching (TODO) has to happen here
-            The old context (gen_context) is deactivated, but the workers have still been running,
-             and sending updates that are accumulated in the work queue (global and manager-buffered)
-            Now it is time to re-assign those worker kernels and cell values (replacing them with dummies)
-             that are cache hits.
-            Then, for all cells and workers, a successor must be assigned
-            '''
-            if self.gen_context is not None:
-                self.gen_context.destroy()
-                self.gen_context._manager.flush()
-                self.gen_context.full_destroy()
+            with mountmanager.reorganize():
+                if self.gen_context is not None:
+                    self.gen_context._unmount()
+                with macro_mode_on():
+                    ctx = context(context=self._context(), name=macro_context_name)
+                    self.namespace = self.default_namespace.copy()
+                    self.namespace["ctx"] = ctx
+                    self.namespace.update(self._values)
+                    try:
+                        exec(self.code_object, self.namespace)
+                    except Exception as e:
+                        self.exception = traceback.format_exc()
+                        raise ExecError from None
+                    self._context()._add_child(macro_context_name, ctx)
+                    self.exception = None
+                    '''
+                    Caching (TODO) has to happen here
+                    The old context (gen_context) is deactivated, but the workers have still been running,
+                     and sending updates that are accumulated in the work queue (global and manager-buffered)
+                    Now it is time to re-assign those worker kernels and cell values (replacing them with dummies)
+                     that are cache hits. Never replace whole cells and contexts!
+                    Finally, for all old cells and workers that were cache hits, a successor must be assigned
+                    '''
+                    print("macro successful")
+                    print("macro done, leaving macro mode")
+                print("macro done, macro mode finished")
+                if self.gen_context is not None:
+                    self.gen_context.destroy()
+                    self.gen_context._manager.flush()
+                    self.gen_context.full_destroy()
+                print("macro done, leaving reorganize mode")
+            print("macro done!")
             self.gen_context = ctx
         except Exception as exc:
-            traceback.print_exc()
             if self.exception is not None:
-                self.exception = traceback.format_exc()
+                if self.exception != 1:
+                    print(self.exception)
+                else:
+                    traceback.print_exc()
+                    self.exception = traceback.format_exc()
                 self.secondary_exception = None
                 try:
+                    print("1. destroy")
                     if ctx is not None:
-                        ctx.destroy() #unnecessary?? depends on mount...
+                        ctx.destroy()
                         ctx.full_destroy()
+                    print("2. remount")
                     if self.gen_context is not None:
                         with macro_mode_on():
+                            self.gen_context._remount()
                             self._context()._add_child(macro_context_name, self.gen_context)
                         self.gen_context._manager.activate()
                 except Exception as exc2:
@@ -96,6 +119,7 @@ class Macro(Worker):
                 # but something went wrong in cleaning up the old context
                 # pretend that nothing happened...
                 # but store the exception as secondary exception, just in case
+                print("CLEANUP error"); traceback.print_exc()
                 self.gen_context = ctx
                 self.secondary_exception = traceback.format_exc()
         finally:
@@ -110,11 +134,14 @@ class Macro(Worker):
             if input_pin == "code":
                 code = value.value
                 func_name = value.func_name
+                identifier = "Seamless macro: " + self.format_path()
                 if value.is_function:
-                    expr = self.function_expr_template.format(code, func_name)
-                    self.code_object = compile(expr, func_name, "exec")
+                    expr = self.function_expr_template.format(code, value.func_name)
+                    self.code_object = cached_compile(expr, identifier, "exec")
                 else:
-                    self.code_object = compile(code, func_name, "exec")
+                    self.code_object = cached_compile(code, identifier, "exec")
+                import inspect
+                print(inspect.getsource(self.code_object))
             else:
                 self._values[input_pin] = value
             if input_pin in self._missing:
@@ -151,7 +178,7 @@ class Macro(Worker):
 
     def full_destroy(self,from_del=False):
         pass
-        
+
     def activate(self):
         pass
 

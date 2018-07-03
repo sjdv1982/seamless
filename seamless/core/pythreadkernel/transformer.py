@@ -6,6 +6,7 @@ from .killable_thread import KillableThread
 from multiprocessing import Process
 import functools
 import time
+from ..cached_compile import cached_compile
 
 USE_PROCESSES = False
 if USE_PROCESSES:
@@ -77,13 +78,14 @@ class Transformer(Worker):
             # If code object is updated, recompile
             if "code" in updated:
                 code = code_obj.value
-                func_name = code_obj.func_name
+                identifier = "Seamless transformer: " + self.parent().format_path()
                 if code_obj.is_function:
+                    func_name = code_obj.func_name
                     expr = self.function_expr_template.format(code, func_name)
-                    self.code_object = compile(expr, self.name, "exec")
+                    self.code_object = cached_compile(expr, identifier, "exec")
                     self.func_name = func_name
                 else:
-                    self.code_object = compile(code, self.name, "exec")
+                    self.code_object = cached_compile(code, identifier, "exec")
             # Update namespace of inputs
             keep = {k:v for k,v in self.namespace.items() if k.startswith("_")}
             self.namespace.clear()

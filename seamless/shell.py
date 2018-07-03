@@ -45,7 +45,7 @@ class PyShell:
     def _on_execute(self, result):
         text = result.info.raw_cell
         cell = self.inputpin.cell()
-        cell._shell_append(text)
+        #cell._shell_append(text)
     def stop():
         if self._dummy:
             return

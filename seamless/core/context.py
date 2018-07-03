@@ -18,6 +18,7 @@ class Context(SeamlessBase):
     _toplevel = False
     _naming_pattern = "ctx"
     _mount = None
+    _unmounted = False
 
     def __init__(
         self, *,
@@ -61,7 +62,7 @@ context : context or None
         context_name = context._name
         if context_name is None:
             context_name = ()
-        self._name = context_name + (name,)        
+        self._name = context_name + (name,)
         self._manager = Manager(self)
 
     def _get_manager(self):
@@ -346,6 +347,7 @@ context : context or None
                     The same setting is applied to all children
                     May also be None, in which case the directory is emptied, but remains
         """
+        assert self._mount is None #Only the mountmanager may modify this further!
         self._mount = {
             "path": path,
             "mode": mode,
@@ -368,20 +370,40 @@ context : context or None
 
     def destroy(self, from_del=False):
         # Precarious circmumstances if called by __del___
+        self._unmount(from_del=from_del)
         if self._destroyed:
             return
         object.__setattr__(self, "_destroyed", True)
-        path = self.path
+        for childname, child in self._children.items():
+            if isinstance(child, Context):
+                child.destroy(from_del=from_del)
+        self._manager.destroy(from_del=from_del)
+
+    def _unmount(self, from_del=False):
+        """Unmounts a context while the mountmanager is reorganizing (during macro execution)
+        The unmount will set all x._mount to None, but only if and when the reorganization succeeds
+        """
+        if self._unmounted:
+            return
+        object.__setattr__(self, "_unmounted" , True) #can be outside macro mode
         mountmanager = self._manager.mountmanager
         for childname, child in self._children.items():
             if isinstance(child, Cell):
                 if child._mount is not None:
-                    mountmanager.unmount(child._mount["path"], child)
+                    if not from_del:
+                        assert mountmanager.reorganizing
+                    mountmanager.unmount(child._mount["path"], child, from_del=from_del)
         for childname, child in self._children.items():
             if isinstance(child, Context):
-                child.destroy()
-
+                child._unmount(from_del=from_del)
         mountmanager.unmount_context(self) #in case we are mounted...
+
+    def _remount(self):
+        """Undo an _unmount"""
+        object.__setattr__(self, "_unmounted" , False) #can be outside macro mode
+        for childname, child in self._children.items():
+            if isinstance(child, Context):
+                child._remount()
 
     def full_destroy(self, from_del=False):
         #all work buffers (work queue and manager work buffers) are now empty
