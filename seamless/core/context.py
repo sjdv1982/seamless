@@ -5,6 +5,7 @@ from . import SeamlessBase
 from .mount import MountItem
 from . import get_macro_mode, macro_register
 import time
+import atexit
 
 class Context(SeamlessBase):
     """Context class. Organizes your cells and workers hierarchically.
@@ -49,6 +50,7 @@ context : context or None
             assert context is None
             self._toplevel = True
             self._manager = Manager(self)
+            atexit.register(self.__del__)
         else:
             assert context is not None
 
@@ -401,7 +403,8 @@ context : context or None
         for childname, child in self._children.items():
             if isinstance(child, Context):
                 child._unmount(from_del=from_del)
-        mountmanager.unmount_context(self) #in case we are mounted...
+        if self._mount is not None:
+            mountmanager.unmount_context(self)
 
     def _remount(self):
         """Undo an _unmount"""

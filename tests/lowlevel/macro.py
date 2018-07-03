@@ -26,7 +26,7 @@ ctx.b.connect(ctx.tf.b)
 ctx.code = cell("pytransformer").set("c = a + b")
 ctx.code.connect(ctx.tf.code)
 ctx.tf.c.connect(ctx.result)
-assert param != 999
+assert param != 999   # on purpose
 if param > 1:
     ctx.d = cell("json").set(42)
     #raise Exception("on purpose") #causes the macro reconstruction to fail; comment it out to make it succeed
@@ -37,7 +37,6 @@ if param > 1:
 
 
 print("START")
-print(ctx.macro.gen_context)
 import time; time.sleep(0.5) #doing this instead of equilibrate() will cause the result update to be delayed until macro reconstruction
 # if the macro reconstruction fails, the result update will still be accepted
 ### ctx.equilibrate()
@@ -71,9 +70,6 @@ if hasattr(ctx.macro_gen_macro, "d"):
 print(ctx.macro_gen_macro.result.value) #will never be None! 3002 if the reconstruction failed, 3004 if it succeeded
 
 mount_check()
-
-print("STOP")
-import sys; sys.exit()
 
 print("Change 2")
 ctx.macro_code.set(
@@ -122,6 +118,8 @@ if hasattr(ctx.macro_gen_macro, "d"):
     print(ctx.macro_gen_macro.d.value)
 print(ctx.macro_gen_macro.result.value) #will never be None! 3002 if the reconstruction failed, 3004 if it succeeded
 
+mount_check()
+
 print("Change 6")
 ctx.param.set(999)
 print(ctx.macro_gen_macro.a.value)
@@ -134,3 +132,6 @@ print(ctx.macro_gen_macro.result.value) #will never be None! 3002 if the reconst
 shell = ctx.macro.shell()
 
 mount_check()
+
+print("STOP")
+#import sys; sys.exit()

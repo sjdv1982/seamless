@@ -80,15 +80,10 @@ class Macro(Worker):
                      that are cache hits. Never replace whole cells and contexts!
                     Finally, for all old cells and workers that were cache hits, a successor must be assigned
                     '''
-                    print("macro successful")
-                    print("macro done, leaving macro mode")
-                print("macro done, macro mode finished")
-                if self.gen_context is not None:
-                    self.gen_context.destroy()
-                    self.gen_context._manager.flush()
-                    self.gen_context.full_destroy()
-                print("macro done, leaving reorganize mode")
-            print("macro done!")
+            if self.gen_context is not None:
+                self.gen_context.destroy()
+                self.gen_context._manager.flush()
+                self.gen_context.full_destroy()
             self.gen_context = ctx
         except Exception as exc:
             if self.exception is not None:
@@ -99,11 +94,9 @@ class Macro(Worker):
                     self.exception = traceback.format_exc()
                 self.secondary_exception = None
                 try:
-                    print("1. destroy")
                     if ctx is not None:
                         ctx.destroy()
                         ctx.full_destroy()
-                    print("2. remount")
                     if self.gen_context is not None:
                         with macro_mode_on():
                             self.gen_context._remount()
@@ -117,7 +110,7 @@ class Macro(Worker):
                 # but something went wrong in cleaning up the old context
                 # pretend that nothing happened...
                 # but store the exception as secondary exception, just in case
-                print("CLEANUP error"); traceback.print_exc()
+                print("macro CLEANUP error"); traceback.print_exc()
                 self.gen_context = ctx
                 self.secondary_exception = traceback.format_exc()
         finally:
@@ -138,8 +131,6 @@ class Macro(Worker):
                     self.code_object = cached_compile(expr, identifier, "exec")
                 else:
                     self.code_object = cached_compile(code, identifier, "exec")
-                import inspect
-                print(inspect.getsource(self.code_object))
             else:
                 self._values[input_pin] = value
             if input_pin in self._missing:
