@@ -59,9 +59,7 @@ class Macro(Worker):
                 assert self.gen_context._manager.mountmanager is mountmanager
                 self.gen_context._manager.deactivate()
             self.exception = 1
-            with mountmanager.reorganize():
-                if self.gen_context is not None:
-                    self.gen_context._unmount()
+            with mountmanager.reorganize(self.gen_context):
                 with macro_mode_on():
                     ctx = context(context=self._context(), name=macro_context_name)
                     self.namespace = self.default_namespace.copy()

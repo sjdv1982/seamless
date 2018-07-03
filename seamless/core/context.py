@@ -173,6 +173,11 @@ context : context or None
             return False
         else:
             return self._context()._part_of(ctx)
+
+    def _part_of2(self, ctx):
+        assert isinstance(ctx, Context)
+        p = ctx.path
+        return self.path[:len(p)] == p
     '''
     def export(self, child, forced=[], skipped=[]):
         """Exports all unconnected inputs and outputs of a child
@@ -392,7 +397,7 @@ context : context or None
                 if child._mount is not None:
                     if not from_del:
                         assert mountmanager.reorganizing
-                    mountmanager.unmount(child._mount["path"], child, from_del=from_del)
+                    mountmanager.unmount(child, from_del=from_del)
         for childname, child in self._children.items():
             if isinstance(child, Context):
                 child._unmount(from_del=from_del)

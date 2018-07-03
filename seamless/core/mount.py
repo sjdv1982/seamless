@@ -21,7 +21,7 @@ Periodically, conditional_read() and conditional_write() are invoked,
 NOTE: resolve_register returns immediately if there has been an exception raised
 """
 
-from weakref import WeakValueDictionary, WeakKeyDictionary, ref
+from weakref import WeakValueDictionary, WeakKeyDictionary, WeakSet, ref
 from threading import Thread, RLock, Event
 from collections import deque, OrderedDict
 import sys, os
@@ -235,56 +235,127 @@ class MountManagerStash:
       kept alive and not garbage-collected, until the stash is undone.
      This means that stashing must be done in a Python context (= with statement)
     """
-    def __init__(self, parent):
-        self._split = False
-        self.mounts = WeakKeyDictionary()
-        self.contexts = WeakSet()
+    def __init__(self, parent, context):
+        self._active = False
         self.parent = parent
         self.context = context
+        self.mounts = WeakKeyDictionary()
+        self.contexts = WeakSet()
+        self.context_as_parent = WeakKeyDictionary()
+        self.paths = set()
+
     def activate(self):
-        assert not self._split
-        self._split = True
-        raise NotImplementedError
-    def join(self):
-        raise NotImplementedError
-        """
-        for path, v in self.limbo.items():
-            cell, mountitem = v
-            self._unmount(path, cell)
-            object.__setattr__(cell, "_mount", None) #since we are not in macro mode
-        dirpaths = sorted(self.limbo_dirpaths.items(),key=lambda l:-len(l[0]))
-        for dirpath, context in dirpaths:
-            self._unmount_dirpath(dirpath)
-            object.__setattr__(context, "_mount", None) #since we are not in macro mode
-        """
-        """
-                if self.from_limbo:
-                    last_checksum, last_mtime = self.parent().limbo_stats[self.path]
-                    if last_checksum == checksum:
-                        do_write = False
-                        self.last_mtime = last_mtime
-        mountitem.init()
-        """
+        assert not self._active
+        self._active = True
+        parent, context = self.parent, self.context
+        for ctx in list(parent.contexts):
+            assert ctx._mount is not None, ctx
+            if ctx._part_of2(context):
+                self.contexts.add(ctx)
+                parent.contexts.remove(ctx)
+                path = ctx._mount["path"]
+                parent.paths.remove(path)
+                self.paths.add(path)
+        for cell, mountitem in list(parent.mounts.items()):
+            assert cell._mount is not None, cell
+            ctx = cell._context()
+            assert ctx is not None, cell
+            if ctx._part_of2(context):
+                self.mounts[cell] = mountitem
+                parent.mounts.pop(cell)
+                path = cell._mount["path"]
+                parent.paths.remove(path)
+                self.paths.add(path)
+
+    def _build_new_paths(self):
+        """paths added by the parent since stash activation"""
+        new_paths = {}
+        parent, context = self.parent, self.context
+        for ctx in list(parent.contexts):
+            if ctx._part_of2(context):
+                path = ctx._mount["path"]
+                new_paths[path] = ctx
+        for cell, mountitem in list(parent.mounts.items()):
+            assert cell._mount is not None, cell
+            path = cell._mount["path"]
+            new_paths[path] = cell
+        return new_paths
+
     def undo(self):
-        raise NotImplementedError
-        """
-        print("reorganizing failure", self.limbo_dirpaths)
-        # why???
-        dirpaths = sorted(self.limbo_dirpaths.items(),key=lambda l:-len(l[0]))
-        for dirpath, context in dirpaths:
-            mount = context._mount
-            self.add_context(self, context, dirpath, mount["persistent"], mount["authority"], True)
-            for childname, child in context._children.items():
-                if getattr(child, "_mount", None) is not None:
-                    self._unmount(child.path, child)
-            object.__setattr__(context, "_unmounted" , True) #out of macro mode
-        print("reorganizing failure...", list(self.limbo.keys()))
-        for path, v in self.limbo.items():
-            cell, mountitem = v
-            self.path_to_cell[path] = cell
-            self.mounts[cell] = mountitem
-        print("reorganizing failure")
-        """
+        from .context import Context
+        assert self._active
+        new_paths = self._build_new_paths()
+        parent, context = self.parent, self.context
+        for ctx in sorted(self.contexts, key=lambda l: -len(l.path)):
+            assert ctx._mount is not None, ctx
+            path = ctx._mount["path"]
+            if path in new_paths:
+                new_context = new_paths[path]
+                object.__setattr__(new_context, "_mount", None) #since we are not in macro mode
+                new_paths.pop(path)
+            parent.contexts.add(ctx)
+            parent.paths.add(path)
+        for cell, mountitem in self.mounts.items():
+            assert cell._mount is not None, cell
+            path = cell._mount["path"]
+            if path in new_paths:
+                new_mountitem = new_paths[path]
+                new_mountitem._destroyed = True
+                new_cell = new_mountitem.cell()
+                object.__setattr__(new_cell, "_mount", None) #since we are not in macro mode
+                new_paths.pop(path)
+            parent.mountitems[cell] = mountitem
+            parent.paths.add(path)
+
+        context_to_unmount = []
+        for path, obj in new_paths.items():
+            if isinstance(obj, Context):
+                context_to_unmount.append(obj)
+            else:
+                parent.unmount(obj)
+
+        for context in sorted(context_to_unmount, key=lambda l: -len(l.path)):
+            parent.unmount_context(context)
+
+    def join(self):
+        print("JOIN")
+        assert self._active
+        new_paths = self._build_new_paths()
+        parent, context = self.parent, self.context
+
+        old_mountitems = {}
+        for old_cell, old_mountitem in self.mounts.items():
+            assert old_cell._mount is not None, cell
+            path = old_cell._mount["path"]
+            object.__setattr__(old_cell, "_mount", None) #since we are not in macro mode
+            if path in new_paths:
+                old_mountitem._destroyed = True
+                old_mountitems[path] = old_mountitem
+            else:
+                old_mountitem.destroy()
+
+        for old_ctx in sorted(self.contexts, key=lambda l: -len(l.path)):
+            assert old_ctx._mount is not None, old_ctx
+            path = old_ctx._mount["path"]
+            if path in new_paths:
+                new_context = new_paths[path]
+                object.__setattr__(old_context, "_mount", None) #since we are not in macro mode
+
+        for path, obj in new_paths.items():
+            if isinstance(obj, Context):
+                new_context = obj
+                if path not in new_paths:
+                    assert new_context in self.context_as_parent, context
+                    self._check_context(new_context, self.context_as_parent[context])
+            else:
+                new_cell = obj
+                new_mountitem = self.cells[new_cell]
+                if path in new_paths:
+                    old_mountitem = old_mountitems[path]
+                    mountitem.last_mtime = old_mountitem.last_mtime
+                    mountitem.last_checksum = old_mountitem.last_checksum
+                else:
+                    mountitem.init()
 
 class MountManager:
     _running = False
@@ -298,14 +369,22 @@ class MountManager:
         self.cell_updates = deque()
         self._tick = Event()
         self.stash = None
+        self.paths = set()
+
+    @property
+    def reorganizing(self):
+        return self.stash is not None
 
     @contextmanager
     def reorganize(self, context):
-        if self.stash is not None:
-            assert context._part_of(self.stash.context)
+        if context is None:
             yield
             return
-        self.stash = MountManagerStash(context)
+        if self.stash is not None:
+            assert context._part_of2(self.stash.context)
+            yield
+            return
+        self.stash = MountManagerStash(self, context)
         try:
             self.stash.activate()
             yield
@@ -319,79 +398,66 @@ class MountManager:
             self.stash = None
 
     def add_mount(self, cell, path, mode, authority, persistent, **kwargs):
-        assert path not in self.path_to_cell, path
-        self.path_to_cell[path] = cell
+        assert path not in self.paths, path
+        print("add mount", path, cell)
+        self.paths.add(path)
         self.mounts[cell] = MountItem(self, cell, path, mode, authority, persistent, **kwargs)
-        self.mounts[cell].init()
+        if self.stash is None:
+            self.mounts[cell].init()
 
-    def _unmount(self, cell):
+    def unmount(self, cell, from_del=False):
+        print("unmount", cell)
+        assert cell._mount is not None
+        if from_del and cell not in self.mounts:
+            return
+        path = cell._mount["path"]
+        assert path in self.paths
+        self.paths.remove(path)
+        assert cell in self.mounts, (cell, path)  #... but path is in self.paths
         mountitem = self.mounts.pop(cell)
         mountitem.destroy()
 
-    def unmount(self, path, cell, from_del=False):
-        if self.reorganizing:
-            if path in self.limbo:
-                assert self.limbo[path][0].cell() is cell, (path, self.limbo[path][0].cell(), cell)
-                return
-            if path in self.limbo_restored:
-                assert self.limbo_restored[path] is cell, (path, self.limbo_restored[path], cell)
-                return
-        if self.path_to_cell.get(path, None) is not cell:
-            if from_del:
-                return
-            print("Warning: mounted path %s does not point to cell %s" % (path, cell))
-            return
-        if self.reorganizing:
-            print("reorganizing unmount", cell)
-            self.path_to_cell.pop(path)
-            mountitem = self.mounts[cell]
-            self.limbo[path] = cell, mountitem
-            self.limbo_stats[path] = mountitem.last_checksum, mountitem.last_mtime
-        else:
-            self._unmount(path, cell)
-
     def unmount_context(self, context):
+        print("unmount context", context)
         self.contexts.discard(context) # may or may not exist, especially at __del__ time
-        if context._mount is None:
-            """THIS is the authoritative one.
-            If context is destroyed while an unmount is undesired,
-              (because of stash replacement)
-            context._mount MUST have been set to None!
-            """
-            mount = context._mount
-            if not mount["persistent"]:
-                dirpath = mount["path"]
-                try:
-                    print("rmdir", dirpath)
-                    os.rmdir(dirpath)
-                except:
-                    print("Error: cannot remove directory %s" % dirpath)
-
-
-    def add_context(self, context):
         mount = context._mount
-        self.con
-        dirpath = mount["path"].replace("/", os.sep)
-        print("add_context", dirpath)
-        persistent, authority = mount["persistent"], mount["authority"]
+        """THIS is the authoritative one.
+        If context is destroyed while an unmount is undesired,
+          (because of stash replacement)
+        context._mount MUST have been set to None!
         """
-        in_limbo = False
-        if self.reorganizing:
-            print("reorganizing add_context", dirpath)
-            in_limbo = (dirpath in self.limbo_dirpaths)
-            print("IN LIMBO", in_limbo)
-            if in_limbo:
-                self.limbo_dirpaths.pop(dirpath)
-        self.contextpath_to_dirpath[context.path] = dirpath
-        if persistent == False:
-            self.nonpersistent_dirpaths.add(dirpath)
-        """
-        if self.stash is None:
-            self._check_context(context)
+        assert mount is not None, context
+        self.paths.remove(mount["path"])
+        if mount["persistent"] == False:
+            dirpath = mount["path"].replace("/", os.sep)
+            try:
+                print("rmdir", dirpath)
+                os.rmdir(dirpath)
+            except:
+                print("Error: cannot remove directory %s" % dirpath)
 
-    def _check_context(self, context):
+
+    def add_context(self, context, path, as_parent):
+        print("add context", path, context)
+        if not as_parent:
+            assert path not in self.paths, path
+            self.paths.add(path)
+            self.contexts.add(context)
+        else:
+            if path in self.paths:
+                assert context in self.contexts, (path, context)
+        if self.stash is None:
+            self._check_context(context, as_parent)
+        else:
+            self.stash.context_as_parent[context] = as_parent
+
+    def _check_context(self, context, as_parent):
+        mount = context._mount
+        assert mount is not None, context
+        dirpath = mount["path"].replace("/", os.sep)
+        persistent, authority = mount["persistent"], mount["authority"]
         if os.path.exists(dirpath):
-            if authority == "cell" and not in_limbo and not as_parent:
+            if authority == "cell" and not as_parent:
                 print("Warning: Directory path '%s' already exists" % dirpath) #TODO: log warning
         else:
             if authority == "file-strict":
@@ -462,11 +528,9 @@ class MountManager:
 
     def destroy(self):
         for path in list(self.mounts.keys()):
-            self._unmount(path)
-        dirpaths = self.nonpersistent_dirpaths | set(self.limbo_dirpaths.keys())
-        dirpaths = sorted(dirpaths,key=lambda l:-len(l))
-        for dirpath in dirpaths:
-            self._unmount_dirpath(dirpath)
+            self.unmount(path)
+        for context in sorted(self.contexts,key=lambda l:-len(l.path)):
+            self.unmount_context(context)
 
     def __del__(self):
         self.destroy()
@@ -478,10 +542,8 @@ def resolve_register(reg):
     contexts = set([r for r in reg if isinstance(r, Context)])
     cells = set([r for r in reg if isinstance(r, Cell)])
     mounts = mountmanager.mounts.copy()
-    print("REG?")
     if sys.exc_info()[0] is not None:
         return #No mounting if there is an exception
-    print("REG", list(reg))
     def find_mount(c, as_parent=False, child=None):
         if as_parent:
             assert child is not None
@@ -518,8 +580,8 @@ def resolve_register(reg):
         find_mount(r)
 
     done_contexts = set()
-    mount_contexts = set()
-    def create_dir(context, as_parent=False):
+    contexts_to_mount = {}
+    def mount_context_delayed(context, as_parent=False):
         if not context in mounts or mounts[context] is None:
             return
         if context in done_contexts:
@@ -527,15 +589,13 @@ def resolve_register(reg):
         parent = context._context
         if parent is not None:
             parent = parent()
-            create_dir(parent, as_parent=True)
-        mount = mounts[context]
-
-
-        mount_contexts[context] = path,  mount["persistent"], mount["authority"], as_parent
+            mount_context_delayed(parent, as_parent=True)
+        object.__setattr__(context, "_mount", mounts[context]) #not in macro mode
+        contexts_to_mount[context] = mounts[context]["path"], as_parent
         done_contexts.add(context)
 
     for context in contexts:
-        create_dir(context)
+        mount_context_delayed(context)
 
     mount_cells = []
     for cell in cells:
@@ -560,13 +620,14 @@ def resolve_register(reg):
                     v = mount_contexts[p]
                     mount_contexts[p] = v[0], True  #make persistent
                     p = p._context
-            print("SET _MOUNT", cell, mount)
-            cell._mount = mount
-            mount_cells.append((cell, mount))
-    for context in mount_contexts.items():
-        mountmanager.add_context(context)
-    for cell, mount in mount_cells:
-        mountmanager.add_mount(cell, **mount)
+            object.__setattr__(cell, "_mount", mount) #not in macro mode
+            mount_cells.append(cell)
+
+    for context, v in contexts_to_mount.items():
+        path, as_parent = v
+        mountmanager.add_context(context, path, as_parent=as_parent)
+    for cell in mount_cells:
+        mountmanager.add_mount(cell, **cell._mount)
 
 mountmanager = MountManager(0.2) #TODO: latency in config cell
 mountmanager.start()

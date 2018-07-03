@@ -51,8 +51,8 @@ def mount_check():
     for c in (ctx.macro_code, ctx.param, ctx.macro_gen_macro.a, ctx.macro_gen_macro.b, ctx.macro_gen_macro.code):
         path = c._mount["path"]
         assert c in mountmanager.mounts, c
+        assert path in mountmanager.paths, (c, path)
         assert mountmanager.mounts[c].path == path, (c, path, mountmanager.mounts[c].path)
-        assert mountmanager.path_to_cell.get(path) is c, (c, path, mountmanager.path_to_cell.get(path))
 
 mount_check()
 
@@ -71,6 +71,9 @@ if hasattr(ctx.macro_gen_macro, "d"):
 print(ctx.macro_gen_macro.result.value) #will never be None! 3002 if the reconstruction failed, 3004 if it succeeded
 
 mount_check()
+
+print("STOP")
+import sys; sys.exit()
 
 print("Change 2")
 ctx.macro_code.set(
@@ -93,9 +96,6 @@ if hasattr(ctx.macro_gen_macro, "d"):
 print(ctx.macro_gen_macro.result.value) #will never be None! 3002 if the reconstruction failed, 3004 if it succeeded
 
 mount_check()
-
-print("STOP")
-import sys; sys.exit()
 
 print("Change 4")
 ctx.macro_code.set(
