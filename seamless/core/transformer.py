@@ -85,7 +85,7 @@ class Transformer(Worker):
         )
 
     def __str__(self):
-        ret = "Seamless transformer: " + self.format_path()
+        ret = "Seamless transformer: " + self._format_path()
         return ret
 
     def activate(self):
@@ -281,7 +281,7 @@ class Transformer(Worker):
             self.output_thread = None
 
     def full_destroy(self,from_del=False):
-        self.destroy(from_del=from_del)
+        self.self.destroy(from_del=from_del)
 
     def __dir__(self):
         return object.__dir__(self) + list(self._pins.keys())

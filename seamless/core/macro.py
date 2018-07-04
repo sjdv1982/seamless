@@ -42,7 +42,7 @@ class Macro(Worker):
         self._missing = set(list(macro_params.keys())+ ["code"])
 
     def __str__(self):
-        ret = "Seamless macro: " + self.format_path()
+        ret = "Seamless macro: " + self._format_path()
         return ret
 
     def execute(self):
@@ -85,7 +85,7 @@ class Macro(Worker):
                     Finally, for all old cells and workers that were cache hits, a successor must be assigned
                     '''
             if self.gen_context is not None:
-                self.gen_context.destroy()
+                self.gen_context.self.destroy()
                 self.gen_context._manager.flush()
                 self.gen_context.full_destroy()
             self.gen_context = ctx
@@ -99,7 +99,7 @@ class Macro(Worker):
                 self.secondary_exception = None
                 try:
                     if ctx is not None:
-                        ctx.destroy()
+                        ctx.self.destroy()
                         ctx.full_destroy()
                     if self.gen_context is not None:
                         with macro_mode_on():
@@ -129,7 +129,7 @@ class Macro(Worker):
             if input_pin == "code":
                 code = value.value
                 func_name = value.func_name
-                identifier = "Seamless macro: " + self.format_path()
+                identifier = "Seamless macro: " + self._format_path()
                 if value.is_function:
                     expr = self.function_expr_template.format(code, value.func_name)
                     self.code_object = cached_compile(expr, identifier, "exec")

@@ -9,10 +9,18 @@ class SeamlessBase:
     _destroyed = False
     _context = None
     _fallback_path = None
+    _exported = False
     name = None
 
     StatusFlags = Enum('StatusFlags', ('OK', 'PENDING', 'UNDEFINED', 'UNCONNECTED', 'ERROR'))
     _status = StatusFlags.UNDEFINED
+
+    def export(self):
+        """Export this seamless object"""
+        from . import get_macro_mode
+        assert get_macro_mode()
+        self._exported = True
+        return self
 
     @property
     def path(self):
@@ -48,9 +56,9 @@ class SeamlessBase:
 
     def _root(self):
         assert self._context is not None #worker/cell must have a context
-        return self._context()._root()        
+        return self._context()._root()
 
-    def format_path(self):
+    def _format_path(self):
         if self.path is None:
             ret = "<None>"
         else:
@@ -58,7 +66,7 @@ class SeamlessBase:
         return ret
 
     def __str__(self):
-        ret = "Seamless object: " + self.format_path()
+        ret = "Seamless object: " + self._format_path()
         return ret
 
     def __repr__(self):
@@ -67,12 +75,16 @@ class SeamlessBase:
     def _set_macro_object(self, macro_object):
         self._macro_object = macro_object
 
+    @property
+    def self(self):
+        return self
+
     def destroy(self):
         self._destroyed = True
 
 class SeamlessBaseList(list):
     def __str__(self):
-        return str([v.format_path() for v in self])
+        return str([v._format_path() for v in self])
 
 from .macro_mode import get_macro_mode, macro_register, macro_mode_on
 from . import cell as cell_module

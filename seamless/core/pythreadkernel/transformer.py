@@ -78,7 +78,7 @@ class Transformer(Worker):
             # If code object is updated, recompile
             if "code" in updated:
                 code = code_obj.value
-                identifier = "Seamless transformer: " + self.parent().format_path()
+                identifier = "Seamless transformer: " + self.parent()._format_path()
                 if code_obj.is_function:
                     func_name = code_obj.func_name
                     expr = self.function_expr_template.format(code, func_name)
@@ -94,7 +94,7 @@ class Transformer(Worker):
             for name in self.inputs:
                 self.namespace[name] = self.values[name]
             queue = Queue()
-            args = (self.parent().format_path(), self.code_object, self.namespace, self.output_name, queue)
+            args = (self.parent()._format_path(), self.code_object, self.namespace, self.output_name, queue)
             executor = Executor(target=execute,args=args, daemon=True)
             executor.start()
             dead_time = 0

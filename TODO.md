@@ -2,7 +2,6 @@ UPDATE OF THE UPDATE
 Great Refactor is underway (see seamless-toward-02.md).
 Most of the text below the FIRST section is out of date.
 Things to do (all low level) :
-- Mount: monitor write-only mount cells as well (give a warning, and re-write)
 - exporting (any cell or pin; eliminate ExportedPin)
 - symlinks  (may be exported)
 - Macro sealing / connection layers / connections to macro-generated contexts

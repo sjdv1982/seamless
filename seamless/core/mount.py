@@ -66,12 +66,12 @@ class MountItem:
         cell = self.cell()
         if cell is None:
             return
-        exists = self._exists(on_init=True)
+        exists = self._exists()
         cell_empty = (cell.status() != "OK")
         if self.authority in ("file", "file-strict"):
             if exists and cell_empty:
                 with self.lock:
-                    filevalue = self._read(on_init=True)
+                    filevalue = self._read()
                     update_file = True
                     if not cell_empty:
                         file_checksum = cell._checksum(filevalue, buffer=True)
@@ -98,7 +98,7 @@ class MountItem:
                 #if "r" in self.mode and self._exists():  #comment out, must read in .storage
                 if exists:
                     with self.lock:
-                        filevalue = self._read(on_init=True)
+                        filevalue = self._read()
                         file_checksum = cell._checksum(filevalue, buffer=True)
                         if file_checksum != checksum:
                             print("Warning: File path '%s' has a different value, overwriting file" % self.path) #TODO: log warning
@@ -110,7 +110,7 @@ class MountItem:
                 #if "r" in self.mode and self._exists(): #comment out, must read in .storage
                 if exists:
                     with self.lock:
-                        filevalue = self._read(on_init=True)
+                        filevalue = self._read()
                         file_checksum = cell._checksum(filevalue, buffer=True)
                         self.set(filevalue, checksum=file_checksum)
                         self._after_read(file_checksum)
@@ -131,10 +131,8 @@ class MountItem:
         assert self.parent is not None
         return self.parent().lock
 
-    def _read(self, on_init=False):
+    def _read(self):
         #print("read", self.cell())
-        if not on_init:
-            assert "r" in self.mode
         binary = self.kwargs["binary"]
         encoding = self.kwargs.get("encoding")
         filemode = "rb" if binary else "r"
@@ -150,9 +148,7 @@ class MountItem:
         with open(self.path.replace("/", os.sep), filemode, encoding=encoding) as f:
             f.write(filevalue)
 
-    def _exists(self, on_init=False):
-        if not on_init and not "r" in self.mode:
-            return False
+    def _exists(self):
         return os.path.exists(self.path.replace("/", os.sep))
 
 
@@ -178,7 +174,7 @@ class MountItem:
         checksum = cell.checksum()
         if self.last_checksum != checksum:
             value = cell.serialize("buffer")
-            assert cell._checksum(value, buffer=True) == checksum, cell.format_path()
+            assert cell._checksum(value, buffer=True) == checksum, cell._format_path()
             with self.lock:
                 self._write(value)
                 self._after_write(checksum)
@@ -192,8 +188,6 @@ class MountItem:
 
     def conditional_read(self):
         if self._destroyed:
-            return
-        if not "r" in self.mode:
             return
         cell = self.cell()
         if cell is None:
@@ -210,7 +204,15 @@ class MountItem:
                 self._after_read(file_checksum, mtime=mtime)
         cell_checksum = cell.checksum()
         if file_checksum is not None and file_checksum != cell_checksum:
-            self.set(filevalue, checksum=file_checksum)
+            if "r" in self.mode:
+                self.set(filevalue, checksum=file_checksum)
+            else:
+                print("Warning: write-only file %s (%s) has changed on disk, overruling" % (self.path, self.cell()))
+                value = cell.serialize("buffer")
+                assert cell._checksum(value, buffer=True) == cell_checksum, cell._format_path()
+                with self.lock:
+                    self._write(value)
+                    self._after_write(cell_checksum)
 
     def destroy(self):
         if self._destroyed:

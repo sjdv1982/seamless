@@ -132,14 +132,14 @@ class InputPinBase(PinBase):
     def _set_context(self, context, childname):
         pass
     def __str__(self):
-        ret = "Seamless input pin: " + self.format_path()
+        ret = "Seamless input pin: " + self._format_path()
         return ret
 
 class OutputPinBase(PinBase):
     def _set_context(self, context, childname):
         pass
     def __str__(self):
-        ret = "Seamless output pin: " + self.format_path()
+        ret = "Seamless output pin: " + self._format_path()
         return ret
 
 class InputPin(InputPinBase):

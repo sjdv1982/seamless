@@ -72,7 +72,7 @@ context : context or None
         return self._manager
 
     def __str__(self):
-        p = self.format_path()
+        p = self._format_path()
         if p == ".":
             p = "<toplevel>"
         ret = "Seamless context: " + p
@@ -333,7 +333,7 @@ context : context or None
         """All unstable workers (not in equilibrium)"""
         from . import SeamlessBaseList
         result = list(self._manager.unstable)
-        return SeamlessBaseList(sorted(result, key=lambda p:p.format_path()))
+        return SeamlessBaseList(sorted(result, key=lambda p:p._format_path()))
 
     def status(self):
         """The computation status of the context
@@ -372,14 +372,21 @@ context : context or None
     def __dir__(self):
         result = []
         result[:] = self._methods
-        for k in self._children:
-            if k not in result:
+        any_exported = any([c._exported for c in self._children.values()])
+        for k, c in self._children.items():
+            if k in result:
+                continue
+            if not any_exported or c._exported:
                 result.append(k)
         return result
 
     @property
     def self(self):
         return _ContextWrapper(self)
+
+    @property
+    def internal_children(self):
+        return _InternalChildrenWrapper(self)
 
     def destroy(self, from_del=False):
         # Precarious circmumstances if called by __del___
@@ -435,7 +442,10 @@ context : context or None
 
 
 Context._methods = [m for m in Context.__dict__ if not m.startswith("_") \
-      and m != "StatusFlags"]
+      and m not in ("destroy", "full_destroy") ]
+Context._methods += [m for m in SeamlessBase.__dict__  if not m.startswith("_") \
+      and m != "StatusFlags" and m not in ("destroy", "full_destroy") \
+      and m not in Context._methods]
 
 def context(**kwargs):
     ctx = Context(**kwargs)
@@ -445,8 +455,7 @@ context.__doc__ = Context.__init__.__doc__
 print("context: TODO symlinks (can be cells/workers/contexts outside this context)")
 
 class _ContextWrapper:
-    _methods = [m for m in Context.__dict__ if not m.startswith("_") \
-      and m not in ("self", "StatusFlags")]
+    _methods = Context._methods + ["destroy", "full_destroy"]
     def __init__(self, wrapped):
         super().__setattr__("_wrapped", wrapped)
     def __getattr__(self, attr):
@@ -457,6 +466,20 @@ class _ContextWrapper:
         return self._methods
     def __setattr__(self, attr, value):
         raise AttributeError("_ContextWrapper is read-only")
+
+class _InternalChildrenWrapper:
+    def __init__(self, wrapped):
+        super().__setattr__("_wrapped", wrapped)
+    def __getattr__(self, attr):
+        children = getattr(self._wrapped, "_children")
+        if attr not in children:
+            raise AttributeError(attr)
+        return children[attr]
+    def __dir__(self):
+        children = getattr(self._wrapped, "_children")
+        return list(children.keys())
+    def __setattr__(self, attr, value):
+        raise AttributeError("_InternalChildrenWrapper is read-only")
 
 from .cell import Cell, CellLikeBase
 '''

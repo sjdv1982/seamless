@@ -176,8 +176,13 @@ class CellBase(CellLikeBase):
                 old_checksum = self.checksum()
                 old_text_checksum = self.text_checksum()
         self._reset_checksums()
-        parsed_value = self._deserialize(value, mode, submode)
-        self._validate(parsed_value)
+        curr_val = self._val
+        try:
+            parsed_value = self._deserialize(value, mode, submode)
+            self._validate(parsed_value)
+        except:
+            self._val = curr_val
+            raise
         if from_pin == True:
             assert not self._authoritative
             self._un_overrule()
@@ -202,12 +207,12 @@ class CellBase(CellLikeBase):
 
     def _overrule(self):
         if not self._overruled:
-            print("Warning: overruling (setting value for non-source cell) %s" % self.format_path())
+            print("Warning: overruling (setting value for non-source cell) %s" % self._format_path())
             self._overruled = True
 
     def _un_overrule(self):
         if self._overruled:
-            print("Warning: cell %s was formerly overruled, now updated by dependency" % self.format_path())
+            print("Warning: cell %s was formerly overruled, now updated by dependency" % self._format_path())
             self._overruled = False
 
     @property
@@ -320,7 +325,7 @@ Use ``Cell.status()`` to get its status.
 
     def _serialize(self, mode, submode=None):
         if mode == "buffer":
-            raise Exception("Cell '%s' cannot be serialized as buffer, use TextCell or JsonCell instead" % self.format_path())
+            raise Exception("Cell '%s' cannot be serialized as buffer, use TextCell or JsonCell instead" % self._format_path())
         elif mode == "copy":
             assert submode is None, (mode, submode)
             return deepcopy(self._val)
@@ -329,12 +334,12 @@ Use ``Cell.status()`` to get its status.
 
     def _deserialize(self, value, mode, submode=None):
         if mode == "buffer":
-            raise Exception("Cell '%s' cannot be de-serialized as buffer, use TextCell or JsonCell instead" % self.format_path())
+            raise Exception("Cell '%s' cannot be de-serialized as buffer, use TextCell or JsonCell instead" % self._format_path())
         assert submode is None, (mode, submode)
         return self._assign(value)
 
     def __str__(self):
-        ret = "Seamless cell: " + self.format_path()
+        ret = "Seamless cell: " + self._format_path()
         return ret
 
     def as_text(self):
@@ -398,7 +403,7 @@ class ArrayCell(Cell):
             return self._assign(value)
 
     def __str__(self):
-        ret = "Seamless array cell: " + self.format_path()
+        ret = "Seamless array cell: " + self._format_path()
         return ret
 
 class MixedCell(Cell):
@@ -471,7 +476,7 @@ class MixedCell(Cell):
             return self._assign(value)
 
     def __str__(self):
-        ret = "Seamless mixed cell: " + self.format_path()
+        ret = "Seamless mixed cell: " + self._format_path()
         return ret
 
 
@@ -496,7 +501,7 @@ class TextCell(Cell):
         return str(self._val)
 
     def __str__(self):
-        ret = "Seamless text cell: " + self.format_path()
+        ret = "Seamless text cell: " + self._format_path()
         return ret
 
 
@@ -552,7 +557,7 @@ class PythonCell(Cell):
         return v
 
     def __str__(self):
-        ret = "Seamless Python cell: " + self.format_path()
+        ret = "Seamless Python cell: " + self._format_path()
         return ret
 
 class PyTransformerCell(PythonCell):
@@ -629,7 +634,7 @@ class JsonCell(Cell):
         return self._to_json()
 
     def __str__(self):
-        ret = "Seamless JSON cell: " + self.format_path()
+        ret = "Seamless JSON cell: " + self._format_path()
         return ret
 
 
@@ -656,7 +661,7 @@ class CsonCell(Cell):
         raise NotImplementedError
 
     def __str__(self):
-        ret = "Seamless CSON cell: " + self.format_path()
+        ret = "Seamless CSON cell: " + self._format_path()
         return ret
 
 class Signal(Cell):
@@ -683,7 +688,7 @@ class Signal(Cell):
         raise NotImplementedError
 
     def __str__(self):
-        ret = "Seamless signal: " + self.format_path()
+        ret = "Seamless signal: " + self._format_path()
         return ret
 
 def cell(celltype=None, **kwargs):

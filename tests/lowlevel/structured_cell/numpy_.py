@@ -23,7 +23,7 @@ with macro_mode_on():
         buffer = None,
         inchannels = None,
         outchannels = [("a",), ("b",), ("data",)]
-    )
+    ).export()
     ctx.tf = transformer({
         "a": "input",
         "b": "input",
@@ -36,7 +36,7 @@ with macro_mode_on():
     ctx.inp.connect_outchannel(("data",), ctx.tf.data)
     ctx.tf.code.cell().set("c = a * data + b")
 
-    ctx.result = cell("array")
+    ctx.result = cell("array").export()
     #ctx.result.mount(persistent=True)
     ctx.tf.c.connect(ctx.result)
 

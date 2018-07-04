@@ -108,7 +108,7 @@ class Reactor(Worker):
                     pin.cell() #auto-create a cell
 
     def __str__(self):
-        ret = "Seamless reactor: " + self.format_path()
+        ret = "Seamless reactor: " + self._format_path()
         return ret
 
     def _shell(self, toplevel=True):
@@ -197,7 +197,7 @@ class Reactor(Worker):
         except AttributeError:
             pass
         else:
-            reactor.destroy()
+            reactor.self.destroy()
 
         # free all input and output pins
         for attr in self._io_attrs:
@@ -211,7 +211,7 @@ class Reactor(Worker):
 
     def __del__(self):
         try:
-            self.destroy()
+            self.self.destroy()
 
         except Exception as err:
             print(err)
