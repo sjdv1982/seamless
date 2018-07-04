@@ -46,6 +46,10 @@ class SeamlessBase:
         assert self._context is not None #worker/cell must have a context
         return self._context()._get_manager()
 
+    def _root(self):
+        assert self._context is not None #worker/cell must have a context
+        return self._context()._root()        
+
     def format_path(self):
         if self.path is None:
             ret = "<None>"

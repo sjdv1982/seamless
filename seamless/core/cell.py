@@ -8,7 +8,7 @@ At the mid-level, the modes would be annotations/hints (i.e. not core),
 """
 modes = ["buffer", "copy", "ref", "signal"]
 submodes = {
-    "copy": ["json", "cson", "silk"],
+    "copy": ["json", "silk", "text"], ###TODO: text should render json as text, pythoncode as text, cson directly.
     "ref": ["pythoncode", "json", "silk"]
 }
 celltypes = ("text", "python", "pytransformer", "json", "cson", "mixed")
@@ -20,6 +20,8 @@ import json
 import hashlib
 from io import BytesIO
 
+import pickle
+import ast
 from ast import PyCF_ONLY_AST, FunctionDef
 from .cached_compile import cached_compile
 
@@ -44,10 +46,11 @@ class CellLikeBase(SeamlessBase):
 
 
 class CellBase(CellLikeBase):
+    _has_text_checksum = False
     _exception = None
     _val = None
     _last_checksum = None
-    _alternative_checksums = None #alternative checksums resulting from cosmetic updates
+    _last_text_checksum = None
     _naming_pattern = "cell"
     _prelim_val = None
     _authoritative = True
@@ -124,17 +127,6 @@ class CellBase(CellLikeBase):
             manager.set_cell(self, value, from_buffer=True, force=True)
         return self
 
-    def set_cosmetic(self, value):
-        """Provides a cosmetic update to the cell
-        that has no effect on its value"""
-        if self._context is None:
-            return
-        if self._val is None:
-            return
-        manager = self._get_manager()
-        manager.set_cell(self, value, cosmetic=True)
-        return self
-
     def serialize(self, mode, submode=None):
         self._check_mode(mode, submode)
         assert self.status() == "OK", self.status()
@@ -160,11 +152,10 @@ class CellBase(CellLikeBase):
         return value
 
 
-    def deserialize(self, value, mode, submode=None, *, from_pin, default, cosmetic, force=False):
+    def deserialize(self, value, mode, submode=None, *, from_pin, default, force=False):
         """Should normally be invoked by the manager, since it does not notify the manager
         from_pin: can be True (normal pin that has authority), False (from code) or "edit" (edit pin)
         default: indicates a default value (pins may overwrite it)
-        cosmetic: declares that the new value is equivalent to the old one (e.g. by adding a comment to a source code cell)
         force: force deserialization, even if slave (normally, force is invoked only by structured_cell)
         """
         assert from_pin in (True, False, "edit")
@@ -179,15 +170,11 @@ class CellBase(CellLikeBase):
             self._status = self.StatusFlags.UNDEFINED
             return
         old_checksum = None
-        if not cosmetic and value is not None:
+        old_text_checksum = None
+        if value is not None:
             if old_status == self.StatusFlags.OK:
                 old_checksum = self.checksum()
-        if cosmetic:
-            cs = self._last_checksum
-            if cs is not None:
-                if self._alternative_checksums is None:
-                    self._alternative_checksums = []
-                self._alternative_checksums.append(cs)
+                old_text_checksum = self.text_checksum()
         self._reset_checksums()
         parsed_value = self._deserialize(value, mode, submode)
         self._validate(parsed_value)
@@ -203,15 +190,15 @@ class CellBase(CellLikeBase):
             if not default and not self._authoritative:
                 self._overrule()
         self._status = self.StatusFlags.OK
-        if cosmetic:
-            different = False
-        elif old_checksum is None: #old checksum failed
+        if old_checksum is None: #old checksum failed
             different = True
+            text_different =True
         elif value is not None:
             different = (self.checksum(may_fail=True) != old_checksum)
+            text_different = (self.text_checksum(may_fail=True) != old_text_checksum)
         else:
             pass #"different" has already been set
-        return different
+        return different, text_different
 
     def _overrule(self):
         if not self._overruled:
@@ -251,6 +238,9 @@ class CellBase(CellLikeBase):
     def _checksum(self, value, *, buffer=False, may_fail=False):
         raise NotImplementedError
 
+    def _text_checksum(self, value, *, buffer=False, may_fail=False):
+        return self._checksum(value, buffer=buffer, may_fail=may_fail)
+
     def checksum(self, *, may_fail=False):
         if self.status() != "OK":
             return None
@@ -259,6 +249,18 @@ class CellBase(CellLikeBase):
             return self._last_checksum
         result = self._checksum(self._val, may_fail=may_fail)
         self._last_checksum = result
+        return result
+
+    def text_checksum(self, *, may_fail=False):
+        if not self._has_text_checksum:
+            return self.checksum(may_fail=False)
+        if self.status() != "OK":
+            return None
+        assert self._val is not None
+        if self._last_text_checksum is not None:
+            return self._last_text_checksum
+        result = self._text_checksum(self._val, may_fail=may_fail)
+        self._last_text_checksum = result
         return result
 
     def connect(self, target):
@@ -473,8 +475,6 @@ class MixedCell(Cell):
         return ret
 
 
-
-
 class TextCell(Cell):
     _mount_kwargs = {"encoding": "utf-8", "binary": False}
     def _serialize(self, mode, submode=None):
@@ -504,7 +504,7 @@ class PythonCell(Cell):
     """Python code object, used for reactors and macros"""
     _mount_kwargs = {"encoding": "utf-8", "binary": False}
     _naming_pattern = "pythoncell"
-
+    _has_text_checksum = True
     _accept_shell_append = True
 
     #TODO: for serialization, store ._accept_shell_append
@@ -512,6 +512,16 @@ class PythonCell(Cell):
 
     def _check_mode(self, mode, submode=None):
         CellBase._check_mode(self, mode, submode)
+
+    def _text_checksum(self, value, *, buffer=False, may_fail=False):
+        return hashlib.md5(str(value).encode("utf-8")).hexdigest()
+
+    def _checksum(self, value, *, buffer=False, may_fail=False):
+        tree = ast.parse(value)
+        ### TODO: would ast.dump or pickle be more rigorous?
+        #dump = ast.dump(tree).encode("utf-8")
+        dump = pickle.dumps(tree)
+        return hashlib.md5(dump).hexdigest()
 
     def _shell_append(self, text):
         if not self._accept_shell_append:
@@ -522,7 +532,7 @@ class PythonCell(Cell):
         self.set(new_value)
 
     def _validate(self, value):
-        raise NotImplementedError #TODO
+        ast.parse(value)
 
     def _serialize(self, mode, submode=None):
         if mode == "buffer":
@@ -629,7 +639,11 @@ class CsonCell(Cell):
     to JSON.
     """
 
+    def _text_checksum(self, value, *, buffer=False, may_fail=False):
+        return hashlib.md5(str(value).encode("utf-8")).hexdigest()
+
     def _checksum(self, value, *, buffer=False, may_fail=False):
+        ###TODO: run json-to-cson, then json.dumps, then md5
         raise NotImplementedError
 
     def _validate(self, value):

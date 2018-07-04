@@ -156,20 +156,22 @@ class Manager:
         self._ids += 1
         return self._ids
 
-    def _update_cell_from_cell(self, cell, target, alias_mode):
+    def _update_cell_from_cell(self, cell, target, alias_mode, only_text):
         #TODO: negotiate proper serialization protocol (see cell.py, end of file)
+        #TODO: determine if with the target cell type, "only_text" warrants an update
         assert cell._get_manager() is self
         mode, submode = alias_mode, None
         value = cell.serialize(mode, submode)
-        different = target.deserialize(value, mode, submode,
+        different, text_different = target.deserialize(value, mode, submode,
           #from_pin is set to True, also for aliases...
-          from_pin=True, default=False, cosmetic=False
+          from_pin=True, default=False
         )
         other = target._get_manager()
         if target._mount is not None:
             other.mountmanager.add_cell_update(target)
-        if different:
-            other.cell_send_update(target)
+        if different or text_different:
+            only_text_new = (text_different and not different)
+            other.cell_send_update(target, only_text_new)
 
     def _connect_cell_to_cell(self, cell, target, alias_mode):
 
@@ -188,13 +190,14 @@ class Manager:
         target._authoritative = False
 
         if cell._status == Cell.StatusFlags.OK:
-            self._update_cell_from_cell(cell, target, alias_mode)
+            self._update_cell_from_cell(cell, target, alias_mode, only_text=False)
 
     @main_thread_buffered
     @manager_buffered
     def connect_cell(self, cell, target, alias_mode=None):
         if self.destroyed:
             return
+        assert cell._root() is target._root()
         if alias_mode is None:
             alias_mode = "copy" ###
         assert isinstance(cell, CellLikeBase)
@@ -244,6 +247,7 @@ class Manager:
     def connect_pin(self, pin, target):
         if self.destroyed:
             return
+        assert pin._root() is target._root()
         assert pin._get_manager() is self
         other = target._get_manager()
         assert isinstance(target, CellLikeBase)
@@ -288,24 +292,26 @@ class Manager:
     @manager_buffered
     @with_successor("cell", 0)
     def set_cell(self, cell, value, *,
-      default=False, cosmetic=False, from_buffer=False, force=False
+      default=False, from_buffer=False, force=False
     ):
         if self.destroyed:
             return
         assert isinstance(cell, CellLikeBase)
         assert cell._get_manager() is self
         mode = "buffer" if from_buffer else "ref"
-        different = cell.deserialize(value, mode, None,
-          from_pin=False, default=default, cosmetic=cosmetic,force=force
+        different, text_different = cell.deserialize(value, mode, None,
+          from_pin=False, default=default,force=force
         )
-        if not cosmetic:
+        only_text = (text_different and not different)
+        if different or text_different:
             for con_id, pin in self.cell_to_pins.get(cell, []):
                 value = cell.serialize(pin.mode, pin.submode)
-                pin.receive_update(value)
-        if cell._mount is not None:
+                if different or pin.submode == "text":
+                    pin.receive_update(value)
+        if text_different and cell._mount is not None:
             self.mountmanager.add_cell_update(cell)
-        if different:
-            self.cell_send_update(cell)
+        if different or text_different:
+            self.cell_send_update(cell, only_text)
 
     @main_thread_buffered
     @manager_buffered
@@ -318,7 +324,7 @@ class Manager:
         for con_id, pin in self.cell_to_pins.get(cell, []):
             value = cell.serialize(pin.mode, pin.submode)
             pin.receive_update(value)
-        self.cell_send_update(cell)
+        self.cell_send_update(cell, only_text=False)
         if cell._mount is not None:
             self.mountmanager.add_cell_update(cell)
 
@@ -341,7 +347,7 @@ class Manager:
         elif isinstance(child, Cell):
             if child._prelim_val is not None:
                 value, default = child._prelim_val
-                self.set_cell(child, value, default=default, cosmetic=False)
+                self.set_cell(child, value, default=default)
                 child._prelim_val = None
         elif isinstance(child, Worker):
             child.activate()
@@ -357,25 +363,26 @@ class Manager:
             other = cell._get_manager()
             if other.destroyed:
                 continue
-            different = cell.deserialize(value, pin.mode, pin.submode,
-              from_pin=True, default=False, cosmetic=False
+            different, text_different = cell.deserialize(value, pin.mode, pin.submode,
+              from_pin=True, default=False
             )
-            if cell._mount is not None:
+            only_text = (text_different and not different)
+            if text_different and cell._mount is not None:
                 other.mountmanager.add_cell_update(cell)
-            if different:
-                other.cell_send_update(cell)
+            if different or text_different:
+                other.cell_send_update(cell, only_text)
 
     @main_thread_buffered
     @manager_buffered
     @with_successor("cell", 0)
-    def cell_send_update(self, cell):
+    def cell_send_update(self, cell, only_text):
         if self.destroyed:
             return
         #Activates aliases
         assert isinstance(cell, CellLikeBase)
         for con_id, target, alias_mode in self.cell_to_cells.get(cell, []):
             #from_pin is set to True, also for aliases
-            self._update_cell_from_cell(cell, target, alias_mode)
+            self._update_cell_from_cell(cell, target, alias_mode, only_text)
 
 from .context import Context
 from .cell import Cell, CellLikeBase

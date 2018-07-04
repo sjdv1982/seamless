@@ -64,8 +64,8 @@ class Inchannel(CellLikeBase):
                     return False
         else:
             monitor.receive_inchannel_value(self.inchannel, value)
-        different = True #TODO: keep checksum etc. to see if value really changed
-        return different
+        different, text_different = True, True #TODO: keep checksum etc. to see if value really changed
+        return different, text_different
 
     @property
     def authoritative(self):
@@ -132,7 +132,7 @@ class Outchannel(CellLikeBase):
         return data
 
     def deserialize(self, *args, **kwargs):
-        return True #dummy
+        return True, True #dummy
 
     def send_update(self, value):
         if value is None and self._status == self.StatusFlags.UNDEFINED:

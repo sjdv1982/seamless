@@ -180,6 +180,12 @@ context : context or None
         assert isinstance(ctx, Context)
         p = ctx.path
         return self.path[:len(p)] == p
+
+    def _root(self):
+        if self._toplevel:
+            return self
+        return super()._root()
+
     '''
     def export(self, child, forced=[], skipped=[]):
         """Exports all unconnected inputs and outputs of a child

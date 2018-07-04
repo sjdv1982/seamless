@@ -422,7 +422,7 @@ class MountManager:
         #print("unmount context", context)
         self.contexts.discard(context) # may or may not exist, especially at __del__ time
         mount = context._mount
-        """THIS is the authoritative one.
+        """context._mount is authoritative!
         If context is destroyed while an unmount is undesired,
           (because of stash replacement)
         context._mount MUST have been set to None!
@@ -439,7 +439,7 @@ class MountManager:
 
 
     def add_context(self, context, path, as_parent):
-        #print("add context", path, context, as_parent, len(self.contexts))
+        #print("add context", path, context, as_parent, context._mount["persistent"])
         if not as_parent:
             assert path not in self.paths, path
             self.paths.add(path)
@@ -600,6 +600,23 @@ def resolve_register(reg):
     for context in contexts:
         mount_context_delayed(context)
 
+    def propagate_persistency(c, persistent=False):
+        m = c._mount
+        if persistent:
+            m["persistent"] = True
+        elif m["persistent"] == True:
+            persistent = True
+        if isinstance(c, Context):
+            if c._toplevel:
+                return
+        parent = c._context
+        assert parent is not None, c
+        parent = parent()
+        propagate_persistency(parent, persistent)
+    for r in reg:
+        if r._mount is not None:
+            propagate_persistency(r)
+
     mount_cells = []
     for cell in cells:
         if cell in mounts and mounts[cell] is not None:
@@ -614,15 +631,6 @@ def resolve_register(reg):
                     continue
                 else:
                     mount["mode"] = "w"
-            if mount["persistent"]:
-                p = cell._context
-                while p is not None:
-                    p = p()
-                    if p not in contexts:
-                        break
-                    v = mount_contexts[p]
-                    mount_contexts[p] = v[0], True  #make persistent
-                    p = p._context
             object.__setattr__(cell, "_mount", mount) #not in macro mode
             mount_cells.append(cell)
 
@@ -645,6 +653,5 @@ def get_extension(c):
 """
 *****
 TODO: filehash option (cell stores hash of the file, necessary for slash-0)
-TODO: remount option (different [but same-value] cell, same path, for caching); must be in reorganize mode
 *****
 """
