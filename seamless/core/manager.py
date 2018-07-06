@@ -174,26 +174,37 @@ class Manager:
             other.cell_send_update(target, only_text_new)
 
     def _connect_cell_to_cell(self, cell, target, alias_mode):
-
+        target0 = target
+        if isinstance(target, Link):
+            target = target.get_linked()
         if not target.authoritative:
             raise Exception("%s: is non-authoritative (already dependent on another worker/cell)" % target)
-        other = target._get_manager()
+        if target0._is_sealed() or cell._is_sealed():
+            concrete, con_id = layer.connect_cell(cell, target0, alias_mode)
+        else:
+            #TODO: negotiate cell-to-cell serialization protocol (also in layer)
+            concrete = True
+            con_id = self.get_id()
 
-        con_id = self.get_id()
         connection = (con_id, target, alias_mode)
-        rev_connection = (con_id, cell, alias_mode)
-
+        if isinstance(target, Path):
+            connection = (con_id, None, alias_mode)
         if cell not in self.cell_to_cells:
             self.cell_to_cells[cell] = []
         self.cell_to_cells[cell].append(connection)
-        other.cell_from_cell[target] = rev_connection
-        target._authoritative = False
 
-        if cell._status == Cell.StatusFlags.OK:
-            self._update_cell_from_cell(cell, target, alias_mode, only_text=False)
+        if concrete:
+            rev_connection = (con_id, cell, alias_mode)
+
+            other = target._get_manager()
+            other.cell_from_cell[target] = rev_connection
+            target._authoritative = False
+
+            if cell._status == Cell.StatusFlags.OK:
+                self._update_cell_from_cell(cell, target, alias_mode, only_text=False)
 
     @main_thread_buffered
-    @manager_buffered
+    #@manager_buffered
     def connect_cell(self, cell, target, alias_mode=None):
         if self.destroyed:
             return
@@ -203,90 +214,132 @@ class Manager:
         assert isinstance(cell, CellLikeBase)
         assert not isinstance(cell, Inchannel)
         assert cell._get_manager() is self
-        other = target._get_manager()
-        assert isinstance(target, (InputPinBase, EditPinBase, CellLikeBase))
-        ###if isinstance(target, ExportedInputPin):
-        ###    target = target.get_pin()
+        target0 = target
+        if isinstance(target, Link):
+            target = target.get_linked()
+        assert isinstance(target, (InputPinBase, EditPinBase, CellLikeBase, Path))
 
         if isinstance(target, CellLikeBase):
             assert not isinstance(target, Outchannel)
-            return self._connect_cell_to_cell(cell, target, alias_mode)
+            return self._connect_cell_to_cell(cell, target0, alias_mode)
 
-        worker = target.worker_ref()
-        assert worker is not None #weakref may not be dead
-        cell._check_mode(target.mode, target.submode)
-        con_id = self.get_id()
-
-        connection = (con_id, target)
-        rev_connection = (con_id, cell)
-
-        if cell._status == Cell.StatusFlags.OK:
-            value = cell.serialize(target.mode, target.submode)
-            target.receive_update(value)
+        if cell._is_sealed() or target._is_sealed():
+            concrete, con_id = layer.connect_cell(cell, target0, alias_mode)
         else:
-            if isinstance(target, EditPinBase) and target.last_value is not None:
-                raise NotImplementedError ### also output *to* the cell!
-                """
-                self.update_from_worker(
-                    self.get_cell_id(source),
-                    target.last_value,
-                    worker, preliminary=False
-                )
-                """
+            concrete = True
+            con_id = self.get_id()
 
-        if isinstance(target, EditPinBase):
-            raise NotImplementedError ### also output *to* the cell!
+        if concrete:
+            cell._check_mode(target.mode, target.submode)
+            worker = target.worker_ref()
+            assert worker is not None #weakref may not be dead
+            connection = (con_id, target)
+            if cell._status == Cell.StatusFlags.OK:
+                value = cell.serialize(target.mode, target.submode)
+                target.receive_update(value)
+            else:
+                if isinstance(target, EditPinBase) and target.last_value is not None:
+                    raise NotImplementedError ### also output *to* the cell!
+                    """
+                    self.update_from_worker(
+                        self.get_cell_id(source),
+                        target.last_value,
+                        worker, preliminary=False
+                    )
+                    """
+
+            if isinstance(target, EditPinBase):
+                raise NotImplementedError ### also output *to* the cell!
+        else:
+            connection = (con_id, None)
 
         if cell not in self.cell_to_pins:
             self.cell_to_pins[cell] = []
         self.cell_to_pins[cell].append(connection)
-        other.pin_from_cell[target] = rev_connection
+
+        if not isinstance(target, Path):
+            rev_connection = (con_id, cell)
+            other = target._get_manager()
+            other.pin_from_cell[target] = rev_connection
 
     @main_thread_buffered
-    @manager_buffered
+    #@manager_buffered
     def connect_pin(self, pin, target):
         if self.destroyed:
             return
+        target0 = target
         assert pin._root() is target._root()
         assert pin._get_manager() is self
-        other = target._get_manager()
-        assert isinstance(target, CellLikeBase)
-        ###if isinstance(pin, ExportedOutputPin):
-        ###    pin = pin.get_pin()
+        if isinstance(target, Link):
+            target = target.get_linked()
+        assert isinstance(target, (CellLikeBase, Path))
         if isinstance(pin, EditPinBase):
             raise NotImplementedError ### also output *from* the cell!
         assert isinstance(pin, OutputPinBase)
-        worker = pin.worker_ref()
-        assert worker is not None #weakref may not be dead
 
         if not target.authoritative:
             raise Exception("%s: is non-authoritative (already dependent on another worker/cell)" % target)
+        if target._is_sealed() or pin._is_sealed():
+            concrete, con_id = layer.connect_pin(pin, target)
+        else:
+            concrete = True
+            con_id = self.get_id()
+        if concrete:
+            worker = pin.worker_ref()
+            assert worker is not None #weakref may not be dead
 
-        target._check_mode(pin.mode, pin.submode)
-        con_id = self.get_id()
         connection = (con_id, target)
-        rev_connection = (con_id, pin)
-
+        if isinstance(target, Path):
+            connection = (con_id, None)
         if pin not in self.pin_to_cells:
             self.pin_to_cells[pin] = []
         self.pin_to_cells[pin].append(connection)
-        other.cell_from_pin[target] = rev_connection
-        target._authoritative = False
 
-        if isinstance(worker, Transformer):
-            worker._on_connect_output()
-            if worker._last_value is not None:
-                raise NotImplementedError
-        elif pin.last_value is not None:
-            raise NotImplementedError #previously unconnected reactor output
-            """
-            self.update_from_worker(
-                cell_id,
-                source.last_value,
-                worker,
-                preliminary=False
-            )
-            """
+        if not isinstance(target, Path):
+            other = target._get_manager()
+            rev_connection = (con_id, pin)
+            other.cell_from_pin[target] = rev_connection
+            target._authoritative = False
+
+        if concrete:
+            target._check_mode(pin.mode, pin.submode)
+            if isinstance(worker, Transformer):
+                worker._on_connect_output()
+                if worker._last_value is not None:
+                    raise NotImplementedError
+            elif pin.last_value is not None:
+                raise NotImplementedError #previously unconnected reactor output
+                """
+                self.update_from_worker(
+                    cell_id,
+                    source.last_value,
+                    worker,
+                    preliminary=False
+                )
+                """
+
+    @main_thread_buffered
+    #@manager_buffered
+    def connect_link(self, link, target):
+        if self.destroyed:
+            return
+        assert link._root() is target._root()
+        assert link._get_manager() is self
+        linked = link.get_linked()
+        if link._is_sealed():
+            path = Path(link)
+            layer.connect_path(path, target)
+            return self
+        if isinstance(linked, Path):
+            return
+        manager = linked._get_manager()
+        if isinstance(linked, Cell):
+            manager.connect_cell(linked, target)
+        elif isinstance(linked, (EditPinBase, OutputPinBase) ):
+            manager.connect_pin(linked, target)
+        else:
+            raise TypeError(linked)
+        return self
 
     @main_thread_buffered
     @manager_buffered
@@ -360,6 +413,8 @@ class Manager:
         #TODO: explicit support for preliminary values
         #TODO: edit pins => from_pin = "edit"
         for con_id, cell in self.pin_to_cells.get(pin,[]):
+            if con_id < 0 and cell is None: #layer connections, may be None
+                continue
             other = cell._get_manager()
             if other.destroyed:
                 continue
@@ -381,6 +436,8 @@ class Manager:
         #Activates aliases
         assert isinstance(cell, CellLikeBase)
         for con_id, target, alias_mode in self.cell_to_cells.get(cell, []):
+            if con_id < 0 and target is None: #layer connections, may be None
+                continue
             #from_pin is set to True, also for aliases
             self._update_cell_from_cell(cell, target, alias_mode, only_text)
 
@@ -390,3 +447,5 @@ from .worker import Worker, InputPin, EditPin, InputPinBase, EditPinBase, \
  OutputPinBase#, ExportedInputPin, ExportedOutputPin
 from .transformer import Transformer
 from .structured_cell import Inchannel, Outchannel
+from . import layer, Link
+from .layer import Path

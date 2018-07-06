@@ -77,6 +77,12 @@ class CellBase(CellLikeBase):
     def _value(self):
         return self._val
 
+    @property
+    def _seal(self):
+        ctx = self._context()
+        assert ctx is not None
+        return ctx._seal
+
     @_value.setter
     def _value(self, value):
         """Should only ever be set by the manager, since it bypasses validation, last checksum, status flags, authority, etc."""
@@ -165,10 +171,11 @@ class CellBase(CellLikeBase):
         old_status = self._status
         if value is None:
             different = (self._last_checksum is not None)
+            text_different = (self._last_text_checksum is not None)
             self._val = None
             self._reset_checksums()
             self._status = self.StatusFlags.UNDEFINED
-            return
+            return different, text_different
         old_checksum = None
         old_text_checksum = None
         if value is not None:
@@ -194,6 +201,9 @@ class CellBase(CellLikeBase):
         elif from_pin == False:
             if not default and not self._authoritative:
                 self._overrule()
+            if self._seal is not None:
+                msg = "Warning: setting value for cell %s, controlled by %s"
+                print(msg % (self._format_path(), self._seal) )
         self._status = self.StatusFlags.OK
         if old_checksum is None: #old checksum failed
             different = True
@@ -273,6 +283,7 @@ class CellBase(CellLikeBase):
         assert get_macro_mode() #or connection overlay mode, TODO
         manager = self._get_manager()
         manager.connect_cell(self, target)
+        return self
 
     def as_text(self):
         raise NotImplementedError

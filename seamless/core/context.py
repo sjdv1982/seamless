@@ -20,6 +20,7 @@ class Context(SeamlessBase):
     _naming_pattern = "ctx"
     _mount = None
     _unmounted = False
+    _seal = None
 
     def __init__(
         self, *,
@@ -51,6 +52,7 @@ context : context or None
             self._toplevel = True
             self._manager = Manager(self)
             atexit.register(self.__del__)
+            layer.create_layer(self)
         else:
             assert context is not None
 
@@ -80,7 +82,7 @@ context : context or None
 
     def _add_child(self, childname, child):
         assert get_macro_mode()
-        assert isinstance(child, (Context, Worker, CellLikeBase))
+        assert isinstance(child, (Context, Worker, CellLikeBase, Link))
         if isinstance(child, Context):
             assert child._context() is self
         else:
@@ -155,6 +157,9 @@ context : context or None
             return self._pins[attr]
         elif attr in self._children:
             return self._children[attr]
+        elif self._is_sealed():
+            path = Path(self)
+            return getattr(path, attr)
         else:
             raise AttributeError(attr)
 
@@ -166,6 +171,9 @@ context : context or None
         if attr in self._pins:
             return True
         return False
+
+    def hasattr(self, attr):
+        return self._hasattr(attr)
 
     def _part_of(self, ctx):
         assert isinstance(ctx, Context)
@@ -186,86 +194,8 @@ context : context or None
             return self
         return super()._root()
 
-    '''
-    def export(self, child, forced=[], skipped=[]):
-        """Exports all unconnected inputs and outputs of a child
-
-        If the child is a worker (or worker-like context):
-            - export the child's inputs/outputs as primary inputs/outputs
-                (if unconnected, and not in skipped)
-            - export any other pins, if forced
-            - sets the context as worker-like
-        Outputs with a single, undefined, auto cell are considered unconnected
-
-        Arguments:
-
-        child: a direct or indirect child (grandchild) of the context
-        forced: contains a list of pin names that are exported in any case
-          (even if not unconnected).
-        skipped: contains a list of pin names that are never exported
-          (even if unconnected).
-
-        """
-        assert get_macro_mode()
-        assert child.context._part_of(self)
-        if isinstance(child, (Worker, Context)):
-            pins = child._pins.keys()
-        else:
-            raise TypeError(child)
-
-        def is_connected(pinname):
-            if isinstance(child, Cell):
-                if pinname == "_input":
-                    return (child._incoming_connections > 0)
-                elif pinname == "_output":
-                    return (child._outgoing_connections > 0)
-                else:
-                    raise ValueError(pinname)
-            else:
-                pin = child._pins[pinname]
-                if isinstance(pin, (InputPinBase, EditPinBase)):
-                    raise NotImplementedError  ###
-                    #manager = pin._get_manager()
-                    #con_cells = manager.pin_to_cells.get(pin.get_pin_id(), [])
-                    #return (len(con_cells) > 0)
-                elif isinstance(pin, OutputPinBase):
-                    raise NotImplementedError  ###
-                    #pin = pin.get_pin()
-                    #manager = pin._get_manager()
-                    #if len(pin._cell_ids) == 0:
-                    #    return False
-                    #elif len(pin._cell_ids) > 1:
-                    #    return True
-                    #con_cell = manager.cells[pin._cell_ids[0]]
-                    #if con_cell._data is not None:
-                    #    return True
-                    #if con_cell.name not in self._auto:
-                    #    return True
-                    #return False
-                else:
-                    raise TypeError(pin)
-        pins = [p for p in pins if not is_connected(p) and p not in skipped]
-        pins = pins + [p for p in forced if p not in pins]
-        if not len(pins):
-            raise Exception("Zero pins to be exported!")
-        for pinname in pins:
-            if self._hasattr(pinname):
-                raise Exception("Cannot export pin '%s', context has already this attribute" % pinname)
-            pin = child._pins[pinname]
-            if isinstance(pin, InputPinBase):
-                self._pins[pinname] = ExportedInputPin(pin)
-                self._pins[pinname]._set_context(self, pinname)
-            elif isinstance(pin, OutputPinBase):
-                self._pins[pinname] = ExportedOutputPin(pin)
-                self._pins[pinname]._set_context(self, pinname)
-            elif isinstance(pin, EditPinBase):
-                self._pins[pinname] = ExportedEditPin(pin)
-                self._pins[pinname]._set_context(self, pinname)
-            else:
-                raise TypeError(pin)
-
-        self._exported_child = child
-    '''
+    def _is_sealed(self):
+        return self._seal is not None
 
     def _flush_workqueue(self):
         manager = self._get_manager()
@@ -435,6 +365,8 @@ context : context or None
                 child.full_destroy(from_del=from_del)
             if isinstance(child, Context):
                 child.full_destroy(from_del=from_del)
+        if self._toplevel:
+            layer.destroy_layer(self)
 
     def __del__(self):
         self.destroy(from_del=True)
@@ -481,12 +413,10 @@ class _InternalChildrenWrapper:
     def __setattr__(self, attr, value):
         raise AttributeError("_InternalChildrenWrapper is read-only")
 
+from . import Link
 from .cell import Cell, CellLikeBase
-'''
-from .worker import Worker,  \
-  InputPinBase, ExportedInputPin, OutputPinBase, ExportedOutputPin, \
-  EditPinBase, ExportedEditPin
-'''
 from .worker import Worker, InputPinBase, OutputPinBase, EditPinBase
 
 from .manager import Manager
+from . import layer
+from .layer import Path

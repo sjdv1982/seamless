@@ -11,6 +11,7 @@ NOTES:
 - Connection layers: depend on one or multiple contexts (and other inputs) and a code cell.
   Code cell is executed as if a macro, but can only add connections.
   Whenever one connection layer of a context becomes dirty, all of them become dirty. Other input contexts also become dirty in their connection layers.
+  UPDATE: no need; static connection layer + dynamic connection layer that has explicit context inputs
 - Renaming is very hard to cache. So the low-level macro cache function can receive (from the high level) a renaming key.
   This renaming key changes the current (sub-)context against which the renamed context is evaluated.
   Normally, every renaming triggers a mid-level-to-low-level translation, so there should be only renaming key.
@@ -138,7 +139,7 @@ This builds upon a similar mechanism in seamless 0.1.
   - Workers and cells with different dependency dicts (compared to the cache) are dirty
   - Authoritative cells with the same md5sum are clean
   - Workers and cells where all dependencies are clean, are clean
-  - Workers and cells that are part of any kind of cycle are dirty
+  - Workers and cells that are part of any kind of cycle are dirty (UPDATE: there can't be cycles now)
   - Cache cells and evaluation cells may be dirty, yet the workers that depend on them are clean (except workers not in equilibrium, see below, and whatever depends on them)
   - Otherwise, workers and cells with any dirty dependency, are dirty
 - A special rule applies to workers that are not in equilibrium.
@@ -146,14 +147,21 @@ This builds upon a similar mechanism in seamless 0.1.
     They must be "hyper-clean": evaluation cells and cache cells are now also taken into account
     If they are hyper-clean, their kernel is substituted with the kernel from the current context (which is performing the computation)
     Else, they are dirty.
-- Reactors that are clean receive a special mark, because whenever they receive an update, the "start" code must be executed, not the "update" code.
+- Reactors that are clean receive a special mark, because whenever they receive an update, the "start" code must be executed, not the "update" code. UPDATE: this is not true, it will be the "update" code.
 - Dirty workers are marked with their last previous output and the hashes of their last previous inputs. This gives still a chance for a caching hit if the hashes match.
   These marks persist for the next low-level caching
   Otherwise, the marks are deleted whenever all inputs have been defined.
 
-NOTE: The only thing you can't have, with this kind of caching, is constructing a worker, then constructing a sub-macro that depends on the worker's output,
- and expect elements of that sub-macro to be cached also. Sub-macros will execute immediately when they have their inputs, but all workers will be halted.
- You may call equilibrate() to (temporarily) lift the halting, this may solve the issue.  (TODO: fine-grained .equilibrate())
+NOTE: Caching takes place at the time that the outermost macro has been completed.
+To make this work, it is imperative that at that time, all sub-macros have been completed, as well.
+This is fixed by the fact that macros execute synchronously,
+ as soon as their inputs are present.
+There are two cases that cannot be fixed in this manner:
+- Macros with an exported inputpin whose input goes above the outermost macro that is being re-run.
+  Future solution: right before cache evaluarion, look at all macro inputpins, and (pre-)set their value if their input is external.
+- Macros that depend on worker output.
+  Future solution: allow the worker to be marked, and do a
+  special equilibrate() using these workers right before cache evaluation.
 
 ******************************************
 # Towards seamless 0.2

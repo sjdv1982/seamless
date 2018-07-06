@@ -31,6 +31,12 @@ class Worker(SeamlessBase):
         update_shells(inputpin, shell_namespace)
 
     @property
+    def _seal(self):
+        ctx = self._context()
+        assert ctx is not None
+        return ctx._seal
+
+    @property
     def _pending_updates(self):
         return self._pending_updates_value
 
@@ -217,6 +223,7 @@ class OutputPin(OutputPinBase):
         assert get_macro_mode() #or connection overlay mode, TODO
         manager = self._get_manager()
         manager.connect_pin(self, target)
+        return self
 
     def cell(self, celltype=None):
         """returns or creates a cell that is connected to the pin"""
@@ -297,6 +304,7 @@ class EditPin(EditPinBase):
         assert get_macro_mode() #or connection overlay mode, TODO
         manager = self._get_manager()
         manager.connect_pin(self, target)
+        return self
 
     def send_update(self, value, *, preliminary=False):
         """Private"""

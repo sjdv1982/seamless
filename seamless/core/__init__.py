@@ -22,6 +22,10 @@ class SeamlessBase:
         self._exported = True
         return self
 
+    def _is_sealed(self):
+        assert self._context is not None #worker/cell must have a context
+        return self._context()._is_sealed()
+
     @property
     def path(self):
         if self._context is None:
@@ -86,9 +90,50 @@ class SeamlessBaseList(list):
     def __str__(self):
         return str([v._format_path() for v in self])
 
+class Link(SeamlessBase):
+    def __init__(self, obj):
+        assert isinstance(obj, SeamlessBase)
+        #assert isinstance(obj, (Context, Worker, CellLikeBase, Link))
+        self._linked = obj
+
+    @property
+    def _seal(self):
+        return self._linked._seal
+
+    @_seal.setter
+    def _seal(self, value):
+        pass
+
+    def get_linked(self):
+        linked = self._linked
+        if isinstance(linked, Link):
+            linked = linked.get_linked()
+        return linked
+
+    def connect(self, target):
+        manager = self._get_manager()
+        manager.connect_link(self, target)
+        return self
+
+    def __getattr__(self, attr):
+        from .layer import Path
+        linked = self.get_linked()
+        result = getattr(linked, attr)
+        if isinstance(result, Path):
+            return getattr(Path(self), attr)
+        else:
+            return result
+
+    def __str__(self):
+        ret = "Seamless object: %s to %s" % (self._format_path(), self._linked)
+        return ret
+
+def link(obj):
+    return Link(obj)
+
 from .macro_mode import get_macro_mode, macro_register, macro_mode_on
 from . import cell as cell_module
-from .cell import Cell, cell, textcell, pytransformercell
+from .cell import Cell, CellLikeBase, cell, textcell, pytransformercell
 from . import context as context_module
 from .context import Context, context
 from .worker import Worker

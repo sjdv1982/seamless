@@ -13,6 +13,7 @@ class Macro(Worker):
     def __init__(self, macro_params):
         super().__init__()
         self.gen_context = None
+        self.macro_context_name = None
         self.code = InputPin(self, "code", "ref", "pythoncode", "pytransformer")
         self._pins = {"code":self.code}
         self._message_id = 0
@@ -45,12 +46,17 @@ class Macro(Worker):
         ret = "Seamless macro: " + self._format_path()
         return ret
 
+    @property
+    def ctx(self):
+        return self.gen_context
+
     def execute(self):
         from .macro_mode import macro_mode_on
-        from .context import context
+        from .context import context, Context
         #TODO: macro caching!!!
         assert self._context is not None
-        macro_context_name = "macro_gen_" + self.name
+        macro_context_name = "MACRO_" + self.name
+        self.macro_context_name = macro_context_name
         ctx = None
         mountmanager = self._context()._manager.mountmanager
         try:
@@ -58,9 +64,12 @@ class Macro(Worker):
             if self.gen_context is not None:
                 assert self.gen_context._manager.mountmanager is mountmanager
                 self.gen_context._manager.deactivate()
+                old_layer = layer.get_layer(self)
+                layer.destroy_layer(self)
+            layer.create_layer(self)
             self.exception = 1
             with mountmanager.reorganize(self.gen_context):
-                with macro_mode_on():
+                with macro_mode_on(self):
                     ctx = context(context=self._context(), name=macro_context_name)
                     keep = {k:v for k,v in self.namespace.items() if k.startswith("_")}
                     self.namespace.clear()
@@ -84,7 +93,17 @@ class Macro(Worker):
                      that are cache hits. Never replace whole cells and contexts!
                     Finally, for all old cells and workers that were cache hits, a successor must be assigned
                     '''
+
+                    layer.fill_objects(ctx)
+                    def seal(c):
+                        c._seal = self
+                        for child in c._children.values():
+                            if isinstance(child, Context):
+                                seal(child)
+                    seal(ctx)
+
             if self.gen_context is not None:
+                layer.clear_objects(self.gen_context)
                 self.gen_context.self.destroy()
                 self.gen_context._manager.flush()
                 self.gen_context.full_destroy()
@@ -102,9 +121,10 @@ class Macro(Worker):
                         ctx.self.destroy()
                         ctx.full_destroy()
                     if self.gen_context is not None:
-                        with macro_mode_on():
+                        with macro_mode_on(self):
                             self.gen_context._remount()
                             self._context()._add_child(macro_context_name, self.gen_context)
+                        layer.restore_layer(self, old_layer)
                         self.gen_context._manager.activate()
                 except Exception as exc2:
                     traceback.print_exc()
@@ -175,8 +195,8 @@ class Macro(Worker):
 def macro(params):
     return Macro(params)
 
-from . import cell, transformer
+from . import cell, transformer, pytransformercell, link, layer
 from .context import context
-names = "cell", "transformer", "context"
+names = "cell", "transformer", "context", "pytransformercell", "link"
 names = names + ("macro",)
 Macro.default_namespace = {n:globals()[n] for n in names}
