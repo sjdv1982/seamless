@@ -10,6 +10,7 @@ class Macro(Worker):
     active = False
     exception = None
     secondary_exception = None
+    macro_tag = "MACRO_"
     def __init__(self, macro_params):
         super().__init__()
         self.gen_context = None
@@ -51,20 +52,22 @@ class Macro(Worker):
         return self.gen_context
 
     def execute(self):
-        from .macro_mode import macro_mode_on
+        from .macro_mode import macro_mode_on, get_macro_mode
         from .context import context, Context
         #TODO: macro caching!!!
         assert self._context is not None
-        macro_context_name = "MACRO_" + self.name
+        macro_context_name = self.macro_tag + self.name
         self.macro_context_name = macro_context_name
         ctx = None
         mountmanager = self._context()._manager.mountmanager
+        outer_macro = (not get_macro_mode())
         try:
             self._pending_updates += 1
             if self.gen_context is not None:
                 assert self.gen_context._manager.mountmanager is mountmanager
                 self.gen_context._manager.deactivate()
-                old_layer = layer.get_layer(self)
+                if outer_macro:
+                    old_layers = layer.get_layers(self)
                 layer.destroy_layer(self)
             layer.create_layer(self)
             self.exception = 1
@@ -94,13 +97,14 @@ class Macro(Worker):
                     Finally, for all old cells and workers that were cache hits, a successor must be assigned
                     '''
 
-                    layer.fill_objects(ctx)
+                    layer.fill_objects(ctx, self)
                     def seal(c):
                         c._seal = self
                         for child in c._children.values():
                             if isinstance(child, Context):
                                 seal(child)
                     seal(ctx)
+                    layer.check_async_macro_contexts(ctx, self)
 
             if self.gen_context is not None:
                 layer.clear_objects(self.gen_context)
@@ -121,11 +125,16 @@ class Macro(Worker):
                         ctx.self.destroy()
                         ctx.full_destroy()
                     if self.gen_context is not None:
-                        with macro_mode_on(self):
-                            self.gen_context._remount()
-                            self._context()._add_child(macro_context_name, self.gen_context)
-                        layer.restore_layer(self, old_layer)
-                        self.gen_context._manager.activate()
+                        if outer_macro:
+                            with macro_mode_on(self):
+                                self.gen_context._remount()
+                                self._context()._add_child(macro_context_name, self.gen_context)
+                            layer.restore_layers(self, old_layers)
+                            self.gen_context._manager.activate()
+                        else:
+                            pass #no need to restore anything, the outer macro will do that
+                            # NOTE: it is illegal (and anyway, quite difficult) to catch an
+                            #  exception in the re-execution of macro that is not outer
                 except Exception as exc2:
                     traceback.print_exc()
                     self.secondary_exception = traceback.format_exc()
@@ -137,6 +146,9 @@ class Macro(Worker):
                 print("macro CLEANUP error"); traceback.print_exc()
                 self.gen_context = ctx
                 self.secondary_exception = traceback.format_exc()
+            if not outer_macro:
+                # Must re-raise the exception so that the outer macro will fail properly
+                raise
         finally:
             self._pending_updates -= 1
 

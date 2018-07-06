@@ -36,8 +36,6 @@ ctx.macro.ctx.submacro.ctx.inp.set(20)
 print(ctx.macro.ctx.submacro.ctx.inp.value)
 print("Stage 2")
 ctx.param.set(2)
-"""
 print("Stage 3")
 ctx.inp.set("INP2")
 print(ctx.macro.ctx.submacro.ctx.inp.value)
-"""

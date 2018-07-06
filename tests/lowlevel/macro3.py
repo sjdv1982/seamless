@@ -48,6 +48,9 @@ ctx.r = cell("text").set("r" + str(param))
 ctx.r_link = link(ctx.r)
 ctx.rr = cell("text")
 ctx.rr_link = link(ctx.rr)
+
+ctx.async_submacro = macro({})
+ctx.not_async_submacro = macro({})
 """)
     ctx.macro_code.connect(ctx.macro.code)
     ctx.tfx = transformer({
@@ -76,6 +79,10 @@ ctx.rr_link = link(ctx.rr)
     ctx.r_link = link(ctx.r)
     ctx.macro.ctx.r_link.connect(ctx.r_link)
     ctx.r.connect(ctx.macro.ctx.rr_link)
+
+    ctx.async_macro = macro({})
+    ctx.dummycode = pytransformercell().set("pass")
+    ctx.dummycode.connect(ctx.macro.ctx.not_async_submacro.code)
 
 def report():
     d = "<non-existent>"

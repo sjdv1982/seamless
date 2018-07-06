@@ -25,9 +25,14 @@ def curr_macro():
         return None
     return macro_register.curr_macro_stack[-1]
 
+def outer_macro():
+    if not _macro_mode:
+        return None
+    return macro_register.curr_macro_stack[0]
+
 @contextmanager
 def macro_mode_on(macro=None):
-    from .layer import fill_objects
+    from .layer import fill_objects, check_async_macro_contexts
     global _macro_mode
     old_macro_mode = _macro_mode
     _macro_mode = True
@@ -42,7 +47,7 @@ def macro_mode_on(macro=None):
     else:
         macro_register.stack[-1].update(curr_macro_register)
     if macro is None:
-        fill_objects(None)
-
+        fill_objects(None, None)
+        check_async_macro_contexts(None, None)
 
 from . import mount

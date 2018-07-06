@@ -1,4 +1,4 @@
-from .macro_mode import curr_macro
+from .macro_mode import curr_macro, outer_macro
 import weakref
 from weakref import WeakKeyDictionary, WeakValueDictionary
 
@@ -272,15 +272,20 @@ def create_layer(macro):
     assert macro not in _layers, macro
     _layers[macro] = []
 
-def get_layer(macro):
+def get_layers(macro):
     assert macro in _layers, macro
-    return _layers[macro]
+    layers = {}
+    macro_path = macro.path
+    for m in _layers:
+        mpath = m.path
+        if mpath[:len(macro_path)] == macro_path:
+            layers[m] = _layers[m]
+    return layers
 
-def restore_layer(macro, layer):
-    print("TODO: layer.restore_layer is not enough! Need to save and restore all upstream layers...")
-    print("TODO: maybe something more efficient to check paths than fill_objects/clear_objects")
+def restore_layers(macro, layers):
     assert macro in _layers, macro
-    _layers[macro] = layer
+    assert macro in layers, macro
+    _layers.update(layers)
 
 def destroy_layer(macro):
     if isinstance(macro, Context) and macro not in _layers:
@@ -308,17 +313,28 @@ def fill_object(obj):
         relpath = path[len(mpath):]
         lc.fill_object(obj, relpath)
 
-def fill_objects(ctx):
+def fill_objects(ctx, macro):
     if ctx is None:
         for c in _layers:
             if not isinstance(c, Context):
                 continue
-            fill_objects(c)
+            fill_objects(c, macro)
         return
     assert isinstance(ctx, Context)
+
+    #Below is not justified, since one can connect into sealed context, at present
+    #To make it work, disallow such connections is they are not exported
+    # (and still check exported children for fill_objects)
+    ###if ctx._is_sealed():
+    ###    return
+
+    # Anyway, it is not so bad, if we fill only when the outermost macro has finished...
+    if outer_macro() is not macro:
+        return
+
     for child in list(ctx._children.values()):
         if isinstance(child, Context):
-            fill_objects(child)
+            fill_objects(child, macro)
         else:
             fill_object(child)
 
@@ -408,6 +424,32 @@ def connect_path(source, target):
     lc_target = _lc_target(target)
     lc = LayeredConnection(lc_source, lc_target, "copy")
     return _add_to_layer(lc)
+
+def check_async_macro_contexts(ctx, macro):
+    from .macro import Macro
+    # For now, do this check only for the outer macro that is being executed
+    # I believe this is correct, although it could give some false negatives?
+    # Anyway, when extern connections will be supported by caching,
+    #  the picture will change a bit
+    if outer_macro() is not macro:
+        return
+    if ctx is None:
+        for c in _layers:
+            if not isinstance(c, Context):
+                continue
+            check_async_macro_contexts(c, macro)
+        return
+    for childname, child in list(ctx._children.items()):
+        if child.name.startswith(Macro.macro_tag):
+            continue
+        if isinstance(child, Context):
+            check_async_macro_contexts(child, macro)
+        if not isinstance(child, Macro):
+            continue
+        if child.ctx is None:
+            print("Warning: macro %s has asynchronous dependencies, beware of cache misses" % child)
+        else:
+            check_async_macro_contexts(child.ctx, macro)
 
 from . import Link, CellLikeBase
 from .context import Context
