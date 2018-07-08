@@ -142,5 +142,9 @@ if qt_error is None:
     _mainloop._run_qt = True
 else:
     sys.stderr.write("    " + qt_error + "\n")
-    sys.stderr.write("    Call seamless.mainloop() to process cell updates\n")
+    sys.stderr.write("    Call seamless.mainloop(), seamless.flush() or context.equilibrate() to process cell updates\n")
     _mainloop._run_qt = False
+
+def flush():
+    from .core.mainloop import workqueue
+    workqueue.flush()

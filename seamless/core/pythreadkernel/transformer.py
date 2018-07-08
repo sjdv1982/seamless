@@ -53,7 +53,7 @@ class Transformer(Worker):
         self.last_result = None
         self.running_thread = None
 
-        self.function_expr_template = "%%s\n%s  = {0}(" % self.output_name
+        self.function_expr_template = "{0}\n%s  = {1}(" % self.output_name
         for inp in sorted(list(inputs)):
             self.function_expr_template += "%s=%s," % (inp, inp)
         self.function_expr_template = self.function_expr_template[:-1] + ")"
@@ -129,6 +129,7 @@ class Transformer(Worker):
                     executor.terminate()
                     break
         finally:
+            assert self.parent().output_queue is self.output_queue
             self.output_queue.append(("@END", None))
             self.output_semaphore.release()
         if ok:

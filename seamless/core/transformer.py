@@ -111,7 +111,13 @@ class Transformer(Worker):
         self.transformer.input_queue.append(labeled_msg)
         self.transformer.semaphore.release()
 
-    def receive_update(self, input_pin, value):
+    def receive_update(self, input_pin, value, checksum):
+        if not self.active:
+            work = partial(self.receive_update, input_pin, value, checksum)
+            self._get_manager().buffered_work.append(work)
+            return
+        if not self._receive_update_checksum(input_pin, checksum):
+            return
         self._send_message( (input_pin, value) )
 
     def _touch(self):
@@ -220,7 +226,6 @@ class Transformer(Worker):
                     pin = self._pins[self._output_name]
                     #we're not in the main thread, but the manager takes care of it
                     pin.send_update(output_value, preliminary=preliminary)
-                else:
                     self._last_value = output_value
                     self._last_value_preliminary = preliminary
 
@@ -244,9 +249,7 @@ class Transformer(Worker):
     def _on_connect_output(self):
         last_value = self._last_value
         if last_value is not None:
-            self._last_value = None
             preliminary = self._last_value_preliminary
-            self._last_value_preliminary = False
             self._pins[self._output_name].send_update(last_value,
                 preliminary=preliminary)
         self._connected_output = True
@@ -254,6 +257,13 @@ class Transformer(Worker):
     def _shell(self, submode):
         assert submode is None
         return self.transformer.namespace, self.code, str(self)
+
+    def resend(self):
+        """Sends again last value"""
+        if self._last_value is None:
+            return
+        pin = self._pins[self._output_name]
+        pin.send_update(self._last_value, preliminary=self._last_value_preliminary)
 
     def destroy(self, from_del=False):
         if not self.active:
@@ -265,6 +275,9 @@ class Transformer(Worker):
         if self.transformer_thread is not None:
             self.transformer.finish.set()
             self.transformer.semaphore.release() # to unblock the .finish event
+            # TODO: after some caching events, transformer threads lock up at destroy()
+            # to prevent this, release just once more (kludge)
+            self.transformer.semaphore.release()
             if not from_del:
                 self.transformer.finished.wait()
                 self.transformer_thread.join()
@@ -279,6 +292,8 @@ class Transformer(Worker):
                 self.output_thread.join()
             del self.output_thread
             self.output_thread = None
+        if not from_del:
+            self._pending_updates = 0
 
     def full_destroy(self,from_del=False):
         self.self.destroy(from_del=from_del)

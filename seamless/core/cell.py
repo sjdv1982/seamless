@@ -13,22 +13,23 @@ submodes = {
 }
 celltypes = ("text", "python", "pytransformer", "json", "cson", "mixed")
 
-from . import SeamlessBase
-from ..mixed import io as mixed_io
 from copy import deepcopy
 import json
 import hashlib
 from io import BytesIO
-
+import numpy as np
 import pickle
 import ast
 from ast import PyCF_ONLY_AST, FunctionDef
-from .cached_compile import cached_compile
+import inspect
 
+from . import SeamlessBase
+from ..mixed import io as mixed_io
+from .cached_compile import cached_compile
 from . import get_macro_mode, macro_register
 from .mount import MountItem
 from ..silk import Silk
-import numpy as np
+from .utils import strip_source
 
 cell_counter = 0
 
@@ -135,8 +136,9 @@ class CellBase(CellLikeBase):
 
     def serialize(self, mode, submode=None):
         self._check_mode(mode, submode)
-        assert self.status() == "OK", self.status()
-        return self._serialize(mode, submode)
+        #assert self.status() == "OK", self.status() #why?
+        checksum = self.checksum() #TODO: determine which checksum we need
+        return self._serialize(mode, submode), checksum
 
     def _reset_checksums(self):
         self._last_checksum = None
@@ -241,7 +243,7 @@ class CellBase(CellLikeBase):
         self._exception = exception
 
     def _validate(self, value):
-        """Won't raise an exception, but may set .exception"""
+        """Won't raise an exception, but may set .exception (TODO: check???)"""
         raise NotImplementedError
 
     def _serialize(self, mode, submode=None):
@@ -268,7 +270,7 @@ class CellBase(CellLikeBase):
 
     def text_checksum(self, *, may_fail=False):
         if not self._has_text_checksum:
-            return self.checksum(may_fail=False)
+            return self.checksum(may_fail=may_fail)
         if self.status() != "OK":
             return None
         assert self._val is not None
@@ -454,6 +456,7 @@ class MixedCell(Cell):
                 except:
                     return None
             else:
+                print(storage, form, value, type(value))
                 b = self._value_to_bytes(value, storage, form)
         return hashlib.md5(b).hexdigest()
 
@@ -554,10 +557,17 @@ class PythonCell(Cell):
         if mode == "buffer":
             assert submode is None, (mode, submode)
             return deepcopy(self._val)
+        if mode == "copy":
+            assert submode == "text"
+            return deepcopy(self._val)
         assert mode == "ref" and submode == "pythoncode", (mode, submode)
         return self
 
     def _deserialize(self, value, mode, submode=None):
+        if inspect.isfunction(value):
+            code = inspect.getsource(value)
+            code = strip_source(code)
+            value = code
         if mode == "ref":
             self._val = value
             return value
@@ -576,6 +586,10 @@ class PyTransformerCell(PythonCell):
     Each input will be an argument"""
 
     def _validate(self, value):
+        if inspect.isfunction(value):
+            code = inspect.getsource(value)
+            code = strip_source(code)
+            value = code
         ast = cached_compile(value, "transformer", "exec", PyCF_ONLY_AST)
         is_function = (len(ast.body) == 1 and
                        isinstance(ast.body[0], FunctionDef))

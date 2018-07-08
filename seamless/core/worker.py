@@ -24,6 +24,19 @@ class Worker(SeamlessBase):
         assert get_macro_mode()
         super().__init__()
         self._pending_updates_value = 0
+        self._last_update_checksums = {}
+
+    def _receive_update_checksum(self, pin, checksum):
+        if pin not in self._last_update_checksums:
+            if checksum is not None:
+                self._last_update_checksums[pin] = checksum
+            return True
+        curr = self._last_update_checksums[pin]
+        if curr == checksum:
+            return False
+        if checksum is not None:
+            self._last_update_checksums[pin] = checksum
+        return True
 
     def activate(self):
         from ..shell import update_shells
@@ -56,7 +69,7 @@ class Worker(SeamlessBase):
         else:
             return self._pins[attr]
 
-    def receive_update(self, input_pin, value):
+    def receive_update(self, input_pin, value, checksum):
         raise NotImplementedError
 
     def touch(self):
@@ -180,12 +193,12 @@ class InputPin(InputPinBase):
         """Sets the value of the connected cell"""
         return self.cell().set(*args, **kwargs)
 
-    def receive_update(self, value):
+    def receive_update(self, value, checksum):
         """Private"""
         worker = self.worker_ref()
         if worker is None:
             return #Worker has died...
-        worker.receive_update(self.name, value)
+        worker.receive_update(self.name, value, checksum)
 
     def status(self):
         manager = self._get_manager()
@@ -312,12 +325,12 @@ class EditPin(EditPinBase):
         manager = self._get_manager()
         manager.pin_send_update(self, value, preliminary=preliminary)
 
-    def receive_update(self, value):
+    def receive_update(self, value, checksum):
         """Private"""
         worker = self.worker_ref()
         if worker is None:
             return #Worker has died...
-        worker.receive_update(self.name, value)
+        worker.receive_update(self.name, value, checksum)
 
     def status(self):
         manager = self._get_manager()

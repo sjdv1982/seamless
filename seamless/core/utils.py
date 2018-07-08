@@ -2,13 +2,12 @@ from ast import FunctionDef, Return, iter_child_nodes
 from collections import OrderedDict
 
 def strip_source(source):
-    init = 99999999
-    indent = init
+    indent = None
     for l in source.splitlines():
         i = len(l) - len(l.lstrip())
-        if i < indent:
+        if indent is None or i < indent:
             indent = i
-    if indent == init:
+    if indent is None:
         return source
     ret = ""
     for l in source.splitlines():

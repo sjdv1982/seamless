@@ -16,7 +16,7 @@ def _convert_np_void(data):
         return float(data)
     if isinstance(data, _string_types):
         return str(data)
-    raise TypeError(type(data))
+    raise TypeError(type(data), data.dtype)
 
 def _copy_into_buffer(data, buffer, offset):
     size = data.nbytes

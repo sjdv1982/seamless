@@ -1,4 +1,5 @@
 import seamless
+seamless.core.cache.use_caching = False ###
 from seamless.core import macro_mode_on
 from seamless.core import context, cell, transformer, pytransformercell, macro
 

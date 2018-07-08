@@ -141,3 +141,4 @@ from .transformer import Transformer, transformer
 from .mount import mountmanager
 from .structured_cell import StructuredCell
 from .macro import macro
+from . import cache

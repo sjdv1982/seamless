@@ -129,7 +129,7 @@ class Outchannel(CellLikeBase):
         if submode == "silk":
             #Schema-less silk; just for attribute access syntax
             data = Silk(data=data, stateful=isinstance(data, MixedBase))
-        return data
+        return data, None #TODO: checksum?
 
     def deserialize(self, *args, **kwargs):
         return True, True #dummy

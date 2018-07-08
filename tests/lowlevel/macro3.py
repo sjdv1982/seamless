@@ -1,4 +1,5 @@
 import seamless
+#seamless.core.cache.use_caching = False ###
 from seamless.core import macro_mode_on
 from seamless.core import context, cell, transformer, pytransformercell, macro, link
 
@@ -130,6 +131,7 @@ print("Change to 4")
 ctx.param.set(4)
 ctx.equilibrate()
 report()
+
 
 print("STOP")
 import sys; sys.exit()

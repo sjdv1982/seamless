@@ -6,6 +6,7 @@ Things to do (all low level) :
   (NOTE: macro caching is a low-level thing, because at the high-level, it is just a change-of-value of the macro parameter, no topology change!)
   Macro caching can give a topology hit (if the macro code and macro args are the same), and the resulting context may give value hits (depend on the value of the connected cells)
   For now, no topology hits (may interfere with layers)
+- Get rid of auto-pathing; Paths must be constructed explicitly
 
 Then, a proof-of-principle of the middle/high level
 
@@ -36,6 +37,7 @@ Then:
 Then, slowly move to the mid-level data structure:
 Mostly elide the middle level, dynamically generate at time of low-level generation/serialization.
 The middle level is the input of a translation macro, whereas the low level is the output
+NOTE: use code generation to generate the source of the translation macro, much nicer error messages!
 Normally:
 1. Being under macro control, the lower level could never be authoritative
 2. Any changes to the mid-level would re-trigger the translation macro.

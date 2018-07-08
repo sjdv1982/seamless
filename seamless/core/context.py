@@ -201,68 +201,73 @@ context : context or None
         manager = self._get_manager()
         manager.workqueue.flush()
         finished = True
+        children_unstable = set()
         for childname, child in self._children.items():
             if isinstance(child, Context):
                 remaining = child.equilibrate(0.001)
                 if len(remaining):
+                    children_unstable.update(remaining)
                     finished = False
         manager.mountmanager.tick()
-        return finished
+        return finished, children_unstable
 
     def equilibrate(self, timeout=None, report=0.5):
         """
         Run workers and cell updates until all workers are stable,
          i.e. they have no more updates to process
         If you supply a timeout, equilibrate() will return after at most
-         "timeout" seconds
+         "timeout" seconds, returning the remaining set of unstable workers
         Report the workers that are not stable every "report" seconds
         """
+        if get_macro_mode():
+            raise Exception("ctx.equilibrate() will not work in macro mode")
+        assert self._get_manager().active
         start_time = time.time()
         last_report_time = start_time
         self._flush_workqueue()
-        last_unstable = []
+        last_unstable = set()
         while 1:
             if self._destroyed:
-                return []
+                return set()
             curr_time = time.time()
             if curr_time - last_report_time > report:
                 manager = self._get_manager()
-                unstable = list(manager.unstable)
+                unstable = self.unstable_workers
                 if last_unstable != unstable:
                     last_unstable = unstable
-                    print("Waiting for:", self.unstable_workers)
+                    print("Equilibrate: waiting for:", self.unstable_workers)
                 last_report_time = curr_time
             if timeout is not None:
                 if curr_time - start_time > timeout:
                     break
-            finished1 = self._flush_workqueue()
+            finished1, _ = self._flush_workqueue()
             if self._destroyed:
-                return []
+                return set()
             manager = self._get_manager()
             len1 = len(manager.unstable)
             time.sleep(0.001)
-            finished2 = self._flush_workqueue()
+            finished2, children_unstable = self._flush_workqueue()
             if self._destroyed:
-                return []
+                return set()
             manager = self._get_manager()
             len2 = len(manager.unstable)
+            manager.children_unstable = children_unstable
             if finished1 and finished2:
                 if len1 == 0 and len2 == 0:
                     break
         if self._destroyed:
-            return []
+            return set()
         manager = self._get_manager()
         manager.workqueue.flush()
         if self._destroyed:
-            return []
-        unstable = list(manager.unstable)
-        return unstable
+            return set()
+        return self._manager.unstable & self._manager.children_unstable
 
     @property
     def unstable_workers(self):
         """All unstable workers (not in equilibrium)"""
         from . import SeamlessBaseList
-        result = list(self._manager.unstable)
+        result = list(self._manager.unstable) + list(self._manager.children_unstable)
         return SeamlessBaseList(sorted(result, key=lambda p:p._format_path()))
 
     def status(self):

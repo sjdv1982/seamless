@@ -26,3 +26,7 @@ print(d["a"].value, d["a"][3].value)
 d["a"] = list(range(10))
 print(d["a"].value, d["a"][3].value)
 print(d.storage, d["a"].storage, d["b"].storage, d["b"]["bb"].storage)
+
+dt = np.dtype([("m1", int),("m2",int)],align=True)
+d = mixed_dict(np.zeros(1,dt)[0])
+print(d.storage, d.form, d.value)

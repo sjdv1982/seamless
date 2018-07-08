@@ -61,7 +61,7 @@ class OverlayMonitor(MakeParentMonitor):
                     if cpath[:l0] == path:
                         exists = True
                 if exists:
-                    warn("inchannel %s exists, value overwritten" % cpath)
+                    warn("inchannel %s exists, value overwritten" % (cpath,))
                     break
 
     def _update_outchannels(self, path):

@@ -1,6 +1,6 @@
 from numpy import ndarray, void
 from collections.abc import MutableMapping
-from . import MixedBase
+from . import MixedBase, is_np_struct
 from .get_form import get_form_dict
 
 class MixedDict(MixedBase, MutableMapping):

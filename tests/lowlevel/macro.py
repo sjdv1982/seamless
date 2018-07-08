@@ -1,4 +1,5 @@
 import seamless
+#seamless.core.cache.use_caching = False ###
 from seamless.core import macro_mode_on
 from seamless.core import context, cell, transformer, pytransformercell, macro
 
@@ -42,7 +43,7 @@ import time; time.sleep(0.5) #doing this instead of equilibrate() will cause the
 ### ctx.equilibrate()
 print(ctx.MACRO_macro.a.value)
 print(ctx.MACRO_macro.b.value)
-print(hasattr(ctx.MACRO_macro, "c"))
+print(hasattr(ctx.MACRO_macro, "d"))
 print(ctx.MACRO_macro.result.value) #None instead of 3002, unless you enable ctx.equilibrate above
 
 def mount_check():
@@ -64,8 +65,8 @@ ctx.equilibrate()
 
 print(ctx.MACRO_macro.a.value)
 print(ctx.MACRO_macro.b.value)
-print(hasattr(ctx.MACRO_macro, "d"))
-if hasattr(ctx.MACRO_macro, "d"):
+print(ctx.MACRO_macro.hasattr("d"))
+if ctx.MACRO_macro.hasattr("d"):
     print(ctx.MACRO_macro.d.value)
 print(ctx.MACRO_macro.result.value) #will never be None! 3002 if the reconstruction failed, 3004 if it succeeded
 
@@ -106,16 +107,18 @@ if ctx.MACRO_macro.hasattr("d"):
 print(ctx.MACRO_macro.result.value) #will never be None! 3002 if the reconstruction failed, 3004 if it succeeded
 
 print("Change 5")
+"""
 ctx.macro_code.set(
     ctx.macro_code.value.replace("raise Exception", "#raise Exception")
 )
+ctx.equilibrate()
+"""
 ctx.param.set(0)
 ctx.equilibrate()
 print(ctx.MACRO_macro.a.value)
 print(ctx.MACRO_macro.b.value)
 print(ctx.MACRO_macro.hasattr("d"))
 if ctx.MACRO_macro.hasattr("d"):
-    print(type(ctx.MACRO_macro.d))
     print(ctx.MACRO_macro.d.value)
 print(ctx.MACRO_macro.result.value) #will never be None! 3002 if the reconstruction failed, 3004 if it succeeded
 

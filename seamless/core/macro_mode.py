@@ -32,6 +32,7 @@ def outer_macro():
 
 @contextmanager
 def macro_mode_on(macro=None):
+    from . import Context
     from .layer import fill_objects, check_async_macro_contexts
     global _macro_mode
     old_macro_mode = _macro_mode
@@ -49,5 +50,21 @@ def macro_mode_on(macro=None):
     if macro is None:
         fill_objects(None, None)
         check_async_macro_contexts(None, None)
+        created_contexts = []
+        for ctx in curr_macro_register:
+            if not isinstance(ctx, Context):
+                continue
+            for c in created_contexts:
+                if c._part_of(ctx):
+                    created_contexts.remove(c)
+                    created_contexts.append(ctx)
+                    break
+                if ctx._part_of(c):
+                    break
+            else:
+                created_contexts.append(ctx)
+        for ctx in created_contexts:
+            ctx._get_manager().activate()
+
 
 from . import mount

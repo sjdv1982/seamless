@@ -81,6 +81,7 @@ class Manager:
         self.pin_to_cells = {} #outputpin => (index, cell) list
         self._ids = 0
         self.unstable = set()
+        self.children_unstable = set()
         #for now, just a single global workqueue
         from .mainloop import workqueue
         self.workqueue = workqueue
@@ -104,6 +105,8 @@ class Manager:
         for childname, child in self.ctx()._children.items():
             if isinstance(child, Context):
                 child._manager.activate()
+            elif isinstance(child, Worker):
+                child.activate()
         self.flush()
 
     def deactivate(self):
@@ -161,7 +164,7 @@ class Manager:
         #TODO: determine if with the target cell type, "only_text" warrants an update
         assert cell._get_manager() is self
         mode, submode = alias_mode, None
-        value = cell.serialize(mode, submode)
+        value, _ = cell.serialize(mode, submode)
         different, text_different = target.deserialize(value, mode, submode,
           #from_pin is set to True, also for aliases...
           from_pin=True, default=False
@@ -235,8 +238,8 @@ class Manager:
             assert worker is not None #weakref may not be dead
             connection = (con_id, target)
             if cell._status == Cell.StatusFlags.OK:
-                value = cell.serialize(target.mode, target.submode)
-                target.receive_update(value)
+                value, checksum = cell.serialize(target.mode, target.submode)
+                target.receive_update(value, checksum)
             else:
                 if isinstance(target, EditPinBase) and target.last_value is not None:
                     raise NotImplementedError ### also output *to* the cell!
@@ -305,8 +308,6 @@ class Manager:
             target._check_mode(pin.mode, pin.submode)
             if isinstance(worker, Transformer):
                 worker._on_connect_output()
-                if worker._last_value is not None:
-                    raise NotImplementedError
             elif pin.last_value is not None:
                 raise NotImplementedError #previously unconnected reactor output
                 """
@@ -327,6 +328,7 @@ class Manager:
         assert link._get_manager() is self
         linked = link.get_linked()
         if link._is_sealed():
+            assert isinstance(linked, (Cell, EditPinBase, OutputPinBase))
             path = Path(link)
             layer.connect_path(path, target)
             return self
@@ -358,9 +360,9 @@ class Manager:
         only_text = (text_different and not different)
         if different or text_different:
             for con_id, pin in self.cell_to_pins.get(cell, []):
-                value = cell.serialize(pin.mode, pin.submode)
+                value, checksum = cell.serialize(pin.mode, pin.submode)
                 if different or pin.submode == "text":
-                    pin.receive_update(value)
+                    pin.receive_update(value, checksum)
         if text_different and cell._mount is not None:
             self.mountmanager.add_cell_update(cell)
         if different or text_different:
@@ -375,8 +377,8 @@ class Manager:
         assert isinstance(cell, CellLikeBase)
         assert cell._get_manager() is self
         for con_id, pin in self.cell_to_pins.get(cell, []):
-            value = cell.serialize(pin.mode, pin.submode)
-            pin.receive_update(value)
+            value, checksum = cell.serialize(pin.mode, pin.submode)
+            pin.receive_update(value, checksum)
         self.cell_send_update(cell, only_text=False)
         if cell._mount is not None:
             self.mountmanager.add_cell_update(cell)
@@ -402,8 +404,8 @@ class Manager:
                 value, default = child._prelim_val
                 self.set_cell(child, value, default=default)
                 child._prelim_val = None
-        elif isinstance(child, Worker):
-            child.activate()
+        ###elif isinstance(child, Worker):
+        ###    child.activate()
         #then, trigger hook (not implemented) #TODO
 
     @main_thread_buffered

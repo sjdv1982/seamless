@@ -626,7 +626,7 @@ class Silk(SilkBase):
             except:
                 #TODO: store exception instead
                 print("Warning: exception in buffered Silk structure")
-                traceback.print_exc(0)
+                traceback.print_exc() ###
                 self._buffer_nosync = True
         else:
             self._validate(full=full)

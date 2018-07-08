@@ -86,15 +86,13 @@ class MountItem:
                 raise Exception("File path '%s' does not exist, but authority is 'file-strict'" % self.path)
             else:
                 if "w" in self.mode and not cell_empty:
-                    checksum = cell.checksum()
-                    value = cell.serialize("buffer")
+                    value, checksum = cell.serialize("buffer")
                     with self.lock:
                         self._write(value)
                         self._after_write(checksum)
         else: #self.authority == "cell"
             if not cell_empty:
-                checksum = cell.checksum()
-                value = cell.serialize("buffer")
+                value, checksum = cell.serialize("buffer")
                 #if "r" in self.mode and self._exists():  #comment out, must read in .storage
                 if exists:
                     with self.lock:
@@ -173,7 +171,7 @@ class MountItem:
             return
         checksum = cell.checksum()
         if self.last_checksum != checksum:
-            value = cell.serialize("buffer")
+            value, _ = cell.serialize("buffer")
             assert cell._checksum(value, buffer=True) == checksum, cell._format_path()
             with self.lock:
                 self._write(value)
@@ -208,7 +206,7 @@ class MountItem:
                 self.set(filevalue, checksum=file_checksum)
             else:
                 print("Warning: write-only file %s (%s) has changed on disk, overruling" % (self.path, self.cell()))
-                value = cell.serialize("buffer")
+                value, _ = cell.serialize("buffer")
                 assert cell._checksum(value, buffer=True) == cell_checksum, cell._format_path()
                 with self.lock:
                     self._write(value)

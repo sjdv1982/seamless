@@ -3,6 +3,7 @@ import traceback
 
 from .worker import Worker, InputPin, OutputPin
 from .cached_compile import cached_compile
+from . import cache
 
 class ExecError(Exception): pass
 
@@ -22,7 +23,7 @@ class Macro(Worker):
         self._values = {}
         self.code_object = None
         self.namespace = {}
-        self.function_expr_template = "{0}(ctx=ctx,"
+        self.function_expr_template = "{0}\n{1}(ctx=ctx,"
         for p in sorted(macro_params.keys()):
             param = macro_params[p]
             self._macro_params[p] = param
@@ -30,11 +31,9 @@ class Macro(Worker):
             if isinstance(param, str):
                 mode = param
             elif isinstance(param, (list, tuple)):
-                io = param[0]
+                mode = param[0]
                 if len(param) > 1:
-                    mode = param[1]
-                if len(param) > 2:
-                    submode = param[2]
+                    submode = param[1]
             else:
                 raise ValueError((p, param))
             pin = InputPin(self, p, mode, submode)
@@ -54,7 +53,6 @@ class Macro(Worker):
     def execute(self):
         from .macro_mode import macro_mode_on, get_macro_mode
         from .context import context, Context
-        #TODO: macro caching!!!
         assert self._context is not None
         macro_context_name = self.macro_tag + self.name
         self.macro_context_name = macro_context_name
@@ -88,24 +86,33 @@ class Macro(Worker):
                         raise ExecError from None
                     self._context()._add_child(macro_context_name, ctx)
                     self.exception = None
+                    layer.fill_objects(ctx, self)
                     '''
-                    Caching (TODO) has to happen here
+                    Caching happens here
                     The old context (gen_context) is deactivated, but the workers have still been running,
                      and sending updates that are accumulated in the work queue (global and manager-buffered)
                     Now it is time to re-assign those worker kernels and cell values (replacing them with dummies)
                      that are cache hits. Never replace whole cells and contexts!
-                    Finally, for all old cells and workers that were cache hits, a successor must be assigned
+                    TODO: Finally, for all old cells and workers that were cache hits, a successor must be assigned
                     '''
+                    if self.gen_context is not None:
+                        hits = cache.cache(ctx, self.gen_context)
 
-                    layer.fill_objects(ctx, self)
-                    def seal(c):
-                        c._seal = self
-                        for child in c._children.values():
-                            if isinstance(child, Context):
-                                seal(child)
-                    seal(ctx)
-                    layer.check_async_macro_contexts(ctx, self)
-
+            with macro_mode_on(self):
+                def seal(c):
+                    c._seal = self
+                    for child in c._children.values():
+                        if isinstance(child, Context):
+                            seal(child)
+                seal(ctx)
+                layer.check_async_macro_contexts(ctx, self)
+                ctx._get_manager().activate()
+            """
+            if self.gen_context is not None:
+                for t in hits["transformers"]:
+                    print("resend", t)
+                    t.resend()
+            """
             if self.gen_context is not None:
                 layer.clear_objects(self.gen_context)
                 self.gen_context.self.destroy()
@@ -153,11 +160,13 @@ class Macro(Worker):
             self._pending_updates -= 1
 
 
-    def receive_update(self, input_pin, value):
+    def receive_update(self, input_pin, value, checksum):
         if value is None:
             self._missing.add(input_pin)
             self._values[input_pin] = None
         else:
+            if not self._receive_update_checksum(input_pin, checksum):
+                return
             if input_pin == "code":
                 code = value.value
                 func_name = value.func_name

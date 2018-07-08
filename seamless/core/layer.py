@@ -170,8 +170,8 @@ class LayeredConnection:
         mgr.pin_from_cell[target] = rev_connection
 
         if cell._status == CellLikeBase.StatusFlags.OK:
-            value = cell.serialize(target.mode, target.submode)
-            target.receive_update(value)
+            value, checksum = cell.serialize(target.mode, target.submode)
+            target.receive_update(value, checksum)
 
     def _activate_pin_cell(self):
         pin, target = self.source.obj(), self.target.obj()
@@ -192,8 +192,6 @@ class LayeredConnection:
         worker = pin.worker_ref()
         if isinstance(worker, Transformer):
             worker._on_connect_output()
-            if worker._last_value is not None:
-                raise NotImplementedError
         elif pin.last_value is not None:
             raise NotImplementedError #previously unconnected reactor output
 
@@ -252,7 +250,7 @@ class LayeredConnection:
                     elif isinstance(target, OutputPinBase):
                         mgr.cell_from_pin.pop(target)
                 elif isinstance(target, (InputPinBase, EditPinBase)):
-                    target.receive_update(None)
+                    target.receive_update(None, None)
                     mgr.pin_from_cell.remove(target)
         if self.target.obj is not None and self.target.obj() is obj:
             if not self.target.static:
