@@ -44,3 +44,5 @@ ctx.equilibrate()
 
 print(ctx.result.value)
 print(ctx.status())
+
+shell = ctx.tf.shell()
