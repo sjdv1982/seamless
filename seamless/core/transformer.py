@@ -18,7 +18,7 @@ class Transformer(Worker):
     active = False
     _destroyed = False
 
-    def __init__(self, transformer_params):
+    def __init__(self, transformer_params, with_schema=False):
         super().__init__()
         self.state = {}
         self.code = InputPin(self, "code", "ref", "pythoncode", "pytransformer")
@@ -31,7 +31,16 @@ class Transformer(Worker):
         self._last_value_preliminary = False
         self._message_id = 0
         self._transformer_params = OrderedDict()
+        forbidden = ("code",)
+        if with_schema:
+            schema_pin = InputPin(self, "schema", "copy", "json")
+            self._io_attrs.append("schema")
+            thread_inputs.append("schema")
+            self._pins["schema"] = schema_pin
+            forbidden += ("schema",)
         for p in sorted(transformer_params.keys()):
+            if p in forbidden:
+                raise ValueError("Forbidden pin name: %s" % p)
             param = transformer_params[p]
             self._transformer_params[p] = param
             pin = None
@@ -79,7 +88,7 @@ class Transformer(Worker):
         """
 
         self.transformer = KernelTransformer(
-            self,
+            self, with_schema,
             thread_inputs, self._output_name,
             self.output_queue, self.output_semaphore
         )
@@ -324,5 +333,5 @@ class Transformer(Worker):
             return self.StatusFlags.ERROR.name
         return self.StatusFlags.OK.name
 
-def transformer(params):
-    return Transformer(params)
+def transformer(params, with_schema=False):
+    return Transformer(params, with_schema)

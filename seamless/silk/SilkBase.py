@@ -1,6 +1,7 @@
 from functools import partialmethod
 import json
 import textwrap
+import linecache
 
 class SilkBase:
 
@@ -96,33 +97,38 @@ for name in binary_special_method_names:
 import ast
 from functools import lru_cache
 
-def compile_function(code_dict, mode="method"):
+def compile_function(code_dict, name, mode="method"):
     assert isinstance(code_dict, dict)
     assert code_dict["language"] == "python"
     code = code_dict["code"]
-    return compile_function_(code, mode)
+    return compile_function_(code, name, mode)
 
 @lru_cache(10000)
-def compile_function_(code, mode):
+def compile_function_(code, name, mode):
     code = textwrap.dedent(code)
     #import astdump
     #print(astdump.indented(code))
-    ast_tree = compile(code, "<string>", "exec", ast.PyCF_ONLY_AST)
+    ast_tree = compile(code, name, "exec", ast.PyCF_ONLY_AST)
     assert len(ast_tree.body) == 1
     func = ast_tree.body[0]
+    cache_entry = (
+        len(code), None,
+        [line+'\n' for line in code.splitlines()], name
+    )
+    linecache.cache[name] = cache_entry
 
     if isinstance(func, ast.FunctionDef):
         func_name = ast_tree.body[0].name
         namespace = {}
         ast_tree.body[0].decorator_list.clear()
-        code = compile(ast_tree, "<string>", "exec")
+        code = compile(ast_tree, name, "exec")
         exec(code, namespace)
         return namespace[func_name]
     elif mode == "method":
         assert isinstance(func, ast.Assign)
         fv = func.value
         assert isinstance(fv, ast.Lambda)
-        code = compile(ast.Expression(fv), "<string>", "eval")
+        code = compile(ast.Expression(fv), name, "eval")
         return eval(code)
     elif mode == "property-getter":
         if isinstance(func.value, ast.Call):
@@ -132,12 +138,13 @@ def compile_function_(code, mode):
         else:
             raise AssertionError
         assert isinstance(fv, ast.Lambda)
-        code = compile(ast.Expression(fv), "<string>", "eval")
+        code = compile(ast.Expression(fv), name, "eval")
         return eval(code)
     elif mode == "property-setter":
         raise SyntaxError(code)
     else:
         raise SyntaxError(code)
+
 
 class AlphabeticDict(dict):
     def __iter__(self):

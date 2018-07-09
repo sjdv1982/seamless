@@ -58,6 +58,8 @@ class Silk(SilkBase):
         assert not isinstance(data, Silk)
         if schema is None:
             schema = {}
+        elif isinstance(schema, Wrapper):
+            schema = schema._unwrap()
         assert isinstance(schema, dict) #  Silk provides its own smart wrapper around schema
                                         #   for now, no other wrappers are allowed
                                         #   as this complicates forking and external upaates to schema.
@@ -86,7 +88,8 @@ class Silk(SilkBase):
             constructor_code = methods.get("__init__", None)
             if constructor_code is None:
                 raise AttributeError("__init__")
-            constructor = compile_function(constructor_code)
+            name = "Silk __init__"
+            constructor = compile_function(constructor_code, name)
             result = constructor(self, *args, **kwargs)
             assert result is None # __init__ must return None
             return self
@@ -94,7 +97,8 @@ class Silk(SilkBase):
             call_code = methods.get("__call__", None)
             if call_code is None:
                 raise AttributeError("__call__")
-            call = compile_function(call_code)
+            name = "Silk __call__"
+            call = compile_function(call_code, name)
             return call(self, *args, **kwargs)
 
     @property
@@ -281,7 +285,8 @@ class Silk(SilkBase):
                 setter = m.get("setter", None)
                 if setter is not None:
                     mm = {"code": setter, "language": m["language"]}
-                    fset = compile_function(mm)
+                    name = "Silk .%s setter" % attr
+                    fset = compile_function(mm, name)
                     fset(self, value)
                 else:
                     raise TypeError(attr) #read-only property cannot be assigned to
@@ -304,12 +309,14 @@ class Silk(SilkBase):
         getter_code = inspect.getsource(prop.fget)
         m["getter"] = getter_code
         mm = {"code": getter_code, "language": "python"}
-        compile_function(mm, mode="property-getter")
+        name = "Silk .%s getter" % attribute
+        compile_function(mm, name, mode="property-getter")
         if prop.fset is not None:
             setter_code = inspect.getsource(prop.fset)
             m["setter"] = setter_code
             mm = {"code": setter_code, "language": "python"}
-            compile_function(mm)
+            name = "Silk .%s setter" % attribute
+            compile_function(mm, name)
         # TODO: deleter
 
         schema = self._schema
@@ -327,7 +334,8 @@ class Silk(SilkBase):
         assert callable(func)
         code = inspect.getsource(func)
         m = {"code": code, "language": "python"}
-        compile_function(m)
+        name = "Silk .%s" % attribute
+        compile_function(m, name)
 
         schema = self._schema
         methods = schema.get("methods", None)
@@ -341,10 +349,16 @@ class Silk(SilkBase):
     def _add_validator(self, func, attr, *, from_meta):
         assert callable(func)
         code = inspect.getsource(func)
-        v = {"code": code, "language": "python"}
-        compile_function(v)
-
+        
         schema = self._schema
+        validators = schema.get("validators", None)
+        if validators is None:
+            l = 1
+        else:
+            l = len(validators) + 1
+        v = {"code": code, "language": "python"}
+        compile_function(v, "Silk validator %d" % l)
+
         if isinstance(attr, int):
             items_schema = schema.get("items", None)
             if items_schema is None:
@@ -362,7 +376,6 @@ class Silk(SilkBase):
                 attr_schema = {}
                 prop_schema[attr] = attr_schema
             schema = attr_schema
-        validators = schema.get("validators", None)
         if validators is None:
             validators = []
             schema["validators"] = validators
@@ -447,10 +460,12 @@ class Silk(SilkBase):
                     getter = m.get("getter", None)
                     if getter is not None:
                         mm = {"code": getter, "language": m["language"]}
-                        fget = compile_function(mm, "property-getter")
+                        name = "Silk .%s getter" % attr
+                        fget = compile_function(mm, name, "property-getter")
                         return fget(self)
                 else:
-                    method = compile_function(m)
+                    name = "Silk .%s" % attr
+                    method = compile_function(m, name)
                     return MethodType(method, self)
         if attr in type(self).__slots__:
             return super().__getattribute__(attr)
@@ -598,8 +613,9 @@ class Silk(SilkBase):
                     )
                     proxy._forks = self._forks
                 validators = schema.get("validators", [])
-                for validator_code in validators:
-                    validator_func = compile_function(validator_code)
+                for v, validator_code in enumerate(validators):
+                    name = "Silk validator %d" % (v+1)
+                    validator_func = compile_function(validator_code, name)
                     validator_func(proxy)
         if self._parent is not None:
             self.parent.validate(full=False)
@@ -735,4 +751,5 @@ class _BufferedSilkFork(_SilkFork):
 
 from .modify_methods import try_modify_methods
 from ..mixed import MixedBase
+from ..core import Wrapper
 print("TODO: Silk form_validator") #see above

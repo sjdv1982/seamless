@@ -1,15 +1,22 @@
 import weakref
 from pprint import pformat
+from copy import deepcopy
 
-class SchemaWrapper:
+from ..core import Wrapper
+class SchemaWrapper(Wrapper):
     _update_hook = None
+    _parent = lambda self: None
     def __init__(self, _parent, _dict, _update_hook):
-        super().__setattr__("_parent", weakref.ref(_parent))
+        if _parent is not None:
+            super().__setattr__("_parent", weakref.ref(_parent))
         if isinstance(_dict, SchemaWrapper):
             _dict = _dict.dict
         super().__setattr__("_dict", _dict)
         if _update_hook is not None:
             super().__setattr__("_update_hook", _update_hook)
+
+    def _unwrap(self):
+        return self._dict
 
     def _get(self, attribute):
         child = self._dict.get(attribute, None)
@@ -21,6 +28,9 @@ class SchemaWrapper:
             if child is None:
                 raise AttributeError(attribute)
         return SchemaWrapper(self._parent(), child, self._update_hook)
+
+    def copy(self):
+        return SchemaWrapper(None, deepcopy(self._dict), None)
 
     def pop(self, attribute):
         child = self._dict.get(attribute, None)
@@ -58,10 +68,10 @@ class SchemaWrapper:
         setattr(self, item, value)
 
     def __getattribute__(self, attribute):
-        if attribute == "dict":
+        if attribute == "dict": #TODO: property with docstring
             return super().__getattribute__("_dict")
-        if attribute == "pop":
-            return super().__getattribute__("pop")
+        if attribute in ("pop", "copy"):
+            return super().__getattribute__(attribute)
         if isinstance(attribute, str) and attribute.startswith("_"):
             return super().__getattribute__(attribute)
         return self._get(attribute)

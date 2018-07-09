@@ -64,8 +64,9 @@ def validator_validators(validator, validators, instance, schema):
     if isinstance(instance, Silk):
         instance = instance.self.data
     silkobject = Silk(data=instance, schema=schema) #containing the methods
-    for validator_code in validators:
-        validator_func = compile_function(validator_code)
+    for v, validator_code in enumerate(validators):
+        name = "Silk validator %d" % (v+1)
+        validator_func = compile_function(validator_code, name)
         try:
             validator_func(silkobject)
         except Exception:

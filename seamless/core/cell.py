@@ -23,7 +23,7 @@ import ast
 from ast import PyCF_ONLY_AST, FunctionDef
 import inspect
 
-from . import SeamlessBase
+from . import SeamlessBase, Wrapper
 from ..mixed import io as mixed_io
 from .cached_compile import cached_compile
 from . import get_macro_mode, macro_register
@@ -108,6 +108,8 @@ class CellBase(CellLikeBase):
     def set(self, value):
         """Update cell data from Python code in the main thread."""
         assert not self._slave #slave cells are read-only
+        if isinstance(value, Wrapper):
+            value = value._unwrap()
         if self._context is None:
             self._prelim_val = value, False #non-default-value prelim
         else:

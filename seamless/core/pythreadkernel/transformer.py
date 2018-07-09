@@ -1,7 +1,5 @@
 import traceback
 from . import Worker
-###from ...dtypes.objects import PythonTransformerCodeObject
-###from ...dtypes import data_type_to_data_object
 from .killable_thread import KillableThread
 from multiprocessing import Process
 import functools
@@ -20,12 +18,13 @@ def return_preliminary(result_queue, value):
     #print("return_preliminary", value)
     result_queue.put((-1, value))
 
-def execute(name, code_object, namespace, output_name, result_queue):
+def execute(name, code_object, namespace, output_name, with_schema, result_queue):
     namespace["return_preliminary"] = functools.partial(
         return_preliminary, result_queue
     )
     try:
-        namespace.pop(output_name, None)
+        if not with_schema:
+            namespace.pop(output_name, None)
         exec(code_object, namespace)
     except:
         exc = traceback.format_exc()
@@ -43,7 +42,8 @@ def execute(name, code_object, namespace, output_name, result_queue):
 class Transformer(Worker):
     name = "transformer"
 
-    def __init__(self, parent, inputs, output_name, output_queue, output_semaphore, **kwargs):
+    def __init__(self, parent, with_schema, inputs, output_name, output_queue, output_semaphore, **kwargs):
+        self.with_schema = with_schema
         self.output_name = output_name
         self.output_queue = output_queue
         self.output_semaphore = output_semaphore
@@ -53,9 +53,16 @@ class Transformer(Worker):
         self.last_result = None
         self.running_thread = None
 
-        self.function_expr_template = "{0}\n%s  = {1}(" % self.output_name
-        for inp in sorted(list(inputs)):
-            self.function_expr_template += "%s=%s," % (inp, inp)
+        if self.with_schema:
+            self.function_expr_template = "{0}\n{1}("
+            for inp in sorted(list(inputs)) + [self.output_name]:
+                if inp == "schema":
+                    continue
+                self.function_expr_template += "%s=%s," % (inp, inp)
+        else:
+            self.function_expr_template = "{0}\n%s  = {1}(" % self.output_name
+            for inp in sorted(list(inputs)):
+                self.function_expr_template += "%s=%s," % (inp, inp)
         self.function_expr_template = self.function_expr_template[:-1] + ")"
 
         all_inputs = list(inputs) + ["code"]
@@ -68,6 +75,7 @@ class Transformer(Worker):
         self.output_semaphore.release()
 
     def update(self, updated, semaphore):
+        from ...silk import Silk
         self.output_queue.append(("@START", None))
         self.output_semaphore.release()
         ok = False
@@ -93,8 +101,12 @@ class Transformer(Worker):
             self.namespace["__name__"] = self.name
             for name in self.inputs:
                 self.namespace[name] = self.values[name]
+            if self.with_schema:
+                output = Silk(schema=self.namespace["schema"])
+                self.namespace[self.output_name] = output
             queue = Queue()
-            args = (self.parent()._format_path(), self.code_object, self.namespace, self.output_name, queue)
+            args = (self.parent()._format_path(), self.code_object,
+              self.namespace, self.output_name, self.with_schema, queue)
             executor = Executor(target=execute,args=args, daemon=True)
             executor.start()
             dead_time = 0

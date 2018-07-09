@@ -126,7 +126,7 @@ class Worker(metaclass=ABCMeta):
                         self.exception = exc
                         print("*********** ERROR in transformer %s: execution error **************" % self.parent())
                         import traceback
-                        traceback.print_exc()
+                        traceback.print_exc(-1)
 
                     else:
                         self.exception = None
