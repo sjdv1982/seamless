@@ -5,6 +5,7 @@ import sys
 
 
 def main():
+    raise NotImplementedError ### TODO
     cmd = """import seamless
 from seamless import context, cell, pythoncell, transformer, reactor, \
  macro, export

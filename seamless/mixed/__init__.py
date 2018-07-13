@@ -93,6 +93,7 @@ for name in binary_special_method_names:
 
 
 from .MixedDict import MixedDict, mixed_dict
+from .MixedObject import MixedObject
 from .Monitor import Monitor
 from .MakeParentMonitor import MakeParentMonitor
 from .OverlayMonitor import OverlayMonitor

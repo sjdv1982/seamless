@@ -1,7 +1,6 @@
 from .cell import CellLikeBase, Cell, JsonCell, TextCell
 from ..mixed import MixedBase, OverlayMonitor, MakeParentMonitor
 from . import get_macro_mode
-from ..silk import Silk
 import weakref
 import traceback
 from copy import deepcopy
@@ -116,15 +115,41 @@ class Outchannel(CellLikeBase):
     def _check_mode(self, mode, submode):
         if mode == "copy":
             print("TODO: Outchannel, copy data")
+        if mode == "ref" and submode == "pythoncode":
+            return
         if mode not in ("copy", "ref", None):
             raise NotImplementedError
         if submode not in ("silk", "json", None):
             raise NotImplementedError
 
     def serialize(self, mode, submode):
+        from ..silk import Silk
         structured_cell = self.structured_cell()
         assert structured_cell is not None
         data = structured_cell.monitor.get_data(self.outchannel)
+        if (mode, submode) == ("ref", "pythoncode"):
+            #TODO: - for now, assert celltype is pytransformer
+            #      - single code (for now, it is copied from cell.py)
+            import inspect, ast
+            from .cached_compile import cached_compile
+            from ast import PyCF_ONLY_AST, FunctionDef
+            class FakeTransformerCell:
+                def __init__(self, value):
+                    if inspect.isfunction(value):
+                        code = inspect.getsource(value)
+                        code = strip_source(code)
+                        value = code
+                    ast = cached_compile(value, "transformer", "exec", PyCF_ONLY_AST)
+                    is_function = (len(ast.body) == 1 and
+                                   isinstance(ast.body[0], FunctionDef))
+                    if is_function:
+                        self.func_name = ast.body[0].name
+                    else:
+                        self.func_name = "transform"
+                    self.is_function = is_function
+                    self.value = value
+            result = FakeTransformerCell(data)
+            return result, None #TODO: checksum?
         data = deepcopy(data) ###TODO: rethink a bit; note that deepcopy also casts data from Silk to dict!
         if submode == "silk":
             #Schema-less silk; just for attribute access syntax
@@ -199,6 +224,7 @@ class StructuredCell(CellLikeBase):
       inchannels,
       outchannels
     ):
+        from ..silk import Silk
         assert get_macro_mode()
         super().__init__()
         self.name = name
@@ -335,6 +361,8 @@ class StructuredCell(CellLikeBase):
             self.schema._mount_setter = self._set_schema_from_mounted_file
 
     def connect_inchannel(self, source, inchannel):
+        if inchannel == ("self",):
+            inchannel = ()
         ic = self.inchannels[inchannel]
         manager = source._get_manager()
         if isinstance(source, Cell):
@@ -346,6 +374,8 @@ class StructuredCell(CellLikeBase):
         ic._status = status
 
     def connect_outchannel(self, outchannel, target):
+        if outchannel == ("self",):
+            outchannel = ()
         oc = self.outchannels[outchannel]
         manager = self.data._get_manager()
         manager.connect_cell(oc, target)

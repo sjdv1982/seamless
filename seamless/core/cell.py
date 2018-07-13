@@ -458,7 +458,6 @@ class MixedCell(Cell):
                 except:
                     return None
             else:
-                print(storage, form, value, type(value))
                 b = self._value_to_bytes(value, storage, form)
         return hashlib.md5(b).hexdigest()
 

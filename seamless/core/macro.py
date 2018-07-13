@@ -27,13 +27,15 @@ class Macro(Worker):
         for p in sorted(macro_params.keys()):
             param = macro_params[p]
             self._macro_params[p] = param
-            mode, submode = "copy", None
+            mode, submode, celltype = "copy", None, None
             if isinstance(param, str):
                 mode = param
             elif isinstance(param, (list, tuple)):
                 mode = param[0]
                 if len(param) > 1:
                     submode = param[1]
+                if len(param) > 2:
+                    celltype = param[2]
             else:
                 raise ValueError((p, param))
             pin = InputPin(self, p, mode, submode)

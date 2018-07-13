@@ -40,15 +40,17 @@ Buffering:
 
 class Silk(SilkBase):
     __slots__ = [
-            "_parent", "data", "_schema",
+            "_parent", "_parent_attr", "data", "_schema",
             "_modifier", "_forks", "_buffer", "_stateful", "_buffer_nosync",
             "_schema_update_hook"
     ]
     # TODO: append method that may also create a schema, depending on policy.infer_item
 
     def __init__(self, schema = None, *, parent = None, data = None,
-      modifier = 0, buffer = None, stateful = False, schema_update_hook = None):
+      modifier = 0, buffer = None, stateful = False, schema_update_hook = None,
+      _parent_attr = None):
         self._parent = parent
+        self._parent_attr = _parent_attr
         self._modifier = modifier
         self._forks = []
         self.data = data
@@ -181,7 +183,10 @@ class Silk(SilkBase):
                 if isinstance(value, _types["array"]) and len(self.data) > 0:
                     self._infer_list_item(value_schema)
         elif isinstance(value, Scalar):
-            assert self._parent is None #MUST be independent
+            assert self._parent is None or self._parent_attr is not None
+            if self._parent is not None:
+                self._parent._setitem(self._parent_attr, value)
+                return
             self._set_value_simple(value, buffer)
         elif isinstance(value, _types["array"]):
             #invalidates all Silk objects constructed from items
@@ -349,7 +354,7 @@ class Silk(SilkBase):
     def _add_validator(self, func, attr, *, from_meta):
         assert callable(func)
         code = inspect.getsource(func)
-        
+
         schema = self._schema
         validators = schema.get("validators", None)
         if validators is None:
@@ -434,7 +439,7 @@ class Silk(SilkBase):
             self._modifier
             proxy = Silk(data = self._buffer,
                          schema = self._schema,
-                         modifier = self._modifier & SILK_BUFFER_CHILD,
+                         modifier = self._modifier | SILK_BUFFER_CHILD,
                          parent = self,
                     )
             proxy._forks = self._forks
@@ -449,7 +454,7 @@ class Silk(SilkBase):
         if attr == "self":
             return Silk(data = data,
                         schema = schema,
-                        modifier = self._modifier & SILK_NO_METHODS,
+                        modifier = self._modifier | SILK_NO_METHODS,
                         parent = self._parent
                    )
 
@@ -507,10 +512,14 @@ class Silk(SilkBase):
         modifier = self._modifier
         if self._buffer is not None:
             data = self._buffer
-            modifier = modifier & SILK_BUFFER_CHILD
+            modifier = modifier | SILK_BUFFER_CHILD
         if isinstance(item, str) and hasattr(data, item):
-            return getattr(data, item)
-        d = data[item]
+            result = getattr(data, item)
+            if not isinstance(data, (MixedDict, MixedObject)) or result.value is not None:
+                return result
+            d = result
+        else:
+            d = data[item]
         if isinstance(d, Scalar):
             return scalar_conv(d)
         if isinstance(item, slice):
@@ -519,7 +528,8 @@ class Silk(SilkBase):
                 parent=self,
                 data=d,
                 schema=schema,
-                modifier=SILK_NO_VALIDATION & modifier,
+                modifier=SILK_NO_VALIDATION | modifier,
+                _parent_attr=item,
             )
 
         if isinstance(item, int):
@@ -544,13 +554,14 @@ class Silk(SilkBase):
                 schema_props[item] = child_schema
                 if self._schema_update_hook is not None:
                     self._schema_update_hook()
-
-        return Silk(
+        result = Silk(
           parent=self,
           data=d,
           schema=child_schema,
           modifier=modifier,
+          _parent_attr=item,
         )
+        return result
 
     def __getitem__(self, item):
         if isinstance(item, str):
@@ -603,7 +614,7 @@ class Silk(SilkBase):
                 if self._buffer is not None or isinstance(data, MixedBase): #hackish, see above
                     modifier = self._modifier
                     if self._buffer is not None:
-                        modifier = modifier & SILK_BUFFER_CHILD
+                        modifier = modifier | SILK_BUFFER_CHILD
                     if isinstance(data, MixedBase):
                         data = data.value
                     if isinstance(data, Silk):
@@ -750,6 +761,6 @@ class _BufferedSilkFork(_SilkFork):
             self._joined = True
 
 from .modify_methods import try_modify_methods
-from ..mixed import MixedBase
+from ..mixed import MixedBase, MixedDict, MixedObject
 from ..core import Wrapper
 print("TODO: Silk form_validator") #see above

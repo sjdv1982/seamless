@@ -33,11 +33,12 @@ Then:
       In a later version, also support the addition of new cells (although these will never be cached)
     - Terminology: authority => source. "only_source" option in mounting context, mounting only source cells
     - Status dict, also as a structured cell  (also policies like .accept_shell_append)
+  - Silk form validators
+  - Seamless console scripts and installer
 
 Then, slowly move to the mid-level data structure:
 Mostly elide the middle level, dynamically generate at time of low-level generation/serialization.
 The middle level is the input of a translation macro, whereas the low level is the output
-NOTE: use code generation to generate the source of the translation macro, much nicer error messages!
 Normally:
 1. Being under macro control, the lower level could never be authoritative
 2. Any changes to the mid-level would re-trigger the translation macro.

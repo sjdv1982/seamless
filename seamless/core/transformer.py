@@ -44,7 +44,7 @@ class Transformer(Worker):
             param = transformer_params[p]
             self._transformer_params[p] = param
             pin = None
-            io, mode, submode = None, "copy", None
+            io, mode, submode, celltype = None, "copy", None, None
             if isinstance(param, str):
                 io = param
             elif isinstance(param, (list, tuple)):
@@ -53,6 +53,8 @@ class Transformer(Worker):
                     mode = param[1]
                 if len(param) > 2:
                     submode = param[2]
+                if len(param) > 3:
+                    celltype = param[3]
             else:
                 raise ValueError((p, param))
             if io == "input":
