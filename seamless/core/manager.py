@@ -173,6 +173,10 @@ class Manager:
         if target._mount is not None:
             other.mountmanager.add_cell_update(target)
         if different or text_different:
+            for con_id, pin in other.cell_to_pins.get(target, []):
+                value, checksum = target.serialize(pin.mode, pin.submode)
+                if different or pin.submode == "text":
+                    pin.receive_update(value, checksum)
             only_text_new = (text_different and not different)
             other.cell_send_update(target, only_text_new)
 

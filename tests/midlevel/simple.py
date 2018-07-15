@@ -17,6 +17,7 @@ tree = [
     {
         "path": ("double",),
         "type": "transformer",
+        "language": "python",
         "pins": {"a":{"submode": "silk"}},
         "RESULT": "result",
         "INPUT": "inp",
@@ -37,12 +38,10 @@ tree = [
     {
         "path": ("code",),
         "type": "cell",
-        "celltype": "structured",
-        "format": "mixed",
-        "silk": True,
-        "buffered": True,
+        "celltype": "code",
+        "language": "python",
+        "transformer": True,
         "value": None,
-        "schema": None,
     },
     {
         "type": "connection",
@@ -59,6 +58,7 @@ tree = [
         "source": ("code",),
         "target": ("double", "code"),
     },
+
 ]
 
 with macro_mode_on():
@@ -67,9 +67,6 @@ with macro_mode_on():
 
 print(ctx.pi)
 print(ctx.pi.value)
-print(ctx.internal_children.double.inp.handle)
-#print(ctx.internal_children.double.inp.handle.code)
 ctx.code.set("result = a * 2")
-print(ctx.internal_children.double.inp.handle)
 ctx.equilibrate()
 print(ctx.twopi.value)

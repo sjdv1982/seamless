@@ -94,7 +94,7 @@ def build_structured_cell(ctx, name, silk, plain, buffered, inchannels, outchann
     )
     return sc
 
-def translate_transformer(node, root, namespace, inchannels, outchannels):
+def translate_py_transformer(node, root, namespace, inchannels, outchannels):
     parent = get_path(root, node["path"][:-1], None, None)
     name = node["path"][-1]
     ctx = context(context=parent, name=name)
@@ -102,12 +102,13 @@ def translate_transformer(node, root, namespace, inchannels, outchannels):
 
     result_name = node["RESULT"]
     input_name = node["INPUT"]
+    inchannels = [i for i in inchannels if i != "code" and i[0] != "code"]
     for c in inchannels:
         assert (not len(c)) or c[0] != result_name #should have been checked by highlevel
 
     with_schema = node["with_schema"]
     buffered = node["buffered"]
-    interchannels = [tuple(pin) for pin in node["pins"]] + [("code",)]
+    interchannels = [tuple(pin) for pin in node["pins"]]
     plain = node["plain"]
     inp = build_structured_cell(ctx, input_name, True, plain, buffered, inchannels, interchannels)
     setattr(ctx, input_name, inp)
@@ -122,8 +123,11 @@ def translate_transformer(node, root, namespace, inchannels, outchannels):
         all_pins[pinname] = p
     all_pins[result_name] = "output"
     ctx.tf = transformer(all_pins, with_schema=with_schema)
+    ctx.code = cell("pytransformer")
+    ctx.code.connect(ctx.tf.code)
+    namespace[ctx.path + ("code",), True] = ctx.code
 
-    for pin in list(node["pins"].keys()) + ["code"]:
+    for pin in list(node["pins"].keys()):
         target = getattr(ctx.tf, pin)
         inp.connect_outchannel( (pin,) ,  target )
 
@@ -173,11 +177,13 @@ def translate_cell(node, root, namespace, inchannels, outchannels):
             assert not len(c) #should have been checked by highlevel
         assert ct in ("text", "code", "json")
         if ct == "code":
-            assert node["language"] == "python"
-            if node["transformer"]:
-                child = cell("pytransformer")
+            if node["language"] == "python":
+                if node["transformer"]:
+                    child = cell("pytransformer")
+                else:
+                    child = cell("python")
             else:
-                child = cell("python")
+                child = cell("text")
         else:
             child = cell(ct)
     setattr(parent, name, child)
@@ -192,10 +198,14 @@ def translate_connection(node, namespace, ctx):
     target = get_path(ctx, target_path, namespace, True)
     if isinstance(source, Outchannel):
         name, parent = source.name, source.structured_cell()
-        parent.connect_outchannel((name,), target)
+        if isinstance(name, str):
+            name = (name,)
+        parent.connect_outchannel(name, target)
     elif isinstance(target, Inchannel):
         name, parent = target.name, target.structured_cell()
-        parent.connect_inchannel(source, (name,))
+        if isinstance(name, str):
+            name = (name,)
+        parent.connect_inchannel(source, name)
     else:
         source.connect(target)
 
@@ -215,8 +225,10 @@ def translate(tree, ctx):
     for node in tree:
         t = node["type"]
         if t == "transformer":
+            if node["language"] != "python":
+                raise NotImplementedError
             inchannels, outchannels = find_channels(node["path"], connection_paths)
-            translate_transformer(node, ctx, namespace, inchannels, outchannels)
+            translate_py_transformer(node, ctx, namespace, inchannels, outchannels)
         elif t == "cell":
             inchannels, outchannels = find_channels(node["path"], connection_paths)
             translate_cell(node, ctx, namespace, inchannels, outchannels)
