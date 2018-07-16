@@ -5,6 +5,8 @@ use_caching = True
 
 @functools.lru_cache(10000)
 def _long_signature_cell(cell, root):
+    if isinstance(cell, (Inchannel, Outchannel)):
+        return None #uncachable for now
     result = {}
     mgr = cell._get_manager()
     from_pin = mgr.cell_from_pin.get(cell)
@@ -152,13 +154,13 @@ def _cache(obj, root, old_paths, hits):
     path = obj.path
     long_sig = long_signature(obj, root)
     if path in old_paths and old_paths[path][0] == long_sig:
-        print("cache hit by preservation", obj)
+        #print("cache hit by preservation", obj)
         p = old_paths.pop(path)
         return _do_cache(obj, p[2], hits)
     for old_path in list(old_paths.keys()):
         p = old_paths[old_path]
         if p[0] == long_sig:
-            print("cache hit by long signature", obj, old_path)
+            #print("cache hit by long signature", obj, old_path)
             old_paths.pop(old_path)
             return _do_cache(obj, p[2], hits)
     short_sig = short_signature(obj)
@@ -166,10 +168,10 @@ def _cache(obj, root, old_paths, hits):
         for old_path in list(old_paths.keys()):
             p = old_paths[old_path]
             if p[1] == short_sig:
-                print("cache hit by short signature", obj, old_path)
+                #print("cache hit by short signature", obj, old_path)
                 old_paths.pop(old_path)
                 return _do_cache(obj, p[2], hits)
-    print("cache miss", obj)
+    #print("cache miss", obj)
 
 def cache(ctx, old_ctx):
     hits = {"transformers": {}, "cells": {}}
@@ -181,6 +183,8 @@ def cache(ctx, old_ctx):
             if isinstance(child, Context):
                 build_paths(child)
             elif isinstance(child, (Cell, Transformer)): #TODO: reactors
+                if isinstance(child, (Inchannel, Outchannel)):
+                    continue
                 path = child.path
                 long_sig = long_signature(child, old_ctx)
                 short_sig = short_signature(child)
@@ -197,6 +201,7 @@ def cache(ctx, old_ctx):
 
 from . import Context, Cell, Transformer #TODO: reactors
 from .worker import InputPinBase
+from .structured_cell import Inchannel, Outchannel
 
 """
 Something to consider (long term): topology hits

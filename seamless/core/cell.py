@@ -559,7 +559,7 @@ class PythonCell(Cell):
             assert submode is None, (mode, submode)
             return deepcopy(self._val)
         if mode == "copy":
-            assert submode == "text"
+            assert submode in ("text", None)
             return deepcopy(self._val)
         assert mode == "ref" and submode == "pythoncode", (mode, submode)
         return self
