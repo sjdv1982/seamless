@@ -125,6 +125,7 @@ def translate_py_transformer(node, root, namespace, inchannels, outchannels):
     ctx.tf = transformer(all_pins, with_schema=with_schema)
     ctx.code = cell("pytransformer")
     ctx.code.connect(ctx.tf.code)
+    ctx.code.set(node["code"])
     namespace[ctx.path + ("code",), True] = ctx.code
 
     for pin in list(node["pins"].keys()):
@@ -142,6 +143,13 @@ def translate_py_transformer(node, root, namespace, inchannels, outchannels):
             assert len(c) == 0 #should have been checked by highlevel
         outp = getattr(ctx.tf, result_name)
         namespace[ctx.path + (result_name,), False] = outp
+
+    handle = ctx.inp.handle
+    for path, value in node["values"].items():
+        h = handle
+        for p in path[:-1]:
+            h = getattr(h, p)
+        setattr(h, path[-1], value)
 
     namespace[ctx.path, True] = inp
     namespace[ctx.path, False] = outp
@@ -209,20 +217,20 @@ def translate_connection(node, namespace, ctx):
     else:
         source.connect(target)
 
-def translate(tree, ctx):
-    contexts = {con["path"]: con for con in tree if con["type"] == "context"}
+def translate(graph, ctx):
+    contexts = {con["path"]: con for con in graph if con["type"] == "context"}
     for path in sorted(contexts.keys(), key=lambda k:len(k)):
         parent = get_path(root, path[:-1], None)
         name = path[-1]
         c = context(context=parent, name=name)
         setattr(parent, name, c)
-        # No need to add it to namespace, as long as the low-level tree structure is imitated
+        # No need to add it to namespace, as long as the low-level graph structure is imitated
 
-    connections = [con for con in tree if con["type"] == "connection"]
+    connections = [con for con in graph if con["type"] == "connection"]
     connection_paths = [(con["source"], con["target"]) for con in connections]
 
     namespace = {}
-    for node in tree:
+    for node in graph:
         t = node["type"]
         if t == "transformer":
             if node["language"] != "python":

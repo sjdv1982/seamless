@@ -364,6 +364,11 @@ context : context or None
     def full_destroy(self, from_del=False):
         #all work buffers (work queue and manager work buffers) are now empty
         # time to free memory
+        if from_del: #to prevent some superfluous error messages
+            try:
+                isinstance(self, (Worker, Context))
+            except:
+                return
         path = self.path
         for childname, child in self._children.items():
             if isinstance(child, Worker):

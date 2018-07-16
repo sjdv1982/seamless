@@ -3,7 +3,7 @@ from seamless.core import macro_mode_on, context
 from seamless.midlevel.translate import translate
 import math
 
-tree = [
+graph = [
     {
         "path": ("pi",),
         "type": "cell",
@@ -19,6 +19,8 @@ tree = [
         "type": "transformer",
         "language": "python",
         "pins": {"a":{"submode": "silk"}},
+        "values": {},
+        "code": None,
         "RESULT": "result",
         "INPUT": "inp",
         "with_schema": False,
@@ -63,7 +65,7 @@ tree = [
 
 with macro_mode_on():
     ctx = context(toplevel=True)
-    translate(tree, ctx)
+    translate(graph, ctx)
 
 print(ctx.pi)
 print(ctx.pi.value)
