@@ -197,3 +197,10 @@ def cache(ctx, old_ctx):
 
 from . import Context, Cell, Transformer #TODO: reactors
 from .worker import InputPinBase
+
+"""
+Something to consider (long term): topology hits
+  Macro caching can give a topology hit (if the macro code and macro args are the same).
+  This is different from the current approach of value hits, which depend on the value of the connected cells)
+  Topology hits may interfere with layers, but maybe they could be made to work
+"""

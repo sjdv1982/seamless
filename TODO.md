@@ -1,24 +1,17 @@
 UPDATE OF THE UPDATE
 Great Refactor is underway (see seamless-toward-02.md).
 Most of the text below the FIRST section is out of date.
-Things to do (all low level) :
-- Signatures/checksums and macro caching.
-  (NOTE: macro caching is a low-level thing, because at the high-level, it is just a change-of-value of the macro parameter, no topology change!)
-  Macro caching can give a topology hit (if the macro code and macro args are the same), and the resulting context may give value hits (depend on the value of the connected cells)
-  For now, no topology hits (may interfere with layers)
-- Get rid of auto-pathing; Paths must be constructed explicitly
+Things to do:
 
-Then, a proof-of-principle of the middle/high level
+First:
+A proof-of-principle of the middle/high level
 
 Then:
-   - cson cells; also structured_cell in plain mode must be able to accommodate
-      a cson's checksum is the checksum of the JSON representation; if you don't want that, connect a text pin/cell downstream of it (see only_text below)
+   - Get rid of auto-pathing; Paths must be constructed explicitly, and only in macro mode
    - Reactors (think of IPython stuff in the namespace, not properly addressed in 0.1; copy from 0.2 transformers)
      (also think of \_pending_inputs: add a name back in, if sent as None (like transformers))
-     NOTE: reactors give a cache hit not just if the value of all cells are the same, but also:
-       - if the connection topology stays the same, and
-       - the value of all three code cells stays the same
-       In that case, the regeneration of the reactor essentially becomes an update() event
+   - cson cells; also structured_cell in plain mode must be able to accommodate
+      a cson's checksum is the checksum of the JSON representation; if you don't want that, connect a text pin/cell downstream of it (see only_text below)       
    - Tie up loose ends of transfer protocol (copy, ref etc.). Take into account only_text changes:
          adding comments / breaking up lines to a Python cell will affect a syntax highlighter, but not a transformer, it is only text
          (a refactor that changes variable names would still trigger transformer re-execution, but this is probably the correct thing to do anyway)
@@ -27,14 +20,25 @@ Then:
       UPDATE: partially done (for managers), extend to fine-grained level (maintain by manager)
       for the rest, YAGNI?
    - PyModule cells and code injection (PyModule cell becomes a module). Also PyCompositeModule which will have inputpins that are PyModules.
+   - Cleanup of the code base, remove vestiges of 0.1 (except tests).
+   - Cleanup of the TODO and the documentation
+
+Then:   
    - Dynamic connection layers: a special macro that has one or more contexts as input (among other inputs), which must be (grand)children
       They are tied to a parent context, and take as input direct children of the context (cells or child contexts);
       Builds connections within/between those children. May also set active switches.
       In a later version, also support the addition of new cells (although these will never be cached)
     - Terminology: authority => source. "only_source" option in mounting context, mounting only source cells
     - Status dict, also as a structured cell  (also policies like .accept_shell_append)
-  - Silk form validators
-  - Seamless console scripts and installer
+    - Finalize caching:
+      - write cache hits into a cell
+      - structured cells: outchannels have a get_path dependency on an inchannel
+      - reactors: they give a cache hit not just if the value of all cells are the same, but also:
+             - if the connection topology stays the same, and
+             - the value of all three code cells stays the same
+         In that case, the regeneration of the reactor essentially becomes an update() event
+    - Silk form validators
+    - Seamless console scripts and installer
 
 Then, slowly move to the mid-level data structure:
 Mostly elide the middle level, dynamically generate at time of low-level generation/serialization.
@@ -49,7 +53,7 @@ When a translation macro is re-triggered for another reason (or when the mid-lev
  the sovereign cell (no double representation)
 Then:
 - apply to slash-0 (see mount.py:filehash)
-- design mid-level AST, including old resources
+- design mid-level AST, including old 0.1 resources
 Finally, the high level:
 - High-level syntax, manipulating the mid-level AST. Syntax can be changed interactively if Silk is used.
 - serialization (take care of shells also).
@@ -60,6 +64,10 @@ NOTE: for the high level, something clever can be done with cells containing def
 if the structured_cell has no other connection (for that inchannel, or higher). This connection is dynamic (layer).
 
 NOTE: seamless will never have any global undo system. It is up to individual editor-reactors to implement their own systems.
+
+Finally:
+- Port over tests
+
 
 /FIRST section, beyond here is mostly out of date
 
