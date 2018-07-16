@@ -32,6 +32,7 @@ class Worker(metaclass=ABCMeta):
     output_queue = None
     output_semaphore = None
     responsive = True
+    running = False
 
     def __init__(self, parent, inputs, event_cls=threading.Event, semaphore_cls=threading.Semaphore):
         self.parent = weakref.ref(parent)
@@ -55,14 +56,15 @@ class Worker(metaclass=ABCMeta):
     def run(self):
         # TODO: add a mechanism to redirect exception messages to the host transformer
         # instead of printing them to stderr
+        assert not self.running
+        self.running = True
 
         def ack(end_of_loop=False):
             #if not end_of_loop and not len(self._pending_inputs):
             #    raise Exception
             updates_processed = self._pending_updates
             self._pending_updates = 0
-            self.output_queue.append((None, (updates_processed, self._pending_inputs)))
-            self.output_semaphore.release()
+            self.send_message(None, (updates_processed, self._pending_inputs))
 
         try:
             while True:
@@ -135,9 +137,14 @@ class Worker(metaclass=ABCMeta):
 
         finally:
             self.finished.set()
+        self.running = False
 
     @abstractmethod
     def update(self, updated):
+        pass
+
+    @abstractmethod
+    def send_message(self, tag, message):
         pass
 
 from .transformer import Transformer

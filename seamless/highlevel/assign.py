@@ -4,6 +4,7 @@ from . import ConstantTypes
 from ..mixed import MixedBase
 from ..silk import Silk
 from .Cell import Cell
+from .pin import InputPin, OutputPin
 from .Transformer import Transformer
 
 def assign_constant(ctx, path, value):
@@ -11,7 +12,12 @@ def assign_constant(ctx, path, value):
         raise NotImplementedError
     #TODO: run it through Silk or something, to check that there aren't lists/dicts/tuples-of-whatever-custom-classes
     # not sure if tuple is natively accepted too
-    ctx._children[path] = Cell(ctx, path)
+    if path in ctx._children:
+        old = ctx._children[path]
+        if isinstance(old, Cell):
+            return False
+        raise AttributeError(path) #already exists
+    Cell(ctx, path) #inserts itself as child
     cell = {
         "path": path,
         "type": "cell",
@@ -23,6 +29,7 @@ def assign_constant(ctx, path, value):
         "schema": None,
     }
     ctx._graph[0][path] = cell
+    return True
 
 def assign_transformer(ctx, path, func):
     parameters = list(inspect.signature(func).parameters.keys())
@@ -41,14 +48,39 @@ def assign_transformer(ctx, path, func):
         "plain_result": False,
     }
     ctx._graph[0][path] = transformer
-    ctx._children[path] = Transformer(ctx, path)
+    Transformer(ctx, path) #inserts itself as child
+
+def assign_connection(ctx, source, target):
+    if target not in ctx._children:
+        assign_constant(ctx, target, None)
+    assert source in ctx._children, source
+    s, t = ctx._children[source], ctx._children[target]
+    assert isinstance(s, (Cell, OutputPin))
+    assert isinstance(t, (Cell, InputPin))
+    if s._virtual_path is not None:
+        source = s._virtual_path
+    if t._virtual_path is not None:
+        target = t._virtual_path
+    connection = {
+        "type": "connection",
+        "source": source,
+        "target": target
+    }
+    ctx._graph[1].append(connection)
+
 
 def assign(ctx, path, value):
     if callable(value):
         assign_transformer(ctx, path, value)
+        ctx._translate()
     elif isinstance(value, Transformer):
         value._assign_to(ctx, path)
+    elif isinstance(value, Cell):
+        assign_connection(value._parent(), value._path, path)
+        ctx._translate()
     elif isinstance(value, ConstantTypes):
-        assign_constant(ctx, path, value)
+        new_cell = assign_constant(ctx, path, value)
+        if new_cell:
+            ctx._translate()
     else:
         raise TypeError(value)

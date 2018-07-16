@@ -8,8 +8,6 @@ from ..core import layer
 from ..midlevel.translate import translate
 from .assign import assign
 
-#class
-
 class Context:
     path = ()
     def __init__(self):
@@ -29,11 +27,21 @@ class Context:
         if attr.startswith("_"):
             return object.__setattr__(self, attr, value)
         assign(self, (attr,) , value)
+
+    def __delattr__(self, attr):
+        assert (attr,) in self._children
+        child = self._children.pop((attr,))
+        child._destroy()
         self._translate()
 
+    def equilibrate(self):
+        self._ctx.equilibrate()
+
     def _translate(self):
-        #TODO (long term): some way to schedule the translation a bit later (lazily?)
-        #  to avoid lots of spurious translations. First prove (profile!) that it matters!
+        #TODO (long term): some way to schedule the translation a bit later
+        #  to avoid lots of spurious translations.
+        # Add it to the work queue; translate() translates, same as equilibrate()
+        # Maybe trigger it lazily also, with ._get_tf / ._get_cell on Transformers and Cells
         graph = list(self._graph[0].values()) + self._graph[1]
         try:
             ctx = None

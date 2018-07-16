@@ -17,6 +17,7 @@ class Transformer(Worker):
     output_thread = None
     active = False
     _destroyed = False
+    _listen_output_state = None
 
     def __init__(self, transformer_params, with_schema=False):
         super().__init__()
@@ -108,9 +109,10 @@ class Transformer(Worker):
         self.output_thread = thread
         self.output_thread.start()
 
-        thread = threading.Thread(target=self.transformer.run, daemon=True) #TODO: name
-        self.transformer_thread = thread
-        self.transformer_thread.start()
+        if self.transformer_thread is None:
+            thread = threading.Thread(target=self.transformer.run, daemon=True) #TODO: name
+            self.transformer_thread = thread
+            self.transformer_thread.start()
 
         self.active = True
 
@@ -161,7 +163,12 @@ class Transformer(Worker):
                     self._pending_updates -= updates_on_hold
                     updates_on_hold = 0
 
-        updates_on_hold = 0
+        if self._listen_output_state is None:
+            updates_on_hold = 0
+            between_start_end = False
+        else:
+            updates_on_hold, between_start_end = self._listen_output_state
+            self._listen_output_state = None
         while True:
             try:
                 if updates_on_hold:
@@ -187,24 +194,34 @@ class Transformer(Worker):
                         self._pending_updates -= updates_on_hold
                         updates_on_hold = 0
 
-                item = get_item()
-                if item is None:
-                    break
-                output_name, output_value = item
-                if output_name == "@START":
-                    between_start_end = True
+                if not between_start_end:
                     item = get_item()
+                    if item[0] == "@RESTART":
+                        self._listen_output_state = (updates_on_hold, between_start_end)
+                        break
                     if item is None:
                         break
                     output_name, output_value = item
-                    assert output_name in ("@PRELIMINARY", "@END"), output_name
-                    if output_name == "@END":
-                        between_start_end = False
-                        receive_end()
+                    if output_name == "@START":
+                        between_start_end = True
                         item = get_item()
+                        if item[0] == "@RESTART":
+                            self._listen_output_state = (updates_on_hold, between_start_end)
+                            break
                         if item is None:
                             break
                         output_name, output_value = item
+                        assert output_name in ("@PRELIMINARY", "@END"), output_name
+                        if output_name == "@END":
+                            between_start_end = False
+                            receive_end()
+                            item = get_item()
+                            if item[0] == "@RESTART":
+                                self._listen_output_state = (updates_on_hold, between_start_end)
+                                break
+                            if item is None:
+                                break
+                            output_name, output_value = item
 
                 if output_name is None and output_value is not None:
                     updates_processed = output_value[0]
@@ -227,10 +244,10 @@ class Transformer(Worker):
                     between_start_end = False
                     receive_end()
                     continue
-                    item = get_item()
-                    if item is None:
-                        break
-                    output_name, output_value = item
+                    ###item = get_item()
+                    ###if item is None:
+                    ###    break
+                    ###output_name, output_value = item
 
                 assert output_name == self._output_name, item
                 if self._connected_output:
@@ -244,6 +261,9 @@ class Transformer(Worker):
                     continue
 
                 item = get_item()
+                if item[0] == "@RESTART":
+                    self._listen_output_state = (updates_on_hold, between_start_end)
+                    break
                 if item is None:
                     break
                 output_name, output_value = item
@@ -256,6 +276,7 @@ class Transformer(Worker):
                     updates_on_hold = 0
             except Exception:
                 traceback.print_exc() #TODO: store it?
+
 
     def _on_connect_output(self):
         last_value = self._last_value

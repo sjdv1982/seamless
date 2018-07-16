@@ -132,9 +132,13 @@ def _do_cache(new_obj, old_obj, hits):
         t = old_obj.transformer
         #TODO: thread-safe lock mechanism to modify t atomically
         t.parent = weakref.ref(new_obj)
+        t.send_message("@RESTART", None)
         t.output_queue = new_obj.output_queue
         t.output_semaphore = new_obj.output_semaphore
+        old_obj.output_thread.join() #happens quickly after @RESTART signal
+        new_obj._listen_output_state = old_obj._listen_output_state
         new_obj.transformer = t
+        new_obj.transformer_thread = old_obj.transformer_thread
         new_obj._pending_updates = old_obj._pending_updates
         new_obj._last_value = old_obj._last_value
         new_obj._last_value_preliminary = old_obj._last_value_preliminary

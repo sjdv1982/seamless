@@ -113,7 +113,7 @@ def translate_py_transformer(node, root, namespace, inchannels, outchannels):
     inp = build_structured_cell(ctx, input_name, True, plain, buffered, inchannels, interchannels)
     setattr(ctx, input_name, inp)
     for inchannel in inchannels:
-        path = ctx.path + inchannel
+        path = node["path"] + inchannel
         namespace[path, True] = inp.inchannels[inchannel]
 
     assert result_name not in node["pins"] #should have been checked by highlevel
@@ -126,7 +126,7 @@ def translate_py_transformer(node, root, namespace, inchannels, outchannels):
     ctx.code = cell("pytransformer")
     ctx.code.connect(ctx.tf.code)
     ctx.code.set(node["code"])
-    namespace[ctx.path + ("code",), True] = ctx.code
+    namespace[node["path"] + ("code",), True] = ctx.code
 
     for pin in list(node["pins"].keys()):
         target = getattr(ctx.tf, pin)
@@ -142,7 +142,7 @@ def translate_py_transformer(node, root, namespace, inchannels, outchannels):
         for c in outchannels:
             assert len(c) == 0 #should have been checked by highlevel
         outp = getattr(ctx.tf, result_name)
-        namespace[ctx.path + (result_name,), False] = outp
+        namespace[node["path"] + (result_name,), False] = outp
 
     handle = ctx.inp.handle
     for path, value in node["values"].items():
@@ -151,8 +151,8 @@ def translate_py_transformer(node, root, namespace, inchannels, outchannels):
             h = getattr(h, p)
         setattr(h, path[-1], value)
 
-    namespace[ctx.path, True] = inp
-    namespace[ctx.path, False] = outp
+    namespace[node["path"], True] = inp
+    namespace[node["path"], False] = outp
 
 def translate_cell(node, root, namespace, inchannels, outchannels):
     path = node["path"]
@@ -175,8 +175,14 @@ def translate_cell(node, root, namespace, inchannels, outchannels):
             assert silk
             child.schema.set(schema)
         for inchannel in inchannels:
-            cpath = path + child.inchannels[inchannel].name
-            namespace[cpath, True] = inchannel
+            cname = child.inchannels[inchannel].name
+            if cname == "self":
+                cpath = path
+            else:
+                if isinstance(cname, str):
+                    cname = (cname,)
+                cpath = path + cname
+            namespace[cpath, True] = child.inchannels[inchannel]
         for outchannel in outchannels:
             cpath = path + outchannel
             namespace[cpath, False] = child.outchannels[outchannel]

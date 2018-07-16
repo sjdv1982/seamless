@@ -1,5 +1,6 @@
 import weakref
 from .Cell import Cell
+from .pin import InputPin, OutputPin
 
 class Transformer:
     def __init__(self, parent, path):
@@ -8,16 +9,26 @@ class Transformer:
             path = (path,)
         self._path = path
 
+        htf = self._get_htf()
+        result_path = self._path + (htf["RESULT"],)
+        result = OutputPin(parent, self, result_path)
+        result._virtual_path = self._path
+        parent._children[path] = self
+        parent._children[result_path] = result
+
+
     def _assign_to(self, hctx, path):
-        from .assign import assign_constant
+        from .assign import assign_constant, assign_connection
+        tf = self._get_tf()
         htf = self._get_htf()
         if htf["with_schema"]:
             raise NotImplementedError
-        assign_constant(hctx, path, None)
+        parent = self._parent()
+        assign_connection(parent, result_path, path)
         hctx._translate()
 
-
     def __setattr__(self, attr, value):
+        from .assign import assign_connection
         if attr.startswith("_"):
             return object.__setattr__(self, attr, value)
         parent = self._parent()
@@ -28,7 +39,12 @@ class Transformer:
             if attr not in htf["pins"]:
                 htf["pins"] = {"submode": "silk"}
             if isinstance(value, Cell):
-                raise NotImplementedError
+                htf = self._get_htf()
+                result_path = self._path + (htf["RESULT"],)
+                assign_connection(parent, result_path, value._path)
+                parent._translate()
+                return
+
             htf["values"][(attr,)] = value
 
             tf = self._get_tf()
@@ -58,3 +74,13 @@ class Transformer:
     def __delattr__(self, attr):
         htf = self._get_htf()
         raise NotImplementedError #remove pin
+
+    def _destroy(self):
+        p = self._path
+        nodes, connections = parent._graph
+        for nodename in list(nodes.keys()):
+            if nodename.startswith(p):
+                nodes.pop(nodename)
+        for con in list(connections):
+            if con["source"].startswith(p) or con["target"].startswith(p):
+                connections.remove(con)

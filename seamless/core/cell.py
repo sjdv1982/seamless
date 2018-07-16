@@ -562,7 +562,15 @@ class PythonCell(Cell):
             assert submode in ("text", None)
             return deepcopy(self._val)
         assert mode == "ref" and submode == "pythoncode", (mode, submode)
-        return self
+        ###return self ### BAD: sensitive to destroy! #TODO
+        class FakePythonCell:
+            pass
+        result = FakePythonCell()
+        for attr in dir(self):
+            if attr.startswith("_"):
+                continue
+            setattr(result, attr, getattr(self, attr))
+        return result
 
     def _deserialize(self, value, mode, submode=None):
         if inspect.isfunction(value):

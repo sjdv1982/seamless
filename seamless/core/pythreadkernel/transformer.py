@@ -60,7 +60,7 @@ class Transformer(Worker):
                     continue
                 self.function_expr_template += "%s=%s," % (inp, inp)
         else:
-            self.function_expr_template = "{0}\n%s  = {1}(" % self.output_name
+            self.function_expr_template = "{0}\n%s = {1}(" % self.output_name
             for inp in sorted(list(inputs)):
                 self.function_expr_template += "%s=%s," % (inp, inp)
         self.function_expr_template = self.function_expr_template[:-1] + ")"
@@ -68,16 +68,18 @@ class Transformer(Worker):
         all_inputs = list(inputs) + ["code"]
         super(Transformer, self).__init__(parent, all_inputs, **kwargs)
 
+    def send_message(self, tag, message):
+        #print("send_message", tag, message, hex(id(self.output_queue)))
+        self.output_queue.append((tag, message))
+        self.output_semaphore.release()
 
     def return_preliminary(self, value):
         #print("return_preliminary", value)
-        self.output_queue.append(("@PRELIMINARY", (self.output_name, value)))
-        self.output_semaphore.release()
+        self.send_message("@PRELIMINARY", (self.output_name, value))
 
     def update(self, updated, semaphore):
         from ...silk import Silk
-        self.output_queue.append(("@START", None))
-        self.output_semaphore.release()
+        self.send_message("@START", None)
         ok = False
         try:
             # Code data object
@@ -142,9 +144,7 @@ class Transformer(Worker):
                     break
         finally:
             assert self.parent().output_queue is self.output_queue
-            self.output_queue.append(("@END", None))
-            self.output_semaphore.release()
+            self.send_message("@END", None)
         if ok:
             self.last_result = result
-            self.output_queue.append((self.output_name, result))
-            self.output_semaphore.release()
+            self.send_message(self.output_name, result)
