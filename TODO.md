@@ -5,7 +5,6 @@ A proof-of-principle of the middle/high level is now there.
 Things to do:
 
 Part 1 (low-level):
-   - Get rid of auto-pathing; Paths must be constructed explicitly, and only in macro mode
    - Links should become symlinks when mounted (new kind of MountItem required!)
    - Reactors (think of IPython stuff in the namespace, not properly addressed in 0.1; copy from 0.2 transformers)
      (also think of \_pending_inputs: add a name back in, if sent as None (like transformers))

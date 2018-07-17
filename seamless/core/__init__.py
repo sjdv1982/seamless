@@ -146,5 +146,6 @@ from .worker import Worker
 from .transformer import Transformer, transformer
 from .mount import mountmanager
 from .structured_cell import StructuredCell
+from .layer import path
 from .macro import macro
 from . import cache

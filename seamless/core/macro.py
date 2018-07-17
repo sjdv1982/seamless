@@ -218,8 +218,8 @@ class Macro(Worker):
 def macro(params):
     return Macro(params)
 
-from . import cell, transformer, pytransformercell, link, layer
+from . import cell, transformer, pytransformercell, link, layer, path
 from .context import context
-names = "cell", "transformer", "context", "pytransformercell", "link"
+names = "cell", "transformer", "context", "pytransformercell", "link", "path"
 names = names + ("macro",)
 Macro.default_namespace = {n:globals()[n] for n in names}

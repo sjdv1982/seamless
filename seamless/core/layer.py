@@ -449,7 +449,11 @@ def check_async_macro_contexts(ctx, macro):
         else:
             check_async_macro_contexts(child.ctx, macro)
 
-from . import Link, CellLikeBase
+def path(obj, *, force_relative=False):
+    assert get_macro_mode()
+    return Path(obj, force_relative)
+
+from . import Link, CellLikeBase, get_macro_mode
 from .context import Context
 from .worker import InputPinBase, OutputPinBase, EditPinBase, Worker
 from .transformer import Transformer

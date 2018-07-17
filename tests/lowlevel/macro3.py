@@ -1,7 +1,8 @@
 import seamless
 #seamless.core.cache.use_caching = False ###
 from seamless.core import macro_mode_on
-from seamless.core import context, cell, transformer, pytransformercell, macro, link
+from seamless.core import context, cell, transformer, pytransformercell, \
+  macro, link, path
 
 with macro_mode_on():
     ctx = context(toplevel=True)
@@ -67,9 +68,11 @@ ctx.not_async_submacro = macro({})
     ctx.macro.ctx.y.connect(ctx.y)
     ctx.e = cell("json")
     ctx.e2 = cell("json")
-    ctx.macro.ctx.d.connect(ctx.e)
-    ctx.e.connect(ctx.macro.ctx.tf2.e)
-    ctx.macro.ctx.tf2.e2.connect(ctx.e2)
+    p_d = path(ctx.macro.ctx).d
+    p_d.connect(ctx.e)
+    p_tf2 = path(ctx.macro.ctx).tf2
+    ctx.e.connect(p_tf2.e)
+    p_tf2.e2.connect(ctx.e2)
     ctx.z = cell("text").set("z")
     ctx.z_link = link(ctx.z)
     ctx.z_link.connect(ctx.macro.ctx.z)

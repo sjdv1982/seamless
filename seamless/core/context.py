@@ -157,11 +157,7 @@ context : context or None
             return self._pins[attr]
         elif attr in self._children:
             return self._children[attr]
-        elif self._is_sealed():
-            path = Path(self)
-            return getattr(path, attr)
-        else:
-            raise AttributeError(attr)
+        raise AttributeError(attr)
 
     def _hasattr(self, attr):
         if hasattr(self.__class__, attr):
