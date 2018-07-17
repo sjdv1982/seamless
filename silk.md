@@ -530,7 +530,7 @@ instance = constructor.fromcopy(s)
 
 *NOTE*: "default" entries in the schema will be honored by the constructor.
 
-As before, schemas can be degenerate, therefore it is recommended to use the
+As before (in Spyder), schemas can be degenerate, therefore it is recommended to use the
 specialized .fromXXX sub-constructors.
 
 In all cases, the constructor returns a naked dict that conforms to the schema.

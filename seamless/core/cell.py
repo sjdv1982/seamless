@@ -195,7 +195,7 @@ class CellBase(CellLikeBase):
             self._val = curr_val
             raise
         if from_pin == True:
-            assert not self._authoritative
+            assert not self._authoritative, self
             self._un_overrule()
         elif from_pin == "edit":
             if not self._authoritative:

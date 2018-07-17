@@ -15,6 +15,7 @@ def assign_constant(ctx, path, value):
     if path in ctx._children:
         old = ctx._children[path]
         if isinstance(old, Cell):
+            old.set(value)
             return False
         raise AttributeError(path) #already exists
     Cell(ctx, path) #inserts itself as child
@@ -32,6 +33,12 @@ def assign_constant(ctx, path, value):
     return True
 
 def assign_transformer(ctx, path, func):
+    if path in ctx._children:
+        old = ctx._children[path]
+        if isinstance(old, Cell):
+            old.set(func)
+            return
+        raise AttributeError(path) #already exists
     parameters = list(inspect.signature(func).parameters.keys())
     transformer =    {
         "path": path,
@@ -50,17 +57,19 @@ def assign_transformer(ctx, path, func):
     ctx._graph[0][path] = transformer
     Transformer(ctx, path) #inserts itself as child
 
-def assign_connection(ctx, source, target):
-    if target not in ctx._children:
+def assign_connection(ctx, source, target, standalone_target):
+    if standalone_target and target not in ctx._children:
         assign_constant(ctx, target, None)
     assert source in ctx._children, source
-    s, t = ctx._children[source], ctx._children[target]
+    s = ctx._children[source]
     assert isinstance(s, (Cell, OutputPin))
-    assert isinstance(t, (Cell, InputPin))
     if s._virtual_path is not None:
         source = s._virtual_path
-    if t._virtual_path is not None:
-        target = t._virtual_path
+    if standalone_target:
+        t = ctx._children[target]
+        assert isinstance(t, (Cell, InputPin))
+        if t._virtual_path is not None:
+            target = t._virtual_path
     connection = {
         "type": "connection",
         "source": source,
@@ -76,7 +85,8 @@ def assign(ctx, path, value):
     elif isinstance(value, Transformer):
         value._assign_to(ctx, path)
     elif isinstance(value, Cell):
-        assign_connection(value._parent(), value._path, path)
+        assert value._parent() is ctx
+        assign_connection(ctx, value._path, path, True)
         ctx._translate()
     elif isinstance(value, ConstantTypes):
         new_cell = assign_constant(ctx, path, value)

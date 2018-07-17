@@ -197,19 +197,29 @@ context : context or None
     def _is_sealed(self):
         return self._seal is not None
 
-    def _flush_workqueue(self):
+    def _flush_workqueue(self, full=True):
         manager = self._get_manager()
         manager.workqueue.flush()
         finished = True
         children_unstable = set()
+        if len(self.unstable_workers):
+            finished = False
         for childname, child in self._children.items():
             if isinstance(child, Context):
-                remaining = child.equilibrate(0.001)
-                if len(remaining):
-                    children_unstable.update(remaining)
-                    finished = False
+                if full:
+                    remaining = child.equilibrate(0.001)
+                    if len(remaining):
+                        children_unstable.update(remaining)
+                        finished = False
+                else:
+                    child_finished = child._flush_workqueue(full=False)
+                    if not child_finished:
+                        finished = False
         manager.mountmanager.tick()
-        return finished, children_unstable
+        if full:
+            return finished, children_unstable
+        else:
+            return finished
 
     def equilibrate(self, timeout=None, report=0.5):
         """
@@ -224,7 +234,12 @@ context : context or None
         assert self._get_manager().active
         start_time = time.time()
         last_report_time = start_time
-        self._flush_workqueue()
+        finished = self._flush_workqueue(full=False)
+
+        if self._destroyed:
+            return set()
+        if finished:
+            return set()
         last_unstable = set()
         while 1:
             if self._destroyed:
@@ -329,6 +344,12 @@ context : context or None
         if self._destroyed:
             return
         object.__setattr__(self, "_destroyed", True)
+        if from_del: #to prevent some superfluous error messages
+            try:
+                isinstance(self, Cell)
+            except:
+                self._manager.destroy(from_del=from_del)
+                return
         for childname, child in self._children.items():
             if isinstance(child, Context):
                 child.destroy(from_del=from_del)

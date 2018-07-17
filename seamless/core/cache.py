@@ -79,6 +79,8 @@ def long_signature(obj, root):
         raise TypeError()
 
 def _short_signature_cell(cell):
+    if isinstance(cell, (Inchannel, Outchannel)):
+        return None #TODO
     if cell.status() == "OK":
         return cell.checksum()
         #TODO: sometimes it is the text checksum we are interested in
@@ -99,7 +101,7 @@ def _short_signature_transformer(tf):
         if from_cell is not None:
             from_cell = from_cell[1]
         subresult = _short_signature_cell(from_cell)
-        assert subresult is not None #if status is OK, no connected cell can be None
+        ###assert subresult is not None #if status is OK, no connected cell can be None; WRONG in case of channels!
         result[pinname] = subresult
     return result
 

@@ -169,7 +169,7 @@ def translate_cell(node, root, namespace, inchannels, outchannels):
         else:
             raise ValueError(format)
         silk = node["silk"]
-        child = build_structured_cell(root, name, silk, plain, buffered, inchannels, outchannels)
+        child = build_structured_cell(parent, name, silk, plain, buffered, inchannels, outchannels)
         schema = node["schema"]
         if schema is not None:
             assert silk

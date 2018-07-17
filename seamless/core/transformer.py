@@ -169,8 +169,10 @@ class Transformer(Worker):
         else:
             updates_on_hold, between_start_end = self._listen_output_state
             self._listen_output_state = None
+
         while True:
             try:
+                output_name, output_value = None, None
                 if updates_on_hold:
                     """
                     Difficult situation. At the one hand, we can't hold on to
@@ -196,19 +198,19 @@ class Transformer(Worker):
 
                 if not between_start_end:
                     item = get_item()
+                    if item is None:
+                        break
                     if item[0] == "@RESTART":
                         self._listen_output_state = (updates_on_hold, between_start_end)
-                        break
-                    if item is None:
                         break
                     output_name, output_value = item
                     if output_name == "@START":
                         between_start_end = True
                         item = get_item()
+                        if item is None:
+                            break
                         if item[0] == "@RESTART":
                             self._listen_output_state = (updates_on_hold, between_start_end)
-                            break
-                        if item is None:
                             break
                         output_name, output_value = item
                         assert output_name in ("@PRELIMINARY", "@END"), output_name
@@ -216,10 +218,10 @@ class Transformer(Worker):
                             between_start_end = False
                             receive_end()
                             item = get_item()
+                            if item is None:
+                                break
                             if item[0] == "@RESTART":
                                 self._listen_output_state = (updates_on_hold, between_start_end)
-                                break
-                            if item is None:
                                 break
                             output_name, output_value = item
 
@@ -240,6 +242,12 @@ class Transformer(Worker):
                     preliminary = True
                     output_name, output_value = item[1]
                 elif between_start_end:
+                    if output_name is None:
+                        #TODO: this shouldn't happen...
+                        item = get_item()
+                        between_start_end = False
+                        receive_end()
+                        continue
                     assert output_name == "@END", output_name
                     between_start_end = False
                     receive_end()
@@ -261,10 +269,10 @@ class Transformer(Worker):
                     continue
 
                 item = get_item()
+                if item is None:
+                    break
                 if item[0] == "@RESTART":
                     self._listen_output_state = (updates_on_hold, between_start_end)
-                    break
-                if item is None:
                     break
                 output_name, output_value = item
                 assert output_name is None

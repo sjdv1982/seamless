@@ -14,6 +14,7 @@ class Cell:
 
     def _get_cell(self):
         parent = self._parent()
+        parent.translate()
         p = parent._ctx.translated
         for subpath in self._path:
             p = getattr(p, subpath)
@@ -36,12 +37,11 @@ class Cell:
         cell = self._get_cell()
         return cell.value
 
-    @value.setter
-    def value(self, value):
+    def set(self, value):
         #TODO: check if sovereign cell!!
         #TODO: disable warning!!
         cell = self._get_cell()
-        cell.value = value
+        cell.set(value)
         hcell = self._get_hcell()
         hcell["value"] = value
 

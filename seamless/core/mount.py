@@ -336,24 +336,41 @@ class MountManagerStash:
             else:
                 old_mountitem.destroy()
 
+        old_paths = set()
         for old_ctx in sorted(self.contexts, key=lambda l: -len(l.path)):
             assert old_ctx._mount is not None, old_ctx
             path = old_ctx._mount["path"]
             if path in new_paths:
+                old_paths.add(path)
                 new_context = new_paths[path]
                 object.__setattr__(old_ctx, "_mount", None) #since we are not in macro mode
-        for path, obj in new_paths.items():
+        for path in sorted(new_paths.keys(), key=lambda p:len(p)):
+            obj = new_paths[path]
             if isinstance(obj, Context):
                 new_context = obj
-                if path not in new_paths:
+                if path not in old_paths:
                     assert new_context in self.context_as_parent, context
-                    self._check_context(new_context, self.context_as_parent[context])
-            else:
+                    parent._check_context(new_context, self.context_as_parent[new_context])
+        for path in sorted(new_paths.keys(), key=lambda p:len(p)):
+            obj = new_paths[path]
+            if not isinstance(obj, Context):
                 new_mountitem = obj
                 if path in old_mountitems:
-                    old_mountitem = old_mountitems[path]
-                    new_mountitem.last_mtime = old_mountitem.last_mtime
-                    new_mountitem.last_checksum = old_mountitem.last_checksum
+                    rewrite = False
+                    value, checksum = new_mountitem.cell().serialize("buffer")
+                    if type(old_mountitem.cell()) != type(new_mountitem.cell()):
+                        rewrite = True
+                    else:
+                        if checksum != old_mountitem.last_checksum:
+                            rewrite = True
+                    if rewrite and value is not None:
+                        with new_mountitem.lock:
+                            new_mountitem._write(value)
+                            new_mountitem._after_write(checksum)
+                    else:
+                        old_mountitem = old_mountitems[path]
+                        new_mountitem.last_mtime = old_mountitem.last_mtime
+                        new_mountitem.last_checksum = old_mountitem.last_checksum
                 else:
                     new_mountitem.init()
 

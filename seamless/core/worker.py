@@ -39,7 +39,10 @@ class Worker(SeamlessBase):
         return True
 
     def activate(self):
-        from ..shell import update_shells
+        try:
+            from ..shell import update_shells
+        except ImportError:  ### If qt is not there...
+            return
         shell_namespace, inputpin, _ = self._shell(None)
         update_shells(inputpin, shell_namespace)
 

@@ -1,13 +1,12 @@
-UPDATE OF THE UPDATE
-Great Refactor is underway (see seamless-toward-02.md).
-Most of the text below the FIRST section is out of date.
+Great Refactor is underway (see seamless-towards-02.md).
+
+A proof-of-principle of the middle/high level is now there.
+
 Things to do:
 
-First:
-A proof-of-principle of the middle/high level
-
-Then:
+Part 1 (low-level):
    - Get rid of auto-pathing; Paths must be constructed explicitly, and only in macro mode
+   - Links should become symlinks when mounted (new kind of MountItem required!)
    - Reactors (think of IPython stuff in the namespace, not properly addressed in 0.1; copy from 0.2 transformers)
      (also think of \_pending_inputs: add a name back in, if sent as None (like transformers))
    - cson cells; also structured_cell in plain mode must be able to accommodate
@@ -16,38 +15,53 @@ Then:
          adding comments / breaking up lines to a Python cell will affect a syntax highlighter, but not a transformer, it is only text
          (a refactor that changes variable names would still trigger transformer re-execution, but this is probably the correct thing to do anyway)
          The same for cson cells
-   - Add the concept of from_pin (from_channel) to structured cells, in particular the form/data/storage hooks. Now, they trigger warnings that they are
-      overruling cells "controlled by Seamless context" (see tests/highlevel/simple.py)
+   - Add the concept of from_pin (from_channel) to structured cells, in particular the form/data/storage hooks. Now,
+   they trigger warnings that they are overruling cells "controlled by Seamless context"
+   (see tests/highlevel/simple.py). This is distinct from sovereignty, which involves non-pin manipulation!
    - "Active" switch of managers, workers, connections; may also be exported, and may be activated in a connection layer.
       UPDATE: partially done (for managers), extend to fine-grained level (maintain by manager)
       for the rest, YAGNI?
-   - PyModule cells and code injection (PyModule cell becomes a module). Also PyCompositeModule which will have inputpins that are PyModules.
+   - PyModule cells and code injection (PyModule cell becomes a Python module).
+     Also PyCompositeModule which will have inputpins that are PyModules.
+     All PyModules will be transported as source to the worker, where they will be built into code.
+  - PyModules must have native IPython support. Need IPythonCell for that reason! Add support to transformers and reactors! Not for macros.
 
-Then:   
+Part 2 (low-level / cleanup):   
    - Signals
    - Observers
-   - Websocketserver, with proof of principle
-   - Cleanup of the code base, remove vestiges of 0.1 (except tests).
-   - Cleanup of the TODO and the documentation
+   - Have a look if Qt mainloop hook can be eliminated.
+   - Start with lib porting. Port Qt editors (including HTML), but no more seamless.qt
+     Port all macros, but store the code in plain Python modules in lib
+   - Port websocketserver, with proof of principle
+   - Port OpenGL, with proof of principle
+   - Cleanup of the code base, remove vestiges of 0.1 (except lib and tests).
+   - Cleanup of the TODO and the documentation (put in limbo)
 
-Then:   
+Part 3 (low-level):   
    - Dynamic connection layers: a special macro that has one or more contexts as input (among other inputs), which must be (grand)children
       They are tied to a parent context, and take as input direct children of the context (cells or child contexts);
       Builds connections within/between those children. May also set active switches.
       In a later version, also support the addition of new cells (although these will never be cached)
-    - Terminology: authority => source. "only_source" option in mounting context, mounting only source cells
-    - Status dict, also as a structured cell  (also policies like .accept_shell_append)
-    - Finalize caching:
-      - write cache hits into a cell
-      - structured cells: outchannels have a get_path dependency on an inchannel
-      - reactors: they give a cache hit not just if the value of all cells are the same, but also:
-             - if the connection topology stays the same, and
-             - the value of all three code cells stays the same
-         In that case, the regeneration of the reactor essentially becomes an update() event
-    - Silk form validators
-    - Seamless console scripts and installer
+  - Terminology: authority => source. "only_source" option in mounting context, mounting only source cells
+  - Report cells (JSON cells, can become structured if directed from the mid-level).
+    Status dict becomes a a Report cell.
+  - Log cell: text cell to which an observer can be attached that receives new entries)
+     The result of translation, caching, macros, etc.; generalized log API.
+     Even transformers and reactors may be declared as having a log output, and various loglevels
+      (transformer.py will already send low-priority log messages about receiving events etc.)
+  - Finalize caching:
+    - write cache hits into a Log cell
+    - structured cells: outchannels have a get_path dependency on an inchannel
+    - re-enable caching for high level (test if simple.py works now)
+    - reactors: they give a cache hit not just if the value of all cells are the same, but also:
+           - if the connection topology stays the same, and
+           - the value of all three code cells stays the same
+       In that case, the regeneration of the reactor essentially becomes an update() event
+  - Silk form validators
+  - Seamless console scripts and installer
 
-Then, slowly move to the mid-level data structure:
+Part 4: shift to the mid-level data structure
+- Sovereignty
 Mostly elide the middle level, dynamically generate at time of low-level generation/serialization.
 The middle level is the input of a translation macro, whereas the low level is the output
 Normally:
@@ -55,43 +69,106 @@ Normally:
 2. Any changes to the mid-level would re-trigger the translation macro.
 => Introduce an exception: sovereignty
 A low level cell may be sovereign if it has a 1:1 correspondence to a mid-level element.
-Sovereign cells are authoritative, they may be changed, and changes to sovereign cells do not cause the translation macro to re-trigger.
-When a translation macro is re-triggered for another reason (or when the mid-level is serialized), the mid-level element is dynamically read from
- the sovereign cell (no double representation)
-Then:
+Sovereign cells are authoritative, they may be changed, and changes to sovereign cells do not cause
+the translation macro to re-trigger.
+When a translation macro is re-triggered for another reason (or when the mid-level is serialized),
+the mid-level element is dynamically read from the sovereign cell (no double representation)
+- Expand mid-level graph syntax (see seamless-towards-02.md):
+  - reactors
+  - macros (by definition low-level) with language (python) and api (pyseamless) fields.
+  - signals
+  - add/mult operators
+  - no observers; not sure about mount.
+
+Part 5: applying the mid-level. Some of this can be delayed until post-merge.
+- Cache cells. Also nice for a transformer to store partial results
+- Reconsider the restrictions on transformers and reactors. Give transformers
+  edit pins and cache pins, allow them to have reactor pin API.
+  At least in theory, allow transformers/reactors to declare as sync/async, and thread/process.
+- Preliminary outputpins (in transformers [as secondary output] and in reactors)
+- Preliminary inputpins (pins that accept preliminary values). Right now, all inputpins are preliminary!
+- Equilibrium contexts (see below)
 - apply to slash-0 (see mount.py:filehash)
-- design mid-level AST, including old 0.1 resources
-Finally, the high level:
-- High-level syntax, manipulating the mid-level AST. Syntax can be changed interactively if Silk is used.
-- serialization (take care of shells also).
+- finalize the design of mid-level graph syntax.
+  - Include old 0.1 resources, or make this high-level only?
+  - Save high-level syntax as mid-level only, or separately?
+
+Part 6, the high level :
+- High-level syntax, manipulating the mid-level graph. Syntax can be changed interactively if Silk is used.
+  Proof of principle DONE. TODO:
+  - mounting is not quite satisfactory (redundant "translated" context)
+  - Macros
+  - Reactors
+  - Many usability issues
+  - Translation policies
+  - Syntax customization for library contexts (see seamless-towards-02.md).
+- serialization (take care of shells also). (Do we need this? or midlevel only?)
 - high-level macros. They contain high-level syntax.
   They have, as an extra input, (a copy of) the high-level translation policies that were in effect at the time of creation
+The rest of part 5 could be delayed until post-0.2
+- High and low policies like .accept_shell_append should go into a cell
+- Meta-schema for schema editing (jsonschema has it)
 
 NOTE: for the high level, something clever can be done with cells containing default values; these cells are only connected to a structured_cell
 if the structured_cell has no other connection (for that inchannel, or higher). This connection is dynamic (layer).
 
 NOTE: seamless will never have any global undo system. It is up to individual editor-reactors to implement their own systems.
 
-Finally:
-- Port over tests
+Part 7 (pre-merge):
+- Port over 0.1 lib: from .py files to Seamless library context files. (can be delayed post-merge?)
+- Port over 0.1 tests
 
+Part 8 (merge):
+  Port over Orca and other examples
+  Make new videos:
+    - Basic example
+    - Fireworks
+    - 3D
+    - Docking
+    - Orca (don't show the code)  
 
-/FIRST section, beyond here is mostly out of date
+RELEASE as 0.2.
 
-UPDATE:
-The following roadmap is outdated by the new conception of Silk as a schema language,
-and the new high-level API
-The topics are either:
-- Explicitly covered by Silk/the high level API (see the docs there)
-- Easily implemented at the library level, thanks to the high level API.
-- Mechanics-based, and therefore unchanged (e.g. thread-based/process-based,
-  sync/async workers)
-That leaves three things to take care of:
-(1) Macros that take a context argument (but I think this is documented already?)
-(2) Event streams
-(3) Equilibrium contexts.
+Post-merge, post-release (0.3):
+- Replace the use of killable threads with processes... gives a problem with Orca example (fixed now ?), docking example (?), see Github issue
+- Bidirectional cell web editing via Websocketserver
+  (also HMTL gen from schema)
+- C/Fortran/CUDA/OpenCL integration (BIG).
+  - Requires also a Silk extension (GPU storage, fixed-binary, see silk.md)
+  - IPython (.ipy)/Cython magic is not (or barely) necessary, since IPython is natively supported by workers.
+- REST API (alternative for Websocketserver)
+- Sync mechanisms / collaborative protocol
+ ("virtual context" that upon creation syncs topology from another context, and then
+  bidirectionally syncs the cell values; REST or Websocketserver under the hood)
 
-(2) Event streams receive event values, or a "undo" signal, which means that all previous
+Post-0.3:
+- Address shell() memory leak: IPython references may hold onto large amounts of data
+- Address GLstore memory leak: stores may not be freed (is this still so post-0.1 ??)
+- Expand and document seamless shell language (slash)
+- Special high-level authority syntax for library contexts (fork)
+
+Long-term:
+- The seamless collaborative protocol (high level) (see seamless-towards-02.md)
+  This replaces the websocketserver with a Crossbar WAMP server.
+- Delegated computing with services, evaluation cells
+  (BIG!, see seamless-towards-02.md:
+    - "Towards flexible and cloud-compatible evaluation"
+    - "Network services"
+    - "The web publisher channels")
+- Set up user library directory and robogit
+- Python debugging / code editor (WIP) / unit tests (see seamless-towards-02.md)
+- Other mount backends (databases)
+- Event streams (BIG!)
+- Full feature implementation of Silk, e.g. constructs (see silk.md)
+- Lazy evaluation, GPU-GPU triggering (BIG!)
+- Re-implement all high level classes as Silk classes with methods in their schema.
+- Organize cells into arrays (probably at high-level only)
+- Cells that contain (serialized, low-level) contexts
+- ATC chains with folding/unfolding (YAGNI?)
+
+Event streams
+=============
+Event streams receive event values, or a "undo" signal, which means that all previous
 values are invalid. Event streams may send back a "send again" signal, which means
 that they want again all values that were previously sent to them. (This is for example if a transformer adds 5 to an event stream; if 5 is changed to 6, either in a input cell or by a change in the source code, the transformer will send a "send again" signal upstream).
 Reactors may choose to cache events so to avoid sending this signal when one of their other inputs changes.
@@ -104,107 +181,15 @@ Reactors must push/pull new event stream values in an explicit API:
   - non-blocking essentially sets to event stream input pin to "accept input" (input) or force-feeds (output)
   - By default, input is blocking while output is non-blocking
 Event streams can never be authoritative, they must depend on a worker.
+NOTE: The trouble won't be the implementation... but event streams have serious consequences for caching!
 
-(3) Transformers are guaranteed not to send anything (be it cell values or events) on their primary output until execution has finished (which means they are in equilibrium).
-In addition, transformers are guaranteed not to accept any events while not in equilibrium.
-This is obviously not so for reactors, and it is also not so for contexts that contain reactors (or multiple transformers that are not arranged linearly) connected to context outputs.
+Equilibrium contexts
+====================
+Transformers are guaranteed not to send anything (be it cell values or events) on their primary output until execution has finished (which means they are in equilibrium).
+In addition, transformers are guaranteed not to accept any events while not in equilibrium. If there are any,
+ the transformer computation is actually canceled.
+This is obviously not so for reactors, and it is also not so for contexts that contain reactors (or multiple transformers that are not arranged linearly) connected to exported outputs of the context.
 It is possible to declare contexts as "equilibrium contexts". In that case, they have the same guarantees as transformers have: sending cell updates or events to the outside world is delayed until equilibrium is reached, and so is the acceptance of new events. This allows contexts to perform atomic computations, reducing the number of glitches.
 It is possible to declare some of the outputs (and event stream inputs) as "secondary", which means that they escape this guarantee (for example, for logging purposes).
-
-
-
-
-
-
-Technically-oriented releases are marked with *
-
-\*0.1
-After release, make videos:
-  Basic example, based on examples/basic.py, then examples/basic-macro.py
-  Fireworks
-  3D
-  Docking
-  Orca (don't show the code)
-
-0.2
-
-- macros
-I am not quite happy with how macros are being used. The direct import method
-(defined macro "spam" in "eggs.py", "from eggs import spam") is fine for the
-core macros, but it hampers live programming on other macros (though it isn't
-prevented completely ; see test-dynamic-macro.py for an API example),
-since it prohibits the link between macro <=> cell <=> file.
-To solve that, a function .load_macro("spam", "eggs.py") is needed, that creates
-a macro with a .cell attribute, with .cell.resource.filepath
-(and .resource.lib) set properly. The .cell can be link()'ed as usual.
-In addition, the function .load_block_macro("ham", "ham.py") loads ham.py as a
-code block, i.e. adding "@macro", a def, and indenting the code.
-ham.py can thus be a main script, like the ones in tests and examples.
-For all main scripts in tests and examples, the "ctx = " and ctx.tofile
-must be made conditional on __name__ == "__main__"
-
-- Overhaul dtypes.objects, in particular the Python code blocks
-  Allow Python blocks to be parsed by the transformer without return.
-  Transformer execution is still prohibited without return, unless the transformer has no outputpin.
-- Give a .as_cell() method every worker and context. This cell will contain a text representation
-  (essentially invoking X_to_json).
-  In the Python register, allow transformer.as_cell() to be registered as a Python function,
-  and context/reactor.as_cell() as a Python class
-- Replace the use of killable threads with processes... gives a problem with Orca example (fixed now ?), docking example (?), see Github issue
-- Replace ctx.CHILDREN, ctx.CELLS etc. with ctx.self.children, ctx.self.cells, etc.
-- Get rid of seamless.qt
-- Composite (JSON) cells
-- Expand and document seamless shell language (slash)
-- Logging + dtype/worker documentation.resource system (using composite cells)
-- Error message logging system (using composite cells)
-- Overhaul dtypes, docson/type registration API, integrate with logging/documentation system. "array" and "json" are no longer dtypes, but formats
-- Update demos
-
-\*0.3
-- Multiple code cells in transformers/reactors
-- Preliminary outputpins (in transformers [as secondary output] and in reactors)
-- Preliminary inputpins (pins that accept preliminary values). Right now, all inputpins are preliminary!
-- Address shell() memory leak: IPython references may hold onto large amounts of data
-- Address GLstore memory leak: stores may not be freed (?)
-- Binary (struct) cells, implemented as structured "array" cells with dtype/shape/ndim (with functionality similarly to composite cells)
-- Active switches (connection level; workers don't see it, except that pin becomes undefined/changes value)
-- Silk: managing variable-length arrays with allocators (subclass ndarray), C header registrar, fix Bool default value bug + bug in examples/silk/test.py
-- Document Silk, make it an official (supported) part of seamless
-- C interop
-- Game of Life demo with Cython and C
-- Update OpenGL demos
-
-0.4
-- Finalize context graph format and their names, update tofile/fromfile accordingly
-- Finalize resource management
-- Finalize basic API, also how to change macros (SEE ABOVE)
-- Cleanup code layout
-- Document tofile/fromfile, saving options and seamless file format
-- Code documentation + dtype/worker documentation system
-- Set up user library directory and robogit
-- Update demos
-
-\*0.5
-- Thread reactors, process reactors
-- Synchronous transformers (do we need this?)
-- Process transformers (now that execution is in a process, do we need this??)
-- Cell arrays, channels, GUI-widget cells
-- GPU computing (OpenCL)
-- Update Game of Life demo
-
-0.6
-- Hook API and GUI for cell creation
-- Update demos
-
-0.7
-- ATC, fold/unfold switches, Silk GUI generation
-- More demos (tetris?)
-
-\*0.8
-- Python debugging, code editor (WIP)
-
-\*0.9
-- Collaborative protocol / delegated computing
-
-\*1.0
-- Lazy evaluation, GPU-GPU triggering
+"Events to the outside world" is only restricted if it goes through exported cells and pins. Traffic through
+non-exported objects is not restricted.

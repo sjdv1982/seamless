@@ -7,6 +7,7 @@ from ..core.cache import cache
 from ..core import layer
 from ..midlevel.translate import translate
 from .assign import assign
+from .proxy import Proxy
 
 class Context:
     path = ()
@@ -17,11 +18,15 @@ class Context:
         self._graph = {}, []
         self._children = {}
         self._context = self._ctx
+        self._needs_translation = False
 
     def __getattr__(self, attr):
         if attr.startswith("_"):
             raise AttributeError(attr)
-        return self._children[(attr,)]
+        child = self._children.get((attr,))
+        if child is not None:
+            return child
+        return Proxy(self, (attr,), "w", None)
 
     def __setattr__(self, attr, value):
         if attr.startswith("_"):
@@ -34,15 +39,28 @@ class Context:
         child._destroy()
         self._translate()
 
+    def mount(self, mountdir):
+        with macro_mode_on():
+            self._ctx.mount(mountdir, persistent=None)
+            mountmanager.paths.add(mountdir) #kludge
+            mountmanager.contexts.add(self._ctx) #kludge
+
     def equilibrate(self):
+        self.translate()
         self._ctx.equilibrate()
 
+    def self(self):
+        raise NotImplementedError
+
     def _translate(self):
-        #TODO (long term): some way to schedule the translation a bit later
-        #  to avoid lots of spurious translations.
-        # Add it to the work queue; translate() translates, same as equilibrate()
-        # Maybe trigger it lazily also, with ._get_tf / ._get_cell on Transformers and Cells
+        # TODO: add translate to the work queue, so that it will run automatically at some point
+        self._needs_translation = True
+
+    def translate(self, force=False):
+        if not force and not self._needs_translation:
+            return
         graph = list(self._graph[0].values()) + self._graph[1]
+        #from pprint import pprint; pprint(graph)
         try:
             ctx = None
             ok = False
@@ -52,16 +70,17 @@ class Context:
                 layer.destroy_layer(self)
             layer.create_layer(self)
             with mountmanager.reorganize(self._gen_context):
-                with macro_mode_on(self._ctx):
+                with macro_mode_on():
                     ctx = context(context=self._ctx, name="translated")
                     translate(graph, ctx)
                     self._ctx._add_child("translated", ctx)
                     ok = True
                     layer.fill_objects(ctx, self)
                     if self._gen_context is not None:
-                        hits = cache(ctx, self._gen_context)
+                        #hits = cache(ctx, self._gen_context) ### TODO: re-enable caching
+                        hits = []
 
-            with macro_mode_on(self._ctx):
+            with macro_mode_on():
                 def seal(c):
                     c._seal = self._ctx
                     for child in c._children.values():
@@ -85,7 +104,7 @@ class Context:
                         ctx.self.destroy()
                         ctx.full_destroy()
                     if self._gen_context is not None:
-                        with macro_mode_on(self):
+                        with macro_mode_on():
                             self._gen_context._remount()
                             self._ctx._add_child("translated", self._gen_context)
                         layer.restore_layers(self, old_layers)
@@ -101,3 +120,4 @@ class Context:
                 print("highlevel context CLEANUP error"); traceback.print_exc()
                 self._gen_context = ctx
             raise
+        self._needs_translation = False

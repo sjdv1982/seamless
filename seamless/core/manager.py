@@ -149,6 +149,11 @@ class Manager:
         self.destroyed = True
         if from_del and self.ctx() is None:
             return
+        if from_del: #to prevent some superfluous error messages
+            try:
+                isinstance(self, Context)
+            except:
+                return
         for childname, child in self.ctx()._children.items():
             if isinstance(child, Context):
                 child.destroy(from_del=from_del)
