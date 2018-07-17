@@ -184,8 +184,9 @@ class CellBase(CellLikeBase):
         old_text_checksum = None
         if value is not None:
             if old_status == self.StatusFlags.OK:
-                old_checksum = self.checksum()
-                old_text_checksum = self.text_checksum()
+                if self.value is not None:
+                    old_checksum = self.checksum()
+                    old_text_checksum = self.text_checksum()
         self._reset_checksums()
         curr_val = self._val
         try:

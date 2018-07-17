@@ -137,7 +137,8 @@ def _do_cache(new_obj, old_obj, hits):
         t.send_message("@RESTART", None)
         t.output_queue = new_obj.output_queue
         t.output_semaphore = new_obj.output_semaphore
-        old_obj.output_thread.join() #happens quickly after @RESTART signal
+        if old_obj.output_thread is not None:
+            old_obj.output_thread.join() #happens quickly after @RESTART signal
         new_obj._listen_output_state = old_obj._listen_output_state
         new_obj.transformer = t
         new_obj.transformer_thread = old_obj.transformer_thread

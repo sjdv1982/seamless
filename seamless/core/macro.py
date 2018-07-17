@@ -88,7 +88,7 @@ class Macro(Worker):
                         raise ExecError from None
                     self._context()._add_child(macro_context_name, ctx)
                     self.exception = None
-                    layer.fill_objects(ctx, self)
+                    filled_objects = layer.fill_objects(ctx, self)
                     '''
                     Caching happens here
                     The old context (gen_context) is deactivated, but the workers have still been running,
@@ -101,6 +101,8 @@ class Macro(Worker):
                         hits = cache.cache(ctx, self.gen_context)
 
             with macro_mode_on(self):
+                for f in filled_objects:
+                    f.activate() #TODO: adapt highlevel.Context.translate()
                 def seal(c):
                     c._seal = self
                     for child in c._children.values():

@@ -223,7 +223,8 @@ class LayeredConnection:
                 success = True
         if success:
             if self.concrete:
-                self.activate()
+                #self.activate()
+                return True
 
     """ YAGNI?
     def clear_object_path(self, obj_path):
@@ -295,9 +296,10 @@ def destroy_layer(macro):
         assert lc2 is lc, (lc.id, lc2.id, lc, lc2)
 
 def fill_object(obj):
+    result = []
     if isinstance(obj, Worker):
         for pin in obj._pins.values():
-            fill_object(pin)
+            result += fill_object(pin)
     path = obj.path
     for id in sorted(list(_id_to_lc.keys())):
         lc = _id_to_lc[id]
@@ -309,16 +311,20 @@ def fill_object(obj):
         if path[:len(mpath)] != mpath:
             continue
         relpath = path[len(mpath):]
-        lc.fill_object(obj, relpath)
+        filled = lc.fill_object(obj, relpath)
+        if filled:
+            result.append(lc)
+    return result
 
 def fill_objects(ctx, macro):
     if ctx is None:
         for c in _layers:
             if not isinstance(c, Context):
                 continue
-            fill_objects(c, macro)
-        return
+            result = fill_objects(c, macro)
+        return result
     assert isinstance(ctx, Context)
+    result = []
 
     #Below is not justified, since one can connect into sealed context, at present
     #To make it work, disallow such connections is they are not exported
@@ -328,13 +334,14 @@ def fill_objects(ctx, macro):
 
     # Anyway, it is not so bad, if we fill only when the outermost macro has finished...
     if outer_macro() is not macro:
-        return
+        return []
 
     for child in list(ctx._children.values()):
         if isinstance(child, Context):
-            fill_objects(child, macro)
+            result += fill_objects(child, macro)
         else:
-            fill_object(child)
+            result += fill_object(child)
+    return result
 
 def clear_object(obj):
     if isinstance(obj, Worker):

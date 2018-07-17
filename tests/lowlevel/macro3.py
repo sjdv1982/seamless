@@ -6,6 +6,7 @@ from seamless.core import context, cell, transformer, pytransformercell, \
 
 with macro_mode_on():
     ctx = context(toplevel=True)
+    #ctx.mount("/tmp/mount-test", persistent=None) #This kind-of works, but with some error messages (same messages on pypy3)
     ctx.param = cell("json").set(0)
 
     ctx.macro = macro({

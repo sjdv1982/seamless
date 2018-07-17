@@ -96,11 +96,21 @@ class SeamlessBaseList(list):
     def __str__(self):
         return str([v._format_path() for v in self])
 
+link_counter = 0
 class Link(SeamlessBase):
+    _mount = None
     def __init__(self, obj):
+        from . import macro_register
+        global link_counter
         assert isinstance(obj, SeamlessBase)
         #assert isinstance(obj, (Context, Worker, CellLikeBase, Link))
         self._linked = obj
+        link_counter += 1
+        self._counter = link_counter
+        macro_register.add(self)
+
+    def __hash__(self):
+        return -self._counter
 
     @property
     def _seal(self):

@@ -360,7 +360,7 @@ context : context or None
         object.__setattr__(self, "_unmounted" , True) #can be outside macro mode
         mountmanager = self._manager.mountmanager
         for childname, child in self._children.items():
-            if isinstance(child, Cell):
+            if isinstance(child, (Cell, Link)):
                 if child._mount is not None:
                     if not from_del:
                         assert mountmanager.reorganizing
@@ -369,7 +369,7 @@ context : context or None
             if isinstance(child, Context):
                 child._unmount(from_del=from_del)
         if self._mount is not None:
-            mountmanager.unmount_context(self)
+            mountmanager.unmount_context(self, from_del=True)
 
     def _remount(self):
         """Undo an _unmount"""
