@@ -179,6 +179,8 @@ class Manager:
             other.mountmanager.add_cell_update(target)
         if different or text_different:
             for con_id, pin in other.cell_to_pins.get(target, []):
+                if con_id < 0 and pin is None: #layer connections, may be None
+                    continue
                 value, checksum = target.serialize(pin.mode, pin.submode)
                 if different or pin.submode == "text":
                     pin.receive_update(value, checksum)
@@ -369,6 +371,8 @@ class Manager:
         only_text = (text_different and not different)
         if different or text_different:
             for con_id, pin in self.cell_to_pins.get(cell, []):
+                if con_id < 0 and pin is None: #layer connections, may be None
+                    continue
                 value, checksum = cell.serialize(pin.mode, pin.submode)
                 if different or pin.submode == "text":
                     pin.receive_update(value, checksum)
@@ -386,6 +390,8 @@ class Manager:
         assert isinstance(cell, CellLikeBase)
         assert cell._get_manager() is self
         for con_id, pin in self.cell_to_pins.get(cell, []):
+            if con_id < 0 and pin is None: #layer connections, may be None
+                continue
             value, checksum = cell.serialize(pin.mode, pin.submode)
             pin.receive_update(value, checksum)
         self.cell_send_update(cell, only_text=False)

@@ -163,7 +163,7 @@ Long-term:
 - Lazy evaluation, GPU-GPU triggering (BIG!)
 - Re-implement all high level classes as Silk classes with methods in their schema.
 - Organize cells into arrays (probably at high-level only)
-- Cells that contain (serialized, low-level) contexts
+- Cells that contain (serialized, low-level) contexts. May help with faster caching of macros.
 - ATC chains with folding/unfolding (YAGNI?)
 
 Event streams
