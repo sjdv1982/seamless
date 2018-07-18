@@ -1,5 +1,16 @@
+import atexit
 from weakref import WeakSet
 from contextlib import contextmanager
+
+toplevel_register = set()
+
+def _destroy_toplevels():
+    for ctx in list(toplevel_register):
+        ctx.destroy(from_del=True)
+
+atexit.register(_destroy_toplevels)
+
+
 
 class MacroRegister:
     def __init__(self):
@@ -48,7 +59,9 @@ def macro_mode_on(macro=None):
     else:
         macro_register.stack[-1].update(curr_macro_register)
     if macro is None:
-        fill_objects(None, None)
+        filled = fill_objects(None, None)
+        for obj in filled:
+            obj.activate(only_macros=False)
         check_async_macro_contexts(None, None)
         created_contexts = []
         for ctx in curr_macro_register:
@@ -64,7 +77,7 @@ def macro_mode_on(macro=None):
             else:
                 created_contexts.append(ctx)
         for ctx in created_contexts:
-            ctx._get_manager().activate()
+            ctx._get_manager().activate(only_macros=False)
 
 
 from . import mount

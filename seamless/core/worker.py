@@ -38,7 +38,7 @@ class Worker(SeamlessBase):
             self._last_update_checksums[pin] = checksum
         return True
 
-    def activate(self):
+    def activate(self, only_macros):
         try:
             from ..shell import update_shells
         except ImportError:  ### If qt is not there...

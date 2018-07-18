@@ -64,7 +64,7 @@ class Reactor:
         self.updated.clear()
         self.update(updated, force_start=True)
 
-    def activate(self):
+    def activate(self, only_macros):
         if self._active:
             return
         if not self._pending_inputs:

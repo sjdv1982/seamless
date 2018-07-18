@@ -100,8 +100,8 @@ class Transformer(Worker):
         ret = "Seamless transformer: " + self._format_path()
         return ret
 
-    def activate(self):
-        super().activate()
+    def activate(self, only_macros):
+        super().activate(only_macros)
         if self.active:
             return
 

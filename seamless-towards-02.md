@@ -328,6 +328,11 @@ A guest can subscribe as follows:
 - If read/write, the guest can now also publish to the *guest* channel. Only the host is subscribed to the guest channel.
 The host sends every state change (both endogenous and those coming from the guest channel) over the host channel, and marks them with a number N. Guest channel messages are not numbered.
 UPDATE: this replaces the Websocketserver, but not the parallel REST API.
+UPDATE: It should be possible to send an (U)RI, instead of the cell value, over the network.
+ The host and guest need to negotate in advance:
+ - which protocols (HTTP, database, etc.) are accepted for URIs
+ - which domains are acceptable. Both may have access to the same database, but not necessarily.
+   (This is somewhat related to having this database as a mount backend, but not exactly)
 
 The web publisher channels
 ===========================

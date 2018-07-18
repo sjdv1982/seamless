@@ -103,7 +103,6 @@ class Link(SeamlessBase):
         from . import macro_register
         global link_counter
         assert isinstance(obj, SeamlessBase)
-        #assert isinstance(obj, (Context, Worker, CellLikeBase, Link))
         self._linked = obj
         link_counter += 1
         self._counter = link_counter

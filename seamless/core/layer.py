@@ -62,6 +62,7 @@ class Path:
 class LayeredConnectionPoint:
     static = False
     obj_original = lambda self: None
+    obj = None
     def __init__(self, type, path, obj, is_input):
         assert type in ("cell", "pin", "path")
         self.type = type
@@ -80,9 +81,11 @@ class LayeredConnectionPoint:
             self.obj = None
 
     def set_object(self, obj, from_init=False):
+        if self.obj is not None and obj is self.obj():
+            return False
         if obj is None:
             self.obj = None
-            return
+            return False
         assert not self.static
         if isinstance(obj, Link):
             obj = obj.get_linked()
@@ -101,6 +104,7 @@ class LayeredConnectionPoint:
         else:
             assert isinstance(obj, (CellLikeBase, InputPinBase, OutputPinBase, EditPinBase))
         self.obj = weakref.ref(obj)
+        return True
 
 _lc_id = -1
 class LayeredConnection:
@@ -166,7 +170,6 @@ class LayeredConnection:
 
         rev_connection = (self.id, cell)
         mgr = target._get_manager()
-        mgr = target._get_manager()
         mgr.pin_from_cell[target] = rev_connection
 
         if cell._status == CellLikeBase.StatusFlags.OK:
@@ -195,7 +198,8 @@ class LayeredConnection:
         elif pin.last_value is not None:
             raise NotImplementedError #previously unconnected reactor output
 
-    def activate(self):
+    def activate(self, only_macros):
+        from .macro import Macro
         assert self.concrete
         source, target = self.source.obj(), self.target.obj()
         assert source._root() is target._root()
@@ -203,10 +207,17 @@ class LayeredConnection:
         mode2 = self._get_half_mode(self.target)
         self.mode = mode1, mode2
         if (mode1, mode2) == ("cell", "cell"):
+            if only_macros:
+                return
             self._activate_cell_cell()
         elif (mode1, mode2) == ("cell", "pin"):
+            is_macro_target = isinstance(target.worker_ref(), Macro)
+            if only_macros != is_macro_target:
+                return
             self._activate_cell_pin()
         elif (mode1, mode2) == ("pin", "cell"):
+            if only_macros:
+                return
             self._activate_pin_cell()
         else:
             raise ValueError(self.mode)
@@ -215,12 +226,12 @@ class LayeredConnection:
         success = False
         if self.source.path.path() == obj_path:
             if not self.source.static:
-                self.source.set_object(obj)
-                success = True
+                if self.source.set_object(obj):
+                    success = True
         if self.target.path.path() == obj_path:
             if not self.target.static:
-                self.target.set_object(obj)
-                success = True
+                if self.target.set_object(obj):
+                    success = True
         if success:
             if self.concrete:
                 #self.activate()
@@ -317,24 +328,37 @@ def fill_object(obj):
     return result
 
 def fill_objects(ctx, macro):
+    """Fills in all the LayeredConnections with paths that point to
+     children of ctx
+    It doesn't matter what is on the other end of the connection
+    (can be a child or a parent of ctx, at any level)
+    """
+    result = []
     if ctx is None:
         for c in _layers:
             if not isinstance(c, Context):
                 continue
-            result = fill_objects(c, macro)
+            result += fill_objects(c, macro)
         return result
     assert isinstance(ctx, Context)
-    result = []
 
     #Below is not justified, since one can connect into sealed context, at present
-    #To make it work, disallow such connections is they are not exported
+    #To make it work, disallow such connections if they are not exported
     # (and still check exported children for fill_objects)
     ###if ctx._is_sealed():
     ###    return
 
     # Anyway, it is not so bad, if we fill only when the outermost macro has finished...
-    if outer_macro() is not macro:
-        return []
+    #if outer_macro() is not macro:
+    #    return []
+
+    #... but this is *also* not justified! We need to fill in connections early
+    # so that we can activate sub-macros early! (while still reorganizing the mount,
+    # and before caching)
+    # Current workaround: fill in at all macro levels
+    # Future solutions:
+    # - Don't fill in objects if their seal is deeper than the current macro
+    # - Faster connection lookup (slow N(1) now!)
 
     for child in list(ctx._children.values()):
         if isinstance(child, Context):
@@ -374,6 +398,13 @@ def fire_connection(id):
         lc.fire()
 
 def _add_to_layer(lc):
+    """
+    print("_add_to_layer")
+    print(lc.source.path, lc.target.path)
+    print(lc.source.obj, lc.target.obj)
+    print(lc.source.static, lc.target.static)
+    print()
+    """
     assert lc.macro() in _layers, lc.macro()
     _layers[lc.macro()].append(lc)
     _id_to_lc[lc.id] = lc

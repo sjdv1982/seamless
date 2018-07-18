@@ -70,6 +70,7 @@ class Manager:
     destroyed = False
     successor = None
     flushing = False
+    filled_objects = []
     def __init__(self, ctx):
         self.ctx = weakref.ref(ctx)
         self.sub_managers = {}
@@ -96,18 +97,31 @@ class Manager:
         if self.destroyed:
             return
         if value:
-            self.unstable.remove(worker)
+            self.unstable.discard(worker)
         else:
             self.unstable.add(worker)
 
-    def activate(self):
-        self.active = True
-        for childname, child in self.ctx()._children.items():
-            if isinstance(child, Context):
-                child._manager.activate()
-            elif isinstance(child, Worker):
-                child.activate()
-        self.flush()
+    def activate(self, only_macros):
+        if only_macros:
+            for f in self.filled_objects:
+                f.activate(only_macros=True)
+            from .macro import Macro
+            for childname, child in self.ctx()._children.items():
+                if isinstance(child, Context):
+                    child._manager.activate(only_macros=True)
+                elif isinstance(child, Macro):
+                    child.activate(only_macros=True)
+        else:
+            self.active = True
+            for f in self.filled_objects:
+                f.activate(only_macros=False)
+            self.filled_objects = []
+            for childname, child in self.ctx()._children.items():
+                if isinstance(child, Context):
+                    child._manager.activate(only_macros=False)
+                elif isinstance(child, Worker):
+                    child.activate(only_macros=False)
+            self.flush()
 
     def deactivate(self):
         self.active = False
@@ -147,13 +161,6 @@ class Manager:
         if self.destroyed:
             return
         self.destroyed = True
-        if from_del and self.ctx() is None:
-            return
-        if from_del: #to prevent some superfluous error messages
-            try:
-                isinstance(self, Context)
-            except:
-                return
         for childname, child in self.ctx()._children.items():
             if isinstance(child, Context):
                 child.destroy(from_del=from_del)
@@ -420,7 +427,7 @@ class Manager:
                 self.set_cell(child, value, default=default)
                 child._prelim_val = None
         ###elif isinstance(child, Worker):
-        ###    child.activate()
+        ###    child.activate(only_macros=False)
         #then, trigger hook (not implemented) #TODO
 
     @main_thread_buffered
@@ -457,6 +464,9 @@ class Manager:
                 continue
             #from_pin is set to True, also for aliases
             self._update_cell_from_cell(cell, target, alias_mode, only_text)
+
+    def set_filled_objects(self, filled_objects):
+        self.filled_objects = filled_objects
 
 from .context import Context
 from .cell import Cell, CellLikeBase

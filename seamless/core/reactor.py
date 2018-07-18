@@ -209,14 +209,6 @@ class Reactor(Worker):
             del value
         super().destroy()
 
-    def __del__(self):
-        try:
-            self.self.destroy()
-
-        except Exception as err:
-            print(err)
-            pass
-
 # @macro takes nothing, a type, or a dict of types
 @macro(type=("json", "seamless", "reactor_params"),with_context=False)
 def reactor(params):

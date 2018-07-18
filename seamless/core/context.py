@@ -4,8 +4,8 @@ from collections import OrderedDict
 from . import SeamlessBase
 from .mount import MountItem
 from . import get_macro_mode, macro_register
+from .macro_mode import toplevel_register
 import time
-import atexit
 
 class Context(SeamlessBase):
     """Context class. Organizes your cells and workers hierarchically.
@@ -51,7 +51,6 @@ context : context or None
             assert context is None
             self._toplevel = True
             self._manager = Manager(self)
-            atexit.register(self.__del__)
             layer.create_layer(self)
         else:
             assert context is not None
@@ -59,6 +58,8 @@ context : context or None
         self._pins = {}
         self._children = {}
         self._auto = set()
+        if toplevel:
+            toplevel_register.add(self)
         macro_register.add(self)
 
     def _set_context(self, context, name):
@@ -194,6 +195,7 @@ context : context or None
         return self._seal is not None
 
     def _flush_workqueue(self, full=True):
+        from .macro import Macro
         manager = self._get_manager()
         manager.workqueue.flush()
         finished = True
@@ -201,7 +203,7 @@ context : context or None
         if len(self.unstable_workers):
             finished = False
         for childname, child in self._children.items():
-            if isinstance(child, Context):
+            if isinstance(child, (Context, Macro)):
                 if full:
                     remaining = child.equilibrate(0.001)
                     if len(remaining):
@@ -335,26 +337,23 @@ context : context or None
         return _InternalChildrenWrapper(self)
 
     def destroy(self, from_del=False):
-        # Precarious circmumstances if called by __del___
+        from .macro import Macro
         self._unmount(from_del=from_del)
         if self._destroyed:
             return
         object.__setattr__(self, "_destroyed", True)
-        if from_del: #to prevent some superfluous error messages
-            try:
-                isinstance(self, Cell)
-            except:
-                self._manager.destroy(from_del=from_del)
-                return
         for childname, child in self._children.items():
-            if isinstance(child, Context):
+            if isinstance(child, (Context, Macro)):
                 child.destroy(from_del=from_del)
         self._manager.destroy(from_del=from_del)
+        if self._toplevel:
+            toplevel_register.remove(self)
 
     def _unmount(self, from_del=False):
         """Unmounts a context while the mountmanager is reorganizing (during macro execution)
         The unmount will set all x._mount to None, but only if and when the reorganization succeeds
         """
+        from .macro import Macro
         if self._unmounted:
             return
         object.__setattr__(self, "_unmounted" , True) #can be outside macro mode
@@ -366,38 +365,39 @@ context : context or None
                         assert mountmanager.reorganizing
                     mountmanager.unmount(child, from_del=from_del)
         for childname, child in self._children.items():
-            if isinstance(child, Context):
+            if isinstance(child, (Context, Macro)):
                 child._unmount(from_del=from_del)
         if self._mount is not None:
             mountmanager.unmount_context(self, from_del=True)
 
     def _remount(self):
         """Undo an _unmount"""
+        from .macro import Macro
         object.__setattr__(self, "_unmounted" , False) #can be outside macro mode
         for childname, child in self._children.items():
-            if isinstance(child, Context):
+            if isinstance(child, (Context, Macro)):
                 child._remount()
 
     def full_destroy(self, from_del=False):
         #all work buffers (work queue and manager work buffers) are now empty
         # time to free memory
-        if from_del: #to prevent some superfluous error messages
-            try:
-                isinstance(self, (Worker, Context))
-            except:
-                return
+        from .macro import Macro
         path = self.path
         for childname, child in self._children.items():
             if isinstance(child, Worker):
                 child.full_destroy(from_del=from_del)
-            if isinstance(child, Context):
+            if isinstance(child, (Context, Macro)):
                 child.full_destroy(from_del=from_del)
         if self._toplevel:
             layer.destroy_layer(self)
 
     def __del__(self):
-        self.destroy(from_del=True)
-        self.full_destroy(from_del=True)
+        if self._destroyed:
+            return
+        self.__dict__["_destroyed"] = True
+        print("Undestroyed %s, mount points may remain" % self)
+        #self.destroy(from_del=True)
+        #self.full_destroy(from_del=True)
 
 
 Context._methods = [m for m in Context.__dict__ if not m.startswith("_") \

@@ -5,7 +5,6 @@ A proof-of-principle of the middle/high level is now there.
 Things to do:
 
 Part 1 (low-level):
-   - Links should become symlinks when mounted (new kind of MountItem required!)
    - Reactors (think of IPython stuff in the namespace, not properly addressed in 0.1; copy from 0.2 transformers)
      (also think of \_pending_inputs: add a name back in, if sent as None (like transformers))
    - cson cells; also structured_cell in plain mode must be able to accommodate
@@ -18,8 +17,7 @@ Part 1 (low-level):
    they trigger warnings that they are overruling cells "controlled by Seamless context"
    (see tests/highlevel/simple.py). This is distinct from sovereignty, which involves non-pin manipulation!
    - "Active" switch of managers, workers, connections; may also be exported, and may be activated in a connection layer.
-      UPDATE: partially done (for managers), extend to fine-grained level (maintain by manager)
-      for the rest, YAGNI?
+      UPDATE: done for managers. Extend to workers (transformers and reactors) as well. YAGNI for connections.
    - PyModule cells and code injection (PyModule cell becomes a Python module).
      Also PyCompositeModule which will have inputpins that are PyModules.
      All PyModules will be transported as source to the worker, where they will be built into code.
@@ -28,6 +26,7 @@ Part 1 (low-level):
 Part 2 (low-level / cleanup):   
    - Signals
    - Observers
+   - Add back in int/float/str/bool cells because they are so convenient.
    - Have a look if Qt mainloop hook can be eliminated.
    - Start with lib porting. Port Qt editors (including HTML), but no more seamless.qt
      Port all macros, but store the code in plain Python modules in lib
@@ -38,9 +37,15 @@ Part 2 (low-level / cleanup):
 
 Part 3 (low-level):   
    - Dynamic connection layers: a special macro that has one or more contexts as input (among other inputs), which must be (grand)children
-      They are tied to a parent context, and take as input direct children of the context (cells or child contexts);
-      Builds connections within/between those children. May also set active switches.
-      In a later version, also support the addition of new cells (although these will never be cached)
+      Like static layers, they are tied to a macro or toplevel context
+      They take as input any children of the context (cells or child contexts);
+      Builds connections within/between those children. May set active switch as well.
+      They can never build new cells, use the help of a macro for that.
+      The result layer consists of a set of pairs (connection + callback that removes that connection),
+       and (object, newstate, oldstate) for objects that have been activated/disactivated.
+      Dynamic connection layers will always be evaluated after any other fprward update.
+      Therefore, if you have A => macro => B, A + B => dynamic layer, you can assume that the macro
+       will respond first to changes in A, so that B will reflect the new A.
   - Terminology: authority => source. "only_source" option in mounting context, mounting only source cells
   - Report cells (JSON cells, can become structured if directed from the mid-level).
     Status dict becomes a a Report cell.
@@ -84,6 +89,10 @@ Part 5: applying the mid-level. Some of this can be delayed until post-merge.
 - Reconsider the restrictions on transformers and reactors. Give transformers
   edit pins and cache pins, allow them to have reactor pin API.
   At least in theory, allow transformers/reactors to declare as sync/async, and thread/process.
+  In the same vein, transformers should be able to be declared as "immediate", which means:
+  sync and activated during translation / macro construction.
+  (Macros are also "immediate" workers already).
+  This allows a macro to depend on an immediate transformer, to avoid async macros (= cache misses).
 - Preliminary outputpins (in transformers [as secondary output] and in reactors)
 - Preliminary inputpins (pins that accept preliminary values). Right now, all inputpins are preliminary!
 - Equilibrium contexts (see below)
@@ -157,6 +166,8 @@ Long-term:
 - Set up user library directory and robogit
 - Python debugging / code editor (WIP) / unit tests (see seamless-towards-02.md)
 - Other mount backends (databases)
+  As a variation, an option for cells to have no .\_val, i.e. .value always pulls
+   the value from the backend (it is assumed not to have changed!)
 - Event streams (BIG!)
 - Full feature implementation of Silk, e.g. constructs (see silk.md)
 - Lazy evaluation, GPU-GPU triggering (BIG!)

@@ -74,6 +74,7 @@ class Context:
                     ctx = context(context=self._ctx, name="translated")
                     translate(graph, ctx)
                     self._ctx._add_child("translated", ctx)
+                    ctx._get_manager().activate(only_macros=True)
                     ok = True
                     layer.fill_objects(ctx, self)
                     if self._gen_context is not None:
@@ -88,7 +89,7 @@ class Context:
                             seal(child)
                 seal(ctx)
                 layer.check_async_macro_contexts(ctx, self)
-                ctx._get_manager().activate()
+                ctx._get_manager().activate(only_macros=False)
 
             if self._gen_context is not None:
                 layer.clear_objects(self._gen_context)
@@ -108,7 +109,7 @@ class Context:
                             self._gen_context._remount()
                             self._ctx._add_child("translated", self._gen_context)
                         layer.restore_layers(self, old_layers)
-                        self._gen_context._manager.activate()
+                        self._gen_context._manager.activate(only_macros=False)
                 except Exception as exc2:
                     traceback.print_exc()
                     self.secondary_exception = traceback.format_exc()

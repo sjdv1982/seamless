@@ -6,7 +6,7 @@ from seamless.core import context, cell, transformer, pytransformercell, \
 
 with macro_mode_on():
     ctx = context(toplevel=True)
-    #ctx.mount("/tmp/mount-test", persistent=None) #This kind-of works, but with some error messages (same messages on pypy3)
+    ctx.mount("/tmp/mount-test", persistent=None)
     ctx.param = cell("json").set(0)
 
     ctx.macro = macro({
@@ -113,7 +113,10 @@ def report():
 print("START")
 ctx.equilibrate()
 
-print("Initial param 0, should be None for .e")
+print("""Initial param 0
+Should be non-existent for .d
+Should be None for .e, .e2
+""")
 report()
 
 print("Change to 2")
@@ -121,7 +124,10 @@ ctx.param.set(2)
 ctx.equilibrate()
 report()
 
-print("Change to 1 (sets .e to None)")
+print("""Change to 1
+Should change to non-existent for .d
+Should change to None for .e, .e2
+""")
 ctx.param.set(1)
 ctx.equilibrate()
 report()
@@ -135,7 +141,6 @@ print("Change to 4")
 ctx.param.set(4)
 ctx.equilibrate()
 report()
-
 
 print("STOP")
 import sys; sys.exit()

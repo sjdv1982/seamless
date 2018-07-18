@@ -228,7 +228,13 @@ class MountItem:
             os.unlink(self.path)
 
     def __del__(self):
-        self.destroy()
+        if self.dummy:
+            return
+        if self._destroyed:
+            return
+        self._destroyed = True
+        print("undestroyed mount path %s" % self.path)
+        #self.destroy()
 
 class LinkItem:
     _destroyed = False
@@ -269,6 +275,12 @@ class LinkItem:
             broken_link = (os.path.lexists(filepath) and not os.path.exists(filepath))
             if unbroken_link or broken_link:
                 os.unlink(filepath)
+
+    def __del__(self):
+        if self._destroyed:
+            return
+        self._destroyed = True
+        print("undestroyed link path %s" % self.path)
 
 
 class MountManagerStash:
@@ -525,17 +537,8 @@ class MountManager:
           (because of stash replacement)
         context._mount MUST have been set to None!
         """
-        if from_del:
-            try:
-                os.sep
-            except:
-                return
         assert mount is not None, context
-        try:
-            self.paths.remove(mount["path"])
-        except:
-            if not from_del:
-                raise
+        self.paths.remove(mount["path"])
         if mount["persistent"] == False:
             dirpath = mount["path"].replace("/", os.sep)
             try:
@@ -643,9 +646,6 @@ class MountManager:
         for context in sorted(self.contexts,key=lambda l:-len(l.path)):
             self.unmount_context(context)
 
-    def __del__(self):
-        self.destroy()
-
 def resolve_register(reg):
     from .context import Context
     from .cell import Cell
@@ -680,7 +680,12 @@ def resolve_register(reg):
             parent = c._context
             assert parent is not None, c
             parent = parent()
-            result = find_mount(parent, as_parent=True,child=c)
+            result = None
+            cc = c
+            if isinstance(c, Link):
+                cc = c.get_linked()
+            if isinstance(cc, (Context, Cell)):
+                result = find_mount(parent, as_parent=True,child=c)
         mounts[c] = result
         if as_parent and result is not None:
             result = copy.deepcopy(result)

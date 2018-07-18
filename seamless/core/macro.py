@@ -71,6 +71,11 @@ class Macro(Worker):
                 layer.destroy_layer(self)
             layer.create_layer(self)
             self.exception = 1
+            def seal(c):
+                c._seal = self
+                for child in c._children.values():
+                    if isinstance(child, Context):
+                        seal(child)
             with mountmanager.reorganize(self.gen_context):
                 with macro_mode_on(self):
                     ctx = context(context=self._context(), name=macro_context_name)
@@ -87,8 +92,12 @@ class Macro(Worker):
                         self.exception = traceback.format_exc()
                         raise ExecError from None
                     self._context()._add_child(macro_context_name, ctx)
-                    self.exception = None
+                    seal(ctx)
                     filled_objects = layer.fill_objects(ctx, self)
+                    manager = ctx._get_manager()
+                    manager.set_filled_objects(filled_objects)
+                    manager.activate(only_macros=True)
+                    self.exception = None
                     '''
                     Caching happens here
                     The old context (gen_context) is deactivated, but the workers have still been running,
@@ -100,17 +109,12 @@ class Macro(Worker):
                     if self.gen_context is not None:
                         hits = cache.cache(ctx, self.gen_context)
 
+                    layer.check_async_macro_contexts(ctx, self)
+
             with macro_mode_on(self):
-                for f in filled_objects:
-                    f.activate() #TODO: adapt highlevel.Context.translate()
-                def seal(c):
-                    c._seal = self
-                    for child in c._children.values():
-                        if isinstance(child, Context):
-                            seal(child)
-                seal(ctx)
-                layer.check_async_macro_contexts(ctx, self)
-                ctx._get_manager().activate()
+                seal(ctx) #caching may have changed some seals
+                if outer_macro:
+                    ctx._get_manager().activate(only_macros=False)
             """
             if self.gen_context is not None:
                 for t in hits["transformers"]:
@@ -141,7 +145,7 @@ class Macro(Worker):
                                 self.gen_context._remount()
                                 self._context()._add_child(macro_context_name, self.gen_context)
                             layer.restore_layers(self, old_layers)
-                            self.gen_context._manager.activate()
+                            self.gen_context._manager.activate(only_macros=False)
                         else:
                             pass #no need to restore anything, the outer macro will do that
                             # NOTE: it is illegal (and anyway, quite difficult) to catch an
@@ -214,8 +218,41 @@ class Macro(Worker):
             return self.StatusFlags.ERROR.name
         return self.StatusFlags.OK.name
 
+    def _unmount(self,from_del=False):
+        if self.gen_context is not None:
+            return self.gen_context._unmount(from_del)
+
+    def _remount(self):
+        if self.gen_context is not None:
+            return self.gen_context._remount()
+
+    def destroy(self,from_del=False):
+        if self.gen_context is not None:
+            return self.gen_context.destroy(from_del)
+
     def full_destroy(self,from_del=False):
-        pass
+        if self.gen_context is not None:
+            return self.gen_context.full_destroy(from_del)
+
+    def equilibrate(self,*args, **kwargs):
+        if self.gen_context is not None:
+            return self.gen_context.equilibrate(*args, **kwargs)
+        else:
+            return set()
+
+    def _flush_workqueue(self, full):
+        if self.gen_context is not None:
+            return self.gen_context._flush_workqueue(full)
+        else:
+            if not full:
+                return True
+            else:
+                return True, set()
+
+    def activate(self, only_macros):
+        super().activate(only_macros)
+        if self.gen_context is not None:
+            self.gen_context._get_manager().activate(only_macros)
 
 def macro(params):
     return Macro(params)
