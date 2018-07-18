@@ -217,9 +217,10 @@ class LayeredConnection:
             if isinstance(m, Macro):
                 is_macro_target = True
                 cm = curr_macro()
-                cpath = cm._context().path + (cm.macro_context_name,)
-                if m.path[:len(cpath)] != cpath:
-                    is_macro_target = False
+                if cm is not None:
+                    cpath = cm._context().path + (cm.macro_context_name,)
+                    if m.path[:len(cpath)] != cpath:
+                        is_macro_target = False
             if only_macros != is_macro_target:
                 return
             self._activate_cell_pin()

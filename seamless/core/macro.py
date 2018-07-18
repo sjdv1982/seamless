@@ -113,8 +113,8 @@ class Macro(Worker):
 
             with macro_mode_on(self):
                 seal(ctx) #caching may have changed some seals
-                if outer_macro:
-                    ctx._get_manager().activate(only_macros=False)
+            if outer_macro:
+                ctx._get_manager().activate(only_macros=False)
             """
             if self.gen_context is not None:
                 for t in hits["transformers"]:
