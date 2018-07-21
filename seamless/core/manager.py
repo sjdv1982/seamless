@@ -16,6 +16,7 @@ TODO: once reactors arrive (or any kind of sync evaluation), keep a stack of cel
 import threading
 import functools
 import weakref
+import traceback
 
 def main_thread_buffered(func):
     def main_thread_buffered_wrapper(self, *args, **kwargs):
@@ -261,13 +262,11 @@ class Manager:
             else:
                 if isinstance(target, EditPinBase) and target.last_value is not None:
                     raise NotImplementedError ### also output *to* the cell!
-                    """
-                    self.update_from_worker(
-                        self.get_cell_id(source),
-                        target.last_value,
-                        worker, preliminary=False
+                    self.pin_send_update(pin,
+                        pin.last_value,
+                        preliminary=pin.last_value_preliminary,
+                        target=target,
                     )
-                    """
 
             if isinstance(target, EditPinBase):
                 raise NotImplementedError ### also output *to* the cell!
@@ -324,18 +323,12 @@ class Manager:
 
         if concrete:
             target._check_mode(pin.mode, pin.submode)
-            if isinstance(worker, Transformer):
-                worker._on_connect_output()
-            elif pin.last_value is not None:
-                raise NotImplementedError #previously unconnected reactor output
-                """
-                self.update_from_worker(
-                    cell_id,
-                    source.last_value,
-                    worker,
-                    preliminary=False
+            if pin.last_value is not None:
+                self.pin_send_update(pin,
+                    pin.last_value,
+                    preliminary=pin.last_value_preliminary,
+                    target=target,
                 )
-                """
 
     @main_thread_buffered
     #@manager_buffered
@@ -433,12 +426,16 @@ class Manager:
     @main_thread_buffered
     @manager_buffered
     @with_successor("pin", 0)
-    def pin_send_update(self, pin, value, preliminary):
+    def pin_send_update(self, pin, value, preliminary, target=None):
         #TODO: explicit support for preliminary values
         #TODO: edit pins => from_pin = "edit"
+        found = False
         for con_id, cell in self.pin_to_cells.get(pin,[]):
             if con_id < 0 and cell is None: #layer connections, may be None
                 continue
+            if target is not None and cell is not target:
+                continue
+            found = True
             other = cell._get_manager()
             if other.destroyed:
                 continue
@@ -450,6 +447,8 @@ class Manager:
                 other.mountmanager.add_cell_update(cell)
             if different or text_different:
                 other.cell_send_update(cell, only_text)
+        if not found:
+            print("Warning: %s was targeted by triggering pin %s, but not found" % (target, pin))
 
     @main_thread_buffered
     @manager_buffered

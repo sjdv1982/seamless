@@ -193,10 +193,12 @@ class LayeredConnection:
         mgr.cell_from_pin[target] = rev_connection
         target._authoritative = False
         worker = pin.worker_ref()
-        if isinstance(worker, Transformer):
-            worker._on_connect_output()
-        elif pin.last_value is not None:
-            raise NotImplementedError #previously unconnected reactor output
+        if pin.last_value is not None:
+            mgr.pin_send_update(pin,
+                pin.last_value,
+                preliminary=pin.last_value_preliminary,
+                target=target,
+            )
 
     def activate(self, only_macros):
         from .macro import Macro

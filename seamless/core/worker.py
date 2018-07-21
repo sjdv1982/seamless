@@ -223,6 +223,7 @@ class OutputPin(OutputPinBase):
     """
 
     last_value = None
+    last_value_preliminary = None
 
     def get_pin(self):
         """Private"""
@@ -231,6 +232,7 @@ class OutputPin(OutputPinBase):
     def send_update(self, value, *, preliminary=False):
         """Private"""
         self.last_value = value
+        self.last_value_preliminary = preliminary
         manager = self._get_manager()
         manager.pin_send_update(self, value, preliminary=preliminary)
 

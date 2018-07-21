@@ -1,10 +1,8 @@
 import weakref
 
 class ReactorInput:
-    _store = None
-    def __init__(self, parent, dtype, name):
+    def __init__(self, parent, name):
         self._parent = weakref.ref(parent)
-        self._dtype = dtype
         self._name = name
         self._value = None
         self.updated = False
@@ -14,9 +12,6 @@ class ReactorInput:
     @property
     def value(self):
         return self.get()
-    @property
-    def store(self):
-        return self._store
 
 class ReactorInputSignal:
     def __init__(self, parent, name):
@@ -29,19 +24,18 @@ class ReactorInputSignal:
         self._clear = False
 
 class ReactorOutput:
-    _store = None
-    def __init__(self, parent, dtype, name):
+    def __init__(self, parent, name):
         self._parent = weakref.ref(parent)
-        self._dtype = dtype
         self._name = name
-    def set(self, value):
+    def _set(self, value, preliminary):
         p = self._parent()
         if p is None:
             return
-        p.output_update(self._name, value)
-    @property
-    def store(self):
-        return self._store
+        p.output_update(self._name, value, preliminary)
+    def set(self, value):
+        return self._set(value, False)
+    def set_preliminary(self, value):
+        return self._set(value, True)
 
 class ReactorOutputSignal:
     def __init__(self, parent, name):
@@ -51,13 +45,12 @@ class ReactorOutputSignal:
         p = self._parent()
         if p is None:
             return
-        p.output_update(self._name, None)
+        p.output_update(self._name, None, priority=True)
 
 class ReactorEdit:
     _store = None
-    def __init__(self, parent, dtype, name):
+    def __init__(self, parent, name):
         self._parent = weakref.ref(parent)
-        self._dtype = dtype
         self._name = name
         self._value = None
         self.updated = False
@@ -67,8 +60,7 @@ class ReactorEdit:
     @property
     def value(self):
         return self.get()
-    def set(self, value):
-        #print("SET",self._parent().parent(), self._name)
+    def _set(self, value, preliminary):
         self._value = value
         self.defined = True
         p = self._parent()
@@ -77,7 +69,8 @@ class ReactorEdit:
         if p.values[self._name] is None:
             p.values[self._name] = p.inputs[self._name]
         p.values[self._name].data = value
-        p.output_update(self._name, value)
-    @property
-    def store(self):
-        return self._store
+        p.output_update(self._name, value, preliminary)
+    def set(self, value):
+        return self._set(value, False)
+    def set_preliminary(self, value):
+        return self._set(value, True)

@@ -55,18 +55,17 @@ class Transformer(Worker):
 
         if self.with_schema:
             self.function_expr_template = "{0}\n{1}("
-            for inp in sorted(list(inputs)) + [self.output_name]:
+            for inp in sorted(list(inputs.keys())) + [self.output_name]:
                 if inp == "schema":
                     continue
                 self.function_expr_template += "%s=%s," % (inp, inp)
         else:
             self.function_expr_template = "{0}\n%s = {1}(" % self.output_name
-            for inp in sorted(list(inputs)):
+            for inp in sorted(list(inputs.keys())):
                 self.function_expr_template += "%s=%s," % (inp, inp)
         self.function_expr_template = self.function_expr_template[:-1] + ")"
 
-        all_inputs = list(inputs) + ["code"]
-        super(Transformer, self).__init__(parent, all_inputs, **kwargs)
+        super(Transformer, self).__init__(parent, inputs, **kwargs)
 
     def send_message(self, tag, message):
         #print("send_message", tag, message, hex(id(self.output_queue)))
@@ -82,13 +81,16 @@ class Transformer(Worker):
         self.send_message("@START", None)
         ok = False
         try:
-            # Code data object
-            code_obj = self.values["code"]
-
             # If code object is updated, recompile
             if "code" in updated:
-                code = code_obj.value
-                identifier = "Seamless transformer: " + self.parent()._format_path()
+                identifier = str(self.parent())
+                _, submode = self.inputs["code"]
+                if submode in ("buffer", "copy"):
+                    code = self.values["code"]
+                else:
+                    # Code data object
+                    code_obj = self.values["code"]
+                    code = code_obj.value
                 if code_obj.is_function:
                     func_name = code_obj.func_name
                     expr = self.function_expr_template.format(code, func_name)

@@ -11,7 +11,7 @@ submodes = {
     "copy": ["json", "silk", "text"], ###TODO: text should render json as text, pythoncode as text, cson directly.
     "ref": ["pythoncode", "json", "silk"]
 }
-celltypes = ("text", "python", "pytransformer", "json", "cson", "mixed")
+celltypes = ("text", "python", "pytransformer", "json", "cson", "mixed", "binary")
 
 from copy import deepcopy
 import json

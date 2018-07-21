@@ -23,11 +23,11 @@ class Transformer(Worker):
         super().__init__()
         self.state = {}
         self.code = InputPin(self, "code", "ref", "pythoncode", "pytransformer")
-        thread_inputs = []
+        #TODO: submode becomes "copy" when we switch from threads to processes
+        thread_inputs = {"code": (self.code.mode, self.code.submode)}
         self._io_attrs = ["code"]
         self._pins = {"code":self.code}
         self._output_name = None
-        self._connected_output = False
         self._last_value = None
         self._last_value_preliminary = False
         self._message_id = 0
@@ -45,7 +45,8 @@ class Transformer(Worker):
             param = transformer_params[p]
             self._transformer_params[p] = param
             pin = None
-            io, mode, submode, celltype = None, "copy", None, None
+            io, mode, submode, celltype = None, "ref", None, None
+            #TODO: change "ref" to "copy" once transport protocol works
             if isinstance(param, str):
                 io = param
             elif isinstance(param, (list, tuple)):
@@ -60,7 +61,7 @@ class Transformer(Worker):
                 raise ValueError((p, param))
             if io == "input":
                 pin = InputPin(self, p, mode, submode)
-                thread_inputs.append(p)
+                thread_inputs[p] = mode, submode
             elif io == "output":
                 pin = OutputPin(self, p, mode, submode)
                 assert self._output_name is None  # can have only one output
@@ -115,7 +116,6 @@ class Transformer(Worker):
             self.transformer_thread.start()
 
         self.active = True
-
 
     def _send_message(self, msg):
         self._message_id += 1
@@ -258,12 +258,9 @@ class Transformer(Worker):
                     ###output_name, output_value = item
 
                 assert output_name == self._output_name, item
-                if self._connected_output:
-                    pin = self._pins[self._output_name]
-                    #we're not in the main thread, but the manager takes care of it
-                    pin.send_update(output_value, preliminary=preliminary)
-                    self._last_value = output_value
-                    self._last_value_preliminary = preliminary
+                pin = self._pins[self._output_name]
+                #we're not in the main thread, but the manager takes care of it
+                pin.send_update(output_value, preliminary=preliminary)
 
                 if preliminary:
                     continue
@@ -285,25 +282,9 @@ class Transformer(Worker):
             except Exception:
                 traceback.print_exc() #TODO: store it?
 
-
-    def _on_connect_output(self):
-        last_value = self._last_value
-        if last_value is not None:
-            preliminary = self._last_value_preliminary
-            self._pins[self._output_name].send_update(last_value,
-                preliminary=preliminary)
-        self._connected_output = True
-
     def _shell(self, submode):
         assert submode is None
         return self.transformer.namespace, self.code, str(self)
-
-    def resend(self):
-        """Sends again last value"""
-        if self._last_value is None:
-            return
-        pin = self._pins[self._output_name]
-        pin.send_update(self._last_value, preliminary=self._last_value_preliminary)
 
     def destroy(self, from_del=False):
         if not self.active:

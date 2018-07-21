@@ -115,12 +115,6 @@ class Macro(Worker):
                 seal(ctx) #caching may have changed some seals
             if outer_macro:
                 ctx._get_manager().activate(only_macros=False)
-            """
-            if self.gen_context is not None:
-                for t in hits["transformers"]:
-                    print("resend", t)
-                    t.resend()
-            """
             if self.gen_context is not None:
                 layer.clear_objects(self.gen_context)
                 self.gen_context.self.destroy()

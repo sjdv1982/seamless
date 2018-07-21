@@ -148,7 +148,7 @@ def link(obj):
 
 from .macro_mode import get_macro_mode, macro_register, macro_mode_on
 from . import cell as cell_module
-from .cell import Cell, CellLikeBase, cell, textcell, pytransformercell
+from .cell import Cell, CellLikeBase, cell, textcell, pythoncell, pytransformercell
 from . import context as context_module
 from .context import Context, context
 from .worker import Worker
@@ -157,4 +157,5 @@ from .mount import mountmanager
 from .structured_cell import StructuredCell
 from .layer import path
 from .macro import macro
+from .reactor import reactor
 from . import cache
