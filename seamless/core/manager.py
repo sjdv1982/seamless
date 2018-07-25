@@ -7,10 +7,6 @@ Cells can have only one outputpin writing to them, this is strictly enforced.
 
 The manager has a notion of the managers of the subcontexts
 manager.set_cell and manager.pin_send_update are thread-safe (can be invoked from any thread)
-TODO: The manager can maintain a value dict and an exception dict (in text/cell form; the cells themselves hold the Python objects)
-
-TODO: once reactors arrive (or any kind of sync evaluation), keep a stack of cells that have been updated since the current sync action
- this to break a single unresponsive endless feedback cycle into lots of cycles with one-update-per-cycle
 """
 
 import threading
@@ -186,14 +182,8 @@ class Manager:
         if target._mount is not None:
             other.mountmanager.add_cell_update(target)
         if different or text_different:
-            for con_id, pin in other.cell_to_pins.get(target, []):
-                if con_id < 0 and pin is None: #layer connections, may be None
-                    continue
-                value, checksum = target.serialize(pin.mode, pin.submode)
-                if different or pin.submode == "text":
-                    pin.receive_update(value, checksum)
             only_text_new = (text_different and not different)
-            other.cell_send_update(target, only_text_new)
+            other.cell_send_update(target, only_text_new, None)
 
     def _connect_cell_to_cell(self, cell, target, alias_mode):
         target0 = target
@@ -226,7 +216,6 @@ class Manager:
                 self._update_cell_from_cell(cell, target, alias_mode, only_text=False)
 
     @main_thread_buffered
-    #@manager_buffered
     def connect_cell(self, cell, target, alias_mode=None):
         if self.destroyed:
             return
@@ -256,20 +245,11 @@ class Manager:
             worker = target.worker_ref()
             assert worker is not None #weakref may not be dead
             connection = (con_id, target)
-            if cell._status == Cell.StatusFlags.OK:
+            if isinstance(target, EditPinBase):
+                pass #will be dealt with in connect_pin invocation below
+            elif cell._status == Cell.StatusFlags.OK:
                 value, checksum = cell.serialize(target.mode, target.submode)
                 target.receive_update(value, checksum)
-            else:
-                if isinstance(target, EditPinBase) and target.last_value is not None:
-                    raise NotImplementedError ### also output *to* the cell!
-                    self.pin_send_update(pin,
-                        pin.last_value,
-                        preliminary=pin.last_value_preliminary,
-                        target=target,
-                    )
-
-            if isinstance(target, EditPinBase):
-                raise NotImplementedError ### also output *to* the cell!
         else:
             connection = (con_id, None)
 
@@ -282,8 +262,10 @@ class Manager:
             other = target._get_manager()
             other.pin_from_cell[target] = rev_connection
 
+        if isinstance(target, EditPinBase):
+            self.connect_pin(target0, cell)
+
     @main_thread_buffered
-    #@manager_buffered
     def connect_pin(self, pin, target):
         if self.destroyed:
             return
@@ -293,11 +275,9 @@ class Manager:
         if isinstance(target, Link):
             target = target.get_linked()
         assert isinstance(target, (CellLikeBase, Path))
-        if isinstance(pin, EditPinBase):
-            raise NotImplementedError ### also output *from* the cell!
-        assert isinstance(pin, OutputPinBase)
+        assert isinstance(pin, (OutputPinBase, EditPinBase))
 
-        if not target.authoritative:
+        if not isinstance(pin, EditPinBase) and not target.authoritative:
             raise Exception("%s: is non-authoritative (already dependent on another worker/cell)" % target)
         if target._is_sealed() or pin._is_sealed():
             concrete, con_id = layer.connect_pin(pin, target)
@@ -319,7 +299,8 @@ class Manager:
             other = target._get_manager()
             rev_connection = (con_id, pin)
             other.cell_from_pin[target] = rev_connection
-            target._authoritative = False
+            if not isinstance(pin, EditPinBase):
+                target._authoritative = False
 
         if concrete:
             target._check_mode(pin.mode, pin.submode)
@@ -329,9 +310,13 @@ class Manager:
                     preliminary=pin.last_value_preliminary,
                     target=target,
                 )
+            elif isinstance(pin, EditPinBase):
+                if target._status == Cell.StatusFlags.OK:
+                    value, checksum = target.serialize(pin.mode, pin.submode)
+                    pin.receive_update(value, checksum)
+
 
     @main_thread_buffered
-    #@manager_buffered
     def connect_link(self, link, target):
         if self.destroyed:
             return
@@ -369,17 +354,10 @@ class Manager:
           from_pin=False, default=default,force=force
         )
         only_text = (text_different and not different)
-        if different or text_different:
-            for con_id, pin in self.cell_to_pins.get(cell, []):
-                if con_id < 0 and pin is None: #layer connections, may be None
-                    continue
-                value, checksum = cell.serialize(pin.mode, pin.submode)
-                if different or pin.submode == "text":
-                    pin.receive_update(value, checksum)
         if text_different and cell._mount is not None:
             self.mountmanager.add_cell_update(cell)
         if different or text_different:
-            self.cell_send_update(cell, only_text)
+            self.cell_send_update(cell, only_text, None)
 
     @main_thread_buffered
     @manager_buffered
@@ -389,12 +367,7 @@ class Manager:
             return
         assert isinstance(cell, CellLikeBase)
         assert cell._get_manager() is self
-        for con_id, pin in self.cell_to_pins.get(cell, []):
-            if con_id < 0 and pin is None: #layer connections, may be None
-                continue
-            value, checksum = cell.serialize(pin.mode, pin.submode)
-            pin.receive_update(value, checksum)
-        self.cell_send_update(cell, only_text=False)
+        self.cell_send_update(cell, only_text=False, origin=None)
         if cell._mount is not None:
             self.mountmanager.add_cell_update(cell)
 
@@ -419,16 +392,12 @@ class Manager:
                 value, default = child._prelim_val
                 self.set_cell(child, value, default=default)
                 child._prelim_val = None
-        ###elif isinstance(child, Worker):
-        ###    child.activate(only_macros=False)
-        #then, trigger hook (not implemented) #TODO
 
     @main_thread_buffered
     @manager_buffered
     @with_successor("pin", 0)
     def pin_send_update(self, pin, value, preliminary, target=None):
         #TODO: explicit support for preliminary values
-        #TODO: edit pins => from_pin = "edit"
         found = False
         for con_id, cell in self.pin_to_cells.get(pin,[]):
             if con_id < 0 and cell is None: #layer connections, may be None
@@ -439,23 +408,41 @@ class Manager:
             other = cell._get_manager()
             if other.destroyed:
                 continue
-            different, text_different = cell.deserialize(value, pin.mode, pin.submode,
-              from_pin=True, default=False
-            )
+            from_pin = "edit" if isinstance(pin, EditPin) else True
+            try:
+                different, text_different = cell.deserialize(value, pin.mode, pin.submode,
+                  from_pin=from_pin, default=False
+                )
+            except Exception:
+                print("*** Error in setting %s ***" % cell)
+                traceback.print_exc()
+                print("******")
+                continue
             only_text = (text_different and not different)
             if text_different and cell._mount is not None:
                 other.mountmanager.add_cell_update(cell)
             if different or text_different:
-                other.cell_send_update(cell, only_text)
-        if not found:
+                other.cell_send_update(cell, only_text, origin=pin)
+        if target is not None and not found:
             print("Warning: %s was targeted by triggering pin %s, but not found" % (target, pin))
 
     @main_thread_buffered
     @manager_buffered
     @with_successor("cell", 0)
-    def cell_send_update(self, cell, only_text):
+    def cell_send_update(self, cell, only_text, origin):
         if self.destroyed:
             return
+
+        #Activates pins
+        for con_id, pin in self.cell_to_pins.get(cell, []):
+            if pin is origin: #editpin that sent the update
+                continue
+            if con_id < 0 and pin is None: #layer connections, may be None
+                continue
+            value, checksum = cell.serialize(pin.mode, pin.submode)
+            if not only_text or pin.submode == "text":
+                pin.receive_update(value, checksum)
+
         #Activates aliases
         assert isinstance(cell, CellLikeBase)
         for con_id, target, alias_mode in self.cell_to_cells.get(cell, []):

@@ -8,6 +8,7 @@ Copyright 2016-2017, Sjoerd de Vries
 # 1. hard dependencies; without these, "import seamless" will fail.
 # Still, if necessary, some of these dependencies could be removed, but seamless would have to be more minimalist in loading its lib
 
+import functools
 import numpy as np
 """
 #import PyOpenGL before PyQt5 to prevent the loading of the wrong OpenGL library that can happen on some systems. Introduces a hard dependency on PyOpenGL, TODO look into later"
@@ -115,7 +116,9 @@ if qt_error is None:
 
     timer = QTimer()
     #Failsafe: run accumulated work every 50 ms, should not be necessary at all
-    timer.timeout.connect(workqueue.flush)
+    from .core.mainloop import MAINLOOP_FLUSH_TIMEOUT
+    flush = functools.partial(workqueue.flush, MAINLOOP_FLUSH_TIMEOUT)
+    timer.timeout.connect(flush)
     timer.start(workqueue.FAILSAFE_FLUSH_LATENCY)
 
     import sys

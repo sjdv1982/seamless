@@ -127,7 +127,7 @@ class CellBase(CellLikeBase):
             manager.set_cell(self, value, default=True)
         return self
 
-    def set_from_buffer(self, value, checksum=None):
+    def from_buffer(self, value, checksum=None):
         """Sets a cell from a buffer value"""
         if self._context is None:
             self._prelim_val = value, False #non-default-value prelim
@@ -135,6 +135,24 @@ class CellBase(CellLikeBase):
             manager = self._get_manager()
             manager.set_cell(self, value, from_buffer=True, force=True)
         return self
+
+    def from_file(self, filepath):
+        ok = False
+        if self._mount_kwargs is not None:
+            if "binary" in self._mount_kwargs:
+                binary = self._mount_kwargs["binary"]
+                if not binary:
+                    if "encoding" in self._mount_kwargs:
+                        encoding = self._mount_kwargs["encoding"]
+                        ok = True
+                else:
+                    ok = True
+        if not ok:
+            raise TypeError("Cell %s cannot be loaded from file" % self)
+        filemode = "rb" if binary else "r"
+        with open(filepath, filemode, encoding=encoding) as f:
+            filevalue = f.read()
+        self.from_buffer(filevalue)
 
     def serialize(self, mode, submode=None):
         self._check_mode(mode, submode)
@@ -195,20 +213,6 @@ class CellBase(CellLikeBase):
         except:
             self._val = curr_val
             raise
-        if from_pin == True:
-            assert not self._authoritative, self
-            self._un_overrule()
-        elif from_pin == "edit":
-            if not self._authoritative:
-                self._overrule()
-            else:
-                self._un_overrule()
-        elif from_pin == False:
-            if not default and not self._authoritative:
-                self._overrule()
-            if self._seal is not None:
-                msg = "Warning: setting value for cell %s, controlled by %s"
-                print(msg % (self._format_path(), self._seal) )
         self._status = self.StatusFlags.OK
         if old_checksum is None: #old checksum failed
             different = True
@@ -218,6 +222,23 @@ class CellBase(CellLikeBase):
             text_different = (self.text_checksum(may_fail=True) != old_text_checksum)
         else:
             pass #"different" has already been set
+
+        if from_pin == True:
+            assert not self._authoritative, self
+            self._un_overrule(different)
+        elif from_pin == "edit":
+            if not self._authoritative:
+                if different:
+                    self._overrule()
+            else:
+                self._un_overrule(different)
+        elif from_pin == False:
+            if different and not default and not self._authoritative:
+                self._overrule()
+            if different and self._seal is not None:
+                msg = "Warning: setting value for cell %s, controlled by %s"
+                print(msg % (self._format_path(), self._seal) )
+
         return different, text_different
 
     def _overrule(self):
@@ -225,9 +246,10 @@ class CellBase(CellLikeBase):
             print("Warning: overruling (setting value for non-source cell) %s" % self._format_path())
             self._overruled = True
 
-    def _un_overrule(self):
+    def _un_overrule(self, different):
         if self._overruled:
-            print("Warning: cell %s was formerly overruled, now updated by dependency" % self._format_path())
+            if different:
+                print("Warning: cell %s was formerly overruled, now updated by dependency" % self._format_path())
             self._overruled = False
 
     @property
@@ -337,7 +359,7 @@ Use ``Cell.status()`` to get its status.
 
     def _check_mode(self, mode, submode=None):
         super()._check_mode(mode, submode)
-        assert (mode, submode) != ("ref", "pythoncode") #TODO
+        #assert (mode, submode) != ("ref", "pythoncode") #TODO
 
     def _serialize(self, mode, submode=None):
         if mode == "buffer":

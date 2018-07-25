@@ -66,9 +66,7 @@ class ReactorEdit:
         p = self._parent()
         if p is None:
             return
-        if p.values[self._name] is None:
-            p.values[self._name] = p.inputs[self._name]
-        p.values[self._name].data = value
+        p.values[self._name] = value
         p.output_update(self._name, value, preliminary)
     def set(self, value):
         return self._set(value, False)

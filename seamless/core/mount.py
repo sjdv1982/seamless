@@ -122,7 +122,7 @@ class MountItem:
         if cell._mount_setter is not None:
             cell._mount_setter(filevalue, checksum)
         else:
-            cell.set_from_buffer(filevalue, checksum=checksum)
+            cell.from_buffer(filevalue, checksum=checksum)
 
     @property
     def lock(self):
@@ -649,7 +649,7 @@ class MountManager:
 def resolve_register(reg):
     from .context import Context
     from .cell import Cell
-    from . import Link
+    from . import Link, Worker
     from .structured_cell import Inchannel, Outchannel
     contexts = set([r for r in reg if isinstance(r, Context)])
     cells = set([r for r in reg if isinstance(r, Cell)])
@@ -697,6 +697,8 @@ def resolve_register(reg):
             result["path"] += get_extension(child)
         return result
     for r in reg:
+        if isinstance(r, Worker):
+            continue
         find_mount(r)
 
     done_contexts = set()
@@ -733,6 +735,8 @@ def resolve_register(reg):
         parent = parent()
         propagate_persistency(parent, persistent)
     for r in reg:
+        if isinstance(r, Worker):
+            continue
         if r._mount is not None:
             propagate_persistency(r)
 

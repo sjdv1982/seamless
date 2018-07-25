@@ -11,7 +11,6 @@ def _destroy_toplevels():
 atexit.register(_destroy_toplevels)
 
 
-
 class MacroRegister:
     def __init__(self):
         self.stack = []
@@ -43,7 +42,7 @@ def outer_macro():
 
 @contextmanager
 def macro_mode_on(macro=None):
-    from . import Context
+    from . import Context, Worker
     from .layer import fill_objects, check_async_macro_contexts
     global _macro_mode
     old_macro_mode = _macro_mode
@@ -78,6 +77,15 @@ def macro_mode_on(macro=None):
                 created_contexts.append(ctx)
         for ctx in created_contexts:
             ctx._get_manager().activate(only_macros=False)
+
+        for worker in curr_macro_register:
+            if not isinstance(worker, Worker):
+                continue
+            for c in created_contexts:
+                if worker._context() is c:
+                    break
+            else:
+                worker.activate(only_macros=False)
 
 
 from . import mount

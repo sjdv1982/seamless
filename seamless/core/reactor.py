@@ -36,9 +36,9 @@ class Reactor(Worker):
             "code_stop":("ref", "pythoncode", True),
             "code_update":("ref", "pythoncode", True),
         }
-        self.code_start = InputPin(self, "code_start", "ref", "pythoncode")
-        self.code_update = InputPin(self, "code_update", "ref", "pythoncode")
-        self.code_stop = InputPin(self, "code_stop", "ref", "pythoncode")
+        self.code_start = InputPin(self, "code_start", "ref", "pythoncode", "python")
+        self.code_update = InputPin(self, "code_update", "ref", "pythoncode", "python")
+        self.code_stop = InputPin(self, "code_stop", "ref", "pythoncode", "python")
         self._io_attrs = ["code_start", "code_update", "code_stop"]
         self._pins = {
                         "code_start": self.code_start,
@@ -55,6 +55,7 @@ class Reactor(Worker):
             self._reactor_params[p] = param
             pin = None
             io, mode, submode, celltype = None, "ref", None, None
+            must_be_defined = True
             #TODO: change "ref" to "copy" once transport protocol works
             if isinstance(param, str):
                 io = param
@@ -66,6 +67,12 @@ class Reactor(Worker):
                     submode = param[2]
                 if len(param) > 3:
                     celltype = param[3]
+            elif isinstance(param, dict):
+                io = param["io"]
+                mode = param.get("mode", mode)
+                submode = param.get("submode", submode)
+                celltype = param.get("celltype", celltype)
+                must_be_defined = param.get("must_be_defined", must_be_defined)
             else:
                 raise ValueError((p, param))
             if io == "input":
@@ -76,7 +83,7 @@ class Reactor(Worker):
                 self.outputs[p] = mode, submode
             elif io == "edit":
                 pin = EditPin(self, p, mode, submode)
-                self.inputs[p] = (mode, submode, param.get("must_be_defined", True))
+                self.inputs[p] = mode, submode, must_be_defined
                 self.outputs[p] = mode, submode
             else:
                 raise ValueError(io)
@@ -106,13 +113,15 @@ class Reactor(Worker):
         assert submode is None
         return self.reactor.namespace, self.code_update, str(self)
 
-    def output_update(self, name, value, preliminary, priority):
+    def output_update(self, name, value, preliminary, priority, spontaneous):
         # This will be called by embedded reactors
         # If these reactors launch their own threads, it will be from a different thread
         #TODO: adapt for if the embedded reactor is in a different process
-        if (priority or preliminary) and threading.current_thread() is threading.main_thread():
+        if (priority or preliminary or spontaneous) and \
+          threading.current_thread() is threading.main_thread():
             self._pins[name].send_update(value, preliminary=preliminary)
         else:
+            #print("output_update", (name, value, preliminary))
             self._queue.append((name, value, preliminary))
 
     def flush(self):
@@ -124,6 +133,7 @@ class Reactor(Worker):
 
     def updates_processed(self, updates):
         self._pending_updates -= updates
+        self.flush()
 
     def receive_update(self, input_pin, value, checksum):
         #print("receive_update", input_pin, value)

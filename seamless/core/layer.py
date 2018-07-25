@@ -191,7 +191,8 @@ class LayeredConnection:
         rev_connection = (self.id, pin)
         mgr = target._get_manager()
         mgr.cell_from_pin[target] = rev_connection
-        target._authoritative = False
+        if not isinstance(pin, EditPinBase):
+            target._authoritative = False
         worker = pin.worker_ref()
         if pin.last_value is not None:
             mgr.pin_send_update(pin,

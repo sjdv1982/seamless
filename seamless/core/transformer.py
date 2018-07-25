@@ -57,6 +57,11 @@ class Transformer(Worker):
                     submode = param[2]
                 if len(param) > 3:
                     celltype = param[3]
+            elif isinstance(param, dict):
+                io = param["io"]
+                mode = param.get("mode", mode)
+                submode = param.get("submode", submode)
+                celltype = param.get("celltype", celltype)
             else:
                 raise ValueError((p, param))
             if io == "input":

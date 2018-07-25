@@ -39,7 +39,7 @@ class Reactor:
         self._running = False
         self._set_namespace()
         self._pending_updates = 0
-
+        self._spontaneous = True
 
     def _update_from_start(self):
         for up in self.inputs.keys():
@@ -117,7 +117,6 @@ class Reactor:
         if p is not None:
             p.updates_processed(updates_processed)
 
-
     def _execute(self, code_obj):
         exec(code_obj, self.namespace)
 
@@ -126,10 +125,12 @@ class Reactor:
         assert threading.current_thread() is threading.main_thread()
         assert not self._running
         try:
+            self._spontaneous = False
             self.namespace["IDENTIFIER"] = get_runtime_identifier(self.parent())
             self._execute(self.code_start_block)
             self._running = True
         finally:
+            self._spontaneous = True
             p = self.parent()
             if p is not None:
                 p.flush()
@@ -142,8 +143,10 @@ class Reactor:
         #if not self._running:
         #    self._code_start() #kludge, no idea why it is necessary...
         try:
+            self._spontaneous = False
             self._execute(self.code_update_block)
         finally:
+            self._spontaneous = True
             p = self.parent()
             if p is not None:
                 p.flush()
@@ -153,8 +156,10 @@ class Reactor:
         assert threading.current_thread() is threading.main_thread()
         if self._running:
             try:
+                self._spontaneous = False
                 self._execute(self.code_stop_block)
             finally:
+                self._spontaneous = True
                 self._running = False
                 self._set_namespace()
                 p = self.parent()
@@ -256,7 +261,7 @@ class Reactor:
     def output_update(self, name, value, preliminary=False, priority=False):
         """Propagates a PINS.name.set in the reactor code"""
         p = self.parent()
-        p.output_update(name, value, preliminary, priority)
+        p.output_update(name, value, preliminary, priority, self._spontaneous)
 
 
     def destroy(self):

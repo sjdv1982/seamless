@@ -5,9 +5,6 @@ A proof-of-principle of the middle/high level is now there.
 Things to do:
 
 Part 1 (low-level):
-   - Reactors (think of IPython stuff in the namespace, not properly addressed in 0.1; copy from 0.2 transformers)
-     (also think of \_pending_inputs: add a name back in, if sent as None (like transformers))
-   - Edit pins
    - cson cells; also structured_cell in plain mode must be able to accommodate
       a cson's checksum is the checksum of the JSON representation; if you don't want that, connect a text pin/cell downstream of it (see only_text below)       
    - Tie up loose ends of transfer protocol (copy, ref etc.). Take into account only_text changes:
@@ -58,7 +55,7 @@ Part 3 (low-level):
      Even transformers and reactors may be declared as having a log output, and various loglevels
       (transformer.py will already send low-priority log messages about receiving events etc.)
   - Finalize caching:
-    - implement successors
+    - implement successors (YAGNI?)
     - write cache hits into a Log cell
     - structured cells: outchannels have a get_path dependency on an inchannel
     - re-enable caching for high level (test if simple.py works now)

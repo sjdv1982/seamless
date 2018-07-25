@@ -25,6 +25,8 @@ class Worker(SeamlessBase):
         super().__init__()
         self._pending_updates_value = 0
         self._last_update_checksums = {}
+        from . import macro_register
+        macro_register.add(self)
 
     def _receive_update_checksum(self, pin, checksum):
         if pin not in self._last_update_checksums:
@@ -187,6 +189,7 @@ class InputPin(InputPinBase):
             assert ctx is not None
             ctx = ctx()
             ctx._add_new_cell(my_cell)
+            assert my_cell._context() is ctx
             my_cell.connect(self)
         else:
             my_cell = my_cell[1]
@@ -207,8 +210,7 @@ class InputPin(InputPinBase):
         manager = self._get_manager()
         my_cell = manager.pin_from_cell.get(self)
         if my_cell is not None:
-            my_cell = my_cell[1]
-            return my_cell.status()
+            return my_cell[1].status()
         else:
             return self.StatusFlags.UNCONNECTED.name
 
@@ -256,12 +258,17 @@ class OutputPin(OutputPinBase):
             if worker is None:
                 raise ValueError("Worker has died")
             my_cell = cell(celltype)
+            ctx = worker._context
+            assert ctx is not None
+            ctx = ctx()
+            ctx._add_new_cell(my_cell)
+            assert my_cell._context() is ctx
             self.connect(my_cell)
         elif l == 1:
-            my_cell = my_cells[0]
+            my_cell = my_cells[0][1]
         elif l > 1:
             raise TypeError("cell() is ambiguous, multiple cells are connected")
-        return my_cell[1]
+        return my_cell
 
     def cells(self):
         """Returns all cells connected to the outputpin"""
@@ -273,8 +280,8 @@ class OutputPin(OutputPinBase):
         manager = self._get_manager()
         my_cells = manager.pin_to_cells.get(self, [])
         if len(my_cells):
-            my_cell = my_cells[0][1]
-            return my_cell.status()
+            my_cell = my_cells[0]
+            return my_cell[1].status()
         else:
             return self.StatusFlags.UNCONNECTED.name
 
@@ -306,9 +313,13 @@ class EditPin(EditPinBase):
             if worker is None:
                 raise ValueError("Worker has died")
             my_cell = cell(celltype)
+            ctx = worker._context
+            assert ctx is not None
+            ctx = ctx()
+            ctx._add_new_cell(my_cell)
             my_cell.connect(self)
         elif l == 1:
-            my_cell = my_cells[0]
+            my_cell = my_cells[0][1]
         elif l > 1:
             raise TypeError("cell() is ambiguous, multiple cells are connected")
         return my_cell
@@ -341,7 +352,7 @@ class EditPin(EditPinBase):
         manager = self._get_manager()
         my_cells = manager.pin_to_cells.get(self, [])
         if len(my_cells):
-            my_cell = my_cells[0][1]
+            my_cell = my_cells[0]
             return my_cell.status()
         else:
             return self.StatusFlags.UNCONNECTED.name
