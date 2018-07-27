@@ -1,7 +1,7 @@
 import weakref
 from . import SeamlessBase
-from . import get_macro_mode
 from .cell import modes as cell_modes, submodes as cell_submodes
+from .macro_mode import get_macro_mode, with_macro_mode
 
 """
 Evaluation modes for workers
@@ -20,13 +20,16 @@ class Worker(SeamlessBase):
     _pins = None
     _naming_pattern = "worker"
 
+    @with_macro_mode
     def __init__(self):
-        assert get_macro_mode()
         super().__init__()
         self._pending_updates_value = 0
         self._last_update_checksums = {}
-        from . import macro_register
-        macro_register.add(self)
+        if get_macro_mode():
+            from . import macro_register
+            macro_register.add(self)
+        else:
+            self.activate(False)
 
     def _receive_update_checksum(self, pin, checksum):
         if pin not in self._last_update_checksums:
@@ -238,9 +241,9 @@ class OutputPin(OutputPinBase):
         manager = self._get_manager()
         manager.pin_send_update(self, value, preliminary=preliminary)
 
+    @with_macro_mode
     def connect(self, target):
         """connects to a target cell"""
-        assert get_macro_mode() #or connection overlay mode, TODO
         manager = self._get_manager()
         manager.connect_pin(self, target)
         return self

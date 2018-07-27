@@ -11,6 +11,8 @@ class IpyString(str):
     def _repr_pretty_(self, p, cycle):
         return p.text(str(self))
 
+from .macro_mode import with_macro_mode
+
 class SeamlessBase:
     _destroyed = False
     _context = None
@@ -21,10 +23,9 @@ class SeamlessBase:
     StatusFlags = Enum('StatusFlags', ('OK', 'PENDING', 'UNDEFINED', 'UNCONNECTED', 'ERROR'))
     _status = StatusFlags.UNDEFINED
 
+    @with_macro_mode
     def export(self):
         """Export this seamless object"""
-        from . import get_macro_mode
-        assert get_macro_mode()
         self._exported = True
         return self
 

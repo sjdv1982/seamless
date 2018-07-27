@@ -20,7 +20,6 @@ class Transformer(Worker):
     _listen_output_state = None
 
     def __init__(self, transformer_params, with_schema=False):
-        super().__init__()
         self.state = {}
         self.code = InputPin(self, "code", "ref", "pythoncode", "pytransformer")
         #TODO: submode becomes "copy" when we switch from threads to processes
@@ -101,6 +100,7 @@ class Transformer(Worker):
             thread_inputs, self._output_name,
             self.output_queue, self.output_semaphore
         )
+        super().__init__()
 
     def __str__(self):
         ret = "Seamless transformer: " + self._format_path()

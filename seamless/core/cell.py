@@ -1,3 +1,5 @@
+from .macro_mode import with_macro_mode
+
 #TODO: not all cell types support all submodes, check this! do a text <=> binary copy!
 
 """
@@ -26,7 +28,7 @@ import inspect
 from . import SeamlessBase, Wrapper
 from ..mixed import io as mixed_io
 from .cached_compile import cached_compile
-from . import get_macro_mode, macro_register
+from . import macro_register, get_macro_mode
 from .mount import MountItem
 from ..silk import Silk
 from .utils import strip_source
@@ -36,11 +38,11 @@ cell_counter = 0
 class CellLikeBase(SeamlessBase):
     def __init__(self):
         global cell_counter
-        assert get_macro_mode()
         super().__init__()
         cell_counter += 1
         self._counter = cell_counter
-        macro_register.add(self)
+        if get_macro_mode():
+            macro_register.add(self)
 
     def __hash__(self):
         return self._counter
@@ -305,9 +307,9 @@ class CellBase(CellLikeBase):
         self._last_text_checksum = result
         return result
 
+    @with_macro_mode
     def connect(self, target):
         """connects to a target cell"""
-        assert get_macro_mode() #or connection overlay mode, TODO
         manager = self._get_manager()
         manager.connect_cell(self, target)
         return self
@@ -323,6 +325,8 @@ class CellBase(CellLikeBase):
         persistent: whether or not the file persists after the context has been destroyed
         """
         assert self._mount is None #Only the mountmanager may modify this further!
+        if self._root()._auto_macro_mode:
+            raise Exception("Root context must have been constructed in macro mode")
         if self._mount_kwargs is None:
             raise NotImplementedError #cannot mount this type of cell
         kwargs = self._mount_kwargs

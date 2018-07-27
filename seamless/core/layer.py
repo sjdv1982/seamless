@@ -1,4 +1,4 @@
-from .macro_mode import curr_macro, outer_macro
+from .macro_mode import curr_macro, outer_macro, with_macro_mode
 import weakref
 from weakref import WeakKeyDictionary, WeakValueDictionary
 
@@ -499,8 +499,8 @@ def check_async_macro_contexts(ctx, macro):
         else:
             check_async_macro_contexts(child.ctx, macro)
 
+@with_macro_mode
 def path(obj, *, force_relative=False):
-    assert get_macro_mode()
     return Path(obj, force_relative)
 
 from . import Link, CellLikeBase, get_macro_mode

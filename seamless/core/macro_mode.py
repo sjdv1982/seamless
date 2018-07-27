@@ -87,5 +87,20 @@ def macro_mode_on(macro=None):
             else:
                 worker.activate(only_macros=False)
 
+def with_macro_mode(func):
+    def with_macro_mode_wrapper(self, *args, **kwargs):
+        if not get_macro_mode():
+            if self._context is None: #worker construction
+                return func(self, *args, **kwargs)
+            ctx = self._root()
+            if not ctx._auto_macro_mode:
+                raise Exception("This operation requires macro mode, since the toplevel context was constructed in macro mode")
+            else:
+                with macro_mode_on():
+                    result = func(self, *args, **kwargs)
+                return result
+        else:
+            return func(self, *args, **kwargs)
+    return with_macro_mode_wrapper
 
 from . import mount

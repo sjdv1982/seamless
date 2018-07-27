@@ -1,10 +1,11 @@
 from .cell import CellLikeBase, Cell, JsonCell, TextCell
 from ..mixed import MixedBase, OverlayMonitor, MakeParentMonitor
-from . import get_macro_mode
 import weakref
 import traceback
 from copy import deepcopy
 import threading, functools
+
+from .macro_mode import get_macro_mode
 
 """NOTE: data and schema can be edited via mount
 If there is buffering, only the buffer can be edit via mount
@@ -225,7 +226,9 @@ class StructuredCell(CellLikeBase):
       outchannels
     ):
         from ..silk import Silk
-        assert get_macro_mode()
+        if not get_macro_mode():
+            if not data._root()._auto_macro_mode:
+                raise Exception("This operation requires macro mode, since the toplevel context was constructed in macro mode")
         super().__init__()
         self.name = name
 

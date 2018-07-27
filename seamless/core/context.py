@@ -4,8 +4,13 @@ from collections import OrderedDict
 from . import SeamlessBase
 from .mount import MountItem
 from . import get_macro_mode, macro_register
-from .macro_mode import toplevel_register
+from .macro_mode import toplevel_register, macro_mode_on, with_macro_mode
 import time
+from contextlib import contextmanager
+
+@contextmanager
+def null_context():
+    yield
 
 class Context(SeamlessBase):
     """Context class. Organizes your cells and workers hierarchically.
@@ -21,6 +26,7 @@ class Context(SeamlessBase):
     _mount = None
     _unmounted = False
     _seal = None
+    _auto_macro_mode = False
 
     def __init__(
         self, *,
@@ -43,24 +49,31 @@ name: str
 context : context or None
     parent context
 """
-        assert get_macro_mode()
-        super().__init__()
-        if context is not None:
-            self._set_context(context, name)
-        if toplevel:
-            assert context is None
-            self._toplevel = True
-            self._manager = Manager(self)
-            layer.create_layer(self)
+        if get_macro_mode():
+            auto_macro_mode = False
+            macro_mode_context = null_context
         else:
-            assert context is not None
+            auto_macro_mode = True
+            macro_mode_context = macro_mode_on
+        with macro_mode_context():
+            super().__init__()
+            self._auto_macro_mode = auto_macro_mode
+            if context is not None:
+                self._set_context(context, name)
+            if toplevel:
+                assert context is None
+                self._toplevel = True
+                self._manager = Manager(self)
+                layer.create_layer(self)
+            else:
+                assert context is not None
 
-        self._pins = {}
-        self._children = {}
-        self._auto = set()
-        if toplevel:
-            toplevel_register.add(self)
-        macro_register.add(self)
+            self._pins = {}
+            self._children = {}
+            self._auto = set()
+            if toplevel:
+                toplevel_register.add(self)
+            macro_register.add(self)
 
     def _set_context(self, context, name):
         super()._set_context(context, name)
@@ -81,8 +94,8 @@ context : context or None
         ret = "Seamless context: " + p
         return ret
 
+    @with_macro_mode
     def _add_child(self, childname, child):
-        assert get_macro_mode()
         assert isinstance(child, (Context, Worker, CellLikeBase, Link))
         if isinstance(child, Context):
             assert child._context() is self
@@ -130,8 +143,8 @@ context : context or None
         self._add_child(context_name, ctx)
         return ctx
 
+    @with_macro_mode
     def __setattr__(self, attr, value):
-        assert get_macro_mode()
         if attr.startswith("_") or hasattr(self.__class__, attr):
             return object.__setattr__(self, attr, value)
         if attr in self._pins:
@@ -309,6 +322,8 @@ context : context or None
                     May also be None, in which case the directory is emptied, but remains
         """
         assert self._mount is None #Only the mountmanager may modify this further!
+        if self._root()._auto_macro_mode:
+            raise Exception("Root context must have been constructed in macro mode")        
         self._mount = {
             "path": path,
             "mode": mode,

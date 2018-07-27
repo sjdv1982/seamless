@@ -27,8 +27,6 @@ class Reactor(Worker):
     #can't have with_schema because multiple outputs are possible
     # reactors will have construct their own Silk objects from schema pins
     def __init__(self, reactor_params):
-        super().__init__()
-
         self.state = {}
         self.outputs = {}
         self.inputs = {
@@ -91,6 +89,7 @@ class Reactor(Worker):
             if pin is not None:
                 self._io_attrs.append(p)
                 self._pins[p] = pin
+        super().__init__()
 
     def activate(self, only_macros):
         if self.active:

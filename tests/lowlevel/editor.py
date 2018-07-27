@@ -19,15 +19,13 @@ teparams = {
 
 from seamless.core import macro_mode_on
 from seamless.core import context, transformer, reactor
-with macro_mode_on():
-    ctx = context(toplevel=True)
-
-    cont = ctx.cont = transformer(tparams)
-    c_data = cont.value.cell()
-    c_data.set(4)
-    c_code = cont.code.cell()
-    c_output = cont.outp.cell()
-    c_code.set("outp = value*2")
+ctx = context(toplevel=True)
+cont = ctx.cont = transformer(tparams)
+c_data = cont.value.cell()
+c_data.set(4)
+c_code = cont.code.cell()
+c_output = cont.outp.cell()
+c_code.set("outp = value*2")
 
 ctx.equilibrate()
 print("VALUE", c_data.value, "'" + c_code.value + "'", c_output.value)
@@ -62,24 +60,23 @@ if PINS.title.updated:
     w.setWindowTitle(PINS.title.get())
 """)
 
-with macro_mode_on():
-    ed1 = ctx.ed1 = reactor(eparams)
-    ed2 = ctx.ed2 = reactor(eparams)
-    ed1.title.cell("text").set("Editor #1")
-    ed2.title.cell("text").set("Editor #2")
-    make_editor(ed1)
-    make_editor(ed2)
-    c_data.connect(ed1.value)
-    c_output.connect(ed2.value)
-    ted1 = ctx.ted1 = reactor(teparams)
-    ted1.title.cell().set("Formula editor")
-    make_text_editor(ted1)
-    c = ed1.title.cell()
-    c = c_code
-    c.connect(ted1.value)
+ed1 = ctx.ed1 = reactor(eparams)
+ed2 = ctx.ed2 = reactor(eparams)
+ed1.title.cell("text").set("Editor #1")
+ed2.title.cell("text").set("Editor #2")
+make_editor(ed1)
+make_editor(ed2)
+c_data.connect(ed1.value)
+c_output.connect(ed2.value)
+ted1 = ctx.ted1 = reactor(teparams)
+ted1.title.cell().set("Formula editor")
+make_text_editor(ted1)
+c = ed1.title.cell()
+c = c_code
+c.connect(ted1.value)
 
-    meta_ted = ctx.meta_ted = reactor(teparams)
-    meta_ted.title.cell().set("Meta-editor")
-    make_text_editor(meta_ted)
-    c = ted1.code_start.cell()
-    c.connect(meta_ted.value)
+meta_ted = ctx.meta_ted = reactor(teparams)
+meta_ted.title.cell().set("Meta-editor")
+make_text_editor(meta_ted)
+c = ted1.code_start.cell()
+c.connect(meta_ted.value)
