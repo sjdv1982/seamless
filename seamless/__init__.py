@@ -3,6 +3,15 @@ Seamless: framework for data-driven and live programming
 Copyright 2016-2017, Sjoerd de Vries
 """
 
+from abc import abstractmethod
+class Wrapper:
+    @abstractmethod
+    def _unwrap(self):
+        pass
+
+from . import silk
+from . import mixed
+
 #Dependencies of seamless
 
 # 1. hard dependencies; without these, "import seamless" will fail.

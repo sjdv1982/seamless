@@ -762,5 +762,5 @@ class _BufferedSilkFork(_SilkFork):
 
 from .modify_methods import try_modify_methods
 from ..mixed import MixedBase, MixedDict, MixedObject
-from ..core import Wrapper
+from .. import Wrapper
 print("TODO: Silk form_validator") #see above

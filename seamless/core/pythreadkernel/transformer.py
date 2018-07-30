@@ -56,12 +56,14 @@ class Transformer(Worker):
         if self.with_schema:
             self.function_expr_template = "{0}\n{1}("
             for inp in sorted(list(inputs.keys())) + [self.output_name]:
-                if inp == "schema":
+                if inp in ("code", "schema"):
                     continue
                 self.function_expr_template += "%s=%s," % (inp, inp)
         else:
             self.function_expr_template = "{0}\n%s = {1}(" % self.output_name
             for inp in sorted(list(inputs.keys())):
+                if inp == "code":
+                    continue
                 self.function_expr_template += "%s=%s," % (inp, inp)
         self.function_expr_template = self.function_expr_template[:-1] + ")"
 

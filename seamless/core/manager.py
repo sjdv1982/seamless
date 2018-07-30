@@ -9,6 +9,9 @@ The manager has a notion of the managers of the subcontexts
 manager.set_cell and manager.pin_send_update are thread-safe (can be invoked from any thread)
 """
 
+from .connection import Connection, CellToCellConnection, CellToPinConnection, \
+ PinToCellConnection
+
 import threading
 import functools
 import weakref
@@ -72,7 +75,7 @@ class Manager:
         self.ctx = weakref.ref(ctx)
         self.sub_managers = {}
         self.cell_to_pins = {} #cell => inputpins
-        self.cell_to_cells = {} #cell => (index, alias target cell, alias mode) list
+        self.cell_to_cells = {} #cell => CellToCellConnection list
         self.cell_from_pin = {} #cell => outputpin
         self.cell_from_cell = {} #alias target cell => (index, source cell, alias mode)
         self.pin_from_cell = {} #inputpin => (index, cell)
@@ -198,18 +201,14 @@ class Manager:
             concrete = True
             con_id = self.get_id()
 
-        connection = (con_id, target, alias_mode)
-        if isinstance(target, Path):
-            connection = (con_id, None, alias_mode)
+        connection = CellToCellConnection(con_id, cell, target, alias_mode)
         if cell not in self.cell_to_cells:
             self.cell_to_cells[cell] = []
         self.cell_to_cells[cell].append(connection)
 
         if concrete:
-            rev_connection = (con_id, cell, alias_mode)
-
             other = target._get_manager()
-            other.cell_from_cell[target] = rev_connection
+            other.cell_from_cell[target] = connection
             target._authoritative = False
 
             if cell._status == Cell.StatusFlags.OK:
@@ -398,6 +397,7 @@ class Manager:
     @with_successor("pin", 0)
     def pin_send_update(self, pin, value, preliminary, target=None):
         #TODO: explicit support for preliminary values
+        assert pin._get_manager() is self
         found = False
         for con_id, cell in self.pin_to_cells.get(pin,[]):
             if con_id < 0 and cell is None: #layer connections, may be None
@@ -445,11 +445,11 @@ class Manager:
 
         #Activates aliases
         assert isinstance(cell, CellLikeBase)
-        for con_id, target, alias_mode in self.cell_to_cells.get(cell, []):
-            if con_id < 0 and target is None: #layer connections, may be None
+        for con in self.cell_to_cells.get(cell, []):
+            if con.id < 0 and con.target is None: #layer connections, may be None
                 continue
             #from_pin is set to True, also for aliases
-            self._update_cell_from_cell(cell, target, alias_mode, only_text)
+            self._update_cell_from_cell(cell, con.target, con.alias_mode, only_text)
 
     def set_filled_objects(self, filled_objects):
         self.filled_objects = filled_objects

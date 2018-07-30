@@ -1,4 +1,6 @@
 from .macro_mode import curr_macro, outer_macro, with_macro_mode
+from .connection import Connection, CellToCellConnection, CellToPinConnection, \
+ PinToCellConnection
 import weakref
 from weakref import WeakKeyDictionary, WeakValueDictionary
 
@@ -138,17 +140,17 @@ class LayeredConnection:
         source, target = self.source.obj(), self.target.obj()
         #TODO: negotiate cell-to-cell serialization protocol
 
-        rev_connection = (self.id, source, self.alias_mode)
+        connection = CellToCellConnection(self.id, source, target, self.alias_mode)
+
         mgr = target._get_manager()
-        mgr.cell_from_cell[target] = rev_connection
+        mgr.cell_from_cell[target] = connection
         target._authoritative = False
 
-        connection = (self.id, target, self.alias_mode)
         mgr = source._get_manager()
         if source not in mgr.cell_to_cells:
             mgr.cell_to_cells[source] = []
         ctc = mgr.cell_to_cells[source]
-        ctc[:] = [c for c in ctc if c[0] != self.id]
+        ctc[:] = [c for c in ctc if c.id != self.id]
         mgr.cell_to_cells[source].append(connection)
 
         if source._status == CellLikeBase.StatusFlags.OK:
@@ -189,8 +191,8 @@ class LayeredConnection:
         ptc.append(connection)
 
         rev_connection = (self.id, pin)
-        mgr = target._get_manager()
-        mgr.cell_from_pin[target] = rev_connection
+        mgr2 = target._get_manager()
+        mgr2.cell_from_pin[target] = rev_connection
         if not isinstance(pin, EditPinBase):
             target._authoritative = False
         worker = pin.worker_ref()
@@ -261,6 +263,8 @@ class LayeredConnection:
             self.mode = None
     """
     def clear_object(self, obj):
+        if not self.concrete:
+            return
         if self.source.obj is not None and self.source.obj() is obj:
             if not self.source.static:
                 self.source.set_object(None)

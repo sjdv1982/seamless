@@ -25,12 +25,12 @@ import ast
 from ast import PyCF_ONLY_AST, FunctionDef
 import inspect
 
-from . import SeamlessBase, Wrapper
+from .. import Wrapper
+from . import SeamlessBase
 from ..mixed import io as mixed_io
 from .cached_compile import cached_compile
 from . import macro_register, get_macro_mode
 from .mount import MountItem
-from ..silk import Silk
 from .utils import strip_source
 
 cell_counter = 0
@@ -791,6 +791,10 @@ extensions = {
     ArrayCell: ".npy",
 }
 from ..mixed import MAGIC_SEAMLESS
+
+from ..silk import Silk
+if inspect.ismodule(Silk):
+    raise ImportError
 
 print("TODO cell: CSON cell")
 print("TODO cell: PyModule cell") #cell that does imports, executed already upon code definition, as a module; code injection causes an import of this module

@@ -2,7 +2,7 @@ import weakref
 from pprint import pformat
 from copy import deepcopy
 
-from ..core import Wrapper
+from .. import Wrapper
 class SchemaWrapper(Wrapper):
     _update_hook = None
     _parent = lambda self: None

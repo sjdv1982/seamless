@@ -1,11 +1,5 @@
 import weakref
 from enum import Enum
-from abc import abstractmethod
-
-class Wrapper:
-    @abstractmethod
-    def _unwrap(self):
-        pass
 
 class IpyString(str):
     def _repr_pretty_(self, p, cycle):

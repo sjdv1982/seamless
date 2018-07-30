@@ -14,7 +14,7 @@ def _long_signature_cell(cell, root):
         from_pin = from_pin[1]
     from_cell = mgr.cell_from_cell.get(cell)
     if from_cell is not None:
-        from_cell = from_cell[1]
+        from_cell = from_cell.source
     if from_pin is not None:
         worker = from_pin.worker_ref()
         if worker._context()._part_of(root):

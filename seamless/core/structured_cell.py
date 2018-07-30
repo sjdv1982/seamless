@@ -33,8 +33,8 @@ class Inchannel(CellLikeBase):
     def _check_mode(self, mode, submode):
         if mode == "copy":
             print("TODO: Inchannel, copy data")
-        if mode not in ("copy", None) or submode is not None:
-            raise NotImplementedError
+        if mode not in ("copy", "ref", None) or submode is not None:
+            raise NotImplementedError(mode, submode)
 
     def deserialize(self, value, mode, submode, *, from_pin, **kwargs):
         assert from_pin

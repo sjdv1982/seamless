@@ -35,7 +35,7 @@ class Transformer(Worker):
         if with_schema:
             schema_pin = InputPin(self, "schema", "copy", "json")
             self._io_attrs.append("schema")
-            thread_inputs.append("schema")
+            thread_inputs["schema"] = "copy", "json"
             self._pins["schema"] = schema_pin
             forbidden += ("schema",)
         for p in sorted(transformer_params.keys()):
