@@ -11,6 +11,7 @@ manager.set_cell and manager.pin_send_update are thread-safe (can be invoked fro
 
 from .connection import Connection, CellToCellConnection, CellToPinConnection, \
  PinToCellConnection
+from . import protocol
 
 import threading
 import functools
@@ -171,23 +172,6 @@ class Manager:
         self._ids += 1
         return self._ids
 
-    def _update_cell_from_cell(self, cell, target, alias_mode, only_text):
-        #TODO: negotiate proper serialization protocol (see cell.py, end of file)
-        #TODO: determine if with the target cell type, "only_text" warrants an update
-        assert cell._get_manager() is self
-        mode, submode = alias_mode, None
-        value, _ = cell.serialize(mode, submode)
-        different, text_different = target.deserialize(value, mode, submode,
-          #from_pin is set to True, also for aliases...
-          from_pin=True, default=False
-        )
-        other = target._get_manager()
-        if target._mount is not None:
-            other.mountmanager.add_cell_update(target)
-        if different or text_different:
-            only_text_new = (text_different and not different)
-            other.cell_send_update(target, only_text_new, None)
-
     def _connect_cell_to_cell(self, cell, target, alias_mode):
         target0 = target
         if isinstance(target, Link):
@@ -197,7 +181,6 @@ class Manager:
         if target0._is_sealed() or cell._is_sealed():
             concrete, con_id = layer.connect_cell(cell, target0, alias_mode)
         else:
-            #TODO: negotiate cell-to-cell serialization protocol (also in layer)
             concrete = True
             con_id = self.get_id()
 
@@ -212,7 +195,7 @@ class Manager:
             target._authoritative = False
 
             if cell._status == Cell.StatusFlags.OK:
-                self._update_cell_from_cell(cell, target, alias_mode, only_text=False)
+                connection.fire(only_text=False)
 
     @main_thread_buffered
     def connect_cell(self, cell, target, alias_mode=None):
@@ -244,8 +227,7 @@ class Manager:
             if isinstance(target, EditPinBase):
                 pass #will be dealt with in connect_pin invocation below
             elif cell._status == Cell.StatusFlags.OK:
-                value, checksum = cell.serialize(target.mode, target.submode)
-                target.receive_update(value, checksum)
+                connection.fire()
 
         if cell not in self.cell_to_pins:
             self.cell_to_pins[cell] = []
@@ -293,18 +275,11 @@ class Manager:
                 target._authoritative = False
 
         if concrete:
-            target._check_mode(pin.mode, pin.submode)
             if pin.last_value is not None:
-                self.pin_send_update(pin,
-                    pin.last_value,
-                    preliminary=pin.last_value_preliminary,
-                    target=target,
-                )
+                connection.fire(pin.last_value, pin.last_value_preliminary)
             elif isinstance(pin, EditPinBase):
                 if target._status == Cell.StatusFlags.OK:
-                    value, checksum = target.serialize(pin.mode, pin.submode)
-                    pin.receive_update(value, checksum)
-
+                    connection.fire_reverse()
 
     @main_thread_buffered
     def connect_link(self, link, target):
@@ -339,9 +314,10 @@ class Manager:
             return
         assert isinstance(cell, CellLikeBase)
         assert cell._get_manager() is self
-        mode = "buffer" if from_buffer else "ref"
-        different, text_different = cell.deserialize(value, mode, None,
-          from_pin=False, default=default,force=force
+        different, text_different = protocol.set_cell(
+          cell, value,
+          default=default, from_buffer=from_buffer,
+          force=force
         )
         only_text = (text_different and not different)
         if text_different and cell._mount is not None:
@@ -397,24 +373,7 @@ class Manager:
             if target is not None and cell is not target:
                 continue
             found = True
-            other = cell._get_manager()
-            if other.destroyed:
-                continue
-            from_pin = "edit" if isinstance(pin, EditPin) else True
-            try:
-                different, text_different = cell.deserialize(value, pin.mode, pin.submode,
-                  from_pin=from_pin, default=False
-                )
-            except Exception:
-                print("*** Error in setting %s ***" % cell)
-                traceback.print_exc()
-                print("******")
-                continue
-            only_text = (text_different and not different)
-            if text_different and cell._mount is not None:
-                other.mountmanager.add_cell_update(cell)
-            if different or text_different:
-                other.cell_send_update(cell, only_text, origin=pin)
+            con.fire(value, preliminary)
         if target is not None and not found:
             print("Warning: %s was targeted by triggering pin %s, but not found" % (target, pin))
 
@@ -432,9 +391,7 @@ class Manager:
                 continue
             if con.id < 0 and pin is None: #layer connections, may be None
                 continue
-            value, checksum = cell.serialize(pin.mode, pin.submode)
-            if not only_text or pin.submode == "text":
-                pin.receive_update(value, checksum)
+            con.fire(only_text)
 
         #Activates aliases
         assert isinstance(cell, CellLikeBase)
@@ -442,15 +399,16 @@ class Manager:
             if con.id < 0 and con.target is None: #layer connections, may be None
                 continue
             #from_pin is set to True, also for aliases
-            self._update_cell_from_cell(cell, con.target, con.alias_mode, only_text)
+            assert con.source._get_manager() is self
+            con.fire(only_text)
 
     def set_filled_objects(self, filled_objects):
         self.filled_objects = filled_objects
 
 from .context import Context
 from .cell import Cell, CellLikeBase
-from .worker import Worker, InputPin, EditPin, InputPinBase, EditPinBase, \
- OutputPinBase#, ExportedInputPin, ExportedOutputPin
+from .worker import Worker, InputPin, EditPin, \
+  InputPinBase, EditPinBase, OutputPinBase
 from .transformer import Transformer
 from .structured_cell import Inchannel, Outchannel
 from . import layer, Link

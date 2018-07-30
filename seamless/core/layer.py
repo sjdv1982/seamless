@@ -154,7 +154,7 @@ class LayeredConnection:
         mgr.cell_to_cells[source].append(connection)
 
         if source._status == CellLikeBase.StatusFlags.OK:
-            mgr._update_cell_from_cell(source, target, self.alias_mode, only_text=False)
+            connection.fire()
 
     def _activate_cell_pin(self):
         cell, target = self.source.obj(), self.target.obj()
@@ -181,8 +181,7 @@ class LayeredConnection:
         mgr.pin_from_cell[target] = connection
 
         if cell._status == CellLikeBase.StatusFlags.OK:
-            value, checksum = cell.serialize(target.mode, target.submode)
-            target.receive_update(value, checksum)
+            connection.fire()
 
     def _activate_pin_cell(self):
         pin, target = self.source.obj(), self.target.obj()
