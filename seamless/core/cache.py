@@ -11,7 +11,7 @@ def _long_signature_cell(cell, root):
     mgr = cell._get_manager()
     from_pin = mgr.cell_from_pin.get(cell)
     if from_pin is not None:
-        from_pin = from_pin[1]
+        from_pin = from_pin.source
     from_cell = mgr.cell_from_cell.get(cell)
     if from_cell is not None:
         from_cell = from_cell.source
@@ -52,7 +52,7 @@ def _long_signature_transformer(tf, root):
             continue
         from_cell = mgr.pin_from_cell.get(pin)
         if from_cell is not None:
-            from_cell = from_cell[1]
+            from_cell = from_cell.source
         subresult = {}
         if from_cell is not None:
             ctx = from_cell._context()
@@ -99,7 +99,7 @@ def _short_signature_transformer(tf):
             continue
         from_cell = mgr.pin_from_cell.get(pin)
         if from_cell is not None:
-            from_cell = from_cell[1]
+            from_cell = from_cell.source
         subresult = _short_signature_cell(from_cell)
         ###assert subresult is not None #if status is OK, no connected cell can be None; WRONG in case of channels!
         result[pinname] = subresult

@@ -239,27 +239,21 @@ class Manager:
             concrete = True
             con_id = self.get_id()
 
+        connection = CellToPinConnection(con_id, cell, target)
         if concrete:
-            cell._check_mode(target.mode, target.submode)
-            worker = target.worker_ref()
-            assert worker is not None #weakref may not be dead
-            connection = (con_id, target)
             if isinstance(target, EditPinBase):
                 pass #will be dealt with in connect_pin invocation below
             elif cell._status == Cell.StatusFlags.OK:
                 value, checksum = cell.serialize(target.mode, target.submode)
                 target.receive_update(value, checksum)
-        else:
-            connection = (con_id, None)
 
         if cell not in self.cell_to_pins:
             self.cell_to_pins[cell] = []
         self.cell_to_pins[cell].append(connection)
 
         if not isinstance(target, Path):
-            rev_connection = (con_id, cell)
             other = target._get_manager()
-            other.pin_from_cell[target] = rev_connection
+            other.pin_from_cell[target] = connection
 
         if isinstance(target, EditPinBase):
             self.connect_pin(target0, cell)
@@ -287,17 +281,14 @@ class Manager:
             worker = pin.worker_ref()
             assert worker is not None #weakref may not be dead
 
-        connection = (con_id, target)
-        if isinstance(target, Path):
-            connection = (con_id, None)
+        connection = PinToCellConnection(con_id, pin, target)
         if pin not in self.pin_to_cells:
             self.pin_to_cells[pin] = []
         self.pin_to_cells[pin].append(connection)
 
         if not isinstance(target, Path):
             other = target._get_manager()
-            rev_connection = (con_id, pin)
-            other.cell_from_pin[target] = rev_connection
+            other.cell_from_pin[target] = connection
             if not isinstance(pin, EditPinBase):
                 target._authoritative = False
 
@@ -399,8 +390,9 @@ class Manager:
         #TODO: explicit support for preliminary values
         assert pin._get_manager() is self
         found = False
-        for con_id, cell in self.pin_to_cells.get(pin,[]):
-            if con_id < 0 and cell is None: #layer connections, may be None
+        for con in self.pin_to_cells.get(pin,[]):
+            cell = con.target
+            if con.id < 0 and cell is None: #layer connections, may be None
                 continue
             if target is not None and cell is not target:
                 continue
@@ -434,10 +426,11 @@ class Manager:
             return
 
         #Activates pins
-        for con_id, pin in self.cell_to_pins.get(cell, []):
+        for con in self.cell_to_pins.get(cell, []):
+            pin = con.target
             if pin is origin: #editpin that sent the update
                 continue
-            if con_id < 0 and pin is None: #layer connections, may be None
+            if con.id < 0 and pin is None: #layer connections, may be None
                 continue
             value, checksum = cell.serialize(pin.mode, pin.submode)
             if not only_text or pin.submode == "text":

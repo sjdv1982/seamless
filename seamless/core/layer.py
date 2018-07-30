@@ -160,19 +160,25 @@ class LayeredConnection:
         cell, target = self.source.obj(), self.target.obj()
         cell._check_mode(target.mode, target.submode)
         if isinstance(target, EditPinBase) and target.last_value is not None:
-            raise NotImplementedError ### also output *to* the cell!
+            if cell._status != Cell.StatusFlags.OK:
+                pin = target
+                mgr = pin._get_manager()
+                mgr.pin_send_update(pin,
+                    pin.last_value,
+                    preliminary=pin.last_value_preliminary,
+                    target=cell,
+                )
 
-        connection = (self.id, target)
+        connection = CellToPinConnection(self.id, cell, target)
         mgr = cell._get_manager()
         if cell not in mgr.cell_to_pins:
             mgr.cell_to_pins[cell] = []
         ctp = mgr.cell_to_pins[cell]
-        ctp[:] = [c for c in ctp if c[0] != self.id]
+        ctp[:] = [c for c in ctp if c.id != self.id]
         ctp.append(connection)
 
-        rev_connection = (self.id, cell)
         mgr = target._get_manager()
-        mgr.pin_from_cell[target] = rev_connection
+        mgr.pin_from_cell[target] = connection
 
         if cell._status == CellLikeBase.StatusFlags.OK:
             value, checksum = cell.serialize(target.mode, target.submode)
@@ -182,17 +188,16 @@ class LayeredConnection:
         pin, target = self.source.obj(), self.target.obj()
         target._check_mode(pin.mode, pin.submode)
 
-        connection = (self.id, target)
+        connection = PinToCellConnection(self.id, pin, target)
         mgr = pin._get_manager()
         if pin not in mgr.pin_to_cells:
             mgr.pin_to_cells[pin] = []
         ptc = mgr.pin_to_cells[pin]
-        ptc[:] = [c for c in ptc if c[0] != self.id]
+        ptc[:] = [c for c in ptc if c.id != self.id]
         ptc.append(connection)
 
-        rev_connection = (self.id, pin)
         mgr2 = target._get_manager()
-        mgr2.cell_from_pin[target] = rev_connection
+        mgr2.cell_from_pin[target] = connection
         if not isinstance(pin, EditPinBase):
             target._authoritative = False
         worker = pin.worker_ref()

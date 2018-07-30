@@ -5,7 +5,6 @@ A proof-of-principle of the middle/high level is now there.
 Things to do:
 
 Part 1 (low-level):
-   - Refactor the connections into Connection objects
    - cson cells; also structured_cell in plain mode must be able to accommodate
       a cson's checksum is the checksum of the JSON representation; if you don't want that, connect a text pin/cell downstream of it (see only_text below)       
    - Tie up loose ends of transfer protocol (copy, ref etc.). Take into account only_text changes:

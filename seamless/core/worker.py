@@ -195,7 +195,7 @@ class InputPin(InputPinBase):
             assert my_cell._context() is ctx
             my_cell.connect(self)
         else:
-            my_cell = my_cell[1]
+            my_cell = my_cell.source
         return my_cell
 
     def set(self, *args, **kwargs):
@@ -213,7 +213,7 @@ class InputPin(InputPinBase):
         manager = self._get_manager()
         my_cell = manager.pin_from_cell.get(self)
         if my_cell is not None:
-            return my_cell[1].status()
+            return my_cell.source.status()
         else:
             return self.StatusFlags.UNCONNECTED.name
 
@@ -268,7 +268,7 @@ class OutputPin(OutputPinBase):
             assert my_cell._context() is ctx
             self.connect(my_cell)
         elif l == 1:
-            my_cell = my_cells[0][1]
+            my_cell = my_cells[0].target
         elif l > 1:
             raise TypeError("cell() is ambiguous, multiple cells are connected")
         return my_cell
@@ -277,14 +277,14 @@ class OutputPin(OutputPinBase):
         """Returns all cells connected to the outputpin"""
         manager = self._get_manager()
         my_cells = manager.pin_to_cells.get(self, [])
-        return [c[1] for c in my_cells]
+        return [c.target for c in my_cells]
 
     def status(self):
         manager = self._get_manager()
         my_cells = manager.pin_to_cells.get(self, [])
         if len(my_cells):
             my_cell = my_cells[0]
-            return my_cell[1].status()
+            return my_cell.target.status()
         else:
             return self.StatusFlags.UNCONNECTED.name
 
@@ -322,7 +322,7 @@ class EditPin(EditPinBase):
             ctx._add_new_cell(my_cell)
             my_cell.connect(self)
         elif l == 1:
-            my_cell = my_cells[0][1]
+            my_cell = my_cells[0].source
         elif l > 1:
             raise TypeError("cell() is ambiguous, multiple cells are connected")
         return my_cell
