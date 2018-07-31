@@ -687,7 +687,7 @@ class JsonCell(Cell):
         return json.dumps(value, sort_keys=True, indent=2)
 
     def _to_json(self):
-        return self._json(self.value)
+        return self._json(self._val)
 
     def _checksum(self, value, *, buffer=False, may_fail=False):
         if buffer:
@@ -768,6 +768,10 @@ class CsonCell(JsonCell):
             return None
         d = cson2json(value)
         return json.dumps(d, sort_keys=True, indent=2)
+
+    @property
+    def value(self):
+        return cson2json(self._val)
 
     def _validate(self, value):
         #TODO: store validation errors
@@ -894,9 +898,3 @@ from .protocol import cson2json
 
 print("TODO cell: PyModule cell") #cell that does imports, executed already upon code definition, as a module; code injection causes an import of this module
 #...and TODO: cache cell, event stream
-
-#TODO: a serialization protocol to establish data transfer over a cell-to-cell (alias) connection
-# it depends on three variables:
-# - the alias mode (argument to manager.connect_cell)
-# - the type / some attribute of the source cell
-# - the type / some attribute of the target cell

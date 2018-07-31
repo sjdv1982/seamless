@@ -1,6 +1,10 @@
 import traceback
 
-#TODO: negotiate cell-to-cell serialization protocol (also in layer)
+#TODO: a serialization protocol to establish data transfer over a cell-to-cell (alias) connection
+# it depends on three variables:
+# - the alias mode (argument to manager.connect_cell)
+# - the type / some attribute of the source cell
+# - the type / some attribute of the target cell
 
 class Connection:
     #TODO: negotiate cell-to-cell serialization protocol
@@ -18,13 +22,28 @@ class Connection:
 class CellToCellConnection(Connection):
     def __init__(self, id, source, target, alias_mode):
         super().__init__(id, source, target)
+        if self.target is None:
+            return
+        if alias_mode is None:
+            alias_mode = "ref"
+        #TODO: extend to other connection types
+        self.adapter = None
+        if type(source) == type(target):
+            return
         self.alias_mode = alias_mode
+        source_modes = [m for m in source._supported_modes if m[0] == alias_mode \
+         and m[1] is None and m[2] is not None]
+        target_modes = [m for m in target._supported_modes if m[0] == alias_mode \
+         and m[1] is None and m[2] is not None]
+        self.adapter = select_adapter(source, target, source_modes, target_modes)
+
     def fire(self, only_text=False):
-        #TODO: negotiate proper serialization protocol (see cell.py, end of file)
         #TODO: determine if with the target cell type, "only_text" warrants an update
         cell, target = self.source, self.target
         mode, submode = self.alias_mode, None
         value, _ = cell.serialize(mode, submode)
+        if self.adapter:
+            value = self.adapter(value)
         different, text_different = target.deserialize(value, mode, submode,
           #from_pin is set to True, also for aliases...
           from_pin=True, default=False
@@ -91,3 +110,4 @@ class PinToCellConnection(Connection):
 from .worker import Worker, InputPin, EditPin, \
   InputPinBase, EditPinBase, OutputPinBase
 from .layer import Path
+from .protocol import select_adapter

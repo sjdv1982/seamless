@@ -202,8 +202,6 @@ class Manager:
         if self.destroyed:
             return
         assert cell._root() is target._root()
-        if alias_mode is None:
-            alias_mode = "copy" ###
         assert isinstance(cell, CellLikeBase)
         assert not isinstance(cell, Inchannel)
         assert cell._get_manager() is self

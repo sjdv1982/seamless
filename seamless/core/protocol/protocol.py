@@ -1,3 +1,5 @@
+from collections import OrderedDict
+
 """
 modes and submodes that a *pin* can have, and that must be supported by a cell
 These are specific for the low-level.
@@ -16,3 +18,28 @@ def set_cell(cell, value, *,
       from_pin=False, default=default,force=force
     )
     return different, text_different
+
+def adapt_cson_json(source):
+    return cson2json(source)
+
+def check_adapt_cson_json(source_mode, target_mode):
+    if source_mode[1] != target_mode[1]:
+        return False
+    if source_mode[1] not in (None, "text"):
+        return False
+    if target_mode[1] not in (None, "json"):
+        return False
+    return source_mode[2] == "cson" and target_mode[2] == "json"
+
+adapters = OrderedDict()
+adapters[check_adapt_cson_json] = adapt_cson_json
+
+def select_adapter(source, target, source_modes, target_modes):
+    for checkfunc, adapter in adapters.items():
+        for source_mode in source_modes:
+            for target_mode in target_modes:
+                if checkfunc(source_mode, target_mode):
+                    return adapter
+    raise Exception("Could not find adapter between %s and %s" % (source, target))
+
+from .cson import cson2json
