@@ -143,7 +143,9 @@ def link(obj):
 
 from .macro_mode import get_macro_mode, macro_register, macro_mode_on
 from . import cell as cell_module
-from .cell import Cell, CellLikeBase, cell, textcell, pythoncell, pytransformercell
+from .cell import Cell, CellLikeBase, cell
+from .cell import textcell, pythoncell, pytransformercell, jsoncell, \
+ csoncell, arraycell, mixedcell, signal
 from . import context as context_module
 from .context import Context, context
 from .worker import Worker

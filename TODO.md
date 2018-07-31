@@ -11,6 +11,7 @@ Part 1 (low-level):
          adding comments / breaking up lines to a Python cell will affect a syntax highlighter, but not a transformer, it is only text
          (a refactor that changes variable names would still trigger transformer re-execution, but this is probably the correct thing to do anyway)
          The same for cson cells
+         alias mode?
    - Add the concept of from_pin (from_channel) to structured cells, in particular the form/data/storage hooks. Now,
    they trigger warnings that they are overruling cells "controlled by Seamless context"
    (see tests/highlevel/simple.py). This is distinct from sovereignty, which involves non-pin manipulation!

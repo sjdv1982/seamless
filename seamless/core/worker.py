@@ -1,6 +1,5 @@
 import weakref
 from . import SeamlessBase
-from .cell import modes as cell_modes, submodes as cell_submodes
 from .macro_mode import get_macro_mode, with_macro_mode
 
 """
@@ -117,7 +116,7 @@ class Worker(SeamlessBase):
     def full_destroy(self, from_del=False):
         raise NotImplementedError
 
-from .cell import modes as cell_modes, submodes as cell_submodes, celltypes
+from .protocol import modes as cell_modes, submodes as cell_submodes, celltypes
 
 class PinBase(SeamlessBase):
     submode = None
@@ -126,7 +125,7 @@ class PinBase(SeamlessBase):
         super().__init__()
         assert mode in cell_modes, (mode, cell_modes)
         if submode is not None:
-            assert submode in cell_submodes[mode], (mode, cell_submodes)
+            assert submode in cell_submodes, (submode, cell_submodes)
         self.name = name
         self.mode = mode
         if celltype is not None:

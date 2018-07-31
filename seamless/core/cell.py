@@ -1,20 +1,3 @@
-from .macro_mode import with_macro_mode
-
-#TODO: not all cell types support all submodes, check this! do a text <=> binary copy!
-
-"""
-modes and submodes that a *pin* can have, and that must be supported by a cell
-These are specific for the low-level.
-At the mid-level, the modes would be annotations/hints (i.e. not core),
- and the submodes would be cell languages: JSON, CSON, Silk, Python
-"""
-modes = ["buffer", "copy", "ref", "signal"]
-submodes = {
-    "copy": ["json", "silk", "text"], ###TODO: text should render json as text, pythoncode as text, cson directly.
-    "ref": ["pythoncode", "json", "silk"]
-}
-celltypes = ("text", "python", "pytransformer", "json", "cson", "mixed", "binary")
-
 from copy import deepcopy
 import json
 import hashlib
@@ -25,6 +8,8 @@ import ast
 from ast import PyCF_ONLY_AST, FunctionDef
 import inspect
 
+from .macro_mode import with_macro_mode
+from .protocol import modes, submodes, celltypes
 from .. import Wrapper
 from . import SeamlessBase
 from ..mixed import io as mixed_io
@@ -96,9 +81,10 @@ class CellBase(CellLikeBase):
         return self._val
 
     def _check_mode(self, mode, submode=None):
+        #TODO: obsolete!
         assert mode in modes, mode
         if submode is not None:
-            assert submode in submodes[mode], (mode, submodes)
+            assert submode in submodes, (submode, submodes)
 
     def touch(self):
         """Forces a cell update, even though the value stays the same
@@ -355,15 +341,16 @@ Use ``Cell.value`` to get its value.
 
 Use ``Cell.status()`` to get its status.
 """
+    _supported_modes = (
+        ("ref", None, None),
+        ("copy", None, None),
+    )
+
     def _checksum(self, value, *, buffer=False, may_fail=False):
         return hashlib.md5(str(value).encode("utf-8")).hexdigest()
 
     def _validate(self, value):
         pass
-
-    def _check_mode(self, mode, submode=None):
-        super()._check_mode(mode, submode)
-        #assert (mode, submode) != ("ref", "pythoncode") #TODO
 
     def _serialize(self, mode, submode=None):
         if mode == "buffer":
@@ -397,6 +384,14 @@ class ArrayCell(Cell):
     #also provides copy+silk and ref+silk transport, but with an empty schema, and text form
 
     _mount_kwargs = {"binary": True}
+
+    _supported_modes = []
+    for mode in "buffer", "copy", "ref":
+        for submode in "silk", None:
+            for celltype in "binary", None:
+                _supported_modes.append((mode, submode, celltype))
+    _supported_modes = tuple(_supported_modes)
+    del mode, submode, celltype
 
     def _checksum(self, value, *, buffer=False, may_fail=False):
         if buffer:
@@ -450,6 +445,14 @@ class ArrayCell(Cell):
 
 class MixedCell(Cell):
     _mount_kwargs = {"binary": True}
+    _supported_modes = []
+    for mode in "buffer", "copy", "ref":
+        for submode in "silk", None:
+            for celltype in "mixed", None:
+                _supported_modes.append((mode, submode, celltype))
+    _supported_modes = tuple(_supported_modes)
+    del mode, submode, celltype
+
     def __init__(self, storage_cell, form_cell):
         super().__init__()
         self.storage_cell = storage_cell
@@ -524,6 +527,14 @@ class MixedCell(Cell):
 
 class TextCell(Cell):
     _mount_kwargs = {"encoding": "utf-8", "binary": False}
+    _supported_modes = []
+    for mode in "buffer", "copy", "ref":
+        for submode in "text", None:
+            for celltype in "text", None:
+                _supported_modes.append((mode, submode, celltype))
+    _supported_modes = tuple(_supported_modes)
+    del mode, submode, celltype
+
     def _serialize(self, mode, submode=None):
         if mode in ("buffer", "copy"):
             assert submode is None, (mode, submode)
@@ -550,6 +561,14 @@ class TextCell(Cell):
 class PythonCell(Cell):
     """Python code object, used for reactors and macros"""
     _mount_kwargs = {"encoding": "utf-8", "binary": False}
+    _supported_modes = []
+    for mode in "buffer", "copy", "ref":
+        for submode in "text", "pythoncode", None:
+            for celltype in "python", None:
+                _supported_modes.append((mode, submode, celltype))
+    _supported_modes = tuple(_supported_modes)
+    del mode, submode, celltype
+
     _naming_pattern = "pythoncell"
     _has_text_checksum = True
     _accept_shell_append = True
@@ -621,6 +640,14 @@ class PyTransformerCell(PythonCell):
     """Python code object used for transformers or macros
     Each input will be an argument"""
 
+    _supported_modes = []
+    for mode in "buffer", "copy", "ref":
+        for submode in "text", "pythoncode", None:
+            for celltype in "python", "pytransformer", None:
+                _supported_modes.append((mode, submode, celltype))
+    _supported_modes = tuple(_supported_modes)
+    del mode, submode, celltype
+
     def _validate(self, value):
         if inspect.isfunction(value):
             code = inspect.getsource(value)
@@ -639,9 +666,19 @@ class PyTransformerCell(PythonCell):
 
 class JsonCell(Cell):
     """A cell in JSON format (monolithic)"""
-    #also provides copy+silk and ref+silk transport, but with an empty schema, and text form
-
     _mount_kwargs = {"encoding": "utf-8", "binary": False}
+
+    _supported_modes = []
+    for mode in "buffer", "copy", "ref":
+        for submode in "json", "silk", "text", None:
+            if submode == "silk" and mode == "buffer":
+                continue
+            for celltype in "json", None:
+                _supported_modes.append((mode, submode, celltype))
+    _supported_modes = tuple(_supported_modes)
+    del mode, submode, celltype
+
+    _naming_pattern = "jsoncell"
 
     @staticmethod
     def _json(value):
@@ -699,31 +736,76 @@ class JsonCell(Cell):
         return ret
 
 
-class CsonCell(Cell):
+class CsonCell(JsonCell):
     """A cell in CoffeeScript Object Notation (CSON) format
     When necessary, the contents of a CSON cell are automatically converted
     to JSON.
     """
+    _mount_kwargs = {"encoding": "utf-8", "binary": False}
+
+    _supported_modes = []
+    for mode in "buffer", "copy", "ref":
+        if mode != "buffer":
+            _supported_modes.append((mode, "silk", "cson"))
+            _supported_modes.append((mode, "silk", None))
+        _supported_modes.append((mode, "json", "cson"))
+        _supported_modes.append((mode, "text", None))
+        _supported_modes.append((mode, "text", "cson"))
+        _supported_modes.append((mode, None, None))
+        _supported_modes.append((mode, None, "cson"))
+    _supported_modes = tuple(_supported_modes)
+    del mode
+
+    _naming_pattern = "csoncell"
+    _has_text_checksum = True
 
     def _text_checksum(self, value, *, buffer=False, may_fail=False):
         return hashlib.md5(str(value).encode("utf-8")).hexdigest()
 
-    def _checksum(self, value, *, buffer=False, may_fail=False):
-        ###TODO: run json-to-cson, then json.dumps, then md5
-        raise NotImplementedError
+    @staticmethod
+    def _json(value):
+        if value is None:
+            return None
+        d = cson2json(value)
+        return json.dumps(d, sort_keys=True, indent=2)
 
     def _validate(self, value):
-        raise NotImplementedError
-
-    def _serialize(self, mode, submode=None):
-        raise NotImplementedError
+        #TODO: store validation errors
+        cson2json(value)
 
     def _deserialize(self, value, mode, submode=None):
-        raise NotImplementedError
+        if value is None:
+            result = None
+        elif submode in ("json", "silk"):
+            if submode == "silk":
+                value = value._data
+            result = json.dumps(value, sort_keys=True, indent=2)
+        else:
+            result = str(value)
+        self._val = result
+        return result
+
+    def _serialize(self, mode, submode=None):
+        value = self._val
+        if value is None:
+            return None
+        if submode in ("json", "silk"):
+            j = self._json(value)
+            if submode == "silk":
+                return Silk(data=j)
+            else:
+                return j
+        return str(value)
+
+    def as_text(self):
+        if self._val is None:
+            return None
+        return str(self._val)
 
     def __str__(self):
         ret = "Seamless CSON cell: " + self._format_path()
         return ret
+
 
 class Signal(Cell):
     """ A cell that does not contain any data
@@ -770,9 +852,6 @@ def cell(celltype=None, **kwargs):
     else:
         return Cell(**kwargs)
 
-def arraycell():
-    return ArrayCell()
-
 def textcell():
     return TextCell()
 
@@ -781,6 +860,21 @@ def pythoncell():
 
 def pytransformercell():
     return PyTransformerCell()
+
+def jsoncell():
+    return JsonCell()
+
+def csoncell():
+    return CsonCell()
+
+def arraycell():
+    return ArrayCell()
+
+def mixedcell():
+    return MixedCell()
+
+def signal():
+    return Signal()
 
 extensions = {
     TextCell: ".txt",
@@ -796,9 +890,10 @@ from ..silk import Silk
 if inspect.ismodule(Silk):
     raise ImportError
 
-print("TODO cell: CSON cell")
+from .protocol import cson2json
+
 print("TODO cell: PyModule cell") #cell that does imports, executed already upon code definition, as a module; code injection causes an import of this module
-#...and TODO: cache cell, evaluation cell, event stream
+#...and TODO: cache cell, event stream
 
 #TODO: a serialization protocol to establish data transfer over a cell-to-cell (alias) connection
 # it depends on three variables:
