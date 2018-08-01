@@ -27,18 +27,23 @@ class Macro(Worker):
         for p in sorted(macro_params.keys()):
             param = macro_params[p]
             self._macro_params[p] = param
-            mode, submode, celltype = "copy", None, None
+            transfer_mode, access_mode, celltype = "copy", None, None
             if isinstance(param, str):
-                mode = param
+                transfer_mode = param
             elif isinstance(param, (list, tuple)):
-                mode = param[0]
+                transfer_mode = param[0]
                 if len(param) > 1:
-                    submode = param[1]
+                    access_mode = param[1]
                 if len(param) > 2:
                     celltype = param[2]
+            elif isinstance(param, dict):
+                io = param["io"]
+                transfer_mode = param.get("transfer_mode", transfer_mode)
+                access_mode = param.get("access_mode", access_mode)
+                celltype = param.get("celltype", celltype)
             else:
                 raise ValueError((p, param))
-            pin = InputPin(self, p, mode, submode)
+            pin = InputPin(self, p, transfer_mode, access_mode)
             self.function_expr_template += "%s=%s," % (p, p)
             self._pins[p] = pin
         self.function_expr_template = self.function_expr_template[:-1] + ")"
@@ -189,8 +194,8 @@ class Macro(Worker):
         if self.status() == self.StatusFlags.OK.name:
             self.execute()
 
-    def _shell(self, submode):
-        assert submode is None
+    def _shell(self, access_mode):
+        assert access_mode is None
         return self.namespace, self.code, str(self)
 
     def __dir__(self):

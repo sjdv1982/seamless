@@ -9,7 +9,7 @@ from ast import PyCF_ONLY_AST, FunctionDef
 import inspect
 
 from .macro_mode import with_macro_mode
-from .protocol import modes, submodes, celltypes
+from .protocol import transfer_modes, access_modes, celltypes
 from .. import Wrapper
 from . import SeamlessBase
 from ..mixed import io as mixed_io
@@ -80,11 +80,11 @@ class CellBase(CellLikeBase):
     def value(self):
         return self._val
 
-    def _check_mode(self, mode, submode=None):
+    def _check_mode(self, transfer_mode, access_mode=None):
         #TODO: obsolete!
-        assert mode in modes, mode
-        if submode is not None:
-            assert submode in submodes, (submode, submodes)
+        assert transfer_mode in transfer_modes, transfer_mode
+        if access_mode is not None:
+            assert access_mode in access_modes, (access_mode, access_modes)
 
     def touch(self):
         """Forces a cell update, even though the value stays the same
@@ -142,11 +142,11 @@ class CellBase(CellLikeBase):
             filevalue = f.read()
         self.from_buffer(filevalue)
 
-    def serialize(self, mode, submode=None):
-        self._check_mode(mode, submode)
+    def serialize(self, transfer_mode, access_mode=None):
+        self._check_mode(transfer_mode, access_mode)
         #assert self.status() == "OK", self.status() #why?
         checksum = self.checksum() #TODO: determine which checksum we need
-        return self._serialize(mode, submode), checksum
+        return self._serialize(transfer_mode, access_mode), checksum
 
     def _reset_checksums(self):
         self._last_checksum = None
@@ -168,7 +168,7 @@ class CellBase(CellLikeBase):
         return value
 
 
-    def deserialize(self, value, mode, submode=None, *, from_pin, default, force=False):
+    def deserialize(self, value, transfer_mode, access_mode=None, *, from_pin, default, force=False):
         """Should normally be invoked by the manager, since it does not notify the manager
         from_pin: can be True (normal pin that has authority), False (from code) or "edit" (edit pin)
         default: indicates a default value (pins may overwrite it)
@@ -177,7 +177,7 @@ class CellBase(CellLikeBase):
         assert from_pin in (True, False, "edit")
         if not force:
             assert not self._slave
-        self._check_mode(mode, submode)
+        self._check_mode(transfer_mode, access_mode)
         old_status = self._status
         if value is None:
             different = (self._last_checksum is not None)
@@ -196,7 +196,7 @@ class CellBase(CellLikeBase):
         self._reset_checksums()
         curr_val = self._val
         try:
-            parsed_value = self._deserialize(value, mode, submode)
+            parsed_value = self._deserialize(value, transfer_mode, access_mode)
             self._validate(parsed_value)
         except:
             self._val = curr_val
@@ -259,10 +259,10 @@ class CellBase(CellLikeBase):
         """Won't raise an exception, but may set .exception (TODO: check???)"""
         raise NotImplementedError
 
-    def _serialize(self, mode, submode=None):
+    def _serialize(self, transfer_mode, access_mode=None):
         raise NotImplementedError
 
-    def _deserialize(self, value, mode, submode=None):
+    def _deserialize(self, value, transfer_mode, access_mode=None):
         raise NotImplementedError
 
     def _checksum(self, value, *, buffer=False, may_fail=False):
@@ -352,19 +352,19 @@ Use ``Cell.status()`` to get its status.
     def _validate(self, value):
         pass
 
-    def _serialize(self, mode, submode=None):
-        if mode == "buffer":
+    def _serialize(self, transfer_mode, access_mode=None):
+        if transfer_mode == "buffer":
             raise Exception("Cell '%s' cannot be serialized as buffer, use TextCell or JsonCell instead" % self._format_path())
-        elif mode == "copy":
-            assert submode is None, (mode, submode)
+        elif transfer_mode == "copy":
+            assert access_mode is None, (transfer_mode, access_mode)
             return deepcopy(self._val)
         else:
             return self._val
 
-    def _deserialize(self, value, mode, submode=None):
-        if mode == "buffer":
+    def _deserialize(self, value, transfer_mode, access_mode=None):
+        if transfer_mode == "buffer":
             raise Exception("Cell '%s' cannot be de-serialized as buffer, use TextCell or JsonCell instead" % self._format_path())
-        assert submode is None, (mode, submode)
+        assert access_mode is None, (transfer_mode, access_mode)
         return self._assign(value)
 
     def __str__(self):
@@ -386,12 +386,12 @@ class ArrayCell(Cell):
     _mount_kwargs = {"binary": True}
 
     _supported_modes = []
-    for mode in "buffer", "copy", "ref":
-        for submode in "silk", None:
+    for transfer_mode in "buffer", "copy", "ref":
+        for access_mode in "silk", None:
             for celltype in "binary", None:
-                _supported_modes.append((mode, submode, celltype))
+                _supported_modes.append((transfer_mode, access_mode, celltype))
     _supported_modes = tuple(_supported_modes)
-    del mode, submode, celltype
+    del transfer_mode, access_mode, celltype
 
     def _checksum(self, value, *, buffer=False, may_fail=False):
         if buffer:
@@ -408,19 +408,19 @@ class ArrayCell(Cell):
     def _validate(self, value):
         assert isinstance(value, np.ndarray)
 
-    def _serialize(self, mode, submode=None):
+    def _serialize(self, transfer_mode, access_mode=None):
         #TODO: proper checks
-        if mode == "buffer":
+        if transfer_mode == "buffer":
             return self._value_to_bytes(self._val)
-        elif mode == "copy":
-            if submode == "silk":
+        elif transfer_mode == "copy":
+            if access_mode == "silk":
                 data = deepcopy(self._val)
                 return Silk(data=data)
             else:
                 return deepcopy(self._val)
-        elif mode == "ref":
-            assert submode in ("json", "silk", None)
-            if submode == "silk":
+        elif transfer_mode == "ref":
+            assert access_mode in ("json", "silk", None)
+            if access_mode == "silk":
                 return Silk(data=self._val)
             else:
                 return self._val
@@ -433,8 +433,8 @@ class ArrayCell(Cell):
         b = BytesIO(value)
         return np.load(b)
 
-    def _deserialize(self, value, mode, submode=None):
-        if mode == "buffer":
+    def _deserialize(self, value, transfer_mode, access_mode=None):
+        if transfer_mode == "buffer":
             return self._assign(self._from_buffer(value))
         else:
             return self._assign(value)
@@ -446,12 +446,12 @@ class ArrayCell(Cell):
 class MixedCell(Cell):
     _mount_kwargs = {"binary": True}
     _supported_modes = []
-    for mode in "buffer", "copy", "ref":
-        for submode in "silk", None:
+    for transfer_mode in "buffer", "copy", "ref":
+        for access_mode in "silk", None:
             for celltype in "mixed", None:
-                _supported_modes.append((mode, submode, celltype))
+                _supported_modes.append((transfer_mode, access_mode, celltype))
     _supported_modes = tuple(_supported_modes)
-    del mode, submode, celltype
+    del transfer_mode, access_mode, celltype
 
     def __init__(self, storage_cell, form_cell):
         super().__init__()
@@ -494,28 +494,28 @@ class MixedCell(Cell):
     def _validate(self, value):
         return ###TODO: how to validate?? check that value conforms to form?
 
-    def _serialize(self, mode, submode=None):
-        if mode == "buffer":
+    def _serialize(self, transfer_mode, access_mode=None):
+        if transfer_mode == "buffer":
             return self._to_bytes()
-        elif mode == "copy":
-            if submode == "silk":
+        elif transfer_mode == "copy":
+            if access_mode == "silk":
                 data = deepcopy(self._val)
                 return Silk(data=data)
-            elif submode == "cson":
+            elif access_mode == "cson":
                 raise NotImplementedError
             else:
                 return deepcopy(self._val)
-        elif mode == "ref":
-            assert submode in ("json", "silk", None)
-            if submode == "silk":
+        elif transfer_mode == "ref":
+            assert access_mode in ("json", "silk", None)
+            if access_mode == "silk":
                 return Silk(data=self._val)
             else:
                 return self._val
         else:
             return self._val
 
-    def _deserialize(self, value, mode, submode=None):
-        if mode == "buffer":
+    def _deserialize(self, value, transfer_mode, access_mode=None):
+        if transfer_mode == "buffer":
             return self._assign(self._from_buffer(value))
         else:
             return self._assign(value)
@@ -528,22 +528,22 @@ class MixedCell(Cell):
 class TextCell(Cell):
     _mount_kwargs = {"encoding": "utf-8", "binary": False}
     _supported_modes = []
-    for mode in "buffer", "copy", "ref":
-        for submode in "text", None:
+    for transfer_mode in "buffer", "copy", "ref":
+        for access_mode in "text", None:
             for celltype in "text", None:
-                _supported_modes.append((mode, submode, celltype))
+                _supported_modes.append((transfer_mode, access_mode, celltype))
     _supported_modes = tuple(_supported_modes)
-    del mode, submode, celltype
+    del transfer_mode, access_mode, celltype
 
-    def _serialize(self, mode, submode=None):
-        if mode in ("buffer", "copy"):
-            assert submode is None, (mode, submode)
+    def _serialize(self, transfer_mode, access_mode=None):
+        if transfer_mode in ("buffer", "copy"):
+            assert access_mode is None, (transfer_mode, access_mode)
             return deepcopy(self._val)
         else:
             return self._val
 
-    def _deserialize(self, value, mode, submode=None):
-        assert submode is None, (mode, submode)
+    def _deserialize(self, value, transfer_mode, access_mode=None):
+        assert access_mode is None, (transfer_mode, access_mode)
         v = str(value)
         self._val = v
         return v
@@ -562,12 +562,12 @@ class PythonCell(Cell):
     """Python code object, used for reactors and macros"""
     _mount_kwargs = {"encoding": "utf-8", "binary": False}
     _supported_modes = []
-    for mode in "buffer", "copy", "ref":
-        for submode in "text", "pythoncode", None:
+    for transfer_mode in "buffer", "copy", "ref":
+        for access_mode in "text", "pythoncode", None:
             for celltype in "python", None:
-                _supported_modes.append((mode, submode, celltype))
+                _supported_modes.append((transfer_mode, access_mode, celltype))
     _supported_modes = tuple(_supported_modes)
-    del mode, submode, celltype
+    del transfer_mode, access_mode, celltype
 
     _naming_pattern = "pythoncell"
     _has_text_checksum = True
@@ -576,8 +576,8 @@ class PythonCell(Cell):
     #TODO: for serialization, store ._accept_shell_append
     # OR: make ._accept_shell_append editable as cell
 
-    def _check_mode(self, mode, submode=None):
-        CellBase._check_mode(self, mode, submode)
+    def _check_mode(self, transfer_mode, access_mode=None):
+        CellBase._check_mode(self, transfer_mode, access_mode)
 
     def _text_checksum(self, value, *, buffer=False, may_fail=False):
         return hashlib.md5(str(value).encode("utf-8")).hexdigest()
@@ -600,14 +600,14 @@ class PythonCell(Cell):
     def _validate(self, value):
         ast.parse(value)
 
-    def _serialize(self, mode, submode=None):
-        if mode == "buffer":
-            assert submode is None, (mode, submode)
+    def _serialize(self, transfer_mode, access_mode=None):
+        if transfer_mode == "buffer":
+            assert access_mode is None, (transfer_mode, access_mode)
             return deepcopy(self._val)
-        if mode == "copy":
-            assert submode in ("text", None)
+        if transfer_mode == "copy":
+            assert access_mode in ("text", None)
             return deepcopy(self._val)
-        assert mode == "ref" and submode == "pythoncode", (mode, submode)
+        assert transfer_mode == "ref" and access_mode == "pythoncode", (transfer_mode, access_mode)
         ###return self ### BAD: sensitive to destroy! #TODO
         class FakePythonCell:
             pass
@@ -618,16 +618,16 @@ class PythonCell(Cell):
             setattr(result, attr, getattr(self, attr))
         return result
 
-    def _deserialize(self, value, mode, submode=None):
+    def _deserialize(self, value, transfer_mode, access_mode=None):
         if inspect.isfunction(value):
             code = inspect.getsource(value)
             code = strip_source(code)
             value = code
-        if mode == "ref":
+        if transfer_mode == "ref":
             self._val = value
             return value
-        assert mode in ("buffer", "copy"), mode
-        assert submode is None, (mode, submode)
+        assert transfer_mode in ("buffer", "copy"), transfer_mode
+        assert access_mode is None, (transfer_mode, access_mode)
         v = str(value)
         self._val = v
         return v
@@ -641,12 +641,12 @@ class PyTransformerCell(PythonCell):
     Each input will be an argument"""
 
     _supported_modes = []
-    for mode in "buffer", "copy", "ref":
-        for submode in "text", "pythoncode", None:
+    for transfer_mode in "buffer", "copy", "ref":
+        for access_mode in "text", "pythoncode", None:
             for celltype in "python", "pytransformer", None:
-                _supported_modes.append((mode, submode, celltype))
+                _supported_modes.append((transfer_mode, access_mode, celltype))
     _supported_modes = tuple(_supported_modes)
-    del mode, submode, celltype
+    del transfer_mode, access_mode, celltype
 
     def _validate(self, value):
         if inspect.isfunction(value):
@@ -669,14 +669,14 @@ class JsonCell(Cell):
     _mount_kwargs = {"encoding": "utf-8", "binary": False}
 
     _supported_modes = []
-    for mode in "buffer", "copy", "ref":
-        for submode in "json", "silk", "text", None:
-            if submode == "silk" and mode == "buffer":
+    for transfer_mode in "buffer", "copy", "ref":
+        for access_mode in "json", "silk", "text", None:
+            if access_mode == "silk" and transfer_mode == "buffer":
                 continue
             for celltype in "json", None:
-                _supported_modes.append((mode, submode, celltype))
+                _supported_modes.append((transfer_mode, access_mode, celltype))
     _supported_modes = tuple(_supported_modes)
-    del mode, submode, celltype
+    del transfer_mode, access_mode, celltype
 
     _naming_pattern = "jsoncell"
 
@@ -699,20 +699,20 @@ class JsonCell(Cell):
         #TODO: store validation errors
         json.dumps(value)
 
-    def _serialize(self, mode, submode=None):
-        if mode == "buffer":
+    def _serialize(self, transfer_mode, access_mode=None):
+        if transfer_mode == "buffer":
             return self._to_json()
-        elif mode == "copy":
-            if submode == "silk":
+        elif transfer_mode == "copy":
+            if access_mode == "silk":
                 data = deepcopy(self._val)
                 return Silk(data=data)
-            elif submode == "cson":
+            elif access_mode == "cson":
                 return self._to_json()
             else:
                 return deepcopy(self._val)
-        elif mode == "ref":
-            assert submode in ("json", "silk", None)
-            if submode == "silk":
+        elif transfer_mode == "ref":
+            assert access_mode in ("json", "silk", None)
+            if access_mode == "silk":
                 return Silk(data=self._val)
             else:
                 return self._val
@@ -722,8 +722,8 @@ class JsonCell(Cell):
     def _from_buffer(self, value):
         return json.loads(value)
 
-    def _deserialize(self, value, mode, submode=None):
-        if mode == "buffer":
+    def _deserialize(self, value, transfer_mode, access_mode=None):
+        if transfer_mode == "buffer":
             return self._assign(self._from_buffer(value))
         else:
             return self._assign(value)
@@ -744,17 +744,17 @@ class CsonCell(JsonCell):
     _mount_kwargs = {"encoding": "utf-8", "binary": False}
 
     _supported_modes = []
-    for mode in "buffer", "copy", "ref":
-        if mode != "buffer":
-            _supported_modes.append((mode, "silk", "cson"))
-            _supported_modes.append((mode, "silk", None))
-        _supported_modes.append((mode, "json", "cson"))
-        _supported_modes.append((mode, "text", None))
-        _supported_modes.append((mode, "text", "cson"))
-        _supported_modes.append((mode, None, None))
-        _supported_modes.append((mode, None, "cson"))
+    for transfer_mode in "buffer", "copy", "ref":
+        if transfer_mode != "buffer":
+            _supported_modes.append((transfer_mode, "silk", "cson"))
+            _supported_modes.append((transfer_mode, "silk", None))
+        _supported_modes.append((transfer_mode, "json", "cson"))
+        _supported_modes.append((transfer_mode, "text", None))
+        _supported_modes.append((transfer_mode, "text", "cson"))
+        _supported_modes.append((transfer_mode, None, None))
+        _supported_modes.append((transfer_mode, None, "cson"))
     _supported_modes = tuple(_supported_modes)
-    del mode
+    del transfer_mode
 
     _naming_pattern = "csoncell"
     _has_text_checksum = True
@@ -777,11 +777,11 @@ class CsonCell(JsonCell):
         #TODO: store validation errors
         cson2json(value)
 
-    def _deserialize(self, value, mode, submode=None):
+    def _deserialize(self, value, transfer_mode, access_mode=None):
         if value is None:
             result = None
-        elif submode in ("json", "silk"):
-            if submode == "silk":
+        elif access_mode in ("json", "silk"):
+            if access_mode == "silk":
                 value = value._data
             result = json.dumps(value, sort_keys=True, indent=2)
         else:
@@ -789,13 +789,13 @@ class CsonCell(JsonCell):
         self._val = result
         return result
 
-    def _serialize(self, mode, submode=None):
+    def _serialize(self, transfer_mode, access_mode=None):
         value = self._val
         if value is None:
             return None
-        if submode in ("json", "silk"):
+        if access_mode in ("json", "silk"):
             j = self._json(value)
-            if submode == "silk":
+            if access_mode == "silk":
                 return Silk(data=j)
             else:
                 return j
@@ -828,10 +828,10 @@ class Signal(Cell):
     def _validate(self, value):
         pass
 
-    def _serialize(self, mode, submode=None):
+    def _serialize(self, transfer_mode, access_mode=None):
         raise NotImplementedError
 
-    def _deserialize(self, value, mode, submode=None):
+    def _deserialize(self, value, transfer_mode, access_mode=None):
         raise NotImplementedError
 
     def __str__(self):
@@ -895,6 +895,14 @@ if inspect.ismodule(Silk):
     raise ImportError
 
 from .protocol import cson2json
+
+"""
+TODO document: only-text changes
+     adding comments / breaking up lines to a Python cell will affect a syntax highlighter, but not a transformer, it is only text
+     (a refactor that changes variable names would still trigger transformer re-execution, but this is probably the correct thing to do anyway)
+     Same for CSON cells: if the CSON is changed but the corresponding JSON stays the same, the checksum stays the same.
+     But the text checksum changes, and a text cell or text inputpin will receive an update.
+"""
 
 print("TODO cell: PyModule cell") #cell that does imports, executed already upon code definition, as a module; code injection causes an import of this module
 #...and TODO: cache cell, event stream

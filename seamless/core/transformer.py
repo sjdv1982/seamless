@@ -22,8 +22,8 @@ class Transformer(Worker):
     def __init__(self, transformer_params, with_schema=False):
         self.state = {}
         self.code = InputPin(self, "code", "ref", "pythoncode", "pytransformer")
-        #TODO: submode becomes "copy" when we switch from threads to processes
-        thread_inputs = {"code": (self.code.mode, self.code.submode)}
+        #TODO: access_mode becomes "copy" when we switch from threads to processes
+        thread_inputs = {"code": (self.code.transfer_mode, self.code.access_mode)}
         self._io_attrs = ["code"]
         self._pins = {"code":self.code}
         self._output_name = None
@@ -44,30 +44,30 @@ class Transformer(Worker):
             param = transformer_params[p]
             self._transformer_params[p] = param
             pin = None
-            io, mode, submode, celltype = None, "ref", None, None
+            io, transfer_mode, access_mode, celltype = None, "ref", None, None
             #TODO: change "ref" to "copy" once transport protocol works
             if isinstance(param, str):
                 io = param
             elif isinstance(param, (list, tuple)):
                 io = param[0]
                 if len(param) > 1:
-                    mode = param[1]
+                    transfer_mode = param[1]
                 if len(param) > 2:
-                    submode = param[2]
+                    access_mode = param[2]
                 if len(param) > 3:
                     celltype = param[3]
             elif isinstance(param, dict):
                 io = param["io"]
-                mode = param.get("mode", mode)
-                submode = param.get("submode", submode)
+                transfer_mode = param.get("transfer_mode", transfer_mode)
+                access_mode = param.get("access_mode", access_mode)
                 celltype = param.get("celltype", celltype)
             else:
                 raise ValueError((p, param))
             if io == "input":
-                pin = InputPin(self, p, mode, submode)
-                thread_inputs[p] = mode, submode
+                pin = InputPin(self, p, transfer_mode, access_mode)
+                thread_inputs[p] = transfer_mode, access_mode
             elif io == "output":
-                pin = OutputPin(self, p, mode, submode)
+                pin = OutputPin(self, p, transfer_mode, access_mode)
                 assert self._output_name is None  # can have only one output
                 self._output_name = p
             else:
@@ -287,8 +287,8 @@ class Transformer(Worker):
             except Exception:
                 traceback.print_exc() #TODO: store it?
 
-    def _shell(self, submode):
-        assert submode is None
+    def _shell(self, access_mode):
+        assert access_mode is None
         return self.transformer.namespace, self.code, str(self)
 
     def destroy(self, from_del=False):

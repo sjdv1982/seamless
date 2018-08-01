@@ -52,7 +52,7 @@ class Reactor(Worker):
             param = reactor_params[p]
             self._reactor_params[p] = param
             pin = None
-            io, mode, submode, celltype = None, "ref", None, None
+            io, transfer_mode, access_mode, celltype = None, "ref", None, None
             must_be_defined = True
             #TODO: change "ref" to "copy" once transport protocol works
             if isinstance(param, str):
@@ -60,29 +60,29 @@ class Reactor(Worker):
             elif isinstance(param, (list, tuple)):
                 io = param[0]
                 if len(param) > 1:
-                    mode = param[1]
+                    transfer_mode = param[1]
                 if len(param) > 2:
-                    submode = param[2]
+                    access_mode = param[2]
                 if len(param) > 3:
                     celltype = param[3]
             elif isinstance(param, dict):
                 io = param["io"]
-                mode = param.get("mode", mode)
-                submode = param.get("submode", submode)
+                transfer_mode = param.get("transfer_mode", transfer_mode)
+                access_mode = param.get("access_mode", access_mode)
                 celltype = param.get("celltype", celltype)
                 must_be_defined = param.get("must_be_defined", must_be_defined)
             else:
                 raise ValueError((p, param))
             if io == "input":
-                pin = InputPin(self, p, mode, submode)
-                self.inputs[p] = (mode, submode, True)
+                pin = InputPin(self, p, transfer_mode, access_mode)
+                self.inputs[p] = (transfer_mode, access_mode, True)
             elif io == "output":
-                pin = OutputPin(self, p, mode, submode)
-                self.outputs[p] = mode, submode
+                pin = OutputPin(self, p, transfer_mode, access_mode)
+                self.outputs[p] = transfer_mode, access_mode
             elif io == "edit":
-                pin = EditPin(self, p, mode, submode)
-                self.inputs[p] = mode, submode, must_be_defined
-                self.outputs[p] = mode, submode
+                pin = EditPin(self, p, transfer_mode, access_mode)
+                self.inputs[p] = transfer_mode, access_mode, must_be_defined
+                self.outputs[p] = transfer_mode, access_mode
             else:
                 raise ValueError(io)
 
@@ -108,8 +108,8 @@ class Reactor(Worker):
         ret = "Seamless reactor: " + self._format_path()
         return ret
 
-    def _shell(self, submode):
-        assert submode is None
+    def _shell(self, access_mode):
+        assert access_mode is None
         return self.reactor.namespace, self.code_update, str(self)
 
     def output_update(self, name, value, preliminary, priority, spontaneous):

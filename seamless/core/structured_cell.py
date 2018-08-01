@@ -30,13 +30,13 @@ class Inchannel(CellLikeBase):
         self.name = name
         super().__init__()
 
-    def _check_mode(self, mode, submode):
-        if mode == "copy":
+    def _check_mode(self, transfer_mode, access_mode):
+        if transfer_mode == "copy":
             print("TODO: Inchannel, copy data")
-        if mode not in ("copy", "ref", None) or submode is not None:
-            raise NotImplementedError(mode, submode)
+        if transfer_mode not in ("copy", "ref", None) or access_mode is not None:
+            raise NotImplementedError(transfer_mode, access_mode)
 
-    def deserialize(self, value, mode, submode, *, from_pin, **kwargs):
+    def deserialize(self, value, transfer_mode, access_mode, *, from_pin, **kwargs):
         assert from_pin
         if value is None:
             self._status = self.StatusFlags.UNDEFINED
@@ -100,8 +100,8 @@ class Outchannel(CellLikeBase):
     'worker_ref' actually is a reference to structured_cell
     """
     _mount = None
-    mode = "copy"
-    submode = None
+    transfer_mode = "copy"
+    access_mode = None
     _buffered = False
     _last_value = None ###TODO: use checksums; for now, only used for buffered
     def __init__(self, structured_cell, outchannel):
@@ -113,22 +113,22 @@ class Outchannel(CellLikeBase):
         if structured_cell.buffer is not None:
             self._buffered = True
 
-    def _check_mode(self, mode, submode):
-        if mode == "copy":
+    def _check_mode(self, transfer_mode, access_mode):
+        if transfer_mode == "copy":
             print("TODO: Outchannel, copy data")
-        if mode == "ref" and submode == "pythoncode":
+        if transfer_mode == "ref" and access_mode == "pythoncode":
             return
-        if mode not in ("copy", "ref", None):
+        if transfer_mode not in ("copy", "ref", None):
             raise NotImplementedError
-        if submode not in ("silk", "json", None):
+        if access_mode not in ("silk", "json", None):
             raise NotImplementedError
 
-    def serialize(self, mode, submode):
+    def serialize(self, transfer_mode, access_mode):
         from ..silk import Silk
         structured_cell = self.structured_cell()
         assert structured_cell is not None
         data = structured_cell.monitor.get_data(self.outchannel)
-        if (mode, submode) == ("ref", "pythoncode"):
+        if (transfer_mode, access_mode) == ("ref", "pythoncode"):
             #TODO: - for now, assert celltype is pytransformer
             #      - single code (for now, it is copied from cell.py)
             import inspect, ast
@@ -152,7 +152,7 @@ class Outchannel(CellLikeBase):
             result = FakeTransformerCell(data)
             return result, None #TODO: checksum?
         data = deepcopy(data) ###TODO: rethink a bit; note that deepcopy also casts data from Silk to dict!
-        if submode == "silk":
+        if access_mode == "silk":
             #Schema-less silk; just for attribute access syntax
             data = Silk(data=data, stateful=isinstance(data, MixedBase))
         return data, None #TODO: checksum?

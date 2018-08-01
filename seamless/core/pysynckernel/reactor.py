@@ -68,15 +68,15 @@ class Reactor:
 
         self._pending_updates += 1
 
-        mode, submode, _ = self.inputs[name]
+        mode, access_mode, _ = self.inputs[name]
         if mode == "buffer":
-            #TODO: support silk, mixed, binary, cson submodes
+            #TODO: support silk, mixed, binary, cson access_modes
             raise NotImplementedError
 
-        assert mode == "ref" or submode in ("json", "text", None), (mode, submode)
-        if submode == "pythoncode":
+        assert mode == "ref" or access_mode in ("json", "text", None), (mode, access_mode)
+        if access_mode == "pythoncode":
             identifier = str(self.parent()) + ":%s" % name
-            if submode in ("buffer", "copy"):
+            if access_mode in ("buffer", "copy"):
                 code = data
             else:
                 code_obj = data
@@ -174,7 +174,7 @@ class Reactor:
         self.namespace["PINS"] = self.PINS
         for name in self.values:
             v = self.values[name]
-            mode, submode, _ = self.inputs[name]
+            mode, access_mode, _ = self.inputs[name]
             if name in self.outputs:
                 assert mode != "signal"
                 e = ReactorEdit(self, name)
@@ -191,7 +191,7 @@ class Reactor:
         for name in self.outputs:
             if name in self.values:
                 continue
-            mode, submode = self.outputs[name]
+            mode, access_mode = self.outputs[name]
             if mode == "signal":
                 e = ReactorOutputSignal(self, name)
             else:
@@ -229,7 +229,7 @@ class Reactor:
             #pin = self.namespace[name]
             pin = getattr(self.PINS, name)
             if name in updated:
-                mode, submode, _ = self.inputs[name]
+                mode, access_mode, _ = self.inputs[name]
                 value = self.values[name]
                 if mode != "signal":
                     pin._value = value

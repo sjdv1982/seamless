@@ -8,8 +8,8 @@ They are the same as at mid-level
 More fancy stuff (such as services and seamless-to-seamless communication
  over the network) has to be organized at the high level
 """
-mode = ["sync", "async"]
-submode = {
+worker_mode = ["sync", "async"]
+worker_submode = {
     "sync": ["inline"],
     "async": ["thread", "subprocess"]
 }
@@ -116,23 +116,23 @@ class Worker(SeamlessBase):
     def full_destroy(self, from_del=False):
         raise NotImplementedError
 
-from .protocol import modes as cell_modes, submodes as cell_submodes, celltypes
+from .protocol import transfer_modes, access_modes, celltypes
 
 class PinBase(SeamlessBase):
-    submode = None
-    def __init__(self, worker, name, mode, submode=None, celltype=None):
+    access_mode = None
+    def __init__(self, worker, name, transfer_mode, access_mode=None, celltype=None):
         self.worker_ref = weakref.ref(worker)
         super().__init__()
-        assert mode in cell_modes, (mode, cell_modes)
-        if submode is not None:
-            assert submode in cell_submodes, (submode, cell_submodes)
+        assert transfer_mode in transfer_modes, (transfer_mode, transfer_modes)
+        if access_mode is not None:
+            assert access_mode in access_modes, (access_mode, access_modes)
         self.name = name
-        self.mode = mode
+        self.transfer_mode = transfer_mode
         if celltype is not None:
             assert celltype in celltypes, (celltype, celltypes)
         self.celltype = celltype
-        if submode is not None:
-            self.submode = submode
+        if access_mode is not None:
+            self.access_mode = access_mode
 
     @property
     def path(self):

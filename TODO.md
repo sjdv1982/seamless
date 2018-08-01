@@ -5,13 +5,18 @@ A proof-of-principle of the middle/high level is now there.
 Things to do:
 
 Part 1 (low-level):
-   - cson cells; also structured_cell in plain mode must be able to accommodate
-      a cson's checksum is the checksum of the JSON representation; if you don't want that, connect a text pin/cell downstream of it (see only_text below)       
-   - Tie up loose ends of transfer protocol (copy, ref etc.). Take into account only_text changes:
-         adding comments / breaking up lines to a Python cell will affect a syntax highlighter, but not a transformer, it is only text
-         (a refactor that changes variable names would still trigger transformer re-execution, but this is probably the correct thing to do anyway)
-         The same for cson cells
-         alias mode?
+   - Redesign the transfer protocol (copy, ref etc.).
+     - Refactor celltype to content_type
+     - Finish the short documentation of the transfer protocol
+       Content type will never be MIME types, this must be in some high-level annotation/schema field.
+     - Disallow None in \_supported_modes. Instead, have native access modes and native content types, in order.
+       Also remove "ref" and "buffer" access modes, if redundant with "copy"
+     - When negotiating the transfer protocol/making adapters:
+       - Cycle through the native access modes and native content types; one of them must succeed.
+         In case of cell-cell, loop over source; within that, loop over target
+       - If transfer mode is "ref" or "buffer" and it doesn't work, try "copy".
+     - Expand adapters, and expand negotiation to cell-pin and pin-cell.
+     - Expand and test the CSON example, especially test only_text; test only_text also for Python cells
    - Add the concept of from_pin (from_channel) to structured cells, in particular the form/data/storage hooks. Now,
    they trigger warnings that they are overruling cells "controlled by Seamless context"
    (see tests/highlevel/simple.py). This is distinct from sovereignty, which involves non-pin manipulation!

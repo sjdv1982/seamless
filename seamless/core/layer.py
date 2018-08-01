@@ -110,13 +110,13 @@ class LayeredConnectionPoint:
 
 _lc_id = -1
 class LayeredConnection:
-    def __init__(self, source, target, alias_mode=None):
+    def __init__(self, source, target, transfer_mode=None):
         global _lc_id
         assert isinstance(source, LayeredConnectionPoint)
         assert isinstance(target, LayeredConnectionPoint)
         self.source = source
         self.target = target
-        self.alias_mode = alias_mode
+        self.transfer_mode = transfer_mode
         macro = curr_macro()
         if macro is None:
             macro = source.path.macro()._root()
@@ -140,7 +140,7 @@ class LayeredConnection:
         source, target = self.source.obj(), self.target.obj()
         #TODO: negotiate cell-to-cell serialization protocol
 
-        connection = CellToCellConnection(self.id, source, target, self.alias_mode)
+        connection = CellToCellConnection(self.id, source, target, self.transfer_mode)
 
         mgr = target._get_manager()
         mgr.cell_from_cell[target] = connection
@@ -158,7 +158,7 @@ class LayeredConnection:
 
     def _activate_cell_pin(self):
         cell, target = self.source.obj(), self.target.obj()
-        cell._check_mode(target.mode, target.submode)
+        cell._check_mode(target.transfer_mode, target.access_mode)
         if isinstance(target, EditPinBase) and target.last_value is not None:
             if cell._status != Cell.StatusFlags.OK:
                 pin = target
@@ -185,7 +185,7 @@ class LayeredConnection:
 
     def _activate_pin_cell(self):
         pin, target = self.source.obj(), self.target.obj()
-        target._check_mode(pin.mode, pin.submode)
+        target._check_mode(pin.transfer_mode, pin.access_mode)
 
         connection = PinToCellConnection(self.id, pin, target)
         mgr = pin._get_manager()
@@ -462,23 +462,22 @@ def connect_pin(pin, target):
     lc = LayeredConnection(lc_source, lc_target)
     return _add_to_layer(lc)
 
-def connect_cell(cell, target, alias_mode):
+def connect_cell(cell, target, transfer_mode):
     assert cell is not None
-    assert alias_mode is not None
     cell0 = cell
     if isinstance(cell, Link):
         cell = cell.get_linked()
     path = Path(cell0, force_relative=True)
     lc_source = LayeredConnectionPoint("cell", path, cell, is_input=True)
     lc_target = _lc_target(target)
-    lc = LayeredConnection(lc_source, lc_target, alias_mode)
+    lc = LayeredConnection(lc_source, lc_target, transfer_mode)
     return _add_to_layer(lc)
 
 def connect_path(source, target):
     assert isinstance(source, Path)
     lc_source = LayeredConnectionPoint("path", source, None, is_input=True)
     lc_target = _lc_target(target)
-    lc = LayeredConnection(lc_source, lc_target, "copy")
+    lc = LayeredConnection(lc_source, lc_target, None)
     return _add_to_layer(lc)
 
 def check_async_macro_contexts(ctx, macro):

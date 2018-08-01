@@ -78,7 +78,7 @@ class Manager:
         self.cell_to_pins = {} #cell => inputpins
         self.cell_to_cells = {} #cell => CellToCellConnection list
         self.cell_from_pin = {} #cell => outputpin
-        self.cell_from_cell = {} #alias target cell => (index, source cell, alias mode)
+        self.cell_from_cell = {} #alias target cell => (index, source cell, transfer mode)
         self.pin_from_cell = {} #inputpin => (index, cell)
         self.pin_to_cells = {} #outputpin => (index, cell) list
         self._ids = 0
@@ -172,19 +172,19 @@ class Manager:
         self._ids += 1
         return self._ids
 
-    def _connect_cell_to_cell(self, cell, target, alias_mode):
+    def _connect_cell_to_cell(self, cell, target, transfer_mode):
         target0 = target
         if isinstance(target, Link):
             target = target.get_linked()
         if not target.authoritative:
             raise Exception("%s: is non-authoritative (already dependent on another worker/cell)" % target)
         if target0._is_sealed() or cell._is_sealed():
-            concrete, con_id = layer.connect_cell(cell, target0, alias_mode)
+            concrete, con_id = layer.connect_cell(cell, target0, transfer_mode)
         else:
             concrete = True
             con_id = self.get_id()
 
-        connection = CellToCellConnection(con_id, cell, target, alias_mode)
+        connection = CellToCellConnection(con_id, cell, target, transfer_mode)
         if cell not in self.cell_to_cells:
             self.cell_to_cells[cell] = []
         self.cell_to_cells[cell].append(connection)
@@ -198,7 +198,7 @@ class Manager:
                 connection.fire(only_text=False)
 
     @main_thread_buffered
-    def connect_cell(self, cell, target, alias_mode=None):
+    def connect_cell(self, cell, target, transfer_mode=None):
         if self.destroyed:
             return
         assert cell._root() is target._root()
@@ -212,10 +212,10 @@ class Manager:
 
         if isinstance(target, CellLikeBase):
             assert not isinstance(target, Outchannel)
-            return self._connect_cell_to_cell(cell, target0, alias_mode)
+            return self._connect_cell_to_cell(cell, target0, transfer_mode)
 
         if cell._is_sealed() or target._is_sealed():
-            concrete, con_id = layer.connect_cell(cell, target0, alias_mode)
+            concrete, con_id = layer.connect_cell(cell, target0, transfer_mode)
         else:
             concrete = True
             con_id = self.get_id()

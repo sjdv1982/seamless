@@ -86,8 +86,8 @@ class Transformer(Worker):
             # If code object is updated, recompile
             if "code" in updated:
                 identifier = str(self.parent())
-                _, submode = self.inputs["code"]
-                if submode in ("buffer", "copy"):
+                _, access_mode = self.inputs["code"]
+                if access_mode in ("buffer", "copy"):
                     code = self.values["code"]
                 else:
                     # Code data object
