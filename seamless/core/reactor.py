@@ -52,7 +52,7 @@ class Reactor(Worker):
             param = reactor_params[p]
             self._reactor_params[p] = param
             pin = None
-            io, transfer_mode, access_mode, celltype = None, "ref", None, None
+            io, transfer_mode, access_mode, content_type = None, "ref", None, None
             must_be_defined = True
             #TODO: change "ref" to "copy" once transport protocol works
             if isinstance(param, str):
@@ -64,12 +64,12 @@ class Reactor(Worker):
                 if len(param) > 2:
                     access_mode = param[2]
                 if len(param) > 3:
-                    celltype = param[3]
+                    content_type = param[3]
             elif isinstance(param, dict):
                 io = param["io"]
                 transfer_mode = param.get("transfer_mode", transfer_mode)
                 access_mode = param.get("access_mode", access_mode)
-                celltype = param.get("celltype", celltype)
+                content_type = param.get("content_type", content_type)
                 must_be_defined = param.get("must_be_defined", must_be_defined)
             else:
                 raise ValueError((p, param))

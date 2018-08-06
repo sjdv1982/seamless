@@ -5,17 +5,15 @@ A proof-of-principle of the middle/high level is now there.
 Things to do:
 
 Part 1 (low-level):
-   - Redesign the transfer protocol (copy, ref etc.).
-     - Refactor celltype to content_type
-     - Finish the short documentation of the transfer protocol
-       Content type will never be MIME types, this must be in some high-level annotation/schema field.
-     - Disallow None in \_supported_modes. Instead, have native access modes and native content types, in order.
-       Also remove "ref" and "buffer" access modes, if redundant with "copy"
+   - Redesign the transfer protocol (copy, ref etc.).       
      - When negotiating the transfer protocol/making adapters:
-       - Cycle through the native access modes and native content types; one of them must succeed.
+       - Loop over the cell supported modes; one of them must succeed.
          In case of cell-cell, loop over source; within that, loop over target
        - If transfer mode is "ref" or "buffer" and it doesn't work, try "copy".
+       - An access modes like "silk" is never directly supported, it must be added via adapter
      - Expand adapters, and expand negotiation to cell-pin and pin-cell.
+     - Remove (from deserialize and serialize) support for modes that are no longer declared in supported_modes
+       (e.g. Silk support)
      - Expand and test the CSON example, especially test only_text; test only_text also for Python cells
    - Add the concept of from_pin (from_channel) to structured cells, in particular the form/data/storage hooks. Now,
    they trigger warnings that they are overruling cells "controlled by Seamless context"
@@ -34,6 +32,9 @@ Part 2 (low-level / cleanup):
    - Signals
    - Observers
    - Add back in int/float/str/bool cells because they are so convenient.
+     Their content type will be int/float/text/bool.
+     Adapters will convert among them (e.g. int=>float) and between them and JSON/mixed/text.
+     Supported access modes are JSON and text. Adapters will convert to Silk.
    - Have a look if Qt mainloop hook can be eliminated.
    - Start with lib porting. Port Qt editors (including HTML), but no more seamless.qt
      Port all macros, but store the code in plain Python modules in lib
@@ -41,6 +42,8 @@ Part 2 (low-level / cleanup):
    - Port OpenGL, with proof of principle
    - Cleanup of the code base, remove vestiges of 0.1 (except lib and tests).
    - Cleanup of the TODO and the documentation (put in limbo)
+
+Merge into master? With auto_macro_mode, most tests should work now? Other ones can be ported...
 
 Part 3 (low-level):   
    - Dynamic connection layers: a special macro that has one or more contexts as input (among other inputs), which must be (grand)children
@@ -89,7 +92,7 @@ the mid-level element is dynamically read from the sovereign cell (no double rep
   - reactors
   - macros (by definition low-level) with language (python) and api (pyseamless) fields.
   - signals
-  - add/mult operators
+  - add operators (but only those)
   - no observers; not sure about mount.
 
 Part 5: applying the mid-level. Some of this can be delayed until post-merge.
@@ -104,7 +107,6 @@ Part 5: applying the mid-level. Some of this can be delayed until post-merge.
 - Preliminary outputpins (in transformers [as secondary output] and in reactors)
 - Preliminary inputpins (pins that accept preliminary values). Right now, all inputpins are preliminary!
 - Equilibrium contexts (see below)
-- apply to slash-0 (see mount.py:filehash)
 - finalize the design of mid-level graph syntax.
   - Include old 0.1 resources, or make this high-level only?
   - Save high-level syntax as mid-level only, or separately?
@@ -149,17 +151,26 @@ Post-merge, post-release (0.3):
 - Replace the use of killable threads with processes... gives a problem with Orca example (fixed now ?), docking example (?), see Github issue
 - Bidirectional cell web editing via Websocketserver
   (also HMTL gen from schema)
+- REST API (alternative for Websocketserver)
+- Web service JSON API (to provide all parameters in one go)
+- Old-school CGI API (alternative for web service JSON API)
+
+0.4:
+- Re-integrate slash0, apply cache cells to it (see mount.py:filehash)
+
+0.5
 - C/Fortran/CUDA/OpenCL integration (BIG).
   - Requires also a Silk extension (GPU storage, fixed-binary, see silk.md)
   - IPython (.ipy)/Cython magic is not (or barely) necessary, since IPython is natively supported by workers.
-- REST API (alternative for Websocketserver)
+- Address GLstore memory leak: stores may not be freed (is this still so post-0.1 ??)
+
+0.6
 - Sync mechanisms / collaborative protocol
  ("virtual context" that upon creation syncs topology from another context, and then
   bidirectionally syncs the cell values; REST or Websocketserver under the hood)
 
-Post-0.3:
+Post-0.6:
 - Address shell() memory leak: IPython references may hold onto large amounts of data
-- Address GLstore memory leak: stores may not be freed (is this still so post-0.1 ??)
 - Expand and document seamless shell language (slash)
 - Special high-level authority syntax for library contexts (fork)
 

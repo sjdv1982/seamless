@@ -36,7 +36,7 @@ with macro_mode_on():
         outchannels = [()]
     )
 
-    ctx.code = cell("pytransformer").set("z = x * y")
+    ctx.code = cell("transformer").set("z = x * y")
 
     ctx.mixer1 = transformer({
         "x": "input",

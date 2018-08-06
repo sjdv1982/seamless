@@ -116,11 +116,11 @@ class Worker(SeamlessBase):
     def full_destroy(self, from_del=False):
         raise NotImplementedError
 
-from .protocol import transfer_modes, access_modes, celltypes
+from .protocol import transfer_modes, access_modes, content_types
 
 class PinBase(SeamlessBase):
     access_mode = None
-    def __init__(self, worker, name, transfer_mode, access_mode=None, celltype=None):
+    def __init__(self, worker, name, transfer_mode, access_mode=None, content_type=None):
         self.worker_ref = weakref.ref(worker)
         super().__init__()
         assert transfer_mode in transfer_modes, (transfer_mode, transfer_modes)
@@ -128,9 +128,9 @@ class PinBase(SeamlessBase):
             assert access_mode in access_modes, (access_mode, access_modes)
         self.name = name
         self.transfer_mode = transfer_mode
-        if celltype is not None:
-            assert celltype in celltypes, (celltype, celltypes)
-        self.celltype = celltype
+        if content_type is not None:
+            assert content_type in content_types, (content_type, content_types)
+        self.content_type = content_type
         if access_mode is not None:
             self.access_mode = access_mode
 
@@ -181,7 +181,7 @@ class InputPin(InputPinBase):
         manager = self._get_manager()
         my_cell = manager.pin_from_cell.get(self)
         if celltype is None:
-            celltype = self.celltype
+            celltype = self.content_type # for now, a 1:1 correspondence between content type and cell type
         if my_cell is None:
             worker = self.worker_ref()
             if worker is None:
@@ -253,7 +253,7 @@ class OutputPin(OutputPinBase):
         manager = self._get_manager()
         my_cells = manager.pin_to_cells.get(self, [])
         if celltype is None:
-            celltype = self.celltype
+            celltype = self.content_type # for now, a 1:1 correspondence between content type and cell type
         l = len(my_cells)
         if l == 0:
             worker = self.worker_ref()
@@ -308,7 +308,7 @@ class EditPin(EditPinBase):
         manager = self._get_manager()
         my_cells = manager.editpin_to_cells(self)
         if celltype is None:
-            celltype = self.celltype
+            celltype = self.content_type # for now, a 1:1 correspondence between content type and cell type
         l = len(my_cells)
         if l == 0:
             worker = self.worker_ref()

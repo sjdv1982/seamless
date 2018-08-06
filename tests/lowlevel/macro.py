@@ -1,7 +1,7 @@
 import seamless
 #seamless.core.cache.use_caching = False ###
 from seamless.core import macro_mode_on
-from seamless.core import context, cell, transformer, pytransformercell, macro
+from seamless.core import context, cell, transformer, pymacrocell, macro
 
 with macro_mode_on():
     ctx = context(toplevel=True)
@@ -12,7 +12,7 @@ with macro_mode_on():
     })
 
     ctx.param.connect(ctx.macro.param)
-    ctx.macro_code = pytransformercell().set("""
+    ctx.macro_code = pymacrocell().set("""
 ctx.sub = context(context=ctx,name="sub")
 ctx.a = cell("json").set(1000 + param)
 ctx.b = cell("json").set(2000 + param)
@@ -24,7 +24,7 @@ ctx.tf = transformer({
 })
 ctx.a.connect(ctx.tf.a)
 ctx.b.connect(ctx.tf.b)
-ctx.code = cell("pytransformer").set("c = a + b")
+ctx.code = cell("transformer").set("c = a + b")
 ctx.code.connect(ctx.tf.code)
 ctx.tf.c.connect(ctx.result)
 assert param != 999   # on purpose

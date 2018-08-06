@@ -16,7 +16,7 @@ class Macro(Worker):
         super().__init__()
         self.gen_context = None
         self.macro_context_name = None
-        self.code = InputPin(self, "code", "ref", "pythoncode", "pytransformer")
+        self.code = InputPin(self, "code", "ref", "pythoncode", "transformer")
         self._pins = {"code":self.code}
         self._message_id = 0
         self._macro_params = OrderedDict()
@@ -27,7 +27,7 @@ class Macro(Worker):
         for p in sorted(macro_params.keys()):
             param = macro_params[p]
             self._macro_params[p] = param
-            transfer_mode, access_mode, celltype = "copy", None, None
+            transfer_mode, access_mode, content_type = "copy", None, None
             if isinstance(param, str):
                 transfer_mode = param
             elif isinstance(param, (list, tuple)):
@@ -35,12 +35,12 @@ class Macro(Worker):
                 if len(param) > 1:
                     access_mode = param[1]
                 if len(param) > 2:
-                    celltype = param[2]
+                    content_type = param[2]
             elif isinstance(param, dict):
                 io = param["io"]
                 transfer_mode = param.get("transfer_mode", transfer_mode)
                 access_mode = param.get("access_mode", access_mode)
-                celltype = param.get("celltype", celltype)
+                content_type = param.get("content_type", content_type)
             else:
                 raise ValueError((p, param))
             pin = InputPin(self, p, transfer_mode, access_mode)
@@ -93,6 +93,8 @@ class Macro(Worker):
                     self.namespace.update(self._values)
                     try:
                         exec(self.code_object, self.namespace)
+                        if self.namespace["ctx"] is not ctx:
+                            raise Exception("Macro must return ctx")
                     except Exception as e:
                         self.exception = traceback.format_exc()
                         raise ExecError from None
@@ -256,8 +258,12 @@ class Macro(Worker):
 def macro(params):
     return Macro(params)
 
-from . import cell, transformer, pytransformercell, link, layer, path
+from . import cell, transformer, pytransformercell, link, layer, path, \
+ reactor, pyreactorcell, pymacrocell, jsoncell, csoncell, mixedcell, \
+ arraycell, mixedcell, signal
 from .context import context
-names = "cell", "transformer", "context", "pytransformercell", "link", "path"
+names = ("cell", "transformer", "context", "pytransformercell", "link", "layer",
+ "path", "reactor", "pyreactorcell", "pymacrocell", "jsoncell", "csoncell",
+ "mixedcell", "arraycell", "signal")
 names = names + ("macro",)
 Macro.default_namespace = {n:globals()[n] for n in names}

@@ -129,7 +129,7 @@ class Outchannel(CellLikeBase):
         assert structured_cell is not None
         data = structured_cell.monitor.get_data(self.outchannel)
         if (transfer_mode, access_mode) == ("ref", "pythoncode"):
-            #TODO: - for now, assert celltype is pytransformer
+            #TODO: - for now, assert content_type is pytransformer
             #      - single code (for now, it is copied from cell.py)
             import inspect, ast
             from .cached_compile import cached_compile

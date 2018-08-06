@@ -123,7 +123,7 @@ def translate_py_transformer(node, root, namespace, inchannels, outchannels):
         all_pins[pinname] = p
     all_pins[result_name] = "output"
     ctx.tf = transformer(all_pins, with_schema=with_schema)
-    ctx.code = cell("pytransformer")
+    ctx.code = cell("transformer")
     ctx.code.connect(ctx.tf.code)
     ctx.code.set(node["code"])
     namespace[node["path"] + ("code",), True] = ctx.code
@@ -193,7 +193,7 @@ def translate_cell(node, root, namespace, inchannels, outchannels):
         if ct == "code":
             if node["language"] == "python":
                 if node["transformer"]:
-                    child = cell("pytransformer")
+                    child = cell("transformer")
                 else:
                     child = cell("python")
             else:

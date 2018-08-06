@@ -1,7 +1,7 @@
 import seamless
-seamless.core.cache.use_caching = False ###
+#seamless.core.cache.use_caching = False ###
 from seamless.core import macro_mode_on
-from seamless.core import context, cell, transformer, pytransformercell, macro
+from seamless.core import context, cell, transformer, pymacrocell, macro
 
 with macro_mode_on():
     ctx = context(toplevel=True)
@@ -13,12 +13,12 @@ with macro_mode_on():
 
     ctx.param.connect(ctx.macro.param)
     ctx.inp = cell("text").set("INPUT")
-    ctx.macro_code = pytransformercell().set("""
+    ctx.macro_code = pymacrocell().set("""
 print("Execute macro")
 ctx.submacro = macro({
     "inp": "copy"
 })
-ctx.submacro_code = pytransformercell().set('''
+ctx.submacro_code = pymacrocell().set('''
 print("Execute submacro")
 ctx.inp = cell("text").set(inp + "!!!")
 ''')

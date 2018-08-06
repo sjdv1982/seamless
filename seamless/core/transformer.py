@@ -21,7 +21,7 @@ class Transformer(Worker):
 
     def __init__(self, transformer_params, with_schema=False):
         self.state = {}
-        self.code = InputPin(self, "code", "ref", "pythoncode", "pytransformer")
+        self.code = InputPin(self, "code", "ref", "pythoncode", "transformer")
         #TODO: access_mode becomes "copy" when we switch from threads to processes
         thread_inputs = {"code": (self.code.transfer_mode, self.code.access_mode)}
         self._io_attrs = ["code"]
@@ -44,7 +44,7 @@ class Transformer(Worker):
             param = transformer_params[p]
             self._transformer_params[p] = param
             pin = None
-            io, transfer_mode, access_mode, celltype = None, "ref", None, None
+            io, transfer_mode, access_mode, content_type = None, "ref", None, None
             #TODO: change "ref" to "copy" once transport protocol works
             if isinstance(param, str):
                 io = param
@@ -55,12 +55,12 @@ class Transformer(Worker):
                 if len(param) > 2:
                     access_mode = param[2]
                 if len(param) > 3:
-                    celltype = param[3]
+                    content_type = param[3]
             elif isinstance(param, dict):
                 io = param["io"]
                 transfer_mode = param.get("transfer_mode", transfer_mode)
                 access_mode = param.get("access_mode", access_mode)
-                celltype = param.get("celltype", celltype)
+                content_type = param.get("content_type", content_type)
             else:
                 raise ValueError((p, param))
             if io == "input":

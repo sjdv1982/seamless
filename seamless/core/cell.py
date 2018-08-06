@@ -9,7 +9,7 @@ from ast import PyCF_ONLY_AST, FunctionDef
 import inspect
 
 from .macro_mode import with_macro_mode
-from .protocol import transfer_modes, access_modes, celltypes
+from .protocol import transfer_modes, access_modes, content_types
 from .. import Wrapper
 from . import SeamlessBase
 from ..mixed import io as mixed_io
@@ -342,8 +342,8 @@ Use ``Cell.value`` to get its value.
 Use ``Cell.status()`` to get its status.
 """
     _supported_modes = (
-        ("ref", None, None),
-        ("copy", None, None),
+        ("ref", "object", "object"),
+        ("copy", "object", "object"),
     )
 
     def _checksum(self, value, *, buffer=False, may_fail=False):
@@ -387,11 +387,8 @@ class ArrayCell(Cell):
 
     _supported_modes = []
     for transfer_mode in "buffer", "copy", "ref":
-        for access_mode in "silk", None:
-            for celltype in "binary", None:
-                _supported_modes.append((transfer_mode, access_mode, celltype))
-    _supported_modes = tuple(_supported_modes)
-    del transfer_mode, access_mode, celltype
+        _supported_modes.append((transfer_mode, "object", "binary"))
+    del transfer_mode
 
     def _checksum(self, value, *, buffer=False, may_fail=False):
         if buffer:
@@ -447,11 +444,9 @@ class MixedCell(Cell):
     _mount_kwargs = {"binary": True}
     _supported_modes = []
     for transfer_mode in "buffer", "copy", "ref":
-        for access_mode in "silk", None:
-            for celltype in "mixed", None:
-                _supported_modes.append((transfer_mode, access_mode, celltype))
+        _supported_modes.append((transfer_mode, "object", "mixed"))
+    del transfer_mode
     _supported_modes = tuple(_supported_modes)
-    del transfer_mode, access_mode, celltype
 
     def __init__(self, storage_cell, form_cell):
         super().__init__()
@@ -528,12 +523,10 @@ class MixedCell(Cell):
 class TextCell(Cell):
     _mount_kwargs = {"encoding": "utf-8", "binary": False}
     _supported_modes = []
-    for transfer_mode in "buffer", "copy", "ref":
-        for access_mode in "text", None:
-            for celltype in "text", None:
-                _supported_modes.append((transfer_mode, access_mode, celltype))
+    for transfer_mode in "buffer", "copy":
+        _supported_modes.append((transfer_mode, "text", "text"))
     _supported_modes = tuple(_supported_modes)
-    del transfer_mode, access_mode, celltype
+    del transfer_mode
 
     def _serialize(self, transfer_mode, access_mode=None):
         if transfer_mode in ("buffer", "copy"):
@@ -559,15 +552,14 @@ class TextCell(Cell):
 
 
 class PythonCell(Cell):
-    """Python code object, used for reactors and macros"""
+    """Generic Python code object"""
     _mount_kwargs = {"encoding": "utf-8", "binary": False}
     _supported_modes = []
-    for transfer_mode in "buffer", "copy", "ref":
-        for access_mode in "text", "pythoncode", None:
-            for celltype in "python", None:
-                _supported_modes.append((transfer_mode, access_mode, celltype))
+    for transfer_mode in "buffer", "copy":
+        _supported_modes.append((transfer_mode, "text", "python"))
+    _supported_modes.append(("ref", "pythoncode", "python"))
     _supported_modes = tuple(_supported_modes)
-    del transfer_mode, access_mode, celltype
+    del transfer_mode
 
     _naming_pattern = "pythoncell"
     _has_text_checksum = True
@@ -636,33 +628,61 @@ class PythonCell(Cell):
         ret = "Seamless Python cell: " + self._format_path()
         return ret
 
+class PyReactorCell(PythonCell):
+    """Python code object used for reactors
+    a "PINS" object will be inserted into its namespace"""
+
+    _codetype = "reactor"
+    _supported_modes = []
+    for transfer_mode in "buffer", "copy":
+        _supported_modes.append((transfer_mode, "text", _codetype))
+    _supported_modes.append(("ref", "pythoncode", _codetype))
+    _supported_modes = tuple(_supported_modes)
+    del transfer_mode
+
 class PyTransformerCell(PythonCell):
-    """Python code object used for transformers or macros
+    """Python code object used for transformers
     Each input will be an argument"""
 
+    _codetype = "transformer"
     _supported_modes = []
-    for transfer_mode in "buffer", "copy", "ref":
-        for access_mode in "text", "pythoncode", None:
-            for celltype in "python", "pytransformer", None:
-                _supported_modes.append((transfer_mode, access_mode, celltype))
+    for transfer_mode in "buffer", "copy":
+        _supported_modes.append((transfer_mode, "text", _codetype))
+    _supported_modes.append(("ref", "pythoncode", _codetype))
     _supported_modes = tuple(_supported_modes)
-    del transfer_mode, access_mode, celltype
+    del transfer_mode
 
     def _validate(self, value):
         if inspect.isfunction(value):
             code = inspect.getsource(value)
             code = strip_source(code)
             value = code
-        ast = cached_compile(value, "transformer", "exec", PyCF_ONLY_AST)
+        ast = cached_compile(value, self._codetype, "exec", PyCF_ONLY_AST)
         is_function = (len(ast.body) == 1 and
                        isinstance(ast.body[0], FunctionDef))
 
         if is_function:
             self.func_name = ast.body[0].name
         else:
-            self.func_name = "transform"
+            self.func_name = self._codetype
 
         self.is_function = is_function
+
+
+class PyMacroCell(PyTransformerCell):
+    """Python code object used for macros
+    The context "ctx" will be the first argument.
+    Each input will be an argument
+    If the macro is a function, ctx must be returned
+    """
+
+    _codetype = "transformer"
+    _supported_modes = []
+    for transfer_mode in "buffer", "copy":
+        _supported_modes.append((transfer_mode, "text", _codetype))
+    _supported_modes.append(("ref", "pythoncode", _codetype))
+    _supported_modes = tuple(_supported_modes)
+    del transfer_mode
 
 class JsonCell(Cell):
     """A cell in JSON format (monolithic)"""
@@ -670,13 +690,12 @@ class JsonCell(Cell):
 
     _supported_modes = []
     for transfer_mode in "buffer", "copy", "ref":
-        for access_mode in "json", "silk", "text", None:
-            if access_mode == "silk" and transfer_mode == "buffer":
+        for access_mode in "json", "text":
+            if access_mode == "text" and transfer_mode == "ref":
                 continue
-            for celltype in "json", None:
-                _supported_modes.append((transfer_mode, access_mode, celltype))
+            _supported_modes.append((transfer_mode, access_mode, "json"))
     _supported_modes = tuple(_supported_modes)
-    del transfer_mode, access_mode, celltype
+    del transfer_mode, access_mode
 
     _naming_pattern = "jsoncell"
 
@@ -742,19 +761,12 @@ class CsonCell(JsonCell):
     to JSON.
     """
     _mount_kwargs = {"encoding": "utf-8", "binary": False}
-
     _supported_modes = []
-    for transfer_mode in "buffer", "copy", "ref":
-        if transfer_mode != "buffer":
-            _supported_modes.append((transfer_mode, "silk", "cson"))
-            _supported_modes.append((transfer_mode, "silk", None))
-        _supported_modes.append((transfer_mode, "json", "cson"))
-        _supported_modes.append((transfer_mode, "text", None))
-        _supported_modes.append((transfer_mode, "text", "cson"))
-        _supported_modes.append((transfer_mode, None, None))
-        _supported_modes.append((transfer_mode, None, "cson"))
+    for transfer_mode in "buffer", "copy":
+        for access_mode in "json", "text":
+            _supported_modes.append((transfer_mode, access_mode, "cson"))
     _supported_modes = tuple(_supported_modes)
-    del transfer_mode
+    del transfer_mode, access_mode
 
     _naming_pattern = "csoncell"
     _has_text_checksum = True
@@ -843,8 +855,12 @@ def cell(celltype=None, **kwargs):
         return TextCell()
     elif celltype == "python":
         return PythonCell(**kwargs)
-    elif celltype == "pytransformer":
+    elif celltype == "transformer":
         return PyTransformerCell(**kwargs)
+    elif celltype == "reactor":
+        return PyReactorCell(**kwargs)
+    elif celltype == "macro":
+        return PyMacroCell(**kwargs)
     elif celltype == "json":
         return JsonCell(**kwargs)
     elif celltype == "cson":
@@ -864,6 +880,12 @@ def pythoncell():
 
 def pytransformercell():
     return PyTransformerCell()
+
+def pyreactorcell():
+    return PyReactorCell()
+
+def pymacrocell():
+    return PyMacroCell()
 
 def jsoncell():
     return JsonCell()
@@ -885,6 +907,9 @@ extensions = {
     JsonCell: ".json",
     CsonCell: ".cson",
     PythonCell: ".py",
+    PyTransformerCell: ".py",
+    PyReactorCell: ".py",
+    PyMacroCell: ".py",
     MixedCell: ".mixed",
     ArrayCell: ".npy",
 }
