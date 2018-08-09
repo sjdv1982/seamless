@@ -5,9 +5,6 @@ A proof-of-principle of the middle/high level is now there.
 Things to do:
 
 Part 1 (low-level):
-   - Add the concept of from_pin (from_channel) to structured cells, in particular the form/data/storage hooks. Now,
-   they trigger warnings that they are overruling cells "controlled by Seamless context"
-   (see tests/highlevel/simple.py). This is distinct from sovereignty, which involves non-pin manipulation!
    - "Active" switch of managers, workers, connections; may also be exported, and may be activated in a connection layer.
       UPDATE: done for managers. Extend to workers (transformers and reactors) as well. YAGNI for connections.
    - PyModule cells and code injection (PyModule cell becomes a Python module).
