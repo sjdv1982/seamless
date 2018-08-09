@@ -16,6 +16,7 @@ A connection declaration may have up to four parts
   - "signal": the connection is a signal, no data whatsoever is transferred
 - access mode: this declares in which form the data will be accessible to the recipient
   - object: generic Python object (only with "object", "binary" or "mixed" content type)
+    Also the format of set_cell
   - pythoncode: a string that can be exec'ed by Python
   - json: the result of json.load, i.e. nested dicts, lists and basic types (str/float/int/bool).
   - silk: a Silk object
@@ -44,38 +45,83 @@ content_types = ("object", "text",
   "python", "transformer", "reactor", "macro",
   "json", "cson", "mixed", "binary"
 )
+text_types = ("text", "python", "transformer", "reactor", "macro", "cson")
 
 
 def set_cell(cell, value, *,
   default, from_buffer, force
 ):
     transfer_mode = "buffer" if from_buffer else "ref"
-    different, text_different = cell.deserialize(value, transfer_mode, None,
+    different, text_different = cell.deserialize(value, transfer_mode,
+      "object", None,
       from_pin=False, default=default,force=force
     )
     return different, text_different
 
 def adapt_cson_json(source):
+    assert isinstance(source, str), source
     return cson2json(source)
 
-def check_adapt_cson_json(source_mode, target_mode):
-    if source_mode[1] != target_mode[1]:
-        return False
-    if source_mode[1] not in (None, "text"):
-        return False
-    if target_mode[1] not in (None, "json"):
-        return False
-    return source_mode[2] == "cson" and target_mode[2] == "json"
+def adapt_json_silk(source):
+    from ...silk import Silk
+    return Silk(data=source)
 
 adapters = OrderedDict()
-adapters[check_adapt_cson_json] = adapt_cson_json
+adapters[("copy", "text", "cson"), ("copy", "json", "cson")] = adapt_cson_json
+adapters[("copy", "text", "cson"), ("copy", "json", "json")] = adapt_cson_json
+for content_type1 in text_types:
+    for content_type2 in text_types:
+        if content_type1 == content_type2:
+            continue
+        adapters[("copy", "text", content_type1), ("copy", "text", content_type2)] = True
+adapters[("ref", "json", "json"), ("ref", "silk", "json")] = adapt_json_silk
+adapters[("copy", "json", "json"), ("copy", "silk", "json")] = adapt_json_silk
+adapters[("copy", "json", "cson"), ("copy", "silk", "cson")] = adapt_json_silk
 
-def select_adapter(source, target, source_modes, target_modes):
-    for checkfunc, adapter in adapters.items():
-        for source_mode in source_modes:
+def select_adapter(transfer_mode, source, target, source_modes, target_modes):
+    if transfer_mode == "ref":
+        transfer_modes = ["ref", "copy"]
+    else:
+        transfer_modes = [transfer_mode]
+    for trans_mode in transfer_modes:
+        for source_mode0 in source_modes:
+            if source_mode0[0] != trans_mode:
+                continue
             for target_mode in target_modes:
-                if checkfunc(source_mode, target_mode):
-                    return adapter
-    raise Exception("Could not find adapter between %s and %s" % (source, target))
+                source_mode = source_mode0
+                if target_mode[0] != trans_mode:
+                    continue
+                if source_mode[1] is None:
+                    source_mode = (trans_mode, target_mode[1], source_mode[2])
+                if source_mode[2] is None:
+                    source_mode = (trans_mode, source_mode[1], target_mode[2])
+                if target_mode[1] is None:
+                    target_mode = (trans_mode, source_mode[1], target_mode[2])
+                if target_mode[2] is None:
+                    target_mode = (trans_mode, target_mode[1], source_mode[2])
+                if source_mode == target_mode:
+                    return None, (source_mode, target_mode)
+                adapter = adapters.get((source_mode, target_mode))
+                if adapter is not None:
+                    if adapter is True:
+                        return None, (source_mode, target_mode)
+                    else:
+                        return adapter, (source_mode, target_mode)
+    raise Exception("""Could not find adapter between %s and %s
+
+Supported source modes: %s
+
+Supported target modes: %s
+
+""" % (source, target, source_modes, target_modes))
+
+class TransferredCell:
+    is_function = False
+    def __init__(self, cell):
+        for attr in dir(cell):
+            if attr.startswith("_"):
+                continue
+            setattr(self, attr, getattr(cell, attr))
+
 
 from .cson import cson2json

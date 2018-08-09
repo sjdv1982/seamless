@@ -75,7 +75,7 @@ class MountItem:
                     update_file = True
                     if not cell_empty:
                         file_checksum = cell._checksum(filevalue, buffer=True)
-                        if file_checksum == cell.checksum():
+                        if file_checksum == cell.text_checksum():
                             update_file = False
                         else:
                             print("Warning: File path '%s' has a different value, overwriting cell" % self.path) #TODO: log warning
@@ -86,13 +86,15 @@ class MountItem:
                 raise Exception("File path '%s' does not exist, but authority is 'file-strict'" % self.path)
             else:
                 if "w" in self.mode and not cell_empty:
-                    value, checksum = cell.serialize("buffer")
+                    value = cell.serialize_buffer()
+                    checksum = cell.text_checksum()
                     with self.lock:
                         self._write(value)
                         self._after_write(checksum)
         else: #self.authority == "cell"
             if not cell_empty:
-                value, checksum = cell.serialize("buffer")
+                value = cell.serialize_buffer()
+                checksum = cell.text_checksum()
                 #if "r" in self.mode and self._exists():  #comment out, must read in .storage
                 if exists:
                     with self.lock:
@@ -172,9 +174,9 @@ class MountItem:
             return
         if cell.status() != "OK":
             return
-        checksum = cell.checksum()
+        checksum = cell.text_checksum()
         if self.last_checksum != checksum:
-            value, _ = cell.serialize("buffer")
+            value = cell.serialize_buffer()
             assert cell._checksum(value, buffer=True) == checksum, cell._format_path()
             with self.lock:
                 self._write(value)
@@ -205,13 +207,13 @@ class MountItem:
                 self._after_read(file_checksum, mtime=mtime)
         cell_checksum = None
         if cell.value is not None:
-            cell_checksum = cell.checksum()
+            cell_checksum = cell.text_checksum()
         if file_checksum is not None and file_checksum != cell_checksum:
             if "r" in self.mode:
                 self.set(filevalue, checksum=file_checksum)
             else:
                 print("Warning: write-only file %s (%s) has changed on disk, overruling" % (self.path, self.cell()))
-                value, _ = cell.serialize("buffer")
+                value = cell.serialize_buffer()
                 assert cell._checksum(value, buffer=True) == cell_checksum, cell._format_path()
                 with self.lock:
                     self._write(value)
@@ -425,8 +427,10 @@ class MountManagerStash:
                 if path in old_mountitems:
                     old_mountitem = old_mountitems[path]
                     rewrite = False
-                    value, checksum = new_mountitem.cell().serialize("buffer")
-                    if type(old_mountitem.cell()) != type(new_mountitem.cell()):
+                    cell = new_mountitem.cell()
+                    value = cell.serialize_buffer()
+                    checksum = cell.text_checksum()
+                    if type(old_mountitem.cell()) != type(cell):
                         rewrite = True
                     else:
                         if checksum != old_mountitem.last_checksum:
@@ -779,6 +783,9 @@ mountmanager.start()
 
 def get_extension(c):
     from .cell import extensions
+    for k,v in extensions.items():
+        if type(c) == k:
+            return v
     for k,v in extensions.items():
         if isinstance(c, k):
             return v

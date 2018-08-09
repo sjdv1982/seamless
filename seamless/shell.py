@@ -53,7 +53,10 @@ class PyShell:
         if self.windowtitle is not None:
             self.control.setWindowTitle(self.windowtitle)
         self.control.show()
-    def _on_execute(self, result):
+    def _on_execute(self, result=None):
+        if result is None:
+            #print("Result is None")
+            return
         text = result.info.raw_cell
         cell = self.inputpin.cell()
         #cell._shell_append(text)

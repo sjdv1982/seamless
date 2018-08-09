@@ -23,7 +23,7 @@ class Transformer(Worker):
         self.state = {}
         self.code = InputPin(self, "code", "ref", "pythoncode", "transformer")
         #TODO: access_mode becomes "copy" when we switch from threads to processes
-        thread_inputs = {"code": (self.code.transfer_mode, self.code.access_mode)}
+        thread_inputs = {"code": ("ref", "pythoncode", "transformer")}
         self._io_attrs = ["code"]
         self._pins = {"code":self.code}
         self._output_name = None
@@ -33,9 +33,9 @@ class Transformer(Worker):
         self._transformer_params = OrderedDict()
         forbidden = ("code",)
         if with_schema:
-            schema_pin = InputPin(self, "schema", "copy", "json")
+            schema_pin = InputPin(self, "schema", "copy", "json", "json")
             self._io_attrs.append("schema")
-            thread_inputs["schema"] = "copy", "json"
+            thread_inputs["schema"] = "copy", "json", "json"
             self._pins["schema"] = schema_pin
             forbidden += ("schema",)
         for p in sorted(transformer_params.keys()):
@@ -65,7 +65,7 @@ class Transformer(Worker):
                 raise ValueError((p, param))
             if io == "input":
                 pin = InputPin(self, p, transfer_mode, access_mode)
-                thread_inputs[p] = transfer_mode, access_mode
+                thread_inputs[p] = transfer_mode, access_mode, content_type
             elif io == "output":
                 pin = OutputPin(self, p, transfer_mode, access_mode)
                 assert self._output_name is None  # can have only one output

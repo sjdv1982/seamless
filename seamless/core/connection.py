@@ -7,8 +7,18 @@ import traceback
 # - the type / some attribute of the target cell
 
 class Connection:
-    #TODO: negotiate cell-to-cell serialization protocol
-    def __init__(self, id, source, target):
+    source = None
+    target = None
+    transfer_mode = None
+    source_access_mode = None
+    source_content_type = None
+    target_access_mode = None
+    target_content_type = None
+    adapter = None
+    rev_adapter = None
+    def __init__(self, id, source, target, transfer_mode,
+      source_supported_modes, target_supported_modes
+    ):
         from .layer import Path
         self.id = id
         self.source = source #must be concrete, since connections are stored under the key "source"
@@ -18,39 +28,43 @@ class Connection:
         else:
             self.target_path = None
             self.target = target
-
-class CellToCellConnection(Connection):
-    def __init__(self, id, source, target, transfer_mode):
-        super().__init__(id, source, target)
         if self.target is None:
             return
         if transfer_mode is None:
             transfer_mode = "ref"
-        #TODO: extend to other connection types
-        self.transfer_mode = transfer_mode
-        self.adapter = None
-        if not hasattr(source, "_supported_modes"):
-            print("WARNING: %s _supported_modes not yet implemented" % type(source))
-            return
-        if not hasattr(target, "_supported_modes"):
-            print("WARNING: %s _supported_modes not yet implemented" % type(target))
-            return
-        if type(source) == type(target):
-            return
-        source_modes = [m for m in source._supported_modes if m[0] == transfer_mode \
-         and m[1] is None and m[2] is not None]
-        target_modes = [m for m in target._supported_modes if m[0] == transfer_mode \
-         and m[1] is None and m[2] is not None]
-        self.adapter = select_adapter(source, target, source_modes, target_modes)
+        self.adapter, modes = select_adapter(
+         transfer_mode, source, target, source_supported_modes, target_supported_modes
+        )
+        source_mode, target_mode = modes
+        assert source_mode[0] == target_mode[0]
+        self.transfer_mode = source_mode[0]
+        _, self.source_access_mode, self.source_content_type = source_mode
+        _, self.target_access_mode, self.target_content_type = target_mode
+
+
+class CellToCellConnection(Connection):
+    def __init__(self, id, source, target, transfer_mode):
+        source_supported_modes = source._supported_modes
+        target_supported_modes = None
+        if target is not None:
+            target_supported_modes = target._supported_modes
+        super().__init__(id, source, target, transfer_mode,
+          source_supported_modes, target_supported_modes)
 
     def fire(self, only_text=False):
-        #TODO: determine if with the target cell type, "only_text" warrants an update
+        if only_text:
+            if self.target_content_type not in ("text", "cson"):
+                return
+        #print("FIRE", self.source, ";", self.target, only_text)
         cell, target = self.source, self.target
-        transfer_mode, access_mode = self.transfer_mode, None
-        value, _ = cell.serialize(transfer_mode, access_mode)
+        value = cell.serialize(
+          self.transfer_mode, self.source_access_mode, self.source_content_type
+        )
         if self.adapter:
             value = self.adapter(value)
-        different, text_different = target.deserialize(value, transfer_mode, access_mode,
+        different, text_different = target.deserialize(
+          value,
+          self.transfer_mode, self.target_access_mode, self.target_content_type,
           #from_pin is set to True, also for aliases...
           from_pin=True, default=False
         )
@@ -63,37 +77,78 @@ class CellToCellConnection(Connection):
 
 class CellToPinConnection(Connection):
     def __init__(self, id, source, target):
-        super().__init__(id, source, target)
+        source_supported_modes = source._supported_modes
+        target_supported_modes = None
+        transfer_mode  = None
         if target is not None and not isinstance(target, Path):
             worker = target.worker_ref()
             assert worker is not None #weakref may not be dead
-            source._check_mode(target.transfer_mode, target.access_mode) #TODO
+            transfer_mode = target.transfer_mode
+            target_supported_modes = [
+              (transfer_mode,
+               target.access_mode,
+               target.content_type
+              )
+            ]
+            if transfer_mode == "ref":
+                target_supported_modes.append(
+                  ("copy",
+                   target.access_mode,
+                   target.content_type
+                  )
+                )
+        super().__init__(id, source, target, transfer_mode,
+          source_supported_modes, target_supported_modes)
 
     def fire(self, only_text=False):
         source, target = self.source, self.target
-        value, checksum = source.serialize(target.transfer_mode, target.access_mode)
+        value = source.serialize(
+          self.transfer_mode, self.source_access_mode, self.source_content_type
+        )
+        checksum = source.checksum()
+        if self.adapter:
+            value = self.adapter(value)
         if not only_text or target.access_mode == "text":
             target.receive_update(value, checksum)
 
-
 class PinToCellConnection(Connection):
     def __init__(self, id, source, target):
-        super().__init__(id, source, target)
-        if source is not None and not isinstance(source, Path):
+        transfer_mode = source.transfer_mode
+        if target is not None and not isinstance(target, Path):
+            target_supported_modes = target._supported_modes
+
             worker = source.worker_ref()
             assert worker is not None #weakref may not be dead
-            target._check_mode(source.transfer_mode, source.access_mode) #TODO
+            source_supported_modes = [
+              (transfer_mode,
+               source.access_mode,
+               source.content_type
+              )
+            ]
+            if transfer_mode == "ref":
+                source_supported_modes.append(
+                  ("copy",
+                   source.access_mode,
+                   source.content_type
+                  )
+                )
+        super().__init__(id, source, target, transfer_mode,
+          source_supported_modes, target_supported_modes)
 
     def fire(self, value, preliminary):
         pin, cell = self.source, self.target
-        cell._check_mode(pin.transfer_mode, pin.access_mode)
+        if self.adapter:
+            value = self.adapter(value)
+
         mgr = pin._get_manager()
         other = cell._get_manager()
         if cell._destroyed or other.destroyed:
             return
         from_pin = "edit" if isinstance(pin, EditPin) else True
         try:
-            different, text_different = cell.deserialize(value, pin.transfer_mode, pin.access_mode,
+            different, text_different = cell.deserialize(
+              value,
+              self.transfer_mode, self.target_access_mode, self.target_content_type,
               from_pin=from_pin, default=False
             )
         except Exception:
@@ -106,12 +161,6 @@ class PinToCellConnection(Connection):
             other.mountmanager.add_cell_update(cell)
         if different or text_different:
             other.cell_send_update(cell, only_text, origin=pin)
-
-    def fire_reverse(self):
-        pin, target = self.source, self.target
-        target._check_mode(pin.transfer_mode, pin.access_mode)
-        value, checksum = target.serialize(pin.transfer_mode, pin.access_mode)
-        pin.receive_update(value, checksum)
 
 from .worker import Worker, InputPin, EditPin, \
   InputPinBase, EditPinBase, OutputPinBase

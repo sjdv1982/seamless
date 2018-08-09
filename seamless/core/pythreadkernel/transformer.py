@@ -86,14 +86,16 @@ class Transformer(Worker):
             # If code object is updated, recompile
             if "code" in updated:
                 identifier = str(self.parent())
-                _, access_mode = self.inputs["code"]
-                if access_mode in ("buffer", "copy"):
+                _, access_mode, _ = self.inputs["code"]
+                if access_mode == "text":
                     code = self.values["code"]
+                    code_obj = None
                 else:
                     # Code data object
+                    assert access_mode in ("pythoncode", "object")
                     code_obj = self.values["code"]
                     code = code_obj.value
-                if code_obj.is_function:
+                if code_obj is not None and code_obj.is_function:
                     func_name = code_obj.func_name
                     expr = self.function_expr_template.format(code, func_name)
                     self.code_object = cached_compile(expr, identifier, "exec")
@@ -106,7 +108,8 @@ class Transformer(Worker):
             self.namespace.update(keep)
             self.namespace["__name__"] = self.name
             for name in self.inputs:
-                self.namespace[name] = self.values[name]
+                if name not in ("code", "schema"):
+                    self.namespace[name] = self.values[name]
             if self.with_schema:
                 output = Silk(schema=self.namespace["schema"])
                 self.namespace[self.output_name] = output

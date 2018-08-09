@@ -236,10 +236,10 @@ class Manager:
             other.pin_from_cell[target] = connection
 
         if isinstance(target, EditPinBase):
-            self.connect_pin(target0, cell)
+            self.connect_pin(target0, cell, mirror_connection=connection)
 
     @main_thread_buffered
-    def connect_pin(self, pin, target):
+    def connect_pin(self, pin, target, mirror_connection=None):
         if self.destroyed:
             return
         target0 = target
@@ -249,6 +249,8 @@ class Manager:
             target = target.get_linked()
         assert isinstance(target, (CellLikeBase, Path))
         assert isinstance(pin, (OutputPinBase, EditPinBase))
+
+        assert (mirror_connection is not None) == (isinstance(pin, EditPinBase))
 
         if not isinstance(pin, EditPinBase) and not target.authoritative:
             raise Exception("%s: is non-authoritative (already dependent on another worker/cell)" % target)
@@ -277,7 +279,7 @@ class Manager:
                 connection.fire(pin.last_value, pin.last_value_preliminary)
             elif isinstance(pin, EditPinBase):
                 if target._status == Cell.StatusFlags.OK:
-                    connection.fire_reverse()
+                    mirror_connection.fire()
 
     @main_thread_buffered
     def connect_link(self, link, target):

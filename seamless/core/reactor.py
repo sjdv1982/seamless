@@ -27,12 +27,13 @@ class Reactor(Worker):
     #can't have with_schema because multiple outputs are possible
     # reactors will have construct their own Silk objects from schema pins
     def __init__(self, reactor_params):
+        self._immediate_id = 0
         self.state = {}
         self.outputs = {}
         self.inputs = {
-            "code_start":("ref", "pythoncode", True),
-            "code_stop":("ref", "pythoncode", True),
-            "code_update":("ref", "pythoncode", True),
+            "code_start":("ref", "pythoncode", "reactor", True),
+            "code_stop":("ref", "pythoncode", "reactor", True),
+            "code_update":("ref", "pythoncode", "reactor", True),
         }
         self.code_start = InputPin(self, "code_start", "ref", "pythoncode", "python")
         self.code_update = InputPin(self, "code_update", "ref", "pythoncode", "python")
@@ -74,15 +75,15 @@ class Reactor(Worker):
             else:
                 raise ValueError((p, param))
             if io == "input":
-                pin = InputPin(self, p, transfer_mode, access_mode)
-                self.inputs[p] = (transfer_mode, access_mode, True)
+                pin = InputPin(self, p, transfer_mode, access_mode, content_type)
+                self.inputs[p] = transfer_mode, access_mode, content_type, True
             elif io == "output":
-                pin = OutputPin(self, p, transfer_mode, access_mode)
-                self.outputs[p] = transfer_mode, access_mode
+                pin = OutputPin(self, p, transfer_mode, access_mode, content_type)
+                self.outputs[p] = transfer_mode, access_mode, content_type
             elif io == "edit":
-                pin = EditPin(self, p, transfer_mode, access_mode)
-                self.inputs[p] = transfer_mode, access_mode, must_be_defined
-                self.outputs[p] = transfer_mode, access_mode
+                pin = EditPin(self, p, transfer_mode, access_mode, content_type)
+                self.inputs[p] = transfer_mode, access_mode, content_type, must_be_defined
+                self.outputs[p] = transfer_mode, access_mode, content_type
             else:
                 raise ValueError(io)
 
@@ -90,6 +91,9 @@ class Reactor(Worker):
                 self._io_attrs.append(p)
                 self._pins[p] = pin
         super().__init__()
+
+    def _update_immediate_id(self):
+        self._immediate_id += 1
 
     def activate(self, only_macros):
         if self.active:
@@ -134,6 +138,10 @@ class Reactor(Worker):
         self._pending_updates -= updates
         self.flush()
 
+    def process_input(self, id, input_pin, value):
+        immediate = (id == self._immediate_id)
+        self.reactor.process_input(input_pin, value, immediate)
+
     def receive_update(self, input_pin, value, checksum):
         #print("receive_update", input_pin, value)
         if not self.active:
@@ -145,9 +153,10 @@ class Reactor(Worker):
         self._pending_updates += 1
 
         if self.inputs[input_pin][0] == "signal":
-            self.reactor.process_input(input_pin, value)
+            self.reactor.process_input(input_pin, value, True)
         else:
-            work = partial(self.reactor.process_input, input_pin, value)
+            self._update_immediate_id()
+            work = partial(self.process_input, self._immediate_id, input_pin, value)
             self._get_manager().workqueue.append(work)
 
     def __dir__(self):

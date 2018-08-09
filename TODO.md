@@ -29,8 +29,8 @@ Part 1 (low-level):
   - PyModules must have native IPython support. Need IPythonCell for that reason! Add support to transformers and reactors! Not for macros.
 
 Part 2 (low-level / cleanup):   
-   - Signals
-   - Observers
+   - Signals (DONE; only to test)
+   - Observers (subclass of OutputPinBase)
    - Add back in int/float/str/bool cells because they are so convenient.
      Their content type will be int/float/text/bool.
      Adapters will convert among them (e.g. int=>float) and between them and JSON/mixed/text.
@@ -73,6 +73,7 @@ Part 3 (low-level):
            - the value of all three code cells stays the same
        In that case, the regeneration of the reactor essentially becomes an update() event
   - Silk form validators
+  - Silk: error messages, multi-lingual (use Python format() syntax, but with properties to fill in, i.e. "The value cannot be {a.x}". This is natively supported by Python. No magic in the style of {a.x-a.y}; define a property for that)
   - Seamless console scripts and installer
 
 Part 4: shift to the mid-level data structure

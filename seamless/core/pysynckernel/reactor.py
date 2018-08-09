@@ -31,7 +31,7 @@ class Reactor:
         self.outputs = outputs
         self._pending_updates = 0
         self.inputs = inputs.copy()
-        self.input_must_be_defined = {k for k,v in inputs.items() if v[2]}
+        self.input_must_be_defined = {k for k,v in inputs.items() if v[3]}
         self._pending_inputs = {name for name in self.input_must_be_defined}
         self.values = {name: None for name in inputs.keys()}
         self.exception = None
@@ -59,7 +59,7 @@ class Reactor:
         self._active = True
 
 
-    def process_input(self, name, data):
+    def process_input(self, name, data, immediate):
         #print("process_input", self.parent(), name, self._pending_inputs)
         if self.parent() is None:
             return
@@ -68,20 +68,27 @@ class Reactor:
 
         self._pending_updates += 1
 
-        mode, access_mode, _ = self.inputs[name]
-        if mode == "buffer":
+        transfer_mode, access_mode, content_type, _ = self.inputs[name]
+        if transfer_mode == "buffer":
             #TODO: support silk, mixed, binary, cson access_modes
             raise NotImplementedError
 
-        assert mode == "ref" or access_mode in ("json", "text", None), (mode, access_mode)
-        if access_mode == "pythoncode":
+        if content_type in ("python", "reactor"):
             identifier = str(self.parent()) + ":%s" % name
-            if access_mode in ("buffer", "copy"):
+            if access_mode == "text":
                 code = data
+                code_obj = None
             else:
+                # Code data object
+                assert access_mode in ("pythoncode", "object")
                 code_obj = data
                 code = code_obj.value
-            code_object = cached_compile(code, identifier, "exec")
+            if code_obj is not None and code_obj.is_function:
+                func_name = code_obj.func_name
+                expr = "{0}\n{1}(PINS)".format(code, func_name)
+                code_object = cached_compile(expr, identifier, "exec")
+            else:
+                code_object = cached_compile(code, identifier, "exec")
             value = code_object
         else:
             value = data
@@ -101,7 +108,9 @@ class Reactor:
         updates_processed = self._pending_updates
 
         # With all inputs now present, we can issue updates
-        if self._active and not self._pending_inputs:
+        #  but if we are not "immediate", that means that new updates will follow
+        #   right away, and we will await those
+        if self._active and not self._pending_inputs and immediate:
             updated = set(self.updated)
             self.updated.clear()
             try:
@@ -174,7 +183,7 @@ class Reactor:
         self.namespace["PINS"] = self.PINS
         for name in self.values:
             v = self.values[name]
-            mode, access_mode, _ = self.inputs[name]
+            mode, _, _, _ = self.inputs[name]
             if name in self.outputs:
                 assert mode != "signal"
                 e = ReactorEdit(self, name)
@@ -191,7 +200,7 @@ class Reactor:
         for name in self.outputs:
             if name in self.values:
                 continue
-            mode, access_mode = self.outputs[name]
+            mode, access_mode, _ = self.outputs[name]
             if mode == "signal":
                 e = ReactorOutputSignal(self, name)
             else:
@@ -229,7 +238,7 @@ class Reactor:
             #pin = self.namespace[name]
             pin = getattr(self.PINS, name)
             if name in updated:
-                mode, access_mode, _ = self.inputs[name]
+                mode, _, _, _ = self.inputs[name]
                 value = self.values[name]
                 if mode != "signal":
                     pin._value = value

@@ -330,11 +330,16 @@ class EditPin(EditPinBase):
         """Sets the value of the connected cell"""
         return self.cell().set(*args, **kwargs)
 
+    @with_macro_mode
     def connect(self, target):
         """connects to a target cell"""
-        assert get_macro_mode() #or connection overlay mode, TODO
-        manager = self._get_manager()
-        manager.connect_pin(self, target)
+        from .layer import Path
+        ###manager = self._get_manager()
+        ###manager.connect_pin(self, target)  #NO; double connection has to be made
+                                              #connect_cell will also invoke connect_pin
+        assert not isinstance(target, Path) #Edit pins cannot be connected to paths
+        other = target._get_manager()
+        other.connect_cell(target, self)
         return self
 
     def send_update(self, value, *, preliminary=False):

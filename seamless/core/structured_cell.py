@@ -30,12 +30,6 @@ class Inchannel(CellLikeBase):
         self.name = name
         super().__init__()
 
-    def _check_mode(self, transfer_mode, access_mode):
-        if transfer_mode == "copy":
-            print("TODO: Inchannel, copy data")
-        if transfer_mode not in ("copy", "ref", None) or access_mode is not None:
-            raise NotImplementedError(transfer_mode, access_mode)
-
     def deserialize(self, value, transfer_mode, access_mode, *, from_pin, **kwargs):
         assert from_pin
         if value is None:
@@ -112,16 +106,6 @@ class Outchannel(CellLikeBase):
         super().__init__()
         if structured_cell.buffer is not None:
             self._buffered = True
-
-    def _check_mode(self, transfer_mode, access_mode):
-        if transfer_mode == "copy":
-            print("TODO: Outchannel, copy data")
-        if transfer_mode == "ref" and access_mode == "pythoncode":
-            return
-        if transfer_mode not in ("copy", "ref", None):
-            raise NotImplementedError
-        if access_mode not in ("silk", "json", None):
-            raise NotImplementedError
 
     def serialize(self, transfer_mode, access_mode):
         from ..silk import Silk

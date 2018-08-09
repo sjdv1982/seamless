@@ -158,17 +158,6 @@ class LayeredConnection:
 
     def _activate_cell_pin(self):
         cell, target = self.source.obj(), self.target.obj()
-        cell._check_mode(target.transfer_mode, target.access_mode)
-        if isinstance(target, EditPinBase) and target.last_value is not None:
-            if cell._status != Cell.StatusFlags.OK:
-                pin = target
-                mgr = pin._get_manager()
-                mgr.pin_send_update(pin,
-                    pin.last_value,
-                    preliminary=pin.last_value_preliminary,
-                    target=cell,
-                )
-
         connection = CellToPinConnection(self.id, cell, target)
         mgr = cell._get_manager()
         if cell not in mgr.cell_to_pins:
@@ -185,8 +174,6 @@ class LayeredConnection:
 
     def _activate_pin_cell(self):
         pin, target = self.source.obj(), self.target.obj()
-        target._check_mode(pin.transfer_mode, pin.access_mode)
-
         connection = PinToCellConnection(self.id, pin, target)
         mgr = pin._get_manager()
         if pin not in mgr.pin_to_cells:

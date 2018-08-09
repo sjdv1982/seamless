@@ -8,12 +8,12 @@ tparams = {
 }
 
 eparams = {
-  "value": {"io": "edit", "mode": "copy"},
+  "value": {"io": "edit", "transfer_mode": "copy"},
   "title": "input",
 }
 
 teparams = {
-  "value": {"io": "edit", "mode": "copy"},
+  "value": {"io": "edit", "transfer_mode": "copy"},
   "title": "input",
 }
 
