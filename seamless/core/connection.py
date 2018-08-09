@@ -60,6 +60,12 @@ class CellToCellConnection(Connection):
         value = cell.serialize(
           self.transfer_mode, self.source_access_mode, self.source_content_type
         )
+        """
+        print(self.transfer_mode,
+          self.source_access_mode, self.source_content_type,
+          self.target_access_mode, self.target_content_type, type(value), self.adapter
+        )
+        """
         if self.adapter:
             value = self.adapter(value)
         different, text_different = target.deserialize(

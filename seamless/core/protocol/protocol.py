@@ -62,7 +62,7 @@ def adapt_cson_json(source):
     assert isinstance(source, str), source
     return cson2json(source)
 
-def adapt_json_silk(source):
+def adapt_to_silk(source):
     from ...silk import Silk
     return Silk(data=source)
 
@@ -74,9 +74,17 @@ for content_type1 in text_types:
         if content_type1 == content_type2:
             continue
         adapters[("copy", "text", content_type1), ("copy", "text", content_type2)] = True
-adapters[("ref", "json", "json"), ("ref", "silk", "json")] = adapt_json_silk
-adapters[("copy", "json", "json"), ("copy", "silk", "json")] = adapt_json_silk
-adapters[("copy", "json", "cson"), ("copy", "silk", "cson")] = adapt_json_silk
+for content_type in content_types:
+    adapters[("copy", "object", content_type), ("copy", "object", "object")] = True
+    adapters[("copy", "object", "object"), ("copy", "object", content_type)] = True
+adapters[("ref", "object", "json"), ("ref", "object", "mixed")] = True
+adapters[("copy", "json", "json"), ("copy", "object", "mixed")] = True
+adapters[("copy", "object", "text"), ("copy", "object", "mixed")] = True
+adapters[("ref", "json", "json"), ("ref", "silk", "json")] = adapt_to_silk
+adapters[("copy", "json", "json"), ("copy", "silk", "json")] = adapt_to_silk
+adapters[("copy", "json", "cson"), ("copy", "silk", "cson")] = adapt_to_silk
+adapters[("ref", "object", "mixed"), ("ref", "silk", "mixed")] = adapt_to_silk
+adapters[("copy", "object", "mixed"), ("copy", "silk", "mixed")] = adapt_to_silk
 
 def select_adapter(transfer_mode, source, target, source_modes, target_modes):
     if transfer_mode == "ref":
@@ -123,5 +131,25 @@ class TransferredCell:
                 continue
             setattr(self, attr, getattr(cell, attr))
 
+"""
+import inspect, ast
+from .cached_compile import cached_compile
+from ast import PyCF_ONLY_AST, FunctionDef
+class FakeTransformerCell:
+    def __init__(self, value):
+        if inspect.isfunction(value):
+            code = inspect.getsource(value)
+            code = strip_source(code)
+            value = code
+        ast = cached_compile(value, "transformer", "exec", PyCF_ONLY_AST)
+        is_function = (len(ast.body) == 1 and
+                       isinstance(ast.body[0], FunctionDef))
+        if is_function:
+            self.func_name = ast.body[0].name
+        else:
+            self.func_name = "transform"
+        self.is_function = is_function
+        self.value = value
+"""
 
 from .cson import cson2json

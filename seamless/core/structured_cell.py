@@ -1,6 +1,7 @@
 from .cell import CellLikeBase, Cell, JsonCell, TextCell
 from ..mixed import MixedBase, OverlayMonitor, MakeParentMonitor
 import weakref
+import json
 import traceback
 from copy import deepcopy
 import threading, functools
@@ -19,18 +20,35 @@ But if the StructuredCell is buffered, this warning is lost
 
 # TODO: re-think mount + slave: read-only?  re-direct to different cell?
 
+supported_modes_mixed = []
+for transfer_mode in "copy", "ref":
+    supported_modes_mixed.append((transfer_mode, "object", "mixed"))
+supported_modes_mixed = tuple(supported_modes_mixed)
+supported_modes_json = []
+for transfer_mode in "copy", "ref":
+    for access_mode in "json", "text", "object":
+        if access_mode == "text" and transfer_mode == "ref":
+            continue
+        supported_modes_json.append((transfer_mode, access_mode, "json"))
+supported_modes_json = tuple(supported_modes_json)
+
 class Inchannel(CellLikeBase):
     _authoritative = True
     _mount = None
-
     def __init__(self, structured_cell, inchannel):
         self.structured_cell = weakref.ref(structured_cell)
         self.inchannel = inchannel
         name = inchannel if inchannel != () else "self"
         self.name = name
         super().__init__()
+        if structured_cell._plain:
+            self._supported_modes = supported_modes_json
+        else:
+            self._supported_modes = supported_modes_mixed
 
-    def deserialize(self, value, transfer_mode, access_mode, *, from_pin, **kwargs):
+    def deserialize(self, value, transfer_mode, access_mode, content_type,
+     *, from_pin, **kwargs
+    ):
         assert from_pin
         if value is None:
             self._status = self.StatusFlags.UNDEFINED
@@ -94,8 +112,6 @@ class Outchannel(CellLikeBase):
     'worker_ref' actually is a reference to structured_cell
     """
     _mount = None
-    transfer_mode = "copy"
-    access_mode = None
     _buffered = False
     _last_value = None ###TODO: use checksums; for now, only used for buffered
     def __init__(self, structured_cell, outchannel):
@@ -106,40 +122,27 @@ class Outchannel(CellLikeBase):
         super().__init__()
         if structured_cell.buffer is not None:
             self._buffered = True
+        if structured_cell._plain:
+            self._supported_modes = supported_modes_json
+        else:
+            self._supported_modes = supported_modes_mixed
 
-    def serialize(self, transfer_mode, access_mode):
-        from ..silk import Silk
+    def checksum(self):
+        return None #TODO
+        # Easy enough for json, but needs access to form for mixed
+        # (see MixedCell._checksum)
+
+    def serialize(self, transfer_mode, access_mode, content_type):
         structured_cell = self.structured_cell()
         assert structured_cell is not None
         data = structured_cell.monitor.get_data(self.outchannel)
-        if (transfer_mode, access_mode) == ("ref", "pythoncode"):
-            #TODO: - for now, assert content_type is pytransformer
-            #      - single code (for now, it is copied from cell.py)
-            import inspect, ast
-            from .cached_compile import cached_compile
-            from ast import PyCF_ONLY_AST, FunctionDef
-            class FakeTransformerCell:
-                def __init__(self, value):
-                    if inspect.isfunction(value):
-                        code = inspect.getsource(value)
-                        code = strip_source(code)
-                        value = code
-                    ast = cached_compile(value, "transformer", "exec", PyCF_ONLY_AST)
-                    is_function = (len(ast.body) == 1 and
-                                   isinstance(ast.body[0], FunctionDef))
-                    if is_function:
-                        self.func_name = ast.body[0].name
-                    else:
-                        self.func_name = "transform"
-                    self.is_function = is_function
-                    self.value = value
-            result = FakeTransformerCell(data)
-            return result, None #TODO: checksum?
-        data = deepcopy(data) ###TODO: rethink a bit; note that deepcopy also casts data from Silk to dict!
-        if access_mode == "silk":
-            #Schema-less silk; just for attribute access syntax
-            data = Silk(data=data, stateful=isinstance(data, MixedBase))
-        return data, None #TODO: checksum?
+        if transfer_mode == "ref":
+            result = data
+        elif access_mode == "text":
+            result = json.dumps(data, sort_keys=True, indent=2)
+        else:
+            result = deepcopy(data)
+        return result
 
     def deserialize(self, *args, **kwargs):
         return True, True #dummy

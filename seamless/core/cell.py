@@ -578,6 +578,9 @@ class PythonCell(Cell):
         self.set(new_value)
 
     def _validate(self, value):
+        from .protocol import TransferredCell
+        if isinstance(value, TransferredCell):
+            value = value.data
         ast.parse(value)
 
     def serialize_buffer(self):
@@ -594,7 +597,7 @@ class PythonCell(Cell):
 
     def _deserialize(self, value, transfer_mode, access_mode, content_type):
         from .protocol import TransferredCell
-        if access_mode == "object":
+        if access_mode in ("object", "pythoncode"):
             # Two possibilities:
             # 1. TransferredCell from pin
             # 2. function object or text object from .set
@@ -640,6 +643,9 @@ class PyTransformerCell(PythonCell):
     del transfer_mode
 
     def _validate(self, value):
+        from .protocol import TransferredCell
+        if isinstance(value, TransferredCell):
+            value = value.data
         if inspect.isfunction(value):
             code = inspect.getsource(value)
             code = strip_source(code)

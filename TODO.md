@@ -5,16 +5,6 @@ A proof-of-principle of the middle/high level is now there.
 Things to do:
 
 Part 1 (low-level):
-   - Redesign the transfer protocol (copy, ref etc.).       
-     - When negotiating the transfer protocol/making adapters:
-       - Loop over the cell supported modes; one of them must succeed.
-         In case of cell-cell, loop over source; within that, loop over target
-       - If transfer mode is "ref" or "buffer" and it doesn't work, try "copy".
-       - An access modes like "silk" is never directly supported, it must be added via adapter
-     - Expand adapters, and expand negotiation to cell-pin and pin-cell.
-     - Remove (from deserialize and serialize) support for modes that are no longer declared in supported_modes
-       (e.g. Silk support)
-     - Expand and test the CSON example, especially test only_text; test only_text also for Python cells
    - Add the concept of from_pin (from_channel) to structured cells, in particular the form/data/storage hooks. Now,
    they trigger warnings that they are overruling cells "controlled by Seamless context"
    (see tests/highlevel/simple.py). This is distinct from sovereignty, which involves non-pin manipulation!
