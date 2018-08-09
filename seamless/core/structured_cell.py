@@ -5,6 +5,7 @@ import json
 import traceback
 from copy import deepcopy
 import threading, functools
+from contextlib import contextmanager
 
 from .macro_mode import get_macro_mode
 
@@ -57,26 +58,27 @@ class Inchannel(CellLikeBase):
         structured_cell = self.structured_cell()
         if structured_cell is None:
             return
-        monitor = structured_cell.monitor
-        if structured_cell._is_silk:
-            handle = structured_cell._silk
-            if structured_cell.buffer is not None:
-                bufmonitor = structured_cell.bufmonitor
-                assert isinstance(handle.data, MixedBase)
-                bufmonitor.set_path(self.inchannel, value, from_pin=True)
-                handle.validate()
+        with structured_cell._from_pin():
+            monitor = structured_cell.monitor
+            if structured_cell._is_silk:
+                handle = structured_cell._silk
+                if structured_cell.buffer is not None:
+                    bufmonitor = structured_cell.bufmonitor
+                    assert isinstance(handle.data, MixedBase)
+                    bufmonitor.set_path(self.inchannel, value, from_channel=True)
+                    handle.validate()
+                else:
+                    try:
+                        with handle.fork():
+                            assert isinstance(handle.data, MixedBase)
+                            monitor.set_path(self.inchannel, value, from_channel=True)
+                        monitor._update_outchannels(self.inchannel)
+                    except:
+                        traceback.print_exc(0)
+                        return False, False
             else:
-                try:
-                    with handle.fork():
-                        assert isinstance(handle.data, MixedBase)
-                        monitor.set_path(self.inchannel, value, from_pin=True)
-                    monitor._update_outchannels(self.inchannel)
-                except:
-                    traceback.print_exc(0)
-                    return False
-        else:
-            monitor.receive_inchannel_value(self.inchannel, value)
-        different, text_different = True, True #TODO: keep checksum etc. to see if value really changed
+                monitor.receive_inchannel_value(self.inchannel, value)
+            different, text_different = True, True #TODO: keep checksum etc. to see if value really changed
         return different, text_different
 
     @property
@@ -201,6 +203,7 @@ def update_hook(cell):
 
 class StructuredCell(CellLikeBase):
     _mount = None
+    _from_pin_mode = False
     def __init__(
       self,
       name,
@@ -350,6 +353,15 @@ class StructuredCell(CellLikeBase):
         if self.schema is not None:
             self.schema._mount_setter = self._set_schema_from_mounted_file
 
+    @contextmanager
+    def _from_pin(self):
+        old_from_pin_mode = self._from_pin_mode
+        self._from_pin_mode = "edit"
+        try:
+            yield
+        finally:
+            self._from_pin_mode = old_from_pin_mode
+
     def connect_inchannel(self, source, inchannel):
         if inchannel == ("self",):
             inchannel = ()
@@ -376,39 +388,39 @@ class StructuredCell(CellLikeBase):
     def _data_hook(self, value):
         cell = self.data
         manager = cell._get_manager()
-        manager.set_cell(cell, value, force=True)
+        manager.set_cell(cell, value, force=True, from_pin=self._from_pin_mode)
         result = self.data._val
         return result
 
     def _form_hook(self, value):
         cell = self.form
         manager = cell._get_manager()
-        manager.set_cell(cell, value, force=True)
+        manager.set_cell(cell, value, force=True, from_pin=self._from_pin_mode)
         return self.form._val
 
     def _storage_hook(self, value):
         cell = self.storage
         manager = cell._get_manager()
-        manager.set_cell(cell, value, force=True)
+        manager.set_cell(cell, value, force=True, from_pin=self._from_pin_mode)
         return self.storage._val
 
     def _buffer_data_hook(self, value):
         cell = self.buffer.data
         manager = cell._get_manager()
-        manager.set_cell(cell, value, force=True)
+        manager.set_cell(cell, value, force=True, from_pin=self._from_pin_mode)
         result = self.buffer.data._val
         return result
 
     def _buffer_form_hook(self, value):
         cell = self.buffer.form
         manager = cell._get_manager()
-        manager.set_cell(cell, value, force=True)
+        manager.set_cell(cell, value, force=True, from_pin=self._from_pin_mode)
         return self.buffer.form._val
 
     def _buffer_storage_hook(self, value):
         cell = self.buffer.storage
         manager = cell._get_manager()
-        manager.set_cell(cell, value, force=True)
+        manager.set_cell(cell, value, force=True, from_pin=self._from_pin_mode)
         return self.buffer.storage._val
 
     def _set_from_mounted_file(self, filebuffer, checksum):

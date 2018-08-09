@@ -43,7 +43,6 @@ def triple_it2(a, b):
 ctx.tfcode = triple_it2
 ctx.equilibrate()
 print(ctx.myresult.value)
-import sys; sys.exit()
 
 # 6
 ctx.translate(force=True)

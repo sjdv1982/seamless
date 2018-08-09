@@ -72,11 +72,11 @@ class OverlayMonitor(MakeParentMonitor):
                 value = None if data is None else data.value
                 func(value)
 
-    def set_path(self, path, subdata, from_pin=False):
-        if not from_pin:
+    def set_path(self, path, subdata, from_channel=False):
+        if not from_channel:
             self._check_inchannels(path)
         super().set_path(path, subdata)
-        if not from_pin:
+        if not from_channel:
             self._update_outchannels(path)
 
     def insert_path(self, path, subdata):

@@ -234,6 +234,8 @@ class CellBase(CellLikeBase):
             if different and self._seal is not None:
                 msg = "Warning: setting value for cell %s, controlled by %s"
                 print(msg % (self._format_path(), self._seal) )
+                if str(self._format_path()).find("myresult") > -1:
+                    raise Exception
 
         return different, text_different
 

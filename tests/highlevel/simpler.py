@@ -22,3 +22,7 @@ ctx.equilibrate()
 print(ctx.myresult.value)
 print("START")
 ctx.equilibrate()
+print("UPDATE")
+ctx.a = 13
+print("UPDATE...")
+ctx.equilibrate()

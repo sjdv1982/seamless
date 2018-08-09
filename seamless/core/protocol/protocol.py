@@ -49,12 +49,12 @@ text_types = ("text", "python", "transformer", "reactor", "macro", "cson")
 
 
 def set_cell(cell, value, *,
-  default, from_buffer, force
+  default, from_buffer, force, from_pin=False,
 ):
     transfer_mode = "buffer" if from_buffer else "ref"
     different, text_different = cell.deserialize(value, transfer_mode,
       "object", None,
-      from_pin=False, default=default,force=force
+      from_pin=from_pin, default=default,force=force
     )
     return different, text_different
 

@@ -308,7 +308,7 @@ class Manager:
     @manager_buffered
     @with_successor("cell", 0)
     def set_cell(self, cell, value, *,
-      default=False, from_buffer=False, force=False
+      default=False, from_buffer=False, force=False, from_pin=False
     ):
         if self.destroyed:
             return
@@ -317,7 +317,7 @@ class Manager:
         different, text_different = protocol.set_cell(
           cell, value,
           default=default, from_buffer=from_buffer,
-          force=force
+          force=force, from_pin=from_pin
         )
         only_text = (text_different and not different)
         if text_different and cell._mount is not None:

@@ -1,6 +1,8 @@
 #port to the high-level of the corresponding file in tests/lowlevel
 # for now, just a mockup
 
+raise NotImplementedError
+
 import seamless
 from seamless import Context, Cell
 
