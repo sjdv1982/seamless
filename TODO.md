@@ -5,15 +5,10 @@ A proof-of-principle of the middle/high level is now there.
 Things to do:
 
 Part 1 (low-level):
-   - "Active" switch of managers, workers, connections; may also be exported, and may be activated in a connection layer.
-      UPDATE: done for managers. Extend to workers (transformers and reactors) as well. YAGNI for connections.
-   - PyModule cells and code injection (PyModule cell becomes a Python module).
-     Also PyCompositeModule which will have inputpins that are PyModules.
-     All PyModules will be transported as source to the worker, where they will be built into code.
-     UPDATE: injection will be a mid-level concept.
+   - module input pins and code injection (as a Python module).
      At the low-level, it will just be pins declared as "module", with a submode that contains import parameters, and
-     a language "python" or "ipython".
-  - PyModules must have native IPython support. Need IPythonCell for that reason! Add support to transformers and reactors! Not for macros.
+     a language "python" or "ipython". Python cells can be directly connected and auto-adapted to a module inputpin.
+  - Module pins must have native IPython support. In contrast, IPythonCell is dumb text cell, just labeled as ipython.
 
 Part 2 (low-level / cleanup):   
    - Signals (DONE; only to test)
@@ -30,7 +25,7 @@ Part 2 (low-level / cleanup):
    - Cleanup of the code base, remove vestiges of 0.1 (except lib and tests).
    - Cleanup of the TODO and the documentation (put in limbo)
 
-Merge into master? With auto_macro_mode, most tests should work now? Other ones can be ported...
+Merge into master? With direct mode, most tests should work now? Other ones can be ported...
 
 Part 3 (low-level):   
    - Dynamic connection layers: a special macro that has one or more contexts as input (among other inputs), which must be (grand)children
@@ -51,7 +46,7 @@ Part 3 (low-level):
      Even transformers and reactors may be declared as having a log output, and various loglevels
       (transformer.py will already send low-priority log messages about receiving events etc.)
   - Finalize caching:
-    - implement successors (YAGNI?)
+    - implement successors (YAGNI? now that the low-level is subordinate, better rip them)
     - write cache hits into a Log cell
     - structured cells: outchannels have a get_path dependency on an inchannel
     - re-enable caching for high level (test if simple.py works now)

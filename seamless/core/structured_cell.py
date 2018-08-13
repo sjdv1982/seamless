@@ -217,7 +217,7 @@ class StructuredCell(CellLikeBase):
     ):
         from ..silk import Silk
         if not get_macro_mode():
-            if not data._root()._auto_macro_mode:
+            if not data._root()._direct_mode:
                 raise Exception("This operation requires macro mode, since the toplevel context was constructed in macro mode")
         super().__init__()
         self.name = name

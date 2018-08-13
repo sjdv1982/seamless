@@ -26,7 +26,7 @@ class Context(SeamlessBase):
     _mount = None
     _unmounted = False
     _seal = None
-    _auto_macro_mode = False
+    _direct_mode = False
 
     def __init__(
         self, *,
@@ -50,14 +50,14 @@ context : context or None
     parent context
 """
         if get_macro_mode():
-            auto_macro_mode = False
+            direct_mode = False
             macro_mode_context = null_context
         else:
-            auto_macro_mode = True
+            direct_mode = True
             macro_mode_context = macro_mode_on
         with macro_mode_context():
             super().__init__()
-            self._auto_macro_mode = auto_macro_mode
+            self._direct_mode = direct_mode
             if context is not None:
                 self._set_context(context, name)
             if toplevel:
@@ -314,7 +314,7 @@ context : context or None
 
     def mount(self, path=None, mode="rw", authority="cell", persistent=False):
         """Performs a "lazy mount"; context is mounted to the directory path when macro mode ends
-        math: directory path (can be None if an ancestor context has been mounted)
+        path: directory path (can be None if an ancestor context has been mounted)
         mode: "r", "w" or "rw" (passed on to children)
         authority: "cell", "file" or "file-strict" (passed on to children)
         persistent: whether or not the directory persists after the context has been destroyed
@@ -322,8 +322,8 @@ context : context or None
                     May also be None, in which case the directory is emptied, but remains
         """
         assert self._mount is None #Only the mountmanager may modify this further!
-        if self._root()._auto_macro_mode:
-            raise Exception("Root context must have been constructed in macro mode")        
+        if self._root()._direct_mode:
+            raise Exception("Root context must have been constructed in macro mode")
         self._mount = {
             "path": path,
             "mode": mode,
