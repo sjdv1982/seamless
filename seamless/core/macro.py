@@ -274,10 +274,10 @@ def macro(params):
 
 from . import cell, transformer, pytransformercell, link, layer, path, \
  reactor, pyreactorcell, pymacrocell, jsoncell, csoncell, mixedcell, \
- arraycell, mixedcell, signal
+ arraycell, mixedcell, signal, pythoncell, ipythoncell
 from .context import context
 names = ("cell", "transformer", "context", "pytransformercell", "link", "layer",
  "path", "reactor", "pyreactorcell", "pymacrocell", "jsoncell", "csoncell",
- "mixedcell", "arraycell", "signal")
+ "mixedcell", "arraycell", "signal", "pythoncell", "ipythoncell")
 names = names + ("macro",)
 Macro.default_namespace = {n:globals()[n] for n in names}

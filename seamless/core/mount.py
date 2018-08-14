@@ -727,6 +727,8 @@ def resolve_register(reg):
 
     def propagate_persistency(c, persistent=False):
         m = c._mount
+        if m is None:
+            return
         if persistent:
             m["persistent"] = True
         elif m["persistent"] == True:

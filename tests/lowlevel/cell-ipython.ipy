@@ -7,9 +7,9 @@ def func(int i):
     cdef int nn
     cdef double s = 0
     with nogil:
-        for n in range(i):
-            for nn in range(i):
-                s += log(n*nn+1)/10000.0
+      for n in range(i):
+          for nn in range(i):
+              s += log(n*nn+1)/10000.0
     return s
 
 # _ is the last IPython cell. With %%cython -a, it is a

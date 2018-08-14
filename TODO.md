@@ -81,6 +81,7 @@ the mid-level element is dynamically read from the sovereign cell (no double rep
 
 Part 5: applying the mid-level. Some of this can be delayed until post-merge.
 - Cache cells. Also nice for a transformer to store partial results
+  Apply this to slash0
 - Reconsider the restrictions on transformers and reactors. Give transformers
   edit pins and cache pins, allow them to have reactor pin API.
   At least in theory, allow transformers/reactors to declare as sync/async, and thread/process.
@@ -173,6 +174,9 @@ Long-term:
    the value from the backend (it is assumed not to have changed!)
 - Event streams (BIG!)
 - Full feature implementation of Silk, e.g. constructs (see silk.md)
+
+Very long-term:
+- Other implementations? JavaScript? Erlang? Elixir?
 - Lazy evaluation, GPU-GPU triggering (BIG!)
 - Re-implement all high level classes as Silk classes with methods in their schema.
 - Organize cells into arrays (probably at high-level only)

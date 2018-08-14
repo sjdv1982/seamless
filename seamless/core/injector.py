@@ -3,6 +3,7 @@ from types import ModuleType
 from weakref import WeakKeyDictionary
 from contextlib import contextmanager
 import hashlib
+from ..ipython import execute as ipython_execute
 
 class Injector:
     def __init__(self, topmodule_name):
@@ -19,8 +20,6 @@ class Injector:
         assert language in ("python", "ipython"), language
         if code is not None:
             assert isinstance(code, str), type(code)
-        if language == "ipython":
-            raise NotImplementedError
         ws = self.workspaces[workspace_key]
         if code is None:
             ws[module_name] = None
@@ -33,7 +32,11 @@ class Injector:
         mname = self.topmodule_name + "." + module_name
         m["name"] = mname
         mod = ModuleType(mname)
-        exec(code, mod.__dict__)
+        namespace = mod.__dict__
+        if language == "ipython":
+            ipython_execute(code, namespace)
+        else:
+            exec(code, namespace)
         m["module"] = mod
         m["checksum"] = checksum
         ws[module_name] = m

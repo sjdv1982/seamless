@@ -1,19 +1,6 @@
 from qtconsole.rich_jupyter_widget import RichJupyterWidget
 from qtconsole.inprocess import InProcessKernelManager, QtInProcessKernelManager
-from ipykernel.inprocess.ipkernel import InProcessKernel
-from ipykernel.zmqshell import ZMQInteractiveShell
-
-class MyInProcessKernel(InProcessKernel):
-    #get rid of singleton shell instance!
-    class dummy:
-        def instance(self, *args, **kwargs):
-            shell = ZMQInteractiveShell(*args, **kwargs)
-            return shell
-    shell_class = dummy()
-
-class MyInProcessKernelManager(InProcessKernelManager):
-    def start_kernel(self, namespace):
-        self.kernel = MyInProcessKernel(parent=self, session=self.session, user_ns = namespace)
+from .ipython import MyInProcessKernel, MyInProcessKernelManager
 
 class MyQtInProcessKernelManager(QtInProcessKernelManager):
     def start_kernel(self, namespace):

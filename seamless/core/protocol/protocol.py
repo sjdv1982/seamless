@@ -86,10 +86,11 @@ adapters[("copy", "json", "json"), ("copy", "silk", "json")] = adapt_to_silk
 adapters[("copy", "json", "cson"), ("copy", "silk", "cson")] = adapt_to_silk
 adapters[("ref", "object", "mixed"), ("ref", "silk", "mixed")] = adapt_to_silk
 adapters[("copy", "object", "mixed"), ("copy", "silk", "mixed")] = adapt_to_silk
-for access_mode in "object", "text", "pythoncode":
+for access_mode in "object", "text":
     adapters[("copy", access_mode, "python"), ("copy", access_mode, "ipython")] = True
 adapters[("copy", "text", "python"), ("copy", "module", "python")] = True
 adapters[("copy", "text", "python"), ("copy", "module", "ipython")] = True
+adapters[("copy", "text", "ipython"), ("copy", "module", "ipython")] = True
 
 def select_adapter(transfer_mode, source, target, source_modes, target_modes):
     if transfer_mode == "ref":

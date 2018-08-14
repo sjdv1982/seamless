@@ -313,7 +313,7 @@ class CellBase(CellLikeBase):
     def as_text(self):
         raise NotImplementedError
 
-    def mount(self, path=None, mode="rw", authority="cell", persistent=False):
+    def mount(self, path=None, mode="rw", authority="cell", persistent=True):
         """Performs a "lazy mount"; cell is mounted to the file when macro mode ends
         path: file path (can be None if an ancestor context has been mounted)
         mode: "r", "w" or "rw"
@@ -680,6 +680,35 @@ class PyMacroCell(PyTransformerCell):
     _supported_modes = tuple(_supported_modes)
     del transfer_mode
 
+class IPythonCell(Cell):
+    _mount_kwargs = {"encoding": "utf-8", "binary": False}
+    _supported_modes = []
+    for transfer_mode in "buffer", "copy":
+        _supported_modes.append((transfer_mode, "text", "ipython"))
+        _supported_modes.append((transfer_mode, "object", "ipython"))
+    _supported_modes = tuple(_supported_modes)
+    del transfer_mode
+
+    def serialize_buffer(self):
+        return self._val
+
+    def _serialize(self, transfer_mode, access_mode, content_type):
+        return self._val
+
+    def _deserialize(self, value, transfer_mode, access_mode, content_type):
+        v = str(value)
+        self._val = v
+        return v
+
+    def as_text(self):
+        if self._val is None:
+            return None
+        return str(self._val)
+
+    def __str__(self):
+        ret = "Seamless IPython cell: " + self._format_path()
+        return ret
+
 class JsonCell(Cell):
     """A cell in JSON format (monolithic)"""
     _mount_kwargs = {"encoding": "utf-8", "binary": False}
@@ -887,6 +916,9 @@ def pyreactorcell():
 def pymacrocell():
     return PyMacroCell()
 
+def ipythoncell():
+    return IPythonCell()
+
 def jsoncell():
     return JsonCell()
 
@@ -910,6 +942,7 @@ extensions = {
     PyTransformerCell: ".py",
     PyReactorCell: ".py",
     PyMacroCell: ".py",
+    IPythonCell: ".ipy",
     MixedCell: ".mixed",
     ArrayCell: ".npy",
 }
@@ -922,12 +955,9 @@ if inspect.ismodule(Silk):
 from .protocol import cson2json
 
 """
-TODO document: only-text changes
+TODO Documentation: only-text changes
      adding comments / breaking up lines to a Python cell will affect a syntax highlighter, but not a transformer, it is only text
      (a refactor that changes variable names would still trigger transformer re-execution, but this is probably the correct thing to do anyway)
      Same for CSON cells: if the CSON is changed but the corresponding JSON stays the same, the checksum stays the same.
      But the text checksum changes, and a text cell or text inputpin will receive an update.
 """
-
-print("TODO cell: PyModule cell") #cell that does imports, executed already upon code definition, as a module; code injection causes an import of this module
-#...and TODO: cache cell, event stream
