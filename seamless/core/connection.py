@@ -114,8 +114,8 @@ class CellToPinConnection(Connection):
         checksum = source.checksum()
         if self.adapter:
             value = self.adapter(value)
-        if not only_text or target.access_mode == "text":
-            target.receive_update(value, checksum)
+        if not only_text or self.target_access_mode == "text":
+            target.receive_update(value, checksum, self.target_content_type)
 
 class PinToCellConnection(Connection):
     def __init__(self, id, source, target):

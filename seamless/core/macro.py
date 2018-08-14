@@ -4,6 +4,7 @@ import traceback
 from .worker import Worker, InputPin, OutputPin
 from .cached_compile import cached_compile
 from . import cache
+from .injector import macro_injector as injector
 
 class ExecError(Exception): pass
 
@@ -12,6 +13,7 @@ class Macro(Worker):
     exception = None
     secondary_exception = None
     macro_tag = "MACRO_"
+    injected_modules = None
     def __init__(self, macro_params):
         super().__init__()
         self.gen_context = None
@@ -24,6 +26,7 @@ class Macro(Worker):
         self.code_object = None
         self.namespace = {}
         self.function_expr_template = "{0}\n{1}(ctx=ctx,"
+        injected_modules = []
         for p in sorted(macro_params.keys()):
             param = macro_params[p]
             self._macro_params[p] = param
@@ -37,17 +40,21 @@ class Macro(Worker):
                 if len(param) > 2:
                     content_type = param[2]
             elif isinstance(param, dict):
-                io = param["io"]
                 transfer_mode = param.get("transfer_mode", transfer_mode)
                 access_mode = param.get("access_mode", access_mode)
                 content_type = param.get("content_type", content_type)
             else:
                 raise ValueError((p, param))
             pin = InputPin(self, p, transfer_mode, access_mode)
+            if access_mode == "module":
+                injected_modules.append(p)
             self.function_expr_template += "%s=%s," % (p, p)
             self._pins[p] = pin
         self.function_expr_template = self.function_expr_template[:-1] + ")"
         self._missing = set(list(macro_params.keys())+ ["code"])
+        if len(injected_modules):
+            self.injected_modules = injected_modules
+            injector.define_workspace(self, injected_modules)
 
     def __str__(self):
         ret = "Seamless macro: " + self._format_path()
@@ -86,13 +93,16 @@ class Macro(Worker):
                     ctx = context(context=self._context(), name=macro_context_name)
                     keep = {k:v for k,v in self.namespace.items() if k.startswith("_")}
                     self.namespace.clear()
-                    self.namespace["__name__"] = self.name
+                    #self.namespace["__name__"] = self.name
+                    self.namespace["__name__"] = "macro"
                     self.namespace.update(keep)
                     self.namespace.update( self.default_namespace.copy())
                     self.namespace["ctx"] = ctx
                     self.namespace.update(self._values)
                     try:
-                        exec(self.code_object, self.namespace)
+                        workspace = self if self.injected_modules else None
+                        with injector.active_workspace(workspace):
+                            exec(self.code_object, self.namespace)
                         if self.namespace["ctx"] is not ctx:
                             raise Exception("Macro must return ctx")
                     except Exception as e:
@@ -169,7 +179,7 @@ class Macro(Worker):
             self._pending_updates -= 1
 
 
-    def receive_update(self, input_pin, value, checksum):
+    def receive_update(self, input_pin, value, checksum, content_type):
         if value is None:
             self._missing.add(input_pin)
             self._values[input_pin] = None
@@ -186,6 +196,10 @@ class Macro(Worker):
                 else:
                     self.code_object = cached_compile(code, identifier, "exec")
             else:
+                if self.injected_modules and input_pin in self.injected_modules:
+                    language = content_type
+                    mod = injector.define_module(self, input_pin, language, value)
+                    value = mod
                 self._values[input_pin] = value
             if input_pin in self._missing:
                 self._missing.remove(input_pin)

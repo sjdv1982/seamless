@@ -142,10 +142,10 @@ class Reactor(Worker):
         immediate = (id == self._immediate_id)
         self.reactor.process_input(input_pin, value, immediate)
 
-    def receive_update(self, input_pin, value, checksum):
+    def receive_update(self, input_pin, value, checksum, content_type):
         #print("receive_update", input_pin, value)
         if not self.active:
-            work = partial(self.receive_update, input_pin, value, checksum)
+            work = partial(self.receive_update, input_pin, value, checksum, content_type)
             self._get_manager().workqueue.append(work)
             return
         if not self._receive_update_checksum(input_pin, checksum):

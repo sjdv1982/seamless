@@ -78,7 +78,7 @@ class Worker(metaclass=ABCMeta):
                     finally:
                         break
 
-                message_id, name, data = self.input_queue.popleft()  # QueueItem instance
+                message_id, name, data, content_type = self.input_queue.popleft()  # QueueItem instance
 
                 if name == "@RESPONSIVE":
                     self.responsive = True
@@ -101,6 +101,12 @@ class Worker(metaclass=ABCMeta):
                     if look_ahead:
                         ack()
                         continue
+
+                    if self.injected_modules and name in self.injected_modules:
+                        language = content_type
+                        mod = self.injector.define_module(self, name, language, data)
+                        data = mod
+
 
                     # If we have missing values, and this input is currently default, it's no longer missing
                     if data is not None:

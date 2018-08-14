@@ -269,7 +269,7 @@ class LayeredConnection:
                     elif isinstance(target, OutputPinBase):
                         mgr.cell_from_pin.pop(target)
                 elif isinstance(target, (InputPinBase, EditPinBase)):
-                    target.receive_update(None, None)
+                    target.receive_update(None, None, None, None)
                     mgr.pin_from_cell.remove(target)
         if self.target.obj is not None and self.target.obj() is obj:
             if not self.target.static:

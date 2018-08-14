@@ -129,14 +129,14 @@ class Transformer(Worker):
         self.transformer.input_queue.append(labeled_msg)
         self.transformer.semaphore.release()
 
-    def receive_update(self, input_pin, value, checksum):
+    def receive_update(self, input_pin, value, checksum, content_type):
         if not self.active:
-            work = partial(self.receive_update, input_pin, value, checksum)
+            work = partial(self.receive_update, input_pin, value, checksum, content_type)
             self._get_manager().buffered_work.append(work)
             return
         if not self._receive_update_checksum(input_pin, checksum):
             return
-        self._send_message( (input_pin, value) )
+        self._send_message( (input_pin, value, content_type) )
 
     def _touch(self):
         self._send_message( ("@TOUCH", None) )

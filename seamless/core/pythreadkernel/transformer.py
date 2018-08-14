@@ -5,6 +5,7 @@ from multiprocessing import Process
 import functools
 import time
 from ..cached_compile import cached_compile
+from ..injector import transformer_injector
 
 USE_PROCESSES = False
 if USE_PROCESSES:
@@ -18,14 +19,16 @@ def return_preliminary(result_queue, value):
     #print("return_preliminary", value)
     result_queue.put((-1, value))
 
-def execute(name, code_object, namespace, output_name, with_schema, result_queue):
+def execute(name, code_object, namespace, injector, workspace,
+    output_name, with_schema, result_queue):
     namespace["return_preliminary"] = functools.partial(
         return_preliminary, result_queue
     )
     try:
         if not with_schema:
             namespace.pop(output_name, None)
-        exec(code_object, namespace)
+        with injector.active_workspace(workspace):
+            exec(code_object, namespace)
     except:
         exc = traceback.format_exc()
         result_queue.put((1, exc))
@@ -41,7 +44,8 @@ def execute(name, code_object, namespace, output_name, with_schema, result_queue
 
 class Transformer(Worker):
     name = "transformer"
-
+    injector = transformer_injector
+    injected_modules = None
     def __init__(self, parent, with_schema, inputs, output_name, output_queue, output_semaphore, **kwargs):
         self.with_schema = with_schema
         self.output_name = output_name
@@ -68,6 +72,15 @@ class Transformer(Worker):
         self.function_expr_template = self.function_expr_template[:-1] + ")"
 
         super(Transformer, self).__init__(parent, inputs, **kwargs)
+        injected_modules = []
+        for inp in self.inputs:
+            pin = self.inputs[inp]
+            access_mode = pin[1]
+            if access_mode == "module":
+                injected_modules.append(inp)
+        if len(injected_modules):
+            self.injected_modules = injected_modules
+            self.injector.define_workspace(self, injected_modules)
 
     def send_message(self, tag, message):
         #print("send_message", tag, message, hex(id(self.output_queue)))
@@ -114,8 +127,10 @@ class Transformer(Worker):
                 output = Silk(schema=self.namespace["schema"])
                 self.namespace[self.output_name] = output
             queue = Queue()
+            workspace = self if self.injected_modules else None
             args = (self.parent()._format_path(), self.code_object,
-              self.namespace, self.output_name, self.with_schema, queue)
+              self.namespace, self.injector, workspace,
+              self.output_name, self.with_schema, queue)
             executor = Executor(target=execute,args=args, daemon=True)
             executor.start()
             dead_time = 0

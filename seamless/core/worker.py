@@ -76,7 +76,7 @@ class Worker(SeamlessBase):
         else:
             return self._pins[attr]
 
-    def receive_update(self, input_pin, value, checksum):
+    def receive_update(self, input_pin, value, checksum, content_type):
         raise NotImplementedError
 
     def touch(self):
@@ -201,12 +201,12 @@ class InputPin(InputPinBase):
         """Sets the value of the connected cell"""
         return self.cell().set(*args, **kwargs)
 
-    def receive_update(self, value, checksum):
+    def receive_update(self, value, checksum, content_type):
         """Private"""
         worker = self.worker_ref()
         if worker is None:
             return #Worker has died...
-        worker.receive_update(self.name, value, checksum)
+        worker.receive_update(self.name, value, checksum, content_type)
 
     def status(self):
         manager = self._get_manager()
@@ -348,12 +348,12 @@ class EditPin(EditPinBase):
         manager = self._get_manager()
         manager.pin_send_update(self, value, preliminary=preliminary)
 
-    def receive_update(self, value, checksum):
+    def receive_update(self, value, checksum, content_type):
         """Private"""
         worker = self.worker_ref()
         if worker is None:
             return #Worker has died...
-        worker.receive_update(self.name, value, checksum)
+        worker.receive_update(self.name, value, checksum, content_type)
 
     def status(self):
         manager = self._get_manager()

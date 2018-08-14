@@ -18,6 +18,7 @@ Part 2 (low-level / cleanup):
      Adapters will convert among them (e.g. int=>float) and between them and JSON/mixed/text.
      Supported access modes are JSON and text. Adapters will convert to Silk.
    - Have a look if Qt mainloop hook can be eliminated.
+   - equilibrate() should not wait for workers with an execution error
    - Start with lib porting. Port Qt editors (including HTML), but no more seamless.qt
      Port all macros, but store the code in plain Python modules in lib
    - Port websocketserver, with proof of principle

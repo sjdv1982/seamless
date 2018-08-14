@@ -21,11 +21,12 @@ A connection declaration may have up to four parts
   - json: the result of json.load, i.e. nested dicts, lists and basic types (str/float/int/bool).
   - silk: a Silk object
   - text: a text string
-  TODO: code_object
+  - module: a Python module
 - content type: the semantic content of the data
   - object: generic Python object
   - text: text
   - python: generic python code
+  - ipython: IPython code
   - transformer: transformer code
   - reactor: reactor code
   - macro: macro code
@@ -40,12 +41,12 @@ They will never be something as rich as MIME types;
 """
 
 transfer_modes = ("buffer", "copy", "ref", "signal")
-access_modes = ("object", "pythoncode", "json", "silk", "text") # how the data is accessed
+access_modes = ("object", "pythoncode", "json", "silk", "text", "module") # how the data is accessed
 content_types = ("object", "text",
-  "python", "transformer", "reactor", "macro",
+  "python", "ipython", "transformer", "reactor", "macro",
   "json", "cson", "mixed", "binary"
 )
-text_types = ("text", "python", "transformer", "reactor", "macro", "cson")
+text_types = ("text", "python", "ipython", "transformer", "reactor", "macro", "cson")
 
 
 def set_cell(cell, value, *,
@@ -85,6 +86,10 @@ adapters[("copy", "json", "json"), ("copy", "silk", "json")] = adapt_to_silk
 adapters[("copy", "json", "cson"), ("copy", "silk", "cson")] = adapt_to_silk
 adapters[("ref", "object", "mixed"), ("ref", "silk", "mixed")] = adapt_to_silk
 adapters[("copy", "object", "mixed"), ("copy", "silk", "mixed")] = adapt_to_silk
+for access_mode in "object", "text", "pythoncode":
+    adapters[("copy", access_mode, "python"), ("copy", access_mode, "ipython")] = True
+adapters[("copy", "text", "python"), ("copy", "module", "python")] = True
+adapters[("copy", "text", "python"), ("copy", "module", "ipython")] = True
 
 def select_adapter(transfer_mode, source, target, source_modes, target_modes):
     if transfer_mode == "ref":

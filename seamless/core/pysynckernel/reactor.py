@@ -7,6 +7,8 @@ from ..cached_compile import cached_compile
 from ..runtime_identifier import get_runtime_identifier
 from .reactor_pins import ReactorInput, ReactorInputSignal, \
     ReactorOutput, ReactorOutputSignal, ReactorEdit
+from ..injector import reactor_injector
+
 
 class PINS:
     pass
@@ -15,6 +17,8 @@ class Reactor:
     name = "reactor"
     _destroyed = False
     _active = False
+    injector = reactor_injector
+    injected_modules = None
 
     def __init__(self,
         parent,
@@ -40,6 +44,16 @@ class Reactor:
         self._set_namespace()
         self._pending_updates = 0
         self._spontaneous = True
+
+        injected_modules = []
+        for inp in self.inputs:
+            pin = self.inputs[inp]
+            access_mode = pin[1]
+            if access_mode == "module":
+                injected_modules.append(inp)
+        if len(injected_modules):
+            self.injected_modules = injected_modules
+            self.injector.define_workspace(self, injected_modules)
 
     def _update_from_start(self):
         for up in self.inputs.keys():
@@ -73,7 +87,12 @@ class Reactor:
             #TODO: support silk, mixed, binary, cson access_modes
             raise NotImplementedError
 
-        if content_type in ("python", "reactor"):
+        if access_mode == "module":
+            if self.injected_modules and name in self.injected_modules:
+                language = content_type
+                mod = self.injector.define_module(self, name, language, data)
+                value = mod
+        elif content_type in ("python", "reactor"):
             identifier = str(self.parent()) + ":%s" % name
             if access_mode == "text":
                 code = data
@@ -127,7 +146,9 @@ class Reactor:
             p.updates_processed(updates_processed)
 
     def _execute(self, code_obj):
-        exec(code_obj, self.namespace)
+        workspace = self if self.injected_modules else None
+        with self.injector.active_workspace(workspace):
+            exec(code_obj, self.namespace)
 
     def _code_start(self):
         #print("CODE-START", self.parent())
@@ -181,6 +202,7 @@ class Reactor:
         self.namespace.clear()
         self.namespace.update(keep)
         self.namespace["PINS"] = self.PINS
+        self.namespace["__name__"] = "reactor"
         for name in self.values:
             v = self.values[name]
             mode, _, _, _ = self.inputs[name]
@@ -206,7 +228,6 @@ class Reactor:
             else:
                 e = ReactorOutput(self, name)
             setattr(self.PINS, name,  e)
-
 
     def update(self, updated, *, force_start=False, updated_now = None):
 
@@ -250,6 +271,8 @@ class Reactor:
                         pin.updated_now = True
                 pin.updated = True
                 do_update = True
+                if self.injected_modules and name in self.injected_modules:
+                    self.namespace[name] = value
             else:
                 pin.updated_now = False
                 pin.updated = False
