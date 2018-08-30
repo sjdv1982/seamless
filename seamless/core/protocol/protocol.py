@@ -91,7 +91,9 @@ for access_mode in "object", "text":
 adapters[("copy", "text", "python"), ("copy", "module", "python")] = True
 adapters[("copy", "text", "python"), ("copy", "module", "ipython")] = True
 adapters[("copy", "text", "ipython"), ("copy", "module", "ipython")] = True
-
+for pymode in ("transformer", "reactor", "macro"):
+    adapters[("ref", "pythoncode", "python"), ("ref", "pythoncode", pymode)] = True
+    adapters[("copy", "pythoncode", "python"), ("copy", "pythoncode", pymode)] = True
 def select_adapter(transfer_mode, source, target, source_modes, target_modes):
     if transfer_mode == "ref":
         transfer_modes = ["ref", "copy"]
