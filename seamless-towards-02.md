@@ -67,7 +67,7 @@ Mid-level:
   (if the cell is an input of a high-level macro)
   UPDATE: no need for this, since mid-level is only manipulated from high-level. Results of computations do not confer authority!
 - There will be a special library contexts of low-level macros that recognize mid-level graph constructs
-  and return low-level contexts.
+  and return low-level contexts. UPDATE: just macros should do
   These contexts are expected to accept connections straightforwardly, and to have hook registration configured.
   The "big low-level macro" (only invoked by the top context) reads in a mid-level graph + such a library,
   and returns a big low-level context (mid-to-low-level translation).
@@ -95,12 +95,13 @@ Some high-level contexts can be configured as *libraries*:
 - To be also available to any macro inside any child context of their parent, if the macro asks for it
 - To be also available as low-level Silk struct, inside low-level macros
 Such contexts will replace the standard library and registrars.
+UPDATE: libraries will be a low level concept now.
 All macros have four parts:
 - execution code
 - loading code (imports)
 - library requirements (see above)
 - configuration (language, what happens when you assign to it)
-Symlinks are also very important to tie a cell to a library cell.
+Symlinks are also very important to tie a cell to a library cell. UPDATE: no longer true (LibCell instead)
 
 Serialization
 Each level is serialized on its own.
@@ -110,6 +111,7 @@ Low-level by default does not store anything, but cell values (not topology) can
 either as hashes or as full values.
 Libraries requested by a macro will be included into the serialization (this can be configured to contain
 only the name + hash, to save space; requires the library to be present when the serialization is loaded)
+UPDATE: for individual cells, this is a feature of LibCell. LibModule topology still to be considered.
 Symlinks defined at the interactive level cause only the symlinked item to be included.
 UPDATE: have to think about serializing mid-level and/or high-level
 
@@ -225,7 +227,106 @@ default 5 will be overwritten.
 You don't import the seamless lib, you add it as a subcontext into your main
 context (TODO: support loading subcontexts!!!; also, the .lib
 context and its subcontexts must be copy-upon-assignment instead of rename-upon-assignment  ).
+!!! lib mounter !!! normally, only read access. libdevel mounter with write access. Robogit (libgit2) to commit changes.
+UPDATE: not exactly a "mounter"; core.lib system instead.
 
+## UPDATE of the UPDATE: Towards flexible and cloud-compatible evaluation / Seamless collaborative protocol
+(text below may be outdated)
+- Multiple mounts should be supported. Concept of "mount namespace", default ones: "file", "uri"
+  Namespace is required, but mount identifier (file name, URL, ...) is optional (checksum might suffice)
+  Mounts maybe read and/or write, but read may also be lazy: workers have to actively demand the value from
+  the mount (this will not be kept in memory afterwards, caching has to be done by the mounter)
+- Secret cells: consist of just a checksum, and optionally some mounts. These mounts are lazy.
+Seamless servers: common characteristic of services is that they synchronize cells. When Seamless talks to a Seamless server,
+ it offers a cell. First, it provides the checksum and the mounts. The server will then respond with one of the
+ following responses ("transfer negotiation"):
+ 0. Server context is dead; client must re-initialize the server context and and re-send all cells.
+    However, the context ID always stays the same.
+ 1. Cell checksum is already known and cached, no need to transfer
+ 2. Mounter is known; no need to transfer; server will retrieve cell value from mounter by itself
+ 3. Please transfer cell value
+ 4. The transfer of this cell or cell value is forbidden
+ 5. Reverse update request: the server asks the client to update one or more cells.
+    This is most common in case of an interactive fix of the code (so the code cell has now a different checksum)
+ 6. Redirect (to another website)
+ 7. Challenge. This server refuses secret cells. You must prove that you have the actual cell value.
+    This is because Seamless does not do blackboxing: services are meant to perform reproducible computations
+     that in principle could be performed locally as well.
+ Server configuration involves primarily these responses.
+ Other configuration is what kind of evaluation/resource-claiming meta-parameters to accept, and what kind of logging is returned.
+
+ Type of servers:
+ 0. Dynamic HTML using websockets. Completely unrelated.
+ A. Two-way synchronization (collaborative protocol). Uses websocket/crossbar server, pub/sub
+ B-D. One-way synchronization. Client manipulates cells, assuming that no other client does.
+ B. Remote context server. Service is remote context server. It starts empty context (in Docker image)
+    Returns a context ID / URL. The URL might be somewhere else.
+    URL provides REST API:
+    1. equilibrate
+    2. set <cell name>
+    3. read <cell name>
+    4. create <cell name, worker, subcontext, etc.>
+    5. delete <cell name, worker, subcontext, etc.>    
+ C. Interactive service. As in B, but:
+    - The server starts a full context, not an empty one.
+    - 4. and 5. are forbidden
+    - 2. is regulated. Some cells may not be set at all; for others, only certain values (or maximum sizes) may be acceptable.
+    - 3. may be regulated as well
+ D. Atomic service.
+    1. Standard Seamless client. Negotiates cell transfer as in C.
+     No concept of context ID.
+     Returns a request URL: in a request, all cells are submitted, then
+      the context is equilibrated, then the result is returned.
+     Service configuration (internal):
+     - Starts full context in Docker image (as in C)
+     - One cell of the context must be marked as "result" cell, some others as input cells
+     - Some cells may be marked as slow-changing. Contexts are kept alive, and when a request has the same values
+       for the slow-changing cells, it is sent to the same context instance.
+       This is just an implementation detail; it is assumed that this has no influence on context state.
+   2. Web service. Non-Seamless client (Python, JavaScript, ...).
+       As 1., but request URL is called directly.
+       No transfer negotiation request, needs extra configuration to regulate this.
+   3. Web server. As 2., but over CGI. Web form needs to (auto-)generated.
+  Instead of Docker images, the service may also run on bare metal. It may even run in-process (dummy server).
+  For atomic services, a HPC backend may be used as well (e.g. Slurm jobs).
+
+Note that service *names* do not play any role. For logging purposes, one could be provided, otherwise it is just the local context name.
+
+The idea is that the RPBS will host a global Seamless server that accepts any context registration.
+A server A, B, C, D1, D2, D3 and an HTML page for D3 are in principle auto-generated upon context registration, but customization is possible. For example, a cell may be designated as D3 HTML cell. Multiple D1 with multiple slow-change configs are possible.
+After some time, context instances will be killed off, this can also be configured.
+The RPBS server will have authorization: authorized registrations will have access to more resources.
+
+How services are found:
+At startup, Seamless server(s) and mounters are read from the environmental variables.
+In the Seamless client, for any context, if a service is not found, Seamless reverts to local evaluation.
+However, a context may be marked as "must be service".
+A context may also be marked already with a context ID. The context ID is a huge (64 bit) global number that monotonically
+ increases; the RPBS server guarantees that two interactive requests made under the same context ID will always modify the
+ same context (as long as it is alive), no matter if they come from the same client or not.
+
+Jupyter:
+Jupyter is only useful for interactive servers and services (A-C). Seamless-in-a-notebook is an interactive client that
+ can also in-line visualize HTML.
+The RPBS server can offer interactive services as a "watermarked notebook". A notebook template is registered, and when a
+ new context instance is created, the notebook is returned with the context ID filled in.
+These notebooks can run everywhere: it can be downloaded and run locally, or at the RPBS. In the latter case,
+ some "privileged connections" to the services can be set up in the form of mounters.
+In the same vein, the RPBS will allow you to clone the entire RPBS server into a private sandbox copy,
+and the URI will be similarly watermarked into the notebook. You can then override any service you like, without affecting
+ other users.
+Maybe every context submitted to an RPBS server should go into a robogit (libgit2) repo. Pull requests from sandbox server
+ repos are then possible. (People should create their own Github account, then push the robogit@RPBS to there.
+  RPBS should provide an in-Docker command line shell for this kind of thing)
+
+Docker repo:
+- Let apt/pip/conda/yum dump their state; define a Docker image as this state, on top of base Docker images
+- The base images has all repo locations set to RPBS mirrors; for Ubuntu, PyPI, etc., all specific to a date and never changing
+  This way we can guarantee version control and support indefinitely
+
+
+
+##/UPDATE of UPDATE
 
 ## UPDATE: Towards flexible and cloud-compatible evaluation
 All (low-level) transformers and reactors will have a hidden JSON input pin "(sl_)evaluation".

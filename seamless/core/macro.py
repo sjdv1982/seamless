@@ -5,6 +5,7 @@ from .worker import Worker, InputPin, OutputPin
 from .cached_compile import cached_compile
 from . import cache
 from .injector import macro_injector as injector
+from . import library
 
 class ExecError(Exception): pass
 
@@ -14,8 +15,7 @@ class Macro(Worker):
     secondary_exception = None
     macro_tag = "MACRO_"
     injected_modules = None
-    def __init__(self, macro_params):
-        super().__init__()
+    def __init__(self, macro_params, *, lib=None):
         self.gen_context = None
         self.macro_context_name = None
         self.code = InputPin(self, "code", "ref", "pythoncode", "transformer")
@@ -26,6 +26,8 @@ class Macro(Worker):
         self.code_object = None
         self.namespace = {}
         self.function_expr_template = "{0}\n{1}(ctx=ctx,"
+        self.lib = lib
+        super().__init__()
         injected_modules = []
         for p in sorted(macro_params.keys()):
             param = macro_params[p]
@@ -102,7 +104,8 @@ class Macro(Worker):
                     try:
                         workspace = self if self.injected_modules else None
                         with injector.active_workspace(workspace):
-                            exec(self.code_object, self.namespace)
+                            with library.bind(self.lib):
+                                exec(self.code_object, self.namespace)
                         if self.namespace["ctx"] is not ctx:
                             raise Exception("Macro must return ctx")
                     except Exception as e:
@@ -269,15 +272,15 @@ class Macro(Worker):
         if self.gen_context is not None:
             self.gen_context._get_manager().activate(only_macros)
 
-def macro(params):
-    return Macro(params)
+def macro(params, *, lib=None):
+    return Macro(params, lib=lib)
 
 from . import cell, transformer, pytransformercell, link, layer, path, \
  reactor, pyreactorcell, pymacrocell, jsoncell, csoncell, mixedcell, \
- arraycell, mixedcell, signal, pythoncell, ipythoncell
+ arraycell, mixedcell, signal, pythoncell, ipythoncell, libcell
 from .context import context
 names = ("cell", "transformer", "context", "pytransformercell", "link", "layer",
  "path", "reactor", "pyreactorcell", "pymacrocell", "jsoncell", "csoncell",
- "mixedcell", "arraycell", "signal", "pythoncell", "ipythoncell")
+ "mixedcell", "arraycell", "signal", "pythoncell", "ipythoncell", "libcell")
 names = names + ("macro",)
 Macro.default_namespace = {n:globals()[n] for n in names}

@@ -1,16 +1,10 @@
 Great Refactor is underway (see seamless-towards-02.md).
 
-A proof-of-principle of the middle/high level is now there.
+Part 1 is now complete
 
 Things to do:
 
-Part 1 (low-level):
-   - module input pins and code injection (as a Python module).
-     At the low-level, it will just be pins declared as "module", with a submode that contains import parameters, and
-     a language "python" or "ipython". Python cells can be directly connected and auto-adapted to a module inputpin.
-  - Module pins must have native IPython support. In contrast, IPythonCell is dumb text cell, just labeled as ipython.
-
-Part 2 (low-level / cleanup):   
+Part 3 (low-level / cleanup):   
    - Signals (DONE; only to test)
    - Observers (subclass of OutputPinBase)
    - Add back in int/float/str/bool cells because they are so convenient.
@@ -20,7 +14,7 @@ Part 2 (low-level / cleanup):
    - Have a look if Qt mainloop hook can be eliminated.
    - equilibrate() should not wait for workers with an execution error
    - Start with lib porting. Port Qt editors (including HTML), but no more seamless.qt
-     Port all macros, but store the code in plain Python modules in lib
+     Port all macros, but store the code in plain Python modules in lib, that register a library context
    - Port websocketserver, with proof of principle
    - Port OpenGL, with proof of principle
    - Cleanup of the code base, remove vestiges of 0.1 (except lib and tests).
@@ -28,7 +22,7 @@ Part 2 (low-level / cleanup):
 
 Merge into master? With direct mode, most tests should work now? Other ones can be ported...
 
-Part 3 (low-level):   
+Part 4 (low-level):   
    - Dynamic connection layers: a special macro that has one or more contexts as input (among other inputs), which must be (grand)children
       Like static layers, they are tied to a macro or toplevel context
       They take as input any children of the context (cells or child contexts);
@@ -59,7 +53,7 @@ Part 3 (low-level):
   - Silk: error messages, multi-lingual (use Python format() syntax, but with properties to fill in, i.e. "The value cannot be {a.x}". This is natively supported by Python. No magic in the style of {a.x-a.y}; define a property for that)
   - Seamless console scripts and installer
 
-Part 4: shift to the mid-level data structure
+Part 5: shift to the mid-level data structure
 - Sovereignty
 Mostly elide the middle level, dynamically generate at time of low-level generation/serialization.
 The middle level is the input of a translation macro, whereas the low level is the output
@@ -79,7 +73,7 @@ the mid-level element is dynamically read from the sovereign cell (no double rep
   - add operators (but only those)
   - no observers; not sure about mount.
 
-Part 5: applying the mid-level. Some of this can be delayed until post-merge.
+Part 6: applying the mid-level. Some of this can be delayed until post-merge.
 - Cache cells. Also nice for a transformer to store partial results
   Apply this to slash0
 - Reconsider the restrictions on transformers and reactors. Give transformers
@@ -96,7 +90,7 @@ Part 5: applying the mid-level. Some of this can be delayed until post-merge.
   - Include old 0.1 resources, or make this high-level only?
   - Save high-level syntax as mid-level only, or separately?
 
-Part 6, the high level :
+Part 7, the high level :
 - High-level syntax, manipulating the mid-level graph. Syntax can be changed interactively if Silk is used.
   Proof of principle DONE. TODO:
   - mounting is not quite satisfactory (redundant "translated" context)
@@ -104,11 +98,12 @@ Part 6, the high level :
   - Reactors
   - Many usability issues
   - Translation policies
-  - Syntax customization for library contexts (see seamless-towards-02.md).
+  - Library contexts (easy enough, but think of serialization)
+  - Syntax customization (see seamless-towards-02.md).
 - serialization (take care of shells also). (Do we need this? or midlevel only?)
 - high-level macros. They contain high-level syntax.
   They have, as an extra input, (a copy of) the high-level translation policies that were in effect at the time of creation
-The rest of part 5 could be delayed until post-0.2
+The rest of part 6 could be delayed until post-0.2
 - High and low policies like .accept_shell_append should go into a cell
 - Meta-schema for schema editing (jsonschema has it)
 
@@ -117,11 +112,11 @@ if the structured_cell has no other connection (for that inchannel, or higher). 
 
 NOTE: seamless will never have any global undo system. It is up to individual editor-reactors to implement their own systems.
 
-Part 7 (pre-merge):
+Part 8 (pre-merge):
 - Port over 0.1 lib: from .py files to Seamless library context files. (can be delayed post-merge?)
 - Port over 0.1 tests
 
-Part 8 (merge):
+Part 9 (merge):
   Port over Orca and other examples
   Make new videos:
     - Basic example
@@ -157,7 +152,7 @@ Post-merge, post-release (0.3):
 Post-0.6:
 - Address shell() memory leak: IPython references may hold onto large amounts of data
 - Expand and document seamless shell language (slash)
-- Special high-level authority syntax for library contexts (fork)
+- Special high-level authority syntax for library contexts (fork into libdevel)
 
 Long-term:
 - The seamless collaborative protocol (high level) (see seamless-towards-02.md)
@@ -210,3 +205,32 @@ It is possible to declare contexts as "equilibrium contexts". In that case, they
 It is possible to declare some of the outputs (and event stream inputs) as "secondary", which means that they escape this guarantee (for example, for logging purposes).
 "Events to the outside world" is only restricted if it goes through exported cells and pins. Traffic through
 non-exported objects is not restricted.
+
+Application to ATTRACT: the mainloop reactor
+============================================
+Without event streams, an energy minimization loop is not a good fit for Seamless. But it can be done.
+There must be an ATTRACT mainloop reactor with editpins A and C, and inputpins B and D.
+Pin A contains the DOFs: upon start-up, it is copied from the initial DOFs.
+It is assumed that a "scorer" context listens to A and gives results on B, which is the energy and DOF gradients.
+To activate the scorer, the mainloop reactor sets A, then equilibrates A and B, then reads B.
+Pin C also contains the energy and DOF gradients, and D also contains the DOFs
+It is assumed that a "minimizer" context listens to C and then gives results on D.
+To activate the minimizer, the mainloop reactor sets C from B, then equilibrates C and D, then reads D.
+The scorer can then be re-activated by setting A from D.
+The minimizer and scorer contexts must be equilibrium contexts.
+"Equilibrating" is done by a having a signal that fires when a context reaches equilibrium.
+The ATTRACT mainloop reactor will have two signal inputpins for this (from scorer and minimizer) and an internal
+ variable that maintains which signal is to be listened for.
+A and C are cached together with the number of minimization steps that have been performed. In this way:
+- The mainloop context can be saved in mid-evaluation and resumed later
+- The number of steps can be increased and only the additional steps are computed.
+Equilibrium contexts should also have a Report cell that reflects the checksum value of all exported cells and pins
+that are "input".
+Exported cells are "input" if they are authoritative within the cell. Exported pins are "input" if they are inputpins.
+The mainloop reactor will listen for these checksum Report cells; when they change, the whole computation must be restarted.
+When porting ATTRACT, the minimizer and scorer should be in slash.
+After event streams, the mainloop reactor will be superfluous
+ and can be built as a simple context of event stream cell A-D plus connections,
+ with an internal counter (event streams must provide this as a Report cell!) to make the B=>C connection conditional.
+Equilibrium contexts with an event stream as input will automatically give one as output, and send the proper "undo" signal
+ when they change, resetting the stream.

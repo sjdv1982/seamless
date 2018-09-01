@@ -118,6 +118,15 @@ class Worker(SeamlessBase):
 
 from .protocol import transfer_modes, access_modes, content_types
 
+default_cell_types = {
+    None: None,
+    "object": None,
+    "pythoncode": "pythoncode",
+    "json": "json",
+    "silk": "json",
+    "text": "text",
+    "module": "pythoncode",
+}
 class PinBase(SeamlessBase):
     access_mode = None
     def __init__(self, worker, name, transfer_mode, access_mode=None, content_type=None):
@@ -182,6 +191,8 @@ class InputPin(InputPinBase):
         my_cell = manager.pin_from_cell.get(self)
         if celltype is None:
             celltype = self.content_type # for now, a 1:1 correspondence between content type and cell type
+            if celltype is None:
+                celltype = default_cell_types[self.access_mode]
         if my_cell is None:
             worker = self.worker_ref()
             if worker is None:
@@ -254,6 +265,8 @@ class OutputPin(OutputPinBase):
         my_cells = manager.pin_to_cells.get(self, [])
         if celltype is None:
             celltype = self.content_type # for now, a 1:1 correspondence between content type and cell type
+            if celltype is None:
+                celltype = default_cell_types[self.access_mode]
         l = len(my_cells)
         if l == 0:
             worker = self.worker_ref()
@@ -309,6 +322,8 @@ class EditPin(EditPinBase):
         my_cells = manager.editpin_to_cells(self)
         if celltype is None:
             celltype = self.content_type # for now, a 1:1 correspondence between content type and cell type
+            if celltype is None:
+                celltype = default_cell_types[self.access_mode]
         l = len(my_cells)
         if l == 0:
             worker = self.worker_ref()

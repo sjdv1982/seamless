@@ -288,13 +288,18 @@ class Manager:
         assert link._root() is target._root()
         assert link._get_manager() is self
         linked = link.get_linked()
-        if link._is_sealed():
+        """
+        if linked._is_sealed():
             assert isinstance(linked, (Cell, EditPinBase, OutputPinBase))
-            path = Path(link)
+            path = Path(linked)
             layer.connect_path(path, target)
             return self
         if isinstance(linked, Path):
             return
+        """
+        if isinstance(linked, Path):
+            layer.connect_path(linked, target)
+            return self
         manager = linked._get_manager()
         if isinstance(linked, Cell):
             manager.connect_cell(linked, target)

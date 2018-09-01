@@ -41,7 +41,7 @@ def outer_macro():
     return macro_register.curr_macro_stack[0]
 
 @contextmanager
-def macro_mode_on(macro=None):
+def macro_mode_on(macro=None, check_async=True):
     from . import Context, Worker
     from .layer import fill_objects, check_async_macro_contexts
     global _macro_mode
@@ -61,7 +61,8 @@ def macro_mode_on(macro=None):
         filled = fill_objects(None, None)
         for obj in filled:
             obj.activate(only_macros=False)
-        check_async_macro_contexts(None, None)
+        if check_async:
+            check_async_macro_contexts(None, None)
         created_contexts = []
         for ctx in curr_macro_register:
             if not isinstance(ctx, Context):
@@ -96,7 +97,7 @@ def with_macro_mode(func):
             if not ctx._direct_mode:
                 raise Exception("This operation requires macro mode, since the toplevel context was constructed in macro mode")
             else:
-                with macro_mode_on():
+                with macro_mode_on(check_async=False):
                     result = func(self, *args, **kwargs)
                 return result
         else:

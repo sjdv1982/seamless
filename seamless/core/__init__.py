@@ -135,7 +135,7 @@ class Link(SeamlessBase):
             return result
 
     def __str__(self):
-        ret = "Seamless object: %s to %s" % (self._format_path(), self._linked)
+        ret = "Seamless link: %s to %s" % (self._format_path(), self._linked)
         return ret
 
 def link(obj):
@@ -146,6 +146,7 @@ from . import cell as cell_module
 from .cell import Cell, CellLikeBase, cell
 from .cell import textcell, pythoncell, pytransformercell, pymacrocell, \
  pyreactorcell, ipythoncell, jsoncell, csoncell, arraycell, mixedcell, signal
+from .library import libcell
 from . import context as context_module
 from .context import Context, context
 from .worker import Worker

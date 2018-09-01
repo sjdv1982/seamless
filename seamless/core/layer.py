@@ -12,7 +12,7 @@ def _get_path(macro):
         assert ctx._toplevel
         mpath = ()
     else:
-        mpath = macro.path + (macro.macro_context_name,)
+        mpath = macro.path[:-1] + (macro.macro_context_name,)
     return mpath
 
 class Path:

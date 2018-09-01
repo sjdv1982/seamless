@@ -67,9 +67,10 @@ class CellBase(CellLikeBase):
 
     @property
     def _seal(self):
-        ctx = self._context()
-        assert ctx is not None
-        return ctx._seal
+        ctx = self._context
+        if ctx is None:
+            return None
+        return ctx()._seal
 
     @_value.setter
     def _value(self, value):
@@ -543,6 +544,7 @@ class TextCell(Cell):
 
 class PythonCell(Cell):
     """Generic Python code object"""
+    _codetype = "func"
     _mount_kwargs = {"encoding": "utf-8", "binary": False}
     _supported_modes = []
     for transfer_mode in "buffer", "copy":
@@ -583,7 +585,20 @@ class PythonCell(Cell):
         from .protocol import TransferredCell
         if isinstance(value, TransferredCell):
             value = value.data
-        ast.parse(value)
+        if inspect.isfunction(value):
+            code = inspect.getsource(value)
+            code = strip_source(code)
+            value = code
+        ast = cached_compile(value, self._codetype, "exec", PyCF_ONLY_AST)
+        is_function = (len(ast.body) == 1 and
+                       isinstance(ast.body[0], FunctionDef))
+
+        if is_function:
+            self.func_name = ast.body[0].name
+        else:
+            self.func_name = self._codetype
+
+        self.is_function = is_function
 
     def serialize_buffer(self):
         return self._val
@@ -643,26 +658,6 @@ class PyTransformerCell(PythonCell):
     _supported_modes.append(("ref", "pythoncode", _codetype))
     _supported_modes = tuple(_supported_modes)
     del transfer_mode
-
-    def _validate(self, value):
-        from .protocol import TransferredCell
-        if isinstance(value, TransferredCell):
-            value = value.data
-        if inspect.isfunction(value):
-            code = inspect.getsource(value)
-            code = strip_source(code)
-            value = code
-        ast = cached_compile(value, self._codetype, "exec", PyCF_ONLY_AST)
-        is_function = (len(ast.body) == 1 and
-                       isinstance(ast.body[0], FunctionDef))
-
-        if is_function:
-            self.func_name = ast.body[0].name
-        else:
-            self.func_name = self._codetype
-
-        self.is_function = is_function
-
 
 class PyMacroCell(PyTransformerCell):
     """Python code object used for macros
@@ -879,27 +874,23 @@ class Signal(Cell):
         ret = "Seamless signal: " + self._format_path()
         return ret
 
+celltypes = {
+    "text": TextCell,
+    "python": PythonCell,
+    "transformer": PyTransformerCell,
+    "reactor": PyReactorCell,
+    "macro": PyMacroCell,
+    "json": JsonCell,
+    "cson": CsonCell,
+    "array": ArrayCell,
+    "mixed": MixedCell,
+    "signal": Signal,
+    None: Cell,
+}
+
 def cell(celltype=None, **kwargs):
-    if celltype == "text":
-        return TextCell()
-    elif celltype == "python":
-        return PythonCell(**kwargs)
-    elif celltype == "transformer":
-        return PyTransformerCell(**kwargs)
-    elif celltype == "reactor":
-        return PyReactorCell(**kwargs)
-    elif celltype == "macro":
-        return PyMacroCell(**kwargs)
-    elif celltype == "json":
-        return JsonCell(**kwargs)
-    elif celltype == "cson":
-        return CsonCell(**kwargs)
-    elif celltype == "array":
-        return ArrayCell(**kwargs)
-    elif celltype == "mixed":
-        return MixedCell(**kwargs)
-    else:
-        return Cell(**kwargs)
+    cellclass = celltypes[celltype]
+    return cellclass(**kwargs)
 
 def textcell():
     return TextCell()
