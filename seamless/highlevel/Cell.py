@@ -1,12 +1,10 @@
 import weakref
+from .Base import Base
 
-class Cell:
+class Cell(Base):
     _virtual_path = None
     def __init__(self, parent, path):
-        self._parent = weakref.ref(parent)
-        if isinstance(path, str):
-            path = (path,)
-        self._path = path
+        super().__init__(parent, path)
         parent._children[path] = self
 
     def __str__(self):
@@ -43,7 +41,7 @@ class Cell:
         cell = self._get_cell()
         cell.set(value)
         hcell = self._get_hcell()
-        hcell["value"] = value
+        hcell["value"] = cell.value
 
     def _destroy(self):
         p = self._path
@@ -57,9 +55,8 @@ class Cell:
 
 class SubCell(Cell):
     def __init__(self, parent, cell, path):
-        self._parent = weakref.ref(parent)
+        super().__init__(parent, path)
         self._cell = weakref.ref(cell)
-        self._path = path
 
     def _get_hcell(self):
         raise NotImplementedError

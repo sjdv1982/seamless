@@ -221,6 +221,7 @@ class StructuredCell(CellLikeBase):
                 raise Exception("This operation requires macro mode, since the toplevel context was constructed in macro mode")
         super().__init__()
         self.name = name
+        self._authoritative = True if not len(inchannels) else False
 
         assert isinstance(data, Cell)
         data._slave = True

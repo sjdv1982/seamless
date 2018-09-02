@@ -6,6 +6,8 @@ from ..silk import Silk
 from .Cell import Cell
 from .pin import InputPin, OutputPin
 from .Transformer import Transformer
+from . import copy_context
+import json
 
 def assign_constant(ctx, path, value):
     if isinstance(value, (Silk, MixedBase)):
@@ -29,6 +31,7 @@ def assign_constant(ctx, path, value):
         "value": value,
         "schema": None,
     }
+    ### json.dumps(cell)
     ctx._graph[0][path] = cell
     return True
 
@@ -40,6 +43,7 @@ def assign_transformer(ctx, path, func):
             return
         raise AttributeError(path) #already exists
     parameters = list(inspect.signature(func).parameters.keys())
+    #TODO: look at default parameters, make them optional
     transformer =    {
         "path": path,
         "type": "transformer",
@@ -53,7 +57,9 @@ def assign_transformer(ctx, path, func):
         "buffered": True,
         "plain": False,
         "plain_result": False,
+        "in_equilibrium": False,
     }
+    ### json.dumps(transformer)
     ctx._graph[0][path] = transformer
     Transformer(ctx, path) #inserts itself as child
 
@@ -77,12 +83,15 @@ def assign_connection(ctx, source, target, standalone_target):
     }
     ctx._graph[1].append(connection)
 
+def assign_context(ctx, path, value):
+    new_ctx = value._run_copier()
+    new_nodes, new_connections = new_ctx._get_graph()
+    copy_context.assign_context(ctx, new_nodes, new_connections, path)
+    ctx._translate()
 
 def assign(ctx, path, value):
-    if callable(value):
-        assign_transformer(ctx, path, value)
-        ctx._translate()
-    elif isinstance(value, Transformer):
+    from .Context import Context, SubContext
+    if isinstance(value, Transformer):
         value._assign_to(ctx, path)
     elif isinstance(value, Cell):
         assert value._parent() is ctx
@@ -92,5 +101,14 @@ def assign(ctx, path, value):
         new_cell = assign_constant(ctx, path, value)
         if new_cell:
             ctx._translate()
+    elif isinstance(value, (Context, SubContext)):
+        assign_context(ctx, path, value)
+        ctx._translate()
+    elif callable(value):
+        assign_transformer(ctx, path, value)
+        ctx._translate()
+        return
     else:
         raise TypeError(value)
+    ### g = {".".join(k): v for k,v in ctx._graph[0].items()}
+    ### json.dumps([g, ctx._graph[1]])

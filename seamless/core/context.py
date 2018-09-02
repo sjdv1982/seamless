@@ -426,8 +426,6 @@ def context(**kwargs):
     return ctx
 context.__doc__ = Context.__init__.__doc__
 
-print("context: TODO symlinks (can be cells/workers/contexts outside this context)")
-
 class _ContextWrapper:
     _methods = Context._methods + ["destroy", "full_destroy"]
     def __init__(self, wrapped):

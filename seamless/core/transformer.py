@@ -19,7 +19,7 @@ class Transformer(Worker):
     _destroyed = False
     _listen_output_state = None
 
-    def __init__(self, transformer_params, with_schema=False):
+    def __init__(self, transformer_params, *, with_schema=False, in_equilibrium=False):
         self.state = {}
         self.code = InputPin(self, "code", "ref", "pythoncode", "transformer")
         #TODO: access_mode becomes "copy" when we switch from threads to processes
@@ -31,6 +31,7 @@ class Transformer(Worker):
         self._last_value_preliminary = False
         self._message_id = 0
         self._transformer_params = OrderedDict()
+        self._in_equilibrium = in_equilibrium #transformer is initially in equilibrium
         forbidden = ("code",)
         if with_schema:
             schema_pin = InputPin(self, "schema", "copy", "json", "json")
@@ -98,8 +99,10 @@ class Transformer(Worker):
         self.transformer = KernelTransformer(
             self, with_schema,
             thread_inputs, self._output_name,
-            self.output_queue, self.output_semaphore
+            self.output_queue, self.output_semaphore,
+            in_equilibrium = self._in_equilibrium
         )
+        self._in_equilibrium = False
         super().__init__()
 
     def __str__(self):
@@ -333,6 +336,9 @@ class Transformer(Worker):
         Returns a dictionary containing the status of all pins that are not OK.
         If all pins are OK, returns the status of the transformer itself: OK or pending
         """
+        if self._in_equilibrium or \
+          (self.transformer is not None and self.transformer.in_equilibrium):
+            return self.StatusFlags.OK.name
         result = {}
         for pinname, pin in self._pins.items():
             s = pin.status()
@@ -350,5 +356,9 @@ class Transformer(Worker):
             return self.StatusFlags.ERROR.name
         return self.StatusFlags.OK.name
 
-def transformer(params, with_schema=False):
-    return Transformer(params, with_schema)
+def transformer(params, with_schema=False, in_equilibrium=False):
+    return Transformer(
+       params,
+       with_schema=with_schema,
+       in_equilibrium=in_equilibrium
+    )

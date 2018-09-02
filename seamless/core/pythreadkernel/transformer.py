@@ -46,7 +46,9 @@ class Transformer(Worker):
     name = "transformer"
     injector = transformer_injector
     injected_modules = None
-    def __init__(self, parent, with_schema, inputs, output_name, output_queue, output_semaphore, **kwargs):
+    def __init__(self, parent, with_schema, inputs,
+                 output_name, output_queue, output_semaphore,
+                 *, in_equilibrium = False, **kwargs):
         self.with_schema = with_schema
         self.output_name = output_name
         self.output_queue = output_queue
@@ -56,6 +58,7 @@ class Transformer(Worker):
         self.code_object = None
         self.last_result = None
         self.running_thread = None
+        self.in_equilibrium = in_equilibrium
 
         if self.with_schema:
             self.function_expr_template = "{0}\n{1}("

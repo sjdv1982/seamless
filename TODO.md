@@ -4,6 +4,17 @@ Part 1 is now complete
 
 Things to do:
 
+Part 2: high level  
+  - Context copy, including copier and constructor.
+    Add post-constructor hook as well (e.g. edit())
+    Simplest case should work, just to test
+  - Equilibrate hooks (low-level)
+  - Libraries
+    .\_lib attribute means that upon translation, an equilibrate hook is added
+     when the hook is activated, the cells in the translated context are lib-registered
+      (see low-level library)
+  - Mark transformer as equilibrated (low level)
+
 Part 3 (low-level / cleanup):   
    - Signals (DONE; only to test)
    - Observers (subclass of OutputPinBase)
@@ -11,6 +22,8 @@ Part 3 (low-level / cleanup):
      Their content type will be int/float/text/bool.
      Adapters will convert among them (e.g. int=>float) and between them and JSON/mixed/text.
      Supported access modes are JSON and text. Adapters will convert to Silk.
+   - Terminology: context children can be private, in which case they are not in __dir__.
+     By default, they are public. No more "export"
    - Have a look if Qt mainloop hook can be eliminated.
    - equilibrate() should not wait for workers with an execution error
    - Start with lib porting. Port Qt editors (including HTML), but no more seamless.qt
@@ -95,10 +108,11 @@ Part 7, the high level :
   Proof of principle DONE. TODO:
   - mounting is not quite satisfactory (redundant "translated" context)
   - Macros
+    In high-level macros, assigning to a (lib) Context creates a dependency!!
   - Reactors
   - Many usability issues
   - Translation policies
-  - Library contexts (easy enough, but think of serialization)
+  - Library construct (easy enough, but think of serialization)
   - Syntax customization (see seamless-towards-02.md).
 - serialization (take care of shells also). (Do we need this? or midlevel only?)
 - high-level macros. They contain high-level syntax.
@@ -153,6 +167,8 @@ Post-0.6:
 - Address shell() memory leak: IPython references may hold onto large amounts of data
 - Expand and document seamless shell language (slash)
 - Special high-level authority syntax for library contexts (fork into libdevel)
+- Add "version" to "language" (both for code cells and for Silk).
+  To evaluate properly, major version must be exactly that; minor version must be at least that.
 
 Long-term:
 - The seamless collaborative protocol (high level) (see seamless-towards-02.md)
@@ -171,7 +187,7 @@ Long-term:
 - Full feature implementation of Silk, e.g. constructs (see silk.md)
 
 Very long-term:
-- Other implementations? JavaScript? Erlang? Elixir?
+- Other implementations? JavaScript? Erlang? Elixir? Go?
 - Lazy evaluation, GPU-GPU triggering (BIG!)
 - Re-implement all high level classes as Silk classes with methods in their schema.
 - Organize cells into arrays (probably at high-level only)

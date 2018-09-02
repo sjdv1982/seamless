@@ -122,7 +122,8 @@ def translate_py_transformer(node, root, namespace, inchannels, outchannels):
         p = ["input", pin.get("mode", "copy"), pin.get("submode"), pin.get("celltype")]
         all_pins[pinname] = p
     all_pins[result_name] = "output"
-    ctx.tf = transformer(all_pins, with_schema=with_schema)
+    in_equilibrium = node["in_equilibrium"]
+    ctx.tf = transformer(all_pins, with_schema=with_schema, in_equilibrium=in_equilibrium)
     ctx.code = cell("transformer")
     ctx.code.connect(ctx.tf.code)
     ctx.code.set(node["code"])
@@ -201,9 +202,19 @@ def translate_cell(node, root, namespace, inchannels, outchannels):
         else:
             child = cell(ct)
     setattr(parent, name, child)
-    value = node["value"]
+    value = node.get("value")
     if value is not None:
+        assert child._authoritative
         child.set(value)
+    else:
+        cached_value = node.get("cached_value")
+        if cached_value is not None:
+            assert not child._authoritative
+            if isinstance(child, StructuredCell):
+                child.set(cached_value)
+            else:
+                manager = child._get_manager()
+                manager.set_cell(child, cached_value, from_pin=True)
 
 def translate_connection(node, namespace, ctx):
     from ..core.structured_cell import Inchannel, Outchannel
@@ -226,7 +237,7 @@ def translate_connection(node, namespace, ctx):
 def translate(graph, ctx):
     contexts = {con["path"]: con for con in graph if con["type"] == "context"}
     for path in sorted(contexts.keys(), key=lambda k:len(k)):
-        parent = get_path(root, path[:-1], None)
+        parent = get_path(ctx, path[:-1], None, is_target=False)
         name = path[-1]
         c = context(context=parent, name=name)
         setattr(parent, name, c)

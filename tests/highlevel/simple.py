@@ -48,3 +48,8 @@ print(ctx.myresult.value)
 ctx.translate(force=True)
 ctx.equilibrate()
 print(ctx.myresult.value)
+
+from seamless.midlevel.serialize import extract
+topology, _, _ = extract(*ctx._graph)
+import json
+json.dump(topology, open("simple-graph.json", "w"), sort_keys=True, indent=2)

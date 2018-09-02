@@ -229,6 +229,22 @@ context (TODO: support loading subcontexts!!!; also, the .lib
 context and its subcontexts must be copy-upon-assignment instead of rename-upon-assignment  ).
 !!! lib mounter !!! normally, only read access. libdevel mounter with write access. Robogit (libgit2) to commit changes.
 UPDATE: not exactly a "mounter"; core.lib system instead.
+UPDATE: Seamless servers serve *high-level* contexts or transformers. They are contacted during translation.
+ The context is *marked* by the high-level topology.
+ In fact, there must be *two* service topologies (with checksums): a smaller one to *retrieve* the result;
+  from this, evaluation and logging parameters (and workers that operate on them) should be stripped.
+  And the full one to *compute* the result (which may still be refused, e.g. too many cores are requested).
+ During (re-)translation, requests like create and delete can be sent.
+ If the response is positive, then the cell checksums and values will be offered by the *low-level*.
+ NOTE: the service checksum system must be a bit different from the semantic checksums used in local low-level evaluation.
+  The reasons are 1. it is very difficult to compute a checksum for a code cell in an arbitrary programming language,
+   unless a parser for that language has been installed; 2. service checksums will be global and therefore must be secure;
+   semantic checksums are just to avoid unnecessary re-computation => use SHA3-512 for service checksums
+ It is possible that the response is negative for the context-as-a-whole, but positive for sub-contexts and transformers
+ Therefore, if there are multiple Seamless servers, they must be assigned a priority.
+ Also, there is a spectrum between positive and negative: one server may accept the whole context, or even have the result cached,
+  but another may accept only an empty context to which the cells must then be added (less efficient).
+
 
 ## UPDATE of the UPDATE: Towards flexible and cloud-compatible evaluation / Seamless collaborative protocol
 (text below may be outdated)

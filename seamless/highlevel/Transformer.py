@@ -3,13 +3,11 @@ import functools
 from .Cell import Cell
 from .proxy import Proxy
 from .pin import InputPin, OutputPin
+from .Base import Base
 
-class Transformer:
+class Transformer(Base):
     def __init__(self, parent, path):
-        self._parent = weakref.ref(parent)
-        if isinstance(path, str):
-            path = (path,)
-        self._path = path
+        super().__init__(parent, path)
 
         htf = self._get_htf()
         result_path = self._path + (htf["RESULT"],)
@@ -93,7 +91,7 @@ class Transformer:
         path = other._path
         if attr == "code":
             p = tf.code
-            value = p.value
+            value = p.data
             cell = {
                 "path": path,
                 "type": "cell",
@@ -102,6 +100,7 @@ class Transformer:
                 "transformer": True,
                 "value": value,
             }
+            assert isinstance(value, str)           
             htf["code"] = None
         else:
             inp = getattr(tf, htf["INPUT"])

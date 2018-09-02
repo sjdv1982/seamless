@@ -1,0 +1,87 @@
+[
+  {
+    "buffered": true,
+    "celltype": "structured",
+    "format": "mixed",
+    "path": [
+      "a"
+    ],
+    "schema": null,
+    "silk": true,
+    "type": "cell"
+  },
+  {
+    "INPUT": "inp",
+    "RESULT": "result",
+    "buffered": true,
+    "code": null,
+    "language": "python",
+    "path": [
+      "transform"
+    ],
+    "pins": {
+      "a": {
+        "submode": "silk"
+      },
+      "b": {
+        "submode": "silk"
+      }
+    },
+    "plain": false,
+    "plain_result": false,
+    "type": "transformer",
+    "values": {
+      "b": 100
+    },
+    "with_schema": false
+  },
+  {
+    "buffered": true,
+    "celltype": "structured",
+    "format": "mixed",
+    "path": [
+      "myresult"
+    ],
+    "schema": null,
+    "silk": true,
+    "type": "cell"
+  },
+  {
+    "celltype": "code",
+    "language": "python",
+    "path": [
+      "tfcode"
+    ],
+    "transformer": true,
+    "type": "cell"
+  },
+  {
+    "source": [
+      "a"
+    ],
+    "target": [
+      "transform",
+      "a"
+    ],
+    "type": "connection"
+  },
+  {
+    "source": [
+      "transform"
+    ],
+    "target": [
+      "myresult"
+    ],
+    "type": "connection"
+  },
+  {
+    "source": [
+      "tfcode"
+    ],
+    "target": [
+      "transform",
+      "code"
+    ],
+    "type": "connection"
+  }
+]

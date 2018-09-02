@@ -33,6 +33,7 @@ class Worker(metaclass=ABCMeta):
     output_semaphore = None
     responsive = True
     running = False
+    in_equilibrium = False
 
     def __init__(self, parent, inputs, event_cls=threading.Event, semaphore_cls=threading.Semaphore):
         self.parent = weakref.ref(parent)
@@ -109,6 +110,8 @@ class Worker(metaclass=ABCMeta):
 
 
                     # If we have missing values, and this input is currently default, it's no longer missing
+                    if self.in_equilibrium and name not in self._pending_inputs:
+                        self.in_equilibrium = False
                     if data is not None:
                         if self._pending_inputs and self.values[name] is None:
                             self._pending_inputs.remove(name)
@@ -120,7 +123,7 @@ class Worker(metaclass=ABCMeta):
 
                 # With all inputs now present, we can issue updates
                 time.sleep(0.01)
-                if not self._pending_inputs and self.responsive:
+                if not self._pending_inputs and self.responsive and not self.in_equilibrium:
                     # ...but not if there is still something in the queue for us
                     if self.semaphore.acquire(blocking=False):
                         self.semaphore.release() #undo the acquire
