@@ -72,8 +72,13 @@ class Manager:
     successor = None
     flushing = False
     filled_objects = []
+    on_equilibrate_callbacks = None
     def __init__(self, ctx):
         self.ctx = weakref.ref(ctx)
+        if ctx._toplevel:
+            self.rootmanager = weakref.ref(self)
+        else:
+            self.rootmanager = weakref.ref(self.ctx()._root()._get_manager())
         self.sub_managers = {}
         self.cell_to_pins = {} #cell => inputpins
         self.cell_to_cells = {} #cell => CellToCellConnection list
@@ -99,6 +104,8 @@ class Manager:
             return
         if value:
             self.unstable.discard(worker)
+            if not len(self.unstable) and not len(self.workqueue):
+                self.rootmanager().test_equilibrate()
         else:
             self.unstable.add(worker)
 
@@ -409,6 +416,30 @@ class Manager:
 
     def set_filled_objects(self, filled_objects):
         self.filled_objects = filled_objects
+
+    def on_equilibrate(self, callback):
+        assert self.ctx()._toplevel
+        if self.on_equilibrate_callbacks is None:
+            self.on_equilibrate_callbacks = []
+        self.on_equilibrate_callbacks.append(callback)
+
+    def _test_equilibrate(self):
+        if len(self.unstable):
+            return False
+        for sub_manager in self.sub_managers.values():
+            if not sub_manager._test_equilibrate():
+                return False
+        return True
+
+    def test_equilibrate(self):
+        if not self.on_equilibrate_callbacks:
+            return
+        if self._test_equilibrate():
+            try:
+                for callback in self.on_equilibrate_callbacks:
+                    callback()
+            finally:
+                del self.on_equilibrate_callbacks
 
 from .context import Context
 from .cell import Cell, CellLikeBase

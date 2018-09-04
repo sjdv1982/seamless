@@ -68,6 +68,9 @@ class WorkQueue:
             run_qt() # Necessary to prevent freezes in glwindow
         self._flushing = False
 
+    def __len__(self):
+        return len(self._work) + len(self._priority_work)
+
 def asyncio_finish():
     try:
         loop = asyncio.get_event_loop()

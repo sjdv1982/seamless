@@ -218,16 +218,19 @@ context : context or None
         for childname, child in self._children.items():
             if isinstance(child, (Context, Macro)):
                 if full:
-                    remaining = child.equilibrate(0.001)
-                    if len(remaining):
+                    child_finished = child._flush_workqueue(full=True)
+                    if not child_finished:
+                        mgr = child._get_manager()
+                        remaining = list(mgr.unstable) + list(mgr.children_unstable)
                         children_unstable.update(remaining)
                         finished = False
                 else:
                     child_finished = child._flush_workqueue(full=False)
                     if not child_finished:
                         finished = False
-        manager.mountmanager.tick()
         if full:
+            manager.mountmanager.tick()
+            manager.children_unstable = children_unstable
             return finished, children_unstable
         else:
             return finished
