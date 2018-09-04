@@ -340,7 +340,140 @@ Docker repo:
 - The base images has all repo locations set to RPBS mirrors; for Ubuntu, PyPI, etc., all specific to a date and never changing
   This way we can guarantee version control and support indefinitely
 
+Dependency server: Takes a dependency URN and gives some JSON as a result, preferably
+with human-readable documentation and some kind of package name + version + checksum
+in the format of apt/yum/pypi/conda.
+Will be hosted at the RPBS.
 
+Further thoughts on checksums
+=============================
+hash/checksum are SHA3-512:
+  This uniquely defines what a cell or computation *is* (like Magnet URIs).
+  Checksums of JSON structures containing checksums can be computed (aka Merkle trees)
+
+global ID: an 128-bit unsigned integer that signifies a session ID
+  (for interactive service instances) or a job ID (for non-interactive ones).
+  The ID is guaranteed to be globally unique.
+  The RPBS will maintain an ID server that returns the last ID + 1.
+
+In general, a computation is defined by the following:
+1. The type (context, transformer, reactor or macro)
+   and the seamless version (more precisely, the version of the mid-level syntax)
+2. A topology (mid-level declaration of contexts, cells, workers and connections)
+   This includes the cell types, and the language of code cells, but no cell values
+   NOTE: this is mid-level; the high-level must mark a context with its topology before
+    it can be considered to be sent to a service.
+   When marking, the topology cells are classified as:
+   a. non-authoritative
+   b. authoritative, but not connected to the outside
+   c. authoritative, and connected to the outside.
+   The server may impose restrictions, e.g. say that only category c. cells may be defined by the client,
+    or refuse because a particular cell cannot be in category c. (for example, cells it considers private).
+   *Any worker or context that has external connections that involve blocks/allocators is ineligible for service*
+3. The value of authoritative cells, including the schemas.
+  Checksums of those values will always be computed on the raw/text data (see above)
+  The "grand cell value" includes the cell type (part of the topology).
+4. Broader topology, that includes cells and workers that only define Report cells
+   and Logging cells
+5. Broader values:
+  - Values of non-authoritative cells
+  - Values of transformer equilibrium state
+  - Values of evaluation parameters and resource claims
+6. The environment. This includes:
+  - Dependencies of the code (see dependency server above)
+  - Docker version? Linux drivers?
+
+Seamless dependency dogma: a computation is defined by 1-3 only. A "grand checksum"
+ of a computation is a single hash that uniquely defines 1-3.
+4. and 5. are derivative data.
+When it comes to environments, every computation has only valid and invalid environments.
+Valid environments give the (unique) correct result, whereas incorrect environments result in an error.
+This means that a dependency library must never have the same code result in two different
+ non-error results. The results must either be the same between two versions, or
+ one version must give an error. If the library does not guarantee this, the code must do version checking.
+
+When submitting, 1-3 is to check if the computation has been done. If not, 1-6 are submitted.
+Submitting 4-6 (in full or in part) is optional: a server may infer it automatically.
+A server may also refuse service because of values in 4-6.
+
+
+Checksum/ID/cell servers
+All of these servers are hosted at the RPBS, but they may forget entries after some time.
+Seamless can be configured with a list of these servers that can be queried.
+
+Computation hash-server:
+hash1 => hash2. hash1 is the grand checksum of a computation, hash2 is its result.
+
+Reverse computation hash-server:
+Same as above, but hash2 => hash1. Note that hash2 must be rather long for this to work,
+ as there are several computations that can give the same result.
+
+Computation server:
+hash => computation. hash1 is the grand checksum of a computation JSON,
+  computation is the computation JSON itself.
+  Only non-error computations (status OK) are cached thus.
+
+Cell server:
+hash+hash2 => value. Serves grand cell values (can be rather big). hash is the
+hash of the cell value, whereas hash2 is the hash of the cell type (part of the topology).
+
+Location server:
+hash => (URI, mode). The hash is from a cell value.
+Mode can be None.
+If mode is "substitute", URI is a template into which the hash must be substituted, e.g. if URI is a cell server.
+
+Description server:
+hash => description. To give a semantic text description for a hash/
+
+Context ID server:
+ID => JSON, for context IDs. Returns an URI to a live interactive service instance.
+  JSON has the format of   <protocol>: (URI, flag)
+  protocol: dynamic HTML (websocket), two-way synchronization (websocket), one-way synchronization (REST)
+  This URI must be unique for the ID. If the URI is dead, the instance will have died.
+  Mode can be None.
+  If mode is "substitute", URI is a template into which the hash must be substituted, e.g. if URI is a cell server.
+  If mode is "submit", then the ID itself must be GETted/posted to the URI (together with any other data)
+  RPBS server will accept only one registration per ID
+
+Job ID server:
+ID => JSON, for job IDs. Returns an URI to a job result of an atomic service.
+  RPBS server will accept only one registration per ID.
+  JSON has the format of   <protocol>: (URI, mode)
+  protocol: one-way synchronization (REST), direct web service (REST), CGI server
+  If mode is "substitute", URI is a template into which the hash must be substituted, e.g. if URI is a cell server.
+  If mode is "submit", then the ID itself must be GETted/posted to the URI (together with any other data)
+  RPBS server will accept only one registration per ID
+
+Obsoletion server:
+hash1+hash2 => hash3. Indicates that hash1 is now obsolete and should be replaced by hash3.
+Reasons for obsoletion are: a new version, a bugfix, etc.
+hash2 indicates the cell type.
+hash1 must be rather long/specific for this to work.
+
+Equivalence server:
+hash1+hash2 => hash3. Same as obsoletion server, but indicates that hash3+hash2
+is semantically equivalent to hash1+hash2.
+This is typically because of adding comments, whitespace or reordering to a
+source code, text or CSON file (normally not JSON, though)
+
+Anathema server:
+hash1 => hash2. hash1 is the grand checksum of a computation, hash2 is that of its result.
+hash2 is anathema if it is fundamentally wrong, due to:
+- Bugs in seamless
+- Bugs in the library environment
+- Bugs in Docker / kernel drivers
+- Violation in the code of Seamless purity (cells with such code can also be stored in an "impurity server" as hash+hash2)
+- Violation of the Seamless dependency dogma (e.g. logging cells connected to non-logging output cells)
+  (such computations can also be stored in a "dogma violation server")
+A Seamless server may consult the anathema server before returning its result.
+If the underlying value of hash2 is sufficiently long, it may be stored in a separate "bogus server".
+
+Finally: "marking".
+Obsoletion server, reverse computation server, equivalence server, impurity server and bogus server require hashes of high-complexity values as an input. Otherwise, they are not an unique result.
+Therefore, it is possible to make them accept one extra optional argument.
+When registering a hash, a *random* 512-bit mark may be generated, and this may be used to mark even low-complexity
+ cells (e.g. an integer cell with value "4", or an empty text cell).
+Seamless will store the mark in the high-level context, and submit it to the service every time.
 
 ##/UPDATE of UPDATE
 

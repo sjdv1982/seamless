@@ -5,15 +5,15 @@ Part 1 is now complete
 Things to do:
 
 Part 2: high level  
-  - Context copy, including copier and constructor.
-    Add post-constructor hook as well (e.g. edit())
-    Simplest case should work, just to test
-  - Equilibrate hooks (low-level)
+  - Authoritative representation of structured cells
+  - Context copy
+    UPDATE: rip the copiers and constructors, high-level macros should be enough!
   - Libraries
     .\_lib attribute means that upon translation, an equilibrate hook is added
      when the hook is activated, the cells in the translated context are lib-registered
       (see low-level library)
   - Mark transformer as equilibrated (low level)
+  - High-level macros
 
 Part 3 (low-level / cleanup):   
    - Signals (DONE; only to test)
@@ -23,7 +23,9 @@ Part 3 (low-level / cleanup):
      Adapters will convert among them (e.g. int=>float) and between them and JSON/mixed/text.
      Supported access modes are JSON and text. Adapters will convert to Silk.
    - Terminology: context children can be private, in which case they are not in __dir__.
-     By default, they are public. No more "export"
+     By default, they are public. No more "export".
+     This has nothing to do with services. Services determine private and public based on
+     what connects into the serviced context.
    - Have a look if Qt mainloop hook can be eliminated.
    - equilibrate() should not wait for workers with an execution error
    - Start with lib porting. Port Qt editors (including HTML), but no more seamless.qt
@@ -171,6 +173,8 @@ Post-0.6:
   To evaluate properly, major version must be exactly that; minor version must be at least that.
 
 Long-term:
+- Concretification (see below)
+- Blocks (see below)
 - The seamless collaborative protocol (high level) (see seamless-towards-02.md)
   This replaces the websocketserver with a Crossbar WAMP server.
 - Delegated computing with services, evaluation cells
@@ -183,16 +187,33 @@ Long-term:
 - Other mount backends (databases)
   As a variation, an option for cells to have no .\_val, i.e. .value always pulls
    the value from the backend (it is assumed not to have changed!)
+   UPDATE: use concretification instead
 - Event streams (BIG!)
 - Full feature implementation of Silk, e.g. constructs (see silk.md)
 
 Very long-term:
 - Other implementations? JavaScript? Erlang? Elixir? Go?
-- Lazy evaluation, GPU-GPU triggering (BIG!)
+- Lazy evaluation, GPU-GPU triggering
 - Re-implement all high level classes as Silk classes with methods in their schema.
 - Organize cells into arrays (probably at high-level only)
 - Cells that contain (serialized, low-level) contexts. May help with faster caching of macros.
 - ATC chains with folding/unfolding (YAGNI?)
+
+Concretification
+================
+"Concretification" is a feature that cells may not need to store their full value.
+It involves sending two signals upstream, i.e. a cell's input pin or inchannels
+that requests something from the upstream worker or cell.
+1. send my hash/checksum
+2. (re-)send again my value
+Applications of this are in:
+- event streams (see below)
+- blocks (with compression; see below),
+- backend caching (a cell may just store its hash and demand its value when needed from
+   a cell server; if the server fails, it may send a signal 2.)
+- lazy evaluation (in lazy mode, transformers evaluate only upon receiving a signal 2.
+Reactors and macros send a signal 2. to each of their input cells; cell.value sends
+a signal 2. and does a special equilibrate that only involves its dependency chain)
 
 Event streams
 =============
@@ -235,6 +256,7 @@ To activate the minimizer, the mainloop reactor sets C from B, then equilibrates
 The scorer can then be re-activated by setting A from D.
 The minimizer and scorer contexts must be equilibrium contexts.
 "Equilibrating" is done by a having a signal that fires when a context reaches equilibrium.
+ Use "on_equilibrate" hook of root managers (adapt for non-root).
 The ATTRACT mainloop reactor will have two signal inputpins for this (from scorer and minimizer) and an internal
  variable that maintains which signal is to be listened for.
 A and C are cached together with the number of minimization steps that have been performed. In this way:
@@ -250,3 +272,133 @@ After event streams, the mainloop reactor will be superfluous
  with an internal counter (event streams must provide this as a Report cell!) to make the B=>C connection conditional.
 Equilibrium contexts with an event stream as input will automatically give one as output, and send the proper "undo" signal
  when they change, resetting the stream.
+
+Thoughts on Seamless and purity
+===============================
+Seamless workers must be pure in terms of cells: given the same input cell values, they must always produce the same final output
+ cell values. This precludes the use of random generators, system time, or even the opening of an external file or URL.
+Special input cells, Evaluation cells, do no count as input cell values.
+This formulation of purity gives the following liberties:
+ - Workers are allowed to produce different non-final (preliminary) cell values (TODO: mark them as such)
+ - They are allowed to have arbitrary side effects, as long as one of the following is true:
+   - These side effects do not concern output cells
+   - Or: they are idempotent in terms of input cells.
+   For example, a transformer may open a GUI showing a progress bar (although a preliminary cell would be cleaner)
+   Or, a reactor may compute the checksum of its inputs, store this in a database, and later retrieve the checksum and use it
+    to produce the output.
+ - They are allowed to send arbitrary values to special cells called Report cells (that reflect the status) and Logging cells
+   (that accumulate values).
+ - They are allowed to change cells via edit pins. This is considered an "act of authority", as if the programmer himself had
+    changed this cell.
+
+Blocks
+======
+In Seamless, workers are expected to send values, for which they allocate the memory themselves.
+Blocks are a (low-level) mechanism to pass around pre-allocated buffers of fixed size.
+This mechanism can save memory, but more importantly, it is much more compatible with GPU computing.
+Memory is not copied back-and-forth by every worker. Instead, buffers reside permanently on the GPU.
+
+A block description consist of dtype, shape and namespace. It is always C-contiguous in memory.
+An extended block description includes stride and offset.
+Namespace can be "cpu", "opencl", "opengl" or "cuda". Maybe in the future, new namespaces can be registered.
+Block allocation can happen in two ways:
+- Via an Allocator (new low-level construct). The block descriptor must be given to the allocator constructor.
+  The Allocator provides an allocator output pin, which gives both the block descriptor and the allocated buffer.
+- Via a StructuredCell, in Silk mode. The path of every allocation must be declared in "allocators", which works
+  similar to "outchannels": each path becomes an allocator output pin.
+  From the shell, the allocation path value is readable (resulting in the block value, copied to a Numpy array)
+  but not writable. No inchannel or outchannel may be a superpath of the allocation path (at the high level, this
+   must be checked during assignment, before translation).
+  The StructuredCell must have all block descriptors declared during construction, including namespace.
+  However, for high-level cells, the block descriptor is read from the .schema. In any case, if there is a schema
+   entry, the StructuredCell will check that it is compatible with the block descriptor.
+  When the OverlayMonitor (or its subclass) is created, a buffer is created (in the appropriate namespace)
+  using the block descriptor, and when activated, both are sent over the allocator output pin.
+Blocks can only ever be written to through a BlockManager.
+The block descriptor must be given to the BlockManager constructor. The BlockManager provides an allocator input pin,
+ which must be connected to an allocator outputpin.
+The BlockManager exposes a block inchannel and a block outchannel. Workers can declare their own block outputpins to
+ write to the block inchannel. Once a worker has written there, the BlockManager will fire on the outchannel.
+ Workers can declare their own block inputpins to receive Block outchannels.
+ When the BlockManager is constructed, each Block inchannel and outchannel sends a signal. This signal contains a unique
+  BlockManager ID, and an extended block descriptor. Workers must verify that input blocks and output blocks do not
+  overlap in memory (see numpy.shares_memory and Diophantine equations), which is illegal.
+ Whenever the BlockManager is allocated, each Block inchannel and outchannel sends another signal, which contains the
+  pointer itself.
+ Whenever a worker has set a block outputpin (i.e. when it is done modifying it), it sends a signal containing the checksum of
+  the block content. Likewise, it receives such a checksum on its inputpin.
+ Whenever a BlockManager receives checksum updates on its inchannel(s), it computes and stores checksum updates over
+  its outchannels.
+ A BlockManager may define one *tiling pattern* and many *tiling channels*.
+ A tiling pattern exists of a list of dicts, one for each dimension. Each dict contains the length (positive integer),
+  the mode ("split" or "compress"), and optionally "compression". Length and compression must be divisors of the
+  number of elements for that dimension, and "compression" must be smaller or equal to length.
+  If mode is "split", then the block is tiled over "length" tiles in that dimension, and the memory is divided equally over
+   each block.
+  If the mode is "compress", the block is tiled *physically* over "compress" tiles, but *logically* over "length" tiles.
+  For example, take a block of a million elements, with "length" as 1000 but "compress" as 10. This means that physically,
+   the block is divided into 10 tiles of 100k elements, but *logically*, there exists 1000 tiles of 100k elements, for a
+   logical array size of 100 million elements. Of those 1000 tiles, only 10 may be physically held in memory.
+ A tiling channel can be inchannel or outchannel, they works exactly like StructuredCell channels, but instead of
+  property paths, they contain index paths (although if referencing a struct array, the last few elements
+  of the index paths may be properties). Only single indices: ranges and steps are not supported.
+ As for StructuredCells, it is checked that the inchannels and outchannels do not overlap.
+ If only "split" mode is used, tiling is just a way to process parts of the buffer independently.
+ However, if "compress" mode is used, the situation becomes more complicated.
+ Like event streams, a tiling outchannel then holds a lock, which is released when all (but not really all, see below)
+ of its downstream  dependencies are done with it. The number of locks is equal to "compress", the number of physical tiles.
+ Each outchannel contains one logical tile (in "split" mode, an entire dimension may be selected, but this cannot
+  work in "compress" mode) and all outchannels compete for the locks. An outchannel will seize a lock when one of its
+  dependencies sends a concretification signal 2., and will release it when the dependency is done.
+BlockManagers own their data, and have a special method to have it set programmatically at startup. (It is copied onto the
+  allocated block later, after the allocation pin has fired)
+Caching of dependencies through BlockManager has to go in the same way as StructuredCell, i.e. with some difficulty.
+ When GPU-GPU triggering will be implemented, it will be using an API on blocks / tiles, together with concretification.
+The domain-specific language "topview" (already used in ATTRACT) will be modified to run on top of blocks.
+
+Cyclic graphs
+=============
+1. Don't model cycles with seamless (keep cycles inside a single worker)
+2. Explicit cells for every assignment (if number of iterations is known).
+   First assignment to cell x becomes cell x1, second assignment to cell becomes x2, etc.
+   Automatic parallelization, but very space-intensive!
+3. Use blocks (if number of iterations is known).
+Compressed tiling works well to reduce space requirements.
+Example: double a value v 10 000 times.
+Declare an BlockAllocator v with 2 elements
+Declare a BlockManager b with 10 000 logical elements and 2 physical elements
+Declare a code cell c that performs the computation
+Declare 10 000 transformers that take b[n-1] as input and b[n] as output, and set the code to c.
+(10 000 transformers may still take a lot of space; some way to "put them on ice" with low-mem would be nice)
+4. Use a reactor + editpins (see ATTRACT mainloop application)
+5. Use event streams (see ATTRACT mainloop application)
+6. Nested asynchronous macros (but seamless will warn of cache misses, and
+   space requirements can be atrocious)
+   Example: collatz.py in low-level tests
+   but Seamless cannot currently deal with this beyond 10-16 iterations or so,
+     even though this example is in fact synchronous
+Solutions can be combined, of course.
+
+Registering commands with domain-specific languages
+===================================================
+Some domain-specific languages, such as slash-0 and topview, rely on a vocabulary
+of registered commands. This is done as follows:
+- A macro to interpret the source code of the DSL, generating a context Z
+- A dictionary with command name and their parameter declaration. This dict
+  will be an extra input parameter of the macro.
+- A dictionary with commands, containing the command name, a unique command ID,
+  and a mapping of each parameter to the name of a pin/cell/channel in Z.
+  This dict is generated as an additional "magic-name" cell in Z by the macro.
+- Instantiation code for each command. Essentially, macro code which can constructors
+  a live instance (context or worker) that can execute the command. This will almost
+  always be a macro that must be bound to a lib.
+- An instantiator. It receives both dictionaries, and the instantiation code for
+  each command.
+- A dynamic connection layer that receives:
+  - The second dictionary
+  - The context Z
+  - The command execution context generated by the instantiator.
+  It will read the "magic name" cell from Z, and use its contents to build
+  connections between Z and the command execution context.
+- If the macro that generates Z can be also the instantiator, then the dynamic
+  connection layer will be superfluous.
