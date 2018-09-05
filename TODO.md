@@ -193,6 +193,8 @@ Long-term:
 
 Very long-term:
 - Other implementations? JavaScript? Erlang? Elixir? Go?
+- Equilibrate/unstable overhaul (test on Collatz test)
+- "Activate" overhaul, the onion of Python with statement make it slow (test on Collatz test)
 - Lazy evaluation, GPU-GPU triggering
 - Re-implement all high level classes as Silk classes with methods in their schema.
 - Organize cells into arrays (probably at high-level only)

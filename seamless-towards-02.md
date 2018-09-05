@@ -386,6 +386,7 @@ In general, a computation is defined by the following:
 Seamless dependency dogma: a computation is defined by 1-3 only. A "grand checksum"
  of a computation is a single hash that uniquely defines 1-3.
 4. and 5. are derivative data.
+Seamless "durable environment" dogma
 When it comes to environments, every computation has only valid and invalid environments.
 Valid environments give the (unique) correct result, whereas incorrect environments result in an error.
 This means that a dependency library must never have the same code result in two different
@@ -395,7 +396,6 @@ This means that a dependency library must never have the same code result in two
 When submitting, 1-3 is to check if the computation has been done. If not, 1-6 are submitted.
 Submitting 4-6 (in full or in part) is optional: a server may infer it automatically.
 A server may also refuse service because of values in 4-6.
-
 
 Checksum/ID/cell servers
 All of these servers are hosted at the RPBS, but they may forget entries after some time.
@@ -474,6 +474,35 @@ Therefore, it is possible to make them accept one extra optional argument.
 When registering a hash, a *random* 512-bit mark may be generated, and this may be used to mark even low-complexity
  cells (e.g. an integer cell with value "4", or an empty text cell).
 Seamless will store the mark in the high-level context, and submit it to the service every time.
+
+"Durability"
+Environment dependencies may have different levels of durability (the Seamless durability dogma).
+0. Zero durability. Results will be different, even with the same arguments.
+   Example: Gromacs/AMBER and anything else that runs on the GPU
+1. Low (exact version) durability. Results will be the same only with the exact same version.
+   Example: ATTRACT, HADDOCK.
+2. High (minor version) durability.
+   Code is durable between two versions X and Y, that have the same major version,
+     but where Y is later than X.
+   2a. Code that runs under X will either give the same result as under Y, or give an exception    
+   2a+. Code that runs under X will either give the same result under Y (forward compatibility guaranteed)
+   2b. Code that runs under Y will either give the same result under X, or give an exception.
+   compatibility 2 means 2a & 2b. compatibility 2+ means 2a+ and 2b+.
+   Examples: Python? (2+?)
+3. Complete (major version) durability. The same, but Y and X do not need to have the same major version
+   (or there is only one major version)
+   Examples: POSIX tools?
+
+RPBS will host a durability server.
+For non-durable (incomplete durability) environment dependencies:
+  Seamless versions will include a list of default dependency versions (for 1. and 2.) or minimum versions (for 2a. and 3a.)
+  The + is just convenient for servers.
+A durability overestimation of a computation is a special kind of bogus, it should be marked as such.
+A zero-durability computation may still be stored, because the result is "as good as any".
+When we start scientific reproducibility test servers, zero-durability computations must be repeated, together
+ with computations that require a random seed (just change the seed). And of course, all computations must be either
+ local or from trusted service servers, not from the scientists themselves.
+
 
 ##/UPDATE of UPDATE
 
