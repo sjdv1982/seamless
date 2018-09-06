@@ -8,7 +8,7 @@ Overhead is terrible and space requirements are atrocious, but there could be
 """
 
 import sys
-sys.USE_TRANSFORMER_CODE = True #kludge to share a variable without an extra slowdown
+sys.USE_TRANSFORMER_CODE = False #kludge to share a variable without an extra slowdown
 
 from seamless.core import context, cell, macro
 ctx = context(toplevel=True)
@@ -60,17 +60,20 @@ ctx.macro_params.connect(m.macro_params)
 ctx.series = cell("json")
 ctx.start.set(10) #7-level nesting here works well for tf and non-tf code
 ###ctx.start.set(12) #10-level nesting works with non-tf,  but equilibrate for tf is getting very slow
-###ctx.start.set(23) #16-level nesting here works well non-tf code (equilibrate too slow for tf)
+###ctx.start.set(23) #16-level nesting here works well only for non-tf code (equilibrate stalls for tf)
+                     # and rebuilding is terribly slow (1-2 minutes)
 ###ctx.start.set(27) #111-level nesting
 # - equilibrate() does not work well with transformer code
 # - activate() is too slow, even for non-transformer code
 
 print("building done")
-ctx.equilibrate() #only needed for tf code
+if sys.USE_TRANSFORMER_CODE:
+    ctx.equilibrate() #only needed for tf code
 print(ctx.macro.gen_context.series.value)
 
-import sys; sys.exit()
+#import sys; sys.exit()
 ctx.start.set(32)
 print("building done, 2nd time")
-ctx.equilibrate() #only needed for tf code, but doesn't work if previously too deeply nested (bug in equilibrate?)
+if sys.USE_TRANSFORMER_CODE:
+    ctx.equilibrate() #only needed for tf code, but doesn't work
 print(ctx.macro.gen_context.series.value)
