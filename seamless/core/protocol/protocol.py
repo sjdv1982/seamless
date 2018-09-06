@@ -78,8 +78,9 @@ for content_type1 in text_types:
 for content_type in content_types:
     adapters[("copy", "object", content_type), ("copy", "object", "object")] = True
     adapters[("copy", "object", "object"), ("copy", "object", content_type)] = True
-adapters[("ref", "object", "json"), ("ref", "object", "mixed")] = True
-adapters[("copy", "json", "json"), ("copy", "object", "mixed")] = True
+for content_type in ("json", "mixed"):
+    adapters[("ref", "object", content_type), ("ref", "object", "mixed")] = True
+    adapters[("copy", "json", content_type), ("copy", "object", "mixed")] = True
 adapters[("copy", "object", "text"), ("copy", "object", "mixed")] = True
 adapters[("ref", "json", "json"), ("ref", "silk", "json")] = adapt_to_silk
 adapters[("copy", "json", "json"), ("copy", "silk", "json")] = adapt_to_silk

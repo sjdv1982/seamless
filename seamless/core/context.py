@@ -210,7 +210,7 @@ context : context or None
     def _flush_workqueue(self, full=True):
         from .macro import Macro
         manager = self._get_manager()
-        manager.workqueue.flush()
+        manager.flush()
         finished = True
         children_unstable = set()
         if len(self.unstable_workers):
@@ -218,7 +218,7 @@ context : context or None
         for childname, child in self._children.items():
             if isinstance(child, (Context, Macro)):
                 if full:
-                    child_finished = child._flush_workqueue(full=True)
+                    child_finished, _ = child._flush_workqueue(full=True)
                     if not child_finished:
                         mgr = child._get_manager()
                         remaining = list(mgr.unstable) + list(mgr.children_unstable)
@@ -248,11 +248,12 @@ context : context or None
         assert self._get_manager().active
         start_time = time.time()
         last_report_time = start_time
-        finished = self._flush_workqueue(full=False)
+        finished, _ = self._flush_workqueue()
 
         if self._destroyed:
             return set()
         if finished:
+            print("finished")
             return set()
         last_unstable = set()
         while 1:
@@ -287,7 +288,7 @@ context : context or None
         if self._destroyed:
             return set()
         manager = self._get_manager()
-        manager.workqueue.flush()
+        manager.flush()
         if self._destroyed:
             return set()
         return self._manager.unstable & self._manager.children_unstable

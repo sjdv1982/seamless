@@ -24,10 +24,14 @@ c = a + b
     ctx.result_link = link(ctx.result)
     ctx.tf.c.connect(ctx.result_link)
 
+def callback():
+    print("Equilibration complete")
+ctx._get_manager().on_equilibrate(callback)
 ctx.cell1.set(10)
 for n in range(5):
     ctx.equilibrate(1)
     print(ctx.status(), ctx.result.value)
+ctx._get_manager().on_equilibrate(callback)        
 ctx.cell1.set(12)
 for n in range(5):
     ctx.equilibrate(1)
