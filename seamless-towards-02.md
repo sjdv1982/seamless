@@ -247,13 +247,14 @@ UPDATE: Seamless servers serve *high-level* contexts or transformers. They are c
 
 
 ## UPDATE of the UPDATE: Towards flexible and cloud-compatible evaluation / Seamless collaborative protocol
-(text below may be outdated)
 - Multiple mounts should be supported. Concept of "mount namespace", default ones: "file", "uri"
   Namespace is required, but mount identifier (file name, URL, ...) is optional (checksum might suffice)
   Mounts maybe read and/or write, but read may also be lazy: workers have to actively demand the value from
   the mount (this will not be kept in memory afterwards, caching has to be done by the mounter)
 - Secret cells: consist of just a checksum, and optionally some mounts. These mounts are lazy.
-Seamless servers: common characteristic of services is that they synchronize cells. When Seamless talks to a Seamless server,
+Seamless servers: Serve a (high-level!) context, transformer, reactor, or (high-level!) macro.
+Low-level implementation: serve a context, transformer or reactor. Macro is served as context.
+Common characteristic of services is that they synchronize cells. When Seamless talks to a Seamless server,
  it offers a cell. First, it provides the checksum and the mounts. The server will then respond with one of the
  following responses ("transfer negotiation"):
  0. Server context is dead; client must re-initialize the server context and and re-send all cells.
@@ -363,7 +364,7 @@ In general, a computation is defined by the following:
    This includes the cell types, and the language of code cells, but no cell values
    NOTE: this is mid-level; the high-level must mark a context with its topology before
     it can be considered to be sent to a service.
-   When marking, the topology cells are classified as:
+   If type is "context": when marking, the topology cells are classified as:
    a. non-authoritative
    b. authoritative, but not connected to the outside
    c. authoritative, and connected to the outside.
@@ -383,10 +384,10 @@ In general, a computation is defined by the following:
   - Dependencies of the code (see dependency server above)
   - Docker version? Linux drivers?
 
-Seamless dependency dogma: a computation is defined by 1-3 only. A "grand checksum"
+I. Seamless "universal computation" dogma: a computation is defined by 1-3 only. A "grand checksum"
  of a computation is a single hash that uniquely defines 1-3.
-4. and 5. are derivative data.
-Seamless "durable environment" dogma
+4. and 5. are derivative data, they may be submitted, or added by the server.
+II. Seamless "durable environment" dogma
 When it comes to environments, every computation has only valid and invalid environments.
 Valid environments give the (unique) correct result, whereas incorrect environments result in an error.
 This means that a dependency library must never have the same code result in two different
@@ -505,6 +506,7 @@ When we start scientific reproducibility test servers, zero-durability computati
 
 
 ##/UPDATE of UPDATE
+(after this, text may be outdated)
 
 ## UPDATE: Towards flexible and cloud-compatible evaluation
 All (low-level) transformers and reactors will have a hidden JSON input pin "(sl_)evaluation".
@@ -529,24 +531,30 @@ Runtime caching
 New cell type: cache cell.
 All (low-level) workers (transformers/reactors/macros) may take (up to) one pin of type "cache" as inputpin (not editpin).
 If they take such a pin, they may raise a CacheError. This will clear the cache, and put the worker
-in "CacheError" state. CacheErrors are meant to detect *stale* caches: workers are forbidden to raise CacheError if the cache is empty.
+in "CacheError" state. CacheErrors are meant to detect *stale* caches: workers are forbidden to raise CacheError if the cache is empty. (UPDATE: multiple cache inputs, but CacheError clears all of them)
 It is understood that the content of cache cells *do not influence the result whatsoever*.
   - Dirty cache cells do not trigger re-evaluation of downstream workers, unless those are in "CacheError" state.
   - Cache cells alone may have multiple sources of authority, i.e. multiple outputpins/editpins connecting to them.
+    (UPDATE: better not do this...)
 Special transformers are "caching transformers", they have a "cache" cell as output.
 Caching transformers are triggered when their input changes *or* their cache output is cleared.
 Caching transformers alone can have multiple cache inputs, and have an API to clear them individually.
-Cache clearing counts as a signal in seamless, which means that the subsequent triggering of the caching transformers has the highest evaluation priority.
+Cache clearing counts as a signal in seamless, which means that the subsequent triggering of the caching transformers
+has the highest evaluation priority.
 Workers in "CacheError" state are re-evaluated whenever their cache input changes.
 If the cache input stays cleared, and the context is in equilibrium, they are nevertheless evaluated with
 empty cache (and the CacheError state is removed).
-UPDATE: It is nice to co-opt this mechanism so that transformers can store partial results, and continue. This can be done using a macro around a
- transformer (can be triggered using mid-level syntax).
+UPDATE: It is nice to co-opt this mechanism so that transformers can store partial results, and continue.
+This can be done using a macro around a transformer (can be triggered using mid-level syntax).
 The transformer has a cache inputpin that is connected from a cache cell. The same cache cell is also connected to
-the secondary outputpin (result_preliminary), this must be allowed.
+the secondary outputpin (result_preliminary), this must be allowed. (UPDATE: or use a special cache edit pin? this example
+won't need a cache transformer then)
 The macro generates a cache transformer that clears the cache cell whenever any of the inputs (including the code) changes.
 The transformer code must be able to analyze the contents of the preliminary results in cache and act accordingly.
 The cache cell will be marked as being serialized upon save (but not mounted).
+UPDATE: Mayve re-think this a bit... maybe mark cells as "cache", and allow transformer edit pins only to "cache" cells.
+ For the rest, rely on concretification signals to compute caches just in time (PIN.cache.value could trigger concretify
+ in a blocking manner, no more CacheError foo?).
 
 Network services (high level)
 =============================

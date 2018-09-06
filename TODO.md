@@ -12,7 +12,6 @@ Part 2: high level
     .\_lib attribute means that upon translation, an equilibrate hook is added
      when the hook is activated, the cells in the translated context are lib-registered
       (see low-level library)
-  - Mark transformer as equilibrated (low level)
   - High-level macros
 
 Part 3 (low-level / cleanup):   
@@ -41,11 +40,10 @@ Part 4 (low-level):
    - Dynamic connection layers: a special macro that has one or more contexts as input (among other inputs), which must be (grand)children
       Like static layers, they are tied to a macro or toplevel context
       They take as input any children of the context (cells or child contexts);
-      Builds connections within/between those children. May set active switch as well.
+      Builds connections within/between those children.
       They can never build new cells, use the help of a macro for that.
       The result layer consists of a set of pairs (connection + callback that removes that connection),
-       and (object, newstate, oldstate) for objects that have been activated/disactivated.
-      Dynamic connection layers will always be evaluated after any other fprward update.
+      Dynamic connection layers will always be evaluated after any other forward update.
       Therefore, if you have A => macro => B, A + B => dynamic layer, you can assume that the macro
        will respond first to changes in A, so that B will reflect the new A.
   - Terminology: authority => source. "only_source" option in mounting context, mounting only source cells
@@ -59,13 +57,14 @@ Part 4 (low-level):
     - implement successors (YAGNI? now that the low-level is subordinate, better rip them)
     - write cache hits into a Log cell
     - structured cells: outchannels have a get_path dependency on an inchannel
+    - structured cells: calculate outchannel checksum (see remarks in source code)
     - re-enable caching for high level (test if simple.py works now)
     - reactors: they give a cache hit not just if the value of all cells are the same, but also:
            - if the connection topology stays the same, and
            - the value of all three code cells stays the same
        In that case, the regeneration of the reactor essentially becomes an update() event
   - Silk form validators
-  - Silk: error messages, multi-lingual (use Python format() syntax, but with properties to fill in, i.e. "The value cannot be {a.x}". This is natively supported by Python. No magic in the style of {a.x-a.y}; define a property for that)
+  - Silk: error messages, multi-lingual (use Python format() syntax, but with properties to fill in, i.e. "The value cannot be {a.x}". This is natively supported by Python. No magic in the style of {a.x+a.y}; define a property for that)
   - Seamless console scripts and installer
 
 Part 5: shift to the mid-level data structure
@@ -173,6 +172,7 @@ Post-0.6:
   To evaluate properly, major version must be exactly that; minor version must be at least that.
 
 Long-term:
+- Reactor start and stop side effects (see below)
 - Concretification (see below)
 - Blocks (see below)
 - The seamless collaborative protocol (high level) (see seamless-towards-02.md)
@@ -200,6 +200,51 @@ Very long-term:
 - Organize cells into arrays (probably at high-level only)
 - Cells that contain (serialized, low-level) contexts. May help with faster caching of macros.
 - ATC chains with folding/unfolding (YAGNI?)
+
+Reactor start and stop side effects
+==================================
+The reactor start and stop code may produce side effects. To work properly,
+ Seamless requires idempotency. For example, of the event chains below, not only
+ must A and B give the same results, but also B and C. In other words, stop followed
+ by start must cancel out in terms of side effects. Seamless has the choice of a
+ spectrum between 1. never do a stop until the reactor terminates
+ (and with the way cache hits work for the reactor, this may be at the end of the program),
+  or 2. stop after every update execution, and restart whenever a new value arrives.
+  1. may save CPU time, while 2. may save memory.
+Some evaluation policy will tell Seamless what to do (this will not affect the result).
+By default it is 1., which is essential in the case of a GUI in a reactor. (While the
+  disappearance of the GUI technically has no result on the computation, it will definitely
+  be an unpleasant surprise to the user).
+
+event chain A:
+set value X to 10
+set value Y to 20
+start
+update
+stop
+
+event chain B
+set value X to 1
+set value Y to 2
+start
+update
+set value X to 10
+update
+set value Y to 20
+update
+stop
+
+event chain C
+set value X to 1
+set value Y to 2
+start
+update
+stop
+set value X to 10
+set value Y to 20
+start
+update
+stop
 
 Concretification
 ================
@@ -404,3 +449,39 @@ of registered commands. This is done as follows:
   connections between Z and the command execution context.
 - If the macro that generates Z can be also the instantiator, then the dynamic
   connection layer will be superfluous.
+
+Lazy evaluation
+===============
+Lazy cells are cells that are the output of a lazy transformer.
+A lazy transformer becomes active only when its output cell
+ becomes concretified.
+The transformer concretifies its dependencies only by pin API.
+Whenever a non-lazy (or lazy, previously concretified) input
+ of a lazy transformer changes, the lazy transformer gets re-evaluated.
+Reactors and non-lazy transformers concretify all of their lazy inputs.
+Lazy transformers can take foreign-language code cells, by exposing the
+ lazy cells as callbacks. This works for C and even for Haskell.
+
+Control over side effect order
+==============================
+This can be done using Hive.
+- Cells are exposed to Hive as push inputpins.
+  Hive push outputpins are exposed to Seamless as outputpins.
+- Signals are exposed to Hive as push trigger inputpins, and vice versa.
+- Lazy cells are exposed as pull outputpins. The Hive pull leads to a concretification.
+  Likewise, Hive pull outputpins are exposed as lazy cells.
+
+Idris evaluation
+================
+Very long-term. From a grand computation description D, one can generate Idris
+ parsers in the same way as Idris type-safe printf.
+One such parser converts D => Idris input type, Idris output type
+Another converts Idris input data + D => Seamless input JSON J1
+A Seamless launcher is a function that converts J1 to Seamless output JSON J2
+  by launching remote (non-interactive) Seamless server
+Another parser converts J2 + D to Idris output data.
+This allows Seamless services to be linked in a type-safe manner, amenable to proofs,
+  and using the entire toolkit of functional programming (map, reduce, etc.)
+Lazy output cq. lazy input cells in Seamless services can be exposed as callbacks-into-Python
+ (CFFI supports this) cq. callbacks-into-Idris-functions
+ (Haskell FFI at least supports this; Idris FFI does not support closures, that's bad).
