@@ -211,6 +211,7 @@ class StructuredCellState:
     buffer_data = None
     buffer_form = None
     buffer_storage = None
+    buffer_nosync = False
 
     def set(self, sc, only_auth=True):
         assert isinstance(sc, StructuredCell)
@@ -221,6 +222,7 @@ class StructuredCellState:
         else:
             self.data = deepcopy(sc.data._val)
         if sc.buffer is not None and sc._silk._buffer_nosync:
+            self.buffer_nosync = True
             store_buffer = True #the buffer is out of sync
             data_filtered_buffer = data_filtered #store the auth part if data_filtered
             self.data = deepcopy(sc.data._val)
@@ -345,9 +347,14 @@ class StructuredCell(CellLikeBase):
                 assert isinstance(buffer.data, Cell)
                 buffer.data._slave = True
                 assert isinstance(buffer.storage, TextCell)
-            if state is not None and state.buffer_data is not None:
-                buffer.data._val = state.buffer_data
-                touch(buffer.data)
+            if state is not None:
+                if state.buffer_nosync:
+                    if state.buffer_data is not None:
+                        buffer.data._val = state.buffer_data
+                        touch(buffer.data)
+                    elif self.data._val is not None:
+                        buffer.data._val = deepcopy(self.data._val)
+                        touch(buffer.data)
             buffer.data._slave = True
             if not self._plain:
                 if state is not None and state.buffer_storage is not None:
