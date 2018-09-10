@@ -1,13 +1,17 @@
 from numpy import ndarray, void
 from .get_form import get_form
 from . import MixedScalar, MixedBase, Scalar,  scalars, is_np_struct, _allowed_types
+from . import MonitorTypeError
 import json
 from copy import deepcopy
 
 def get_subpath(data, form, path):
     if data is None or silk.is_none(data):
         return None, None, None
-    type_ = form["type"]
+    if isinstance(form, str):
+        type_ = form
+    else:
+        type_ = form["type"]
     if not len(path):
         assert type_ in scalars
         result = data, form, None
@@ -34,7 +38,7 @@ def get_subpath(data, form, path):
         result = subdata, subform, None
         return result
     elif type_ in scalars:
-        raise TypeError
+        raise MonitorTypeError
     else:
         raise TypeError(type_)
 
@@ -178,12 +182,15 @@ class Monitor:
         if self.plain:
             json.dumps(subdata)
         if not len(path):
-            if self.form is None:
+            _, form = get_form(subdata)
+            if form is None:
                 type_ = None
-            elif isinstance(self.form, str):
-                type_ = self.form
+            if isinstance(form, str):
+                type_ = form
+                if type_ == "null":
+                    type_ = None
             else:
-                type_ = self.form["type"]
+                type_ = form["type"]
             if type_ == "object":
                 if isinstance(self.data, dict) and isinstance(subdata, dict):
                     self.data.clear()
@@ -192,7 +199,6 @@ class Monitor:
                     arr = np.array(self.data)
                     arr[0] = subdata
                 else:
-                    self.recompute_form(data=subdata)
                     self.data = self._data_hook(subdata)
                     #raise TypeError(type_, type(self.data), type(subdata))
             elif type_ == "array":
@@ -200,20 +206,18 @@ class Monitor:
                     self.data[:] = subdata
                 elif isinstance(self.data, ndarray) and isinstance(subdata, ndarray):
                     if self.data.shape != subdata.shape:
-                        self.recompute_form(data=subdata)
                         self.data = self._data_hook(subdata)
                         #raise TypeError(self.data.shape, subdata.shape)
                     else:
                         self.data[:] = subdata
                 else:
-                    self.recompute_form(data=subdata)
                     self.data = self._data_hook(subdata)
                     #raise TypeError(type_, type(self.data), type(subdata))
             elif type_ is None or type_ in scalars:
-                self.recompute_form(data=subdata)
                 self.data = self._data_hook(subdata)
             else:
                 raise TypeError(type_)
+            self.recompute_form(data=subdata)
         else:
             parent_subdata, parent_subform, trigger = self._get_parent_path(path, subdata)
             if isinstance(parent_subform, str):
@@ -244,7 +248,7 @@ class Monitor:
         if data is None:
             data = self.data
         storage, form = get_form(data)
-        if self.form is None:
+        if self.form is None or subpath is None:
             self.form = self._form_hook(form)
         else:
             if isinstance(self.form, dict):

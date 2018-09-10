@@ -40,24 +40,33 @@ with macro_mode_on():
     ctx.mount("/tmp/mount-test")
 
 ctx.equilibrate()
+print("part 1")
 print(ctx.tf.status())
 print(ctx.result.value)
+print()
 
+print("part 1a")
 inp = ctx.inp.handle
+inp.set("test")
+print("SCHEMA", inp.schema)
+inp.schema.pop("type")
+inp.set(None)
+print(inp, inp.schema)
+print()
+
 #inp.a = {"x": 10}
 inp.b = 100
+print(inp, inp.schema)
 inp.a.x = 11
 #ctx.equilibrate() ###gives error in transformer, until next line
 inp.dat = np.arange(10)
-print(inp, type(inp.a))
-
 ctx.equilibrate()
 print(ctx.tf.status())
-
 print(ctx.result.value)
-
 print(ctx.inp.value)
 print(inp.schema, inp)
+print()
+
 ctx.a.set({"x": 12})
 print("START")
 ctx.a.set(1) #error

@@ -25,6 +25,9 @@ from ..silk.validation import (
 scalars = ("boolean", "integer", "number", "string")
 
 
+class MonitorTypeError(TypeError):
+    pass
+
 def is_np_struct(data):
     return isinstance(data, np.void) and not data.dtype.isbuiltin and len(data.dtype.fields)
 

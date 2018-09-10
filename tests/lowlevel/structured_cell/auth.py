@@ -132,7 +132,7 @@ ctx.equilibrate()
 print(ctx.result.value)
 
 state = StructuredCellState()
-state.set(ctx.hub)
+state.set(ctx.hub, only_auth=True)
 
 print("state storage", state.storage)
 print("state data", state.data)

@@ -1,5 +1,7 @@
 import weakref
 from .Base import Base
+from .Library import check_lib_core
+from ..midlevel import TRANSLATION_PREFIX
 
 class Cell(Base):
     _virtual_path = None
@@ -13,7 +15,7 @@ class Cell(Base):
     def _get_cell(self):
         parent = self._parent()
         parent.translate()
-        p = parent._ctx.translated
+        p = getattr(parent._ctx, TRANSLATION_PREFIX)
         for subpath in self._path:
             p = getattr(p, subpath)
         return p
@@ -28,20 +30,35 @@ class Cell(Base):
     def __getattr__(self, attr):
         #TODO: add subcell to parent._children as well!
         #TODO: check if already in parent._children!
+        parent = self._parent()
+        check_lib_core(parent, self._get_cell())
         return SubCell(self._parent(), self, self._path + (attr,))
+
+    def __setattr__(self, attr, value):
+        if attr.startswith("_"):
+            return object.__setattr__(self, attr, value)
+        parent = self._parent()
+        check_lib_core(parent, self._get_cell())
+        raise NotImplementedError
 
     @property
     def value(self):
         cell = self._get_cell()
         return cell.value
 
-    def set(self, value):
-        #TODO: check if sovereign cell!!
-        #TODO: disable warning!!
+    def _set(self, value):
+        #TODO: check if sovereign cell => disable warning!!
         cell = self._get_cell()
         cell.set(value)
         hcell = self._get_hcell()
         hcell["value"] = cell.value
+        ctx = self._parent()
+
+    def set(self, value):
+        self._set(value)
+        ctx = self._parent()
+        if ctx._as_lib and not ctx._needs_translation:
+            ctx._register_library()
 
     def _destroy(self):
         p = self._path

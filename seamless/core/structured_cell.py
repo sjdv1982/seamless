@@ -1,5 +1,5 @@
 from .cell import CellLikeBase, Cell, JsonCell, TextCell
-from ..mixed import MixedBase, OverlayMonitor, MakeParentMonitor
+from ..mixed import MixedBase, OverlayMonitor, MakeParentMonitor, MonitorTypeError
 from ..mixed.get_form import get_form
 import weakref
 import json
@@ -106,7 +106,10 @@ class Inchannel(CellLikeBase):
 
     @property
     def value(self):
-        return self.structured_cell().monitor.get_data(self.inchannel)
+        try:
+            return self.structured_cell().monitor.get_data(self.inchannel)
+        except MonitorTypeError:
+            return None
 
 
 class Outchannel(CellLikeBase):
@@ -189,7 +192,10 @@ class Outchannel(CellLikeBase):
 
     @property
     def value(self):
-        return self.structured_cell().monitor.get_data(self.outchannel)
+        try:
+            return self.structured_cell().monitor.get_data(self.outchannel)
+        except MonitorTypeError:
+            return None
 
 class BufferWrapper:
     def __init__(self, data, storage, form):
@@ -213,7 +219,7 @@ class StructuredCellState:
     buffer_storage = None
     buffer_nosync = False
 
-    def set(self, sc, only_auth=True):
+    def set(self, sc, only_auth):
         assert isinstance(sc, StructuredCell)
         data_filtered = False
         store_buffer = False
@@ -231,7 +237,9 @@ class StructuredCellState:
             storage, form = get_form(self.data)
         else:
             form = deepcopy(sc.form._val)
-            storage = sc.storage._val
+            storage = None
+            if sc.storage is not None:
+                storage = sc.storage._val
         self.form = form
         self.storage = storage
         if sc.schema is not None:
@@ -244,6 +252,7 @@ class StructuredCellState:
                 self.buffer_data = deepcopy(sc.buffer.data._val)
                 self.buffer_form = deepcopy(sc.buffer.form._val)
                 self.buffer_storage = sc.buffer.storage._val
+        return self
 
     def _get_auth(self, sc, data):
         # Returns:
@@ -252,7 +261,7 @@ class StructuredCellState:
         v = deepcopy(data)
         if not sc.inchannels:
             return v, False
-        if sc.inchannels == [()]:
+        if list(sc.inchannels.keys()) == [()]:
             return None, False
         if v is None:
             return None, False
@@ -260,7 +269,7 @@ class StructuredCellState:
         for inchannel in sc.inchannels:
             vv = v
             for p in inchannel[:-1]:
-                if p not in vv:
+                if not isinstance(vv, dict) or p not in vv:
                     vv = None
                     break
                 vv = vv[p]
@@ -269,7 +278,12 @@ class StructuredCellState:
                 vv.pop(p)
         return v, True
 
-def touch(cell):
+    def serialize(self):
+        return deepcopy(self.__dict__)
+
+def set_state(cell, state):
+    cell._val = state
+    cell._status = cell.StatusFlags.OK
     cell.touch()
 
 class StructuredCell(CellLikeBase):
@@ -297,9 +311,9 @@ class StructuredCell(CellLikeBase):
 
         assert isinstance(data, Cell)
         if state is not None and state.data is not None:
-            data._val = state.data
-            touch(data)
-        data._slave = True
+            set_state(data, state.data)
+        assert data._master is None
+        data._master = (self, "data")
         self.data = data
         if storage is None:
             assert isinstance(data, JsonCell)
@@ -308,26 +322,26 @@ class StructuredCell(CellLikeBase):
             assert isinstance(storage, TextCell)
             if state is not None and state.storage is not None:
                 storage._val = state.storage
-                touch(storage)
-            storage._slave = True
+                set_state(storage, state.storage)
+            assert storage._master is None
+            storage._master = (self, "storage")
             self._plain = False
         self.storage = storage
 
         assert isinstance(form, JsonCell)
         if state is not None and state.form is not None:
-            form._val = state.form
-            touch(form)
-        form._slave = True
+            set_state(form, state.form)
+        assert form._master is None
+        form._master = (self, "form")
         val = form._val
-        assert val is None or isinstance(val, dict)
+        #assert val is None or isinstance(val, dict), val
         self.form = form
-
         if schema is None:
             self._is_silk = False
         else:
             assert isinstance(schema, JsonCell)
             if state is not None and state.schema is not None:
-                schema._val = state.schema
+                set_state(schema, state.schema)
             val = schema._val
             if val is None:
                 manager = schema._get_manager()
@@ -344,28 +358,26 @@ class StructuredCell(CellLikeBase):
                 assert isinstance(buffer.data, JsonCell)
                 assert buffer.storage is None
             else:
-                assert isinstance(buffer.data, Cell)
-                buffer.data._slave = True
                 assert isinstance(buffer.storage, TextCell)
+                assert buffer.storage._master is None
+                buffer.storage._master = (self, "buffer_storage")
             if state is not None:
                 if state.buffer_nosync:
                     if state.buffer_data is not None:
-                        buffer.data._val = state.buffer_data
-                        touch(buffer.data)
+                        set_state(buffer.data, state.buffer_data)
                     elif self.data._val is not None:
                         buffer.data._val = deepcopy(self.data._val)
-                        touch(buffer.data)
-            buffer.data._slave = True
+                        buffer.data.touch()
+            assert buffer.data._master is None
+            buffer.data._master = (self, "buffer_data")
             if not self._plain:
                 if state is not None and state.buffer_storage is not None:
-                    buffer.storage._val = state.buffer_storage
-                    touch(buffer.storage)
-                buffer.storage._slave = True
+                    set_state(buffer.storage, state.buffer_storage)
             assert isinstance(buffer.form, JsonCell)
             if state is not None and state.buffer_form is not None:
-                buffer.form._val = state.buffer_form
-                touch(buffer.form)
-            buffer.form._slave = True
+                set_state(buffer.form, state.buffer_form)
+            assert buffer.form._master is None
+            buffer.form._master = (self, "buffer_form")
         self.buffer = buffer
 
         self.inchannels = {}
@@ -452,11 +464,68 @@ class StructuredCell(CellLikeBase):
         if self.schema is not None:
             self.schema._mount_setter = self._set_schema_from_mounted_file
         if state is not None:
-            for outchannel in self.outchannels:
-                oc = self.outchannels[outchannel]
-                value = oc.value
-                if value is not None:
-                    oc.send_update(value)
+            self.touch()
+
+    def _set_slave(self, mode, val):
+        assert mode in ("data", "storage", "form", "schema", "buffer_data", "buffer_form", "buffer_storage")
+        if mode == "data":
+            self.data._val = val
+            self.monitor.data = val
+        elif mode == "storage":
+            self.storage._val = val
+            self.monitor.storage = val
+        elif mode == "form":
+            self.form._val = val
+            self.monitor.form = val
+        elif mode == "schema":
+            self.schema.update(val)
+        elif mode == "buffer_data":
+            self.buffer.data._val = val
+            self.bufmonitor.data = val
+        elif mode == "buffer_storage":
+            self.buffer.storage._val = val
+            self.bufmonitor.storage = val
+        elif mode == "buffer_form":
+            self.buffer_form._val = val
+            self.bufmonitor.form = val
+
+    def touch(self):
+        for outchannel in self.outchannels:
+            oc = self.outchannels[outchannel]
+            value = oc.value
+            if value is not None:
+                oc.send_update(value)
+
+    @property
+    def authoritative(self):
+        return not self.inchannels
+
+    @property
+    def has_authority(self):
+        # Returns if the data contains any authoritative parts
+        data = self.data._val
+        if not self.inchannels:
+            return True
+        if list(self.inchannels.keys()) == [()]:
+            return False
+        if data is None:
+            return False
+        assert isinstance(data, dict), (data, self.inchannels)
+        def _has_auth(v, path, inchannels):
+            if not len(inchannels):
+                return True
+            for vv, vvalue in v.items():
+                p = path + (vv,)
+                if p in inchannels:
+                    continue
+                if not isinstance(vvalue, dict):
+                    return True
+                lp = len(p)
+                inchannels2 = set([ic for ic in inchannels if ic[:lp] == p])
+                if _has_auth(vv, p, inchannels2):
+                    return True
+            return False
+        return _has_auth(self.data._val, (), self.inchannels)
 
     @contextmanager
     def _from_pin(self):
@@ -487,7 +556,10 @@ class StructuredCell(CellLikeBase):
         oc = self.outchannels[outchannel]
         manager = self.data._get_manager()
         manager.connect_cell(oc, target)
-        v = self.monitor.get_path(outchannel)
+        try:
+            v = self.monitor.get_path(outchannel)
+        except MonitorTypeError:
+            v = None
         if isinstance(v, MixedObject):
             v = v.value
         status = oc.StatusFlags.OK if v is not None else oc.StatusFlags.UNDEFINED
@@ -565,6 +637,10 @@ class StructuredCell(CellLikeBase):
         else:
             self.monitor.set_path((), value)
 
+    def __str__(self):
+        ret = "Seamless structured cell: " + self._format_path()
+        return ret
+
     def status(self):
         return self.data.status()
 
@@ -596,7 +672,7 @@ print("TODO: Runtime wrapper around StructuredCell that protects against .foo = 
 
 """
 TODO (long-term): a mechanism to overrule checksum computation
-_slave takes away the checksum responsibility, this now lies with StructuredCell
+_master takes away the checksum responsibility, this now lies with StructuredCell
 By default: serialize the entire value (still TODO), and calc a checksum of that
 However, this is terribly inefficient if:
  there is a data structure that consists of part X and part Y
@@ -605,7 +681,3 @@ In that case, it is much better to delegate the checksum computation to X and Y 
  to return some checksum-of-checksums
 The configuration of checksum calculation should probably be another cell
 """
-
-#TODO: schema could become not a slave
-# but then, it may be updated from elsewhere; need to listen for that
-#  and the schema may be connected to a target, which would require listening as well

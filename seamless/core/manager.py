@@ -254,8 +254,8 @@ class Manager:
         assert pin._get_manager() is self
         if isinstance(target, Link):
             target = target.get_linked()
-        assert isinstance(target, (CellLikeBase, Path))
-        assert isinstance(pin, (OutputPinBase, EditPinBase))
+        assert isinstance(target, (CellLikeBase, Path)), (pin, target)
+        assert isinstance(pin, (OutputPinBase, EditPinBase)), (pin, target)
 
         assert (mirror_connection is not None) == (isinstance(pin, EditPinBase))
 

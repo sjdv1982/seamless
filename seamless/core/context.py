@@ -253,7 +253,6 @@ context : context or None
         if self._destroyed:
             return set()
         if finished:
-            print("finished")
             return set()
         last_unstable = set()
         while 1:

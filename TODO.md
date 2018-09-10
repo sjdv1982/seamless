@@ -5,7 +5,7 @@ Part 1 is now complete
 Things to do:
 
 Part 2: high level  
-  - Authoritative representation of structured cells
+  - .\_lib => libcell during translation
   - Context copy
     UPDATE: rip the copiers and constructors, high-level macros should be enough!
   - Libraries
@@ -13,6 +13,7 @@ Part 2: high level
      when the hook is activated, the cells in the translated context are lib-registered
       (see low-level library)
   - High-level macros
+  - Indirect library update (see Library.py)
 
 Part 3 (low-level / cleanup):   
    - Signals (DONE; only to test)

@@ -1,0 +1,162 @@
+[
+  {
+    "path": [
+      "sub"
+    ],
+    "type": "context"
+  },
+  {
+    "buffered": true,
+    "celltype": "structured",
+    "format": "mixed",
+    "path": [
+      "sub",
+      "a"
+    ],
+    "schema": null,
+    "silk": true,
+    "type": "cell"
+  },
+  {
+    "INPUT": "inp",
+    "RESULT": "result",
+    "buffered": true,
+    "code": "def triple_it(a, b):\n    print(\"3 * a + b\", a, b)\n    return 3 * a + b\n",
+    "in_equilibrium": true,
+    "language": "python",
+    "path": [
+      "sub",
+      "transform"
+    ],
+    "pins": {
+      "a": {
+        "submode": "silk"
+      },
+      "b": {
+        "submode": "silk"
+      }
+    },
+    "plain": false,
+    "plain_result": false,
+    "type": "transformer",
+    "values": {
+      "b": 6
+    },
+    "with_schema": false
+  },
+  {
+    "buffered": true,
+    "celltype": "structured",
+    "format": "mixed",
+    "path": [
+      "sub",
+      "myresult"
+    ],
+    "schema": null,
+    "silk": true,
+    "type": "cell"
+  },
+  {
+    "path": [
+      "sub2"
+    ],
+    "type": "context"
+  },
+  {
+    "buffered": true,
+    "celltype": "structured",
+    "format": "mixed",
+    "path": [
+      "sub2",
+      "a"
+    ],
+    "schema": null,
+    "silk": true,
+    "type": "cell"
+  },
+  {
+    "INPUT": "inp",
+    "RESULT": "result",
+    "buffered": true,
+    "code": "def triple_it(a, b):\n    print(\"3 * a + b\", a, b)\n    return 3 * a + b\n",
+    "in_equilibrium": true,
+    "language": "python",
+    "path": [
+      "sub2",
+      "transform"
+    ],
+    "pins": {
+      "a": {
+        "submode": "silk"
+      },
+      "b": {
+        "submode": "silk"
+      }
+    },
+    "plain": false,
+    "plain_result": false,
+    "type": "transformer",
+    "values": {
+      "b": 6
+    },
+    "with_schema": false
+  },
+  {
+    "buffered": true,
+    "celltype": "structured",
+    "format": "mixed",
+    "path": [
+      "sub2",
+      "myresult"
+    ],
+    "schema": null,
+    "silk": true,
+    "type": "cell"
+  },
+  {
+    "source": [
+      "sub",
+      "a"
+    ],
+    "target": [
+      "sub",
+      "transform",
+      "a"
+    ],
+    "type": "connection"
+  },
+  {
+    "source": [
+      "sub",
+      "transform"
+    ],
+    "target": [
+      "sub",
+      "myresult"
+    ],
+    "type": "connection"
+  },
+  {
+    "source": [
+      "sub2",
+      "a"
+    ],
+    "target": [
+      "sub2",
+      "transform",
+      "a"
+    ],
+    "type": "connection"
+  },
+  {
+    "source": [
+      "sub2",
+      "transform"
+    ],
+    "target": [
+      "sub2",
+      "myresult"
+    ],
+    "type": "connection"
+  }
+]

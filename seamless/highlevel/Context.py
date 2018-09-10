@@ -1,5 +1,8 @@
 import traceback
 from copy import deepcopy
+from collections import namedtuple
+import weakref
+from functools import partial
 
 from .Base import Base
 from ..core.macro_mode import macro_mode_on, get_macro_mode
@@ -10,7 +13,10 @@ from ..core import layer
 from ..midlevel.translate import translate
 from .assign import assign
 from .proxy import Proxy
-from . import copy_context
+from ..midlevel import copy_context
+from ..midlevel import TRANSLATION_PREFIX
+from ..midlevel.library import register_library
+from .Library import get_lib_paths
 
 class ContextMixin:
     def __call__(self, *args, **kwargs):
@@ -36,13 +42,16 @@ class ContextMixin:
         ### - implement _export and _default_export (from parent in case of SubContext)
         raise NotImplementedError
 
+Graph = namedtuple("Graph", ("nodes", "connections", "subcontexts"))
+
 class Context(ContextMixin):
     path = ()
     def __init__(self):
         with macro_mode_on(self):
             self._ctx = context(toplevel=True)
         self._gen_context = None
-        self._graph = {}, []
+        self._graph = Graph({},[],{})
+        self._graph.subcontexts[None] = {}
         self._children = {}
         self._context = self._ctx
         self._needs_translation = False
@@ -53,8 +62,8 @@ class Context(ContextMixin):
         self._copier = None # Custom copier function (optional)
         self._constructor = None # Custom constructor function
                                  # (optional, mutually exclusive with copier)
-        self._lib = None
-
+        self._as_lib = None
+        self._parent = weakref.ref(self)
 
     def _get_path(self, path):
         child = self._children.get(path)
@@ -65,6 +74,14 @@ class Context(ContextMixin):
             assert node["type"] == "context", (path, node["type"]) #should be in children!
             return SubContext(self, path)
         return Proxy(self, path, "w", None)
+
+    @property
+    def from_lib(self):
+        return self._graph.subcontexts[None].get("from_lib")
+
+    @from_lib.setter
+    def from_lib(self, value):
+        self._graph.subcontexts[None]["from_lib"] = value
 
     def __getattr__(self, attr):
         if attr.startswith("_"):
@@ -101,6 +118,8 @@ class Context(ContextMixin):
         self._needs_translation = True
 
     def translate(self, force=False):
+        assert self._as_lib is None or self._from_lib is None
+        is_lib = (self.as_lib is not None)
         if not force and not self._needs_translation:
             return
         graph = list(self._graph[0].values()) + self._graph[1]
@@ -115,9 +134,10 @@ class Context(ContextMixin):
             layer.create_layer(self)
             with mountmanager.reorganize(self._gen_context):
                 with macro_mode_on():
-                    ctx = context(context=self._ctx, name="translated")
-                    translate(graph, ctx)
-                    self._ctx._add_child("translated", ctx)
+                    ctx = context(context=self._ctx, name=TRANSLATION_PREFIX)
+                    lib_paths = get_lib_paths(self)
+                    translate(graph, ctx, lib_paths, is_lib)
+                    self._ctx._add_child(TRANSLATION_PREFIX, ctx)
                     ctx._get_manager().activate(only_macros=True)
                     ok = True
                     layer.fill_objects(ctx, self)
@@ -151,7 +171,7 @@ class Context(ContextMixin):
                     if self._gen_context is not None:
                         with macro_mode_on():
                             self._gen_context._remount()
-                            self._ctx._add_child("translated", self._gen_context)
+                            self._ctx._add_child(TRANSLATION_PREFIX, self._gen_context)
                         layer.restore_layers(self, old_layers)
                         self._gen_context._manager.activate(only_macros=False)
                 except Exception as exc2:
@@ -165,13 +185,20 @@ class Context(ContextMixin):
                 print("highlevel context CLEANUP error"); traceback.print_exc()
                 self._gen_context = ctx
             raise
+        self._register_library()
         self._needs_translation = False
 
     def _get_graph(self):
-        nodes, connections = self._graph
+        nodes, connections, subcontexts = self._graph
         nodes, connections = deepcopy(nodes), deepcopy(connections)
         copy_context.fill_cell_values(self, nodes)
         return nodes, connections
+
+    def _register_library(self):
+        ctx_functor = lambda: getattr(self._ctx, TRANSLATION_PREFIX)
+        if self._as_lib is not None:
+            callback = partial(register_library, ctx_functor, self, self._as_lib)
+            self._ctx._get_manager().on_equilibrate(callback)
 
 class SubContext(Base, ContextMixin):
     def __init__(self, parent, path):
@@ -206,3 +233,8 @@ class SubContext(Base, ContextMixin):
         nodes, connections = copy_context.copy_context(nodes, connections, path)
         copy_context.fill_cell_values(parent, nodes, path)
         return nodes, connections
+
+    @property
+    def from_lib(self):
+        p = self._parent()._graph.subcontexts.get(self._path, {})
+        return p.get("from_lib")

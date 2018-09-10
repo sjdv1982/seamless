@@ -755,7 +755,7 @@ def resolve_register(reg):
                 print("Warning: Unable to mount file path '%s': cannot mount this type of cell (%s)" % (path, type(cell).__name__))
                 continue
             mount.update(cell._mount_kwargs)
-            if cell._slave and (cell._mount_setter is None):
+            if cell._master and (cell._mount_setter is None):
                 if mount.get("mode") == "r":
                     continue
                 else:

@@ -155,9 +155,12 @@ class Silk(SilkBase):
             value = value.data
         is_none = False
         if buffer:
-            is_none = (self._buffer is None)
+            wdata = self._buffer
         else:
-            is_none = (self.data is None)
+            wdata = self.data
+        if isinstance(wdata, MixedBase): #hackish, but necessary
+            wdata = wdata.value
+        is_none = (wdata is None)
         if is_none:
             self._set_value_simple(value, buffer)
             if not lowlevel:
@@ -228,11 +231,13 @@ class Silk(SilkBase):
             policy = default_policy
 
         data_was_none = False
-        if self._buffer is None and data is None:
-            data_was_none = True
-            assert self._parent is None # MUST be independent
-            data = AlphabeticDict()
-            self._set_value_dict(data, buffer=False)
+        if self._buffer is None:
+            if data is None:
+                data_was_none = True
+                assert self._parent is None # MUST be independent
+                data = AlphabeticDict()
+                self._set_value_dict(data, buffer=False)
+                data = self.data
 
         if self._buffer is not None:
             self._buffer[attr] = value
@@ -252,7 +257,10 @@ class Silk(SilkBase):
         if policy["infer_type"]:
             if data_was_none:
                 if "type" not in schema:
-                    type_ = infer_type(self.data)
+                    data = self.data
+                    if isinstance(data, MixedBase):
+                        data = data.value #hackish
+                    type_ = infer_type(data)
                     schema["type"] = type_
                     if self._schema_update_hook is not None:
                         self._schema_update_hook()

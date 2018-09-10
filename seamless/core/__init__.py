@@ -11,17 +11,10 @@ class SeamlessBase:
     _destroyed = False
     _context = None
     _fallback_path = None
-    _exported = False
     name = None
 
     StatusFlags = Enum('StatusFlags', ('OK', 'PENDING', 'UNDEFINED', 'UNCONNECTED', 'ERROR'))
     _status = StatusFlags.UNDEFINED
-
-    @with_macro_mode
-    def export(self):
-        """Export this seamless object"""
-        self._exported = True
-        return self
 
     def _is_sealed(self):
         assert self._context is not None #worker/cell must have a context
@@ -146,7 +139,7 @@ from . import cell as cell_module
 from .cell import Cell, CellLikeBase, cell
 from .cell import textcell, pythoncell, pytransformercell, pymacrocell, \
  pyreactorcell, ipythoncell, jsoncell, csoncell, arraycell, mixedcell, signal
-from .library import libcell
+from .library import libcell, libmixedcell
 from . import context as context_module
 from .context import Context, context
 from .worker import Worker

@@ -4,6 +4,10 @@ from .Cell import Cell
 from .proxy import Proxy
 from .pin import InputPin, OutputPin
 from .Base import Base
+from .Library import check_lib_core
+from ..midlevel import TRANSLATION_PREFIX
+
+from ..core.context import Context as CoreContext
 
 class Transformer(Base):
     def __init__(self, parent, path):
@@ -15,6 +19,15 @@ class Transformer(Base):
         result._virtual_path = self._path
         parent._children[path] = self
         parent._children[result_path] = result
+
+    @property
+    def with_schema(self):
+        return self._get_htf()["with_schema"]
+    @with_schema.setter
+    def with_schema(self, value):
+        assert value in (True, False), value
+        self._get_htf()["with_schema"] = value
+        self._parent()._translate()
 
 
     def _assign_to(self, hctx, path):
@@ -29,19 +42,24 @@ class Transformer(Base):
         assign_connection(parent, result_path, path, True)
         hctx._translate()
 
+
     def __setattr__(self, attr, value):
         from .assign import assign_connection
         if attr.startswith("_"):
             return object.__setattr__(self, attr, value)
         translate = False
         parent = self._parent()
+        tf = self._get_tf()
+        htf = self._get_htf()
         if attr == "code":
-            tf = self._get_tf()
-            htf = self._get_htf()
+            check_lib_core(parent, tf.code)
             tf.code.set(value)
             htf["code"] = tf.code.value
+            if parent._as_lib and not parent._needs_translation:
+                parent._register_library()
         else:
-            htf = self._get_htf()
+            inp = getattr(tf, htf["INPUT"])
+            check_lib_core(parent, inp)
             if attr not in htf["pins"]:
                 htf["pins"][attr] = {"submode": "silk"}
                 translate = True
@@ -54,17 +72,19 @@ class Transformer(Base):
             else:
                 htf["values"][(attr,)] = value
                 tf = self._get_tf()
-                inp = tf.inp.handle
+                inp = getattr(tf, htf["INPUT"]).handle
                 setattr(inp, attr, value)
+            htf.pop("in_equilibrium", None)
             if translate:
                 parent._translate()
 
     def _get_tf(self):
         parent = self._parent()
         parent.translate()
-        p = parent._ctx.translated
+        p = getattr(parent._ctx, TRANSLATION_PREFIX)
         for subpath in self._path:
             p = getattr(p, subpath)
+        assert isinstance(p, CoreContext)
         return p
 
     def _get_htf(self):
@@ -100,7 +120,7 @@ class Transformer(Base):
                 "transformer": True,
                 "value": value,
             }
-            assert isinstance(value, str)           
+            assert isinstance(value, str)
             htf["code"] = None
         else:
             inp = getattr(tf, htf["INPUT"])

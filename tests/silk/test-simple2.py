@@ -1,5 +1,10 @@
 from seamless.silk import Silk
 
+s = Silk()
+print(s.schema)
+s.set("test")
+print(s.schema)
+
 #s = Silk().set(1)
 #s.set(2.0)
 

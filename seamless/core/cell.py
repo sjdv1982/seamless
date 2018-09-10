@@ -46,12 +46,10 @@ class CellBase(CellLikeBase):
     _mount = None
     _mount_kwargs = None
     _mount_setter = None
-    _slave = False   #Slave cells. Cannot be written to by API, do not accept connections,
+    _master = None   #Slave cells. Cannot be written to by API, do not accept connections,
                      #  and mounting is write-only unless there is a mount_setter.
-                     # Slave cells are controlled by StructuredCell.
-                     # TODO: make StructuredCell a bit less tyrannical, and allow slave
-                     #  cells to be controlled by workers/macros external to the StructuredCell
-                     # This will require a listener in the vein of mount_setter
+                     # Slave cells are controlled by StructuredCell (the master)
+    _lib_path = None # Set by library.libcell
 
     def status(self):
         """The cell's current status."""
@@ -98,7 +96,7 @@ class CellBase(CellLikeBase):
 
     def set(self, value):
         """Update cell data from Python code in the main thread."""
-        assert not self._slave #slave cells are read-only
+        assert not self._master #slave cells are read-only
         if isinstance(value, Wrapper):
             value = value._unwrap()
         if self._context is None:
@@ -183,7 +181,7 @@ class CellBase(CellLikeBase):
         """
         assert from_pin in (True, False, "edit")
         if not force:
-            assert not self._slave
+            assert not self._master
         old_status = self._status
         if value is None:
             different = (self._last_checksum is not None)
@@ -215,7 +213,7 @@ class CellBase(CellLikeBase):
             text_different =True
         elif value is not None:
             different = (self.checksum(may_fail=True) != old_checksum)
-            self.text_checksum()
+            self.text_checksum(may_fail=True)
             text_different = (self.text_checksum(may_fail=True) != old_text_checksum)
         else:
             pass #"different" has already been set
@@ -919,8 +917,8 @@ def csoncell():
 def arraycell():
     return ArrayCell()
 
-def mixedcell():
-    return MixedCell()
+def mixedcell(**kwargs):
+    return MixedCell(**kwargs)
 
 def signal():
     return Signal()

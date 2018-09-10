@@ -5,12 +5,13 @@ ctx.mount("/tmp/mount-test")
 
 ctx.a = 12
 
-def triple_it(a):
-    print("triple", a)
-    return 3 * a
+def triple_it(a, b):
+    print("3 * a + b", a, b)
+    return 3 * a + b
 
 ctx.transform = triple_it
 ctx.transform.a = ctx.a
+ctx.transform.b = 6
 ctx.myresult = ctx.transform
 ctx.equilibrate()
 print(ctx.myresult.value)
@@ -31,4 +32,7 @@ print(ctx2.sub2.myresult.value)
 from seamless.midlevel.serialize import extract
 topology, _, _, _, _ = extract(*ctx2._graph)
 import json
-json.dump(topology, open("context-graph.json", "w"), sort_keys=True, indent=2)
+json.dump(topology, open("context2-graph.json", "w"), sort_keys=True, indent=2)
+f = open("context2-graph-raw.txt", "w")
+from pprint import pprint
+pprint(ctx2._graph[0], stream=f)

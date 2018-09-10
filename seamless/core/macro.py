@@ -277,10 +277,12 @@ def macro(params, *, lib=None):
 
 from . import cell, transformer, pytransformercell, link, layer, path, \
  reactor, pyreactorcell, pymacrocell, jsoncell, csoncell, mixedcell, \
- arraycell, mixedcell, signal, pythoncell, ipythoncell, libcell
+ arraycell, mixedcell, signal, pythoncell, ipythoncell, libcell, libmixedcell
+from .structured_cell import StructuredCell, BufferWrapper
 from .context import context
 names = ("cell", "transformer", "context", "pytransformercell", "link", "layer",
  "path", "reactor", "pyreactorcell", "pymacrocell", "jsoncell", "csoncell",
- "mixedcell", "arraycell", "signal", "pythoncell", "ipythoncell", "libcell")
+ "mixedcell", "arraycell", "signal", "pythoncell", "ipythoncell", "libcell", "libmixedcell")
+names += ("StructuredCell", "BufferWrapper")
 names = names + ("macro",)
 Macro.default_namespace = {n:globals()[n] for n in names}
