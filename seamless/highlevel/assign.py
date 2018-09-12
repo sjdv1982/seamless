@@ -1,5 +1,8 @@
 import inspect
 from copy import deepcopy
+import json
+import weakref
+from types import LambdaType
 
 from . import ConstantTypes
 from ..mixed import MixedBase
@@ -9,7 +12,7 @@ from .pin import InputPin, OutputPin
 from .Transformer import Transformer
 from ..midlevel import copy_context
 from . import assign_virtual
-import json
+from ..core.lambdacode import lambdacode
 
 def assign_constant(ctx, path, value):
     if isinstance(value, (Silk, MixedBase)):
@@ -19,7 +22,6 @@ def assign_constant(ctx, path, value):
     if path in ctx._children:
         old = ctx._children[path]
         if isinstance(old, Cell):
-            print("SET!")
             old._set(value)
             return False
         raise AttributeError(path) #already exists
@@ -50,11 +52,19 @@ def assign_transformer(ctx, path, func):
         #TODO: look at default parameters, make them optional
         if p.kind not in (p.VAR_KEYWORD, p.VAR_POSITIONAL):
             parameters.append(pname)
+    code = inspect.getsource(func)
+    #if isinstance(func, LambdaType): ### does not work, bug in Python??
+    if func.__class__.__name__ == "lambda":
+        print("FUNC!", func)
+        code = lambdacode(func)
+        if code is None:
+            raise ValueError("Cannot extract source code from this lambda")
+
     transformer =    {
         "path": path,
         "type": "transformer",
         "language": "python",
-        "code": inspect.getsource(func),
+        "code": code,
         "pins": {param:{"submode": "silk"} for param in parameters},
         "values": {},
         "RESULT": "result",
@@ -104,7 +114,7 @@ def _assign_context(ctx, new_nodes, new_connections, path):
             continue
         if target[:len(path)] != path:
             continue
-        connections.pop(con)
+        connections.remove(con)
     ctx._graph[0][path] = {
         "path": path,
         "type": "context"
@@ -131,17 +141,18 @@ def _assign_context(ctx, new_nodes, new_connections, path):
 
 def assign_context(ctx, path, value):
     assert not ctx._parent()._as_lib
-    new_ctx = value._run_copier()
+    new_ctx = value
     new_nodes, new_connections = new_ctx._get_graph()
     _assign_context(ctx, new_nodes, new_connections, path)
     subcontexts = ctx._graph.subcontexts
+    ctx._del_subcontext(path)
     as_lib = new_ctx._as_lib
-    if as_lib is not None or \
-      (path in subcontexts and "from_lib" in subcontexts[path]):
+    if as_lib is not None:
         if path not in subcontexts:
             subcontexts[path] = {}
-        subcontexts[path]["from_lib"] = as_lib
-    ctx._translate()
+        subcontexts[path]["from_lib"] = as_lib.name
+        as_lib.copy_deps.add((weakref.ref(ctx), path))
+    ctx._needs_translation = True
 
 def assign(ctx, path, value):
     from .Context import Context, SubContext
@@ -164,7 +175,5 @@ def assign(ctx, path, value):
         ctx._translate()
     else:
         raise TypeError(value)
-    if ctx._as_lib and not ctx._needs_translation:
-        ctx._register_library()
     ### g = {".".join(k): v for k,v in ctx._graph[0].items()}
     ### json.dumps([g, ctx._graph[1]])

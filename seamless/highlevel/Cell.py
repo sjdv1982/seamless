@@ -1,6 +1,5 @@
 import weakref
 from .Base import Base
-from .Library import check_lib_core
 from ..midlevel import TRANSLATION_PREFIX
 
 class Cell(Base):
@@ -40,6 +39,14 @@ class Cell(Base):
         parent = self._parent()
         check_lib_core(parent, self._get_cell())
         raise NotImplementedError
+        #TODO
+        '''
+        if parent._as_lib is not None and not translate:
+            if htf["path"] in parent._as_lib.partial_authority:
+                parent._as_lib.needs_update = True
+        '''
+        #TODO: get a handle on the underlying Silk data for modification
+        # This also triggers parent._as_lib.needs_update = True
 
     @property
     def value(self):
@@ -57,8 +64,6 @@ class Cell(Base):
     def set(self, value):
         self._set(value)
         ctx = self._parent()
-        if ctx._as_lib and not ctx._needs_translation:
-            ctx._register_library()
 
     def _destroy(self):
         p = self._path
@@ -77,3 +82,5 @@ class SubCell(Cell):
 
     def _get_hcell(self):
         raise NotImplementedError
+
+from .Library import check_lib_core

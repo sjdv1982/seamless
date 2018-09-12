@@ -55,8 +55,6 @@ class Transformer(Base):
             check_lib_core(parent, tf.code)
             tf.code.set(value)
             htf["code"] = tf.code.value
-            if parent._as_lib and not parent._needs_translation:
-                parent._register_library()
         else:
             inp = getattr(tf, htf["INPUT"])
             check_lib_core(parent, inp)
@@ -75,8 +73,12 @@ class Transformer(Base):
                 inp = getattr(tf, htf["INPUT"]).handle
                 setattr(inp, attr, value)
             htf.pop("in_equilibrium", None)
+            if parent._as_lib is not None and not translate:
+                if htf["path"] in parent._as_lib.partial_authority:
+                    parent._as_lib.needs_update = True
             if translate:
                 parent._translate()
+
 
     def _get_tf(self):
         parent = self._parent()
@@ -91,6 +93,18 @@ class Transformer(Base):
         parent = self._parent()
         return parent._graph[0][self._path]
 
+    def _get_value(self, attr):
+        tf = self._get_tf()
+        htf = self._get_htf()
+        if attr == "code":
+            p = tf.code
+            return p.data
+        else:
+            inp = getattr(tf, htf["INPUT"])
+            p = inp.value[attr]
+            return p
+
+
     def __getattr__(self, attr):
         if attr.startswith("_"):
             raise AttributeError(value)
@@ -100,7 +114,11 @@ class Transformer(Base):
             raise AttributeError(attr)
         #TODO: make it a full wrapper of the input pin value, with sub-attribute access, modify tf["values"] when set
         pull_source = functools.partial(self._pull_source, attr)
-        return Proxy(self, (attr,), "r", pull_source)
+        try:
+            value = self._get_value(attr)
+        except AttributeError:
+            value = None
+        return Proxy(self, (attr,), "r", pull_source, value=value)
 
     def _pull_source(self, attr, other):
         from .assign import assign_connection
@@ -124,7 +142,7 @@ class Transformer(Base):
             htf["code"] = None
         else:
             inp = getattr(tf, htf["INPUT"])
-            p = getattr(inp, attr)
+            p = getattr(inp.value, attr)
             value = p.value
             cell = {
                 "path": path,

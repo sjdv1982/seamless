@@ -1,11 +1,12 @@
 import weakref
 
 class Proxy:
-    def __init__(self, parent, path, mode, pull_source=None):
+    def __init__(self, parent, path, mode, pull_source=None, value=None):
         self._parent = weakref.ref(parent)
         self._path = path
         self._mode = mode
         self._pull_source = pull_source
+        self._value = value
 
     def __rshift__(self, other):
         assert "w" in self._mode
@@ -15,7 +16,10 @@ class Proxy:
         other._pull_source(self)
 
     def __str__(self):
-        return "<does not exist>"
+        if self._value is None:
+            return "<does not exist>"
+        else:
+            return str(self._value)
 
     def __setattr__(self, attr, value):
         if attr.startswith("_"):

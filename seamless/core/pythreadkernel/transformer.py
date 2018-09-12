@@ -113,7 +113,13 @@ class Transformer(Worker):
                     code = code_obj.value
                 if code_obj is not None and code_obj.is_function:
                     func_name = code_obj.func_name
-                    expr = self.function_expr_template.format(code, func_name)
+                    if func_name == "<expr>":
+                        expr = "{0} = {1}".format(self.output_name, code)
+                    elif func_name == "<lambda>":
+                        code2 = "LAMBDA = " + code
+                        expr = self.function_expr_template.format(code2, "LAMBDA")
+                    else:
+                        expr = self.function_expr_template.format(code, func_name)
                     self.code_object = cached_compile(expr, identifier, "exec")
                     self.func_name = func_name
                 else:

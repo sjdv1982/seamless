@@ -16,35 +16,11 @@ from .proxy import Proxy
 from ..midlevel import copy_context
 from ..midlevel import TRANSLATION_PREFIX
 from ..midlevel.library import register_library
-from .Library import get_lib_paths
-
-class ContextMixin:
-    def __call__(self, *args, **kwargs):
-        if self._constructor is None:
-            raise TypeError("Context has no constructor")
-        raise NotImplementedError
-        self2 = self._copy()
-        result = self._constructor(self2, *args, **kwargs)
-        assert isinstance(result, Context)
-
-    def _run_copier(self):
-        if self._copier is None: return self #kludge
-        raise NotImplementedError
-        self2 = self._copy()
-        if self._copier is None:
-            return self2
-        return self._copier(self2)
-
-    def _copy(self):
-        ### TODO
-        ### - clean Context copy using _get_graph (makes SubContext independent)
-        ### - eliminate _constructor;
-        ### - implement _export and _default_export (from parent in case of SubContext)
-        raise NotImplementedError
+from .Library import get_lib_paths, get_libitem
 
 Graph = namedtuple("Graph", ("nodes", "connections", "subcontexts"))
 
-class Context(ContextMixin):
+class Context:
     path = ()
     def __init__(self):
         with macro_mode_on(self):
@@ -55,13 +31,6 @@ class Context(ContextMixin):
         self._children = {}
         self._context = self._ctx
         self._needs_translation = False
-        self._export = {} # dict with export indications (True, False and None values)
-                          # This is used when the context is copied
-                          # They apply for all children as well, until overridden
-        self._default_export = True  #meaning of the None value in _export
-        self._copier = None # Custom copier function (optional)
-        self._constructor = None # Custom constructor function
-                                 # (optional, mutually exclusive with copier)
         self._as_lib = None
         self._parent = weakref.ref(self)
 
@@ -185,7 +154,6 @@ class Context(ContextMixin):
                 print("highlevel context CLEANUP error"); traceback.print_exc()
                 self._gen_context = ctx
             raise
-        self._register_library()
         self._needs_translation = False
 
     def _get_graph(self):
@@ -194,17 +162,34 @@ class Context(ContextMixin):
         copy_context.fill_cell_values(self, nodes)
         return nodes, connections
 
-    def _register_library(self):
-        ctx_functor = lambda: getattr(self._ctx, TRANSLATION_PREFIX)
-        if self._as_lib is not None:
-            callback = partial(register_library, ctx_functor, self, self._as_lib)
-            self._ctx._get_manager().on_equilibrate(callback)
+    def register_library(self):
+        assert self._as_lib is not None #must be a library
+        libitem = self._as_lib
+        self.equilibrate()
+        ctx = getattr(self._ctx, TRANSLATION_PREFIX)
+        libname = self._as_lib.name
+        partial_authority = register_library(ctx, self, libname)
+        if partial_authority != libitem.partial_authority:
+            libitem.needs_update = True
+            libitem.partial_authority = partial_authority
+        libitem.update()
 
-class SubContext(Base, ContextMixin):
+    def _del_subcontext(self, path):
+        subcontexts = self._graph.subcontexts
+        for p in list(subcontexts.keys()):
+            if p is None:
+                continue
+            if p[:len(path)] == path:
+                sc = subcontexts.pop(p)
+                libname = sc.get("from_lib")
+                if libname is not None:
+                    libitem = get_libitem(libname)
+                    libitem.copy_deps.remove((weakref.ref(self), path))
+
+
+class SubContext(Base):
     def __init__(self, parent, path):
         super().__init__(parent, path)
-        self._copier = None
-        self._constructor = None
 
     def __getattr__(self, attr):
         if attr.startswith("_"):

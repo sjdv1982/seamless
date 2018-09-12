@@ -14,8 +14,6 @@ _boundcells = WeakSet()
 def _update_old_keys(oldkeys, oldlib, lib, name, on_macros):
     master_cells = set() #master cells will receive a refresh
     for key in oldkeys:
-        if key not in _cells:
-            continue
         oldcells = _cells[key]
         fullkey = name + "." + key
         for oldcell in oldcells:

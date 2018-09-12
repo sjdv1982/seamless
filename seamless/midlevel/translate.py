@@ -10,11 +10,10 @@ We can't do codegen because not all cells are text!)
 from collections import OrderedDict
 from functools import partial
 
-from seamless.core import cell, libcell, transformer, context, macro, StructuredCell
+from seamless.core import cell, libcell, libmixedcell, transformer, context, macro, StructuredCell
 from seamless.core.structured_cell import BufferWrapper
 
 from . import copy_context
-from .library import get_lib_path
 
 STRUC_ID = "_STRUC"
 
@@ -75,10 +74,17 @@ def build_structured_cell(ctx, name, silk, plain, buffered, inchannels, outchann
         else:
             storage = cell("text")
         c.storage = storage
-        c.data = cell("mixed",
-            form_cell = c.form,
-            storage_cell = c.storage,
-        )
+        if lib_path:
+            path = lib_path + ".data"
+            c.data = libmixedcell(path,
+                form_cell = c.form,
+                storage_cell = c.storage
+            )
+        else:
+            c.data = cell("mixed",
+                form_cell = c.form,
+                storage_cell = c.storage
+            )
     if silk:
         if lib_path:
             path = lib_path + ".schema"
@@ -110,10 +116,17 @@ def build_structured_cell(ctx, name, silk, plain, buffered, inchannels, outchann
             else:
                 buffer_storage = cell("text")
             c.buffer_storage = buffer_storage
-            c.buffer_data = cell("mixed",
-                form_cell = c.buffer_form,
-                storage_cell = c.buffer_storage,
-            )
+            if lib_path:
+                path = lib_path + ".buffer_data"
+                c.buffer_data = libmixedcell(path,
+                    form_cell = c.buffer_form,
+                    storage_cell = c.buffer_storage,
+                )
+            else:
+                c.buffer_data = cell("mixed",
+                    form_cell = c.buffer_form,
+                    storage_cell = c.buffer_storage,
+                )
         bufferwrapper = BufferWrapper(
             c.buffer_data,
             buffer_storage,
@@ -348,3 +361,5 @@ def translate(graph, ctx, from_lib_paths, is_lib):
 
     for node in connections:
         translate_connection(node, namespace2, ctx)
+
+from .library import get_lib_path

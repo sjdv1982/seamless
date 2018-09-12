@@ -5,7 +5,7 @@ from io import BytesIO
 import numpy as np
 import pickle
 import ast
-from ast import PyCF_ONLY_AST, FunctionDef
+from ast import PyCF_ONLY_AST, FunctionDef, Expr, Lambda
 import inspect
 
 from .macro_mode import with_macro_mode
@@ -590,9 +590,17 @@ class PythonCell(Cell):
         ast = cached_compile(value, self._codetype, "exec", PyCF_ONLY_AST)
         is_function = (len(ast.body) == 1 and
                        isinstance(ast.body[0], FunctionDef))
+        is_expr = (len(ast.body) == 1 and
+                       isinstance(ast.body[0], Expr))
 
         if is_function:
             self.func_name = ast.body[0].name
+        elif is_expr:
+            if isinstance(ast.body[0].value, Lambda):
+                self.func_name = "<lambda>"
+            else:
+                self.func_name = "<expr>"
+            is_function = True
         else:
             self.func_name = self._codetype
 
@@ -644,6 +652,10 @@ class PyReactorCell(PythonCell):
     _supported_modes = tuple(_supported_modes)
     del transfer_mode
 
+def _validate(self, value):
+    super()._validate(value)
+    assert self.func_name not in ("<expr>", "<lambda>") #cannot be an expression
+
 class PyTransformerCell(PythonCell):
     """Python code object used for transformers
     Each input will be an argument"""
@@ -672,6 +684,11 @@ class PyMacroCell(PyTransformerCell):
     _supported_modes.append(("ref", "pythoncode", _codetype))
     _supported_modes = tuple(_supported_modes)
     del transfer_mode
+
+def _validate(self, value):
+    super()._validate(value)
+    assert self.func_name not in ("<expr>", "<lambda>") #cannot be an expression
+
 
 class IPythonCell(Cell):
     _mount_kwargs = {"encoding": "utf-8", "binary": False}

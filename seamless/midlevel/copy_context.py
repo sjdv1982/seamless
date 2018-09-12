@@ -87,36 +87,6 @@ def fill_cell_values(ctx, nodes, path=None):
     finally:
         manager.activate(only_macros=False)
 
-def _warn_partial_authority(cell):
-    from ..core.structured_cell import StructuredCell
-    assert isinstance(cell, StructuredCell)
-    if cell.has_authority and not cell.authoritative:
-        print("WARNING: StructuredCell %s has partial authority, direct library update will not work" % cell)
-
-def warn_partial_authority(ctx, nodes):
-    from ..highlevel.Cell import Cell
-    from ..highlevel.Transformer import Transformer
-    from ..core.structured_cell import StructuredCell
-    for p in nodes:
-        child = ctx._children.get(p)
-        node = nodes[p]
-        if isinstance(child, Transformer):
-            transformer = child._get_tf()
-            input_name = node["INPUT"]
-            inp = getattr(transformer, input_name)
-            _warn_partial_authority(inp)
-            if node["with_schema"]:
-                result_name = node["RESULT"]
-                result = getattr(transformer, result_name)
-                _warn_partial_authority(result)
-            continue
-        if not isinstance(child, Cell):
-            continue
-        assert node["type"] == "cell", (pp, node["type"])
-        cell = child._get_cell()
-        if isinstance(cell, StructuredCell):
-            _warn_partial_authority(cell)
-
 """
 def clear_cached_cell_values(ctx, nodes):
     from ..highlevel.Cell import Cell

@@ -1,9 +1,7 @@
 from seamless.highlevel import Context, stdlib
 
 ctx = Context()
-
 ctx.a = 12
-ctx.a._get_hcell()["format"] = "plain" ###
 
 def triple_it(a, **kwargs):
     print("triple", a, kwargs)
@@ -15,10 +13,8 @@ ctx.myresult = ctx.transform
 ctx.equilibrate()
 print(ctx.myresult.value)
 
+ctx.transform.b = 777
 stdlib.triple_it = ctx
-#ctx.transform.b = 777
-ctx.equilibrate()
-print(ctx.myresult.value)
 
 print("START")
 ctx2 = Context()
@@ -28,15 +24,17 @@ ctx2.equilibrate()
 
 print(ctx2.sub.myresult.value)
 print(ctx2.sub2.myresult.value)
+print(ctx2.sub.transform.b)
 
 def double_it(a, **kwargs):
     print("double", a, kwargs)
     return 2 * a
 stdlib.triple_it.transform.code = double_it
-print(stdlib.triple_it.transform._get_tf().code.value)
-stdlib.triple_it.equilibrate()
+stdlib.triple_it.transform.b = 888
+stdlib.triple_it.register_library()
 print(stdlib.triple_it.myresult.value)
 
 ctx2.equilibrate()
 print(ctx2.sub.myresult.value)
 print(ctx2.sub2.myresult.value)
+print(ctx2.sub.transform.b)
