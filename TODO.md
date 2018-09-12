@@ -5,15 +5,12 @@ Part 1 is now complete
 Things to do:
 
 Part 2: high level  
-  - .\_lib => libcell during translation
-  - Context copy
-    UPDATE: rip the copiers and constructors, high-level macros should be enough!
-  - Libraries
-    .\_lib attribute means that upon translation, an equilibrate hook is added
-     when the hook is activated, the cells in the translated context are lib-registered
-      (see low-level library)
+  - Sub-cell access and connections (not yet for transformer.inp)
   - High-level macros
-  - Indirect library update (see Library.py)
+  - Hook them both up with indirect library update system
+  - Test library-containing-another-library
+  - C/C++ cell translation
+  - Cloudless proof-of-principle
 
 Part 3 (low-level / cleanup):   
    - Signals (DONE; only to test)
@@ -38,15 +35,6 @@ Part 3 (low-level / cleanup):
 Merge into master? With direct mode, most tests should work now? Other ones can be ported...
 
 Part 4 (low-level):   
-   - Dynamic connection layers: a special macro that has one or more contexts as input (among other inputs), which must be (grand)children
-      Like static layers, they are tied to a macro or toplevel context
-      They take as input any children of the context (cells or child contexts);
-      Builds connections within/between those children.
-      They can never build new cells, use the help of a macro for that.
-      The result layer consists of a set of pairs (connection + callback that removes that connection),
-      Dynamic connection layers will always be evaluated after any other forward update.
-      Therefore, if you have A => macro => B, A + B => dynamic layer, you can assume that the macro
-       will respond first to changes in A, so that B will reflect the new A.
   - Terminology: authority => source. "only_source" option in mounting context, mounting only source cells
   - Report cells (JSON cells, can become structured if directed from the mid-level).
     Status dict becomes a a Report cell.
@@ -201,6 +189,17 @@ Very long-term:
 - Organize cells into arrays (probably at high-level only)
 - Cells that contain (serialized, low-level) contexts. May help with faster caching of macros.
 - ATC chains with folding/unfolding (YAGNI?)
+
+YAGNI?
+- Dynamic connection layers: a special macro that has one or more contexts as input (among other inputs), which must be (grand)children
+   Like static layers, they are tied to a macro or toplevel context
+   They take as input any children of the context (cells or child contexts);
+   Builds connections within/between those children.
+   They can never build new cells, use the help of a macro for that.
+   The result layer consists of a set of pairs (connection + callback that removes that connection),
+   Dynamic connection layers will always be evaluated after any other forward update.
+   Therefore, if you have A => macro => B, A + B => dynamic layer, you can assume that the macro
+    will respond first to changes in A, so that B will reflect the new A.
 
 Reactor start and stop side effects
 ==================================
