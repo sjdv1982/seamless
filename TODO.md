@@ -8,8 +8,11 @@ Part 2: high level
   - High-level macros
   - Test indirect library update system, also with high-level macros
   - Test library-containing-another-library
+  - Low-level macro (similar to Transformer)
   - Edit schema JSON as file (proper mounting)
   - C/C++ cell translation
+    (Transformer gains .compile_options, .link_options, .header (read-only),
+     but only if language is C/C++)
   - Serialization
   - Cloudless proof-of-principle  
 
