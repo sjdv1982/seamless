@@ -279,7 +279,20 @@ class StructuredCellState:
         return v, True
 
     def serialize(self):
-        return deepcopy(self.__dict__)
+        result = {}
+        for k,v in self.__dict__.items():
+            if v is not None:
+                result[k] = deepcopy(v)
+        return result
+
+    @classmethod
+    def from_data(cls, data):
+        storage, form = get_form(data)
+        result = cls()
+        result.data = data
+        result.storage = storage
+        result.form = form
+        return result
 
 def set_state(cell, state):
     cell._val = state
@@ -311,7 +324,7 @@ class StructuredCell(CellLikeBase):
 
         assert isinstance(data, Cell)
         if state is not None and state.data is not None:
-            set_state(data, state.data)
+            set_state(data, deepcopy(state.data))
         assert data._master is None
         data._master = (self, "data")
         self.data = data
@@ -322,7 +335,7 @@ class StructuredCell(CellLikeBase):
             assert isinstance(storage, TextCell)
             if state is not None and state.storage is not None:
                 storage._val = state.storage
-                set_state(storage, state.storage)
+                set_state(storage, deepcopy(state.storage))
             assert storage._master is None
             storage._master = (self, "storage")
             self._plain = False
@@ -330,7 +343,7 @@ class StructuredCell(CellLikeBase):
 
         assert isinstance(form, JsonCell)
         if state is not None and state.form is not None:
-            set_state(form, state.form)
+            set_state(form, deepcopy(state.form))
         assert form._master is None
         form._master = (self, "form")
         val = form._val
@@ -341,7 +354,7 @@ class StructuredCell(CellLikeBase):
         else:
             assert isinstance(schema, JsonCell)
             if state is not None and state.schema is not None:
-                set_state(schema, state.schema)
+                set_state(schema, deepcopy(state.schema))
             val = schema._val
             if val is None:
                 manager = schema._get_manager()
@@ -364,18 +377,25 @@ class StructuredCell(CellLikeBase):
             if state is not None:
                 if state.buffer_nosync:
                     if state.buffer_data is not None:
-                        set_state(buffer.data, state.buffer_data)
-                    elif self.data._val is not None:
-                        buffer.data._val = deepcopy(self.data._val)
-                        buffer.data.touch()
+                        set_state(buffer.data, deepcopy(state.buffer_data))
+                elif self.data._val is not None:
+                    set_state(buffer.data, deepcopy(self.data._val))
             assert buffer.data._master is None
             buffer.data._master = (self, "buffer_data")
             if not self._plain:
-                if state is not None and state.buffer_storage is not None:
-                    set_state(buffer.storage, state.buffer_storage)
+                if state is not None:
+                    if state.buffer_nosync:
+                        if state.buffer_storage is not None:
+                            set_state(buffer.storage, deepcopy(state.buffer_storage))
+                    elif self.storage._val is not None:
+                        set_state(buffer.storage, deepcopy(self.storage._val))
             assert isinstance(buffer.form, JsonCell)
-            if state is not None and state.buffer_form is not None:
-                set_state(buffer.form, state.buffer_form)
+            if state is not None:
+                if state.buffer_nosync:
+                    if state.buffer_form is not None:
+                        set_state(buffer.form, deepcopy(state.buffer_form))
+                elif self.form._val is not None:
+                    set_state(buffer.form, deepcopy(self.form._val))
             assert buffer.form._master is None
             buffer.form._master = (self, "buffer_form")
         self.buffer = buffer

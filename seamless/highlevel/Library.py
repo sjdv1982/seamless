@@ -85,8 +85,8 @@ def get_lib_paths(ctx):
             lib_paths[subcontext] = from_lib
     return lib_paths
 
-def check_lib_core(ctx, obj):
-    """Check that a core object does not point to an authoritative cell imported from a library"""
+def test_lib_lowlevel(ctx, obj):
+    """Test if a low-level object points to an authoritative cell imported from a library"""
     from ..core import SeamlessBase
     from ..core.library import lib_has_path
     assert isinstance(obj, SeamlessBase)
@@ -98,6 +98,8 @@ def check_lib_core(ctx, obj):
         libname = lib_paths[lib_path]
         tail = objpath[len(lib_path):]
         p = ".".join(tail)
-        assert not lib_has_path(libname, p)
+        if lib_has_path(libname, p):
+            return True
+    return False
 
 stdlib = Library(title="stdlib", name_prefix="")

@@ -70,7 +70,11 @@ def silk_binary_method(self, other, name):
     method = self._get_special(name)
     if method is NotImplemented:
         return NotImplemented
-    return method(other)
+    result = method(other)
+    if result is NotImplemented and isinstance(other, SilkBase):
+        return method(other.data)
+    else:
+        return result
 
 binary_special_method_names = (
     "__add__", "__sub__", "__mul__", "__matmul__", "__truediv__",

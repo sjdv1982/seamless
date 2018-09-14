@@ -3,7 +3,6 @@ from copy import deepcopy
 transformer_states = (
     ("input", "stored_state_input", True),
     ("input", "cached_state_input", False),
-    ("result", "stored_state_result", True),
     ("result", "cached_state_result", False),
 )
 
@@ -32,9 +31,6 @@ def extract(nodes, connections):
             if cached_state is not None:
                 cached_states[path] = cached_state.serialize()
         elif nodetype == "transformer":
-            if "values" in result:
-                v = {".".join(k):v for k,v in result["values"].items()}
-                result["values"] = v
             for sub, key, is_stored in transformer_states:
                 state = result.pop(key, None)
                 if state is not None:

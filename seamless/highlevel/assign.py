@@ -10,11 +10,12 @@ from ..silk import Silk
 from .Cell import Cell
 from .pin import InputPin, OutputPin
 from .Transformer import Transformer
-from ..midlevel import copy_context
+from ..midlevel import copying
 from . import assign_virtual
 from ..core.lambdacode import lambdacode
 
 def assign_constant(ctx, path, value):
+    from . import set_hcell
     if isinstance(value, (Silk, MixedBase)):
         raise NotImplementedError
     #TODO: run it through Silk or something, to check that there aren't lists/dicts/tuples-of-whatever-custom-classes
@@ -33,9 +34,10 @@ def assign_constant(ctx, path, value):
         "format": "mixed",
         "silk": True,
         "buffered": True,
-        "value": value,
         "schema": None,
     }
+    set_hcell(cell, value)
+
     ### json.dumps(cell)
     ctx._graph[0][path] = cell
     return True
@@ -53,9 +55,7 @@ def assign_transformer(ctx, path, func):
         if p.kind not in (p.VAR_KEYWORD, p.VAR_POSITIONAL):
             parameters.append(pname)
     code = inspect.getsource(func)
-    #if isinstance(func, LambdaType): ### does not work, bug in Python??
-    if func.__class__.__name__ == "lambda":
-        print("FUNC!", func)
+    if isinstance(func, LambdaType) and func.__name__ == "<lambda>":
         code = lambdacode(func)
         if code is None:
             raise ValueError("Cannot extract source code from this lambda")
@@ -66,7 +66,6 @@ def assign_transformer(ctx, path, func):
         "language": "python",
         "code": code,
         "pins": {param:{"submode": "silk"} for param in parameters},
-        "values": {},
         "RESULT": "result",
         "INPUT": "inp",
         "with_schema": False,
@@ -153,6 +152,24 @@ def assign_context(ctx, path, value):
         subcontexts[path]["from_lib"] = as_lib.name
         as_lib.copy_deps.add((weakref.ref(ctx), path))
     ctx._needs_translation = True
+
+def assign_to_subcell(cell, path, value):
+    from ..midlevel.copying import fill_cell_value
+    hcell = cell._get_hcell()
+    if hcell["celltype"] != "structured":
+        raise TypeError("Can only assign directly to properties of structured cells")
+    if isinstance(value, Cell):
+        ctx = cell._parent()
+        assert value._parent() is ctx #no connections between different (toplevel) contexts
+        assign_connection(ctx, value._path, cell._path + path, True)
+        ctx._translate()
+    elif isinstance(value, ConstantTypes):
+        structured_cell = cell._get_cell()
+        structured_cell.monitor.set_path(path, value)
+        fill_cell_value(structured_cell, cell._get_hcell())
+    else:
+        raise TypeError(value)
+
 
 def assign(ctx, path, value):
     from .Context import Context, SubContext

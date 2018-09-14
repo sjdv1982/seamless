@@ -11,10 +11,17 @@ def triple_it(a):
 def triple_it2(a, b):
     return 3 * a + b
 
-ctx.transform = triple_it
-ctx.transform.a = ctx.a
+#ctx.transform = triple_it
+ctx.transform = lambda a,b: a + b
+#ctx.transform.a = ctx.a
+ctx.transform.a = 12
+ctx.transform.b = 100 ###
 ctx.myresult = ctx.transform
-ctx.transform.code = triple_it2
+ctx.equilibrate()
+print(ctx.myresult.value)
+import sys; sys.exit()
+
+ctx.transform.code = triple_it
 ctx.tfcode >> ctx.transform.code
 ctx.transform.b = 100
 ctx.tfcode = triple_it2
@@ -26,3 +33,4 @@ print("UPDATE")
 ctx.a = 13
 print("UPDATE...")
 ctx.equilibrate()
+print(ctx.myresult.value)

@@ -1,11 +1,11 @@
 from ..core.library import build, register
-from . import copy_context, TRANSLATION_PREFIX
+from . import copying, TRANSLATION_PREFIX
 from .translate import find_channels
 
 def register_library(ctx, hctx, libname):
     from ..core import library
     nodes, connections, _ = hctx._graph
-    copy_context.fill_cell_values(hctx, nodes)
+    copying.fill_cell_values(hctx, nodes)
     partial_authority = get_partial_authority(hctx, nodes, connections)
     lib = build(ctx)
     library.register(libname, lib)
@@ -69,11 +69,9 @@ def get_partial_authority(ctx, nodes, connections):
         node = nodes[p]
         if isinstance(child, Transformer):
             transformer = child._get_tf()
-            if not len(node["values"]):
-                continue #no authority at all
-            inchannels, _ = find_channels(p, connection_paths)
-            inchannels = [i for i in inchannels if i != "code" and i[0] != "code"]
-            if len(inchannels):
+            inp = getattr(transformer, node["INPUT"])
+            assert isinstance(cell, StructuredCell)
+            if cell.has_authority and not cell.authoritative:
                 partial_authority.add(p)
             continue
         if not isinstance(child, Cell):

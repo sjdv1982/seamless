@@ -73,7 +73,7 @@ the mid-level element is dynamically read from the sovereign cell (no double rep
   - reactors
   - macros (by definition low-level) with language (python) and api (pyseamless) fields.
   - signals
-  - add operators (but only those)
+  - add operators (but only those) UPDATE: implement at high-level (wrapper around transformer, but not an operator)
   - no observers; not sure about mount.
 
 Part 6: applying the mid-level. Some of this can be delayed until post-merge.

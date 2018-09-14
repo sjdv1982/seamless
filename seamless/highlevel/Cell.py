@@ -27,26 +27,23 @@ class Cell(Base):
         raise NotImplementedError
 
     def __getattr__(self, attr):
-        #TODO: add subcell to parent._children as well!
-        #TODO: check if already in parent._children!
         parent = self._parent()
-        check_lib_core(parent, self._get_cell())
-        return SubCell(self._parent(), self, self._path + (attr,))
+        readonly = not test_lib_lowlevel(parent, self._get_cell())
+        return SubCell(self._parent(), self, (attr,), readonly=readonly)
 
     def __setattr__(self, attr, value):
         if attr.startswith("_"):
             return object.__setattr__(self, attr, value)
+        from .assign import assign_to_subcell
         parent = self._parent()
-        check_lib_core(parent, self._get_cell())
-        raise NotImplementedError
-        #TODO
-        '''
-        if parent._as_lib is not None and not translate:
-            if htf["path"] in parent._as_lib.partial_authority:
+        assert not test_lib_lowlevel(parent, self._get_cell())
+        assign_to_subcell(self, (attr,), value)
+        ctx = parent._ctx
+        if parent._as_lib is not None and not ctx._needs_translation:
+            hcell = self._get_hcell()
+            if hcell["path"] in parent._as_lib.partial_authority:
                 parent._as_lib.needs_update = True
-        '''
-        #TODO: get a handle on the underlying Silk data for modification
-        # This also triggers parent._as_lib.needs_update = True
+        parent.translate()
 
     @property
     def value(self):
@@ -55,15 +52,17 @@ class Cell(Base):
 
     def _set(self, value):
         #TODO: check if sovereign cell => disable warning!!
-        cell = self._get_cell()
-        cell.set(value)
+        from . import set_hcell
+        try:
+            cell = self._get_cell()
+            cell.set(value)
+        except AttributeError: #not yet been translated
+            pass
         hcell = self._get_hcell()
-        hcell["value"] = cell.value
-        ctx = self._parent()
+        set_hcell(hcell, value)
 
     def set(self, value):
         self._set(value)
-        ctx = self._parent()
 
     def _destroy(self):
         p = self._path
@@ -75,12 +74,55 @@ class Cell(Base):
             if con["source"].startswith(p) or con["target"].startswith(p):
                 connections.remove(con)
 
+    def __add__(self, target):
+        from .assign import assign_operator_add
+        return assign_operator_add(self, target)
+
 class SubCell(Cell):
-    def __init__(self, parent, cell, path):
-        super().__init__(parent, path)
+    def __init__(self, parent, cell, subpath, readonly):
+        fullpath = cell._path + subpath
+        super().__init__(parent, fullpath)
         self._cell = weakref.ref(cell)
+        self._readonly = readonly
+        self._subpath = subpath
 
-    def _get_hcell(self):
-        raise NotImplementedError
+    def __setattr__(self, attr, value):
+        if attr.startswith("_"):
+            return object.__setattr__(self, attr, value)
+        from .assign import assign_to_subcell
+        parent = self._parent()
+        assert not test_lib_lowlevel(parent, self._get_cell())
+        path = self._subpath + attr
+        assign_to_subcell(self, path, value)
+        ctx = parent._ctx
+        if parent._as_lib is not None and not ctx._needs_translation:
+            hcell = self._get_hcell()
+            if hcell["path"] in parent._as_lib.partial_authority:
+                parent._as_lib.needs_update = True
+        parent.translate()
 
-from .Library import check_lib_core
+    def __getattr__(self, attr):
+        parent = self._parent()
+        readonly = self._readonly
+        return SubCell(self._parent(), self, self._subpath + (attr,), readonly=readonly)
+
+    def set(self, value):
+        assert not self._readonly
+        print("UNTESTED SubCell.set")
+        cell = self._cell
+        attr = self._subpath[-1]
+        if len(self._subpath) == 1:
+            return setattr(cell, attr, value)
+        else:
+            parent_subcell = SubCell(self._parent(), cell, self._subpath[:-1], False)
+            return setattr(parent_subcell, attr, value)
+
+    @property
+    def _virtual_path(self):
+        cell = self._cell()
+        p = cell._virtual_path
+        if p is None:
+            return None
+        return p + self._subpath
+
+from .Library import test_lib_lowlevel

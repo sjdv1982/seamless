@@ -13,7 +13,7 @@ from functools import partial
 from seamless.core import cell, libcell, libmixedcell, transformer, context, macro, StructuredCell
 from seamless.core.structured_cell import BufferWrapper
 
-from . import copy_context
+from . import copying
 
 STRUC_ID = "_STRUC"
 
@@ -199,9 +199,7 @@ def translate_py_transformer(node, root, namespace, inchannels, outchannels, lib
 
     if with_schema:
         plain_result = node["plain_result"]
-        output_state = node.get("stored_state_result", None)
-        if output_state is None:
-            output_state = node.get("cached_state_output", None)
+        output_state = node.get("cached_state_output", None)
         outp = build_structured_cell(ctx, result_name, True, plain_result, False, [()], outchannels, output_state, lib_path0)
         setattr(ctx, output_name, outp)
         result_pin = getattr(ctx.tf, result_name)
@@ -212,17 +210,8 @@ def translate_py_transformer(node, root, namespace, inchannels, outchannels, lib
         outp = getattr(ctx.tf, result_name)
         namespace[node["path"] + (result_name,), False] = outp
 
-    handle = ctx.inp.handle
-    for path, value in node["values"].items():
-        h = handle
-        for p in path[:-1]:
-            h = getattr(h, p)
-        setattr(h, path[-1], value)
-
-    if not is_lib: #clean up state and in_equilibrium, unless a library context
-        node.pop("stored_state_input", None)
+    if not is_lib: #clean up cached state and in_equilibrium, unless a library context
         node.pop("cached_state_input", None)
-        node.pop("stored_state_result", None)
         node.pop("cached_state_result", None)
         node.pop("in_equilibrium", None)
 
@@ -234,7 +223,6 @@ def translate_cell(node, root, namespace, inchannels, outchannels, lib_path0, is
     parent = get_path(root, path[:-1], None, None)
     name = path[-1]
     ct = node["celltype"]
-    stored_state = None
     if len(inchannels):
         lib_path0 = None #partial authority or no authority; no library update in either case
     if ct == "structured":
@@ -288,22 +276,20 @@ def translate_cell(node, root, namespace, inchannels, outchannels, lib_path0, is
             else:
                 child = cell(ct)
     setattr(parent, name, child)
-    if not lib_path0:
-        value = node.get("value")
-        if value is not None:
+    if ct != "structured":
+        stored_value = node.get("stored_value")
+        if stored_value is not None:
             assert child.authoritative
-            child.set(value)
+            child.set(stored_value)
         else:
             cached_value = node.get("cached_value")
             if cached_value is not None:
                 assert not child.authoritative
-                if isinstance(child, StructuredCell):
-                    child.set(cached_value)
-                else:
-                    manager = child._get_manager()
-                    manager.set_cell(child, cached_value, from_pin=True)
+                manager = child._get_manager()
+                manager.set_cell(child, cached_value, from_pin=True)
+
+
     if not is_lib:
-        node.pop("stored_state", None)
         node.pop("cached_state", None)
 
 

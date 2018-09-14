@@ -13,7 +13,7 @@ from ..core import layer
 from ..midlevel.translate import translate
 from .assign import assign
 from .proxy import Proxy
-from ..midlevel import copy_context
+from ..midlevel import copying
 from ..midlevel import TRANSLATION_PREFIX
 from ..midlevel.library import register_library
 from .Library import get_lib_paths, get_libitem
@@ -83,7 +83,6 @@ class Context:
         raise NotImplementedError
 
     def _translate(self):
-        # TODO: add translate to the work queue, so that it will run automatically at some point
         self._needs_translation = True
 
     def translate(self, force=False):
@@ -159,7 +158,7 @@ class Context:
     def _get_graph(self):
         nodes, connections, subcontexts = self._graph
         nodes, connections = deepcopy(nodes), deepcopy(connections)
-        copy_context.fill_cell_values(self, nodes)
+        copying.fill_cell_values(self, nodes)
         return nodes, connections
 
     def register_library(self):
@@ -185,6 +184,9 @@ class Context:
                 if libname is not None:
                     libitem = get_libitem(libname)
                     libitem.copy_deps.remove((weakref.ref(self), path))
+
+    def status(self):
+        return self._ctx.status()
 
 
 class SubContext(Base):
@@ -215,8 +217,8 @@ class SubContext(Base):
         parent = self._parent()
         nodes, connections = parent._graph
         path = self._path
-        nodes, connections = copy_context.copy_context(nodes, connections, path)
-        copy_context.fill_cell_values(parent, nodes, path)
+        nodes, connections = copying.copy_context(nodes, connections, path)
+        copying.fill_cell_values(parent, nodes, path)
         return nodes, connections
 
     @property

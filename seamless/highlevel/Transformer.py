@@ -4,7 +4,7 @@ from .Cell import Cell
 from .proxy import Proxy
 from .pin import InputPin, OutputPin
 from .Base import Base
-from .Library import check_lib_core
+from .Library import test_lib_lowlevel
 from ..midlevel import TRANSLATION_PREFIX
 
 from ..core.context import Context as CoreContext
@@ -45,6 +45,7 @@ class Transformer(Base):
 
     def __setattr__(self, attr, value):
         from .assign import assign_connection
+        from ..midlevel.copying import fill_structured_cell_value
         if attr.startswith("_"):
             return object.__setattr__(self, attr, value)
         translate = False
@@ -52,12 +53,12 @@ class Transformer(Base):
         tf = self._get_tf()
         htf = self._get_htf()
         if attr == "code":
-            check_lib_core(parent, tf.code)
+            assert not test_lib_lowlevel(parent, tf.code)
             tf.code.set(value)
             htf["code"] = tf.code.value
         else:
             inp = getattr(tf, htf["INPUT"])
-            check_lib_core(parent, inp)
+            assert not test_lib_lowlevel(parent, inp)
             if attr not in htf["pins"]:
                 htf["pins"][attr] = {"submode": "silk"}
                 translate = True
@@ -68,10 +69,10 @@ class Transformer(Base):
                 assign_connection(parent, value._path, target_path, False)
                 translate = True
             else:
-                htf["values"][(attr,)] = value
                 tf = self._get_tf()
-                inp = getattr(tf, htf["INPUT"]).handle
-                setattr(inp, attr, value)
+                inp = getattr(tf, htf["INPUT"])
+                setattr(inp.handle, attr, value)
+                fill_structured_cell_value(inp, htf, "stored_state_input", "cached_state_input")
             htf.pop("in_equilibrium", None)
             if parent._as_lib is not None and not translate:
                 if htf["path"] in parent._as_lib.partial_authority:
@@ -112,7 +113,6 @@ class Transformer(Base):
         if attr not in htf["pins"] and attr != "code":
             #TODO: could be result pin... what to do?
             raise AttributeError(attr)
-        #TODO: make it a full wrapper of the input pin value, with sub-attribute access, modify tf["values"] when set
         pull_source = functools.partial(self._pull_source, attr)
         try:
             value = self._get_value(attr)
@@ -136,7 +136,6 @@ class Transformer(Base):
                 "celltype": "code",
                 "language": "python",
                 "transformer": True,
-                "value": value,
             }
             assert isinstance(value, str)
             htf["code"] = None
@@ -151,15 +150,14 @@ class Transformer(Base):
                 "format": "mixed",
                 "silk": True,
                 "buffered": True,
-                "value": value,
                 "schema": None,
             }
-            #TODO: elim attribute from htf["values"]
             #TODO: check existing inchannel connections (cannot be the same or higher)
-        Cell(parent, path) #inserts itself as child
+        child = Cell(parent, path) #inserts itself as child
         parent._graph[0][path] = cell
         target_path = self._path + (attr,)
         assign_connection(parent, other._path, target_path, False)
+        child.set(value)
         parent._translate()
 
     def __delattr__(self, attr):

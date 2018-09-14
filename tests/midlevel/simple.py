@@ -3,6 +3,7 @@ from seamless.core import macro_mode_on, context
 from seamless.midlevel.translate import translate
 import math
 
+raise NotImplementedError #structured_cell does not take value anymore, rather stored_state and cached_state
 graph = [
     {
         "path": ("pi",),
@@ -11,7 +12,7 @@ graph = [
         "format": "mixed",
         "silk": True,
         "buffered": True,
-        "value": math.pi,
+        ###"value": math.pi,
         "schema": {'validators': [{'code': 'def validate(self):\n    assert self > 0\n', 'language': 'python'}]},
     },
     {
@@ -19,7 +20,7 @@ graph = [
         "type": "transformer",
         "language": "python",
         "pins": {"a":{"submode": "silk"}},
-        "values": {},
+        ###"values": {},
         "code": None,
         "RESULT": "result",
         "INPUT": "inp",
@@ -34,7 +35,7 @@ graph = [
         "celltype": "json",
         "silk": False,
         "buffered": False,
-        "value": None,
+        ###"value": None,
         "schema": None,
     },
     {
@@ -43,7 +44,7 @@ graph = [
         "celltype": "code",
         "language": "python",
         "transformer": True,
-        "value": None,
+        ###"value": None,
     },
     {
         "type": "connection",

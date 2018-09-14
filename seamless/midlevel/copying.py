@@ -45,6 +45,17 @@ def fill_structured_cell_value(cell, node, label_auth, label_cached):
     else:
         node.pop(label_cached, None)
 
+def fill_cell_value(cell, node):
+    from ..core.structured_cell import StructuredCell
+    if isinstance(cell, StructuredCell):
+        fill_structured_cell_value(cell, node, "stored_state", "cached_state")
+    else:
+        if cell.authoritative:
+            node["stored_value"] = child.value
+            node.pop("cached_value", None)
+        else:
+            node["cached_value"] = child.value
+            node.pop("stored_value", None)
 
 def fill_cell_values(ctx, nodes, path=None):
     from ..highlevel.Cell import Cell
@@ -69,21 +80,13 @@ def fill_cell_values(ctx, nodes, path=None):
                     result_name = node["RESULT"]
                     result = getattr(transformer, result_name)
                     assert isinstance(result, StructuredCell)
-                    fill_structured_cell_value(result, node, "stored_state_result", "cached_state_result")
+                    fill_structured_cell_value(result, node, None, "cached_state_result")
                 continue
             if not isinstance(child, Cell):
                 continue
             assert node["type"] == "cell", (pp, node["type"])
             cell = child._get_cell()
-            if isinstance(cell, StructuredCell):
-                fill_structured_cell_value(cell, node, "stored_state", "cached_state")
-            else:
-                if cell.authoritative:
-                    node["value"] = child.value
-                    node.pop("cached_value", None)
-                else:
-                    node["cached_value"] = child.value
-                    node.pop("value", None)
+            fill_cell_value(cell, node)
     finally:
         manager.activate(only_macros=False)
 
@@ -97,7 +100,6 @@ def clear_cached_cell_values(ctx, nodes):
         if node["type"] == "transformer":
             node.pop("stored_state_input", None)
             node.pop("cached_state_input", None)
-            node.pop("stored_state_result", None)
             node.pop("cached_state_result", None)
             node.pop("in_equilibrium", None)
         elif node["type"] == "cell":
