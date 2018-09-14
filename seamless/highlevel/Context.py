@@ -7,6 +7,7 @@ from functools import partial
 from .Base import Base
 from ..core.macro_mode import macro_mode_on, get_macro_mode
 from ..core.context import context, Context as CoreContext
+from ..core.cell import cell
 from ..core.mount import mountmanager #for now, just a single global mountmanager
 from ..core.cache import cache
 from ..core import layer
@@ -22,6 +23,7 @@ Graph = namedtuple("Graph", ("nodes", "connections", "subcontexts"))
 
 class Context:
     path = ()
+    _graph_ctx = None
     def __init__(self):
         with macro_mode_on(self):
             self._ctx = context(toplevel=True)
@@ -29,7 +31,6 @@ class Context:
         self._graph = Graph({},[],{})
         self._graph.subcontexts[None] = {}
         self._children = {}
-        self._context = self._ctx
         self._needs_translation = False
         self._as_lib = None
         self._parent = weakref.ref(self)
@@ -69,11 +70,24 @@ class Context:
         child._destroy()
         self._translate()
 
-    def mount(self, mountdir):
+    def mount(self, mountdir, persistent=None):
         with macro_mode_on():
-            self._ctx.mount(mountdir, persistent=None)
-            mountmanager.paths.add(mountdir) #kludge
-            mountmanager.contexts.add(self._ctx) #kludge
+            ctx = self._ctx
+            ctx.mount(mountdir, persistent=persistent)
+            mountmanager.add_context(ctx,(), False)
+            mountmanager.paths[ctx].add(mountdir) #kludge
+
+    def mount_graph(self, mountdir, persistent=None):
+        with macro_mode_on(self):
+            ctx = self._graph_ctx = context(toplevel=True)
+        with macro_mode_on():
+            ctx.mount(mountdir, persistent=persistent, mode="w")
+            mountmanager.add_context(ctx,(), False)
+            mountmanager.paths[ctx].add(mountdir) #kludge
+        with macro_mode_on():
+            ctx.topology = cell("json")
+            ctx.values = cell("json")
+            ctx.states = cell("json")
 
     def equilibrate(self):
         self.translate()
@@ -90,6 +104,7 @@ class Context:
         is_lib = (self.as_lib is not None)
         if not force and not self._needs_translation:
             return
+        self._remount_graph()
         graph = list(self._graph[0].values()) + self._graph[1]
         #from pprint import pprint; pprint(graph)
         try:
@@ -160,6 +175,16 @@ class Context:
         nodes, connections = deepcopy(nodes), deepcopy(connections)
         copying.fill_cell_values(self, nodes)
         return nodes, connections
+
+    def _remount_graph(self):
+        from ..midlevel.serialize import extract        
+        if self._graph_ctx is not None:
+            nodes, connections = self._graph.nodes, self._graph.connections
+            topology, values, states, _, _ = extract(nodes, connections)
+            self._graph_ctx.topology.set(topology)
+            self._graph_ctx.values.set(values)
+            self._graph_ctx.states.set(states)
+            mountmanager.tick()
 
     def register_library(self):
         assert self._as_lib is not None #must be a library

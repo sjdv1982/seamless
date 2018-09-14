@@ -30,9 +30,6 @@
     "plain": false,
     "plain_result": false,
     "type": "transformer",
-    "values": {
-      "b": 100
-    },
     "with_schema": false
   },
   {

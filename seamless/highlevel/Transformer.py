@@ -110,6 +110,9 @@ class Transformer(Base):
         if attr.startswith("_"):
             raise AttributeError(value)
         htf = self._get_htf()
+        if attr == htf["INPUT"]:
+            # TODO: better wrapping
+            return getattr(self._get_tf(), htf["INPUT"])
         if attr not in htf["pins"] and attr != "code":
             #TODO: could be result pin... what to do?
             raise AttributeError(attr)

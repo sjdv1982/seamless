@@ -6,7 +6,7 @@ ctx.mount("/tmp/mount-test")
 ctx.a = 12
 
 def triple_it(a, b):
-    print("3 * a + b", a, b)
+    print("3 * a + b, a = %s, b = %s" % (a, b))
     return 3 * a + b
 
 ctx.transform = triple_it
@@ -30,7 +30,7 @@ print(ctx2.sub.myresult.value)
 print(ctx2.sub2.myresult.value)
 
 from seamless.midlevel.serialize import extract
-topology, _, _, _, _ = extract(*ctx2._graph)
+topology, _, _, _, _ = extract(*ctx2._graph[:2])
 import json
 json.dump(topology, open("context2-graph.json", "w"), sort_keys=True, indent=2)
 f = open("context2-graph-raw.txt", "w")

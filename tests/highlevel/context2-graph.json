@@ -21,7 +21,7 @@
     "INPUT": "inp",
     "RESULT": "result",
     "buffered": true,
-    "code": "def triple_it(a, b):\n    print(\"3 * a + b\", a, b)\n    return 3 * a + b\n",
+    "code": "def triple_it(a, b):\n    print(\"3 * a + b, a = %s, b = %s\" % (a, b))\n    return 3 * a + b\n",
     "in_equilibrium": true,
     "language": "python",
     "path": [
@@ -39,9 +39,6 @@
     "plain": false,
     "plain_result": false,
     "type": "transformer",
-    "values": {
-      "b": 6
-    },
     "with_schema": false
   },
   {
@@ -78,7 +75,7 @@
     "INPUT": "inp",
     "RESULT": "result",
     "buffered": true,
-    "code": "def triple_it(a, b):\n    print(\"3 * a + b\", a, b)\n    return 3 * a + b\n",
+    "code": "def triple_it(a, b):\n    print(\"3 * a + b, a = %s, b = %s\" % (a, b))\n    return 3 * a + b\n",
     "in_equilibrium": true,
     "language": "python",
     "path": [
@@ -96,9 +93,6 @@
     "plain": false,
     "plain_result": false,
     "type": "transformer",
-    "values": {
-      "b": 6
-    },
     "with_schema": false
   },
   {

@@ -296,6 +296,7 @@ class MountManagerStash:
     """
     def __init__(self, parent, context):
         self._active = False
+        self.root = context._root()
         self.parent = parent
         self.context = context
         self.mounts = WeakKeyDictionary()
@@ -313,7 +314,7 @@ class MountManagerStash:
                 self.contexts.add(ctx)
                 parent.contexts.remove(ctx)
                 path = ctx._mount["path"]
-                parent.paths.remove(path)
+                parent.paths[self.root].remove(path)
                 self.paths.add(path)
         for cell, mountitem in list(parent.mounts.items()):
             assert cell._mount is not None, cell
@@ -323,7 +324,7 @@ class MountManagerStash:
                 self.mounts[cell] = mountitem
                 parent.mounts.pop(cell)
                 path = cell._mount["path"]
-                parent.paths.remove(path)
+                parent.paths[self.root].remove(path)
                 self.paths.add(path)
 
     def _build_new_paths(self):
@@ -356,7 +357,7 @@ class MountManagerStash:
                 object.__setattr__(new_context, "_mount", None) #since we are not in macro mode
                 new_paths.pop(path)
             parent.contexts.add(ctx)
-            parent.paths.add(path)
+            parent.paths[self.root].add(path)
         for cell, mountitem in self.mounts.items():
             assert cell._mount is not None, cell
             path = cell._mount["path"]
@@ -371,7 +372,7 @@ class MountManagerStash:
                     object.__setattr__(new_cell, "_mount", None) #since we are not in macro mode
                 new_paths.pop(path)
             parent.mounts[cell] = mountitem
-            parent.paths.add(path)
+            parent.paths[self.root].add(path)
 
         context_to_unmount = []
         for path, obj in new_paths.items():
@@ -475,7 +476,7 @@ class MountManager:
         self.cell_updates = deque()
         self._tick = Event()
         self.stash = None
-        self.paths = set()
+        self.paths = WeakKeyDictionary()
 
     @property
     def reorganizing(self):
@@ -505,17 +506,19 @@ class MountManager:
                 self.stash = None
 
     def add_mount(self, cell, path, mode, authority, persistent, **kwargs):
-        assert path not in self.paths, path
+        paths = self.paths[cell._root()]
+        assert path not in paths, path
         #print("add mount", path, cell)
-        self.paths.add(path)
+        paths.add(path)
         self.mounts[cell] = MountItem(self, cell, path, mode, authority, persistent, **kwargs)
         if self.stash is None:
             self.mounts[cell].init()
 
     def add_link(self, link, path, persistent):
-        assert path not in self.paths, path
+        paths = self.paths[link._root()]
+        assert path not in paths, path
         #print("add link", path, link)
-        self.paths.add(path)
+        paths.add(path)
         self.mounts[link] = LinkItem(link, path, persistent)
         if self.stash is None:
             self.mounts[link].init()
@@ -523,12 +526,14 @@ class MountManager:
     def unmount(self, cell_or_link, from_del=False):
         #print("unmount", cell_or_link, hex(id(cell_or_link)))
         assert cell_or_link._mount is not None
-        if from_del and cell_or_link not in self.mounts:
+        root = cell_or_link._root()
+        if from_del and (cell_or_link not in self.mounts or root not in self.paths):
             return
+        paths = self.paths[root]
         path = cell_or_link._mount["path"]
-        assert path in self.paths
-        self.paths.remove(path)
-        assert cell_or_link in self.mounts, (cell_or_link, path)  #... but path is in self.paths
+        assert path in paths
+        paths.remove(path)
+        assert cell_or_link in self.mounts, (cell_or_link, path)  #... but path is in paths
         mountitem = self.mounts.pop(cell_or_link)
         mountitem.destroy()
 
@@ -542,7 +547,11 @@ class MountManager:
         context._mount MUST have been set to None!
         """
         assert mount is not None, context
-        self.paths.remove(mount["path"])
+        try:
+            paths = self.paths[context._root()]
+        except KeyError:
+            return
+        paths.remove(mount["path"])
         if mount["persistent"] == False:
             dirpath = mount["path"].replace("/", os.sep)
             try:
@@ -554,12 +563,18 @@ class MountManager:
 
     def add_context(self, context, path, as_parent):
         #print("add context", path, context, as_parent, context._mount["persistent"])
+        root = context._root()
+        if root not in self.paths:
+            paths = set()
+            self.paths[root] = paths
+        else:
+            paths = self.paths[root]
         if not as_parent:
-            assert path not in self.paths, path
-            self.paths.add(path)
+            assert path not in paths, path
+            paths.add(path)
             self.contexts.add(context)
         else:
-            if path in self.paths:
+            if path in paths:
                 assert context in self.contexts, (path, context)
         if self.stash is None:
             self._check_context(context, as_parent)

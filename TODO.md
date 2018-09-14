@@ -5,12 +5,13 @@ Part 1 is now complete
 Things to do:
 
 Part 2: high level  
-  - Sub-cell access and connections (not yet for transformer.inp)
   - High-level macros
-  - Hook them both up with indirect library update system
+  - Test indirect library update system, also with high-level macros
   - Test library-containing-another-library
+  - Edit schema JSON as file (proper mounting)
   - C/C++ cell translation
-  - Cloudless proof-of-principle
+  - Serialization
+  - Cloudless proof-of-principle  
 
 Part 3 (low-level / cleanup):   
    - Signals (DONE; only to test)
@@ -99,7 +100,7 @@ Part 7, the high level :
   - mounting is not quite satisfactory (redundant "translated" context)
   - Macros
     In high-level macros, assigning to a (lib) Context creates a dependency!!
-  - Reactors
+  - Reactors; Edit schema JSON as file (proper mounting) => Reactor for JSON <=> CSON (JSON is written as CSON cell, CSON cell edits JSON)
   - Many usability issues
   - Translation policies
   - Library construct (easy enough, but think of serialization)

@@ -287,11 +287,18 @@ class StructuredCellState:
 
     @classmethod
     def from_data(cls, data):
+        from ..silk import Silk
+        if isinstance(data, Silk):
+            data = data.self.data
+        if isinstance(data, MixedBase):
+            data = data.value
         storage, form = get_form(data)
         result = cls()
-        result.data = data
         result.storage = storage
         result.form = form
+        result.schema = {}
+        s = Silk(schema=result.schema).set(data)
+        result.data = s.data
         return result
 
 def set_state(cell, state):
@@ -415,12 +422,8 @@ class StructuredCell(CellLikeBase):
         monitor_form = self.form._val
         monitor_inchannels = list(self.inchannels.keys())
         monitor_outchannels = {ocname:oc.send_update for ocname, oc in self.outchannels.items()}
-        data_hook = None
-        if not isinstance(monitor_data, (list, dict)):
-            data_hook = self._data_hook
-        form_hook = None
-        if not isinstance(monitor_form, (list, dict)):
-            form_hook = self._form_hook
+        data_hook = self._data_hook
+        form_hook = self._form_hook
         storage_hook = self._storage_hook
         data_update_hook = functools.partial(update_hook, self.data)
         form_update_hook = functools.partial(update_hook, self.form)
@@ -447,12 +450,8 @@ class StructuredCell(CellLikeBase):
                 monitor_buffer_data = buffer.data._val
                 monitor_buffer_storage = self.buffer.storage._val if self.buffer.storage is not None else None
                 monitor_buffer_form = self.buffer.form._val
-                buffer_data_hook = None
-                if not isinstance(monitor_buffer_data, (list, dict)):
-                    buffer_data_hook = self._buffer_data_hook
-                buffer_form_hook = None
-                if not isinstance(monitor_buffer_form, (list, dict)):
-                    buffer_form_hook = self._buffer_form_hook
+                buffer_data_hook = self._buffer_data_hook
+                buffer_form_hook = self._buffer_form_hook
                 buffer_storage_hook = self._buffer_storage_hook
                 buffer_data_update_hook = functools.partial(update_hook, self.buffer.data)
                 buffer_form_update_hook = functools.partial(update_hook, self.buffer.form)
@@ -667,11 +666,21 @@ class StructuredCell(CellLikeBase):
     @property
     def value(self):
         """
-        Returns the current value
+        Returns the current value, as unbuffered Silk or dict
         Unless the schema has changed, this value always conforms
          to schema, even for buffered StructuredCells
         """
-        result = self.monitor.get_data()
+        from ..silk import Silk
+        schema_update_hook = functools.partial(update_hook, self.schema)
+        if self._is_silk:
+            result = Silk(
+                schema=self.schema._val,
+                data=self.monitor.get_path(),
+                stateful=True,
+                schema_update_hook=schema_update_hook,
+            )
+        else:
+            result = self.monitor.get_data()
         return result
 
     @property

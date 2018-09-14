@@ -1,6 +1,8 @@
 import weakref
+from types import LambdaType
 from .Base import Base
 from ..midlevel import TRANSLATION_PREFIX
+from ..core.lambdacode import lambdacode
 
 class Cell(Base):
     _virtual_path = None
@@ -27,6 +29,11 @@ class Cell(Base):
         raise NotImplementedError
 
     def __getattr__(self, attr):
+        if attr == "schema":
+            hcell = self._get_hcell()
+            if hcell["celltype"] == "structured":
+                cell = self._get_cell()
+                return cell.handle.schema
         parent = self._parent()
         readonly = not test_lib_lowlevel(parent, self._get_cell())
         return SubCell(self._parent(), self, (attr,), readonly=readonly)
@@ -50,14 +57,31 @@ class Cell(Base):
         cell = self._get_cell()
         return cell.value
 
+    @property
+    def handle(self):
+        cell = self._get_cell()
+        return cell.handle
+
+    @property
+    def data(self):
+        cell = self._get_cell()
+        return cell.data
+
     def _set(self, value):
         #TODO: check if sovereign cell => disable warning!!
         from . import set_hcell
         try:
             cell = self._get_cell()
             cell.set(value)
+            value = cell.value
         except AttributeError: #not yet been translated
-            pass
+            if callable(value):
+                code = inspect.getsource(value)
+                if isinstance(value, LambdaType) and func.__name__ == "<lambda>":
+                    code = lambdacode(value)
+                    if code is None:
+                        raise ValueError("Cannot extract source code from this lambda")
+                value = code
         hcell = self._get_hcell()
         set_hcell(hcell, value)
 
@@ -74,9 +98,8 @@ class Cell(Base):
             if con["source"].startswith(p) or con["target"].startswith(p):
                 connections.remove(con)
 
-    def __add__(self, target):
-        from .assign import assign_operator_add
-        return assign_operator_add(self, target)
+    def __add__(self, other):
+        self.set(self.value + other)
 
 class SubCell(Cell):
     def __init__(self, parent, cell, subpath, readonly):

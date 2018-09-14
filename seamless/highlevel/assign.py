@@ -25,8 +25,8 @@ def assign_constant(ctx, path, value):
         if isinstance(old, Cell):
             old._set(value)
             return False
-        raise AttributeError(path) #already exists
-    Cell(ctx, path) #inserts itself as child
+        raise AttributeError(path) #already exists, but not a Cell
+    child = Cell(ctx, path) #inserts itself as child
     cell = {
         "path": path,
         "type": "cell",
@@ -36,10 +36,10 @@ def assign_constant(ctx, path, value):
         "buffered": True,
         "schema": None,
     }
-    set_hcell(cell, value)
 
     ### json.dumps(cell)
     ctx._graph[0][path] = cell
+    child._set(value)
     return True
 
 def assign_transformer(ctx, path, func):
@@ -78,8 +78,18 @@ def assign_transformer(ctx, path, func):
     Transformer(ctx, path) #inserts itself as child
 
 def assign_connection(ctx, source, target, standalone_target):
-    if standalone_target and target not in ctx._children:
-        assign_constant(ctx, target, None)
+    if standalone_target:
+        if target not in ctx._children:
+            assign_constant(ctx, target, None)
+        t = ctx._children[target]
+        assert isinstance(t, Cell)
+        hcell = t._get_hcell()
+        if hcell["celltype"] == "structured":
+            hcell.pop("stored_state", None)
+            hcell.pop("cached_state", None)
+        else:
+            hcell.pop("stored_value", None)
+            hcell.pop("cached_value", None)
     assert source in ctx._children, source
     s = ctx._children[source]
     assert isinstance(s, (Cell, OutputPin))
@@ -161,12 +171,19 @@ def assign_to_subcell(cell, path, value):
     if isinstance(value, Cell):
         ctx = cell._parent()
         assert value._parent() is ctx #no connections between different (toplevel) contexts
-        assign_connection(ctx, value._path, cell._path + path, True)
+        assign_connection(ctx, value._path, cell._path + path, False)
         ctx._translate()
     elif isinstance(value, ConstantTypes):
         structured_cell = cell._get_cell()
-        structured_cell.monitor.set_path(path, value)
+        if structured_cell._is_silk:
+            handle = structured_cell.handle
+            for p in path[:-1]:
+                handle = getattr(handle, p)
+            setattr(handle, path[-1], value)
+        else:
+            structured_cell.monitor.set_path(path, value)
         fill_cell_value(structured_cell, cell._get_hcell())
+        cell._parent()._remount_graph()
     else:
         raise TypeError(value)
 

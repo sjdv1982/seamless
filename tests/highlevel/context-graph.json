@@ -36,7 +36,6 @@
     "plain": false,
     "plain_result": false,
     "type": "transformer",
-    "values": {},
     "with_schema": false
   },
   {
@@ -88,7 +87,6 @@
     "plain": false,
     "plain_result": false,
     "type": "transformer",
-    "values": {},
     "with_schema": false
   },
   {

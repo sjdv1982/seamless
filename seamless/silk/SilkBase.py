@@ -154,7 +154,7 @@ class AlphabeticDict(dict):
     def __iter__(self):
         return iter(sorted(super().__iter__()))
     def __str__(self):
-        print("TODO: AlphabeticDict.__str__")
+        #print("TODO: AlphabeticDict.__str__")
         #return json.dumps(self, sort_keys=True, indent=2) #doesn't work for numpy
         return super().__str__() ###
 

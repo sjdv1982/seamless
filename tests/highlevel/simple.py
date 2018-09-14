@@ -50,6 +50,6 @@ ctx.equilibrate()
 print(ctx.myresult.value)
 
 from seamless.midlevel.serialize import extract
-topology, _, _, _, _ = extract(*ctx._graph)
+topology, _, _, _, _ = extract(*ctx._graph[:2])
 import json
 json.dump(topology, open("simple-graph.json", "w"), sort_keys=True, indent=2)

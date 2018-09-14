@@ -180,7 +180,8 @@ class Silk(SilkBase):
                 if policy["infer_type"]:
                     if "type" not in schema:
                         type_ = infer_type(value)
-                        schema["type"] = type_
+                        if type_ != "null":
+                            schema["type"] = type_
                         if self._schema_update_hook is not None:
                             self._schema_update_hook()
                 if isinstance(value, _types["array"]) and len(self.data) > 0:
