@@ -301,6 +301,19 @@ class StructuredCellState:
         result.data = s.data
         return result
 
+    def __deepcopy__(self, memo):
+        result = StructuredCellState()
+        result.data = deepcopy(self.data, memo)
+        result.form = deepcopy(self.form, memo)
+        result.storage = self.storage
+        result.schema = deepcopy(self.schema, memo)
+        result.buffer_data = deepcopy(self.buffer_data, memo)
+        result.buffer_form = deepcopy(self.buffer_form, memo)
+        result.buffer_storage = self.buffer_storage
+        result.buffer_nosync = self.buffer_nosync
+        return result
+
+
 def set_state(cell, state):
     cell._val = state
     cell._status = cell.StatusFlags.OK

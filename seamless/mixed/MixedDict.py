@@ -39,7 +39,6 @@ class MixedNumpyStruct(MixedBase, MutableMapping):
 from .Monitor import Monitor
 
 def mixed_dict(data, storage=None, form=None, *, MonitorClass=Monitor, **args):
-    """Mostly for demonstration use (outside of contexts)"""
     if not isinstance(data, MutableMapping) and not is_np_struct(data):
         raise TypeError(type(data))
     if isinstance(data, MixedDict):

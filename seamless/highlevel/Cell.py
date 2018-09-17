@@ -1,8 +1,10 @@
 import weakref
+import inspect
 from types import LambdaType
 from .Base import Base
 from ..midlevel import TRANSLATION_PREFIX
 from ..core.lambdacode import lambdacode
+from ..silk import Silk
 
 class Cell(Base):
     _virtual_path = None
@@ -11,10 +13,15 @@ class Cell(Base):
         parent._children[path] = self
 
     def __str__(self):
-        return str(self._get_cell())
+        try:
+            return str(self._get_cell())
+        except AttributeError:
+            return("Cell %s in dummy mode" % ("." + ".".join(self._path)))
 
     def _get_cell(self):
         parent = self._parent()
+        if parent._dummy:
+            raise AttributeError
         parent.translate()
         p = getattr(parent._ctx, TRANSLATION_PREFIX)
         for subpath in self._path:
@@ -43,6 +50,7 @@ class Cell(Base):
             return object.__setattr__(self, attr, value)
         from .assign import assign_to_subcell
         parent = self._parent()
+        assert not parent._dummy
         assert not test_lib_lowlevel(parent, self._get_cell())
         assign_to_subcell(self, (attr,), value)
         ctx = parent._ctx
@@ -54,8 +62,27 @@ class Cell(Base):
 
     @property
     def value(self):
-        cell = self._get_cell()
-        return cell.value
+        parent = self._parent()
+        if parent._dummy:
+            hcell = self._get_hcell()
+            if hcell["celltype"] == "structured":
+                state = hcell.get("stored_state", None)
+                if state is None:
+                    state = hcell.get("cached_state", None)
+                value = None
+                if state is not None:
+                    if hcell["silk"]:
+                        value = Silk(data=state.data, schema=state.schema)
+                    else:
+                        value = state.data
+            else:
+                value = hcell.get("stored_value", None)
+                if value is None:
+                    value = hcell.get("cached_value", None)
+            return value
+        else:
+            cell = self._get_cell()
+            return cell.value
 
     @property
     def handle(self):
@@ -70,12 +97,13 @@ class Cell(Base):
     def _set(self, value):
         #TODO: check if sovereign cell => disable warning!!
         from . import set_hcell
+        from ..silk import Silk
         try:
             cell = self._get_cell()
             cell.set(value)
             value = cell.value
         except AttributeError: #not yet been translated
-            if callable(value):
+            if callable(value) and not isinstance(value, Silk):
                 code = inspect.getsource(value)
                 if isinstance(value, LambdaType) and func.__name__ == "<lambda>":
                     code = lambdacode(value)
@@ -88,21 +116,27 @@ class Cell(Base):
     def set(self, value):
         self._set(value)
 
-    def _destroy(self):
-        p = self._path
-        nodes, connections = parent._graph
-        for nodename in list(nodes.keys()):
-            if nodename.startswith(p):
-                nodes.pop(nodename)
-        for con in list(connections):
-            if con["source"].startswith(p) or con["target"].startswith(p):
-                connections.remove(con)
-
     def __add__(self, other):
         self.set(self.value + other)
 
+    @property
+    def celltype(self):
+        hcell = self._get_hcell()
+        return hcell["celltype"]
+
+    @celltype.setter
+    def celltype(self, value):
+        assert value in ("structured", "text", "code", "json"), value #TODO, see translate.py
+        hcell = self._get_hcell()
+        hcell["celltype"] = value
+        self._update_dep()
+
+    def _update_dep(self):
+        self._parent()._depsgraph.update_path(self._path)
+
 class SubCell(Cell):
     def __init__(self, parent, cell, subpath, readonly):
+        assert not parent._dummy #cannot access cell.attr in constructors, use cell.value.attr instead
         fullpath = cell._path + subpath
         super().__init__(parent, fullpath)
         self._cell = weakref.ref(cell)

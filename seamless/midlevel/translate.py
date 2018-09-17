@@ -239,10 +239,6 @@ def translate_cell(node, root, namespace, inchannels, outchannels, lib_path0, is
         if state is None:
             state = node.get("cached_state")
         child = build_structured_cell(parent, name, silk, plain, buffered, inchannels, outchannels, state, lib_path0)
-        schema = node["schema"]
-        if schema is not None:
-            assert silk
-            child.schema.set(schema)
         for inchannel in inchannels:
             cname = child.inchannels[inchannel].name
             if cname == "self":

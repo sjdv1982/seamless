@@ -251,30 +251,34 @@ UPDATE: Seamless servers serve *high-level* contexts or transformers. They are c
   Namespace is required, but mount identifier (file name, URL, ...) is optional (checksum might suffice)
   Mounts maybe read and/or write, but read may also be lazy: workers have to actively demand the value from
   the mount (this will not be kept in memory afterwards, caching has to be done by the mounter)
+  UPDATE: maybe generic checksum value server will be enough?
+- Reactors and subcontexts can be marked as "ephemeral", in which case they won't be executed on a remote service.
+  In fact, they will be stripped from the context graph. Examples: editors, loggers, visualizers.
 - Secret cells: consist of just a checksum, and optionally some mounts. These mounts are lazy.
-Seamless servers: Serve a (high-level!) context, transformer, reactor, or (high-level!) macro.
-Low-level implementation: serve a context, transformer or reactor. Macro is served as context.
+  UPDATE: maybe generic checksum value server will be enough?
+Seamless servers: Serve a (high-level!) context, transformer or reactor
+Low-level implementation: send the high-level graph over the wire, together with cell updates.
 Common characteristic of services is that they synchronize cells. When Seamless talks to a Seamless server,
- it offers a cell. First, it provides the checksum and the mounts. The server will then respond with one of the
+ it offers a cell. First, it provides the checksum. The server will then respond with one of the
  following responses ("transfer negotiation"):
  0. Server context is dead; client must re-initialize the server context and and re-send all cells.
     However, the context ID always stays the same.
  1. Cell checksum is already known and cached, no need to transfer
  2. Mounter is known; no need to transfer; server will retrieve cell value from mounter by itself
+    UPDATE: seems like YAGNI
  3. Please transfer cell value
  4. The transfer of this cell or cell value is forbidden
  5. Reverse update request: the server asks the client to update one or more cells.
     This is most common in case of an interactive fix of the code (so the code cell has now a different checksum)
- 6. Redirect (to another website)
+ 6. Redirect (to another website). Maybe make this rare?
  7. Challenge. This server refuses secret cells. You must prove that you have the actual cell value.
-    This is because Seamless does not do blackboxing: services are meant to perform reproducible computations
-     that in principle could be performed locally as well.
  Server configuration involves primarily these responses.
  Other configuration is what kind of evaluation/resource-claiming meta-parameters to accept, and what kind of logging is returned.
 
  Type of servers:
  0. Dynamic HTML using websockets. Completely unrelated.
  A. Two-way synchronization (collaborative protocol). Uses websocket/crossbar server, pub/sub
+    NOTE: text cells should support a git backend to resolve simultaneous edits on different sections of the text.
  B-D. One-way synchronization. Client manipulates cells, assuming that no other client does.
  B. Remote context server. Service is remote context server. It starts empty context (in Docker image)
     Returns a context ID / URL. The URL might be somewhere else.

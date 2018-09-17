@@ -153,7 +153,6 @@ class Transformer(Base):
                 "format": "mixed",
                 "silk": True,
                 "buffered": True,
-                "schema": None,
             }
             #TODO: check existing inchannel connections (cannot be the same or higher)
         child = Cell(parent, path) #inserts itself as child
@@ -166,13 +165,3 @@ class Transformer(Base):
     def __delattr__(self, attr):
         htf = self._get_htf()
         raise NotImplementedError #remove pin
-
-    def _destroy(self):
-        p = self._path
-        nodes, connections = parent._graph
-        for nodename in list(nodes.keys()):
-            if nodename.startswith(p):
-                nodes.pop(nodename)
-        for con in list(connections):
-            if con["source"].startswith(p) or con["target"].startswith(p):
-                connections.remove(con)

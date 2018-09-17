@@ -5,10 +5,10 @@
                 'path': ('sub', 'a'),
                 'schema': None,
                 'silk': True,
-                'stored_state': <seamless.core.structured_cell.StructuredCellState object at 0x7ff5364d7cf8>,
+                'stored_state': <seamless.core.structured_cell.StructuredCellState object at 0x7f6db04a8978>,
                 'type': 'cell'},
  ('sub', 'myresult'): {'buffered': True,
-                       'cached_state': <seamless.core.structured_cell.StructuredCellState object at 0x7ff5364ba2e8>,
+                       'cached_state': <seamless.core.structured_cell.StructuredCellState object at 0x7f6db0cf4f98>,
                        'celltype': 'structured',
                        'format': 'mixed',
                        'path': ('sub', 'myresult'),
@@ -18,7 +18,7 @@
  ('sub', 'transform'): {'INPUT': 'inp',
                         'RESULT': 'result',
                         'buffered': True,
-                        'cached_state_input': <seamless.core.structured_cell.StructuredCellState object at 0x7ff53dfb1710>,
+                        'cached_state_input': <seamless.core.structured_cell.StructuredCellState object at 0x7f6db0cf4e48>,
                         'code': 'def triple_it(a, b):\n'
                                 '    print("3 * a + b, a = %s, b = %s" % (a, '
                                 'b))\n'
@@ -30,7 +30,7 @@
                                  'b': {'submode': 'silk'}},
                         'plain': False,
                         'plain_result': False,
-                        'stored_state_input': <seamless.core.structured_cell.StructuredCellState object at 0x7ff53dfb1828>,
+                        'stored_state_input': <seamless.core.structured_cell.StructuredCellState object at 0x7f6db0cf4e80>,
                         'type': 'transformer',
                         'with_schema': False},
  ('sub2',): {'path': ('sub2',), 'type': 'context'},
@@ -40,10 +40,10 @@
                  'path': ('sub2', 'a'),
                  'schema': None,
                  'silk': True,
-                 'stored_state': <seamless.core.structured_cell.StructuredCellState object at 0x7ff5364ba518>,
+                 'stored_state': <seamless.core.structured_cell.StructuredCellState object at 0x7f6db04a8cf8>,
                  'type': 'cell'},
  ('sub2', 'myresult'): {'buffered': True,
-                        'cached_state': <seamless.core.structured_cell.StructuredCellState object at 0x7ff5364ba6d8>,
+                        'cached_state': <seamless.core.structured_cell.StructuredCellState object at 0x7f6db0cf4cc0>,
                         'celltype': 'structured',
                         'format': 'mixed',
                         'path': ('sub2', 'myresult'),
@@ -53,7 +53,7 @@
  ('sub2', 'transform'): {'INPUT': 'inp',
                          'RESULT': 'result',
                          'buffered': True,
-                         'cached_state_input': <seamless.core.structured_cell.StructuredCellState object at 0x7ff5364ba668>,
+                         'cached_state_input': <seamless.core.structured_cell.StructuredCellState object at 0x7f6db0cded68>,
                          'code': 'def triple_it(a, b):\n'
                                  '    print("3 * a + b, a = %s, b = %s" % (a, '
                                  'b))\n'
@@ -65,6 +65,6 @@
                                   'b': {'submode': 'silk'}},
                          'plain': False,
                          'plain_result': False,
-                         'stored_state_input': <seamless.core.structured_cell.StructuredCellState object at 0x7ff5364ba5f8>,
+                         'stored_state_input': <seamless.core.structured_cell.StructuredCellState object at 0x7f6db0cded30>,
                          'type': 'transformer',
                          'with_schema': False}}

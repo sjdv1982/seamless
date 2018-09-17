@@ -5,10 +5,10 @@ Part 1 is now complete
 Things to do:
 
 Part 2: high level  
-  - High-level macros
-  - Test indirect library update system, also with high-level macros
-  - Test library-containing-another-library
-  - Low-level macro (similar to Transformer)
+  - Constructors
+  - Test indirect library update system, also with constructors
+    Test library-containing-another-library
+    Copy depsgraph when copying contexts!
   - Edit schema JSON as file (proper mounting)
   - C/C++ cell translation
     (Transformer gains .compile_options, .link_options, .header (read-only),
@@ -83,6 +83,7 @@ the mid-level element is dynamically read from the sovereign cell (no double rep
 Part 6: applying the mid-level. Some of this can be delayed until post-merge.
 - Cache cells. Also nice for a transformer to store partial results
   Apply this to slash0
+  UPDATE: cache cells can be set directly with a checksum! or is this normal cells??
 - Reconsider the restrictions on transformers and reactors. Give transformers
   edit pins and cache pins, allow them to have reactor pin API.
   At least in theory, allow transformers/reactors to declare as sync/async, and thread/process.
@@ -98,6 +99,7 @@ Part 6: applying the mid-level. Some of this can be delayed until post-merge.
   - Save high-level syntax as mid-level only, or separately?
 
 Part 7, the high level :
+OUTDATED, since a lot of it is done now. No high-level macros, since constructors will suffice!
 - High-level syntax, manipulating the mid-level graph. Syntax can be changed interactively if Silk is used.
   Proof of principle DONE. TODO:
   - mounting is not quite satisfactory (redundant "translated" context)

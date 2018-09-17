@@ -18,22 +18,32 @@ from ..midlevel import copying
 from ..midlevel import TRANSLATION_PREFIX
 from ..midlevel.library import register_library
 from .Library import get_lib_paths, get_libitem
+from .depsgraph import DepsGraph
 
-Graph = namedtuple("Graph", ("nodes", "connections", "subcontexts"))
+Graph = namedtuple("Graph", ("nodes", "connections", "params"))
 
 class Context:
     path = ()
     _graph_ctx = None
-    def __init__(self):
-        with macro_mode_on(self):
-            self._ctx = context(toplevel=True)
+    _depsgraph = None
+    def __init__(self, dummy=False):
+        self._dummy = dummy
+        if not dummy:
+            with macro_mode_on(self):
+                self._ctx = context(toplevel=True)
         self._gen_context = None
-        self._graph = Graph({},[],{})
-        self._graph.subcontexts[None] = {}
+        self._graph = Graph({},[],{"from_lib": None})
         self._children = {}
         self._needs_translation = False
         self._as_lib = None
         self._parent = weakref.ref(self)
+        if not self._dummy:
+            self._depsgraph = DepsGraph(self)
+
+    def __call__(self, *args, **kwargs):
+        assert self._as_lib is not None #only libraries have constructors
+        libname = self._as_lib.name
+        return LibraryContextInstance(libname, *args, **kwargs)
 
     def _get_path(self, path):
         child = self._children.get(path)
@@ -41,17 +51,20 @@ class Context:
             return child
         node = self._graph[0].get(path)
         if node is not None:
-            assert node["type"] == "context", (path, node["type"]) #should be in children!
+            assert node["type"] == "context", (path, node["type"]) #if not context, should be in children!
             return SubContext(self, path)
         return Proxy(self, path, "w", None)
 
+    def _get_subcontext(self, path):
+        child = self._children[path]
+
     @property
     def from_lib(self):
-        return self._graph.subcontexts[None].get("from_lib")
+        return self._graph.params.get("from_lib")
 
     @from_lib.setter
     def from_lib(self, value):
-        self._graph.subcontexts[None]["from_lib"] = value
+        self._graph.params["from_lib"] = value
 
     def __getattr__(self, attr):
         if attr.startswith("_"):
@@ -65,12 +78,10 @@ class Context:
         assign(self, (attr,) , value)
 
     def __delattr__(self, attr):
-        assert (attr,) in self._children
-        child = self._children.pop((attr,))
-        child._destroy()
-        self._translate()
+        self._destroy_path((attr,))
 
     def mount(self, mountdir, persistent=None):
+        assert not self._dummy
         with macro_mode_on():
             ctx = self._ctx
             ctx.mount(mountdir, persistent=persistent)
@@ -78,6 +89,7 @@ class Context:
             mountmanager.paths[ctx].add(mountdir) #kludge
 
     def mount_graph(self, mountdir, persistent=None):
+        assert not self._dummy
         with macro_mode_on(self):
             ctx = self._graph_ctx = context(toplevel=True)
         with macro_mode_on():
@@ -90,6 +102,8 @@ class Context:
             ctx.states = cell("json")
 
     def equilibrate(self):
+        if self._dummy:
+            return
         self.translate()
         self._ctx.equilibrate()
 
@@ -100,6 +114,8 @@ class Context:
         self._needs_translation = True
 
     def translate(self, force=False):
+        if self._dummy:
+            return
         assert self._as_lib is None or self._from_lib is None
         is_lib = (self.as_lib is not None)
         if not force and not self._needs_translation:
@@ -171,13 +187,15 @@ class Context:
         self._needs_translation = False
 
     def _get_graph(self):
-        nodes, connections, subcontexts = self._graph
+        nodes, connections, params = self._graph
         nodes, connections = deepcopy(nodes), deepcopy(connections)
         copying.fill_cell_values(self, nodes)
         return nodes, connections
 
     def _remount_graph(self):
-        from ..midlevel.serialize import extract        
+        if self._dummy:
+            return
+        from ..midlevel.serialize import extract
         if self._graph_ctx is not None:
             nodes, connections = self._graph.nodes, self._graph.connections
             topology, values, states, _, _ = extract(nodes, connections)
@@ -187,6 +205,7 @@ class Context:
             mountmanager.tick()
 
     def register_library(self):
+        assert not self._dummy
         assert self._as_lib is not None #must be a library
         libitem = self._as_lib
         self.equilibrate()
@@ -198,19 +217,44 @@ class Context:
             libitem.partial_authority = partial_authority
         libitem.update()
 
-    def _del_subcontext(self, path):
-        subcontexts = self._graph.subcontexts
-        for p in list(subcontexts.keys()):
-            if p is None:
-                continue
+    def set_constructor(self, *, constructor, post_constructor, args, direct_library_access):
+        from .Library import set_constructor
+        assert not self._dummy
+        assert self._as_lib is not None #must be a library
+        libname = self._as_lib.name
+        set_constructor(libname, constructor, post_constructor, args, direct_library_access)
+
+    def _destroy_path(self, path):
+        for p in list(self._children.keys()):
             if p[:len(path)] == path:
-                sc = subcontexts.pop(p)
-                libname = sc.get("from_lib")
-                if libname is not None:
-                    libitem = get_libitem(libname)
-                    libitem.copy_deps.remove((weakref.ref(self), path))
+                child = self._children.pop(p)
+                if child["type"] == "context":
+                    libname = child.get("from_lib")
+                    if libname is not None:
+                        libitem = get_libitem(libname)
+                        libitem.copy_deps.remove((weakref.ref(self), path))
+                self._translate()
+
+        nodes = self._graph.nodes
+        l = len(nodes)
+        newnodes = {k:v for k,v in nodes.items() \
+                    if k[:len(path)] != path }
+        if len(newnodes) < l:
+            nodes.clear()
+            nodes.update(newnodes)
+            self._translate()
+
+        connections = self._graph.connections
+        l = len(connections)
+        connections[:] = [con for con in connections \
+                           if con["source"][:len(path)] != path \
+                           or con["target"][:len(path)] != path ]
+        if len(connections) < l:
+            self._translate()
+
 
     def status(self):
+        assert not self._dummy
         return self._ctx.status()
 
 
@@ -243,10 +287,25 @@ class SubContext(Base):
         nodes, connections = parent._graph
         path = self._path
         nodes, connections = copying.copy_context(nodes, connections, path)
+        #TODO:
         copying.fill_cell_values(parent, nodes, path)
         return nodes, connections
 
     @property
     def from_lib(self):
-        p = self._parent()._graph.subcontexts.get(self._path, {})
-        return p.get("from_lib")
+        sub = self._parent()._children[self._path]
+        return sub.get("from_lib")
+
+    def touch(self):
+        """Re-evaluates all constructor dependencies
+        This is meant for a library contexts where direct library update has been
+        disabled by the constructor, or otherwise some bug has happened"""
+        if self._as_lib is None:
+            return
+        ctx._as_lib.library.touch(self)
+
+class LibraryContextInstance:
+    def __init__(self, libname, *args, **kwargs):
+        self.libname = libname
+        self.args = args
+        self.kwargs = kwargs
