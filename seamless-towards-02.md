@@ -86,23 +86,6 @@ It is done again and again whenever a new cell/context/... is added or removed.
   UPDATE: not even then. A high-level macro is nothing but a macro that returns a mid-level graph structure.
   The default language is the Python-Seamless high-level API, but it can be any language)
 
-Macros
-High-level macros use the high-level API and generate a high-level context.
-(UPDATE: or a mid-level graph structure!)
-Low-level macros use the low-level (direct-mode) API and generate a low-level context.
-  They can be embedded in the mid-level graph (specifying Python as the language)
-Some high-level contexts can be configured as *libraries*:
-- To be also available to any macro inside any child context of their parent, if the macro asks for it
-- To be also available as low-level Silk struct, inside low-level macros
-Such contexts will replace the standard library and registrars.
-UPDATE: libraries will be a low level concept now.
-All macros have four parts:
-- execution code
-- loading code (imports)
-- library requirements (see above)
-- configuration (language, what happens when you assign to it)
-Symlinks are also very important to tie a cell to a library cell. UPDATE: no longer true (LibCell instead)
-
 Serialization
 Each level is serialized on its own.
 On the high-level, the topology is stored, but only the value of authoritative cells.
@@ -147,7 +130,7 @@ This builds upon a similar mechanism in seamless 0.1.
   - Otherwise, workers and cells with any dirty dependency, are dirty
 - A special rule applies to workers that are not in equilibrium.
     (This includes workers that depend on non-empty event streams)
-    They must be "hyper-clean": evaluation cells and cache cells are now also taken into account
+    They must be "hyper-clean": evaluation cells and ephemeral cells are now also taken into account
     If they are hyper-clean, their kernel is substituted with the kernel from the current context (which is performing the computation)
     Else, they are dirty.
 - Reactors that are clean receive a special mark, because whenever they receive an update, the "start" code must be executed, not the "update" code. UPDATE: this is not true, it will be the "update" code.
@@ -252,7 +235,7 @@ UPDATE: Seamless servers serve *high-level* contexts or transformers. They are c
   Mounts maybe read and/or write, but read may also be lazy: workers have to actively demand the value from
   the mount (this will not be kept in memory afterwards, caching has to be done by the mounter)
   UPDATE: maybe generic checksum value server will be enough?
-- Reactors and subcontexts can be marked as "ephemeral", in which case they won't be executed on a remote service.
+- Reactors and subcontexts can be marked as "auxiliary", in which case they won't be executed on a remote service.
   In fact, they will be stripped from the context graph. Examples: editors, loggers, visualizers.
 - Secret cells: consist of just a checksum, and optionally some mounts. These mounts are lazy.
   UPDATE: maybe generic checksum value server will be enough?
@@ -530,80 +513,11 @@ This is just for the purpose of dependency tracking, though, not cache substitut
 Evaluation cells may contain more complex evaluation parameters.
 Their semantic meaning is at the high level, no low-level support or core mid-level support.
 
-Runtime caching
-===============
-New cell type: cache cell.
-All (low-level) workers (transformers/reactors/macros) may take (up to) one pin of type "cache" as inputpin (not editpin).
-If they take such a pin, they may raise a CacheError. This will clear the cache, and put the worker
-in "CacheError" state. CacheErrors are meant to detect *stale* caches: workers are forbidden to raise CacheError if the cache is empty. (UPDATE: multiple cache inputs, but CacheError clears all of them)
-It is understood that the content of cache cells *do not influence the result whatsoever*.
-  - Dirty cache cells do not trigger re-evaluation of downstream workers, unless those are in "CacheError" state.
-  - Cache cells alone may have multiple sources of authority, i.e. multiple outputpins/editpins connecting to them.
-    (UPDATE: better not do this...)
-Special transformers are "caching transformers", they have a "cache" cell as output.
-Caching transformers are triggered when their input changes *or* their cache output is cleared.
-Caching transformers alone can have multiple cache inputs, and have an API to clear them individually.
-Cache clearing counts as a signal in seamless, which means that the subsequent triggering of the caching transformers
-has the highest evaluation priority.
-Workers in "CacheError" state are re-evaluated whenever their cache input changes.
-If the cache input stays cleared, and the context is in equilibrium, they are nevertheless evaluated with
-empty cache (and the CacheError state is removed).
-UPDATE: It is nice to co-opt this mechanism so that transformers can store partial results, and continue.
-This can be done using a macro around a transformer (can be triggered using mid-level syntax).
-The transformer has a cache inputpin that is connected from a cache cell. The same cache cell is also connected to
-the secondary outputpin (result_preliminary), this must be allowed. (UPDATE: or use a special cache edit pin? this example
-won't need a cache transformer then)
-The macro generates a cache transformer that clears the cache cell whenever any of the inputs (including the code) changes.
-The transformer code must be able to analyze the contents of the preliminary results in cache and act accordingly.
-The cache cell will be marked as being serialized upon save (but not mounted).
-UPDATE: Mayve re-think this a bit... maybe mark cells as "cache", and allow transformer edit pins only to "cache" cells.
- For the rest, rely on concretification signals to compute caches just in time (PIN.cache.value could trigger concretify
- in a blocking manner, no more CacheError foo?).
-
-Network services (high level)
-=============================
-UPDATE: slightly outdated. Will be mostly implemented as high-level macros.
-NOTE: these are to implement foreign (non-Seamless) web services. Seamless web services have better ways to communicate
- (see below).
-Seamless will have the core concept of *network services*.
-Seamless has a universal network service handler: it receives a protocol (REST, websocket, etc.),
-a URI, a port, and JSON data. Data is sent, the result is returned.
-Registering a network service takes the following parameters:
-- type: can be "transformer", "reactor" or "macro"
-- code: the code string that is serviced. The code string contains the source code of the transformer or macro. In case of "reactor", a dict of the three code strings. Also contains the language of the source code (default: Python)
-- parameter pin dict. Must match the pin parameters of the transformer/reactor (equivalent for macro).
-- adapter: code string (+ language) of the function that converts the input into parameters for the handler.
-- schema_adapter: same, but receives the schema of the input instead (and also the code).
-- handler_parameters: hard-coded parameters for the handler
-- post_adapter: Another code string (+ language) to convert the handler results to pins. Optional for transformers/macros.
-Adapter, schema_adapter must each return a dict, or raise an ServiceException if they decide that the service is not suitable based on the schema/the data.
-The handler_parameters dict is updated by the schema_adapter result dict, then updated by the adapter result
-dict, then sent to the handler. The result of the handler is passed to the post_adapter.
-It is possible to set in the "evaluation" dict some flag that forces service evaluation: however, this
-should not influence the result! The local code must be correct!
-
-On top of this, network service macros can be implemented, that take slightly different parameters.
-For example: named REST service handler, taking the following parameters:
-- name: name of the REST service
-- code: transformer code to be evaluated locally if the REST service is not found
-
-Example: raw network service handler. Receives a URL + port + data. Sends data, returns the result.
-Another: raw REST service handler. Same, but HTTP REST protocol.
-Another: named network service handler. Receives not a URL but the *name* of a network service. Relies on a registry to convert this name into some kind of network call (could also be docker).
-Remember that seamless assumes that the result of a computation is constant, regardless of service. So changing a service registry will not automatically re-evaluate the computation!
-Now, the adapters also receive the "evaluation" parameter, so this can be forwarded to the handler!
-Likewise, the adapters may combine this with its own "evaluation" analysis, based on what they receive.
-For example, you may inform the ATTRACT grid computation service that your are planning to send 1 trillion
-docking energy evaluations to the ATTRACT grid. A dumb ATTRACT grid service would build the grid on one machine,
-and return some kind of session ID. This session ID is stored as cache in both the input and the result
-"evaluation".
-The session ID in the result "evaluation" can then be used to query the ATTRACT service with structures
-
 
 The seamless collaborative protocol (high level)
 ================================================
 
-Whereas network services are wrappers around transformers, the collaborative protocol is a means to share *cells*, like dynamic_html, but then bidirectionally
+The collaborative protocol is a means to share *cells*, like dynamic_html, but then bidirectionally
 The idea is that a cell is bound to a unique "cell channel", so that two programs or web browsers can pub/sub to the channel
 At the core, there is a single Seamless router (Crossbar instance) at the RPBS. Websocketserver is gone: seamless looks for the router
  when it is initialized, or launches a "pocket router".
@@ -624,16 +538,3 @@ UPDATE: It should be possible to send an (U)RI, instead of the cell value, over 
  - which protocols (HTTP, database, etc.) are accepted for URIs
  - which domains are acceptable. Both may have access to the same database, but not necessarily.
    (This is somewhat related to having this database as a mount backend, but not exactly)
-
-The web publisher channels
-===========================
-Seamless will include a pocket web publisher. Each publisher can be made available on the Seamless router as a pair of RPCs: one to submit a web page under a path (providing some kind of
-  authorization) and another to retrieve the page
-- Static publisher: takes an HTML template and a host channel ID. The host channel ID is substituted into the HTML. The HTML is supposed to contact the channel via WAMP. If the channel comes
-  from seamless, there will be a seamless collaborative sync protocol behind it: dynamic_html, or direct cell synchronization
-  The static publisher does not take any arguments
-- Dynamic publisher: takes an HTML template and a factory channel. The factory channel is invoked (without arguments) and returns a host channel ID.
-A web server can serve the static publisher directly. The dynamic publisher should be accessible in two ways:
-- Launcher: web page ID is in the request, no further arguments. Invokes the factory, redirects to the Retriever, with the host channel ID as parameter
-- Retriever: web page ID in the request, host channel ID as parameter. Takes the HTML template, fills in the host channel and returns the HTML.
-  As long as the host channel is open, the Retriever link will be universally accessible (no private browser connections).

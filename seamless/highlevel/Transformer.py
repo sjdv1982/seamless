@@ -31,13 +31,12 @@ class Transformer(Base):
 
 
     def _assign_to(self, hctx, path):
-        from .assign import assign_constant, assign_connection
+        from .assign import assign_connection
         tf = self._get_tf()
         htf = self._get_htf()
         if htf["with_schema"]:
             raise NotImplementedError
         parent = self._parent()
-        htf = self._get_htf()
         result_path = self._path + (htf["RESULT"],)
         assign_connection(parent, result_path, path, True)
         hctx._translate()
