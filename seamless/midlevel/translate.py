@@ -10,7 +10,7 @@ We can't do codegen because not all cells are text!)
 from collections import OrderedDict
 from functools import partial
 
-from seamless.core import cell, libcell, libmixedcell, transformer, context, macro, StructuredCell
+from seamless.core import cell, libcell, libmixedcell, transformer, reactor, context, macro, StructuredCell
 from seamless.core.structured_cell import BufferWrapper
 
 from . import copying
@@ -189,6 +189,83 @@ def translate_py_transformer(node, root, namespace, inchannels, outchannels, lib
         ctx.code = libcell(lib_path)
     else:
         ctx.code = cell("transformer")
+    ctx.code.connect(ctx.tf.code)
+    ctx.code.set(node["code"])
+    namespace[node["path"] + ("code",), True] = ctx.code
+
+    for pin in list(node["pins"].keys()):
+        target = getattr(ctx.tf, pin)
+        inp.connect_outchannel( (pin,) ,  target )
+
+    if with_schema:
+        plain_result = node["plain_result"]
+        output_state = node.get("cached_state_output", None)
+        outp = build_structured_cell(ctx, result_name, True, plain_result, False, [()], outchannels, output_state, lib_path0)
+        setattr(ctx, output_name, outp)
+        result_pin = getattr(ctx.tf, result_name)
+        outp.connect_inchannel(result_pin, ())
+    else:
+        for c in outchannels:
+            assert len(c) == 0 #should have been checked by highlevel
+        outp = getattr(ctx.tf, result_name)
+        namespace[node["path"] + (result_name,), False] = outp
+
+    if not is_lib: #clean up cached state and in_equilibrium, unless a library context
+        node.pop("cached_state_input", None)
+        node.pop("cached_state_result", None)
+        node.pop("in_equilibrium", None)
+
+    namespace[node["path"], True] = inp
+    namespace[node["path"], False] = outp
+
+def translate_py_reactor(node, root, namespace, inchannels, outchannels, lib_path00, is_lib):
+    parent = get_path(root, node["path"][:-1], None, None)
+    name = node["path"][-1]
+    lib_path0 = lib_path00 + "." + name if lib_path00 is not None else None
+    ctx = context(context=parent, name=name)
+    setattr(parent, name, ctx)
+
+    io_name = node["IO"]
+    codes = ("code_start", "code_stop", "code_update")
+    inchannels = [i for i in inchannels if i not in codes and i[0] not in codes]
+    if len(inchannels):
+        lib_path0 = None #partial authority or no authority; no library update in either case
+
+    buffered = node["buffered"]
+    interchannels_in = [tuple(p) for p, pin in node["pins"].items() if pin["io"] in ("output", "edit")]
+    interchannels_out = [tuple(p) for p, pin in node["pins"].items() if pin["io"] in ("input", "edit")]
+    editchannels = [tuple(p) for p, pin in node["pins"].items() if pin["io"] == "edit"]
+    all_inchannels = inchannels
+    all_inchannels += [p for p in interchannels_out if p not in all_inchannels]
+    all_outchannels = outchannels
+    all_outchannels += [p for p in interchannels_in if p not in all_outchannels]
+
+    plain = node["plain"]
+    io_state = node.get("stored_state_io", None)
+    if io_state is None:
+        io_state = node.get("cached_state_io", None)
+    io = build_structured_cell(ctx, io_name, True, plain, buffered, all_inchannels, all_outchannels, io_state, lib_path0)
+    setattr(ctx, io_name, io)
+    for inchannel in inchannels:
+        path = node["path"] + inchannel
+        namespace[path, True] = io.inchannels[inchannel]
+    for outchannel in outchannels: #?
+        path = node["path"] + outchannel
+        namespace[path, False] = io.outchannels[outchannel]
+
+    all_pins = {}
+    for pinname, pin in node["pins"].items():
+        p = [pin.get("io"), pin.get("mode", "copy"), pin.get("submode"), pin.get("celltype")]
+        all_pins[pinname] = p
+
+    ctx.rc = reactor(all_pins)
+    for attr in ("code_start", "code_stop", "code_update"):
+        if lib_path00 is not None:
+            lib_path = lib_path00 + "." + name + ".code"
+            setattr(ctx, attr, libcell(lib_path))
+        else:
+            setattr(ctx, attr, cell("python"))
+    raise NotImplementedError
     ctx.code.connect(ctx.tf.code)
     ctx.code.set(node["code"])
     namespace[node["path"] + ("code",), True] = ctx.code

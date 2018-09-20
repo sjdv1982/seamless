@@ -17,6 +17,12 @@ Ideas that are superfluous. Keep them here, just in case...
    Therefore, if you have A => macro => B, A + B => dynamic layer, you can assume that the macro
     will respond first to changes in A, so that B will reflect the new A.
 
+    - Report cells (JSON cells, can become structured if directed from the mid-level).
+      Status dict becomes a a Report cell.
+    - Log cell: text cell to which an observer can be attached that receives new entries)
+       The result of translation, caching, macros, etc.; generalized log API.
+       Even transformers and reactors may be declared as having a log output, and various loglevels
+        (transformer.py will already send low-priority log messages about receiving events etc.)
 
 Event streams
 =============
@@ -154,3 +160,137 @@ A web server can serve the static publisher directly. The dynamic publisher shou
   - library requirements (see above)
   - configuration (language, what happens when you assign to it)
   Symlinks are also very important to tie a cell to a library cell. UPDATE: no longer true (LibCell instead)
+
+- Organize cells into arrays (probably at high-level only)
+
+- Other mount backends (databases)
+  As a variation, an option for cells to have no .\_val, i.e. .value always pulls
+   the value from the backend (it is assumed not to have changed!)
+  Multiple mounts should be supported. Concept of "mount namespace", default ones: "file", "uri"
+   Namespace is required, but mount identifier (file name, URL, ...) is optional (checksum might suffice)
+   Mounts maybe read and/or write, but read may also be lazy: workers have to actively demand the value from
+   the mount (this will not be kept in memory afterwards, caching has to be done by the mounter)
+   UPDATE: maybe generic checksum value server will be enough?
+
+ - Preliminary outputpins (in transformers [as secondary output] and in reactors)
+ - Preliminary inputpins (pins that accept preliminary values). Right now, all inputpins are preliminary!
+ - Equilibrium contexts (see below)
+ - finalize the design of mid-level graph syntax.
+   - Include old 0.1 resources, or make this high-level only?
+   - Save high-level syntax as mid-level only, or separately?
+
+ Concretification
+ ================
+ "Concretification" is a feature that cells may not need to store their full value.
+ It involves sending two signals upstream, i.e. a cell's input pin or inchannels
+ that requests something from the upstream worker or cell.
+ 1. send my hash/checksum
+ 2. (re-)send again my value
+ Applications of this are in:
+ - blocks (with compression; see below),
+ - backend caching (a cell may just store its hash and demand its value when needed from
+    a cell server; if the server fails, it may send a signal 2.)
+ - lazy evaluation (in lazy mode, transformers evaluate only upon receiving a signal 2.
+ Reactors and macros send a signal 2. to each of their input cells
+ 3. Release. In case of lazy cells, signal 2. is non-blocking; the manager is notified when
+  the result is ready. The manager then forwards the results, and sends back a "release" signal,
+  meaning that the value may be freed from memory. If this indeed happens or not, depends on
+  the configuration (although compressed blocks always free).
+  The checksum of the cell always kept. The value may still be in a checksum cell server.
+  If the value cannot be retrieved, a signal 2. is sent upstream.
+  (Non-lazy cells may also rely on such a server, but in their case, it is an error if the server fails.)
+
+ Lazy evaluation
+ ===============
+ Lazy cells are cells that are marked as such. They must be dependent on a
+  transformer.
+ Reactors immediately concretify all of their lazy inputs, and cannot have a
+  lazy output/edit.
+ However, transformers that output lazy cells automatically become lazy.
+ They concretify their inputs only when its output cell becomes concretified.
+
+ An important advantage of lazy cells is that there are stronger timing guarantees.
+ Signal 2. (invalidate the value) is propagated forward *immediately* by Seamless
+  towards downstream dependencies (stopping transformers in their tracks), before
+  sending any values to the workers.
+ Example: dependency graph A=>B, A=>C, B+C=>D. If A is updated to A*,
+  B will become updated to B* and C to C*.
+  Eventually, D will be evaluated from B*+C*, but the intermediate computations
+  B*+C or B+C* are both possible as "glitches". However, if B and C are lazy, then
+  an update for A will immediately invalidate them, and the glitches disappear.
+ From the Python shell, lazy cells have a method that concretifies in a non-blocking manner.
+ In addition, they have a method that concretifies in a blocking manner
+  and then returns a result.
+ Finally, they have a channel that sends concretification signals,
+  to which Python can subscribe callbacks (like an observer or Hive push antenna)
+
+ In addition to LazyCell, there is LazyCallback, which emulates LazyCell.
+ However, a LazyCallback wraps a zero-argument Python callback (blocking or non-blocking)
+  into a cell value. This callback is triggered upon concretification.
+ With cffi, the callback can come from another language, like C or even Haskell.
+ Note that callback foo cannot be serialized, it is the responsibility of
+  Python (or whatever host language) to bind the callbacks after graph instantiation.
+
+
+Workers and memory
+==================
+By default, workers keep all of their values buffered. This may eat up a lot of
+memory resources. Pins may be configured to be on-demand instead. In that case,
+seamless will send only the checksums, and the worker will then have to ask for
+the value.
+In case of transformers/macros, this is a single request for all of the values.
+For reactors, the request is actually made when the pin value is demanded.
+This request is blocking, so it should probably only be used for async reactors.
+
+
+Equilibrium contexts
+====================
+Transformers are guaranteed not to send anything (be it cell values or events) on their primary output until execution has finished (which means they are in equilibrium).
+In addition, transformers are guaranteed not to accept any events while not in equilibrium. If there are any,
+ the transformer computation is actually canceled.
+This is obviously not so for reactors, and it is also not so for contexts that contain reactors (or multiple transformers that are not arranged linearly) connected to exported outputs of the context.
+It is possible to declare contexts as "equilibrium contexts". In that case, they have the same guarantees as transformers have: sending cell updates or events to the outside world is delayed until equilibrium is reached, and so is the acceptance of new events. This allows contexts to perform atomic computations, reducing the number of glitches.
+It is possible to declare some of the outputs as "secondary", which means that they escape this guarantee (for example, for logging purposes).
+"Events to the outside world" is only restricted if it goes through exported cells and pins. Traffic through
+non-exported objects is not restricted.
+
+Block allocation
+================
+Block allocation can happen in two ways:
+- Via an Allocator (new low-level construct). The block descriptor must be given to the allocator constructor.
+  The Allocator provides an allocator output pin, which gives both the block descriptor and the allocated buffer.
+- Via a StructuredCell, in Silk mode. The path of every allocation must be declared in "allocators", which works
+  similar to "outchannels": each path becomes an allocator output pin.
+  From the shell, the allocation path value is readable (resulting in the block value, copied to a Numpy array)
+  but not writable. No inchannel or outchannel may be a superpath of the allocation path (at the high level, this
+   must be checked during assignment, before translation).
+  The StructuredCell must have all block descriptors declared during construction, including namespace.
+  However, for high-level cells, the block descriptor is read from the .schema. In any case, if there is a schema
+   entry, the StructuredCell will check that it is compatible with the block descriptor.
+  When the OverlayMonitor (or its subclass) is created, a buffer is created (in the appropriate namespace)
+  using the block descriptor, and when activated, both are sent over the allocator output pin.
+
+  Application to ATTRACT: the mainloop reactor
+  ============================================
+  Because of the cylic dependency, an energy minimization loop is not a good fit for Seamless. But it can be done.
+  There must be an ATTRACT mainloop reactor with editpins A and C, and inputpins B and D.
+  Pin A contains the DOFs: upon start-up, it is copied from the initial DOFs.
+  It is assumed that a "scorer" context listens to A and gives results on B, which is the energy and DOF gradients.
+  To activate the scorer, the mainloop reactor sets A, then equilibrates A and B, then reads B.
+  Pin C also contains the energy and DOF gradients, and D also contains the DOFs
+  It is assumed that a "minimizer" context listens to C and then gives results on D.
+  To activate the minimizer, the mainloop reactor sets C from B, then equilibrates C and D, then reads D.
+  The scorer can then be re-activated by setting A from D.
+  The minimizer and scorer contexts must be equilibrium contexts.
+  "Equilibrating" is done by a having a signal that fires when a context reaches equilibrium.
+   Use "on_equilibrate" hook of root managers (adapt for non-root).
+  The ATTRACT mainloop reactor will have two signal inputpins for this (from scorer and minimizer) and an internal
+   variable that maintains which signal is to be listened for.
+  A and C are cached together with the number of minimization steps that have been performed. In this way:
+  - The mainloop context can be saved in mid-evaluation and resumed later
+  - The number of steps can be increased and only the additional steps are computed.
+  Equilibrium contexts should also have a Report cell that reflects the checksum value of all exported cells and pins
+  that are "input".
+  Exported cells are "input" if they are authoritative within the cell. Exported pins are "input" if they are inputpins.
+  The mainloop reactor will listen for these checksum Report cells; when they change, the whole computation must be restarted.
+  When porting ATTRACT, the minimizer and scorer should be in slash.

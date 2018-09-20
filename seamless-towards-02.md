@@ -230,20 +230,18 @@ UPDATE: Seamless servers serve *high-level* contexts or transformers. They are c
 
 
 ## UPDATE of the UPDATE: Towards flexible and cloud-compatible evaluation / Seamless collaborative protocol
-- Multiple mounts should be supported. Concept of "mount namespace", default ones: "file", "uri"
-  Namespace is required, but mount identifier (file name, URL, ...) is optional (checksum might suffice)
-  Mounts maybe read and/or write, but read may also be lazy: workers have to actively demand the value from
-  the mount (this will not be kept in memory afterwards, caching has to be done by the mounter)
-  UPDATE: maybe generic checksum value server will be enough?
-- Reactors and subcontexts can be marked as "auxiliary", in which case they won't be executed on a remote service.
-  In fact, they will be stripped from the context graph. Examples: editors, loggers, visualizers.
-- Secret cells: consist of just a checksum, and optionally some mounts. These mounts are lazy.
-  UPDATE: maybe generic checksum value server will be enough?
-Seamless servers: Serve a (high-level!) context, transformer or reactor
-Low-level implementation: send the high-level graph over the wire, together with cell updates.
-Common characteristic of services is that they synchronize cells. When Seamless talks to a Seamless server,
- it offers a cell. First, it provides the checksum. The server will then respond with one of the
- following responses ("transfer negotiation"):
+Seamless services: Serve a (high-level) context, transformer or reactor; or a low-level transformer or reactor.
+Services are substituted during graph translation:
+  High level: send the high-level graph over the wire, together with cell updates.
+  Low level: after finding a service, don't build a core.transformer, but a service.core.transformer
+Local execution is a fallback, but service substitution can be enforced or disabled on an individual basis.
+ (Also the kind of allowed services can be configured; services may promise fast execution, or not)
+Service discovery happens with an explicit discover() command.
+Common characteristic of services is that they synchronize cells.
+When Seamless talks to a Seamless server, it offers a cell.
+(UPDATE: this is not strictly true. Cell-cell connections between a serviced context
+  and the outside world are indeed treated as state shared. However pin connections are exposed too!)
+First, it provides the checksum. The server will then respond with one of the following responses ("transfer negotiation"):
  0. Server context is dead; client must re-initialize the server context and and re-send all cells.
     However, the context ID always stays the same.
  1. Cell checksum is already known and cached, no need to transfer
@@ -296,7 +294,8 @@ Common characteristic of services is that they synchronize cells. When Seamless 
 
 Note that service *names* do not play any role. For logging purposes, one could be provided, otherwise it is just the local context name.
 
-The idea is that the RPBS will host a global Seamless server that accepts any context registration.
+The idea is that the RPBS will host a global Seamless server (Cloudless) that accepts any context registration, and will
+ be a *router* for services.
 A server A, B, C, D1, D2, D3 and an HTML page for D3 are in principle auto-generated upon context registration, but customization is possible. For example, a cell may be designated as D3 HTML cell. Multiple D1 with multiple slow-change configs are possible.
 After some time, context instances will be killed off, this can also be configured.
 The RPBS server will have authorization: authorized registrations will have access to more resources.
@@ -400,6 +399,9 @@ Computation server:
 hash => computation. hash1 is the grand checksum of a computation JSON,
   computation is the computation JSON itself.
   Only non-error computations (status OK) are cached thus.
+
+NOTE: make computation servers also for low-level transformers, and for reactors
+ marked as "pure".
 
 Cell server:
 hash+hash2 => value. Serves grand cell values (can be rather big). hash is the
@@ -519,8 +521,8 @@ The seamless collaborative protocol (high level)
 
 The collaborative protocol is a means to share *cells*, like dynamic_html, but then bidirectionally
 The idea is that a cell is bound to a unique "cell channel", so that two programs or web browsers can pub/sub to the channel
-At the core, there is a single Seamless router (Crossbar instance) at the RPBS. Websocketserver is gone: seamless looks for the router
- when it is initialized, or launches a "pocket router".
+At the core, there is a single Seamless router (Crossbar instance) at the RPBS.
+Websocketserver is gone: seamless looks for the router when it is initialized, or launches a "pocket router".
 Every seamless kernel has its own ID, every context has its own ID, and every cell has its own ID. This triple of IDs forms the channel ID.
 Seamless IDs are read from os.environ, else it is 0.
 Seamless can expose its cell (for read or read/write) by registering itself as a channel with the Seamless router.

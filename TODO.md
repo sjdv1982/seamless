@@ -5,166 +5,162 @@ Part 1 is now complete
 Things to do:
 
 Part 2: high level
-  - low-level structured cell editchannels  
-  - Reactors
-  - Constructors
-  - Test indirect library update system, also with constructors
-    Test library-containing-another-library
-    Copy depsgraph when copying contexts!
+  - Reactors (without editpins)
+  - Constructors, finish testing
+    Test library-containing-another-library    
+    Make sure constructors work correctly when copying parent contexts
+    Test indirect library update system, also with constructors
   - Edit schema JSON as file (proper mounting)
+    Special mount mode for JSON: whatever is read will be passed through cson2json
+  - Silk form validators + proper type inference for arrays
   - C/C++ cell translation
     (Transformer gains .compile_options, .link_options, .header (read-only),
      but only if language is C/C++)
   - Serialization
-  - Cloudless proof-of-principle  
+  - Services proof-of-principle
+    Low-level services (non-interactive transformer) and local cache dict
+    Other possible services: interactive transformer, pure reactor (non-interactive or interactive)  
+    NOTE: These are strictly core.manager concerns. Neither the workers nor
+     the high-level has anything to do with it!
+  - High-level proof-of-principle: non-interactive C++ transformer.
+  - Sovereignty
+  A low level cell may be sovereign if it has a 1:1 correspondence to a mid-level element.
+  Sovereign cells are authoritative, they may be changed, and changes to sovereign cells do not cause
+  the translation macro to re-trigger.
+  When a translation macro is re-triggered for another reason (or when the mid-level is serialized),
+  the mid-level element is dynamically read from the sovereign cell (no double representation)
 
-Part 3 (low-level / cleanup):   
-   - Signals (DONE; only to test)
-   - Observers (subclass of OutputPinBase)
+Part 3 (low-level / cleanup):
+   - low-level structured cell editchannels
+     High-level reactor editpins     
    - Add back in int/float/str/bool cells because they are so convenient.
      Their content type will be int/float/text/bool.
      Adapters will convert among them (e.g. int=>float) and between them and JSON/mixed/text.
      Supported access modes are JSON and text. Adapters will convert to Silk.
+   - Implement old lib.gui.edit as a new library, with new editpin.
    - Terminology: context children can be private, in which case they are not in __dir__.
      By default, they are public. No more "export".
      This has nothing to do with services. Services determine private and public based on
      what connects into the serviced context.
    - Have a look if Qt mainloop hook can be eliminated.
    - equilibrate() should not wait for workers with an execution error
+   - High-level:
+     macros (by definition low-level) with language (python) and api (pyseamless) fields.
    - Start with lib porting. Port Qt editors (including HTML), but no more seamless.qt
      Port all macros, but store the code in plain Python modules in lib, that register a library context
    - Port websocketserver, with proof of principle
-   - Port OpenGL, with proof of principle
+   - Jettison OpenGL for now; re-target main focus of Seamless towards scientific computations for now
+   - Cleanup tests. With direct mode, most low-level tests should work now? Other ones can be ported to high-level
+     Tests involving slash0 and OpenGL can be jettisoned for now
    - Cleanup of the code base, remove vestiges of 0.1 (except lib and tests).
    - Cleanup of the TODO and the documentation (put in limbo)
 
-Merge into master? With direct mode, most tests should work now? Other ones can be ported...
+Merge into master; end of the Great Refactor
 
-Part 4 (low-level):   
-  - Terminology: authority => source. "only_source" option in mounting context, mounting only source cells
-  - Report cells (JSON cells, can become structured if directed from the mid-level).
-    Status dict becomes a a Report cell.
-  - Log cell: text cell to which an observer can be attached that receives new entries)
-     The result of translation, caching, macros, etc.; generalized log API.
-     Even transformers and reactors may be declared as having a log output, and various loglevels
-      (transformer.py will already send low-priority log messages about receiving events etc.)
-  - Finalize caching:
-    - write cache hits into a Log cell
-    - structured cells: outchannels have a get_path dependency on an inchannel
-    - structured cells: calculate outchannel checksum (see remarks in source code)
-    - re-enable caching for high level (test if simple.py works now)
-    - reactors: they give a cache hit not just if the value of all cells are the same, but also:
-           - if the connection topology stays the same, and
-           - the value of all three code cells stays the same
-       In that case, the regeneration of the reactor essentially becomes an update() event
-  - Lazy evaluation and concretification (see below)
-  - Silk form validators
-  - Silk: error messages, multi-lingual (use Python format() syntax, but with properties to fill in, i.e. "The value cannot be {a.x}". This is natively supported by Python. No magic in the style of {a.x+a.y}; define a property for that)
+Part 4:
+- High-level: pure contexts. Pure contexts have at least some public output cells and output pins.
+  Only pure contexts are can have a grand computation result: the checksums of the public outputs are what is being
+   stored as the result of the grand computation.
+  Connections to private output cells/pins are not forbidden, but lead to a loss of purity (with a big warning),
+   as does demanding their value from Python.
+  Reactors and transformers can also be marked as pure (the high-level makes transformers pure by default).
+  In both cases, all output pins are public.
+  However, an ephemeral output prevents a worker from being pure. Pure contexts can't have ephemeral public outputs, either.
+  If they maintain their purity, a pure object is an independent caching unit. A hit in the
+  computation checksum server will avoid the pure object to be (re-)translated at all.
+  Also for the purpose of low-level caching, pure objects are a single dependency unit (a "virtual transformer"),
+   so the low-level must be informed.  
+- The New Way of execution management (see below).
+ For now, never shut down any worker
+- Finalize caching:
+  - structured cells: outchannels have a get_path dependency on an inchannel
+  - structured cells: calculate outchannel checksum (see remarks in source code)
+  - re-enable caching for high level (test if simple.py works now)
+  - low-level reactors: they give a cache hit not just if the value of all cells are the same, but also:
+         - if the connection topology stays the same, and
+         - the value of all three code cells stays the same
+     In that case, the regeneration of the reactor essentially becomes an update() event  
+
+Part 5:
+  - High-level mounting is not quite satisfactory (redundant "translated" context)
+  - Auxiliary, ephemeral and execution cells (see below)
+    Re-integrate slash0, apply ephemeral cells to it
+    Expand and document seamless shell language (slash)
+  - Signals
+  - Observers (subclass of OutputPinBase)
+  - Fully port over 0.1 lib: from .py files to Seamless library context files
+  - Fully port over 0.1 tests
+  - Clean up all vestiges of 0.1
+  - Update documentation
   - Seamless console scripts and installer
 
+0.2 release
+Documentation      
+Make new videos:
+  - Basic example
+  - Docking
 
-Part 5: shift to the mid-level data structure
-- Sovereignty
-Mostly elide the middle level, dynamically generate at time of low-level generation/serialization.
-The middle level is the input of a translation macro, whereas the low level is the output
-Normally:
-1. Being under macro control, the lower level could never be authoritative
-2. Any changes to the mid-level would re-trigger the translation macro.
-=> Introduce an exception: sovereignty
-A low level cell may be sovereign if it has a 1:1 correspondence to a mid-level element.
-Sovereign cells are authoritative, they may be changed, and changes to sovereign cells do not cause
-the translation macro to re-trigger.
-When a translation macro is re-triggered for another reason (or when the mid-level is serialized),
-the mid-level element is dynamically read from the sovereign cell (no double representation)
-- Expand mid-level graph syntax (see seamless-towards-02.md):
-  - reactors
-  - macros (by definition low-level) with language (python) and api (pyseamless) fields.
-  - signals
-  - add operators (but only those) UPDATE: implement at high-level (wrapper around transformer, but not an operator)
-  - no observers; not sure about mount.
+Part 6: "Towards flexible and cloud-compatible evaluation"
+- Build upon services proof-of-principle (cloudless)
+- HMTL gen from schema
+- Bidirectional cell web editing via Websocketserver
+- Implement all the checksum servers
+- Docker integration
 
-Part 6: applying the mid-level. Some of this can be delayed until post-merge.
-- Ephemeral cells. Also nice for a transformer to store partial results
-  Apply this to slash0
-- Reconsider the restrictions on transformers and reactors. Give transformers
-  edit pins and cache pins, allow them to have reactor pin API.
-  At least in theory, allow transformers/reactors to declare as sync/async, and thread/process.
-  In the same vein, transformers should be able to be declared as "immediate", which means:
-  sync and activated during translation / macro construction.
-  (Macros are also "immediate" workers already).
-  This allows a macro to depend on an immediate transformer, to avoid async macros (= cache misses).
-- Preliminary outputpins (in transformers [as secondary output] and in reactors)
-- Preliminary inputpins (pins that accept preliminary values). Right now, all inputpins are preliminary!
-- Equilibrium contexts (see below)
-- finalize the design of mid-level graph syntax.
-  - Include old 0.1 resources, or make this high-level only?
-  - Save high-level syntax as mid-level only, or separately?
+0.3 release
+Documentation  
+Make new videos:
+  - Making web services
 
-Part 7, the high level :
-OUTDATED, since a lot of it is done now. No high-level macros, since constructors will suffice!
-- High-level syntax, manipulating the mid-level graph. Syntax can be changed interactively if Silk is used.
-  Proof of principle DONE. TODO:
-  - mounting is not quite satisfactory (redundant "translated" context)
-  - Reactors; Edit schema JSON as file (proper mounting) => Reactor for JSON <=> CSON (JSON is written as CSON cell, CSON cell edits JSON)
-  - Many usability issues
-  - Translation policies (these are auxiliary)
-  - Syntax customization (see seamless-towards-02.md).
+Part 7:
+- Replace the use of killable threads with processes... gives a problem with Orca example (fixed now ?), docking example (?), see Github issue
+- Graph translation should be asynchronous and interruptible
+  (check regularly for interruption signals)
+- Start with report channels that catch error messages, cache hits/misses etc.
+   Gradually make Seamless such that it never crashes, but reports everything
+   Kernels should be killable from shell (deactivates manager too)
+- "only_auth" option in mounting context, mounting only authority cells
+   This should be on by default
+- Silk: error messages, multi-lingual (use Python format() syntax, but with properties to fill in, i.e. "The value cannot be {a.x}". This is natively supported by Python. No magic in the style of {a.x+a.y}; define a property for that)
+
+Release as 0.4
+
+Part 8:
+- Blocks
+- Streams
+- Special constructs (see below)
+- Foreign-language integration
+  - Extends the C/C++ proof-of-principle
+  - Support Fortran/CUDA/OpenCL
+  - Requires also a Silk extension (GPU storage, fixed-binary, see silk.md)
+  - IPython (.ipy)/Cython magic is not (or barely) necessary, since IPython is natively supported by workers.
+- Bring back OpenGL support
 - High-level extensions of serialization (e.g. take care of reporting, shells... Do we need this? or midlevel only?)
-The rest of part 6 could be delayed until post-0.2
-- High and low policies like .accept_shell_append should go into a cell
-- Meta-schema for schema editing (jsonschema has it)
-
-NOTE: for the high level, something clever can be done with cells containing default values; these cells are only connected to a structured_cell
-if the structured_cell has no other connection (for that inchannel, or higher). This connection is dynamic (layer).
-
-NOTE: seamless will never have any global undo system. It is up to individual editor-reactors to implement their own systems.
-
-Part 8 (pre-merge):
-- Port over 0.1 lib: from .py files to Seamless library context files. (can be delayed post-merge?)
-- Port over 0.1 tests
-
-Part 9 (merge):
-  Port over Orca and other examples
-  Make new videos:
-    - Basic example
+- Port over Orca and other examples
+- Make new videos:
     - Fireworks
     - 3D
     - Docking
     - Orca (don't show the code)  
 
-RELEASE as 0.2.
-
-Post-merge, post-release (0.3):
-- Replace the use of killable threads with processes... gives a problem with Orca example (fixed now ?), docking example (?), see Github issue
-- Bidirectional cell web editing via Websocketserver
-  (also HMTL gen from schema)
-- REST API (alternative for Websocketserver)
-- Web service JSON API (to provide all parameters in one go)
-- Old-school CGI API (alternative for web service JSON API)
-
-0.4:
-- Re-integrate slash0, apply ephemeral cells to it
-
-0.5
-- C/Fortran/CUDA/OpenCL integration (BIG).
-  - Requires also a Silk extension (GPU storage, fixed-binary, see silk.md)
-  - IPython (.ipy)/Cython magic is not (or barely) necessary, since IPython is natively supported by workers.
-- Blocks
-- Bags
-
-0.6
-- Sync mechanisms / collaborative protocol
- ("virtual context" that upon creation syncs topology from another context, and then
-  bidirectionally syncs the cell values; REST or Websocketserver under the hood)
-
-Post-0.6:
-- Address shell() memory leak: IPython references may hold onto large amounts of data
-- Expand and document seamless shell language (slash)
-- Special high-level authority syntax for library contexts (fork into libdevel)
-- Add "version" to "language" (both for code cells and for Silk).
-  To evaluate properly, major version must be exactly that; minor version must be at least that.
+Release as 0.5
 
 Long-term:
+- Meta-schema for schema editing (jsonschema has it)
+- GUI around report channels (to visualize) and around high-level context (to edit)
+  Also integrate with shell()
+  Address shell() memory leak: IPython references may hold onto large amounts of data
+- Collaborative protocol
+ ("virtual context" that upon creation syncs topology from another context, and then
+  bidirectionally syncs the cell values; REST or Websocketserver under the hood)
+- Reconsider the restrictions on transformers and reactors. [Give transformers
+  edit pins and cache pins, allow them to have reactor pin API => YAGNI?].
+  At least in theory, allow transformers/reactors to declare as sync/async, and thread/process.
+  In the same vein, transformers should be able to be declared as "immediate", which means:
+  sync and activated during translation / macro construction.
+  (Macros are also "immediate" workers already).
+  This allows a macro to depend on an immediate transformer, to avoid async macros (= cache misses).
+- Support more foreign languages: Julia, R, JavaScript. IPython magics, also have a look at python-bond
 - Simplified implementations, with various levels of reduced interactivity
   1. Frozen libraries. Libcell becomes a kind of symlink.
   No direct low-level library update, but also no high-level depsgraph.
@@ -176,32 +172,111 @@ Long-term:
   i.e. a C++ transformer has its C++ code frozen, as well as the Python code that
   implements the cffi interface.
   4. Everything frozen. The graph is considered as a single computation that should yield
-  the designated result cells. Depending on additional
-
-- Reactor start and stop side effects (see below)
-- The seamless collaborative protocol (high level) (see seamless-towards-02.md)
-  This replaces the websocketserver with a Crossbar WAMP server.
-- Delegated computing with services, evaluation cells
-  (BIG!, see seamless-towards-02.md:
-    - "Towards flexible and cloud-compatible evaluation"
-    - "Network services"
-    - "The web publisher channels")
+  the designated result cells. No interactivity, authority never changes
+  => editpins are also forbidden.
+- Specialized client implementations for special constructs
+- Reactor start and stop side effects (see below), and other policies involving
+  the New Way.
 - Set up user library directory and robogit
-- Python debugging / code editor (WIP) / unit tests (see seamless-towards-02.md)
-- Other mount backends (databases)
-  As a variation, an option for cells to have no .\_val, i.e. .value always pulls
-   the value from the backend (it is assumed not to have changed!)
-   UPDATE: use concretification instead
-- Full feature implementation of Silk, e.g. constructs (see silk.md)
 
 Very long-term:
-- Other implementations? JavaScript? Erlang? Elixir? Go?
-- Equilibrate/unstable overhaul (test on Collatz test)
-- "Activate" overhaul, the onion of Python with statement make it slow (test on Collatz test)
-- GPU-GPU triggering
+- Hive integration to control side effect timing (see below)
+- Use the report system for timings. Use this for precise measurements where
+  the seamless overhead is, and how much.
+- Python debugging / code editor (WIP) (see seamless-towards-02.md)
+- Full feature implementation of Silk, e.g. constructs (see silk.md)
+- Other *host* implementations? JavaScript? Erlang? Elixir? Go?
+- "Activate" overhaul, the "onion" of Python with statements make it slow.
+  Test on Collatz test. This is a good test for the New Way and also for
+  simplified implementations.  
+- GPU-GPU triggering.
+  This is possible with clEnqueueWaitForEvents / cudaStreamWaitEvent, by waiting for a *task*.
+  The task you are waiting for must already have been dispatched to the GPU. In other words,
+  you can pre-emptively launch a GPU task once it is dependent only on other GPU tasks
+  (including H2D/D2H copying), and no purely CPU tasks (i.e. all of those must have finished).
+  The best bet for implementation is probably the rewriting of multiple CUDA/OpenCL transformers
+  into one.
 - Re-implement all high level classes as Silk classes with methods in their schema.
-- Organize cells into arrays (probably at high-level only)
-- Cells that contain (serialized, low-level) contexts. May help with faster caching of macros.
+- Serialize the topology of low-level contexts, including checksums.
+  May help with faster caching of low-level macros.
+
+The New Way of execution management
+===================================
+The New Way is purely a manager issue. Worker implementations are unaffected.
+- There will be only a single manager for every top-level context
+- All checksums will be SHA-512
+- Only authoritative cells, object cells (cell()) and Python code cells will hold their value.
+  For any other cell, only the checksum will be stored
+  The value will be retrieved from a local cache dict
+  The local cache dict takes checksums as keys.  
+- Caching will be tricky for StructuredCells; the solution is
+   a special Monitor backed up by caching.
+   The authoritative part of the StructuredCell is always stored.
+   Each outchannel and inchannel has its own relationship with the local cache dict, just as a cell does.
+   Outchannels have a fallback mechanism where they ask their value of the authoritative part
+   and/or the inchannels they depend on, as if they were the output of a transformer.  
+   Even while being accessed, values could be removed from the local cache dict at will,
+    and Python will eventually garbage-collect the accessed value.
+    But a cache miss must trigger re-computation!
+- Setting a value to anything non-authoritative will now be an error in Seamless.
+  (This is anyway pretty difficult, as a high-level assignment would just modify the graph)
+- Cells are (initially) considered "pending" if their checksum is known, else "undefined".
+  Then, authoritative cells are marked as "equilibrium", as well as any outchannels/cells they
+  are connected to.
+  The manager considers workers as "undefined" as long as their inputs
+  (and required editpins) are not in equilibrium. When they are known, a reactor
+  is then considered "pending". A transformer (or a reactor marked as "pure")
+  that is "pending" immediately becomes "equilibrium" under the following conditions:
+  The checksum of the output cell is known, AND,
+  the output cell is marked as "equilibrium" OR the grand checksum of the
+  transformer is found in a computation server (see "services").
+  A "pending" worker will have all of its inputs queried for their values, and
+  then sent to them, becoming "running". The values will be queried using the local cache dict.
+  In case of cache misses, checksum value servers can be queried (same as services do).
+  If the cache miss persists, the cell's itself becomes "pending": its upstream dependencies
+  (by definition, it has some) are changed from "equilibrium" to "running".
+  A "running" worker will send values as normal. Once it is done, it may or may not be shut down.
+  If it is shut down, its kernel is killed, and the worker is set to "equilibrium". Else, it is set
+  to "equilibrium+"
+  However, if the worker gives an error, the worker state is changed to "error" (or "error+").
+  Upon entering "error", the worker does the following:
+  All downstream cells are set to "error". A cell in error has its checksum invalidated, and propagates
+   the "error" state to downstream dependencies. A running worker may or may not be shut down upon receiving
+  an error, but at least, its computation will be interrupted. Its status becomes "error" (if shut down) or
+  "error+" if not shut down. Workers may still be shut down after some time has elapsed.
+  A reactor that shuts down for any reason has its "code_stop" evaluated (see "reactor side effects" below).
+- The local cache dict can be configured to forget cache values. A separate dict records the time and
+ the cell path. It may decide to forget when the cell path is destroyed or time lapses, or may maintain
+ just one value per cell path. Each local cache dict is tied to a toplevel context.
+- equilibrate() means that there are no "pending" cells and no "pending" or "running" workers. All cells
+  and workers are either "equilibrium", "undefined", or "error". (Workers lacking input connections are
+  "unconnected", which is a form of "undefined").
+- equilibrate() can be invoked on individual cells, workers and contexts.
+  As a flag, a blocking value request can be included.
+- When an authoritative cell is updated (via reactor or from the outside),
+  the cell is *first* re-defined as "pending".
+  An "equilibrium" worker connected to an input that is now "pending", becomes "undefined".
+  Same for a "running" worker, and it has also its computation interrupted.
+  Only *then* the new checksum is set and propagated, potentially triggering workers.
+- Reactors may also define *outputs* even after their code_update execution has returned
+  (although it should be rare); this is treated the same way.
+- There are "secret cells" for which a checksum may be set from the shell. However, they must either
+  be connected to a service, or the checksum must give a cache hit.
+
+An important advantage of the New Way is that there are stronger timing guarantees.
+Example: dependency graph A=>B, A=>C, B+C=>D. If A is updated to A*,
+B will become updated to B* and C to C*.
+Eventually, D will be evaluated from B*+C*, but before, the intermediate computations
+B*+C or B+C* are both possible as "glitches". But now the glitches disappear.
+
+Test on Collatz test, this is a good measurement for equilibrate/unstable.
+
+- Temporary
+return_preliminary marks a result as temporary. Temporary results never trigger
+ equilibrium.
+Macros always ignore temporary results. Reactors and workers can be configured
+ to accept them or not.
+
 
 Auxiliary, ephemeral and execution cells
 ========================================
@@ -210,12 +285,14 @@ Execution cells are cells that contain only execution details and do not influen
 Ephemeral cells are the same, but they indicate some hidden dependency.
   Examples: session ID, temporary file name, file with pointers in it (ATTRACT grid header)
   A reactor may have an editpin to an ephemeral cell, used for caching.
-Ephemeral cells must be lazy, they cannot be stored, and they are not authoritative.
+  Workers with an ephemeral output pin are never pure. But it is assumed that as long as the
+   worker is not shut down, the ephemeral output is accurate.
+Ephemeral cells are not authoritative and never eager. Usually, they are not stored.
 Changes in execution cells or ephemeral cells do not trigger re-computation, but the worker
  will receive the new value once something else triggers re-computation.
-Auxiliary cells/contexts are high-level only. Auxiliary cells (like ephemeral cells and
+ Auxiliary cells/contexts are high-level only. Auxiliary cells (as are ephemeral cells and
   execution cells) are stripped from a high-level graph before its grand computational checksum
-  is computed.
+  is computed. Examples: editors, loggers, visualizers.
 
 
 Reactor start and stop side effects
@@ -263,81 +340,28 @@ start
 update
 stop
 
-Concretification
-================
-"Concretification" is a feature that cells may not need to store their full value.
-It involves sending two signals upstream, i.e. a cell's input pin or inchannels
-that requests something from the upstream worker or cell.
-1. send my hash/checksum
-2. (re-)send again my value
-Applications of this are in:
-- blocks (with compression; see below),
-- backend caching (a cell may just store its hash and demand its value when needed from
-   a cell server; if the server fails, it may send a signal 2.)
-- lazy evaluation (in lazy mode, transformers evaluate only upon receiving a signal 2.
-Reactors and macros send a signal 2. to each of their input cells
-3. Release. In case of lazy cells, signal 2. is non-blocking; the manager is notified when
- the result is ready. The manager then forwards the results, and sends back a "release" signal,
- meaning that the value may be freed from memory. If this indeed happens or not, depends on
- the configuration (although compressed blocks always free).
- The checksum of the cell always kept. The value may still be in a checksum cell server.
- If the value cannot be retrieved, a signal 2. is sent upstream.
- (Non-lazy cells may also rely on such a server, but in their case, it is an error if the server fails.)
-
-
-Equilibrium contexts
-====================
-Transformers are guaranteed not to send anything (be it cell values or events) on their primary output until execution has finished (which means they are in equilibrium).
-In addition, transformers are guaranteed not to accept any events while not in equilibrium. If there are any,
- the transformer computation is actually canceled.
-This is obviously not so for reactors, and it is also not so for contexts that contain reactors (or multiple transformers that are not arranged linearly) connected to exported outputs of the context.
-It is possible to declare contexts as "equilibrium contexts". In that case, they have the same guarantees as transformers have: sending cell updates or events to the outside world is delayed until equilibrium is reached, and so is the acceptance of new events. This allows contexts to perform atomic computations, reducing the number of glitches.
-It is possible to declare some of the outputs as "secondary", which means that they escape this guarantee (for example, for logging purposes).
-"Events to the outside world" is only restricted if it goes through exported cells and pins. Traffic through
-non-exported objects is not restricted.
-
-Application to ATTRACT: the mainloop reactor
-============================================
-Because of the cylic dependency, an energy minimization loop is not a good fit for Seamless. But it can be done.
-There must be an ATTRACT mainloop reactor with editpins A and C, and inputpins B and D.
-Pin A contains the DOFs: upon start-up, it is copied from the initial DOFs.
-It is assumed that a "scorer" context listens to A and gives results on B, which is the energy and DOF gradients.
-To activate the scorer, the mainloop reactor sets A, then equilibrates A and B, then reads B.
-Pin C also contains the energy and DOF gradients, and D also contains the DOFs
-It is assumed that a "minimizer" context listens to C and then gives results on D.
-To activate the minimizer, the mainloop reactor sets C from B, then equilibrates C and D, then reads D.
-The scorer can then be re-activated by setting A from D.
-The minimizer and scorer contexts must be equilibrium contexts.
-"Equilibrating" is done by a having a signal that fires when a context reaches equilibrium.
- Use "on_equilibrate" hook of root managers (adapt for non-root).
-The ATTRACT mainloop reactor will have two signal inputpins for this (from scorer and minimizer) and an internal
- variable that maintains which signal is to be listened for.
-A and C are cached together with the number of minimization steps that have been performed. In this way:
-- The mainloop context can be saved in mid-evaluation and resumed later
-- The number of steps can be increased and only the additional steps are computed.
-Equilibrium contexts should also have a Report cell that reflects the checksum value of all exported cells and pins
-that are "input".
-Exported cells are "input" if they are authoritative within the cell. Exported pins are "input" if they are inputpins.
-The mainloop reactor will listen for these checksum Report cells; when they change, the whole computation must be restarted.
-When porting ATTRACT, the minimizer and scorer should be in slash.
-
 Thoughts on Seamless and purity
 ===============================
-Seamless workers must be pure in terms of cells: given the same input cell values, they must always produce the same final output
- cell values. This precludes the use of random generators, system time, or even the opening of an external file or URL.
+Seamless workers must be "kind-of-pure" in terms of cells: given the same input cell values, they must always produce the same
+final output cell values.
+This precludes the use of random generators, system time, or even the opening of an external file or URL.
 Special input cells, Evaluation cells, do no count as input cell values.
-This formulation of purity gives the following liberties:
- - Workers are allowed to produce different non-final (preliminary) cell values (TODO: mark them as such)
+This loose formulation of purity gives the following liberties:
+ - Workers are allowed to produce different non-final (preliminary) cell values
  - They are allowed to have arbitrary side effects, as long as one of the following is true:
-   - These side effects do not concern output cells
-   - Or: they are idempotent in terms of input cells.
+   - A) These side effects do not concern output cells
+   - B) Or: they are idempotent in terms of input cells.
    For example, a transformer may open a GUI showing a progress bar (although a preliminary cell would be cleaner)
    Or, a reactor may compute the checksum of its inputs, store this in a database, and later retrieve the checksum and use it
     to produce the output.
  - They are allowed to send arbitrary values to special cells called Report cells (that reflect the status) and Logging cells
    (that accumulate values).
- - They are allowed to change cells via edit pins. This is considered an "act of authority", as if the programmer himself had
+ - C) They are allowed to change cells via edit pins. This is considered an "act of authority", as if the programmer himself had
     changed this cell.
+There is also a stricter formulation of purity: namely that B) and C) do not happen. Workers and contexts may be marked "pure"
+ accordingly. In that case, they function as a single caching unit.
+Non-pure (i.e. only "kind-of-pure") transformers are not normally shut down. It is assumed that when they shut down, they must be
+ re-executed (which may be expensive). Reactors have explicit start-up and shutdown code, so they can be shut down at will.
 
 Blocks
 ======
@@ -346,74 +370,146 @@ Blocks are a (low-level) mechanism to pass around pre-allocated buffers of fixed
 This mechanism can save memory, but more importantly, it is much more compatible with GPU computing.
 Memory is not copied back-and-forth by every worker. Instead, buffers reside permanently on the GPU.
 
-A block description consist of dtype, shape and namespace. It is always C-contiguous in memory.
-An extended block description includes stride and offset.
+A BlockManager manages the block. It must be constructed with a namespace.
 Namespace can be "cpu", "opencl", "opengl" or "cuda". Maybe in the future, new namespaces can be registered.
-Block allocation can happen in two ways:
-- Via an Allocator (new low-level construct). The block descriptor must be given to the allocator constructor.
-  The Allocator provides an allocator output pin, which gives both the block descriptor and the allocated buffer.
-- Via a StructuredCell, in Silk mode. The path of every allocation must be declared in "allocators", which works
-  similar to "outchannels": each path becomes an allocator output pin.
-  From the shell, the allocation path value is readable (resulting in the block value, copied to a Numpy array)
-  but not writable. No inchannel or outchannel may be a superpath of the allocation path (at the high level, this
-   must be checked during assignment, before translation).
-  The StructuredCell must have all block descriptors declared during construction, including namespace.
-  However, for high-level cells, the block descriptor is read from the .schema. In any case, if there is a schema
-   entry, the StructuredCell will check that it is compatible with the block descriptor.
-  When the OverlayMonitor (or its subclass) is created, a buffer is created (in the appropriate namespace)
-  using the block descriptor, and when activated, both are sent over the allocator output pin.
-Blocks can only ever be written to through a BlockManager.
-The block descriptor must be given to the BlockManager constructor. The BlockManager provides an allocator input pin,
- which must be connected to an allocator outputpin.
+A block description consist of dtype, shape, stride, and offset.
+A block description can be passed in to the BlockManager constructor,
+ in which case the BlockManager will allocate the memory by itself. Alternatively, a pre-allocated Python object
+ (Numpy array, PyCUDA array, etc.) can be provided via a set_block() method. You can call set_block() multiple times,
+ this will invalidate all workers connected to the BlockManager (both input and output).
 The BlockManager exposes a block inchannel and a block outchannel. Workers can declare their own block outputpins to
  write to the block inchannel. Once a worker has written there, the BlockManager will fire on the outchannel.
  Workers can declare their own block inputpins to receive Block outchannels.
- When the BlockManager is constructed, each Block inchannel and outchannel sends a signal. This signal contains a unique
-  BlockManager ID, and an extended block descriptor. Workers must verify that input blocks and output blocks do not
-  overlap in memory (see numpy.shares_memory and Diophantine equations), which is illegal.
- Whenever the BlockManager is allocated, each Block inchannel and outchannel sends another signal, which contains the
-  pointer itself.
- Whenever a worker has set a block outputpin (i.e. when it is done modifying it), it sends a signal containing the checksum of
+ When the BlockManager allocates its block, each Block inchannel and outchannel sends two messages.
+ The first message contains the pointer, the namespace, and the block descriptor of the block as a whole.
+  The second message contains the specific block descriptor for the pin. Workers must verify that descriptors
+  for input blocks and output blocks do not overlap in memory (see numpy.shares_memory and Diophantine equations),
+  which is illegal.
+ Whenever a worker has set a block outputpin (i.e. when it is done modifying it), it sends a message containing the checksum of
   the block content. Likewise, it receives such a checksum on its inputpin.
  Whenever a BlockManager receives checksum updates on its inchannel(s), it computes and stores checksum updates over
-  its outchannels.
+  its outchannel(s).
  A BlockManager may define one *tiling shape* and many *tiling channels*.
  A tiling shape is like an array shape ("length" for each dimension). Length must be a divisor of the
-  number of elements for that dimension. The block is tiled over "length" tiles in that dimension,
-  and the memory is divided equally over each block.
-   A tiling channel can be inchannel or outchannel, they works exactly like StructuredCell channels, but instead of
+  number of elements for that dimension (this is verified as soon as the block descriptor is known).
+  The block is tiled over "length" tiles in that dimension, and the memory is divided equally over each block.
+   For every tile, a block inchannel and outchannel can be defined.
+   A tiling channel can be inchannel or outchannel, they work exactly like StructuredCell channels, but instead of
    property paths, they contain index paths (although if referencing a struct array, the last few elements
    of the index paths may be properties). Only single indices: ranges and steps are not supported.
    As for StructuredCells, it is checked that the inchannels and outchannels do not overlap.
    This is a way to process parts of the buffer independently.
+  The top-level block outchannel only fires when all tiles have been received.
+ Block inchannels can be invalidated, which is propagated to the outchannels.
+ It is possible call a method swap_buffers: tile[1] points now to tile[0] and vice versa. Each connected inchannel
+ and outchannel will get an invalidation signal and then receive the new block descriptor.
+Namespaces are part of the block pin declaration. Seamless pin protocol takes care of namespace mismatches, e.g.
+ copying data between CPU and GPU (this is blocking, so not the most efficient).
 
- BlockManagers can be lazy, in which case all inchannels and outchannels are lazy.
- BlockManagers own their data, and have a special method to have it set programmatically at startup. (It is copied onto the
-  allocated block later, after the allocation pin has fired)
-Caching of dependencies through BlockManager has to go in the same way as StructuredCell, i.e. with some difficulty.
- When GPU-GPU triggering will be implemented, it will be using an API on blocks / tiles, together with concretification.
+Caching of blocks works similar to caching of structured_cell, namely at the level of individual inchannels and outchannels.
+BlockManager-BlockManager is not possible, but block *pins* get processed as normal. The very first message has its pointer
+ translated, all other messages are forwarded, with the contents serialized and put into the other buffer.
+ Again, the Seamless pin protocol takes care of namespaces.
 
-Bags
-====
-
+Streams
+=======
+Streams are sequences of messages. The number of messages is not always a priori known, and may arrive in any order.
+A standard message has a key, a celltype, a checksum and (optionally) a value.
+The checksum/value corresponds to a "buffer" representation of a standard cell, or a "state" representation for a structured_cell.
+A transformer may declare stream inputpins or a stream outputpin.  
+A stream may send standard messages, the "invalidate" message, the "no more keys" message, or the "close" message.
+It may receive a "value request" message, consisting of a key (and celltype+checksum, just to check), a "discard" message
+(meaning that no more value request will come for that particular key),  and the "finished" message
+(meaning that no more value requests will come for any key).
+Value requests are non-blocking, it simply means that a message with value will come.
+(In case of multiple consumers of the stream, Seamless will buffer the value message until discard messages have been received
+  from all other consumers)
+The transformer is expected to read all messages from stream inputpins before exiting. It may send back value requests,
+it should send back a "discard" message for the other keys, and finally, it must send a "finished" message back.
+(if not, it is considered as an error). If multiple transformers connect to the same inputstream, discard messages and finished
+messages are withheld by seamless until all transformers have sent the same message.
+A transformer with an output stream is expected to send standard messages followed by a "no more keys" message.
+In addition, it must poll the output for value requests, until a "finished" message has been received.
+Then, it should respond with a "close" message.
+Value request can be polled before or after the "no more keys" message, but exiting before is considered an error
+(and will invalidate the entire stream).
+The transformer should respond to value requests by sending the value for the requested key in a standard message, but not
+ doing this is not an error. However, the value-requesting transformer should raise an error if it gets a "closed" message
+ before its value request was honored.
+"Do-it-yourself" streams can be programmed in Python by inheriting from StreamInchannel or StreamOutchannel.
+In addition to observers, this is the only way to interact with Seamless in a reactive (rather than imperative) manner.
+You will need to provide some kind of callback or backend to process requests.
+NOTE: streams are fundamentally uncachable.
+A transformer or context with stream inputs can only be sent to an interactive service.
+A transformer with stream pins will always be re-executed after macro execution.
+For this reason, low-level macros that generate stream transformers are generally a bad idea.
+However, stream transformers (and low-level macros that generate them) can be part of a pure context that does not have
+ any stream inputs or outputs. (At the high-level, streams that are part of non-pure contexts flag a big warning).
+ Such a pure context gets cached independently (without translation, even), and this will elide the stream execution.
 
 Special constructs
 ==================
 These are special constructs with generic application, as they use serialized high-level graphs.
+The graph must be pure and have one or more exported outputs.
 Each special construct has a reference implementation. The checksums of the
  reference implementation code are always considered as ground truth.
-They can be executed as every other non-interactive Seamless service in this way.
-However, services may offer to accept special construct requests, but process them
- with a very different optimized implementation under the hood.
+They can be executed as every other Seamless service in this way.
+However, services may accept reference-implementation special construct requests,
+but process them with a very different optimized implementation under the hood.
+All special constructs are implemented as transformers.
 
+- Apply
+(non-interactive)
+Takes a serialized graph, a mixed-cell dict of input values with keys corresponding to the
+ input cells/pins (i.e. a grand computation).
+The computation is checked for cache hits. Both the checksum and the value must be found.
+The graph is translated, the input values are connected, the context is equilibrated,
+ the result values are returned.
+ Store the result value in local cache.
+(interactive)
+The inputs can be changed.
+Cache hits are being explored as soon as the checksums are known; values can be lazy.
+By default, only the result checksum is returned.
+The service accepts value requests for the output.
+Serve all value requests from local cache; cache misses lead to recomputation.
 
 - Map
+(Interactive)
+Takes in an input stream, a graph and an output stream. Applies the graph to every item in the stream.
+Needs a description to which input cell to bind the input stream, and from which cell to read the output.
+Does not support multiple streams, but you can do the zipping and unzipping yourself.
+Reference implementation:
+Import seamless and embeds the graph in an (interactive) Apply graph.
+Iterate over all input keys. Call the Apply graph and let equilibrate. Forward all returned key+checksums.
+Reverse-forward all value requests to the Apply graph.
+Forward all invalidate messages (interrupt graph). Forward no more keys messages and close messages after computation.
+Forward all finish and discard messages from output to input.
+(Non-interactive)
+Input is a mixed/json dict/array instead of a stream. Embedded Apply graph is non-interactive.
+
+- Filter
+Like Map, but this time the graph must return a boolean (keep it or not).
+(Interactive):
+  send back discard messages if false. Forward the message otherwise. Reverse-forward
+  all downstream value requests.
+
+- Split
+Like filter, but produces two streams (the True stream and the False stream)
 
 - Reduce
+Takes in an input stream and a graph, and a result.
+Requires an initial value, and a secondary input cell in the graph (for accumulation).
+Use an interactive Apply graph to accumulate. Tell the graph not to cache the graph-as-a-whole,
+ as keys are unordered.
+Iterate over the keys. Immediately ask the value of every key.
+For the first key, write the initial value in that cell before executing.
+For all subsequent keys, write the result for the last key.
+Once all keys have been processed, return the result.
+(Non-interactive)
+Input is a mixed/json dict/array instead of a stream. Embedded Apply graph is non-interactive.
 
 - CyclicIterator
 Performs a fixed number of iterations of a cyclic graph.
-Requires a serialized high-level graph g that performs the computation
 There must be the fixed number of iterations N.
 There must be an iteration variable: a variable that has an initial value, and
  where the result of the computation becomes the input for the next computation.
@@ -421,23 +517,31 @@ There may be multiple such iteration variables (although there is only one loop)
 Each variable can be indicated as "accumulate" or "last". "last" keeps only the last value.
 "accumulate" accumulates into an array or a Block.
 Reference implementation:
-- Allocate an array or Block for every accumulated itervar
+- Allocate an array for every accumulated itervar
 - Allocate input cells for input
 - Allocate output cells for every itervar
-- Translate the graph, connect it to input and output cells
+- Translate the graph, connect it to input and output cells (using non-interactive Apply)
 - Assign the (initial) input values to the input cells, and equilibrate.
 - For N iterations: read the itervars from the output cells. Accumulate if needed.
 - If not the last iteration: write the itervars to their input cells, and equilibrate.
 - Return the itervars (accumulated or not)
+It is possible that an itervar is an array or a Block.
+In that case, the input and output are a two-tile block,
+ and swap_buffers is invoked after every iteration.
+CyclicIterator is always non-interactive.
 
-- Sort
-Converts a Bag to a Block or an array cell.
-Retrieves all the keys of the Bag. Sort the keys and build a Block with the indices.
-Demand all values in parallel.
-Either return a lazy Block, or wait for all values and return a normal Block or array.
 
-- Filter
-Like Map, but this time the graph must return a boolean (keep it or not).
+Utility functions
+=================
+Sort: stream1 => stream2. sorts the keys of stream1 and creates a stream2
+ where the keys are the sorted indices.
+Zip: zips N streams into one, like Python zip.
+Convert from mixed/json to stream. Keys can be the first-level
+ keys of the dict, but also second-level or deeper, or up-to-second-level.
+Convert from stream to mixed/json. Keys must either be strings, or the same
+ level encoding as above, or integers (this will produce a mixed/json array)
+Convert between Block and stream; requires integer keys of the stream.
+Convert between Block and mixed/json; mixed/json must be organized as an array.
 
 Cyclic graphs
 =============
@@ -445,11 +549,11 @@ Strategies to model them:
 1. Don't model cycles with seamless (keep cycles inside a single worker)
 2. Explicit cells for every assignment (if number of iterations is known).
    First assignment to cell x becomes cell x1, second assignment to cell becomes x2, etc.
-   Automatic parallelization, but very space-intensive!
+   Would be feasible on very long term, with cells being very low-footprint
+    and caches eager to be cleared. Otherwise very space-intensive.
 3. Use an CyclicIterator (see Special Constructs). if number of iterations is known.
    Build a high-level graph g that performs the computation, and send it as data   
-4. Use a reactor + editpins (see ATTRACT mainloop application)
-5. Nested asynchronous macros (but seamless will warn of cache misses, and
+4. Nested asynchronous macros (but seamless will warn of cache misses, and
    space requirements can be atrocious)
    Example: collatz.py in low-level tests
    but Seamless cannot currently deal with this beyond 10-16 iterations or so,
@@ -480,57 +584,15 @@ of registered commands. This is done as follows:
 - If the macro that generates Z can be also the instantiator, then the dynamic
   connection layer will be superfluous.
 
-Lazy evaluation
-===============
-Lazy cells are cells that are marked as such. They must be dependent on a
- transformer.
-Reactors immediately concretify all of their lazy inputs, and cannot have a
- lazy output/edit.
-However, transformers that output lazy cells automatically become lazy.
-They concretify their inputs only when its output cell becomes concretified.
-
-An important advantage of lazy cells is that there are stronger timing guarantees.
-Signal 2. (invalidate the value) is propagated forward *immediately* by Seamless
- towards downstream dependencies (stopping transformers in their tracks), before
- sending any values to the workers.
-Example: dependency graph A=>B, A=>C, B+C=>D. If A is updated to A*,
- B will become updated to B* and C to C*.
- Eventually, D will be evaluated from B*+C*, but the intermediate computations
- B*+C or B+C* are both possible as "glitches". However, if B and C are lazy, then
- an update for A will immediately invalidate them, and the glitches disappear.
-From the Python shell, lazy cells have a method that concretifies in a non-blocking manner.
-In addition, they have a method that concretifies in a blocking manner
- and then returns a result.
-Finally, they have a channel that sends concretification signals,
- to which Python can subscribe callbacks (like an observer or Hive push antenna)
-
-In addition to LazyCell, there is LazyCallback, which emulates LazyCell.
-However, a LazyCallback wraps a zero-argument Python callback (blocking or non-blocking)
- into a cell value. This callback is triggered upon concretification.
-With cffi, the callback can come from another language, like C or even Haskell.
-Note that callback foo cannot be serialized, it is the responsibility of
- Python (or whatever host language) to bind the callbacks after graph instantiation.
-
-
-Workers and memory
-==================
-By default, workers keep all of their values buffered. This may eat up a lot of
- memory resources. Pins may be configured to be on-demand instead. In that case,
- seamless will send only the checksums, and the worker will then have to ask for
- the value.
- In case of transformers/macros, this is a single request for all of the values.
- For reactors, the request is actually made when the pin value is demanded.
- This request is blocking, so it should probably only be used for async reactors.
-
-
 Control over side effect order
 ==============================
 This can be done using Hive.
-- Cells are exposed to Hive as push inputpins.
-  Hive push outputpins are exposed to Seamless as outputpins.
-- Signals are exposed to Hive as push trigger inputpins, and vice versa.
-- Lazy cells are exposed as pull outputpins. The Hive pull leads to a concretification.
-  Likewise, Hive pull outputpins are exposed as lazy cells.
+- Cells are exposed to Hive as push inputpins. They work as observers.
+  Hive push outputpins are exposed to Seamless as outputpins. This leads to a .set invocation
+- Alternatively, cells can be exposed as pull outputpins. The Hive pull leads to an .equilibrate + .value invocation.
+  Hive pull outputpins can be exposed only via some DIY stream.
+- Signals can be exposed to Hive as push trigger inputpins, and vice versa.
+None of this uses any specific Hive<=>Seamless machinery, it all goes via Python callbacks.
 
 Idris evaluation
 ================
@@ -546,3 +608,5 @@ This allows (non-interactive) Seamless services to be linked in a type-safe mann
 Lazy output cq. lazy input cells in Seamless services can be exposed as callbacks-into-Python
  (CFFI supports this) cq. callbacks-into-Idris-functions
  (Haskell FFI at least supports this; Idris FFI does not support closures, that's bad).
+
+ NOTE: seamless will never have any global undo system. It is up to individual editor-reactors to implement their own systems.
