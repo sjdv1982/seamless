@@ -17,6 +17,7 @@ import threading
 import functools
 import weakref
 import traceback
+import contextlib
 
 def main_thread_buffered(func):
     def main_thread_buffered_wrapper(self, *args, **kwargs):
@@ -73,6 +74,7 @@ class Manager:
     flushing = False
     filled_objects = []
     on_equilibrate_callbacks = None
+    _editpin_origin = None
     def __init__(self, ctx):
         self.ctx = weakref.ref(ctx)
         if ctx._toplevel:
@@ -320,22 +322,27 @@ class Manager:
     @manager_buffered
     @with_successor("cell", 0)
     def set_cell(self, cell, value, *,
-      default=False, from_buffer=False, force=False, from_pin=False
+      default=False, from_buffer=False,
+      force=False, from_pin=False, origin=None
     ):
         if self.destroyed:
             return
         assert isinstance(cell, CellLikeBase)
         assert cell._get_manager() is self
-        different, text_different = protocol.set_cell(
-          cell, value,
-          default=default, from_buffer=from_buffer,
-          force=force, from_pin=from_pin
-        )
+        if cell is origin: #update comes from an outchannel
+                           #deserialize is not needed
+            different, text_different = True, True
+        else:
+            different, text_different = protocol.set_cell(
+              cell, value,
+              default=default, from_buffer=from_buffer,
+              force=force, from_pin=from_pin
+            )
         only_text = (text_different and not different)
         if text_different and cell._mount is not None:
             self.mountmanager.add_cell_update(cell)
         if different or text_different:
-            self.cell_send_update(cell, only_text, None)
+            self.cell_send_update(cell, only_text, origin)
 
     @main_thread_buffered
     @manager_buffered
@@ -385,7 +392,8 @@ class Manager:
             if target is not None and cell is not target:
                 continue
             found = True
-            con.fire(value, preliminary)
+            with self._set_editpin_origin(pin):
+                con.fire(value, preliminary)
         if target is not None and not found:
             print("Warning: %s was targeted by triggering pin %s, but not found" % (target, pin))
 
@@ -402,6 +410,8 @@ class Manager:
             if pin is origin: #editpin that sent the update
                 continue
             if con.id < 0 and pin is None: #layer connections, may be None
+                continue
+            if con.target is self._editpin_origin:
                 continue
             con.fire(only_text)
 
@@ -440,6 +450,15 @@ class Manager:
                     callback()
             finally:
                 del self.on_equilibrate_callbacks
+
+    @contextlib.contextmanager
+    def _set_editpin_origin(self, pin):
+        from .worker import EditPin
+        assert self._editpin_origin is None, self._editpin_origin
+        if isinstance(pin, EditPin):
+            self._editpin_origin = pin
+        yield
+        self._editpin_origin = None
 
 from .context import Context
 from .cell import Cell, CellLikeBase

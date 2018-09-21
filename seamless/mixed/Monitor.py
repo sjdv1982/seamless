@@ -170,7 +170,7 @@ class Monitor:
         else:
             return storage
 
-    def set_path(self, path, subdata, from_channel=False):
+    def set_path(self, path, subdata, **kwargs):
         """
         Updates the data under path with the value "subdata"
         Then, updates the form

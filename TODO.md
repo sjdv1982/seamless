@@ -5,6 +5,7 @@ Part 1 is now complete
 Things to do:
 
 Part 2: high level
+  - low-level structured cell editchannels
   - Reactors (without editpins)
   - Constructors, finish testing
     Test library-containing-another-library    
@@ -31,8 +32,6 @@ Part 2: high level
   the mid-level element is dynamically read from the sovereign cell (no double representation)
 
 Part 3 (low-level / cleanup):
-   - low-level structured cell editchannels
-     High-level reactor editpins     
    - Add back in int/float/str/bool cells because they are so convenient.
      Their content type will be int/float/text/bool.
      Adapters will convert among them (e.g. int=>float) and between them and JSON/mixed/text.
@@ -542,6 +541,11 @@ Convert from stream to mixed/json. Keys must either be strings, or the same
  level encoding as above, or integers (this will produce a mixed/json array)
 Convert between Block and stream; requires integer keys of the stream.
 Convert between Block and mixed/json; mixed/json must be organized as an array.
+NOTE: if the stream messages are big enough,
+ the mixed/json cell that is converted from/to stream can be much more
+ space-efficiently value-cached by storing the value as a set-of-checksums-of-messages,
+ rather than the value as a whole.
+ This is because each message will already be value-cached at some point.
 
 Cyclic graphs
 =============

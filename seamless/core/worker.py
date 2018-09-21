@@ -374,7 +374,7 @@ class EditPin(EditPinBase):
         manager = self._get_manager()
         my_cells = manager.pin_to_cells.get(self, [])
         if len(my_cells):
-            my_cell = my_cells[0]
+            my_cell = my_cells[0].target
             return my_cell.status()
         else:
             return self.StatusFlags.UNCONNECTED.name

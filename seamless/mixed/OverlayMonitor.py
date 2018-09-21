@@ -14,10 +14,11 @@ class OverlayMonitor(MakeParentMonitor):
     """
     def __init__(self,
       data, storage, form, inchannels, outchannels, *,
-      plain=False, **args
+      editchannels=set(), plain=False, **args
     ):
         self.inchannels = set()
         self.outchannels = outchannels
+        self.editchannels = editchannels
         super().__init__(data, storage, form, plain=plain, **args)
         for path in inchannels:
             self._add_inchannel(path)
@@ -46,9 +47,12 @@ class OverlayMonitor(MakeParentMonitor):
         self._update_outchannels(path)
 
     def _check_inchannels(self, path):
+        if path in self.editchannels:
+            return
         if path in self.inchannels:
             ppath = path if len(path) else "()"
             warn("inchannel %s exists, value overwritten" % ppath)
+            raise Exception ###
         else:
             l0 = len(path)
             for cpath in self.inchannels:
@@ -72,10 +76,14 @@ class OverlayMonitor(MakeParentMonitor):
                 value = None if data is None else data.value
                 func(value)
 
-    def set_path(self, path, subdata, from_channel=False):
-        if not from_channel:
+    def set_path(self, path, subdata, from_channel=False, forced=False):
+        """
+        'from_channel' means that the value comes from an inchannel
+        'forced' means that the path was set because a child path needs to be set
+        If those cases are not true, we want to check that there are no inchannels for this path"""
+        if not from_channel and not forced:
             self._check_inchannels(path)
-        super().set_path(path, subdata)
+        super().set_path(path, subdata, from_channel=from_channel, forced=forced)
         if not from_channel:
             self._update_outchannels(path)
 

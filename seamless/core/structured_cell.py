@@ -34,9 +34,47 @@ for transfer_mode in "copy", "ref":
         supported_modes_json.append((transfer_mode, access_mode, "json"))
 supported_modes_json = tuple(supported_modes_json)
 
+def channel_deserialize(channel, value, transfer_mode, access_mode, content_type,
+ *, from_pin, **kwargs
+):
+    assert from_pin
+    if value is None:
+        channel._status = channel.StatusFlags.UNDEFINED
+    else:
+        channel._status = channel.StatusFlags.OK
+    structured_cell = channel.structured_cell()
+    if structured_cell is None:
+        return
+    with structured_cell._from_pin():
+        monitor = structured_cell.monitor
+        if structured_cell._is_silk:
+            handle = structured_cell._silk
+            if structured_cell.buffer is not None:
+                bufmonitor = structured_cell.bufmonitor
+                assert isinstance(handle.data, MixedBase)
+                bufmonitor.set_path(channel.inchannel, value, from_channel=True)
+                handle.validate()
+            else:
+                try:
+                    with handle.fork():
+                        assert isinstance(handle.data, MixedBase)
+                        monitor.set_path(channel.inchannel, value, from_channel=True)
+                    monitor._update_outchannels(channel.inchannel)
+                except:
+                    traceback.print_exc(0)
+                    return False, False
+        else:
+            monitor.receive_inchannel_value(channel.inchannel, value)
+        dif = (value != channel._last_value)
+        #TODO: keep checksum etc. to see if value really changed
+        different, text_different = dif, dif
+        channel._last_value = deepcopy(value)
+    return different, text_different
+
 class Inchannel(CellLikeBase):
     _authoritative = True
     _mount = None
+    _last_value = None
     def __init__(self, structured_cell, inchannel):
         self.structured_cell = weakref.ref(structured_cell)
         self.inchannel = inchannel
@@ -51,36 +89,10 @@ class Inchannel(CellLikeBase):
     def deserialize(self, value, transfer_mode, access_mode, content_type,
      *, from_pin, **kwargs
     ):
-        assert from_pin
-        if value is None:
-            self._status = self.StatusFlags.UNDEFINED
-        else:
-            self._status = self.StatusFlags.OK
-        structured_cell = self.structured_cell()
-        if structured_cell is None:
-            return
-        with structured_cell._from_pin():
-            monitor = structured_cell.monitor
-            if structured_cell._is_silk:
-                handle = structured_cell._silk
-                if structured_cell.buffer is not None:
-                    bufmonitor = structured_cell.bufmonitor
-                    assert isinstance(handle.data, MixedBase)
-                    bufmonitor.set_path(self.inchannel, value, from_channel=True)
-                    handle.validate()
-                else:
-                    try:
-                        with handle.fork():
-                            assert isinstance(handle.data, MixedBase)
-                            monitor.set_path(self.inchannel, value, from_channel=True)
-                        monitor._update_outchannels(self.inchannel)
-                    except:
-                        traceback.print_exc(0)
-                        return False, False
-            else:
-                monitor.receive_inchannel_value(self.inchannel, value)
-            different, text_different = True, True #TODO: keep checksum etc. to see if value really changed
-        return different, text_different
+        return channel_deserialize(
+            self, value, transfer_mode, access_mode, content_type,
+             from_pin=from_pin, **kwargs
+        )
 
     @property
     def authoritative(self):
@@ -151,7 +163,7 @@ class Outchannel(CellLikeBase):
         return result
 
     def deserialize(self, *args, **kwargs):
-        return True, True #dummy
+        raise Exception ###should never be called
 
     def send_update(self, value):
         if value is None and self._status == self.StatusFlags.UNDEFINED:
@@ -166,10 +178,14 @@ class Outchannel(CellLikeBase):
                 if value == self._last_value:
                     return value
             self._last_value = deepcopy(value)
+        else:
+            if value == self._last_value:
+                return value
+            self._last_value = deepcopy(value)
         assert structured_cell is not None
         data = structured_cell.data
         manager = data._get_manager()
-        manager.set_cell(self, value)
+        manager.set_cell(self, value, origin=self)
         return value
 
     @property
@@ -196,6 +212,29 @@ class Outchannel(CellLikeBase):
             return self.structured_cell().monitor.get_data(self.outchannel)
         except MonitorTypeError:
             return None
+
+class Editchannel(Outchannel):
+    def __init__(self, structured_cell, channel):
+        self.structured_cell = weakref.ref(structured_cell)
+        self.inchannel = channel
+        self.outchannel = channel
+        name = channel if channel != () else "self"
+        self.name = name
+        CellLikeBase.__init__(self)
+        if structured_cell.buffer is not None:
+            self._buffered = True
+        if structured_cell._plain:
+            self._supported_modes = supported_modes_json
+        else:
+            self._supported_modes = supported_modes_mixed
+
+    def deserialize(self, value, transfer_mode, access_mode, content_type,
+     *, from_pin, **kwargs
+    ):
+        return channel_deserialize(
+            self, value, transfer_mode, access_mode, content_type,
+             from_pin=from_pin, **kwargs
+        )
 
 class BufferWrapper:
     def __init__(self, data, storage, form):
@@ -333,6 +372,7 @@ class StructuredCell(CellLikeBase):
       inchannels,
       outchannels,
       *,
+      editchannels=[],
       state=None #is used destructively, you may want to make a deepcopy beforehand
     ):
         from ..silk import Silk
@@ -428,13 +468,20 @@ class StructuredCell(CellLikeBase):
         if outchannels is not None:
             for outchannel in outchannels:
                 self.outchannels[outchannel] = Outchannel(self, outchannel)
+        self.editchannels = {}
+        if editchannels is not None:
+            for channel in editchannels:
+                self.editchannels[channel] = Editchannel(self, channel)
 
         monitor_data = self.data._val
         assert not isinstance(monitor_data, MixedBase)
         monitor_storage = self.storage._val if self.storage is not None else None
         monitor_form = self.form._val
         monitor_inchannels = list(self.inchannels.keys())
+        monitor_inchannels += list(self.editchannels.keys())
+        monitor_editchannels = list(self.editchannels.keys())
         monitor_outchannels = {ocname:oc.send_update for ocname, oc in self.outchannels.items()}
+        monitor_outchannels.update({cname:c.send_update for cname, c in self.editchannels.items()})
         data_hook = self._data_hook
         form_hook = self._form_hook
         storage_hook = self._storage_hook
@@ -447,6 +494,7 @@ class StructuredCell(CellLikeBase):
             form=monitor_form,
             inchannels=monitor_inchannels,
             outchannels=monitor_outchannels,
+            editchannels=monitor_editchannels,
             plain=self._plain,
             attribute_access=self._is_silk,
             data_hook=data_hook,
@@ -585,7 +633,10 @@ class StructuredCell(CellLikeBase):
         from ..mixed import MixedObject
         if outchannel == ("self",):
             outchannel = ()
-        oc = self.outchannels[outchannel]
+        try:
+            oc = self.outchannels[outchannel]
+        except KeyError:
+            oc = self.editchannels[outchannel]
         manager = self.data._get_manager()
         manager.connect_cell(oc, target)
         try:
@@ -596,6 +647,24 @@ class StructuredCell(CellLikeBase):
             v = v.value
         status = oc.StatusFlags.OK if v is not None else oc.StatusFlags.UNDEFINED
         oc._status = status
+
+    def connect_editchannel(self, editchannel, target):
+        from ..mixed import MixedObject
+        from .worker import EditPinBase
+        if editchannel == ("self",):
+            editchannel = ()
+        ec = self.editchannels[editchannel]
+        assert isinstance(target, EditPinBase)
+        manager = self.data._get_manager()
+        manager.connect_cell(ec, target)
+        try:
+            v = self.monitor.get_path(editchannel)
+        except MonitorTypeError:
+            v = None
+        if isinstance(v, MixedObject):
+            v = v.value
+        status = ec.StatusFlags.OK if v is not None else ec.StatusFlags.UNDEFINED
+        ec._status = status
 
     def _data_hook(self, value):
         cell = self.data
@@ -711,15 +780,3 @@ class StructuredCell(CellLikeBase):
 
 print("TODO: Runtime wrapper around StructuredCell that protects against .foo = bar\
  where .handle.foo = bar is intended")
-
-"""
-TODO (long-term): a mechanism to overrule checksum computation
-_master takes away the checksum responsibility, this now lies with StructuredCell
-By default: serialize the entire value (still TODO), and calc a checksum of that
-However, this is terribly inefficient if:
- there is a data structure that consists of part X and part Y
- where X is huge and unchanging, and Y is small and changes all the time
-In that case, it is much better to delegate the checksum computation to X and Y and
- to return some checksum-of-checksums
-The configuration of checksum calculation should probably be another cell
-"""

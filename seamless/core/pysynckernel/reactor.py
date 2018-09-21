@@ -102,7 +102,7 @@ class Reactor:
                 assert access_mode in ("pythoncode", "object")
                 code_obj = data
                 code = code_obj.value
-            if code_obj is not None and code_obj.is_function:
+            if code_obj is not None and code_obj.is_function and code_obj.func_name != "<expr>":
                 func_name = code_obj.func_name
                 expr = "{0}\n{1}(PINS)".format(code, func_name)
                 code_object = cached_compile(expr, identifier, "exec")
@@ -113,12 +113,13 @@ class Reactor:
             value = data
 
         # If we have missing values, and this input is currently default, it's no longer missing
+        must_be_defined = (name in self.input_must_be_defined)
         if value is not None:
-            if self._pending_inputs and self.values[name] is None:
+            if must_be_defined and self._pending_inputs and self.values[name] is None:
                 self._pending_inputs.remove(name)
         else:
-            self._pending_inputs.add(name)
-
+            if must_be_defined:
+                self._pending_inputs.add(name)
 
         self.values[name] = value
         self.updated.add(name)

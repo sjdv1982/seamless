@@ -76,7 +76,7 @@ class Reactor(Worker):
                 raise ValueError((p, param))
             if io == "input":
                 pin = InputPin(self, p, transfer_mode, access_mode, content_type)
-                self.inputs[p] = transfer_mode, access_mode, content_type, True
+                self.inputs[p] = transfer_mode, access_mode, content_type, must_be_defined
             elif io == "output":
                 pin = OutputPin(self, p, transfer_mode, access_mode, content_type)
                 self.outputs[p] = transfer_mode, access_mode, content_type
