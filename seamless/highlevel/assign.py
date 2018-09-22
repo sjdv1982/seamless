@@ -30,7 +30,7 @@ def assign_constant(ctx, path, value):
         "path": path,
         "type": "cell",
         "celltype": "structured",
-        "format": "mixed",
+        "datatype": "mixed",
         "silk": True,
         "buffered": True,
     }

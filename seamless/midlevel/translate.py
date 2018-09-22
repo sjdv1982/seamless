@@ -318,13 +318,11 @@ def translate_cell(node, root, namespace, inchannels, outchannels, lib_path0, is
         lib_path0 = None #partial authority or no authority; no library update in either case
     if ct == "structured":
         buffered = node["buffered"]
-        format = node["format"]
-        if format in ("mixed", "binary"):
+        datatype = node["datatype"]
+        if datatype in ("mixed", "array"):
             plain = False
-        elif format == "plain":
+        else: #unknown datatype must be text
             plain = True
-        else:
-            raise ValueError(format)
         silk = node["silk"]
         state = node.get("stored_state")
         if state is None:
@@ -351,7 +349,6 @@ def translate_cell(node, root, namespace, inchannels, outchannels, lib_path0, is
             child = libcell(lib_path)
             #TODO: allow fork to be set
         else:
-            assert ct in ("text", "code", "json"), ct #TODO
             if ct == "code":
                 if node["language"] == "python":
                     if node["transformer"]:
@@ -360,8 +357,12 @@ def translate_cell(node, root, namespace, inchannels, outchannels, lib_path0, is
                         child = core_cell("python")
                 else:
                     child = core_cell("text")
-            else:
+            elif ct in ("text", "json"):
                 child = core_cell(ct)
+            elif ct in ("mixed", "array", "signal"):
+                raise NotImplementedError(ct)
+            else:
+                raise ValueError(ct) #unknown celltype; should have been caught by high level
     setattr(parent, name, child)
     if ct != "structured":
         stored_value = node.get("stored_value")

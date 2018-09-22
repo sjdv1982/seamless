@@ -5,6 +5,7 @@ from .Base import Base
 from ..midlevel import TRANSLATION_PREFIX
 from ..core.lambdacode import lambdacode
 from ..silk import Silk
+from .mime import get_mime, language_to_mime, ext_to_mime
 
 class Cell(Base):
     _virtual_path = None
@@ -51,7 +52,7 @@ class Cell(Base):
         parent.translate(force=True)
 
     def __setattr__(self, attr, value):
-        if attr.startswith("_"):
+        if attr.startswith("_") or hasattr(type(self), attr):
             return object.__setattr__(self, attr, value)
         from .assign import assign_to_subcell
         parent = self._parent()
@@ -131,10 +132,55 @@ class Cell(Base):
 
     @celltype.setter
     def celltype(self, value):
-        assert value in ("structured", "text", "code", "json"), value #TODO, see translate.py
+        assert value in ("structured", "text", "code", "json", "mixed", "array", "signal"), value
         hcell = self._get_hcell()
         hcell["celltype"] = value
         self._update_dep()
+
+    @property
+    def mimetype(self):
+        hcell = self._get_hcell()
+        mimetype = hcell.get("mimetype")
+        if mimetype is not None:
+            return mimetype
+        celltype = hcell["celltype"]
+        if celltype == "code":
+            language = hcell["language"]
+            mimetype = language_to_mime(language)
+            return mimetype
+        if celltype == "structured":
+            datatype = hcell["datatype"]
+            if datatype in ("mixed", "binary"):
+                mimetype = get_mime(datatype)                
+            else:
+                mimetype = ext_to_mime(datatype)
+        else:
+            mimetype = get_mime(celltype)
+        return mimetype
+
+    @mimetype.setter
+    def mimetype(self, value):
+        if value.find("/") == -1:
+            try:
+                value = ext_to_mime(value)
+            except KeyError:
+                raise ValueError("Unknown extension %s" % value) from None
+        hcell = self._get_hcell()
+        hcell["mimetype"] = value
+
+    @property
+    def datatype(self):
+        hcell = self._get_hcell()
+        celltype = hcell["celltype"]
+        assert celltype == "structured"
+        return hcell["datatype"]
+
+    @datatype.setter
+    def datatype(self, value):
+        hcell = self._get_hcell()
+        celltype = hcell["celltype"]
+        assert celltype == "structured"
+        hcell["datatype"] = value
 
     def _update_dep(self):
         self._parent()._depsgraph.update_path(self._path)

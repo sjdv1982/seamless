@@ -7,7 +7,7 @@ from .pin import InputPin, OutputPin
 from .Base import Base
 from .Library import test_lib_lowlevel
 from ..midlevel import TRANSLATION_PREFIX
-
+from .mime import language_to_mime
 from ..core.context import Context as CoreContext
 
 class Reactor(Base):
@@ -155,11 +155,28 @@ class Reactor(Base):
             #TODO: could be result pin... what to do?
             raise AttributeError(attr)
         pull_source = functools.partial(self._pull_source, attr)
-        try:
-            value = self._get_value(attr)
-        except AttributeError:
-            value = None
-        return Proxy(self, (attr,), "r", pull_source, value=value)
+        if attr in ("code_start", "code_update", "code_stop"):
+            getter = functools.partial(self._codegetter, attr)
+        else:
+            getter = functools.partial(self._valuegetter, attr)
+        return Proxy(self, (attr,), "r", pull_source=pull_source, getter=getter)
+
+    def _codegetter(self, attr, attr2):
+        if attr2 == "value":
+            rc = self._get_rc()
+            return getattr(rx, attr).value
+        elif attr2 == "mimetype":
+            hrc = self._get_hrc()
+            language = hrc["language"]
+            mimetype = language_to_mime(language)
+            return mimetype
+        else:
+            raise AttributeError(attr2)
+
+    def _valuegetter(self, attr, attr2):
+        if attr2 != "value":
+            raise AttributeError(attr2)
+        return self._get_value(attr)
 
     def _pull_source(self, attr, other):
         from .assign import assign_connection
@@ -188,7 +205,7 @@ class Reactor(Base):
                 "path": path,
                 "type": "cell",
                 "celltype": "structured",
-                "format": "mixed",
+                "datatype": "mixed",
                 "silk": True,
                 "buffered": True,
             }

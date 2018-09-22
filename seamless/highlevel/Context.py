@@ -53,7 +53,7 @@ class Context:
         if node is not None:
             assert node["type"] == "context", (path, node["type"]) #if not context, should be in children!
             return SubContext(self, path)
-        return Proxy(self, path, "w", None)
+        return Proxy(self, path, "w")
 
     def _get_subcontext(self, path):
         child = self._children[path]

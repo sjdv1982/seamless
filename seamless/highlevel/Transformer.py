@@ -7,7 +7,7 @@ from .pin import InputPin, OutputPin
 from .Base import Base
 from .Library import test_lib_lowlevel
 from ..midlevel import TRANSLATION_PREFIX
-
+from .mime import language_to_mime
 from ..core.context import Context as CoreContext
 
 class Transformer(Base):
@@ -129,11 +129,28 @@ class Transformer(Base):
             #TODO: could be result pin... what to do?
             raise AttributeError(attr)
         pull_source = functools.partial(self._pull_source, attr)
-        try:
-            value = self._get_value(attr)
-        except AttributeError:
-            value = None
-        return Proxy(self, (attr,), "r", pull_source, value=value)
+        if attr == "code":
+            getter = self._codegetter
+        else:
+            getter = functools.partial(self._valuegetter, attr)
+        return Proxy(self, (attr,), "r", pull_source=pull_source, getter=getter)
+
+    def _codegetter(self, attr):
+        if attr == "value":
+            tf = self._get_tf()
+            return tf.code.value
+        elif attr == "mimetype":
+            htf = self._get_htf()
+            language = htf["language"]
+            mimetype = language_to_mime(language)
+            return mimetype
+        else:
+            raise AttributeError(attr)
+
+    def _valuegetter(self, attr, attr2):
+        if attr2 != "value":
+            raise AttributeError(attr2)
+        return self._get_value(attr)
 
     def _pull_source(self, attr, other):
         from .assign import assign_connection
@@ -162,7 +179,7 @@ class Transformer(Base):
                 "path": path,
                 "type": "cell",
                 "celltype": "structured",
-                "format": "mixed",
+                "datatype": "mixed",
                 "silk": True,
                 "buffered": True,
             }

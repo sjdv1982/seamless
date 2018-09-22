@@ -2,12 +2,12 @@
 import weakref
 
 class Proxy:
-    def __init__(self, parent, path, mode, pull_source=None, value=None):
+    def __init__(self, parent, path, mode, *, pull_source=None, getter=None):
         self._parent = weakref.ref(parent)
         self._path = path
         self._mode = mode
         self._pull_source = pull_source
-        self._value = value
+        self._getter = getter
 
     def __rshift__(self, other):
         assert "w" in self._mode
@@ -28,4 +28,6 @@ class Proxy:
         raise NotImplementedError
 
     def __getattr__(self, attr):
-        raise NotImplementedError
+        if self._getter is None:
+            raise AttributeError
+        return self._getter(attr)
