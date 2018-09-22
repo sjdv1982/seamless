@@ -202,6 +202,8 @@ def translate_py_transformer(node, root, namespace, inchannels, outchannels, lib
         ctx.code = libcell(lib_path)
     else:
         ctx.code = core_cell("transformer")
+        if "mount" in node:
+            ctx.code.mount(node["mount"])
     ctx.code.connect(ctx.tf.code)
     ctx.code.set(node["code"])
     namespace[node["path"] + ("code",), True] = ctx.code

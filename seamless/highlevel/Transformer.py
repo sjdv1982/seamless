@@ -1,6 +1,7 @@
 import weakref
 import functools
 from .Cell import Cell
+from .Resource import Resource
 from .proxy import Proxy
 from .pin import InputPin, OutputPin
 from .Base import Base
@@ -58,8 +59,13 @@ class Transformer(Base):
         htf = self._get_htf()
         if attr == "code":
             assert not test_lib_lowlevel(parent, tf.code)
-            tf.code.set(value)
-            htf["code"] = tf.code.value
+            if isinstance(value, Resource):
+                htf["mount"] = value.filename
+                htf["code"] = value.data
+                translate = True
+            else:
+                tf.code.set(value)
+                htf["code"] = tf.code.value
         else:
             inp = getattr(tf, htf["INPUT"])
             assert not test_lib_lowlevel(parent, inp)
@@ -74,7 +80,7 @@ class Transformer(Base):
                 translate = True
             else:
                 if parent._needs_translation:
-                    translate = False #_get_tf() will translate                
+                    translate = False #_get_tf() will translate
                 tf = self._get_tf()
                 inp = getattr(tf, htf["INPUT"])
                 setattr(inp.handle, attr, value)
@@ -83,8 +89,8 @@ class Transformer(Base):
             if parent._as_lib is not None and not translate:
                 if htf["path"] in parent._as_lib.partial_authority:
                     parent._as_lib.needs_update = True
-            if translate:
-                parent._translate()
+        if translate:
+            parent._translate()
 
 
     def _get_tf(self):
