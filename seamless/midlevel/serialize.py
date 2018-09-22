@@ -36,6 +36,12 @@ def extract(nodes, connections):
                 if state is not None:
                     states = states if is_stored else cached_states
                     states[path+"."+sub] = state.serialize()
+        elif nodetype == "connection":
+            pass
+        elif nodetype == "context":
+            pass
+        else:
+            raise TypeError(nodetype)
         topology.append(result)
     topology += connections
     return topology, values, states, cached_values, cached_states

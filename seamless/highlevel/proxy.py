@@ -1,3 +1,4 @@
+#TODO: add celltype and mimetype
 import weakref
 
 class Proxy:

@@ -10,7 +10,12 @@ from ..midlevel import TRANSLATION_PREFIX
 from ..core.context import Context as CoreContext
 
 class Transformer(Base):
-    def __init__(self, parent, path):
+    def __init__(self, parent=None, path=None):
+        assert (parent is None) == (path is None)
+        if parent is not None:
+            self._init(parent, path)
+
+    def _init(self, parent, path):
         super().__init__(parent, path)
 
         htf = self._get_htf()
@@ -59,7 +64,7 @@ class Transformer(Base):
             inp = getattr(tf, htf["INPUT"])
             assert not test_lib_lowlevel(parent, inp)
             if attr not in htf["pins"]:
-                htf["pins"][attr] = {"submode": "silk"}
+                htf["pins"][attr] = {"transfer_mode": "copy", "access_mode": "silk"}
                 translate = True
             if isinstance(value, Cell):
                 target_path = self._path + (attr,)
@@ -68,6 +73,8 @@ class Transformer(Base):
                 assign_connection(parent, value._path, target_path, False)
                 translate = True
             else:
+                if parent._needs_translation:
+                    translate = False #_get_tf() will translate                
                 tf = self._get_tf()
                 inp = getattr(tf, htf["INPUT"])
                 setattr(inp.handle, attr, value)

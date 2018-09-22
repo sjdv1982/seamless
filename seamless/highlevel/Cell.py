@@ -45,6 +45,11 @@ class Cell(Base):
         readonly = not test_lib_lowlevel(parent, self._get_cell())
         return SubCell(self._parent(), self, (attr,), readonly=readonly)
 
+    def mount(self, mount):
+        hcell = self._get_hcell()
+        hcell["mount"] = mount
+        parent.translate(force=True)
+
     def __setattr__(self, attr, value):
         if attr.startswith("_"):
             return object.__setattr__(self, attr, value)

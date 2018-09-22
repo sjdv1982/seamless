@@ -140,6 +140,8 @@ def _find_lib_structured(ctx, lib_structured, prepath):
                 lib_structured[child.buffer.storage] = a
 
 def build(ctx):
+    from .context import Context
+    assert isinstance(ctx, Context), type(ctx)
     lib_structured = {}
     _find_lib_structured(ctx, lib_structured, None)
     result = {}

@@ -46,3 +46,5 @@ def parse_function_code(code_or_func, identifier="<None>"):
 
 from .Context import Context
 from .Library import stdlib, mylib
+from .Reactor import Reactor
+from .Transformer import Transformer

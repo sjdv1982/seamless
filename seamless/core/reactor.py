@@ -45,6 +45,7 @@ class Reactor(Worker):
                         "code_stop": self.code_stop,
                      }
         self._reactor_params = OrderedDict()
+        self._delay_update = 0
 
         forbidden = list(self.inputs.keys())
         for p in sorted(reactor_params.keys()):
@@ -143,11 +144,16 @@ class Reactor(Worker):
         self.reactor.process_input(input_pin, value, immediate)
 
     def receive_update(self, input_pin, value, checksum, content_type):
-        #print("receive_update", input_pin, value)
+        #print("receive_update", input_pin, value, self.active)
+        if self._destroyed:
+            return
         if not self.active:
+            self._delay_update += 1
+            if self._delay_update == 100: raise Exception(hex(id(self)))
             work = partial(self.receive_update, input_pin, value, checksum, content_type)
             self._get_manager().workqueue.append(work)
             return
+        self._delay_update = 0
         if not self._receive_update_checksum(input_pin, checksum):
             return
         self._pending_updates += 1
@@ -204,7 +210,7 @@ class Reactor(Worker):
         if self._destroyed:
             return
         reactor = self.reactor
-        reactor.self.destroy()
+        reactor.destroy()
         super().destroy()
 
     def full_destroy(self,from_del=False):

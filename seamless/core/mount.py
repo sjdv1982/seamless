@@ -506,7 +506,12 @@ class MountManager:
                 self.stash = None
 
     def add_mount(self, cell, path, mode, authority, persistent, **kwargs):
-        paths = self.paths[cell._root()]
+        root = cell._root()
+        if root not in self.paths:
+            paths = set()
+            self.paths[root] = paths
+        else:
+            paths = self.paths[root]
         assert path not in paths, path
         #print("add mount", path, cell)
         paths.add(path)
@@ -595,6 +600,8 @@ class MountManager:
             os.mkdir(dirpath)
 
     def add_cell_update(self, cell):
+        if self.reorganizing:
+            return
         assert cell in self.mounts, (cell, hex(id(cell)))
         self.cell_updates.append(cell)
 

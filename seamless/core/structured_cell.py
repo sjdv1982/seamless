@@ -420,6 +420,7 @@ class StructuredCell(CellLikeBase):
                 manager = schema._get_manager()
                 manager.set_cell(schema, {})
                 val = schema._val
+                assert isinstance(val, dict)
             assert isinstance(val, dict)
             self._is_silk = True
         self.schema = schema

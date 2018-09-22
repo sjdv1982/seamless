@@ -7,6 +7,7 @@ from . import ConstantTypes
 from ..mixed import MixedBase
 from ..silk import Silk
 from .Cell import Cell
+from .Resource import Resource
 from .pin import InputPin, OutputPin
 from .Transformer import Transformer
 from ..midlevel import copying
@@ -39,6 +40,11 @@ def assign_constant(ctx, path, value):
     child._set(value)
     return True
 
+def assign_resource(ctx, path, value):
+    result = assign_constant(value.data)
+    child = ctx._children[path]
+    child.mount(value.filename)
+
 def assign_transformer(ctx, path, func):
     if path in ctx._children:
         old = ctx._children[path]
@@ -60,7 +66,7 @@ def assign_transformer(ctx, path, func):
         "type": "transformer",
         "language": "python",
         "code": code,
-        "pins": {param:{"submode": "silk"} for param in parameters},
+        "pins": {param:{"transfer_mode": "copy", "access_mode": "silk"} for param in parameters},
         "RESULT": "result",
         "INPUT": "inp",
         "with_schema": False,
@@ -203,6 +209,8 @@ def assign(ctx, path, value):
         new_cell = assign_constant(ctx, path, value)
         if new_cell:
             ctx._translate()
+    elif isinstance(value, Resource):
+        raise NotImplementedError
     elif isinstance(value, (Context, SubContext)):
         assign_context(ctx, path, value)
         ctx._translate()

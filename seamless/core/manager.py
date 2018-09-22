@@ -111,7 +111,7 @@ class Manager:
         else:
             self.unstable.add(worker)
 
-    def activate(self, only_macros):
+    def activate(self, only_macros, triggered=False):
         if only_macros:
             for f in self.filled_objects:
                 f.activate(only_macros=True)
@@ -128,10 +128,11 @@ class Manager:
             self.filled_objects = []
             for childname, child in self.ctx()._children.items():
                 if isinstance(child, Context):
-                    child._manager.activate(only_macros=False)
+                    child._manager.activate(only_macros=False, triggered=True)
                 elif isinstance(child, Worker):
                     child.activate(only_macros=False)
-            self.flush()
+            if not triggered:
+                self.flush()
 
     def deactivate(self):
         self.active = False
@@ -339,7 +340,7 @@ class Manager:
               force=force, from_pin=from_pin
             )
         only_text = (text_different and not different)
-        if text_different and cell._mount is not None:
+        if text_different and cell._mount is not None and self.active:
             self.mountmanager.add_cell_update(cell)
         if different or text_different:
             self.cell_send_update(cell, only_text, origin)
@@ -353,7 +354,7 @@ class Manager:
         assert isinstance(cell, CellLikeBase)
         assert cell._get_manager() is self
         self.cell_send_update(cell, only_text=False, origin=None)
-        if cell._mount is not None:
+        if cell._mount is not None and self.active:
             self.mountmanager.add_cell_update(cell)
 
     @main_thread_buffered

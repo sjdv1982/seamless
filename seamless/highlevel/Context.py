@@ -34,7 +34,7 @@ class Context:
         self._gen_context = None
         self._graph = Graph({},[],{"from_lib": None})
         self._children = {}
-        self._needs_translation = False
+        self._needs_translation = True
         self._as_lib = None
         self._parent = weakref.ref(self)
         if not self._dummy:
@@ -75,7 +75,11 @@ class Context:
     def __setattr__(self, attr, value):
         if attr.startswith("_"):
             return object.__setattr__(self, attr, value)
-        assign(self, (attr,) , value)
+        if isinstance(value, (Reactor, Transformer)):
+            value._init(self, (attr,) )
+            self.translate(force=True)
+        else:
+            assign(self, (attr,) , value)
 
     def __delattr__(self, attr):
         self._destroy_path((attr,))
@@ -309,3 +313,6 @@ class LibraryContextInstance:
         self.libname = libname
         self.args = args
         self.kwargs = kwargs
+
+from .Reactor import Reactor
+from .Transformer import Transformer

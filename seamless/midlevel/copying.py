@@ -67,7 +67,7 @@ def fill_cell_values(ctx, nodes, path=None):
         for p in nodes:
             pp = path + p if path is not None else p
             child = ctx._children.get(pp)
-            node = nodes[pp]
+            node = nodes[p]
             if isinstance(child, Transformer):
                 transformer = child._get_tf()
                 if transformer.status() == "OK":
@@ -82,11 +82,12 @@ def fill_cell_values(ctx, nodes, path=None):
                     assert isinstance(result, StructuredCell)
                     fill_structured_cell_value(result, node, None, "cached_state_result")
                 continue
-            if not isinstance(child, Cell):
-                continue
-            assert node["type"] == "cell", (pp, node["type"])
-            cell = child._get_cell()
-            fill_cell_value(cell, node)
+            elif isinstance(child, Cell):
+                assert node["type"] == "cell", (pp, node["type"])
+                cell = child._get_cell()
+                fill_cell_value(cell, node)
+            else:
+                raise TypeError(child)
     finally:
         manager.activate(only_macros=False)
 

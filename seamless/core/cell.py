@@ -544,6 +544,9 @@ class PythonCell(Cell):
     """Generic Python code object"""
     _codetype = "func"
     _mount_kwargs = {"encoding": "utf-8", "binary": False}
+    is_function = None
+    func_name = None
+    
     _supported_modes = []
     for transfer_mode in "buffer", "copy":
         for access_mode in "text", "pythoncode", "object":

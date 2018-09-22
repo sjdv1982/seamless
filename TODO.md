@@ -5,8 +5,7 @@ Part 1 is now complete
 Things to do:
 
 Part 2: high level
-  - low-level structured cell editchannels
-  - Reactors (without editpins)
+  - Reactors
   - Constructors, finish testing
     Test library-containing-another-library    
     Make sure constructors work correctly when copying parent contexts
@@ -19,7 +18,7 @@ Part 2: high level
      but only if language is C/C++)
   - Serialization
   - Services proof-of-principle
-    Low-level services (non-interactive transformer) and local cache dict
+    Low-level services (non-interactive transformer)
     Other possible services: interactive transformer, pure reactor (non-interactive or interactive)  
     NOTE: These are strictly core.manager concerns. Neither the workers nor
      the high-level has anything to do with it!
@@ -57,6 +56,7 @@ Part 3 (low-level / cleanup):
 Merge into master; end of the Great Refactor
 
 Part 4:
+- "Simple mode" translation of transformers and reactors (no structured_cell, no schema)
 - High-level: pure contexts. Pure contexts have at least some public output cells and output pins.
   Only pure contexts are can have a grand computation result: the checksums of the public outputs are what is being
    stored as the result of the grand computation.
