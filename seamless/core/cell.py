@@ -179,7 +179,7 @@ class CellBase(CellLikeBase):
         default: indicates a default value (pins may overwrite it)
         force: force deserialization, even if slave (normally, force is invoked only by structured_cell)
         """
-        assert from_pin in (True, False, "edit")
+        assert from_pin in (True, False, "edit", "duplex")
         if not force:
             assert not self._master
         old_status = self._status
@@ -227,6 +227,8 @@ class CellBase(CellLikeBase):
                     self._overrule()
             else:
                 self._un_overrule(different)
+        elif from_pin == "duplex":
+            assert self._authoritative, self
         elif from_pin == False:
             if different and not default and not self._authoritative:
                 self._overrule()
@@ -546,7 +548,7 @@ class PythonCell(Cell):
     _mount_kwargs = {"encoding": "utf-8", "binary": False}
     is_function = None
     func_name = None
-    
+
     _supported_modes = []
     for transfer_mode in "buffer", "copy":
         for access_mode in "text", "pythoncode", "object":

@@ -43,13 +43,14 @@ class Connection:
 
 
 class CellToCellConnection(Connection):
-    def __init__(self, id, source, target, transfer_mode):
+    def __init__(self, id, source, target, transfer_mode, duplex=False):
         source_supported_modes = source._supported_modes
         target_supported_modes = None
         if target is not None:
             target_supported_modes = target._supported_modes
         super().__init__(id, source, target, transfer_mode,
           source_supported_modes, target_supported_modes)
+        self.duplex = duplex
 
     def fire(self, only_text=False):
         if only_text:
@@ -68,11 +69,13 @@ class CellToCellConnection(Connection):
         """
         if self.adapter:
             value = self.adapter(value)
+        #from_pin is set to True, also for aliases...
+        #but not if duplex is True, meaning that we are two cells connected to each other
+        from_pin = "duplex" if self.duplex else True
         different, text_different = target.deserialize(
           value,
           self.transfer_mode, self.target_access_mode, self.target_content_type,
-          #from_pin is set to True, also for aliases...
-          from_pin=True, default=False
+          from_pin=from_pin, default=False
         )
         other = target._get_manager()
         if target._mount is not None:

@@ -1,6 +1,3 @@
-#TODO: add_work => workqueue, among other things...
-#totally synchronous, for GUI
-
 import os
 import traceback
 from functools import partial
@@ -149,11 +146,14 @@ class Reactor(Worker):
             return
         if not self.active:
             self._delay_update += 1
-            if self._delay_update == 100: raise Exception(hex(id(self)))
+            if self._delay_update == 100:
+                raise Exception #reactor doesn't get activated, for some reason
             work = partial(self.receive_update, input_pin, value, checksum, content_type)
             self._get_manager().workqueue.append(work)
             return
         self._delay_update = 0
+        if checksum is None and value is not None:
+            checksum = str(value) #KLUDGE; as long as structured_cell doesn't compute checksums...
         if not self._receive_update_checksum(input_pin, checksum):
             return
         self._pending_updates += 1
@@ -191,6 +191,9 @@ class Reactor(Worker):
         for pinname, pin in self._pins.items():
             s = pin.status()
             if s != self.StatusFlags.OK.name:
+                if s == "UNDEFINED":
+                    if pinname in self.inputs and not self.inputs[pinname][3]:
+                        continue
                 result[pinname] = s
         rc = self.reactor
         for pinname in rc._pending_inputs:
@@ -205,6 +208,8 @@ class Reactor(Worker):
         return self.StatusFlags.OK.name
 
     def destroy(self, from_del=False):
+        if from_del:
+            return
         if not self.active:
             return
         if self._destroyed:

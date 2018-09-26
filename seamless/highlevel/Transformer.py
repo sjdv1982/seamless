@@ -2,13 +2,14 @@ import weakref
 import functools
 from .Cell import Cell
 from .Resource import Resource
-from .proxy import Proxy
+from .proxy import Proxy, CodeProxy
 from .pin import InputPin, OutputPin
 from .Base import Base
 from .Library import test_lib_lowlevel
 from ..midlevel import TRANSLATION_PREFIX
 from .mime import language_to_mime
 from ..core.context import Context as CoreContext
+from . import parse_function_code
 
 class Transformer(Base):
     def __init__(self, parent=None, path=None):
@@ -55,15 +56,37 @@ class Transformer(Base):
             return object.__setattr__(self, attr, value)
         translate = False
         parent = self._parent()
-        tf = self._get_tf()
         htf = self._get_htf()
+
+        if isinstance(value, Resource):
+            assert attr ==  "code"
+            mount = {
+                "path": value.filename,
+                "mode": "r",
+                "authority": "cell",
+                "persistent": True,
+            }
+            htf["mount"] = mount
+            translate = True
+
+        if not self._has_tf() and not isinstance(value, Cell):
+            if isinstance(value, Resource):
+                value = value.data
+            if "TEMP" not in htf:
+                htf["TEMP"] = {}
+            htf["TEMP"][attr] = value
+            self._parent()._translate()
+            return
+
+        tf = self._get_tf()
         if attr == "code":
             assert not test_lib_lowlevel(parent, tf.code)
             if isinstance(value, Resource):
-                htf["mount"] = value.filename
                 htf["code"] = value.data
                 translate = True
             else:
+                if callable(value):
+                    value, _, _ = parse_function_code(value)
                 tf.code.set(value)
                 htf["code"] = tf.code.value
         else:
@@ -75,7 +98,7 @@ class Transformer(Base):
             if isinstance(value, Cell):
                 target_path = self._path + (attr,)
                 assert value._parent() == parent
-                #TODO: check existing inchannel connections (cannot be the same or higher)
+                #TODO: check existing inchannel connections and links (cannot be the same or higher)
                 assign_connection(parent, value._path, target_path, False)
                 translate = True
             else:
@@ -84,7 +107,8 @@ class Transformer(Base):
                 tf = self._get_tf()
                 inp = getattr(tf, htf["INPUT"])
                 setattr(inp.handle, attr, value)
-                fill_structured_cell_value(inp, htf, "stored_state_input", "cached_state_input")
+                # superfluous, filling now happens upon translation
+                ###fill_structured_cell_value(inp, htf, "stored_state_input", "cached_state_input")
             htf.pop("in_equilibrium", None)
             if parent._as_lib is not None and not translate:
                 if htf["path"] in parent._as_lib.partial_authority:
@@ -93,9 +117,22 @@ class Transformer(Base):
             parent._translate()
 
 
+    def _has_tf(self):
+        parent = self._parent()
+        try:
+            p = getattr(parent._ctx, TRANSLATION_PREFIX)
+            for subpath in self._path:
+                p = getattr(p, subpath)
+            if not isinstance(p, CoreContext):
+                raise AttributeError
+            return True
+        except AttributeError:
+            return False
+
     def _get_tf(self):
         parent = self._parent()
-        parent.translate()
+        if not parent._translating:
+            parent.translate()
         p = getattr(parent._ctx, TRANSLATION_PREFIX)
         for subpath in self._path:
             p = getattr(p, subpath)
@@ -131,9 +168,11 @@ class Transformer(Base):
         pull_source = functools.partial(self._pull_source, attr)
         if attr == "code":
             getter = self._codegetter
+            proxycls = CodeProxy
         else:
             getter = functools.partial(self._valuegetter, attr)
-        return Proxy(self, (attr,), "r", pull_source=pull_source, getter=getter)
+            proxycls = Proxy
+        return proxycls(self, (attr,), "r", pull_source=pull_source, getter=getter)
 
     def _codegetter(self, attr):
         if attr == "value":
@@ -183,7 +222,7 @@ class Transformer(Base):
                 "silk": True,
                 "buffered": True,
             }
-            #TODO: check existing inchannel connections (cannot be the same or higher)
+        #TODO: check existing inchannel connections and links (cannot be the same or higher)
         child = Cell(parent, path) #inserts itself as child
         parent._graph[0][path] = cell
         target_path = self._path + (attr,)
@@ -194,3 +233,9 @@ class Transformer(Base):
     def __delattr__(self, attr):
         htf = self._get_htf()
         raise NotImplementedError #remove pin
+
+    def __dir__(self):
+        htf = self._get_htf()
+        d = [p for p in type(self).__dict__ if not p.startswith("_")]
+        pins = list(htf["pins"].keys())
+        return sorted(d + pins + ["code"])

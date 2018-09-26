@@ -361,7 +361,7 @@ context : context or None
             return
         object.__setattr__(self, "_destroyed", True)
         for childname, child in self._children.items():
-            if isinstance(child, (Context, Macro)):
+            if isinstance(child, (Context, Worker)):
                 child.destroy(from_del=from_del)
         self._manager.destroy(from_del=from_del)
         if self._toplevel:

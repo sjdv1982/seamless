@@ -10,8 +10,22 @@ from .Cell import Cell
 from .Resource import Resource
 from .pin import InputPin, OutputPin
 from .Transformer import Transformer
+from .Reactor import Reactor
+from .proxy import Proxy, CodeProxy
 from ..midlevel import copying
 from . import parse_function_code
+from .Link import Link
+
+def get_new_cell(path):
+    return {
+        "path": path,
+        "type": "cell",
+        "celltype": "structured",
+        "datatype": "mixed",
+        "silk": True,
+        "buffered": True,
+    }
+
 
 def assign_constant(ctx, path, value):
     from . import set_hcell
@@ -26,18 +40,10 @@ def assign_constant(ctx, path, value):
             return False
         raise AttributeError(path) #already exists, but not a Cell
     child = Cell(ctx, path) #inserts itself as child
-    cell = {
-        "path": path,
-        "type": "cell",
-        "celltype": "structured",
-        "datatype": "mixed",
-        "silk": True,
-        "buffered": True,
-    }
-
+    cell = get_new_cell(path)
+    cell["TEMP"] = value
     ### json.dumps(cell)
     ctx._graph[0][path] = cell
-    child._set(value)
     return True
 
 def assign_resource(ctx, path, value):
@@ -73,6 +79,7 @@ def assign_transformer(ctx, path, func):
         "buffered": True,
         "plain": False,
         "plain_result": False,
+        "TEMP": None, #to mark as non-translated
     }
     ### json.dumps(transformer)
     ctx._graph[0][path] = transformer
@@ -91,9 +98,25 @@ def assign_connection(ctx, source, target, standalone_target):
         else:
             hcell.pop("stored_value", None)
             hcell.pop("cached_value", None)
-    assert source in ctx._children, source
-    s = ctx._children[source]
-    assert isinstance(s, (Cell, OutputPin))
+    lt = len(target)
+    ctx._graph[1][:] = [con for con in ctx._graph[1] if con["target"][:lt] != target]
+    if standalone_target:
+        t = ctx._children[target]
+        assert not t.links
+    assert source in ctx._children or source[:-1] in ctx._children, source
+    if source in ctx._children:
+        s = ctx._children[source]
+        assert isinstance(s, (Cell, OutputPin))
+    else:
+        source_parent = ctx._children[source[:-1]]
+        assert isinstance(source_parent, (Transformer, Reactor))
+        attr = source[-1]
+        s = getattr(source_parent, attr)
+        assert isinstance(s, Proxy)
+        if not isinstance(s, CodeProxy):
+            assert isinstance(source_parent, Reactor)
+            pin = source_parent.pins[attr]
+            assert pin["io"] in ("output", "edit"), (source, pin[io])
     if s._virtual_path is not None:
         source = s._virtual_path
     if standalone_target:
@@ -199,16 +222,31 @@ def assign_library_context_instance(ctx, path, lci):
 
 def assign(ctx, path, value):
     from .Context import Context, SubContext, LibraryContextInstance
+    from .proxy import Proxy
     if isinstance(value, Transformer):
         value._assign_to(ctx, path)
     elif isinstance(value, Cell):
-        assert value._parent() is ctx
-        assign_connection(ctx, value._path, path, True)
+        if value._parent is None:
+            value._init(ctx, path)
+            cell = get_new_cell(path)
+            cell["TEMP"] = None
+            ctx._graph.nodes[path] = cell
+        else:
+            assert value._parent() is ctx
+            assign_connection(ctx, value._path, path, True)
         ctx._translate()
     elif isinstance(value, ConstantTypes):
         new_cell = assign_constant(ctx, path, value)
         if new_cell:
             ctx._translate()
+        else:
+            old_len = len(ctx._graph[1])
+            lp = len(path)
+            ctx._graph[1][:] = [con for con in ctx._graph[1] if con["target"][:lp] != path]
+            new_len = len(ctx._graph[1])
+            if new_len < old_len:
+                ctx._translate()
+
     elif isinstance(value, Resource):
         raise NotImplementedError
     elif isinstance(value, (Context, SubContext)):
@@ -217,10 +255,21 @@ def assign(ctx, path, value):
     elif callable(value):
         assign_transformer(ctx, path, value)
         ctx._translate()
+    elif isinstance(value, Proxy):
+        assert value._parent()._parent() is ctx
+        if path not in ctx._children:
+            Cell(ctx, path) #inserts itself as child
+            ctx._graph[0][path] = get_new_cell(path)
+        #TODO: break links and connections from ctx._children[path]
+        assign_connection(ctx, value._virtual_path, path, False)
+        ctx._translate()
+    elif isinstance(value, Link):
+        value._init(ctx, path)
+        ctx._translate()
     elif isinstance(value, LibraryContextInstance):
         assign_library_context_instance(ctx, path, value)
         ctx._translate()
     else:
-        raise TypeError(value)
+        raise TypeError(str(value), type(value))
     ### g = {".".join(k): v for k,v in ctx._graph[0].items()}
     ### json.dumps([g, ctx._graph[1]])

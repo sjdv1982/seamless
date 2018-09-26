@@ -133,10 +133,10 @@ Part 8:
   - Support Fortran/CUDA/OpenCL
   - Requires also a Silk extension (GPU storage, fixed-binary, see silk.md)
   - IPython (.ipy)/Cython magic is not (or barely) necessary, since IPython is natively supported by workers.
-- Bring back OpenGL support
+- Bring back OpenGL support (or first integration with Observable?)
 - High-level extensions of serialization (e.g. take care of reporting, shells... Do we need this? or midlevel only?)
 - Port over Orca and other examples
-- Make new videos:
+- Make new videos (or first integration with Observable?):
     - Fireworks
     - 3D
     - Docking
@@ -145,6 +145,7 @@ Part 8:
 Release as 0.5
 
 Long-term:
+- Integration with Observable (see architecture.txt)
 - Meta-schema for schema editing (jsonschema has it)
 - GUI around report channels (to visualize) and around high-level context (to edit)
   Also integrate with shell()
@@ -179,7 +180,6 @@ Long-term:
 - Set up user library directory and robogit
 
 Very long-term:
-- Hive integration to control side effect timing (see below)
 - Use the report system for timings. Use this for precise measurements where
   the seamless overhead is, and how much.
 - Python debugging / code editor (WIP) (see seamless-towards-02.md)
@@ -587,16 +587,6 @@ of registered commands. This is done as follows:
   connections between Z and the command execution context.
 - If the macro that generates Z can be also the instantiator, then the dynamic
   connection layer will be superfluous.
-
-Control over side effect order
-==============================
-This can be done using Hive.
-- Cells are exposed to Hive as push inputpins. They work as observers.
-  Hive push outputpins are exposed to Seamless as outputpins. This leads to a .set invocation
-- Alternatively, cells can be exposed as pull outputpins. The Hive pull leads to an .equilibrate + .value invocation.
-  Hive pull outputpins can be exposed only via some DIY stream.
-- Signals can be exposed to Hive as push trigger inputpins, and vice versa.
-None of this uses any specific Hive<=>Seamless machinery, it all goes via Python callbacks.
 
 Idris evaluation
 ================

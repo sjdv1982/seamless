@@ -172,9 +172,7 @@ class Manager:
         if self.destroyed:
             return
         self.destroyed = True
-        for childname, child in self.ctx()._children.items():
-            if isinstance(child, Context):
-                child.destroy(from_del=from_del)
+        self.ctx().destroy(from_del=from_del)
         #all of the children are now dead
         #  only in the buffered_work and the work queue there is still some function calls to the children
 
@@ -182,7 +180,7 @@ class Manager:
         self._ids += 1
         return self._ids
 
-    def _connect_cell_to_cell(self, cell, target, transfer_mode):
+    def _connect_cell_to_cell(self, cell, target, transfer_mode, duplex=False):
         target0 = target
         if isinstance(target, Link):
             target = target.get_linked()
@@ -194,21 +192,29 @@ class Manager:
             concrete = True
             con_id = self.get_id()
 
-        connection = CellToCellConnection(con_id, cell, target, transfer_mode)
+        connection = CellToCellConnection(con_id, cell, target, transfer_mode, duplex=duplex)
         if cell not in self.cell_to_cells:
             self.cell_to_cells[cell] = []
         self.cell_to_cells[cell].append(connection)
 
+        if not duplex:
+            target._authoritative = False
         if concrete:
             other = target._get_manager()
             other.cell_from_cell[target] = connection
-            target._authoritative = False
 
             if cell._status == Cell.StatusFlags.OK:
                 connection.fire(only_text=False)
 
+    def _connect_editchannel_to_cell(self, channel, cell, transfer_mode):
+        self._connect_cell_to_cell(channel, cell, transfer_mode, duplex=True)
+        ###self._connect_cell_to_cell(cell, channel, transfer_mode, duplex=True)
+
     @main_thread_buffered
-    def connect_cell(self, cell, target, transfer_mode=None):
+    def connect_cell(self, cell, target, transfer_mode=None, duplex=False):
+        # "duplex" is for an synchronizing connection
+        #  it implies that a reverse connection will be formed
+        #  and it doesn't take away authority
         if self.destroyed:
             return
         assert cell._root() is target._root()
@@ -218,11 +224,12 @@ class Manager:
         target0 = target
         if isinstance(target, Link):
             target = target.get_linked()
+
         assert isinstance(target, (InputPinBase, EditPinBase, CellLikeBase, Path))
 
         if isinstance(target, CellLikeBase):
-            assert not isinstance(target, Outchannel)
-            return self._connect_cell_to_cell(cell, target0, transfer_mode)
+            assert not isinstance(target, Outchannel) or isinstance(target, Editchannel)
+            return self._connect_cell_to_cell(cell, target0, transfer_mode, duplex=duplex)
 
         if cell._is_sealed() or target._is_sealed():
             concrete, con_id = layer.connect_cell(cell, target0, transfer_mode)
@@ -246,7 +253,8 @@ class Manager:
             other.pin_from_cell[target] = connection
 
         if isinstance(target, EditPinBase):
-            self.connect_pin(target0, cell, mirror_connection=connection)
+            mgr = target0._get_manager()
+            mgr.connect_pin(target0, cell, mirror_connection=connection)
 
     @main_thread_buffered
     def connect_pin(self, pin, target, mirror_connection=None):
@@ -326,6 +334,7 @@ class Manager:
       default=False, from_buffer=False,
       force=False, from_pin=False, origin=None
     ):
+        from .macro_mode import macro_mode_on, get_macro_mode
         if self.destroyed:
             return
         assert isinstance(cell, CellLikeBase)
@@ -341,7 +350,8 @@ class Manager:
             )
         only_text = (text_different and not different)
         if text_different and cell._mount is not None and self.active:
-            self.mountmanager.add_cell_update(cell)
+            if not get_macro_mode():
+                self.mountmanager.add_cell_update(cell)
         if different or text_different:
             self.cell_send_update(cell, only_text, origin)
 
@@ -412,7 +422,7 @@ class Manager:
                 continue
             if con.id < 0 and pin is None: #layer connections, may be None
                 continue
-            if con.target is self._editpin_origin:
+            if con.target is self.ctx()._root()._get_manager()._editpin_origin:
                 continue
             con.fire(only_text)
 
@@ -455,17 +465,18 @@ class Manager:
     @contextlib.contextmanager
     def _set_editpin_origin(self, pin):
         from .worker import EditPin
-        assert self._editpin_origin is None, self._editpin_origin
+        mgr = self.ctx()._root()._get_manager()
+        assert mgr._editpin_origin is None, mgr._editpin_origin
         if isinstance(pin, EditPin):
-            self._editpin_origin = pin
+            mgr._editpin_origin = pin
         yield
-        self._editpin_origin = None
+        mgr._editpin_origin = None
 
 from .context import Context
 from .cell import Cell, CellLikeBase
 from .worker import Worker, InputPin, EditPin, \
   InputPinBase, EditPinBase, OutputPinBase
 from .transformer import Transformer
-from .structured_cell import Inchannel, Outchannel
+from .structured_cell import Inchannel, Outchannel, Editchannel
 from . import layer, Link
 from .layer import Path

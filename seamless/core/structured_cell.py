@@ -76,9 +76,12 @@ class Inchannel(CellLikeBase):
     _mount = None
     _last_value = None
     def __init__(self, structured_cell, inchannel):
+        assert isinstance(inchannel, tuple)
+        assert all([isinstance(v, str) for v in inchannel])
         self.structured_cell = weakref.ref(structured_cell)
         self.inchannel = inchannel
-        name = inchannel if inchannel != () else "self"
+        name = inchannel
+        ###name = inchannel if inchannel != () else "self"
         self.name = name
         super().__init__()
         if structured_cell._plain:
@@ -133,9 +136,12 @@ class Outchannel(CellLikeBase):
     _buffered = False
     _last_value = None ###TODO: use checksums; for now, only used for buffered
     def __init__(self, structured_cell, outchannel):
+        assert isinstance(outchannel, tuple)
+        assert all([isinstance(v, str) for v in outchannel])
         self.structured_cell = weakref.ref(structured_cell)
         self.outchannel = outchannel
-        name = outchannel if outchannel != () else "self"
+        name = outchannel
+        ###name = outchannel if outchannel != () else "self"
         self.name = name
         super().__init__()
         if structured_cell.buffer is not None:
@@ -214,11 +220,15 @@ class Outchannel(CellLikeBase):
             return None
 
 class Editchannel(Outchannel):
+    _authoritative = True
     def __init__(self, structured_cell, channel):
+        assert isinstance(channel, tuple)
+        assert all([isinstance(v, str) for v in channel])
         self.structured_cell = weakref.ref(structured_cell)
         self.inchannel = channel
         self.outchannel = channel
-        name = channel if channel != () else "self"
+        ###name = channel if channel != () else "self"
+        name = channel
         self.name = name
         CellLikeBase.__init__(self)
         if structured_cell.buffer is not None:
@@ -227,6 +237,10 @@ class Editchannel(Outchannel):
             self._supported_modes = supported_modes_json
         else:
             self._supported_modes = supported_modes_mixed
+
+    @property
+    def authoritative(self):
+        return self._authoritative
 
     def deserialize(self, value, transfer_mode, access_mode, content_type,
      *, from_pin, **kwargs
@@ -576,6 +590,11 @@ class StructuredCell(CellLikeBase):
             value = oc.value
             if value is not None:
                 oc.send_update(value)
+        for channel in self.editchannels:
+            ec = self.editchannels[channel]
+            value = ec.value
+            if value is not None:
+                ec.send_update(value)
 
     @property
     def authoritative(self):
@@ -619,7 +638,8 @@ class StructuredCell(CellLikeBase):
 
     def connect_inchannel(self, source, inchannel):
         if inchannel == ("self",):
-            inchannel = ()
+            raise Exception
+            ###    inchannel = ()
         ic = self.inchannels[inchannel]
         manager = source._get_manager()
         if isinstance(source, Cell):
@@ -633,7 +653,8 @@ class StructuredCell(CellLikeBase):
     def connect_outchannel(self, outchannel, target):
         from ..mixed import MixedObject
         if outchannel == ("self",):
-            outchannel = ()
+            raise Exception
+            ###    outchannel = ()
         try:
             oc = self.outchannels[outchannel]
         except KeyError:
@@ -653,11 +674,13 @@ class StructuredCell(CellLikeBase):
         from ..mixed import MixedObject
         from .worker import EditPinBase
         if editchannel == ("self",):
-            editchannel = ()
+            raise Exception
+            ###editchannel = ()
         ec = self.editchannels[editchannel]
-        assert isinstance(target, EditPinBase)
+        assert isinstance(target, (EditPinBase, Editchannel, Cell)), type(target)
         manager = self.data._get_manager()
-        manager.connect_cell(ec, target)
+        duplex = not isinstance(target, EditPinBase)
+        manager.connect_cell(ec, target, duplex=duplex)
         try:
             v = self.monitor.get_path(editchannel)
         except MonitorTypeError:

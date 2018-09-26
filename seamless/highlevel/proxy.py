@@ -9,6 +9,21 @@ class Proxy:
         self._pull_source = pull_source
         self._getter = getter
 
+    @property
+    def _virtual_path(self):
+        return self._parent()._path + self._path
+
+    @property
+    def authoritative(self):
+        #TODO: determine if the proxy didn't get any inbound connections
+        # If it did, you can't get another inbound connection, nor a link
+        return True #for now, until implemented
+
+    @property
+    def links(self):
+        #TODO: return the other partner of all Link objects with self in it
+        return [] #stub
+
     def __rshift__(self, other):
         assert "w" in self._mode
         assert isinstance(other, Proxy)
@@ -17,10 +32,13 @@ class Proxy:
         other._pull_source(self)
 
     def __str__(self):
-        if self._value is None:
+        value = self.value
+        if value is None:
             return "<does not exist>"
         else:
-            return str(self._value)
+            #return str(value)
+            path = self._parent()._path + self._path
+            return "Proxy for %s" % ("." + ".".join(path))
 
     def __setattr__(self, attr, value):
         if attr.startswith("_"):
@@ -31,3 +49,9 @@ class Proxy:
         if self._getter is None:
             raise AttributeError
         return self._getter(attr)
+
+class CodeProxy(Proxy):
+    """A subclass of Proxy that points to a code cell
+    The main difference is that a CodeProxy behaves as a simple (non-structured)
+    Cell when it comes to links and connections"""
+    pass

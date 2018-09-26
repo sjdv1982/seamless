@@ -67,12 +67,10 @@ def macro_mode_on(macro=None, check_async=True):
         for ctx in curr_macro_register:
             if not isinstance(ctx, Context):
                 continue
-            for c in created_contexts:
+            for c in list(created_contexts):
                 if c._part_of(ctx):
                     created_contexts.remove(c)
-                    created_contexts.append(ctx)
-                    break
-                if ctx._part_of(c):
+                elif ctx._part_of(c):
                     break
             else:
                 created_contexts.append(ctx)

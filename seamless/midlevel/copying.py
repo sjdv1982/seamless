@@ -1,4 +1,6 @@
+from ..mixed import MixedBase
 from copy import deepcopy
+from ..core import Link as core_link
 
 def copy_context(nodes, connections, path):
     new_nodes = {}
@@ -45,21 +47,30 @@ def fill_structured_cell_value(cell, node, label_auth, label_cached):
     else:
         node.pop(label_cached, None)
 
+def fill_simple_cell_value(cell, node, label_auth, label_cached):
+    if isinstance(cell, core_link):
+        node.pop(label_auth, None)
+        node.pop(label_cached, None)
+        return
+    value = cell.value
+    if isinstance(value, MixedBase):
+        value = value.value
+    if cell.authoritative:
+        node[label_auth] = value
+        node.pop(label_cached, None)
+    else:
+        node[label_cached] = value
+        node.pop(label_auth, None)
+
 def fill_cell_value(cell, node):
     from ..core.structured_cell import StructuredCell
     if isinstance(cell, StructuredCell):
         fill_structured_cell_value(cell, node, "stored_state", "cached_state")
     else:
-        if cell.authoritative:
-            node["stored_value"] = child.value
-            node.pop("cached_value", None)
-        else:
-            node["cached_value"] = child.value
-            node.pop("stored_value", None)
+        fill_simple_cell_value(cell, node, "stored_value", "cached_value")
 
 def fill_cell_values(ctx, nodes, path=None):
-    from ..highlevel.Cell import Cell
-    from ..highlevel.Transformer import Transformer
+    from ..highlevel import Cell, Transformer, Reactor, Link
     from ..core.structured_cell import StructuredCell
     manager = ctx._ctx._get_manager()
     try:
@@ -68,6 +79,8 @@ def fill_cell_values(ctx, nodes, path=None):
             pp = path + p if path is not None else p
             child = ctx._children.get(pp)
             node = nodes[p]
+            if "TEMP" in node:
+                continue #not yet translated
             if isinstance(child, Transformer):
                 transformer = child._get_tf()
                 if transformer.status() == "OK":
@@ -76,37 +89,28 @@ def fill_cell_values(ctx, nodes, path=None):
                 inp = getattr(transformer, input_name)
                 assert isinstance(inp, StructuredCell)
                 fill_structured_cell_value(inp, node, "stored_state_input", "cached_state_input")
+                fill_simple_cell_value(transformer.code, node, "code", "cached_code")
                 if node["with_schema"]:
                     result_name = node["RESULT"]
                     result = getattr(transformer, result_name)
                     assert isinstance(result, StructuredCell)
                     fill_structured_cell_value(result, node, None, "cached_state_result")
-                continue
+            elif isinstance(child, Reactor):
+                reactor = child._get_rc()
+                io_name = node["IO"]
+                io = getattr(reactor, io_name)
+                assert isinstance(io, StructuredCell)
+                fill_structured_cell_value(io, node, "stored_state_io", "cached_state_io")
+                fill_simple_cell_value(reactor.code_start, node, "code_start", "cached_code_start")
+                fill_simple_cell_value(reactor.code_update, node, "code_update", "cached_code_update")
+                fill_simple_cell_value(reactor.code_stop, node, "code_stop", "cached_code_stop")
             elif isinstance(child, Cell):
                 assert node["type"] == "cell", (pp, node["type"])
                 cell = child._get_cell()
                 fill_cell_value(cell, node)
+            elif isinstance(child, Link):
+                continue
             else:
                 raise TypeError(child)
     finally:
         manager.activate(only_macros=False)
-
-"""
-def clear_cached_cell_values(ctx, nodes):
-    from ..highlevel.Cell import Cell
-    from ..highlevel.Transformer import Transformer
-    from ..core.structured_cell import StructuredCell
-    for p in nodes:
-        node = nodes[p]
-        if node["type"] == "transformer":
-            node.pop("stored_state_input", None)
-            node.pop("cached_state_input", None)
-            node.pop("cached_state_result", None)
-            node.pop("in_equilibrium", None)
-        elif node["type"] == "cell":
-            if node["celltype"] == "structured":
-                node.pop("stored_state", None)
-                node.pop("cached_state", None)
-            else:
-                node.pop("cached_value", None)
-"""

@@ -9,21 +9,40 @@ from .mime import get_mime, language_to_mime, ext_to_mime
 
 class Cell(Base):
     _virtual_path = None
-    def __init__(self, parent, path):
+
+    def __init__(self, parent=None, path=None):
+        assert (parent is None) == (path is None)
+        if parent is not None:
+            self._init(parent, path)
+
+    def _init(self, parent, path):
         super().__init__(parent, path)
         parent._children[path] = self
+
+    @property
+    def authoritative(self):
+        #TODO: determine if the cell didn't get any inbound connections
+        # If it did, you can't get another inbound connection, nor a link
+        return True #stub
+
+    @property
+    def links(self):
+        #TODO: return the other partner of all Link objects with self in it
+        return [] #stub
 
     def __str__(self):
         try:
             return str(self._get_cell())
         except AttributeError:
+            raise
             return("Cell %s in dummy mode" % ("." + ".".join(self._path)))
 
     def _get_cell(self):
         parent = self._parent()
         if parent._dummy:
             raise AttributeError
-        parent.translate()
+        if not parent._translating:
+            parent.translate()
         p = getattr(parent._ctx, TRANSLATION_PREFIX)
         for subpath in self._path:
             p = getattr(p, subpath)
@@ -31,12 +50,14 @@ class Cell(Base):
 
     def _get_hcell(self):
         parent = self._parent()
-        return parent._graph[0][self._path]
+        return parent._graph.nodes[self._path]
 
     def self(self):
         raise NotImplementedError
 
     def __getattr__(self, attr):
+        if attr == "value":
+            raise AttributeError(attr) #property has failed
         if attr == "schema":
             hcell = self._get_hcell()
             if hcell["celltype"] == "structured":
@@ -46,10 +67,16 @@ class Cell(Base):
         readonly = not test_lib_lowlevel(parent, self._get_cell())
         return SubCell(self._parent(), self, (attr,), readonly=readonly)
 
-    def mount(self, mount):
+    def mount(self, path=None, mode="rw", authority="cell", persistent=True):
         hcell = self._get_hcell()
+        mount = {
+            "path": path,
+            "mode": mode,
+            "authority": authority,
+            "persistent": persistent
+        }
         hcell["mount"] = mount
-        parent.translate(force=True)
+        #self._parent().translate(force=True)
 
     def __setattr__(self, attr, value):
         if attr.startswith("_") or hasattr(type(self), attr):
@@ -58,19 +85,21 @@ class Cell(Base):
         parent = self._parent()
         assert not parent._dummy
         assert not test_lib_lowlevel(parent, self._get_cell())
+        subcell = getattr(self, attr)
+        #TODO: break links and connections from subcell
         assign_to_subcell(self, (attr,), value)
         ctx = parent._ctx
         if parent._as_lib is not None and not ctx._needs_translation:
             hcell = self._get_hcell()
             if hcell["path"] in parent._as_lib.partial_authority:
                 parent._as_lib.needs_update = True
-        parent.translate()
+        parent._translate()
 
     @property
     def value(self):
         parent = self._parent()
+        hcell = self._get_hcell()
         if parent._dummy:
-            hcell = self._get_hcell()
             if hcell["celltype"] == "structured":
                 state = hcell.get("stored_state", None)
                 if state is None:
@@ -87,8 +116,15 @@ class Cell(Base):
                     value = hcell.get("cached_value", None)
             return value
         else:
-            cell = self._get_cell()
-            return cell.value
+            try:
+                cell = self._get_cell()
+            except:
+                import traceback; traceback.print_exc()
+                raise
+            value = cell.value
+            if hcell["celltype"] == "structured":
+                value = value.value
+            return value
 
     @property
     def handle(self):
@@ -104,6 +140,10 @@ class Cell(Base):
         #TODO: check if sovereign cell => disable warning!!
         from . import set_hcell
         from ..silk import Silk
+        hcell = self._get_hcell()
+        if "TEMP" in hcell:
+            hcell["TEMP"] = value
+            return
         try:
             cell = self._get_cell()
             cell.set(value)
@@ -116,7 +156,6 @@ class Cell(Base):
                     if code is None:
                         raise ValueError("Cannot extract source code from this lambda")
                 value = code
-        hcell = self._get_hcell()
         set_hcell(hcell, value)
 
     def set(self, value):
@@ -134,7 +173,16 @@ class Cell(Base):
     def celltype(self, value):
         assert value in ("structured", "text", "code", "json", "mixed", "array", "signal"), value
         hcell = self._get_hcell()
+        if "TEMP" in hcell:
+            cellvalue = hcell["TEMP"]
+        else:
+            cellvalue = self.value
         hcell["celltype"] = value
+        if cellvalue is not None and "TEMP" not in hcell:
+            self._parent().translate(force=True) # This needs to be kept!
+            self.set(cellvalue)
+        else:
+            self._parent()._translate()
         self._update_dep()
 
     @property
@@ -151,7 +199,7 @@ class Cell(Base):
         if celltype == "structured":
             datatype = hcell["datatype"]
             if datatype in ("mixed", "binary"):
-                mimetype = get_mime(datatype)                
+                mimetype = get_mime(datatype)
             else:
                 mimetype = ext_to_mime(datatype)
         else:
@@ -185,7 +233,7 @@ class Cell(Base):
     def _update_dep(self):
         self._parent()._depsgraph.update_path(self._path)
 
-class SubCell(Cell):
+class SubCell(Cell): #TODO: YAGNI with Proxy?
     def __init__(self, parent, cell, subpath, readonly):
         assert not parent._dummy #cannot access cell.attr in constructors, use cell.value.attr instead
         fullpath = cell._path + subpath
@@ -200,6 +248,8 @@ class SubCell(Cell):
         from .assign import assign_to_subcell
         parent = self._parent()
         assert not test_lib_lowlevel(parent, self._get_cell())
+        subcell = getattr(self, attr)
+        #TODO: break links and connections from subcell
         path = self._subpath + attr
         assign_to_subcell(self, path, value)
         ctx = parent._ctx
@@ -207,12 +257,23 @@ class SubCell(Cell):
             hcell = self._get_hcell()
             if hcell["path"] in parent._as_lib.partial_authority:
                 parent._as_lib.needs_update = True
-        parent.translate()
+        parent._translate()
 
     def __getattr__(self, attr):
         parent = self._parent()
         readonly = self._readonly
         return SubCell(self._parent(), self, self._subpath + (attr,), readonly=readonly)
+
+    @property
+    def authoritative(self):
+        #TODO: determine if the subcell didn't get any inbound connections
+        # If it did, you can't get another inbound connection, nor a link
+        return True #stub
+
+    @property
+    def links(self):
+        #TODO: return the other partner of all Link objects with self in it
+        return [] #stub
 
     def set(self, value):
         assert not self._readonly

@@ -26,6 +26,7 @@ class Context:
     path = ()
     _graph_ctx = None
     _depsgraph = None
+    _translating = False
     def __init__(self, dummy=False):
         self._dummy = dummy
         if not dummy:
@@ -77,7 +78,7 @@ class Context:
             return object.__setattr__(self, attr, value)
         if isinstance(value, (Reactor, Transformer)):
             value._init(self, (attr,) )
-            self.translate(force=True)
+            self._translate()
         else:
             assign(self, (attr,) , value)
 
@@ -91,6 +92,7 @@ class Context:
             ctx.mount(mountdir, persistent=persistent)
             mountmanager.add_context(ctx,(), False)
             mountmanager.paths[ctx].add(mountdir) #kludge
+        self._translate()
 
     def mount_graph(self, mountdir, persistent=None):
         assert not self._dummy
@@ -104,6 +106,7 @@ class Context:
             ctx.topology = cell("json")
             ctx.values = cell("json")
             ctx.states = cell("json")
+        self._translate()
 
     def equilibrate(self):
         if self._dummy:
@@ -121,13 +124,26 @@ class Context:
         if self._dummy:
             return
         assert self._as_lib is None or self._from_lib is None
-        is_lib = (self.as_lib is not None)
+        is_lib = (self._as_lib is not None)
         if not force and not self._needs_translation:
             return
-        self._remount_graph()
-        graph = list(self._graph[0].values()) + self._graph[1]
+        if self._translating:
+            raise Exception("Nested invocation of ctx.translate")
+        from ..core.macro_mode import get_macro_mode
+        assert not get_macro_mode()
+        try:
+            self._translating = True
+            if self._ctx is not None and hasattr(self._ctx, TRANSLATION_PREFIX):
+                copying.fill_cell_values(self, self._graph.nodes)
+            self._remount_graph()
+        finally:
+            self._translating = False
+        # nodes must be in alphabetical order; this matters for linked cells that each have their own value!
+        graph = [v for k,v in sorted(self._graph.nodes.items(), key=lambda kv: kv[0])]
+        graph += self._graph.connections
         #from pprint import pprint; pprint(graph)
         try:
+            self._translating = True
             ctx = None
             ok = False
             if self._gen_context is not None:
@@ -166,7 +182,7 @@ class Context:
             self._gen_context = ctx
         except Exception as exc:
             if not ok:
-                traceback.print_exc()
+                ###traceback.print_exc()  #not if we raise...
                 try:
                     if ctx is not None:
                         ctx.self.destroy()
@@ -188,6 +204,15 @@ class Context:
                 print("highlevel context CLEANUP error"); traceback.print_exc()
                 self._gen_context = ctx
             raise
+        finally:
+            self._translating = False
+
+        try:
+            self._translating = True
+            copying.fill_cell_values(self, self._graph.nodes) #do it again, because we can get the real values from the low-level cells now
+            self._remount_graph() #do it again, because TEMP values may have been popped, and we have now real values instead
+        finally:
+            self._translating = False
         self._needs_translation = False
 
     def _get_graph(self):
@@ -201,11 +226,12 @@ class Context:
             return
         from ..midlevel.serialize import extract
         if self._graph_ctx is not None:
+            ctx = self._graph_ctx
             nodes, connections = self._graph.nodes, self._graph.connections
             topology, values, states, _, _ = extract(nodes, connections)
-            self._graph_ctx.topology.set(topology)
-            self._graph_ctx.values.set(values)
-            self._graph_ctx.states.set(states)
+            ctx.topology.set(topology)
+            ctx.values.set(values)
+            ctx.states.set(states)
             mountmanager.tick()
 
     def register_library(self):
@@ -261,6 +287,11 @@ class Context:
         assert not self._dummy
         return self._ctx.status()
 
+    def __dir__(self):
+        d = [p for p in type(self).__dict__ if not p.startswith("_")]
+        subs = [p[0] for p in self._children]
+        return sorted(d + list(set(subs)))
+
 
 class SubContext(Base):
     def __init__(self, parent, path):
@@ -308,6 +339,12 @@ class SubContext(Base):
             return
         ctx._as_lib.library.touch(self)
 
+    def __dir__(self):
+        d = [p for p in type(self).__dict__ if not p.startswith("_")]
+        l = len(self._path)
+        subs = [p[l] for p in self._parent()._children if len(p) > l and p[:l] == self._path]
+        return sorted(d + list(set(subs)))
+
 class LibraryContextInstance:
     def __init__(self, libname, *args, **kwargs):
         self.libname = libname
@@ -316,3 +353,4 @@ class LibraryContextInstance:
 
 from .Reactor import Reactor
 from .Transformer import Transformer
+from .Cell import Cell

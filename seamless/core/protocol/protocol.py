@@ -1,4 +1,5 @@
 from collections import OrderedDict
+import json
 
 """
 A connection declaration may have up to four parts
@@ -67,14 +68,28 @@ def adapt_to_silk(source):
     from ...silk import Silk
     return Silk(data=source)
 
+def adapt_from_silk(source):
+    return deepcopy(source.data)
+
+def assert_text(source):
+    source = json.loads(source)
+    assert isinstance(source, str)
+    return source
+
 adapters = OrderedDict()
 adapters[("copy", "text", "cson"), ("copy", "json", "cson")] = adapt_cson_json
 adapters[("copy", "text", "cson"), ("copy", "json", "json")] = adapt_cson_json
 for content_type1 in text_types:
+    adapters[("copy", "text", content_type1), ("copy", "text", "json")] = True
+    adapters[("copy", "text", content_type1), ("copy", "text", "mixed")] = True
+    adapters[("copy", "text", content_type1), ("copy", "object", "json")] = True
+    adapters[("copy", "text", content_type1), ("copy", "object", "mixed")] = True
     for content_type2 in text_types:
         if content_type1 == content_type2:
             continue
         adapters[("copy", "text", content_type1), ("copy", "text", content_type2)] = True
+adapters[("copy", "text", "text"), ("copy", "text", "json")] = True
+adapters[("copy", "text", "json"), ("copy", "text", "text")] = assert_text
 for content_type in content_types:
     adapters[("copy", "object", content_type), ("copy", "object", "object")] = True
     adapters[("copy", "object", "object"), ("copy", "object", content_type)] = True
@@ -87,6 +102,8 @@ adapters[("copy", "json", "json"), ("copy", "silk", "json")] = adapt_to_silk
 adapters[("copy", "json", "cson"), ("copy", "silk", "cson")] = adapt_to_silk
 adapters[("ref", "object", "mixed"), ("ref", "silk", "mixed")] = adapt_to_silk
 adapters[("copy", "object", "mixed"), ("copy", "silk", "mixed")] = adapt_to_silk
+adapters[("copy", "silk", "mixed"), ("copy", "object", "mixed")] = adapt_from_silk
+adapters[("copy", "silk", "json"), ("copy", "object", "json")] = adapt_from_silk
 for access_mode in "object", "text":
     adapters[("copy", access_mode, "python"), ("copy", access_mode, "ipython")] = True
 adapters[("copy", "text", "python"), ("copy", "module", "python")] = True
@@ -95,6 +112,8 @@ adapters[("copy", "text", "ipython"), ("copy", "module", "ipython")] = True
 for pymode in ("transformer", "reactor", "macro"):
     adapters[("ref", "pythoncode", "python"), ("ref", "pythoncode", pymode)] = True
     adapters[("copy", "pythoncode", "python"), ("copy", "pythoncode", pymode)] = True
+
+
 def select_adapter(transfer_mode, source, target, source_modes, target_modes):
     if transfer_mode == "ref":
         transfer_modes = ["ref", "copy"]

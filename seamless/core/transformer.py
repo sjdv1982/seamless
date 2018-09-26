@@ -137,6 +137,8 @@ class Transformer(Worker):
             work = partial(self.receive_update, input_pin, value, checksum, content_type)
             self._get_manager().buffered_work.append(work)
             return
+        if checksum is None and value is not None:
+            checksum = str(value) #KLUDGE; as long as structured_cell doesn't compute checksums...             
         if not self._receive_update_checksum(input_pin, checksum):
             return
         self._send_message( (input_pin, value, content_type) )

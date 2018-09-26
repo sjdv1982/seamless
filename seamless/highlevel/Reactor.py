@@ -1,8 +1,9 @@
 import weakref
 import functools
+from copy import deepcopy
 from .Cell import Cell
 from .Resource import Resource
-from .proxy import Proxy
+from .proxy import Proxy, CodeProxy
 from .pin import InputPin, OutputPin
 from .Base import Base
 from .Library import test_lib_lowlevel
@@ -23,17 +24,18 @@ class Reactor(Base):
             "path": path,
             "type": "reactor",
             "language": "python",
-            "code_start": None,
-            "code_update": None,
-            "code_stop": None,
+            #"code_start": None,
+            #"code_update": None,
+            #"code_stop": None,
             "pins": {},
             "IO": "io",
             "buffered": True,
             "plain": False,
+            "TEMP": None, #to mark as non-translated
         }
         parent._graph.nodes[path] = hrc
 
-    def set_pin(self, pin, *,
+    def set_pin(self, pinname, *,
         io=None,
         transfer_mode=None,
         access_mode=None,
@@ -75,15 +77,35 @@ class Reactor(Base):
   - mixed: seamless.mixed data
   - binary: Numpy data"""
         #TODO: validation
-        if pin not in self.pins:
+        hrc = self._get_hrc()
+        # also, in case of output/edit, assert that there is no existing inbound connection
+        if pinname not in hrc["pins"]:
+            assert io is not None #must be defined for a new pin
+            hrc["pins"][pinname] = {}
             transfer_mode = "copy" if transfer_mode is None else transfer_mode
             access_mode = "silk" if access_mode is None else access_mode
-        raise NotImplementedError
-        # also, in case of output/edit, assert that there is no existing inbound connection
+        pin = {}
+        if io is not None:
+            pin["io"] = io
+        if transfer_mode is not None:
+            pin["transfer_mode"] = transfer_mode
+        if access_mode is not None:
+            pin["access_mode"] = access_mode
+        if content_type is not None:
+            pin["content_type"] = content_type
+        if must_be_defined is not None:
+            pin["must_be_defined"] = must_be_defined
+        hrc["pins"][pinname].update(pin)
+        self._parent()._translate()
+
+    @property
+    def pins(self):
+        hrc = self._get_hrc()
+        return deepcopy(hrc["pins"])
 
     def delete_pin(self, pin):
         hrc = self._get_hrc()
-        hrc.pins.pop(pin, None)
+        hrc["pins"].pop(pin, None)
 
     def __setattr__(self, attr, value):
         from .assign import assign_connection
@@ -92,44 +114,67 @@ class Reactor(Base):
             return object.__setattr__(self, attr, value)
         translate = False
         parent = self._parent()
-        rc = self._get_rc()
         hrc = self._get_hrc()
+
+        if isinstance(value, Resource):
+            assert attr in ("code_start", "code_update", "code_stop")
+            if "mount" not in hrc:
+                hrc["mount"] = {}
+            mount = {
+                "path": value.filename,
+                "mode": "r",
+                "authority": "cell",
+                "persistent": True,
+            }
+            hrc["mount"][attr] = mount
+            translate = True
+
+        if not self._has_rc() and not isinstance(value, Cell):
+            if isinstance(value, Resource):
+                value = value.data
+            if "TEMP" not in hrc or hrc["TEMP"] is None:
+                hrc["TEMP"] = {}
+            hrc["TEMP"][attr] = value
+            self._parent()._translate()
+            return
+
         if attr in ("code_start", "code_update", "code_stop"):
+            rc = self._get_rc()
             cell = getattr(rc, attr)
             assert not test_lib_lowlevel(parent, cell)
             if isinstance(value, Resource):
-                if "mount" not in hrc:
-                    hrc["mount"] = {}
-                hrc["mount"][attr] = value.filename
                 hrc[attr] = value.data
-                translate = True
             else:
                 cell.set(value)
                 hrc[attr] = cell.value
         else:
-            io = getattr(rc, hrc["IO"])
-            assert not test_lib_lowlevel(parent, io)
             if attr not in hrc["pins"]:
                 hrc["pins"][attr] = {"io": "input", "transfer_mode": "copy", "access_mode": "silk"}
                 translate = True
             if isinstance(value, Cell):
+                ###io = getattr(rc, hrc["IO"])
+                ###assert not test_lib_lowlevel(parent, io) #TODO: test this at hrc level, not rc
                 target_path = self._path + (attr,)
                 assert value._parent() == parent
-                #TODO: check existing inchannel connections (cannot be the same or higher)
+                #TODO: check existing inchannel connections and links (cannot be the same or higher)
                 assign_connection(parent, value._path, target_path, False)
                 translate = True
             else:
+                rc = self._get_rc()
+                io = getattr(rc, hrc["IO"])
+                assert not test_lib_lowlevel(parent, io) #TODO: test this at hrc level, not rc
                 if parent._needs_translation:
                     translate = False #_get_rc() will translate
                 rc = self._get_rc()
                 io = getattr(rc, hrc["IO"])
                 setattr(io.handle, attr, value)
-                fill_structured_cell_value(io, hrc, "stored_state_io", "cached_state_io")
+                # superfluous, filling now happens upon translation
+                ###fill_structured_cell_value(io, hrc, "stored_state_io", "cached_state_io")
             if parent._as_lib is not None and not translate:
                 if hrc["path"] in parent._as_lib.partial_authority:
                     parent._as_lib.needs_update = True
         if translate:
-            parent.translate(force=True)
+            parent._translate()
 
 
     def _get_value(self, attr):
@@ -157,14 +202,16 @@ class Reactor(Base):
         pull_source = functools.partial(self._pull_source, attr)
         if attr in ("code_start", "code_update", "code_stop"):
             getter = functools.partial(self._codegetter, attr)
+            proxycls = CodeProxy
         else:
             getter = functools.partial(self._valuegetter, attr)
-        return Proxy(self, (attr,), "r", pull_source=pull_source, getter=getter)
+            proxycls = Proxy
+        return proxycls(self, (attr,), "r", pull_source=pull_source, getter=getter)
 
     def _codegetter(self, attr, attr2):
         if attr2 == "value":
             rc = self._get_rc()
-            return getattr(rx, attr).value
+            return getattr(rc, attr).value
         elif attr2 == "mimetype":
             hrc = self._get_hrc()
             language = hrc["language"]
@@ -209,7 +256,7 @@ class Reactor(Base):
                 "silk": True,
                 "buffered": True,
             }
-            #TODO: check existing inchannel connections (cannot be the same or higher)
+        #TODO: check existing inchannel connections and links (cannot be the same or higher)
         child = Cell(parent, path) #inserts itself as child
         parent._graph[0][path] = cell
         target_path = self._path + (attr,)
@@ -217,14 +264,31 @@ class Reactor(Base):
         child.set(value)
         parent._translate()
 
+
+    def _has_rc(self):
+        parent = self._parent()
+        try:
+            p = getattr(parent._ctx, TRANSLATION_PREFIX)
+            for subpath in self._path:
+                p = getattr(p, subpath)
+            if not isinstance(p, CoreContext):
+                raise AttributeError
+            return True
+        except AttributeError:
+            return False
+
     def _get_rc(self):
         parent = self._parent()
-        parent.translate()
+        if not parent._translating:
+            parent.translate()
         p = getattr(parent._ctx, TRANSLATION_PREFIX)
         for subpath in self._path:
             p = getattr(p, subpath)
         assert isinstance(p, CoreContext)
         return p
+
+    def status(self):
+        return self._get_rc().status()
 
     def _get_hrc(self):
         parent = self._parent()

@@ -41,14 +41,13 @@ class MountItem:
             self.parent = ref(parent)
         self.path = path
         self.cell = ref(cell)
+        self.dummy = dummy
         assert mode in ("r", "w", "rw"), mode #read from file, write to file, or both
         self.mode = mode
         assert persistent in (True, False, None)
         assert authority in ("cell", "file", "file-strict"), authority
         if authority == "file-strict":
             assert persistent
-        if authority == "cell":
-            assert "w" in self.mode, (authority, mode)
         elif authority in ("file", "file-strict"):
             assert "r" in self.mode, (authority, mode)
         self.authority = authority
@@ -57,7 +56,7 @@ class MountItem:
         self.last_time = None
         self.last_mtime = None
         self.persistent = persistent
-        self.dummy = dummy
+
 
     def init(self):
         if self._destroyed:
@@ -101,11 +100,15 @@ class MountItem:
                         filevalue = self._read()
                         file_checksum = cell._checksum(filevalue, buffer=True)
                         if file_checksum != checksum:
-                            print("Warning: File path '%s' has a different value, overwriting file" % self.path) #TODO: log warning
+                            if "w" in self.mode:
+                                print("Warning: File path '%s' has a different value, overwriting file" % self.path) #TODO: log warning
+                            else:
+                                print("Warning: File path '%s' has a different value, no overwriting enabled" % self.path) #TODO: log warning
                         self._after_read(file_checksum)
-                with self.lock:
-                    self._write(value)
-                    self._after_write(checksum)
+                if "w" in self.mode:
+                    with self.lock:
+                        self._write(value)
+                        self._after_write(checksum)
             else:
                 #if "r" in self.mode and self._exists(): #comment out, must read in .storage
                 if exists:
@@ -140,7 +143,7 @@ class MountItem:
             return f.read()
 
     def _write(self, filevalue):
-        #print("write", self.cell())
+        #print("write", self.cell(), filevalue, filevalue is None)
         assert "w" in self.mode
         binary = self.kwargs["binary"]
         encoding = self.kwargs.get("encoding")
@@ -148,6 +151,8 @@ class MountItem:
         filepath = self.path.replace("/", os.sep)
         if os.path.exists(filepath):
             os.unlink(filepath)
+        if filevalue is None:
+            return
         with open(filepath, filemode, encoding=encoding) as f:
             f.write(filevalue)
 
@@ -431,12 +436,13 @@ class MountManagerStash:
                     cell = new_mountitem.cell()
                     value = cell.serialize_buffer()
                     checksum = cell.text_checksum()
-                    if type(old_mountitem.cell()) != type(cell):
-                        rewrite = True
-                    else:
-                        if checksum != old_mountitem.last_checksum:
+                    if "w" in old_mountitem.mode:
+                        if type(old_mountitem.cell()) != type(cell):
                             rewrite = True
-                    if rewrite and value is not None:
+                        else:
+                            if checksum != old_mountitem.last_checksum:
+                                rewrite = True
+                    if rewrite:
                         with new_mountitem.lock:
                             new_mountitem._write(value)
                             new_mountitem._after_write(checksum)

@@ -294,3 +294,13 @@ Block allocation can happen in two ways:
   Exported cells are "input" if they are authoritative within the cell. Exported pins are "input" if they are inputpins.
   The mainloop reactor will listen for these checksum Report cells; when they change, the whole computation must be restarted.
   When porting ATTRACT, the minimizer and scorer should be in slash.
+
+  Control over side effect order (YAGNI: Observable notebooks are better than Hive)
+  ==============================
+  This can be done using Hive.
+  - Cells are exposed to Hive as push inputpins. They work as observers.
+    Hive push outputpins are exposed to Seamless as outputpins. This leads to a .set invocation
+  - Alternatively, cells can be exposed as pull outputpins. The Hive pull leads to an .equilibrate + .value invocation.
+    Hive pull outputpins can be exposed only via some DIY stream.
+  - Signals can be exposed to Hive as push trigger inputpins, and vice versa.
+  None of this uses any specific Hive<=>Seamless machinery, it all goes via Python callbacks.

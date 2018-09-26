@@ -10,3 +10,7 @@ class Base:
         if isinstance(path, str):
             path = (path,)
         self._path = path
+
+    @property
+    def self(self):
+        return self ### TODO: proper implementation

@@ -6,6 +6,8 @@ from weakref import WeakKeyDictionary, WeakValueDictionary
 
 #"macro" must be either a real macro, or a toplevel context
 
+#UPDATE: authority is no longer managed here (the authority is modified up-front by the manager, NOT upon concretization)
+
 def _get_path(macro):
     if isinstance(macro, Context):
         ctx = macro
@@ -144,7 +146,7 @@ class LayeredConnection:
 
         mgr = target._get_manager()
         mgr.cell_from_cell[target] = connection
-        target._authoritative = False
+        ###target._authoritative = False
 
         mgr = source._get_manager()
         if source not in mgr.cell_to_cells:
@@ -184,8 +186,8 @@ class LayeredConnection:
 
         mgr2 = target._get_manager()
         mgr2.cell_from_pin[target] = connection
-        if not isinstance(pin, EditPinBase):
-            target._authoritative = False
+        ###if not isinstance(pin, EditPinBase):
+        ###    target._authoritative = False
         worker = pin.worker_ref()
         if pin.last_value is not None:
             mgr.pin_send_update(pin,
@@ -262,7 +264,7 @@ class LayeredConnection:
                 target = self.target.obj()
                 mgr = target._get_manager()
                 if isinstance(target, CellLikeBase):
-                    target._authoritative = True
+                    ###target._authoritative = True
                     target.set(None)
                     if isinstance(obj, CellLikeBase):
                         mgr.cell_from_cell.pop(target)
