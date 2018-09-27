@@ -170,9 +170,9 @@ class Reactor(Base):
                 setattr(io.handle, attr, value)
                 # superfluous, filling now happens upon translation
                 ###fill_structured_cell_value(io, hrc, "stored_state_io", "cached_state_io")
-            if parent._as_lib is not None and not translate:
-                if hrc["path"] in parent._as_lib.partial_authority:
-                    parent._as_lib.needs_update = True
+        if parent._as_lib is not None:
+            if hrc["path"] in parent._as_lib.partial_authority:
+                parent._as_lib.needs_update = True
         if translate:
             parent._translate()
 
@@ -240,7 +240,8 @@ class Reactor(Base):
                 "type": "cell",
                 "celltype": "code",
                 "language": "python",
-                "transformer": True,
+                "transformer": False,
+                "TEMP": None,
             }
             assert isinstance(value, str)
             hrc[attr] = None

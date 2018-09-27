@@ -18,6 +18,7 @@ ctx.equilibrate()
 print(ctx.myresult.value)
 
 ctx.tfcode >> ctx.transform.code
+print(ctx.tfcode._get_hcell())
 print(ctx.tfcode.value)
 ctx.transform.b = 100
 ctx.tfcode = triple_it_b

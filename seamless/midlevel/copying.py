@@ -79,6 +79,9 @@ def fill_cell_values(ctx, nodes, path=None):
             pp = path + p if path is not None else p
             child = ctx._children.get(pp)
             node = nodes[p]
+            if child is None:
+                assert node["type"] == "context"
+                continue
             if "TEMP" in node:
                 continue #not yet translated
             if isinstance(child, Transformer):
@@ -111,6 +114,6 @@ def fill_cell_values(ctx, nodes, path=None):
             elif isinstance(child, Link):
                 continue
             else:
-                raise TypeError(child)
+                raise TypeError(p, type(child))
     finally:
         manager.activate(only_macros=False)

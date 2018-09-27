@@ -23,22 +23,34 @@ def as_tuple(v):
     else:
         return tuple(v)
 
-def get_path(root, path, namespace, is_target):
+def get_path(root, path, namespace, is_target, until_structured_cell=False):
     if namespace is not None:
         hit = namespace.get((path, is_target))
+        if hit is None:
+            for p, hit_is_target in namespace:
+                if hit_is_target != is_target:
+                    continue
+                if path[:len(p)] == p:
+                    subroot = namespace[p]
+                    subpath = path[len(p):]
+                    hit = get_path(subroot, subpath, None, None)
         if hit is not None:
-            return hit
-        for p, hit_is_target in namespace:
-            if hit_is_target != is_target:
-                continue
-            if path[:len(p)] == p:
-                subroot = namespace[p]
-                subpath = path[len(p):]
-                return get_path(subroot, subpath, None, None)
+            if until_structured_cell:
+                return hit, ()
+            else:
+                return hit
+                                
     c = root
-    for p in path:
-        c = getattr(c, p)
-    return c
+    if until_structured_cell:
+        for pnr, p in enumerate(path):
+            if isinstance(c, StructuredCell):
+                return c, path[pnr:]
+            c = getattr(c, p)
+        return c, ()
+    else:
+        for p in path:
+            c = getattr(c, p)
+        return c
 
 def find_channels(path, connection_paths, skip=[]):
     inchannels = []
@@ -474,47 +486,31 @@ def translate_link(node, namespace, ctx):
     first_simple, second_simple = first["simple"], second["simple"]
     if first["simple"] and second["simple"]:
         return #links between simple cells have been dealt with already, as core.link
-    first = get_path(ctx, first["path"], namespace, False)
-    second = get_path(ctx, second["path"], namespace, True)
+    first, subpath_first = get_path(ctx, first["path"], namespace, False, until_structured_cell=True)
+    second, subpath_second = get_path(ctx, second["path"], namespace, True, until_structured_cell=True)
 
     first2, second2 = first, second
     if isinstance(first, StructuredCell):
         assert not first_simple
-        first_name = ()
-        first2 = first.editchannels[()]
-    elif isinstance(first, Editchannel):
-        assert not first_simple
-        first2 = first
-        first, first_name = first.structured_cell(), first.name
-    elif isinstance(first, (Inchannel, Outchannel)):
-        first, first_name = first.structured_cell(), first.name
-        assert first_name in first.editchannels, first_name
-        first2 = first.editchannels[first_name]
+        first2 = first.editchannels[subpath_first]
     else:
-        assert first_simple
+        ###assert first_simple #could come from a CodeProxy!
+        pass
 
     if isinstance(second, StructuredCell):
         assert not second_simple
-        second_name = ()
-        second2 = second.editchannels[()]
-    elif isinstance(second, Editchannel):
-        assert not second_simple
-        second2 = second
-        second, second_name = second.structured_cell(), second.name
-    elif isinstance(second, (Inchannel, Outchannel)):
-        second2 = second
-        second, second_name = second.structured_cell(), second.name
-        assert second_name in second.editchannels, second_name
-        second2 = second.editchannels[second_name]
+        second2 = second.editchannels[(subpath_second)]
     else:
-        assert second_simple
+        ###assert second_simple #could come from a CodeProxy!
+        pass
 
-    if not first_simple:
-        first.connect_editchannel(first_name, second2)
+    if (not first_simple) and isinstance(first, StructuredCell):
+        first.connect_editchannel(subpath_first, second2)
     else:
         first._get_manager().connect_cell(first, second2, duplex=True)
-    if not second_simple:
-        second.connect_editchannel(second_name, first2)
+
+    if (not second_simple) and isinstance(second, StructuredCell):
+        second.connect_editchannel(subpath_second, first2)
     else:
         second._get_manager().connect_cell(second, first2, duplex=True)
 
@@ -578,8 +574,8 @@ def translate(graph, ctx, from_lib_paths, is_lib):
             translated_cell = translate_cell(node, ctx, namespace, inchannels, outchannels, editchannels, lib_path, is_lib)
             link_targets[path] = translated_cell
 
-    print("LOW-LEVEL LINKS", lowlevel_links)
-    print("LOW-LEVEL LINK TARGETS", link_targets)
+    #print("LOW-LEVEL LINKS", lowlevel_links)
+    #print("LOW-LEVEL LINK TARGETS", link_targets)
 
     for node in graph:
         t = node["type"]

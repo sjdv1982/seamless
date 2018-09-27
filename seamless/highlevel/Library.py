@@ -140,12 +140,12 @@ class LibraryItem:
         assert isinstance(constructor, ConstructorItem)
         self.constructor = constructor
 
-    def update(self):
+    def update(self, force=False):
         """Triggers an indirect library update
         Library dependencies receive a fresh copy of the library
         Their top-level contexts are then re-translated"""
         from .assign import assign_context
-        if not self.needs_update:
+        if not self.needs_update and not force:
             return
         #print("LibItem UPDATE", self.name, self.copy_deps)
         lib = getattr(self.library, self.name)

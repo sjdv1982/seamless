@@ -7,7 +7,7 @@ mylib.Test.set_constructor(
     constructor=lambda ctx: ctx,
     post_constructor=None,
     args=[],
-    direct_library_update=True
+    direct_library_access=True
 )
 ctx = Context()
 ctx.test = mylib.Test()

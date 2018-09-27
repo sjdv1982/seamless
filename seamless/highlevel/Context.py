@@ -76,7 +76,10 @@ class Context:
     def __setattr__(self, attr, value):
         if attr.startswith("_"):
             return object.__setattr__(self, attr, value)
-        if isinstance(value, (Reactor, Transformer)):
+        if isinstance(value, Reactor):
+            value._init(self, (attr,) )
+            self._translate()
+        elif isinstance(value, Transformer) and value._parent is None:
             value._init(self, (attr,) )
             self._translate()
         else:
@@ -255,14 +258,19 @@ class Context:
         set_constructor(libname, constructor, post_constructor, args, direct_library_access)
 
     def _destroy_path(self, path):
-        for p in list(self._children.keys()):
+        nodes = self._graph.nodes
+        for p in list(nodes.keys()):
             if p[:len(path)] == path:
-                child = self._children.pop(p)
-                if child["type"] == "context":
-                    libname = child.get("from_lib")
+                node = nodes[p]
+                child = self._children.get(p)
+                if node["type"] == "context":
+                    assert child is None
+                    libname = node.get("from_lib")
                     if libname is not None:
                         libitem = get_libitem(libname)
                         libitem.copy_deps.remove((weakref.ref(self), path))
+                nodes.pop(p)
+                self._children.pop(p, None)
                 self._translate()
 
         nodes = self._graph.nodes
@@ -328,7 +336,7 @@ class SubContext(Base):
 
     @property
     def from_lib(self):
-        sub = self._parent()._children[self._path]
+        sub = self._parent()._graph.nodes[self._path]
         return sub.get("from_lib")
 
     def touch(self):

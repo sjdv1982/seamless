@@ -20,7 +20,12 @@ def _update_old_keys(oldkeys, oldlib, lib, name, on_macros):
             is_macro = isinstance(oldcell, (PythonCell, PyMacroCell))
             if is_macro != on_macros:
                 continue
-            manager = oldcell._get_manager()
+            if oldcell._destroyed:
+                continue
+            try:
+                manager = oldcell._get_manager()
+            except AttributeError:
+                continue #sometimes, cell is not yet destroyed, but has no more context
             exists = False
             if key in lib:
                 celltype, cell_content, checksum, text_checksum = lib[key]
@@ -46,6 +51,7 @@ def _update_old_keys(oldkeys, oldlib, lib, name, on_macros):
                 if celltype == "structured":
                     continue
                 manager.set_cell(oldcell, None, from_pin=True)
+        pass
     for master in master_cells:
         master.touch()
 
@@ -92,11 +98,16 @@ def _build(ctx, lib_structured, result, prepath):
             path = prepath + "." + childname
         if isinstance(child, Context):
             _build(child, lib_structured, result, path)
+            """
         elif isinstance(child, StructuredCell):
+            print("LIB STRUC??", child)
             if child in lib_structured:
+                print("LIB STRUC!!", path)
                 result[path] = "structured", None, None, None
+            """
         elif isinstance(child, Cell):
             if child in lib_structured:
+                #print("LIB STRUC CHILD", child, lib_structured[child])
                 if not lib_structured[child]:
                     continue
             else:

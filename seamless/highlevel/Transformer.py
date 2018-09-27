@@ -110,9 +110,9 @@ class Transformer(Base):
                 # superfluous, filling now happens upon translation
                 ###fill_structured_cell_value(inp, htf, "stored_state_input", "cached_state_input")
             htf.pop("in_equilibrium", None)
-            if parent._as_lib is not None and not translate:
-                if htf["path"] in parent._as_lib.partial_authority:
-                    parent._as_lib.needs_update = True
+        if parent._as_lib is not None:
+            if htf["path"] in parent._as_lib.partial_authority:
+                parent._as_lib.needs_update = True
         if translate:
             parent._translate()
 
@@ -207,6 +207,7 @@ class Transformer(Base):
                 "celltype": "code",
                 "language": "python",
                 "transformer": True,
+                "TEMP": None,
             }
             assert isinstance(value, str)
             htf["code"] = None

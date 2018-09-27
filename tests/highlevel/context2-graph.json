@@ -8,12 +8,11 @@
   {
     "buffered": true,
     "celltype": "structured",
-    "format": "mixed",
+    "datatype": "mixed",
     "path": [
       "sub",
       "a"
     ],
-    "schema": null,
     "silk": true,
     "type": "cell"
   },
@@ -21,7 +20,6 @@
     "INPUT": "inp",
     "RESULT": "result",
     "buffered": true,
-    "code": "def triple_it(a, b):\n    print(\"3 * a + b, a = %s, b = %s\" % (a, b))\n    return 3 * a + b\n",
     "in_equilibrium": true,
     "language": "python",
     "path": [
@@ -30,10 +28,12 @@
     ],
     "pins": {
       "a": {
-        "submode": "silk"
+        "access_mode": "silk",
+        "transfer_mode": "copy"
       },
       "b": {
-        "submode": "silk"
+        "access_mode": "silk",
+        "transfer_mode": "copy"
       }
     },
     "plain": false,
@@ -44,12 +44,11 @@
   {
     "buffered": true,
     "celltype": "structured",
-    "format": "mixed",
+    "datatype": "mixed",
     "path": [
       "sub",
       "myresult"
     ],
-    "schema": null,
     "silk": true,
     "type": "cell"
   },
@@ -62,12 +61,11 @@
   {
     "buffered": true,
     "celltype": "structured",
-    "format": "mixed",
+    "datatype": "mixed",
     "path": [
       "sub2",
       "a"
     ],
-    "schema": null,
     "silk": true,
     "type": "cell"
   },
@@ -75,7 +73,6 @@
     "INPUT": "inp",
     "RESULT": "result",
     "buffered": true,
-    "code": "def triple_it(a, b):\n    print(\"3 * a + b, a = %s, b = %s\" % (a, b))\n    return 3 * a + b\n",
     "in_equilibrium": true,
     "language": "python",
     "path": [
@@ -84,10 +81,12 @@
     ],
     "pins": {
       "a": {
-        "submode": "silk"
+        "access_mode": "silk",
+        "transfer_mode": "copy"
       },
       "b": {
-        "submode": "silk"
+        "access_mode": "silk",
+        "transfer_mode": "copy"
       }
     },
     "plain": false,
@@ -98,12 +97,11 @@
   {
     "buffered": true,
     "celltype": "structured",
-    "format": "mixed",
+    "datatype": "mixed",
     "path": [
       "sub2",
       "myresult"
     ],
-    "schema": null,
     "silk": true,
     "type": "cell"
   },

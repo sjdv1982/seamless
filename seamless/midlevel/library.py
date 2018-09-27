@@ -71,18 +71,22 @@ def get_partial_authority(ctx, nodes, connections):
             transformer = child._get_tf()
             inp = getattr(transformer, node["INPUT"])
             assert isinstance(cell, StructuredCell)
-            if cell.has_authority and not cell.authoritative:
+            if inp.has_authority and not inp.authoritative:
                 partial_authority.add(p)
             continue
         if not isinstance(child, Cell):
-            continue
+            raise TypeError(p, type(child))
         assert node["type"] == "cell", (pp, node["type"])
         cell = child._get_cell()
         if isinstance(cell, StructuredCell):
+            """
             inchannels, _ = find_channels(p, connection_paths)
             if not len(inchannels):
                 continue #complete authority
             elif inchannels == [()]:
                 continue #no authority
             partial_authority.add(p)
+            """
+            if cell.has_authority and not cell.authoritative:
+                partial_authority.add(p)
     return partial_authority

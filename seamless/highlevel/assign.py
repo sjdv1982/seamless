@@ -159,6 +159,8 @@ def _assign_context2(ctx, new_nodes, new_connections, path):
         node["path"] = pp
         nodes[pp] = node
         nodetype = node["type"]
+        if not "TEMP" in node:
+            node["TEMP"] = None #mark as non-translated        
         if nodetype == "cell":
             Cell(ctx, pp)
         elif nodetype == "transformer":

@@ -89,7 +89,10 @@ for content_type1 in text_types:
             continue
         adapters[("copy", "text", content_type1), ("copy", "text", content_type2)] = True
 adapters[("copy", "text", "text"), ("copy", "text", "json")] = True
-adapters[("copy", "text", "json"), ("copy", "text", "text")] = assert_text
+
+for content_type in ("text", "python", "ipython", "transformer", "reactor", "macro"):
+    adapters[("copy", "text", "json"), ("copy", "text", content_type)] = assert_text
+
 for content_type in content_types:
     adapters[("copy", "object", content_type), ("copy", "object", "object")] = True
     adapters[("copy", "object", "object"), ("copy", "object", content_type)] = True

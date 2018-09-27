@@ -49,4 +49,5 @@ from .Library import stdlib, mylib
 from .Reactor import Reactor
 from .Transformer import Transformer
 from .Cell import Cell
+from .SubCell import SubCell
 from .Link import Link

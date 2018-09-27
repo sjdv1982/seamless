@@ -2,11 +2,10 @@
   {
     "buffered": true,
     "celltype": "structured",
-    "format": "mixed",
+    "datatype": "mixed",
     "path": [
       "a"
     ],
-    "schema": null,
     "silk": true,
     "type": "cell"
   },
@@ -14,17 +13,19 @@
     "INPUT": "inp",
     "RESULT": "result",
     "buffered": true,
-    "code": null,
+    "in_equilibrium": true,
     "language": "python",
     "path": [
       "transform"
     ],
     "pins": {
       "a": {
-        "submode": "silk"
+        "access_mode": "silk",
+        "transfer_mode": "copy"
       },
       "b": {
-        "submode": "silk"
+        "access_mode": "silk",
+        "transfer_mode": "copy"
       }
     },
     "plain": false,
@@ -35,11 +36,10 @@
   {
     "buffered": true,
     "celltype": "structured",
-    "format": "mixed",
+    "datatype": "mixed",
     "path": [
       "myresult"
     ],
-    "schema": null,
     "silk": true,
     "type": "cell"
   },

@@ -5,15 +5,16 @@ Can be between:
     Structured cell and simple cell (implemented as EditChannel) or vice versa
     Simple cell and simple cell (implemented as core.link)
 StructuredCell can also be Proxy
-Simple cell can also be CodeProxy
 """
 
 from .Base import Base
 
 def is_simple(arg):
-    if isinstance(arg, CodeProxy):
-        return True
-    elif isinstance(arg, Proxy):
+    ###if isinstance(arg, CodeProxy): #too difficult to implement; out-of-order translation of transformers => is_simple = False
+    ###    return True
+    if isinstance(arg, Proxy):
+        return False
+    elif isinstance(arg, SubCell):
         return False
     elif isinstance(arg, Cell):
         node = arg._get_hcell()
@@ -32,15 +33,16 @@ class Link(Base):
 
         is_simple_second = is_simple(second)
         assert second.authoritative
-
+        first_path = first._virtual_path if isinstance(first, Proxy) else first._path
+        second_path = second._virtual_path if isinstance(second, Proxy) else second._path
         self._mynode = {
             "type": "link",
             "first": {
-                "path": first._path,
+                "path": first_path,
                 "simple": is_simple_first,
             },
             "second": {
-                "path": second._path,
+                "path": second_path,
                 "simple": is_simple_second,
             },
         }
@@ -61,3 +63,4 @@ class Link(Base):
 
 from .proxy import Proxy, CodeProxy
 from .Cell import Cell
+from .SubCell import SubCell

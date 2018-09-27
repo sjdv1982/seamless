@@ -17,7 +17,7 @@ mylib.Test.set_constructor(
     args=[
       {"name": "dup", "as_cell": False, "auth": True},
     ],
-    direct_library_update=False
+    direct_library_access=False
 )
 ctx = Context()
 
@@ -30,4 +30,4 @@ ctx.test2 = mylib.Test(3)
 print(ctx.test2.dup1, ctx.test2.dup1.value)
 print(ctx.test2.dup2, ctx.test2.dup2.value)
 print(ctx.test2.dup3, ctx.test2.dup3.value)
-print(ctx.test2.dup6) #does not exist
+print(ctx.test2.dup6) #AttributeError

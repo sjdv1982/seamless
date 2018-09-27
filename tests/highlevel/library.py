@@ -10,7 +10,7 @@ def triple_it(a, **kwargs):
 ctx.transform = triple_it
 ctx.transform.a = ctx.a
 ctx.myresult = ctx.transform
-ctx.equilibrate()
+###ctx.equilibrate()
 print(ctx.myresult.value)
 
 ctx.transform.b = 777
@@ -24,17 +24,28 @@ ctx2.equilibrate()
 
 print(ctx2.sub.myresult.value)
 print(ctx2.sub2.myresult.value)
-print(ctx2.sub.transform.b)
+print(ctx2.sub.transform.b.value)
 
+print("UPDATE...")
 def double_it(a, **kwargs):
     print("double", a, kwargs)
     return 2 * a
 stdlib.triple_it.transform.code = double_it
-stdlib.triple_it.transform.b = 888
 stdlib.triple_it.register_library()
 print(stdlib.triple_it.myresult.value)
 
+print("UPDATE")
 ctx2.equilibrate()
 print(ctx2.sub.myresult.value)
 print(ctx2.sub2.myresult.value)
-print(ctx2.sub.transform.b)
+print(ctx2.sub.transform.b.value)
+
+print("UPDATE 2...")
+stdlib.triple_it.transform.b = 888
+stdlib.triple_it.equilibrate()
+stdlib.triple_it.register_library()
+print("UPDATE 2")
+ctx2.equilibrate()
+print(ctx2.sub.myresult.value)
+print(ctx2.sub2.myresult.value)
+print(ctx2.sub.transform.b.value)
