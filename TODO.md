@@ -5,13 +5,11 @@ Part 1 is now complete
 Things to do:
 
 Part 2: high level
-  - Reactors
   - Constructors, finish testing
     Test library-containing-another-library    
     Make sure constructors work correctly when copying parent contexts
     Test indirect library update system, also with constructors
-  - Edit schema JSON as file (proper mounting)
-    Special mount mode for JSON: whatever is read will be passed through cson2json
+  - Special mount mode for JSON: whatever is read will be passed through cson2json
   - Silk form validators + proper type inference for arrays
   - C/C++ cell translation
     (Transformer gains .compile_options, .link_options, .header (read-only),
@@ -47,9 +45,10 @@ Part 3 (low-level / cleanup):
    - Start with lib porting. Port Qt editors (including HTML), but no more seamless.qt
      Port all macros, but store the code in plain Python modules in lib, that register a library context
    - Port websocketserver, with proof of principle
-   - Jettison OpenGL for now; re-target main focus of Seamless towards scientific computations for now
-   - Cleanup tests. With direct mode, most low-level tests should work now? Other ones can be ported to high-level
-     Tests involving slash0 and OpenGL can be jettisoned for now
+   - Bring back slash0
+   - Jettison Plotly and OpenGL for now; re-target main focus of Seamless towards scientific computations for now
+   - Cleanup tests. With direct mode, most low-level tests should work now? Other ones can be ported to high-level    
+    - Tests involving OpenGL can be jettisoned for now
    - Cleanup of the code base, remove vestiges of 0.1 (except lib and tests).
    - Cleanup of the TODO and the documentation (put in limbo)
 
@@ -83,7 +82,7 @@ Part 4:
 Part 5:
   - High-level mounting is not quite satisfactory (redundant "translated" context)
   - Auxiliary, ephemeral and execution cells (see below)
-    Re-integrate slash0, apply ephemeral cells to it
+    apply ephemeral cells to slash0
     Expand and document seamless shell language (slash)
   - Signals
   - Observers (subclass of OutputPinBase)
