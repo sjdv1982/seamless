@@ -73,7 +73,7 @@ def adapt_from_silk(source):
 
 def assert_text(source):
     source = json.loads(source)
-    assert isinstance(source, str)
+    assert isinstance(source, str) or source is None, type(source)
     return source
 
 adapters = OrderedDict()
@@ -88,10 +88,10 @@ for content_type1 in text_types:
         if content_type1 == content_type2:
             continue
         adapters[("copy", "text", content_type1), ("copy", "text", content_type2)] = True
-adapters[("copy", "text", "text"), ("copy", "text", "json")] = True
 
 for content_type in ("text", "python", "ipython", "transformer", "reactor", "macro"):
     adapters[("copy", "text", "json"), ("copy", "text", content_type)] = assert_text
+    adapters[("copy", "text", content_type), ("copy", "text", "json")] = json.dumps
 
 for content_type in content_types:
     adapters[("copy", "object", content_type), ("copy", "object", "object")] = True

@@ -39,7 +39,7 @@ def get_path(root, path, namespace, is_target, until_structured_cell=False):
                 return hit, ()
             else:
                 return hit
-                                
+
     c = root
     if until_structured_cell:
         for pnr, p in enumerate(path):
@@ -287,8 +287,8 @@ def translate_py_reactor(node, root, namespace, inchannels, outchannels, editcha
     buffered = node["buffered"]
     interchannels_in = [as_tuple(p) for p, pin in node["pins"].items() if pin["io"] == "output"]
     interchannels_out = [as_tuple(p) for p, pin in node["pins"].items() if pin["io"] == "input"]
-
     interchannels_edit = [as_tuple(p) for p, pin in node["pins"].items() if pin["io"] == "edit"]
+
     all_inchannels = interchannels_in + inchannels  #highlevel must check that there are no duplicates
     all_outchannels = interchannels_out + [p for p in outchannels if p not in interchannels_out]
     all_editchannels = interchannels_edit + [p for p in editchannels if p not in interchannels_edit]
@@ -504,6 +504,7 @@ def translate_link(node, namespace, ctx):
         ###assert second_simple #could come from a CodeProxy!
         pass
 
+    #print("LINK!", first_simple, second_simple, first, type(first).__name__, second, type(second).__name__)
     if (not first_simple) and isinstance(first, StructuredCell):
         first.connect_editchannel(subpath_first, second2)
     else:

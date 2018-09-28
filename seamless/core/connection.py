@@ -67,7 +67,7 @@ class CellToCellConnection(Connection):
           self.target_access_mode, self.target_content_type, type(value), self.adapter
         )
         """
-        if self.adapter:
+        if self.adapter and value is not None:
             value = self.adapter(value)
         #from_pin is set to True, also for aliases...
         #but not if duplex is True, meaning that we are two cells connected to each other
@@ -115,7 +115,7 @@ class CellToPinConnection(Connection):
           self.transfer_mode, self.source_access_mode, self.source_content_type
         )
         checksum = source.checksum()
-        if self.adapter:
+        if self.adapter and value is not None:
             value = self.adapter(value)
         if not only_text or self.target_access_mode == "text":
             target.receive_update(value, checksum, self.target_content_type)
@@ -146,7 +146,7 @@ class PinToCellConnection(Connection):
 
     def fire(self, value, preliminary):
         pin, cell = self.source, self.target
-        if self.adapter:
+        if self.adapter and value is not None:
             value = self.adapter(value)
 
         mgr = pin._get_manager()

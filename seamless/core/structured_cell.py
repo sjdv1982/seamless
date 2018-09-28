@@ -20,7 +20,11 @@ OverlayMonitor warns if an inchannel is overwritten via handle
 But if the StructuredCell is buffered, this warning is lost
 """
 
-# TODO: re-think mount + slave: read-only?  re-direct to different cell?
+#TODO: different supported_modes for inchannels and outchannels?
+# (if yes, must also adapt editchannels two support two sets,
+#   and teach manager._connect_cell_to_cell to pick the right set)
+# Maybe YAGNI: with the text-json hack in channel_deserialize,
+#  all seems to be working for now...
 
 supported_modes_mixed = []
 for transfer_mode in "copy", "ref":
@@ -42,6 +46,13 @@ def channel_deserialize(channel, value, transfer_mode, access_mode, content_type
         channel._status = channel.StatusFlags.UNDEFINED
     else:
         channel._status = channel.StatusFlags.OK
+        if access_mode == "text" and content_type == "json": #text-json hack
+            value = json.loads(value)
+            access_mode = "json"
+        if access_mode == "object":
+            assert content_type in ("json", "mixed"), (access_mode, content_type, value)
+        else:
+            assert access_mode in ("json", "mixed"), (access_mode, content_type, value)
     structured_cell = channel.structured_cell()
     if structured_cell is None:
         return
@@ -81,7 +92,6 @@ class Inchannel(CellLikeBase):
         self.structured_cell = weakref.ref(structured_cell)
         self.inchannel = inchannel
         name = inchannel
-        ###name = inchannel if inchannel != () else "self"
         self.name = name
         super().__init__()
         if structured_cell._plain:
@@ -141,7 +151,6 @@ class Outchannel(CellLikeBase):
         self.structured_cell = weakref.ref(structured_cell)
         self.outchannel = outchannel
         name = outchannel
-        ###name = outchannel if outchannel != () else "self"
         self.name = name
         super().__init__()
         if structured_cell.buffer is not None:
@@ -191,6 +200,7 @@ class Outchannel(CellLikeBase):
         assert structured_cell is not None
         data = structured_cell.data
         manager = data._get_manager()
+        #print("set_cell", type(self).__name__, self.outchannel)
         manager.set_cell(self, value, origin=self)
         return value
 
@@ -227,7 +237,6 @@ class Editchannel(Outchannel):
         self.structured_cell = weakref.ref(structured_cell)
         self.inchannel = channel
         self.outchannel = channel
-        ###name = channel if channel != () else "self"
         name = channel
         self.name = name
         CellLikeBase.__init__(self)
@@ -495,8 +504,17 @@ class StructuredCell(CellLikeBase):
         monitor_inchannels = list(self.inchannels.keys())
         monitor_inchannels += list(self.editchannels.keys())
         monitor_editchannels = list(self.editchannels.keys())
+        def double_update(func1, func2, *args, **kwargs):
+            func1(*args, **kwargs)
+            func2(*args, **kwargs)
         monitor_outchannels = {ocname:oc.send_update for ocname, oc in self.outchannels.items()}
-        monitor_outchannels.update({cname:c.send_update for cname, c in self.editchannels.items()})
+        for cname, c in self.editchannels.items():
+            func = self.editchannels[cname].send_update
+            if cname in self.outchannels:
+                func2 = self.outchannels[cname].send_update
+                monitor_outchannels[cname] = functools.partial(double_update, func, func2)
+            else:
+                monitor_outchannels[cname] = func
         data_hook = self._data_hook
         form_hook = self._form_hook
         storage_hook = self._storage_hook
@@ -553,9 +571,16 @@ class StructuredCell(CellLikeBase):
             )
         if self.buffer is not None:
             mountcell = self.buffer.data
+            storagecell = self.buffer.storage
+            formcell = self.buffer.form
         else:
             mountcell = self.data
+            storagecell = self.storage
+            formcell = self.form
         mountcell._mount_setter = self._set_from_mounted_file
+        if storagecell is not None:
+            storagecell._mount_setter = self._init_storage_from_mounted_file
+            formcell._mount_setter = self._init_form_from_mounted_file
         if self.schema is not None:
             self.schema._mount_setter = self._set_schema_from_mounted_file
         if state is not None:
@@ -637,9 +662,6 @@ class StructuredCell(CellLikeBase):
             self._from_pin_mode = old_from_pin_mode
 
     def connect_inchannel(self, source, inchannel):
-        if inchannel == ("self",):
-            raise Exception
-            ###    inchannel = ()
         ic = self.inchannels[inchannel]
         manager = source._get_manager()
         if isinstance(source, Cell):
@@ -652,9 +674,6 @@ class StructuredCell(CellLikeBase):
 
     def connect_outchannel(self, outchannel, target):
         from ..mixed import MixedObject
-        if outchannel == ("self",):
-            raise Exception
-            ###    outchannel = ()
         try:
             oc = self.outchannels[outchannel]
         except KeyError:
@@ -673,9 +692,6 @@ class StructuredCell(CellLikeBase):
     def connect_editchannel(self, editchannel, target):
         from ..mixed import MixedObject
         from .worker import EditPinBase
-        if editchannel == ("self",):
-            raise Exception
-            ###editchannel = ()
         ec = self.editchannels[editchannel]
         assert isinstance(target, (EditPinBase, Editchannel, Cell)), type(target)
         manager = self.data._get_manager()
@@ -727,6 +743,26 @@ class StructuredCell(CellLikeBase):
         manager = cell._get_manager()
         manager.set_cell(cell, value, force=True, from_pin=self._from_pin_mode)
         return self.buffer.storage._val
+
+    def _init_storage_from_mounted_file(self, filebuffer, checksum):
+        storage = filebuffer
+        assert storage in ("pure-plain", "pure-binary", "mixed-plain", "mixed-binary"), storage
+        if self.buffer is not None:
+            self.buffer.storage._val = storage
+            self.bufmonitor.storage = storage
+        else:
+            self.storage._val = storage
+            self.monitor.storage = storage
+
+    def _init_form_from_mounted_file(self, filebuffer, checksum):
+        form = json.loads(filebuffer)
+        if self.buffer is not None:
+            self.buffer.form._val = form
+            self.bufmonitor.form = form
+        else:
+            self.form._val = form
+            self.monitor.form = form
+            cell = self.data
 
     def _set_from_mounted_file(self, filebuffer, checksum):
         cell = self.buffer.data if self.buffer is not None else self.data

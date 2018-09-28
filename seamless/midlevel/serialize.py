@@ -75,6 +75,8 @@ def extract(nodes, connections):
             pass
         elif nodetype == "context":
             pass
+        elif nodetype == "link":
+            pass
         else:
             raise TypeError(nodetype)
         topology.append(result)

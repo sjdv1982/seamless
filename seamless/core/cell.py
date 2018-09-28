@@ -235,8 +235,6 @@ class CellBase(CellLikeBase):
             if different and self._seal is not None:
                 msg = "Warning: setting value for cell %s, controlled by %s"
                 print(msg % (self._format_path(), self._seal) )
-                if str(self._format_path()).find("myresult") > -1:
-                    raise Exception
 
         return different, text_different
 
@@ -358,6 +356,8 @@ Use ``Cell.status()`` to get its status.
     )
 
     def _checksum(self, value, *, buffer=False, may_fail=False):
+        if value is None:
+            return None
         return hashlib.md5(str(value).encode("utf-8")).hexdigest()
 
     def _validate(self, value):
@@ -401,6 +401,8 @@ class ArrayCell(Cell):
     del transfer_mode
 
     def _checksum(self, value, *, buffer=False, may_fail=False):
+        if value is None:
+            return None
         if buffer:
             return super()._checksum(value)
         assert isinstance(value, np.ndarray)
@@ -473,6 +475,8 @@ class MixedCell(Cell):
         return self._value_to_bytes(self._val, storage, form)
 
     def _checksum(self, value, *, buffer=False, may_fail=False):
+        if value is None:
+            return None
         if buffer:
             b = value
         else:
@@ -567,6 +571,8 @@ class PythonCell(Cell):
         return hashlib.md5(str(value).encode("utf-8")).hexdigest()
 
     def _checksum(self, value, *, buffer=False, may_fail=False):
+        if value is None:
+            return None
         if buffer:
             return self._text_checksum(value, buffer=True, may_fail=may_fail)
         tree = ast.parse(value)
@@ -749,6 +755,8 @@ class JsonCell(Cell):
         return self._json(self._val)
 
     def _checksum(self, value, *, buffer=False, may_fail=False):
+        if value is None:
+            return None
         if buffer:
             return super()._checksum(value)
         j = self._json(value)
@@ -807,6 +815,8 @@ class CsonCell(JsonCell):
     _has_text_checksum = True
 
     def _checksum(self, value, *, buffer=False, may_fail=False):
+        if value is None:
+            return None
         if buffer:
             return self._text_checksum(value, buffer=True, may_fail=may_fail)
         j = self._json(value)

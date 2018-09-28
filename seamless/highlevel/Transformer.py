@@ -157,7 +157,7 @@ class Transformer(Base):
 
     def __getattr__(self, attr):
         if attr.startswith("_"):
-            raise AttributeError(value)
+            raise AttributeError(attr)
         htf = self._get_htf()
         if attr == htf["INPUT"]:
             # TODO: better wrapping

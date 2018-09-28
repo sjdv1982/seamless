@@ -190,7 +190,7 @@ class Reactor(Base):
 
     def __getattr__(self, attr):
         if attr.startswith("_"):
-            raise AttributeError(value)
+            raise AttributeError(attr)
         hrc = self._get_hrc()
         if attr == hrc["IO"]:
             # TODO: better wrapping

@@ -160,7 +160,7 @@ def _assign_context2(ctx, new_nodes, new_connections, path):
         nodes[pp] = node
         nodetype = node["type"]
         if not "TEMP" in node:
-            node["TEMP"] = None #mark as non-translated        
+            node["TEMP"] = None #mark as non-translated
         if nodetype == "cell":
             Cell(ctx, pp)
         elif nodetype == "transformer":
@@ -261,7 +261,9 @@ def assign(ctx, path, value):
         assert value._parent()._parent() is ctx
         if path not in ctx._children:
             Cell(ctx, path) #inserts itself as child
-            ctx._graph[0][path] = get_new_cell(path)
+            node = get_new_cell(path)
+            node["TEMP"] = None
+            ctx._graph[0][path] = node
         #TODO: break links and connections from ctx._children[path]
         assign_connection(ctx, value._virtual_path, path, False)
         ctx._translate()

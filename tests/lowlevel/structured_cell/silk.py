@@ -37,7 +37,7 @@ with macro_mode_on():
     ctx.result = cell()
     ctx.tf.c.connect(ctx.result)
 
-    ctx.mount("/tmp/mount-test")
+    ctx.mount("/tmp/mount-test", persistent=True)
 
 ctx.equilibrate()
 print("part 1")

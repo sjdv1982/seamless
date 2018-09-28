@@ -3,10 +3,11 @@ import traceback
 import os
 import time
 from functools import partial
+import threading
 
 from .worker import Worker, InputPin, OutputPin
 from .pythreadkernel import Transformer as KernelTransformer
-import threading
+from .protocol import content_types
 
 class Transformer(Worker):
     """
@@ -64,6 +65,8 @@ class Transformer(Worker):
                 content_type = param.get("content_type", content_type)
             else:
                 raise ValueError((p, param))
+            if content_type is None and access_mode in content_types:
+                content_type = access_mode                                
             if io == "input":
                 pin = InputPin(self, p, transfer_mode, access_mode)
                 thread_inputs[p] = transfer_mode, access_mode, content_type
@@ -138,7 +141,7 @@ class Transformer(Worker):
             self._get_manager().buffered_work.append(work)
             return
         if checksum is None and value is not None:
-            checksum = str(value) #KLUDGE; as long as structured_cell doesn't compute checksums...             
+            checksum = str(value) #KLUDGE; as long as structured_cell doesn't compute checksums...
         if not self._receive_update_checksum(input_pin, checksum):
             return
         self._send_message( (input_pin, value, content_type) )

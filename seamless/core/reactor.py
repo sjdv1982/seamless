@@ -11,6 +11,7 @@ from .pysynckernel import Reactor as KernelReactor
 from . import IpyString
 
 from . import get_macro_mode, macro_register
+from .protocol import content_types
 
 class Reactor(Worker):
     """
@@ -72,6 +73,8 @@ class Reactor(Worker):
                 must_be_defined = param.get("must_be_defined", must_be_defined)
             else:
                 raise ValueError((p, param))
+            if content_type is None and access_mode in content_types:
+                content_type = access_mode
             if io == "input":
                 pin = InputPin(self, p, transfer_mode, access_mode, content_type)
                 self.inputs[p] = transfer_mode, access_mode, content_type, must_be_defined

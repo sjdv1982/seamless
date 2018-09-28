@@ -32,6 +32,7 @@ def _from_stream_binary(
   data, form,
   jsons, buffer
 ):
+    #print("_from_stream_binary", form, data)
     storage = "mixed-binary"
     type_ = form["type"]
     if type_ == "object":
@@ -46,7 +47,7 @@ def _from_stream_binary(
             item_form = form["properties"][key]
             if not isinstance(item_form, dict):
                 continue
-            item_storage = item_form.get("storage")
+            item_storage = item_form.get("storage", "pure-binary")
             _from_stream_sub(data, key, item_storage, item_form, jsons, buffer)
     elif type_ in ("tuple", "array"):
         if data is None:
@@ -61,7 +62,7 @@ def _from_stream_binary(
         assert form["identical"]
         item_form = form["items"]
         if isinstance(item_form, dict):
-            item_storage = item_form.get("storage")
+            item_storage = item_form.get("storage", "pure-plain")
             for n in range(shape[0]):
                 _from_stream_sub(data, n, item_storage, item_form, jsons, buffer)
     else:
@@ -73,6 +74,7 @@ def _from_stream_plain(
   data, form,
   jsons, buffer
 ):
+    #print("_from_stream_plain", form, data)
     storage = "mixed-plain"
     type_ = form["type"]
     if data is None:
@@ -82,14 +84,14 @@ def _from_stream_plain(
             item_form = form["properties"][key]
             if not isinstance(item_form, dict):
                 continue
-            item_storage = item_form.get("storage")
+            item_storage = item_form.get("storage", "pure-plain")
             _from_stream_sub(data, key, item_storage, item_form, jsons, buffer)
     elif type_ in ("tuple", "array"):
         assert len(shape) == 1
         assert form["identical"]
         item_form = form["items"]
         if isinstance(item_form, dict):
-            item_storage = item_form.get("storage")
+            item_storage = item_form.get("storage", "pure-plain")
             for n in range(shape[0]):
                 _from_stream_sub(data, n, item_storage, item_form, jsons, buffer)
     else:
@@ -117,6 +119,7 @@ def _from_stream_sub(
   parent_data, sub, storage, form,
   jsons, buffer
 ):
+    #print("_from_stream_sub", sub, storage, form, parent_data)
     if storage.endswith("plain"):
         if isinstance(parent_data, np.generic):
             my_data = jsons.pop(1)

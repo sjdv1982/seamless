@@ -72,6 +72,7 @@ class MountItem:
                 with self.lock:
                     filevalue = self._read()
                     update_file = True
+                    file_checksum = None
                     if not cell_empty:
                         file_checksum = cell._checksum(filevalue, buffer=True)
                         if file_checksum == cell.text_checksum():
@@ -91,11 +92,14 @@ class MountItem:
                         self._write(value)
                         self._after_write(checksum)
         else: #self.authority == "cell"
+            must_read = ("r" in self.mode)
+            if not must_read and cell._master is not None and \
+              cell._master[1] in ("form", "storage"):
+                must_read = True
             if not cell_empty:
                 value = cell.serialize_buffer()
                 checksum = cell.text_checksum()
-                #if "r" in self.mode and self._exists():  #comment out, must read in .storage
-                if exists:
+                if exists and must_read:
                     with self.lock:
                         filevalue = self._read()
                         file_checksum = cell._checksum(filevalue, buffer=True)
@@ -110,8 +114,7 @@ class MountItem:
                         self._write(value)
                         self._after_write(checksum)
             else:
-                #if "r" in self.mode and self._exists(): #comment out, must read in .storage
-                if exists:
+                if exists and must_read:
                     with self.lock:
                         filevalue = self._read()
                         file_checksum = cell._checksum(filevalue, buffer=True)
@@ -142,17 +145,18 @@ class MountItem:
         with open(self.path.replace("/", os.sep), filemode, encoding=encoding) as f:
             return f.read()
 
-    def _write(self, filevalue):
-        #print("write", self.cell(), filevalue, filevalue is None)
+    def _write(self, filevalue, with_none=False):
         assert "w" in self.mode
         binary = self.kwargs["binary"]
         encoding = self.kwargs.get("encoding")
         filemode = "wb" if binary else "w"
         filepath = self.path.replace("/", os.sep)
-        if os.path.exists(filepath):
-            os.unlink(filepath)
         if filevalue is None:
-            return
+            if not with_none:
+                if os.path.exists(filepath):
+                    os.unlink(filepath)
+                return
+            filevalue = ""
         with open(filepath, filemode, encoding=encoding) as f:
             f.write(filevalue)
 
@@ -169,7 +173,7 @@ class MountItem:
         except Exception:
             pass
 
-    def conditional_write(self):
+    def conditional_write(self, with_none=False):
         if self._destroyed:
             return
         if not "w" in self.mode:
@@ -177,14 +181,17 @@ class MountItem:
         cell = self.cell()
         if cell is None:
             return
-        if cell.status() != "OK":
-            return
+        status = cell.status()
+        if status != "OK":
+            if not with_none or status != "UNDEFINED":
+                return
         checksum = cell.text_checksum()
-        if self.last_checksum != checksum:
+        if checksum is None or self.last_checksum != checksum:
             value = cell.serialize_buffer()
-            assert cell._checksum(value, buffer=True) == checksum, cell._format_path()
+            if value is not None:
+                assert cell._checksum(value, buffer=True) == checksum, cell._format_path()
             with self.lock:
-                self._write(value)
+                self._write(value, with_none=with_none)
                 self._after_write(checksum)
 
     def _after_read(self, checksum, *, mtime=None):
@@ -474,6 +481,7 @@ class MountManager:
     _running = False
     _last_run = None
     _stop = False
+    _mounting = False
     def __init__(self, latency):
         self.latency = latency
         self.mounts = WeakKeyDictionary()
@@ -523,7 +531,11 @@ class MountManager:
         paths.add(path)
         self.mounts[cell] = MountItem(self, cell, path, mode, authority, persistent, **kwargs)
         if self.stash is None:
-            self.mounts[cell].init()
+            try:
+                self._mounting = True
+                self.mounts[cell].init()
+            finally:
+                self._mounting = False
 
     def add_link(self, link, path, persistent):
         paths = self.paths[link._root()]
@@ -606,7 +618,7 @@ class MountManager:
             os.mkdir(dirpath)
 
     def add_cell_update(self, cell):
-        if self.reorganizing:
+        if self.reorganizing or self._mounting:
             return
         assert cell in self.mounts, (cell, hex(id(cell)))
         self.cell_updates.append(cell)
@@ -634,7 +646,7 @@ class MountManager:
             if mount_item is None: #cell was deleted
                 continue
             try:
-                mount_item.conditional_write()
+                mount_item.conditional_write(with_none=True)
             except Exception:
                 exc = traceback.format_exc()
                 if exc != mount_item.last_exc:
@@ -783,7 +795,7 @@ def resolve_register(reg):
                 print("Warning: Unable to mount file path '%s': cannot mount this type of cell (%s)" % (path, type(cell).__name__))
                 continue
             mount.update(cell._mount_kwargs)
-            if cell._master and (cell._mount_setter is None):
+            if cell._master and (cell._mount_setter is None or cell._master[1] in ("form", "storage")):
                 if mount.get("mode") == "r":
                     continue
                 else:

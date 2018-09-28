@@ -1,6 +1,8 @@
-from seamless.highlevel import Context, Cell, Link
+from seamless.highlevel import Context, Cell, Link, Reactor
 
 ctx = Context()
+
+"""
 ctx.tf = lambda a,b: 42
 ctx.x = ctx.tf.code
 ctx.y = ctx.x
@@ -128,8 +130,11 @@ print("modify xx4...")
 ctx.xx4 = "new xx4"
 print(ctx.x.value, ctx.xx.value, ctx.xx2.value, ctx.xx3.value, ctx.xx4.value)
 
-ctx.struc = {"a":1, "b":2, "c": 3}
+print("*" * 100)
+ctx.struc = {"a":1, "b":2, "c":3}
+ctx.struc.datatype = "json"
 ctx.struc2 = {}
+ctx.struc2.datatype = "json"
 print(ctx.struc.a)
 ctx.link_struc = Link(ctx.struc.a, ctx.struc2.k)
 print(ctx.struc.a, ctx.struc2.k)
@@ -137,3 +142,26 @@ ctx.struc.a = 999
 print(ctx.struc.a, ctx.struc2.k)
 ctx.struc2.k = 111
 print(ctx.struc.a, ctx.struc2.k)
+
+print("*" * 100)
+ctx.txt = Cell()
+ctx.txt.celltype = "json"
+ctx.link_txt = Link(ctx.struc.b, ctx.txt)
+print(ctx.struc.value, ctx.txt.value)
+ctx.struc.b = 123
+print(ctx.struc.value, ctx.txt.value)
+ctx.txt = 321
+print(ctx.struc.value, ctx.txt.value)
+"""
+ctx.rc = Reactor()
+ctx.rc._get_hrc()["plain"] = True
+ctx.rc.set_pin("test", io="edit", access_mode="text", must_be_defined=False)
+ctx.rc.test = "Hello"
+ctx.txt2 = Cell()
+ctx.txt2.celltype = "text"
+ctx.link_txt2 = Link(ctx.rc.test, ctx.txt2)
+print(ctx.rc.io.value, ctx.txt2.value)
+ctx.rc.test = "Hello 2"
+print(ctx.rc.io.value, ctx.txt2.value)
+ctx.txt2 = "Hello 3"
+print(ctx.rc.io.value, ctx.txt2.value)
