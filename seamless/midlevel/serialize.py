@@ -1,4 +1,5 @@
 from copy import deepcopy
+import json
 
 transformer_states = (
     ("input", "stored_state_input", True),
@@ -79,6 +80,11 @@ def extract(nodes, connections):
             pass
         else:
             raise TypeError(nodetype)
+        result.pop("TEMP", None)
+        #print(path0, result)
+        #json.dumps(result)
         topology.append(result)
+    #json.dumps(topology)
+    #json.dumps(connections)
     topology += connections
     return topology, values, states, cached_values, cached_states
