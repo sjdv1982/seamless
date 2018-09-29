@@ -1,5 +1,7 @@
 from collections import OrderedDict
 import json
+from copy import deepcopy
+from ...silk import Silk
 
 """
 A connection declaration may have up to four parts
@@ -69,6 +71,9 @@ def adapt_to_silk(source):
     return Silk(data=source)
 
 def adapt_from_silk(source):
+    if not isinstance(source, Silk):  #HACK: should have been covered by protocol
+        print("Warning, adapt_from_silk, should have been Silk, is %s" % type(source))
+        return source
     return deepcopy(source.data)
 
 def assert_text(source):

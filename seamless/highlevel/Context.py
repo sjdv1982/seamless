@@ -107,8 +107,8 @@ class Context:
             mountmanager.paths[ctx].add(mountdir) #kludge
         with macro_mode_on():
             ctx.topology = cell("json")
-            ctx.values = cell("json")
-            ctx.states = cell("json")
+            ctx.values = cell("json") #TODO: change to mixed
+            ctx.states = cell("json") #TODO: change to mixed
         self._translate()
 
     def equilibrate(self):
