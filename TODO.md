@@ -1,26 +1,57 @@
 Great Refactor is underway (see seamless-towards-02.md).
 
 Part 1 is now complete
+Most of the high level is done.
 
 Things to do:
 
 Part 2: high level
-  - Constructors, finish testing
-    Test library-containing-another-library    
-    Make sure constructors work correctly when copying parent contexts
-    Test indirect library update system, also with constructors
-  - Special mount mode for JSON: whatever is read will be passed through cson2json
-  - Silk form validators + proper type inference for arrays
-  - C/C++ cell translation
-    (Transformer gains .compile_options, .link_options, .header (read-only),
-     but only if language is C/C++)
-  - Serialization
-  - Services proof-of-principle
-    Low-level services (non-interactive transformer)
+A: get BCsearch working
+- Silk form validators
+  - All form-validating properties are under "form" of the main schema
+    They cannot be defined at the level of sub-schemas
+  - Every "form" property must be either absent or present
+  - If present, the form must have exactly that value
+  - Or, the "form" property must be a list, and have one of the values in the list
+    Or, if numeric, it must have one of the values between any two adjacent ascending list items
+  - The above applies a bit differently for shape and strides, as they are already lists:
+    - Or, the "form" property must be a list of lists. The property must have the same length.
+      For each item in the lists-of-lists, the property must have one of the values, or
+      be between any two adjacent ascending list items.
+- Services proof-of-principle
+  Low-level services (non-interactive transformer)
+- Special mount mode for JSON: whatever is read will be passed through cson2json
+- C/C++ cell translation
+  (Transformer gains .compile_options, .link_options, .header (read-only),
+   but only if language is C/C++)
+
+B: Towards a first real example
+- Constructors, finish testing
+  Test library-containing-another-library    
+  Make sure constructors work correctly when copying parent contexts
+  Test indirect library update system, also with constructors
+- Finish browser lib
+-  First real example:
+  - Convert topology.json (of a different ctx!) to SVG
+  - Interject merge for manual edit
+  - Hook up browser for visualization
+
+C: Towards Camembert plots (big!)
+- equilibrate() should not wait for workers with an execution error
+- High-level:
+  macros (by definition low-level) with language (python) and api (seamless.core) fields.
+- Call graph serialization
+- Port websocketserver and dynamic_html
+- Integrate with Observable Notebook: https://beta.observablehq.com/@sjdv1982/model-view-controller
+
+D: Port the peptide trajectory editor, use Observable instead of Jupyter.
+
+E: The final new features before the merge
+  - Some more services proof-of-principle
+    Low-level services (non-interactive transformer) will have been done
     Other possible services: interactive transformer, pure reactor (non-interactive or interactive)  
     NOTE: These are strictly core.manager concerns. Neither the workers nor
      the high-level has anything to do with it!
-  - High-level proof-of-principle: non-interactive C++ transformer.
   - Sovereignty
   A low level cell may be sovereign if it has a 1:1 correspondence to a mid-level element.
   Sovereign cells are authoritative, they may be changed, and changes to sovereign cells do not cause
@@ -28,7 +59,7 @@ Part 2: high level
   When a translation macro is re-triggered for another reason (or when the mid-level is serialized),
   the mid-level element is dynamically read from the sovereign cell (no double representation)
 
-Part 3 (low-level / cleanup):
+Part 3 (low-level / cleanup): Towards the merge
    - Add back in int/float/str/bool cells because they are so convenient.
      Their content type will be int/float/text/bool.
      Adapters will convert among them (e.g. int=>float) and between them and JSON/mixed/text.
@@ -38,19 +69,15 @@ Part 3 (low-level / cleanup):
      By default, they are public. No more "export".
      This has nothing to do with services. Services determine private and public based on
      what connects into the serviced context.
-   - Have a look if Qt mainloop hook can be eliminated.
-   - equilibrate() should not wait for workers with an execution error
-   - High-level:
-     macros (by definition low-level) with language (python) and api (pyseamless) fields.
+   - Have a look if Qt mainloop hook can be eliminated (replace by a useqt() method)
    - Start with lib porting. Port Qt editors (including HTML), but no more seamless.qt
      Port all macros, but store the code in plain Python modules in lib, that register a library context
-   - Port websocketserver, with proof of principle
    - Bring back slash0
    - Jettison Plotly and OpenGL for now; re-target main focus of Seamless towards scientific computations for now
    - Cleanup tests. With direct mode, most low-level tests should work now? Other ones can be ported to high-level    
     - Tests involving OpenGL can be jettisoned for now
    - Cleanup of the code base, remove vestiges of 0.1 (except lib and tests).
-   - Cleanup of the TODO and the documentation (put in limbo)
+   - Cleanup of the TODO and the documentation (put in limbo). Don't forget /docs/WIP!
 
 Merge into master; end of the Great Refactor
 
@@ -80,10 +107,6 @@ Part 4:
      In that case, the regeneration of the reactor essentially becomes an update() event  
 
 Part 5:
-  - High-level mounting is not quite satisfactory (redundant "translated" context)
-  - Auxiliary, ephemeral and execution cells (see below)
-    apply ephemeral cells to slash0
-    Expand and document seamless shell language (slash)
   - Signals
   - Observers (subclass of OutputPinBase)
   - Fully port over 0.1 lib: from .py files to Seamless library context files
@@ -98,6 +121,15 @@ Make new videos:
   - Basic example
   - Docking
 
+Intermezzo:
+Do a bit of code cleanup
+Have a look at all Python files. Move in-code TODOs etc. to documentation
+Make the beginning of dev documentation, create some Github issues perhaps.
+Start to reorganize some code, rename some APIs, etc.
+Perhaps a bit more formal unit tests
+Have a look at what it would take to go to PEP8 compliance.
+
+
 Part 6: "Towards flexible and cloud-compatible evaluation"
 - Build upon services proof-of-principle (cloudless)
 - HMTL gen from schema
@@ -111,7 +143,20 @@ Make new videos:
   - Making web services
 
 Part 7:
-- Replace the use of killable threads with processes... gives a problem with Orca example (fixed now ?), docking example (?), see Github issue
+- High-level mounting is not quite satisfactory (redundant "translated" context)
+- Auxiliary, ephemeral and execution cells (see below)
+  apply ephemeral cells to slash0
+  Expand and document seamless shell language (slash)
+  Make a slash reproducable mode, where every file is pulled from the file system in advance.
+  However, POSIX files are whitelisted (exempt).
+  Other files may be whitelisted, leading to explicit dependency registration.
+  The "compiled" slash graph should not access the file system at all
+  (One cannot forbid the code cells and pulled command lines to do so, but they aren't supposed to).    
+- Replace the use of killable threads with processes... gives a problem with Orca example (fixed now ?), docking
+ example (?), see Github issue
+ - Silk: think of proper type inference, e.g. for arrays (see silk.md)
+   Also properly deal with .schema and .schema.form for sub-properties (must tap into main schema object)
+   and make add_validator a schema method!
 - Graph translation should be asynchronous and interruptible
   (check regularly for interruption signals)
 - Start with report channels that catch error messages, cache hits/misses etc.
