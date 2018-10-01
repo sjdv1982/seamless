@@ -93,7 +93,7 @@ def fill_cell_values(ctx, nodes, path=None):
                 assert isinstance(inp, StructuredCell)
                 fill_structured_cell_value(inp, node, "stored_state_input", "cached_state_input")
                 fill_simple_cell_value(transformer.code, node, "code", "cached_code")
-                if node["with_schema"]:
+                if node["with_result"]:
                     result_name = node["RESULT"]
                     result = getattr(transformer, result_name)
                     assert isinstance(result, StructuredCell)

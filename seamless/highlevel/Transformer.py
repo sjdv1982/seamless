@@ -28,12 +28,12 @@ class Transformer(Base):
         parent._children[result_path] = result
 
     @property
-    def with_schema(self):
-        return self._get_htf()["with_schema"]
-    @with_schema.setter
-    def with_schema(self, value):
+    def with_result(self):
+        return self._get_htf()["with_result"]
+    @with_result.setter
+    def with_result(self, value):
         assert value in (True, False), value
-        self._get_htf()["with_schema"] = value
+        self._get_htf()["with_result"] = value
         self._parent()._translate()
 
 
@@ -41,7 +41,7 @@ class Transformer(Base):
         from .assign import assign_connection
         tf = self._get_tf()
         htf = self._get_htf()
-        if htf["with_schema"]:
+        if htf["with_result"]:
             raise NotImplementedError
         parent = self._parent()
         result_path = self._path + (htf["RESULT"],)
@@ -52,7 +52,7 @@ class Transformer(Base):
     def __setattr__(self, attr, value):
         from .assign import assign_connection
         from ..midlevel.copying import fill_structured_cell_value
-        if attr.startswith("_"):
+        if attr.startswith("_") or attr in type(self).__dict__:
             return object.__setattr__(self, attr, value)
         translate = False
         parent = self._parent()
@@ -72,7 +72,7 @@ class Transformer(Base):
         if not self._has_tf() and not isinstance(value, Cell):
             if isinstance(value, Resource):
                 value = value.data
-            if "TEMP" not in htf:
+            if "TEMP" not in htf or htf["TEMP"] is None:
                 htf["TEMP"] = {}
             htf["TEMP"][attr] = value
             self._parent()._translate()
@@ -149,6 +149,9 @@ class Transformer(Base):
         if attr == "code":
             p = tf.code
             return p.data
+        elif attr == htf["RESULT"]:
+            assert htf["with_result"] #otherwise "result" is just a pin
+            return getattr(tf, attr).value
         else:
             inp = getattr(tf, htf["INPUT"])
             p = inp.value[attr]
@@ -162,7 +165,7 @@ class Transformer(Base):
         if attr == htf["INPUT"]:
             # TODO: better wrapping
             return getattr(self._get_tf(), htf["INPUT"])
-        if attr not in htf["pins"] and attr != "code":
+        if attr not in htf["pins"] and attr != "code" and attr != htf["RESULT"]:
             #TODO: could be result pin... what to do?
             raise AttributeError(attr)
         pull_source = functools.partial(self._pull_source, attr)

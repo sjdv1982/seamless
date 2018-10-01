@@ -20,13 +20,12 @@ def return_preliminary(result_queue, value):
     result_queue.put((-1, value))
 
 def execute(name, code_object, namespace, injector, workspace,
-    output_name, with_schema, result_queue):
+    output_name, result_queue):
     namespace["return_preliminary"] = functools.partial(
         return_preliminary, result_queue
     )
     try:
-        if not with_schema:
-            namespace.pop(output_name, None)
+        namespace.pop(output_name, None)
         with injector.active_workspace(workspace):
             exec(code_object, namespace)
     except:
@@ -46,10 +45,9 @@ class Transformer(Worker):
     name = "transformer"
     injector = transformer_injector
     injected_modules = None
-    def __init__(self, parent, with_schema, inputs,
+    def __init__(self, parent, inputs,
                  output_name, output_queue, output_semaphore,
                  *, in_equilibrium = False, **kwargs):
-        self.with_schema = with_schema
         self.output_name = output_name
         self.output_queue = output_queue
         self.output_semaphore = output_semaphore
@@ -60,18 +58,11 @@ class Transformer(Worker):
         self.running_thread = None
         self.in_equilibrium = in_equilibrium
 
-        if self.with_schema:
-            self.function_expr_template = "{0}\n{1}("
-            for inp in sorted(list(inputs.keys())) + [self.output_name]:
-                if inp in ("code", "schema"):
-                    continue
-                self.function_expr_template += "%s=%s," % (inp, inp)
-        else:
-            self.function_expr_template = "{0}\n%s = {1}(" % self.output_name
-            for inp in sorted(list(inputs.keys())):
-                if inp == "code":
-                    continue
-                self.function_expr_template += "%s=%s," % (inp, inp)
+        self.function_expr_template = "{0}\n%s = {1}(" % self.output_name
+        for inp in sorted(list(inputs.keys())):
+            if inp == "code":
+                continue
+            self.function_expr_template += "%s=%s," % (inp, inp)
         self.function_expr_template = self.function_expr_template[:-1] + ")"
 
         super(Transformer, self).__init__(parent, inputs, **kwargs)
@@ -95,7 +86,6 @@ class Transformer(Worker):
         self.send_message("@PRELIMINARY", (self.output_name, value))
 
     def update(self, updated, semaphore):
-        from ...silk import Silk
         self.send_message("@START", None)
         ok = False
         try:
@@ -132,14 +122,11 @@ class Transformer(Worker):
             for name in self.inputs:
                 if name not in ("code", "schema"):
                     self.namespace[name] = self.values[name]
-            if self.with_schema:
-                output = Silk(schema=self.namespace["schema"])
-                self.namespace[self.output_name] = output
             queue = Queue()
             workspace = self if self.injected_modules else None
             args = (self.parent()._format_path(), self.code_object,
               self.namespace, self.injector, workspace,
-              self.output_name, self.with_schema, queue)
+              self.output_name, queue)
             executor = Executor(target=execute,args=args, daemon=True)
             executor.start()
             dead_time = 0

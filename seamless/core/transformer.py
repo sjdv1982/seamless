@@ -20,7 +20,7 @@ class Transformer(Worker):
     _destroyed = False
     _listen_output_state = None
 
-    def __init__(self, transformer_params, *, with_schema=False, in_equilibrium=False):
+    def __init__(self, transformer_params, *, in_equilibrium=False):
         self.state = {}
         self.code = InputPin(self, "code", "ref", "pythoncode", "transformer")
         #TODO: access_mode becomes "copy" when we switch from threads to processes
@@ -34,12 +34,6 @@ class Transformer(Worker):
         self._transformer_params = OrderedDict()
         self._in_equilibrium = in_equilibrium #transformer is initially in equilibrium
         forbidden = ("code",)
-        if with_schema:
-            schema_pin = InputPin(self, "schema", "copy", "json", "json")
-            self._io_attrs.append("schema")
-            thread_inputs["schema"] = "copy", "json", "json"
-            self._pins["schema"] = schema_pin
-            forbidden += ("schema",)
         for p in sorted(transformer_params.keys()):
             if p in forbidden:
                 raise ValueError("Forbidden pin name: %s" % p)
@@ -66,7 +60,7 @@ class Transformer(Worker):
             else:
                 raise ValueError((p, param))
             if content_type is None and access_mode in content_types:
-                content_type = access_mode                                
+                content_type = access_mode
             if io == "input":
                 pin = InputPin(self, p, transfer_mode, access_mode)
                 thread_inputs[p] = transfer_mode, access_mode, content_type
@@ -100,7 +94,7 @@ class Transformer(Worker):
         """
 
         self.transformer = KernelTransformer(
-            self, with_schema,
+            self,
             thread_inputs, self._output_name,
             self.output_queue, self.output_semaphore,
             in_equilibrium = self._in_equilibrium
@@ -361,9 +355,8 @@ class Transformer(Worker):
             return self.StatusFlags.ERROR.name
         return self.StatusFlags.OK.name
 
-def transformer(params, with_schema=False, in_equilibrium=False):
+def transformer(params, in_equilibrium=False):
     return Transformer(
        params,
-       with_schema=with_schema,
        in_equilibrium=in_equilibrium
     )

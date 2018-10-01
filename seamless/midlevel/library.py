@@ -45,7 +45,7 @@ def warn_partial_authority(ctx, nodes):
             input_name = node["INPUT"]
             inp = getattr(transformer, input_name)
             _warn_partial_authority(inp)
-            if node["with_schema"]:
+            if node["with_result"]:
                 result_name = node["RESULT"]
                 result = getattr(transformer, result_name)
                 _warn_partial_authority(result)

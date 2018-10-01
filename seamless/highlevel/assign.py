@@ -75,7 +75,8 @@ def assign_transformer(ctx, path, func):
         "pins": {param:{"transfer_mode": "copy", "access_mode": "silk"} for param in parameters},
         "RESULT": "result",
         "INPUT": "inp",
-        "with_schema": False,
+        "with_result": False,
+        "SCHEMA": None, #the result schema can be exposed as an input pin to the transformer under this name. Implies with_result
         "buffered": True,
         "plain": False,
         "plain_result": False,

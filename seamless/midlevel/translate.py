@@ -199,7 +199,7 @@ def translate_py_transformer(node, root, namespace, inchannels, outchannels, lib
     for c in inchannels:
         assert (not len(c)) or c[0] != result_name #should have been checked by highlevel
 
-    with_schema = node["with_schema"]
+    with_result = node["with_result"]
     buffered = node["buffered"]
     interchannels = [as_tuple(pin) for pin in node["pins"]]
     plain = node["plain"]
@@ -219,8 +219,14 @@ def translate_py_transformer(node, root, namespace, inchannels, outchannels, lib
         p.update(pin)
         all_pins[pinname] = p
     all_pins[result_name] = "output"
+    if node["SCHEMA"]:
+        assert with_result
+        all_pins[node["SCHEMA"]] = {
+            "io": "input", "transfer_mode": "json",
+            "access_mode": "json", "content_type": "json"
+        }
     in_equilibrium = node.get("in_equilibrium", False)
-    ctx.tf = transformer(all_pins, with_schema=with_schema, in_equilibrium=in_equilibrium)
+    ctx.tf = transformer(all_pins, in_equilibrium=in_equilibrium)
     if lib_path00 is not None:
         lib_path = lib_path00 + "." + name + ".code"
         ctx.code = libcell(lib_path)
@@ -250,18 +256,21 @@ def translate_py_transformer(node, root, namespace, inchannels, outchannels, lib
         target = getattr(ctx.tf, pin)
         inp.connect_outchannel( (pin,) ,  target )
 
-    if with_schema:
+    if with_result:
         plain_result = node["plain_result"]
         output_state = node.get("cached_state_output", None)
-        outp = build_structured_cell(ctx, result_name, True, plain_result, False, [()], outchannels, output_state, lib_path0)
-        setattr(ctx, output_name, outp)
+        result = build_structured_cell(ctx, result_name, True, plain_result, False, [()], outchannels, output_state, lib_path0)
+        setattr(ctx, result_name, result)
         result_pin = getattr(ctx.tf, result_name)
-        outp.connect_inchannel((), result_pin)
+        result.connect_inchannel(result_pin, ())
+        if node["SCHEMA"]:
+            schema_pin = getattr(ctx.tf, node["SCHEMA"])
+            result.schema.connect(schema_pin)
     else:
         for c in outchannels:
             assert len(c) == 0 #should have been checked by highlevel
-        outp = getattr(ctx.tf, result_name)
-        namespace[node["path"] + (result_name,), False] = outp
+        result = getattr(ctx.tf, result_name)
+        namespace[node["path"] + (result_name,), False] = result
 
     if not is_lib: #clean up cached state and in_equilibrium, unless a library context
         node.pop("cached_state_input", None)
@@ -269,7 +278,7 @@ def translate_py_transformer(node, root, namespace, inchannels, outchannels, lib
         node.pop("in_equilibrium", None)
 
     namespace[node["path"], True] = inp
-    namespace[node["path"], False] = outp
+    namespace[node["path"], False] = result
     node.pop("TEMP", None)
 
 def translate_py_reactor(node, root, namespace, inchannels, outchannels, editchannels, lib_path00, is_lib):
