@@ -32,6 +32,10 @@ class CellLikeBase(SeamlessBase):
     def __hash__(self):
         return self._counter
 
+    def __str__(self):
+        ret = "Seamless %s: " % type(self).__name__ + self._format_path()
+        return ret
+
 
 class CellBase(CellLikeBase):
     _has_text_checksum = False

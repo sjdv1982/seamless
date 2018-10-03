@@ -81,7 +81,16 @@ def assert_text(source):
     assert isinstance(source, str) or source is None, type(source)
     return source
 
+def assert_mixed_text(source):
+    assert isinstance(source, str) or source is None, type(source)
+    return source
+
+def assert_plain(source):
+    json.dumps(source)
+
 adapters = OrderedDict()
+adapters[("copy", "object", "mixed"), ("copy", "text", "text")] = assert_mixed_text
+adapters[("copy", "object", "mixed"), ("copy", "json", "json")] = assert_plain
 adapters[("copy", "text", "cson"), ("copy", "json", "cson")] = adapt_cson_json
 adapters[("copy", "text", "cson"), ("copy", "json", "json")] = adapt_cson_json
 for content_type1 in text_types:

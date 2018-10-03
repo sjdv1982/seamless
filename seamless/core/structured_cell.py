@@ -664,7 +664,9 @@ class StructuredCell(CellLikeBase):
     def connect_inchannel(self, source, inchannel):
         ic = self.inchannels[inchannel]
         manager = source._get_manager()
-        if isinstance(source, Cell):
+        if isinstance(source, StructuredCell):
+            source.connect_outchannel((), ic)
+        elif isinstance(source, Cell):
             manager.connect_cell(source, ic)
         else:
             manager.connect_pin(source, ic)

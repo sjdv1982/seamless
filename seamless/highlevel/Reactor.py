@@ -123,7 +123,7 @@ class Reactor(Base):
             mount = {
                 "path": value.filename,
                 "mode": "r",
-                "authority": "cell",
+                "authority": "file",
                 "persistent": True,
             }
             hrc["mount"][attr] = mount

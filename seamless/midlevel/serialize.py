@@ -4,7 +4,7 @@ import json
 transformer_states = (
     ("input", "stored_state_input", True),
     ("input", "cached_state_input", False),
-    ("result", "cached_state_result", False),
+    ("RESULT", "cached_state_result", False),
 )
 
 transformer_values = (
@@ -51,6 +51,12 @@ def extract(nodes, connections):
                 cached_states[path] = cached_state.serialize()
         elif nodetype == "transformer":
             for sub, key, is_not_cached in transformer_states:
+                if sub == "RESULT":
+                    if not node["with_result"]:
+                        continue
+                    sub = node["RESULT"]
+                    if sub is None:
+                        continue
                 state = result.pop(key, None)
                 if state is not None:
                     mstates = states if is_not_cached else cached_states

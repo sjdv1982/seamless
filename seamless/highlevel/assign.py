@@ -238,8 +238,11 @@ def assign(ctx, path, value):
             assert value._parent() is ctx
             assign_connection(ctx, value._path, path, True)
         ctx._translate()
-    elif isinstance(value, ConstantTypes):
-        new_cell = assign_constant(ctx, path, value)
+    elif isinstance(value, (Resource, ConstantTypes)):
+        v = value
+        if isinstance(value, Resource):
+            v = value.data
+        new_cell = assign_constant(ctx, path, v)
         if new_cell:
             ctx._translate()
         else:
@@ -249,9 +252,14 @@ def assign(ctx, path, value):
             new_len = len(ctx._graph[1])
             if new_len < old_len:
                 ctx._translate()
-
-    elif isinstance(value, Resource):
-        raise NotImplementedError
+        if isinstance(value, Resource):
+            node = ctx._graph.nodes[path]
+            node["mount"] = {
+                "path": value.filename,
+                "mode": "r",
+                "authority": "file",
+                "persistent": True,
+            }
     elif isinstance(value, (Context, SubContext)):
         assign_context(ctx, path, value)
         ctx._translate()

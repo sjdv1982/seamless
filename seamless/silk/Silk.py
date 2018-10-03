@@ -38,6 +38,18 @@ Buffering:
 #TODO: .self property that becomes a SilkWrapper?
 #TODO: .data => _data + data property + ( .self._data in structured_cell)
 
+def init_object_schema(silk, schema):
+    if "type" in schema:
+        assert schema["type"] == "object"
+        assert "properties" in schema
+        return schema["properties"]
+    schema["type"] = "object"
+    result = {}
+    schema["properties"] = result
+    if silk._schema_update_hook is not None:
+        silk._schema_update_hook()
+    return result
+
 class Silk(SilkBase):
     __slots__ = [
             "_parent", "_parent_attr", "data", "_schema",
@@ -248,7 +260,7 @@ class Silk(SilkBase):
         if isinstance(value, Silk):
             value, value_schema = value.data, value._schema
             if "properties" not in schema:
-                schema["properties"] = {}
+                init_object_schema(self, schema)
             if attr not in schema["properties"]:
                 schema["properties"][attr] = value_schema
                 #TODO: infer_property check
@@ -266,7 +278,7 @@ class Silk(SilkBase):
                     if self._schema_update_hook is not None:
                         self._schema_update_hook()
             if "properties" not in schema:
-                schema["properties"] = {}
+                init_object_schema(self, schema)
             if attr not in schema["properties"]:
                 schema["properties"][attr] = {}
             if "type" not in schema["properties"][attr]:
@@ -383,8 +395,7 @@ class Silk(SilkBase):
         elif isinstance(attr, str):
             prop_schema = schema.get("properties", None)
             if prop_schema is None:
-                prop_schema = {}
-                schema["properties"] = prop_schema
+                prop_schema = init_object_schema(self, schema)
             attr_schema = prop_schema.get(attr, None)
             if attr_schema is None:
                 attr_schema = {}
@@ -553,10 +564,7 @@ class Silk(SilkBase):
         else:
             schema_props = schema.get("properties", None)
             if schema_props is None:
-                schema_props = {}
-                schema["properties"] = schema_props
-                if self._schema_update_hook is not None:
-                    self._schema_update_hook()
+                schema_props = init_object_schema(self, schema)
             child_schema = schema_props.get(item, None)
             if child_schema is None:
                 child_schema = {}

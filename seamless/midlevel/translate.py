@@ -258,8 +258,8 @@ def translate_py_transformer(node, root, namespace, inchannels, outchannels, lib
 
     if with_result:
         plain_result = node["plain_result"]
-        output_state = node.get("cached_state_output", None)
-        result = build_structured_cell(ctx, result_name, True, plain_result, False, [()], outchannels, output_state, lib_path0)
+        result_state = node.get("cached_state_result", None)
+        result = build_structured_cell(ctx, result_name, True, plain_result, False, [()], outchannels, result_state, lib_path0)
         setattr(ctx, result_name, result)
         result_pin = getattr(ctx.tf, result_name)
         result.connect_inchannel(result_pin, ())
@@ -274,7 +274,8 @@ def translate_py_transformer(node, root, namespace, inchannels, outchannels, lib
 
     if not is_lib: #clean up cached state and in_equilibrium, unless a library context
         node.pop("cached_state_input", None)
-        node.pop("cached_state_result", None)
+        if not in_equilibrium:
+            node.pop("cached_state_result", None)
         node.pop("in_equilibrium", None)
 
     namespace[node["path"], True] = inp
@@ -461,9 +462,10 @@ def translate_cell(node, root, namespace, inchannels, outchannels, editchannels,
             else:
                 cached_value = node.get("cached_value")
                 if cached_value is not None:
-                    assert not child.authoritative
-                    manager = child._get_manager()
-                    manager.set_cell(child, cached_value, from_pin=True)
+                    ###assert not child.authoritative
+                    if not child.authoritative:
+                        manager = child._get_manager()
+                        manager.set_cell(child, cached_value, from_pin=True)
 
 
     if not is_lib:

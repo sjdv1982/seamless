@@ -118,7 +118,7 @@ class Transformer(Worker):
             keep = {k:v for k,v in self.namespace.items() if k.startswith("_")}
             self.namespace.clear()
             self.namespace.update(keep)
-            self.namespace["__name__"] = self.name
+            self.namespace["__name__"] = ".".join(self.parent().path)
             for name in self.inputs:
                 if name not in ("code", "schema"):
                     self.namespace[name] = self.values[name]
