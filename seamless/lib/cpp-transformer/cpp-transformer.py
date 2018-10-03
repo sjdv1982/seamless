@@ -8,15 +8,15 @@ ctx.tf.a = 0 #example-based programming, to fill the schema
 ctx.tf.b = 0
 
 ctx.a = 2
-ctx.a.celltype = "json" #int!
+ctx.a.celltype = "json" #TODO: int!
 ctx.b = 3
-ctx.b.celltype = "json" #int!
+ctx.b.celltype = "json" #TODO: int!
 ctx.tf.a = ctx.a
 ctx.tf.b = ctx.b
 ctx.tf.with_result = True
 ctx.tf.result = 0 #example-based programming, to fill the schema
 
-#connect the schema's; just the values, for now...
+#connect the schema's; just the values, for now... #TODO: pins!
 ctx.input_schema = ctx.tf.inp.schema.value
 ctx.result_schema = ctx.tf.result.schema._dict #TODO: solve inconsistency...
 
