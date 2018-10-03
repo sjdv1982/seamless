@@ -376,7 +376,8 @@ In the future, this could be generalized:
 - binary as end point, to be used with slash-language transformers (= interfacing via file system shell)
 - implement caching + incremental compiling ("make" replacement).
   Already, internally, modules should be compiled to low-level BinaryModule, consisting of .o bag.
-  This will be passed on to transformer for marshalling (CFFI) or interfacing (link into .so)
+  This will be passed on to transformer for marshalling (CFFI) or interfacing (link into .so with distutils).
+  In both case, use extra_objects (in set_source for CFFI, Extension class constructor params for distutils)
   The translation of module-JSON-to-.o-bag should become a low-level macro with a cell for each file
    (probably implemented using slash).
 
