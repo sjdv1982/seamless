@@ -294,7 +294,7 @@ The following global interfacers (to Python) are defined:
 - Cython distutils. Accepts C, C++ and Cython as public source objects.
 - Manual interfacer (also for non-Python. Requires headers for workers written in compiled languages).
   Compiles public source object with -fPIC. The module becomes a shared library.
-  Python must use ctypes to load it.
+  Python must use ctypes to load it, or ABI-mode CFFI (manual header).
 Private objects in an extension module are simply compiled to binary code objects and linked into the module binary.
 
 Modules are always either compiled, or interpreted. If it is a mixture, there are
