@@ -169,6 +169,7 @@ Part 7:
 Release as 0.4
 
 Part 8:
+- Flesh out modules (see below). Allow native IPython workers, as well
 - Blocks
 - Streams
 - Special constructs (see below)
@@ -242,6 +243,84 @@ Very long-term:
 - Re-implement all high level classes as Silk classes with methods in their schema.
 - Serialize the topology of low-level contexts, including checksums.
   May help with faster caching of low-level macros.
+
+Modules, compiled workers, and interpreted workers
+==================================================
+In principle, seamless allows a worker to be written in any language. (1)
+Seamless will restrict the allowed values of a worker's "language" to a
+list of recognized languages (mime types), but this list should be very long.
+For every recognized language, seamless will classify them as:
+- By default, "compiled" or "interpreted" (2)
+- A default compiler (this can be defined even for interpreted languages, e.g. Nuitka or Cython for Python)
+Languages can then be subdivided as follows:
+
+0) The Python and IPython languages are native to pyseamless.
+Workers and modules can always be written in those languages.
+1) For a worker written in an interpreted language, that language MUST be marshalled.
+This would normally involve some kind of bidirectional JSON bridge. Some IPython magics implement marshalling as well.
+Memory is never shared, always copied.
+The interpreter is responsible for its own memory management.
+2) For a worker written in a compiled languages, that language MAY be marshalled.
+This essentially means: filling up a data structure (generated from the input and result schemas)
+that can be passed on to the compiled language.
+In addition, a header must be generated of the worker function.
+(transform, code_start, code_update or code_stop) in the compiled language.
+There may be different marshallers for the same language, e.g. a Fortran header may use the underscore name (gcc)
+ or a full ISO C binding.
+If no marshaller can be found, a C header is generated instead; the user is then informed that the worker function
+ signature must match this C signature. Marshalling is then done using the default CFFI marshaller, which uses the
+ C header.
+ Cell memory management is always done by Seamless. The compiled function may allocate things internally, but these allocations
+  may never become part of Seamless cells. The compiled function must have released all resources after transform()/code_stop()
+  have finished.
+3) Compiled languages in an extension module MUST be interfaced if their objects are PUBLIC.
+*Interfacing* means: to allow the symbols of the public objects to be imported in the language of the worker.
+Different interfacers can analyze the public objects of extension modules and tell if they are compatible
+The following global interfacers (to Python) are defined:
+- CFFI. Requires C headers for every public source object. Accepts C and C++ as public source objects.
+- Numpy distutils. Accepts C, C++ and Fortran (using f2py) as public source objects. (see WIP)
+- Cython distutils. Accepts C, C++ and Cython as public source objects.
+- Manual interfacer (also for non-Python. Requires headers for workers written in compiled languages).
+  Compiles public source object with -fPIC. The module becomes a shared library.
+Private objects in an extension module are simply compiled to binary code objects and linked into the module binary.
+
+Modules are always either compiled, or interpreted. If it is a mixture, there are
+ four options:
+ a  split the module in two modules. The interpreted module may import the compiled one.
+ b  annotate the compiled source objects as "data". The interpreted source objects may
+    then compile them on the fly (JIT)
+ c  designate for each compiled source object (or group of source objects) one of
+     the interpreted source objects as its "compiler". The module as a whole will
+     be interpreted, with the "compiler" parts removed, but the compiled objects included.
+     Example: CFFI build script.
+d   have the compiled module marshalled to the interpreted language. Example. Cython-to-IPython using IPython magic.
+
+Interpreted modules must have all objects of the same language, unless a transpiler is available.
+IPython-to-Python transpilation is implicit.
+
+A worker can be explicitly interpreted or compiled. The default is determined from the worker's language.
+Workers may have one or two module pins, containing JSON of the module definition.
+A compiled worker has a special optional module pin "main_module", containing *one* module definition, the main module dict.
+The code pins are implicitly part of the main module. However, explicit dict entries for the code pins are possible.
+"\_" is an alias for "code".
+A dict entry for a module may contain:
+- The language (but not for a code pin), required
+- The source (but not for a code pin), required
+- "compiled" or "interpreted"
+- The compiler (optional)
+- Compilation options: a list, a string or a dict (keys are compilers)
+
+
+(1) But for the time being, macros will be written in Python, using the pyseamless.core API.
+Therefore, "workers" will refer to reactors and transformers
+(2) Or "kernel". Kernel languages have the restriction of both interpreted and compiled languages.
+ They need a compiler, but they cannot be part of a polyglot module.
+ The only pure "kernel" language would be OpenCL (marshalled using PyOpenCL).
+ CUDA by default is in "kernel" mode (using PyCUDA marshalling), but it could also be
+ in "compiled" mode (using nvcc, and then marshalled using CFFI as usual).
+ OpenGL/GLSL is a bit of a special case. It definitely requires marshalling,
+ but not in the context of polyglot transformers/reactors.
+ Rather use the 0.1 library for marshalling (rip Spyder, parse Silk schemas).
 
 The New Way of execution management
 ===================================
