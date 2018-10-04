@@ -1,0 +1,28 @@
+# Defaults for various compiles
+
+# NOTE: -ffast-math reduces reproducibility.
+#  But when the compiler versions are not the same, it is not guaranteed anyway
+#  (and -ffast-math will be the least of our worries)
+# So, enable it by default
+
+{
+  #GNU compiler collection; no "location"; use `which` or implicit shell execution
+  "gcc": {
+      "options": ["-O3"],
+      "public_options": ["-fPIC"],
+      "debug_options": ["-g -O0 -fno-inline -Wall -ffast-math "],
+      "profile_options": ["-p -g"],
+  }
+  "g++": {
+      "options": ["-O3"],
+      "public_options": ["-fPIC"],
+      "debug_options": ["-g -O0 -fno-inline -Wall -ffast-math"],
+      "profile_options": ["-p -g"],
+  }
+  "gfortran": {
+      "options": ["-g -O3 -fno-automatic -ffast-math -fcray-pointer"],
+      "public_options": ["-fPIC"],
+      "debug_options": ["-g -O3 -fno-automatic -ffast-math -fcray-pointer"],
+      "profile_options": ["-p -g"],
+  }
+}

@@ -1,5 +1,5 @@
 #forked from Python's standard lib subprocess, but with mapping stdin and stdout
-# This is NOT enough to make diff3 --merge work!!
+# SLash seems to require this atm
 from subprocess import *
 
 def run(*popenargs,

@@ -379,6 +379,12 @@ Valid environments give the (unique) correct result, whereas incorrect environme
 This means that a dependency library must never have the same code result in two different
  non-error results. The results must either be the same between two versions, or
  one version must give an error. If the library does not guarantee this, the code must do version checking.
+NOTE: there is a "base environment" that escapes this notion. The "base environment" includes
+- Docker version
+- Interpreter versions (Python, node.js)
+- Compiler versions (GCC, CUDA)
+- Relevant drivers and hardware (GPU, CPU instruction set), insofar exposed to the docker image
+Memory does conform to the notion, though, as does time-constrained execution.
 
 When submitting, 1-3 is to check if the computation has been done. If not, 1-6 are submitted.
 Submitting 4-6 (in full or in part) is optional: a server may infer it automatically.

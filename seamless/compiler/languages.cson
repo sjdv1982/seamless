@@ -1,0 +1,27 @@
+# Specifications and default settings for languages
+#TODO: integrate this with mimetypes at the high level
+{
+  "python": {
+    "extension": "py",
+    "mode": "interpreted"
+  }
+  "javascript": {
+    "extension": "js",
+    "mode": "interpreted"
+  }
+  "c": {
+    "extension": "c"
+    "mode": "compiled"
+    "compiler": "gcc"
+  }
+  "c++": {
+    "extension": "cpp"
+    "mode": "compiled"
+    "compiler": "g++"
+  }
+  "fortran": {
+    "extension": "f"
+    "mode": "compiled"
+    "compiler": "gfortran"
+  }
+}
