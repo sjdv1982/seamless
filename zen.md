@@ -17,7 +17,6 @@ GUIs are good, unless they hide the state.
 
 Edit all state, then edit the editor
 
-Code execution is repeatable; if it is not repeatable, you throw away the code,
-and keep its result.
+Code execution is repeatable; if it is not repeatable, the result has authority.
 
 Transform lazily, react eagerly.

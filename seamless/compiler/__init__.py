@@ -25,3 +25,5 @@ compilers = cson2json(compilers_cson)
 with open(languages_cson_file) as f:
     languages_cson = f.read()
 languages = cson2json(languages_cson)
+
+from .compile import compile

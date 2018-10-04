@@ -340,7 +340,9 @@ An "objects" entry for a source object may contain:
   "../blah/X" will always refer to X in extension module blah (also inside the code, e.g. #include)
 - List of exported symbols (if compiled, implies "public"). Necessary for IPython or .ipynb
 - The compiler (optional, implies "compiled")
-- Compilation options: a list, a string or a per-compiler dict thereof (optional)
+- "target": compilation mode (release, debug, profile; default is "profile")
+- Compilation options: a list, a string or a per-compiler dict thereof
+  (optional; if not defined, use default options based on target)
 - The transpiler and transpiler options (optional)
 - "marshaller": two scenarios where this is specified:
   1 In the code pin of the main module: a customized marshaller.
@@ -366,6 +368,8 @@ Compiled workers may have their own marshaller, but that is mostly about generat
  Internally, the C header generated from the schema is used by CFFI, and this is the fallback.
 For interpreted workers, extension modules may be defined.
 Extension modules with all objects written in Python will be usable directly (3).
+TODO: in .core, support for modules-defined-as-dicts-of-Python-cells, not just single Python/IPython cells
+TODO: in .core, support for .ipynb cells (check language_info!)                
 
 Compiled workers have a main module, of which the code pin source objects are implicit members.
  You may add additional extension modules, but this is tricky.

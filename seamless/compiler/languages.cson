@@ -5,6 +5,14 @@
     "extension": "py",
     "mode": "interpreted"
   }
+  "ipython": {
+    "extension": "ipy",
+    "mode": "interpreted"
+  }
+  "ipython-notebook": {
+    "extension": "ipynb",
+    "mode": "interpreted"
+  }
   "javascript": {
     "extension": "js",
     "mode": "interpreted"

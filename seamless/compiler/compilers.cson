@@ -8,21 +8,21 @@
 {
   #GNU compiler collection; no "location"; use `which` or implicit shell execution
   "gcc": {
-      "options": ["-O3"],
+      "options": ["-O3", "-ffast-math", "-march=native"],
       "public_options": ["-fPIC"],
-      "debug_options": ["-g -O0 -fno-inline -Wall -ffast-math "],
+      "debug_options": ["-g", "-O0", "-fno-inline" , "-Wall", "-ffast-math"],
       "profile_options": ["-p -g"],
   }
   "g++": {
-      "options": ["-O3"],
+      "options": ["-O3", "-ffast-math", "-march=native"],
       "public_options": ["-fPIC"],
-      "debug_options": ["-g -O0 -fno-inline -Wall -ffast-math"],
+      "debug_options": ["-g", "-O0", "-fno-inline" , "-Wall", "-ffast-math"],
       "profile_options": ["-p -g"],
   }
   "gfortran": {
-      "options": ["-g -O3 -fno-automatic -ffast-math -fcray-pointer"],
+      "options": ["-O3", "-fno-automatic", "-fcray-pointer", "-ffast-math", "-march=native"],
       "public_options": ["-fPIC"],
-      "debug_options": ["-g -O3 -fno-automatic -ffast-math -fcray-pointer"],
+      "debug_options": ["-O0", "-fno-automatic", "-fcray-pointer", "-ffast-math"],
       "profile_options": ["-p -g"],
   }
 }
