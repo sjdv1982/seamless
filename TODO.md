@@ -7,6 +7,20 @@ Things to do:
 
 Part 2: high level
 A: get BCsearch working
+- C/C++/Fortran cell translation
+  WIP.
+  Make native support for BinaryModule (module pin, see injection.py),
+   = a MixedCell of dict-of-.o (Numpy arrays) + header.
+   low-level transformers (and later, reactors) will have native CFFI support
+    to build this (plus cffi-generated C code) into .so (make global Seamless cache) for interfacing
+    Marshalling is just a special kind of interfacing, where the marshalling
+     code is the transformer code (marshalling transformer).
+    A high-level C++ - transformer is "nothing but" a marshalling transformer
+     where the C++ code has been folded into one particular BinaryModule called "main".
+  Differentiate between "header" (always C, consumed by CFFI) and "signature"
+   (returned as output cell, for user info)
+- Special mount mode for JSON: whatever is read will be passed through cson2json
+
 - Silk form validators
   - All form-validating properties are under "form" of the main schema
     They cannot be defined at the level of sub-schemas
@@ -20,10 +34,6 @@ A: get BCsearch working
       be between any two adjacent ascending list items.
 - Services proof-of-principle
   Low-level services (non-interactive transformer)
-- Special mount mode for JSON: whatever is read will be passed through cson2json
-- C/C++ cell translation
-  (Transformer gains .compile_options, .link_options, .header (read-only),
-   but only if language is C/C++)
 
 B: Towards a first real example
 - Constructors, finish testing
@@ -251,7 +261,7 @@ Seamless will restrict the allowed values of a worker's "language" to a
 list of recognized languages (mime types), but this list should be very long.
 For every recognized language, seamless will classify them as:
 - By default, "compiled" or "interpreted" (2)
-- A default compiler (this can be defined even for interpreted languages, e.g. Nuitka or Cython for Python)
+- A default compiler (this can be defined even for interpreted languages, e.g. Nuitka or embedded-CFFI for Python)
 Languages can then be subdivided as follows:
 
 0) The Python and IPython languages are native to pyseamless.
@@ -278,10 +288,13 @@ If no marshaller can be found, a C header is generated instead; the user is then
 Different interfacers can analyze the public objects of extension modules and tell if they are compatible
 The following global interfacers (to Python) are defined:
 - CFFI. Requires C headers for every public source object. Accepts C and C++ as public source objects.
+  Requires fixed binary form for all arguments.
+  Pure-plain JSON objects/arrays can become string, but mixed-plain for any argument is not allowed
 - Numpy distutils. Accepts C, C++ and Fortran (using f2py) as public source objects. (see WIP)
 - Cython distutils. Accepts C, C++ and Cython as public source objects.
 - Manual interfacer (also for non-Python. Requires headers for workers written in compiled languages).
   Compiles public source object with -fPIC. The module becomes a shared library.
+  Python must use ctypes to load it, or ABI-mode CFFI (manual header).
 Private objects in an extension module are simply compiled to binary code objects and linked into the module binary.
 
 Modules are always either compiled, or interpreted. If it is a mixture, there are
@@ -300,16 +313,77 @@ IPython-to-Python transpilation is implicit.
 
 A worker can be explicitly interpreted or compiled. The default is determined from the worker's language.
 Workers may have one or two module pins, containing JSON of the module definition.
-A compiled worker has a special optional module pin "main_module", containing *one* module definition, the main module dict.
-The code pins are implicitly part of the main module. However, explicit dict entries for the code pins are possible.
-"\_" is an alias for "code".
-A dict entry for a module may contain:
-- The language (but not for a code pin), required
-- The source (but not for a code pin), required
-- "compiled" or "interpreted"
-- The compiler (optional)
-- Compilation options: a list, a string or a dict (keys are compilers)
+A compiled-language worker has a special optional module pin "main_module", containing *one* module definition,
+ the main module dict.
+It also has the option "marshaller" (default: the language-specific marshaller)
+ and it has the option "interfacer" (default: auto-detect).
+ If the worker is interpreted-language, an interfacer must be found.
 
+All workers also have a special optional module pin "modules", which contains a *dict* of module definitions
+The code pins are implicitly part of the main module. However, explicit "objects" entries for the code pins are possible.
+"\_" is an alias for "code".
+A module is a dict with at least an item "objects".
+An "objects" entry for a source object may contain:
+- The language (but not for a code pin), required. Seamless must know the language (in particular, its file extension)
+- The source (but not for a code pin), required
+- "compiled" or "interpreted" or "data" or "internal_compiled" (option c above, must contain name of other object)
+- One or more private headers (in one or more languages) for sharing symbols with other objects.
+  Format: (filename, value) dict. Filename includes file extension. Seamless will check that the filename won't clash
+  with other headers or object-source-files-written-on-disk.
+  No need to specify language. May be referenced (included) by own code (in own language)
+   or by other object in the module (in that object's language), Seamless won't care.   
+- Public or private (but not for a code pin), default: public (implies "compiled")
+- Public C headers, as a language:header-code dict.
+  Only for extension modules for interpreted workers.
+  Needed if CFFI interfacer is used.
+- Dependencies. Just for incremental (re-)compilation
+  "../blah/X" will always refer to X in extension module blah (also inside the code, e.g. #include)
+- List of exported symbols (if compiled, implies "public"). Necessary for IPython or .ipynb
+- The compiler (optional, implies "compiled")
+- Compilation options: a list, a string or a per-compiler dict thereof (optional)
+- The transpiler and transpiler options (optional)
+- "marshaller": two scenarios where this is specified:
+  1 In the code pin of the main module: a customized marshaller.
+    For Fortran, seamless known the gcc marshaller (apply underscore), and the iso bind marshaller.
+    They generate different signatures, and have different schema support.
+  2 In an extension module, this is option d above. e.g. specification of an IPython magic
+
+The module also contains:
+- mode: "interpreted" or "compiled"
+- language (only if interpreted)
+The module may also contain:
+- A compiler config dict, where locations of each compiler can be entered (else Unix "which" is used)
+- A transpiler config dict, that also lists the target language
+- interfacer
+- Linking options
+- Global settings: verbose compilation, debug compilation, build directory
+
+In summary:
+For pyseamless, interpreted workers in Python need no marshalling (3).
+All other interpreted workers must be marshalled to and from Python (4).
+Compiled workers may have their own marshaller, but that is mostly about generating
+ from the schema the "signature" (telling the user the mandatory worker function declaration).
+ Internally, the C header generated from the schema is used by CFFI, and this is the fallback.
+For interpreted workers, extension modules may be defined.
+Extension modules with all objects written in Python will be usable directly (3).
+
+Compiled workers have a main module, of which the code pin source objects are implicit members.
+ You may add additional extension modules, but this is tricky.
+
+The whole point of a compiled module is to generate a shared module (for marshalling or interfacing).
+In the future, this could be generalized:
+- submodules, which generate statically-linked libraries (different bag of linked .o, plus public header )
+- binary as end point, to be used with slash-language transformers (= interfacing via file system shell)
+- implement caching + incremental compiling ("make" replacement).
+  Already, internally, modules should be compiled to low-level BinaryModule, consisting of .o bag.
+  This will be passed on to transformer for marshalling (CFFI) or interfacing (link into .so with distutils).
+  In both case, use extra_objects (in set_source for CFFI, Extension class constructor params for distutils)
+  The translation of module-JSON-to-.o-bag should become a low-level macro with a cell for each file
+   (probably implemented using slash).
+
+You can choose between marshalling and interfacing.
+In general, marshalling is better, as you can share all Seamless schema's, and you have
+ type safety. Interfacing only works for interpreted workers, it may require type declarations.
 
 (1) But for the time being, macros will be written in Python, using the pyseamless.core API.
 Therefore, "workers" will refer to reactors and transformers
@@ -321,6 +395,9 @@ Therefore, "workers" will refer to reactors and transformers
  OpenGL/GLSL is a bit of a special case. It definitely requires marshalling,
  but not in the context of polyglot transformers/reactors.
  Rather use the 0.1 library for marshalling (rip Spyder, parse Silk schemas).
+(3) Including IPython, and including .ipynb (TODO)
+(4) but if you can find a worker service that will accept the interpreted worker,
+ it will do the job for you, problem solved.
 
 The New Way of execution management
 ===================================

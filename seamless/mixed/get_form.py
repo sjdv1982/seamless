@@ -14,6 +14,7 @@ from copy import deepcopy
 from . import ( Scalar,
   _array_types, _integer_types, _float_types, _string_types, _unsigned_types
 )
+_string_types = (str,)  ##JSON cannot deal with bytes
 
 def get_typedef_scalar(value):
     if isinstance(value, bool):

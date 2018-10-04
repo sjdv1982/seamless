@@ -156,7 +156,7 @@ class MountItem:
                 if os.path.exists(filepath):
                     os.unlink(filepath)
                 return
-            filevalue = ""
+            filevalue = b"" if binary else ""
         with open(filepath, filemode, encoding=encoding) as f:
             f.write(filevalue)
 

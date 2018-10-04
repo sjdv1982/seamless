@@ -28,12 +28,12 @@ class Transformer(Base):
         parent._children[result_path] = result
 
     @property
-    def with_schema(self):
-        return self._get_htf()["with_schema"]
-    @with_schema.setter
-    def with_schema(self, value):
+    def with_result(self):
+        return self._get_htf()["with_result"]
+    @with_result.setter
+    def with_result(self, value):
         assert value in (True, False), value
-        self._get_htf()["with_schema"] = value
+        self._get_htf()["with_result"] = value
         self._parent()._translate()
 
 
@@ -41,7 +41,7 @@ class Transformer(Base):
         from .assign import assign_connection
         tf = self._get_tf()
         htf = self._get_htf()
-        if htf["with_schema"]:
+        if htf["with_result"]:
             raise NotImplementedError
         parent = self._parent()
         result_path = self._path + (htf["RESULT"],)
@@ -52,7 +52,7 @@ class Transformer(Base):
     def __setattr__(self, attr, value):
         from .assign import assign_connection
         from ..midlevel.copying import fill_structured_cell_value
-        if attr.startswith("_"):
+        if attr.startswith("_") or attr in type(self).__dict__:
             return object.__setattr__(self, attr, value)
         translate = False
         parent = self._parent()
@@ -63,16 +63,16 @@ class Transformer(Base):
             mount = {
                 "path": value.filename,
                 "mode": "r",
-                "authority": "cell",
+                "authority": "file",
                 "persistent": True,
             }
             htf["mount"] = mount
             translate = True
 
-        if not self._has_tf() and not isinstance(value, Cell):
+        if not self._has_tf() and not isinstance(value, Cell) and attr != htf["RESULT"]:
             if isinstance(value, Resource):
                 value = value.data
-            if "TEMP" not in htf:
+            if "TEMP" not in htf or htf["TEMP"] is None:
                 htf["TEMP"] = {}
             htf["TEMP"][attr] = value
             self._parent()._translate()
@@ -89,6 +89,12 @@ class Transformer(Base):
                     value, _, _ = parse_function_code(value)
                 tf.code.set(value)
                 htf["code"] = tf.code.value
+        elif attr == htf["RESULT"]:
+            assert htf["with_result"]
+            result = getattr(tf, htf["RESULT"])
+            # Example-based programming to set the schema
+            # TODO: suppress inchannel warning
+            result.handle.set(value)
         else:
             inp = getattr(tf, htf["INPUT"])
             assert not test_lib_lowlevel(parent, inp)
@@ -109,7 +115,7 @@ class Transformer(Base):
                 setattr(inp.handle, attr, value)
                 # superfluous, filling now happens upon translation
                 ###fill_structured_cell_value(inp, htf, "stored_state_input", "cached_state_input")
-            htf.pop("in_equilibrium", None)
+            ###htf.pop("in_equilibrium", None) # a lot more things can break equilibrium!!
         if parent._as_lib is not None:
             if htf["path"] in parent._as_lib.partial_authority:
                 parent._as_lib.needs_update = True
@@ -149,6 +155,9 @@ class Transformer(Base):
         if attr == "code":
             p = tf.code
             return p.data
+        elif attr == htf["RESULT"]:
+            assert htf["with_result"] #otherwise "result" is just a pin
+            return getattr(tf, attr).value
         else:
             inp = getattr(tf, htf["INPUT"])
             p = inp.value[attr]
@@ -162,13 +171,16 @@ class Transformer(Base):
         if attr == htf["INPUT"]:
             # TODO: better wrapping
             return getattr(self._get_tf(), htf["INPUT"])
-        if attr not in htf["pins"] and attr != "code":
+        if attr not in htf["pins"] and attr != "code" and attr != htf["RESULT"]:
             #TODO: could be result pin... what to do?
             raise AttributeError(attr)
         pull_source = functools.partial(self._pull_source, attr)
         if attr == "code":
             getter = self._codegetter
             proxycls = CodeProxy
+        elif attr == htf["RESULT"]:
+            getter = self._resultgetter
+            proxycls = Proxy
         else:
             getter = functools.partial(self._valuegetter, attr)
             proxycls = Proxy
@@ -185,6 +197,15 @@ class Transformer(Base):
             return mimetype
         else:
             raise AttributeError(attr)
+
+    def _resultgetter(self, attr):
+        htf = self._get_htf()
+        assert htf["with_result"]
+        tf = self._get_tf()
+        resultcell = getattr(tf, htf["RESULT"])
+        if attr == "schema":
+            return resultcell.handle.schema
+        return getattr(resultcell, attr)
 
     def _valuegetter(self, attr, attr2):
         if attr2 != "value":

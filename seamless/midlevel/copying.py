@@ -36,6 +36,7 @@ def fill_structured_cell_value(cell, node, label_auth, label_cached):
     In that case, both the authoritative part of the state (under label_auth)
      and the full state (under)
     """
+    state = None
     if cell.has_authority: #cell has at least some authority
         state = StructuredCellState().set(cell, only_auth=True)
         node[label_auth] = state
@@ -46,6 +47,7 @@ def fill_structured_cell_value(cell, node, label_auth, label_cached):
         node[label_cached] = state
     else:
         node.pop(label_cached, None)
+    return state
 
 def fill_simple_cell_value(cell, node, label_auth, label_cached):
     if isinstance(cell, core_link):
@@ -61,13 +63,14 @@ def fill_simple_cell_value(cell, node, label_auth, label_cached):
     else:
         node[label_cached] = value
         node.pop(label_auth, None)
+    return value
 
 def fill_cell_value(cell, node):
     from ..core.structured_cell import StructuredCell
     if isinstance(cell, StructuredCell):
-        fill_structured_cell_value(cell, node, "stored_state", "cached_state")
+        return fill_structured_cell_value(cell, node, "stored_state", "cached_state")
     else:
-        fill_simple_cell_value(cell, node, "stored_value", "cached_value")
+        return fill_simple_cell_value(cell, node, "stored_value", "cached_value")
 
 def fill_cell_values(ctx, nodes, path=None):
     from ..highlevel import Cell, Transformer, Reactor, Link
@@ -86,18 +89,20 @@ def fill_cell_values(ctx, nodes, path=None):
                 continue #not yet translated
             if isinstance(child, Transformer):
                 transformer = child._get_tf()
-                if transformer.status() == "OK":
-                    node["in_equilibrium"] = True
+                ###if transformer.status() == "OK":
+                ###    node["in_equilibrium"] = True
+                # Not nearly strong enough: upstream transformers may be engaged in long computation!
                 input_name = node["INPUT"]
                 inp = getattr(transformer, input_name)
                 assert isinstance(inp, StructuredCell)
                 fill_structured_cell_value(inp, node, "stored_state_input", "cached_state_input")
                 fill_simple_cell_value(transformer.code, node, "code", "cached_code")
-                if node["with_schema"]:
+                if node["with_result"]:
                     result_name = node["RESULT"]
-                    result = getattr(transformer, result_name)
-                    assert isinstance(result, StructuredCell)
-                    fill_structured_cell_value(result, node, None, "cached_state_result")
+                    result = getattr(transformer, result_name, None)
+                    if result is not None:
+                        assert isinstance(result, StructuredCell)
+                        fill_structured_cell_value(result, node, None, "cached_state_result")
             elif isinstance(child, Reactor):
                 reactor = child._get_rc()
                 io_name = node["IO"]

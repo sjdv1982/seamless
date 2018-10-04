@@ -52,7 +52,6 @@ class OverlayMonitor(MakeParentMonitor):
         if path in self.inchannels:
             ppath = path if len(path) else "()"
             warn("inchannel %s exists, value overwritten" % ppath)
-            raise Exception ###
         else:
             l0 = len(path)
             for cpath in self.inchannels:
