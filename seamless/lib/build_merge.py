@@ -17,7 +17,7 @@ merge.set_pin("merged", io="output", access_mode="text")
 merge.set_pin("mode", io="output")
 
 merge.fallback = "no"
-#TODO: add the validator to the schema of the .fallback property
+#TODO: add the validator to the schema of the .fallback property, instead of the main schema
 #  (requires that .add_validator and ._set_property/._set_method become schema methods)
 def validate_fallback(self):
     assert self.fallback in ("upstream", "modified", "no"), self.fallback
