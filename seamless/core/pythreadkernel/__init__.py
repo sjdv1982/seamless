@@ -105,6 +105,8 @@ class Worker(metaclass=ABCMeta):
 
                     if self.injected_modules and name in self.injected_modules:
                         language = content_type
+                        if content_type == "mixed":
+                            language = "binary"
                         mod = self.injector.define_module(self, name, language, data)
                         data = mod
 

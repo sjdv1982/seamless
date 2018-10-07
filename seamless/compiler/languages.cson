@@ -28,7 +28,7 @@
     "compiler": "g++"
   }
   "fortran": {
-    "extension": "f"
+    "extension": ["f", "f90"]
     "mode": "compiled"
     "compiler": "gfortran"
   }

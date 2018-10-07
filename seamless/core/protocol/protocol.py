@@ -1,4 +1,5 @@
 from collections import OrderedDict
+import sys
 import json
 from copy import deepcopy
 from ...silk import Silk
@@ -25,6 +26,7 @@ A connection declaration may have up to four parts
   - silk: a Silk object
   - text: a text string
   - module: a Python module
+  - binary_module: a tree of binary objects (.o / .obj) for compilation
 - content type: the semantic content of the data
   - object: generic Python object
   - text: text
@@ -44,7 +46,7 @@ They will never be something as rich as MIME types;
 """
 
 transfer_modes = ("buffer", "copy", "ref", "signal")
-access_modes = ("object", "pythoncode", "json", "silk", "text", "module") # how the data is accessed
+access_modes = ("object", "pythoncode", "json", "silk", "text", "module", "binary_module") # how the data is accessed
 content_types = ("object", "text",
   "python", "ipython", "transformer", "reactor", "macro",
   "json", "cson", "mixed", "binary"
@@ -61,6 +63,14 @@ def set_cell(cell, value, *,
       from_pin=from_pin, default=default,force=force
     )
     return different, text_different
+
+def compile_binary_module(binary_module):
+    from ...compiler.build_extension import build_extension_cffi
+    compiler_verbose = True #TODO: read from some setting somewhere
+    #TODO: other compilation than cffi (Numpy or Cython)
+    module_name = build_extension_cffi(binary_module, compiler_verbose=compiler_verbose)
+    return sys.modules[module_name]
+
 
 def adapt_cson_json(source):
     assert isinstance(source, str), source
@@ -129,7 +139,7 @@ adapters[("copy", "text", "ipython"), ("copy", "module", "ipython")] = True
 for pymode in ("transformer", "reactor", "macro"):
     adapters[("ref", "pythoncode", "python"), ("ref", "pythoncode", pymode)] = True
     adapters[("copy", "pythoncode", "python"), ("copy", "pythoncode", pymode)] = True
-
+adapters[("copy", "object", "mixed"), ("copy", "binary_module", "mixed")] = compile_binary_module
 
 def select_adapter(transfer_mode, source, target, source_modes, target_modes):
     if transfer_mode == "ref":

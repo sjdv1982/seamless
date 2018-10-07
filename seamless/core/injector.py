@@ -17,19 +17,24 @@ class Injector:
         self.workspaces[workspace_key] = ws
 
     def define_module(self, workspace_key, module_name, language, code):
-        assert language in ("python", "ipython"), language
-        if code is not None:
-            assert isinstance(code, str), type(code)
+        assert language in ("python", "ipython", "binary"), language
         ws = self.workspaces[workspace_key]
+        mname = self.topmodule_name + "." + module_name
+        if language == "binary":
+            mod = code
+            m = {"module":mod, "name": mname, "checksum": None}
+            ws[module_name] = m
+            return mod
         if code is None:
             ws[module_name] = None
             return
+        else:
+            assert isinstance(code, str), type(code)
         m = ws.get(module_name)
         checksum = hashlib.md5(code.encode("utf-8")).hexdigest()
         if m is not None and m["checksum"] == checksum:
             return
         m = {}
-        mname = self.topmodule_name + "." + module_name
         m["name"] = mname
         mod = ModuleType(mname)
         namespace = mod.__dict__

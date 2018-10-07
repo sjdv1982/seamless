@@ -127,7 +127,6 @@ class Transformer(Worker):
             self.namespace["__name__"] ="transformer"  #must be the same as injector
             for name in self.inputs:
                 if name not in ("code", "schema"):
-                    print("VALUE", name, self.values[name])
                     self.namespace[name] = self.values[name]
             queue = Queue()
             workspace = self if self.injected_modules else None

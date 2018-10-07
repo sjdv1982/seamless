@@ -8,21 +8,27 @@
 {
   #GNU compiler collection; no "location"; use `which` or implicit shell execution
   "gcc": {
+      "compile_flag": "-c"
+      "output_flag": "-o"
       "options": ["-O3", "-ffast-math", "-march=native"],
       "public_options": ["-fPIC"],
       "debug_options": ["-g", "-O0", "-fno-inline" , "-Wall", "-ffast-math"],
-      "profile_options": ["-p -g"],
+      "profile_options": ["-p", "-g"],
   }
   "g++": {
+      "compile_flag": "-c"
+      "output_flag": "-o"
       "options": ["-O3", "-ffast-math", "-march=native"],
       "public_options": ["-fPIC"],
       "debug_options": ["-g", "-O0", "-fno-inline" , "-Wall", "-ffast-math"],
-      "profile_options": ["-p -g"],
+      "profile_options": ["-p", "-g"],
   }
   "gfortran": {
+      "compile_flag": "-c"
+      "output_flag": "-o"
       "options": ["-O3", "-fno-automatic", "-fcray-pointer", "-ffast-math", "-march=native"],
       "public_options": ["-fPIC"],
       "debug_options": ["-O0", "-fno-automatic", "-fcray-pointer", "-ffast-math"],
-      "profile_options": ["-p -g"],
+      "profile_options": ["-p", "-g"],
   }
 }
