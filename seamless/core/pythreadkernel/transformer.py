@@ -74,7 +74,7 @@ class Transformer(Worker):
         for inp in self.inputs:
             pin = self.inputs[inp]
             access_mode = pin[1]
-            if access_mode == "module":
+            if access_mode in ("module", "binary_module"):
                 injected_modules.append(inp)
         if len(injected_modules):
             self.injected_modules = injected_modules
@@ -123,9 +123,11 @@ class Transformer(Worker):
             keep = {k:v for k,v in self.namespace.items() if k.startswith("_")}
             self.namespace.clear()
             self.namespace.update(keep)
-            self.namespace["__name__"] = ".".join(self.parent().path)
+            self.namespace["__fullname__"] = ".".join(self.parent().path)
+            self.namespace["__name__"] ="transformer"  #must be the same as injector
             for name in self.inputs:
                 if name not in ("code", "schema"):
+                    print("VALUE", name, self.values[name])
                     self.namespace[name] = self.values[name]
             queue = Queue()
             workspace = self if self.injected_modules else None

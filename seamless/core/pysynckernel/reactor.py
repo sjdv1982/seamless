@@ -203,7 +203,8 @@ class Reactor:
         self.namespace.clear()
         self.namespace.update(keep)
         self.namespace["PINS"] = self.PINS
-        self.namespace["__name__"] = "reactor"
+        self.namespace["__fullname__"] = ".".join(self.parent().path)
+        self.namespace["__name__"] = "reactor" #must be the same as injector
         for name in self.values:
             v = self.values[name]
             mode, _, _, _ = self.inputs[name]

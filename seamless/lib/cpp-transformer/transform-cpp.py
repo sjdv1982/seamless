@@ -7,7 +7,7 @@ from cffi import FFI
 cppcode = cppcode.data #Silk
 header = header.data #Silk
 
-name = __name__
+name = __fullname__
 if name.startswith("translated."):
     name = name[len("translated."):]
 name = name.replace(".", "_")
