@@ -516,6 +516,15 @@ class MixedCell(Cell):
         else:
             return self._assign(value)
 
+    def set(self, value, auto_form=False):
+        from seamless.mixed.get_form import get_form
+        if auto_form:
+            storage, form = get_form(value)
+            self.storage_cell.set(storage)
+            self.form_cell.set(form)
+        super().set(value)
+
+
     def __str__(self):
         ret = "Seamless mixed cell: " + self._format_path()
         return ret
@@ -607,6 +616,9 @@ class PythonCell(Cell):
                        isinstance(ast.body[0], FunctionDef))
         is_expr = (len(ast.body) == 1 and
                        isinstance(ast.body[0], Expr))
+        #no multiline expressions, may give indentation syntax errors
+        if len(value.splitlines()) > 1:
+            is_expr = False
 
         if is_function:
             self.func_name = ast.body[0].name

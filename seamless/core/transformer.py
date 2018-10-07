@@ -265,9 +265,10 @@ class Transformer(Worker):
                     ###output_name, output_value = item
 
                 assert output_name == self._output_name, item
-                pin = self._pins[self._output_name]
-                #we're not in the main thread, but the manager takes care of it
-                pin.send_update(output_value, preliminary=preliminary)
+                if self._output_name is not None:
+                    pin = self._pins[self._output_name]
+                    #we're not in the main thread, but the manager takes care of it
+                    pin.send_update(output_value, preliminary=preliminary)
 
                 if preliminary:
                     continue

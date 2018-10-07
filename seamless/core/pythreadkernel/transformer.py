@@ -32,11 +32,14 @@ def execute(name, code_object, namespace, injector, workspace,
         exc = traceback.format_exc()
         result_queue.put((1, exc))
     else:
-        try:
-            result = namespace[output_name]
-            result_queue.put((0, result))
-        except KeyError:
-            result_queue.put((1, "Output variable name '%s' undefined" % output_name))
+        if output_name is None:
+            result_queue.put((0, None))
+        else:
+            try:
+                result = namespace[output_name]
+                result_queue.put((0, result))
+            except KeyError:
+                result_queue.put((1, "Output variable name '%s' undefined" % output_name))
     if USE_PROCESSES:
         result_queue.close()
     result_queue.join()
@@ -58,7 +61,8 @@ class Transformer(Worker):
         self.running_thread = None
         self.in_equilibrium = in_equilibrium
 
-        self.function_expr_template = "{0}\n%s = {1}(" % self.output_name
+        o = self.output_name if self.output_name is not None else "_"
+        self.function_expr_template = "{0}\n%s = {1}(" % o
         for inp in sorted(list(inputs.keys())):
             if inp == "code":
                 continue
@@ -104,7 +108,8 @@ class Transformer(Worker):
                 if code_obj is not None and code_obj.is_function:
                     func_name = code_obj.func_name
                     if func_name == "<expr>":
-                        expr = "{0} = {1}".format(self.output_name, code)
+                        o = self.output_name if self.output_name is not None else "_"
+                        expr = "{0} = {1}".format(o, code)
                     elif func_name == "<lambda>":
                         code2 = "LAMBDA = " + code
                         expr = self.function_expr_template.format(code2, "LAMBDA")
