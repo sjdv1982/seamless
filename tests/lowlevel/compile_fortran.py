@@ -20,7 +20,6 @@ module = {
         "main": {
             "code": code,
             "language": "f90",
-            "extension": "f90",
         },
     },
     "public_header": {

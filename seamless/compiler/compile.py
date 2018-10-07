@@ -23,6 +23,7 @@ def compile(moduletree, compiler_verbose=False):
     binary_moduletree["objects"] = {}
     for objectname, object_ in moduletree["objects"].items():
         lang = object_["language"]
+        extension = object_.get("extension")
         try:
             language = languages[lang]
         except KeyError:
@@ -37,6 +38,7 @@ def compile(moduletree, compiler_verbose=False):
                         break
             else:
                 raise KeyError(lang) from None
+            extension = lang
 
         compiler_name = object_.get("compiler", language.get("compiler"))
         assert compiler_name is not None, lang
@@ -57,10 +59,11 @@ def compile(moduletree, compiler_verbose=False):
             options = list(options) if isinstance(options, str) else options
         compiler_binary = compiler.get("location", compiler_name)
         code = object_["code"]
-        ext = object_.get("extension", language["extension"])
-        if isinstance(ext, list):
-            ext = ext[0]
-        code_file = objectname + "." + ext
+        if extension is None:
+            extension = language["extension"]
+        if isinstance(extension, list):
+            extension = extension[0]
+        code_file = objectname + "." + extension
         obj_file = objectname + ".o" #TODO: Windows
         cmd = [compiler_binary, compiler["compile_flag"], code_file]
         cmd += options
