@@ -1,6 +1,8 @@
 from .cell import CellLikeBase, Cell, JsonCell, TextCell
 from ..mixed import MixedBase, OverlayMonitor, MakeParentMonitor, MonitorTypeError
 from ..mixed.get_form import get_form
+from ..mixed.io.util import is_identical_debug
+
 import weakref
 import json
 import traceback
@@ -76,7 +78,7 @@ def channel_deserialize(channel, value, transfer_mode, access_mode, content_type
                     return False, False
         else:
             monitor.receive_inchannel_value(channel.inchannel, value)
-        dif = (value != channel._last_value)
+        dif = not is_identical_debug(value, channel._last_value)
         #TODO: keep checksum etc. to see if value really changed
         different, text_different = dif, dif
         channel._last_value = deepcopy(value)
@@ -190,7 +192,7 @@ class Outchannel(CellLikeBase):
         structured_cell = self.structured_cell()
         if self._buffered:
             if structured_cell._plain or structured_cell.storage.value == "pure-plain":
-                if value == self._last_value:
+                if is_identical_debug(value, self._last_value):
                     return value
             self._last_value = deepcopy(value)
         else:
@@ -384,6 +386,7 @@ def set_state(cell, state):
 class StructuredCell(CellLikeBase):
     _mount = None
     _from_pin_mode = False
+    _exported = True
     def __init__(
       self,
       name,

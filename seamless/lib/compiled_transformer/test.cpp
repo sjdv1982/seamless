@@ -1,3 +1,5 @@
+#include <cmath>
+
 extern "C" int transform(int a, int b) {
   float x = 0;
   for (int n = 0; n < 1000; n++) {
@@ -6,5 +8,5 @@ extern "C" int transform(int a, int b) {
     }
   }
   int xx = x;
-  return xx % 1000;
+  return xx % 1000 + M_PI + 2;
 }

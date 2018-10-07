@@ -21,6 +21,7 @@ from .utils import strip_source
 cell_counter = 0
 
 class CellLikeBase(SeamlessBase):
+    _exported = True
     def __init__(self):
         global cell_counter
         super().__init__()

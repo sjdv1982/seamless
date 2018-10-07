@@ -3,8 +3,8 @@ json_to_c = {
     "number": "double", #TODO: storage size
     "str": "const char*",
 }
-print("input schema:", input_schema)
-print("result schema:", result_schema)
+###print("input schema:", input_schema)
+###print("result schema:", result_schema)
 
 input_args = ""
 input_jtype = input_schema["type"]

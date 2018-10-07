@@ -71,8 +71,8 @@ def compile(moduletree, compiler_verbose=False):
         checksum = md5(code.encode()).hexdigest()
         cachekey = (tuple(cmd), checksum)
         #TODO: include header checksums as well
-        obj_data = cache.get(cachekey)
-        if obj_data is None:
+        obj_array = cache.get(cachekey)
+        if obj_array is None:
             currdir = os.getcwd()
             try:
                 os.chdir(tempfile.gettempdir())
@@ -90,7 +90,7 @@ def compile(moduletree, compiler_verbose=False):
                 cache[cachekey] = obj_array
             finally:
                 try:
-                    ###os.unlink(code_file)
+                    ###os.unlink(code_file) #TODO: optionally keep it for manual compilation?
                     os.unlink(obj_file)
                 except:
                     pass

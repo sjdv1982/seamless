@@ -27,6 +27,7 @@ class Context(SeamlessBase):
     _unmounted = False
     _seal = None
     _direct_mode = False
+    _exported = True
 
     def __init__(
         self, *,

@@ -10,11 +10,9 @@ def build_extension_cffi(binary_module, compiler_verbose=False, debug=None):
         return Distribution(kwargs)
 
     cffi_header = None
-    public_header = binary_module.get("public_header")
-    if public_header is not None:
-        assert public_header["language"] == "c"
-        cffi_header = public_header["code"]
-    assert cffi_header is not None
+    public_header = binary_module["public_header"]
+    assert public_header["language"] == "c"
+    cffi_header = public_header["code"]
     return _build_extension(
         binary_module, cffi_header,
         Extension, distclass,

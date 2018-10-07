@@ -18,6 +18,7 @@ class Worker(SeamlessBase):
     """Base class for all workers."""
     _pins = None
     _naming_pattern = "worker"
+    _exported = True
 
     @with_macro_mode
     def __init__(self):
