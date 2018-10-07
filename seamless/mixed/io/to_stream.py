@@ -38,6 +38,7 @@ def _to_stream(
 ):
     if storage == "pure-plain":
         if binary_parent:
+            json.dumps(data) ###
             jsons.append(data) #no need to copy anything
             return -1, buffer_offset
         else: #parent is already plain (and is in jsons), nothing to do
@@ -56,6 +57,9 @@ def _to_stream(
         return buffersize, buffer_offset
     if isinstance(form, str):
         return None, buffer_offset #scalar or empty child of a mixed parent; even if binary, already taken into account
+
+    # Storage is now "mixed-plain" or "mixed-binary"
+
     type_ = form["type"]
     identical = False
     if type_ in ("string", "integer", "number", "boolean", "null"):
@@ -63,13 +67,16 @@ def _to_stream(
 
     my_data = None
     my_buffersize = None
+    append_my_data = False
+    has_been_copied = False
     if storage == "mixed-plain":
         if binary_parent != False:
             my_data = deepcopy(data)
             if binary_parent:
                 my_buffersize = -1
-            jsons.append(my_data)
+            append_my_data = True
         else: #data has already been copied
+            has_been_copied = True
             my_data = data
     elif storage == "mixed-binary":
         if type_ != "tuple": #plain parent, or we occupy a Python object slot in the parent Numpy struct
@@ -81,6 +88,7 @@ def _to_stream(
             my_buffersize = buffersize
         else:
             assert binary_parent #tuples must have a binary parent
+            has_been_copied = True
             my_data = data #data has already been buffered
     else:
         raise ValueError(storage)
@@ -104,29 +112,42 @@ def _to_stream(
         keys = list(range(len(my_data)))
         form_items = form["items"]
         identical = form["identical"]
+        if isinstance(form_items, tuple):
+            form_items = list(form_items)
     else:
         raise ValueError(type_)
     keys = list(keys)
-    if identical:
+    if not identical:
         assert len(items) == len(form_items), (data, form)
     for n in range(len(items)):
         item = items[n]
+        if isinstance(item, tuple):
+            assert has_been_copied or my_data is not data
+            item = list(item)
+            my_data[keys[n]] = item
+            items[n] = item
         if identical:
             form_item = form_items
         else:
             form_item = form_items[n]
+            if isinstance(form_item, tuple):
+                form_item = list(form_item)
+                form_items[n] = form_item
         substorage = storage
         if isinstance(form_item, dict):
             substorage = form_item.get("storage", storage)
+
         item_size, buffer_offset = _to_stream(
           item, substorage, form_item,
           jsons, buffer, buffer_offset,
           binary_parent=item_binary_parent
         )
         if item_size is not None:
-            assert my_data is not data
-            #print("ITEM", item_size)
+            assert has_been_copied or my_data is not data #my_data must have been copied! can't overwrite data!
             my_data[keys[n]] = 0 #zero out the Python object
+    if append_my_data:
+        json.dumps(my_data)
+        jsons.append(my_data)
     return my_buffersize, buffer_offset
 
 def to_stream(data, storage, form):
@@ -148,6 +169,8 @@ def to_stream(data, storage, form):
 
     bytebuffer = bytearray(buffersize)
     buffer = np.frombuffer(bytebuffer,dtype=np.uint8)
+    if isinstance(data, tuple):
+        data = list(data)
     id, buffer_offset = _to_stream(data, storage, updated_form, jsons, buffer, 0)
     assert buffer_offset == buffersize, (buffer_offset, buffersize)
 

@@ -1,5 +1,70 @@
 import numpy as np
 
+def _is_identical_dict_debug(first, second):
+    keys1, keys2 = first.keys(), second.keys()
+    if keys1 != keys2:
+        return False
+    for k in keys1:
+        if not is_identical_debug(first[k], second[k]):
+            return False
+    return True
+
+def _is_identical_list_debug(first, second):
+    if len(first) != len(second):
+        return False
+    for f,s in zip(first, second):
+        if not is_identical_debug(f, s):
+            return False
+    return True
+
+def _is_identical_ndarray_debug(first, second):
+    if first.dtype != second.dtype:
+        return False
+    if first.dtype.fields is None and first.dtype != np.object:
+        return np.array_equal(first, second)
+    else:
+        for f,s in zip(first, second):
+            if not is_identical_debug(f, s):
+                return False
+        return True
+
+def _is_identical_npvoid_debug(first, second):
+    if first.dtype != second.dtype:
+        return False
+    if first.dtype.fields is None:
+        if first.dtype == np.object:
+            return is_identical_debug(first, second)
+        else:
+            return first == second
+    for field in first.dtype.fields:
+        f, s = first[field], second[field]
+        if not is_identical_debug(f, s):
+            return False
+    return True
+
+def is_identical_debug(first, second):
+    """Checks that two mixed objects are identical
+    Does not rely on any form information
+    TODO: is_identical(first, form1, second, form2)"""
+    if isinstance(first, dict):
+        if not isinstance(second, dict):
+            return False
+        return _is_identical_dict_debug(first, second)
+    elif isinstance(first, (tuple, list)):
+        if not isinstance(second, (tuple, list)):
+            return False
+        return _is_identical_list_debug(first, second)
+    elif isinstance(first, np.ndarray):
+        if not isinstance(second, np.ndarray):
+            return False
+        return _is_identical_ndarray_debug(first, second)
+    elif isinstance(first, np.void):
+        if not isinstance(second, np.void):
+            return False
+        return _is_identical_npvoid_debug(first, second)
+    else:
+        return first == second
+
 def mul(shape):
     result = 1
     for s in shape:
@@ -126,7 +191,7 @@ def get_buffersize_debug(data, storage, form, binary_parent=None):
         identical = form["identical"]
     else:
         raise ValueError(type_)
-    if identical:
+    if not identical:
         assert len(items) == len(form_items), (data, form)
     for n in range(len(items)):
         item = items[n]

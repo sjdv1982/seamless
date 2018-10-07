@@ -46,7 +46,7 @@ def _from_stream_binary(
         for key in keys:
             item_form = form["properties"][key]
             if not isinstance(item_form, dict):
-                continue
+                continue #scalar
             item_storage = item_form.get("storage", "pure-binary")
             _from_stream_sub(data, key, item_storage, item_form, jsons, buffer)
     elif type_ in ("tuple", "array"):
@@ -59,12 +59,15 @@ def _from_stream_binary(
               storage, my_form, buffer, buffer_offset, buffersize, shape
             )
         assert len(shape) == 1
+        form_items = form["items"]
         assert form["identical"]
-        item_form = form["items"]
+        item_form = form_items
         if isinstance(item_form, dict):
             item_storage = item_form.get("storage", "pure-plain")
             for n in range(shape[0]):
                 _from_stream_sub(data, n, item_storage, item_form, jsons, buffer)
+        else:
+            assert isinstance(item_form, str) #scalar
     else:
         raise TypeError(type_, form)
 
@@ -83,17 +86,22 @@ def _from_stream_plain(
         for key in sorted(form["properties"]):
             item_form = form["properties"][key]
             if not isinstance(item_form, dict):
-                continue
+                continue #scalar
             item_storage = item_form.get("storage", "pure-plain")
             _from_stream_sub(data, key, item_storage, item_form, jsons, buffer)
     elif type_ in ("tuple", "array"):
+        shape = form["shape"]
         assert len(shape) == 1
-        assert form["identical"]
-        item_form = form["items"]
-        if isinstance(item_form, dict):
+        form_items = form["items"]
+        for n in range(shape[0]):
+            if form["identical"]:
+                item_form = form_items
+            else:
+                item_form = form_items[n]
+            if not isinstance(item_form, dict):
+                continue #scalar
             item_storage = item_form.get("storage", "pure-plain")
-            for n in range(shape[0]):
-                _from_stream_sub(data, n, item_storage, item_form, jsons, buffer)
+            _from_stream_sub(data, n, item_storage, item_form, jsons, buffer)
     else:
         raise TypeError(type_, form)
     return data
@@ -119,12 +127,13 @@ def _from_stream_sub(
   parent_data, sub, storage, form,
   jsons, buffer
 ):
-    #print("_from_stream_sub", sub, storage, form, parent_data)
     if storage.endswith("plain"):
         if isinstance(parent_data, np.generic):
             my_data = jsons.pop(1)
             parent_data[sub] = my_data #fill pyobject slot
     else: #binary
+        if isinstance(form, str):
+            form = {"type": form}
         is_array = (form.get("type") == "array")
         if is_array or not isinstance(parent_data, np.generic):
             assert "type" in form
