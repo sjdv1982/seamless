@@ -70,7 +70,7 @@ def get_partial_authority(ctx, nodes, connections):
         if isinstance(child, Transformer):
             transformer = child._get_tf()
             inp = getattr(transformer, node["INPUT"])
-            assert isinstance(cell, StructuredCell)
+            assert isinstance(inp, StructuredCell)
             if inp.has_authority and not inp.authoritative:
                 partial_authority.add(p)
             continue

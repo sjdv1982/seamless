@@ -1,11 +1,15 @@
+input_pins = []
+for k,v in pins.items():
+    vv = v if isinstance(v, str) else v["io"]
+    if vv == "input":
+        input_pins.append(k)
 args = []
-input_jtype = input_schema["type"]
-if input_jtype == "array":
-    raise NotImplementedError
-elif input_jtype == "object":
-    input_props = input_schema["properties"]
-else:
-    input_props = {"input": input_schema}
+assert input_schema["type"] == "object"
+input_props = input_schema["properties"]
+
+for pin in input_pins:
+    if pin not in input_props:
+        raise TypeError("Missing schema for input pin .%s" % pin)
 
 order = input_schema.get("order", [])
 for prop in sorted(input_props.keys()):
@@ -21,5 +25,3 @@ if result_schema["type"] in ("object", "array"):
 
 if simple_result:
     result = binary_module.lib.transform(*args)
-
-print(result)

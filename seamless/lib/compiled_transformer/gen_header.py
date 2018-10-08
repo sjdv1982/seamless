@@ -3,6 +3,7 @@ json_to_c = {
     "number": "double", #TODO: storage size
     "str": "const char*",
 }
+
 ###print("input schema:", input_schema)
 ###print("result schema:", result_schema)
 
@@ -27,6 +28,9 @@ for propnr, prop in enumerate(order):
     if propnr + 1 < len(order):
         input_args += ", "
 
+
+if "type" not in result_schema:
+    raise TypeError("Result schema needs to be defined")
 
 return_jtype = result_schema["type"]
 if return_jtype in ("object", "array"):

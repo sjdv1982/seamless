@@ -12,6 +12,10 @@ from numpy.distutils.core import NumpyDistribution, numpy_cmdclass
 from hashlib import md5
 import json
 import importlib
+import shutil
+
+from threading import RLock
+from .locks import locks, locklock
 
 cache = set()
 
@@ -35,7 +39,6 @@ def _build(dist, tmpdir, compiler_verbose=False, debug=None):
     distutils.log.set_verbosity(compiler_verbose)
     dist.parse_config_files()
     options = dist.get_option_dict('build_ext')
-    tmpdir = "."
     if debug is None:
         debug = sys.flags.debug
     options['debug'] = ('ffiplatform', debug)
@@ -95,25 +98,33 @@ def _build_extension(
     if full_module_name in cache:
         return full_module_name
     currdir = os.getcwd()
+    tempdir = os.path.join(tempfile.gettempdir(), "_build-" + full_module_name)
+    tempdir = os.path.abspath(tempdir)
+    with locklock:
+        if tempdir not in locks:
+            lock = RLock()
+            locks[tempdir] = lock
+        else:
+            lock = locks[tempdir]
     try:
-        os.chdir(tempfile.gettempdir())
-        try:
-            subdir = "_build-" + full_module_name
-            os.mkdir(subdir)
-        except:
-            pass
-        os.chdir(subdir)
+        lock.acquire()
+        os.mkdir(tempdir)
         ext = _create_extension(binary_module, full_module_name, cffi_header, extclass)
         dist = distclass(ext_modules = [ext])
-        _ = _build(dist, ".", compiler_verbose, debug)
-        syspath_old = []
-        syspath_old = sys.path[:]
-        try:
-            sys.path.append(os.getcwd())
-            importlib.import_module(full_module_name)
-        finally:
-            sys.path[:] = syspath_old
+        _ = _build(dist, tempdir, compiler_verbose, debug)
+        with locklock:
+            syspath_old = []
+            syspath_old = sys.path[:]
+            try:
+                sys.path.append(tempdir)
+                importlib.import_module(full_module_name)
+            finally:
+                sys.path[:] = syspath_old
         cache.add(full_module_name)
     finally:
-        os.chdir(currdir)
+        try:
+            shutil.rmtree(tempdir)
+        except:
+            pass
+        lock.release()
     return full_module_name

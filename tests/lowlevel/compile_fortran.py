@@ -33,7 +33,9 @@ module = {
 ######################################################################
 
 compiler_verbose = True
-binary_module = compile(module, compiler_verbose=compiler_verbose)
+import tempfile, os
+tempdir = tempfile.gettempdir() + os.sep + "compile_fortran"
+binary_module = compile(module, tempdir, compiler_verbose=compiler_verbose)
 
 ######################################################################
 # 3: build and test extension directly

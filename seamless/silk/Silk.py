@@ -174,6 +174,10 @@ class Silk(SilkBase):
             wdata = wdata.value
         is_none = (wdata is None)
         if is_none:
+            assert self._parent is None or self._parent_attr is not None
+            if self._parent is not None:
+                self._parent._setitem(self._parent_attr, value)
+                return
             self._set_value_simple(value, buffer)
             if not lowlevel:
                 schema = self._schema

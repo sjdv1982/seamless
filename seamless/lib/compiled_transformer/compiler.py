@@ -1,7 +1,10 @@
 from seamless.compiler import compile
 from copy import deepcopy
+import os, tempfile, shutil
 
 m = deepcopy(main_module)
+if not "objects" in m:
+    m["objects"] = {}
 if not "code" in m["objects"]:
     m["objects"]["code"] = {}
 mm =  m["objects"]["code"]
@@ -12,6 +15,8 @@ m["public_header"] = {
     "code": header
 }
 
-binary_module = compile(m, compiler_verbose=compiler_verbose)
+tempdir = tempfile.gettempdir()
+build_dir = os.path.join(tempdir, __fullname__.replace(".","__"))
+binary_module = compile(m, build_dir, compiler_verbose=compiler_verbose)
 
 result = binary_module

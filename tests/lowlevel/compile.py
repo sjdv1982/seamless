@@ -31,8 +31,10 @@ module = {
 # 2: compile it to binary module
 ######################################################################
 
-compiler_verbose = False
-binary_module = compile(module, compiler_verbose=compiler_verbose)
+compiler_verbose = True
+import tempfile, os
+tempdir = tempfile.gettempdir() + os.sep + "compile"
+binary_module = compile(module, tempdir, compiler_verbose=compiler_verbose)
 
 ######################################################################
 # 3: build and test extension directly

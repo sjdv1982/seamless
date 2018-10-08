@@ -269,6 +269,7 @@ class BufferWrapper:
 
 def update_hook(cell):
     cell._reset_checksums()
+    cell.touch()
     if cell._mount is not None:
         cell._get_manager().mountmanager.add_cell_update(cell)
 

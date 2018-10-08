@@ -99,16 +99,15 @@ class CellBase(CellLikeBase):
         manager.touch_cell(self)
         return self
 
-    def set(self, value):
+    def set(self, value, force=False):
         """Update cell data from Python code in the main thread."""
-        assert not self._master #slave cells are read-only
         if isinstance(value, Wrapper):
             value = value._unwrap()
         if self._context is None:
             self._prelim_val = value, False #non-default-value prelim
         else:
             manager = self._get_manager()
-            manager.set_cell(self, value)
+            manager.set_cell(self, value, force=force)
         return self
 
     def set_default(self, value):
@@ -186,7 +185,7 @@ class CellBase(CellLikeBase):
         """
         assert from_pin in (True, False, "edit", "duplex")
         if not force:
-            assert not self._master
+            assert not self._master #slave cells are read-only
         old_status = self._status
         if value is None:
             different = (self._last_checksum is not None)
@@ -511,18 +510,28 @@ class MixedCell(Cell):
         else: #ref
             return self._val
 
+    def _assign(self, value):
+        from seamless.mixed.get_form import get_form
+        result = super()._assign(value)
+        storage, form = None, None
+        if self._val is not None:
+            storage, form = get_form(self._val)
+        self.storage_cell.set(storage, force=True)
+        self.form_cell.set(form, force=True)
+        return result
+
     def _deserialize(self, value, transfer_mode, access_mode, content_type):
         if transfer_mode == "buffer":
             return self._assign(self._from_buffer(value))
         else:
             return self._assign(value)
 
-    def set(self, value, auto_form=False):
+    def set(self, value, auto_form=False, force=False):
         from seamless.mixed.get_form import get_form
         if auto_form:
             storage, form = get_form(value)
-            self.storage_cell.set(storage)
-            self.form_cell.set(form)
+            self.storage_cell.set(storage, force=force)
+            self.form_cell.set(form, force=force)
         super().set(value)
 
 
