@@ -54,6 +54,9 @@ class Worker(metaclass=ABCMeta):
     def _cleanup(self):
         pass
 
+    def process_message(self, message_id, name, data, content_type):
+        pass
+
     def run(self):
         # TODO: add a mechanism to redirect exception messages to the host transformer
         # instead of printing them to stderr
@@ -103,6 +106,9 @@ class Worker(metaclass=ABCMeta):
                         ack()
                         continue
 
+
+                    self.process_message(message_id, name, data, content_type)
+                    
                     if self.injected_modules and name in self.injected_modules:
                         language = content_type
                         if content_type == "mixed":
