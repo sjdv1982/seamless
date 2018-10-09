@@ -54,7 +54,7 @@ class Worker(metaclass=ABCMeta):
     def _cleanup(self):
         pass
 
-    def process_message(self, message_id, name, data, content_type):
+    def process_message(self, message_id, name, data, access_mode, content_type):
         pass
 
     def run(self):
@@ -82,7 +82,7 @@ class Worker(metaclass=ABCMeta):
                     finally:
                         break
 
-                message_id, name, data, content_type = self.input_queue.popleft()  # QueueItem instance
+                message_id, name, data, access_mode, content_type = self.input_queue.popleft()  # QueueItem instance
 
                 if name == "@RESPONSIVE":
                     self.responsive = True
@@ -106,9 +106,8 @@ class Worker(metaclass=ABCMeta):
                         ack()
                         continue
 
+                    self.process_message(message_id, name, data, access_mode, content_type)
 
-                    self.process_message(message_id, name, data, content_type)
-                    
                     if self.injected_modules and name in self.injected_modules:
                         language = content_type
                         if content_type == "mixed":
@@ -145,7 +144,8 @@ class Worker(metaclass=ABCMeta):
                         self.exception = exc
                         print("*********** ERROR in transformer %s: execution error **************" % self.parent())
                         import traceback
-                        traceback.print_exc(-1)
+                        traceback.print_exc()
+                        ###traceback.print_exc(-1)
 
                     else:
                         self.exception = None

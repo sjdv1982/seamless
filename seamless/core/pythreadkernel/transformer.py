@@ -48,6 +48,7 @@ class Transformer(Worker):
     name = "transformer"
     injector = transformer_injector
     injected_modules = None
+    EXCEPTION = None
     def __init__(self, parent, inputs,
                  output_name, output_queue, output_semaphore,
                  *, in_equilibrium = False, **kwargs):
@@ -152,10 +153,12 @@ class Transformer(Worker):
                     if status == -1:
                         prelim = msg
                     elif status == 0:
+                        self.EXCEPTION = None
                         result = msg
                         ok = True
                         break
                     elif status == 1:
+                        self.EXCEPTION = msg
                         raise Exception(msg)
                 if ok:
                     break

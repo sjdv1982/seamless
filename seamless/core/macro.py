@@ -182,7 +182,7 @@ class Macro(Worker):
             self._pending_updates -= 1
 
 
-    def receive_update(self, input_pin, value, checksum, content_type):
+    def receive_update(self, input_pin, value, checksum, access_mode, content_type):
         if value is None:
             self._missing.add(input_pin)
             self._values[input_pin] = None

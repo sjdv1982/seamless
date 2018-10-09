@@ -123,7 +123,7 @@ class CellToPinConnection(Connection):
         if self.adapter and value is not None:
             value = self.adapter(value)
         if not only_text or self.target_access_mode == "text":
-            target.receive_update(value, checksum, self.target_content_type)
+            target.receive_update(value, checksum, self.target_access_mode, self.target_content_type)
 
 class PinToCellConnection(Connection):
     def __init__(self, id, source, target):

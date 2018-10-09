@@ -1,29 +1,17 @@
 import traceback
-from .. import Worker
+from ... import Worker
 import functools
 import time
 from threading import Thread, Event
+from ..encode import encode
+from ....cell import celltypes
+celltypes_rev = {v:k for k,v in celltypes.items()}
 
-from ..mixed
-
-def encode(value, content_type):
-    #skip array for now...
-
-def execute(server, values, content_type, kill_event, callback):
-    assert values.keys() == content_type.keys()
-    data = {}
-    for k in values:
-        content_type = content_types[k]
-        data[k] = {
-            "value": encode(values[k], content_type),
-            "content_type": content_type
-        }
-        #TODO: SHA-512 checksums
-    response = server.post(server, data=data, timeout=10000)
+def execute(server, rqdata, kill_event, callback):
+    response = server.post(server, data=rqdata, timeout=10000)
     if response.status_code != requests.codes.ok:
         print("Server error: %s, %s" % response.status_code, response.text)
         callback(False, None)
-
     else:
         if kill_event.set():
             callback(False, None)
@@ -35,9 +23,10 @@ class DummyInjector:
         return data
 dummy_injector = DummyInjector()
 
-class Transformer(Worker):
+class JobTransformer(Worker):
     name = "transformer"
     injector = dummy_injector
+    injected_modules = None
     def __init__(self, parent, inputs,
                  output_name, output_queue, output_semaphore,
                  *, in_equilibrium = False, **kwargs):
@@ -46,12 +35,14 @@ class Transformer(Worker):
         self.output_queue = output_queue
         self.output_semaphore = output_semaphore
         self.in_equilibrium = in_equilibrium
+        self.access_modes = {}
         self.content_types = {}
         self.kill = Event()
         self.server = None
-        super(Transformer, self).__init__(parent, inputs, **kwargs)
+        super().__init__(parent, inputs, **kwargs)
 
-    def process_message(self, message_id, name, data, content_type):
+    def process_message(self, message_id, name, data, access_mode, content_type):
+        self.access_modes[name] = access_mode
         self.content_types[name] = content_type
         #TODO: SHA-512 checksums
 
@@ -62,20 +53,32 @@ class Transformer(Worker):
 
     def update(self, updated, semaphore):
         self.send_message("@START", None)
-        ok = False
-        assert self.server is not None
-        self.kill.clear()
+        parent = self.parent()
+        transformer_params = parent._transformer_params
+        outputpin = parent._pins[parent._output_name]
+        output_cells = outputpin.cells()
+        output_signature = [celltypes_rev[type(c)] for c in output_cells]
+        if not len(output_signature):
+            output_signature = ["mixed"]
+        rqdata = encode(transformer_params, output_signature, self.values, self.access_modes, self.content_types)
         try:
-            #run request in separate executor thread...
-            while 1:
-                time.sleep(0.01)
-                if semaphore.acquire(blocking=False):
-                    semaphore.release()
-                    self.kill.set()
-                    break
+            server = self.server
+            assert server is not None
+            if server.startswith("file://"):
+                filename = server[len("file://"):]
+                with open(filename, "wb") as f:
+                    f.write(rqdata)
+            else:
+                self.kill.clear()
+
+                #run request in separate executor thread...
+                while 1:
+                    time.sleep(0.01)
+                    if semaphore.acquire(blocking=False):
+                        semaphore.release()
+                        self.kill.set()
+                        break
         finally:
             assert self.parent().output_queue is self.output_queue
             self.send_message("@END", None)
-        if ok:
-            self.last_result = result
-            self.send_message(self.output_name, result)
+        self.send_message(self.output_name, None)

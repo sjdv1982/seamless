@@ -7,6 +7,9 @@ import threading
 
 from .worker import Worker, InputPin, OutputPin
 from .pythreadkernel import Transformer as KernelTransformer
+from .pythreadkernel.remote.client import JobTransformer as ServiceTransformer
+#TODO: multiple types of remote transformers
+
 from .protocol import content_types
 
 class Transformer(Worker):
@@ -20,8 +23,9 @@ class Transformer(Worker):
     _destroyed = False
     _listen_output_state = None
 
-    def __init__(self, transformer_params, *, in_equilibrium=False):
+    def __init__(self, transformer_params, *, in_equilibrium=False, service=False):
         self.state = {}
+        self.service = service
         self.code = InputPin(self, "code", "ref", "pythoncode", "transformer")
         #TODO: access_mode becomes "copy" when we switch from threads to processes
         thread_inputs = {"code": ("ref", "pythoncode", "transformer")}
@@ -93,7 +97,8 @@ class Transformer(Worker):
         - It must run async from the main thread
         """
 
-        self.transformer = KernelTransformer(
+        KernelTransformerClass = ServiceTransformer if service else KernelTransformer
+        self.transformer = KernelTransformerClass(
             self,
             thread_inputs, self._output_name,
             self.output_queue, self.output_semaphore,
@@ -129,16 +134,16 @@ class Transformer(Worker):
         self.transformer.input_queue.append(labeled_msg)
         self.transformer.semaphore.release()
 
-    def receive_update(self, input_pin, value, checksum, content_type):
+    def receive_update(self, input_pin, value, checksum, access_mode, content_type):
         if not self.active:
-            work = partial(self.receive_update, input_pin, value, checksum, content_type)
+            work = partial(self.receive_update, input_pin, value, checksum, access_mode, content_type)
             self._get_manager().buffered_work.append(work)
             return
         if checksum is None and value is not None:
             checksum = str(value) #KLUDGE; as long as structured_cell doesn't compute checksums...
         if not self._receive_update_checksum(input_pin, checksum):
             return
-        self._send_message( (input_pin, value, content_type) )
+        self._send_message( (input_pin, value, access_mode, content_type) )
 
     def _touch(self):
         self._send_message( ("@TOUCH", None) )
@@ -356,8 +361,9 @@ class Transformer(Worker):
             return self.StatusFlags.ERROR.name
         return self.StatusFlags.OK.name
 
-def transformer(params, in_equilibrium=False):
+def transformer(params, in_equilibrium=False, service=False):
     return Transformer(
        params,
-       in_equilibrium=in_equilibrium
+       in_equilibrium=in_equilibrium,
+       service=service
     )

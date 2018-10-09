@@ -143,7 +143,7 @@ class Reactor(Worker):
         immediate = (id == self._immediate_id)
         self.reactor.process_input(input_pin, value, immediate)
 
-    def receive_update(self, input_pin, value, checksum, content_type):
+    def receive_update(self, input_pin, value, checksum, access_mode, content_type):
         #print("receive_update", input_pin, value, self.active)
         if self._destroyed:
             return
@@ -151,7 +151,7 @@ class Reactor(Worker):
             self._delay_update += 1
             if self._delay_update == 100:
                 raise Exception #reactor doesn't get activated, for some reason
-            work = partial(self.receive_update, input_pin, value, checksum, content_type)
+            work = partial(self.receive_update, input_pin, value, checksum, access_mode, content_type)
             self._get_manager().workqueue.append(work)
             return
         self._delay_update = 0

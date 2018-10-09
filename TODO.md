@@ -7,8 +7,7 @@ Things to do:
 
 Part 2: high level
 A: get BCsearch working
-- C/C++/Fortran cell translation
-  WIP.
+- DONE C/C++/Fortran cell translation
   Make native support for BinaryModule (module pin, see injection.py),
    = a MixedCell of dict-of-.o (Numpy arrays) + header.
    low-level transformers (and later, reactors) will have native CFFI support
@@ -19,6 +18,15 @@ A: get BCsearch working
      where the C++ code has been folded into one particular BinaryModule called "main".
   Differentiate between "header" (always C, consumed by CFFI) and "signature"
    (returned as output cell, for user info)
+- Network evaluation:
+  Almost done (tests/simple-remote-client/server)
+  TODO:
+  - embed in a real network server (and support it as .server, not just file://)
+  - send back the response (RPSEAMLESS?)
+  - implement pin/manager.send_update_from_remote() that accepts the response
+    and dispatches it towards the various cell types
+  - make sure that a remote job_transformer loses equilibrium when a new result celltype
+     is connected (changes output signature)
 - Special mount mode for JSON: whatever is read will be passed through cson2json
 
 - Silk form validators
