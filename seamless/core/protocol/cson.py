@@ -1,5 +1,6 @@
 import subprocess
 from subprocess import PIPE
+import json
 
 try:
     import cson as cson_lib
@@ -11,7 +12,7 @@ except Exception:
 has_cson_cmd = False
 try:
     p = subprocess.Popen(["cson2json"], stdin=PIPE, stdout=PIPE, stderr=PIPE)
-    json, err = p.communicate("{}".encode("utf-8"))
+    j, err = p.communicate("{}".encode("utf-8"))
     if err:
         has_cson_cmd = False
     else:
@@ -25,20 +26,21 @@ if not has_cson_lib and not has_cson_cmd:
 
 def _cson2json_cmd(cson):
     p = subprocess.Popen(["cson2json"], stdin=PIPE, stdout=PIPE, stderr=PIPE)
-    json, err = p.communicate(cson.encode("utf-8"))
+    j, err = p.communicate(cson.encode("utf-8"))
     if err:
         raise RuntimeError(err)
-    return json.decode("utf-8")
+    return json.loads(j.decode("utf-8"))
 
 def cson2json(cson):
     if cson is None:
         return None
     if has_cson_lib and not has_cson_cmd:
-        return cson_lib.loads(cson)
+        result = cson_lib.loads(cson)
     elif has_cson_cmd and not has_cson_lib:
-        return _cson2json_cmd(cson)
+        result = _cson2json_cmd(cson)
     else:
         try:
-            return cson_lib.loads(cson)
+            result = cson_lib.loads(cson)
         except Exception:
-            return _cson2json_cmd(cson)
+            result = _cson2json_cmd(cson)
+    return result
