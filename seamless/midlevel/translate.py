@@ -11,276 +11,11 @@ from functools import partial
 
 from seamless.core import cell as core_cell, link as core_link, \
  libcell, libmixedcell, transformer, reactor, context, macro, StructuredCell
-from seamless.core.structured_cell import BufferWrapper
 
 from . import copying
+from .util import as_tuple, get_path, find_channels, find_editchannels, build_structured_cell, try_set, try_set2
 
-STRUC_ID = "_STRUC"
 
-def as_tuple(v):
-    if isinstance(v, str):
-        return (v,)
-    else:
-        return tuple(v)
-
-def get_path(root, path, namespace, is_target, until_structured_cell=False):
-    if namespace is not None:
-        hit = namespace.get((path, is_target))
-        if hit is None:
-            for p, hit_is_target in namespace:
-                if hit_is_target != is_target:
-                    continue
-                if path[:len(p)] == p:
-                    subroot = namespace[p]
-                    subpath = path[len(p):]
-                    hit = get_path(subroot, subpath, None, None)
-        if hit is not None:
-            if until_structured_cell:
-                return hit, ()
-            else:
-                return hit
-
-    c = root
-    if until_structured_cell:
-        for pnr, p in enumerate(path):
-            if isinstance(c, StructuredCell):
-                return c, path[pnr:]
-            c = getattr(c, p)
-        return c, ()
-    else:
-        for p in path:
-            c = getattr(c, p)
-        return c
-
-def find_channels(path, connection_paths, skip=[]):
-    inchannels = []
-    outchannels = []
-    for source, target in connection_paths:
-        if source[:len(path)] == path:
-            p = source[len(path):]
-            if not len(p) or p[-1] not in skip:
-                outchannels.append(p)
-        if target[:len(path)] == path:
-            p = target[len(path):]
-            if not len(p) or p[-1] not in skip:
-                inchannels.append(p)
-    return inchannels, outchannels
-
-def find_editchannels(path, link_paths, skip=[]):
-    editchannels = []
-    for first, second in link_paths:
-        for point in first, second:
-            if point[:len(path)] == path:
-                p = point[len(path):]
-                if not len(p) or p[-1] not in skip:
-                    editchannels.append(p)
-    return editchannels
-
-def build_structured_cell(
-  ctx, name, silk, plain, buffered,
-  inchannels, outchannels, state, lib_path0,
-  *, editchannels=[], mount=None,
-):
-    #print("build_structured_cell", name, lib_path)
-    name2 = name + STRUC_ID
-    c = context(name=name2,context=ctx)
-    setattr(ctx, name2, c)
-    if mount is not None:
-        c.mount(**mount)
-    lib_path = lib_path0 + "." + name2 if lib_path0 is not None else None
-    if lib_path:
-        path = lib_path + ".form"
-        cc = libcell(path)
-    else:
-        cc = core_cell("json")
-    c.form = cc
-    if plain:
-        if lib_path:
-            path = lib_path + ".data"
-            cc = libcell(path)
-        else:
-            cc = core_cell("json")
-        c.data = cc
-        storage = None
-    else:
-        if lib_path:
-            path = lib_path + ".storage"
-            storage = libcell(path)
-        else:
-            storage = core_cell("text")
-        c.storage = storage
-        if lib_path:
-            path = lib_path + ".data"
-            c.data = libmixedcell(path,
-                form_cell = c.form,
-                storage_cell = c.storage
-            )
-        else:
-            c.data = core_cell("mixed",
-                form_cell = c.form,
-                storage_cell = c.storage
-            )
-    if silk:
-        if lib_path:
-            path = lib_path + ".schema"
-            schema = libcell(path)
-        else:
-            schema = core_cell("json")
-        c.schema = schema
-    else:
-        schema = None
-    if buffered:
-        if lib_path:
-            path = lib_path + ".buffer_form"
-            cc = libcell(path)
-        else:
-            cc = core_cell("json")
-        c.buffer_form = cc
-        if plain:
-            if lib_path:
-                path = lib_path + ".buffer_data"
-                cc = libcell(path)
-            else:
-                cc = core_cell("json")
-            c.buffer_data = cc
-            buffer_storage = None
-        else:
-            if lib_path:
-                path = lib_path + ".buffer_storage"
-                buffer_storage = libcell(path)
-            else:
-                buffer_storage = core_cell("text")
-            c.buffer_storage = buffer_storage
-            if lib_path:
-                path = lib_path + ".buffer_data"
-                c.buffer_data = libmixedcell(path,
-                    form_cell = c.buffer_form,
-                    storage_cell = c.buffer_storage,
-                )
-            else:
-                c.buffer_data = core_cell("mixed",
-                    form_cell = c.buffer_form,
-                    storage_cell = c.buffer_storage,
-                )
-        bufferwrapper = BufferWrapper(
-            c.buffer_data,
-            buffer_storage,
-            c.buffer_form
-        )
-    else:
-        bufferwrapper = None
-
-    sc = StructuredCell(
-        name,
-        c.data,
-        storage = storage,
-        form = c.form,
-        schema = schema,
-        buffer = bufferwrapper,
-        inchannels = inchannels,
-        outchannels = outchannels,
-        state = state,
-        editchannels=editchannels
-    )
-    return sc
-
-def translate_py_transformer(node, root, namespace, inchannels, outchannels, lib_path00, is_lib):
-    #TODO: simple translation, without a structured cell
-    parent = get_path(root, node["path"][:-1], None, None)
-    name = node["path"][-1]
-    lib_path0 = lib_path00 + "." + name if lib_path00 is not None else None
-    ctx = context(context=parent, name=name)
-    setattr(parent, name, ctx)
-
-    result_name = node["RESULT"]
-    input_name = node["INPUT"]
-    if len(inchannels):
-        lib_path0 = None #partial authority or no authority; no library update in either case
-    for c in inchannels:
-        assert (not len(c)) or c[0] != result_name #should have been checked by highlevel
-
-    with_result = node["with_result"]
-    buffered = node["buffered"]
-    interchannels = [as_tuple(pin) for pin in node["pins"]]
-    plain = node["plain"]
-    input_state = node.get("stored_state_input", None)
-    if input_state is None:
-        input_state = node.get("cached_state_input", None)
-    inp = build_structured_cell(ctx, input_name, True, plain, buffered, inchannels, interchannels, input_state, lib_path0)
-    setattr(ctx, input_name, inp)
-    for inchannel in inchannels:
-        path = node["path"] + inchannel
-        namespace[path, True] = inp.inchannels[inchannel]
-
-    assert result_name not in node["pins"] #should have been checked by highlevel
-    all_pins = {}
-    for pinname, pin in node["pins"].items():
-        p = {"io": "input"}
-        p.update(pin)
-        all_pins[pinname] = p
-    all_pins[result_name] = "output"
-    if node["SCHEMA"]:
-        assert with_result
-        all_pins[node["SCHEMA"]] = {
-            "io": "input", "transfer_mode": "json",
-            "access_mode": "json", "content_type": "json"
-        }
-    in_equilibrium = node.get("in_equilibrium", False)
-    ctx.tf = transformer(all_pins, in_equilibrium=in_equilibrium)
-    if lib_path00 is not None:
-        lib_path = lib_path00 + "." + name + ".code"
-        ctx.code = libcell(lib_path)
-    else:
-        ctx.code = core_cell("transformer")
-        if "mount" in node:
-            ctx.code.mount(**node["mount"])
-    ctx.code.connect(ctx.tf.code)
-    code = node.get("code")
-    if code is None:
-        code = node.get("cached_code")
-    ctx.code.set(code)
-    temp = node.get("TEMP")
-    if temp is None:
-        temp = {}
-    if "code" in temp:
-        ctx.code.set(temp["code"])
-    inphandle = inp.handle
-    for k,v in temp.items():
-        if k == "code":
-            continue
-        setattr(inphandle, k, v)
-    namespace[node["path"] + ("code",), True] = ctx.code
-    namespace[node["path"] + ("code",), False] = ctx.code
-
-    for pin in list(node["pins"].keys()):
-        target = getattr(ctx.tf, pin)
-        inp.connect_outchannel( (pin,) ,  target )
-
-    if with_result:
-        plain_result = node["plain_result"]
-        result_state = node.get("cached_state_result", None)
-        result = build_structured_cell(ctx, result_name, True, plain_result, False, [()], outchannels, result_state, lib_path0)
-        setattr(ctx, result_name, result)
-        result_pin = getattr(ctx.tf, result_name)
-        result.connect_inchannel(result_pin, ())
-        if node["SCHEMA"]:
-            schema_pin = getattr(ctx.tf, node["SCHEMA"])
-            result.schema.connect(schema_pin)
-    else:
-        for c in outchannels:
-            assert len(c) == 0 #should have been checked by highlevel
-        result = getattr(ctx.tf, result_name)
-        namespace[node["path"] + (result_name,), False] = result
-
-    if not is_lib: #clean up cached state and in_equilibrium, unless a library context
-        node.pop("cached_state_input", None)
-        if not in_equilibrium:
-            node.pop("cached_state_result", None)
-        node.pop("in_equilibrium", None)
-
-    namespace[node["path"], True] = inp
-    namespace[node["path"], False] = result
-    node.pop("TEMP", None)
 
 def translate_py_reactor(node, root, namespace, inchannels, outchannels, editchannels, lib_path00, is_lib):
     #TODO: simple-mode translation, without a structured cell
@@ -339,7 +74,7 @@ def translate_py_reactor(node, root, namespace, inchannels, outchannels, editcha
         code = node.get(attr)
         if code is None:
             code = node.get("cached_" + attr)
-        c.set(code)
+        try_set(c, code)
         namespace[node["path"] + (attr,), True] = c
         namespace[node["path"] + (attr,), False] = c
 
@@ -358,7 +93,7 @@ def translate_py_reactor(node, root, namespace, inchannels, outchannels, editcha
         temp = {}
     for attr in ("code_start", "code_stop", "code_update"):
         if attr in temp:
-            getattr(ctx, attr).set(temp[attr])
+            try_set(getattr(ctx, attr), temp[attr])
     iohandle = io.handle
     for k,v in temp.items():
         if k in ("code_start", "code_stop", "code_update"):
@@ -441,7 +176,7 @@ def translate_cell(node, root, namespace, inchannels, outchannels, editchannels,
         if link_target is not None:
             warn("Cell %s has a link target, cannot set construction constant" % pathstr)
         else:
-            child.set(node["TEMP"])
+            try_set(child, node["TEMP"])
     if ct != "structured":
         if link_target is not None:
             if "mount" in node:
@@ -453,19 +188,21 @@ def translate_cell(node, root, namespace, inchannels, outchannels, editchannels,
             if cached_value is not None:
                 warn("Cell %s has a link target, cannot set cached value" % pathstr)
         else:
+            if "file_extension" in node:
+                child.set_file_extension(node["file_extension"])
             if "mount" in node:
                 child.mount(**node["mount"])
             stored_value = node.get("stored_value")
             if stored_value is not None:
                 assert child.authoritative
-                child.set(stored_value)
+                try_set(child, stored_value)
             else:
                 cached_value = node.get("cached_value")
                 if cached_value is not None:
                     ###assert not child.authoritative
                     if not child.authoritative:
                         manager = child._get_manager()
-                        manager.set_cell(child, cached_value, from_pin=True)
+                        try_set2(child, manager, cached_value, from_pin=True)
 
 
     if not is_lib:
@@ -476,8 +213,14 @@ def translate_cell(node, root, namespace, inchannels, outchannels, editchannels,
 def translate_connection(node, namespace, ctx):
     from ..core.structured_cell import Inchannel, Outchannel
     source_path, target_path = node["source"], node["target"]
+
     source = get_path(ctx, source_path, namespace, False)
+    if isinstance(source, StructuredCell):
+        source = source.outchannels[()]
     target = get_path(ctx, target_path, namespace, True)
+    if isinstance(target, StructuredCell):
+        target = target.inchannels[()]
+
     if isinstance(source, Outchannel):
         name, parent = source.name, source.structured_cell()
         if isinstance(name, str):
@@ -596,11 +339,15 @@ def translate(graph, ctx, from_lib_paths, is_lib):
         path = node["path"]
         lib_path = get_lib_path(path[:-1], from_lib_paths)
         if t == "transformer":
-            if node["language"] != "python":
-                raise NotImplementedError
             skip_channels = ("code",)
             inchannels, outchannels = find_channels(node["path"], connection_paths, skip_channels)
-            translate_py_transformer(node, ctx, namespace, inchannels, outchannels, lib_path, is_lib)
+            if node["compiled"]:
+                from .translate_compiled_transformer import translate_compiled_transformer
+                translate_compiled_transformer(node, ctx, namespace, inchannels, outchannels, lib_path, is_lib)
+            elif node["language"] == "python":
+                translate_py_transformer(node, ctx, namespace, inchannels, outchannels, lib_path, is_lib)
+            else:
+                raise NotImplementedError
         elif t == "reactor":
             if node["language"] != "python":
                 raise NotImplementedError
@@ -631,3 +378,4 @@ def translate(graph, ctx, from_lib_paths, is_lib):
         translate_connection(node, namespace2, ctx)
 
 from .library import get_lib_path
+from .translate_py_transformer import translate_py_transformer

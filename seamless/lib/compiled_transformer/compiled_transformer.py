@@ -1,6 +1,6 @@
 import numpy as np
 from seamless.highlevel import Context, Cell, stdlib
-from seamless.lib import set_resource
+from seamless.highlevel import set_resource
 
 gen_header_file = "gen_header.py"
 compiler_file = "compiler.py"
@@ -14,10 +14,10 @@ pins["input_schema"]["access_mode"] = "json"
 pins["result_schema"]["access_mode"] = "json"
 ctx.gen_header.code = set_resource(gen_header_file)
 
-ctx.compiler = lambda language, header, compiled_code, main_module, compiler_verbose: None
+ctx.compiler = lambda lang, header, compiled_code, main_module, compiler_verbose: None
 ctx.compiler.code = set_resource(compiler_file)
 pins = ctx.compiler._get_htf()["pins"] ###
-pins["language"]["access_mode"] = "text"
+pins["lang"]["access_mode"] = "text"
 pins["compiled_code"]["access_mode"] = "text"
 pins["header"]["access_mode"] = "text"
 pins["main_module"]["access_mode"] = "json"
@@ -25,6 +25,7 @@ pins["compiler_verbose"]["access_mode"] = "json"
 
 ctx.translator = lambda binary_module, pins, input_schema, result_schema, kwargs: None
 ctx.translator.code = set_resource(translator_file)
+ctx.translator.RESULT = "translator_result_"
 pins = ctx.translator._get_htf()["pins"] ###
 pins["binary_module"]["access_mode"] = "binary_module"
 pins["input_schema"]["access_mode"] = "json"
@@ -92,7 +93,7 @@ if __name__ == "__main__":
 
     ctf = ctx.compiler
     ctf.compiled_code = ctx.cppcode
-    ctf.language = "cpp"
+    ctf.lang = "cpp"
     ctf.main_module = {
         "objects": {
             "code": {
@@ -111,6 +112,6 @@ if __name__ == "__main__":
     ctx.kwargs = {"a": 2, "b": 3}
 
     ctx.equilibrate()
-    print(dict(ctx.translator.pins.value.items()))    
+    print(dict(ctx.translator.pins.value.items()))
 else:
     stdlib.compiled_transformer = ctx

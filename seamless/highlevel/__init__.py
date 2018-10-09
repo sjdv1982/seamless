@@ -11,6 +11,20 @@ from ..core.cached_compile import cached_compile
 
 ConstantTypes = _allowed_types + (Silk, MixedBase, tuple)
 
+import inspect
+import os
+def set_resource(f):
+    from .Resource import Resource
+    caller_frame = inspect.currentframe().f_back
+    filename = inspect.getfile(caller_frame)
+    dirname = os.path.dirname(filename)
+    ff = os.path.join(dirname, f)
+    data = open(ff).read()
+    if inspect.getmodule(caller_frame).__name__ == "__main__":
+        return Resource(ff, data)
+    else:
+        return data
+
 def set_hcell(cell, value):
     from ..core.structured_cell import StructuredCellState
     if cell["celltype"] == "structured":
@@ -51,3 +65,5 @@ from .Transformer import Transformer
 from .Cell import Cell
 from .SubCell import SubCell
 from .Link import Link
+
+from ..lib.compiled_transformer import compiled_transformer as _

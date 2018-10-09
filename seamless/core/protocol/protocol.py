@@ -146,6 +146,7 @@ adapters[("copy", "object", "mixed"), ("copy", "binary_module", "mixed")] = comp
 adapters[("ref", "object", "mixed"), ("ref", "binary_module", "mixed")] = compile_binary_module
 
 def select_adapter(transfer_mode, source, target, source_modes, target_modes):
+    #print("select_adapter", transfer_mode, source, target, source_modes, target_modes)
     if transfer_mode == "ref":
         transfer_modes = ["ref", "copy"]
     else:

@@ -24,4 +24,4 @@ if result_schema["type"] in ("object", "array"):
     raise NotImplementedError
 
 if simple_result:
-    result = binary_module.lib.transform(*args)
+    translator_result_ = binary_module.lib.transform(*args)

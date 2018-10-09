@@ -1,4 +1,5 @@
 import traceback
+from ..mixed import MixedBase
 
 #TODO: a serialization protocol to establish data transfer over a cell-to-cell (alias) connection
 # it depends on three variables:
@@ -61,6 +62,8 @@ class CellToCellConnection(Connection):
         value = cell.serialize(
           self.transfer_mode, self.source_access_mode, self.source_content_type
         )
+        if isinstance(value, MixedBase):
+            value = value.data
         """
         print(self.transfer_mode,
           self.source_access_mode, self.source_content_type,
@@ -114,6 +117,8 @@ class CellToPinConnection(Connection):
         value = source.serialize(
           self.transfer_mode, self.source_access_mode, self.source_content_type
         )
+        if isinstance(value, MixedBase):
+            value = value.data
         checksum = source.checksum()
         if self.adapter and value is not None:
             value = self.adapter(value)
@@ -146,6 +151,8 @@ class PinToCellConnection(Connection):
 
     def fire(self, value, preliminary):
         pin, cell = self.source, self.target
+        if isinstance(value, MixedBase):
+            value = value.data
         if self.adapter and value is not None:
             value = self.adapter(value)
 

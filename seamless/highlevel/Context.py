@@ -286,7 +286,7 @@ class Context:
         l = len(connections)
         connections[:] = [con for con in connections \
                            if con["source"][:len(path)] != path \
-                           or con["target"][:len(path)] != path ]
+                           and con["target"][:len(path)] != path ]
         if len(connections) < l:
             self._translate()
 

@@ -70,6 +70,7 @@ def assign_transformer(ctx, path, func):
     transformer =    {
         "path": path,
         "type": "transformer",
+        "compiled": False,
         "language": "python",
         "code": code,
         #"pins": {param:{"transfer_mode": "copy", "access_mode": "silk"} for param in parameters},
@@ -87,7 +88,7 @@ def assign_transformer(ctx, path, func):
     ctx._graph[0][path] = transformer
     Transformer(ctx, path) #inserts itself as child
 
-def assign_connection(ctx, source, target, standalone_target):
+def assign_connection(ctx, source, target, standalone_target, exempt=[]):
     if standalone_target:
         if target not in ctx._children:
             assign_constant(ctx, target, None)
@@ -101,7 +102,15 @@ def assign_connection(ctx, source, target, standalone_target):
             hcell.pop("stored_value", None)
             hcell.pop("cached_value", None)
     lt = len(target)
-    ctx._graph[1][:] = [con for con in ctx._graph[1] if con["target"][:lt] != target]
+    def keep_con(con):
+        ctarget = con["target"]
+        if ctarget[:lt] != target:
+            return True
+        for e in exempt:
+            if ctarget[:len(e)] == e:
+                return True
+        return False
+    ctx._graph[1][:] = filter(keep_con, ctx._graph[1])
     if standalone_target:
         t = ctx._children[target]
         assert not t.links

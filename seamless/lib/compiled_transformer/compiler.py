@@ -9,7 +9,7 @@ if not "code" in m["objects"]:
     m["objects"]["code"] = {}
 mm =  m["objects"]["code"]
 mm["code"] = compiled_code
-mm["language"] = language
+mm["language"] = lang
 m["public_header"] = {
     "language": "c",
     "code": header

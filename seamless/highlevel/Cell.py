@@ -1,10 +1,12 @@
 import weakref
 import inspect
+import traceback
 from types import LambdaType
 from .Base import Base
 from ..midlevel import TRANSLATION_PREFIX
 from ..core.lambdacode import lambdacode
 from ..silk import Silk
+from ..mixed import MixedBase
 from .mime import get_mime, language_to_mime, ext_to_mime
 
 class Cell(Base):
@@ -162,6 +164,10 @@ class Cell(Base):
                     if code is None:
                         raise ValueError("Cannot extract source code from this lambda")
                 value = code
+        except: #error in setting
+            #TODO: logging
+            traceback.print_exc()
+            return
         set_hcell(hcell, value)
 
     def set(self, value):
@@ -183,6 +189,10 @@ class Cell(Base):
             cellvalue = hcell["TEMP"]
         else:
             cellvalue = self.value
+        if isinstance(cellvalue, Silk):
+            cellvalue = cellvalue.data
+        if isinstance(cellvalue, MixedBase):
+            cellvalue = cellvalue.value
         hcell["celltype"] = value
         if cellvalue is not None and "TEMP" not in hcell:
             self._parent().translate(force=True) # This needs to be kept!
@@ -214,12 +224,14 @@ class Cell(Base):
 
     @mimetype.setter
     def mimetype(self, value):
+        hcell = self._get_hcell()
         if value.find("/") == -1:
             try:
-                value = ext_to_mime(value)
+                ext = value
+                value = ext_to_mime(ext)
             except KeyError:
-                raise ValueError("Unknown extension %s" % value) from None
-        hcell = self._get_hcell()
+                raise ValueError("Unknown extension %s" % ext) from None
+            hcell["file_extension"] = ext
         hcell["mimetype"] = value
 
     @property

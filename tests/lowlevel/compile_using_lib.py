@@ -50,7 +50,7 @@ with macro_mode_on():
     )
     ctf = ctx.tf = context(name="tf",context=ctx)
 
-    # 1b. Example
+    # 1b. Example values
     inp = ctx.inp.handle
     inp.a = 2
     inp.b = 3
@@ -100,7 +100,7 @@ with macro_mode_on(), library.bind("compiled_transformer"):
 with macro_mode_on():
     #3a: between example and library
     ctx.pins.connect(ctf.translator.pins)
-    ctx.result.connect_inchannel(ctf.translator.result, ())
+    ctx.result.connect_inchannel(ctf.translator.translator_result_, ())
     ctx.inp.connect_outchannel((), ctf.translator.kwargs)
     ctx.inp_struc.schema.connect(ctf.gen_header.input_schema)
     ctx.result_struc.schema.connect(ctf.gen_header.result_schema)
@@ -112,7 +112,7 @@ with macro_mode_on():
     ctf.gen_header.result.connect(ctx.header)
     ctx.header.connect(ctf.compiler.header)
 
-    ctx.language.connect(ctf.compiler.language)
+    ctx.language.connect(ctf.compiler.lang)
     ctx.compiled_code.connect(ctf.compiler.compiled_code)
     ctx.main_module.connect(ctf.compiler.main_module)
     ctx.compiler_verbose.connect(ctf.compiler.compiler_verbose)

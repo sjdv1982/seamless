@@ -22,6 +22,7 @@ cell_counter = 0
 
 class CellLikeBase(SeamlessBase):
     _exported = True
+    _is_text = False
     def __init__(self):
         global cell_counter
         super().__init__()
@@ -316,6 +317,11 @@ class CellBase(CellLikeBase):
     def as_text(self):
         raise NotImplementedError
 
+    def set_file_extension(self, extension):
+        if self._mount is None:
+            self._mount = {}
+        self._mount.update({"extension": extension})
+
     def mount(self, path=None, mode="rw", authority="cell", persistent=True):
         """Performs a "lazy mount"; cell is mounted to the file when macro mode ends
         path: file path (can be None if an ancestor context has been mounted)
@@ -329,12 +335,14 @@ class CellBase(CellLikeBase):
         if self._mount_kwargs is None:
             raise NotImplementedError #cannot mount this type of cell
         kwargs = self._mount_kwargs
-        self._mount = {
+        if self._mount is None:
+            self._mount = {}
+        self._mount.update({
             "path": path,
             "mode": mode,
             "authority": authority,
-            "persistent": persistent
-        }
+            "persistent": persistent,
+        })
         self._mount.update(self._mount_kwargs)
         MountItem(None, self, dummy=True, **self._mount) #to validate parameters
 
@@ -362,7 +370,10 @@ Use ``Cell.status()`` to get its status.
     def _checksum(self, value, *, buffer=False, may_fail=False):
         if value is None:
             return None
-        return hashlib.md5(str(value).encode("utf-8")).hexdigest()
+        v = str(value)
+        if buffer and type(self)._is_text:
+            v = v.rstrip("\n")
+        return hashlib.md5(v.encode("utf-8")).hexdigest()
 
     def _validate(self, value):
         pass
@@ -541,6 +552,7 @@ class MixedCell(Cell):
 
 
 class TextCell(Cell):
+    _is_text = True
     _mount_kwargs = {"encoding": "utf-8", "binary": False}
     _supported_modes = []
     for transfer_mode in "buffer", "copy":
@@ -550,13 +562,20 @@ class TextCell(Cell):
     del transfer_mode
 
     def serialize_buffer(self):
-        return self._val
+        v = self._val
+        if v is not None:
+            v = v.rstrip("\n")  + "\n"
+        return v
 
     def _serialize(self, transfer_mode, access_mode, content_type):
+        if transfer_mode == "buffer":
+            return self.serialize_buffer()
         return self._val
 
     def _deserialize(self, value, transfer_mode, access_mode, content_type):
         v = str(value)
+        if transfer_mode == "buffer":
+            v = v.rstrip("\n")
         self._val = v
         return v
 
@@ -571,6 +590,7 @@ class TextCell(Cell):
 
 class PythonCell(Cell):
     """Generic Python code object"""
+    _is_text = True
     _codetype = "func"
     _mount_kwargs = {"encoding": "utf-8", "binary": False}
     is_function = None
@@ -591,7 +611,9 @@ class PythonCell(Cell):
     # OR: make ._accept_shell_append editable as cell
 
     def _text_checksum(self, value, *, buffer=False, may_fail=False):
-        return hashlib.md5(str(value).encode("utf-8")).hexdigest()
+        v = str(value)
+        v = v.rstrip("\n") + "\n"
+        return hashlib.md5(v.encode("utf-8")).hexdigest()
 
     def _checksum(self, value, *, buffer=False, may_fail=False):
         if value is None:
@@ -644,14 +666,15 @@ class PythonCell(Cell):
         self.is_function = is_function
 
     def serialize_buffer(self):
-        return self._val
+        v = self._val.rstrip("\n")
+        return v + "\n"
 
     def _serialize(self, transfer_mode, access_mode, content_type):
-        if access_mode in "text":
+        if access_mode == "text":
             return self._val
         assert access_mode in ("pythoncode", "object")
         if transfer_mode == "buffer":
-            raise NotImplementedError
+            return self.serialize_buffer()
         from .protocol import TransferredCell
         return TransferredCell(self)
 
@@ -728,6 +751,7 @@ def _validate(self, value):
 
 
 class IPythonCell(Cell):
+    _is_text = True
     _mount_kwargs = {"encoding": "utf-8", "binary": False}
     _supported_modes = []
     for transfer_mode in "buffer", "copy":
@@ -737,9 +761,12 @@ class IPythonCell(Cell):
     del transfer_mode
 
     def serialize_buffer(self):
-        return self._val
+        v = self._val.rstrip("\n")
+        return v + "\n"
 
     def _serialize(self, transfer_mode, access_mode, content_type):
+        if transfer_mode == "buffer":
+            return self.serialize_buffer()
         return self._val
 
     def _deserialize(self, value, transfer_mode, access_mode, content_type):
@@ -758,6 +785,7 @@ class IPythonCell(Cell):
 
 class JsonCell(Cell):
     """A cell in JSON format (monolithic)"""
+    _is_text = True
     _mount_kwargs = {"encoding": "utf-8", "binary": False}
 
     _supported_modes = []
@@ -785,7 +813,7 @@ class JsonCell(Cell):
             return None
         if buffer:
             return super()._checksum(value)
-        j = self._json(value)
+        j = self._json(value) + "\n"
         return super()._checksum(j)
 
     def _validate(self, value):
@@ -793,7 +821,11 @@ class JsonCell(Cell):
         json.dumps(value)
 
     def serialize_buffer(self):
-        return self._to_json()
+        v = self._to_json()
+        if v is not None:
+            v = v.rstrip("\n")
+            v += "\n"
+        return v
 
     def _serialize(self, transfer_mode, access_mode, content_type):
         if access_mode == "buffer":
@@ -849,7 +881,9 @@ class CsonCell(JsonCell):
         return super()._checksum(j)
 
     def _text_checksum(self, value, *, buffer=False, may_fail=False):
-        return hashlib.md5(str(value).encode("utf-8")).hexdigest()
+        v = str(value)
+        v = v.rstrip("\n") + "\n"
+        return hashlib.md5(v.encode("utf-8")).hexdigest()
 
     @staticmethod
     def _json(value):
@@ -869,7 +903,8 @@ class CsonCell(JsonCell):
         cson2json(value)
 
     def serialize_buffer(self):
-        return self._val
+        v = self._val.rstrip("\n")
+        return v + "\n"
 
     def _serialize(self, transfer_mode, access_mode, content_type):
         if access_mode == "json":

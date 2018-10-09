@@ -53,6 +53,7 @@ C: Towards Camembert plots (big!)
 - Call graph serialization
 - Port websocketserver and dynamic_html
 - Integrate with Observable Notebook: https://beta.observablehq.com/@sjdv1982/model-view-controller
+(see also architecture.txt)
 
 D: Port the peptide trajectory editor, use Observable instead of Jupyter.
 
@@ -200,7 +201,6 @@ Part 8:
 Release as 0.5
 
 Long-term:
-- Integration with Observable (see architecture.txt)
 - Meta-schema for schema editing (jsonschema has it)
 - GUI around report channels (to visualize) and around high-level context (to edit)
   Also integrate with shell()

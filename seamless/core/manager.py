@@ -12,6 +12,7 @@ manager.set_cell and manager.pin_send_update are thread-safe (can be invoked fro
 from .connection import Connection, CellToCellConnection, CellToPinConnection, \
  PinToCellConnection
 from . import protocol
+from ..mixed import MixedBase
 
 import threading
 import functools
@@ -339,6 +340,8 @@ class Manager:
             return
         assert isinstance(cell, CellLikeBase)
         assert cell._get_manager() is self
+        if isinstance(value, MixedBase):
+            value = value.data
         if cell is origin: #update comes from an outchannel
                            #deserialize is not needed
             different, text_different = True, True
@@ -395,6 +398,8 @@ class Manager:
     def pin_send_update(self, pin, value, preliminary, target=None):
         #TODO: explicit support for preliminary values
         assert pin._get_manager() is self
+        if isinstance(value, MixedBase):
+            value = value.data        
         found = False
         for con in self.pin_to_cells.get(pin,[]):
             cell = con.target

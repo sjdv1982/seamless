@@ -28,6 +28,23 @@ class Transformer(Base):
         parent._children[result_path] = result
 
     @property
+    def RESULT(self):
+        htf = self._get_htf()
+        return htf["RESULT"]
+
+    @RESULT.setter
+    def RESULT(self, value):
+        htf = self._get_htf()
+        result_path = self._path + (htf["RESULT"],)
+        new_result_path = self._path + (value,)
+        parent = self._parent()
+        result = OutputPin(parent, self, new_result_path)
+        result._virtual_path = self._path
+        parent._children.pop(result_path)
+        parent._children[new_result_path] = result
+        htf["RESULT"] = value
+
+    @property
     def with_result(self):
         return self._get_htf()["with_result"]
     @with_result.setter
@@ -36,18 +53,32 @@ class Transformer(Base):
         self._get_htf()["with_result"] = value
         self._parent()._translate()
 
+    @property
+    def language(self):
+        return self._get_htf()["language"]
+    @language.setter
+    def language(self, value):
+        from ..compiler import find_language
+        lang, language, extension = find_language(value)
+        compiled = (language["mode"] == "compiled")
+        htf = self._get_htf()
+        htf["language"] = lang
+        htf["compiled"] = compiled
+        htf["file_extension"] = extension
+        if compiled:
+            htf["with_result"] = True
+            if "main_module" not in htf:
+                htf["main_module"] = {"compiler_verbose": True}
+        self._parent()._translate()
 
     def _assign_to(self, hctx, path):
         from .assign import assign_connection
         tf = self._get_tf()
         htf = self._get_htf()
-        if htf["with_result"]:
-            raise NotImplementedError
         parent = self._parent()
         result_path = self._path + (htf["RESULT"],)
         assign_connection(parent, result_path, path, True)
         hctx._translate()
-
 
     def __setattr__(self, attr, value):
         from .assign import assign_connection
@@ -81,7 +112,13 @@ class Transformer(Base):
         tf = self._get_tf()
         if attr == "code":
             assert not test_lib_lowlevel(parent, tf.code)
-            if isinstance(value, Resource):
+            if isinstance(value, Cell):
+                target_path = self._path + (attr,)
+                assert value._parent() == parent
+                #TODO: check existing inchannel connections and links (cannot be the same or higher)
+                assign_connection(parent, value._path, target_path, False)
+                translate = True
+            elif isinstance(value, Resource):
                 htf["code"] = value.data
                 translate = True
             else:
@@ -89,6 +126,15 @@ class Transformer(Base):
                     value, _, _ = parse_function_code(value)
                 tf.code.set(value)
                 htf["code"] = tf.code.value
+        elif attr == htf["INPUT"]:
+            target_path = self._path
+            assert value._parent() == parent
+            #TODO: check existing inchannel connections and links (cannot be the same or higher)
+            # assign_connection will break previous connections into self
+            #  but we must exempt self.code from this
+            exempt = [self._path + ("code",)]
+            assign_connection(parent, value._path, target_path, False, exempt=exempt)
+            translate = True
         elif attr == htf["RESULT"]:
             assert htf["with_result"]
             result = getattr(tf, htf["RESULT"])
@@ -219,6 +265,7 @@ class Transformer(Base):
         parent = self._parent()
         assert other._parent() is parent
         path = other._path
+        language = htf["language"]
         if attr == "code":
             p = tf.code
             value = p.data
@@ -226,7 +273,7 @@ class Transformer(Base):
                 "path": path,
                 "type": "cell",
                 "celltype": "code",
-                "language": "python",
+                "language": language,
                 "transformer": True,
                 "TEMP": None,
             }
@@ -247,6 +294,12 @@ class Transformer(Base):
         #TODO: check existing inchannel connections and links (cannot be the same or higher)
         child = Cell(parent, path) #inserts itself as child
         parent._graph[0][path] = cell
+        if "file_extension" in htf:
+            child.mimetype = htf["file_extension"]
+        else:
+            mimetype = language_to_mime(language)
+            child.mimetype = mimetype
+
         target_path = self._path + (attr,)
         assign_connection(parent, other._path, target_path, False)
         child.set(value)

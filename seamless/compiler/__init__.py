@@ -26,4 +26,25 @@ with open(languages_cson_file) as f:
     languages_cson = f.read()
 languages = cson2json(languages_cson)
 
+def find_language(lang):
+    try:
+        language = languages[lang]
+        extension = language.get("extension")
+        if isinstance(extension, list):
+            extension = extension[0]
+    except KeyError:
+        ext_to_lang = {}
+        for lang0, language in languages.items():
+            ext = language.get("extension", [])
+            if isinstance(ext, str):
+                if ext == lang:
+                    break
+            else:
+                if lang in ext:
+                    break
+        else:
+            raise KeyError(lang) from None
+        extension = lang
+    return lang, language, extension
+
 from .compile import compile

@@ -51,11 +51,12 @@ def _build(dist, tmpdir, compiler_verbose=False, debug=None):
     [soname] = cmd_obj.get_outputs()
     return soname
 
-def _write_objects(binary_module):
+def _write_objects(binary_module, tempdir):
     objects = []
     for objectname, (obj_array, checksum) in binary_module["objects"].items():
         objdata = obj_array.tobytes()
         objfile = objectname+".o"#TODO: Windows
+        objfile = os.path.join(tempdir, objfile)
         with open(objfile, "wb") as f:
             f.write(objdata)
         objects.append(objfile)
@@ -71,13 +72,14 @@ def _prepare_extension(binary_module, cffi_header):
     full_module_name = "seamless_" + grand_checksum
     return full_module_name, merkle_tree
 
-def _create_extension(binary_module, full_module_name, cffi_header, extclass):
-    objects = _write_objects(binary_module)
+def _create_extension(binary_module, full_module_name, cffi_header, extclass, tempdir):
+    objects = _write_objects(binary_module, tempdir)
     sources = []
     if cffi_header is not None:
         cffi_wrapper = cffi(full_module_name, cffi_header)
         cffi_wrapper_name = "_cffi_wrapper_" + full_module_name
         cffi_wrapper_file = cffi_wrapper_name + ".c"
+        cffi_wrapper_file = os.path.join(tempdir, cffi_wrapper_file)
         with open(cffi_wrapper_file, "w") as f:
             f.write(cffi_wrapper)
     sources = [cffi_wrapper_file]
@@ -109,7 +111,7 @@ def _build_extension(
     try:
         lock.acquire()
         os.mkdir(tempdir)
-        ext = _create_extension(binary_module, full_module_name, cffi_header, extclass)
+        ext = _create_extension(binary_module, full_module_name, cffi_header, extclass, tempdir)
         dist = distclass(ext_modules = [ext])
         _ = _build(dist, tempdir, compiler_verbose, debug)
         with locklock:

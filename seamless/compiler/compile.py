@@ -38,21 +38,9 @@ def compile(moduletree, build_dir, compiler_verbose=False):
         for objectname, object_ in moduletree["objects"].items():
             lang = object_["language"]
             extension = object_.get("extension")
-            try:
-                language = languages[lang]
-            except KeyError:
-                ext_to_lang = {}
-                for lang0, language in languages.items():
-                    ext = language.get("extension", [])
-                    if isinstance(ext, str):
-                        if ext == lang:
-                            break
-                    else:
-                        if lang in ext:
-                            break
-                else:
-                    raise KeyError(lang) from None
-                extension = lang
+            _, language, extension2 = find_language(lang)
+            if extension is None and extension2 is not None:
+                extension = extension2
 
             compiler_name = object_.get("compiler", language.get("compiler"))
             assert compiler_name is not None, lang
@@ -109,3 +97,5 @@ def compile(moduletree, build_dir, compiler_verbose=False):
         lock.release()
 
     return binary_moduletree
+
+from . import find_language

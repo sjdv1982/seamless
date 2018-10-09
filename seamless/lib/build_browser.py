@@ -1,5 +1,5 @@
 from seamless.highlevel import Context, Reactor, stdlib
-from seamless.lib import set_resource
+from seamless.highlevel import set_resource
 
 ctx = Context()
 b = ctx.browser = Reactor()

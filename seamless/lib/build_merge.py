@@ -1,5 +1,5 @@
 from seamless.highlevel import Context, Reactor, Cell, Link, stdlib
-from seamless.lib import set_resource
+from seamless.highlevel import set_resource
 
 ctx = Context()
 merge = ctx.merge = Reactor()
