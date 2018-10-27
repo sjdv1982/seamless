@@ -6,6 +6,7 @@ from io import BytesIO
 from .. import MAGIC_SEAMLESS, _integer_types, _float_types, _string_types
 from .util import get_buffersize, get_buffersize_debug, \
   sanitize_dtype
+from ...core.protocol import json_encode  
 
 def _convert_np_void(data):
     if not isinstance(data, np.generic):
@@ -38,7 +39,6 @@ def _to_stream(
 ):
     if storage == "pure-plain":
         if binary_parent:
-            json.dumps(data) ###
             jsons.append(data) #no need to copy anything
             return -1, buffer_offset
         else: #parent is already plain (and is in jsons), nothing to do
@@ -146,7 +146,7 @@ def _to_stream(
             assert has_been_copied or my_data is not data #my_data must have been copied! can't overwrite data!
             my_data[keys[n]] = 0 #zero out the Python object
     if append_my_data:
-        json.dumps(my_data)
+        json_encode(my_data)
         jsons.append(my_data)
     return my_buffersize, buffer_offset
 
@@ -154,7 +154,7 @@ def to_stream(data, storage, form):
     """ Converts data to a stream of bytes (either a bytes object or a bytearray)"""
     if storage == "pure-plain":
         data = _convert_np_void(data)
-        txt = json.dumps(data, sort_keys=True, indent=2)
+        txt = json_encode(data, sort_keys=True, indent=2)
         return txt.encode("utf-8")
     elif storage == "pure-binary":
         b = BytesIO()
@@ -178,7 +178,7 @@ def to_stream(data, storage, form):
     assert buffersize == buffersize_check, (buffersize, buffersize_check)
     #print("BUFFERSIZE", buffersize)
 
-    bytes_jsons = json.dumps(jsons).encode("utf-8")
+    bytes_jsons = json_encode(jsons).encode("utf-8")
     s1 = np.uint64(len(bytes_jsons)).tobytes()
     s2 = np.uint64(buffersize).tobytes()
     streamsize = len(MAGIC_SEAMLESS) + 16 + len(bytes_jsons) + buffersize

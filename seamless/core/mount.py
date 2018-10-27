@@ -20,7 +20,7 @@ Periodically, conditional_read() and conditional_write() are invoked,
 
 NOTE: resolve_register returns immediately if there has been an exception raised
 """
-from .protocol import cson2json
+from .protocol import cson2json, json_encode
 
 from weakref import WeakValueDictionary, WeakKeyDictionary, WeakSet, ref
 from threading import Thread, RLock, Event
@@ -141,7 +141,7 @@ class MountItem:
         #Special mount mode for JSON: whatever is read will be passed through cson2json
         if filevalue is not None and isinstance(cell, JsonCell) and "w" in self.mode:
             d = cson2json(filevalue)
-            filevalue2 = json.dumps(d, sort_keys=True, indent=2)
+            filevalue2 = json_encode(d, sort_keys=True, indent=2)
             if filevalue2 != filevalue:
                 filevalue = filevalue2
                 self._write(filevalue)

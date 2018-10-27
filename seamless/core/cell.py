@@ -9,7 +9,7 @@ from ast import PyCF_ONLY_AST, FunctionDef, Expr, Lambda
 import inspect
 
 from .macro_mode import with_macro_mode
-from .protocol import transfer_modes, access_modes, content_types
+from .protocol import transfer_modes, access_modes, content_types, json_encode
 from .. import Wrapper
 from . import SeamlessBase
 from ..mixed import io as mixed_io
@@ -803,7 +803,7 @@ class JsonCell(Cell):
     def _json(value):
         if value is None:
             return None
-        return json.dumps(value, sort_keys=True, indent=2)
+        return json_encode(value, sort_keys=True, indent=2)
 
     def _to_json(self):
         return self._json(self._val)
@@ -818,7 +818,7 @@ class JsonCell(Cell):
 
     def _validate(self, value):
         #TODO: store validation errors
-        json.dumps(value)
+        json_encode(value)
 
     def serialize_buffer(self):
         v = self._to_json()
@@ -890,7 +890,7 @@ class CsonCell(JsonCell):
         if value is None:
             return None
         d = cson2json(value)
-        return json.dumps(d, sort_keys=True, indent=2)
+        return json_encode(d, sort_keys=True, indent=2)
 
     @property
     def value(self):
@@ -922,7 +922,7 @@ class CsonCell(JsonCell):
             if transfer_mode == "buffer":
                 result = value
             else:
-                result = json.dumps(value, sort_keys=True, indent=2)
+                result = json_encode(value, sort_keys=True, indent=2)
         else:
             result = value
         self._val = result

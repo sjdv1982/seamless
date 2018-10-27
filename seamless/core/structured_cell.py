@@ -1,4 +1,5 @@
 from .cell import CellLikeBase, Cell, JsonCell, TextCell
+from .protocol import json_encode
 from ..mixed import MixedBase, OverlayMonitor, MakeParentMonitor, MonitorTypeError
 from ..mixed.get_form import get_form
 from ..mixed.io.util import is_identical_debug
@@ -174,7 +175,7 @@ class Outchannel(CellLikeBase):
         if transfer_mode == "ref":
             result = data
         elif access_mode == "text":
-            result = json.dumps(data, sort_keys=True, indent=2)
+            result = json_encode(data, sort_keys=True, indent=2)
         else:
             result = deepcopy(data)
         return result

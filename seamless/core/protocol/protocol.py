@@ -1,6 +1,6 @@
 from collections import OrderedDict
 import sys
-import json
+from .json import json_encode
 from copy import deepcopy
 from ...silk import Silk
 
@@ -96,7 +96,7 @@ def assert_mixed_text(source):
     return source
 
 def assert_plain(source):
-    json.dumps(source)
+    json_encode(source)
     return source
 
 adapters = OrderedDict()
@@ -116,7 +116,7 @@ for content_type1 in text_types:
 
 for content_type in ("text", "python", "ipython", "transformer", "reactor", "macro"):
     adapters[("copy", "text", "json"), ("copy", "text", content_type)] = assert_text
-    adapters[("copy", "text", content_type), ("copy", "text", "json")] = json.dumps
+    adapters[("copy", "text", content_type), ("copy", "text", "json")] = json_encode
 adapters[("copy", "object", "mixed"), ("copy", "text", "mixed")] = assert_mixed_text
 adapters[("copy", "object", "mixed"), ("copy", "json", "mixed")] = assert_plain
 

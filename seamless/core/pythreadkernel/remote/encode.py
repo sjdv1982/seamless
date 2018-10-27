@@ -1,9 +1,9 @@
 from ...cell import cell
+from ...protocol import json_encode
 from . import MAGIC_SEAMLESS_REQUEST
 import numpy as np
-import json
 
-nil = json.dumps(None)
+nil = json_encode(None)
 
 def encode(transformer_params, output_signature, values, access_modes, content_types):
     #TODO: SHA-512 checksums
@@ -27,7 +27,7 @@ def encode(transformer_params, output_signature, values, access_modes, content_t
             buf = buf.encode(encoding)
         d.append((k,am,c,len(buf)))
         b += buf
-    dd = json.dumps(d)
+    dd = json_encode(d)
 
     s1 = np.uint64(len(dd)).tobytes()
     s2 = np.uint64(len(b)).tobytes()
