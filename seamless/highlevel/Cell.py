@@ -84,7 +84,7 @@ class Cell(Base):
             "persistent": persistent
         }
         hcell["mount"] = mount
-        #self._parent().translate(force=True)
+        self._parent()._translate()
 
     def __setattr__(self, attr, value):
         if attr.startswith("_") or hasattr(type(self), attr):
