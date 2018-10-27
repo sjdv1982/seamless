@@ -1,11 +1,24 @@
 import json
+import numpy as np
 from ...mixed import MixedScalar
-
+from ...silk.validation import _integer_types, _float_types
 def seamless_encoder(obj):
+    retry = False
     if isinstance(obj, MixedScalar):
-        return default_encoder.encode(obj.value)
+        obj = obj.value
+        retry = True
+    if isinstance(obj, np.generic):
+        if isinstance(obj, _integer_types):
+            obj = int(obj)
+            retry = True
+        elif isinstance(obj, _float_types):
+            obj = float(obj)
+            retry = True
+    if retry:
+        return default_encoder.encode(obj)
     else:
-        raise TypeError(repr(obj) + " is not JSON serializable")
+        typename = obj.__class__.__name__
+        raise TypeError("%s object %s is not JSON serializable" % typename, repr(obj))
 
 def json_encode(obj, *, skipkeys=False, ensure_ascii=True, check_circular=True,
         allow_nan=True, cls=None, indent=None, separators=None,
