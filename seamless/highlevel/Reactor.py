@@ -40,7 +40,7 @@ class Reactor(Base):
         transfer_mode=None,
         access_mode=None,
         content_type=None,
-        must_be_defined=None,
+        must_be_defined=None
       ): #docstring copied from .core.protocol.protocol.py
         """Define a new pin, or update an existing one
 - pin: name of the pin

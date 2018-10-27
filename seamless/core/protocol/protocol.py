@@ -55,7 +55,7 @@ text_types = ("text", "python", "ipython", "transformer", "reactor", "macro", "c
 
 
 def set_cell(cell, value, *,
-  default, from_buffer, force, from_pin=False,
+  default, from_buffer, force, from_pin=False
 ):
     transfer_mode = "buffer" if from_buffer else "ref"
     different, text_different = cell.deserialize(value, transfer_mode,
