@@ -78,7 +78,7 @@ class MountItem:
         exists = self._exists()
         cell_empty = (cell.status() != "OK")
         if self.authority in ("file", "file-strict"):
-            if exists and cell_empty:
+            if exists:
                 with self.lock:
                     filevalue = self._read()
                     update_file = True
