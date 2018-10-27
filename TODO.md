@@ -7,17 +7,6 @@ Things to do:
 
 Part 2: high level
 A: get BCsearch working
-- DONE C/C++/Fortran cell translation
-  Make native support for BinaryModule (module pin, see injection.py),
-   = a MixedCell of dict-of-.o (Numpy arrays) + header.
-   low-level transformers (and later, reactors) will have native CFFI support
-    to build this (plus cffi-generated C code) into .so (make global Seamless cache) for interfacing
-    Marshalling is just a special kind of interfacing, where the marshalling
-     code is the transformer code (marshalling transformer).
-    A high-level C++ - transformer is "nothing but" a marshalling transformer
-     where the C++ code has been folded into one particular BinaryModule called "main".
-  Differentiate between "header" (always C, consumed by CFFI) and "signature"
-   (returned as output cell, for user info)
 - Network evaluation:
   Almost done (tests/simple-remote-client/server)
   TODO:
@@ -27,7 +16,6 @@ A: get BCsearch working
     and dispatches it towards the various cell types
   - make sure that a remote job_transformer loses equilibrium when a new result celltype
      is connected (changes output signature)
-- Special mount mode for JSON: whatever is read will be passed through cson2json
 
 - Silk form validators
   - All form-validating properties are under "form" of the main schema
