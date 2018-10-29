@@ -6,7 +6,11 @@ Most of the high level is done.
 Things to do:
 
 Part 2: high level
+
+BUG: mount directory does not get cleaned up
 A: get BCsearch working
+- Make initial version
+- Follow roadmap (see BCsearch directory)
 - Network evaluation:
   Almost done (tests/simple-remote-client/server)
   TODO:

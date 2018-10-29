@@ -200,6 +200,9 @@ class Silk(SilkBase):
                             schema["type"] = type_
                         if self._schema_update_hook is not None:
                             self._schema_update_hook()
+                    if type_ == "object":
+                        # TODO: make conditional upon policy.infer_property
+                        self._infer_properties(schema, value)
                 if isinstance(value, _types["array"]) and len(self.data) > 0:
                     self._infer_list_item(value_schema)
         elif isinstance(value, Scalar):
@@ -230,6 +233,9 @@ class Silk(SilkBase):
         elif isinstance(value, (dict, np.generic)):
             #invalidates all Silk objects constructed from items
             self._set_value_dict(value, buffer)
+            if policy["infer_type"]:
+                # TODO: make conditional upon policy.infer_property
+                self._infer_properties(schema, value)
         else:
             raise TypeError(type(value))
 
@@ -263,13 +269,8 @@ class Silk(SilkBase):
 
         if isinstance(value, Silk):
             value, value_schema = value.data, value._schema
-            if "properties" not in schema:
-                init_object_schema(self, schema)
-            if attr not in schema["properties"]:
-                schema["properties"][attr] = value_schema
-                #TODO: infer_property check
-                if self._schema_update_hook is not None:
-                    self._schema_update_hook()
+            # TODO: make conditional upon policy.infer_property
+            self._infer_property(schema, attr, value, value_schema)
 
         if policy["infer_type"]:
             if data_was_none:
@@ -281,17 +282,9 @@ class Silk(SilkBase):
                     schema["type"] = type_
                     if self._schema_update_hook is not None:
                         self._schema_update_hook()
-            if "properties" not in schema:
-                init_object_schema(self, schema)
-            if attr not in schema["properties"]:
-                schema["properties"][attr] = {}
-            if "type" not in schema["properties"][attr]:
-                type_ = infer_type(value)
-                schema["properties"][attr]["type"] = type_
-                if self._schema_update_hook is not None:
-                    self._schema_update_hook()
+            # TODO: make conditional upon policy.infer_property
+            self._infer_property(schema, attr, value)
 
-        # TODO: make conditional upon policy.infer_property
 
 
     def __setattr__(self, attr, value):
@@ -425,6 +418,39 @@ class Silk(SilkBase):
                 schema.pop("validators", None)
                 if old_validators is not None:
                     schema["validators"] = old_validators
+
+    def _infer_property(self, schema, attr, value, value_schema=None):
+        update_hook = False
+        if "properties" not in schema:
+            schema["properties"] = {}
+            update_hook = True
+        if attr not in schema["properties"]:
+            if value_schema is None:
+                value_schema = {}
+            schema["properties"][attr] = value_schema
+            update_hook = True
+        if "type" not in schema["properties"][attr]:
+            type_ = infer_type(value)
+            schema["properties"][attr]["type"] = type_
+            update_hook = True
+        if update_hook and self._schema_update_hook is not None:
+            self._schema_update_hook()
+
+    def _infer_properties(self, schema, value):
+        update_hook = False
+        if "properties" not in schema:
+            schema["properties"] = {}
+            update_hook = True
+        for attr, subvalue in value.items():
+            if attr not in schema["properties"]:
+                schema["properties"][attr] = {}
+                update_hook = True
+            if "type" not in schema["properties"][attr]:
+                type_ = infer_type(subvalue)
+                schema["properties"][attr]["type"] = type_
+                update_hook = True
+        if update_hook and self._schema_update_hook is not None:
+            self._schema_update_hook()
 
     def _infer_list_item(self, item_schema):
         schema = self._schema
