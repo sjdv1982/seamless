@@ -6,7 +6,7 @@ from io import BytesIO
 from .. import MAGIC_SEAMLESS, _integer_types, _float_types, _string_types
 from .util import get_buffersize, get_buffersize_debug, \
   sanitize_dtype
-from ...core.protocol import json_encode  
+from ...core.protocol import json_encode
 
 def _convert_np_void(data):
     if not isinstance(data, np.generic):
@@ -23,7 +23,7 @@ def _copy_into_buffer(data, buffer, offset):
     size = data.nbytes
     if not data.dtype.hasobject:
         new_data = buffer[offset:offset+size].view(data.dtype)
-        new_data[:] = data
+        new_data[:] = data.reshape(-1)
     else:
         rbuffer = np.frombuffer(buffer=data, dtype=np.uint8)
         buffer[offset:offset+size] = rbuffer
