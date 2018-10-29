@@ -1,4 +1,5 @@
 import numpy as np
+from .. import np_char
 
 def _is_identical_dict_debug(first, second):
     keys1, keys2 = first.keys(), second.keys()
@@ -228,7 +229,7 @@ def sanitize_dtype(dtype):
 def _form_to_dtype_scalar(form):
     type_ = form["type"]
     if type_ == "string":
-        raise NotImplementedError
+        return np_char, None
     if type_ == "integer":
         result = "="
         if form.get("unsigned"):

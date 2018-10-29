@@ -11,10 +11,11 @@ Paradigm:
 """
 from numpy import ndarray, void
 from copy import deepcopy
-from . import ( Scalar,
+from . import ( Scalar, np_char,
   _array_types, _integer_types, _float_types, _string_types, _unsigned_types
 )
 _string_types = (str,)  ##JSON cannot deal with bytes
+
 
 def get_typedef_scalar(value):
     if isinstance(value, bool):
@@ -178,7 +179,7 @@ def get_tform_numpy_builtin(dt):
         typedef0 = "integer"
     elif any([dtb == t for t in _float_types]):
         typedef0 = "number"
-    elif any([dtb == t for t in _string_types]):
+    elif dtb == np_char:
         typedef0 = "string"
     else:
         raise TypeError(dtb)
@@ -238,7 +239,7 @@ def get_tform_numpy_struct(dt):
 
 
 def get_tform_numpy(dt):
-    if dt.base.isbuiltin:
+    if dt.base.isbuiltin or dt == np_char:
         return get_tform_numpy_builtin(dt)
     return get_tform_numpy_struct(dt)
 

@@ -24,6 +24,8 @@ from ..silk.validation import (
 
 scalars = ("boolean", "integer", "number", "string")
 
+import numpy as np
+np_char = np.dtype('S1')
 
 class MonitorTypeError(TypeError):
     pass
