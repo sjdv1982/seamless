@@ -329,6 +329,7 @@ context : context or None
         if self._root()._direct_mode:
             raise Exception("Root context must have been constructed in macro mode")
         self._mount = {
+            "autopath": False,
             "path": path,
             "mode": mode,
             "authority": authority,

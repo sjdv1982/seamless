@@ -85,13 +85,16 @@ class Cell(Base):
 
     def mount(self, path=None, mode="rw", authority="cell", persistent=True):
         hcell = self._get_hcell()
-        mount = {
-            "path": path,
-            "mode": mode,
-            "authority": authority,
-            "persistent": persistent
-        }
-        hcell["mount"] = mount
+        if path is None:
+            hcell.pop("mount", None)
+        else:
+            mount = {
+                "path": path,
+                "mode": mode,
+                "authority": authority,
+                "persistent": persistent
+            }
+            hcell["mount"] = mount
         self._parent()._translate()
 
     def __setattr__(self, attr, value):

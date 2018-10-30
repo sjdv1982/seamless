@@ -29,6 +29,7 @@ class Context:
     _translating = False
     def __init__(self, dummy=False):
         self._dummy = dummy
+        self._mount = None
         if not dummy:
             with macro_mode_on(self):
                 self._ctx = context(toplevel=True)
@@ -88,18 +89,30 @@ class Context:
     def __delattr__(self, attr):
         self._destroy_path((attr,))
 
-    def mount(self, mountdir, persistent=None):
+    def mount(self, path=None, mode="rw", authority="cell", persistent=False):
         assert not self._dummy
+        if path is None:
+            self._mount = None
+            ctx.mount(None)
+            return
+        self._mount = {
+            "path": path,
+            "mode": mode,
+            "authority": authority,
+            "persistent": persistent
+        }
         with macro_mode_on():
             ctx = self._ctx
-            ctx.mount(mountdir, persistent=persistent)
+            ctx.mount(**self._mount)
             mountmanager.add_context(ctx,(), False)
-            mountmanager.paths[ctx].add(mountdir) #kludge
+            mountmanager.paths[ctx].add(path) #kludge
         self._translate()
 
     def mount_graph(self, mountdir, persistent=None):
         assert not self._dummy
         with macro_mode_on(self):
+            if self._graph_ctx is not None:
+                self._graph_ctx.destroy()
             ctx = self._graph_ctx = context(toplevel=True)
         with macro_mode_on():
             ctx.mount(mountdir, persistent=persistent, mode="w")

@@ -737,6 +737,7 @@ def resolve_register(reg):
                 if parent_result is None:
                     raise Exception("No path provided for mount of %s, but no ancestor context is mounted" % c)
                 result["path"] = parent_result["path"]
+                result["autopath"] = True
         elif isinstance(c, (Inchannel, Outchannel)):
             result = None
         elif isinstance(c, Context) and c._toplevel:
@@ -756,6 +757,7 @@ def resolve_register(reg):
             result = copy.deepcopy(result)
             if result["persistent"] is None:
                 result["persistent"] = False
+            result["autopath"] = True
             result["path"] += "/" + child.name
             if isinstance(child, Link):
                 child = child.get_linked()
@@ -799,7 +801,7 @@ def resolve_register(reg):
             return
         if persistent:
             m["persistent"] = True
-        elif m["persistent"] == True:
+        elif m["persistent"] == True and m["autopath"]:
             persistent = True
         if isinstance(c, Context):
             if c._toplevel:

@@ -338,6 +338,7 @@ class CellBase(CellLikeBase):
         if self._mount is None:
             self._mount = {}
         self._mount.update({
+            "autopath": False,
             "path": path,
             "mode": mode,
             "authority": authority,
