@@ -151,7 +151,7 @@ class Transformer(Base):
             inp = getattr(tf, htf["INPUT"])
             assert not test_lib_lowlevel(parent, inp)
             if attr not in htf["pins"]:
-                htf["pins"][attr] = default_pin
+                htf["pins"][attr] = default_pin.copy()
                 translate = True
             if isinstance(value, Cell):
                 target_path = self._path + (attr,)

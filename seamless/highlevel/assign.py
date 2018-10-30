@@ -74,7 +74,7 @@ def assign_transformer(ctx, path, func):
         "compiled": False,
         "language": "python",
         "code": code,
-        "pins": {param:default_pin for param in parameters},
+        "pins": {param:default_pin.copy() for param in parameters},
         "RESULT": "result",
         "INPUT": "inp",
         "with_result": False,

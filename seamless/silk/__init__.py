@@ -1,4 +1,5 @@
 from .Silk import Silk
+from .validation import Scalar
 
 def is_none(obj):
     if obj is None:

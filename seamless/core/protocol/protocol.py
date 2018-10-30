@@ -100,8 +100,11 @@ def adapt_cson_json(source):
     return cson2json(source)
 
 def adapt_to_silk(source):
-    from ...silk import Silk
-    return Silk(data=source)
+    from ...silk import Silk, Scalar
+    if isinstance(source, Scalar):
+        return source
+    else:
+        return Silk(data=source)
 
 def adapt_from_silk(source):
     if not isinstance(source, Silk):  #HACK: should have been covered by protocol
