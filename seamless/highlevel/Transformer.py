@@ -235,10 +235,23 @@ class Transformer(Base):
             proxycls = Proxy
         return proxycls(self, (attr,), "r", pull_source=pull_source, getter=getter)
 
+    def _code_mount(self, path=None, mode="rw", authority="cell", persistent=True):
+        htf = self._get_htf()
+        mount = {
+            "path": path,
+            "mode": mode,
+            "authority": authority,
+            "persistent": persistent
+        }
+        htf["mount"] = mount
+        self._parent()._translate()
+
     def _codegetter(self, attr):
         if attr == "value":
             tf = self._get_tf()
             return tf.code.value
+        elif attr == "mount":
+            return self._code_mount
         elif attr == "mimetype":
             htf = self._get_htf()
             language = htf["language"]
