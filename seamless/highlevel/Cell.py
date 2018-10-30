@@ -40,6 +40,12 @@ class Cell(Base):
             raise
             return("Cell %s in dummy mode" % ("." + ".".join(self._path)))
 
+    def _get_cell_subpath(self, cell, subpath):
+        p = cell
+        for path in subpath:
+            p = getattr(p, path)
+        return p
+
     def _get_cell(self):
         parent = self._parent()
         if parent._dummy:
@@ -49,8 +55,8 @@ class Cell(Base):
                 parent.translate()
         p = getattr(parent._ctx, TRANSLATION_PREFIX)
         if len(self._path):
-            p = getattr(p, self._path[0])            
-        return p
+            p = getattr(p, self._path[0])
+        return self._get_cell_subpath(p, self._path[1:])
 
     def _get_hcell(self):
         parent = self._parent()

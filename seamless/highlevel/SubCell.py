@@ -14,6 +14,9 @@ class SubCell(Cell):
     def _get_hcell(self):
         return self._cell()._get_hcell()
 
+    def _get_cell_subpath(self, cell, subpath):
+        return cell
+
     def __setattr__(self, attr, value):
         if attr.startswith("_"):
             return object.__setattr__(self, attr, value)

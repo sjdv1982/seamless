@@ -66,11 +66,14 @@ def fill_simple_cell_value(cell, node, label_auth, label_cached):
     return value
 
 def fill_cell_value(cell, node):
+    from ..core import Cell
     from ..core.structured_cell import StructuredCell
     if isinstance(cell, StructuredCell):
         return fill_structured_cell_value(cell, node, "stored_state", "cached_state")
-    else:
+    elif isinstance(cell, Cell):
         return fill_simple_cell_value(cell, node, "stored_value", "cached_value")
+    else:
+        raise TypeError(type(cell))
 
 def fill_cell_values(ctx, nodes, path=None):
     from ..highlevel import Cell, Transformer, Reactor, Link
@@ -115,7 +118,10 @@ def fill_cell_values(ctx, nodes, path=None):
             elif isinstance(child, Cell):
                 assert node["type"] == "cell", (pp, node["type"])
                 cell = child._get_cell()
-                fill_cell_value(cell, node)
+                try:
+                    fill_cell_value(cell, node)
+                except TypeError as e:
+                    raise TypeError(p, node)
             elif isinstance(child, Link):
                 continue
             else:
