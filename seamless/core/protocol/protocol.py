@@ -27,6 +27,7 @@ A connection declaration may have up to four parts
   - text: a text string
   - module: a Python module
   - binary_module: a tree of binary objects (.o / .obj) for compilation
+  - default (only transformer inputpins). "silk" if the source is "json" or "mixed", else "object"
 - content type: the semantic content of the data
   - object: generic Python object
   - text: text
@@ -53,7 +54,6 @@ content_types = ("object", "text",
 )
 text_types = ("text", "python", "ipython", "transformer", "reactor", "macro", "cson")
 
-
 def set_cell(cell, value, *,
   default, from_buffer, force, from_pin=False
 ):
@@ -71,6 +71,29 @@ def compile_binary_module(binary_module):
     module_name = build_extension_cffi(binary_module, compiler_verbose=compiler_verbose)
     return sys.modules[module_name]
 
+def substitute_default(source_mode, target_mode):
+    if target_mode[1] != "default":
+        return target_mode
+    access_mode, content_type = source_mode[1:]
+    if access_mode == "object":
+        if content_type in ("json", "mixed"):
+            result = "silk"
+        elif content_type == "object":
+            if content_type in text_types:
+                result = "text"
+            else:
+                result = "object"
+        else:
+            result = "object"
+    elif access_mode in ("json", "silk"):
+        result = "silk"
+    else:
+        result = access_mode
+    return target_mode[0], result, target_mode[2]
+
+#################################
+#   Adapters
+#################################
 
 def adapt_cson_json(source):
     assert isinstance(source, str), source
@@ -157,6 +180,7 @@ def select_adapter(transfer_mode, source, target, source_modes, target_modes):
                 continue
             for target_mode in target_modes:
                 source_mode = source_mode0
+                target_mode = substitute_default(source_mode, target_mode)
                 if target_mode[0] != trans_mode:
                     continue
                 if source_mode[1] is None:
@@ -190,26 +214,5 @@ class TransferredCell:
             if attr.startswith("_"):
                 continue
             setattr(self, attr, getattr(cell, attr))
-
-"""
-import inspect, ast
-from .cached_compile import cached_compile
-from ast import PyCF_ONLY_AST, FunctionDef
-class FakeTransformerCell:
-    def __init__(self, value):
-        if inspect.isfunction(value):
-            code = inspect.getsource(value)
-            code = strip_source(code)
-            value = code
-        ast = cached_compile(value, "transformer", "exec", PyCF_ONLY_AST)
-        is_function = (len(ast.body) == 1 and
-                       isinstance(ast.body[0], FunctionDef))
-        if is_function:
-            self.func_name = ast.body[0].name
-        else:
-            self.func_name = "transform"
-        self.is_function = is_function
-        self.value = value
-"""
 
 from .cson import cson2json

@@ -3,13 +3,19 @@ import functools
 from .Cell import Cell
 from .Resource import Resource
 from .proxy import Proxy, CodeProxy
-from .pin import InputPin, OutputPin
+from .pin import InputPin, OutputPin, PinsWrapper
 from .Base import Base
 from .Library import test_lib_lowlevel
 from ..midlevel import TRANSLATION_PREFIX
 from .mime import language_to_mime
 from ..core.context import Context as CoreContext
 from . import parse_function_code
+
+default_pin = {
+  "transfer_mode": "copy",
+  "access_mode": "default",
+  "content_type": None,
+}
 
 class Transformer(Base):
     def __init__(self, parent=None, path=None):
@@ -145,7 +151,7 @@ class Transformer(Base):
             inp = getattr(tf, htf["INPUT"])
             assert not test_lib_lowlevel(parent, inp)
             if attr not in htf["pins"]:
-                htf["pins"][attr] = {"transfer_mode": "copy", "access_mode": "silk"}
+                htf["pins"][attr] = default_pin
                 translate = True
             if isinstance(value, Cell):
                 target_path = self._path + (attr,)
@@ -220,19 +226,20 @@ class Transformer(Base):
         if attr == htf["INPUT"]:
             # TODO: better wrapping
             return getattr(self._get_tf(), htf["INPUT"])
-        if attr not in htf["pins"] and attr != "code" and attr != htf["RESULT"]:
-            #TODO: could be result pin... what to do?
-            raise AttributeError(attr)
         pull_source = functools.partial(self._pull_source, attr)
-        if attr == "code":
+        if attr in htf["pins"]:
+            getter = self._resultgetter
+            proxycls = Proxy
+        elif attr == "pins":
+            return PinsWrapper(self)
+        elif attr == "code":
             getter = self._codegetter
             proxycls = CodeProxy
         elif attr == htf["RESULT"]:
             getter = self._resultgetter
             proxycls = Proxy
         else:
-            getter = functools.partial(self._valuegetter, attr)
-            proxycls = Proxy
+            raise AttributeError(attr)
         return proxycls(self, (attr,), "r", pull_source=pull_source, getter=getter)
 
     def _code_mount(self, path=None, mode="rw", authority="cell", persistent=True):
@@ -328,5 +335,6 @@ class Transformer(Base):
     def __dir__(self):
         htf = self._get_htf()
         d = [p for p in type(self).__dict__ if not p.startswith("_")]
+        std = ["code", "pins", htf["RESULT"] , htf["INPUT"]]
         pins = list(htf["pins"].keys())
-        return sorted(d + pins + ["code"])
+        return sorted(d + pins + std)

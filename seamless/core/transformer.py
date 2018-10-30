@@ -27,7 +27,7 @@ class Transformer(Worker):
         self.state = {}
         self.service = service
         self.code = InputPin(self, "code", "ref", "pythoncode", "transformer")
-        #TODO: access_mode becomes "copy" when we switch from threads to processes
+        #TODO: transfer_mode becomes "copy" when we switch from threads to processes
         thread_inputs = {"code": ("ref", "pythoncode", "transformer")}
         self._io_attrs = ["code"]
         self._pins = {"code":self.code}

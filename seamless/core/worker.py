@@ -135,7 +135,10 @@ class PinBase(SeamlessBase):
         super().__init__()
         assert transfer_mode in transfer_modes, (transfer_mode, transfer_modes)
         if access_mode is not None:
-            assert access_mode in access_modes, (access_mode, access_modes)
+            if isinstance(self, InputPin):
+                assert access_mode in access_modes + ("default",), (access_mode, access_modes)
+            else:
+                assert access_mode in access_modes, (access_mode, access_modes)
         self.name = name
         self.transfer_mode = transfer_mode
         if content_type is not None:

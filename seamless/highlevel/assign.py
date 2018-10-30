@@ -52,6 +52,7 @@ def assign_resource(ctx, path, value):
     child.mount(value.filename)
 
 def assign_transformer(ctx, path, func):
+    from .Transformer import default_pin
     if path in ctx._children:
         old = ctx._children[path]
         if isinstance(old, Cell):
@@ -73,8 +74,7 @@ def assign_transformer(ctx, path, func):
         "compiled": False,
         "language": "python",
         "code": code,
-        "pins": {param:{"transfer_mode": "copy", "access_mode": "silk"} for param in parameters},
-        ###"pins": {param:{"transfer_mode": "copy", "access_mode": "object"} for param in parameters},
+        "pins": {param:default_pin for param in parameters},
         "RESULT": "result",
         "INPUT": "inp",
         "with_result": False,

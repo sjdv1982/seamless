@@ -6,6 +6,9 @@ from .cached_compile import cached_compile
 from . import cache
 from .injector import macro_injector as injector
 from . import library
+from .protocol import content_types
+
+#TODO: content_type is not used?
 
 class ExecError(Exception): pass
 
@@ -47,6 +50,8 @@ class Macro(Worker):
                 content_type = param.get("content_type", content_type)
             else:
                 raise ValueError((p, param))
+            if content_type is None and access_mode in content_types:
+                content_type = access_mode
             pin = InputPin(self, p, transfer_mode, access_mode)
             if access_mode == "module":
                 injected_modules.append(p)
