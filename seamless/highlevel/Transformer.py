@@ -209,6 +209,9 @@ class Transformer(Base):
             p = inp.value[attr]
             return p
 
+    def status(self):
+        tf = self._get_tf().tf
+        return tf.status()
 
     def __getattr__(self, attr):
         if attr.startswith("_"):

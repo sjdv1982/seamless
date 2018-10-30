@@ -3,8 +3,9 @@ ctx = Context()
 ctx.mount_graph("/tmp/seamless", persistent=True)
 ctx.a = {}
 ctx.a.b = 12
-print(ctx.a.value, ctx.a.value.data, ctx.a.value.data.value)
-print(type(ctx.a.value), type(ctx.a.value.data), type(ctx.a.value.data.value))
+print(ctx.a.value, ctx.a.value.data)
+print(type(ctx.a.value), type(ctx.a.value.data))
+
 ####ctx.a.b = "test" ###should give error
 ctx.tf = lambda x,y: x + y
 ctx.tf.x = ctx.a.b
@@ -36,6 +37,7 @@ ctx.z = 100
 def func(q,z):
     return q.c * q.f - q.g + q.d + 2 * z
 ctx.tf2 = func
+###ctx.tf2._get_htf()["pins"]["q"]["access_mode"] = "silk"
 ctx.tf2.q = ctx.q
 ctx.tf2.z = ctx.z
 ctx.qq = ctx.tf2

@@ -118,7 +118,8 @@ def get_buffersize(storage, form, binary_parent=None):
     if storage == "mixed-binary":
         item_binary_parent = True
     if type_ == "object":
-        form_items = list(form["properties"].values())
+        properties = form.get("properties", {})
+        form_items = list(properties.values())        
     elif type_ in ("array", "tuple"):
         form_items = form["items"]
         identical = form["identical"]
@@ -185,7 +186,8 @@ def get_buffersize_debug(data, storage, form, binary_parent=None):
             items = [data[field] for field in data.dtype.fields]
         else:
             items = list(data.values())
-        form_items = list(form["properties"].values())
+        properties = form.get("properties", {})
+        form_items = list(properties.values())
     elif type_ in ("array", "tuple"):
         items = data
         form_items = form["items"]

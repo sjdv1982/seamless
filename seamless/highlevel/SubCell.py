@@ -11,25 +11,18 @@ class SubCell(Cell):
         self._readonly = readonly
         self._subpath = subpath
 
-    def _get_cell(self):
-        cell = self._cell()
-        p = cell.value
-        for subpath in self._subpath:
-            p = getattr(p, subpath)
-        return p
-
     def _get_hcell(self):
-        raise AttributeError
+        return self._cell()._get_hcell()
 
     def __setattr__(self, attr, value):
         if attr.startswith("_"):
             return object.__setattr__(self, attr, value)
         from .assign import assign_to_subcell
         parent = self._parent()
-        assert not test_lib_lowlevel(parent, self._get_cell())
+        assert not test_lib_lowlevel(parent,self._cell()._get_cell())
         subcell = getattr(self, attr)
         #TODO: break links and connections from subcell
-        path = self._subpath + attr
+        path = self._subpath + (attr,)
         assign_to_subcell(self, path, value)
         ctx = parent._ctx
         if parent._as_lib is not None:
@@ -39,9 +32,11 @@ class SubCell(Cell):
         parent._translate()
 
     def __getattr__(self, attr):
+        if attr == "value":
+            raise AttributeError
         parent = self._parent()
         readonly = self._readonly
-        return SubCell(self._parent(), self, self._subpath + (attr,), readonly=readonly)
+        return SubCell(self._parent(), self._cell(), self._subpath + (attr,), readonly=readonly)
 
     @property
     def authoritative(self):
@@ -54,10 +49,18 @@ class SubCell(Cell):
         #TODO: return the other partner of all Link objects with self in it
         return [] #stub
 
+    @property
+    def value(self):
+        cell = self._cell()
+        cellvalue = cell.value
+        for attr in self._subpath:
+            cellvalue = getattr(cellvalue, attr)
+        return cellvalue
+
     def set(self, value):
         assert not self._readonly
         print("UNTESTED SubCell.set")
-        cell = self._cell
+        cell = self._cell()
         attr = self._subpath[-1]
         if len(self._subpath) == 1:
             return setattr(cell, attr, value)

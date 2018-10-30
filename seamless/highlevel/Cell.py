@@ -1,6 +1,7 @@
 import weakref
 import inspect
 import traceback
+import threading
 from types import LambdaType
 from .Base import Base
 from ..midlevel import TRANSLATION_PREFIX
@@ -44,10 +45,11 @@ class Cell(Base):
         if parent._dummy:
             raise AttributeError
         if not parent._translating:
-            parent.translate()
+            if threading.current_thread() == threading.main_thread():
+                parent.translate()
         p = getattr(parent._ctx, TRANSLATION_PREFIX)
-        for subpath in self._path:
-            p = getattr(p, subpath)
+        if len(self._path):
+            p = getattr(p, self._path[0])            
         return p
 
     def _get_hcell(self):
@@ -130,8 +132,10 @@ class Cell(Base):
                 import traceback; traceback.print_exc()
                 raise
             value = cell.value
-            ###if hcell["celltype"] == "structured":
-            ###    value = value.value
+            if hcell["celltype"] == "structured":
+                value = value.value
+                if hcell["silk"]:
+                    value = Silk(data=value, schema=self.schema)
             return value
 
     @property
@@ -250,6 +254,20 @@ class Cell(Base):
 
     def _update_dep(self):
         self._parent()._depsgraph.update_path(self._path)
+
+    def __dir__(self):
+        result = super().__dir__()
+        parent = self._parent()
+        hcell = self._get_hcell()
+        if not parent._dummy:
+            try:
+                celltype = hcell["celltype"]
+                if celltype == "structured" and hcell["silk"]:
+                    result += dir(self.value)
+            except:
+                pass
+        return result
+
 
 from .Library import test_lib_lowlevel
 from .SubCell import SubCell

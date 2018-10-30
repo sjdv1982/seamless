@@ -20,7 +20,7 @@ def meta(name, bases, d):
 
 def prep(name, bases):
     return {
-        "schema": SchemaWrapper({}),
+        "schema": SchemaWrapper(None, {}, None),
     }
 
 meta.__prepare__ = prep

@@ -23,6 +23,16 @@ class SilkBase:
             data = self._buffer
         return str(data)
 
+    def __dir__(self):
+        result = super().__dir__()
+        result += ["data", "schema"]
+        data = self.data
+        result += dir(data)
+        if isinstance(data, dict):
+            result += data.keys()
+        result = list(set(result))
+        return result
+
     def __repr__(self):
         # TODO: proper string representation
         data = self.data

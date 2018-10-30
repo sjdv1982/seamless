@@ -267,11 +267,6 @@ class Silk(SilkBase):
         else:
             data[attr] = value
 
-        if isinstance(value, Silk):
-            value, value_schema = value.data, value._schema
-            # TODO: make conditional upon policy.infer_property
-            self._infer_property(schema, attr, value, value_schema)
-
         if policy["infer_type"]:
             if data_was_none:
                 if "type" not in schema:
@@ -282,10 +277,13 @@ class Silk(SilkBase):
                     schema["type"] = type_
                     if self._schema_update_hook is not None:
                         self._schema_update_hook()
-            # TODO: make conditional upon policy.infer_property
-            self._infer_property(schema, attr, value)
-
-
+            if isinstance(value, Silk):
+                value, value_schema = value.data, value._schema
+                # TODO: make conditional upon policy.infer_property
+                self._infer_property(schema, attr, value, value_schema)
+            else:
+                # TODO: make conditional upon policy.infer_property
+                self._infer_property(schema, attr, value)
 
     def __setattr__(self, attr, value):
         if attr in type(self).__slots__:
@@ -565,8 +563,12 @@ class Silk(SilkBase):
             modifier = modifier | SILK_BUFFER_CHILD
         if isinstance(item, str) and hasattr(data, item):
             result = getattr(data, item)
+            """
+            # why do we need this???
             if not isinstance(data, (MixedDict, MixedObject)) or result.value is not None:
+                print("RESULT", result, type(result), result.value)
                 return result
+            """
             d = result
         else:
             d = data[item]
