@@ -21,10 +21,17 @@ def translate_py_transformer(node, root, namespace, inchannels, outchannels, lib
     interchannels = [as_tuple(pin) for pin in node["pins"]]
     plain = node["plain"]
     input_state = node.get("stored_state_input", None)
+    mount = node.get("mount", {})
     if input_state is None:
         input_state = node.get("cached_state_input", None)
-    inp = build_structured_cell(ctx, input_name, True, plain, buffered, inchannels, interchannels, input_state, lib_path0)
+    inp, inp_ctx = build_structured_cell(
+      ctx, input_name, True, plain, buffered, inchannels, interchannels,
+      input_state, lib_path0,
+      return_context=True
+     )
     setattr(ctx, input_name, inp)
+    if "schema" in mount:
+        inp_ctx.schema.mount(**mount["schema"])
     for inchannel in inchannels:
         path = node["path"] + inchannel
         namespace[path, True] = inp.inchannels[inchannel]
@@ -49,8 +56,9 @@ def translate_py_transformer(node, root, namespace, inchannels, outchannels, lib
         ctx.code = libcell(lib_path)
     else:
         ctx.code = core_cell("transformer")
-        if "mount" in node:
-            ctx.code.mount(**node["mount"])
+        if "code" in mount:
+            ctx.code.mount(**mount["code"])
+
     ctx.code.connect(ctx.tf.code)
     code = node.get("code")
     if code is None:
@@ -76,8 +84,16 @@ def translate_py_transformer(node, root, namespace, inchannels, outchannels, lib
     if with_result:
         plain_result = node["plain_result"]
         result_state = node.get("cached_state_result", None)
-        result = build_structured_cell(ctx, result_name, True, plain_result, False, [()], outchannels, result_state, lib_path0)
+        result, result_ctx = build_structured_cell(
+            ctx, result_name, True, plain_result, False, [()],
+            outchannels, result_state, lib_path0,
+            return_context=True
+        )
+        if "result_schema" in mount:
+            result_ctx.schema.mount(**mount["result_schema"])
+
         setattr(ctx, result_name, result)
+
         result_pin = getattr(ctx.tf, result_name)
         result.connect_inchannel(result_pin, ())
         if node["SCHEMA"]:

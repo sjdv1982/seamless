@@ -57,6 +57,7 @@ def _finalize(ctx, ctf, inp, c_inp, result, c_result):
 
 def translate_compiled_transformer(node, root, namespace, inchannels, outchannels, lib_path00, is_lib):
     #TODO: still a lot of common code with translate_py_transformer, put in functions
+    print("TODO: mount schema, result_schema")
     parent = get_path(root, node["path"][:-1], None, None)
     name = node["path"][-1]
     lib_path0 = lib_path00 + "." + name if lib_path00 is not None else None

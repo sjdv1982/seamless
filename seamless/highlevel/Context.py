@@ -91,6 +91,8 @@ class Context:
 
     def mount(self, path=None, mode="rw", authority="cell", persistent=False):
         assert not self._dummy
+        if self._parent() is not self:
+            raise NotImplementedError
         if path is None:
             self._mount = None
             ctx.mount(None)

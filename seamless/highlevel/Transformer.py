@@ -17,6 +17,11 @@ default_pin = {
   "content_type": None,
 }
 
+class TransformerWrapper:
+    #TODO: setup access to non-pins
+    def __init__(self, parent):
+        self.parent = parent
+
 class Transformer(Base):
     def __init__(self, parent=None, path=None):
         assert (parent is None) == (path is None)
@@ -32,6 +37,10 @@ class Transformer(Base):
         result._virtual_path = self._path
         parent._children[path] = self
         parent._children[result_path] = result
+
+    @property
+    def self(self):
+        return TransformerWrapper(self)
 
     @property
     def RESULT(self):
@@ -97,14 +106,7 @@ class Transformer(Base):
 
         if isinstance(value, Resource):
             assert attr ==  "code"
-            mount = {
-                "path": value.filename,
-                "mode": "r",
-                "authority": "file",
-                "persistent": True,
-            }
-            htf["mount"] = mount
-            translate = True
+            self._sub_mount(attr, value.filename, "r", "file", True)
 
         if not self._has_tf() and not isinstance(value, Cell) and attr != htf["RESULT"]:
             if isinstance(value, Resource):
@@ -223,42 +225,62 @@ class Transformer(Base):
         if attr.startswith("_"):
             raise AttributeError(attr)
         htf = self._get_htf()
-        if attr == htf["INPUT"]:
-            # TODO: better wrapping
-            return getattr(self._get_tf(), htf["INPUT"])
         pull_source = functools.partial(self._pull_source, attr)
         if attr in htf["pins"]:
-            getter = self._resultgetter
+            getter = functools.partial(self._valuegetter, attr)
             proxycls = Proxy
         elif attr == "pins":
             return PinsWrapper(self)
         elif attr == "code":
             getter = self._codegetter
             proxycls = CodeProxy
+        elif attr == htf["INPUT"]:
+            getter = self._inputgetter
+            pull_source = None
+            proxycls = Proxy
         elif attr == htf["RESULT"]:
             getter = self._resultgetter
+            pull_source = None
             proxycls = Proxy
         else:
             raise AttributeError(attr)
         return proxycls(self, (attr,), "r", pull_source=pull_source, getter=getter)
 
-    def _code_mount(self, path=None, mode="rw", authority="cell", persistent=True):
+    def _sub_mount(self, attr, path=None, mode="rw", authority="cell", persistent=True):
         htf = self._get_htf()
+        if path is None:
+            if "mount" in htf:
+                mount = htf["mount"]
+                if attr in mount:
+                    mount.pop(attr)
+                    if not len(mount):
+                        htf.pop("mount")
+            return
         mount = {
             "path": path,
             "mode": mode,
             "authority": authority,
             "persistent": persistent
         }
-        htf["mount"] = mount
+        if not "mount" in htf:
+            htf["mount"] = {}
+        htf["mount"][attr] = mount
         self._parent()._translate()
+
+    def mount_schema(self, path=None, mode="rw", authority="cell", persistent=True):
+        return self._sub_mount("schema", path, mode, authority, persistent)
+
+    def mount_result_schema(self, path=None, mode="rw", authority="cell", persistent=True):
+        htf = self._get_htf()
+        assert htf["with_result"]
+        return self._sub_mount("result_schema", path, mode, authority, persistent)
 
     def _codegetter(self, attr):
         if attr == "value":
             tf = self._get_tf()
             return tf.code.value
         elif attr == "mount":
-            return self._code_mount
+            return functools.partial(self._sub_mount, "code")
         elif attr == "mimetype":
             htf = self._get_htf()
             language = htf["language"]
@@ -266,6 +288,14 @@ class Transformer(Base):
             return mimetype
         else:
             raise AttributeError(attr)
+
+    def _inputgetter(self, attr):
+        htf = self._get_htf()
+        if attr in htf["pins"]:
+            return getattr(self, attr)
+        if attr == "schema":
+            return inputcell.handle.schema
+        raise AttributeError(attr)
 
     def _resultgetter(self, attr):
         htf = self._get_htf()

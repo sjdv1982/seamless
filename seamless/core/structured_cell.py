@@ -752,7 +752,7 @@ class StructuredCell(CellLikeBase):
         return self.buffer.storage._val
 
     def _init_storage_from_mounted_file(self, filebuffer, checksum):
-        storage = filebuffer
+        storage = filebuffer.strip("\n")
         assert storage in ("pure-plain", "pure-binary", "mixed-plain", "mixed-binary"), storage
         if self.buffer is not None:
             self.buffer.storage._val = storage

@@ -296,7 +296,7 @@ class Silk(SilkBase):
             return super().__setattr__(attr, value)
         if isinstance(value, property):
             return self._set_property(attr, value)
-        if callable(value):
+        if not isinstance(value, Silk) and callable(value):
             return self._set_method(attr, value)
 
         schema = self._schema

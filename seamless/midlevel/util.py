@@ -81,7 +81,7 @@ def find_editchannels(path, link_paths, skip=[]):
 def build_structured_cell(
   ctx, name, silk, plain, buffered,
   inchannels, outchannels, state, lib_path0,
-  *, editchannels=[], mount=None
+  *, editchannels=[], mount=None, return_context=False
 ):
     #print("build_structured_cell", name, lib_path)
     name2 = name + STRUC_ID
@@ -184,4 +184,7 @@ def build_structured_cell(
         state = state,
         editchannels=editchannels
     )
-    return sc
+    if return_context:
+        return sc, c
+    else:
+        return sc
