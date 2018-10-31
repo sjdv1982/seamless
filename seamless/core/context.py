@@ -2,7 +2,7 @@
 from weakref import WeakValueDictionary
 from collections import OrderedDict
 from . import SeamlessBase
-from .mount import MountItem
+from .mount import MountItem, is_dummy_mount
 from . import get_macro_mode, macro_register
 from .macro_mode import toplevel_register, macro_mode_on, with_macro_mode
 import time
@@ -380,14 +380,14 @@ context : context or None
         mountmanager = self._manager.mountmanager
         for childname, child in self._children.items():
             if isinstance(child, (Cell, Link)):
-                if child._mount is not None:
+                if not is_dummy_mount(child._mount):
                     if not from_del:
                         assert mountmanager.reorganizing
                     mountmanager.unmount(child, from_del=from_del)
         for childname, child in self._children.items():
             if isinstance(child, (Context, Macro)):
                 child._unmount(from_del=from_del)
-        if self._mount is not None:
+        if not is_dummy_mount(self._mount):
             mountmanager.unmount_context(self, from_del=True)
 
     def _remount(self):

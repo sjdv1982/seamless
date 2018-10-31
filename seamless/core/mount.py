@@ -32,7 +32,7 @@ import copy
 from contextlib import contextmanager
 import json
 
-def is_dummy(mount):
+def is_dummy_mount(mount):
     if mount is None:
         return True
     assert isinstance(mount, dict), mount
@@ -282,7 +282,7 @@ class LinkItem:
             return
         linked = self.get_linked()
         is_dir = (isinstance(linked, Context))
-        if is_dummy(linked._mount):
+        if is_dummy_mount(linked._mount):
             return
         linked_path = linked._mount["path"]
         os.symlink(linked_path, self.path, is_dir)
@@ -339,7 +339,7 @@ class MountManagerStash:
         self._active = True
         parent, context = self.parent, self.context
         for ctx in list(parent.contexts):
-            assert not is_dummy(ctx._mount), ctx
+            assert not is_dummy_mount(ctx._mount), ctx
             if ctx._part_of2(context):
                 self.contexts.add(ctx)
                 parent.contexts.remove(ctx)
@@ -347,7 +347,7 @@ class MountManagerStash:
                 parent.paths[self.root].remove(path)
                 self.paths.add(path)
         for cell, mountitem in list(parent.mounts.items()):
-            assert not is_dummy(cell._mount), cell
+            assert not is_dummy_mount(cell._mount), cell
             ctx = cell._context()
             assert ctx is not None, cell
             if ctx._part_of2(context):
@@ -367,7 +367,7 @@ class MountManagerStash:
             if ctx._part_of2(context):
                 new_paths[path] = ctx
         for cell, mountitem in list(parent.mounts.items()):
-            assert not is_dummy(cell._mount), cell
+            assert not is_dummy_mount(cell._mount), cell
             ctx = cell._context()
             if ctx._part_of2(context):
                 path = cell._mount["path"]
@@ -380,7 +380,7 @@ class MountManagerStash:
         new_paths = self._build_new_paths()
         parent, context = self.parent, self.context
         for ctx in sorted(self.contexts, key=lambda l: -len(l.path)):
-            assert not is_dummy(ctx._mount), ctx
+            assert not is_dummy_mount(ctx._mount), ctx
             path = ctx._mount["path"]
             if path in new_paths:
                 new_context = new_paths[path]
@@ -389,7 +389,7 @@ class MountManagerStash:
             parent.contexts.add(ctx)
             parent.paths[self.root].add(path)
         for cell, mountitem in self.mounts.items():
-            assert not is_dummy(cell._mount), cell
+            assert not is_dummy_mount(cell._mount), cell
             path = cell._mount["path"]
             if path in new_paths:
                 new_mountitem = new_paths[path]
@@ -425,7 +425,7 @@ class MountManagerStash:
 
         old_mountitems = {}
         for old_cell, old_mountitem in list(self.mounts.items()):
-            assert not is_dummy(old_cell._mount), old_cell
+            assert not is_dummy_mount(old_cell._mount), old_cell
             path = old_cell._mount["path"]
             object.__setattr__(old_cell, "_mount", None) #since we are not in macro mode
             if path in new_paths:
@@ -437,7 +437,7 @@ class MountManagerStash:
 
         old_paths = set()
         for old_ctx in sorted(self.contexts, key=lambda l: -len(l.path)):
-            assert not is_dummy(old_ctx._mount), old_ctx
+            assert not is_dummy_mount(old_ctx._mount), old_ctx
             path = old_ctx._mount["path"]
             if path in new_paths:
                 old_paths.add(path)
@@ -565,8 +565,8 @@ class MountManager:
             self.mounts[link].init()
 
     def unmount(self, cell_or_link, from_del=False):
-        #print("unmount", cell_or_link, hex(id(cell_or_link)))
-        assert not is_dummy(cell_or_link._mount), cell_or_link
+        #print("UNMOUNT", cell_or_link, cell_or_link._mount)
+        assert not is_dummy_mount(cell_or_link._mount), cell_or_link
         root = cell_or_link._root()
         if from_del and (cell_or_link not in self.mounts or root not in self.paths):
             return
@@ -587,7 +587,7 @@ class MountManager:
           (because of stash replacement)
         context._mount MUST have been set to None!
         """
-        assert not is_dummy(mount), context
+        assert not is_dummy_mount(mount), context
         try:
             paths = self.paths[context._root()]
         except KeyError:
@@ -627,7 +627,7 @@ class MountManager:
 
     def _check_context(self, context, as_parent):
         mount = context._mount
-        assert not is_dummy(mount), context
+        assert not is_dummy_mount(mount), context
         dirpath = mount["path"].replace("/", os.sep)
         persistent, authority = mount["persistent"], mount["authority"]
         if os.path.exists(dirpath):
@@ -727,7 +727,7 @@ def resolve_register(reg):
             assert child is not None
         if c in mounts:
             result = mounts[c]
-        elif not is_dummy(c._mount):
+        elif not is_dummy_mount(c._mount):
             result = c._mount.copy()
             if result["path"] is None:
                 parent = c._context
@@ -797,7 +797,7 @@ def resolve_register(reg):
 
     def propagate_persistency(c, persistent=False):
         m = c._mount
-        if is_dummy(m):
+        if is_dummy_mount(m):
             return
         if persistent:
             m["persistent"] = True
@@ -813,12 +813,12 @@ def resolve_register(reg):
     for r in reg:
         if isinstance(r, Worker):
             continue
-        if not is_dummy(r._mount):
+        if not is_dummy_mount(r._mount):
             propagate_persistency(r)
 
     mount_cells = []
     for cell in cells:
-        if cell in mounts and mounts[cell] is not None:
+        if cell in mounts and not is_dummy_mount(mounts[cell]):
             mount = mounts[cell]
             path = mount["path"]
             if cell._mount_kwargs is None:
@@ -835,7 +835,7 @@ def resolve_register(reg):
 
     mount_links = []
     for link in links:
-        if link in mounts and mounts[link] is not None:
+        if link in mounts and not is_dummy_mount(mounts[link]):
             mount = mounts[link]
             path = mount["path"]
             object.__setattr__(link, "_mount", mount) #not in macro mode
@@ -845,6 +845,7 @@ def resolve_register(reg):
         path, as_parent = v
         mountmanager.add_context(context, path, as_parent=as_parent)
     for cell in mount_cells:
+        #print("MOUNT", cell, cell._mount)
         mountmanager.add_mount(cell, **cell._mount)
     for link in mount_links:
         mount = link._mount
