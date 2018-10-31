@@ -259,7 +259,7 @@ class Silk(SilkBase):
 
         data_was_none = False
         if self._buffer is None:
-            if data is None:
+            if data is None or (isinstance(data, MixedBase) and data.value is None):
                 data_was_none = True
                 assert self._parent is None # MUST be independent
                 data = AlphabeticDict()
@@ -272,15 +272,14 @@ class Silk(SilkBase):
             data[attr] = value
 
         if policy["infer_type"]:
-            if data_was_none:
-                if "type" not in schema:
-                    data = self.data
-                    if isinstance(data, MixedBase):
-                        data = data.value #hackish
-                    type_ = infer_type(data)
-                    schema["type"] = type_
-                    if self._schema_update_hook is not None:
-                        self._schema_update_hook()
+            if "type" not in schema:
+                data = self.data
+                if isinstance(data, MixedBase):
+                    data = data.value #hackish
+                type_ = infer_type(data)
+                schema["type"] = type_
+                if self._schema_update_hook is not None:
+                    self._schema_update_hook()
             if isinstance(value, Silk):
                 value, value_schema = value.data, value._schema
                 # TODO: make conditional upon policy.infer_property
@@ -443,7 +442,14 @@ class Silk(SilkBase):
         if "properties" not in schema:
             schema["properties"] = {}
             update_hook = True
-        for attr, subvalue in value.items():
+        if isinstance(value, dict):
+            items = value.items()
+        else: #struct
+            items = []
+            for field in value.dtype.fields:
+                subvalue = value[field]
+                items.append((field, subvalue))
+        for attr, subvalue in items:
             if attr not in schema["properties"]:
                 schema["properties"][attr] = {}
                 update_hook = True

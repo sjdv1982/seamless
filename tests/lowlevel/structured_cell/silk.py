@@ -37,9 +37,9 @@ with macro_mode_on():
     ctx.result = cell()
     ctx.tf.c.connect(ctx.result)
 
-    ctx.mount("/tmp/mount-test", persistent=True)
+    ctx.mount("/tmp/mount-test")
 
-ctx.equilibrate()
+###ctx.equilibrate()
 print("part 1")
 print(ctx.tf.status())
 print(ctx.result.value)
@@ -47,14 +47,19 @@ print()
 
 print("part 1a")
 inp = ctx.inp.handle
+inp.q = "Q"
+print("SCHEMA1", inp.schema)
+inp.schema.pop("type")
+inp.schema.pop("properties")
+inp.set(None)
 inp.set("test")
-print("SCHEMA", inp.schema)
+print("SCHEMA2", inp.schema)
 inp.schema.pop("type")
 inp.set(None)
 print(inp, inp.schema)
 print()
 
-#inp.a = {"x": 10}
+inp.a = {}
 inp.b = 100
 print(inp, inp.schema)
 inp.a.x = 11
@@ -66,6 +71,7 @@ print(ctx.result.value)
 print(ctx.inp.value)
 print(inp.schema, inp)
 print()
+import sys; sys.exit()
 
 ctx.a.set({"x": 12})
 print("START")
