@@ -173,6 +173,7 @@ class Context:
                 with macro_mode_on():
                     ctx = context(context=self._ctx, name=TRANSLATION_PREFIX)
                     lib_paths = get_lib_paths(self)
+                    assert mountmanager.reorganizing
                     translate(graph, ctx, lib_paths, is_lib)
                     self._ctx._add_child(TRANSLATION_PREFIX, ctx)
                     ctx._get_manager().activate(only_macros=True)

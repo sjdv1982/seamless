@@ -32,6 +32,8 @@ import copy
 from contextlib import contextmanager
 import json
 
+NoStash = 1
+
 def is_dummy_mount(mount):
     if mount is None:
         return True
@@ -517,7 +519,9 @@ class MountManager:
     @contextmanager
     def reorganize(self, context):
         if context is None:
+            self.stash = NoStash
             yield
+            self.stash = None
             return
         if self.stash is not None:
             assert context._part_of2(self.stash.context)
@@ -548,7 +552,7 @@ class MountManager:
         #print("add mount", path, cell)
         paths.add(path)
         self.mounts[cell] = MountItem(self, cell, path, mode, authority, persistent, **kwargs)
-        if self.stash is None:
+        if self.stash is None or self.stash is NoStash:
             try:
                 self._mounting = True
                 self.mounts[cell].init()
@@ -561,7 +565,7 @@ class MountManager:
         #print("add link", path, link)
         paths.add(path)
         self.mounts[link] = LinkItem(link, path, persistent)
-        if self.stash is None:
+        if self.stash is None or self.stash is NoStash:
             self.mounts[link].init()
 
     def unmount(self, cell_or_link, from_del=False):
@@ -620,7 +624,7 @@ class MountManager:
         else:
             if path in paths:
                 assert context in self.contexts, (path, context)
-        if self.stash is None:
+        if self.stash is None or self.stash is NoStash:
             self._check_context(context, as_parent)
         else:
             self.stash.context_as_parent[context] = as_parent

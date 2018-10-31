@@ -336,6 +336,7 @@ class Manager:
       force=False, from_pin=False, origin=None
     ):
         from .macro_mode import macro_mode_on, get_macro_mode
+        from .mount import is_dummy_mount
         if self.destroyed:
             return
         assert isinstance(cell, CellLikeBase)
@@ -352,7 +353,7 @@ class Manager:
               force=force, from_pin=from_pin
             )
         only_text = (text_different and not different)
-        if text_different and cell._mount is not None and self.active:
+        if text_different and not is_dummy_mount(cell._mount) and self.active:
             if not get_macro_mode():
                 self.mountmanager.add_cell_update(cell)
         if different or text_different:
@@ -362,12 +363,13 @@ class Manager:
     @manager_buffered
     @with_successor("cell", 0)
     def touch_cell(self, cell):
+        from .mount import is_dummy_mount
         if self.destroyed:
             return
         assert isinstance(cell, CellLikeBase)
         assert cell._get_manager() is self
         self.cell_send_update(cell, only_text=False, origin=None)
-        if cell._mount is not None and self.active:
+        if not is_dummy_mount(cell._mount) and self.active:
             self.mountmanager.add_cell_update(cell)
 
     @main_thread_buffered
@@ -399,7 +401,7 @@ class Manager:
         #TODO: explicit support for preliminary values
         assert pin._get_manager() is self
         if isinstance(value, MixedBase):
-            value = value.data        
+            value = value.data
         found = False
         for con in self.pin_to_cells.get(pin,[]):
             cell = con.target
