@@ -275,6 +275,10 @@ class Transformer(Base):
         assert htf["with_result"]
         return self._sub_mount("result_schema", path, mode, authority, persistent)
 
+    def shell(self):
+        tf = self._get_tf()
+        return tf.tf.shell()
+
     def _codegetter(self, attr):
         if attr == "value":
             tf = self._get_tf()
@@ -364,7 +368,7 @@ class Transformer(Base):
 
     def __dir__(self):
         htf = self._get_htf()
-        d = [p for p in type(self).__dict__ if not p.startswith("_")]
+        d = super().__dir__()
         std = ["code", "pins", htf["RESULT"] , htf["INPUT"]]
         pins = list(htf["pins"].keys())
         return sorted(d + pins + std)
