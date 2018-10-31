@@ -30,8 +30,8 @@ def translate_py_transformer(node, root, namespace, inchannels, outchannels, lib
       return_context=True
      )
     setattr(ctx, input_name, inp)
-    if "schema" in mount:
-        inp_ctx.schema.mount(**mount["schema"])
+    if "input_schema" in mount:
+        inp_ctx.schema.mount(**mount["input_schema"])
     for inchannel in inchannels:
         path = node["path"] + inchannel
         namespace[path, True] = inp.inchannels[inchannel]

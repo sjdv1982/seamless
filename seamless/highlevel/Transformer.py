@@ -267,8 +267,8 @@ class Transformer(Base):
         htf["mount"][attr] = mount
         self._parent()._translate()
 
-    def mount_schema(self, path=None, mode="rw", authority="cell", persistent=True):
-        return self._sub_mount("schema", path, mode, authority, persistent)
+    def mount_input_schema(self, path=None, mode="rw", authority="cell", persistent=True):
+        return self._sub_mount("input_schema", path, mode, authority, persistent)
 
     def mount_result_schema(self, path=None, mode="rw", authority="cell", persistent=True):
         htf = self._get_htf()
@@ -297,6 +297,8 @@ class Transformer(Base):
         htf = self._get_htf()
         if attr in htf["pins"]:
             return getattr(self, attr)
+        tf = self._get_tf()
+        inputcell = getattr(tf, htf["INPUT"])
         if attr == "schema":
             return inputcell.handle.schema
         raise AttributeError(attr)

@@ -7,7 +7,6 @@ Things to do:
 
 Part 2: high level
 
-BUG: mount directory does not get cleaned up
 A: get BCsearch working
 - Make initial version
 - Follow roadmap (see BCsearch directory)
