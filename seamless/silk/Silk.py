@@ -161,6 +161,21 @@ class Silk(SilkBase):
             wdata.update(value)
 
     def _set(self, value, lowlevel, buffer):
+        def _get():
+            schema = self._schema
+            if (schema is None or schema == {}) and value_schema is not None:
+                if schema is None:
+                    schema = value_schema
+                    self._schema = schema
+                else:
+                    schema.update(value_schema)
+                    if self._schema_update_hook is not None:
+                        self._schema_update_hook()
+            policy = schema.get("policy", None)
+            if policy is None or not len(policy):
+                #TODO: implement lookup hierarchy wrapper that also looks at parent
+                policy = default_policy
+            return schema, policy
         value_schema = None
         if isinstance(value, Silk):
             value_schema = value.schema.dict
@@ -180,19 +195,7 @@ class Silk(SilkBase):
                 return
             self._set_value_simple(value, buffer)
             if not lowlevel:
-                schema = self._schema
-                if (schema is None or schema == {}) and value_schema is not None:
-                    if schema is None:
-                        schema = value_schema
-                        self._schema = schema
-                    else:
-                        schema.update(value_schema)
-                        if self._schema_update_hook is not None:
-                            self._schema_update_hook()
-                policy = schema.get("policy", None)
-                if policy is None or not len(policy):
-                    #TODO: implement lookup hierarchy wrapper that also looks at parent
-                    policy = default_policy
+                schema, policy = _get_schema_policy()
                 if policy["infer_type"]:
                     if "type" not in schema:
                         type_ = infer_type(value)
@@ -233,6 +236,7 @@ class Silk(SilkBase):
         elif isinstance(value, (dict, np.generic)):
             #invalidates all Silk objects constructed from items
             self._set_value_dict(value, buffer)
+            schema, policy = _get_schema_policy()
             if policy["infer_type"]:
                 # TODO: make conditional upon policy.infer_property
                 self._infer_properties(schema, value)
