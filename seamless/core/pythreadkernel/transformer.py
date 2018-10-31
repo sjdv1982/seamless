@@ -64,11 +64,15 @@ class Transformer(Worker):
 
         o = self.output_name if self.output_name is not None else "_"
         self.function_expr_template = "{0}\n%s = {1}(" % o
+        has_inputs = False
         for inp in sorted(list(inputs.keys())):
             if inp == "code":
                 continue
+            has_inputs = True
             self.function_expr_template += "%s=%s," % (inp, inp)
-        self.function_expr_template = self.function_expr_template[:-1] + ")"
+        if has_inputs:
+            self.function_expr_template = self.function_expr_template[:-1]
+        self.function_expr_template += ")"
 
         super(Transformer, self).__init__(parent, inputs, **kwargs)
         injected_modules = []
