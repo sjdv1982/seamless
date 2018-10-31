@@ -161,7 +161,7 @@ class Silk(SilkBase):
             wdata.update(value)
 
     def _set(self, value, lowlevel, buffer):
-        def _get():
+        def _get_schema_policy():
             schema = self._schema
             if (schema is None or schema == {}) and value_schema is not None:
                 if schema is None:
