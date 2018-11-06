@@ -273,7 +273,10 @@ class Silk(SilkBase):
 
         if policy["infer_type"]:
             if "type" not in schema:
-                data = self.data
+                if self._buffer is not None:
+                    data = self._buffer
+                else:
+                    data = self.data
                 if isinstance(data, MixedBase):
                     data = data.value #hackish
                 type_ = infer_type(data)
