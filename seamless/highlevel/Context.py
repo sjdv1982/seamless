@@ -194,7 +194,7 @@ class Context:
                 ctx._get_manager().activate(only_macros=False)
 
             if self._gen_context is not None:
-                with mountmanager.reorganize(self._gen_context):
+                with mountmanager.reorganize(None):
                     layer.clear_objects(self._gen_context)
                     self._gen_context.self.destroy()
                     self._gen_context._manager.flush()

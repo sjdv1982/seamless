@@ -643,6 +643,7 @@ class MountManager:
             os.mkdir(dirpath)
 
     def add_cell_update(self, cell):
+        #print("add_cell_update", cell, self.reorganizing, self.mounting)
         if self.reorganizing or self._mounting:
             return
         assert cell in self.mounts, (cell, hex(id(cell)))
@@ -756,7 +757,8 @@ def resolve_register(reg):
                 cc = c.get_linked()
             if isinstance(cc, (Context, Cell)):
                 result = find_mount(parent, as_parent=True,child=c)
-        mounts[c] = result
+        if not as_parent:
+            mounts[c] = result
         if as_parent and result is not None:
             result = copy.deepcopy(result)
             if result["persistent"] is None:
