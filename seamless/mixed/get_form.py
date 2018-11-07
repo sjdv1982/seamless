@@ -186,7 +186,7 @@ def get_tform_numpy_builtin(dt):
 
     typedef = {
         "type": typedef0,
-        "bytes": dt.itemsize,
+        "bytesize": dt.itemsize,
     }
     if typedef0 == "integer":
         unsigned = any([dt == t for t in _unsigned_types])
@@ -207,7 +207,7 @@ def get_tform_numpy_struct(dt):
         raise TypeError("Composite dtypes must be native")
     storages = {}
     props = {}
-    typedef = {"type": "object", "properties": props, "bytes": dt.itemsize}
+    typedef = {"type": "object", "properties": props, "bytesize": dt.itemsize}
     typedef["order"] = list(dt.fields)
     for fieldname in dt.fields:
         cstorage, ctypedef = get_tform_numpy(dt[fieldname])
@@ -360,9 +360,19 @@ def get_form_list(data):
         storage, items, identical = get_form_items_numpy(data)
         extra = {
             "shape": data.shape,
-            "strides": data.strides,
-            "bytes": dt.itemsize,
         }
+        strides = data.strides
+        stride = data.itemsize
+        contiguous = False
+        for n in range(data.ndim-1, -1, -1):
+            if data.strides[n] != stride:
+                break
+            stride *= data.shape[n]
+        else:
+            contiguous = True
+        extra["contiguous"] = contiguous
+        if not contiguous:
+            extra["strides"] = strides
     elif isinstance(data, _array_types):
         storage, items, identical = get_form_items_list_plain(data)
         extra = {

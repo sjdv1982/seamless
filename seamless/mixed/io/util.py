@@ -89,7 +89,13 @@ def get_buffersize(storage, form, binary_parent=None):
         if binary_parent:
             if type_ != "array":
                 return 0 #already taken into account, unless Numpy array
-        result = form["bytes"]
+        if type_ == "array":
+            items = form["items"]
+            if isinstance(items, list):
+                items = items[0]
+            result = items["bytesize"]
+        else:
+            result = form["bytesize"]
         if type_ in ("array", "tuple"):
             result *= mul(form["shape"])
         return result
@@ -105,7 +111,7 @@ def get_buffersize(storage, form, binary_parent=None):
         result = 0
     elif storage == "mixed-binary":
         if type_ != "tuple":
-            nbytes = form["bytes"]
+            nbytes = form["bytesize"]
             if type_ == "array":
                 nbytes *= mul(form["shape"])
             result = nbytes
@@ -119,7 +125,7 @@ def get_buffersize(storage, form, binary_parent=None):
         item_binary_parent = True
     if type_ == "object":
         properties = form.get("properties", {})
-        form_items = list(properties.values())        
+        form_items = list(properties.values())
     elif type_ in ("array", "tuple"):
         form_items = form["items"]
         identical = form["identical"]
@@ -238,11 +244,11 @@ def _form_to_dtype_scalar(form):
             result += "u"
         else:
             result += "i"
-        result += str(form["bytes"])
+        result += str(form["bytesize"])
     elif type_ == "number":
         result = "="
         result += "f"
-        result += str(form["bytes"])
+        result += str(form["bytesize"])
     else:
         raise TypeError(type_)
     return np.dtype(result), None
