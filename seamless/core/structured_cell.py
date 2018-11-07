@@ -796,7 +796,7 @@ class StructuredCell(CellLikeBase):
             return
         value = cell._from_buffer(filebuffer)
         cell._val.update(value)
-        self._silk.validate()
+        self._silk.validate(accept_none=True)
 
 
     def set(self, value):

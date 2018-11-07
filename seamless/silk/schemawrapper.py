@@ -32,6 +32,16 @@ class SchemaWrapper(Wrapper):
     def copy(self):
         return SchemaWrapper(None, deepcopy(self._dict), None)
 
+    def update(self, value):
+        if isinstance(value, SchemaWrapper):
+            value = value.dict
+        self._dict.update(value)
+        parent = self._parent()
+        if parent is not None:
+            parent.validate(accept_none=True)
+        if self._update_hook is not None:
+            self._update_hook()
+
     def pop(self, attribute):
         child = self._dict.get(attribute, None)
         if child is None:
@@ -46,7 +56,7 @@ class SchemaWrapper(Wrapper):
             result = self._dict.pop(attribute)
         parent = self._parent()
         if parent is not None:
-            parent.validate()
+            parent.validate(accept_none=True)
         if self._update_hook is not None:
             self._update_hook()
         return result
@@ -60,7 +70,7 @@ class SchemaWrapper(Wrapper):
         self._dict[attribute] = value
         parent = self._parent()
         if parent is not None:
-            parent.validate()
+            parent.validate(accept_none=True)
         if self._update_hook is not None:
             self._update_hook()
 
@@ -70,7 +80,7 @@ class SchemaWrapper(Wrapper):
     def __getattribute__(self, attribute):
         if attribute == "dict": #TODO: property with docstring
             return super().__getattribute__("_dict")
-        if attribute in ("pop", "copy"):
+        if attribute in ("pop", "copy", "update"):
             return super().__getattribute__(attribute)
         if isinstance(attribute, str) and attribute.startswith("_"):
             return super().__getattribute__(attribute)

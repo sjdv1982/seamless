@@ -54,13 +54,13 @@ class Silk(SilkBase):
     __slots__ = [
             "_parent", "_parent_attr", "data", "_schema",
             "_modifier", "_forks", "_buffer", "_stateful", "_buffer_nosync",
-            "_schema_update_hook"
+            "_schema_update_hook", "_schema_dummy"
     ]
-    # TODO: append method that may also create a schema, depending on policy.infer_item
+    # TODO: append method that may also create a schema, depending on policy.infer_new_item
 
     def __init__(self, schema = None, *, parent = None, data = None,
       modifier = 0, buffer = None, stateful = False, schema_update_hook = None,
-      _parent_attr = None):
+      _parent_attr = None, schema_dummy = False):
         self._parent = parent
         self._parent_attr = _parent_attr
         self._modifier = modifier
@@ -69,6 +69,7 @@ class Silk(SilkBase):
         self._buffer = buffer
         self._stateful = stateful
         self._buffer_nosync = False
+        self._schema_dummy = schema_dummy
         assert not isinstance(data, Silk)
         if schema is None:
             schema = {}
@@ -204,7 +205,7 @@ class Silk(SilkBase):
                         if self._schema_update_hook is not None:
                             self._schema_update_hook()
                     if type_ == "object":
-                        # TODO: make conditional upon policy.infer_property
+                        # TODO: make conditional upon policy.infer_new_property
                         self._infer_properties(schema, value)
                 if isinstance(value, _types["array"]) and len(self.data) > 0:
                     self._infer_list_item(value_schema)
@@ -238,7 +239,7 @@ class Silk(SilkBase):
             self._set_value_dict(value, buffer)
             schema, policy = _get_schema_policy()
             if policy["infer_type"]:
-                # TODO: make conditional upon policy.infer_property
+                # TODO: make conditional upon policy.infer_new_property
                 self._infer_properties(schema, value)
         else:
             raise TypeError(type(value))
@@ -285,11 +286,11 @@ class Silk(SilkBase):
                     self._schema_update_hook()
             if isinstance(value, Silk):
                 value, value_schema = value.data, value._schema
-                # TODO: make conditional upon policy.infer_property
-                self._infer_property(schema, attr, value, value_schema)
+                # TODO: make conditional upon policy.infer_new_property
+                self._infer_new_property(schema, attr, value, value_schema)
             else:
-                # TODO: make conditional upon policy.infer_property
-                self._infer_property(schema, attr, value)
+                # TODO: make conditional upon policy.infer_new_property
+                self._infer_new_property(schema, attr, value)
 
     def __setattr__(self, attr, value):
         if attr in type(self).__slots__:
@@ -423,7 +424,7 @@ class Silk(SilkBase):
                 if old_validators is not None:
                     schema["validators"] = old_validators
 
-    def _infer_property(self, schema, attr, value, value_schema=None):
+    def _infer_new_property(self, schema, attr, value, value_schema=None):
         update_hook = False
         if "properties" not in schema:
             schema["properties"] = {}
@@ -469,9 +470,9 @@ class Silk(SilkBase):
         if policy is None or not len(policy):
             #TODO: implement lookup hierarchy wrapper that also looks at parent
             policy = default_policy
-        infer_item = policy["infer_item"]
-        if infer_item != "uniform":
-            raise NotImplementedError(infer_item)
+        infer_new_item = policy["infer_new_item"]
+        if infer_new_item != "uniform":
+            raise NotImplementedError(infer_new_item)
             # TODO: if "pluriform", need a new method:
             #   _infer_additional_list_item must be called for each .append
             #   In addition, deletion/[:] can become quite tricky: ignore?
@@ -641,22 +642,13 @@ class Silk(SilkBase):
 
 
 
-    def _validate(self, full):
+    def _validate(self, full, accept_none):
         if not self._modifier & SILK_NO_VALIDATION:
             if full:
                 if self._buffer is not None:
                     data = self._buffer
                 else:
                     data = self.data
-                if isinstance(data, MixedBase):
-                    # This is hackish, to special-case MixedBase thus
-                    # But there is really no alternative, except to add
-                    #  MutableXXX bases classes to ./validation.py
-                    #  and even then, MixedObject is polymorphic:
-                    #   it can be dict/list/scalar/None
-                    # Better to validate the underlying value
-                    #  (wrapped by MixedBase) instead
-                    data = data.value
                 if isinstance(self.data, SilkHasForm):
                     form = self.data._get_silk_form()
                     """
@@ -666,6 +658,19 @@ class Silk(SilkBase):
                     """
                     ### form_schema = get_form_schema(self._schema)
                     ###form_validator(formschema).validate(form)
+                if isinstance(data, MixedBase):
+                    # This is hackish, to special-case MixedBase thus
+                    # But there is really no alternative, except to add
+                    #  MutableXXX bases classes to ./validation.py
+                    #  and even then, MixedObject is polymorphic:
+                    #   it can be dict/list/scalar/None
+                    # Better to validate the underlying value
+                    #  (wrapped by MixedBase) instead
+                    data = data.value
+                if isinstance(data, Silk):
+                    data = data.data
+                if data is None and accept_none:
+                    return
                 schema_validator(self._schema).validate(data)
             else:
                 schema = self._schema
@@ -681,6 +686,8 @@ class Silk(SilkBase):
                         data = data.value
                     if isinstance(data, Silk):
                         data = data.data
+                    if data is None and accept_none:
+                        return
                     proxy = type(self)(
                       schema, parent=self._parent, data=data, modifier=modifier,
                     )
@@ -691,7 +698,7 @@ class Silk(SilkBase):
                     validator_func = compile_function(validator_code, name)
                     validator_func(proxy)
         if self._parent is not None:
-            self.parent.validate(full=False)
+            self.parent.validate(full=False, accept_none=accept_none)
 
     def _commit_buffer(self):
         if self._stateful:
@@ -706,10 +713,12 @@ class Silk(SilkBase):
             self._set(deepcopy(self._buffer),lowlevel=True,buffer=False)
         self._buffer_nosync = False
 
-    def validate(self, full=True):
+    def validate(self, full=True, accept_none=False):
+        if self._schema_dummy:
+            accept_none = True
         if (self._modifier & SILK_BUFFER_CHILD) or self._buffer is not None:
             try:
-                self._validate(full=full)
+                self._validate(full=full, accept_none=accept_none)
                 if self._buffer is not None:
                     self._commit_buffer()
             except:
@@ -718,7 +727,7 @@ class Silk(SilkBase):
                 traceback.print_exc() ###
                 self._buffer_nosync = True
         else:
-            self._validate(full=full)
+            self._validate(full=full, accept_none=accept_none)
 
     def fork(self):
         if self._buffer is not None:

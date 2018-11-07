@@ -68,7 +68,8 @@ UPDATE:
 
 # extra schema fields
 On top of JSON schema
-(1) indicates object-only, (2) indicates array-only
+(1) indicates array-only, (2) indicates object-only
+For other schemas, (1) or (2) have no meaning by itself, but still can be provided to govern the behavior of children (by policy inheritance).
 In a later version of Silk, there will be an annoying Microsoft-Office-paperclip
 assistant who will ask all kind of annoying questions
 
@@ -127,6 +128,7 @@ not fixed-binary (see below), a Python object is filled in.
 UPDATE: do not store this on the instance, compute this at runtime, possibly cached
 (same as methods)
 UPDATE2: "mixed" classes take care of this now
+FINAL UPDATE: "form" will contain constraints on the form!!
 
 
 ### /(note on *form*)
@@ -134,6 +136,7 @@ UPDATE2: "mixed" classes take care of this now
 ### dtype (only for scalars)
 If form is binary, defines binary data type: float32, int32, uint8, etc.
 Must match with "type": float32 for number, uint8 for integer, etc.
+UPDATE: use "bytes" and "unsigned" instead!!
 
 ### gpu
 Dict of storage parameters on the GPU.
@@ -165,6 +168,7 @@ Every infer_XXX property has a corresponding set_XXX function in the Silk API,
 Every set_XXX has a "recursive" parameter.
 
 ### surplus_to_binary
+UPDATE: ELIMINATE. Conversion to binary is out of scope of Silk
 What to do with extra properties/items when plain is converted to binary
 - Error
 - Silently discard them
@@ -174,11 +178,13 @@ What to do with extra properties/items when plain is converted to binary
   In any case, this invalidates Cython/C headers generated from the schema)
 Default: Error
 
+
 ### accept_missing_binary_optional
-What to do with binary forms that lack one or more columns of optional properties
+What to do with binary-form instances that lack one or more columns of optional properties
 - True: accept them. This can be practical for backwards compatibility with an earlier schema where
   the optional property was lacking.
-  However, this invalidates Cython/C headers generated from the schema
+  However, this invalidates Cython/C headers generated from the schema.
+  But note that most header generators cannot deal with optional properties anyway.
 - False: raise an error.
 Default: True
 
@@ -188,18 +194,44 @@ Can be handy in class statements (class variables are faked by default variables
 Default: False
 UPDATE: in the future, maybe lookup scope for default dict to save memory.
 
-### infer_property (2)
-If a new property is accessed via Silk, an (empty) schema for that property is inserted under "properties"
+### infer_new_property (2)
+If a new property is accessed via Silk, an schema for that property is inserted under "properties".
 If False, the returned Silk object will be schema-less (and policy-less)
-For arrays, this has no meaning by itself, but still can be provided to govern the behavior of items
+If True, a new schema may be created.
+Created schemas have all other policies applied (infer_type etc.), except
+ infer_array  and infer_object.
 Default: True
 
-### infer_item (1)
-What happens if a new item is assigned:
-"uniform": all items have the same schema. For the first item, an empty schema is created when it is first accessed via Silk.
-"pluriform": all items have their own schema.  For each item, an empty schema is created when it is first accessed via Silk.
-False: If a new item is accessed via Silk, the returned Silk object will be schema-less (and policy-less)
-Default: uniform
+### infer_object (2)
+What happens if a non-empty dict or a Numpy struct is assigned to a new object schema.
+If True, a schema will be created for each property.
+Created schemas have all other policies applied (infer_type etc.), except
+ infer_array  and infer_object.
+Default: False
+
+### infer_new_item (1)
+What happens if a new item is assigned (e.g. via .append):
+If False, the returned Silk object will be schema-less (and policy-less)
+If True, a new schema may be created.
+This depends if the existing array schema is uniform ("items" holds a single schema) or pluriform ("items" is empty or holds an array of schemas).
+A new schema is only created for pluriform arrays.
+Created schemas have all other policies applied (infer_type etc.), except
+ infer_array and infer_object.
+Default: True
+
+
+### infer_array (1)
+What happens if a non-empty list or a Numpy array is assigned to a new array schema.
+The result will be an array schema that is empty, uniform ("items" holds a single schema) or pluriform ("items" holds an array of schemas).
+"pluriform": A schema will be created for each item.
+"auto": A schema will be created for the first item. If any item does
+ not validate against that schema, the schema becomes pluriform,
+ else uniform.
+False: No schema will be created for any item.
+Created schemas have all other policies applied (infer_type etc.), except
+ infer_array and infer_object.
+For Numpy arrays, the bytesize may also be inferred, if infer_storage is defined.
+Default: "auto"
 
 ### infer_type
 Silk will replace a "any" or absent "type" value with the type of the first assigned value
@@ -207,21 +239,17 @@ Lists and dicts are not recursively inferred, but simply set to "object" / "arra
 When assigned to a Silk type, the schema is copied.
 Default: True
 
-### infer_shapedarray
-Whenever a Numpy array is assigned, the instance is inferred to be a shapedarray,
-fixing ndims. If infer_dtype is True, this will fix the dtype as well.
-
-### infer_dtype
-Whenever an instance enters binary form (but not mixed-binary form),
-the dtype is assigned based on the current value.
-Instance must be a standalone scalar (parent is an object) or an array's scalar base instance
-(item [0] in a single-schema items list).
-If infer_shapedarray, the instance may also be a numpy array.
+### infer_ndims
+Whenever a binary array is assigned, the instance is inferred to be a shapedarray, fixing ndims.
 Default: True
 
-### infer_dtype_mixed
-Same as above, but also for mixed-binary
-Default: False
+### infer_storage
+For any instance, infer its storage as a form constraint.
+Storage is inferred as "plain" or "binary"; "pure-" and "mixed-" must be
+ added manually.
+If the instance is binary, infer its bytesize as well. 
+Default: True
+
 
 ### infer_required (2)
 A new inferred property is automatically added to the required properties
@@ -276,8 +304,8 @@ Error logs are observable, both for appends and for clear events.
 Default: False
 
 ### infer_recursive
-Arrays and objects are tree structures. If a value is assigned to the array or object, walk the entire tree
-of the assigned value and add a schema for each item.
+Arrays and objects are tree structures. If a value is assigned to the array or object, walk the entire tree of the assigned value and add a schema for each item. This is done for arrays if "infer_array" is true, and for objects if
+"infer_object" is true.
 Default: False
 
 ### binary_validation
@@ -373,37 +401,7 @@ It has a lower priority than the generic "array" type inferencer => {"type": "ar
 which accepts one-dimensional Numpy arrays and normal lists.
 UPDATE: or a higher priority? policy option...
 
-## extra fields:
 
-### dtype
-computed from/to base_item.dtype
-UPDATE: computed from "items.dtype" instead
-
-### shape
-A list of items that are one of the following:
-- None
-- A single positive integer value
-- A pair of (inclusive) lower-bound - upper-bound positive integer values
-The length of the list must match with "ndim", if defined
-
-### ndim
-The array must have ndim dimensions. Must match with "shape", if defined.
-
-### base
-Schema of the scalar base item.
-Base may be undefined, in which case the scalar base item is simply a Python
-object.
-UPDATE: this is called "items" instead
-
-### c_contiguous
-If form is binary, array must be c_contiguous
-Default: False
-
-### f_contiguous
-If form is binary, array must be f_contiguous
-Default: False
-
-UPDATE: single "contiguous" parameter: "any", "c", "fortran"
 
 ### validators
 Construct validators for the shapedarray construct.

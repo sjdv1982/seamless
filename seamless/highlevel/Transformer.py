@@ -11,6 +11,7 @@ from .mime import language_to_mime
 from ..core.context import Context as CoreContext
 from . import parse_function_code
 from .SchemaWrapper import SchemaWrapper
+from ..silk import Silk
 
 default_pin = {
   "transfer_mode": "copy",
@@ -241,12 +242,12 @@ class Transformer(Base):
             proxycls = CodeProxy
         elif attr == htf["INPUT"]:
             getter = self._inputgetter
-            dirs = ["schema", htf["INPUT"]] + list(htf["pins"].keys())
+            dirs = ["schema"] + list(htf["pins"].keys())
             pull_source = None
             proxycls = Proxy
         elif attr == htf["RESULT"] and htf["with_result"]:
             getter = self._resultgetter
-            dirs = ["schema", htf["RESULT"]]
+            dirs = ["schema", "dummy"]
             pull_source = None
             proxycls = Proxy
         else:
@@ -311,6 +312,9 @@ class Transformer(Base):
         if attr == "schema":
             schema_mounter = functools.partial(self._sub_mount, "result_schema")
             return SchemaWrapper(resultcell.handle.schema, schema_mounter)
+        elif attr == "dummy":
+            schema = resultcell.handle.schema
+            return lambda: Silk(schema=schema, schema_dummy=True)
         return getattr(resultcell, attr)
 
     def _valuegetter(self, attr, attr2):
