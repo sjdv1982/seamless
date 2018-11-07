@@ -122,6 +122,105 @@ class Silk(SilkBase):
             return AttributeError
         return self._parent
 
+    def _get_policy(self):
+        policy = self._schema.get("policy")
+        if policy is None or not len(policy):
+            #TODO: implement lookup hierarchy wrapper that also looks at parent
+            policy = default_policy
+
+    #***************************************************
+    #*  methods for inference
+    #***************************************************
+
+    def _infer_new_property(self, schema, attr, value, value_schema=None):
+        update_hook = False
+        if "properties" not in schema:
+            schema["properties"] = {}
+            update_hook = True
+        if attr not in schema["properties"]:
+            if value_schema is None:
+                value_schema = {}
+            schema["properties"][attr] = value_schema
+            update_hook = True
+        if "type" not in schema["properties"][attr]:
+            type_ = infer_type(value)
+            schema["properties"][attr]["type"] = type_
+            update_hook = True
+        if update_hook and self._schema_update_hook is not None:
+            self._schema_update_hook()
+
+    def _infer_properties(self, schema, value):
+        update_hook = False
+        if "properties" not in schema:
+            schema["properties"] = {}
+            update_hook = True
+        if isinstance(value, dict):
+            items = value.items()
+        else: #struct
+            items = []
+            for field in value.dtype.fields:
+                subvalue = value[field]
+                items.append((field, subvalue))
+        for attr, subvalue in items:
+            if attr not in schema["properties"]:
+                schema["properties"][attr] = {}
+                update_hook = True
+            if "type" not in schema["properties"][attr]:
+                type_ = infer_type(subvalue)
+                schema["properties"][attr]["type"] = type_
+                update_hook = True
+        if update_hook and self._schema_update_hook is not None:
+            self._schema_update_hook()
+
+
+    def _infer_list_item(self, item_schema):
+        schema = self._schema
+        policy = schema.get("policy", None)
+        if policy is None or not len(policy):
+            #TODO: implement lookup hierarchy wrapper that also looks at parent
+            policy = default_policy
+        infer_new_item = policy["infer_new_item"]
+        if infer_new_item != "uniform":
+            raise NotImplementedError(infer_new_item)
+            # TODO: if "pluriform", need a new method:
+            #   _infer_additional_list_item must be called for each .append
+            #   In addition, deletion/[:] can become quite tricky: ignore?
+        assert len(self.data) > 0
+        if item_schema is None:
+            item = self.data[0]
+            s = Silk()
+            s.item = item
+            item_schema = s.schema.properties.item.dict
+        schema["items"] = item_schema
+        if self._schema_update_hook is not None:
+            self._schema_update_hook()
+
+    def _infer_type(self, schema, policy, value):
+        updated = False
+        if policy["infer_type"]:
+            if "type" not in schema:
+                type_ = infer_type(value)
+                if type_ != "null":
+                    schema["type"] = type_
+                    updated = True
+        return updated
+        '''
+        #from _setitem...
+        if policy["infer_type"]:
+            if "type" not in schema:
+                type_ = infer_type(data)
+                schema["type"] = type_
+                if self._schema_update_hook is not None:
+                    self._schema_update_hook()
+            if isinstance(value, Silk):
+                value, value_schema = value.data, value._schema
+                # TODO: make conditional upon policy.infer_new_property
+                self._infer_new_property(schema, attr, value, value_schema)
+            else:
+                # TODO: make conditional upon policy.infer_new_property
+                self._infer_new_property(schema, attr, value)
+        '''
+
     #***************************************************
     #*  methods for setting
     #***************************************************
@@ -162,7 +261,7 @@ class Silk(SilkBase):
             wdata.update(value)
 
     def _set(self, value, lowlevel, buffer):
-        def _get_schema_policy():
+        def _get_schema():
             schema = self._schema
             if (schema is None or schema == {}) and value_schema is not None:
                 if schema is None:
@@ -172,11 +271,8 @@ class Silk(SilkBase):
                     schema.update(value_schema)
                     if self._schema_update_hook is not None:
                         self._schema_update_hook()
-            policy = schema.get("policy", None)
-            if policy is None or not len(policy):
-                #TODO: implement lookup hierarchy wrapper that also looks at parent
-                policy = default_policy
-            return schema, policy
+            return schema
+        schema_updated = False
         value_schema = None
         if isinstance(value, Silk):
             value_schema = value.schema.dict
@@ -196,19 +292,13 @@ class Silk(SilkBase):
                 return
             self._set_value_simple(value, buffer)
             if not lowlevel:
-                schema, policy = _get_schema_policy()
-                if policy["infer_type"]:
-                    if "type" not in schema:
-                        type_ = infer_type(value)
-                        if type_ != "null":
-                            schema["type"] = type_
-                        if self._schema_update_hook is not None:
-                            self._schema_update_hook()
-                    if type_ == "object":
-                        # TODO: make conditional upon policy.infer_new_property
-                        self._infer_properties(schema, value)
-                if isinstance(value, _types["array"]) and len(self.data) > 0:
-                    self._infer_list_item(value_schema)
+                schema = _get_schema()
+                policy = self._get_policy()
+                schema_updated |= self._infer_type(schema, policy, value)
+                if schema["type"] == "object":
+                    schema_updated |= self._infer_object(schema, policy, value)
+                elif schema["type"] == "array":
+                    schema_updated |= self._infer_array(schema, policy, value)
         elif isinstance(value, Scalar):
             assert self._parent is None or self._parent_attr is not None
             if self._parent is not None:
@@ -233,16 +323,20 @@ class Silk(SilkBase):
                 else:
                     empty_list = (len(self.data) == 0)
                 if empty_list:
-                    self._infer_list_item(value_schema)
+                    schema = _get_schema()
+                    policy = self._get_policy()
+                    schema_updated |= self._infer_array(schema, policy, value)
         elif isinstance(value, (dict, np.generic)):
             #invalidates all Silk objects constructed from items
             self._set_value_dict(value, buffer)
-            schema, policy = _get_schema_policy()
-            if policy["infer_type"]:
-                # TODO: make conditional upon policy.infer_new_property
-                self._infer_properties(schema, value)
+            schema = _get_schema()
+            policy = self._get_policy()
+            schema_updated |= self._infer_object(schema, policy, value)
         else:
             raise TypeError(type(value))
+        if schema_updated and self._schema_update_hook is not None:
+            self._schema_update_hook()
+
 
     def set(self, value):
         buffer = (self._buffer is not None)
@@ -253,10 +347,7 @@ class Silk(SilkBase):
 
     def _setitem(self, attr, value):
         data, schema = self.data, self._schema
-        policy = schema.get("policy", None)
-        if policy is None or not len(policy):
-            #TODO: implement lookup hierarchy wrapper that also looks at parent
-            policy = default_policy
+        policy = self._get_policy()
 
         data_was_none = False
         if self._buffer is None:
@@ -266,31 +357,13 @@ class Silk(SilkBase):
                 data = AlphabeticDict()
                 self._set_value_dict(data, buffer=False)
                 data = self.data
-
-        if self._buffer is not None:
-            self._buffer[attr] = value
         else:
-            data[attr] = value
+            data = self._buffer
+        data[attr] = value
+        if isinstance(data, MixedBase):
+            data = data.value #hackish
 
-        if policy["infer_type"]:
-            if "type" not in schema:
-                if self._buffer is not None:
-                    data = self._buffer
-                else:
-                    data = self.data
-                if isinstance(data, MixedBase):
-                    data = data.value #hackish
-                type_ = infer_type(data)
-                schema["type"] = type_
-                if self._schema_update_hook is not None:
-                    self._schema_update_hook()
-            if isinstance(value, Silk):
-                value, value_schema = value.data, value._schema
-                # TODO: make conditional upon policy.infer_new_property
-                self._infer_new_property(schema, attr, value, value_schema)
-            else:
-                # TODO: make conditional upon policy.infer_new_property
-                self._infer_new_property(schema, attr, value)
+
 
     def __setattr__(self, attr, value):
         if attr in type(self).__slots__:
@@ -423,68 +496,6 @@ class Silk(SilkBase):
                 schema.pop("validators", None)
                 if old_validators is not None:
                     schema["validators"] = old_validators
-
-    def _infer_new_property(self, schema, attr, value, value_schema=None):
-        update_hook = False
-        if "properties" not in schema:
-            schema["properties"] = {}
-            update_hook = True
-        if attr not in schema["properties"]:
-            if value_schema is None:
-                value_schema = {}
-            schema["properties"][attr] = value_schema
-            update_hook = True
-        if "type" not in schema["properties"][attr]:
-            type_ = infer_type(value)
-            schema["properties"][attr]["type"] = type_
-            update_hook = True
-        if update_hook and self._schema_update_hook is not None:
-            self._schema_update_hook()
-
-    def _infer_properties(self, schema, value):
-        update_hook = False
-        if "properties" not in schema:
-            schema["properties"] = {}
-            update_hook = True
-        if isinstance(value, dict):
-            items = value.items()
-        else: #struct
-            items = []
-            for field in value.dtype.fields:
-                subvalue = value[field]
-                items.append((field, subvalue))
-        for attr, subvalue in items:
-            if attr not in schema["properties"]:
-                schema["properties"][attr] = {}
-                update_hook = True
-            if "type" not in schema["properties"][attr]:
-                type_ = infer_type(subvalue)
-                schema["properties"][attr]["type"] = type_
-                update_hook = True
-        if update_hook and self._schema_update_hook is not None:
-            self._schema_update_hook()
-
-    def _infer_list_item(self, item_schema):
-        schema = self._schema
-        policy = schema.get("policy", None)
-        if policy is None or not len(policy):
-            #TODO: implement lookup hierarchy wrapper that also looks at parent
-            policy = default_policy
-        infer_new_item = policy["infer_new_item"]
-        if infer_new_item != "uniform":
-            raise NotImplementedError(infer_new_item)
-            # TODO: if "pluriform", need a new method:
-            #   _infer_additional_list_item must be called for each .append
-            #   In addition, deletion/[:] can become quite tricky: ignore?
-        assert len(self.data) > 0
-        if item_schema is None:
-            item = self.data[0]
-            s = Silk()
-            s.item = item
-            item_schema = s.schema.properties.item.dict
-        schema["items"] = item_schema
-        if self._schema_update_hook is not None:
-            self._schema_update_hook()
 
     #***************************************************
     #*  methods for getting
