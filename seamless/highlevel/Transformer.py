@@ -10,6 +10,7 @@ from ..midlevel import TRANSLATION_PREFIX
 from .mime import language_to_mime
 from ..core.context import Context as CoreContext
 from . import parse_function_code
+from .SchemaWrapper import SchemaWrapper
 
 default_pin = {
   "transfer_mode": "copy",
@@ -225,26 +226,32 @@ class Transformer(Base):
         if attr.startswith("_"):
             raise AttributeError(attr)
         htf = self._get_htf()
+        schema_mounter = None
+        dirs = None
         pull_source = functools.partial(self._pull_source, attr)
         if attr in htf["pins"]:
             getter = functools.partial(self._valuegetter, attr)
+            dirs = ["value"]
             proxycls = Proxy
         elif attr == "pins":
             return PinsWrapper(self)
         elif attr == "code":
             getter = self._codegetter
+            dirs = ["value", "mount", "mimetype"]
             proxycls = CodeProxy
         elif attr == htf["INPUT"]:
             getter = self._inputgetter
+            dirs = ["schema", htf["INPUT"]] + list(htf["pins"].keys())
             pull_source = None
             proxycls = Proxy
-        elif attr == htf["RESULT"]:
+        elif attr == htf["RESULT"] and htf["with_result"]:
             getter = self._resultgetter
+            dirs = ["schema", htf["RESULT"]]
             pull_source = None
             proxycls = Proxy
         else:
             raise AttributeError(attr)
-        return proxycls(self, (attr,), "r", pull_source=pull_source, getter=getter)
+        return proxycls(self, (attr,), "r", pull_source=pull_source, getter=getter, dirs=dirs)
 
     def _sub_mount(self, attr, path=None, mode="rw", authority="cell", persistent=True):
         htf = self._get_htf()
@@ -266,14 +273,6 @@ class Transformer(Base):
             htf["mount"] = {}
         htf["mount"][attr] = mount
         self._parent()._translate()
-
-    def mount_input_schema(self, path=None, mode="rw", authority="cell", persistent=True):
-        return self._sub_mount("input_schema", path, mode, authority, persistent)
-
-    def mount_result_schema(self, path=None, mode="rw", authority="cell", persistent=True):
-        htf = self._get_htf()
-        assert htf["with_result"]
-        return self._sub_mount("result_schema", path, mode, authority, persistent)
 
     def shell(self):
         tf = self._get_tf()
@@ -300,7 +299,8 @@ class Transformer(Base):
         tf = self._get_tf()
         inputcell = getattr(tf, htf["INPUT"])
         if attr == "schema":
-            return inputcell.handle.schema
+            schema_mounter = functools.partial(self._sub_mount, "input_schema")
+            return SchemaWrapper(inputcell.handle.schema, schema_mounter)
         raise AttributeError(attr)
 
     def _resultgetter(self, attr):
@@ -309,7 +309,8 @@ class Transformer(Base):
         tf = self._get_tf()
         resultcell = getattr(tf, htf["RESULT"])
         if attr == "schema":
-            return resultcell.handle.schema
+            schema_mounter = functools.partial(self._sub_mount, "result_schema")
+            return SchemaWrapper(resultcell.handle.schema, schema_mounter)
         return getattr(resultcell, attr)
 
     def _valuegetter(self, attr, attr2):

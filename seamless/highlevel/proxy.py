@@ -2,12 +2,13 @@
 import weakref
 
 class Proxy:
-    def __init__(self, parent, path, mode, *, pull_source=None, getter=None):
+    def __init__(self, parent, path, mode, *, pull_source=None, getter=None, dirs=None):
         self._parent = weakref.ref(parent)
         self._path = path
         self._mode = mode
         self._pull_source = pull_source
         self._getter = getter
+        self._dirs = dirs
 
     @property
     def _virtual_path(self):
@@ -49,6 +50,12 @@ class Proxy:
         if self._getter is None:
             raise AttributeError
         return self._getter(attr)
+
+    def __dir__(self):
+        result = list(object.__dir__(self))
+        if self._dirs is not None:
+            result += self._dirs
+        return result
 
 class CodeProxy(Proxy):
     """A subclass of Proxy that points to a code cell
