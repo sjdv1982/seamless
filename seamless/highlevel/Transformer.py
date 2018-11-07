@@ -247,7 +247,7 @@ class Transformer(Base):
             proxycls = Proxy
         elif attr == htf["RESULT"] and htf["with_result"]:
             getter = self._resultgetter
-            dirs = ["schema", "dummy"]
+            dirs = ["schema", "schema_dummy"]
             pull_source = None
             proxycls = Proxy
         else:
@@ -312,7 +312,7 @@ class Transformer(Base):
         if attr == "schema":
             schema_mounter = functools.partial(self._sub_mount, "result_schema")
             return SchemaWrapper(resultcell.handle.schema, schema_mounter)
-        elif attr == "dummy":
+        elif attr == "schema_dummy":
             schema = resultcell.handle.schema
             return lambda: Silk(schema=schema, schema_dummy=True)
         return getattr(resultcell, attr)
