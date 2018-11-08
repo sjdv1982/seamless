@@ -314,7 +314,11 @@ class Transformer(Base):
             return SchemaWrapper(resultcell.handle.schema, schema_mounter)
         elif attr == "schema_dummy":
             schema = resultcell.handle.schema
-            return lambda: Silk(schema=schema, schema_dummy=True)
+            return lambda: Silk(
+             schema=schema,
+             schema_dummy=True,
+             schema_update_hook=resultcell.handle._schema_update_hook
+            )
         return getattr(resultcell, attr)
 
     def _valuegetter(self, attr, attr2):

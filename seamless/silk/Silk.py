@@ -138,6 +138,34 @@ class Silk(SilkBase):
     #*  methods for inference
     #***************************************************
 
+    def _is_binary_array(self):
+        schema = self._schema
+        storage = None
+        if "storage" not in schema:
+            return False
+        if schema["storage"] not in ("binary", "mixed-binary", "pure-binary"):
+            return False
+        if "form" not in schema:
+            return False
+        if "ndim" not in schema["form"]:
+            return False
+        if "type" not in schema or schema["type"] != "array":
+            return False
+        return True
+
+    def _is_binary_array_item(self):
+        if self._parent is None:
+            return False
+        if self._parent._is_binary_array():
+            return True
+        schema = self._schema
+        storage = None
+        if "storage" in schema:
+            storage = schema["storage"]
+            if storage in ("plain", "mixed-plain", "pure-plain"):
+                return False
+        return self._parent._is_binary_array_item()
+
     def _infer_new_property(self, schema, attr, value, value_schema=None):
         schema_updated = False
         policy = self._get_policy(schema)
@@ -154,7 +182,8 @@ class Silk(SilkBase):
             schema_updated = True
         subschema = schema["properties"][attr]
         subpolicy = self._get_policy(subschema, policy)
-        schema_updated |= self._infer(subschema, subpolicy, value)
+        dummy = Silk(subschema, parent=self)
+        schema_updated |= dummy._infer(subpolicy, value)
         return schema_updated
 
     def _infer_object(self, schema, policy, value, value_schema=None):
@@ -182,10 +211,13 @@ class Silk(SilkBase):
                 schema_updated = True
             subschema = schema["properties"][attr]
             subpolicy = self._get_policy(subschema, policy)
-            schema_updated |= self._infer(subschema, subpolicy, subvalue)
+            dummy = Silk(subschema, parent=self)
+            schema_updated |= dummy._infer(subpolicy, subvalue)
         return schema_updated
 
     def _infer_new_item(self, schema, pos, value, value_item_schema=None):
+        if self._is_binary_array_item():
+            return False
         schema_updated = False
         policy = self._get_policy(schema)
         if not policy["infer_new_item"]:
@@ -196,7 +228,8 @@ class Silk(SilkBase):
                 item_schema = deepcopy(value_item_schema)
             else:
                 item_schema = {}
-                self._infer(item_schema, policy, value)
+                dummy = Silk(item_schema, parent=self)
+                dummy._infer(policy, value)
             if policy["infer_array"] == "pluriform" and pos == 0:
                 item_schema = [item_schema]
             schema["items"] = item_schema
@@ -208,7 +241,8 @@ class Silk(SilkBase):
                     new_item_schema = deepcopy(value_item_schema)
                 else:
                     new_item_schema = {}
-                    self._infer(new_item_schema, policy, value)
+                    dummy = Silk(new_item_schema,parent=self)
+                    dummy._infer(policy, value)
                 item_schema.insert(pos, new_item_schema)
                 schema_updated = True
             else: #single schema, no inference
@@ -240,10 +274,9 @@ class Silk(SilkBase):
                     schema["form"] = {}
                     schema_updated = True
                 form_schema = schema["form"]
-            if policy["infer_array"] and policy["infer_storage"]:
-                form_schema["bytesize"] = wvalue.itemsize
             if policy["infer_ndim"]:
                 form_schema["ndim"] = wvalue.ndim
+                schema_updated = True
             if policy["infer_strides"]:
                 contiguous = is_contiguous(wvalue)
                 if contiguous:
@@ -252,8 +285,10 @@ class Silk(SilkBase):
                 else:
                     form_schema.pop("contiguous", None)
                     form_schema["strides"] = wvalue.strides
+                schema_updated = True
             if policy["infer_shape"]:
                 form_schema["shape"] = wvalue.shape
+                schema_updated = True
         if not policy["infer_array"]:
             return schema_updated
 
@@ -264,29 +299,66 @@ class Silk(SilkBase):
             if value_item_schema is not None:
                 schema["items"] = deepcopy(value_item_schema)
                 schema_updated = True
-            elif len(value):
-                pluriform = False
-                item_schema = {}
-                self._infer(item_schema, policy, value[0])
-                if policy["infer_array"] == "pluriform":
-                    pluriform = True
-                else:
-                    for n in range(1, len(value)):
-                        subsilk = Silk(data=value[n],schema=item_schema)
-                        try:
-                            subsilk.validate()
-                        except:
-                            pluriform = True
-                            break
-                if pluriform:
-                    item_schemas = [item_schema]
-                    for n in range(1, len(value)):
-                        item_schemas.append({})
-                        self._infer(item_schemas[n], policy, value[n])
-                    schema["items"] = item_schemas
-                else:
-                    schema["items"] = item_schema
-                schema_updated = True
+            else:
+                bytesize = None
+                first_item_type = None
+                unsigned = None
+                if storage == "binary":
+                    #TODO: only if parent does not have ndim...
+                    if policy["infer_type"] and wvalue.ndim > 1:
+                        first_item_type = infer_type(wvalue.flat[0])
+                        if first_item_type == "integer":
+                            unsigned = is_unsigned(wvalue.dtype)
+                    if policy["infer_array"] and policy["infer_storage"]:
+                        bytesize = wvalue.itemsize
+                        schema_updated = True
+                if len(value):
+                    pluriform = False
+                    item_schema = {}
+                    dummy = Silk(item_schema,parent=self)
+                    dummy._infer(policy, value[0])
+                    if policy["infer_array"] == "pluriform":
+                        pluriform = True
+                    else:
+                        for n in range(1, len(value)):
+                            subsilk = Silk(data=value[n],schema=item_schema)
+                            try:
+                                subsilk.validate()
+                            except:
+                                pluriform = True
+                                break
+                    if pluriform:
+                        item_schemas = [item_schema]
+                        for n in range(1, len(value)):
+                            item_schemas.append({})
+                            dummy = Silk(item_schemas[n],parent=self)
+                            dummy._infer(policy, value[n])
+                        if bytesize is not None:
+                            for item_schema in item_schemas:
+                                if "form" not in item_schema:
+                                    item_schema["form"] = {}
+                                item_schema["form"]["bytesize"] = bytesize
+                        if first_item_type is not None:
+                            for item_schema in item_schemas:
+                                if "form" not in item_schema:
+                                    item_schema["form"] = {}
+                                item_schema["form"]["type"] = first_item_type
+                                if unsigned is not None:
+                                    item_schema["form"]["unsigned"] = unsigned
+                        schema["items"] = item_schemas
+                    else:
+                        if bytesize is not None:
+                            if "form" not in item_schema:
+                                item_schema["form"] = {}
+                            item_schema["form"]["bytesize"] = bytesize
+                        if first_item_type is not None:
+                            if "form" not in item_schema:
+                                item_schema["form"] = {}
+                            item_schema["form"]["type"] = first_item_type
+                            if unsigned is not None:
+                                item_schema["form"]["unsigned"] = unsigned
+                        schema["items"] = item_schema
+                    schema_updated = True
         return schema_updated
 
     def _infer_type(self, schema, policy, value):
@@ -299,7 +371,13 @@ class Silk(SilkBase):
                     schema_updated = True
         return schema_updated
 
-    def _infer(self, schema, policy, value):
+    def _infer(self, policy, value):
+        schema = self._schema
+        if self._is_binary_array_item():
+            if not isinstance(value, np.ndarray):
+                return self._infer_type(schema, policy, value)
+            else:
+                return False
         schema_updated = False
         schema_updated |= self._infer_type(schema, policy, value)
         if "type" in schema:
@@ -935,6 +1013,6 @@ class _BufferedSilkFork(_SilkFork):
             self._joined = True
 
 from .modify_methods import try_modify_methods
-from ..mixed import MixedBase, MixedDict, MixedObject, is_contiguous
+from ..mixed import MixedBase, MixedDict, MixedObject, is_contiguous, is_unsigned
 from .. import Wrapper
 print("TODO: Silk form_validator") #see above

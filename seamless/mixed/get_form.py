@@ -19,7 +19,7 @@ _string_types = (str,)  ##JSON cannot deal with bytes
 
 def is_contiguous(data):
     """Returns if the data is C-contiguous
-    The last stride must be itemsize (bytesize), 
+    The last stride must be itemsize (bytesize),
      the second-last must be itemsize * shape[-1], etc.
     These criteria are stricter than Numpy's c_contiguous:
       see the documentation of numpy.ndarray.flags for an explanation
@@ -36,6 +36,9 @@ def is_contiguous(data):
         contiguous = True
     return contiguous
 
+def is_unsigned(dt):
+    return any([dt == t for t in _unsigned_types])
+    
 def get_typedef_scalar(value):
     if isinstance(value, bool):
         typedef = "boolean"
@@ -208,7 +211,7 @@ def get_tform_numpy_builtin(dt):
         "bytesize": dt.itemsize,
     }
     if typedef0 == "integer":
-        unsigned = any([dt == t for t in _unsigned_types])
+        unsigned = is_unsigned(dt)
         typedef["unsigned"] = unsigned
     if dt.ndim:
         typedef = {

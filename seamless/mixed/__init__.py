@@ -102,4 +102,4 @@ from .MixedObject import MixedObject
 from .Monitor import Monitor
 from .MakeParentMonitor import MakeParentMonitor
 from .OverlayMonitor import OverlayMonitor
-from .get_form import is_contiguous
+from .get_form import is_contiguous, is_unsigned
