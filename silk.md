@@ -254,7 +254,7 @@ Default: True
 
 ### infer_strides
 Whenever a binary array is assigned, the strides/contiguous property is fixed.
-Default: True
+Default: False
 
 ### infer_required (2)
 A new inferred property is automatically added to the required properties

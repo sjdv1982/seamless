@@ -13,6 +13,7 @@ _string_types = (str, bytes)
 _types["array"] = _array_types
 _types["integer"] = _integer_types
 _types["number"] = _integer_types + _float_types
+_types["string"] = _string_types
 #_types["object"] = (dict, MutableMapping) #don't do, for now..
 
 Scalar = (type(None), bool, str, bytes) + _integer_types + _float_types
