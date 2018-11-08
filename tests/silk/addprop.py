@@ -15,6 +15,7 @@ schema = dict(s.schema._dict)
 jsonschema.validate(dict(s.data), schema)
 
 s.schema.policy = {}
-s.schema.policy.infer_type = False
+s.schema.policy.infer_new_property = False
 s.z = "OK"
-s.err = 1
+print(s.schema)
+s.err = 1 #error

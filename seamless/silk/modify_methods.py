@@ -2,27 +2,33 @@ from .validation import _array_types
 from functools import partial
 
 def list_grow_method(self, name, *args, **kwargs):
-    empty_list = (
-        isinstance(self.data,list) and \
-        len(self.data) == 0
-    )
     item = None
     item_schema = None
     if name == "append":
         item, = args
+        pos = len(self)
     elif name == "insert":
-        _, item = args
+        pos, item = args
     if item is not None:
         if isinstance(item, Silk):
             item_schema = item.schema.dict
 
     method = self._get_special(name, skip_modify_methods = True)
 
+    if isinstance(item, Silk):
+        item_schema = item.schema.dict
+        item = item.data
+
+    schema = self._schema
+    schema_updated = self._infer_new_item(
+       schema, pos, item, value_item_schema=item_schema
+    )
+
     result = method(*args, **kwargs)
     if not len(self._forks):
         self.validate()
-    if empty_list:
-        self._infer_list_item(item_schema)
+    if schema_updated and self._schema_update_hook is not None:
+        self._schema_update_hook()
     return result
 
 def list_modify_method(self, name, *args, **kwargs):

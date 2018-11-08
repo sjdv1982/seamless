@@ -227,7 +227,7 @@ The result will be an array schema that is empty, uniform ("items" holds a singl
 "auto": A schema will be created for the first item. If any item does
  not validate against that schema, the schema becomes pluriform,
  else uniform.
-False: No schema will be created for any item.
+False: No "items" schema will be created at all.
 Created schemas have all other policies applied (infer_type etc.), except
  infer_array and infer_object.
 For Numpy arrays, the bytesize may also be inferred, if infer_storage is defined.
@@ -239,17 +239,22 @@ Lists and dicts are not recursively inferred, but simply set to "object" / "arra
 When assigned to a Silk type, the schema is copied.
 Default: True
 
-### infer_ndims
-Whenever a binary array is assigned, the instance is inferred to be a shapedarray, fixing ndims.
-Default: True
-
 ### infer_storage
 For any instance, infer its storage as a form constraint.
 Storage is inferred as "plain" or "binary"; "pure-" and "mixed-" must be
  added manually.
-If the instance is binary, infer its bytesize as well. 
+If the instance is binary, infer its bytesize as well.
+Default: True
+UPDATE: this is stored in a "storage" attribute.
+For children, it can also be stored in schema["form"]["storage"][child]
+
+### infer_ndim
+Whenever a binary array is assigned, the instance is inferred to be a shapedarray, fixing ndim.
 Default: True
 
+### infer_strides
+Whenever a binary array is assigned, the strides/contiguous property is fixed.
+Default: True
 
 ### infer_required (2)
 A new inferred property is automatically added to the required properties
@@ -480,7 +485,7 @@ pure-binary schema.
 
 Written above is that C-headers can only be generated for fixed-binary schemas.
 This is not actually true. C headers can also be generated for shapedarrays if
-ndims, but not shape, is known in advance (and the base item is fixed-binary).
+ndim, but not shape, is known in advance (and the base item is fixed-binary).
 They will then be exposed to C as a pointer + *shape object* (similar to memoryview)
 
 However, this complicates the use of C code in a transformer.

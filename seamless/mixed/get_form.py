@@ -17,6 +17,25 @@ from . import ( Scalar, np_char,
 _string_types = (str,)  ##JSON cannot deal with bytes
 
 
+def is_contiguous(data):
+    """Returns if the data is C-contiguous
+    The last stride must be itemsize (bytesize), 
+     the second-last must be itemsize * shape[-1], etc.
+    These criteria are stricter than Numpy's c_contiguous:
+      see the documentation of numpy.ndarray.flags for an explanation
+    """
+    if not data.flags["C_CONTIGUOUS"]:
+        return False
+    stride = data.itemsize
+    contiguous = False
+    for n in range(data.ndim-1, -1, -1):
+        if data.strides[n] != stride:
+            break
+        stride *= data.shape[n]
+    else:
+        contiguous = True
+    return contiguous
+
 def get_typedef_scalar(value):
     if isinstance(value, bool):
         typedef = "boolean"
@@ -362,14 +381,7 @@ def get_form_list(data):
             "shape": data.shape,
         }
         strides = data.strides
-        stride = data.itemsize
-        contiguous = False
-        for n in range(data.ndim-1, -1, -1):
-            if data.strides[n] != stride:
-                break
-            stride *= data.shape[n]
-        else:
-            contiguous = True
+        contiguous = is_contiguous(data)
         extra["contiguous"] = contiguous
         if not contiguous:
             extra["strides"] = strides

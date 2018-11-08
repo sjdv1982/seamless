@@ -21,10 +21,10 @@ class SchemaWrapper(Wrapper):
     def _get(self, attribute):
         child = self._dict.get(attribute, None)
         if child is None:
-            props = self._dict.get("properties", None)
+            props = self._dict.get("properties")
             if props is None:
                 raise AttributeError(attribute)
-            child = props.get(attribute, None)
+            child = props.get(attribute)
             if child is None:
                 raise AttributeError(attribute)
         return SchemaWrapper(self._parent(), child, self._update_hook)
