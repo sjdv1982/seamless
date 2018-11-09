@@ -90,11 +90,13 @@ def build_structured_cell(
     if mount is not None:
         c.mount(**mount)
     lib_path = lib_path0 + "." + name2 if lib_path0 is not None else None
+    sovereign = True
     if lib_path:
         path = lib_path + ".form"
         cc = libcell(path)
     else:
         cc = core_cell("json")
+        cc._sovereign = sovereign
     c.form = cc
     if plain:
         if lib_path:
@@ -102,6 +104,7 @@ def build_structured_cell(
             cc = libcell(path)
         else:
             cc = core_cell("json")
+            cc._sovereign = sovereign
         c.data = cc
         storage = None
     else:
@@ -110,6 +113,7 @@ def build_structured_cell(
             storage = libcell(path)
         else:
             storage = core_cell("text")
+            storage._sovereign = sovereign
         c.storage = storage
         if lib_path:
             path = lib_path + ".data"
@@ -122,6 +126,7 @@ def build_structured_cell(
                 form_cell = c.form,
                 storage_cell = c.storage
             )
+            c.data._sovereign = sovereign
     if silk:
         if lib_path:
             path = lib_path + ".schema"
@@ -137,6 +142,7 @@ def build_structured_cell(
             cc = libcell(path)
         else:
             cc = core_cell("json")
+            cc._sovereign = sovereign
         c.buffer_form = cc
         if plain:
             if lib_path:
@@ -144,6 +150,7 @@ def build_structured_cell(
                 cc = libcell(path)
             else:
                 cc = core_cell("json")
+                cc._sovereign = sovereign
             c.buffer_data = cc
             buffer_storage = None
         else:
@@ -152,6 +159,7 @@ def build_structured_cell(
                 buffer_storage = libcell(path)
             else:
                 buffer_storage = core_cell("text")
+                buffer_storage._sovereign = sovereign
             c.buffer_storage = buffer_storage
             if lib_path:
                 path = lib_path + ".buffer_data"
@@ -164,6 +172,7 @@ def build_structured_cell(
                     form_cell = c.buffer_form,
                     storage_cell = c.buffer_storage,
                 )
+                c.buffer_data._sovereign = sovereign
         bufferwrapper = BufferWrapper(
             c.buffer_data,
             buffer_storage,
@@ -175,13 +184,13 @@ def build_structured_cell(
     sc = StructuredCell(
         name,
         c.data,
-        storage = storage,
-        form = c.form,
-        schema = schema,
-        buffer = bufferwrapper,
-        inchannels = inchannels,
-        outchannels = outchannels,
-        state = state,
+        storage=storage,
+        form=c.form,
+        schema=schema,
+        buffer=bufferwrapper,
+        inchannels=inchannels,
+        outchannels=outchannels,
+        state=state,
         editchannels=editchannels
     )
     if return_context:

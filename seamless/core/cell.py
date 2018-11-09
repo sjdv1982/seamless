@@ -56,6 +56,15 @@ class CellBase(CellLikeBase):
                      #  and mounting is write-only unless there is a mount_setter.
                      # Slave cells are controlled by StructuredCell (the master)
     _lib_path = None # Set by library.libcell
+    """
+      Sovereignty
+      A low level cell may be sovereign if it has a 1:1 correspondence to a mid-level element.
+      Sovereign cells are authoritative, they may be changed, and changes to sovereign cells do not cause
+      the translation macro to re-trigger.
+      When a translation macro is re-triggered for another reason (or when the mid-level is serialized),
+      the mid-level element is dynamically read from the sovereign cell (no double representation)
+    """
+    _sovereign = False
 
     def status(self):
         """The cell's current status."""
@@ -237,7 +246,7 @@ class CellBase(CellLikeBase):
         elif from_pin == False:
             if different and not default and not self._authoritative:
                 self._overrule()
-            if different and self._seal is not None:
+            if different and self._seal is not None and not self._sovereign:
                 msg = "Warning: setting value for cell %s, controlled by %s"
                 print(msg % (self._format_path(), self._seal) )
 

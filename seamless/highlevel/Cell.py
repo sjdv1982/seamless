@@ -158,7 +158,6 @@ class Cell(Base):
         return cell.data
 
     def _set(self, value):
-        #TODO: check if sovereign cell => disable warning!!
         from . import set_hcell
         from ..silk import Silk
         hcell = self._get_hcell()

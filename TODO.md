@@ -62,12 +62,6 @@ E: The final new features before the merge
     Other possible services: interactive transformer, pure reactor (non-interactive or interactive)  
     NOTE: These are strictly core.manager concerns. Neither the workers nor
      the high-level has anything to do with it!
-  - Sovereignty
-  A low level cell may be sovereign if it has a 1:1 correspondence to a mid-level element.
-  Sovereign cells are authoritative, they may be changed, and changes to sovereign cells do not cause
-  the translation macro to re-trigger.
-  When a translation macro is re-triggered for another reason (or when the mid-level is serialized),
-  the mid-level element is dynamically read from the sovereign cell (no double representation)
 
 Part 3 (low-level / cleanup): Towards the merge
    - Add back in int/float/str/bool cells because they are so convenient.
