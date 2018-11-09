@@ -67,6 +67,7 @@ def translate_py_reactor(node, root, namespace, inchannels, outchannels, editcha
             setattr(ctx, attr, c)
         else:
             c = core_cell("python")
+            c._sovereign = True
             setattr(ctx, attr, c)
             if "mount" in node and attr in node["mount"]:
                 c.mount(**node["mount"][attr])
@@ -170,6 +171,7 @@ def translate_cell(node, root, namespace, inchannels, outchannels, editchannels,
                 raise NotImplementedError(ct)
             else:
                 raise ValueError(ct) #unknown celltype; should have been caught by high level
+            child._sovereign = True
     setattr(parent, name, child)
     pathstr = "." + ".".join(path)
     if node.get("TEMP") is not None:
