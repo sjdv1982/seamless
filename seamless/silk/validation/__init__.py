@@ -19,8 +19,6 @@ _types["string"] = _string_types
 Scalar = (type(None), bool, str, bytes) + _integer_types + _float_types
 _allowed_types = Scalar + _array_types + (np.void, dict)
 
-import traceback
-
 def infer_type(value):
     if isinstance(value, dict):
         type_ = "object"
@@ -53,34 +51,43 @@ def scalar_conv(value):
         return value.decode()
     raise TypeError(value)
 
-from .SilkBase import compile_function
+semantic_keywords = set(("enum", "const", "multipleOf", "minimum", "maximum",
+ "exclusiveMinimum", "exclusiveMaximum", "maxLength", "minLength", "pattern"))
 
-def validator_storage(validator, storage, instance, schema):
-    raise NotImplementedError
+def is_numpy_structure_schema(schema):
+    """Returns is the schema is a Numpy structure schema
+    For such a schema, no elements (items) need to be validated
+    This massively speeds up schema validation for large Numpy arrays"""
+    if "storage" not in schema:
+        return False
+    if schema["storage"] not in ("binary", "pure-binary"):
+        return False
+    if "form" not in schema:
+        return False
+    if "ndim" not in schema["form"]:
+        return False
+    if "items" not in schema:
+        return True
+    items_schema = schema["items"]
+    if isinstance(items_schema, list):
+        return False
+    if "validators" in items_schema:
+        return False
+    if set(items_schema.keys()).intersection(semantic_keywords):
+        return False
+    return True
 
-def validator_validators(validator, validators, instance, schema):
-    if not len(validators):
-        return
-    from .Silk import Silk
-    if isinstance(instance, Silk):
-        instance = instance.self.data
-    silkobject = Silk(data=instance, schema=schema) #containing the methods
-    for v, validator_code in enumerate(validators):
-        name = "Silk validator %d" % (v+1)
-        validator_func = compile_function(validator_code, name)
-        try:
-            validator_func(silkobject)
-        except Exception:
-            msg = traceback.format_exc()
-            yield ValidationError("\n"+msg)
+
+from .validators import *
 
 validator0 = type("validator", (jsonschema.Draft4Validator,), {"DEFAULT_TYPES": _types})
 schema_validator = jsonschema.validators.extend(validator0, {
     #"object": validator_object
-    #"items": validator_items
+    "type": validator_type,
+    "items": validator_items,
+    "form": validator_form,
+    "storage": validator_storage,
     "validators": validator_validators
 })
 
-form_validator = jsonschema.validators.extend(validator0, {
-    "storage": validator_storage,
-})
+from .formwrapper import FormWrapper

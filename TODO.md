@@ -8,7 +8,11 @@ Things to do:
 Part 2: high level
 
 A: get BCsearch working
-- Make initial version
+- Finish form validation
+- Expand Seamless compiled Transformer: C header generator.
+   (modify lib interactively, using simplified BCSearch build.py)
+- Expand Seamless compiled Transformer: C interface
+- Make initial BCSearch version
 - Follow roadmap (see BCsearch directory)
 - Network evaluation:
   Almost done (tests/simple-remote-client/server)
@@ -20,17 +24,6 @@ A: get BCsearch working
   - make sure that a remote job_transformer loses equilibrium when a new result celltype
      is connected (changes output signature)
 
-- Silk form validators
-  - All form-validating properties are under "form" of the main schema
-    They cannot be defined at the level of sub-schemas
-  - Every "form" property must be either absent or present
-  - If present, the form must have exactly that value
-  - Or, the "form" property must be a list, and have one of the values in the list
-    Or, if numeric, it must have one of the values between any two adjacent ascending list items
-  - The above applies a bit differently for shape and strides, as they are already lists:
-    - Or, the "form" property must be a list of lists. The property must have the same length.
-      For each item in the lists-of-lists, the property must have one of the values, or
-      be between any two adjacent ascending list items.
 - Services proof-of-principle
   Low-level services (non-interactive transformer)
 

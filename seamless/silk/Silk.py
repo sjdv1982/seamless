@@ -4,7 +4,10 @@ from copy import copy, deepcopy
 import numpy as np
 
 from .SilkBase import SilkBase, SilkHasForm, compile_function
-from .validation import schema_validator, form_validator, Scalar, scalar_conv, _types, infer_type
+from .validation import (
+  schema_validator, FormWrapper,
+  Scalar, scalar_conv, _types, infer_type, is_numpy_structure_schema
+)
 from .schemawrapper import SchemaWrapper
 
 from .policy import default_policy as silk_default_policy
@@ -37,6 +40,27 @@ Buffering:
 
 #TODO: .self property that becomes a SilkWrapper?
 #TODO: .data => _data + data property + ( .self._data in structured_cell)
+
+def _prepare_for_validation(data):
+    has_form = False
+    if isinstance(data, SilkHasForm):
+        storage, form = data._get_silk_form()
+        has_form = True
+    if isinstance(data, MixedBase):
+        # This is hackish, to special-case MixedBase thus
+        # But there is really no alternative, except to add
+        #  MutableXXX bases classes to ./validation.py
+        #  and even then, MixedObject is polymorphic:
+        #   it can be dict/list/scalar/None
+        # Better to validate the underlying value
+        #  (wrapped by MixedBase) instead
+        data = data.value
+    if isinstance(data, Silk):
+        data = data.data
+    wdata = data
+    if has_form:
+        data = FormWrapper(data, form, storage)
+    return data, wdata
 
 def init_object_schema(silk, schema):
     if "type" in schema:
@@ -253,7 +277,7 @@ class Silk(SilkBase):
         schema_updated = False
         schema_updated |= self._infer_type(schema, policy, value)
         wvalue = value
-        if isinstance(wvalue, MixedBase): #hackish, but necessary
+        if isinstance(wvalue, MixedBase): #hackish, but necessary (see _prepare_for_validation)
             wvalue = wvalue.value
             if isinstance(wvalue, Silk):
                 wvalue = wvalue.data
@@ -319,11 +343,19 @@ class Silk(SilkBase):
                     dummy._infer(policy, value[0])
                     if policy["infer_array"] == "pluriform":
                         pluriform = True
+                    elif storage == "binary" and is_numpy_structure_schema(schema):
+                        #fastest, if we can skip validation altogether
+                        #requires that the schema is a numpy structure schema.
+                        pass
                     else:
+                        # Not too slow (10**5 per sec).
+                        #  Much better than constructing and validating
+                        #  an explicit Silk object!
+                        validator = schema_validator(item_schema)
+                        value, _ = _prepare_for_validation(value)
                         for n in range(1, len(value)):
-                            subsilk = Silk(data=value[n],schema=item_schema)
                             try:
-                                subsilk.validate()
+                                validator.validate(value[n])
                             except:
                                 pluriform = True
                                 break
@@ -667,7 +699,7 @@ class Silk(SilkBase):
             data = self._buffer
         else:
             data = self.data
-        if isinstance(data, MixedBase): #hackish, but necessary
+        if isinstance(data, MixedBase): #hackish, but necessary (see _prepare_for_validation)
             data = data.value
         return data
 
@@ -758,12 +790,6 @@ class Silk(SilkBase):
             modifier = modifier | SILK_BUFFER_CHILD
         if isinstance(item, str) and hasattr(data, item):
             result = getattr(data, item)
-            """
-            # why do we need this???
-            if not isinstance(data, (MixedDict, MixedObject)) or result.value is not None:
-                print("RESULT", result, type(result), result.value)
-                return result
-            """
             d = result
         else:
             d = data[item]
@@ -830,27 +856,8 @@ class Silk(SilkBase):
                     data = self._buffer
                 else:
                     data = self.data
-                if isinstance(self.data, SilkHasForm):
-                    form = self.data._get_silk_form()
-                    """
-                    ###TODO: extract the relevant form bits from the schema
-                    (=> formschema) and send that to the form_validator
-                    (also TODO)
-                    """
-                    ### form_schema = get_form_schema(self._schema)
-                    ###form_validator(formschema).validate(form)
-                if isinstance(data, MixedBase):
-                    # This is hackish, to special-case MixedBase thus
-                    # But there is really no alternative, except to add
-                    #  MutableXXX bases classes to ./validation.py
-                    #  and even then, MixedObject is polymorphic:
-                    #   it can be dict/list/scalar/None
-                    # Better to validate the underlying value
-                    #  (wrapped by MixedBase) instead
-                    data = data.value
-                if isinstance(data, Silk):
-                    data = data.data
-                if data is None and accept_none:
+                data, wdata = _prepare_for_validation(data)
+                if wdata is None and accept_none:
                     return
                 schema_validator(self._schema).validate(data)
             else:
@@ -859,11 +866,11 @@ class Silk(SilkBase):
                 data = self.data
                 if self._buffer is not None:
                     data = self._buffer
-                if self._buffer is not None or isinstance(data, MixedBase): #hackish, see above
+                if self._buffer is not None or isinstance(data, MixedBase):
                     modifier = self._modifier
                     if self._buffer is not None:
                         modifier = modifier | SILK_BUFFER_CHILD
-                    if isinstance(data, MixedBase):
+                    if isinstance(data, MixedBase): #hackish (see _prepare_for_validation)
                         data = data.value
                     if isinstance(data, Silk):
                         data = data.data
@@ -1013,6 +1020,5 @@ class _BufferedSilkFork(_SilkFork):
             self._joined = True
 
 from .modify_methods import try_modify_methods
-from ..mixed import MixedBase, MixedDict, MixedObject, is_contiguous, is_unsigned
+from ..mixed import MixedBase, is_contiguous, is_unsigned
 from .. import Wrapper
-print("TODO: Silk form_validator") #see above
