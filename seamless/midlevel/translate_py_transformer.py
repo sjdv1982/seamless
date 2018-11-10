@@ -28,7 +28,7 @@ def translate_py_transformer(node, root, namespace, inchannels, outchannels, lib
       ctx, input_name, True, plain, buffered, inchannels, interchannels,
       input_state, lib_path0,
       return_context=True
-     )
+    )
     setattr(ctx, input_name, inp)
     if "input_schema" in mount:
         inp_ctx.schema.mount(**mount["input_schema"])

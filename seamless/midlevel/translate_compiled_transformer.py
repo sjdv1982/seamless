@@ -44,12 +44,15 @@ def _finalize(ctx, ctf, inp, c_inp, result, c_result):
     ctx.compiler_verbose.connect(ctf.compiler.compiler_verbose)
 
     ctx.binary_module_storage = cell("text")
+    ctx.binary_module_storage._sovereign = True
     ctx.binary_module_form = cell("json")
+    ctx.binary_module_form._sovereign = True
     ctx.binary_module = cell(
         "mixed",
         storage_cell = ctx.binary_module_storage,
         form_cell = ctx.binary_module_form,
     )
+    ctx.binary_module._sovereign = True
     ctf.compiler.result.connect(ctx.binary_module)
 
     ctx.binary_module.connect(ctf.translator.binary_module)
@@ -57,7 +60,6 @@ def _finalize(ctx, ctf, inp, c_inp, result, c_result):
 
 def translate_compiled_transformer(node, root, namespace, inchannels, outchannels, lib_path00, is_lib):
     #TODO: still a lot of common code with translate_py_transformer, put in functions
-    print("TODO: mount schema, result_schema")
     parent = get_path(root, node["path"][:-1], None, None)
     name = node["path"][-1]
     lib_path0 = lib_path00 + "." + name if lib_path00 is not None else None
@@ -77,10 +79,17 @@ def translate_compiled_transformer(node, root, namespace, inchannels, outchannel
 
     plain = node["plain"]
     input_state = node.get("stored_state_input", None)
+    mount = node.get("mount", {})
     if input_state is None:
         input_state = node.get("cached_state_input", None)
-    inp = build_structured_cell(ctx, input_name, True, plain, buffered, inchannels, [()], input_state, lib_path0)
+    inp, inp_ctx = build_structured_cell(
+      ctx, input_name, True, plain, buffered, inchannels, [()],
+      input_state, lib_path0,
+      return_context=True
+    )
     setattr(ctx, input_name, inp)
+    if "input_schema" in mount:
+        inp_ctx.schema.mount(**mount["input_schema"])
     for inchannel in inchannels:
         path = node["path"] + inchannel
         namespace[path, True] = inp.inchannels[inchannel]
@@ -110,12 +119,19 @@ def translate_compiled_transformer(node, root, namespace, inchannels, outchannel
     else:
         ctx.code = cell("text")
         ctx.code.set_file_extension(node["file_extension"])
-        if "mount" in node:
+        if "code" in mount:
             ctx.code.mount(**node["mount"])
 
     plain_result = node["plain_result"]
     result_state = node.get("cached_state_result", None)
-    result = build_structured_cell(ctx, result_name, True, plain_result, False, [()], outchannels, result_state, lib_path0)
+    result, result_ctx = build_structured_cell(
+        ctx, result_name, True, plain_result, False, [()],
+        outchannels, result_state, lib_path0,
+        return_context=True
+    )
+    if "result_schema" in mount:
+        result_ctx.schema.mount(**mount["result_schema"])
+
     setattr(ctx, result_name, result)
     assert not node["SCHEMA"]
 
