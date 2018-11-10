@@ -82,7 +82,6 @@ from .validators import *
 
 validator0 = type("validator", (jsonschema.Draft4Validator,), {"DEFAULT_TYPES": _types})
 schema_validator = jsonschema.validators.extend(validator0, {
-    #"object": validator_object
     "type": validator_type,
     "items": validator_items,
     "form": validator_form,
