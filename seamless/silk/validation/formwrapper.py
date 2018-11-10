@@ -12,13 +12,16 @@ class FormWrapper:
         self._form = form
         self._storage = storage
 
+    def __contains__(self, item):
+        return item in self._wrapped
+
     def __getattribute__(self, attribute):
         if attribute in ("_wrapped", "_form", "_storage") or attribute.startswith("__"):
             return super().__getattribute__(attribute)
-        return getattr(self._wrapped, attribute)
+        else:
+            return getattr(self._wrapped, attribute)
 
     def __getitem__(self, item):
-        print(self._wrapped, item)
         subitem = self._wrapped[item]
         substorage = None
         subform = None
@@ -42,7 +45,6 @@ class FormWrapper:
         if subform is None and substorage is None:
             return subitem
         else:
-            print("SUBITEM", subitem, subform, substorage)
             return FormWrapper(subitem, subform, substorage)
 
     def __str__(self):

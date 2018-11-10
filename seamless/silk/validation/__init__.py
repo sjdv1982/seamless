@@ -81,12 +81,16 @@ def is_numpy_structure_schema(schema):
 from .validators import *
 
 validator0 = type("validator", (jsonschema.Draft4Validator,), {"DEFAULT_TYPES": _types})
-schema_validator = jsonschema.validators.extend(validator0, {
-    "type": validator_type,
+schema_validator0 = jsonschema.validators.extend(validator0, {
     "items": validator_items,
     "form": validator_form,
     "storage": validator_storage,
     "validators": validator_validators
 })
+class schema_validator(schema_validator0):
+    def is_type(self, instance, type):
+        if isinstance(instance, FormWrapper):
+            instance = instance._wrapped
+        return super().is_type(instance, type)
 
 from .formwrapper import FormWrapper

@@ -242,12 +242,12 @@ class Transformer(Base):
             proxycls = CodeProxy
         elif attr == htf["INPUT"]:
             getter = self._inputgetter
-            dirs = ["schema"] + list(htf["pins"].keys())
+            dirs = ["value", "schema"] + list(htf["pins"].keys())
             pull_source = None
             proxycls = Proxy
         elif attr == htf["RESULT"] and htf["with_result"]:
             getter = self._resultgetter
-            dirs = ["schema", "schema_dummy"]
+            dirs = ["value", "schema", "schema_dummy"]
             pull_source = None
             proxycls = Proxy
         else:
@@ -299,7 +299,9 @@ class Transformer(Base):
             return getattr(self, attr)
         tf = self._get_tf()
         inputcell = getattr(tf, htf["INPUT"])
-        if attr == "schema":
+        if attr == "value":
+            return inputcell.value
+        elif attr == "schema":
             schema_mounter = functools.partial(self._sub_mount, "input_schema")
             return SchemaWrapper(inputcell.handle.schema, schema_mounter)
         raise AttributeError(attr)
@@ -309,7 +311,9 @@ class Transformer(Base):
         assert htf["with_result"]
         tf = self._get_tf()
         resultcell = getattr(tf, htf["RESULT"])
-        if attr == "schema":
+        if attr == "value":
+            return resultcell.value        
+        elif attr == "schema":
             schema_mounter = functools.partial(self._sub_mount, "result_schema")
             return SchemaWrapper(resultcell.handle.schema, schema_mounter)
         elif attr == "schema_dummy":

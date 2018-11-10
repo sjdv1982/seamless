@@ -42,15 +42,8 @@ def validator_items(validator, items, instance, schema):
                 storage, form = get_form(instance)
             if storage != "mixed-binary":
                 return
-    for error in validator_items_ORIGINAL(validator, items, data, schema):
+    for error in validator_items_ORIGINAL(validator, items, instance, schema):
         yield error
-
-def validator_type(validator, types, instance, schema):
-    if isinstance(instance, FormWrapper):
-        instance = instance._wrapped
-    for error in validator_type_ORIGINAL(validator, types, instance, schema):
-        yield error
-
 
 def _validator_storage(storage, instance_storage, form_str=None):
     #TODO: raise proper ValidationErrors
@@ -233,4 +226,4 @@ def validator_validators(validator, validators, instance, schema):
             msg2 = "\n" + stars + "*  Silk validation error\n" + stars + msg + stars
             yield ValidationError(msg2)
 
-__all__ = ["validator_items", "validator_type", "validator_storage", "validator_form", "validator_validators"]
+__all__ = ["validator_items", "validator_storage", "validator_form", "validator_validators"]
