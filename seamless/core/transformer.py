@@ -146,7 +146,7 @@ class Transformer(Worker):
         self._send_message( (input_pin, value, access_mode, content_type) )
 
     def _touch(self):
-        self._send_message( ("@TOUCH", None) )
+        self._send_message( ("@TOUCH", None, None, None) )
 
     def listen_output(self):
         # TODO logging
