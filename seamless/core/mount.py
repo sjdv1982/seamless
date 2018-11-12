@@ -343,7 +343,7 @@ class MountManagerStash:
         parent, context = self.parent, self.context
         for ctx in list(parent.contexts):
             assert not is_dummy_mount(ctx._mount), ctx
-            if ctx._part_of2(context):
+            if ctx._root() is self.root and ctx._part_of2(context):
                 self.contexts.add(ctx)
                 parent.contexts.remove(ctx)
                 path = ctx._mount["path"]
@@ -353,7 +353,7 @@ class MountManagerStash:
             assert not is_dummy_mount(cell._mount), cell
             ctx = cell._context()
             assert ctx is not None, cell
-            if ctx._part_of2(context):
+            if ctx._root() is self.root and ctx._part_of2(context):
                 self.mounts[cell] = mountitem
                 parent.mounts.pop(cell)
                 path = cell._mount["path"]
@@ -367,12 +367,12 @@ class MountManagerStash:
         parent, context = self.parent, self.context
         for ctx in list(parent.contexts):
             path = ctx._mount["path"]
-            if ctx._part_of2(context):
+            if ctx._root() is self.root and ctx._part_of2(context):
                 new_paths[path] = ctx
         for cell, mountitem in list(parent.mounts.items()):
             assert not is_dummy_mount(cell._mount), cell
             ctx = cell._context()
-            if ctx._part_of2(context):
+            if ctx._root() is self.root and ctx._part_of2(context):
                 path = cell._mount["path"]
                 new_paths[path] = mountitem
         return new_paths
@@ -592,6 +592,10 @@ class MountManager:
           (because of stash replacement)
         context._mount MUST have been set to None!
         """
+        if context._root() is context:
+            self.paths.pop(context, None)
+            if mount is None:
+                return
         assert not is_dummy_mount(mount), context
         try:
             paths = self.paths[context._root()]
@@ -612,12 +616,7 @@ class MountManager:
 
     def add_context(self, context, path, as_parent):
         #print("add context", path, context, as_parent, context._mount["persistent"])
-        root = context._root()
-        if root not in self.paths:
-            paths = set()
-            self.paths[root] = paths
-        else:
-            paths = self.paths[root]
+        paths = self.paths[context._root()]
         if not as_parent:
             assert path not in paths, path
             paths.add(path)
@@ -778,6 +777,9 @@ def resolve_register(reg):
             result["path"] += extension
         return result
     for r in reg:
+        root = r._root()
+        if root not in mountmanager.paths:
+            mountmanager.paths[root] = set()
         if isinstance(r, Worker):
             continue
         find_mount(r)

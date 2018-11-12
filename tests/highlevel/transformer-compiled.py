@@ -33,3 +33,16 @@ ctx.transform.b = ctx.b
 ctx.equilibrate()
 print(ctx.result.value)
 print(ctx.status())
+
+"""
+### code generator (gen_header, translator) can be hacked in two ways:
+
+1. Hack the library:
+    from seamless.highlevel import stdlib
+    t = stdlib.compiled_transformer
+    t.gen_header.code.mount("/tmp/gen-header.py")
+This will affect all transformers, but "t.register_library()" must be invoked
+ upon every change (this is a design decision)
+
+2. Hack the specific transformer: /translated/transform/tf/gen_header_code.py
+"""

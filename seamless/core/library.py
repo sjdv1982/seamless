@@ -11,11 +11,12 @@ _lib = {}
 _cells = {}
 _boundcells = WeakSet()
 
-def _update_old_keys(oldkeys, oldlib, lib, name, on_macros):
+def _update_old_keys(oldkeys, oldlib, lib, on_macros):
     master_cells = set() #master cells will receive a refresh
     for key in oldkeys:
+        if key not in _cells:
+            continue
         oldcells = _cells[key]
-        fullkey = name + "." + key
         for oldcell in oldcells:
             is_macro = isinstance(oldcell, (PythonCell, PyMacroCell))
             if is_macro != on_macros:
@@ -63,8 +64,8 @@ def register(name, lib):
         return
     oldlib = _lib[name]
     oldkeys = list(oldlib.keys())
-    _update_old_keys(oldkeys, oldlib, lib, name, on_macros=True)
-    _update_old_keys(oldkeys, oldlib, lib, name, on_macros=False)
+    _update_old_keys(oldkeys, oldlib, lib, on_macros=True)
+    _update_old_keys(oldkeys, oldlib, lib, on_macros=False)
     _lib[name] = lib
 
 _bound = None
@@ -197,7 +198,7 @@ def _libcell(path, mandated_celltype, *args, **kwargs):
 
 def lib_has_path(libname, path):
     assert libname in _lib
-    print("lib_has_path", libname, path, path in _lib[libname], _lib[libname])
+    #print("lib_has_path", libname, path, path in _lib[libname], _lib[libname])
     return path in _lib[libname]
 
 def libcell(path):

@@ -387,7 +387,7 @@ context : context or None
         for childname, child in self._children.items():
             if isinstance(child, (Context, Macro)):
                 child._unmount(from_del=from_del)
-        if not is_dummy_mount(self._mount):
+        if not is_dummy_mount(self._mount) or self._root() is self:
             mountmanager.unmount_context(self, from_del=True)
 
     def _remount(self):
