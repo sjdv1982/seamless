@@ -88,6 +88,36 @@ class Transformer(Base):
                 htf["main_module"] = {"compiler_verbose": True}
         self._parent()._translate()
 
+    @property
+    def header(self):
+        htf = self._get_htf()
+        assert htf["compiled"]
+        tf = self._get_tf()
+        return tf.header.value
+
+    @property
+    def schema(self):
+        htf = self._get_htf()
+        inp = htf["INPUT"]
+        #TODO: self.self
+        return getattr(self, inp).schema
+
+    @property
+    def example(self):
+        htf = self._get_htf()
+        tf = self._get_tf()
+        inputcell = getattr(tf, htf["INPUT"])
+        schema = inputcell.handle.schema
+        return Silk(
+         schema=schema,
+         schema_dummy=True,
+         schema_update_hook=inputcell.handle._schema_update_hook
+        )
+
+    @example.setter
+    def example(self, value):
+        return self.example.set(value)
+
     def _assign_to(self, hctx, path):
         from .assign import assign_connection
         tf = self._get_tf()
@@ -242,12 +272,12 @@ class Transformer(Base):
             proxycls = CodeProxy
         elif attr == htf["INPUT"]:
             getter = self._inputgetter
-            dirs = ["value", "schema"] + list(htf["pins"].keys())
+            dirs = ["value", "schema", "example"] + list(htf["pins"].keys())
             pull_source = None
             proxycls = Proxy
         elif attr == htf["RESULT"] and htf["with_result"]:
             getter = self._resultgetter
-            dirs = ["value", "schema", "schema_dummy"]
+            dirs = ["value", "schema", "example"]
             pull_source = None
             proxycls = Proxy
         else:
@@ -304,6 +334,8 @@ class Transformer(Base):
         elif attr == "schema":
             schema_mounter = functools.partial(self._sub_mount, "input_schema")
             return SchemaWrapper(inputcell.handle.schema, schema_mounter)
+        elif attr == "example":
+            return self.example
         raise AttributeError(attr)
 
     def _resultgetter(self, attr):
@@ -312,13 +344,13 @@ class Transformer(Base):
         tf = self._get_tf()
         resultcell = getattr(tf, htf["RESULT"])
         if attr == "value":
-            return resultcell.value        
+            return resultcell.value
         elif attr == "schema":
             schema_mounter = functools.partial(self._sub_mount, "result_schema")
             return SchemaWrapper(resultcell.handle.schema, schema_mounter)
-        elif attr == "schema_dummy":
+        elif attr == "example":
             schema = resultcell.handle.schema
-            return lambda: Silk(
+            return Silk(
              schema=schema,
              schema_dummy=True,
              schema_update_hook=resultcell.handle._schema_update_hook

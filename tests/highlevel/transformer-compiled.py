@@ -5,8 +5,8 @@ ctx = Context()
 ctx.mount(os.path.join(tempfile.gettempdir(), "transformer-compiled"))
 
 ctx.transform = lambda a,b: a + b
-ctx.transform.a = 0 #example, just to fill the schema
-ctx.transform.b = 0 #example, just to fill the schema
+ctx.transform.example.a = 0
+ctx.transform.example.b = 0
 ctx.result = ctx.transform
 ctx.result.celltype = "json"
 ctx.equilibrate()
@@ -18,7 +18,7 @@ ctx.code = """
 extern "C" double transform(int a, int b) {
     return a + b;
 }"""
-ctx.transform.result = 0.0 #example, just to fill the schema
+ctx.transform.result.example = 0.0 #example, just to fill the schema
 ctx.equilibrate()
 print(ctx.result.value)
 

@@ -44,6 +44,8 @@ class Proxy:
     def __setattr__(self, attr, value):
         if attr.startswith("_"):
             return object.__setattr__(self, attr, value)
+        elif attr == "example" and "example" in self._dirs:
+            return getattr(self, "example").set(value)
         raise NotImplementedError
 
     def __getattr__(self, attr):
