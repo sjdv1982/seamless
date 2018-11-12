@@ -86,10 +86,10 @@ if __name__ == "__main__":
     ctx.cppcode.celltype = "text"
 
     ctx.tf = lambda a,b: a + b
-    ctx.tf.a = 0 #example-based programming, to fill the schema
-    ctx.tf.b = 0
+    ctx.tf.example.a = 0
+    ctx.tf.example.b = 0
     ctx.tf.with_result = True
-    ctx.tf.result = 0.0 #example-based programming, to fill the schema
+    ctx.tf.result.example = 0.0
 
     ctf = ctx.compiler
     ctf.compiled_code = ctx.cppcode
