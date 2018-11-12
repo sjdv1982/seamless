@@ -382,6 +382,7 @@ class StructuredCellState:
 
 def set_state(cell, state):
     cell._val = state
+    cell._reset_checksums()
     cell._status = cell.StatusFlags.OK
     cell.touch()
 
@@ -423,6 +424,7 @@ class StructuredCell(CellLikeBase):
             assert isinstance(storage, TextCell)
             if state is not None and state.storage is not None:
                 storage._val = state.storage
+                storage._reset_checksums()
                 set_state(storage, deepcopy(state.storage))
             assert storage._master is None
             storage._master = (self, "storage")
@@ -595,23 +597,28 @@ class StructuredCell(CellLikeBase):
         assert mode in ("data", "storage", "form", "schema", "buffer_data", "buffer_form", "buffer_storage")
         if mode == "data":
             self.data._val = val
+            self.data._reset_checksums()
             self.monitor.data = val
         elif mode == "storage":
             self.storage._val = val
+            self.storage._reset_checksums()
             self.monitor.storage = val
         elif mode == "form":
             self.form._val = val
+            self.form._reset_checksums()
             self.monitor.form = val
         elif mode == "schema":
             self.schema.update(val)
         elif mode == "buffer_data":
             self.buffer.data._val = val
+            self.buffer.data._reset_checksums()
             self.bufmonitor.data = val
         elif mode == "buffer_storage":
             self.buffer.storage._val = val
             self.bufmonitor.storage = val
         elif mode == "buffer_form":
             self.buffer_form._val = val
+            self.buffer_form._reset_checksums()
             self.bufmonitor.form = val
 
     def touch(self):
@@ -756,18 +763,22 @@ class StructuredCell(CellLikeBase):
         assert storage in ("pure-plain", "pure-binary", "mixed-plain", "mixed-binary"), storage
         if self.buffer is not None:
             self.buffer.storage._val = storage
+            self.buffer.storage._reset_checksums()
             self.bufmonitor.storage = storage
         else:
             self.storage._val = storage
+            self.storage._reset_checksums()
             self.monitor.storage = storage
 
     def _init_form_from_mounted_file(self, filebuffer, checksum):
         form = json.loads(filebuffer)
         if self.buffer is not None:
             self.buffer.form._val = form
+            self.buffer.form._reset_checksums()
             self.bufmonitor.form = form
         else:
             self.form._val = form
+            self.form._reset_checksums()
             self.monitor.form = form
             cell = self.data
 
@@ -796,6 +807,7 @@ class StructuredCell(CellLikeBase):
             return
         value = cell._from_buffer(filebuffer)
         cell._val.update(value)
+        cell._reset_checksums()
         self._silk.validate(accept_none=True)
 
 

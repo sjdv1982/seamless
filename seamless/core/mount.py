@@ -149,6 +149,7 @@ class MountItem:
                 self._write(filevalue)
         if cell._mount_setter is not None:
             cell._mount_setter(filevalue, checksum)
+            cell._get_manager().cell_send_update(cell, False, None)
         else:
             cell.from_buffer(filevalue, checksum=checksum)
 
