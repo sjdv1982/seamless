@@ -52,7 +52,7 @@ class Cell(Base):
             raise AttributeError
         if not parent._translating:
             if threading.current_thread() == threading.main_thread():
-                parent.translate()
+                parent._do_translate()
         p = getattr(parent._ctx, TRANSLATION_PREFIX)
         if len(self._path):
             p = getattr(p, self._path[0])
@@ -207,7 +207,7 @@ class Cell(Base):
             cellvalue = cellvalue.value
         hcell["celltype"] = value
         if cellvalue is not None and "TEMP" not in hcell:
-            self._parent().translate(force=True) # This needs to be kept!
+            self._parent()._do_translate(force=True) # This needs to be kept!
             self.set(cellvalue)
         else:
             self._parent()._translate()

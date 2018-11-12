@@ -281,7 +281,7 @@ class Reactor(Base):
     def _get_rc(self):
         parent = self._parent()
         if not parent._translating:
-            parent.translate()
+            parent._do_translate()
         p = getattr(parent._ctx, TRANSLATION_PREFIX)
         for subpath in self._path:
             p = getattr(p, subpath)

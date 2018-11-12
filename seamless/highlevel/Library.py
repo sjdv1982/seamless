@@ -1,17 +1,44 @@
 """
-Two mechanisms of library update:
-- Direct library update.
-  This uses low-level library registration.
-  Whenever an authoritative, non-slave changes ctx, any libcell is directly updated.
-- Indirect library update (high level)
-  The high-level keeps track of all high-level macros that copy a library from stdlib.
-  Whenever the library is re-translated or its constructor/copier changes, then
-   the high-level macro is re-executed
+There are two mechanisms of library update:
+- Low-level library update.
+  This uses *low-level* library registration of *low-level* context ctx.
+  The low-level keeps track of all cells that mirror a library cell (using
+   the "libcell" construct).
+  Whenever ctx.register_library() is re-invoked, all authoritative, non-slave
+   cells in ctx are re-registered as library cells. If a cell has changed since
+   the last registration, all libcells that mirror it are updated.
+- High-level library update
+  This uses *high-level* library registration of *high-level* context ctx.
+  The high-level keeps track of all subcontexts that copy a library from stdlib.
+  Whenever ctx.register_library() is invoked, or its constructor is redefined,
+   then the constructor/copier is re-executed to regenerate the subcontext.
+
+NOTE: unlike most low-level mechanisms, the low-level library update
+is not instaneous: it requires a manual invocation of register_library()
+This is a design decision: usually, the correct workflow is to either fork
+ a libcell, or to create a new unit test inside the library context itself.
+
+However, there are cases where this is not easily possible, namely libraries
+ that are part of the translation machinery (e.g. compiled_transformer).
+In that case, the libcells are not accessible from the high level. They could
+ still be changed from the low-level, but not mounted, and the change would be
+ non-authoritative (overruled by every re-translation).
+You could still mount the entire transformer, but your changes would be lost
+ upon program exit (unless you do persistent=True, which has its own problems).
+
+For this particular case, library update mechanisms can be made automatic
+ by defining ctx.auto_register(True).
+ Low-level library update (using e.g. mount) is now instantaneous; this is
+  because every change in any authoritative cell with has_authority leads
+  to a high-level library re-registration.
+ High-level library re-registration also happens for every explicit invocation
+  of translate.
 """
 class Library:
     def __init__(self, title, name_prefix):
         self._title = title
         self._name_prefix = name_prefix
+        self._library_item = None
     def __setattr__(self, attr, ctx):
         if attr.startswith("_"):
             return object.__setattr__(self, attr, ctx)

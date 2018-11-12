@@ -76,6 +76,7 @@ class Manager:
     filled_objects = []
     on_equilibrate_callbacks = None
     _editpin_origin = None
+    _cell_update_hook = None
     def __init__(self, ctx):
         self.ctx = weakref.ref(ctx)
         if ctx._toplevel:
@@ -358,6 +359,10 @@ class Manager:
                 self.mountmanager.add_cell_update(cell)
         if different or text_different:
             self.cell_send_update(cell, only_text, origin)
+            if not from_pin:
+                cell_update_hook = self._root()._cell_update_hook
+                if cell_update_hook is not None:
+                    cell_update_hook(cell, value)
 
     @main_thread_buffered
     @manager_buffered
@@ -478,6 +483,12 @@ class Manager:
             mgr._editpin_origin = pin
         yield
         mgr._editpin_origin = None
+
+    def cell_update_hook(self, update_hook):
+        self._root()._cell_update_hook = update_hook
+
+    def _root(self):
+        return self.ctx()._root()._get_manager()
 
 from .context import Context
 from .cell import Cell, CellLikeBase

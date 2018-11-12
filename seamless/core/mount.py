@@ -854,7 +854,6 @@ def resolve_register(reg):
         path, as_parent = v
         mountmanager.add_context(context, path, as_parent=as_parent)
     for cell in mount_cells:
-        #print("MOUNT", cell, cell._mount)
         mountmanager.add_mount(cell, **cell._mount)
     for link in mount_links:
         mount = link._mount

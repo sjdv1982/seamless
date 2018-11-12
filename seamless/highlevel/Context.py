@@ -24,20 +24,21 @@ Graph = namedtuple("Graph", ("nodes", "connections", "params"))
 
 class Context:
     path = ()
+    _mount = None
+    _gen_context = None
     _graph_ctx = None
     _depsgraph = None
     _translating = False
+    _as_lib = None
+    _auto_register_library = False
     def __init__(self, dummy=False):
         self._dummy = dummy
-        self._mount = None
         if not dummy:
             with macro_mode_on(self):
                 self._ctx = context(toplevel=True)
-        self._gen_context = None
         self._graph = Graph({},[],{"from_lib": None})
         self._children = {}
         self._needs_translation = True
-        self._as_lib = None
         self._parent = weakref.ref(self)
         if not self._dummy:
             self._depsgraph = DepsGraph(self)
@@ -89,6 +90,13 @@ class Context:
     def __delattr__(self, attr):
         self._destroy_path((attr,))
 
+    def auto_register(self, auto_register=True):
+        """See the doc of Library.py"""
+        if not self._as_lib:
+            raise TypeError("Context must be a library")
+        self._auto_register_library = True
+        self._do_translate(force=True)
+
     def mount(self, path=None, mode="rw", authority="cell", persistent=False):
         assert not self._dummy
         if self._parent() is not self:
@@ -139,6 +147,9 @@ class Context:
         self._needs_translation = True
 
     def translate(self, force=False):
+        return self._do_translate(force=force, explicit=True)
+
+    def _do_translate(self, force=True, explicit=False):
         if self._dummy:
             return
         assert self._as_lib is None or self._from_lib is None
@@ -174,6 +185,8 @@ class Context:
                     ctx = context(context=self._ctx, name=TRANSLATION_PREFIX)
                     lib_paths = get_lib_paths(self)
                     assert mountmanager.reorganizing
+                    if self._auto_register_library:
+                        ctx._get_manager().cell_update_hook(self._library_update_hook)
                     translate(graph, ctx, lib_paths, is_lib)
                     self._ctx._add_child(TRANSLATION_PREFIX, ctx)
                     ctx._get_manager().activate(only_macros=True)
@@ -234,6 +247,8 @@ class Context:
         finally:
             self._translating = False
         self._needs_translation = False
+        if explicit and self._auto_register_library:
+            self.register_library()
 
     def _get_graph(self):
         nodes, connections, params = self._graph
@@ -266,6 +281,11 @@ class Context:
             libitem.needs_update = True
             libitem.partial_authority = partial_authority
         libitem.update()
+
+    def _library_update_hook(self, cell, value):
+        if self._translating:
+            return
+        self.register_library()
 
     def set_constructor(self, *, constructor, post_constructor, args, direct_library_access):
         from .Library import set_constructor
