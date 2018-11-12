@@ -172,6 +172,7 @@ class Transformer(Worker):
                         break
                     time.sleep(0.005)
                 else:
+                    # should only happen if killed
                     self._pending_updates -= updates_on_hold
                     updates_on_hold = 0
 
@@ -269,14 +270,17 @@ class Transformer(Worker):
                     ###    break
                     ###output_name, output_value = item
 
-                assert output_name == self._output_name, item
-                if self._output_name is not None:
-                    pin = self._pins[self._output_name]
-                    #we're not in the main thread, but the manager takes care of it
-                    pin.send_update(output_value, preliminary=preliminary)
+                if output_name == "@ERROR":
+                    pass #TODO: log error
+                else:
+                    assert output_name == self._output_name, item
+                    if self._output_name is not None:
+                        pin = self._pins[self._output_name]
+                        #we're not in the main thread, but the manager takes care of it
+                        pin.send_update(output_value, preliminary=preliminary)
 
-                if preliminary:
-                    continue
+                    if preliminary:
+                        continue
 
                 item = get_item()
                 if item is None:

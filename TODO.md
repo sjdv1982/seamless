@@ -392,6 +392,7 @@ Therefore, "workers" will refer to reactors and transformers
 The New Way of execution management
 ===================================
 The New Way is purely a manager issue. Worker implementations are unaffected.
+(however, now there is a sleep hack in kernel/transformer.py to prevent premature equilibrium; this needs to be removed)
 - There will be only a single manager for every top-level context
 - All checksums will be SHA-512
 - Only authoritative cells, object cells (cell()) and Python code cells will hold their value.

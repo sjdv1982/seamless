@@ -14,7 +14,6 @@ class SchemaWrapper:
             object.__setattr__(self, attr, value)
         else:
             setattr(self._wrapped, attr, value)
-            print("WRAP", type(self._wrapped))
 
     def __getitem__(self, item):
         return self._wrapped[item]

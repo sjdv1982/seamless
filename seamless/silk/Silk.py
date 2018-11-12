@@ -464,15 +464,15 @@ class Silk(SilkBase):
     def _set(self, value, lowlevel, buffer):
         def _get_schema():
             schema = self._schema
+            updated = False
             if (schema is None or schema == {}) and value_schema is not None:
                 if schema is None:
                     schema = value_schema
                     self._schema = schema
                 else:
                     schema.update(value_schema)
-                    if self._schema_update_hook is not None:
-                        self._schema_update_hook()
-            return schema
+                updated = True
+            return schema, updated
         schema_updated = False
         value_schema = None
         if isinstance(value, Silk):
@@ -480,7 +480,8 @@ class Silk(SilkBase):
             value = value.data
 
         if not lowlevel:
-            schema = _get_schema()
+            schema, up = _get_schema()
+            schema_updated |= up
             policy = self._get_policy(schema)
             schema_updated |= self._infer_type(schema, policy, value)
 
@@ -518,7 +519,8 @@ class Silk(SilkBase):
             else:
                 is_empty = (len(raw_data) == 0)
             self._set_value_dict(value, buffer)
-            schema = _get_schema()
+            schema, up = _get_schema()
+            schema_updated |= up
             policy = self._get_policy(schema)
             if is_empty and not lowlevel:
                 schema_updated |= self._infer_object(schema, policy, value, value_schema)
@@ -716,6 +718,8 @@ class Silk(SilkBase):
                          schema = self._schema,
                          modifier = self._modifier | SILK_BUFFER_CHILD,
                          parent = self,
+                         schema_update_hook = self._schema_update_hook,
+                         schema_dummy = self._schema_dummy
                     )
             proxy._forks = self._forks
             return proxy._get_special(attr, skip_modify_methods)
@@ -730,7 +734,9 @@ class Silk(SilkBase):
             return Silk(data = data,
                         schema = schema,
                         modifier = self._modifier | SILK_NO_METHODS,
-                        parent = self._parent
+                        parent = self._parent,
+                        schema_update_hook = self._schema_update_hook,
+                        schema_dummy = self._schema_dummy
                    )
 
         if not self._modifier & SILK_NO_METHODS:
@@ -803,6 +809,8 @@ class Silk(SilkBase):
                 schema=schema,
                 modifier=SILK_NO_VALIDATION | modifier,
                 _parent_attr=item,
+                schema_update_hook = self._schema_update_hook,
+                schema_dummy = self._schema_dummy
             )
 
         if isinstance(item, int):
@@ -830,6 +838,8 @@ class Silk(SilkBase):
           schema=child_schema,
           modifier=modifier,
           _parent_attr=item,
+          schema_update_hook = self._schema_update_hook,
+          schema_dummy = self._schema_dummy
         )
         return result
 

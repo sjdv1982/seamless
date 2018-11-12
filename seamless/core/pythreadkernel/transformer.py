@@ -176,6 +176,10 @@ class Transformer(Worker):
         finally:
             assert self.parent().output_queue is self.output_queue
             self.send_message("@END", None)
+            if not ok:
+                time.sleep(2) # For now, give other workers the opportunity to finish
+                              # Won't be necessary anymore when the New Way is there
+                self.send_message("@ERROR", self.EXCEPTION)
         if ok:
             self.last_result = result
             self.send_message(self.output_name, result)
