@@ -126,16 +126,24 @@ def validator_form(validator, form, instance, schema, _from_items=False):
 
     if isinstance(instance, FormWrapper):
         instance_storage, instance_form = instance._storage, instance._form
+        print("FORMW", instance_storage, instance_form)
     else:
         #TODO:BAD
         instance_storage, instance_form = get_form(instance)
     form_str = indent(pprint.pformat(instance_form, width=72))
     if "storage" in instance_form:
-        for error in _validator_storage(instance_form["storage"], instance_storage, form_str):
+        storage_form = instance_form["storage"]
+        for error in _validator_storage(storage_form, instance_storage, form_str):
             yield error
+        if instance_storage is None:
+            instance_storage = storage_form.get("form")
     if _from_items:
         form_str += "\n(on items)"
+    binary_form_props = ("unsigned", "shape", "bytesize", "strides", "ndim")
+
     for key, value in sorted(form.items(),key=lambda item:item[0]):
+        if key in binary_form_props and not instance_storage.endswith("binary"):
+            continue
         missing_key = None
         if key == "ndim":
             if "shape" not in instance_form:
@@ -189,6 +197,7 @@ def validator_form(validator, form, instance, schema, _from_items=False):
             yield ValidationError(msg)
 
     if not _from_items and is_numpy_structure_schema(schema):
+        assert instance_storage is not None, schema
         if "items" not in instance_form:
             msg = textwrap.dedent("""
 
@@ -200,7 +209,7 @@ def validator_form(validator, form, instance, schema, _from_items=False):
             ) % (form_str,)
             yield ValidationError(msg)
             return
-        form_wrapper =  FormWrapper(None, instance_form["items"], None)
+        form_wrapper =  FormWrapper(None, instance_form["items"], instance_storage)
         for error in validator_form(
             validator,
             schema["items"]["form"], form_wrapper,
