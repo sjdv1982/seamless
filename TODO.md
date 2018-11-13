@@ -23,9 +23,15 @@ A: get BCsearch working
     and dispatches it towards the various cell types
   - make sure that a remote job_transformer loses equilibrium when a new result celltype
      is connected (changes output signature)
-
 - Services proof-of-principle
   Low-level services (non-interactive transformer)
+- Proper high-level support for the binary-module-of-a-compiled-transformer
+  (see BCSearch/test.py and translate_compiled_transformer.py:line 45)
+  (not for Python modules or stand-alone binary modules; they will be implemented later)
+
+intermezzo:
+- convert "json" to "plain" everywhere (JsonCell etc).
+- re-run all tests
 
 B: Towards a first real example
 - Constructors, finish testing
@@ -39,7 +45,6 @@ B: Towards a first real example
   - Hook up browser for visualization
 
 C: Towards Camembert plots (big!)
-- equilibrate() should not wait for workers with an execution error
 - High-level:
   macros (by definition low-level) with language (python) and api (seamless.core) fields.
 - Call graph serialization
