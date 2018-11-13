@@ -28,6 +28,7 @@ class Context(SeamlessBase):
     _seal = None
     _direct_mode = False
     _exported = True
+    _equilibrating = False
 
     def __init__(
         self, *,
@@ -244,54 +245,60 @@ context : context or None
          "timeout" seconds, returning the remaining set of unstable workers
         Report the workers that are not stable every "report" seconds
         """
+        if self._root()._equilibrating:
+            return
         if get_macro_mode():
             raise Exception("ctx.equilibrate() will not work in macro mode")
         assert self._get_manager().active
-        start_time = time.time()
-        last_report_time = start_time
-        finished, _ = self._flush_workqueue()
+        try:
+            self._root()._equilibrating = True
+            start_time = time.time()
+            last_report_time = start_time
+            finished, _ = self._flush_workqueue()
 
-        if self._destroyed:
-            return set()
-        if finished:
-            return set()
-        last_unstable = set()
-        while 1:
             if self._destroyed:
                 return set()
-            curr_time = time.time()
-            if curr_time - last_report_time > report:
+            if finished:
+                return set()
+            last_unstable = set()
+            while 1:
+                if self._destroyed:
+                    return set()
+                curr_time = time.time()
+                if curr_time - last_report_time > report:
+                    manager = self._get_manager()
+                    unstable = self.unstable_workers
+                    if last_unstable != unstable:
+                        last_unstable = unstable
+                        print("Equilibrate: waiting for:", self.unstable_workers)
+                    last_report_time = curr_time
+                if timeout is not None:
+                    if curr_time - start_time > timeout:
+                        break
+                finished1, _ = self._flush_workqueue()
+                if self._destroyed:
+                    return set()
                 manager = self._get_manager()
-                unstable = self.unstable_workers
-                if last_unstable != unstable:
-                    last_unstable = unstable
-                    print("Equilibrate: waiting for:", self.unstable_workers)
-                last_report_time = curr_time
-            if timeout is not None:
-                if curr_time - start_time > timeout:
-                    break
-            finished1, _ = self._flush_workqueue()
+                len1 = len(manager.unstable)
+                time.sleep(0.001)
+                finished2, children_unstable = self._flush_workqueue()
+                if self._destroyed:
+                    return set()
+                manager = self._get_manager()
+                len2 = len(manager.unstable)
+                manager.children_unstable = children_unstable
+                if finished1 and finished2:
+                    if len1 == 0 and len2 == 0:
+                        break
             if self._destroyed:
                 return set()
             manager = self._get_manager()
-            len1 = len(manager.unstable)
-            time.sleep(0.001)
-            finished2, children_unstable = self._flush_workqueue()
+            manager.flush()
             if self._destroyed:
                 return set()
-            manager = self._get_manager()
-            len2 = len(manager.unstable)
-            manager.children_unstable = children_unstable
-            if finished1 and finished2:
-                if len1 == 0 and len2 == 0:
-                    break
-        if self._destroyed:
-            return set()
-        manager = self._get_manager()
-        manager.flush()
-        if self._destroyed:
-            return set()
-        return self._manager.unstable & self._manager.children_unstable
+            return self._manager.unstable & self._manager.children_unstable
+        finally:
+            self._root()._equilibrating = False
 
     @property
     def unstable_workers(self):

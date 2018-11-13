@@ -134,11 +134,11 @@ class Context:
             ctx.states = cell("json") #TODO: change to mixed
         self._translate()
 
-    def equilibrate(self):
+    def equilibrate(self, timeout=None):
         if self._dummy:
             return
         self.translate()
-        self._ctx.equilibrate()
+        return self._ctx.equilibrate(timeout)
 
     def self(self):
         raise NotImplementedError
@@ -171,7 +171,10 @@ class Context:
         graph = [v for k,v in sorted(self._graph.nodes.items(), key=lambda kv: kv[0])]
         graph += self._graph.connections
         #from pprint import pprint; pprint(graph)
+        root = self._ctx._get_manager()._root()
+        old_cell_update_hook = root._cell_update_hook
         try:
+            root._cell_update_hook = None
             self._translating = True
             ctx = None
             ok = False
@@ -185,8 +188,6 @@ class Context:
                     ctx = context(context=self._ctx, name=TRANSLATION_PREFIX)
                     lib_paths = get_lib_paths(self)
                     assert mountmanager.reorganizing
-                    if self._auto_register_library:
-                        ctx._get_manager().cell_update_hook(self._library_update_hook)
                     translate(graph, ctx, lib_paths, is_lib)
                     self._ctx._add_child(TRANSLATION_PREFIX, ctx)
                     ctx._get_manager().activate(only_macros=True)
@@ -238,7 +239,10 @@ class Context:
                 self._gen_context = ctx
             raise
         finally:
+            root._cell_update_hook = old_cell_update_hook
             self._translating = False
+        if self._auto_register_library:
+            ctx._get_manager().cell_update_hook(self._library_update_hook)
 
         try:
             self._translating = True
@@ -248,7 +252,8 @@ class Context:
             self._translating = False
         self._needs_translation = False
         if explicit and self._auto_register_library:
-            self.register_library()
+            #the timeout is just a precaution
+            self.register_library(timeout=5)
 
     def _get_graph(self):
         nodes, connections, params = self._graph
@@ -269,23 +274,32 @@ class Context:
             ctx.states.set(states)
             mountmanager.tick()
 
-    def register_library(self):
+    def register_library(self, timeout=None):
         assert not self._dummy
         assert self._as_lib is not None #must be a library
         libitem = self._as_lib
-        self.equilibrate()
-        ctx = getattr(self._ctx, TRANSLATION_PREFIX)
-        libname = self._as_lib.name
-        partial_authority = register_library(ctx, self, libname)
-        if partial_authority != libitem.partial_authority:
-            libitem.needs_update = True
-            libitem.partial_authority = partial_authority
-        libitem.update()
+        root = self._ctx._get_manager()._root()
+        old_cell_update_hook = root._cell_update_hook
+        try:
+            root._cell_update_hook = None
+            result = self.equilibrate(timeout)
+            ctx = getattr(self._ctx, TRANSLATION_PREFIX)
+            libname = self._as_lib.name
+            partial_authority = register_library(ctx, self, libname)
+            if partial_authority != libitem.partial_authority:
+                libitem.needs_update = True
+                libitem.partial_authority = partial_authority
+            libitem.update()
+        finally:
+            root._cell_update_hook = old_cell_update_hook
 
     def _library_update_hook(self, cell, value):
         if self._translating:
             return
-        self.register_library()
+        #the timeout is just a precaution;
+        # since the _flushing hack on core/mainloop.py,
+        # this is not longer blocking
+        self.register_library(timeout=5) #TODO: fix after New Way
 
     def set_constructor(self, *, constructor, post_constructor, args, direct_library_access):
         from .Library import set_constructor

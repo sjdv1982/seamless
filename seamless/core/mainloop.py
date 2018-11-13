@@ -34,8 +34,12 @@ class WorkQueue:
     def flush(self, timeout=None):
         if threading.current_thread() is not threading.main_thread():
             return
-        if self._flushing:
-            return
+        ### NOTE: disabled the code below to avoid the hanging
+        #    of equilibrate() inside work
+        #   It remains to be seen if this has any negative effects
+        #if self._flushing:
+        #    return
+        ### /NOTE
         if timeout is not None:
             timeout_time = time.time() + timeout/1000
         self._flushing = True

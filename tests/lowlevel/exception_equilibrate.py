@@ -15,4 +15,4 @@ with macro_mode_on():
     })
     ctx.cell1.connect(ctx.tf.a)
     ctx.tf.code.set(code)
-ctx.equilibrate(1)
+ctx.equilibrate(5)

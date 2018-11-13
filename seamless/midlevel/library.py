@@ -5,10 +5,15 @@ from .translate import find_channels
 def register_library(ctx, hctx, libname):
     from ..core import library
     nodes, connections, _ = hctx._graph
-    copying.fill_cell_values(hctx, nodes)
-    partial_authority = get_partial_authority(hctx, nodes, connections)
-    lib = build(ctx)
-    library.register(libname, lib)
+    assert not hctx._translating
+    try:
+        hctx._translating = True
+        copying.fill_cell_values(hctx, nodes)
+        partial_authority = get_partial_authority(hctx, nodes, connections)
+        lib = build(ctx)
+        library.register(libname, lib)
+    finally:
+        hctx._translating = False
     return partial_authority
 
 def get_lib_path(nodepath, from_lib_paths):

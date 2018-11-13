@@ -362,7 +362,12 @@ class Manager:
             if not from_pin:
                 cell_update_hook = self._root()._cell_update_hook
                 if cell_update_hook is not None:
-                    cell_update_hook(cell, value)
+                    self._root()._run_cell_update_hook(cell, value)
+
+    @main_thread_buffered
+    def _run_cell_update_hook(self, cell, value):
+        self._cell_update_hook(cell, value)
+
 
     @main_thread_buffered
     @manager_buffered
