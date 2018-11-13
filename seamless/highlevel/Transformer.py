@@ -306,6 +306,8 @@ class Transformer(Base):
         self._parent()._translate()
 
     def shell(self):
+        htf = self._get_htf()
+        assert not htf["compiled"]
         tf = self._get_tf()
         return tf.tf.shell()
 

@@ -23,7 +23,7 @@ def _init_from_library(ctf):
         ctf.translator = transformer(ctf.translator_params.value)
         ctf.translator_code.connect(ctf.translator.code)
 
-def _finalize(ctx, ctf, inp, c_inp, result, c_result):
+def _finalize(ctx, ctf, inp, c_inp, result, c_result, input_name, result_name):
     #1: between transformer and library
     ctx.pins.connect(ctf.translator.pins)
     ctx.result.connect_inchannel(ctf.translator.translator_result_, ())
@@ -32,6 +32,8 @@ def _finalize(ctx, ctf, inp, c_inp, result, c_result):
     c_result.schema.connect(ctf.gen_header.result_schema)
     c_inp.schema.connect(ctf.translator.input_schema)
     c_result.schema.connect(ctf.translator.result_schema)
+    ctf.gen_header.input_name.cell().set(input_name)
+    ctf.gen_header.result_name.cell().set(result_name)
 
     #2: among library cells
     ctx.header = cell("text")
@@ -66,8 +68,8 @@ def translate_compiled_transformer(node, root, namespace, inchannels, outchannel
     ctx = context(context=parent, name=name)
     setattr(parent, name, ctx)
 
-    result_name = node["RESULT"]
     input_name = node["INPUT"]
+    result_name = node["RESULT"]
     if len(inchannels):
         lib_path0 = None #partial authority or no authority; no library update in either case
     for c in inchannels:
@@ -142,7 +144,7 @@ def translate_compiled_transformer(node, root, namespace, inchannels, outchannel
     ctx.pins = cell("json").set(all_pins)
     c_inp = getattr(ctx, input_name + STRUC_ID)
     c_result = getattr(ctx, result_name + STRUC_ID)
-    _finalize(ctx, ctf, inp, c_inp, result, c_result)
+    _finalize(ctx, ctf, inp, c_inp, result, c_result, input_name, result_name)
 
     code = node.get("code")
     if code is None:

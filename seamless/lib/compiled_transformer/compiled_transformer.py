@@ -8,10 +8,12 @@ translator_file = "translator.py"
 
 ctx = Context()
 
-ctx.gen_header = lambda input_schema, result_schema: None
+ctx.gen_header = lambda input_schema, result_schema, input_name, result_name: None
 pins = ctx.gen_header._get_htf()["pins"] ###
 pins["input_schema"]["access_mode"] = "json"
 pins["result_schema"]["access_mode"] = "json"
+pins["input_name"]["access_mode"] = "text"
+pins["result_name"]["access_mode"] = "text"
 ctx.gen_header.code = set_resource(gen_header_file)
 
 ctx.compiler = lambda lang, header, compiled_code, main_module, compiler_verbose: None
@@ -23,13 +25,17 @@ pins["header"]["access_mode"] = "text"
 pins["main_module"]["access_mode"] = "json"
 pins["compiler_verbose"]["access_mode"] = "json"
 
-ctx.translator = lambda binary_module, pins, input_schema, result_schema, kwargs: None
+def func(binary_module, pins, input_schema, result_schema, input_name, result_name, kwargs):
+    None
+ctx.translator = func
 ctx.translator.code = set_resource(translator_file)
 ctx.translator.RESULT = "translator_result_"
 pins = ctx.translator._get_htf()["pins"] ###
 pins["binary_module"]["access_mode"] = "binary_module"
 pins["input_schema"]["access_mode"] = "json"
 pins["result_schema"]["access_mode"] = "json"
+pins["input_name"]["access_mode"] = "text"
+pins["result_name"]["access_mode"] = "text"
 
 ctx.translate()
 
@@ -58,8 +64,16 @@ if __name__ == "__main__":
     ctx.result_schema = Cell()
     ctx.result_schema.celltype = "json"
 
+    ctx.input_name = Cell()
+    ctx.input_name.celltype = "text"
+
+    ctx.result_name = Cell()
+    ctx.result_name.celltype = "text"
+
     ctx.gen_header.input_schema = ctx.input_schema
     ctx.gen_header.result_schema = ctx.result_schema
+    ctx.gen_header.input_name = ctx.input_name
+    ctx.gen_header.result_name = ctx.result_name
 
     ctx.print_header = lambda header: print("HEADER", header)
     ctx.print_header.header = ctx.header
@@ -72,6 +86,8 @@ if __name__ == "__main__":
     ctf = ctx.translator
     ctf.input_schema = ctx.input_schema
     ctf.result_schema = ctx.result_schema
+    ctf.input_name = ctx.input_name
+    ctf.result_name = ctx.result_name
     ctf.binary_module = ctx.binary_module
     ctx.result = ctx.translator
 
@@ -107,6 +123,8 @@ if __name__ == "__main__":
     #connect the schema's; just the values, for now... #TODO: pins!
     ctx.input_schema = ctx.tf.inp.schema.value
     ctx.result_schema = ctx.tf.result.schema._dict #TODO: solve inconsistency...
+    ctx.input_name = ctx.tf.input_name
+    ctx.result_name = ctx.tf.result_name
 
     ctx.translator.pins = ctx.tf._get_tf().tf._transformer_params ### convoluted way to access, but nothing we can do
     ctx.kwargs = {"a": 2, "b": 3}
