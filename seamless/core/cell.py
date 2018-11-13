@@ -338,7 +338,8 @@ class CellBase(CellLikeBase):
         authority: "cell", "file" or "file-strict"
         persistent: whether or not the file persists after the context has been destroyed
         """
-        assert self._mount is None #Only the mountmanager may modify this further!
+        from .mount import is_dummy_mount
+        assert is_dummy_mount(self._mount) #Only the mountmanager may modify this further!
         if self._root()._direct_mode:
             raise Exception("Root context must have been constructed in macro mode")
         if self._mount_kwargs is None:

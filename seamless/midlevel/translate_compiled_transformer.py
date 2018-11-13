@@ -42,6 +42,7 @@ def _finalize(ctx, ctf, inp, c_inp, result, c_result, input_name, result_name):
 
     ctx.language.connect(ctf.compiler.lang)
     ctx.code.connect(ctf.compiler.compiled_code)
+    # TODO: interactive binary objects (structured cell)
     ctx.main_module.connect(ctf.compiler.main_module)
     ctx.compiler_verbose.connect(ctf.compiler.compiler_verbose)
 
@@ -122,7 +123,7 @@ def translate_compiled_transformer(node, root, namespace, inchannels, outchannel
         ctx.code = cell("text")
         ctx.code.set_file_extension(node["file_extension"])
         if "code" in mount:
-            ctx.code.mount(**node["mount"])
+            ctx.code.mount(**mount["code"])
 
     plain_result = node["plain_result"]
     result_state = node.get("cached_state_result", None)
