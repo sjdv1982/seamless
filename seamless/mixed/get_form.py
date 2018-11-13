@@ -9,6 +9,7 @@ Paradigm:
     - After each Python object, leave plain-mode and return to binary
     - After finishing the Numpy array Q, leave binary mode and return to plain
 """
+import numpy as np
 from numpy import ndarray, void
 from copy import deepcopy
 from . import ( Scalar, np_char,
@@ -16,7 +17,18 @@ from . import ( Scalar, np_char,
 )
 _string_types = (str,)  ##JSON cannot deal with bytes
 
-
+dt_builtins = (
+    np.dtype("int8"),
+    np.dtype("int16"),
+    np.dtype("int32"),
+    np.dtype("int64"),
+    np.dtype("uint8"),
+    np.dtype("uint16"),
+    np.dtype("uint32"),
+    np.dtype("uint64"),
+    np.dtype("float32"),
+    np.dtype("float64"),
+)
 def is_contiguous(data):
     """Returns if the data is C-contiguous
     The last stride must be itemsize (bytesize),
@@ -38,7 +50,7 @@ def is_contiguous(data):
 
 def is_unsigned(dt):
     return any([dt == t for t in _unsigned_types])
-    
+
 def get_typedef_scalar(value):
     if isinstance(value, bool):
         typedef = "boolean"
@@ -224,7 +236,7 @@ def get_tform_numpy_builtin(dt):
 
 def get_tform_numpy_struct(dt):
     if not dt.isalignedstruct:
-        raise TypeError("Composite dtypes must be memory-aligned")
+        raise TypeError("Composite dtypes must be memory-aligned", dt)
     if not dt.isnative:
         raise TypeError("Composite dtypes must be native")
     storages = {}
@@ -261,7 +273,7 @@ def get_tform_numpy_struct(dt):
 
 
 def get_tform_numpy(dt):
-    if dt.base.isbuiltin or dt == np_char:
+    if dt.base.isbuiltin or dt == np_char or dt in dt_builtins:
         return get_tform_numpy_builtin(dt)
     return get_tform_numpy_struct(dt)
 

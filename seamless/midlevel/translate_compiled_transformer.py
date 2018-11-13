@@ -32,8 +32,11 @@ def _finalize(ctx, ctf, inp, c_inp, result, c_result, input_name, result_name):
     c_result.schema.connect(ctf.gen_header.result_schema)
     c_inp.schema.connect(ctf.translator.input_schema)
     c_result.schema.connect(ctf.translator.result_schema)
+
     ctf.gen_header.input_name.cell().set(input_name)
     ctf.gen_header.result_name.cell().set(result_name)
+    ctf.translator.input_name.cell().set(input_name)
+    ctf.translator.result_name.cell().set(result_name)
 
     #2: among library cells
     ctx.header = cell("text")

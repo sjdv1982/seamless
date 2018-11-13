@@ -156,6 +156,8 @@ Part 7:
   (One cannot forbid the code cells and pulled command lines to do so, but they aren't supposed to).    
 - Replace the use of killable threads with processes... gives a problem with Orca example (fixed now ?), docking
  example (?), see Github issue
+ Fix it with seamless.compiler which uses RLocks, need to be multiprocess!
+   (transformers can compile!)
  - Silk: think of proper type inference, e.g. for arrays (see silk.md)
    Also properly deal with .schema and .schema.form for sub-properties (must tap into main schema object)
    and make add_validator a schema method!

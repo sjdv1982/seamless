@@ -34,7 +34,10 @@ def compile(moduletree, build_dir, compiler_verbose=False):
             else:
                 lock = locks[build_dir]
         lock.acquire()
-        os.mkdir(build_dir) #must be non-existing
+        try:
+            os.mkdir(build_dir) #must be non-existing
+        except FileExistsError:
+            print("WARNING: compiler build dir %s already exists... this could be trouble!" % build_dir)
         for objectname, object_ in moduletree["objects"].items():
             lang = object_["language"]
             extension = object_.get("extension")

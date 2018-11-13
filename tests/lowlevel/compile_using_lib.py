@@ -85,6 +85,8 @@ with macro_mode_on(), library.bind("compiled_transformer"):
     ctf.gen_header_params = libcell(".gen_header_params")
     ctf.gen_header = transformer(ctf.gen_header_params.value)
     ctf.gen_header_code.connect(ctf.gen_header.code)
+    ctf.gen_header.result_name.cell().set("result")
+    ctf.gen_header.input_name.cell().set("input")
 
     ctf.compiler_code = libcell(".compiler.code")
     ctf.compiler_params = libcell(".compiler_params")
@@ -95,6 +97,8 @@ with macro_mode_on(), library.bind("compiled_transformer"):
     ctf.translator_params = libcell(".translator_params")
     ctf.translator = transformer(ctf.translator_params.value)
     ctf.translator_code.connect(ctf.translator.code)
+    ctf.translator.result_name.cell().set("result")
+    ctf.translator.input_name.cell().set("input")
 
 # 3: set up connections to library
 with macro_mode_on():
