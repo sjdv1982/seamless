@@ -149,7 +149,7 @@ class Context:
     def translate(self, force=False):
         return self._do_translate(force=force, explicit=True)
 
-    def _do_translate(self, force=True, explicit=False):
+    def _do_translate(self, force=False, explicit=False):
         if self._dummy:
             return
         assert self._as_lib is None or self._from_lib is None
