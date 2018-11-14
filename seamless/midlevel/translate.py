@@ -50,14 +50,14 @@ def translate_py_reactor(node, root, namespace, inchannels, outchannels, editcha
     setattr(ctx, io_name, io)
     for inchannel in inchannels:
         path = node["path"] + inchannel
-        namespace[path, True] = io.inchannels[inchannel]
+        namespace[path, True] = io.inchannels[inchannel], node
     for outchannel in outchannels:
         path = node["path"] + outchannel
-        namespace[path, False] = io.outchannels[outchannel]
+        namespace[path, False] = io.outchannels[outchannel], node
     for channel in editchannels:
         path = node["path"] + channel
-        namespace[path, True] = io.editchannels[channel]
-        namespace[path, False] = io.editchannels[channel]
+        namespace[path, True] = io.editchannels[channel], node
+        namespace[path, False] = io.editchannels[channel], node
 
     ctx.rc = reactor(node["pins"])
     for attr in ("code_start", "code_stop", "code_update"):
@@ -76,18 +76,18 @@ def translate_py_reactor(node, root, namespace, inchannels, outchannels, editcha
         if code is None:
             code = node.get("cached_" + attr)
         try_set(c, code)
-        namespace[node["path"] + (attr,), True] = c
-        namespace[node["path"] + (attr,), False] = c
+        namespace[node["path"] + (attr,), True] = c, node
+        namespace[node["path"] + (attr,), False] = c, node
 
     for pinname, pin in node["pins"].items():
         target = getattr(ctx.rc, pinname)
         iomode = pin["io"]
         if iomode == "input":
-            io.connect_outchannel( (pinname,) ,  target )
+            io.connect_outchannel( (pinname,) ,  target)
         elif iomode == "edit":
-            io.connect_editchannel( (pinname,) ,  target )
+            io.connect_editchannel( (pinname,) ,  target)
         elif iomode == "output":
-            io.connect_inchannel(target, (pinname,) )
+            io.connect_inchannel(target, (pinname,))
 
     temp = node.get("TEMP")
     if temp is None:
@@ -104,8 +104,8 @@ def translate_py_reactor(node, root, namespace, inchannels, outchannels, editcha
     if not is_lib: #clean up cached state and in_equilibrium, unless a library context
         node.pop("cached_state_io", None)
 
-    namespace[node["path"], True] = io
-    namespace[node["path"], False] = io
+    namespace[node["path"], True] = io, node
+    namespace[node["path"], False] = io, node
     node.pop("TEMP", None)
 
 def translate_cell(node, root, namespace, inchannels, outchannels, editchannels, lib_path0, is_lib, link_target=None):
@@ -142,10 +142,10 @@ def translate_cell(node, root, namespace, inchannels, outchannels, editchannels,
                 if isinstance(cname, str):
                     cname = (cname,)
                 cpath = path + cname
-            namespace[cpath, True] = child.inchannels[inchannel]
+            namespace[cpath, True] = child.inchannels[inchannel], node
         for outchannel in outchannels:
             cpath = path + outchannel
-            namespace[cpath, False] = child.outchannels[outchannel]
+            namespace[cpath, False] = child.outchannels[outchannel], node
     else: #not structured
         for c in inchannels + outchannels + editchannels:
             assert not len(c) #should have been checked by highlevel
@@ -214,27 +214,39 @@ def translate_cell(node, root, namespace, inchannels, outchannels, editchannels,
 
 def translate_connection(node, namespace, ctx):
     from ..core.structured_cell import Inchannel, Outchannel
+    from ..core.worker import Worker, PinBase
     source_path, target_path = node["source"], node["target"]
 
-    source = get_path(ctx, source_path, namespace, False)
+    source, source_node = get_path(
+      ctx, source_path, namespace, False,
+      return_node = True
+    )
     if isinstance(source, StructuredCell):
         source = source.outchannels[()]
-    target = get_path(ctx, target_path, namespace, True)
+    target, target_node = get_path(
+      ctx, target_path, namespace, True,
+      return_node=True
+    )
     if isinstance(target, StructuredCell):
         target = target.inchannels[()]
+    transfer_mode = "copy"
+    if target_node is not None and target_node["type"] == "transformer":
+        transfer_mode = "ref"
 
     if isinstance(source, Outchannel):
         name, parent = source.name, source.structured_cell()
         if isinstance(name, str):
             name = (name,)
-        parent.connect_outchannel(name, target)
+        parent.connect_outchannel(name, target, transfer_mode=transfer_mode)
     elif isinstance(target, Inchannel):
         name, parent = target.name, target.structured_cell()
         if isinstance(name, str):
             name = (name,)
-        parent.connect_inchannel(source, name)
-    else:
+        parent.connect_inchannel(source, name, transfer_mode=transfer_mode)
+    elif isinstance(source, (Worker, PinBase)):
         source.connect(target)
+    else:
+        source.connect(target, transfer_mode=transfer_mode)
 
 def translate_link(node, namespace, ctx):
     from ..core.structured_cell import Inchannel, Outchannel, Editchannel, StructuredCell

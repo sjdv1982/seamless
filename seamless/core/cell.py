@@ -317,10 +317,10 @@ class CellBase(CellLikeBase):
         return result
 
     @with_macro_mode
-    def connect(self, target):
+    def connect(self, target, transfer_mode=None):
         """connects to a target cell"""
         manager = self._get_manager()
-        manager.connect_cell(self, target)
+        manager.connect_cell(self, target, transfer_mode=transfer_mode)
         return self
 
     def as_text(self):

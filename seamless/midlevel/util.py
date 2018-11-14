@@ -25,7 +25,10 @@ def as_tuple(v):
     else:
         return tuple(v)
 
-def get_path(root, path, namespace, is_target, until_structured_cell=False):
+def get_path(root, path, namespace, is_target,
+  *, until_structured_cell=False,
+  return_node=False
+ ):
     if namespace is not None:
         hit = namespace.get((path, is_target))
         if hit is None:
@@ -35,12 +38,19 @@ def get_path(root, path, namespace, is_target, until_structured_cell=False):
                 if path[:len(p)] == p:
                     subroot = namespace[p]
                     subpath = path[len(p):]
-                    hit = get_path(subroot, subpath, None, None)
+                    hit = get_path(subroot, subpath, None, None, return_node=True)
         if hit is not None:
+            hit, node = hit
             if until_structured_cell:
-                return hit, ()
+                if return_node:
+                    return hit, node, ()
+                else:
+                    return hit, ()
             else:
-                return hit
+                if return_node:
+                    return hit, node
+                else:
+                    return hit
 
     c = root
     if until_structured_cell:
@@ -48,11 +58,17 @@ def get_path(root, path, namespace, is_target, until_structured_cell=False):
             if isinstance(c, StructuredCell):
                 return c, path[pnr:]
             c = getattr(c, p)
-        return c, ()
+        if return_node:
+            return c, None, ()
+        else:
+            return c, ()
     else:
         for p in path:
             c = getattr(c, p)
-        return c
+        if return_node:
+            return c, None
+        else:
+            return c
 
 def find_channels(path, connection_paths, skip=[]):
     inchannels = []

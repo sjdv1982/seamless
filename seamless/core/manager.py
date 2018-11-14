@@ -193,6 +193,9 @@ class Manager:
         else:
             concrete = True
             con_id = self.get_id()
+        if isinstance(cell, (Outchannel, Editchannel)) and \
+          isinstance(target, (Inchannel, Editchannel)):
+            assert cell.structured_cell() is not target.structured_cell, (cell, target)
 
         connection = CellToCellConnection(con_id, cell, target, transfer_mode, duplex=duplex)
         if cell not in self.cell_to_cells:

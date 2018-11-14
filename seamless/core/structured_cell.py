@@ -675,27 +675,27 @@ class StructuredCell(CellLikeBase):
         finally:
             self._from_pin_mode = old_from_pin_mode
 
-    def connect_inchannel(self, source, inchannel):
+    def connect_inchannel(self, source, inchannel, transfer_mode=None):
         ic = self.inchannels[inchannel]
         manager = source._get_manager()
         if isinstance(source, StructuredCell):
-            source.connect_outchannel((), ic)
+            source.connect_outchannel((), ic, transfer_mode=transfer_mode)
         elif isinstance(source, Cell):
-            manager.connect_cell(source, ic)
+            manager.connect_cell(source, ic, transfer_mode=transfer_mode)
         else:
             manager.connect_pin(source, ic)
         v = self.monitor.get_path(inchannel)
         status = ic.StatusFlags.OK if v is not None else ic.StatusFlags.UNDEFINED
         ic._status = status
 
-    def connect_outchannel(self, outchannel, target):
+    def connect_outchannel(self, outchannel, target, transfer_mode=transfer_mode):
         from ..mixed import MixedObject
         try:
             oc = self.outchannels[outchannel]
         except KeyError:
             oc = self.editchannels[outchannel]
         manager = self.data._get_manager()
-        manager.connect_cell(oc, target)
+        manager.connect_cell(oc, target, transfer_mode=transfer_mode)
         try:
             v = self.monitor.get_path(outchannel)
         except MonitorTypeError:
@@ -705,14 +705,14 @@ class StructuredCell(CellLikeBase):
         status = oc.StatusFlags.OK if v is not None else oc.StatusFlags.UNDEFINED
         oc._status = status
 
-    def connect_editchannel(self, editchannel, target):
+    def connect_editchannel(self, editchannel, target, transfer_mode=transfer_mode):
         from ..mixed import MixedObject
         from .worker import EditPinBase
         ec = self.editchannels[editchannel]
         assert isinstance(target, (EditPinBase, Editchannel, Cell)), type(target)
         manager = self.data._get_manager()
         duplex = not isinstance(target, EditPinBase)
-        manager.connect_cell(ec, target, duplex=duplex)
+        manager.connect_cell(ec, target, duplex=duplex, transfer_mode=transfer_mode)
         try:
             v = self.monitor.get_path(editchannel)
         except MonitorTypeError:

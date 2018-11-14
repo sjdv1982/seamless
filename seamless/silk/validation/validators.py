@@ -221,7 +221,9 @@ def validator_form(validator, form, instance, schema, _from_items=False):
 def validator_validators(validator, validators, instance, schema):
     if not len(validators):
         return
-    from ..Silk import Silk
+    from ..Silk import Silk, FormWrapper
+    if isinstance(instance, FormWrapper):
+        instance = instance._wrapped
     if isinstance(instance, Silk):
         instance = instance.self.data
     silkobject = Silk(data=instance, schema=schema) #containing the methods

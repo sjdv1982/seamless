@@ -98,7 +98,7 @@ def translate_compiled_transformer(node, root, namespace, inchannels, outchannel
         inp_ctx.schema.mount(**mount["input_schema"])
     for inchannel in inchannels:
         path = node["path"] + inchannel
-        namespace[path, True] = inp.inchannels[inchannel]
+        namespace[path, True] = inp.inchannels[inchannel], node
 
     assert result_name not in node["pins"] #should have been checked by highlevel
     assert "translator_result_" not in node["pins"] #should have been checked by highlevel
@@ -164,8 +164,8 @@ def translate_compiled_transformer(node, root, namespace, inchannels, outchannel
         if k == "code":
             continue
         setattr(inphandle, k, v)
-    namespace[node["path"] + ("code",), True] = ctx.code
-    namespace[node["path"] + ("code",), False] = ctx.code
+    namespace[node["path"] + ("code",), True] = ctx.code, node
+    namespace[node["path"] + ("code",), False] = ctx.code, node
 
     if not is_lib: #clean up cached state and in_equilibrium, unless a library context
         node.pop("cached_state_input", None)
@@ -173,8 +173,8 @@ def translate_compiled_transformer(node, root, namespace, inchannels, outchannel
             node.pop("cached_state_result", None)
         node.pop("in_equilibrium", None)
 
-    namespace[node["path"], True] = inp
-    namespace[node["path"], False] = result
+    namespace[node["path"], True] = inp, node
+    namespace[node["path"], False] = result, node
     node.pop("TEMP", None)
 
 from .util import get_path, as_tuple, build_structured_cell, STRUC_ID

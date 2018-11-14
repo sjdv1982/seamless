@@ -32,7 +32,11 @@ class Connection:
         if self.target is None:
             return
         if transfer_mode is None:
-            transfer_mode = "ref"
+            if isinstance(source, (Outchannel, Editchannel)) and \
+              isinstance(target, (Inchannel, Editchannel)):
+                transfer_mode = "copy"
+            else:
+                transfer_mode = "ref"
         self.adapter, modes = select_adapter(
          transfer_mode, source, target, source_supported_modes, target_supported_modes
         )
@@ -182,3 +186,4 @@ from .worker import Worker, InputPin, EditPin, \
   InputPinBase, EditPinBase, OutputPinBase
 from .layer import Path
 from .protocol import select_adapter
+from .structured_cell import Inchannel, Outchannel, Editchannel

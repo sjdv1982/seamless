@@ -20,8 +20,14 @@ class MixedDict(MixedBase, MutableMapping):
         data = self._monitor.get_data(self._path)
         return len(data)
     def clear(self):
-        for path in self:
+        for path in list(self.keys()):
+            if isinstance(path, str):
+                path = (path,)
             self._monitor.del_path(path)
+    def update(self, other):
+        for k,v in other.items():
+            path = self._path + (k,)
+            self._monitor.set_path(path, v)
 
 
 class MixedNumpyStruct(MixedBase, MutableMapping):
