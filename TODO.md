@@ -51,7 +51,7 @@ B: Towards a first real example
 C: Towards Camembert plots (big!)
 - High-level:
   macros (by definition low-level) with language (python) and api (seamless.core) fields.
-- Call graph serialization
+- *Call graph serialization*
 - Port websocketserver and dynamic_html
 - Integrate with Observable Notebook: https://beta.observablehq.com/@sjdv1982/model-view-controller
 (see also architecture.txt)
@@ -125,6 +125,8 @@ Part 5:
 Documentation      
 Make new videos:
   - Basic example
+  - Something with C/C++
+  - Something with web forms/interactive notebook (some elements of part 6)
   - Docking
 
 Intermezzo:
@@ -159,7 +161,7 @@ Part 7:
   The "compiled" slash graph should not access the file system at all
   (One cannot forbid the code cells and pulled command lines to do so, but they aren't supposed to).    
 - Replace the use of killable threads with processes... gives a problem with Orca example (fixed now ?), docking
- example (?), see Github issue
+ example (?), see Github issue (UPDATE: switch has been made now)
  Fix it with seamless.compiler which uses RLocks, need to be multiprocess!
    (transformers can compile!)
  - Silk: think of proper type inference, e.g. for arrays (see silk.md)
@@ -182,8 +184,8 @@ Part 8:
 - Streams
 - Special constructs (see below)
 - Foreign-language integration
-  - Extends the C/C++ proof-of-principle
-  - Support Fortran/CUDA/OpenCL
+  - Extends the C/C++/Fortran proof-of-principle
+  - Support CUDA/OpenCL
   - Requires also a Silk extension (GPU storage, fixed-binary, see silk.md)
   - IPython (.ipy)/Cython magic is not (or barely) necessary, since IPython is natively supported by workers.
 - Bring back OpenGL support (or first integration with Observable?)
