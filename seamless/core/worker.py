@@ -63,6 +63,8 @@ class Worker(SeamlessBase):
 
     @_pending_updates.setter
     def _pending_updates(self, value):
+        if self._destroyed or self._context() is None:
+            return
         manager = self._get_manager()
         old_value = self._pending_updates_value
         if old_value == 0 and value > 0:

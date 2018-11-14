@@ -31,6 +31,10 @@ A: get BCsearch working
 
 intermezzo:
 - convert "json" to "plain" everywhere (JsonCell etc).
+- Look into "gracefully shutting down transformers"; slows things down,
+   but proper caching may rely on it?
+   UPDATE: for now, needs to have USE_PROCESSES is True,
+    else causes segfault for BCSearch/test.py
 - re-run all tests
 
 B: Towards a first real example

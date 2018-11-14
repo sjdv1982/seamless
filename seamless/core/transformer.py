@@ -317,8 +317,10 @@ class Transformer(Worker):
             # to prevent this, release just once more (kludge)
             self.transformer.semaphore.release()
             if not from_del:
-                self.transformer.finished.wait()
-                self.transformer_thread.join()
+                pass
+                # disable for now, since it is so slow... may break macros
+                #self.transformer.finished.wait()
+                #self.transformer_thread.join()
             del self.transformer_thread
             self.transformer_thread = None
 

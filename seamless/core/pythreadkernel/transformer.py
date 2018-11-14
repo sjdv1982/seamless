@@ -7,7 +7,7 @@ import time
 from ..cached_compile import cached_compile
 from ..injector import transformer_injector
 
-USE_PROCESSES = False
+USE_PROCESSES = True
 if USE_PROCESSES:
     from multiprocessing import JoinableQueue as Queue
     Executor = Process
