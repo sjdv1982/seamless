@@ -4,6 +4,8 @@ import operator, functools
 
 ffi = binary_module.ffi
 
+ARRAYS = [] #a list of Numpy arrays whose references must be kept alive
+
 def get_dtype(type, unsigned, bytesize): #adapted from _form_to_dtype_scalar
     if type == "string":
         return np.dtype('S1')
@@ -57,14 +59,14 @@ def build_result_array_struct(name, schema):
     array_struct = ffi.new(array_struct_name + " *")
     array_struct.shape[0:len(shape)] = shape[:]
     arr = np.zeros(shape=shape,dtype=dtype)
-    ptr = ffi.from_buffer(arr)
-    array_struct.data = ffi.cast(ffi.typeof(array_struct.data), ptr)
+    ARRAYS.append(arr)
+    arr_ptr = ffi.from_buffer(arr)
+    array_struct.data = ffi.cast(ffi.typeof(array_struct.data), arr_ptr)
     return array_struct
 
 def build_result_struct(schema):
     result_struct_name = gen_struct_name(result_name)
     result_struct = ffi.new(result_struct_name + " *")
-    result_struct[0].nhits = 123 ###
     props = schema["properties"]
     for propname, propschema in props.items():
         proptype = propschema["type"]
@@ -80,6 +82,7 @@ def build_result_struct(schema):
     return result_struct
 
 def unpack_result_array_struct(array_struct, schema):
+    ""
     shape = schema["form"]["shape"]
     try:
         type = schema["items"]["type"]
@@ -90,8 +93,17 @@ def unpack_result_array_struct(array_struct, schema):
     dtype = get_dtype(type, unsigned, bytesize)
     shape = list(array_struct.shape)
     nbytes = functools.reduce(operator.mul, shape, 1) * dtype.itemsize
+    """
     buf = ffi.buffer(array_struct.data, nbytes)
     arr = np.frombuffer(buf,dtype=dtype).reshape(shape)
+    # In theory, no copy needs to be made, but in practice, still...
+    arr = arr.copy()
+    """
+    #instead, just pop off the array...
+    arr = ARRAYS.pop(0)
+    assert arr.dtype == dtype
+    assert arr.shape == tuple(shape), (arr.shape, shape)
+    assert arr.nbytes == nbytes
     return arr
 
 def unpack_result_struct(result_struct, schema):
@@ -153,3 +165,4 @@ if simple_result:
 else:
     binary_module.lib.transform(*args)
     translator_result_ = unpack_result_struct(args[-1], result_schema)
+ARRAYS.clear()
