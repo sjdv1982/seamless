@@ -23,11 +23,19 @@ def _is_identical_ndarray_debug(first, second):
         return False
     if first.dtype.fields is None and first.dtype != np.object:
         return np.array_equal(first, second)
-    else:
+    elif first.dtype.fields is not None:
+        for field in first.dtype.fields:
+            f, s = first[field], second[field]
+            if not _is_identical_ndarray_debug(f, s):
+                return False
+        return True
+    elif first.dtype == np.object:
         for f,s in zip(first, second):
             if not is_identical_debug(f, s):
                 return False
         return True
+    else:
+        raise TypeError(first.dtype)
 
 def _is_identical_npvoid_debug(first, second):
     if first.dtype != second.dtype:
@@ -37,10 +45,11 @@ def _is_identical_npvoid_debug(first, second):
             return is_identical_debug(first, second)
         else:
             return first == second
-    for field in first.dtype.fields:
-        f, s = first[field], second[field]
-        if not is_identical_debug(f, s):
-            return False
+    else:
+        for field in first.dtype.fields:
+            f, s = first[field], second[field]
+            if not is_identical_debug(f, s):
+                return False
     return True
 
 def is_identical_debug(first, second):

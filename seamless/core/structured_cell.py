@@ -75,7 +75,9 @@ def channel_deserialize(channel, value, transfer_mode, access_mode, content_type
                         monitor.set_path(channel.inchannel, value, from_channel=True)
                     monitor._update_outchannels(channel.inchannel)
                 except:
-                    traceback.print_exc(0)
+                    print("*** Error in setting channel %s ***" % channel)
+                    traceback.print_exc()
+                    print("******")
                     return False, False
         else:
             monitor.receive_inchannel_value(channel.inchannel, value)
@@ -191,15 +193,9 @@ class Outchannel(CellLikeBase):
         else:
             self._status = self.StatusFlags.OK
         structured_cell = self.structured_cell()
-        if self._buffered:
-            if structured_cell._plain or structured_cell.storage.value == "pure-plain":
-                if is_identical_debug(value, self._last_value):
-                    return value
-            self._last_value = deepcopy(value)
-        else:
-            if value == self._last_value:
-                return value
-            self._last_value = deepcopy(value)
+        if is_identical_debug(value, self._last_value):
+            return value
+        self._last_value = deepcopy(value)
         assert structured_cell is not None
         data = structured_cell.data
         manager = data._get_manager()
