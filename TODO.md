@@ -8,11 +8,15 @@ Things to do:
 Part 2: high level
 
 A: get BCsearch working
-- Finish form validation
-- Expand Seamless compiled Transformer: C header generator.
-   (modify lib interactively, using simplified BCSearch build.py)
-- Expand Seamless compiled Transformer: C interface
-- Make initial BCSearch version
+- Compiled Transformer:
+  - Make CompiledObjects wrapper around transformer["main_module"]["objects"]
+  - Make CompiledObject wrapper around transformer["main_module"]["objects"][x]
+  - The wrapper exposes "code" as a CodeProxy, "language" as a property
+- Make headers connectible and mountable (read-only)
+- Allow re-assignment of transformers
+
+- Demo test run: Build BCSearch transformer shim interactively, from scratch, in Jupyter
+- Make complete initial BCSearch version
 - Follow roadmap (see BCsearch directory)
 - Network evaluation:
   Almost done (tests/simple-remote-client/server)
