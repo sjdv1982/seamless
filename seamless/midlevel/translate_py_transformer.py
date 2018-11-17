@@ -3,6 +3,8 @@ from seamless.core import cell as core_cell, link as core_link, \
 
 def translate_py_transformer(node, root, namespace, inchannels, outchannels, lib_path00, is_lib):
     #TODO: simple translation, without a structured cell
+    inchannels = [ic for ic in inchannels if ic[0] != "code"]
+
     parent = get_path(root, node["path"][:-1], None, None)
     name = node["path"][-1]
     lib_path0 = lib_path00 + "." + name if lib_path00 is not None else None

@@ -19,6 +19,9 @@ from .util import as_tuple, get_path, find_channels, find_editchannels, build_st
 
 def translate_py_reactor(node, root, namespace, inchannels, outchannels, editchannels, lib_path00, is_lib):
     #TODO: simple-mode translation, without a structured cell
+    skip_channels = ("code_start", "code_update", "code_stop")
+    inchannels = [ic for ic in inchannels if ic[0] not in skip_channels]
+    editchannels = [ec for ec in editchannels if ec[0] not in skip_channels]
     parent = get_path(root, node["path"][:-1], None, None)
     name = node["path"][-1]
     lib_path0 = lib_path00 + "." + name if lib_path00 is not None else None
@@ -353,8 +356,7 @@ def translate(graph, ctx, from_lib_paths, is_lib):
         path = node["path"]
         lib_path = get_lib_path(path[:-1], from_lib_paths)
         if t == "transformer":
-            skip_channels = ("code",)
-            inchannels, outchannels = find_channels(node["path"], connection_paths, skip_channels)
+            inchannels, outchannels = find_channels(node["path"], connection_paths)
             if node["compiled"]:
                 from .translate_compiled_transformer import translate_compiled_transformer
                 translate_compiled_transformer(node, ctx, namespace, inchannels, outchannels, lib_path, is_lib)
@@ -365,9 +367,8 @@ def translate(graph, ctx, from_lib_paths, is_lib):
         elif t == "reactor":
             if node["language"] != "python":
                 raise NotImplementedError
-            skip_channels = ("code_start", "code_update", "code_stop")
-            inchannels, outchannels = find_channels(node["path"], connection_paths, skip_channels)
-            editchannels = find_editchannels(node["path"], link_paths, skip_channels)
+            inchannels, outchannels = find_channels(node["path"], connection_paths)
+            editchannels = find_editchannels(node["path"], link_paths)
             translate_py_reactor(node, ctx, namespace, inchannels, outchannels, editchannels, lib_path, is_lib)
         elif t == "cell":
             if path in link_target_paths:

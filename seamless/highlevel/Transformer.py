@@ -12,6 +12,7 @@ from ..core.context import Context as CoreContext
 from . import parse_function_code
 from .SchemaWrapper import SchemaWrapper
 from ..silk import Silk
+from .compiled import CompiledObjectDict
 
 default_pin = {
   "transfer_mode": "copy",
@@ -140,6 +141,9 @@ class Transformer(Base):
             assert attr ==  "code"
             self._sub_mount(attr, value.filename, "r", "file", True)
 
+        if attr == "main_module" and htf["compiled"] and attr not in htf["pins"]:
+            raise TypeError("Cannot assign directly all module objects; assign individual elements")
+
         if not self._has_tf() and not isinstance(value, Cell) and attr != htf["RESULT"]:
             if isinstance(value, Resource):
                 value = value.data
@@ -170,9 +174,7 @@ class Transformer(Base):
             target_path = self._path
             assert value._parent() == parent
             #TODO: check existing inchannel connections and links (cannot be the same or higher)
-            # assign_connection will break previous connections into self
-            #  but we must exempt self.code from this
-            exempt = [self._path + ("code",)]
+            exempt = self._exempt()
             assign_connection(parent, value._path, target_path, False, exempt=exempt)
             translate = True
         elif attr == htf["RESULT"]:
@@ -198,6 +200,7 @@ class Transformer(Base):
                     translate = False #_get_tf() will translate
                 tf = self._get_tf()
                 inp = getattr(tf, htf["INPUT"])
+                parent._remove_connections(self._path + (attr,))
                 setattr(inp.handle, attr, value)
                 # superfluous, filling now happens upon translation
                 ###fill_structured_cell_value(inp, htf, "stored_state_input", "cached_state_input")
@@ -208,6 +211,16 @@ class Transformer(Base):
         if translate:
             parent._translate()
 
+    def _exempt(self):
+        # assign_connection will break previous connections into self
+        #  but we must exempt self.code from this, and perhaps main_module
+        exempt = []
+        htf = self._get_htf()
+        if "code" not in htf["pins"]:
+            exempt.append((self._path + ("code",)))
+        if htf["compiled"] and "main_module" not in htf["pins"]:
+            exempt.append((self._path + ("main_module",)))
+        return exempt
 
     def _has_tf(self):
         parent = self._parent()
@@ -221,10 +234,13 @@ class Transformer(Base):
         except AttributeError:
             return False
 
-    def _get_tf(self):
+    def _get_tf(self, may_translate=True):
         parent = self._parent()
-        if not parent._translating:
+        if may_translate and not parent._translating:
             parent._do_translate()
+        else:
+            if not self._has_tf():
+                return None
         p = getattr(parent._ctx, TRANSLATION_PREFIX)
         for subpath in self._path:
             p = getattr(p, subpath)
@@ -280,6 +296,8 @@ class Transformer(Base):
             dirs = ["value", "schema", "example"]
             pull_source = None
             proxycls = Proxy
+        elif attr == "main_module" and htf["compiled"]:
+            return CompiledObjectDict(self)
         else:
             raise AttributeError(attr)
         return proxycls(self, (attr,), "r", pull_source=pull_source, getter=getter, dirs=dirs)
@@ -369,6 +387,9 @@ class Transformer(Base):
         tf = self._get_tf()
         htf = self._get_htf()
         parent = self._parent()
+        if isinstance(other, Cell):
+            raise NotImplementedError
+        assert isinstance(other, Proxy)
         assert other._parent() is parent
         path = other._path
         language = htf["language"]
@@ -381,7 +402,7 @@ class Transformer(Base):
                 "celltype": "code",
                 "language": language,
                 "transformer": True,
-                "TEMP": None,
+                "TEMP": value,
             }
             assert isinstance(value, str)
             htf["code"] = None
@@ -408,7 +429,6 @@ class Transformer(Base):
 
         target_path = self._path + (attr,)
         assign_connection(parent, other._path, target_path, False)
-        child.set(value)
         parent._translate()
 
     def __delattr__(self, attr):
@@ -419,5 +439,7 @@ class Transformer(Base):
         htf = self._get_htf()
         d = super().__dir__()
         std = ["code", "pins", htf["RESULT"] , htf["INPUT"]]
+        if htf["compiled"]:
+            std.append("main_module")
         pins = list(htf["pins"].keys())
         return sorted(d + pins + std)

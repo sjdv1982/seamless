@@ -134,6 +134,8 @@ class Cell(Base):
                 if value is None:
                     value = hcell.get("cached_value", None)
             return value
+        elif "TEMP" in hcell:
+            return hcell["TEMP"]
         else:
             try:
                 cell = self._get_cell()

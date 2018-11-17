@@ -657,7 +657,7 @@ class StructuredCell(CellLikeBase):
                     return True
                 lp = len(p)
                 inchannels2 = set([ic for ic in inchannels if ic[:lp] == p])
-                if _has_auth(vv, p, inchannels2):
+                if _has_auth(vvalue, p, inchannels2):
                     return True
             return False
         return _has_auth(self.data._val, (), self.inchannels)

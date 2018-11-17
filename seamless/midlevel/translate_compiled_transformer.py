@@ -45,8 +45,7 @@ def _finalize(ctx, ctf, inp, c_inp, result, c_result, input_name, result_name):
 
     ctx.language.connect(ctf.compiler.lang)
     ctx.code.connect(ctf.compiler.compiled_code)
-    # TODO: interactive binary objects (structured cell)
-    ctx.main_module.connect(ctf.compiler.main_module)
+    ctx.main_module.connect_outchannel((), ctf.compiler.main_module)
     ctx.compiler_verbose.connect(ctf.compiler.compiler_verbose)
 
     ctx.binary_module_storage = cell("text")
@@ -66,6 +65,11 @@ def _finalize(ctx, ctf, inp, c_inp, result, c_result, input_name, result_name):
 
 def translate_compiled_transformer(node, root, namespace, inchannels, outchannels, lib_path00, is_lib):
     #TODO: still a lot of common code with translate_py_transformer, put in functions
+    inchannels = [ic for ic in inchannels if ic[0] != "code"]
+
+    main_module_inchannels = [("objects",) + ic[1:] for ic in inchannels if ic[0] == "_main_module"]
+    inchannels = [ic for ic in inchannels if ic[0] != "_main_module"]
+
     parent = get_path(root, node["path"][:-1], None, None)
     name = node["path"][-1]
     lib_path0 = lib_path00 + "." + name if lib_path00 is not None else None
@@ -83,9 +87,9 @@ def translate_compiled_transformer(node, root, namespace, inchannels, outchannel
     assert with_result #compiled transformers must have with_result
     buffered = node["buffered"]
 
+    mount = node.get("mount", {})
     plain = node["plain"]
     input_state = node.get("stored_state_input", None)
-    mount = node.get("mount", {})
     if input_state is None:
         input_state = node.get("cached_state_input", None)
     inp, inp_ctx = build_structured_cell(
@@ -116,6 +120,51 @@ def translate_compiled_transformer(node, root, namespace, inchannels, outchannel
         }
     in_equilibrium = node.get("in_equilibrium", False)
 
+    temp = node.get("TEMP")
+    if temp is None:
+        temp = {}
+
+    # Compiler
+    ctx.language = cell("text").set(node["language"])
+
+    main_module_state = node.get("stored_state_main_module", None)
+    if main_module_state is None:
+        main_module_state = node.get("cached_state_main_module", None)
+
+    ctx.main_module = build_structured_cell(
+      ctx, "main_module", False, True, False,
+      main_module_inchannels, [()],
+      main_module_state, lib_path00,
+    )
+
+    if "_main_module" in temp and len(temp["_main_module"]):
+        temp_main_module = temp["_main_module"]
+        main_module_handle = ctx.main_module.handle
+        main_module_data = ctx.main_module.data.value
+        if main_module_data is None:
+            main_module_handle.set({"objects":{}})
+            main_module_data = ctx.main_module.data.value
+        elif "objects" not in main_module_data:
+            main_module_handle["objects"] = {}
+        for objname, obj in temp_main_module.items():
+            for key, value in obj.items():
+                if objname in main_module_data["objects"] and \
+                 key in main_module_data["objects"][objname]:
+                    msg = "WARNING: %s main module object '%s': %s already defined"
+                    print(msg % (node["path"], objname, key))
+                    continue
+                if objname not in main_module_data["objects"]:
+                    main_module_handle["objects"][objname] = {}
+                main_module_handle["objects"][objname][key] = value
+    
+    for ic in main_module_inchannels:
+        icpath = node["path"] + ("_main_module",) + ic[1:]
+        namespace[icpath, True] = ctx.main_module.inchannels[ic], node
+
+    compiler_verbose = node["main_module"]["compiler_verbose"]
+    ctx.compiler_verbose = cell("json").set(True)
+
+    # Transformer itself
     ctf = ctx.tf = context(name="tf",context=ctx)
     _init_from_library(ctf)
 
@@ -141,10 +190,6 @@ def translate_compiled_transformer(node, root, namespace, inchannels, outchannel
     setattr(ctx, result_name, result)
     assert not node["SCHEMA"]
 
-    ctx.language = cell("text").set(node["language"])
-    ctx.main_module = cell("json").set(node["main_module"])
-    compiler_verbose = node["main_module"]["compiler_verbose"]
-    ctx.compiler_verbose = cell("json").set(True)
     ctx.pins = cell("json").set(all_pins)
     c_inp = getattr(ctx, input_name + STRUC_ID)
     c_result = getattr(ctx, result_name + STRUC_ID)
@@ -153,15 +198,13 @@ def translate_compiled_transformer(node, root, namespace, inchannels, outchannel
     code = node.get("code")
     if code is None:
         code = node.get("cached_code")
-    ctx.code.set(code)
-    temp = node.get("TEMP")
-    if temp is None:
-        temp = {}
+    if code is not None:
+        ctx.code.set(code)
     if "code" in temp:
         ctx.code.set(temp["code"])
     inphandle = inp.handle
     for k,v in temp.items():
-        if k == "code":
+        if k in ("code", "_main_module"):
             continue
         setattr(inphandle, k, v)
     namespace[node["path"] + ("code",), True] = ctx.code, node

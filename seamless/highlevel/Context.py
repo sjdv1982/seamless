@@ -346,6 +346,14 @@ class Context:
         assert not self._dummy
         return self._ctx.status()
 
+    def _remove_connections(self, path):
+        # Removes all connections starting with path
+        lp = len(path)
+        def keep_con(con):
+            ctarget = con["target"]
+            return ctarget[:lp] != path
+        self._graph[1][:] = filter(keep_con, self._graph[1])
+
     def __dir__(self):
         d = [p for p in type(self).__dict__ if not p.startswith("_")]
         subs = [p[0] for p in self._children]

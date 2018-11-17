@@ -278,10 +278,13 @@ class Reactor(Base):
         except AttributeError:
             return False
 
-    def _get_rc(self):
+    def _get_rc(self, may_translate=True):
         parent = self._parent()
-        if not parent._translating:
+        if may_translate and not parent._translating:
             parent._do_translate()
+        else:
+            if not self._has_rc():
+                return None
         p = getattr(parent._ctx, TRANSLATION_PREFIX)
         for subpath in self._path:
             p = getattr(p, subpath)

@@ -15,6 +15,7 @@ from .proxy import Proxy, CodeProxy
 from ..midlevel import copying
 from . import parse_function_code
 from .Link import Link
+from .compiled import CompiledObjectDict, CompiledObjectWrapper
 
 def get_new_cell(path):
     return {
@@ -37,6 +38,7 @@ def assign_constant(ctx, path, value):
         old = ctx._children[path]
         if isinstance(old, Cell):
             old._set(value)
+            ctx._remove_connections(path)
             return False
         raise AttributeError(path) #already exists, but not a Cell
     child = Cell(ctx, path) #inserts itself as child
@@ -292,6 +294,10 @@ def assign(ctx, path, value):
     elif isinstance(value, LibraryContextInstance):
         assign_library_context_instance(ctx, path, value)
         ctx._translate()
+    elif isinstance(value, CompiledObjectDict):
+        raise TypeError("Cannot assign directly to all module objects; assign to individual elements")
+    elif isinstance(value, CompiledObjectWrapper):
+        raise TypeError("Cannot assign directly to an entire module object; assign to individual elements")
     else:
         raise TypeError(str(value), type(value))
     ### g = {".".join(k): v for k,v in ctx._graph[0].items()}

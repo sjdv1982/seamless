@@ -70,7 +70,7 @@ class MakeParentMonitor(Monitor):
         if result is None:
             subdata, subform = self.data, self.form
             start = 0
-            for start in range(len(parent_path)-1, 0, -1):
+            for start in range(len(parent_path)-1, -1, -1):
                 cached_path = parent_path[:start]
                 part_result = self.pathcache.get(cached_path)
                 if part_result is not None:

@@ -34,7 +34,7 @@ def fill_structured_cell_value(cell, node, label_auth, label_cached):
     For structured cells, it is much less clear cut, as they may have
      partial authority (having some but not all values dependent on inchannels)
     In that case, both the authoritative part of the state (under label_auth)
-     and the full state (under)
+     and the full state (under label_cached) are stored
     """
     state = None
     if cell.has_authority: #cell has at least some authority
@@ -106,6 +106,11 @@ def fill_cell_values(ctx, nodes, path=None):
                     if result is not None:
                         assert isinstance(result, StructuredCell)
                         fill_structured_cell_value(result, node, None, "cached_state_result")
+                if node["compiled"]:
+                    fill_structured_cell_value(
+                        transformer.main_module, node,
+                        "stored_state_main_module", "cached_state_main_module"
+                    )
             elif isinstance(child, Reactor):
                 reactor = child._get_rc()
                 io_name = node["IO"]

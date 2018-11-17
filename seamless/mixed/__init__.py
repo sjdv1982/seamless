@@ -86,7 +86,11 @@ def mixed_scalar_binary_method_inplace(self, other, name2):
     return result
 
 class MixedScalar(MixedBase):
-    pass
+    def __getitem__(self, item):
+        value = self.value
+        if not isinstance(value, str):
+            raise TypeError(type(value))            
+        return value[item]
 
 for name in binary_special_method_names:
     if name.startswith("__i"):

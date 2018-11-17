@@ -126,7 +126,8 @@ class Monitor:
                 cached_path = path[:n+1]
                 remaining_path = path[n:]
                 part_result = get_subpath(subdata, subform, remaining_path)
-                self.pathcache[cached_path] = part_result #TODO: restore
+                if part_result != (None, None, None):
+                    self.pathcache[cached_path] = part_result #TODO: restore
                 subdata, subform, _ = part_result
             result = part_result
         return result

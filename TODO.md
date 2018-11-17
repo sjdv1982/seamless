@@ -8,10 +8,7 @@ Things to do:
 Part 2: high level
 
 A: get BCsearch working
-- Compiled Transformer:
-  - Make CompiledObjects wrapper around transformer["main_module"]["objects"]
-  - Make CompiledObject wrapper around transformer["main_module"]["objects"][x]
-  - The wrapper exposes "code" as a CodeProxy, "language" as a property
+
 - Make headers connectible and mountable (read-only)
 - Allow re-assignment of transformers
 
@@ -29,9 +26,6 @@ A: get BCsearch working
      is connected (changes output signature)
 - Services proof-of-principle
   Low-level services (non-interactive transformer)
-- Proper high-level support for the binary-module-of-a-compiled-transformer
-  (see BCSearch/test.py and translate_compiled_transformer.py:line 45)
-  (not for Python modules or stand-alone binary modules; they will be implemented later)
 
 intermezzo:
 - convert "json" to "plain" everywhere (JsonCell etc).
@@ -55,7 +49,7 @@ B: Towards a first real example
 C: Towards Camembert plots (big!)
 - High-level:
   macros (by definition low-level) with language (python) and api (seamless.core) fields.
-- *Call graph serialization*
+- Call graph serialization
 - Port websocketserver and dynamic_html
 - Integrate with Observable Notebook: https://beta.observablehq.com/@sjdv1982/model-view-controller
 (see also architecture.txt)
@@ -257,8 +251,71 @@ Very long-term:
 - Serialize the topology of low-level contexts, including checksums.
   May help with faster caching of low-level macros.
 
+*****************************************************************************
+
+Call graph serialization
+=========================
+Seamless has fundamentally the following sources of authority:
+- Dependence: cells dependent on upstream transformers, reactor outputpins,
+  or low-level macros.
+- Low-level authority: reactor editpins, the mount system, and the low-level library system
+- High-level authority. This comes from 1) values in the call graph, or 2)
+  the high-level library system (either via simple copying, or via a constructor).
+  2) can be seen as a form of (high-level) dependence, but this is OK.
+
+Cells that have full dependence are non-authority cells (they hold no
+  authoritative state). Other cells are authority cells.
+Structured cells can be mixed-authority, having inchannels that define some
+ state but not all of it.
+
+DOGMA: Authority may never pass from dependence to the high level. This means that:
+- a high-level constructor must never react to a low-level cell change
+- a low-level worker must never modify the call graph of its own context
+  (but it may modify other call graphs)
+- The topology of a high-level library must not be changed from the low level
+ representation of that same library (but it may modify other libraries).
+
+In PySeamless, the high-level API is a bit of a hybrid between high-level authority
+ and low-level authority.
+For *topology manipulations*, the API is a wrapper around call graph manipulator
+classes, as it should be. However, *state manipulations* are typically passed
+through to the low level, for efficiency.
+However, the high level relies too much on this pass-through:
+Silk operations (validation, schema inference) do not exist at the high level,
+and neither does basic parsing of values (e.g verifying that it is really JSON,
+if it goes into a JSON cell). This is fine if the low-level already exists,
+ i.e. if there has been a translation.
+Right now, *if there has been no translation yet*, the pass-through is delayed,
+ and the state is stored in an ugly TEMP attribute of the call graph.
+What needs to happen: the TEMP attribute has to go. Whenever state is modified
+ before translation (of that particular piece of state),
+ the particular piece of state must be translated in isolation; then the
+ state manipulation is effected, and then the result is stored in the call graph.
+The translated state must respect low-level authority (mounts, libraries).
+
+Since dependence may never influence the high level, some rules must be
+enforced.
+
+- For mixed-authority cells, any authoritative state manipulation must
+ have the same result regardless of what is in the non-authoritative part.
+  Seamless will not enforce this, but normally it should be OK.
+- Schema cells (or storage or form cells) may never have any dependence.
+  If you want to generate them dynamically, use a high-level macro.
+
+What stays is that after translation, the *low-level holds the authoritative
+state of the call graph* (this is PySeamless's sovereignty idea).
+This means that authoritative low-level updates (from mounts or reactors;
+libraries are already linked to the high level) do not need to update the call
+ graph. Right before re-translation or serialization, the call graph is filled
+ with the low-level state (midlevel/copying.py).  
+
+
 Modules, compiled workers, and interpreted workers
 ==================================================
+UPDATE: At the high-level, non-main modules will be implemented as special Module
+ and BinaryModule constructs. They will be linked to Transformers/Reactors/Macros.
+ The main module of a compiled Transformer is something else
+ (will have been implemented already earlier)
 In principle, seamless allows a worker to be written in any language. (1)
 Seamless will restrict the allowed values of a worker's "language" to a
 list of recognized languages (mime types), but this list should be very long.

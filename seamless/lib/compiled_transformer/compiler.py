@@ -5,9 +5,9 @@ import os, tempfile, shutil
 m = deepcopy(main_module)
 if not "objects" in m:
     m["objects"] = {}
-if not "code" in m["objects"]:
-    m["objects"]["code"] = {}
-mm =  m["objects"]["code"]
+if not "main" in m["objects"]:
+    m["objects"]["main"] = {}
+mm =  m["objects"]["main"]
 mm["code"] = compiled_code
 mm["language"] = lang
 m["public_header"] = {

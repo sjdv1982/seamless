@@ -12,6 +12,9 @@ If your transform() function is written in C++, don't forget to add "extern C"
 
 """
 
+if "type" not in input_schema:
+    raise TypeError("Input schema needs to be defined")
+
 json_to_c = {
     "integer": "int",
     ("integer", 1): "int8_t",

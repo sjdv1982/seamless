@@ -65,7 +65,8 @@ def _prepare_for_validation(data):
 def init_object_schema(silk, schema):
     if "type" in schema:
         assert schema["type"] == "object"
-        assert "properties" in schema
+        if "properties" not in schema:
+            schema["properties"] = {}
         return schema["properties"]
     schema["type"] = "object"
     result = {}

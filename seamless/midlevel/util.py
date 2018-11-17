@@ -36,7 +36,7 @@ def get_path(root, path, namespace, is_target,
                 if hit_is_target != is_target:
                     continue
                 if path[:len(p)] == p:
-                    subroot = namespace[p]
+                    subroot = namespace[p, hit_is_target][0]
                     subpath = path[len(p):]
                     hit = get_path(subroot, subpath, None, None, return_node=True)
         if hit is not None:
@@ -70,28 +70,25 @@ def get_path(root, path, namespace, is_target,
         else:
             return c
 
-def find_channels(path, connection_paths, skip=[]):
+def find_channels(path, connection_paths):
     inchannels = []
     outchannels = []
     for source, target in connection_paths:
         if source[:len(path)] == path:
             p = source[len(path):]
-            if not len(p) or p[-1] not in skip:
-                outchannels.append(p)
+            outchannels.append(p)
         if target[:len(path)] == path:
             p = target[len(path):]
-            if not len(p) or p[-1] not in skip:
-                inchannels.append(p)
+            inchannels.append(p)
     return inchannels, outchannels
 
-def find_editchannels(path, link_paths, skip=[]):
+def find_editchannels(path, link_paths):
     editchannels = []
     for first, second in link_paths:
         for point in first, second:
             if point[:len(path)] == path:
                 p = point[len(path):]
-                if not len(p) or p[-1] not in skip:
-                    editchannels.append(p)
+                editchannels.append(p)
     return editchannels
 
 def build_structured_cell(
