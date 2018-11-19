@@ -93,8 +93,23 @@ class Transformer(Base):
     def header(self):
         htf = self._get_htf()
         assert htf["compiled"]
+        dirs = ["value", "mount", "mimetype"]
+        return Proxy(self, ("header",), "w", getter=self._header_getter, dirs=dirs)
+
+    def _header_getter(self, attr):
+        htf = self._get_htf()
+        assert htf["compiled"]
         tf = self._get_tf()
-        return tf.header.value
+        if attr == "value":
+            return tf.header.value
+        elif attr == "mount":
+            return self._sub_mount_header
+        elif attr == "mimetype":
+            language = "c"
+            mimetype = language_to_mime(language)
+            return mimetype
+        else:
+            raise AttributeError(attr)
 
     @property
     def schema(self):
@@ -302,8 +317,21 @@ class Transformer(Base):
             raise AttributeError(attr)
         return proxycls(self, (attr,), "r", pull_source=pull_source, getter=getter, dirs=dirs)
 
+    def _sub_mount_header(self, path=None, mode="w", authority="cell", persistent=True):
+        assert mode == "w"
+        assert authority == "cell"
+        return self._sub_mount(
+          "header",
+          path=path,
+          mode=mode,
+          authority=authority,
+          persistent=persistent
+        )
+
     def _sub_mount(self, attr, path=None, mode="rw", authority="cell", persistent=True):
         htf = self._get_htf()
+        if attr == "header":
+            assert htf["compiled"]
         if path is None:
             if "mount" in htf:
                 mount = htf["mount"]
