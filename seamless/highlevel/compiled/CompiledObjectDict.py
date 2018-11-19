@@ -38,7 +38,8 @@ class CompiledObjectDict:
             tf = worker._get_tf(may_translate=False)
             main_module = getattr(tf, "main_module")
             main_module_data = main_module.data.value
-            return main_module_data.keys()
+            if "objects" in main_module_data:
+                return main_module_data["objects"].keys()
 
     def __delattr__(self, attr):
         raise NotImplementedError

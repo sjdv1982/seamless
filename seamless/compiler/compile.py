@@ -61,6 +61,8 @@ def compile(moduletree, build_dir, compiler_verbose=False):
             else:
                 options = list(debug_options)
             compiler_binary = compiler.get("location", compiler_name)
+            if "code" not in object_:
+                raise Exception("Binary Module %s: no code in object" % objectname)
             code = object_["code"]
             if extension is None:
                 extension = language["extension"]

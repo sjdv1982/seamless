@@ -78,11 +78,11 @@ def _create_extension(binary_module, full_module_name, cffi_header, extclass, te
     if cffi_header is not None:
         cffi_wrapper = cffi(full_module_name, cffi_header)
         cffi_wrapper_name = "_cffi_wrapper_" + full_module_name
-        cffi_wrapper_file = cffi_wrapper_name + ".c"
-        cffi_wrapper_file = os.path.join(tempdir, cffi_wrapper_file)
+        cffi_wrapper_file0 = cffi_wrapper_name + ".c"
+        cffi_wrapper_file = os.path.join(tempdir, cffi_wrapper_file0)
         with open(cffi_wrapper_file, "w") as f:
             f.write(cffi_wrapper)
-    sources = [cffi_wrapper_file]
+    sources = [cffi_wrapper_file0]
     ext = extclass(
         name = full_module_name,
         extra_objects = objects,
@@ -110,7 +110,9 @@ def _build_extension(
             lock = locks[tempdir]
     try:
         lock.acquire()
+        d = os.getcwd()
         os.mkdir(tempdir)
+        os.chdir(tempdir)
         ext = _create_extension(binary_module, full_module_name, cffi_header, extclass, tempdir)
         dist = distclass(ext_modules = [ext])
         _ = _build(dist, tempdir, compiler_verbose, debug)
@@ -129,4 +131,5 @@ def _build_extension(
         except:
             pass
         lock.release()
+        os.chdir(d)
     return full_module_name

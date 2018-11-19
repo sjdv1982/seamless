@@ -57,6 +57,8 @@ class CompiledObjectWrapper:
                 if main_module_data is None:
                     main_module_handle.set({"objects":{}})
                     main_module_data = main_module.data.value
+                if "objects" not in main_module_data:
+                    main_module_handle["objects"] = {}
                 if objname not in main_module_data["objects"]:
                     main_module_handle["objects"][objname] = {}
                 main_module_handle["objects"][objname][attr] = value
@@ -127,7 +129,12 @@ class CompiledObjectWrapper:
         assert other._parent() is parent
 
         if isinstance(other, Cell):
-            raise NotImplementedError
+            target_path = self._path + ("code",)
+            assign_connection(parent, other._path, target_path, False)
+            self._delattr("code")
+            parent._translate()
+            return
+
         assert isinstance(other, Proxy)
 
         new_path = other._path
@@ -198,6 +205,8 @@ class CompiledObjectWrapper:
             tf = worker._get_tf(may_translate=False)
             main_module = getattr(tf, "main_module")
             main_module_data = main_module.data.value
-            if self._obj not in main_module_data:
+            if "objects" not in main_module_data:
+                return []
+            if self._obj not in main_module_data["objects"]:
                 return []
         return properties

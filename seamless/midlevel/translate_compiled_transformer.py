@@ -158,6 +158,8 @@ def translate_compiled_transformer(node, root, namespace, inchannels, outchannel
                       ("objects", objname), {}, forced=True
                     )
                 main_module_handle["objects"][objname][key] = value
+    elif main_module_state is None:
+        ctx.main_module.monitor.set_path((), {}, forced=True)
 
     for ic in main_module_inchannels:
         icpath = node["path"] + ("_main_module",) + ic[1:]

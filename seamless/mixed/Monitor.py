@@ -42,6 +42,12 @@ def get_subpath(data, form, path):
     else:
         raise TypeError(type_)
 
+def subpath_is_none(part_result):
+    if part_result is None:
+        return True
+    data, form, _ = part_result
+    return (data is None and form is None)
+
 class Monitor:
     _data_update_hook = None
     _form_update_hook = None
@@ -126,7 +132,7 @@ class Monitor:
                 cached_path = path[:n+1]
                 remaining_path = path[n:]
                 part_result = get_subpath(subdata, subform, remaining_path)
-                if part_result != (None, None, None):
+                if not subpath_is_none(part_result):
                     self.pathcache[cached_path] = part_result #TODO: restore
                 subdata, subform, _ = part_result
             result = part_result

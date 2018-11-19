@@ -107,10 +107,11 @@ def fill_cell_values(ctx, nodes, path=None):
                         assert isinstance(result, StructuredCell)
                         fill_structured_cell_value(result, node, None, "cached_state_result")
                 if node["compiled"]:
-                    fill_structured_cell_value(
-                        transformer.main_module, node,
-                        "stored_state_main_module", "cached_state_main_module"
-                    )
+                    if hasattr(transformer, "main_module"):
+                        fill_structured_cell_value(
+                            transformer.main_module, node,
+                            "stored_state_main_module", "cached_state_main_module"
+                        )
             elif isinstance(child, Reactor):
                 reactor = child._get_rc()
                 io_name = node["IO"]

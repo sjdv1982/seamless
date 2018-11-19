@@ -212,6 +212,8 @@ for propname in sorted(input_props.keys()):
         order.append(propname)
 for propnr, propname in enumerate(order):
     propschema = input_props[propname]
+    if "type" not in propschema:
+        raise TypeError("Property '%s' needs to have its type defined" % propname)
     prop_jtype = propschema["type"]
     if prop_jtype == "object":
         raise NotImplementedError #input structs
