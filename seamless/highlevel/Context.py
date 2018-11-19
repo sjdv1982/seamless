@@ -103,7 +103,7 @@ class Context:
             raise NotImplementedError
         if path is None:
             self._mount = None
-            ctx.mount(None)
+            self._ctx.mount(None)
             return
         self._mount = {
             "path": path,
@@ -404,7 +404,7 @@ class SubContext(Base):
         disabled by the constructor, or otherwise some bug has happened"""
         if self._as_lib is None:
             return
-        ctx._as_lib.library.touch(self)
+        self._as_lib.library.touch(self)
 
     def __dir__(self):
         d = [p for p in type(self).__dict__ if not p.startswith("_")]

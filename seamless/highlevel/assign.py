@@ -59,8 +59,8 @@ def assign_transformer(ctx, path, func):
         old = ctx._children[path]
         if isinstance(old, Cell):
             old.set(func)
-            return
-        raise AttributeError(path) #already exists
+        else:
+            ctx._destroy_path(path)
 
     assert callable(func)
     code, _, _ = parse_function_code(func)
@@ -129,7 +129,7 @@ def assign_connection(ctx, source, target, standalone_target, exempt=[]):
         if not isinstance(s, CodeProxy):
             assert isinstance(source_parent, Reactor)
             pin = source_parent.pins[attr]
-            assert pin["io"] in ("output", "edit"), (source, pin[io])
+            assert pin["io"] in ("output", "edit"), (source, pin["io"])
     if s._virtual_path is not None:
         source = s._virtual_path
     if standalone_target:
