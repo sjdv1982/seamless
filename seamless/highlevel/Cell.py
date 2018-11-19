@@ -265,6 +265,12 @@ class Cell(Base):
     def _update_dep(self):
         self._parent()._depsgraph.update_path(self._path)
 
+    def __rshift__(self, other):
+        assert isinstance(other, Proxy)
+        assert "r" in other._mode
+        assert other._pull_source is not None
+        other._pull_source(self)
+
     def __dir__(self):
         result = super().__dir__()
         parent = self._parent()
@@ -281,3 +287,4 @@ class Cell(Base):
 
 from .Library import test_lib_lowlevel
 from .SubCell import SubCell
+from .proxy import Proxy

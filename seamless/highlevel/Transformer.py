@@ -416,7 +416,10 @@ class Transformer(Base):
         htf = self._get_htf()
         parent = self._parent()
         if isinstance(other, Cell):
-            raise NotImplementedError
+            target_path = self._path + (attr,)
+            assign_connection(parent, other._path, target_path, False)
+            parent._translate()
+            return
         assert isinstance(other, Proxy)
         assert other._parent() is parent
         path = other._path
