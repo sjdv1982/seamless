@@ -154,9 +154,11 @@ def translate_compiled_transformer(node, root, namespace, inchannels, outchannel
                     print(msg % (node["path"], objname, key))
                     continue
                 if objname not in main_module_data["objects"]:
-                    main_module_handle["objects"][objname] = {}
+                    ctx.main_module.monitor.set_path(
+                      ("objects", objname), {}, forced=True
+                    )
                 main_module_handle["objects"][objname][key] = value
-    
+
     for ic in main_module_inchannels:
         icpath = node["path"] + ("_main_module",) + ic[1:]
         namespace[icpath, True] = ctx.main_module.inchannels[ic], node
