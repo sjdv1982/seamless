@@ -1,4 +1,4 @@
-import weakref
+import weakref, functools
 
 from ..proxy import Proxy, CodeProxy
 from ..Cell import Cell
@@ -14,6 +14,10 @@ class CompiledObjectWrapper:
     def __init__(self, worker, obj):
         self._worker = weakref.ref(worker)
         self._obj = obj
+
+    @property
+    def _path(self):
+        return self._worker()._path + ("main_module" , self._obj)
 
     def __setattr__(self, attr, value):
         if attr in ("_worker", "_obj"):
@@ -51,18 +55,18 @@ class CompiledObjectWrapper:
                 main_module_handle = main_module.handle
                 main_module_data = main_module.data.value
                 if main_module_data is None:
-                    main_module_handle.set({})
+                    main_module_handle.set({"objects":{}})
                     main_module_data = main_module.data.value
-                if objname not in main_module_data:
-                    main_module_handle[objname] = {}
-                main_module_handle[objname][attr] = value
+                if objname not in main_module_data["objects"]:
+                    main_module_handle["objects"][objname] = {}
+                main_module_handle["objects"][objname][attr] = value
                 parent.translate()
 
     def __getattr__(self, attr):
         if attr not in properties:
             raise AttributeError(attr)
         worker = self._worker()
-        target_path = worker._path + ("_main_module", self._obj, attr)
+        pull_source = None
         if attr == "code":
             getter = self._codegetter
             dirs = ["value", "mount", "mimetype"]
@@ -72,7 +76,7 @@ class CompiledObjectWrapper:
             getter = functools.partial(self._valuegetter, attr)
             dirs = ["value"]
             proxycls = Proxy
-        return proxycls(self, target_path, "r", pull_source=pull_source, getter=getter, dirs=dirs)
+        return proxycls(self, (attr,), "r", pull_source=pull_source, getter=getter, dirs=dirs)
 
     def _codegetter(self, attr):
         if attr == "value":
@@ -109,12 +113,15 @@ class CompiledObjectWrapper:
             tf = worker._get_tf(may_translate=False)
             main_module = getattr(tf, "main_module")
             main_module_data = main_module.data.value
-            if self._obj not in main_module_data:
+            if "objects" not in main_module_data:
                 return None
-            return main_module.handle[self._obj][attr].value
+            if self._obj not in main_module_data["objects"]:
+                return None
+            return main_module.handle["objects"][self._obj][attr].value
 
     def _pull_source(self, other):
         from ..assign import assign_connection
+        from ..Transformer import Transformer
         worker = self._worker()
         parent = worker._parent()
         assert other._parent() is parent
@@ -125,9 +132,17 @@ class CompiledObjectWrapper:
 
         new_path = other._path
         target_path = worker._path + ("_main_module", self._obj, "code")
-        language = self._get_value("language")
+        language = None
+        if isinstance(worker, Transformer):
+            m = getattr(worker.main_module,self._obj)
+            if m is not None:
+                language = m.language
+                if language is not None:
+                    language = language.value
         if language is None:
-            print("%s: cannot detect language, default to c." % target_path)
+            language = self._get_value("language")
+        if language is None:
+            print("%s: cannot detect language, default to c." % str(target_path))
             language = "c"
         value = self._get_value("code")
         cell = {
@@ -143,7 +158,33 @@ class CompiledObjectWrapper:
         mimetype = language_to_mime(language)
         child.mimetype = mimetype
         assign_connection(parent, new_path, target_path, False)
+        self._delattr("code")
         parent._translate()
+
+
+    def _delattr(self, attr):
+        worker = self._worker()
+        if not worker._has_tf():
+            htf = worker._get_htf()
+            temp = htf.get("TEMP")
+            if temp is not None:
+                if "_main_module" in temp:
+                    main_module = temp["_main_module"]
+                    objname = self._obj
+                    if objname in main_module:
+                        return main_module[objname].pop(attr, None)
+        else:
+            tf = worker._get_tf()
+            main_module = getattr(tf, "main_module")
+            main_module_handle = main_module.handle
+            main_module_data = main_module.data.value
+            if main_module_data is not None:
+                objname = self._obj
+                if objname in main_module_data:
+                    return main_module_handle[objname].pop(attr, None)
+
+    def __delattr__(self, attr):
+        return self._delattr(attr)
 
     def __dir__(self):
         worker = self._worker()

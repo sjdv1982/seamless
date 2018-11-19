@@ -39,3 +39,6 @@ class CompiledObjectDict:
             main_module = getattr(tf, "main_module")
             main_module_data = main_module.data.value
             return main_module_data.keys()
+
+    def __delattr__(self, attr):
+        raise NotImplementedError

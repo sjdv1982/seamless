@@ -142,7 +142,7 @@ def translate_compiled_transformer(node, root, namespace, inchannels, outchannel
         main_module_handle = ctx.main_module.handle
         main_module_data = ctx.main_module.data.value
         if main_module_data is None:
-            main_module_handle.set({"objects":{}})
+            ctx.main_module.monitor.set_path((), {"objects":{}}, forced=True)
             main_module_data = ctx.main_module.data.value
         elif "objects" not in main_module_data:
             main_module_handle["objects"] = {}
@@ -194,6 +194,9 @@ def translate_compiled_transformer(node, root, namespace, inchannels, outchannel
     c_inp = getattr(ctx, input_name + STRUC_ID)
     c_result = getattr(ctx, result_name + STRUC_ID)
     _finalize(ctx, ctf, inp, c_inp, result, c_result, input_name, result_name)
+
+    if "header" in mount:
+        ctx.header.mount(**mount["header"])
 
     code = node.get("code")
     if code is None:
