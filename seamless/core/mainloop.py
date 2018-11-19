@@ -66,7 +66,8 @@ class WorkQueue:
         #Whenever work is done, do an asyncio flush
         loop = asyncio.get_event_loop()
         loop.call_soon(lambda loop: loop.stop(), loop)
-        loop.run_forever()
+        if not loop.is_running():
+            loop.run_forever()
 
         if self._signal_processing == 0 and _run_qt:
             run_qt() # Necessary to prevent freezes in glwindow
