@@ -643,7 +643,7 @@ class Silk(SilkBase):
         if self._schema_update_hook is not None:
             self._schema_update_hook()
 
-    def _add_validator(self, func, attr, *, from_meta):
+    def _add_validator(self, func, attr, *, from_meta, name):
         assert callable(func)
         code = inspect.getsource(func)
 
@@ -654,7 +654,11 @@ class Silk(SilkBase):
         else:
             l = len(validators) + 1
         v = {"code": code, "language": "python"}
-        compile_function(v, "Silk validator %d" % l)
+        func_name = "Silk validator %d" % l
+        if name is not None:
+            v["name"] = name
+            func_name = name
+        compile_function(v, func_name)
 
         if isinstance(attr, int):
             items_schema = schema.get("items", None)
@@ -675,16 +679,18 @@ class Silk(SilkBase):
         if validators is None:
             validators = []
             schema["validators"] = validators
+        if name is not None:
+            validators[:] = [v for v in validators if v.get("name") != name]
         validators.append(v)
         if self._schema_update_hook is not None:
             self._schema_update_hook()
 
-    def add_validator(self, func, attr=None):
+    def add_validator(self, func, attr=None, *, name=None):
         schema = self._schema
         old_validators = copy(schema.get("validators", None))
         ok = False
         try:
-            self._add_validator(func, attr, from_meta=False)
+            self._add_validator(func, attr, from_meta=False,name=name)
             self.validate(full = False)
             ok = True
         finally:
@@ -816,6 +822,7 @@ class Silk(SilkBase):
 
         if isinstance(item, int):
             schema_items = schema.get("items", None)
+            child_schema = None
             if schema_items is None:
                 schema_items = {}
                 schema["items"] = schema_items

@@ -616,10 +616,6 @@ class PythonCell(Cell):
 
     _naming_pattern = "pythoncell"
     _has_text_checksum = True
-    _accept_shell_append = True
-
-    #TODO: for serialization, store ._accept_shell_append
-    # OR: make ._accept_shell_append editable as cell
 
     def _text_checksum(self, value, *, buffer=False, may_fail=False):
         v = str(value)
@@ -637,14 +633,6 @@ class PythonCell(Cell):
         dump = ast.dump(tree).encode("utf-8")
         #dump = pickle.dumps(tree)
         return hashlib.md5(dump).hexdigest()
-
-    def _shell_append(self, text):
-        if not self._accept_shell_append:
-            return
-        if self._val is None:
-            return
-        new_value = self._val + "\n" + text
-        self.set(new_value)
 
     def _validate(self, value):
         from .protocol import TransferredCell

@@ -4,8 +4,9 @@ from numpy.distutils.core import Extension as NumpyExtension
 from numpy.distutils.core import NumpyDistribution, numpy_cmdclass
 from .cffi import _build_extension
 
-def build_extension_cffi(binary_module, compiler_verbose=False, debug=None):
+def build_extension_cffi(binary_module, compiler_verbose=False):
     # TODO: check that there is no Cython
+    debug = (binary_module.get("target", "profile") == "debug")
     def distclass(**kwargs):
         return Distribution(kwargs)
 
@@ -24,7 +25,8 @@ TODO:
 - Take out Fortran files, they will be sources
 - Make sure that cffi_header is None
 - To be invoked only for extension modules (main module uses CFFI marshalling for Python-language workers)
-def build_extension_numpy(binary_module, compiler_verbose=False, debug=None):
+def build_extension_numpy(binary_module, compiler_verbose=False):
+    debug = ...
     def distclass(**kwargs):
         kwargs2 = kwargs.copy()
         kwargs2["cmdclass"] = numpy_cmdclass

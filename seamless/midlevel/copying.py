@@ -1,6 +1,6 @@
 from ..mixed import MixedBase
 from copy import deepcopy
-from ..core import Link as core_link
+from ..core.link import Link as core_link
 
 def copy_context(nodes, connections, path):
     new_nodes = {}
@@ -123,7 +123,10 @@ def fill_cell_values(ctx, nodes, path=None):
                 fill_simple_cell_value(reactor.code_stop, node, "code_stop", "cached_code_stop")
             elif isinstance(child, Cell):
                 assert node["type"] == "cell", (pp, node["type"])
-                cell = child._get_cell()
+                try:
+                    cell = child._get_cell()
+                except AttributeError: # cell may not have been translated yet
+                    continue
                 try:
                     fill_cell_value(cell, node)
                 except TypeError as e:

@@ -148,6 +148,19 @@ class Transformer(Worker):
     def _touch(self):
         self._send_message( ("@TOUCH", None, None, None) )
 
+    @property
+    def debug(self):
+        return self.transformer.debug
+
+    @debug.setter
+    def debug(self, value):
+        assert isinstance(value, bool), value
+        old_value = self.transformer.debug
+        if value != old_value:
+            self.transformer.debug = value
+            manager = self._get_manager()
+            manager.touch_worker(self)
+
     def listen_output(self):
         # TODO logging
         # TODO requires_function cleanup
@@ -298,10 +311,6 @@ class Transformer(Worker):
                     updates_on_hold = 0
             except Exception:
                 traceback.print_exc() #TODO: store it?
-
-    def _shell(self, access_mode):
-        assert access_mode is None
-        return self.transformer.namespace, self.code, str(self)
 
     def destroy(self, from_del=False):
         if not self.active:

@@ -8,10 +8,6 @@ Things to do:
 Part 2: high level
 
 A: get BCsearch working
-
-- Make headers connectible and mountable (read-only)
-- Allow re-assignment of transformers
-
 - Demo test run: Build BCSearch transformer shim interactively, from scratch, in Jupyter
 - Make complete initial BCSearch version
 - Follow roadmap (see BCsearch directory)
@@ -68,6 +64,10 @@ Part 3 (low-level / cleanup): Towards the merge
      Their content type will be int/float/text/bool.
      Adapters will convert among them (e.g. int=>float) and between them and JSON/mixed/text.
      Supported access modes are JSON and text. Adapters will convert to Silk.
+   - Allow a "wrapping mode" for high-level cells. With wrapping mode on, a cell
+      tries to behave as much as possible as cell.value. Auto-wrapping can be
+      enabled at the context level.
+     (Must be stored in meta-data)
    - Implement old lib.gui.edit as a new library, with new editpin.
    - Terminology: context children can be private, in which case they are not in __dir__.
      By default, they are public. No more "export".
@@ -86,6 +86,7 @@ Part 3 (low-level / cleanup): Towards the merge
 Merge into master; end of the Great Refactor
 
 Part 4:
+- Set virtual filenames for (non-compiled) transformers. See tests/highlevel/python-debugging.py
 - "Simple mode" translation of transformers and reactors (no structured_cell, no schema)
 - High-level: pure contexts. Pure contexts have at least some public output cells and output pins.
   Only pure contexts are can have a grand computation result: the checksums of the public outputs are what is being
@@ -150,6 +151,9 @@ Make new videos:
 
 Part 7:
 - High-level mounting is not quite satisfactory (redundant "translated" context)
+- The high level should store all permanent state in the graph nodes,
+    nothing in the class instances. This way, the user can add their own syntax
+    to manipulate the graph. (highlevel.ctx.\_children should go as well).
 - Auxiliary, ephemeral and execution cells (see below)
   apply ephemeral cells to slash0
   Expand and document seamless shell language (slash)
@@ -200,8 +204,7 @@ Release as 0.5
 Long-term:
 - Meta-schema for schema editing (jsonschema has it)
 - GUI around report channels (to visualize) and around high-level context (to edit)
-  Also integrate with shell()
-  Address shell() memory leak: IPython references may hold onto large amounts of data
+- An extra "table" celltype, for text (like awk or org-mode) or binary (like Pandas)
 - Collaborative protocol
  ("virtual context" that upon creation syncs topology from another context, and then
   bidirectionally syncs the cell values; REST or Websocketserver under the hood)

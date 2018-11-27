@@ -42,7 +42,7 @@ def outer_macro():
 
 @contextmanager
 def macro_mode_on(macro=None, check_async=True):
-    from . import Context, Worker
+    from . import Context, Worker, mount
     from .layer import fill_objects, check_async_macro_contexts
     global _macro_mode
     old_macro_mode = _macro_mode
@@ -101,5 +101,3 @@ def with_macro_mode(func):
         else:
             return func(self, *args, **kwargs)
     return with_macro_mode_wrapper
-
-from . import mount

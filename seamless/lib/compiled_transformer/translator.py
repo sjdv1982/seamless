@@ -1,6 +1,13 @@
 from seamless.silk import Silk
 import numpy as np
 import operator, functools
+import sys
+wurlitzer = None
+try:
+    import wurlitzer
+except ImportError:
+    print('Compiler transformer: Python package "wurlitzer" could not be found; "printf" etc. will show only in a terminal')
+
 
 ffi = binary_module.ffi
 
@@ -160,9 +167,18 @@ elif result_schema["type"] == "array":
     simple_result = False
     raise NotImplementedError
 
-if simple_result:
-    translator_result_ = binary_module.lib.transform(*args)
+def run():
+    if simple_result:
+        return binary_module.lib.transform(*args)
+    else:
+        binary_module.lib.transform(*args)
+        return unpack_result_struct(args[-1], result_schema)
+
+if wurlitzer is not None:
+    with wurlitzer.pipes() as (stdout, stderr):
+        translator_result_ = run()
+    sys.stderr.write(stderr.read())
+    sys.stdout.write(stdout.read())
 else:
-    binary_module.lib.transform(*args)
-    translator_result_ = unpack_result_struct(args[-1], result_schema)
+    translator_result_ = run()
 ARRAYS.clear()

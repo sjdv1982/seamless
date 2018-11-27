@@ -69,26 +69,7 @@ def assign_transformer(ctx, path, func):
         #TODO: look at default parameters, make them optional
         if p.kind not in (p.VAR_KEYWORD, p.VAR_POSITIONAL):
             parameters.append(pname)
-
-    transformer =    {
-        "path": path,
-        "type": "transformer",
-        "compiled": False,
-        "language": "python",
-        "code": code,
-        "pins": {param:default_pin.copy() for param in parameters},
-        "RESULT": "result",
-        "INPUT": "inp",
-        "with_result": False,
-        "SCHEMA": None, #the result schema can be exposed as an input pin to the transformer under this name. Implies with_result
-        "buffered": True,
-        "plain": False,
-        "plain_result": False,
-        "TEMP": None, #to mark as non-translated
-    }
-    ### json.dumps(transformer)
-    ctx._graph[0][path] = transformer
-    Transformer(ctx, path) #inserts itself as child
+    Transformer(ctx, path, code, parameters) #inserts itself as child
 
 def assign_connection(ctx, source, target, standalone_target, exempt=[]):
     if standalone_target:

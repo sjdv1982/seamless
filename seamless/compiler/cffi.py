@@ -17,6 +17,9 @@ import shutil
 from threading import RLock
 from .locks import locks, locklock
 
+SEAMLESS_EXTENSION_DIR = os.path.join(tempfile.gettempdir(), "seamless-extensions")
+#  Here Seamless will write the compiled Python module .so files before importing
+
 cache = set()
 
 def cffi(module_name, header):
@@ -30,11 +33,12 @@ def cffi(module_name, header):
   recompiler.collect_step_tables()
   f = io.StringIO()
   # ... and once for the internal declaration.
-  # Not strictly necessary, I suppose
+  # In this case, "stdbool" needs to be added
+  header = '#include "stdbool.h"\n' + header
   recompiler.write_source_to_f(f, header)
   return f.getvalue()
 
-def _build(dist, tmpdir, compiler_verbose=False, debug=None):
+def _build(dist, tempdir, compiler_verbose=False, debug=None):
     """Adapted from cffi.ffiplatform"""
     distutils.log.set_verbosity(compiler_verbose)
     dist.parse_config_files()
@@ -43,13 +47,15 @@ def _build(dist, tmpdir, compiler_verbose=False, debug=None):
         debug = sys.flags.debug
     options['debug'] = ('ffiplatform', debug)
     options['force'] = ('ffiplatform', True)
-    options['build_lib'] = ('ffiplatform', tmpdir)
-    options['build_temp'] = ('ffiplatform', tmpdir)
+    options['build_lib'] = ('ffiplatform', tempdir)
+    options['build_temp'] = ('ffiplatform', tempdir)
     distutils.core._setup_distribution = dist
     dist.run_command('build_ext')
     cmd_obj = dist.get_command_obj('build_ext')
     [soname] = cmd_obj.get_outputs()
-    return soname
+    with open(soname, "rb") as f:
+        soname2 = os.path.split(soname)[1]
+        return soname2, f.read()
 
 def _write_objects(binary_module, tempdir):
     objects = []
@@ -111,23 +117,32 @@ def _build_extension(
     try:
         lock.acquire()
         d = os.getcwd()
-        os.mkdir(tempdir)
+        try:
+            os.mkdir(tempdir)
+        except FileExistsError:
+            shutil.rmtree(tempdir)
+            os.mkdir(tempdir)
         os.chdir(tempdir)
         ext = _create_extension(binary_module, full_module_name, cffi_header, extclass, tempdir)
         dist = distclass(ext_modules = [ext])
-        _ = _build(dist, tempdir, compiler_verbose, debug)
+        soname, extension_code = _build(dist, tempdir, compiler_verbose, debug)
         with locklock:
+            if not os.path.exists(SEAMLESS_EXTENSION_DIR):
+                os.makedirs(SEAMLESS_EXTENSION_DIR)
+            module_file = os.path.join(SEAMLESS_EXTENSION_DIR, soname)
+            with open(module_file, "wb") as f:
+                f.write(extension_code)
             syspath_old = []
             syspath_old = sys.path[:]
             try:
-                sys.path.append(tempdir)
+                sys.path.append(SEAMLESS_EXTENSION_DIR)
                 importlib.import_module(full_module_name)
             finally:
                 sys.path[:] = syspath_old
         cache.add(full_module_name)
     finally:
         try:
-            shutil.rmtree(tempdir)
+            shutil.rmtree(tempdir) #skip, for GDB
         except:
             pass
         lock.release()

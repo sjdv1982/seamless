@@ -1,0 +1,33 @@
+NOTE: see tests/highlevel/python-debugger.py for notes on debugging Python transformers
+
+Setup:
+1. Launch Seamless
+2. Define your compiled transformer, and do ctx.translate()
+3. Set transformer.debug to True.
+   Seamless will now inform you that your transformer is being debugged,
+    and give the process ID of the transformer
+4. Go to /tmp/tf__XXXX, and open it with Visual Studio Code
+5. Open the C/C++ file(s) you want to debug
+   (transform.c[pp] should contain the main code)
+6. Set some breakpoints and press F5. Select C/C++ (GDB/LLDB).
+   This will open launch.json.
+7. Click "Add Configuration", and select (gdb) Attach
+   In the program name, enter /usr/bin/python3 (but it does not really matter)
+
+Execution:
+1. If needed, in Seamless, relaunch the transformer with transformer.touch()
+2. If needed, select "(gdb) Attach" in the lower left. Else, press F5
+3. Select the process ID of the transformer.
+4. Enter your root password.
+5. A little debug toolbar will appear. Press "Pause".
+6. Go to the Debug Console, and type "-exec signal SIGUSR1"
+7. Press "Continue" in the debug toolbar
+
+NOTE: it is extremely annoying that all debuggers use breakpoints based on file names.
+This is not as easy to spoof for compiled code as it is for Python.
+Fpr debugging, the file name is always that of the file name on disk during compilation.
+But you *can* set the file *path* with gcc option: -fdebug-prefix-map=old=new
+TODO:
+Seamless will support setting this path in the binary module tree JSON. And it will have
+ an option to mount all compiled files to there (write-only).
+File paths must be stripped from checksum calculations.

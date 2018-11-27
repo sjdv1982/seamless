@@ -6,7 +6,7 @@ It will be used to generate bindings, but it will not be automatically
 added to the compiled transformer code.
 
 If your transformer code is written in C/C++, you may do so yourself.
-For C, you may need to add #include <stdint.h>.
+For C, you may need to include "stdint.h" and "stdbool.h".
 If your transform() function is written in C++, don't forget to add "extern C"
 */
 
@@ -73,8 +73,8 @@ def gen_basic_type(name, schema, *, verify_integer_bytesize, item=False):
                     result = "u" + result
                 else:
                     result = "unsigned " +  result
-    for warning in warnings:
-        print("WARNING: " + warning)
+    ###for warning in warnings:
+    ###    print("WARNING: " + warning)
     return result
 
 def gen_array(name, schema, *, verify_shape, const):
@@ -205,6 +205,10 @@ elif input_jtype == "object":
     input_props = input_schema["properties"]
 else:
     input_props = {input_name: input_schema}
+
+for pin in inputpins:
+    if pin not in input_props:
+        raise TypeError("Input pin '%s' is not in input schema" % pin)
 
 order = input_schema.get("order", [])
 for propname in sorted(input_props.keys()):

@@ -1,5 +1,5 @@
 #forked from Python's standard lib subprocess, but with mapping stdin and stdout
-# SLash seems to require this atm
+# Slash seems to require this atm
 from subprocess import *
 
 def run(*popenargs,

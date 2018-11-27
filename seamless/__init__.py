@@ -160,3 +160,7 @@ else:
 def flush():
     from .core.mainloop import workqueue
     workqueue.flush()
+
+from .highlevel import *
+from .silk import Silk
+from .debugger import pdb

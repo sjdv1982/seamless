@@ -53,6 +53,8 @@ def translate_py_transformer(node, root, namespace, inchannels, outchannels, lib
         }
     in_equilibrium = node.get("in_equilibrium", False)
     ctx.tf = transformer(all_pins, in_equilibrium=in_equilibrium)
+    if node["debug"]:
+        ctx.tf.debug = True
     if lib_path00 is not None:
         lib_path = lib_path00 + "." + name + ".code"
         ctx.code = libcell(lib_path)

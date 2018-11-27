@@ -38,6 +38,7 @@ def compile(moduletree, build_dir, compiler_verbose=False):
             os.mkdir(build_dir) #must be non-existing
         except FileExistsError:
             print("WARNING: compiler build dir %s already exists... this could be trouble!" % build_dir)
+        overall_target = moduletree.get("target", "profile")
         for objectname, object_ in moduletree["objects"].items():
             lang = object_["language"]
             extension = object_.get("extension")
@@ -48,7 +49,7 @@ def compile(moduletree, build_dir, compiler_verbose=False):
             compiler_name = object_.get("compiler", language.get("compiler"))
             assert compiler_name is not None, lang
             compiler = compilers[compiler_name]
-            target = object_.get("target", "profile")
+            target = object_.get("target", overall_target)
             assert target in ("release", "debug", "profile"), target
             std_options = object_.get("options", compiler["options"])
             profile_options = object_.get("profile_options", compiler["profile_options"])
@@ -96,7 +97,7 @@ def compile(moduletree, build_dir, compiler_verbose=False):
             binary_moduletree["objects"][objectname] = (obj_array, checksum)
     finally:
         try:
-            shutil.rmtree(build_dir)
+            shutil.rmtree(build_dir) #TODO: sometimes skip, for GDB
         except:
             pass
         lock.release()

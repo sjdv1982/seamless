@@ -1,5 +1,6 @@
 """
 Final test for compiled transformers, using stdlib.compiled_transformer
+Now using debugging
 """
 
 from seamless.core import context, cell, transformer, macro, libcell, macro_mode_on
@@ -57,13 +58,10 @@ with macro_mode_on():
     result = ctx.result.handle
     result.set(0.0)
 
-    ctx.compiled_code = cell("text").set(
-"""extern "C" double transform(int a, int b) {
-    return a + b;
-}"""
-    )
+    ctx.compiled_code = cell("text")
+
     ctx.language = cell("text").set("cpp")
-    ctx.main_module = cell("json").set({})
+    ctx.main_module = cell("json").set({"target": "debug"})
     ctx.compiler_verbose = cell("json").set(True)
     ctx.pins = cell("json").set({
         'a': {'io': 'input', 'transfer_mode': 'copy', 'access_mode': 'object'},
@@ -101,6 +99,9 @@ with macro_mode_on(), library.bind("compiled_transformer"):
     ctf.translator.result_name.cell().set("result")
     ctf.translator.input_name.cell().set("input")
 
+    ctf.translator.debug = True
+
+
 # 3: set up connections to library
 with macro_mode_on():
     #3a: between example and library
@@ -134,18 +135,6 @@ with macro_mode_on():
 
     ctx.binary_module.connect(ctf.translator.binary_module)
 
-print("START")
-ctx.equilibrate()
-print(ctx.pins.value)
-print(ctx.inp_struc.schema.value)
-print(ctx.result_struc.schema.value)
-print(ctx.header.value)
-print(ctx.binary_module.value)
-print(ctx.result.value)
-
-inp.a.set(10)
-ctx.equilibrate()
-print(ctx.result.value)
 
 inp.q.set(100.0)
 pins = deepcopy(ctx.pins.value)
@@ -153,32 +142,19 @@ pins.update({
     'q': {'io': 'input', 'transfer_mode': 'copy', 'access_mode': 'object'},
 })
 ctx.pins.set(pins)
-ctx.compiled_code.set(
-"""extern "C" double transform(int a, int b, double q) {
-return a + b + q;
-}""")
-
-ctx.compiler_verbose.set(False)
 ctx.equilibrate()
-print(ctx.inp_struc.schema.value)
-print(ctx.result.value)
-print(ctx.status())
-
-ctx.compiled_code.set(
-"""extern "C" double transform(int a, int b, double q) {
-return a + b - q;
-}""")
-ctx.equilibrate()
-print(ctx.result.value)
-print(ctx.status())
+print("START")
 
 ctx.compiled_code.set(
 """
 #include <cstdio>
 extern "C" double transform(int a, int b, double q) {
   printf("PRINTF transform: a=%d, b=%d, q=%.3f\\n", a, b, q);
-  return 42;
+  return a + b - q;
 }""")
+'''
+print("Waiting for debugger...")
 ctx.equilibrate()
-print(ctx.result.value)
+print("RESULT", ctx.result.value) #-95.0
 print(ctx.status())
+'''

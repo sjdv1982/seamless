@@ -82,6 +82,8 @@ class Context:
             value._init(self, (attr,) )
             self._translate()
         elif isinstance(value, Transformer) and value._parent is None:
+            self._graph[0][(attr,)] = value
+            self._children[(attr,)] = value
             value._init(self, (attr,) )
             self._translate()
         else:

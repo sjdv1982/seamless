@@ -4,8 +4,14 @@ from .killable_thread import KillableThread
 from multiprocessing import Process
 import functools
 import time
+import sys
+import signal
+import platform
 from ..cached_compile import cached_compile
 from ..injector import transformer_injector
+
+if platform.system() == "Windows":
+    from ctypes import windll
 
 USE_PROCESSES = True
 if USE_PROCESSES:
@@ -30,6 +36,7 @@ def execute(name, code_object, namespace, injector, workspace,
             exec(code_object, namespace)
     except:
         exc = traceback.format_exc()
+        print(exc)
         result_queue.put((1, exc))
     else:
         if output_name is None:
@@ -43,6 +50,27 @@ def execute(name, code_object, namespace, injector, workspace,
     if USE_PROCESSES:
         result_queue.close()
     result_queue.join()
+
+def execute_debug(name, code_object, namespace, injector, workspace,
+    output_name, result_queue):
+    if platform.system() == "Windows":
+        while True:
+            if windll.kernel32.IsDebuggerPresent() != 0:
+                break
+            time.sleep(0.1)
+    else:
+        class DebuggerAttached(Exception):
+            pass
+        def handler(*args, **kwargs):
+            raise DebuggerAttached
+        signal.signal(signal.SIGUSR1, handler)
+        try:
+            time.sleep(3600)
+        except DebuggerAttached:
+            pass
+    execute(name, code_object, namespace, injector, workspace,
+        output_name, result_queue)
+
 
 class Transformer(Worker):
     name = "transformer"
@@ -61,6 +89,7 @@ class Transformer(Worker):
         self.last_result = None
         self.running_thread = None
         self.in_equilibrium = in_equilibrium
+        self.debug = False
 
         o = self.output_name if self.output_name is not None else "_"
         self.function_expr_template = "{0}\n%s = {1}(" % o
@@ -138,8 +167,25 @@ class Transformer(Worker):
             args = (self.parent()._format_path(), self.code_object,
               self.namespace, self.injector, workspace,
               self.output_name, queue)
-            executor = Executor(target=execute,args=args, daemon=True)
-            executor.start()
+            if self.debug and USE_PROCESSES:
+                executor = Executor(target=execute_debug,args=args, daemon=True)
+                executor.start()
+                msg = "%s is running as process %d, waiting for a debugger attachment"
+                print(msg % (self.namespace["__fullname__"], executor.pid),
+                  file=sys.stderr)
+                if platform.system() != "Windows":
+                    msg = "After attaching, send the SIGUSR1 signal ('signal SIGUSR1' in GDB)"
+                    print(msg, file=sys.stderr)
+                msg = "To cancel debugging, set Transformer.debug to False"
+                print(msg, file=sys.stderr)
+            else:
+                executor = Executor(target=execute,args=args, daemon=True)
+                executor.start()
+                if self.debug:
+                    msg = "Seamless is not configured to execute transformers in processes"
+                    print(msg, file=sys.stderr)
+                    msg = "Debugging of processes will not be possible"
+                    print(msg, file=sys.stderr)
             dead_time = 0
             while 1:
                 ok = False
@@ -174,12 +220,15 @@ class Transformer(Worker):
                     executor.terminate()
                     break
         finally:
-            assert self.parent().output_queue is self.output_queue
-            self.send_message("@END", None)
-            if not ok:
-                time.sleep(2) # For now, give other workers the opportunity to finish
-                              # Won't be necessary anymore when the New Way is there
-                self.send_message("@ERROR", self.EXCEPTION)
+            if self.parent() is None:
+                ok = False  # parent has died
+            else:
+                assert self.parent().output_queue is self.output_queue
+                self.send_message("@END", None)
+                if not ok:
+                    time.sleep(2) # For now, give other workers the opportunity to finish
+                                  # Won't be necessary anymore when the New Way is there
+                    self.send_message("@ERROR", self.EXCEPTION)
         if ok:
             self.last_result = result
             self.send_message(self.output_name, result)

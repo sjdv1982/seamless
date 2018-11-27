@@ -20,21 +20,49 @@ default_pin = {
   "content_type": None,
 }
 
+def new_transformer(ctx, path, code, parameters):
+    if parameters is None:
+        parameters = []
+    transformer =    {
+        "path": path,
+        "type": "transformer",
+        "compiled": False,
+        "language": "python",
+        "pins": {param:default_pin.copy() for param in parameters},
+        "RESULT": "result",
+        "INPUT": "inp",
+        "with_result": False,
+        "SCHEMA": None, #the result schema can be exposed as an input pin to the transformer under this name. Implies with_result
+        "buffered": True,
+        "plain": False,
+        "plain_result": False,
+        "main_module": {"compiler_verbose": True},
+        "debug": False,
+        "TEMP": None, #to mark as non-translated
+    }
+    if code is not None:
+        transformer["code"] = code
+    ### json.dumps(transformer)
+    ctx._graph[0][path] = transformer
+    return transformer
+
+
 class TransformerWrapper:
     #TODO: setup access to non-pins
     def __init__(self, parent):
         self.parent = parent
 
 class Transformer(Base):
-    def __init__(self, parent=None, path=None):
+    _example_cache = None
+    def __init__(self, parent=None, path=None, code=None, parameters=None):
         assert (parent is None) == (path is None)
         if parent is not None:
-            self._init(parent, path)
+            self._init(parent, path, code, parameters)
 
-    def _init(self, parent, path):
+    def _init(self, parent, path, code=None, parameters=None):
         super().__init__(parent, path)
 
-        htf = self._get_htf()
+        htf = new_transformer(parent, path, code, parameters)
         result_path = self._path + (htf["RESULT"],)
         result = OutputPin(parent, self, result_path)
         result._virtual_path = self._path
@@ -72,6 +100,40 @@ class Transformer(Base):
         self._parent()._translate()
 
     @property
+    def debug(self):
+        return self._get_htf()["debug"]
+    @debug.setter
+    def debug(self, value):
+        from ..core.transformer import Transformer as CoreTransformer
+        htf = self._get_htf()
+        htf["debug"] = value
+        if self._has_tf():
+            tf = self._get_tf().tf
+            if htf["compiled"]:
+                tf2 = tf.translator
+            else:
+                tf2 = tf
+            assert isinstance(tf2, CoreTransformer)
+            tf2.debug = value
+        if htf["compiled"]:
+            if self._has_tf():
+                main_module = self._get_tf().main_module
+                if main_module.data.value is None:
+                    main_module.monitor.set_path((), {"objects":{}}, forced=True)
+                if value:
+                    main_module.handle["target"] = "debug"
+                else:
+                    main_module.handle["target"] = "profile"
+            else:
+                self._parent()._translate()
+            if "main_module" not in htf:
+                htf["main_module"] = {"compiler_verbose": True}
+            if value:
+                htf["main_module"]["target"] = "debug"
+            else:
+                htf["main_module"]["target"] = "profile"
+
+    @property
     def language(self):
         return self._get_htf()["language"]
     @language.setter
@@ -95,6 +157,12 @@ class Transformer(Base):
         assert htf["compiled"]
         dirs = ["value", "mount", "mimetype"]
         return Proxy(self, ("header",), "w", getter=self._header_getter, dirs=dirs)
+
+    @header.setter
+    def header(self, value):
+        htf = self._get_htf()
+        assert not htf["compiled"]
+        return self._setattr("header", value)
 
     def _header_getter(self, attr):
         htf = self._get_htf()
@@ -120,15 +188,22 @@ class Transformer(Base):
 
     @property
     def example(self):
-        htf = self._get_htf()
         tf = self._get_tf()
+        if self._example_cache is not None:
+            cached_tf, cached_example = self._example_cache
+            cached_tf = cached_tf()
+            if cached_tf is not None and cached_tf is tf:
+                return cached_example
+        htf = self._get_htf()
         inputcell = getattr(tf, htf["INPUT"])
         schema = inputcell.handle.schema
-        return Silk(
+        example = Silk(
          schema=schema,
          schema_dummy=True,
          schema_update_hook=inputcell.handle._schema_update_hook
         )
+        self._example_cache = weakref.ref(tf), example
+        return example
 
     @example.setter
     def example(self, value):
@@ -144,10 +219,14 @@ class Transformer(Base):
         hctx._translate()
 
     def __setattr__(self, attr, value):
-        from .assign import assign_connection
-        from ..midlevel.copying import fill_structured_cell_value
         if attr.startswith("_") or attr in type(self).__dict__:
             return object.__setattr__(self, attr, value)
+        else:
+            return self._setattr(attr, value)
+
+    def _setattr(self, attr, value):
+        from .assign import assign_connection
+        from ..midlevel.copying import fill_structured_cell_value
         translate = False
         parent = self._parent()
         htf = self._get_htf()
@@ -280,6 +359,17 @@ class Transformer(Base):
             p = inp.value[attr]
             return p
 
+    def touch(self):
+        tf = self._get_tf()
+        htf = self._get_htf()
+        if htf["compiled"]:
+            tf.tf.gen_header.touch()
+            tf.tf.compiler.touch()
+            tf.tf.translator.touch()
+            tf.binary_module.touch()
+        else:
+            tf.tf.touch()
+
     def status(self):
         tf = self._get_tf().tf
         return tf.status()
@@ -311,8 +401,11 @@ class Transformer(Base):
             dirs = ["value", "schema", "example"]
             pull_source = None
             proxycls = Proxy
-        elif attr == "main_module" and htf["compiled"]:
-            return CompiledObjectDict(self)
+        elif attr == "main_module":
+            if not htf["compiled"]:
+                self._get_tf()
+            if htf["compiled"]:
+                return CompiledObjectDict(self)
         else:
             raise AttributeError(attr)
         return proxycls(self, (attr,), "r", pull_source=pull_source, getter=getter, dirs=dirs)
@@ -350,12 +443,6 @@ class Transformer(Base):
             htf["mount"] = {}
         htf["mount"][attr] = mount
         self._parent()._translate()
-
-    def shell(self):
-        htf = self._get_htf()
-        assert not htf["compiled"]
-        tf = self._get_tf()
-        return tf.tf.shell()
 
     def _codegetter(self, attr):
         if attr == "value":
@@ -433,9 +520,10 @@ class Transformer(Base):
                 "celltype": "code",
                 "language": language,
                 "transformer": True,
-                "TEMP": value,
             }
-            assert isinstance(value, str)
+            if value is not None:
+                assert isinstance(value, str), type(value)
+                cell["TEMP"] = value
             htf["code"] = None
         else:
             inp = getattr(tf, htf["INPUT"])

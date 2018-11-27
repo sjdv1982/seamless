@@ -2,30 +2,31 @@ from seamless.compiler import compile
 from seamless.compiler.cffi import cffi
 from seamless.compiler.build_extension import build_extension_cffi
 
+# Run with IPython/Jupyter!
+
 ######################################################################
 # 1: set up compiled module
 ######################################################################
 
 code = """
-function add(a, b) result(r) bind(C)
-    use iso_c_binding
-    implicit none
-    integer(c_int), VALUE:: a, b
-    real(c_float) r
-    r = a + b
-end function
+#include <cmath>
+
+extern "C" float addfunc(int a, int b){
+    return a + b + M_PI;
+}
 """
 module = {
-    "target": "debug",
     "objects": {
         "main": {
             "code": code,
-            "language": "f90",
+            "language": "cpp",
         },
     },
+    "target": "debug",
+    "link_options" : ["-lm"],
     "public_header": {
         "language": "c",
-        "code": "float add(int a, int b);"
+        "code": "float addfunc(int a, int b);"
     }
 }
 
@@ -35,7 +36,7 @@ module = {
 
 compiler_verbose = True
 import tempfile, os
-tempdir = tempfile.gettempdir() + os.sep + "compile_fortran"
+tempdir = tempfile.gettempdir() + os.sep + "compile"
 binary_module = compile(module, tempdir, compiler_verbose=compiler_verbose)
 
 ######################################################################
@@ -45,7 +46,7 @@ binary_module = compile(module, tempdir, compiler_verbose=compiler_verbose)
 module_name = build_extension_cffi(binary_module, compiler_verbose=compiler_verbose)
 import sys
 testmodule = sys.modules[module_name].lib
-print(testmodule.add(2,3))
+print(testmodule.addfunc(2,3))
 
 ######################################################################
 # 4: test the mixed serialization protocol on the binary module
@@ -62,8 +63,10 @@ binary_module2 = from_stream(x, storage, form)
 assert (is_identical_debug(binary_module, binary_module2))
 
 ######################################################################
-# 5: test it in a context
+# 5: test it in a debugging context
 ######################################################################
+
+print("START")
 
 from seamless.core import context, cell, transformer, macro_mode_on
 with macro_mode_on():
@@ -78,16 +81,14 @@ with macro_mode_on():
         "testmodule": ("input", "ref", "binary_module"),
         "result": ("output", "ref", "json"),
     })
+    ctx.tf.debug = True
     ctx.module.connect(tf.testmodule)
     tf.a.cell().set(2)
     tf.b.cell().set(3)
     tf.code.cell().set("""
 from .testmodule import lib
-print("ADD", lib.add(a,b))
-result = testmodule.lib.add(a,b)
+print("ADD", lib.addfunc(a,b))
+result = testmodule.lib.addfunc(a,b)
     """)
     ctx.result = cell("json")
     ctx.tf.result.connect(ctx.result)
-
-ctx.equilibrate()
-print(ctx.result.value)

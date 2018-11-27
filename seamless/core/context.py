@@ -465,7 +465,7 @@ class _InternalChildrenWrapper:
     def __setattr__(self, attr, value):
         raise AttributeError("_InternalChildrenWrapper is read-only")
 
-from . import Link
+from .link import Link
 from .cell import Cell, CellLikeBase
 from .worker import Worker, InputPinBase, OutputPinBase, EditPinBase
 

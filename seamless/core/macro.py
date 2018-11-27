@@ -218,10 +218,6 @@ class Macro(Worker):
         if self.status() == self.StatusFlags.OK.name:
             self.execute()
 
-    def _shell(self, access_mode):
-        assert access_mode is None
-        return self.namespace, self.code, str(self)
-
     def __dir__(self):
         return object.__dir__(self) + list(self._pins.keys())
 

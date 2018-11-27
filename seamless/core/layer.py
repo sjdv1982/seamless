@@ -499,7 +499,8 @@ def check_async_macro_contexts(ctx, macro):
 def path(obj, *, force_relative=False):
     return Path(obj, force_relative)
 
-from . import Link, CellLikeBase, get_macro_mode
+from . import CellLikeBase, get_macro_mode
+from .link import Link
 from .context import Context
 from .worker import InputPinBase, OutputPinBase, EditPinBase, Worker
 from .transformer import Transformer

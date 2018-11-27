@@ -22,10 +22,25 @@ class CompiledObjectDict:
                     objects = main_module_data["objects"]
                     if "value" not in objects:
                         return objects
+        elif attr == "compiler_verbose":
+            htf = worker._get_htf()
+            main_module = htf.get("main_module")
+            if main_module is None:
+                return None
+            return main_module.get("compiler_verbose")
+
         return CompiledObjectWrapper(self._worker(), attr)
 
     def __setattr__(self, attr, value):
-        raise TypeError("Cannot assign directly an entire module object; assign individual elements")
+        worker = self._worker()
+        if attr == "compiler_verbose":
+            htf = worker._get_htf()
+            main_module = htf.get("main_module")
+            if main_module is None:
+                htf["main_module"] = {}
+            main_module["compiler_verbose"] = value
+        else:
+            raise TypeError("Cannot assign directly an entire module object; assign individual elements")
 
     def __dir__(self):
         worker = self._worker()
@@ -33,13 +48,13 @@ class CompiledObjectDict:
             temp = worker._get_htf().get("TEMP", {})
             if temp is not None and "_main_module" not in temp:
                 return []
-            return temp["_main_module"].keys()
+            return list(temp["_main_module"].keys()) + ["compiler_verbose"]
         else:
             tf = worker._get_tf(may_translate=False)
             main_module = getattr(tf, "main_module")
             main_module_data = main_module.data.value
             if "objects" in main_module_data:
-                return main_module_data["objects"].keys()
+                return list(main_module_data["objects"].keys()) + ["compiler_verbose"]
 
     def __delattr__(self, attr):
         raise NotImplementedError

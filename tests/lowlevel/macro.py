@@ -133,9 +133,6 @@ if ctx.MACRO_macro.hasattr("d"):
     print(ctx.MACRO_macro.d.value)
 print(ctx.MACRO_macro.result.value) #will never be None! 3002 if the reconstruction failed, 3004 if it succeeded
 
-shell = ctx.macro.shell()
-shell2 = ctx.MACRO_macro.tf.shell()
-
 mount_check()
 
 with macro_mode_on():

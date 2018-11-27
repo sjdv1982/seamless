@@ -19,6 +19,9 @@ _types["string"] = _string_types
 Scalar = (type(None), bool, str, bytes) + _integer_types + _float_types
 _allowed_types = Scalar + _array_types + (np.void, dict)
 
+def is_np_struct(data):
+    return isinstance(data, np.void) and not data.dtype.isbuiltin and len(data.dtype.fields)
+
 def infer_type(value):
     if isinstance(value, dict):
         type_ = "object"
@@ -34,6 +37,8 @@ def infer_type(value):
         type_ = "string"
     elif value is None:
         type_ = "null"
+    elif is_np_struct(value):
+        type_ = "object"
     else:
         raise TypeError(type(value))
     return type_
@@ -91,6 +96,8 @@ class schema_validator(schema_validator0):
     def is_type(self, instance, type):
         if isinstance(instance, FormWrapper):
             instance = instance._wrapped
+        if type == "object" and is_np_struct(instance):
+            return True
         return super().is_type(instance, type)
 
 from .formwrapper import FormWrapper

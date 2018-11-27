@@ -4,7 +4,7 @@ from seamless.core import StructuredCell
 from seamless.core import library
 
 
-def _init_from_library(ctf):
+def _init_from_library(ctf, debug):
     # Just to register the "compiled_transformer" lib
     from seamless.lib.compiled_transformer import compiled_transformer as _
     with library.bind("compiled_transformer"):
@@ -21,10 +21,13 @@ def _init_from_library(ctf):
         ctf.translator_code = libcell(".translator.code")
         ctf.translator_params = libcell(".translator_params")
         ctf.translator = transformer(ctf.translator_params.value)
+        if debug:
+            ctf.translator.debug = True
         ctf.translator_code.connect(ctf.translator.code)
 
 def _finalize(ctx, ctf, inp, c_inp, result, c_result, input_name, result_name):
     #1: between transformer and library
+    ctx.inputpins.connect(ctf.gen_header.inputpins)
     ctx.pins.connect(ctf.translator.pins)
     ctx.result.connect_inchannel(ctf.translator.translator_result_, ())
     inp.connect_outchannel((), ctf.translator.kwargs)
@@ -107,9 +110,12 @@ def translate_compiled_transformer(node, root, namespace, inchannels, outchannel
     assert result_name not in node["pins"] #should have been checked by highlevel
     assert "translator_result_" not in node["pins"] #should have been checked by highlevel
     all_pins = {}
+    inputpins = []
     for pinname, pin in node["pins"].items():
         p = {"io": "input"}
         p.update(pin)
+        if p["io"] == "input":
+            inputpins.append(pinname)
         all_pins[pinname] = p
     all_pins[result_name] = "output"
     if node["SCHEMA"]:
@@ -166,11 +172,16 @@ def translate_compiled_transformer(node, root, namespace, inchannels, outchannel
         namespace[icpath, True] = ctx.main_module.inchannels[ic], node
 
     compiler_verbose = node["main_module"]["compiler_verbose"]
-    ctx.compiler_verbose = cell("json").set(True)
+    ctx.compiler_verbose = cell("json").set(compiler_verbose)
+
+    target = node["main_module"].get("target")
+    if target is not None:
+        ctx.main_module.monitor.set_path(("target",), target, forced=True)
 
     # Transformer itself
     ctf = ctx.tf = context(name="tf",context=ctx)
-    _init_from_library(ctf)
+    debug = node["debug"]
+    _init_from_library(ctf, debug)
 
     if lib_path00 is not None:
         lib_path = lib_path00 + "." + name + ".code"
@@ -195,6 +206,7 @@ def translate_compiled_transformer(node, root, namespace, inchannels, outchannel
     assert not node["SCHEMA"]
 
     ctx.pins = cell("json").set(all_pins)
+    ctx.inputpins = cell("json").set(inputpins)
     c_inp = getattr(ctx, input_name + STRUC_ID)
     c_result = getattr(ctx, result_name + STRUC_ID)
     _finalize(ctx, ctf, inp, c_inp, result, c_result, input_name, result_name)

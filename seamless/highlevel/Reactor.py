@@ -241,9 +241,10 @@ class Reactor(Base):
                 "celltype": "code",
                 "language": "python",
                 "transformer": False,
-                "TEMP": None,
             }
-            assert isinstance(value, str)
+            if value is not None:
+                assert isinstance(value, str)
+                cell["TEMP"] = value
             hrc[attr] = None
         else:
             io = getattr(rc, hrc["IO"])

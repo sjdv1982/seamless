@@ -49,3 +49,5 @@ This is a design decision that can be overruled by specifying:
 
 See the documentation of highlevel/Library.py for more details.
 """
+
+ctx.transform.debug = True

@@ -462,14 +462,15 @@ class MountManagerStash:
                     old_mountitem = old_mountitems[path]
                     rewrite = False
                     cell = new_mountitem.cell()
-                    value = cell.serialize_buffer()
-                    checksum = cell.text_checksum()
-                    if "w" in old_mountitem.mode:
-                        if type(old_mountitem.cell()) != type(cell):
-                            rewrite = True
-                        else:
-                            if checksum != old_mountitem.last_checksum:
+                    if cell._val is not None:
+                        value = cell.serialize_buffer()
+                        checksum = cell.text_checksum()
+                        if "w" in old_mountitem.mode:
+                            if type(old_mountitem.cell()) != type(cell):
                                 rewrite = True
+                            else:
+                                if checksum != old_mountitem.last_checksum:
+                                    rewrite = True
                     if rewrite:
                         with new_mountitem.lock:
                             new_mountitem._write(value)
@@ -650,7 +651,6 @@ class MountManager:
         self.cell_updates.append(cell)
 
     def _run(self):
-        from . import Link
         for cell, mount_item in list(self.mounts.items()):
             if isinstance(cell, Link):
                 continue
@@ -707,8 +707,9 @@ class MountManager:
 
     def tick(self):
         """Waits until one iteration of the run() loop has finished"""
-        self._tick.clear()
-        self._tick.wait()
+        if self._running:
+            self._tick.clear()
+            self._tick.wait()
 
     def destroy(self):
         for path in list(self.mounts.keys()):
@@ -719,7 +720,7 @@ class MountManager:
 def resolve_register(reg):
     from .context import Context
     from .cell import Cell
-    from . import Link, Worker
+    from . import Worker
     from .structured_cell import Inchannel, Outchannel
     contexts = set([r for r in reg if isinstance(r, Context)])
     cells = set([r for r in reg if isinstance(r, Cell)])
@@ -872,6 +873,7 @@ def get_extension(c):
             return v
     return ""
 
+from .link import Link
 """
 *****
 TODO: filehash option (cell stores hash of the file, necessary for slash-0)

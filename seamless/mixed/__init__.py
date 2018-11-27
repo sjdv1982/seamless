@@ -19,7 +19,7 @@ from ..silk.SilkBase import SilkHasForm, binary_special_method_names
 
 from ..silk.validation import (
   _array_types, _integer_types, _float_types, _string_types, _unsigned_types,
-  _allowed_types, Scalar
+  _allowed_types, Scalar, is_np_struct
 )
 
 scalars = ("boolean", "integer", "number", "string")
@@ -29,9 +29,6 @@ np_char = np.dtype('S1')
 
 class MonitorTypeError(TypeError):
     pass
-
-def is_np_struct(data):
-    return isinstance(data, np.void) and not data.dtype.isbuiltin and len(data.dtype.fields)
 
 class MixedBase(SilkHasForm):
     def __init__(self, _monitor, _path):
@@ -61,7 +58,10 @@ class MixedBase(SilkHasForm):
         if attr.startswith("_"):
             raise AttributeError(attr)
         if self._monitor.attribute_access:
-            return self.__getitem__(attr)
+            if isinstance(self.value, np.ndarray):
+                return getattr(self.value, attr)
+            else:
+                return self.__getitem__(attr)
         raise AttributeError(attr)
     def __str__(self):
         return str(self.value)
@@ -88,8 +88,8 @@ def mixed_scalar_binary_method_inplace(self, other, name2):
 class MixedScalar(MixedBase):
     def __getitem__(self, item):
         value = self.value
-        if not isinstance(value, str):
-            raise TypeError(type(value))            
+        if not isinstance(value, (str, np.ndarray)):
+            raise TypeError(type(value))
         return value[item]
 
 for name in binary_special_method_names:

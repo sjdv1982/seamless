@@ -113,10 +113,6 @@ class Reactor(Worker):
         ret = "Seamless reactor: " + self._format_path()
         return ret
 
-    def _shell(self, access_mode):
-        assert access_mode is None
-        return self.reactor.namespace, self.code_update, str(self)
-
     def output_update(self, name, value, preliminary, priority, spontaneous):
         # This will be called by embedded reactors
         # If these reactors launch their own threads, it will be from a different thread
@@ -274,8 +270,6 @@ possible. Therefore, if they perform long computations, reactors should spawn
 their own threads or processes from within their code.
 
 Invoke ``reactor.status()`` to get the current status of the reactor
-
-Invoke ``shell(reactor)`` to create an IPython shell of the reactor namespace
 
 Reactors can be created or connected only in macro mode
 

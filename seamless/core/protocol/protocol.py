@@ -67,7 +67,9 @@ def set_cell(cell, value, *,
 
 def compile_binary_module(binary_module):
     from ...compiler.build_extension import build_extension_cffi
-    compiler_verbose = False #TODO: read from some setting somewhere
+    compiler_verbose = False
+    if binary_module.get("target") == "debug":
+        compiler_verbose = True
     #TODO: other compilation than cffi (Numpy or Cython)
     module_name = build_extension_cffi(binary_module, compiler_verbose=compiler_verbose)
     return sys.modules[module_name]

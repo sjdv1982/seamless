@@ -44,12 +44,7 @@ class Worker(SeamlessBase):
         return True
 
     def activate(self, only_macros):
-        try:
-            from ..shell import update_shells
-        except ImportError:  ### If qt is not there...
-            return
-        shell_namespace, inputpin, _ = self._shell(None)
-        update_shells(inputpin, shell_namespace)
+        pass
 
     @property
     def _seal(self):
@@ -92,30 +87,6 @@ class Worker(SeamlessBase):
             pin._validate_path(required_path + (pin_name,))
         return required_path
 
-    def shell(self, subshell=None):
-        """Creates an IPython shell (QtConsole).
-
-        The shell is connected to the namespace of a worker (reactor
-        or transformer, or a context that has a worker exported)
-        where its code blocks are executed.
-
-        This works only for in-process workers. As of seamless 0.1, all workers are
-        in-process. However, transformers use ``multiprocessing``. Therefore, changes
-        to the namespace while a transformation is running will not affect the current
-        transformation, only the next.
-
-        As of seamless 0.2, a reactor's namespace is reset upon ``code_start``.
-        A transformer's namespace is reset upon every execution.
-
-        TODO: further description
-        subshell must be None for transformers, "start"/"update"/"stop" for reactors
-        """
-        #TODO: for serialization, store associated shells
-
-        from ..shell import PyShell
-        shell_namespace, inputpin, shell_title = self._shell(subshell)
-        return PyShell(shell_namespace, inputpin, shell_title)
-
     def full_destroy(self, from_del=False):
         raise NotImplementedError
 
@@ -127,6 +98,7 @@ default_cell_types = {
     "pythoncode": "pythoncode",
     "json": "json",
     "silk": "json",
+    "default": "json",
     "text": "text",
     "module": "pythoncode",
 }

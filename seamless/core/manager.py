@@ -504,5 +504,6 @@ from .worker import Worker, InputPin, EditPin, \
   InputPinBase, EditPinBase, OutputPinBase
 from .transformer import Transformer
 from .structured_cell import Inchannel, Outchannel, Editchannel
-from . import layer, Link
+from . import layer
+from .link import Link
 from .layer import Path

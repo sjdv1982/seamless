@@ -17,7 +17,7 @@ class CompiledObjectWrapper:
 
     @property
     def _path(self):
-        return self._worker()._path + ("main_module" , self._obj)
+        return self._worker()._path + ("_main_module" , self._obj)
 
     def __setattr__(self, attr, value):
         if attr in ("_worker", "_obj"):
@@ -158,8 +158,10 @@ class CompiledObjectWrapper:
             "celltype": "code",
             "language": language,
             "transformer": True,
-            "TEMP": value,
         }
+        if value is not None:
+            assert isinstance(value, str), type(value)
+            cell["TEMP"] = value
         child = Cell(parent, new_path) #inserts itself as child
         parent._graph[0][new_path] = cell
         mimetype = language_to_mime(language)

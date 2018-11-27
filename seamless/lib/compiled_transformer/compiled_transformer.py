@@ -8,7 +8,9 @@ translator_file = "translator.py"
 
 ctx = Context()
 
-ctx.gen_header = lambda input_schema, result_schema, input_name, result_name: None
+def gen_header(input_schema, result_schema, input_name, result_name, inputpins):
+    return None
+ctx.gen_header = gen_header
 pins = ctx.gen_header._get_htf()["pins"] ###
 pins["input_schema"]["access_mode"] = "json"
 pins["result_schema"]["access_mode"] = "json"
@@ -27,6 +29,7 @@ pins["compiler_verbose"]["access_mode"] = "json"
 
 def func(binary_module, pins, input_schema, result_schema, input_name, result_name, kwargs):
     None
+
 ctx.translator = func
 ctx.translator.code = set_resource(translator_file)
 ctx.translator.RESULT = "translator_result_"
@@ -58,6 +61,9 @@ if __name__ == "__main__":
     ctx.header = ctx.gen_header
     ctx.header.celltype = "text"
 
+    ctx.inputpins = Cell()
+    ctx.inputpins.celltype = "json"
+
     ctx.input_schema = Cell()
     ctx.input_schema.celltype = "json"
 
@@ -70,6 +76,7 @@ if __name__ == "__main__":
     ctx.result_name = Cell()
     ctx.result_name.celltype = "text"
 
+    ctx.gen_header.inputpins = ctx.inputpins
     ctx.gen_header.input_schema = ctx.input_schema
     ctx.gen_header.result_schema = ctx.result_schema
     ctx.gen_header.input_name = ctx.input_name
@@ -82,13 +89,11 @@ if __name__ == "__main__":
     ctf.header = ctx.header
     ctx.binary_module = ctx.compiler
 
-
     ctf = ctx.translator
     ctf.input_schema = ctx.input_schema
     ctf.result_schema = ctx.result_schema
     ctf.input_name = ctx.input_name
     ctf.result_name = ctx.result_name
-    ctf.binary_module = ctx.binary_module
     ctx.result = ctx.translator
 
     ctx.kwargs = Cell()
@@ -101,35 +106,35 @@ if __name__ == "__main__":
     ctx.cppcode = set_resource("test.cpp")
     ctx.cppcode.celltype = "text"
 
-    ctx.tf = lambda a,b: a + b
-    ctx.tf.example.a = 0
-    ctx.tf.example.b = 0
-    ctx.tf.with_result = True
-    ctx.tf.result.example = 0.0
+    ctx.tf0 = lambda a,b: a + b
+    ctx.tf0.example.a = 0
+    ctx.tf0.example.b = 0
+    ctx.tf0.with_result = True
+    ctx.tf0.result.example = 0.0
 
     ctf = ctx.compiler
     ctf.compiled_code = ctx.cppcode
     ctf.lang = "cpp"
     ctf.main_module = {
-        "objects": {
-            "code": {
-                "target": "debug",
-            },
-        },
         "link_options" : ["-lm"],
     }
     ctf.compiler_verbose = True
 
     #connect the schema's; just the values, for now... #TODO: pins!
-    ctx.input_schema = ctx.tf.inp.schema.value
-    ctx.result_schema = ctx.tf.result.schema._dict #TODO: solve inconsistency...
-    ctx.input_name = ctx.tf.input_name
-    ctx.result_name = ctx.tf.result_name
+    ctx.input_schema = ctx.tf0.inp.schema._dict
+    ctx.result_schema = ctx.tf0.result.schema._dict #TODO: solve inconsistency...
+    ctx.input_name = ctx.tf0._get_htf()["INPUT"]
+    ctx.result_name = ctx.tf0._get_htf()["RESULT"]
 
-    ctx.translator.pins = ctx.tf._get_tf().tf._transformer_params ### convoluted way to access, but nothing we can do
+    pins = ctx.tf0._get_tf().tf._transformer_params ### convoluted way to access, but nothing we can do
+    ctx.translator.pins = pins
+    inputpins = [k for k,v in pins.items() if \
+      (isinstance(v,str) and v == "input") or \
+      (isinstance(v,dict) and v["io"] == "input") ]
+    ctx.inputpins.set(inputpins)
+
     ctx.kwargs = {"a": 2, "b": 3}
 
     ctx.equilibrate()
-    print(dict(ctx.translator.pins.value.items()))
 else:
     stdlib.compiled_transformer = ctx
