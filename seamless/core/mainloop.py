@@ -69,8 +69,10 @@ class WorkQueue:
         if not loop.is_running():
             loop.run_forever()
 
+        """
         if self._signal_processing == 0 and _run_qt:
             run_qt() # Necessary to prevent freezes in glwindow
+        """
         self._flushing = False
 
     def __len__(self):
@@ -84,6 +86,7 @@ def asyncio_finish():
     except RuntimeError:
         pass
 
+"""
 _run_qt = True  #set by __init__.py
 event_loop = None #set by __init__.py
 
@@ -97,10 +100,16 @@ def run_qt():
     _qt_is_running = True
     event_loop.processEvents()
     _qt_is_running = False
+"""
 
 workqueue = WorkQueue()
 def mainloop():
     """Only run in non-IPython mode"""
     while 1:
-        workqueue.flush(timeout=MAINLOOP_FLUSH_TIMEOUT/1000)
-        time.sleep(workqueue.FAILSAFE_FLUSH_LATENCY/1000)
+        mainloop_one_iteration()
+
+def mainloop_one_iteration(timeout=MAINLOOP_FLUSH_TIMEOUT/1000):
+    workqueue.flush(timeout)
+    time.sleep(workqueue.FAILSAFE_FLUSH_LATENCY/1000)
+
+

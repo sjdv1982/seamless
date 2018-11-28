@@ -7,6 +7,7 @@
 1. With Jupyter, please be very patient, especially with the first cell (import seamless).
    Don't do something like 'Run all cells'. Do equilibrate() often.
    Try re-executing a cell or restarting the kernel.
+   UPDATE: now that Qt support has been ripped, it goes much better
 2. Unfortunately, if equilibrate() causes a graph re-translation, all transformers (and reactors)
    will be re-executed. Seamless is not yet ready for long-running computations.
 3. In principle, you can re-define everything on the fly (i.e. re-execute Jupyter cells at will),
