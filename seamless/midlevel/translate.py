@@ -69,7 +69,7 @@ def translate_py_reactor(node, root, namespace, inchannels, outchannels, editcha
             c = libcell(lib_path)
             setattr(ctx, attr, c)
         else:
-            c = core_cell("python")
+            c = core_cell(node["language"])
             c._sovereign = True
             setattr(ctx, attr, c)
             if "mount" in node and attr in node["mount"]:
@@ -161,11 +161,11 @@ def translate_cell(node, root, namespace, inchannels, outchannels, editchannels,
             #TODO: allow fork to be set
         else:
             if ct == "code":
-                if node["language"] == "python":
+                if node["language"] in ("python", "ipython"):
                     if node["transformer"]:
                         child = core_cell("transformer")
                     else:
-                        child = core_cell("python")
+                        child = core_cell(node["language"])
                 else:
                     child = core_cell("text")
             elif ct in ("text", "json"):
@@ -360,12 +360,12 @@ def translate(graph, ctx, from_lib_paths, is_lib):
             if node["compiled"]:
                 from .translate_compiled_transformer import translate_compiled_transformer
                 translate_compiled_transformer(node, ctx, namespace, inchannels, outchannels, lib_path, is_lib)
-            elif node["language"] == "python":
+            elif node["language"] in ("python", "ipython"):
                 translate_py_transformer(node, ctx, namespace, inchannels, outchannels, lib_path, is_lib)
             else:
                 raise NotImplementedError
         elif t == "reactor":
-            if node["language"] != "python":
+            if node["language"] not in ("python", "ipython"):
                 raise NotImplementedError
             inchannels, outchannels = find_channels(node["path"], connection_paths)
             editchannels = find_editchannels(node["path"], link_paths)

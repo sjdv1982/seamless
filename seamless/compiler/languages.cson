@@ -27,6 +27,11 @@
     "mode": "compiled"
     "compiler": "g++"
   }
+  "cuda": {
+    "extension": "cu"
+    "mode": "compiled"
+    "compiler": "nvcc"
+  }
   "fortran": {
     "extension": ["f", "f90"]
     "mode": "compiled"

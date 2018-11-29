@@ -31,4 +31,13 @@
       "debug_options": ["-fPIC", "-O0", "-fno-automatic", "-fcray-pointer"],
       "profile_options": ["-p", "-g"],
   }
+  #nvcc; no "location"; use `which` or implicit shell execution
+  "nvcc": {
+      "compile_flag": "-c"
+      "output_flag": "-o"
+      "options": ["-O3", "-ffast-math", "-fPIC"],
+      "public_options": ["-fPIC"],
+      "debug_options": ["-fPIC", "-g", "-O0", "-fno-inline" , "-Wall"],
+      "profile_options": ["-p", "-g"],
+  }
 }

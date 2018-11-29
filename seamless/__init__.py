@@ -36,7 +36,7 @@ from .core import mainloop as _mainloop
 from .core.mainloop import mainloop, mainloop_one_iteration, asyncio_finish, workqueue
 atexit.register(asyncio_finish)
 
-ipython = None
+ipython_instance = None
 ipy_error = None
 try:
     from IPython import get_ipython
@@ -47,8 +47,8 @@ except ImportError:
     raise
     ipy_error = "Cannot find IPython"
 else:
-    ipython = get_ipython()
-    if ipython is None:
+    ipython_instance = get_ipython()
+    if ipython_instance is None:
         ipy_error = "Seamless was not imported inside IPython"
 
 if ipy_error is None:
@@ -81,7 +81,7 @@ if ipy_error is None:
             kernel.do_one_iteration()
 
     
-    ipython.enable_gui("seamless")
+    ipython_instance.enable_gui("seamless")
     
 else:
     sys.stderr.write("    " + ipy_error + "\n")

@@ -12,6 +12,8 @@ def translate_py_transformer(node, root, namespace, inchannels, outchannels, lib
     setattr(parent, name, ctx)
 
     result_name = node["RESULT"]
+    if node["language"] == "ipython":
+        assert result_name == "result"
     input_name = node["INPUT"]
     if len(inchannels):
         lib_path0 = None #partial authority or no authority; no library update in either case
@@ -59,7 +61,10 @@ def translate_py_transformer(node, root, namespace, inchannels, outchannels, lib
         lib_path = lib_path00 + "." + name + ".code"
         ctx.code = libcell(lib_path)
     else:
-        ctx.code = core_cell("transformer")
+        if node["language"] == "ipython":
+            ctx.code = core_cell("ipython")
+        else:
+            ctx.code = core_cell("transformer")
         if "code" in mount:
             ctx.code.mount(**mount["code"])
         ctx.code._sovereign = True

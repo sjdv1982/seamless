@@ -73,7 +73,6 @@ Part 3 (low-level / cleanup): Towards the merge
      By default, they are public. No more "export".
      This has nothing to do with services. Services determine private and public based on
      what connects into the serviced context.
-   - Have a look if Qt mainloop hook can be eliminated (replace by a useqt() method)
    - Start with lib porting. Port Qt editors (including HTML), but no more seamless.qt
      Port all macros, but store the code in plain Python modules in lib, that register a library context
    - Bring back slash0
@@ -162,8 +161,6 @@ Part 7:
   Other files may be whitelisted, leading to explicit dependency registration.
   The "compiled" slash graph should not access the file system at all
   (One cannot forbid the code cells and pulled command lines to do so, but they aren't supposed to).    
-- Replace the use of killable threads with processes... gives a problem with Orca example (fixed now ?), docking
- example (?), see Github issue (UPDATE: switch has been made now)
  Fix it with seamless.compiler which uses RLocks, need to be multiprocess!
    (transformers can compile!)
  - Silk: think of proper type inference, e.g. for arrays (see silk.md)

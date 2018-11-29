@@ -55,6 +55,19 @@ content_types = ("object", "text",
 )
 text_types = ("text", "python", "ipython", "transformer", "reactor", "macro", "cson")
 
+class ValueDummy:
+    def __init__(self, value):
+        self.value = value
+        self.is_function = False
+
+class TransferredCell:
+    is_function = False
+    def __init__(self, cell):
+        for attr in dir(cell):
+            if attr.startswith("_"):
+                continue
+            setattr(self, attr, getattr(cell, attr))
+
 def set_cell(cell, value, *,
   default, from_buffer, force, from_pin=False
 ):
@@ -128,6 +141,17 @@ def assert_plain(source):
     json_encode(source)
     return source
 
+def adapt_ipython(source):
+    result = "code = %r\n" % source
+    result +=  """
+import seamless.ipython
+seamless.ipython.execute(code, globals())
+if not "result" in globals():
+    result = _
+"""
+    return ValueDummy(result)
+
+
 adapters = OrderedDict()
 adapters[("copy", "object", "mixed"), ("copy", "text", "text")] = assert_mixed_text
 adapters[("copy", "object", "mixed"), ("copy", "json", "json")] = assert_plain
@@ -169,8 +193,10 @@ adapters[("copy", "text", "python"), ("copy", "module", "python")] = True
 adapters[("copy", "text", "python"), ("copy", "module", "ipython")] = True
 adapters[("copy", "text", "ipython"), ("copy", "module", "ipython")] = True
 for pymode in ("transformer", "reactor", "macro"):
-    adapters[("ref", "pythoncode", "python"), ("ref", "pythoncode", pymode)] = True
-    adapters[("copy", "pythoncode", "python"), ("copy", "pythoncode", pymode)] = True
+    for lang in ("python", "ipython"):
+        adapters[("ref", "pythoncode", lang), ("ref", "pythoncode", pymode)] = True
+        adapters[("copy", "pythoncode", lang), ("copy", "pythoncode", pymode)] = True
+    adapters[("copy", "text", "ipython"), ("copy", "pythoncode", pymode)] = adapt_ipython
 adapters[("copy", "object", "mixed"), ("copy", "binary_module", "mixed")] = compile_binary_module
 adapters[("ref", "object", "mixed"), ("ref", "binary_module", "mixed")] = compile_binary_module
 
@@ -213,12 +239,5 @@ Supported target modes: %s
 
 """ % (source, target, source_modes, target_modes))
 
-class TransferredCell:
-    is_function = False
-    def __init__(self, cell):
-        for attr in dir(cell):
-            if attr.startswith("_"):
-                continue
-            setattr(self, attr, getattr(cell, attr))
 
 from .cson import cson2json

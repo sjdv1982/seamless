@@ -967,6 +967,7 @@ class Signal(Cell):
 celltypes = {
     "text": TextCell,
     "python": PythonCell,
+    "ipython": IPythonCell,
     "transformer": PyTransformerCell,
     "reactor": PyReactorCell,
     "macro": PyMacroCell,
@@ -1020,6 +1021,7 @@ extensions = {
     JsonCell: ".json",
     CsonCell: ".cson",
     PythonCell: ".py",
+    IPythonCell: ".ipy",
     PyTransformerCell: ".py",
     PyReactorCell: ".py",
     PyMacroCell: ".py",
