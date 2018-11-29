@@ -68,7 +68,7 @@ if ipy_error is None:
         raise RuntimeError("Cannot run seamless.mainloop() in IPython mode")
 
     def inputhook_terminal(context):
-        while not context.input_is_ready():
+        while not context.input_is_ready():                
             mainloop_one_iteration()
     _register_integration_terminal("seamless", inputhook_terminal)
 
@@ -80,7 +80,6 @@ if ipy_error is None:
                 mainloop_one_iteration()        
             kernel.do_one_iteration()
 
-    _register_integration_terminal("seamless", inputhook_terminal)
     
     ipython.enable_gui("seamless")
     
