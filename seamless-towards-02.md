@@ -257,7 +257,11 @@ First, it provides the checksum. The server will then respond with one of the fo
  Other configuration is what kind of evaluation/resource-claiming meta-parameters to accept, and what kind of logging is returned.
 
  Type of servers:
- 0. Dynamic HTML using websockets. Completely unrelated.
+ ### VERY NEW (Nov 2018) UPDATE: See "Seamless shared authority" below.
+ 0. will be ripped, and B. will be a special case of A.
+ REST API and web sockets will be organized. 
+ OLD:
+ 0. Dynamic HTML using websockets. Completely unrelated. UPDATE: ...and ripped
  A. Two-way synchronization (collaborative protocol). Uses websocket/crossbar server, pub/sub
     NOTE: text cells should support a git backend to resolve simultaneous edits on different sections of the text.
  B-D. One-way synchronization. Client manipulates cells, assuming that no other client does.
@@ -499,6 +503,9 @@ When we start scientific reproducibility test servers, zero-durability computati
  with computations that require a random seed (just change the seed). And of course, all computations must be either
  local or from trusted service servers, not from the scientists themselves.
 
+UPDATE: for durability 1+, make a "requirement repo" that can automatically convert a list
+ of requirement (e.g. a list of Python modules) to a list of version-stamped packages (pip, nix, apt). RPBS will a) be a mirror and b) snapshot package versions every month. Example: capability "numpy" + Nov 27 2018 => pip package numpy-1.15.4 (the state of PyPI on Nov 01 2018, i.e. "RPBS-Linux 18.11")
+ Different capabilities can be combined and made into a Docker image using docker2repo/binder.
 
 ##/UPDATE of UPDATE
 (after this, text may be outdated)
@@ -525,6 +532,7 @@ Their semantic meaning is at the high level, no low-level support or core mid-le
 The seamless collaborative protocol (high level)
 ================================================
 
+### UPDATE: completely outdated. See "Seamless shared authority" below.
 The collaborative protocol is a means to share *cells*, like dynamic_html, but then bidirectionally
 The idea is that a cell is bound to a unique "cell channel", so that two programs or web browsers can pub/sub to the channel
 At the core, there is a single Seamless router (Crossbar instance) at the RPBS.
@@ -546,3 +554,122 @@ UPDATE: It should be possible to send an (U)RI, instead of the cell value, over 
  - which protocols (HTTP, database, etc.) are accepted for URIs
  - which domains are acceptable. Both may have access to the same database, but not necessarily.
    (This is somewhat related to having this database as a mount backend, but not exactly)
+
+
+Seamless shared authority
+=========================
+
+There are two concepts of shared authority: *context* authority and *cell* authority.
+*context* authority regulates where a context graph is being computed. The *worker*
+ performs the computation, whereas the *master* controls it. For each seamless instance,
+ a context for which the seamless instance is the master but not the worker is a 
+ *delegated context*.
+For *cell* authority, the *host* owns and holds the data, whereas a *client* may request
+or modify the data.
+1. Context authority 
+ The context consists of a context graph, the in-context cell values, the connections,
+  and the values of the incoming connections. 
+ Context authority can be interactive or non-interactive. 
+ Non-interactive computing can be dumb or smart.
+ For non-interactive computing, the mechanism is as follows:
+  The master has at most one non-interactive worker, in the form of a REST server.
+  Whenever the context is updated, a new *context request* is built. 
+  A. In "dumb" mode, this request contains the entire context, including values. 
+  This request is sent to the worker.
+  Any previous context request is canceled. It is up to the worker to re-use pieces
+  of earlier context requests (e.g preliminary results).  
+  B. In "smart" mode, the master also acts as host of the cell values and connection values.
+  It registers itself as host, providing identifiers for each cell and connection (see below).
+  The context request all values are then replaced by the sharing handle (see below). 
+  The worker may then act as client, requesting cell/connection values on demand. 
+  The master may also ask: what about this graph? and get back some information on how easy
+   it would be to execute.
+  For any context request in any mode, the worker must either refuse quickly, return an error, or return the result (as either a value or as a sharing handle). 
+The master has at most one interactive worker, in the form of a REST server.
+The master may send the following requests, which the worker must quickly either acknowledge or refuse:
+  - How busy are you? (Do you have free channels? A graph topology may be sent already)
+  - Open a new channel (returns a channel ID; a graph topology may be sent already)
+  On an opened channel:
+  - (re)define graph topology (may include some values; flag can be defined to keep "internal cells")
+  - Set cell/connection value
+  - Get cell/connection value
+  - Are you in equilibrium?
+  - Shut down the channel (the worker is free to ignore this)
+  In addition, the master may send "equilibrate", which may take a long time to answer.
+  Every request is marked with an ascending ID, and the worker response is marked with the same ID.
+  All values are sent as sharing handles. The master must register itself as host for them.
+2. Cell authority
+Cell authority can be local or remote. Local means that the state of the cell is maintained by the
+ current seamless context. If it is remote, the state is maintained by a host elsewhere.
+All cells can be set *by value* or *by checksum*. 
+Setting by value always computes the checksum. Setting by checksum does nothing if the checksum stays the same.
+Every cell that is not in a delegated context can be directly queried for its value.
+(internal cells of delegated contexts may be queried from interactive workers, if the flag is set ).
+Direct query of local cells gives the following result:
+A. cell is None: return None
+B. value mode: return value.
+C. checksum mode: see below. 
+3. Cell sharing
+Local cells may be shared, which means that the current Seamless instance is their host.
+(remote cells may also be shared, in which the Seamless instance is simply a router for that cell).
+Cell sharing involves three operations:
+3a. Publishing changes on the "cell share channel". Every Seamless instance may have exactly one
+ channel, implemented as a websocket server. Upon connecting to the channel, a client will receive a share list (of shared cell names and types) and their checksums, and the global host marker. Whenever the host changes a shared cell, the change gets published on the cell share channel, and the host marker increases by one.
+ Share lists may be registered under a "namespace". Clients indicate their preferred namespace
+ in the path url (e.g, http://localhost/seamless/mynamespace:1234 for a cell share channel served on
+ http://localhost/seamless:1234)
+ The change is published as a share handle, of the format (cell name, checksum, host marker).
+ Upon receiving the share handle, the client is expected to store it, together with the
+  name of the host, if the client has more than one host.
+ The other event that is being published is when the share list is being re-defined.
+ (The high level should do this after re-translation, if there was no change)
+ Internally, the host maintains for each shared cell what was the host marker that changed it
+  most recently.
+3b. Querying the "host channel". Every host has one, implementing five REST methods:
+  - query value. The argument is a cell name. The host channel will return the cell value
+    (including storage, form and/or schema, if applicable), the checksum, and the current host marker.
+  - query update. The argument is a share handle. If the checksum is different than the stored one
+    AND the host marker is later, return as above. Else, just return the current checksum + host marker. 
+    If the host marker is earlier, then some routing has gone at different speed. In that case, the
+     client should keep querying the update until the (routed) host catches up. Routing must always
+     preserve the upstream host ID!
+  - cancel all queries.
+  - query set value (see 3c.)
+  - set value (see 3c.)
+  NOTE: at the high level, only one top-level context can expose shares for each namespace. 
+  During context translation, for that namespace, both the cell share channel and the host channel should delay any response until the translation is done.
+3c. Sending values to the host channel. 
+A "query set value" can be done with just a shared handle. The host may send four possible responses:
+- accept; please call "set value"
+- reject; host marker is too old (i.e., the value has been updated in the meantime)
+  The client will receive the current host marker in the response, and can use this to force the issue.
+- success; submitted checksum found in cache (new host marker is returned)
+- fail; cell is no longer shared.
+Then, the value itself can be submitted with "set value", which returns the new host marker,
+ or an error.
+
+Querying checksum mode:
+First, search local cache. If successful, return value.
+Else, send a simultaneous request to all registered network cache servers. In addition, if the cell is remote, send a "query update" request to the host.
+As soon as any network cache successfully yields a significant portion (depending on the value size) of the value, cancel all other cache requests. As soon as the full value has been obtained, if the cell is remote, cancel the host "query update" request, and return the value.
+On the other hand, as soon as "query update" request starts yielding a value, cancel all network cache requests. When complete, return value.
+If the cell is not remote, and network caching fails, report an error.
+If "query update" returns the same handle, wait for the network cache. If it fails, query the host
+with "query value".
+If "query update" indicates a routing delay, run "query update" until solved, then run "query value".
+
+After any cell (local or remote) in checksum mode has been successfully queried/retrieved from cache, it enters value mode. But Seamless is free to put any cell back in checksum mode, adding its value to local cache.
+Local cache must not discard a value as long as any cell in checksum mode holds on to it, although it may offload to network cache (under the same constraints).
+
+
+NOTE: transformer authority is a special case of context authority. It has the same modes
+(interactive, non-interactive smart, and non-interactive dumb).
+Transformer authority and cell authority are maintained at the low level. Context authority
+ at the high level.
+NOTE: There can be only one interactive and one non-interactive worker, but cluster managers
+ can function as one virtual worker. They can deal with all kinds of meta-parameters, and do
+ smart dispatch based on the contents of the graphs and values.
+
+
+
+

@@ -137,6 +137,7 @@ Have a look at what it would take to go to PEP8 compliance.
 
 
 Part 6: "Towards flexible and cloud-compatible evaluation"
+  (use shared authority plan)
 - Build upon services proof-of-principle (cloudless)
 - HMTL gen from schema
 - Bidirectional cell web editing via Websocketserver

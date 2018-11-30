@@ -27,10 +27,8 @@ Future:
    This part focuses on the editing and display of *values*, rather than *topology*.
    A comprehensive solution that also integrates with the front-end would be (Py)Qt.
    Unfortunately, Qt is a dead technology. Nowadays, editing is done using text editors or IDEs for text, and the
-   browser for everything else. Seamless will move away from Qt, except for prototyping IDE-like features
-   (syntax highlighting, tab completion). Editing will be done by auto-generating HTML+JS (Vue or maybe React) client-side,
-   and Python (flask) server-side. Seamless's dynamic HTML + websocketserver can help to generate HTML without
-   reload.
+   browser for everything else. Seamless will move away from Qt. Editing will be done by auto-generating HTML+JS (Vue or maybe React) client-side,
+   and Python (flask) server-side.
 
    On the short-term, the front-end and the back-end will be the same.
    Jupyter and other notebooks (Beaker, Pyodide) can both control Seamless via Python, and display the HTML
@@ -88,7 +86,8 @@ You can do computations with Observable, but Seamless is much better. Observable
 4. Summary.
 The best is a combination of Seamless <=> Vue/React <=> Observable. The first <=> is generate/AJAX
  and the second <=> is embed/observe.
-Start your plots and visualizations in Seamless if you prefer, but move to Observable for serious work.
+Start your plots and visualizations and widgets in Seamless (with Jupyter) if you prefer, 
+ but move to Observable for serious work.
 Start your algorithms in Observable if you prefer, but move to Seamless for serious work.
 
 Seamless can also replace task-scheduling tools like Make, Gradle, Webpack, etc., trying to push away from the file system
