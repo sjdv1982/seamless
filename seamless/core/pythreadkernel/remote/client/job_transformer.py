@@ -44,7 +44,7 @@ class JobTransformer(Worker):
     def process_message(self, message_id, name, data, access_mode, content_type):
         self.access_modes[name] = access_mode
         self.content_types[name] = content_type
-        #TODO: SHA-512 checksums
+        #TODO: git-style SHA-256 checksums
 
     def send_message(self, tag, message):
         #print("send_message", tag, message, hex(id(self.output_queue)))

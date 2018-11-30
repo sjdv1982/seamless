@@ -469,7 +469,7 @@ The New Way of execution management
 The New Way is purely a manager issue. Worker implementations are unaffected.
 (however, now there is a sleep hack in kernel/transformer.py to prevent premature equilibrium; this needs to be removed)
 - There will be only a single manager for every top-level context
-- All checksums will be SHA-512
+- All checksums will be git-style but with SHA-256
 - Only authoritative cells, object cells (cell()) and Python code cells will hold their value.
   For any other cell, only the checksum will be stored
   The value will be retrieved from a local cache dict

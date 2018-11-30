@@ -6,7 +6,7 @@ import numpy as np
 nil = json_encode(None)
 
 def encode(transformer_params, output_signature, values, access_modes, content_types):
-    #TODO: SHA-512 checksums
+    #TODO: git-style SHA-256 checksums
     assert values.keys() == content_types.keys() == access_modes.keys()
     b = b''
     d = [transformer_params, output_signature]

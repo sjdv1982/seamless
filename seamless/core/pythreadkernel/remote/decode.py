@@ -14,7 +14,7 @@ def decode(rqdata, as_cells=False):
     len_b = np.frombuffer(s2, dtype=np.uint64).tolist()[0]
 
     values, access_modes, content_types = {}, {}, {}
-    #TODO: SHA-512 checksums
+    #TODO: git-style SHA-256 checksums
     dd = rqdata[l+16:l+16+len_dd].decode()
     d = json.loads(dd)
     b = rqdata[l+16+len_dd:]
