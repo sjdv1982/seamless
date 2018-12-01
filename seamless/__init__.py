@@ -68,7 +68,7 @@ if ipy_error is None:
         raise RuntimeError("Cannot run seamless.mainloop() in IPython mode")
 
     def inputhook_terminal(context):
-        while not context.input_is_ready():                
+        while not context.input_is_ready():
             mainloop_one_iteration()
     _register_integration_terminal("seamless", inputhook_terminal)
 
@@ -77,12 +77,12 @@ if ipy_error is None:
         while 1:
             t = time.time()
             while time.time() - t < kernel._poll_interval:
-                mainloop_one_iteration()        
+                mainloop_one_iteration()
             kernel.do_one_iteration()
 
-    
+
     ipython_instance.enable_gui("seamless")
-    
+
 else:
     sys.stderr.write("    " + ipy_error + "\n")
     sys.stderr.write("    Call seamless.mainloop(), seamless.flush() or context.equilibrate() to process cell updates\n")
@@ -91,6 +91,5 @@ def flush():
     from .core.mainloop import workqueue
     workqueue.flush()
 
-from .highlevel import *
 from .silk import Silk
 from .debugger import pdb

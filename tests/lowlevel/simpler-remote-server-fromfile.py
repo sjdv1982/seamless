@@ -1,8 +1,8 @@
 with open("simpler-remote.rqseamless", "rb") as f:
     rqdata = f.read()
 
-from seamless.core.pythreadkernel.remote import decode, encode
-from seamless.core.pythreadkernel.remote.server.job_transformer import transform_job
+from seamless.core.asynckernel.remote import decode, encode
+from seamless.core.asynckernel.remote.server.job_transformer import transform_job
 
 transformer_params, output_signature, values, access_modes, content_types = decode(rqdata)
 print(transformer_params)

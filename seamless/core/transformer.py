@@ -6,8 +6,8 @@ from functools import partial
 import threading
 
 from .worker import Worker, InputPin, OutputPin
-from .pythreadkernel import Transformer as KernelTransformer
-from .pythreadkernel.remote.client import JobTransformer as ServiceTransformer
+from .asynckernel import Transformer as KernelTransformer
+from .asynckernel.remote.client import JobTransformer as ServiceTransformer
 #TODO: multiple types of remote transformers
 
 from .protocol import content_types
