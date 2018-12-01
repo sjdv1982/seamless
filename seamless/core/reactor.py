@@ -6,7 +6,7 @@ import threading
 
 from .worker import Worker, InputPin, EditPin, OutputPin
 from .cell import Cell, PythonCell
-from .pysynckernel import Reactor as KernelReactor
+from .synckernel import Reactor as KernelReactor
 
 from . import IpyString
 

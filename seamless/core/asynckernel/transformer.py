@@ -1,10 +1,12 @@
 import traceback
 from . import Worker
 from .killable_thread import KillableThread
+import multiprocessing
 from multiprocessing import Process
 import functools
 import time
 import sys
+import os
 import signal
 import platform
 from ..cached_compile import cached_compile
@@ -13,7 +15,11 @@ from ..injector import transformer_injector
 if platform.system() == "Windows":
     from ctypes import windll
 
-USE_PROCESSES = True
+USE_PROCESSES = os.environ.get("SEAMLESS_USE_PROCESSES")
+if USE_PROCESSES is None:
+    USE_PROCESSES = True
+    if multiprocessing.get_start_method() != "fork":
+        USE_PROCESSES = False
 if USE_PROCESSES:
     from multiprocessing import JoinableQueue as Queue
     Executor = Process
@@ -25,12 +31,15 @@ def return_preliminary(result_queue, value):
     #print("return_preliminary", value)
     result_queue.put((-1, value))
 
-def execute(name, code_object, namespace, injector, workspace,
+def execute(name, code, identifier, namespace, injector, workspace,
     output_name, result_queue):
     namespace["return_preliminary"] = functools.partial(
         return_preliminary, result_queue
     )
     try:
+        code_object = cached_compile(code, identifier, "exec")
+        if USE_PROCESSES and multiprocessing.get_start_method() != "fork":
+            injector.restore()
         namespace.pop(output_name, None)
         with injector.active_workspace(workspace):
             exec(code_object, namespace)
@@ -51,7 +60,7 @@ def execute(name, code_object, namespace, injector, workspace,
         result_queue.close()
     result_queue.join()
 
-def execute_debug(name, code_object, namespace, injector, workspace,
+def execute_debug(name, code, identifier, namespace, injector, workspace,
     output_name, result_queue):
     if platform.system() == "Windows":
         while True:
@@ -68,7 +77,7 @@ def execute_debug(name, code_object, namespace, injector, workspace,
             time.sleep(3600)
         except DebuggerAttached:
             pass
-    execute(name, code_object, namespace, injector, workspace,
+    execute(name, code, identifier, namespace, injector, workspace,
         output_name, result_queue)
 
 
@@ -85,7 +94,7 @@ class Transformer(Worker):
         self.output_semaphore = output_semaphore
 
         self.func_name = None
-        self.code_object = None
+        self.tf_code = None
         self.last_result = None
         self.running_thread = None
         self.in_equilibrium = in_equilibrium
@@ -129,7 +138,6 @@ class Transformer(Worker):
         try:
             # If code object is updated, recompile
             if "code" in updated:
-                identifier = str(self.parent())
                 _, access_mode, _ = self.inputs["code"]
                 if access_mode == "text":
                     code = self.values["code"]
@@ -149,10 +157,10 @@ class Transformer(Worker):
                         expr = self.function_expr_template.format(code2, "LAMBDA")
                     else:
                         expr = self.function_expr_template.format(code, func_name)
-                    self.code_object = cached_compile(expr, identifier, "exec")
+                    self.tf_code = expr
                     self.func_name = func_name
                 else:
-                    self.code_object = cached_compile(code, identifier, "exec")
+                    self.tf_code = code
             # Update namespace of inputs
             keep = {k:v for k,v in self.namespace.items() if k.startswith("_")}
             self.namespace.clear()
@@ -164,9 +172,18 @@ class Transformer(Worker):
                     self.namespace[name] = self.values[name]
             queue = Queue()
             workspace = self if self.injected_modules else None
-            args = (self.parent()._format_path(), self.code_object,
+            args = (self.parent()._format_path(), self.tf_code,
+              str(self.parent()),
               self.namespace, self.injector, workspace,
               self.output_name, queue)
+            injector = self.injector
+            if USE_PROCESSES and multiprocessing.get_start_method() != "fork":
+                injector = injector.clone()
+            args = (self.parent()._format_path(), self.tf_code,
+              str(self.parent()),
+               self.namespace, injector, workspace,
+               self.output_name, queue
+            )
             if self.debug and USE_PROCESSES:
                 executor = Executor(target=execute_debug,args=args, daemon=True)
                 executor.start()

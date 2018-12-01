@@ -45,9 +45,9 @@ class WorkQueue:
 
         if ipython is not None and not self._ipython_registered:
             # It is annoying to do again and again, but the first time it doesn't work... bug in IPython?
-            ###self._ipython_registered = True            
-            ipython.enable_gui("seamless")            
-        
+            ###self._ipython_registered = True
+            ipython.enable_gui("seamless")
+
         ### NOTE: disabled the code below to avoid the hanging
         #    of equilibrate() inside work
         #   It remains to be seen if this has any negative effects
@@ -120,19 +120,26 @@ from multiprocessing import Process
 def run_qt():
     global run_qt, qt_app
     if qt_app is None: #TODO: some kind of env variable to disable Qt completely
-        p = Process(target=test_qt)
-        p.start()
-        p.join()
-        if not p.exitcode:
-            qt_app = PyQt5.QtWidgets.QApplication(["  "])
-        else:        
+        import multiprocessing
+        if multiprocessing.get_start_method() != "fork":
+            print("""Cannot test if Qt can be started
+This is because forking is not possible, you are probably running under Windows
+If you are running from terminal (instead of Jupyter), you could enable Qt manually (TODO)
+""")
+        else:
+            p = Process(target=test_qt)
+            p.start()
+            p.join()
+            if not p.exitcode:
+                qt_app = PyQt5.QtWidgets.QApplication(["  "])
+        if qt_app is None:
             msg = "Qt could not be started. Qt widgets will not work" #TODO: some kind of env variable to disable this warning
             print(msg,file=sys.stderr)
             run_qt = lambda: None
             return
     qt_app.processEvents()
 
-try:        
+try:
     import PyQt5.QtCore, PyQt5.QtWidgets
 except ImportError:
     run_qt = lambda: None

@@ -80,6 +80,20 @@ class Injector:
                 else:
                     sys_modules.pop(mname)
 
+    def clone(self):
+        """Returns a cloned injector for pickling"""
+        return ClonedInjector(self)
+
+class ClonedInjector(Injector):
+    def __init__(self, injector):
+        assert isinstance(injector, Injector)
+        self.topmodule_name = injector.topmodule_name
+        self.workspaces = dict(injector.workspaces)
+        self.topmodule_dict = injector.topmodule.__dict__
+    def restore(self):
+        self.topmodule = ModuleType(self.topmodule_name)
+        self.topmodule.__dict__.update(self.topmodule_dict)
+
 macro_injector = Injector("macro")
 transformer_injector = Injector("transformer")
 reactor_injector = Injector("reactor")
