@@ -31,7 +31,7 @@ def new_transformer(ctx, path, code, parameters):
         "pins": {param:default_pin.copy() for param in parameters},
         "RESULT": "result",
         "INPUT": "inp",
-        "with_result": False,
+        "with_result": True,
         "SCHEMA": None, #the result schema can be exposed as an input pin to the transformer under this name. Implies with_result
         "buffered": True,
         "plain": False,

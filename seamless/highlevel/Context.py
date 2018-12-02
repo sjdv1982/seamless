@@ -133,7 +133,9 @@ class Context:
         with macro_mode_on():
             ctx.topology = cell("json")
             ctx.values = cell("json") #TODO: change to mixed
+            ctx.cached_values = cell("json") #TODO: change to mixed
             ctx.states = cell("json") #TODO: change to mixed
+            ctx.cached_states = cell("json") #TODO: change to mixed
         self._translate()
 
     def equilibrate(self, timeout=None):
@@ -270,10 +272,12 @@ class Context:
         if self._graph_ctx is not None:
             ctx = self._graph_ctx
             nodes, connections = self._graph.nodes, self._graph.connections
-            topology, values, states, _, _ = extract(nodes, connections)
+            topology, values, states, cached_values, cached_states = extract(nodes, connections)
             ctx.topology.set(topology)
             ctx.values.set(values)
+            ctx.cached_values.set(cached_values)
             ctx.states.set(states)
+            ctx.cached_states.set(cached_states)
             mountmanager.tick()
 
     def register_library(self, timeout=None):

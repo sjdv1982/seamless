@@ -4,7 +4,10 @@ import json
 transformer_states = (
     ("input", "stored_state_input", True),
     ("input", "cached_state_input", False),
+    ("RESULT", "stored_state_result", True),
     ("RESULT", "cached_state_result", False),
+    ("main_module", "stored_state_main_module", True),
+    ("main_module", "cached_state_main_module", False),
 )
 
 transformer_values = (

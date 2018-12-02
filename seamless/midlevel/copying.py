@@ -105,7 +105,7 @@ def fill_cell_values(ctx, nodes, path=None):
                     result = getattr(transformer, result_name, None)
                     if result is not None:
                         assert isinstance(result, StructuredCell)
-                        fill_structured_cell_value(result, node, None, "cached_state_result")
+                        fill_structured_cell_value(result, node, "stored_state_result", "cached_state_result")
                 if node["compiled"]:
                     if hasattr(transformer, "main_module"):
                         fill_structured_cell_value(
