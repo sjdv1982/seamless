@@ -20,6 +20,9 @@ if USE_PROCESSES is None:
     USE_PROCESSES = True
     if multiprocessing.get_start_method() != "fork":
         USE_PROCESSES = False
+else:
+    if USE_PROCESSES == "0" or USE_PROCESSES.upper() == "FALSE":
+        USE_PROCESSES = False
 if USE_PROCESSES:
     from multiprocessing import JoinableQueue as Queue
     Executor = Process
@@ -214,6 +217,10 @@ class Transformer(Worker):
                     dead_time += 0.01
                     if dead_time >= 1:
                         raise Exception #executor died without result or exception
+                if semaphore.acquire(blocking=False):
+                    semaphore.release()
+                    executor.terminate()
+                    break
                 while not queue.empty():
                     status, msg = queue.get()
                     queue.task_done()
@@ -232,10 +239,6 @@ class Transformer(Worker):
                 if prelim is not None:
                     self.return_preliminary(prelim)
                     prelim = None
-                if semaphore.acquire(blocking=False):
-                    semaphore.release()
-                    executor.terminate()
-                    break
         finally:
             if self.parent() is None:
                 ok = False  # parent has died

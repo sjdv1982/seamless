@@ -107,10 +107,12 @@ class Inchannel(CellLikeBase):
     def deserialize(self, value, transfer_mode, access_mode, content_type,
      *, from_pin, **kwargs
     ):
-        return channel_deserialize(
+        result = channel_deserialize(
             self, value, transfer_mode, access_mode, content_type,
              from_pin=from_pin, **kwargs
         )
+        self.structured_cell()._observe()
+        return result
 
     @property
     def authoritative(self):
@@ -388,6 +390,7 @@ class StructuredCell(CellLikeBase):
     _mount = None
     _from_pin_mode = False
     _exported = True
+    _observer = None
     def __init__(
       self,
       name,
@@ -814,6 +817,7 @@ class StructuredCell(CellLikeBase):
             self._silk.set(value)
         else:
             self.monitor.set_path((), value)
+        self._observe()
 
     def __str__(self):
         ret = "Seamless structured cell: " + self._format_path()
@@ -854,6 +858,17 @@ class StructuredCell(CellLikeBase):
             monitor = self.monitor
             result = monitor.get_path()
         return result
+
+    def _set_observer(self, observer):
+        #self._observer = weakref.ref(observer) #TODO: should work! but hctx._traitlets doesn't hold on?
+        self._observer = observer
+
+    def _observe(self):
+        if self._observer is not None:
+            data = self.value
+            if isinstance(data, MixedBase):
+                data = data.value
+            self._observer(data)
 
 print("TODO: Runtime wrapper around StructuredCell that protects against .foo = bar\
  where .handle.foo = bar is intended")

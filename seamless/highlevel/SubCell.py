@@ -52,6 +52,9 @@ class SubCell(Cell):
         #TODO: return the other partner of all Link objects with self in it
         return [] #stub
 
+    def traitlet(self):
+        return self._parent()._add_traitlet(self._cell()._path, self._subpath)
+
     @property
     def value(self):
         cell = self._cell()

@@ -99,6 +99,8 @@ Part 4:
   computation checksum server will avoid the pure object to be (re-)translated at all.
   Also for the purpose of low-level caching, pure objects are a single dependency unit (a "virtual transformer"),
    so the low-level must be informed.  
+  UPDATE: better to consider everything as pure by default, unless a cell is marked as ephemeral and is connected
+  to/from the outside directly.
 - The New Way of execution management (see below).
  For now, never shut down any worker
 - Finalize caching:
@@ -111,8 +113,8 @@ Part 4:
      In that case, the regeneration of the reactor essentially becomes an update() event  
 
 Part 5:
-  - Signals
-  - Observers (subclass of OutputPinBase)
+  - Signals (will always be ephemeral)
+  - Observers (subclass of OutputPinBase) (UPDATE: traitlet instead)
   - Fully port over 0.1 lib: from .py files to Seamless library context files
   - Fully port over 0.1 tests
   - Clean up all vestiges of 0.1
@@ -139,8 +141,8 @@ Have a look at what it would take to go to PEP8 compliance.
 Part 6: "Towards flexible and cloud-compatible evaluation"
   (use shared authority plan)
 - Build upon services proof-of-principle (cloudless)
-- HMTL gen from schema
-- Bidirectional cell web editing via Websocketserver
+- HMTL gen from schema (UPDATE: less essential now? maybe do slash0 first)
+- Bidirectional cell web editing via Websocketserver (UPDATE: use shared authority instead)
 - Implement all the checksum servers
 - Docker integration
 
@@ -158,15 +160,13 @@ Part 7:
   apply ephemeral cells to slash0
   Expand and document seamless shell language (slash)
   Make a slash reproducable mode, where every file is pulled from the file system in advance.
-  However, POSIX files are whitelisted (exempt).
+  However, POSIX commands are whitelisted (exempt).
   Other files may be whitelisted, leading to explicit dependency registration.
   The "compiled" slash graph should not access the file system at all
   (One cannot forbid the code cells and pulled command lines to do so, but they aren't supposed to).    
  Fix it with seamless.compiler which uses RLocks, need to be multiprocess!
    (transformers can compile!)
- - Silk: think of proper type inference, e.g. for arrays (see silk.md)
-   Also properly deal with .schema and .schema.form for sub-properties (must tap into main schema object)
-   and make add_validator a schema method!
+ - Silk: make add_validator a schema method!
 - Graph translation should be asynchronous and interruptible
   (check regularly for interruption signals)
 - Start with report channels that catch error messages, cache hits/misses etc.
@@ -203,9 +203,6 @@ Long-term:
 - Meta-schema for schema editing (jsonschema has it)
 - GUI around report channels (to visualize) and around high-level context (to edit)
 - An extra "table" celltype, for text (like awk or org-mode) or binary (like Pandas)
-- Collaborative protocol
- ("virtual context" that upon creation syncs topology from another context, and then
-  bidirectionally syncs the cell values; REST or Websocketserver under the hood)
 - Reconsider the restrictions on transformers and reactors. [Give transformers
   edit pins and cache pins, allow them to have reactor pin API => YAGNI?].
   At least in theory, allow transformers/reactors to declare as sync/async, and thread/process.
@@ -233,7 +230,7 @@ Long-term:
 - Set up user library directory and robogit
 
 Very long-term:
-- Use the report system for timings. Use this for precise measurements where
+- Use the report system for detailed timings. Use this for precise measurements where
   the seamless overhead is, and how much.
 - Python debugging / code editor (WIP) (see seamless-towards-02.md)
 - Full feature implementation of Silk, e.g. constructs (see silk.md)
@@ -555,7 +552,7 @@ Ephemeral cells are the same, but they indicate some hidden dependency.
 Ephemeral cells are not authoritative and never eager. Usually, they are not stored.
 Changes in execution cells or ephemeral cells do not trigger re-computation, but the worker
  will receive the new value once something else triggers re-computation.
- Auxiliary cells/contexts are high-level only. Auxiliary cells (as are ephemeral cells and
+ Auxiliary cells/workers/contexts are high-level only. Auxiliary cells and workers (as are ephemeral cells and
   execution cells) are stripped from a high-level graph before its grand computational checksum
   is computed. Examples: editors, loggers, visualizers.
 
@@ -662,12 +659,13 @@ The BlockManager exposes a block inchannel and a block outchannel. Workers can d
    A tiling channel can be inchannel or outchannel, they work exactly like StructuredCell channels, but instead of
    property paths, they contain index paths (although if referencing a struct array, the last few elements
    of the index paths may be properties). Only single indices: ranges and steps are not supported.
-   As for StructuredCells, it is checked that the inchannels and outchannels do not overlap.
    This is a way to process parts of the buffer independently.
-  The top-level block outchannel only fires when all tiles have been received.
+   As for StructuredCells, it is checked that the inchannels and outchannels do not overlap. [HUH? they *should* overlap! an outchannel should fire whenever one of its inchannels is modified AND all constituent inchannels have submitted a value]   
+  The top-level block outchannel only fires when all tiles have been received. [*all* outchannels do so]
  Block inchannels can be invalidated, which is propagated to the outchannels.
  It is possible call a method swap_buffers: tile[1] points now to tile[0] and vice versa. Each connected inchannel
  and outchannel will get an invalidation signal and then receive the new block descriptor.
+ [hmm... maybe not; let the users build the 8-shape topology themselves]
 Namespaces are part of the block pin declaration. Seamless pin protocol takes care of namespace mismatches, e.g.
  copying data between CPU and GPU (this is blocking, so not the most efficient).
 
@@ -732,11 +730,14 @@ The graph is translated, the input values are connected, the context is equilibr
  the result values are returned.
  Store the result value in local cache.
 (interactive)
-The inputs can be changed.
-Cache hits are being explored as soon as the checksums are known; values can be lazy.
+The inputs can be changed. (syntactically, works much more like a normal transformer, except
+  that there is the additional graph pin).
+UPDATE: The text below will be true for all of seamless!
+(Cache hits are being explored as soon as the checksums are known; values can be lazy.
 By default, only the result checksum is returned.
 The service accepts value requests for the output.
-Serve all value requests from local cache; cache misses lead to recomputation.
+Serve all value requests from local cache; cache misses lead to recomputation.)
+
 
 - Map
 (Interactive)
@@ -747,10 +748,10 @@ Reference implementation:
 Import seamless and embeds the graph in an (interactive) Apply graph.
 Iterate over all input keys. Call the Apply graph and let equilibrate. Forward all returned key+checksums.
 Reverse-forward all value requests to the Apply graph.
-Forward all invalidate messages (interrupt graph). Forward no more keys messages and close messages after computation.
+Forward all invalidate messages (interrupting embedded graph). Forward no more keys messages and close messages after computation.
 Forward all finish and discard messages from output to input.
 (Non-interactive)
-Input is a mixed/json dict/array instead of a stream. Embedded Apply graph is non-interactive.
+Embedded Apply graph is non-interactive.
 
 - Filter
 Like Map, but this time the graph must return a boolean (keep it or not).
@@ -771,7 +772,9 @@ For the first key, write the initial value in that cell before executing.
 For all subsequent keys, write the result for the last key.
 Once all keys have been processed, return the result.
 (Non-interactive)
-Input is a mixed/json dict/array instead of a stream. Embedded Apply graph is non-interactive.
+Embedded Apply graph is non-interactive.
+NOTE: for floating points values, reduce can easily lead to non-determinism,
+ since streams are non-ordered and flops are non-commutative (see Order special op below)
 
 - CyclicIterator
 Performs a fixed number of iterations of a cyclic graph.
@@ -800,11 +803,15 @@ Utility functions
 =================
 Sort: stream1 => stream2. sorts the keys of stream1 and creates a stream2
  where the keys are the sorted indices.
+Order: stream1 => stream2, where stream1 has numeric keys.
+  stream2 is equal to stream1, but its behavior is now ordered:
+  key N+1 will only be returned after key N has been requested and returned.
 Zip: zips N streams into one, like Python zip.
 Convert from mixed/json to stream. Keys can be the first-level
  keys of the dict, but also second-level or deeper, or up-to-second-level.
 Convert from stream to mixed/json. Keys must either be strings, or the same
  level encoding as above, or integers (this will produce a mixed/json array)
+ (In addition, array chunking must be possible as well)
 Convert between Block and stream; requires integer keys of the stream.
 Convert between Block and mixed/json; mixed/json must be organized as an array.
 NOTE: if the stream messages are big enough,
