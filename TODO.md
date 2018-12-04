@@ -8,8 +8,7 @@ Things to do:
 Part 2: high level
 
 A: get BCsearch working
-- Demo test run: Build BCSearch transformer shim interactively, from scratch, in Jupyter
-- Make complete initial BCSearch version
+(initial/demo version works now)
 - Follow roadmap (see BCsearch directory)
 - Network evaluation:
   Almost done (tests/simple-remote-client/server)

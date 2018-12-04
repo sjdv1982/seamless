@@ -572,10 +572,10 @@ or modify the data.
  Context authority can be interactive or non-interactive. 
  Non-interactive computing can be dumb or smart.
  For non-interactive computing, the mechanism is as follows:
-  The master has at most one non-interactive worker, in the form of a REST server.
+  The master has any number of non-interactive workers, in the form of REST servers.
   Whenever the context is updated, a new *context request* is built. 
   A. In "dumb" mode, this request contains the entire context, including values. 
-  This request is sent to the worker.
+  This request is sent to a worker.
   Any previous context request is canceled. It is up to the worker to re-use pieces
   of earlier context requests (e.g preliminary results).  
   B. In "smart" mode, the master also acts as host of the cell values and connection values.
@@ -585,8 +585,8 @@ or modify the data.
   The master may also ask: what about this graph? and get back some information on how easy
    it would be to execute.
   For any context request in any mode, the worker must either refuse quickly, return an error, or return the result (as either a value or as a sharing handle). 
-The master has at most one interactive worker, in the form of a REST server.
-The master may send the following requests, which the worker must quickly either acknowledge or refuse:
+The master has any number of interactive workers, in the form of REST servers.
+The master may send the following requests, which a worker must quickly either acknowledge or refuse:
   - How busy are you? (Do you have free channels? A graph topology may be sent already)
   - Open a new channel (returns a channel ID; a graph topology may be sent already)
   On an opened channel:

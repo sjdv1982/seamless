@@ -1,4 +1,4 @@
-from seamless import Context, Transformer
+from seamless.highlevel import Context, Transformer
 
 ctx = Context()
 
