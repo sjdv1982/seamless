@@ -93,3 +93,4 @@ def flush():
 
 from .silk import Silk
 from .debugger import pdb
+from .shareserver import shareserver
