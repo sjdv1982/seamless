@@ -111,7 +111,10 @@ class Inchannel(CellLikeBase):
             self, value, transfer_mode, access_mode, content_type,
              from_pin=from_pin, **kwargs
         )
-        self.structured_cell()._observe()
+        cell = self.structured_cell()
+        cell._observe()
+        if cell._share_callback is not None:
+            cell._share_callback()
         return result
 
     @property
@@ -391,6 +394,7 @@ class StructuredCell(CellLikeBase):
     _from_pin_mode = False
     _exported = True
     _observer = None
+    _share_callback = None
     def __init__(
       self,
       name,
@@ -634,6 +638,20 @@ class StructuredCell(CellLikeBase):
             if value is not None:
                 ec.send_update(value)
 
+
+    def serialize(self, transfer_mode, access_mode, content_type):
+        data = self.monitor.get_data(())
+        if transfer_mode == "ref":
+            result = data
+        elif access_mode == "text":
+            result = json_encode(data, sort_keys=True, indent=2)
+        else:
+            result = deepcopy(data)
+        return result
+
+    def checksum(self):
+        return self.data.checksum()
+
     @property
     def authoritative(self):
         return not self.inchannels
@@ -818,6 +836,8 @@ class StructuredCell(CellLikeBase):
         else:
             self.monitor.set_path((), value)
         self._observe()
+        if self._share_callback is not None:
+            self._share_callback()
 
     def __str__(self):
         ret = "Seamless structured cell: " + self._format_path()
@@ -869,6 +889,10 @@ class StructuredCell(CellLikeBase):
             if isinstance(data, MixedBase):
                 data = data.value
             self._observer(data)
+
+
+    def _set_share_callback(self, share_callback):
+        self._share_callback = share_callback
 
 print("TODO: Runtime wrapper around StructuredCell that protects against .foo = bar\
  where .handle.foo = bar is intended")

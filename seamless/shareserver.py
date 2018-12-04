@@ -17,6 +17,7 @@ class ShareServer(object):
     _rest_server_started = False
 
     def __init__(self):
+        self.started = False
         self.namespaces = {} #TODO: some cleanup, can be memory leak
         self.connections = {} #TODO: some cleanup, can be (minor) memory leak
 
@@ -63,7 +64,7 @@ class ShareServer(object):
             return
         for k,v in d.items():
             _, checksum, marker = v
-            if not await self._send(websocket, (checksum, marker)):
+            if not await self._send(websocket, (k, checksum, marker)):
                 break
         self.connections[path].append(websocket)
         async for message in websocket: #keep connection open forever
@@ -99,7 +100,7 @@ class ShareServer(object):
             cell = cell()
             if cell is None:
                 raise KeyError
-            value = cell.value
+            value = cell.serialize("ref", "text", "json")
             return web.Response(text=json.dumps(value))
         except KeyError:
             return web.Response(text=json.dumps(None))
@@ -131,7 +132,8 @@ class ShareServer(object):
         app = web.Application()
         app.add_routes([
             web.get('/{tail:.*}', self._handle_get),
-            web.put('/{tail:.*}', self._handle_put)
+            web.put('/{tail:.*}', self._handle_put),
+            #TODO: POST with equilibrate
         ])
         runner = web.AppRunner(app)
         await runner.setup()
@@ -144,8 +146,11 @@ class ShareServer(object):
         s2 = self.serve_rest()
         await s1
         await s2
+        self.started = True
 
     def start(self):
+        if self.started:
+            return
         self._future_start = asyncio.ensure_future(self._start())
 
     def share(self, namespace, key, cell):
@@ -169,7 +174,7 @@ class ShareServer(object):
             _, _, marker = ns[key]
         ns[key] = [weakref.ref(cell), checksum, marker]
 
-    def send_update(self, namespace, key):
+    async def _send_update(self, namespace, key):
         assert namespace in self.namespaces
         ns = self.namespaces[namespace]
         cell, old_checksum, marker = ns[key]
@@ -184,13 +189,15 @@ class ShareServer(object):
         marker += 1
         ns[key][1:3] = checksum, marker
 
-        loop = asyncio.get_event_loop()
-        loop.run_until_complete(self._future_start)     
+        await self._future_start
 
         coros = []
         for websocket in self.connections[namespace]:
-            s = self._send(websocket, (checksum, marker))
+            s = self._send(websocket, (key, checksum, marker))
             coros.append(s)
-        loop.run_until_complete(asyncio.gather(*coros))
+        await asyncio.gather(*coros)
+    
+    def send_update(self, namespace, key):
+        asyncio.ensure_future(self._send_update(namespace, key))
         
 shareserver = ShareServer()

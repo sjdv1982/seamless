@@ -65,6 +65,8 @@ class CellBase(CellLikeBase):
       the mid-level element is dynamically read from the sovereign cell (no double representation)
     """
     _sovereign = False
+    _observer = None
+    _share_callback = None
 
     def status(self):
         """The cell's current status."""
@@ -110,7 +112,7 @@ class CellBase(CellLikeBase):
         return self
 
     def set(self, value, force=False):
-        """Update cell data from Python code in the main thread."""
+        """Update cell data from the terminal."""
         if isinstance(value, Wrapper):
             value = value._unwrap()
         if self._context is None:
@@ -250,6 +252,10 @@ class CellBase(CellLikeBase):
                 msg = "Warning: setting value for cell %s, controlled by %s"
                 print(msg % (self._format_path(), self._seal) )
 
+        if self._observer is not None:
+            self._observer(self._val)
+        if self._share_callback is not None:
+            self._share_callback()
         return different, text_different
 
     def _overrule(self):
@@ -357,6 +363,11 @@ class CellBase(CellLikeBase):
         self._mount.update(self._mount_kwargs)
         MountItem(None, self, dummy=True, **self._mount) #to validate parameters
 
+    def _set_observer(self, observer):
+        self._observer = observer
+
+    def _set_share_callback(self, share_callback):
+        self._share_callback = share_callback
 
 class Cell(CellBase):
     """Default class for cells.

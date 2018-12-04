@@ -274,6 +274,9 @@ class Cell(Base):
         assert other._pull_source is not None
         other._pull_source(self)
 
+    def share(self):
+        self._parent()._share(self)
+
     def __dir__(self):
         result = super().__dir__()
         parent = self._parent()

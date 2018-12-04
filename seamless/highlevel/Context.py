@@ -20,6 +20,24 @@ from ..midlevel.library import register_library
 from .Library import get_lib_paths, get_libitem
 from .depsgraph import DepsGraph
 
+def connect_share(ctx, path):
+    from ..core import StructuredCell, Cell as core_cell
+    key = "/".join(path) #TODO: split in subpaths by inspecting and traversing ctx._children (recursively for subcontext children)    
+    hcell = ctx._children[path]
+    if not isinstance(hcell, Cell):
+        raise NotImplementedError(type(hcell))
+    cell = hcell._get_cell()
+    if isinstance(cell, StructuredCell):
+        pass #TODO: see above
+    elif isinstance(cell, core_cell):
+        pass #TODO: see above
+    else:
+        raise TypeError(cell)
+    shareserver.share(ctx._share_namespace, key, cell)
+    sharefunc = partial(shareserver.send_update, ctx._share_namespace, key)
+    cell._set_share_callback(sharefunc)
+    sharefunc()
+
 Graph = namedtuple("Graph", ("nodes", "connections", "params"))
 
 SeamlessTraitlet = None
@@ -32,7 +50,7 @@ try:
         subpath = None
         parent = None
         def _connect(self):
-            from ..core import StructuredCell, cell as core_cell
+            from ..core import StructuredCell, Cell as core_cell
             hcell = self.parent()._children[self.path]
             if not isinstance(hcell, Cell):
                 raise NotImplementedError(type(hcell))
@@ -96,6 +114,7 @@ class Context:
     _translating = False
     _as_lib = None
     _auto_register_library = False
+    _shares = None
     def __init__(self, dummy=False):
         self._dummy = dummy
         if not dummy:
@@ -334,6 +353,9 @@ class Context:
             self._remount_graph() #do it again, because TEMP values may have been popped, and we have now real values instead
             for traitlet in self._traitlets.values():
                 traitlet._connect()
+            if self._shares is not None:
+                for path in self._shares:
+                    connect_share(self, path)
         finally:
             self._translating = False
         self._needs_translation = False
@@ -410,6 +432,8 @@ class Context:
                         libitem.copy_deps.remove((weakref.ref(self), path))
                 nodes.pop(p)
                 self._children.pop(p, None)
+                if self._shares is not None:
+                    self._shares.pop(p, None)                
                 self._translate()
 
         nodes = self._graph.nodes
@@ -441,6 +465,18 @@ class Context:
             ctarget = con["target"]
             return ctarget[:lp] != path
         self._graph[1][:] = filter(keep_con, self._graph[1])
+
+    def _share(self, cell):
+        key = ".".join(cell._path)
+        if self._shares is None:
+            global shareserver
+            from .. import shareserver
+            shareserver.start()
+            self._share_namespace = shareserver.new_namespace("ctx")
+            self._shares = set()
+        self._shares.add(cell._path)
+        self._translate()
+            
 
     def __dir__(self):
         d = [p for p in type(self).__dict__ if not p.startswith("_")]
