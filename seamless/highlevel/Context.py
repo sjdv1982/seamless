@@ -20,26 +20,9 @@ from ..midlevel.library import register_library
 from .Library import get_lib_paths, get_libitem
 from .depsgraph import DepsGraph
 
-def connect_share(ctx, path):
-    from ..core import StructuredCell, Cell as core_cell
-    key = "/".join(path) #TODO: split in subpaths by inspecting and traversing ctx._children (recursively for subcontext children)    
-    hcell = ctx._children[path]
-    if not isinstance(hcell, Cell):
-        raise NotImplementedError(type(hcell))
-    cell = hcell._get_cell()
-    if isinstance(cell, StructuredCell):
-        pass #TODO: see above
-    elif isinstance(cell, core_cell):
-        pass #TODO: see above
-    else:
-        raise TypeError(cell)
-    shareserver.share(ctx._share_namespace, key, cell)
-    sharefunc = partial(shareserver.send_update, ctx._share_namespace, key)
-    cell._set_share_callback(sharefunc)
-    sharefunc()
-
 Graph = namedtuple("Graph", ("nodes", "connections", "params"))
 
+shareserver = None
 SeamlessTraitlet = None
 try:
     import traitlets
@@ -353,15 +336,39 @@ class Context:
             self._remount_graph() #do it again, because TEMP values may have been popped, and we have now real values instead
             for traitlet in self._traitlets.values():
                 traitlet._connect()
-            if self._shares is not None:
-                for path in self._shares:
-                    connect_share(self, path)
+            self._connect_share()
         finally:
             self._translating = False
         self._needs_translation = False
         if explicit and self._auto_register_library:
             #the timeout is just a precaution
             self.register_library(timeout=5)
+
+    def _connect_share(self):
+        from ..core import StructuredCell, Cell as core_cell
+        sharedict = {}
+        if self._shares is not None:                
+            for path in self._shares:
+                key = "/".join(path) #TODO: split in subpaths by inspecting and traversing ctx._children (recursively for subcontext children)    
+                hcell = self._children[path]
+                if not isinstance(hcell, Cell):
+                    raise NotImplementedError(type(hcell))
+                cell = hcell._get_cell()
+                if isinstance(cell, StructuredCell):
+                    pass #TODO: see above
+                elif isinstance(cell, core_cell):
+                    pass #TODO: see above
+                else:
+                    raise TypeError(cell)  
+                sharedict[key] = cell
+
+        if shareserver is not None:
+            shareserver.share(self._share_namespace, sharedict)
+        for key, cell in sharedict.items():
+            sharefunc = partial(shareserver.send_update, self._share_namespace, key)
+            cell._set_share_callback(sharefunc)
+            sharefunc()
+
 
     def _get_graph(self):
         nodes, connections, params = self._graph

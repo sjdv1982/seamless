@@ -160,7 +160,8 @@ class CellBase(CellLikeBase):
         self.from_buffer(filevalue)
 
     def serialize(self, transfer_mode, access_mode, content_type):
-        assert (transfer_mode, access_mode, content_type) in self._supported_modes
+        if (transfer_mode, access_mode, content_type) not in self._supported_modes:
+            raise TypeError
         return self._serialize(transfer_mode, access_mode, content_type)
 
     def serialize_buffer(self):

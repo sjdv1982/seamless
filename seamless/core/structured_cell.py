@@ -595,6 +595,12 @@ class StructuredCell(CellLikeBase):
             formcell._mount_setter = self._init_form_from_mounted_file
         if self.schema is not None:
             self.schema._mount_setter = self._set_schema_from_mounted_file
+
+        if self._plain:
+            self._supported_modes = supported_modes_json
+        else:
+            self._supported_modes = supported_modes_mixed
+
         if state is not None:
             self.touch()
 
@@ -640,6 +646,8 @@ class StructuredCell(CellLikeBase):
 
 
     def serialize(self, transfer_mode, access_mode, content_type):
+        if (transfer_mode, access_mode, content_type) not in self._supported_modes:
+            raise TypeError
         data = self.monitor.get_data(())
         if transfer_mode == "ref":
             result = data

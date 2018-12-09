@@ -170,6 +170,7 @@ for content_type1 in text_types:
 for content_type in ("text", "python", "ipython", "transformer", "reactor", "macro"):
     adapters[("copy", "text", "json"), ("copy", "text", content_type)] = assert_text
     adapters[("copy", "text", content_type), ("copy", "text", "json")] = json_encode
+    adapters[("copy", "text", content_type), ("copy", "json", content_type)] = True
 adapters[("copy", "object", "mixed"), ("copy", "text", "mixed")] = assert_mixed_text
 adapters[("copy", "object", "mixed"), ("copy", "json", "mixed")] = assert_plain
 
@@ -239,5 +240,48 @@ Supported target modes: %s
 
 """ % (source, target, source_modes, target_modes))
 
+def serialize(cell, transfer_mode, access_mode, content_type):    
+    source_modes = list(cell._supported_modes)
+    if transfer_mode == "ref":
+        transfer_modes = ["ref", "copy"]
+    else:
+        transfer_modes = [transfer_mode]
+    for trans_mode in transfer_modes:
+        target_mode0 = trans_mode, access_mode, content_type
+        for source_mode0 in source_modes:
+            if source_mode0[0] != trans_mode:
+                continue
+            source_mode = source_mode0
+            target_mode = substitute_default(source_mode, target_mode0)
+            if target_mode[0] != trans_mode:
+                continue
+            if source_mode[1] is None:
+                source_mode = (trans_mode, target_mode[1], source_mode[2])
+            if source_mode[2] is None:
+                source_mode = (trans_mode, source_mode[1], target_mode[2])
+            if target_mode[1] is None:
+                target_mode = (trans_mode, source_mode[1], target_mode[2])
+            if target_mode[2] is None:
+                target_mode = (trans_mode, target_mode[1], source_mode[2])
+            if source_mode == target_mode:
+                adapter = True
+            else:
+                adapter = adapters.get((source_mode, target_mode))
+            if adapter is not None:
+                value = cell.serialize(*source_mode)
+                if value is None:
+                    return None
+                if adapter is True:
+                    return value
+                else:
+                    return adapter(value)
+    target_mode = transfer_mode, access_mode, content_type                    
+    raise Exception("""Could not find adapter for cell %s
+
+Requested mode: %s
+
+Supported modes: %s
+
+""" % (cell, target_mode, source_modes))
 
 from .cson import cson2json
