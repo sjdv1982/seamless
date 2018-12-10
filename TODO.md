@@ -14,6 +14,11 @@ A: get BCsearch working
   Almost done (tests/simple-remote-client/server)
   TODO:
   - embed in a real network server (and support it as .server, not just file://)
+    UPDATE: this should be done by having a special GRAPH namespace on the REST server;
+    the highlevel may share contexts (TODO) and transformers in this manner; sharing
+    will expose the context/transformer to receive GRAPH commands; in a separate mechanism,
+    a transformer/context can be configured in "delegated mode", meaning that local computation
+    is disabled and that there must be either a cache hit or a worker that takes GRAPH commands)
   - send back the response (RPSEAMLESS?)
   - implement pin/manager.send_update_from_remote() that accepts the response
     and dispatches it towards the various cell types
@@ -112,8 +117,8 @@ Part 4:
      In that case, the regeneration of the reactor essentially becomes an update() event  
 
 Part 5:
-  - Signals (will always be ephemeral)
-  - Observers (subclass of OutputPinBase) (UPDATE: traitlet instead)
+  - Signals (will always be ephemeral) UPDATE: rip them, or rather, make them a special case of plugin-socket (see below). Probably delay this until long-term
+  - Observers (subclass of OutputPinBase) (UPDATE: traitlet instead. DONE)
   - Fully port over 0.1 lib: from .py files to Seamless library context files
   - Fully port over 0.1 tests
   - Clean up all vestiges of 0.1
@@ -197,6 +202,19 @@ Part 8:
     - Orca (don't show the code)  
 
 Release as 0.5
+
+Medium-term:
+- Add Pandas as a query engine. Querying in Pandas is fantastic (much better than numexpr).
+  Usage is as simple as `from pandas.core.computation.eval import eval as pd_eval`, and then:
+  `pd_eval("c < 108 and c > 102", global_dict={"c": arr["c"]})` where arr is a structured array.
+  The Silk wrapper can be passed in as a resolver for even more ease of use.
+  (Unfortunately, using DataFrames stinks...
+  DataFrames are very opinionated about holding state, no way to let Silk hold it in a vanilla Numpy array.
+  This is because Pandas *really* wants a 2D Numpy array, of dtype=object if needed).
+  With this, there is absolutely no need to re-implement/re-invent a PDB selection language.
+  PDB selection should be server-side, sent as a JSON object with atom indices to the browser,
+   to be interpreted by NGL.
+
 
 Long-term:
 - Meta-schema for schema editing (jsonschema has it)
@@ -876,3 +894,42 @@ Lazy output cq. lazy input cells in Seamless services can be exposed as callback
  (Haskell FFI at least supports this; Idris FFI does not support closures, that's bad).
 
  NOTE: seamless will never have any global undo system. It is up to individual editor-reactors to implement their own systems.
+
+Plugin-socket connection system
+===============================
+Seamless will have a hive-like plugin-socket connection system to connect reactors.
+These reactor connections are *not* meant to influence computations, but only to improve visualization
+ and authority control.
+Use cases:
+- Have reactor 1 that polls a database, and reactor 2 that has an editpin to modify cell X.
+  When reactor 1 and 2 are connected, cell X can be modified (as an act of authority) when the database
+  is modified.
+  Conversely, if reactor 2 receives updates to X, reactor 1 could store them in the database. For this,
+  X could also come from an inputpin.
+- Reactor 1 maintains an OpenGL window, and reactor 2 draws in it. When connected, reactor 1 can notify
+  reactor 2 when the drawing can take place (since in OpenGL, drawing must take place within a specific 
+  callback triggered by the windowing system; With Vulkan, this may no longer be necessary).
+- Reactor 1 and 2 both maintain a GUI using a native widget. By exposing their widget objects to reactor 3,
+  reactor 3 can display them in a common window.
+
+NOTE: TO DOCUMENT:
+Seamless should make it easy to write code that runs fast (e.g. in parallel, in C, on the GPU) with
+minimal effort. However, Seamless does *not* by default have a high performance in terms of 
+data handling: a lot of things are copied and have their checksums computed, repeatedly.
+Seamless should provide the facilities to make data handling faster, usually at the expense of error 
+control, but users will have to enable them if they see that their data load gets too heavy.
+TO DOCUMENT (= example of the above):
+Structured cells are pretty efficient when it comes to state-modification-to-outchannel mapping. 
+When you set .a.b, it will fire on outchannels .a.b.c, .a and self, but not on .a.d, a.d.e or .f .
+For other outchannels, not even the checksums will be computed (TODO: not true at present)
+This holds no matter if .a.b is set from an inchannel or from the terminal.
+However, this efficiency is *lost* when you use any kind of buffering or forking. This will set the entire
+ state, causing all checksums to be recomputed.
+In addition, it is pretty *inefficient* if you make repeated state modifications; for example,
+"for i in range(100): cell.a.b.append(i)". Outchannels connected to a transformer will repeatedly cancel
+ the transformer, and those to a reactor will *wait* on each append until the reactor has finished!
+Therefore, any Silk method that modifies the data should normally use fork().
+(to think about:
+- storing some selected bytes of a big array, to quickly detect huge changes w/o recomputing full checksum
+- Make a special StructuredCell Silk mode where set/setitem are not intercepted by the monitor, but where
+  instead any outchannel update must be triggered manually by sending a dirty signal )
