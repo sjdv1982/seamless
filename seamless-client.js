@@ -1,4 +1,4 @@
-export default function connect_seamless(websocketserver, restserver, namespace="ctx"){  
+function connect_seamless(websocketserver, restserver, namespace="ctx"){  
   var ctx = {
     self: {
       oninput: function(value) {},
@@ -116,3 +116,4 @@ module.exports = {
   connect_seamless: connect_seamless,
 };
 */
+export default connect_seamless
