@@ -111,9 +111,12 @@ function connect_seamless(websocketserver, restserver, namespace="ctx"){
 }
 
 /* 
+//for require 
+export default connect_seamless
+
 //If the target is ES5:
 module.exports = {
   connect_seamless: connect_seamless,
 };
 */
-export default connect_seamless
+
