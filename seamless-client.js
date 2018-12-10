@@ -1,4 +1,4 @@
-function connect_seamless(websocketserver, restserver, namespace="ctx"){  
+export function connect_seamless(websocketserver, restserver, namespace="ctx"){  
   var ctx = {
     self: {
       oninput: function(value) {},
@@ -109,3 +109,10 @@ function connect_seamless(websocketserver, restserver, namespace="ctx"){
   
   return ctx
 }
+
+/* 
+//If the target is ES5:
+module.exports = {
+  connect_seamless: connect_seamless,
+};
+*/
