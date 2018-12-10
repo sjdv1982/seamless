@@ -110,13 +110,13 @@ function connect_seamless(websocketserver, restserver, namespace="ctx"){
   return ctx
 }
 
-/* 
-//for require 
-export default connect_seamless
 
-//If the target is ES5:
+//export default connect_seamless
+define({
+  connect_seamless: connect_seamless,
+});
+/*
 module.exports = {
   connect_seamless: connect_seamless,
 };
 */
-
