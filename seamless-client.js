@@ -1,4 +1,4 @@
-export function connect_seamless(websocketserver, restserver, namespace="ctx"){  
+export default function connect_seamless(websocketserver, restserver, namespace="ctx"){  
   var ctx = {
     self: {
       oninput: function(value) {},
