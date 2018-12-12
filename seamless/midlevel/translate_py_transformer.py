@@ -46,7 +46,7 @@ def translate_py_transformer(node, root, namespace, inchannels, outchannels, lib
         p = {"io": "input"}
         p.update(pin)
         all_pins[pinname] = p
-    all_pins[result_name] = "output"
+    all_pins[result_name] = {"io": "output", "transfer_mode": "copy"}
     if node["SCHEMA"]:
         assert with_result
         all_pins[node["SCHEMA"]] = {
