@@ -195,7 +195,7 @@ class CellBase(CellLikeBase):
         from_pin: can be True (normal pin that has authority), False (from code) or "edit" (edit pin)
         default: indicates a default value (pins may overwrite it)
         force: force deserialization, even if slave (normally, force is invoked only by structured_cell)
-        """
+        """        
         assert from_pin in (True, False, "edit", "duplex")
         if not force:
             assert not self._master #slave cells are read-only
@@ -253,7 +253,7 @@ class CellBase(CellLikeBase):
                 msg = "Warning: setting value for cell %s, controlled by %s"
                 print(msg % (self._format_path(), self._seal) )
 
-        if self._observer is not None:
+        if self._observer is not None and self._val is not None:
             self._observer(self._val)
         if self._share_callback is not None:
             self._share_callback()
@@ -366,6 +366,8 @@ class CellBase(CellLikeBase):
 
     def _set_observer(self, observer):
         self._observer = observer
+        if self._val is not None:
+            observer(self._val)
 
     def _set_share_callback(self, share_callback):
         self._share_callback = share_callback

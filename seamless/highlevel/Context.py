@@ -54,9 +54,8 @@ try:
                 else:
                     ccell = cell
             elif isinstance(cell, core_cell):
-                assert subpath is None
-                raise NotImplementedError
-                ccell = cell
+                assert self.subpath is None
+                ccell = cell                
             else:
                 raise TypeError(cell)
             if ccell is not None:
