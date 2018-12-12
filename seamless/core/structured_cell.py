@@ -890,13 +890,15 @@ class StructuredCell(CellLikeBase):
     def _set_observer(self, observer):
         #self._observer = weakref.ref(observer) #TODO: should work! but hctx._traitlets doesn't hold on?
         self._observer = observer
+        self._observe()
 
     def _observe(self):
         if self._observer is not None:
             data = self.value
             if isinstance(data, MixedBase):
                 data = data.value
-            self._observer(data)
+            if data is not None:
+                self._observer(data)
 
 
     def _set_share_callback(self, share_callback):
