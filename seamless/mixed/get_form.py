@@ -213,7 +213,7 @@ def get_tform_numpy_builtin(dt):
         typedef0 = "integer"
     elif any([dtb == t for t in _float_types]):
         typedef0 = "number"
-    elif dtb == np_char:
+    elif is_np_str(dtb):
         typedef0 = "string"
     else:
         raise TypeError(dtb)
@@ -272,8 +272,11 @@ def get_tform_numpy_struct(dt):
     return storage, typedef
 
 
+def is_np_str(dt):
+    return dt == np.dtype("S%d" % dt.itemsize)
+
 def get_tform_numpy(dt):
-    if dt.base.isbuiltin or dt == np_char or dt in dt_builtins:
+    if dt.base.isbuiltin or is_np_str(dt) or dt in dt_builtins:
         return get_tform_numpy_builtin(dt)
     return get_tform_numpy_struct(dt)
 
