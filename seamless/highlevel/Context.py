@@ -146,16 +146,19 @@ class Context:
     def __setattr__(self, attr, value):
         if attr.startswith("_"):
             return object.__setattr__(self, attr, value)
+        attr2 = (attr,)
         if isinstance(value, Reactor):
             value._init(self, (attr,) )
             self._translate()
         elif isinstance(value, Transformer) and value._parent is None:
-            self._graph[0][(attr,)] = value
-            self._children[(attr,)] = value
-            value._init(self, (attr,) )
+            self._graph[0][attr2] = value
+            self._children[attr2] = value
+            value._init(self, attr2 )
             self._translate()
+        elif attr2 in self._children:
+            self._children[attr2].set(value)
         else:
-            assign(self, (attr,) , value)
+            assign(self, attr2, value)
 
     def __delattr__(self, attr):
         self._destroy_path((attr,))
@@ -347,9 +350,9 @@ class Context:
     def _connect_share(self):
         from ..core import StructuredCell, Cell as core_cell
         sharedict = {}
-        if self._shares is not None:                
+        if self._shares is not None:
             for path in self._shares:
-                key = "/".join(path) #TODO: split in subpaths by inspecting and traversing ctx._children (recursively for subcontext children)    
+                key = "/".join(path) #TODO: split in subpaths by inspecting and traversing ctx._children (recursively for subcontext children)
                 hcell = self._children[path]
                 if not isinstance(hcell, Cell):
                     raise NotImplementedError(type(hcell))
@@ -359,7 +362,7 @@ class Context:
                 elif isinstance(cell, core_cell):
                     pass #TODO: see above
                 else:
-                    raise TypeError(cell)  
+                    raise TypeError(cell)
                 sharedict[key] = cell
 
         if shareserver is not None:
@@ -440,7 +443,7 @@ class Context:
                 nodes.pop(p)
                 self._children.pop(p, None)
                 if self._shares is not None:
-                    self._shares.pop(p, None)                
+                    self._shares.pop(p, None)
                 self._translate()
 
         nodes = self._graph.nodes
@@ -483,7 +486,7 @@ class Context:
             self._shares = set()
         self._shares.add(cell._path)
         self._translate()
-            
+
 
     def __dir__(self):
         d = [p for p in type(self).__dict__ if not p.startswith("_")]
