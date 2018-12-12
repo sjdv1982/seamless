@@ -450,5 +450,5 @@ def get_form(data):
     elif isinstance(data, dict):
         storage, typedef = get_form_dict_plain(data)
     else:
-        raise TypeError
+        raise TypeError(type(data))
     return storage, typedef

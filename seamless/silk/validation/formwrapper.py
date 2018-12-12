@@ -40,6 +40,8 @@ class FormWrapper:
             if isinstance(subform, str):
                 substorage = subform
                 subform = None
+            elif subform is None:
+                pass
             else:
                 substorage = subform.get("storage")
         if subform is None and substorage is None:

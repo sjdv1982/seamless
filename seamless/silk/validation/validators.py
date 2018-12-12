@@ -92,6 +92,8 @@ def _validator_storage(storage, instance_storage, form_str=None):
 def validator_storage(validator, storage, instance, schema):
     if isinstance(instance, FormWrapper):
         instance_storage = instance._storage
+        if instance._storage is None: #huh? to look into later... TODO
+            instance_storage, _ = get_form(instance._wrapped)
     else:
         #TODO:BAD
         instance_storage, _ = get_form(instance)
@@ -211,7 +213,7 @@ def validator_form(validator, form, instance, schema, _from_items=False):
             yield ValidationError(msg)
             return
         form_wrapper =  FormWrapper(None, instance_form["items"], instance_storage)
-        items_form = schema.get("items", {}).get("form" ,  {})        
+        items_form = schema.get("items", {}).get("form" ,  {})
         for error in validator_form(
             validator,
             items_form, form_wrapper,
