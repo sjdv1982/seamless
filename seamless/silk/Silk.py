@@ -129,9 +129,10 @@ class Silk(SilkBase):
                 raise AttributeError("__init__")
             name = "Silk __init__"
             constructor = compile_function(constructor_code, name)
-            result = constructor(self, *args, **kwargs)
+            instance = Silk(data=None,schema=self._schema)
+            result = constructor(instance, *args, **kwargs)
             assert result is None # __init__ must return None
-            return self
+            return instance
         else:
             call_code = methods.get("__call__", None)
             if call_code is None:
@@ -282,10 +283,12 @@ class Silk(SilkBase):
             wvalue = wvalue.value
             if isinstance(wvalue, Silk):
                 wvalue = wvalue.data
-        if isinstance(wvalue, list):
+        if isinstance(wvalue, (list, tuple)):
             storage = "plain"
         elif isinstance(wvalue, np.ndarray):
             storage = "binary"
+        else:
+            raise TypeError(wvalue)
         if policy["infer_storage"]:
             schema["storage"] = storage
         if storage == "binary":
@@ -788,6 +791,10 @@ class Silk(SilkBase):
         except (TypeError, KeyError, AttributeError, IndexError) as exc:
             if attr.startswith("_"):
                 raise AttributeError(attr) from None
+            try:
+                return deepcopy(self._schema["__prototype__"][attr])
+            except KeyError:
+                pass
             try:
                 return super().__getattribute__("_getitem")(attr)
             except (TypeError, KeyError, AttributeError, IndexError):

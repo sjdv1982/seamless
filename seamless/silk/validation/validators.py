@@ -211,9 +211,10 @@ def validator_form(validator, form, instance, schema, _from_items=False):
             yield ValidationError(msg)
             return
         form_wrapper =  FormWrapper(None, instance_form["items"], instance_storage)
+        items_form = schema.get("items", {}).get("form" ,  {})        
         for error in validator_form(
             validator,
-            schema["items"]["form"], form_wrapper,
+            items_form, form_wrapper,
             schema, _from_items=True
           ):
             yield error
