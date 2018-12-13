@@ -246,8 +246,9 @@ def sanitize_dtype(dtype):
 def _form_to_dtype_scalar(form):
     type_ = form["type"]
     if type_ == "string":
-        return np_char, None
-    if type_ == "integer":
+        result = "S"
+        result += str(form["bytesize"])
+    elif type_ == "integer":
         result = "="
         if form.get("unsigned"):
             result += "u"
