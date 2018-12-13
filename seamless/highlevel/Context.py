@@ -168,9 +168,9 @@ class Context:
     def __delattr__(self, attr):
         self._destroy_path((attr,))
 
-    def _add_traitlet(self, path, subpath):
+    def _add_traitlet(self, path, subpath, fresh):
         traitlet = self._traitlets.get((path, subpath))
-        if traitlet is not None:
+        if traitlet is not None and not fresh:
             return traitlet
         if SeamlessTraitlet is None:
             raise ImportError("cannot find traitlets module")

@@ -114,8 +114,8 @@ class Cell(Base):
                 parent._as_lib.needs_update = True
         parent._translate()
 
-    def traitlet(self):
-        return self._parent()._add_traitlet(self._path, None)
+    def traitlet(self, fresh=False):
+        return self._parent()._add_traitlet(self._path, None, fresh)
 
     @property
     def value(self):
