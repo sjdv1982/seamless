@@ -247,6 +247,7 @@ class ShareServer(object):
         print("Opened the seamless REST server at port {0}".format(self.rest_port))
 
     async def _start(self):        
+        print("START")
         s1 = self.serve_update()
         s2 = self.serve_rest()
         await s1
@@ -257,7 +258,7 @@ class ShareServer(object):
 
     def start(self):
         if self.started:
-            return
+            return        
         self._future_start = asyncio.ensure_future(self._start())
         return self._future_start
 

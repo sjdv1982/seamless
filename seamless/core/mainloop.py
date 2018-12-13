@@ -75,12 +75,14 @@ class WorkQueue:
                 if work_count == 100 and not _signal_processing:
                     run_qt() # Necessary to prevent freezes in glwindow
                     work_count = 0
-
         #Whenever work is done, do an asyncio flush
         loop = asyncio.get_event_loop()
+        loop.run_until_complete(asyncio.sleep(0))
+        """
         loop.call_soon(lambda loop: loop.stop(), loop)
         if not loop.is_running():
             loop.run_forever()
+        """
 
         #print("flush")
         if self._signal_processing == 0:
