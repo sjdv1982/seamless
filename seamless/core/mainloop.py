@@ -120,7 +120,6 @@ from multiprocessing import Process
 def run_qt():
     global run_qt, qt_app
     if qt_app is None: 
-        ''' #disable Qt for now, as it no longer plays nice with Jupyter
         import multiprocessing
         if multiprocessing.get_start_method() != "fork":
             print("""Cannot test if Qt can be started
@@ -133,7 +132,6 @@ If you are running from terminal (instead of Jupyter), you could enable Qt manua
             p.join()
             if not p.exitcode:
                 qt_app = PyQt5.QtWidgets.QApplication(["  "])
-        '''
         if qt_app is None:
             msg = "Qt could not be started. Qt widgets will not work" #TODO: some kind of env variable to disable this warning
             print(msg,file=sys.stderr)

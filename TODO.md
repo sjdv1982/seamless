@@ -1,3 +1,5 @@
+NOTE: Seamless runs very well with Jupyter, but requires tornado-4.5.3, not tornado 5.1!
+
 Great Refactor is underway (see seamless-towards-02.md).
 
 Part 1 is now complete
