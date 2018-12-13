@@ -65,7 +65,10 @@ try:
         def receive_update(self, value):
             #print("Traitlet RECEIVE UPDATE", self.path, self.subpath, value)
             self._updating = True
+            old_value = self.value
             self.value = value
+            # For some mysterious reason, traitlets observers are not notified...
+            self._notify_trait("value", old_value, value)
             self._updating = False
 
         @traitlets.observe('value')
