@@ -55,7 +55,7 @@ try:
                     ccell = cell
             elif isinstance(cell, core_cell):
                 assert self.subpath is None
-                ccell = cell                
+                ccell = cell
             else:
                 raise TypeError(cell)
             if ccell is not None:
@@ -149,11 +149,14 @@ class Context:
         if isinstance(value, Reactor):
             value._init(self, (attr,) )
             self._translate()
-        elif isinstance(value, Transformer) and value._parent is None:
-            self._graph[0][attr2] = value
-            self._children[attr2] = value
-            value._init(self, attr2 )
-            self._translate()
+        elif isinstance(value, Transformer):
+            if value._parent is None:
+                self._graph[0][attr2] = value
+                self._children[attr2] = value
+                value._init(self, attr2 )
+                self._translate()
+            else:
+                assign(self, attr2, value)
         elif attr2 in self._children:
             self._children[attr2].set(value)
         else:
