@@ -1,4 +1,5 @@
 NOTE: Seamless runs very well with Jupyter, but requires tornado-4.5.3, not tornado 5.1!
+ Ipykernel 4.10 works best.
 
 Great Refactor is underway (see seamless-towards-02.md).
 
@@ -484,6 +485,7 @@ The New Way of execution management
 ===================================
 The New Way is purely a manager issue. Worker implementations are unaffected.
 (however, now there is a sleep hack in kernel/transformer.py to prevent premature equilibrium; this needs to be removed)
+- Need asyncio, to move beyond tornado 4 / ipykernel 4
 - There will be only a single manager for every top-level context
 - All checksums will be git-style but with SHA-256
 - Only authoritative cells, object cells (cell()) and Python code cells will hold their value.
