@@ -161,7 +161,9 @@ class Context:
             else:
                 assign(self, attr2, value)
         elif attr2 in self._children:
-            self._children[attr2].set(value)
+            child = self._children[attr2]
+            if isinstance(child, Cell):
+                child.set(value)
         else:
             assign(self, attr2, value)
 
