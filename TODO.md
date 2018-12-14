@@ -9,7 +9,41 @@ Things to do:
 
 Part 2: high level
 
-A: get BCsearch working
+0: prepare proof of principles
+- BC demo works now, at development level
+- Observable Notebook integration works now
+- Make a bash transformer
+- Simple visualization for BCSearch
+- BCSearch on Github? integrate into struclib?
+
+A: Towards a first real example
+- Constructors, finish testing
+  Test library-containing-another-library    
+  Make sure constructors work correctly when copying parent contexts
+  Test indirect library update system, also with constructors
+- Finish browser lib
+-  First real example:
+  - Convert topology.json (of a different ctx!) to SVG
+  - Interject merge for manual edit
+  - Hook up browser for visualization
+
+intermezzo:
+- convert "json" to "plain" everywhere (JsonCell etc).
+- Look into "gracefully shutting down transformers"; slows things down,
+   but proper caching may rely on it?
+   UPDATE: for now, needs to have USE_PROCESSES is True,
+    else causes segfault for BCSearch/test.py
+- re-run all tests
+
+C: Towards Camembert plots (big!)
+- High-level:
+  macros (by definition low-level) with language (python) and api (seamless.core) fields.
+- Call graph serialization
+
+D: Port the peptide trajectory editor, use Observable instead of Jupyter.
+   Build upon struclib
+
+E: get BCsearch working
 (initial/demo version works now)
 - Follow roadmap (see BCsearch directory)
 - Network evaluation:
@@ -29,34 +63,6 @@ A: get BCsearch working
 - Services proof-of-principle
   Low-level services (non-interactive transformer)
 
-intermezzo:
-- convert "json" to "plain" everywhere (JsonCell etc).
-- Look into "gracefully shutting down transformers"; slows things down,
-   but proper caching may rely on it?
-   UPDATE: for now, needs to have USE_PROCESSES is True,
-    else causes segfault for BCSearch/test.py
-- re-run all tests
-
-B: Towards a first real example
-- Constructors, finish testing
-  Test library-containing-another-library    
-  Make sure constructors work correctly when copying parent contexts
-  Test indirect library update system, also with constructors
-- Finish browser lib
--  First real example:
-  - Convert topology.json (of a different ctx!) to SVG
-  - Interject merge for manual edit
-  - Hook up browser for visualization
-
-C: Towards Camembert plots (big!)
-- High-level:
-  macros (by definition low-level) with language (python) and api (seamless.core) fields.
-- Call graph serialization
-- Port websocketserver and dynamic_html
-- Integrate with Observable Notebook: https://beta.observablehq.com/@sjdv1982/model-view-controller
-(see also architecture.txt)
-
-D: Port the peptide trajectory editor, use Observable instead of Jupyter.
 
 E: The final new features before the merge
   - Some more services proof-of-principle
@@ -90,6 +96,14 @@ Part 3 (low-level / cleanup): Towards the merge
 
 Merge into master; end of the Great Refactor
 
+0.2 release
+Documentation      
+Make new videos:
+  - Basic example
+  - Something with C/C++
+  - Something with web forms/interactive notebook (some elements of part 6)
+  - Docking
+
 Part 4:
 - Set virtual filenames for (non-compiled) transformers. See tests/highlevel/python-debugging.py
 - "Simple mode" translation of transformers and reactors (no structured_cell, no schema)
@@ -118,6 +132,9 @@ Part 4:
          - the value of all three code cells stays the same
      In that case, the regeneration of the reactor essentially becomes an update() event  
 
+
+0.2 release
+
 Part 5:
   - Signals (will always be ephemeral) UPDATE: rip them, or rather, make them a special case of plugin-socket (see below). Probably delay this until long-term
   - Observers (subclass of OutputPinBase) (UPDATE: traitlet instead. DONE)
@@ -127,13 +144,6 @@ Part 5:
   - Update documentation
   - Seamless console scripts and installer
 
-0.2 release
-Documentation      
-Make new videos:
-  - Basic example
-  - Something with C/C++
-  - Something with web forms/interactive notebook (some elements of part 6)
-  - Docking
 
 Intermezzo:
 Do a bit of code cleanup
