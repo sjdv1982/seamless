@@ -160,10 +160,12 @@ class Context:
                 self._translate()
             else:
                 assign(self, attr2, value)
+            """
         elif attr2 in self._children:
             child = self._children[attr2]
             if isinstance(child, Cell):
                 child.set(value)
+            """
         else:
             assign(self, attr2, value)
 
