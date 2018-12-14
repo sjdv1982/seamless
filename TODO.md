@@ -1,5 +1,6 @@
 NOTE: Seamless runs very well with Jupyter, but requires tornado-4.5.3, not tornado 5.1!
  Ipykernel 4.10 works best.
+NOTE: Seamless requires IPython 6, not IPython 7!
 
 Great Refactor is underway (see seamless-towards-02.md).
 

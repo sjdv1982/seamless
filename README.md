@@ -11,17 +11,16 @@ live code development (shaders, algorithms, and GUIs).
 **Installation**: pip install seamless-framework
 
 **Requirements**: Python 3.5+, IPython
- numpy, cson, websockets, requests, aiohttp, aiohttp_cors
+ numpy, cson
 
 NOTE: Seamless runs very well with Jupyter, but requires tornado-4.5.3, not tornado 5.1!
+NOTE: Seamless requires IPython 6, not IPython 7!
 
 *Recommended*: scipy, pandas,  cython, PyQt5 (including QWebEngine)
+websockets, requests, aiohttp, aiohttp_cors
 
 **NOTE: For live programming, seamless must be run interactively within
 IPython (from the command line: ipython -i script.py)**
-
-For convenience, a command line tool ``seamless`` is provided, that starts up
-IPython and also imports the seamless API.
 
 Notebook tutorials: https://github.com/sjdv1982/seamless/tree/stable/docs/notebooks
 

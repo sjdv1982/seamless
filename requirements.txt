@@ -1,7 +1,4 @@
-pandas
 websockets
-PyQt5
 cson
 numpy
-PyOpenGL
-IPython
+IPython==6
