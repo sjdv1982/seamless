@@ -93,6 +93,11 @@ try:
     assert len(return_mode) <= 1, return_mode #TODO: stdout and stderr to different targets => return JSON
     return_mode = return_mode[0] if len(return_mode) else None #TODO, see above
     process = subprocess.Popen(command, stdout=stdout, stderr=stderr, shell=True)
+    ###env=my_env
+    ###subprocess.run(args, *, stdin=None, input=None, stdout=None, stderr=None, capture_output=False, shell=False, cwd=None, timeout=None, check=False, encoding=None, errors=None, text=None, env=None, universal_newlines=None)¶    
+    ###use seamless subprocess!
+
+    #The theoretical maximum length of an environment variable is around 32,760 characters. However, you are unlikely to attain that theoretical maximum in practice. All environment variables must live together in a single environment block, which itself has a limit of 32767 characters.Feb 3, 2010
 
     last_stdout_data = b""
     last_stderr_data = b""
