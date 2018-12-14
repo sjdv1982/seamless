@@ -257,8 +257,15 @@ def assign(ctx, path, value):
         assign_context(ctx, path, value)
         ctx._translate()
     elif callable(value):
-        assign_transformer(ctx, path, value)
-        ctx._translate()
+        done = False
+        if path in ctx._children:
+            old = ctx._children[path]
+            if isinstance(old, Cell):
+                old._set(value)
+                done = True
+        if not done:
+            assign_transformer(ctx, path, value)
+            ctx._translate()
     elif isinstance(value, Proxy):
         assert value._parent()._parent() is ctx
         if path not in ctx._children:
