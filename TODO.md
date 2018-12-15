@@ -11,14 +11,21 @@ Things to do:
 
 Part 2: high level
 
-0: prepare proof of principles
+2A: prepare proof of principles
 - BC demo works now, at development level
 - Observable Notebook integration works now
-- Make a bash transformer
 - Simple visualization for BCSearch
 - BCSearch on Github? integrate into struclib?
+- Make a bash transformer, DONE
+  Make a simple Galaxy-XML-to-Seamless translator
 
-A: Towards a first real example
+Give demo for the RPBS platform
+Seamless is now usable by me, to port RPBS/Galaxy services
+ Need some more months to make it usable:
+- by other devs
+- by sysadmins (job control, deployment) 
+
+2B: Towards a first real example
 - Constructors, finish testing
   Test library-containing-another-library    
   Make sure constructors work correctly when copying parent contexts
@@ -35,17 +42,43 @@ intermezzo:
    but proper caching may rely on it?
    UPDATE: for now, needs to have USE_PROCESSES is True,
     else causes segfault for BCSearch/test.py
+  Make it case-by-case possible to do thread evaluation, and wait-for-shutdown
 - re-run all tests
 
-C: Towards Camembert plots (big!)
-- High-level:
-  macros (by definition low-level) with language (python) and api (seamless.core) fields.
-- Call graph serialization
+Part 3 (low-level / cleanup): Towards the merge
+   - Add back in int/float/str/bool cells because they are so convenient.
+     Their content type will be int/float/text/bool.
+     Adapters will convert among them (e.g. int=>float) and between them and JSON/mixed/text.
+     Supported access modes are JSON and text. Adapters will convert to Silk.
+   - Allow a "wrapping mode" for high-level cells. With wrapping mode on, a cell
+      tries to behave as much as possible as cell.value. Auto-wrapping can be
+      enabled at the context level.
+     (Must be stored in meta-data)
+     !!Big!! Will have a significant impact on examples, if enabled by default!
+   - Implement old lib.gui.edit as a new library, with new editpin.
+   - Terminology: context children can be private, in which case they are not in __dir__.
+     By default, they are public. No more "export".
+     (In general, look at __dir__ in the context of Silk, mixed, and cells)
+     (NOTE: This has nothing to do with services. Services determine private and public based on
+     what connects into the serviced context.)
+   - Start with lib porting. Port Qt editors (including HTML), but no more seamless.qt
+     Port all macros, but store the code in plain Python modules in lib, that register a library context   
+   - Jettison Plotly and OpenGL for now; re-target main focus of Seamless towards scientific computations for now
+   - Cleanup tests. With direct mode, most low-level tests should work now? Other ones can be ported to high-level    
+    - Tests involving OpenGL can be jettisoned for now
+   - Cleanup of the code base, remove vestiges of 0.1 (except lib and tests).
+   - Cleanup of the TODO and the documentation (put in limbo). Don't forget /docs/WIP!
 
-D: Port the peptide trajectory editor, use Observable instead of Jupyter.
+Merge into master; end of the Great Refactor
+Seamless is now kind-of ready to be started to be used by other devs, at their peril, caveat emptor, etc.
+Limiting factor: lack of documentation/examples
+
+Part 4: Towards release
+
+4A: Port the peptide trajectory editor, use Observable instead of Jupyter.
    Build upon struclib
 
-E: get BCsearch working
+4B: get BCsearch working
 (initial/demo version works now)
 - Follow roadmap (see BCsearch directory)
 - Network evaluation:
@@ -65,49 +98,57 @@ E: get BCsearch working
 - Services proof-of-principle
   Low-level services (non-interactive transformer)
 
-
-E: The final new features before the merge
-  - Some more services proof-of-principle
-    Low-level services (non-interactive transformer) will have been done
-    Other possible services: interactive transformer, pure reactor (non-interactive or interactive)  
-    NOTE: These are strictly core.manager concerns. Neither the workers nor
-     the high-level has anything to do with it!
-
-Part 3 (low-level / cleanup): Towards the merge
-   - Add back in int/float/str/bool cells because they are so convenient.
-     Their content type will be int/float/text/bool.
-     Adapters will convert among them (e.g. int=>float) and between them and JSON/mixed/text.
-     Supported access modes are JSON and text. Adapters will convert to Silk.
-   - Allow a "wrapping mode" for high-level cells. With wrapping mode on, a cell
-      tries to behave as much as possible as cell.value. Auto-wrapping can be
-      enabled at the context level.
-     (Must be stored in meta-data)
-   - Implement old lib.gui.edit as a new library, with new editpin.
-   - Terminology: context children can be private, in which case they are not in __dir__.
-     By default, they are public. No more "export".
-     This has nothing to do with services. Services determine private and public based on
-     what connects into the serviced context.
-   - Start with lib porting. Port Qt editors (including HTML), but no more seamless.qt
-     Port all macros, but store the code in plain Python modules in lib, that register a library context
-   - Bring back slash0
-   - Jettison Plotly and OpenGL for now; re-target main focus of Seamless towards scientific computations for now
-   - Cleanup tests. With direct mode, most low-level tests should work now? Other ones can be ported to high-level    
-    - Tests involving OpenGL can be jettisoned for now
-   - Cleanup of the code base, remove vestiges of 0.1 (except lib and tests).
-   - Cleanup of the TODO and the documentation (put in limbo). Don't forget /docs/WIP!
-
-Merge into master; end of the Great Refactor
-
 0.2 release
-Documentation      
+Documentation, make at least something sparse
+Reorganize this TODO into Github issues
 Make new videos:
   - Basic example
   - Something with C/C++
   - Something with web forms/interactive notebook (some elements of part 6)
   - Docking
+Seamless is now becoming usable by other devs, but needs a lot of patience (correct Jupyter version etc.)
+Lack of documentation still a big issue.
 
-Part 4:
-- Set virtual filenames for (non-compiled) transformers. See tests/highlevel/python-debugging.py
+- macros (by definition low-level) with language (python) and api (seamless.core) fields.
+- Call graph serialization
+
+- The New Way of execution management (see below). 
+- Seamless mainloop and equilibrate should now integrate with asyncio/nest_asyncio. No more dirty things
+  regarding work flushes. This should make Seamless compatible with modern (autumn 2018) versions of
+  IPython, ipykernel and tornado.
+  Don't forget to look into the stdout swallowing that currently happens (Wurlitzer?)  
+- Finalize caching:
+  - structured cells: outchannels have a get_path dependency on an inchannel
+  - structured cells: calculate outchannel checksum (see remarks in source code)
+  - re-enable caching for high level (test if simple.py works now)
+  - low-level reactors: they give a cache hit not just if the value of all cells are the same, but also:
+         - if the connection topology stays the same, and
+         - the value of all three code cells stays the same
+     In that case, the regeneration of the reactor essentially becomes an update() event  
+
+- Bring back slash0. Probably eliminate a lot of features, but the macro principle is good. This allows
+  new pins to be declared at the slash0 unrelated to the call graph, thus avoiding retranslation and 
+  supporting caching.
+
+Intermezzo:
+  - Fully port over 0.1 lib: from .py files to Seamless library context files
+  - Fully port over 0.1 tests
+  - Clean up all vestiges of 0.1 (put them in WIP if needed)
+  - Update documentation
+  - Seamless installer
+  - Initial docker integration
+
+0.3 release
+Lots of videos and notebooks, also of a more ideological nature
+Start promoting Seamless as something that starts to be useful for outsiders. Error messages are becoming limiting.
+
+Part 5:
+- Cell sharing must support unidirectional sharing (easy!)
+- Some more services proof-of-principle   
+  Low-level services (non-interactive transformer) will have been done
+  Other possible services: interactive transformer, pure reactor (non-interactive or interactive)  
+  NOTE: These are strictly core.manager concerns. Neither the workers nor
+    the high-level has anything to do with it!
 - "Simple mode" translation of transformers and reactors (no structured_cell, no schema)
 - High-level: pure contexts. Pure contexts have at least some public output cells and output pins.
   Only pure contexts are can have a grand computation result: the checksums of the public outputs are what is being
@@ -123,51 +164,39 @@ Part 4:
    so the low-level must be informed.  
   UPDATE: better to consider everything as pure by default, unless a cell is marked as ephemeral and is connected
   to/from the outside directly.
-- The New Way of execution management (see below).
- For now, never shut down any worker
-- Finalize caching:
-  - structured cells: outchannels have a get_path dependency on an inchannel
-  - structured cells: calculate outchannel checksum (see remarks in source code)
-  - re-enable caching for high level (test if simple.py works now)
-  - low-level reactors: they give a cache hit not just if the value of all cells are the same, but also:
-         - if the connection topology stays the same, and
-         - the value of all three code cells stays the same
-     In that case, the regeneration of the reactor essentially becomes an update() event  
 
+- Build upon services proof-of-principle (cloudless)
+- HMTL gen from schema 
+  non-interactive => relatively easy but unimportant; need to think about result display
+  interactive (REST calls) => tricky
+- Implement all the checksum servers
+- Improved docker integration: bundle with servers, cache server, cache volumes
 
-0.2 release
+0.4 release
+Documentation  
+Make new videos:
+  - Making web services
+Seamless starts to be usable as a service deployment tool. Limiting factor becomes flow control.
+Contributing is still hard because the code is still a mess.
 
-Part 5:
+Part 6:
+  - Streams
+  - Special constructs (see below)
+  - Set virtual filenames for (non-compiled) transformers. See tests/highlevel/python-debugging.py
+    Maybe integrate with gdbgui
   - Signals (will always be ephemeral) UPDATE: rip them, or rather, make them a special case of plugin-socket (see below). Probably delay this until long-term
-  - Observers (subclass of OutputPinBase) (UPDATE: traitlet instead. DONE)
-  - Fully port over 0.1 lib: from .py files to Seamless library context files
-  - Fully port over 0.1 tests
-  - Clean up all vestiges of 0.1
-  - Update documentation
-  - Seamless console scripts and installer
-
 
 Intermezzo:
 Do a bit of code cleanup
 Have a look at all Python files. Move in-code TODOs etc. to documentation
-Make the beginning of dev documentation, create some Github issues perhaps.
 Start to reorganize some code, rename some APIs, etc.
 Perhaps a bit more formal unit tests
 Have a look at what it would take to go to PEP8 compliance.
 
 
-Part 6: "Towards flexible and cloud-compatible evaluation"
-  (use shared authority plan)
-- Build upon services proof-of-principle (cloudless)
-- HMTL gen from schema (UPDATE: less essential now? maybe do slash0 first)
-- Bidirectional cell web editing via Websocketserver (UPDATE: use shared authority instead)
-- Implement all the checksum servers
-- Docker integration
-
-0.3 release
-Documentation  
-Make new videos:
-  - Making web services
+0.5 release
+Seamless is now in alpha; all missing features and the most annoying bugs should now be in Github issues.
+Start to solicit for help.
 
 Part 7:
 - High-level mounting is not quite satisfactory (redundant "translated" context)
@@ -194,31 +223,31 @@ Part 7:
    This should be on by default
 - Silk: error messages, multi-lingual (use Python format() syntax, but with properties to fill in, i.e. "The value cannot be {a.x}". This is natively supported by Python. No magic in the style of {a.x+a.y}; define a property for that)
 
-Release as 0.4
+0.6 release
 
 Part 8:
-- Flesh out modules (see below). Allow native IPython workers, as well
 - Blocks
-- Streams
-- Special constructs (see below)
 - Foreign-language integration
   - Extends the C/C++/Fortran proof-of-principle
   - Support CUDA/OpenCL
   - Requires also a Silk extension (GPU storage, fixed-binary, see silk.md)
   - IPython (.ipy)/Cython magic is not (or barely) necessary, since IPython is natively supported by workers.
-- Bring back OpenGL support (or first integration with Observable?)
-- High-level extensions of serialization (e.g. take care of reporting, shells... Do we need this? or midlevel only?)
+- Bring back OpenGL support 
 - Port over Orca and other examples
-- Make new videos (or first integration with Observable?):
+- Make new videos:
     - Fireworks
     - 3D
     - Docking
     - Orca (don't show the code)  
 
-Release as 0.5
+0.7 release
+Seamless is now in beta. Shift attention to API stability, unit tests, etc. Learn about best practices,
+ and ask for help.
+
 
 Medium-term:
-- Add Pandas as a query engine. Querying in Pandas is fantastic (much better than numexpr).
+- (UPDATE: DONE. Just get my patch into pandas...)
+  Add Pandas as a query engine. Querying in Pandas is fantastic (much better than numexpr).
   Usage is as simple as `from pandas.core.computation.eval import eval as pd_eval`, and then:
   `pd_eval("c < 108 and c > 102", global_dict={"c": arr["c"]})` where arr is a structured array.
   The Silk wrapper can be passed in as a resolver for even more ease of use.
@@ -232,7 +261,9 @@ Medium-term:
 
 Long-term:
 - Meta-schema for schema editing (jsonschema has it)
-- GUI around report channels (to visualize) and around high-level context (to edit)
+- More love to the GUI around report channels (to visualize) and around high-level context (to edit)
+  At this point, some proof-of-principle should exist already.
+- Windows support? Or never?
 - An extra "table" celltype, for text (like awk or org-mode) or binary (like Pandas)
 - Reconsider the restrictions on transformers and reactors. [Give transformers
   edit pins and cache pins, allow them to have reactor pin API => YAGNI?].
@@ -258,12 +289,14 @@ Long-term:
 - Specialized client implementations for special constructs
 - Reactor start and stop side effects (see below), and other policies involving
   the New Way.
-- Set up user library directory and robogit
+- Set up user library directory and robogit. User contributions to the stdlib should be made easy.
 
 Very long-term:
 - Use the report system for detailed timings. Use this for precise measurements where
   the seamless overhead is, and how much.
 - Python debugging / code editor (WIP) (see seamless-towards-02.md)
+  UPDATE: native widgets are probably outdated, but some network channel (Jupyter protocol?)
+  would probably be good. Keep an eye on analogous developments in VS Code and JupyterLab. 
 - Full feature implementation of Silk, e.g. constructs (see silk.md)
 - Other *host* implementations? JavaScript? Erlang? Elixir? Go?
 - "Activate" overhaul, the "onion" of Python with statements make it slow.
