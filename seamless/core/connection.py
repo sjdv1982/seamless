@@ -123,7 +123,10 @@ class CellToPinConnection(Connection):
         )
         if isinstance(value, MixedBase):
             value = value.data
-        checksum = source.checksum()
+        if source.value is not None:
+            checksum = source.checksum()
+        else:
+            checksum = None
         if self.adapter and value is not None:
             value = self.adapter(value)
         if not only_text or self.target_access_mode == "text":

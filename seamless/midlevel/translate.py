@@ -362,11 +362,13 @@ def translate(graph, ctx, from_lib_paths, is_lib):
                 translate_compiled_transformer(node, ctx, namespace, inchannels, outchannels, lib_path, is_lib)
             elif node["language"] in ("python", "ipython"):
                 translate_py_transformer(node, ctx, namespace, inchannels, outchannels, lib_path, is_lib)
+            elif node["language"] == "bash":
+                translate_bash_transformer(node, ctx, namespace, inchannels, outchannels, lib_path, is_lib)
             else:
-                raise NotImplementedError
+                raise NotImplementedError(node["language"])
         elif t == "reactor":
             if node["language"] not in ("python", "ipython"):
-                raise NotImplementedError
+                raise NotImplementedError(node["language"])
             inchannels, outchannels = find_channels(node["path"], connection_paths)
             editchannels = find_editchannels(node["path"], link_paths)
             translate_py_reactor(node, ctx, namespace, inchannels, outchannels, editchannels, lib_path, is_lib)
@@ -394,3 +396,4 @@ def translate(graph, ctx, from_lib_paths, is_lib):
 
 from .library import get_lib_path
 from .translate_py_transformer import translate_py_transformer
+from .translate_bash_transformer import translate_bash_transformer

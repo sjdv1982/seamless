@@ -67,5 +67,6 @@ from .SubCell import SubCell
 from .Link import Link
 
 from ..lib.compiled_transformer import compiled_transformer as _
+from ..lib.bash_transformer import bash_transformer as _
 
 __all__ = ["Context", "stdlib", "mylib", "Reactor", "Transformer", "Link"]

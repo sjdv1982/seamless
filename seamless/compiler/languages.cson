@@ -37,4 +37,12 @@
     "mode": "compiled"
     "compiler": "gfortran"
   }
+  "bash": {
+    "extension": "sh",
+    "mode": "interpreted"
+  }
+  "slash": {
+    "extension": "slash",
+    "mode": "interpreted"
+  }
 }

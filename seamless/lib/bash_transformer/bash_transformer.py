@@ -3,12 +3,12 @@ from seamless.highlevel import set_resource
 
 executor_file = "executor.py"
 
-print("START")
 ctx = Context()
-ctx.executor = lambda dummy: None
-ctx.executor_code >> ctx.executor.code
 ctx.executor_code = set_resource(executor_file)
-del ctx.executor
+ctx.executor_code._get_hcell()["language"] = "python"
+ctx.executor_code._get_hcell()["transformer"] = True
+ctx.executor_code.celltype = "code"
+ctx.translate()
 
 if __name__ == "__main__":
     #ctx.mount("/tmp/seamless-test", persistent=False) #TODO: persistent=False (does not delete atm)
@@ -22,7 +22,9 @@ if __name__ == "__main__":
     ctx.executor.lines = 3
     ctx.result = ctx.executor
     ctx.equilibrate()
+    print(ctx.result.value)
     ctx.executor_code = ctx.executor_code.value + "\npass"
     ctx.equilibrate()
+    print(ctx.result.value)
 else:
     stdlib.bash_transformer = ctx
