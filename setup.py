@@ -45,13 +45,14 @@ setup(
 
     packages=find_packages(),
 
-    install_requires=['ipython', 'pyqt5', 'numpy', 'cson', 'PyOpenGL', 'lxml', 'qtconsole'],
+    install_requires=[
+      'ipython', 'numpy', 'cson', 'websockets', 'tornado', 'requests',
+      'aiohttp', 'aiohttp_cors', 'wurlitzer'
+    ],
 
     extras_require={
-        'recommended': ['scipy', 'pandas', 'websockets', 'cython'],
+        'recommended': ['scipy', 'pandas', 'cython', 'pyqt5'],
     },
-
-    entry_points={'console_scripts': ['seamless=seamless_console_scripts.seamless:main']},
 
     python_requires='>=3.5',
 )

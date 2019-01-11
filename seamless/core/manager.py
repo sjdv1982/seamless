@@ -1,595 +1,509 @@
-import json
-from ..dtypes.cson import cson2json
+"""
+All runtime access to cells and workers goes via the manager
+also something like .touch(), .set().
+Doing .set() on non-authoritative cells will result in a warning
+Connecting to a cell with a value (making it non-authoritative), will likewise result in a warning
+Cells can have only one outputpin writing to them, this is strictly enforced.
+
+The manager has a notion of the managers of the subcontexts
+manager.set_cell and manager.pin_send_update are thread-safe (can be invoked from any thread)
+"""
+
+from .connection import Connection, CellToCellConnection, CellToPinConnection, \
+ PinToCellConnection
+from . import protocol
+from ..mixed import MixedBase
+
+import threading
+import functools
 import weakref
-from weakref import WeakKeyDictionary, WeakValueDictionary, WeakSet
-from ..dtypes import TransportedArray
-from .registrar import RegistrarObject
+import traceback
+import contextlib
 
-#TODO: disconnect method (see MacroObject for low-level implementation)
+def main_thread_buffered(func):
+    def main_thread_buffered_wrapper(self, *args, **kwargs):
+        if threading.current_thread() != threading.main_thread():
+            work = functools.partial(func, self, *args, **kwargs)
+            self.workqueue.append(work)
+        else:
+            func(self, *args, **kwargs)
+    return main_thread_buffered_wrapper
 
-def head(value):
-    return str(value)[:50].replace("\n","\\n")
+def manager_buffered(func):
+    def manager_buffered_wrapper(self, *args, **kwargs):
+        if not self.active and not self.flushing:
+            work = functools.partial(func, self, *args, **kwargs)
+            self.buffered_work.append(work)
+        else:
+            func(self, *args, **kwargs)
+    return manager_buffered_wrapper
+
+def with_successor(argname, argindex):
+    def with_successor_outer_wrapper(func):
+        def with_successor_wrapper(self, *args0, **kwargs0):
+            args, kwargs = args0, kwargs0
+            if self.destroyed and self.successor:
+                raise NotImplementedError #untested! need to implement destroyed, successor
+                if len(args) > argindex:
+                    target = args[argindex]
+                elif target in kwargs:
+                    target = kwargs[argname]
+                else:
+                    raise TypeError((argname, argindex))
+
+                if isinstance(target, CellLikeBase):
+                    successor_target = getattr(self.successor, target.name)
+                elif isinstance(target, InputPin):
+                    worker_name = target.get_workerr().name #pin.get_worker()? can't remember API
+                    successor_target = attr(self.successor, worker_name).pinsss[target.name] ##pins[]? can't remember API
+
+                if successor_target._manager.destroyed:
+                    return
+                if len(args) > argindex:
+                    args = args[:argindex] + [successor_target] + args[argindex+1:]
+                elif target in kwargs:
+                    kwargs = kwargs.copy()
+                    kwargs[argname] = successor_target
+            return func(self, *args, **kwargs)
+        return with_successor_wrapper
+    return with_successor_outer_wrapper
 
 class Manager:
+    active = True
+    destroyed = False
+    successor = None
+    flushing = False
+    filled_objects = []
+    on_equilibrate_callbacks = None
+    _editpin_origin = None
+    _cell_update_hook = None
+    def __init__(self, ctx):
+        self.ctx = weakref.ref(ctx)
+        if ctx._toplevel:
+            self.rootmanager = weakref.ref(self)
+        else:
+            self.rootmanager = weakref.ref(self.ctx()._root()._get_manager())
+        self.sub_managers = {}
+        self.cell_to_pins = {} #cell => inputpins
+        self.cell_to_cells = {} #cell => CellToCellConnection list
+        self.cell_from_pin = {} #cell => outputpin
+        self.cell_from_cell = {} #alias target cell => (index, source cell, transfer mode)
+        self.pin_from_cell = {} #inputpin => (index, cell)
+        self.pin_to_cells = {} #outputpin => (index, cell) list
+        self._ids = 0
+        self.unstable = set()
+        self.children_unstable = set()
+        #for now, just a single global workqueue
+        from .mainloop import workqueue
+        self.workqueue = workqueue
+        #for now, just a single global mountmanager
+        from .mount import mountmanager
+        self.mountmanager = mountmanager
+        self.buffered_work = []
 
-    def __init__(self):
-        self.listeners = {}
-        self.cell_aliases = {}
-        self.cell_rev_aliases = {}
-        self.macro_listeners = {}
-        self.observers = {}
-        self.registrar_listeners = WeakKeyDictionary()
-        self.rev_registrar_listeners = WeakKeyDictionary()
-        self.pin_to_cells = {}
-        self.cells = WeakValueDictionary()
-        self.cell_to_output_pin = WeakKeyDictionary()
-        self._childids = WeakValueDictionary()
-        self.registrar_items = []
-        self.unstable_workers = WeakSet()
-        self._last_connection_id = -1
-        super().__init__()
-
-    def _connection_id(self):
-        self._last_connection_id += 1
-        return self._last_connection_id
-
+    @main_thread_buffered
+    @manager_buffered
     def set_stable(self, worker, value):
-        assert value in (True, False), value
-        if not value:
-            #print("UNSTABLE", worker)
-            self.unstable_workers.add(worker)
-        else:
-            #print("STABLE", worker)
-            self.unstable_workers.discard(worker)
-
-    def add_cell_alias(self, source, target):
-        from .cell import Cell
-        assert isinstance(source, Cell)
-        assert isinstance(target, Cell)
-        assert source is not target
-        cell_id = self.get_cell_id(source)
-        target_ref = weakref.ref(target)
-
-        try:
-            aliases = self.cell_aliases[cell_id]
-            if target_ref not in aliases:
-                aliases.append(target_ref)
-
-        except KeyError:
-            self.cell_aliases[cell_id] = [target_ref]
-
-        if cell_id not in self.cells:
-            self.cells[cell_id] = source
-
-        #reverse alias
-        cell_id = self.get_cell_id(target)
-        source_ref = weakref.ref(source)
-
-        try:
-            rev_aliases = self.cell_rev_aliases[cell_id]
-            if source_ref not in rev_aliases:
-                rev_aliases.append(source_ref)
-
-        except KeyError:
-            self.cell_rev_aliases[cell_id] = [source_ref]
-
-        if cell_id not in self.cells:
-            self.cells[cell_id] = target
-
-    def add_registrar_item(self, registrar_name, dtype, data, data_name):
-        item = registrar_name, dtype, data, data_name
-        for curr_item in self.registrar_items:
-            if data_name is None:
-                exists = (curr_item[:3] == item[:3])
-            else:
-                exists = (curr_item[:2] == item[:2]) and \
-                  curr_item[3] == data_name
-            if exists:
-                raise ValueError("Registrar item already exists")
-        self.registrar_items.append(item)
-
-    def remove_registrar_item(self, registrar_name, dtype, data, data_name):
-        item = registrar_name, dtype, data, data_name
-        if item not in self.registrar_items:
-            return   #TODO: for now, silently ignore
-        self.registrar_items.remove(item)
-
-    def add_listener(self, cell, input_pin, con_id=None):
-        cell_id = self.get_cell_id(cell)
-        pin_ref = weakref.ref(input_pin)
-
-        if con_id is None:
-            con_id = self._connection_id()
-        try:
-            listeners = self.listeners[cell_id]
-        except KeyError:
-            self.listeners[cell_id] = [(pin_ref, con_id)]
-        else:
-            for lnr, listener in enumerate(listeners):
-                assert listener[0] != pin_ref
-                # TODO: tolerate (silently ignore) a connection that exists already?
-                if con_id < listener[1]:
-                    listeners.insert(lnr, (pin_ref, con_id))
-                    break
-            else:
-                listeners.append((pin_ref, con_id))
-
-        try:
-            curr_pin_to_cells = self.pin_to_cells[input_pin.get_pin_id()]
-            assert cell_id not in [c[0] for c in curr_pin_to_cells]
-            # TODO: tolerate (append) multiple inputs?
-            curr_pin_to_cells.append((cell_id, con_id))
-
-        except KeyError:
-            self.pin_to_cells[input_pin.get_pin_id()] = [(cell_id, con_id)]
-
-        if cell_id not in self.cells:
-            self.cells[cell_id] = cell
-
-        return con_id
-
-    def _remove_listener(self, cell_id, input_pin, worker):
-        input_pin_id = input_pin.get_pin_id()
-        l = self.listeners[cell_id]
-        l[:] = [ref for ref in l if ref[0]().get_pin_id() != input_pin_id]
-        if not len(l):
-            self.listeners.pop(cell_id)
-            cell = self.cells.get(cell_id, None)
-            if cell is not None:
-                cell._on_disconnect(input_pin, worker, False)
-
-    def remove_listener(self, cell, input_pin):
-        worker = input_pin.worker_ref()
-        input_pin_id = input_pin.get_pin_id()
-        self.pin_to_cells.pop(input_pin_id, [])
-        cell_id = self.get_cell_id(cell)
-        self._remove_listener(cell_id, input_pin, worker)
-
-    def remove_listeners_pin(self, input_pin):
-        worker = input_pin.worker_ref()
-        cell_ids = self.pin_to_cells.pop(input_pin.get_pin_id(), [])
-        for cell_id, con_id in cell_ids:
-            self._remove_listener(cell_id, input_pin, worker)
-
-    def remove_alias(self, cell1, cell2):
-        cell1_id = self.get_cell_id(cell1)
-        cell1_ref = weakref.ref(cell1)
-        cell2_id = self.get_cell_id(cell2)
-        cell2_ref = weakref.ref(cell2)
-
-        try:
-            cell1._on_disconnect(cell2, None, incoming=False)
-        except: #TODO: catch specific exception
-            pass
-
-        try:
-            cell2._on_disconnect(cell1, None, incoming=True)
-        except: #TODO: catch specific exception
-            pass
-
-        r = self.cell_aliases[cell1_id]
-        r[:] = [rr for rr in r if rr is not cell2_ref]
-        r = self.cell_rev_aliases[cell2_id]
-        r[:] = [rr for rr in r if rr is not cell1_ref]
-
-
-    def remove_aliases(self, cell):
-        cell_id = self.get_cell_id(cell)
-        cell_ref = weakref.ref(cell)
-        targets = self.cell_aliases.pop(cell_id, [])
-
-        for target_ref in targets:
-            target = target_ref()
-            if target is None:
-                continue
-            target._on_disconnect(cell, None, incoming=True)
-            target_id = self.get_cell_id(target)
-            r = self.cell_rev_aliases[target_id]
-            r[:] = [rr for rr in r if rr is not cell_ref]
-            if not len(r):
-                self.cell_rev_aliases.pop(target_id)
-
-        #rev_aliases
-        targets = self.cell_rev_aliases.pop(cell_id, [])
-
-        for target_ref in targets:
-            target = target_ref()
-            if target is None:
-                continue
-            target_id = self.get_cell_id(target)
-            r = self.cell_aliases[target_id]
-            r[:] = [rr for rr in r if rr is not cell_ref]
-            if not len(r):
-                self.cell_aliases.pop(target_id)
-
-    def remove_listeners_cell(self, cell):
-        cell_id = self.get_cell_id(cell)
-        listeners = self.listeners.pop(cell_id, [])
-        for listener in listeners:
-            pin = listener[0]()
-            if pin is None:
-                continue
-            pin_id = pin.get_pin_id()
-            if pin_id not in self.pin_to_cells:
-                continue
-            self.pin_to_cells[pin_id][:] = \
-                [c for c in self.pin_to_cells[pin_id] if c[0] != cell_id ]
-
-
-    def add_macro_listener(self, cell, macro_object, macro_arg):
-        cell_id = self.get_cell_id(cell)
-        m = (macro_object, macro_arg)
-
-        try:
-            macro_listeners = self.macro_listeners[cell_id]
-            assert m not in macro_listeners
-            macro_listeners.append(m)
-
-        except KeyError:
-            self.macro_listeners[cell_id] = [m]
-            if cell_id not in self.cells:
-                self.cells[cell_id] = cell
-
-    def remove_macro_listener(self, cell, macro_object, macro_arg):
-        cell_id = self.get_cell_id(cell)
-        m = (macro_object, macro_arg)
-
-        if cell_id in self.macro_listeners:
-            l = self.macro_listeners[cell_id]
-            if m in l:
-                l.remove(m)
-
-        #For now:
-        #unconditionally destroy the MacroObject, even if there are other
-        #cells that connect to it
-        # TODO: make macro objects (or a front end/wrapper around them)
-        # behave more like workers (connect/disconnect API)
-        macro_object.destroy()
-
-    def remove_macro_listeners_cell(self, cell):
-        cell_id = self.get_cell_id(cell)
-        listeners = self.macro_listeners.pop(cell_id, [])
-        for macro_object, macro_arg in listeners:
-            #For now:
-            #unconditionally destroy the MacroObject (see above)
-            macro_object.destroy()
-
-    def add_registrar_listener(self, registrar, key, target, namespace_name):
-        if registrar not in self.registrar_listeners:
-            self.registrar_listeners[registrar] = {}
-        d = self.registrar_listeners[registrar]
-        if key not in d:
-            d[key] = []
-        d[key].append((weakref.ref(target), namespace_name))
-
-        if target not in self.rev_registrar_listeners:
-            self.rev_registrar_listeners[target] = []
-        r = self.rev_registrar_listeners[target]
-        r.append((weakref.ref(registrar), key))
-
-    def remove_registrar_listeners(self, target):
-        if target not in self.rev_registrar_listeners:
+        if self.destroyed:
             return
-        rev = self.rev_registrar_listeners.pop(target)
-        for registrar_ref, key in rev:
-            registrar = registrar_ref()
-            if registrar not in self.registrar_listeners:
-                continue
-            r = self.registrar_listeners[registrar]
-            t = r[key]
-            t[:] = [tt for tt in t if tt[0]() is not None and tt[0]() is not target]
-            if not len(t):
-                r.pop(key)
-                if not len(r):
-                    self.registrar_listeners.pop(registrar)
+        if value:
+            self.unstable.discard(worker)
+            if not len(self.unstable) and not len(self.workqueue):
+                self.rootmanager().test_equilibrate()
+        else:
+            self.unstable.add(worker)
+
+    def activate(self, only_macros, triggered=False):
+        if only_macros:
+            for f in self.filled_objects:
+                f.activate(only_macros=True)
+            from .macro import Macro
+            for childname, child in self.ctx()._children.items():
+                if isinstance(child, Context):
+                    child._manager.activate(only_macros=True)
+                elif isinstance(child, Macro):
+                    child.activate(only_macros=True)
+        else:
+            self.active = True
+            for f in self.filled_objects:
+                f.activate(only_macros=False)
+            self.filled_objects = []
+            for childname, child in self.ctx()._children.items():
+                if isinstance(child, Context):
+                    child._manager.activate(only_macros=False, triggered=True)
+                elif isinstance(child, Worker):
+                    child.activate(only_macros=False)
+            if not triggered:
+                self.flush()
+
+    def deactivate(self):
+        self.active = False
+        for childname, child in self.ctx()._children.items():
+            if isinstance(child, Context):
+                child._manager.deactivate()
 
 
-    def add_observer(self, cell, observer, as_data):
-        cell_id = self.get_cell_id(cell)
-        obs_ref = weakref.ref(observer)
+    def stop_flushing(self):
+        self.flushing = False
+        for childname, child in self.ctx()._children.items():
+            if isinstance(child, Context):
+                child._manager.stop_flushing()
 
+    def flush(self, from_parent=False):
+        assert threading.current_thread() == threading.main_thread()
+        assert self.active or self.destroyed
+        self.flushing = True
+        for childname, child in self.ctx()._children.items():
+            if isinstance(child, Context):
+                child._manager.flush(from_parent=True) # need to flush only once
+                                            # with self.active or self.destroyed, work buffer shouldn't accumulate
         try:
-            observers = self.observers[cell_id]
-            assert obs_ref not in observers
-            observers.append((obs_ref, as_data))
-        except KeyError:
-            self.observers[cell_id] = [(obs_ref, as_data)]
-        if cell_id not in self.cells:
-            self.cells[cell_id] = cell
-
-    def remove_observer(self, cell, observer):
-        cell_id = self.get_cell_id(cell)
-        obs_ref = weakref.ref(observer)
-
-        if cell_id in self.observers:
-            l = self.observers[cell_id]
-            l[:] = [ll for ll in l if ll[0] != obs_ref]
-
-    def remove_observers_cell(self, cell):
-        cell_id = self.get_cell_id(cell)
-        listeners = self.observers.pop(cell_id, [])
-
-    def _update(self, cell, dtype, value, *,
-            worker=None, last_con_id=None):
-        import threading
-        assert threading.current_thread() is threading.main_thread()
-        from .cell import Signal
-        cell_id = self.get_cell_id(cell)
-
-        macro_listeners = self.macro_listeners.get(cell_id, [])
-        if last_con_id is None:
-            for macro_object, macro_arg in macro_listeners:
+            self.workqueue.flush()
+            while self.active and len(self.buffered_work):
+                item = self.buffered_work.pop(0)
                 try:
-                    updated = macro_object.update_cell(macro_arg)
-                except Exception:
-                    #TODO: proper logging
-                    import traceback
+                    item()
+                except:
                     traceback.print_exc()
+                    #TODO: log exception
+        finally:
+            if not from_parent:
+                self.stop_flushing()
 
-        aliases = self.cell_aliases.get(cell_id, [])
-        for target_cell_ref in aliases:
-            target_cell = target_cell_ref()
-            if target_cell is not None:
-                if isinstance(target_cell, Signal):
-                    #print("cell-cell alias", cell, "=>", target_cell)
-                    self._update(target_cell, None, None,
-                        worker=worker, last_con_id=last_con_id)
-                else:
-                    value2 = value
-                    if dtype is not None and \
-                      (dtype == "cson" or dtype[0] == "cson") and \
-                      target_cell.dtype is not None and \
-                      (target_cell.dtype == "json" or target_cell.dtype[0] == "json"):
-                        if isinstance(value, (str, bytes)):
-                            value2 = cson2json(value)
+    def destroy(self,from_del=False):
+        if self.destroyed:
+            return
+        self.destroyed = True
+        self.ctx().destroy(from_del=from_del)
+        #all of the children are now dead
+        #  only in the buffered_work and the work queue there is still some function calls to the children
 
-                    target_cell._update(value2, propagate=True)
+    def get_id(self):
+        self._ids += 1
+        return self._ids
 
-        listeners = self.listeners.get(cell_id, [])
-        if last_con_id:
-            listeners = [l for l in listeners if l[1] == last_con_id]
+    def _connect_cell_to_cell(self, cell, target, transfer_mode, duplex=False):
+        target0 = target
+        if isinstance(target, Link):
+            target = target.get_linked()
+        if not target.authoritative:
+            raise Exception("%s: is non-authoritative (already dependent on another worker/cell)" % target)
+        if target0._is_sealed() or cell._is_sealed():
+            concrete, con_id = layer.connect_cell(cell, target0, transfer_mode)
+        else:
+            concrete = True
+            con_id = self.get_id()
+        if isinstance(cell, (Outchannel, Editchannel)) and \
+          isinstance(target, (Inchannel, Editchannel)):
+            assert cell.structured_cell() is not target.structured_cell, (cell, target)
 
-        resource_name0 = None
-        if cell.resource is not None:
-            resource_name0 = cell.resource.filepath
-        for input_pin_ref in listeners:
-            input_pin = input_pin_ref[0]()
+        connection = CellToCellConnection(con_id, cell, target, transfer_mode, duplex=duplex)
+        if cell not in self.cell_to_cells:
+            self.cell_to_cells[cell] = []
+        self.cell_to_cells[cell].append(connection)
 
-            if input_pin is None:
-                continue #TODO: error?
+        if not duplex:
+            target._authoritative = False
+        if concrete:
+            other = target._get_manager()
+            other.cell_from_cell[target] = connection
 
-            if worker is not None and input_pin.worker_ref() is worker:
+            if cell._status == Cell.StatusFlags.OK:
+                connection.fire(only_text=False)
+
+    def _connect_editchannel_to_cell(self, channel, cell, transfer_mode):
+        self._connect_cell_to_cell(channel, cell, transfer_mode, duplex=True)
+        ###self._connect_cell_to_cell(cell, channel, transfer_mode, duplex=True)
+
+    @main_thread_buffered
+    def connect_cell(self, cell, target, transfer_mode=None, duplex=False):
+        # "duplex" is for an synchronizing connection
+        #  it implies that a reverse connection will be formed
+        #  and it doesn't take away authority
+        if self.destroyed:
+            return
+        assert cell._root() is target._root()
+        assert isinstance(cell, CellLikeBase)
+        assert not isinstance(cell, Inchannel)
+        assert cell._get_manager() is self
+        target0 = target
+        if isinstance(target, Link):
+            target = target.get_linked()
+
+        assert isinstance(target, (InputPinBase, EditPinBase, CellLikeBase, Path))
+
+        if isinstance(target, CellLikeBase):
+            assert not isinstance(target, Outchannel) or isinstance(target, Editchannel)
+            return self._connect_cell_to_cell(cell, target0, transfer_mode, duplex=duplex)
+
+        if cell._is_sealed() or target._is_sealed():
+            concrete, con_id = layer.connect_cell(cell, target0, transfer_mode)
+        else:
+            concrete = True
+            con_id = self.get_id()
+
+        connection = CellToPinConnection(con_id, cell, target)
+        if concrete:
+            if isinstance(target, EditPinBase):
+                pass #will be dealt with in connect_pin invocation below
+            elif cell._status == Cell.StatusFlags.OK:
+                connection.fire()
+
+        if cell not in self.cell_to_pins:
+            self.cell_to_pins[cell] = []
+        self.cell_to_pins[cell].append(connection)
+
+        if not isinstance(target, Path):
+            other = target._get_manager()
+            other.pin_from_cell[target] = connection
+
+        if isinstance(target, EditPinBase):
+            mgr = target0._get_manager()
+            mgr.connect_pin(target0, cell, mirror_connection=connection)
+
+    @main_thread_buffered
+    def connect_pin(self, pin, target, mirror_connection=None):
+        if self.destroyed:
+            return
+        target0 = target
+        assert pin._root() is target._root()
+        assert pin._get_manager() is self
+        if isinstance(target, Link):
+            target = target.get_linked()
+        assert isinstance(target, (CellLikeBase, Path)), (pin, target)
+        assert isinstance(pin, (OutputPinBase, EditPinBase)), (pin, target)
+
+        assert (mirror_connection is not None) == (isinstance(pin, EditPinBase))
+
+        if not isinstance(pin, EditPinBase) and not target.authoritative:
+            raise Exception("%s: is non-authoritative (already dependent on another worker/cell)" % target)
+        if target._is_sealed() or pin._is_sealed():
+            concrete, con_id = layer.connect_pin(pin, target)
+        else:
+            concrete = True
+            con_id = self.get_id()
+        if concrete:
+            worker = pin.worker_ref()
+            assert worker is not None #weakref may not be dead
+
+        connection = PinToCellConnection(con_id, pin, target)
+        if pin not in self.pin_to_cells:
+            self.pin_to_cells[pin] = []
+        self.pin_to_cells[pin].append(connection)
+
+        if not isinstance(target, Path):
+            other = target._get_manager()
+            other.cell_from_pin[target] = connection
+            if not isinstance(pin, EditPinBase):
+                target._authoritative = False
+
+        if concrete:
+            if pin.last_value is not None:
+                connection.fire(pin.last_value, pin.last_value_preliminary)
+            elif isinstance(pin, EditPinBase):
+                if target._status == Cell.StatusFlags.OK:
+                    mirror_connection.fire()
+
+    @main_thread_buffered
+    def connect_link(self, link, target):
+        if self.destroyed:
+            return
+        assert link._root() is target._root()
+        assert link._get_manager() is self
+        linked = link.get_linked()
+        """
+        if linked._is_sealed():
+            assert isinstance(linked, (Cell, EditPinBase, OutputPinBase))
+            path = Path(linked)
+            layer.connect_path(path, target)
+            return self
+        if isinstance(linked, Path):
+            return
+        """
+        if isinstance(linked, Path):
+            layer.connect_path(linked, target)
+            return self
+        manager = linked._get_manager()
+        if isinstance(linked, Cell):
+            manager.connect_cell(linked, target)
+        elif isinstance(linked, (EditPinBase, OutputPinBase) ):
+            manager.connect_pin(linked, target)
+        else:
+            raise TypeError(linked)
+        return self
+
+    @main_thread_buffered
+    @manager_buffered
+    @with_successor("cell", 0)
+    def set_cell(self, cell, value, *,
+      default=False, from_buffer=False,
+      force=False, from_pin=False, origin=None
+    ):
+        from .macro_mode import macro_mode_on, get_macro_mode
+        from .mount import is_dummy_mount
+        if self.destroyed:
+            return
+        assert isinstance(cell, CellLikeBase)
+        assert cell._get_manager() is self
+        if isinstance(value, MixedBase):
+            value = value.data
+        if cell is origin: #update comes from an outchannel
+                           #deserialize is not needed
+            different, text_different = True, True
+        else:
+            different, text_different = protocol.set_cell(
+              cell, value,
+              default=default, from_buffer=from_buffer,
+              force=force, from_pin=from_pin
+            )
+        only_text = (text_different and not different)
+        if text_different and not is_dummy_mount(cell._mount) and self.active:
+            if not get_macro_mode():
+                self.mountmanager.add_cell_update(cell)
+        if different or text_different:
+            self.cell_send_update(cell, only_text, origin)
+            if not from_pin:
+                cell_update_hook = self._root()._cell_update_hook
+                if cell_update_hook is not None:
+                    self._root()._run_cell_update_hook(cell, value)
+
+    @main_thread_buffered
+    def _run_cell_update_hook(self, cell, value):
+        self._cell_update_hook(cell, value)
+
+
+    @main_thread_buffered
+    @manager_buffered
+    @with_successor("cell", 0)
+    def touch_cell(self, cell):
+        from .mount import is_dummy_mount
+        if self.destroyed:
+            return
+        assert isinstance(cell, CellLikeBase)
+        assert cell._get_manager() is self
+        self.cell_send_update(cell, only_text=False, origin=None)
+        if not is_dummy_mount(cell._mount) and self.active:
+            self.mountmanager.add_cell_update(cell)
+
+    @main_thread_buffered
+    @manager_buffered
+    @with_successor("worker", 0)
+    def touch_worker(self, worker):
+        if self.destroyed:
+            return
+        assert isinstance(worker, Worker)
+        assert worker._get_manager() is self
+        worker._touch()
+
+    @main_thread_buffered
+    @manager_buffered
+    def notify_attach_child(self, childname, child):
+        if isinstance(child, Context):
+            assert isinstance(child._manager, Manager)
+            self.sub_managers[childname] = child._manager
+        elif isinstance(child, Cell):
+            if child._prelim_val is not None:
+                value, default = child._prelim_val
+                self.set_cell(child, value, default=default)
+                child._prelim_val = None
+
+    @main_thread_buffered
+    @manager_buffered
+    @with_successor("pin", 0)
+    def pin_send_update(self, pin, value, preliminary, target=None):
+        #TODO: explicit support for preliminary values
+        assert pin._get_manager() is self
+        if isinstance(value, MixedBase):
+            value = value.data
+        found = False
+        for con in self.pin_to_cells.get(pin,[]):
+            cell = con.target
+            if con.id < 0 and cell is None: #layer connections, may be None
                 continue
-            value2 = value
-            if dtype is not None and \
-              (dtype == "cson" or dtype[0] == "cson") and \
-              input_pin.dtype is not None and \
-              (input_pin.dtype == "json" or input_pin.dtype[0] == "json"):
-                if isinstance(value, (str, bytes)):
-                    value2 = cson2json(value)
-            resource_name = "pin: " + input_pin.format_path()
-            if resource_name0 is not None:
-                resource_name = resource_name0 + " in " + resource_name
+            if target is not None and cell is not target:
+                continue
+            found = True
+            with self._set_editpin_origin(pin):
+                con.fire(value, preliminary)
+        if target is not None and not found:
+            print("Warning: %s was targeted by triggering pin %s, but not found" % (target, pin))
+
+    @main_thread_buffered
+    @manager_buffered
+    @with_successor("cell", 0)
+    def cell_send_update(self, cell, only_text, origin):
+        if self.destroyed:
+            return
+
+        #Activates pins
+        for con in self.cell_to_pins.get(cell, []):
+            pin = con.target
+            if pin is origin: #editpin that sent the update
+                continue
+            if con.id < 0 and pin is None: #layer connections, may be None
+                continue
+            if con.target is self.ctx()._root()._get_manager()._editpin_origin:
+                continue
+            con.fire(only_text)
+
+        #Activates aliases
+        assert isinstance(cell, CellLikeBase)
+        for con in self.cell_to_cells.get(cell, []):
+            if con.id < 0 and con.target is None: #layer connections, may be None
+                continue
+            #from_pin is set to True, also for aliases
+            assert con.source._get_manager() is self
+            con.fire(only_text)
+
+    def set_filled_objects(self, filled_objects):
+        self.filled_objects = filled_objects
+
+    def on_equilibrate(self, callback):
+        assert self.ctx()._toplevel
+        if self.on_equilibrate_callbacks is None:
+            self.on_equilibrate_callbacks = []
+        self.on_equilibrate_callbacks.append(callback)
+
+    def _test_equilibrate(self):
+        if len(self.unstable):
+            return False
+        for sub_manager in self.sub_managers.values():
+            if not sub_manager._test_equilibrate():
+                return False
+        return True
+
+    def test_equilibrate(self):
+        if not self.on_equilibrate_callbacks:
+            return
+        if self._test_equilibrate():
             try:
-                input_pin.receive_update(value2, resource_name)
-            except Exception:
-                #TODO: proper logging
-                import traceback
-                traceback.print_exc()
+                for callback in self.on_equilibrate_callbacks:
+                    callback()
+            finally:
+                del self.on_equilibrate_callbacks
 
-        observers = self.observers.get(cell_id, [])
-        new_value = cell.value
-        new_data = cell.data
-        for observer, as_data in observers:
-            obs = observer()
-            if obs is not None:
-                if as_data:
-                    obs(new_data)
-                else:
-                    obs(new_value)
+    @contextlib.contextmanager
+    def _set_editpin_origin(self, pin):
+        from .worker import EditPin
+        mgr = self.ctx()._root()._get_manager()
+        assert mgr._editpin_origin is None, mgr._editpin_origin
+        if isinstance(pin, EditPin):
+            mgr._editpin_origin = pin
+        yield
+        mgr._editpin_origin = None
 
-    def update_from_code(self, cell, last_con_id=None):
-        import seamless
-        if cell.dtype == "array":
-            value = TransportedArray(cell._data, cell._store)
-        else:
-            value = cell._data
-        #print("manager.update_from_code", cell, head(value))
-        self._update(cell, cell.dtype, value, last_con_id=last_con_id)
-        from .. import run_work
-        from .macro import get_macro_mode
-        if not get_macro_mode():
-            run_work()
+    def cell_update_hook(self, update_hook):
+        self._root()._cell_update_hook = update_hook
 
-    def update_from_worker(self, cell_id, value, worker, *, preliminary):
-        import seamless
-        from .cell import Signal
-        cell = self.cells.get(cell_id, None)
-        if cell is None or cell._destroyed:
-            return #cell has died...
-        #print("manager.update_from_worker", cell, head(value), worker)
+    def _root(self):
+        return self.ctx()._root()._get_manager()
 
-        if isinstance(cell, Signal):
-            assert value is None
-            self._update(cell, None, None, worker=worker)
-        else:
-            changed = cell._update(value,propagate=False,
-                preliminary=preliminary)
-            if changed:
-                if cell.dtype == "array":
-                    value = TransportedArray(value, cell._store)
-                self._update(cell, cell.dtype, value, worker=worker)
-
-    def update_registrar_key(self, registrar, key):
-        from .worker import Worker
-        from .macro import MacroObject
-        if registrar not in self.registrar_listeners:
-            return
-        d = self.registrar_listeners[registrar]
-        if key not in d:
-            return
-        for t in list(d[key]):
-            target = t[0]()
-            if target is None:
-                continue
-            if isinstance(target, Worker):
-                namespace_name = t[1]
-                target.receive_registrar_update(registrar.name, key, namespace_name)
-            elif isinstance(target, MacroObject):
-                target.update_cell((registrar.name, key))
-            else:
-                raise TypeError(target)
-
-    @classmethod
-    def get_cell_id(cls, cell):
-        return id(cell)
-
-    def disconnect(self, source, target):
-        from .transformer import Transformer
-        from .cell import Cell, CellLike
-        from .context import Context
-        from .worker import EditPinBase, ExportedEditPin, \
-            InputPinBase, ExportedInputPin, OutputPinBase, ExportedOutputPin
-        if isinstance(source, EditPinBase):
-            source, target = target, source
-        if isinstance(source, CellLike) and source._like_cell:
-            if isinstance(target, ExportedInputPin):
-                target = target.get_pin()
-            if isinstance(source, Context):
-                assert "_output" in source._pins
-                source = source._pins["_output"]
-            if isinstance(target, Cell):
-                self.remove_alias(source, target)
-            else:
-                self.remove_listener(source, target)
-                worker = target.worker_ref()
-                if worker is not None:
-                    source._on_disconnect(target, worker, incoming = False)
-
-        elif isinstance(source, OutputPinBase):
-            if isinstance(target, Context):
-                assert "_input" in target._pins
-                target = target._pins["_input"]
-            if isinstance(source, ExportedOutputPin):
-                source = source.get_pin()
-
-            cell_id = self.get_cell_id(target)
-
-            ok = False
-            if cell_id in self.cells and \
-              target in self.cell_to_output_pin:
-                if cell_id not in source._cell_ids:
-                    ok = False
-                else:
-                    for ref, con_id in self.cell_to_output_pin[target]:
-                        if ref() is source:
-                            source._cell_ids.remove(cell_id)
-                            ok = True
-                    o = self.cell_to_output_pin[target]
-                    o[:] = [oo for oo in o if oo[0] != ref]
-            if not ok:
-                raise ValueError("Connection does not exist")
-
-            worker = source.worker_ref()
-            if worker is not None:
-                if isinstance(worker, Transformer):
-                    worker._on_disconnect_output()
-                target._on_disconnect(source, worker, incoming = True)
-
-        else:
-            raise TypeError
-
-    def _connect(self, source, target, con_id):
-        from .transformer import Transformer
-        from .cell import Cell, CellLike
-        from .context import Context
-        from .worker import EditPinBase, ExportedEditPin, \
-            InputPinBase, ExportedInputPin, OutputPinBase, ExportedOutputPin
-        if isinstance(source, EditPinBase):
-            source, target = target, source
-        if isinstance(source, CellLike) and source._like_cell:
-            assert isinstance(target, (InputPinBase, EditPinBase, CellLike))
-            assert source._get_manager() is self
-            assert target._get_manager() is self
-            if isinstance(target, ExportedInputPin):
-                target = target.get_pin()
-
-            if isinstance(target, Cell):
-                self.add_cell_alias(source, target)
-                target._on_connect(source, None, incoming = True)
-                if source._status == Cell.StatusFlags.OK:
-                    value = source._data
-                    if source.dtype is not None and \
-                      (source.dtype == "cson" or source.dtype[0] == "cson") and \
-                      target.dtype is not None and \
-                      (target.dtype == "json" or target.dtype[0] == "json"):
-                        if isinstance(value, (str, bytes)):
-                            value = cson2json(value)
-                    target._update(value,propagate=True)
-
-                return
-            assert not isinstance(target, Context) #TODO?
-            worker = target.worker_ref()
-            assert worker is not None #weakref may not be dead
-            source._on_connect(target, worker, incoming = False)
-            self.add_listener(source, target, con_id)
-
-            if source._status == Cell.StatusFlags.OK:
-                self.update_from_code(source, last_con_id=con_id)
-            else:
-                if isinstance(target, EditPinBase) and target.last_value is not None:
-                    self.update_from_worker(
-                        self.get_cell_id(source),
-                        target.last_value,
-                        worker, preliminary=False
-                    )
-
-        elif isinstance(source, OutputPinBase):
-            assert isinstance(target, CellLike) and target._like_cell
-            if isinstance(target, Context):
-                assert "_input" in target._pins
-                target = target._pins["_input"]
-            if isinstance(source, ExportedOutputPin):
-                source = source.get_pin()
-            worker = source.worker_ref()
-            assert worker is not None #weakref may not be dead
-            target._on_connect(source, worker, incoming = True)
-            cell_id = self.get_cell_id(target)
-            if cell_id not in self.cells:
-                self.cells[cell_id] = target
-
-            if cell_id not in source._cell_ids:
-                source._cell_ids.append(cell_id)
-                if con_id is None:
-                    self._connection_id()
-                new_item = (weakref.ref(source), con_id)
-                if target not in self.cell_to_output_pin:
-                    self.cell_to_output_pin[target] = [new_item]
-                else:
-                    for itemnr, item in enumerate(
-                      self.cell_to_output_pin[target]
-                    ):
-                        if con_id > item[1]:
-                            self.cell_to_output_pin[target].insert(
-                                itemnr, new_item
-                            )
-                            break
-                    else:
-                        self.cell_to_output_pin[target].append(new_item)
-
-            if isinstance(worker, Transformer):
-                worker._on_connect_output()
-            elif source.last_value is not None:
-                self.update_from_worker(
-                    cell_id,
-                    source.last_value,
-                    worker,
-                    preliminary=False
-                )
-
-
-        else:
-            raise TypeError
-
-    def connect(self, source, target):
-        self._connect(source, target, None)
+from .context import Context
+from .cell import Cell, CellLikeBase
+from .worker import Worker, InputPin, EditPin, \
+  InputPinBase, EditPinBase, OutputPinBase
+from .transformer import Transformer
+from .structured_cell import Inchannel, Outchannel, Editchannel
+from . import layer
+from .link import Link
+from .layer import Path

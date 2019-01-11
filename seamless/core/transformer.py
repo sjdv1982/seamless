@@ -1,92 +1,79 @@
 from collections import deque, OrderedDict
-import threading
 import traceback
 import os
 import time
 from functools import partial
+import threading
 
-from .macro import macro
 from .worker import Worker, InputPin, OutputPin
-from .cell import Cell, PythonCell
-from .pythreadkernel import Transformer as KernelTransformer
+from .asynckernel import Transformer as KernelTransformer
+from .asynckernel.remote.client import JobTransformer as ServiceTransformer
+#TODO: multiple types of remote transformers
 
-from . import IpyString
-from .. import dtypes
-from .. import silk
-
-transformer_param_docson = {
-  "pin": "Required. Can be \"input\" or \"output\"",
-  "dtype": "Optional, must be registered with types if defined"
-}
-
-"""
-currdir = os.path.dirname(__file__)
-silk.register(
-  open(os.path.join(currdir, "transformer.silk")).read(),
-  doc = "Transformer pin parameters",
-  docson = transformer_param_docson  #("json", "docson")
-)
-"""
-
-transformer_params = {
-  "*": "silk.SeamlessTransformerPin",
-}
-dtypes.register(
-  ("json", "seamless", "transformer_params"),
-  typeschema = transformer_params, #("json", "typeschema")
-  docson = {
-    "*": "Transformer pin parameters",
-  },
-  doc = "Transformer parameters"
-)
+from .protocol import content_types
 
 class Transformer(Worker):
     """
     This is the main-thread part of the transformer
     """
-    _required_code_type = PythonCell.CodeTypes.FUNCTION
     transformer = None
     transformer_thread = None
     output_thread = None
     active = False
+    _destroyed = False
+    _listen_output_state = None
 
-    def __init__(self, transformer_params):
-        from .context import get_active_context
-        super().__init__()
+    def __init__(self, transformer_params, *, in_equilibrium=False, service=False):
         self.state = {}
-        self.code = InputPin(self, "code", ("text", "code", "python"))
-        thread_inputs = {}
+        self.service = service
+        self.code = InputPin(self, "code", "ref", "pythoncode", "transformer")
+        #TODO: transfer_mode becomes "copy" when we switch from threads to processes
+        thread_inputs = {"code": ("ref", "pythoncode", "transformer")}
         self._io_attrs = ["code"]
         self._pins = {"code":self.code}
         self._output_name = None
-        self._connected_output = False
         self._last_value = None
         self._last_value_preliminary = False
         self._message_id = 0
-        _registrars = []
         self._transformer_params = OrderedDict()
+        self._in_equilibrium = in_equilibrium #transformer is initially in equilibrium
+        forbidden = ("code",)
         for p in sorted(transformer_params.keys()):
+            if p in forbidden:
+                raise ValueError("Forbidden pin name: %s" % p)
             param = transformer_params[p]
             self._transformer_params[p] = param
             pin = None
-            dtype = param.get("dtype", None)
-            if isinstance(dtype, list):
-                dtype = tuple(dtype)
-            if param["pin"] == "input":
-                pin = InputPin(self, p, dtype)
-                thread_inputs[p] = dtype
-            elif param["pin"] == "output":
-                pin = OutputPin(self, p, dtype)
+            io, transfer_mode, access_mode, content_type = None, "ref", None, None
+            #TODO: change "ref" to "copy" once transport protocol works
+            if isinstance(param, str):
+                io = param
+            elif isinstance(param, (list, tuple)):
+                io = param[0]
+                if len(param) > 1:
+                    transfer_mode = param[1]
+                if len(param) > 2:
+                    access_mode = param[2]
+                if len(param) > 3:
+                    content_type = param[3]
+            elif isinstance(param, dict):
+                io = param["io"]
+                transfer_mode = param.get("transfer_mode", transfer_mode)
+                access_mode = param.get("access_mode", access_mode)
+                content_type = param.get("content_type", content_type)
+            else:
+                raise ValueError((p, param))
+            if content_type is None and access_mode in content_types:
+                content_type = access_mode
+            if io == "input":
+                pin = InputPin(self, p, transfer_mode, access_mode)
+                thread_inputs[p] = transfer_mode, access_mode, content_type
+            elif io == "output":
+                pin = OutputPin(self, p, transfer_mode, access_mode)
                 assert self._output_name is None  # can have only one output
                 self._output_name = p
-            elif param["pin"] == "registrar":
-                registrar_name = param["registrar"]
-                ctx = get_active_context()
-                manager = ctx._manager
-                registrar = getattr(ctx.registrar, registrar_name)
-                _registrars.append((registrar, p))
             else:
-                raise ValueError(param["pin"])
+                raise ValueError(io)
 
             if pin is not None:
                 self._io_attrs.append(p)
@@ -108,32 +95,24 @@ class Transformer(Worker):
           (other than the deques and semaphores, which could as well be
            implemented using network sockets)
         - It must run async from the main thread
-        TODO: in case of process, synchronize registrars (use execnet?)
         """
 
-        self.transformer = KernelTransformer(
+        KernelTransformerClass = ServiceTransformer if service else KernelTransformer
+        self.transformer = KernelTransformerClass(
             self,
             thread_inputs, self._output_name,
-            self.output_queue, self.output_semaphore
+            self.output_queue, self.output_semaphore,
+            in_equilibrium = self._in_equilibrium
         )
-        if self.context is not None:
-            self._set_context(self.context, self.name) #to update the transformer registrars
-
-        for registrar, p in _registrars:
-            registrar.connect(p, self)
-
-        from .macro import add_activate
-        add_activate(self)
+        self._in_equilibrium = False
+        super().__init__()
 
     def __str__(self):
-        ret = "Seamless transformer: " + self.format_path()
+        ret = "Seamless transformer: " + self._format_path()
         return ret
 
-    def _shell(self, toplevel=True):
-        p = self._find_successor()
-        return p.transformer.namespace, str(self)
-
-    def activate(self):
+    def activate(self, only_macros):
+        super().activate(only_macros)
         if self.active:
             return
 
@@ -141,36 +120,46 @@ class Transformer(Worker):
         self.output_thread = thread
         self.output_thread.start()
 
-        thread = threading.Thread(target=self.transformer.run, daemon=True) #TODO: name
-        self.transformer_thread = thread
-        self.transformer_thread.start()
+        if self.transformer_thread is None:
+            thread = threading.Thread(target=self.transformer.run, daemon=True) #TODO: name
+            self.transformer_thread = thread
+            self.transformer_thread.start()
 
         self.active = True
 
+    def _send_message(self, msg):
+        self._message_id += 1
+        self._pending_updates += 1
+        labeled_msg = (self._message_id,) + msg
+        self.transformer.input_queue.append(labeled_msg)
+        self.transformer.semaphore.release()
+
+    def receive_update(self, input_pin, value, checksum, access_mode, content_type):
+        if not self.active:
+            work = partial(self.receive_update, input_pin, value, checksum, access_mode, content_type)
+            self._get_manager().buffered_work.append(work)
+            return
+        if checksum is None and value is not None:
+            checksum = str(value) #KLUDGE; as long as structured_cell doesn't compute checksums...
+        if not self._receive_update_checksum(input_pin, checksum):
+            return
+        self._send_message( (input_pin, value, access_mode, content_type) )
+
+    def _touch(self):
+        self._send_message( ("@TOUCH", None, None, None) )
+
     @property
-    def transformer_params(self):
-        return self._transformer_params
+    def debug(self):
+        return self.transformer.debug
 
-    def set_context(self, context):
-        Worker.set_context(self, context)
-        for p in self._pins:
-            self._pins[p].set_context(context)
-        return self
-
-    def receive_update(self, input_pin, value, resource_name):
-        self._message_id += 1
-        self._pending_updates += 1
-        msg = (self._message_id, input_pin, value, resource_name)
-        self.transformer.input_queue.append(msg)
-        self.transformer.semaphore.release()
-
-    def receive_registrar_update(self, registrar_name, key, namespace_name):
-        #TODO: this will only work for same-namespace (thread) kernels
-        self._message_id += 1
-        self._pending_updates += 1
-        value = registrar_name, key, namespace_name
-        self.transformer.input_queue.append((self._message_id, "@REGISTRAR", value, None))
-        self.transformer.semaphore.release()
+    @debug.setter
+    def debug(self, value):
+        assert isinstance(value, bool), value
+        old_value = self.transformer.debug
+        if value != old_value:
+            self.transformer.debug = value
+            manager = self._get_manager()
+            manager.touch_worker(self)
 
     def listen_output(self):
         # TODO logging
@@ -196,12 +185,20 @@ class Transformer(Worker):
                         break
                     time.sleep(0.005)
                 else:
+                    # should only happen if killed
                     self._pending_updates -= updates_on_hold
                     updates_on_hold = 0
 
-        updates_on_hold = 0
+        if self._listen_output_state is None:
+            updates_on_hold = 0
+            between_start_end = False
+        else:
+            updates_on_hold, between_start_end = self._listen_output_state
+            self._listen_output_state = None
+
         while True:
             try:
+                output_name, output_value = None, None
                 if updates_on_hold:
                     """
                     Difficult situation. At the one hand, we can't hold on to
@@ -225,24 +222,34 @@ class Transformer(Worker):
                         self._pending_updates -= updates_on_hold
                         updates_on_hold = 0
 
-                item = get_item()
-                if item is None:
-                    break
-                output_name, output_value = item
-                if output_name == "@START":
-                    between_start_end = True
+                if not between_start_end:
                     item = get_item()
                     if item is None:
                         break
+                    if item[0] == "@RESTART":
+                        self._listen_output_state = (updates_on_hold, between_start_end)
+                        break
                     output_name, output_value = item
-                    assert output_name in ("@PRELIMINARY", "@END"), output_name
-                    if output_name == "@END":
-                        between_start_end = False
-                        receive_end()
+                    if output_name == "@START":
+                        between_start_end = True
                         item = get_item()
                         if item is None:
                             break
+                        if item[0] == "@RESTART":
+                            self._listen_output_state = (updates_on_hold, between_start_end)
+                            break
                         output_name, output_value = item
+                        assert output_name in ("@PRELIMINARY", "@END"), output_name
+                        if output_name == "@END":
+                            between_start_end = False
+                            receive_end()
+                            item = get_item()
+                            if item is None:
+                                break
+                            if item[0] == "@RESTART":
+                                self._listen_output_state = (updates_on_hold, between_start_end)
+                                break
+                            output_name, output_value = item
 
                 if output_name is None and output_value is not None:
                     updates_processed = output_value[0]
@@ -261,32 +268,38 @@ class Transformer(Worker):
                     preliminary = True
                     output_name, output_value = item[1]
                 elif between_start_end:
+                    if output_name is None:
+                        #TODO: this shouldn't happen...
+                        item = get_item()
+                        between_start_end = False
+                        receive_end()
+                        continue
                     assert output_name == "@END", output_name
                     between_start_end = False
                     receive_end()
                     continue
-                    item = get_item()
-                    if item is None:
-                        break
-                    output_name, output_value = item
+                    ###item = get_item()
+                    ###if item is None:
+                    ###    break
+                    ###output_name, output_value = item
 
-                assert output_name == self._output_name, item
-                if self._connected_output:
-                    pin = self._pins[self._output_name]
-                    #use .partial, we're not in the main thread!
-                    f = partial(pin.send_update, output_value,
-                        preliminary=preliminary)
-                    import seamless
-                    seamless.add_work(f)
+                if output_name == "@ERROR":
+                    pass #TODO: log error
                 else:
-                    self._last_value = output_value
-                    self._last_value_preliminary = preliminary
+                    assert output_name == self._output_name, item
+                    if self._output_name is not None:
+                        pin = self._pins[self._output_name]
+                        #we're not in the main thread, but the manager takes care of it
+                        pin.send_update(output_value, preliminary=preliminary)
 
-                if preliminary:
-                    continue
+                    if preliminary:
+                        continue
 
                 item = get_item()
                 if item is None:
+                    break
+                if item[0] == "@RESTART":
+                    self._listen_output_state = (updates_on_hold, between_start_end)
                     break
                 output_name, output_value = item
                 assert output_name is None
@@ -299,22 +312,9 @@ class Transformer(Worker):
             except Exception:
                 traceback.print_exc() #TODO: store it?
 
-    def _on_connect_output(self):
-        last_value = self._last_value
-        if last_value is not None:
-            self._last_value = None
-            preliminary = self._last_value_preliminary
-            self._last_value_preliminary = False
-            self._pins[self._output_name].send_update(last_value,
-                preliminary=preliminary)
-        self._connected_output = True
-
-    def _on_disconnect_output(self):
-        if self._destroyed:
+    def destroy(self, from_del=False):
+        if not self.active:
             return
-        self._connected_output = False
-
-    def destroy(self):
         if self._destroyed:
             return
 
@@ -322,8 +322,14 @@ class Transformer(Worker):
         if self.transformer_thread is not None:
             self.transformer.finish.set()
             self.transformer.semaphore.release() # to unblock the .finish event
-            self.transformer.finished.wait()
-            self.transformer_thread.join()
+            # TODO: after some caching events, transformer threads lock up at destroy()
+            # to prevent this, release just once more (kludge)
+            self.transformer.semaphore.release()
+            if not from_del:
+                pass
+                # disable for now, since it is so slow... may break macros
+                #self.transformer.finished.wait()
+                #self.transformer_thread.join()
             del self.transformer_thread
             self.transformer_thread = None
 
@@ -331,55 +337,28 @@ class Transformer(Worker):
         if self.output_thread is not None:
             self.output_finish.set()
             self.output_semaphore.release() # to unblock for the output_finish
-            self.output_thread.join()
+            if not from_del:
+                self.output_thread.join()
             del self.output_thread
             self.output_thread = None
+        if not from_del:
+            self._pending_updates = 0
 
-        # free all input and output pins
-        for attr in self._io_attrs:
-            value = getattr(self, attr)
-            if value is None:
-                continue
-
-            setattr(self, attr, None)
-            del value
-
-        super().destroy()
-
-    def __del__(self):
-        try:
-            self.destroy()
-
-        except Exception as err:
-            print(err)
-            pass
+    def full_destroy(self,from_del=False):
+        self.self.destroy(from_del=from_del)
 
     def __dir__(self):
         return object.__dir__(self) + list(self._pins.keys())
 
-    def _set_context(self, context, name, force_detach=False):
-        super()._set_context(context, name, force_detach)
-        if self.transformer is None:
-            return
-        if self.context is not None:
-            self.transformer.registrars = self.context.registrar
-        else:
-            self.transformer.registrars = None
-
-    @property
-    def error(self):
-        """Returns a text representation of any exception (with traceback)
-        that occurred during transformer execution"""
-        if self.transformer.exception is None:
-            return None
-        else:
-            return IpyString(self.transformer.exception)
 
     def status(self):
         """The computation status of the transformer
         Returns a dictionary containing the status of all pins that are not OK.
         If all pins are OK, returns the status of the transformer itself: OK or pending
         """
+        if self._in_equilibrium or \
+          (self.transformer is not None and self.transformer.in_equilibrium):
+            return self.StatusFlags.OK.name
         result = {}
         for pinname, pin in self._pins.items():
             s = pin.status()
@@ -393,84 +372,13 @@ class Transformer(Worker):
             return result
         if t._pending_updates:
             return self.StatusFlags.PENDING.name
-        if self.error is not None:
+        if self.transformer.exception is not None:
             return self.StatusFlags.ERROR.name
         return self.StatusFlags.OK.name
 
-# @macro takes nothing, a type, or a dict of types
-@macro(type=("json", "seamless", "transformer_params"), with_context=False)
-def transformer(params):
-    """Defines a transformer worker.
-
-Transformers transform their input cells into an output result.
-Transformers are connected to their input cells via input pins, and their
-result is connected to an output cell via an output pin. There can be only one
-output pin. The pins are declared in the `params` parameter (see below).
-
-In addition, all transformers have an implicit input pin named "code",
-which must be connected to a Python cell ( `dtype=("text", "code", "python")` ).
-The code must be a Python block that returns the result using a "return" statement.
-All input values are injected directly into the code's namespace. The variable
-name of the input is the same as its pin name.
-
-As of seamless 0.1, all transformers are asynchronous (non-blocking),
-and they carry out their computation in a separate process
-(using ``multiprocessing``).
-
-As of seamless 0.1, transformers start their computation as soon as all inputs
-(including the code) has been defined, even if no output cell has been connected.
-Whenever the input data or code changes, a new computation is performed. If the
-previous computation is still in progress, it is canceled.
-
-Inside the transformer code, preliminary values can be returned using
-``return_preliminary(value)``.
-As of seamless 0.1, this does not require any special pin declaration.
-
-Invoke ``transformer.status()`` to get the current status of the transformer.
-
-Invoke ``shell(transformer)`` to create an IPython shell
-of the transformer namespace.
-
-``pin.connect(cell)`` connects an outputpin to a cell.
-
-``cell.connect(pin)`` connects a cell to an inputpin.
-
-``pin.cell()`` returns or creates a cell that is connected to that pin.
-
-Parameters
-----------
-
-    params: dict
-        A dictionary containing the transformer parameters.
-
-        As of seamless 0.1, each (name,value) item represents a transformer pin:
-
-        -  name: string
-            name of the pin
-
-        -  value: dict
-            with the following items:
-
-            - pin: string
-                must be "input" or "output". Only one output pin is allowed.
-            - dtype: string or tuple of strings
-                Describes the dtype of the cell(s) connected to the pin.
-                As of seamless 0.1, the following data types are understood:
-
-                -   "int", "float", "bool", "str", "json", "cson", "array", "signal"
-                -   "text", ("text", "code", "python"), ("text", "code", "ipython")
-                -   ("text", "code", "silk"), ("text", "code", "slash-0")
-                -   ("text", "code", "vertexshader"), ("text", "code", "fragmentshader"),
-                -   ("text", "html"),
-                -   ("json", "seamless", "transformer_params"),
-                    ("cson", "seamless", "transformer_params"),
-                -   ("json", "seamless", "reactor_params"),
-                    ("cson", "seamless", "reactor_params")
-
-        Since "transformer" is a macro, the dictionary can also be provided
-        in the form of a cell of dtype ("json", "seamless", "transformer_params")
-"""
-    from seamless.core.transformer import Transformer #code must be standalone
-    return Transformer(params)
-
-from .context import Context
+def transformer(params, in_equilibrium=False, service=False):
+    return Transformer(
+       params,
+       in_equilibrium=in_equilibrium,
+       service=service
+    )

@@ -1,0 +1,90 @@
+0. Seamless is in a very early development stage.
+   Right now, it is just me hacking on it. If you are on a different OS than me (Ubuntu Linux)
+   it will likely not work (TODO: test multiprocessing "spawn", get rid of code_object).
+   If you do something very different than I have been using Seamless for,
+   it will likely not work. There are also areas of Seamless that are done poorly because I lack the
+   proper expertise. Please be patient, send bug reports, etc.
+1. Unfortunately, if equilibrate() causes a graph re-translation, all transformers (and reactors)
+   will be re-executed. Seamless is not yet ready for long-running computations.
+2. In principle, you can re-define everything on the fly (i.e. re-execute Jupyter cells at will),
+   but in practice this may not always work.
+   Make big Jupyter cells.
+   Do equilibrate() often, at both the beginning and the end of the cell.
+   If necessary, restart your kernel and re-execute each cell (slowly!)
+   This also depends a lot on the Jupyter version you are running:
+   with ipykernel 4 and tornado 4, it goes much better than without.
+3. Error messages and warnings are printed out immediately, polluting your output.
+   This is especially annoying with Jupyter, where they are dumped in the output
+   of the last cell.
+   You may want to select an empty-ish code cell (containing "pass") and execute
+   it right before you modify some cells.
+   A logging system is being planned.
+4. There is not yet any way to save context graphs. Will come soon.
+   In the meantime, Jupyter notebooks can hold the state. This can be a problem
+   because of mixed authority: e.g. if you mount a schema to a file and then
+   modify it both in Jupyter and on the file system.
+5. A mechanism to visualize context graphs is being planned.
+6. Caching in general is a can of worms. Right now, you won't realize it too much,
+   because (low-level) macros have not been exposed yet to the high-level. Macros
+   rewrite the low-level graph on the fly. Caching now tries to preserve workers
+   that have not changed. Bugs in this are likely, esp. in relation with the
+   mounting system. Once macros are there, you may want to disable their caching.
+   A second source of caching is result caching, which is also not implemented yet.
+   A third source of caching is caching-upon-translation (see point 2). This will
+   be re-enabled at some point, but may need to be disabled manually in case of bugs.
+7. Debugging is a pain in the ass. This is because debuggers for Python and C
+   a) claim the tty; and/or: b) have a file-centric view of the world; and/or:
+   c) are opinionated about threads vs processes.
+   Seamless prefers to clean up its mess, i.e. delete files after compilation.
+   (Only the compiled Python module file is kept, for now).
+   Jupyter (and IPython) claim the tty; if this interferes, you may convert your
+   notebook to a Python script and execute it with Python. If, at the end, you
+   add seamless.mainloop(), seamless will keep listening for events
+   (worker, mount, reactor edits), without claiming the tty. All Python debuggers
+   will work like this (but see below).
+   Transformers are currently executed as processes.
+   1) Python debuggers have trouble with this;
+   for this reason, Seamless includes a patched version of pdb that does
+   work with processes. Still, none of them work inside Jupyter within processes.
+   See tests/highlevel/python-debugger.py for notes on debugging Python transformers.
+   2) For compiled transformers, the .debug option will not only save debugging symbols;
+   it will also print out the pid and pause it until it receives SIGUSR1 (Unix) or
+   a debugger is attached (Windows). gdb attach + signal SIGUSR1 will work, except that:
+   - Visual Studio Code does not work with gdb in this manner (communication goes wrong)
+   - In Ubuntu, you need to be sudo gdb to attach. This prevents gdbgui from working.
+     Once you disable the sudo requirement in Ubuntu, gdbgui works fine.
+   NOTE: it is extremely annoying that all debuggers use breakpoints based on file names.
+   When debugging, you will have to tell the debugger where to find your source files.
+   This is not as easy to spoof for compiled code as it is for Python.
+   For debugging, the file name is always that of the file name on disk during compilation.
+   But you *can* set the file *path* with gcc option: -fdebug-prefix-map=old=new
+   The original file path will be something like /tmp/<path of your transformer>
+   Alternatively, you can set the directory search path in gdb to find the source.
+   The code in Transformer.code will always be called "main" (main.c, main.cpp, ...).
+   The code in the binary module will have the name of the object.
+
+   Related to this:
+    It is not really possible to unload compiled extension modules in Python.
+    Right now, Seamless gets around this by marking every module with a different
+    name ("seamless-" + checksum). Still, the symbols in those modules point to
+     the same source files, which may have changed on disk.
+    I found that if multiple versions of the same module/file greatly confuses
+     gdb, so that breakpoints no longer work.
+    UPDATE: after some fiddling, it seems to work now.
+
+  Finally, inline functions give trouble in debugging mode.
+    At least on my desktop machine, it refuses to link (missing symbols).
+    On my laptop, it simply segfaults. Could be a bug in distutils/cffi.
+
+   TLDR:
+   - When debugging, restart your kernel when you start, and re-start every
+     time recompilation happens. (UPDATE: may not be necessary anymore)
+   - Don't use inline functions when debugging.
+   - For compiled transformers, know where seamless writes your files
+    (main.c, <object>.c).
+   - For flexibility, you may configure your transformer to be run as thread
+   (TODO: now it is a global flag). Take care: transformer threads will be killed
+   by a dirty hack when the transformer needs to restart.
+8. Right now, Seamless kills transformers (cleanly, unless they are threads)
+   but does not wait for them to be killed (it used to, but it is slow!!).
+   You may want to re-enable this if needed (TODO).

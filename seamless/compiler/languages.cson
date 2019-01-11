@@ -1,0 +1,48 @@
+# Specifications and default settings for languages
+#TODO: integrate this with mimetypes at the high level
+{
+  "python": {
+    "extension": "py",
+    "mode": "interpreted"
+  }
+  "ipython": {
+    "extension": "ipy",
+    "mode": "interpreted"
+  }
+  "ipython-notebook": {
+    "extension": "ipynb",
+    "mode": "interpreted"
+  }
+  "javascript": {
+    "extension": "js",
+    "mode": "interpreted"
+  }
+  "c": {
+    "extension": "c"
+    "mode": "compiled"
+    "compiler": "gcc"
+  }
+  "c++": {
+    "extension": "cpp"
+    "mode": "compiled"
+    "compiler": "g++"
+  }
+  "cuda": {
+    "extension": "cu"
+    "mode": "compiled"
+    "compiler": "nvcc"
+  }
+  "fortran": {
+    "extension": ["f", "f90"]
+    "mode": "compiled"
+    "compiler": "gfortran"
+  }
+  "bash": {
+    "extension": "sh",
+    "mode": "interpreted"
+  }
+  "slash": {
+    "extension": "slash",
+    "mode": "interpreted"
+  }
+}

@@ -1,6 +1,10 @@
 *.pyc
+*.html
 build/
 dist/
 *.egg-info/
 *.*~
 */.ipynb_checkpoints/
+seamless-OLD-BAK
+tests/highlevel/*.json
+tests/highlevel/context2-graph-raw.txt

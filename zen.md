@@ -1,23 +1,26 @@
 Seamless Zen
 ============
 
-Watch the state as it is now, don't watch the news.
+Cells are good, files are bad, URLs are ugly.
 
 All state is in cells, unless it is local.
 
 Always be prepared to rebuild from cells.
 
-Cells are good, files are bad.
+More than two numbers don't add up, nor do they multiply
 
-Importing external libraries is good, importing project code is bad.
+Random generators cannot be random.
 
-Namespaces are good, classes less so.
+Execution takes as long as it has to.
 
-GUIs are good, unless they hide the state.
+Watch the state of now, don't watch the news.
 
-Edit all state, then edit the editor
+Importing libraries is good, as long as they are external.
 
-Code execution is repeatable; if it is not repeatable, you throw away the code,
-and keep its result.
+Structures hold, classes manipulate.
+
+APIs and GUIs are good, unless they hide things away.
+
+Edit all state, then edit the editor.
 
 Transform lazily, react eagerly.

@@ -1,0 +1,112 @@
+Seamless consists of a high-level API, a graph format, and a low-level translator-evaluator (core).
+The workflow of Seamless can be decoupled as follows:
+
+1. A computation graph is constructed using the high-level API (seamless.highlevel).
+   This graph consists of the node topology + cell values.
+   In the current design of the graph format, the topology can be translated without any values.
+   Currently, the best front-ends are IPython and Jupyter to construct the topology locally
+   (i.e. server-side, i.e. the same place as they will be evaluated).
+   An alternative would be Pyodide, leading to in-browser topology construction followed by
+    in-browser evaluation (CPython=>wasm JS).
+
+2. The mid-level translator (seamless.midlevel) translates a Seamless graph into a low-level seamless context.
+   The current low-level implementation in Python will be the only one for the foreseeable future.
+   However, the entire translator-evaluator will wrapped into Seamless network services that accept graphs.
+   These services have various levels of interactivity, but a semi-interactive model (fixed topology, interactive values)
+   is the most relevant for decoupling.
+   The front-ends described in 1. could be coupled to a Seamless service. In this way, the front-end could move to
+   the client, and also away from Python.
+
+Future:
+   A future development would be to port the high-level API to JS, or make a different API around the graph format.
+    The graph format will be formalized in a future version of Seamless.
+    As it is only graph evaluation, this is not too difficult, although setting values would be harder.
+    Iodide would be a viable front-end for that.
+
+3. Back-end: The edit and display of cell values.
+   This part focuses on the editing and display of *values*, rather than *topology*.
+   A comprehensive solution that also integrates with the front-end would be (Py)Qt.
+   Unfortunately, Qt is a dead technology. Nowadays, editing is done using text editors or IDEs for text, and the
+   browser for everything else. Seamless will move away from Qt. Editing will be done by auto-generating HTML+JS (Vue or maybe React) client-side,
+   and Python (flask) server-side.
+
+   On the short-term, the front-end and the back-end will be the same.
+   Jupyter and other notebooks (Beaker, Pyodide) can both control Seamless via Python, and display the HTML
+   of Seamless result cells.
+   For non-programming access, there doesn't have to be any backend: Seamless HTML cells can be served directly as a web page.
+
+
+   On the long-term, a fantastic in-browser edit-display framework is available: Observable.
+   Observable is in agreement with much of the design philosophy of Seamless. Reactive, interactive, cell-based, dependency graph.
+   It has a Jupyter-like reactive web editor (which is unfortunately not open source).
+   However, it has a very flexible runtime where you can add new cells and link them up to the outside world.
+   So one could embed an Observable notebook inside a web page as soon as a web *editor* could be embedded too.
+
+Observable vs Seamless
+1. Semantic differences
+Observable:
+The basis of the cell is a co-routine. Side effects, promises, animated properties
+ are encouraged. Very fine control over execution order, but uncachable.
+Loading data via URL is encouraged => hidden dependencies
+Seamless:
+Dependencies are very controlled. No URLs or function pointer, everything is text or binary.
+Workers are expected to return soon, or run in a separate thread.
+ No generators or promises. Seamless wants to equilibrate.
+Side effects are carefully controlled, especially with "pure" attribute.
+ This makes seamless much more like a pure functional language (term rewriting),
+ whereas execution in Observable is much more tick-driven.
+Seamless is very meta, as much as Lisp. Macros can generate topology.
+Code cells are just text data. Code generation is much much easier.
+ Seamless is not tied to one language.
+Caching in seamless is easy, and macros are cached as well.
+Seamless does reactive imports, whereas Observable's notebook imports are static.
+Both are very strong in importing and modifying the imported graph. With Observable, it is simpler,
+ but Seamless has more options (forking, or modifying all instances, or just changing
+  execution strategy alone).
+2. Syntactic differences
+Observable:
+The web editor has automatic dependency detection, and all code becomes a JS cell.
+The web editor is therefore tied to "almost JS".
+For example, a markdown cell becomes JS code returning markdown-interpreted HTML.
+Using the runtime directly is much more powerful, but loses all the sugar.
+Seamless:
+Code is just Python. You must put it in a cell, explicitly, and ask a cell for its value,
+ explicitly. Less sugar, but more flexible.
+Seamless graph execution is easily rerouted elsewhere, e.g. to big clusters.
+ Caching and retrieval-by-value are very important.
+3. Conclusions
+Observable is more agile and intuitive and integrates well with web technologies. It runs client-side.
+Seamless is more explicit, flexible and rigorous and integrates well with numerical code. It runs server-side.
+You can do visualizations with Seamless, but Observable is easier to use
+ (web technologies) and will run better (no server-client latencies).
+You can do computations with Observable, but Seamless is much better. Observable is not as eager
+ as Jupyter, but it still computes too much compared to Seamless. Only Seamless can do
+  well-defined, reproducible computations that run where the big data is and where the
+  number crunching power is.
+4. Summary.
+The best is a combination of Seamless <=> Vue/React <=> Observable. The first <=> is generate/AJAX
+ and the second <=> is embed/observe.
+Start your plots and visualizations and widgets in Seamless (with Jupyter) if you prefer, 
+ but move to Observable for serious work.
+Start your algorithms in Observable if you prefer, but move to Seamless for serious work.
+
+Seamless can also replace task-scheduling tools like Make, Gradle, Webpack, etc., trying to push away from the file system
+ as a source of authority. Serving a file or serving a computation becomes blurred. Observable is not nearly so radical.
+
+BIG LIMITING FACTOR: With Observable, you can 1) interactively reactively edit notebooks in the web editor;
+2) embed a notebook via the Runtime, and set up dynamic data sources (and sinks). What you cannot do is both, since
+ the web editor is not open source and has no remote API. An issue has been raised at observable-runtime's GitHub page.
+
+UPDATE: URLSearchParams functions as a remote API: see https://github.com/observablehq/notebook-runtime/issues/140
+To make a bifunctional (interactive+dynamicdata AND embeddable+dynamicdata) notebook:
+- Start with a cell "cellsync_inject = null"
+- Define a cellsync(attr, value) Observable cell. The function checks:
+  - If "EXTERN" has been defined, pull/push the value from http://EXTERN/attr
+    this uses URLSearchParams, which is just a cell that is always present.
+  - If no "EXTERN" has been defined, check that the JS function "cellsync_inject" has been defined. If not, error.
+  - During interactive development, define EXTERN (it should poll a Seamless server/service)
+  - When embedding, just inject "cellsync_inject" as a function. No need for custom variables ("virtual cells").
+    Check that JS functions can be injected like this!
+
+Finally: an alternative for Observable would be Carbide, a lens-based framework.
+As far as I can see, you could hook up a Seamless service via Vue or React in a similar way.

@@ -1,27 +1,56 @@
-#stub, TODO: refactor, document
 import weakref
-from weakref import WeakValueDictionary, WeakKeyDictionary
-from . import Managed
+from . import SeamlessBase
+from .macro_mode import get_macro_mode, with_macro_mode
 
-class WorkerLike:
-    """Base class for workers and contexts"""
-    _like_worker = True
+"""
+Evaluation modes for workers
+They are the same as at mid-level
+More fancy stuff (such as services and seamless-to-seamless communication
+ over the network) has to be organized at the high level
+"""
+worker_mode = ["sync", "async"]
+worker_submode = {
+    "sync": ["inline"],
+    "async": ["thread", "subprocess"]
+}
 
-class Worker(Managed, WorkerLike):
+class Worker(SeamlessBase):
     """Base class for all workers."""
     _pins = None
+    _naming_pattern = "worker"
+    _exported = True
 
+    @with_macro_mode
     def __init__(self):
         super().__init__()
         self._pending_updates_value = 0
-        from .macro import get_macro_mode
-        from .context import get_active_context
+        self._last_update_checksums = {}
         if get_macro_mode():
-            ctx = get_active_context()
-            if ctx is None:
-                raise AssertionError("Workers can only be defined when there is an active context")
-            assert self._context is None, self
-            name = ctx._add_new_worker(self)
+            from . import macro_register
+            macro_register.add(self)
+        else:
+            self.activate(False)
+
+    def _receive_update_checksum(self, pin, checksum):
+        if pin not in self._last_update_checksums:
+            if checksum is not None:
+                self._last_update_checksums[pin] = checksum
+            return True
+        curr = self._last_update_checksums[pin]
+        if curr == checksum:
+            return False
+        if checksum is not None:
+            self._last_update_checksums[pin] = checksum
+        return True
+
+    def activate(self, only_macros):
+        pass
+
+    @property
+    def _seal(self):
+        ctx = self._context()
+        assert ctx is not None
+        return ctx._seal
 
     @property
     def _pending_updates(self):
@@ -29,8 +58,9 @@ class Worker(Managed, WorkerLike):
 
     @_pending_updates.setter
     def _pending_updates(self, value):
-        assert self.context is not None
-        manager = self.context._manager
+        if self._destroyed or self._context() is None:
+            return
+        manager = self._get_manager()
         old_value = self._pending_updates_value
         if old_value == 0 and value > 0:
             manager.set_stable(self, False)
@@ -39,33 +69,17 @@ class Worker(Managed, WorkerLike):
         self._pending_updates_value = value
 
     def __getattr__(self, attr):
-        if self._destroyed:
-            successor = self._find_successor()
-            if successor:
-                return getattr(successor, attr)
-            else:
-                raise AttributeError("Worker has been destroyed, cannot find successor")
         if self._pins is None or attr not in self._pins:
             raise AttributeError(attr)
         else:
             return self._pins[attr]
 
-    def destroy(self):
-        #print("WORKER DESTROY", self)
-        if self._destroyed:
-            return
-        for pin_name, pin in self._pins.items():
-            pin.destroy()
-        if self.context is not None:
-            manager = self.context._manager
-            manager.remove_registrar_listeners(self)
-        super().destroy()
-
-    def receive_update(self, input_pin, value, resource_name):
+    def receive_update(self, input_pin, value, checksum, access_mode, content_type):
         raise NotImplementedError
 
-    def receive_registrar_update(self, registrar_name, key, namespace_name):
-        raise NotImplementedError
+    def touch(self):
+        manager = self._get_manager()
+        manager.touch_worker(self)
 
     def _validate_path(self, required_path=None):
         required_path = super()._validate_path(required_path)
@@ -73,12 +87,39 @@ class Worker(Managed, WorkerLike):
             pin._validate_path(required_path + (pin_name,))
         return required_path
 
+    def full_destroy(self, from_del=False):
+        raise NotImplementedError
 
-class PinBase(Managed):
-    def __init__(self, worker, name):
+from .protocol import transfer_modes, access_modes, content_types
+
+default_cell_types = {
+    None: None,
+    "object": None,
+    "pythoncode": "pythoncode",
+    "json": "json",
+    "silk": "json",
+    "default": "json",
+    "text": "text",
+    "module": "pythoncode",
+}
+class PinBase(SeamlessBase):
+    access_mode = None
+    def __init__(self, worker, name, transfer_mode, access_mode=None, content_type=None):
         self.worker_ref = weakref.ref(worker)
         super().__init__()
+        assert transfer_mode in transfer_modes, (transfer_mode, transfer_modes)
+        if access_mode is not None:
+            if isinstance(self, InputPin):
+                assert access_mode in access_modes + ("default",), (access_mode, access_modes)
+            else:
+                assert access_mode in access_modes, (access_mode, access_modes)
         self.name = name
+        self.transfer_mode = transfer_mode
+        if content_type is not None:
+            assert content_type in content_types, (content_type, content_types)
+        self.content_type = content_type
+        if access_mode is not None:
+            self.access_mode = access_mode
 
     @property
     def path(self):
@@ -91,33 +132,27 @@ class PinBase(Managed):
         return worker.path + name
 
     @property
-    def context(self):
+    def _context(self):
         worker = self.worker_ref()
         if worker is None:
             return None
-        return worker.context
-
-    def get_pin_id(self):
-        return id(self.get_pin())
+        return worker._context
 
     def get_pin(self):
         return self
 
-    def _own(self):
-        raise TypeError(type(self))
-
 class InputPinBase(PinBase):
-    def _set_context(self, context, childname, force_detach=False):
+    def _set_context(self, context, childname):
         pass
     def __str__(self):
-        ret = "Seamless input pin: " + self.format_path()
+        ret = "Seamless input pin: " + self._format_path()
         return ret
 
 class OutputPinBase(PinBase):
-    def _set_context(self, context, childname, force_detach=False):
+    def _set_context(self, context, childname):
         pass
     def __str__(self):
-        ret = "Seamless output pin: " + self.format_path()
+        ret = "Seamless output pin: " + self._format_path()
         return ret
 
 class InputPin(InputPinBase):
@@ -127,91 +162,61 @@ class InputPin(InputPinBase):
     pin.cell() returns or creates a cell that is connected to the inputpin
     """
 
-    def __init__(self, worker, name, dtype):
-        """Private"""
-        InputPinBase.__init__(self, worker, name)
-        self.dtype = dtype
-
-    def cell(self, own=False):
+    def cell(self, celltype=None):
         """Returns or creates a cell connected to the inputpin"""
         from .cell import cell
-        from .context import active_owner_as, get_active_context
-        from .macro import get_macro_mode
         manager = self._get_manager()
-        context = self.context
-        curr_pin_to_cells = manager.pin_to_cells.get(self.get_pin_id(), [])
-        l = len(curr_pin_to_cells)
-        if l == 0:
-            if self.dtype is None:
-                raise ValueError(
-                 "Cannot construct cell() for pin with dtype=None"
-                )
+        my_cell = manager.pin_from_cell.get(self)
+        if celltype is None:
+            celltype = self.content_type # for now, a 1:1 correspondence between content type and cell type
+            if celltype is None:
+                celltype = default_cell_types[self.access_mode]
+        if my_cell is None:
             worker = self.worker_ref()
             if worker is None:
                 raise ValueError("Worker has died")
-            with active_owner_as(self):
-                my_cell = cell(self.dtype)
-            if not get_macro_mode():
-                ctx = get_active_context()
-                if ctx is None:
-                    ctx = context
-                ctx._add_new_cell(my_cell)
+            my_cell = cell(celltype)
+            ctx = worker._context
+            assert ctx is not None
+            ctx = ctx()
+            ctx._add_new_cell(my_cell)
+            assert my_cell._context() is ctx
             my_cell.connect(self)
-        elif l == 1:
-            my_cell = manager._childids[curr_pin_to_cells[0][0]]
-        elif l > 1:
-            raise TypeError("cell() is ambiguous, multiple cells are connected")
-        if own:
-            self.own(my_cell)
+        else:
+            my_cell = my_cell.source
         return my_cell
 
     def set(self, *args, **kwargs):
         """Sets the value of the connected cell"""
         return self.cell().set(*args, **kwargs)
 
-    def receive_update(self, value, resource_name):
+    def receive_update(self, value, checksum, access_mode, content_type):
         """Private"""
         worker = self.worker_ref()
         if worker is None:
             return #Worker has died...
-
-        worker.receive_update(self.name, value, resource_name)
-
-    def destroy(self):
-        """Private"""
-        #print("PIN DESTROY", self)
-        if self._destroyed:
-            return
-        context = self.context
-        if context is None:
-            return
-        manager = self._get_manager()
-        manager.remove_listeners_pin(self)
-        super().destroy()
+        worker.receive_update(self.name, value, checksum, access_mode, content_type)
 
     def status(self):
-        manager = self.context._manager
-        curr_pin_to_cells = manager.pin_to_cells.get(self.get_pin_id(), [])
-        if len(curr_pin_to_cells):
-            my_cell = manager._childids[curr_pin_to_cells[0][0]]
-            return my_cell.status()
+        manager = self._get_manager()
+        my_cell = manager.pin_from_cell.get(self)
+        if my_cell is not None:
+            return my_cell.source.status()
         else:
             return self.StatusFlags.UNCONNECTED.name
+
+    def _touch(self):
+        raise NotImplementedError
 
 class OutputPin(OutputPinBase):
     """Connects the output of workers (transformers and reactors) to cells
 
     outputpin.connect(cell) connects an outputpin to a cell
     outputpin.cell() returns or creates a cell that is connected to the outputpin
-    outputpin.disconnect(cell) breaks an existing connection
     """
 
     last_value = None
-    def __init__(self, worker, name, dtype):
-        """Private"""
-        OutputPinBase.__init__(self, worker, name)
-        self.dtype = dtype
-        self._cell_ids = []
+    last_value_preliminary = None
 
     def get_pin(self):
         """Private"""
@@ -219,93 +224,62 @@ class OutputPin(OutputPinBase):
 
     def send_update(self, value, *, preliminary=False):
         """Private"""
-        if self._destroyed:
-            return
         self.last_value = value
+        self.last_value_preliminary = preliminary
         manager = self._get_manager()
-        for cell_id in self._cell_ids:
-            manager.update_from_worker(cell_id, value, self.worker_ref(),
-                preliminary=preliminary)
+        manager.pin_send_update(self, value, preliminary=preliminary)
 
+    @with_macro_mode
     def connect(self, target):
         """connects to a target cell"""
         manager = self._get_manager()
-        manager.connect(self, target)
+        manager.connect_pin(self, target)
+        return self
 
-    def disconnect(self, target):
-        """breaks an existing connection to a target cell"""
-        manager = self._get_manager()
-        manager.disconnect(self, target)
-
-    def cell(self, own=False):
+    def cell(self, celltype=None):
         """returns or creates a cell that is connected to the pin"""
         from .cell import cell
-        from .context import active_owner_as, get_active_context
-        from .macro import get_macro_mode
-        context = get_active_context()
-        if context is None:
-            context = self.context
-        assert context is not None
-        manager = context._manager
-        l = len(self._cell_ids)
+        manager = self._get_manager()
+        my_cells = manager.pin_to_cells.get(self, [])
+        if celltype is None:
+            celltype = self.content_type # for now, a 1:1 correspondence between content type and cell type
+            if celltype is None:
+                celltype = default_cell_types[self.access_mode]
+        l = len(my_cells)
         if l == 0:
-            if self.dtype is None:
-                raise ValueError(
-                 "Cannot construct cell() for pin with dtype=None"
-                )
             worker = self.worker_ref()
             if worker is None:
                 raise ValueError("Worker has died")
-            with active_owner_as(self):
-                my_cell = cell(self.dtype)
-            if not get_macro_mode():
-                ctx = get_active_context()
-                if ctx is None:
-                    ctx = context
-                ctx._add_new_cell(my_cell)
+            my_cell = cell(celltype)
+            ctx = worker._context
+            assert ctx is not None
+            ctx = ctx()
+            ctx._add_new_cell(my_cell)
+            assert my_cell._context() is ctx
             self.connect(my_cell)
         elif l == 1:
-            my_cell = manager._childids[self._cell_ids[0]]
+            my_cell = my_cells[0].target
         elif l > 1:
             raise TypeError("cell() is ambiguous, multiple cells are connected")
-        if own:
-            self.own(my_cell)
         return my_cell
 
     def cells(self):
         """Returns all cells connected to the outputpin"""
-        context = self.context
-        manager = context._manager
-        cells = [c for c in manager.cells if manager.get_cell_id(c) in self._cell_ids]
-        return cells
-
-    def destroy(self):
-        """Private"""
-        if self._destroyed:
-            return
-        #print("OUTPUTPIN DESTROY", self)
-        context = self.context
-        if context is None:
-            return
         manager = self._get_manager()
-        for cell_id in list(self._cell_ids):
-            cell = manager.cells.get(cell_id, None)
-            if cell is None:
-                continue
-            manager.disconnect(self, cell)
-        super().destroy()
+        my_cells = manager.pin_to_cells.get(self, [])
+        return [c.target for c in my_cells]
 
     def status(self):
-        manager = self.context._manager
-        l = [c for c in manager.cells if c in self._cell_ids]
-        if len(l):
-            my_cell = cell = manager.cells[l[0]]
-            return my_cell.status()
+        manager = self._get_manager()
+        my_cells = manager.pin_to_cells.get(self, [])
+        if len(my_cells):
+            my_cell = my_cells[0]
+            return my_cell.target.status()
         else:
             return self.StatusFlags.UNCONNECTED.name
 
 class EditPinBase(PinBase):
-    def _set_context(self, context, childname, force_detach=False):
+    def _set_context(self, context, childname):
         pass
 
 class EditPin(EditPinBase):
@@ -318,115 +292,78 @@ class EditPin(EditPinBase):
     """
 
     last_value = None
-    def __init__(self, worker, name, dtype):
-        """Private"""
-        InputPinBase.__init__(self, worker, name)
-        self.dtype = dtype
 
-    def get_pin(self):
-        """Private"""
-        return self
-
-    def cell(self, own=False):
-        """returns or creates a cell that is connected to the pin"""
+    def cell(self, celltype=None):
+        """Returns or creates a cell connected to the inputpin"""
         from .cell import cell
-        from .context import active_owner_as, get_active_context
-        from .macro import get_macro_mode
         manager = self._get_manager()
-        context = self.context
-        curr_pin_to_cells = manager.pin_to_cells.get(self.get_pin_id(), [])
-        l = len(curr_pin_to_cells)
+        my_cells = manager.editpin_to_cells(self)
+        if celltype is None:
+            celltype = self.content_type # for now, a 1:1 correspondence between content type and cell type
+            if celltype is None:
+                celltype = default_cell_types[self.access_mode]
+        l = len(my_cells)
         if l == 0:
-            if self.dtype is None:
-                raise ValueError(
-                 "Cannot construct cell() for pin with dtype=None"
-                )
             worker = self.worker_ref()
             if worker is None:
                 raise ValueError("Worker has died")
-            with active_owner_as(self):
-                my_cell = cell(self.dtype)
-            if not get_macro_mode():
-                ctx = get_active_context()
-                if ctx is None:
-                    ctx = context
-                ctx._add_new_cell(my_cell)
+            my_cell = cell(celltype)
+            ctx = worker._context
+            assert ctx is not None
+            ctx = ctx()
+            ctx._add_new_cell(my_cell)
             my_cell.connect(self)
         elif l == 1:
-            my_cell = manager._childids[curr_pin_to_cells[0][0]]
+            my_cell = my_cells[0].source
         elif l > 1:
             raise TypeError("cell() is ambiguous, multiple cells are connected")
-        if own:
-            self.own(my_cell)
         return my_cell
 
-    def receive_update(self, value, resource_name):
+    def set(self, *args, **kwargs):
+        """Sets the value of the connected cell"""
+        return self.cell().set(*args, **kwargs)
+
+    @with_macro_mode
+    def connect(self, target):
+        """connects to a target cell"""
+        from .layer import Path
+        ###manager = self._get_manager()
+        ###manager.connect_pin(self, target)  #NO; double connection has to be made
+                                              #connect_cell will also invoke connect_pin
+        assert not isinstance(target, Path) #Edit pins cannot be connected to paths
+        other = target._get_manager()
+        other.connect_cell(target, self)
+        return self
+
+    def send_update(self, value, *, preliminary=False):
+        """Private"""
+        self.last_value = value
+        manager = self._get_manager()
+        manager.pin_send_update(self, value, preliminary=preliminary)
+
+    def receive_update(self, value, checksum, access_mode, content_type):
         """Private"""
         worker = self.worker_ref()
         if worker is None:
             return #Worker has died...
-        worker.receive_update(self.name, value, resource_name)
-
-    def send_update(self, value, *, preliminary=False):
-        """Private"""
-        if self._destroyed:
-            return
-        self.last_value = value
-        manager = self._get_manager()
-        curr_pin_to_cells = manager.pin_to_cells.get(self.get_pin_id(), [])
-        for cell_id, con_id in curr_pin_to_cells:
-            manager.update_from_worker(cell_id, value, self.worker_ref(),
-                preliminary=preliminary)
-
-    def destroy(self):
-        """Private"""
-        if self._destroyed:
-            return
-        context = self.context
-        if context is None:
-            return
-        super().destroy()
-        manager = self._get_manager()
-        manager.remove_listeners_pin(self)
-
-
-    def connect(self, target):
-        """connects to-and-from a target cell"""
-        manager = self._get_manager()
-        manager.connect(self, target)
-
-    def disconnect(self, target):
-        """breaks an existing connection to-and-from a target cell"""
-        manager = self._get_manager()
-        manager.disconnect(self, target)
+        worker.receive_update(self.name, value, checksum, access_mode, content_type)
 
     def status(self):
-        manager = self.context._manager
-        curr_pin_to_cells = manager.pin_to_cells.get(self.get_pin_id(), [])
-        if len(curr_pin_to_cells):
-            my_cell = manager.cells[curr_pin_to_cells[0][0]]
+        manager = self._get_manager()
+        my_cells = manager.pin_to_cells.get(self, [])
+        if len(my_cells):
+            my_cell = my_cells[0].target
             return my_cell.status()
         else:
             return self.StatusFlags.UNCONNECTED.name
 
+'''
 class ExportedPinBase:
     def __init__(self, pin):
         self._pin = pin
 
-    def _set_context(self, context, childname, force_detach=False):
+    def _set_context(self, context, childname):
         self.name = childname
-
-    def get_pin_id(self):
-        from .cell import CellLike
-        if isinstance(self._pin, CellLike):
-            raise TypeError
-        return self._pin.get_pin_id()
-
-    def get_pin(self):
-        from .cell import CellLike
-        if isinstance(self._pin, CellLike):
-            return self._pin
-        return self._pin.get_pin()
 
     def __getattr__(self, attr):
         return getattr(self._pin, attr)
@@ -439,64 +376,26 @@ class ExportedPinBase:
     def path(self):
         return self._pin.path
 
-    def own(self, *args, **kwargs):
-        return self._pin.own(*args, **kwargs)
-
     def _get_manager(self):
         return self._pin._get_manager()
 
-    def destroy(self):
-        #self._pin.destroy() #DON'T destroy the underlying pin!
-        pass
-
 class ExportedOutputPin(ExportedPinBase, OutputPinBase):
     def __init__(self, pin):
-        from .cell import CellLike
-        assert isinstance(pin, (OutputPinBase, CellLike))
+        assert isinstance(pin, OutputPinBase)
         super().__init__(pin)
-    @property
-    def _cell_ids(self):
-        return self._pin._cell_ids
+    def cells(self):
+        return self._pin.cells()
 ExportedOutputPin.__doc__ = OutputPin.__doc__
 
 class ExportedInputPin(ExportedPinBase, InputPinBase):
     def __init__(self, pin):
-        from .cell import CellLike
-        assert isinstance(pin, (InputPinBase, CellLike))
+        assert isinstance(pin, InputPinBase)
         super().__init__(pin)
 ExportedInputPin.__doc__ = InputPin.__doc__
 
 class ExportedEditPin(ExportedPinBase, EditPinBase):
     def __init__(self, pin):
-        from .cell import CellLike
-        assert isinstance(pin, (EditPinBase, CellLike))
+        assert isinstance(pin, EditPinBase)
         super().__init__(pin)
 ExportedEditPin.__doc__ = EditPin.__doc__
-
-_runtime_identifiers = WeakValueDictionary()
-_runtime_identifiers_rev = WeakKeyDictionary()
-
-def get_runtime_identifier(worker):
-    identifier = worker.format_path()
-    holder = _runtime_identifiers.get(identifier, None)
-    if holder is None:
-        _runtime_identifiers[identifier] = worker
-        if worker in _runtime_identifiers_rev:
-            old_identifier = _runtime_identifiers_rev.pop(worker)
-            _runtime_identifiers.pop(old_identifier)
-        _runtime_identifiers_rev[worker] = identifier
-        return identifier
-    elif holder is worker:
-        return identifier
-    elif worker in _runtime_identifiers_rev:
-        return _runtime_identifiers_rev[worker]
-    else:
-        count = 0
-        while True:
-            count += 1
-            new_identifier = identifier + "-" + str(count)
-            if new_identifier not in _runtime_identifiers:
-                break
-        _runtime_identifiers[new_identifier] = worker
-        _runtime_identifiers_rev[worker] = new_identifier
-        return new_identifier
+'''
