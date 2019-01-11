@@ -1,11 +1,14 @@
-cson
 numpy
+cson
+jsonschema
 websockets
 requests
 aiohttp
 aiohttp_cors
 wurlitzer
+cffi
 IPython==6
 tornado==4.5
-ipykernel==4
+ipykernel==4.10
 [-e] git://github.com/sjdv1982/seamless.git#egg=seamless-framework
+

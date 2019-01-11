@@ -11,6 +11,8 @@
    Make big Jupyter cells.
    Do equilibrate() often, at both the beginning and the end of the cell.
    If necessary, restart your kernel and re-execute each cell (slowly!)
+   This also depends a lot on the Jupyter version you are running:
+   with ipykernel 4 and tornado 4, it goes much better than without.
 3. Error messages and warnings are printed out immediately, polluting your output.
    This is especially annoying with Jupyter, where they are dumped in the output
    of the last cell.
