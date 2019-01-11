@@ -1,4 +1,11 @@
-websockets
-cson
 numpy
+cson
+jsonschema
 IPython==6
+tornado==4.5.3
+ipykernel==4.10
+cffi
+wurlitzer
+aiohttp
+aiohttp_cors
+websockets

@@ -9,21 +9,84 @@ Most of the high level is done.
 
 Things to do:
 
+After discussion with Pierre, push distributed deployment sooner
+1. Finish the Great Refactor early, by putting loose ends in OLD folder (DONE)
+   2a: merge the branch on Github
+   2b: Configure gpu-node1 as a Docker repo: docker repo service, then ssh tunnel.
+   2c: make a very simple Dockerfile (wget + pip), to be used with IPython
+       make a very simple Jupyter Docker image.
+   2d: test deployment (native, then Dockerfile)
+3. The New Way and streams will be done early (this is big!)
+- Replace all md5sum with sha3-256
+- Every worker has a number of cores used (default 1). As many jobs are launched as there are cores
+- Fix asyncio compatibility, rip pythreadkernel, final test in Jupyter Docker image
+- Workers will be shut down (clearing namespaces etc.) unless annotated as "debug".  
+- Move from values to checksums. No local cache dict, no local cell values. Everything comes from generic
+  checksum-to-value caching (cell caching). Values will be pulled from there just-in-time.
+  Contexts in equilibrium should now be very memory-frugal.
+- Mixed cells (and structured cells) have cache-tree-depth (default 0).
+  At 0, simple checksum => value. At level 1, dicts/lists will be checksum => {checksum:checksum}
+  resp. checksum => [checksum] (Merkle trees), in a special Merkle tree cache.
+- Structured cells have their own Merkle tree, corresponding to what is now State.
+- Outchannels will store their own checksums (can be easy with Merkle trees)
+  Outchannels will never refer to buffered or invalid state, they will be undefined in that case
+- Fully implement New Way execution. Changing an authoritative value forward-invalidates. Changing
+  non-authoritative sets "overrule" as before, but now also in a forward sense.
+- Streams
+- Stream annotations for transformer
+  Outputpin + some inputpins are annotated as streams (multiple stream groups for cart combin)
+  Stream execution code that does the execution (but is not semantically relevant), uses API
+   for caching and stuff.
+  Stream-annotated transformers have stream inputpins.
+  Stream cells are possible and can be connected (and only to stream cells or stream pins;
+    special transformer for cell <=> stream cell)
+- Simple transformer caching, using the old request format (with no values now)
+  Done twice: once with stream annotation, once without
+- Set up Redis backends for cell caching and simple transformer caching, in Docker images.
+- In the future:
+  - Every cell will be associated with one or more seamless top context IDs (scids)
+  - scids, cells, transformers can be annotated. Best front-end is probably to annotate
+    an entire top-level graph and then submit it to annotation server.
+  - Extend simple transformer caching with high-level graph caching
+  - When scids get re-defined, it is possible to obsolete associated checksums
+    (clearing value cache, define obsoletion server entries)
+  - Use username/origin on transformer caching, user authority on scid/annotation
+  - Lots of reverse servers
+- Docker run transformer. Implementation similar to bash transformer, but needs
+  docker image digest (supported by docker run).
+  Global config for:
+  - run with singularity (singularity run docker://...)
+  - infer digest from name (digest will be stored in separate output cell).
+  No volumes, bind mounts or other options,
+  everything needed must be in the image, and output must be in stdout (can be tar/tgz)
+  Networking will be disabled (networking none), and the container will be removed (--rm)
+  If you find this chafing, you are not doing it right anyway: consider using Seamless inside of a
+  Docker service, running reproducible computations locally,
+  and defining capabilities to build the Docker image to provide the proper environment.
+- Set up caching servers as Docker services
+- Set up simple transformer slave that uses Merkle trees (used in caching) as requests
+
 Part 2: high level
 
 2A: prepare proof of principles
 - BC demo works now, at development level
 - Observable Notebook integration works now
-- Simple visualization for BCSearch
-- BCSearch on Github? integrate into struclib?
+- Simple visualization for DaReUS-Loop
+- R transformer (use rmagic bridge)
+- PyPPP docker image: code is open source, but SVM model is secret
+- Put DaReUS-Loop on Github, also integrate into struclib
+
 - Make a bash transformer, DONE
-  Make a simple Galaxy-XML-to-Seamless translator
+- Make a simple Galaxy-XML-to-Seamless translator
+- Make a simple Mobyle-XML-to-Seamless translator
+- Make a simple SnakeMake transformer (on top of Docker transformer;
+  deeper transformation would require slash and/or macros)
 
 Give demo for the RPBS platform
 Seamless is now usable by me, to port RPBS/Galaxy services
  Need some more months to make it usable:
 - by other devs
-- by sysadmins (job control, deployment) 
+- by sysadmins (job control, deployment)
 
 2B: Towards a first real example
 - Constructors, finish testing
@@ -112,7 +175,7 @@ Lack of documentation still a big issue.
 - macros (by definition low-level) with language (python) and api (seamless.core) fields.
 - Call graph serialization
 
-- The New Way of execution management (see below). 
+- The New Way of execution management (see below).
 - Seamless mainloop and equilibrate should now integrate with asyncio/nest_asyncio. No more dirty things
   regarding work flushes. This should make Seamless compatible with modern (autumn 2018) versions of
   IPython, ipykernel and tornado.
@@ -127,7 +190,7 @@ Lack of documentation still a big issue.
      In that case, the regeneration of the reactor essentially becomes an update() event  
 
 - Bring back slash0. Probably eliminate a lot of features, but the macro principle is good. This allows
-  new pins to be declared at the slash0 unrelated to the call graph, thus avoiding retranslation and 
+  new pins to be declared at the slash0 unrelated to the call graph, thus avoiding retranslation and
   supporting caching.
 
 Intermezzo:
@@ -166,7 +229,7 @@ Part 5:
   to/from the outside directly.
 
 - Build upon services proof-of-principle (cloudless)
-- HMTL gen from schema 
+- HMTL gen from schema
   non-interactive => relatively easy but unimportant; need to think about result display
   interactive (REST calls) => tricky
 - Implement all the checksum servers
@@ -180,7 +243,7 @@ Seamless starts to be usable as a service deployment tool. Limiting factor becom
 Contributing is still hard because the code is still a mess.
 
 Part 6:
-  - Streams
+  - Streams (WILL BE DONE ALREADY)
   - Special constructs (see below)
   - Set virtual filenames for (non-compiled) transformers. See tests/highlevel/python-debugging.py
     Maybe integrate with gdbgui
@@ -232,7 +295,7 @@ Part 8:
   - Support CUDA/OpenCL
   - Requires also a Silk extension (GPU storage, fixed-binary, see silk.md)
   - IPython (.ipy)/Cython magic is not (or barely) necessary, since IPython is natively supported by workers.
-- Bring back OpenGL support 
+- Bring back OpenGL support
 - Port over Orca and other examples
 - Make new videos:
     - Fireworks
@@ -296,7 +359,7 @@ Very long-term:
   the seamless overhead is, and how much.
 - Python debugging / code editor (WIP) (see seamless-towards-02.md)
   UPDATE: native widgets are probably outdated, but some network channel (Jupyter protocol?)
-  would probably be good. Keep an eye on analogous developments in VS Code and JupyterLab. 
+  would probably be good. Keep an eye on analogous developments in VS Code and JupyterLab.
 - Full feature implementation of Silk, e.g. constructs (see silk.md)
 - Other *host* implementations? JavaScript? Erlang? Elixir? Go?
 - "Activate" overhaul, the "onion" of Python with statements make it slow.
@@ -531,7 +594,7 @@ The New Way is purely a manager issue. Worker implementations are unaffected.
 (however, now there is a sleep hack in kernel/transformer.py to prevent premature equilibrium; this needs to be removed)
 - Need asyncio, to move beyond tornado 4 / ipykernel 4
 - There will be only a single manager for every top-level context
-- All checksums will be git-style but with SHA-256
+- All checksums will be git-style but with SHA3-256
 - Only authoritative cells, object cells (cell()) and Python code cells will hold their value.
   For any other cell, only the checksum will be stored
   The value will be retrieved from a local cache dict
@@ -955,19 +1018,19 @@ Use cases:
   Conversely, if reactor 2 receives updates to X, reactor 1 could store them in the database. For this,
   X could also come from an inputpin.
 - Reactor 1 maintains an OpenGL window, and reactor 2 draws in it. When connected, reactor 1 can notify
-  reactor 2 when the drawing can take place (since in OpenGL, drawing must take place within a specific 
+  reactor 2 when the drawing can take place (since in OpenGL, drawing must take place within a specific
   callback triggered by the windowing system; With Vulkan, this may no longer be necessary).
 - Reactor 1 and 2 both maintain a GUI using a native widget. By exposing their widget objects to reactor 3,
   reactor 3 can display them in a common window.
 
 NOTE: TO DOCUMENT:
 Seamless should make it easy to write code that runs fast (e.g. in parallel, in C, on the GPU) with
-minimal effort. However, Seamless does *not* by default have a high performance in terms of 
+minimal effort. However, Seamless does *not* by default have a high performance in terms of
 data handling: a lot of things are copied and have their checksums computed, repeatedly.
-Seamless should provide the facilities to make data handling faster, usually at the expense of error 
+Seamless should provide the facilities to make data handling faster, usually at the expense of error
 control, but users will have to enable them if they see that their data load gets too heavy.
 TO DOCUMENT (= example of the above):
-Structured cells are pretty efficient when it comes to state-modification-to-outchannel mapping. 
+Structured cells are pretty efficient when it comes to state-modification-to-outchannel mapping.
 When you set .a.b, it will fire on outchannels .a.b.c, .a and self, but not on .a.d, a.d.e or .f .
 For other outchannels, not even the checksums will be computed (TODO: not true at present)
 This holds no matter if .a.b is set from an inchannel or from the terminal.
