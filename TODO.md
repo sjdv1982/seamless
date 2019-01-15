@@ -11,13 +11,17 @@ Things to do:
 
 After discussion with Pierre, push distributed deployment sooner
 1. Finish the Great Refactor early, by putting loose ends in OLD folder (DONE)
-   2a: merge the branch on Github
+   2a: merge the branch on Github, DONE
    2b: Configure gpu-node1 as a Docker repo: docker repo service, then ssh tunnel.
    2c: make a very simple Dockerfile (wget + pip), to be used with IPython
        make a very simple Jupyter Docker image.
    2d: test deployment (native, then Dockerfile)
 3. The New Way and streams will be done early (this is big!)
+- Create a cache branch
 - Replace all md5sum with sha3-256
+- Rip pythreadkernel and construct a request object instead (see tests/lowlevel/simpler-remote),
+  but with checksums instead of values, and add access mode as well. Make checksum-to-cell dictionary
+  as local cache.
 - Every worker has a number of cores used (default 1). As many jobs are launched as there are cores
 - Fix asyncio compatibility, rip pythreadkernel, final test in Jupyter Docker image
 - Workers will be shut down (clearing namespaces etc.) unless annotated as "debug".  
