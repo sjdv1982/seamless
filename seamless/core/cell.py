@@ -13,6 +13,7 @@ from .protocol import transfer_modes, access_modes, content_types, json_encode
 from .. import Wrapper
 from . import SeamlessBase
 from ..mixed import io as mixed_io
+from ..get_hash import get_hash
 from .cached_compile import cached_compile
 from . import macro_register, get_macro_mode
 from .mount import MountItem
@@ -398,7 +399,7 @@ Use ``Cell.status()`` to get its status.
         v = str(value)
         if buffer and type(self)._is_text:
             v = v.rstrip("\n")
-        return hashlib.md5(v.encode("utf-8")).hexdigest()
+        return get_hash(v,hex=True)
 
     def _validate(self, value):
         pass
@@ -530,7 +531,7 @@ class MixedCell(Cell):
                     return None
             else:
                 b = self._value_to_bytes(value, storage, form)
-        return hashlib.md5(b).hexdigest()
+        return get_hash(b,hex=True)
 
     def _validate(self, value):
         return ###TODO: how to validate?? check that value conforms to form?
@@ -634,7 +635,7 @@ class PythonCell(Cell):
     def _text_checksum(self, value, *, buffer=False, may_fail=False):
         v = str(value)
         v = v.rstrip("\n") + "\n"
-        return hashlib.md5(v.encode("utf-8")).hexdigest()
+        return get_hash(v,hex=True)
 
     def _checksum(self, value, *, buffer=False, may_fail=False):
         if value is None:
@@ -646,7 +647,7 @@ class PythonCell(Cell):
         # For now, use ast, because pickle seems to be newline-sensitive
         dump = ast.dump(tree).encode("utf-8")
         #dump = pickle.dumps(tree)
-        return hashlib.md5(dump).hexdigest()
+        return get_hash(dump,hex=True)
 
     def _validate(self, value):
         from .protocol import TransferredCell
@@ -896,7 +897,7 @@ class CsonCell(JsonCell):
     def _text_checksum(self, value, *, buffer=False, may_fail=False):
         v = str(value)
         v = v.rstrip("\n") + "\n"
-        return hashlib.md5(v.encode("utf-8")).hexdigest()
+        return get_hash(v,hex=True)
 
     @staticmethod
     def _json(value):

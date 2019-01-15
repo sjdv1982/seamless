@@ -9,7 +9,7 @@ from distutils.core import Distribution
 from numpy.distutils.core import Extension as NumpyExtension
 from numpy.distutils.core import NumpyDistribution, numpy_cmdclass
 
-from hashlib import md5
+from ..get_hash import get_hash
 import json
 import importlib
 import shutil
@@ -73,8 +73,8 @@ def _prepare_extension(binary_module, cffi_header):
     for objectname, (obj_array, checksum) in binary_module["objects"].items():
         merkle_tree[objectname] = checksum
     if cffi_header is not None:
-        merkle_tree["_cffi_header"] = md5(cffi_header.encode()).hexdigest()
-    grand_checksum = md5(json.dumps(merkle_tree).encode()).hexdigest()
+        merkle_tree["_cffi_header"] = get_hash(cffi_header, hex=True)
+    grand_checksum = get_hash(json.dumps(merkle_tree), hex=True)
     full_module_name = "seamless_" + grand_checksum
     return full_module_name, merkle_tree
 

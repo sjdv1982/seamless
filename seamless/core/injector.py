@@ -2,7 +2,7 @@ import sys
 from types import ModuleType
 from weakref import WeakKeyDictionary
 from contextlib import contextmanager
-import hashlib
+from ..get_hash import get_hash
 from ..ipython import execute as ipython_execute
 
 class Injector:
@@ -31,7 +31,7 @@ class Injector:
         else:
             assert isinstance(code, str), type(code)
         m = ws.get(module_name)
-        checksum = hashlib.md5(code.encode("utf-8")).hexdigest()
+        checksum = get_hash(code, hex=True)
         if m is not None and m["checksum"] == checksum:
             return
         m = {}

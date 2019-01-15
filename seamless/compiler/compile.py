@@ -5,7 +5,7 @@ from .. import subprocess
 import numpy as np
 import os
 from copy import deepcopy
-from hashlib import md5
+from .get_hash import get_hash
 import shutil
 
 from threading import RLock
@@ -76,7 +76,7 @@ def compile(moduletree, build_dir, compiler_verbose=False):
             cmd = [compiler_binary, compiler["compile_flag"], code_file]
             cmd += options
             cmd += [compiler["output_flag"], obj_file]
-            checksum = md5(code.encode()).hexdigest()
+            checksum = get_hash(code, hex=True)
             cachekey = (tuple(cmd), checksum)
             #TODO: include header checksums as well
             obj_array = cache.get(cachekey)
