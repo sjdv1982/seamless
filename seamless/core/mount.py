@@ -535,6 +535,8 @@ class MountManager:
                 self.stash.activate()
                 yield
                 #print("reorganize success")
+                if self.stash is None:
+                    return
                 self.stash.join()
             except Exception as e:
                 #print("reorganize failure")
