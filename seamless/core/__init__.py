@@ -86,18 +86,16 @@ class SeamlessBaseList(list):
 
 from .macro_mode import get_macro_mode, macro_register, macro_mode_on
 from . import cell as cell_module
-from .cell import Cell, CellLikeBase, cell
+from .cell import Cell, cell
 from .cell import textcell, pythoncell, pytransformercell, pymacrocell, \
- pyreactorcell, ipythoncell, jsoncell, csoncell, arraycell, mixedcell, signal
+ pyreactorcell, ipythoncell, plaincell, csoncell, arraycell, mixedcell
 from .library import libcell, libmixedcell
 from . import context as context_module
-from .context import Context, context
+from .context import Context, context, path
 from .worker import Worker
 from .transformer import Transformer, transformer
 from .mount import mountmanager
 from .structured_cell import StructuredCell
-from .layer import path
 from .macro import macro
 from .reactor import reactor
-from . import cache
 from .link import link

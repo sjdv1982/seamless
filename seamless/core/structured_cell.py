@@ -1,4 +1,5 @@
-from .cell import CellLikeBase, Cell, JsonCell, TextCell
+from . import SeamlessBase
+from .cell import PlainCell, TextCell
 from .protocol import json_encode
 from ..mixed import MixedBase, OverlayMonitor, MakeParentMonitor, MonitorTypeError
 from ..mixed.get_form import get_form
@@ -87,11 +88,12 @@ def channel_deserialize(channel, value, transfer_mode, access_mode, content_type
         channel._last_value = deepcopy(value)
     return different, text_different
 
-class Inchannel(CellLikeBase):
+class Inchannel(SeamlessBase):
     _authoritative = True
     _mount = None
     _last_value = None
     def __init__(self, structured_cell, inchannel):
+        raise NotImplementedError # cache branch
         assert isinstance(inchannel, tuple)
         assert all([isinstance(v, str) for v in inchannel])
         self.structured_cell = weakref.ref(structured_cell)
@@ -147,7 +149,7 @@ class Inchannel(CellLikeBase):
             return None
 
 
-class Outchannel(CellLikeBase):
+class Outchannel(SeamlessBase):
     """
     Behaves like cells
     'worker_ref' actually is a reference to structured_cell
@@ -236,6 +238,7 @@ class Outchannel(CellLikeBase):
 class Editchannel(Outchannel):
     _authoritative = True
     def __init__(self, structured_cell, channel):
+        raise NotImplementedError # cache branch
         assert isinstance(channel, tuple)
         assert all([isinstance(v, str) for v in channel])
         self.structured_cell = weakref.ref(structured_cell)
@@ -243,7 +246,7 @@ class Editchannel(Outchannel):
         self.outchannel = channel
         name = channel
         self.name = name
-        CellLikeBase.__init__(self)
+        ###CellLikeBase.__init__(self)
         if structured_cell.buffer is not None:
             self._buffered = True
         if structured_cell._plain:
@@ -389,7 +392,7 @@ def set_state(cell, state):
     cell._status = cell.StatusFlags.OK
     cell.touch()
 
-class StructuredCell(CellLikeBase):
+class StructuredCell(SeamlessBase):
     _mount = None
     _from_pin_mode = False
     _exported = True
@@ -409,6 +412,7 @@ class StructuredCell(CellLikeBase):
       editchannels=[],
       state=None #is used destructively, you may want to make a deepcopy beforehand
     ):
+        raise NotImplementedError # cache branch
         from ..silk import Silk
         if not get_macro_mode():
             if not data._root()._direct_mode:
@@ -423,7 +427,7 @@ class StructuredCell(CellLikeBase):
         data._master = (self, "data")
         self.data = data
         if storage is None:
-            assert isinstance(data, JsonCell)
+            assert isinstance(data, PlainCell)
             self._plain = True
         else:
             assert isinstance(storage, TextCell)
@@ -436,7 +440,7 @@ class StructuredCell(CellLikeBase):
             self._plain = False
         self.storage = storage
 
-        assert isinstance(form, JsonCell)
+        assert isinstance(form, PlainCell)
         if state is not None and state.form is not None:
             set_state(form, deepcopy(state.form))
         assert form._master is None
@@ -447,7 +451,7 @@ class StructuredCell(CellLikeBase):
         if schema is None:
             self._is_silk = False
         else:
-            assert isinstance(schema, JsonCell)
+            assert isinstance(schema, PlainCell)
             if state is not None and state.schema is not None:
                 set_state(schema, deepcopy(state.schema))
             val = schema._val
@@ -464,7 +468,7 @@ class StructuredCell(CellLikeBase):
             assert self._is_silk
             assert isinstance(buffer, BufferWrapper)
             if self._plain:
-                assert isinstance(buffer.data, JsonCell)
+                assert isinstance(buffer.data, PlainCell)
                 assert buffer.storage is None
             else:
                 assert isinstance(buffer.storage, TextCell)
@@ -485,7 +489,7 @@ class StructuredCell(CellLikeBase):
                             set_state(buffer.storage, deepcopy(state.buffer_storage))
                     elif self.storage._val is not None:
                         set_state(buffer.storage, deepcopy(self.storage._val))
-            assert isinstance(buffer.form, JsonCell)
+            assert isinstance(buffer.form, PlainCell)
             if state is not None:
                 if state.buffer_nosync:
                     if state.buffer_form is not None:

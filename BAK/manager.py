@@ -5,9 +5,12 @@ Doing .set() on non-authoritative cells will result in a warning
 Connecting to a cell with a value (making it non-authoritative), will likewise result in a warning
 Cells can have only one outputpin writing to them, this is strictly enforced.
 
+The manager has a notion of the managers of the subcontexts
 manager.set_cell and manager.pin_send_update are thread-safe (can be invoked from any thread)
 """
 
+from .connection import Connection, CellToCellConnection, CellToPinConnection, \
+ PinToCellConnection
 from . import protocol
 from ..mixed import MixedBase
 
@@ -35,9 +38,40 @@ def manager_buffered(func):
             func(self, *args, **kwargs)
     return manager_buffered_wrapper
 
+def with_successor(argname, argindex):
+    def with_successor_outer_wrapper(func):
+        def with_successor_wrapper(self, *args0, **kwargs0):
+            args, kwargs = args0, kwargs0
+            if self.destroyed and self.successor:
+                raise NotImplementedError #untested! need to implement destroyed, successor
+                if len(args) > argindex:
+                    target = args[argindex]
+                elif target in kwargs:
+                    target = kwargs[argname]
+                else:
+                    raise TypeError((argname, argindex))
+
+                if isinstance(target, CellLikeBase):
+                    successor_target = getattr(self.successor, target.name)
+                elif isinstance(target, InputPin):
+                    worker_name = target.get_workerr().name #pin.get_worker()? can't remember API
+                    successor_target = attr(self.successor, worker_name).pinsss[target.name] ##pins[]? can't remember API
+
+                if successor_target._manager.destroyed:
+                    return
+                if len(args) > argindex:
+                    args = args[:argindex] + [successor_target] + args[argindex+1:]
+                elif target in kwargs:
+                    kwargs = kwargs.copy()
+                    kwargs[argname] = successor_target
+            return func(self, *args, **kwargs)
+        return with_successor_wrapper
+    return with_successor_outer_wrapper
+
 class Manager:
     active = True
     destroyed = False
+    successor = None
     flushing = False
     filled_objects = []
     on_equilibrate_callbacks = None
@@ -300,12 +334,11 @@ class Manager:
 
     @main_thread_buffered
     @manager_buffered
+    @with_successor("cell", 0)
     def set_cell(self, cell, value, *,
-      from_buffer=False,
+      default=False, from_buffer=False,
       force=False, from_pin=False, origin=None
     ):
-        print("manager.set_cell, TODO")
-        return ###
         from .macro_mode import macro_mode_on, get_macro_mode
         from .mount import is_dummy_mount
         if self.destroyed:
@@ -341,6 +374,7 @@ class Manager:
 
     @main_thread_buffered
     @manager_buffered
+    @with_successor("cell", 0)
     def touch_cell(self, cell):
         from .mount import is_dummy_mount
         if self.destroyed:
@@ -353,6 +387,7 @@ class Manager:
 
     @main_thread_buffered
     @manager_buffered
+    @with_successor("worker", 0)
     def touch_worker(self, worker):
         if self.destroyed:
             return
@@ -363,14 +398,18 @@ class Manager:
     @main_thread_buffered
     @manager_buffered
     def notify_attach_child(self, childname, child):
-        if isinstance(child, Cell):
+        if isinstance(child, Context):
+            assert isinstance(child._manager, Manager)
+            self.sub_managers[childname] = child._manager
+        elif isinstance(child, Cell):
             if child._prelim_val is not None:
-                value, from_buffer = child._prelim_val
-                self.set_cell(child, value, from_buffer=from_buffer)
+                value, default = child._prelim_val
+                self.set_cell(child, value, default=default)
                 child._prelim_val = None
 
     @main_thread_buffered
     @manager_buffered
+    @with_successor("pin", 0)
     def pin_send_update(self, pin, value, preliminary, target=None):
         #TODO: explicit support for preliminary values
         assert pin._get_manager() is self
@@ -391,6 +430,7 @@ class Manager:
 
     @main_thread_buffered
     @manager_buffered
+    @with_successor("cell", 0)
     def cell_send_update(self, cell, only_text, origin):
         if self.destroyed:
             return
@@ -459,8 +499,11 @@ class Manager:
         return self.ctx()._root()._get_manager()
 
 from .context import Context
-from .cell import Cell
-from .worker import Worker, InputPin, EditPin, OutputPin
+from .cell import Cell, CellLikeBase
+from .worker import Worker, InputPin, EditPin, \
+  InputPinBase, EditPinBase, OutputPinBase
 from .transformer import Transformer
 from .structured_cell import Inchannel, Outchannel, Editchannel
+from . import layer
 from .link import Link
+from .layer import Path

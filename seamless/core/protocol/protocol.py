@@ -20,24 +20,22 @@ A connection declaration may have up to four parts
     If transfer-by-reference is not possible for any reason, a copy is transferred instead.
   - "signal": the connection is a signal, no data whatsoever is transferred
 - access mode: this declares in which form the data will be accessible to the recipient
-  - object: generic Python object (only with "object", "binary" or "mixed" content type)
     Also the format of set_cell
   - pythoncode: a string that can be exec'ed by Python
-  - json: the result of json.load, i.e. nested dicts, lists and basic types (str/float/int/bool).
+  - plain: nested dicts, lists and basic types (str/float/int/bool).
   - silk: a Silk object
   - text: a text string
   - module: a Python module
   - binary_module: a tree of binary objects (.o / .obj) for compilation
-  - default (only transformer inputpins). "silk" if the source is "json" or "mixed", else "object"
+  - default (only transformer inputpins). "silk" if the source is "plain" or "mixed", else "object"
 - content type: the semantic content of the data
-  - object: generic Python object
   - text: text
   - python: generic python code
   - ipython: IPython code
   - transformer: transformer code
   - reactor: reactor code
   - macro: macro code
-  - json: JSON data
+  - plain: plain data
   - cson: CSON data
   - mixed: seamless.mixed data
   - binary: Numpy data
@@ -48,10 +46,10 @@ They will never be something as rich as MIME types;
 """
 
 transfer_modes = ("buffer", "copy", "ref", "signal")
-access_modes = ("object", "pythoncode", "json", "silk", "text", "module", "binary_module") # how the data is accessed
-content_types = ("object", "text",
+access_modes = ("pythoncode", "plain", "silk", "text", "module", "binary_module") # how the data is accessed
+content_types = ("text",
   "python", "ipython", "transformer", "reactor", "macro",
-  "json", "cson", "mixed", "binary"
+  "plain", "cson", "mixed", "binary"
 )
 text_types = ("text", "python", "ipython", "transformer", "reactor", "macro", "cson")
 
@@ -92,7 +90,7 @@ def substitute_default(source_mode, target_mode):
         return target_mode
     access_mode, content_type = source_mode[1:]
     if access_mode == "object":
-        if content_type in ("json", "mixed"):
+        if content_type in ("plain", "mixed"):
             result = "silk"
         elif content_type == "object":
             if content_type in text_types:
@@ -101,7 +99,7 @@ def substitute_default(source_mode, target_mode):
                 result = "object"
         else:
             result = "object"
-    elif access_mode in ("json", "silk"):
+    elif access_mode in ("plain", "silk"):
         result = "silk"
     else:
         result = access_mode
@@ -154,13 +152,13 @@ if not "result" in globals():
 
 adapters = OrderedDict()
 adapters[("copy", "object", "mixed"), ("copy", "text", "text")] = assert_mixed_text
-adapters[("copy", "object", "mixed"), ("copy", "json", "json")] = assert_plain
-adapters[("copy", "text", "cson"), ("copy", "json", "cson")] = adapt_cson_json
-adapters[("copy", "text", "cson"), ("copy", "json", "json")] = adapt_cson_json
+adapters[("copy", "object", "mixed"), ("copy", "plain", "plain")] = assert_plain
+adapters[("copy", "text", "cson"), ("copy", "plain", "cson")] = adapt_cson_json
+adapters[("copy", "text", "cson"), ("copy", "plain", "plain")] = adapt_cson_json
 for content_type1 in text_types:
-    adapters[("copy", "text", content_type1), ("copy", "text", "json")] = True
+    adapters[("copy", "text", content_type1), ("copy", "text", "plain")] = True
     adapters[("copy", "text", content_type1), ("copy", "text", "mixed")] = True
-    adapters[("copy", "text", content_type1), ("copy", "object", "json")] = True
+    adapters[("copy", "text", content_type1), ("copy", "object", "plain")] = True
     adapters[("copy", "text", content_type1), ("copy", "object", "mixed")] = True
     for content_type2 in text_types:
         if content_type1 == content_type2:
@@ -168,26 +166,26 @@ for content_type1 in text_types:
         adapters[("copy", "text", content_type1), ("copy", "text", content_type2)] = True
 
 for content_type in ("text", "python", "ipython", "transformer", "reactor", "macro"):
-    adapters[("copy", "text", "json"), ("copy", "text", content_type)] = assert_text
-    adapters[("copy", "text", content_type), ("copy", "text", "json")] = json_encode
-    adapters[("copy", "text", content_type), ("copy", "json", content_type)] = True
+    adapters[("copy", "text", "plain"), ("copy", "text", content_type)] = assert_text
+    adapters[("copy", "text", content_type), ("copy", "text", "plain")] = json_encode
+    adapters[("copy", "text", content_type), ("copy", "plain", content_type)] = True
 adapters[("copy", "object", "mixed"), ("copy", "text", "mixed")] = assert_mixed_text
-adapters[("copy", "object", "mixed"), ("copy", "json", "mixed")] = assert_plain
+adapters[("copy", "object", "mixed"), ("copy", "plain", "mixed")] = assert_plain
 
 for content_type in content_types:
     adapters[("copy", "object", content_type), ("copy", "object", "object")] = True
     adapters[("copy", "object", "object"), ("copy", "object", content_type)] = True
-for content_type in ("json", "mixed"):
+for content_type in ("plain", "mixed"):
     adapters[("ref", "object", content_type), ("ref", "object", "mixed")] = True
-    adapters[("copy", "json", content_type), ("copy", "object", "mixed")] = True
+    adapters[("copy", "plain", content_type), ("copy", "object", "mixed")] = True
 adapters[("copy", "object", "text"), ("copy", "object", "mixed")] = True
-adapters[("ref", "json", "json"), ("ref", "silk", "json")] = adapt_to_silk
-adapters[("copy", "json", "json"), ("copy", "silk", "json")] = adapt_to_silk
-adapters[("copy", "json", "cson"), ("copy", "silk", "cson")] = adapt_to_silk
+adapters[("ref", "plain", "plain"), ("ref", "silk", "plain")] = adapt_to_silk
+adapters[("copy", "plain", "plain"), ("copy", "silk", "plain")] = adapt_to_silk
+adapters[("copy", "plain", "cson"), ("copy", "silk", "cson")] = adapt_to_silk
 adapters[("ref", "object", "mixed"), ("ref", "silk", "mixed")] = adapt_to_silk
 adapters[("copy", "object", "mixed"), ("copy", "silk", "mixed")] = adapt_to_silk
 adapters[("copy", "silk", "mixed"), ("copy", "object", "mixed")] = adapt_from_silk
-adapters[("copy", "silk", "json"), ("copy", "object", "json")] = adapt_from_silk
+adapters[("copy", "silk", "plain"), ("copy", "object", "plain")] = adapt_from_silk
 for access_mode in "object", "text":
     adapters[("copy", access_mode, "python"), ("copy", access_mode, "ipython")] = True
 adapters[("copy", "text", "python"), ("copy", "module", "python")] = True

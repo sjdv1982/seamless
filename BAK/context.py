@@ -66,6 +66,7 @@ context : context or None
                 assert context is None
                 self._toplevel = True
                 self._manager = Manager(self)
+                layer.create_layer(self)
             else:
                 assert context is not None
 
@@ -77,16 +78,16 @@ context : context or None
             macro_register.add(self)
 
     def _set_context(self, context, name):
-        assert not self._toplevel
         super()._set_context(context, name)
         context_name = context._name
         if context_name is None:
             context_name = ()
         self._name = context_name + (name,)
+        self._manager = Manager(self)
 
     def _get_manager(self):
         assert self._toplevel or self._context is not None  #context must have a parent, or be toplevel
-        return self._root()._manager
+        return self._manager
 
     def __str__(self):
         p = self._format_path()
@@ -97,7 +98,7 @@ context : context or None
 
     @with_macro_mode
     def _add_child(self, childname, child):
-        assert isinstance(child, (Context, Worker, Cell, Link, StructuredCell))
+        assert isinstance(child, (Context, Worker, CellLikeBase, Link))
         if isinstance(child, Context):
             assert child._context() is self
         else:
@@ -118,6 +119,32 @@ context : context or None
         self._add_child(cell_name, cell)
         return cell_name
 
+    def _add_new_worker(self, worker):
+        from .worker import Worker
+        assert isinstance(worker, Worker)
+        assert worker._context is None
+        count = 0
+        while 1:
+            count += 1
+            worker_name = worker._naming_pattern + str(count)
+            if not self._hasattr(worker_name):
+                break
+        self._auto.add(worker_name)
+        self._add_child(worker_name, worker)
+        return worker_name
+
+    def _add_new_subcontext(self, ctx):
+        assert isinstance(ctx, Context)
+        count = 0
+        while 1:
+            count += 1
+            context_name = ctx._naming_pattern + str(count)
+            if not self._hasattr(context_name):
+                break
+        self._auto.add(context_name)
+        self._add_child(context_name, ctx)
+        return ctx
+
     @with_macro_mode
     def __setattr__(self, attr, value):
         if attr.startswith("_") or hasattr(self.__class__, attr):
@@ -125,6 +152,17 @@ context : context or None
         if attr in self._pins:
             raise AttributeError(
              "Cannot assign to pin '%s'" % attr)
+        '''
+        from .worker import ExportedInputPin, ExportedOutputPin, \
+          ExportedEditPin
+        pintypes = (ExportedInputPin, ExportedOutputPin, ExportedEditPin)
+        if isinstance(value, pintypes):
+            #TODO: check that pin target is a child
+            self._pins[attr] = value
+            self._pins[attr]._set_context(self, attr)
+            return
+        '''
+
         if attr in self._children and self._children[attr] is not value:
             raise AttributeError(
              "Cannot assign to child '%s'" % attr)
@@ -171,14 +209,33 @@ context : context or None
     def _is_sealed(self):
         return self._seal is not None
 
-    def _flush_workqueue(self):
+    def _flush_workqueue(self, full=True):
         from .macro import Macro
         manager = self._get_manager()
         manager.flush()
         finished = True
+        children_unstable = set()
         if len(self.unstable_workers):
             finished = False
-        return finished
+        for childname, child in self._children.items():
+            if isinstance(child, (Context, Macro)):
+                if full:
+                    child_finished, _ = child._flush_workqueue(full=True)
+                    if not child_finished:
+                        mgr = child._get_manager()
+                        remaining = list(mgr.unstable) + list(mgr.children_unstable)
+                        children_unstable.update(remaining)
+                        finished = False
+                else:
+                    child_finished = child._flush_workqueue(full=False)
+                    if not child_finished:
+                        finished = False
+        if full:
+            manager.mountmanager.tick()
+            manager.children_unstable = children_unstable
+            return finished, children_unstable
+        else:
+            return finished
 
     def equilibrate(self, timeout=None, report=0.5):
         """
@@ -188,24 +245,66 @@ context : context or None
          "timeout" seconds, returning the remaining set of unstable workers
         Report the workers that are not stable every "report" seconds
         """
-        if not self._toplevel:
-            return self._root().equilibrate()
-        if self._equilibrating:
+        if self._root()._equilibrating:
             return
         if get_macro_mode():
             raise Exception("ctx.equilibrate() will not work in macro mode")
         assert self._get_manager().active
         try:
-            self._equilibrating = True
-            return self._get_manager().equilibrate(timeout, report)
+            self._root()._equilibrating = True
+            start_time = time.time()
+            last_report_time = start_time
+            finished, _ = self._flush_workqueue()
+
+            if self._destroyed:
+                return set()
+            if finished:
+                return set()
+            last_unstable = set()
+            while 1:
+                if self._destroyed:
+                    return set()
+                curr_time = time.time()
+                if curr_time - last_report_time > report:
+                    manager = self._get_manager()
+                    unstable = self.unstable_workers
+                    if last_unstable != unstable:
+                        last_unstable = unstable
+                        print("Equilibrate: waiting for:", self.unstable_workers)
+                    last_report_time = curr_time
+                if timeout is not None:
+                    if curr_time - start_time > timeout:
+                        break
+                finished1, _ = self._flush_workqueue()
+                if self._destroyed:
+                    return set()
+                manager = self._get_manager()
+                len1 = len(manager.unstable)
+                time.sleep(0.001)
+                finished2, children_unstable = self._flush_workqueue()
+                if self._destroyed:
+                    return set()
+                manager = self._get_manager()
+                len2 = len(manager.unstable)
+                manager.children_unstable = children_unstable
+                if finished1 and finished2:
+                    if len1 == 0 and len2 == 0:
+                        break
+            if self._destroyed:
+                return set()
+            manager = self._get_manager()
+            manager.flush()
+            if self._destroyed:
+                return set()
+            return self._manager.unstable & self._manager.children_unstable
         finally:
-            self._equilibrating = False
-        
+            self._root()._equilibrating = False
+
     @property
     def unstable_workers(self):
         """All unstable workers (not in equilibrium)"""
         from . import SeamlessBaseList
-        result = list(self._manager.unstable)
+        result = list(self._manager.unstable) + list(self._manager.children_unstable)
         return SeamlessBaseList(sorted(result, key=lambda p:p._format_path()))
 
     def status(self):
@@ -316,6 +415,8 @@ context : context or None
                 child.full_destroy(from_del=from_del)
             if isinstance(child, (Context, Macro)):
                 child.full_destroy(from_del=from_del)
+        if self._toplevel:
+            layer.destroy_layer(self)
 
     def __del__(self):
         if self._destroyed:
@@ -364,18 +465,10 @@ class _InternalChildrenWrapper:
     def __setattr__(self, attr, value):
         raise AttributeError("_InternalChildrenWrapper is read-only")
 
-class Path:
-    def __init__(self, obj):
-        path = obj.path
-        raise NotImplementedError ###cache branch
-
-def path(obj):
-    return Path(obj)
-
-
 from .link import Link
-from .cell import Cell
+from .cell import Cell, CellLikeBase
 from .worker import Worker, InputPinBase, OutputPinBase, EditPinBase
-from .structured_cell import StructuredCell
 
 from .manager import Manager
+from . import layer
+from .layer import Path

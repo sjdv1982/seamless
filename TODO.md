@@ -11,32 +11,53 @@ Things to do:
 
 After discussion with Pierre, push distributed deployment sooner
 1. Finish the Great Refactor early, by putting loose ends in OLD folder (DONE)
-   2a: merge the branch on Github, DONE
-   2b: Configure gpu-node1 as a Docker repo: docker repo service, then ssh tunnel.
-   2c: make a very simple Dockerfile (wget + pip), to be used with IPython
+   1a: merge the branch on Github, DONE
+   1b: Configure gpu-node1 as a Docker repo: docker repo service, then ssh tunnel.
+   1c: make a very simple Dockerfile (wget + pip), to be used with IPython
        make a very simple Jupyter Docker image.
-   2d: test deployment (native, then Dockerfile)
+   1d: test deployment (native, then Dockerfile)
+2. Great Split (this is big!)
+  - Put low-level execution code in BAK, DONE
+  - Rip execution code from low-level, DONE
+  - Minimal manager to store connections and cell values
+  - Minimal manager to make simple example work, using the New Way
+  - Revert the old mixed cells with two slave cells (storage and form).
+    Make sure that slave cells can never be mounted bidirectionally
+  - Get minimal mounting example working
+  - Reimplement IPython (mainloop/asyncio) support 
+    Test using Anaconda then Docker
+  - For Monitor, replace direct data storage + hooks with API
+  - Get mixed tests working
+  - Adapt StructuredCell to have direct manager API instead of slave cells.
+    Only three slave cells (data, schema, buffer) instead of seven
+    The manager API will sync StructuredCell updates with cells (data, buffer) and their mounts
+  - Get simple StructuredCell tests working
+  - Gradually, get all tests working (eventually, macros), extending the manager, using the New Way 
 3. The New Way and streams will be done early (this is big!)
-- Create a cache branch
-- Replace all md5sum with sha3-256
+- Create a cache branch DONE
+- Replace all md5sum with sha3-256 DONE
+- Rip _text_checksum. Instead, keep dictionaries of text-checksum-to-semantic-checksum for Python and CSON.
+- Rip the ._val attribute, store all values in a checksum-to-cell dictionary.
+  Move from values to checksums. No local cache dict, no local cell values. Everything comes from generic caching. Cell paths keep cache alive.
 - Rip pythreadkernel and construct a request object instead (see tests/lowlevel/simpler-remote),
-  but with checksums instead of values, and add access mode as well. Make checksum-to-cell dictionary
+  but with checksums instead of values, and add access mode as well. 
   as local cache.
-- Every worker has a number of cores used (default 1). As many jobs are launched as there are cores
-- Fix asyncio compatibility, rip pythreadkernel, final test in Jupyter Docker image
-- Workers will be shut down (clearing namespaces etc.) unless annotated as "debug".  
-- Move from values to checksums. No local cache dict, no local cell values. Everything comes from generic
+  Transformers will be shut down (clearing namespaces etc.) unless annotated as "debug".  
   checksum-to-value caching (cell caching). Values will be pulled from there just-in-time.
   Contexts in equilibrium should now be very memory-frugal.
+- Every worker has a number of cores used (default 1). As many jobs are launched as there are cores
+- Fix asyncio compatibility, rip pythreadkernel, final test in Jupyter Docker image
 - Mixed cells (and structured cells) have cache-tree-depth (default 0).
   At 0, simple checksum => value. At level 1, dicts/lists will be checksum => {checksum:checksum}
   resp. checksum => [checksum] (Merkle trees), in a special Merkle tree cache.
 - Structured cells have their own Merkle tree, corresponding to what is now State.
 - Outchannels will store their own checksums (can be easy with Merkle trees)
   Outchannels will never refer to buffered or invalid state, they will be undefined in that case
+  (NOTE: should be like that already, right?)
 - Fully implement New Way execution. Changing an authoritative value forward-invalidates. Changing
   non-authoritative sets "overrule" as before, but now also in a forward sense.
-- Streams
+4. Streams
+- Basic implementation in manager/protocol
 - Stream annotations for transformer
   Outputpin + some inputpins are annotated as streams (multiple stream groups for cart combin)
   Stream execution code that does the execution (but is not semantically relevant), uses API
