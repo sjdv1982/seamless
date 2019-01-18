@@ -17,9 +17,12 @@ After discussion with Pierre, push distributed deployment sooner
        make a very simple Jupyter Docker image.
    1d: test deployment (native, then Dockerfile)
 2. Great Split (this is big!)
+
   A.
   - Put low-level execution code in BAK, DONE
   - Rip execution code from low-level, DONE
+  - Changes to macro mode. Essentially, worker execution and status propagation is disabled.
+    For now, macro mode has no arguments.    
   - Minimal manager to store connections and cell values
   - Get rid of transfer_mode in protocol.py (and when porting serialize/deserialize).
     objects are built in "ref" mode. If a copy is desired, this must be indicated in
@@ -39,22 +42,6 @@ After discussion with Pierre, push distributed deployment sooner
     Interrupt happens in 20 secs, or when the transformer re-executes, whichever happens sooner
   
   B.
-  - Revert the old mixed cells with two slave cells (storage and form).
-    Make sure that slave cells can never be mounted bidirectionally
-  - Get minimal mounting example working
-  - Reimplement IPython (mainloop/asyncio) support 
-    Test using Anaconda then Docker
-  - For Monitor, replace direct data storage + hooks with API
-  - Get mixed tests working
-  - Adapt StructuredCell to have direct manager API instead of slave cells.
-    Only three slave cells (data, schema, buffer) instead of seven
-    The manager API will sync StructuredCell updates with cells (data, buffer) and their mounts
-    Non-buffered, non-forked monitors should report the path that has changed through the API
-    manager and accessorcache should respect this path to determine which accessors (outchannels)
-    have changed.
-  - Get StructuredCell tests working
-  
-  C.
   - Get reactors working. reactcache can be set up similar to transformcache.
     The result of a reaction is the buffer checksum of all of its outputpins.
     Editpin-connected cells are an explicit part of the reaction input dict. 
@@ -66,15 +53,33 @@ After discussion with Pierre, push distributed deployment sooner
     In addition, reactors must be marked as pure or impure. 
     Pure reactors get shut down after every reaction. Impure reactors receive delta updates.
     very much the same as in the current situation.
-  
-  D.
-  - Macros: while a macro context is being created, it is specified as "orphaned"
-    Orphaned contexts are registered with the manager, but by default are deactivated (no worker execution)    
-    ([A]synchronous macro execution is no longer an issue before the classical caching phase has 
-    disappeared)
-    During creation, the old macro context (if exists) is *also* deactivated.
-    (implementation: keep a deactivation path as a manager attribute. There can be only one such path, because
-    macro creation is synchronous. It can be nested (macros containing macros) so be careful in clearing it.)
+
+  C.
+  - Macros. Immediate macro execution is disabled, e.g. macros never
+   get immediately evaluated while they are being defined and connected
+   in macro mode.
+   In this phase, the underlying macro.ctx handle is "unbound". Whenever
+   a macro is successfully evaluated, the ctx handle becomes "bound".
+   Unbound ctx handles cannot support __dir__; any attribute can be
+   accessed and leads to a Path object (TODO: relocate Path class).
+   Connecting a Path object to anything results in a Path connection,
+   where one (or both) of the endpoints are paths.
+   Whenever a macro is evaluated, relevant Path connections 
+   are converted to accessors (a list of converted accessors is kept)
+   Bound macro.ctx handles are just macro-generated contexts.
+   However, connecting an item in a macro-generated context *also*
+    results in a Path connection rather than a accessor.
+   There is always an active macro (the one that is being evaluated,
+   the argument to macro_mode)
+   Path connections are *not* labeled with the active macro; instead,
+   when a macro-generated context gets destroyed, all path connections
+   get destroyed where both endpoints are within the context.
+   Therefore, though a macro often creates path connections into a submacro context, it is illegal for a macro to create path connections
+   where *both* endpoints are within the *same* submacro.
+    
+  - While a macro context is being created (i.e. when its macro is
+    evaluated), it is specified as "orphaned".
+    This is always in macro mode, hance all worker execution is disabled (beyond what is already running)
     When macro execution is complete, the old macro is being destroyed.
     Destruction:
     1. Shuts down all non-pure reactors
@@ -83,11 +88,29 @@ After discussion with Pierre, push distributed deployment sooner
     Part 1. will happen immediately; 2. and 3. will happen with a 20 sec delay, or when all cells in the
      new macro reach stable status, whichever happens sooner.
    - Get all macro tests working 
-  
+
+  D.
+  - Revert the old mixed cells with two slave cells (storage and form).
+    Make sure that slave cells can never be mounted bidirectionally
+  - Get minimal mounting example working
+  - Reimplement IPython (mainloop/asyncio) support 
+    Test using Anaconda then Docker
+
   E.
+  - For Monitor, replace direct data storage + hooks with API
+  - Get mixed tests working
+  - Adapt StructuredCell to have direct manager API instead of slave cells.
+    Only three slave cells (data, schema, buffer) instead of seven
+    The manager API will sync StructuredCell updates with cells (data, buffer) and their mounts
+    Non-buffered, non-forked monitors should report the path that has changed through the API
+    manager and accessorcache should respect this path to determine which accessors (outchannels)
+    have changed.
+  - Get StructuredCell tests working
+  
+  F.
   - Gradually, get all low-level tests working, extending the manager, using the New Way 
 
-  F. Get the high level working. Should be quite straightforward now.
+  G. Get the high level working. Should be quite straightforward now.
 
 Details:
 The New Way and streams will be done early (this is big!)
@@ -146,6 +169,15 @@ The New Way and streams will be done early (this is big!)
   and defining capabilities to build the Docker image to provide the proper environment.
 - Set up caching servers as Docker services
 - Set up simple transformer slave that uses Merkle trees (used in caching) as requests
+
+# Notes about the New Way:
+- Faking a cycle with a reactor will no longer work. In general,
+ hiding a dependency by using an edit pin instead of an outputpin
+ will not work.
+- For structured cells, synthetic (i.e. dependent, non-authoritative)
+  schemas are a legit use case (i.e. synthesize from XML or Spyder).
+  StructuredCell should support this, disabling all type inference
+  if the schema cell is dependent.
 
 Part 2: high level
 
