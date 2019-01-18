@@ -103,7 +103,7 @@ context : context or None
         else:
             child._set_context(self, childname)
         self._children[childname] = child
-        self._manager.notify_attach_child(childname, child)
+        self._manager.attach_child(child)
 
     def _add_new_cell(self, cell):
         assert isinstance(cell, Cell)
@@ -273,7 +273,6 @@ context : context or None
         for childname, child in self._children.items():
             if isinstance(child, (Context, Worker)):
                 child.destroy(from_del=from_del)
-        self._manager.destroy(from_del=from_del)
         if self._toplevel:
             toplevel_register.remove(self)
 
@@ -322,8 +321,6 @@ context : context or None
             return
         self.__dict__["_destroyed"] = True
         print("Undestroyed %s, mount points may remain" % self)
-        #self.destroy(from_del=True)
-        #self.full_destroy(from_del=True)
 
 
 Context._methods = [m for m in Context.__dict__ if not m.startswith("_") \

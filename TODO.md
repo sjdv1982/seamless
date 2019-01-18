@@ -17,10 +17,28 @@ After discussion with Pierre, push distributed deployment sooner
        make a very simple Jupyter Docker image.
    1d: test deployment (native, then Dockerfile)
 2. Great Split (this is big!)
+  A.
   - Put low-level execution code in BAK, DONE
   - Rip execution code from low-level, DONE
   - Minimal manager to store connections and cell values
+  - Get rid of transfer_mode in protocol.py (and when porting serialize/deserialize).
+    objects are built in "ref" mode. If a copy is desired, this must be indicated in
+    the worker execution dict (containing also ncores, etc.)
+    If a copy is desired:
+    - No change for text
+    - No change for pythoncode. This should anyway be stored as text (else fork() problems)
+    - For binary and mixed where storage != "pure-plain": make a deepcopy
+    - For plain and mixed where storage == "pure-plain": reload from buffer
+    Also, do not return adapter when negotiating source/target modes,
+     make a separate function to adapt when a cache tree is given
   - Minimal manager to make simple example work, using the New Way
+  - New Way statuses, including "overrule". Overrule is orthogonal to the other statuses,
+    and a cell is overruled if *any* of its upstream inputs is overruled!
+  - Implement transformer interrupt action, upon destroy or by manager (upon auth update).
+    New-way style, auth update propagate forward (potentially leading to multiple interrupts).
+    Interrupt happens in 20 secs, or when the transformer re-executes, whichever happens sooner
+  
+  B.
   - Revert the old mixed cells with two slave cells (storage and form).
     Make sure that slave cells can never be mounted bidirectionally
   - Get minimal mounting example working
@@ -31,12 +49,50 @@ After discussion with Pierre, push distributed deployment sooner
   - Adapt StructuredCell to have direct manager API instead of slave cells.
     Only three slave cells (data, schema, buffer) instead of seven
     The manager API will sync StructuredCell updates with cells (data, buffer) and their mounts
-  - Get simple StructuredCell tests working
-  - Gradually, get all tests working (eventually, macros), extending the manager, using the New Way 
-3. The New Way and streams will be done early (this is big!)
+    Non-buffered, non-forked monitors should report the path that has changed through the API
+    manager and accessorcache should respect this path to determine which accessors (outchannels)
+    have changed.
+  - Get StructuredCell tests working
+  
+  C.
+  - Get reactors working. reactcache can be set up similar to transformcache.
+    The result of a reaction is the buffer checksum of all of its outputpins.
+    Editpin-connected cells are an explicit part of the reaction input dict. 
+    When an editpin is changed, a new reaction is defined, 
+    with a new value of the editpin. 
+    But the reaction is only executed if the editpin was changed externally.
+    If not, the new reaction is cached with the same result (outputpin checksums)
+    as the old one.
+    In addition, reactors must be marked as pure or impure. 
+    Pure reactors get shut down after every reaction. Impure reactors receive delta updates.
+    very much the same as in the current situation.
+  
+  D.
+  - Macros: while a macro context is being created, it is specified as "orphaned"
+    Orphaned contexts are registered with the manager, but by default are deactivated (no worker execution)    
+    ([A]synchronous macro execution is no longer an issue before the classical caching phase has 
+    disappeared)
+    During creation, the old macro context (if exists) is *also* deactivated.
+    (implementation: keep a deactivation path as a manager attribute. There can be only one such path, because
+    macro creation is synchronous. It can be nested (macros containing macros) so be careful in clearing it.)
+    When macro execution is complete, the old macro is being destroyed.
+    Destruction:
+    1. Shuts down all non-pure reactors
+    2. May clean up cache items associated with the old macro 
+    3. Will also interrupt all transforms and pure reactors.
+    Part 1. will happen immediately; 2. and 3. will happen with a 20 sec delay, or when all cells in the
+     new macro reach stable status, whichever happens sooner.
+   - Get all macro tests working 
+  
+  E.
+  - Gradually, get all low-level tests working, extending the manager, using the New Way 
+
+  F. Get the high level working. Should be quite straightforward now.
+
+Details:
+The New Way and streams will be done early (this is big!)
 - Create a cache branch DONE
 - Replace all md5sum with sha3-256 DONE
-- Rip _text_checksum. Instead, keep dictionaries of text-checksum-to-semantic-checksum for Python and CSON.
 - Rip the ._val attribute, store all values in a checksum-to-cell dictionary.
   Move from values to checksums. No local cache dict, no local cell values. Everything comes from generic caching. Cell paths keep cache alive.
 - Rip pythreadkernel and construct a request object instead (see tests/lowlevel/simpler-remote),
@@ -56,7 +112,7 @@ After discussion with Pierre, push distributed deployment sooner
   (NOTE: should be like that already, right?)
 - Fully implement New Way execution. Changing an authoritative value forward-invalidates. Changing
   non-authoritative sets "overrule" as before, but now also in a forward sense.
-4. Streams
+3. Streams
 - Basic implementation in manager/protocol
 - Stream annotations for transformer
   Outputpin + some inputpins are annotated as streams (multiple stream groups for cart combin)
