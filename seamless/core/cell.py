@@ -19,10 +19,10 @@ Use ``Cell.status()`` to get its status.
 """
     _celltype = None
     _storage_type = None
+    _default_access_mode = None
+    _content_type = None
     _prelim_val = None
 
-    _authoritative = True
-    _overruled = False #a non-authoritative cell that has previously received a value
     _mount = None
     _mount_kwargs = None
     _mount_setter = None
@@ -47,6 +47,14 @@ Use ``Cell.status()`` to get its status.
         if get_macro_mode():
             macro_register.add(self)
 
+    def _set_context(self, ctx, name):
+        super()._set_context(ctx, name)
+        self._get_manager().register_cell(self)
+        if self._prelim_val is not None:
+            value, from_buffer = self._prelim_val
+            self._get_manager().set_cell(self, value, from_buffer=from_buffer)
+            self._prelim_val = None
+
     def __hash__(self):
         return self._counter
 
@@ -58,25 +66,63 @@ Use ``Cell.status()`` to get its status.
         """The cell's current status."""
         raise NotImplementedError ###cache branch
 
+
+    @property
+    def checksum(self):
+        manager = self._get_manager()
+        checksum = manager.cell_cache.cell_to_buffer_checksums.get(self)
+        if checksum is None:
+            return None
+        return checksum.hex()
+
+    @property
+    def semantic_checksum(self):        
+        manager = self._get_manager()
+        checksum = manager.cell_cache.cell_to_buffer_checksums.get(self)        
+        if checksum is None:
+            return None
+        default_accessor = manager.get_default_accessor(self)
+        default_tree = default_accessor.to_tree(checksum)
+        semantic_key = manager.tree_cache.tree_to_semantic_key.get(hash(default_tree))
+        if semantic_key is None:
+            print("cache miss")
+            buffer_item = manager.value_cache.get_buffer(checksum)
+            if buffer_item is None:
+                raise ValueError("Checksum not in value cache") 
+            _, _, buffer = buffer_item
+            _, semantic_key = manager.cache_tree(default_tree, buffer)
+        semantic_checksum, _, _, _ = semantic_key
+        return semantic_checksum.hex()
+
     @property
     def authoritative(self):
-        return self._authoritative
-
-    @property
-    def _value(self):
-        raise NotImplementedError ###cache branch
-
-    @_value.setter
-    def _value(self, value):
-        """Should only ever be set by the manager, since it bypasses validation, last checksum, status flags, authority, etc."""
-        raise NotImplementedError ###cache branch
+        manager = self._get_manager()
+        return manager.cell_cache.cell_to_authority[self]
 
 
     @property
     def value(self):
         """Returns the value of the cell
         Usually, this is the same as the data"""
-        raise NotImplementedError ###cache branch
+        manager = self._get_manager()
+        checksum = manager.cell_cache.cell_to_buffer_checksums.get(self)        
+        if checksum is None:
+            return None
+        default_accessor = manager.get_default_accessor(self)
+        default_tree = default_accessor.to_tree(checksum)
+        semantic_key = manager.tree_cache.tree_to_semantic_key.get(hash(default_tree))
+        cache_hit = False
+        if semantic_key is not None:
+            value = manager.value_cache.get_object(semantic_key)
+            if value is not None:
+                cache_hit = True
+        if not cache_hit:
+            buffer_item = manager.value_cache.get_buffer(checksum)
+            if buffer_item is None:
+                raise ValueError("Checksum not in value cache") 
+            _, _, buffer = buffer_item
+            value, _ = manager.cache_tree(default_tree, buffer)
+        return value
 
     @property
     def data(self):
@@ -102,6 +148,10 @@ Use ``Cell.status()`` to get its status.
     def set(self, value):
         """Update cell data from the terminal."""
         return self._set(value, False)
+
+    def set_checksum(self, checksum):
+        """Specifies the checksum of the data (hex format)"""
+        return self._get_manager().set_cell_checksum(self, bytes.fromhex(checksum))
 
     def from_buffer(self, value):
         """Sets a cell from a buffer value"""
@@ -181,6 +231,8 @@ class ArrayCell(Cell):
     _mount_kwargs = {"binary": True}
     _celltype = "array"
     _storage_type = "binary"
+    _default_access_mode = "binary"
+    _content_type = "binary"
 
     def __str__(self):
         ret = "Seamless array cell: " + self._format_path()
@@ -190,6 +242,8 @@ class MixedCell(Cell):
     _mount_kwargs = {"binary": True}
     _celltype = "mixed"
     _storage_type = "mixed"
+    _default_access_mode = "mixed"
+    _content_type = "mixed"
 
     def __str__(self):
         ret = "Seamless mixed cell: " + self._format_path()
@@ -200,6 +254,8 @@ class TextCell(Cell):
     _mount_kwargs = {"encoding": "utf-8", "binary": False}
     _celltype = "text"
     _storage_type = "text"
+    _default_access_mode = "text"
+    _content_type = "text"
 
     def __str__(self):
         ret = "Seamless text cell: " + self._format_path()
@@ -210,6 +266,8 @@ class PythonCell(Cell):
     _celltype = "python"
     _subcelltype = None
     _storage_type = "text"
+    _default_access_mode = "pythoncode"
+    _content_type = "python"
     _mount_kwargs = {"encoding": "utf-8", "binary": False}
 
     def __str__(self):
@@ -220,12 +278,14 @@ class PyReactorCell(PythonCell):
     """Python code object used for reactors
     a "PINS" object will be inserted into its namespace"""
     _subcelltype = "reactor"
+    _content_type = "reactor"
 
 
 class PyTransformerCell(PythonCell):
     """Python code object used for transformers
     Each input will be an argument"""
     _subcelltype = "transformer"
+    _content_type = "transformer"
 
 
 class PyMacroCell(PythonCell):
@@ -235,11 +295,14 @@ class PyMacroCell(PythonCell):
     If the macro is a function, ctx must be returned
     """
     _subcelltype = "macro"
+    _content_type = "macro"
 
 
 class IPythonCell(Cell):
     _celltype = "ipython"
     _storage_type = "text"
+    _default_access_mode = "text"
+    _content_type = "ipython"
     _mount_kwargs = {"encoding": "utf-8", "binary": False}
 
     def __str__(self):
@@ -251,6 +314,8 @@ class PlainCell(Cell):
     """A cell in plain (i.e. JSON-serializable) format"""
     _celltype = "plain"
     _storage_type = "text"
+    _default_access_mode = "plain"
+    _content_type = "plain"
     _mount_kwargs = {"encoding": "utf-8", "binary": False}
 
     def __str__(self):
@@ -265,6 +330,8 @@ class CsonCell(Cell):
     """
     _celltype = "cson"
     _storage_type = "text"
+    _default_access_mode = "plain"
+    _content_type = "cson"
     _mount_kwargs = {"encoding": "utf-8", "binary": False}
 
     def __str__(self):

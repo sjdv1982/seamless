@@ -45,14 +45,18 @@ They will never be something as rich as MIME types;
   support for this must be in some high-level annotation/schema field.
 """
 
-transfer_modes = ("buffer", "copy", "ref", "signal")
-access_modes = ("pythoncode", "plain", "silk", "text", "module", "binary_module") # how the data is accessed
+transfer_modes = ("buffer", "copy", "ref")
+access_modes = ("pythoncode", "plain", "mixed", "silk", "text", "module", "binary_module", "binary") # how the data is accessed
 content_types = ("text",
   "python", "ipython", "transformer", "reactor", "macro",
   "plain", "cson", "mixed", "binary"
 )
 text_types = ("text", "python", "ipython", "transformer", "reactor", "macro", "cson")
 
+from .deserialize import deserialize
+
+
+'''
 class ValueDummy:
     def __init__(self, value):
         self.value = value
@@ -283,3 +287,4 @@ Supported modes: %s
 """ % (cell, target_mode, source_modes))
 
 from .cson import cson2json
+'''

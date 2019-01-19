@@ -100,10 +100,11 @@ context : context or None
         assert isinstance(child, (Context, Worker, Cell, Link, StructuredCell))
         if isinstance(child, Context):
             assert child._context() is self
+            self._children[childname] = child
         else:
+            self._children[childname] = child
             child._set_context(self, childname)
-        self._children[childname] = child
-        self._manager.attach_child(child)
+        
 
     def _add_new_cell(self, cell):
         assert isinstance(cell, Cell)

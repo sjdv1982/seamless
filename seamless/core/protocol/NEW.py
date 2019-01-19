@@ -1,4 +1,6 @@
 """Loose ends from other files, to be integrated"""
+# ALSO SEE THE COMMENTED-OUT SECTION OF ./protocol.py
+
 # from cell.py:
 
 class Cell:
@@ -185,3 +187,140 @@ names = ("cell", "transformer", "context", "pytransformercell", "link",
 names += ("StructuredCell", "BufferWrapper")
 names = names + ("macro",)
 Macro.default_namespace = {n:globals()[n] for n in names}
+
+
+#protocol.py
+
+
+adapters = OrderedDict()
+adapters[("copy", "object", "mixed"), ("copy", "text", "text")] = assert_mixed_text
+adapters[("copy", "object", "mixed"), ("copy", "plain", "plain")] = assert_plain
+adapters[("copy", "text", "cson"), ("copy", "plain", "cson")] = adapt_cson_json
+adapters[("copy", "text", "cson"), ("copy", "plain", "plain")] = adapt_cson_json
+for content_type1 in text_types:
+    adapters[("copy", "text", content_type1), ("copy", "text", "plain")] = True
+    adapters[("copy", "text", content_type1), ("copy", "text", "mixed")] = True
+    adapters[("copy", "text", content_type1), ("copy", "object", "plain")] = True
+    adapters[("copy", "text", content_type1), ("copy", "object", "mixed")] = True
+    for content_type2 in text_types:
+        if content_type1 == content_type2:
+            continue
+        adapters[("copy", "text", content_type1), ("copy", "text", content_type2)] = True
+
+for content_type in ("text", "python", "ipython", "transformer", "reactor", "macro"):
+    adapters[("copy", "text", "plain"), ("copy", "text", content_type)] = assert_text
+    adapters[("copy", "text", content_type), ("copy", "text", "plain")] = json_encode
+    adapters[("copy", "text", content_type), ("copy", "plain", content_type)] = True
+adapters[("copy", "object", "mixed"), ("copy", "text", "mixed")] = assert_mixed_text
+adapters[("copy", "object", "mixed"), ("copy", "plain", "mixed")] = assert_plain
+
+for content_type in content_types:
+    adapters[("copy", "object", content_type), ("copy", "object", "object")] = True
+    adapters[("copy", "object", "object"), ("copy", "object", content_type)] = True
+for content_type in ("plain", "mixed"):
+    adapters[("ref", "object", content_type), ("ref", "object", "mixed")] = True
+    adapters[("copy", "plain", content_type), ("copy", "object", "mixed")] = True
+adapters[("copy", "object", "text"), ("copy", "object", "mixed")] = True
+adapters[("ref", "plain", "plain"), ("ref", "silk", "plain")] = adapt_to_silk
+adapters[("copy", "plain", "plain"), ("copy", "silk", "plain")] = adapt_to_silk
+adapters[("copy", "plain", "cson"), ("copy", "silk", "cson")] = adapt_to_silk
+adapters[("ref", "object", "mixed"), ("ref", "silk", "mixed")] = adapt_to_silk
+adapters[("copy", "object", "mixed"), ("copy", "silk", "mixed")] = adapt_to_silk
+adapters[("copy", "silk", "mixed"), ("copy", "object", "mixed")] = adapt_from_silk
+adapters[("copy", "silk", "plain"), ("copy", "object", "plain")] = adapt_from_silk
+for access_mode in "object", "text":
+    adapters[("copy", access_mode, "python"), ("copy", access_mode, "ipython")] = True
+adapters[("copy", "text", "python"), ("copy", "module", "python")] = True
+adapters[("copy", "text", "python"), ("copy", "module", "ipython")] = True
+adapters[("copy", "text", "ipython"), ("copy", "module", "ipython")] = True
+for pymode in ("transformer", "reactor", "macro"):
+    for lang in ("python", "ipython"):
+        adapters[("ref", "pythoncode", lang), ("ref", "pythoncode", pymode)] = True
+        adapters[("copy", "pythoncode", lang), ("copy", "pythoncode", pymode)] = True
+    adapters[("copy", "text", "ipython"), ("copy", "pythoncode", pymode)] = adapt_ipython
+adapters[("copy", "object", "mixed"), ("copy", "binary_module", "mixed")] = compile_binary_module
+adapters[("ref", "object", "mixed"), ("ref", "binary_module", "mixed")] = compile_binary_module
+
+def select_adapter(transfer_mode, source, target, source_modes, target_modes):
+    #print("select_adapter", transfer_mode, source, target, source_modes, target_modes)
+    if transfer_mode == "ref":
+        transfer_modes = ["ref", "copy"]
+    else:
+        transfer_modes = [transfer_mode]
+    for trans_mode in transfer_modes:
+        for source_mode0 in source_modes:
+            if source_mode0[0] != trans_mode:
+                continue
+            for target_mode in target_modes:
+                source_mode = source_mode0
+                target_mode = substitute_default(source_mode, target_mode)
+                if target_mode[0] != trans_mode:
+                    continue
+                if source_mode[1] is None:
+                    source_mode = (trans_mode, target_mode[1], source_mode[2])
+                if source_mode[2] is None:
+                    source_mode = (trans_mode, source_mode[1], target_mode[2])
+                if target_mode[1] is None:
+                    target_mode = (trans_mode, source_mode[1], target_mode[2])
+                if target_mode[2] is None:
+                    target_mode = (trans_mode, target_mode[1], source_mode[2])
+                if source_mode == target_mode:
+                    return None, (source_mode, target_mode)
+                adapter = adapters.get((source_mode, target_mode))
+                if adapter is not None:
+                    if adapter is True:
+                        return None, (source_mode, target_mode)
+                    else:
+                        return adapter, (source_mode, target_mode)
+    raise Exception("""Could not find adapter between %s and %s
+
+Supported source modes: %s
+
+Supported target modes: %s
+
+""" % (source, target, source_modes, target_modes))
+
+def serialize(cell, transfer_mode, access_mode, content_type):    
+    source_modes = list(cell._supported_modes)
+    if transfer_mode == "ref":
+        transfer_modes = ["ref", "copy"]
+    else:
+        transfer_modes = [transfer_mode]
+    for trans_mode in transfer_modes:
+        target_mode0 = trans_mode, access_mode, content_type
+        for source_mode0 in source_modes:
+            if source_mode0[0] != trans_mode:
+                continue
+            source_mode = source_mode0
+            target_mode = substitute_default(source_mode, target_mode0)
+            if target_mode[0] != trans_mode:
+                continue
+            if source_mode[1] is None:
+                source_mode = (trans_mode, target_mode[1], source_mode[2])
+            if source_mode[2] is None:
+                source_mode = (trans_mode, source_mode[1], target_mode[2])
+            if target_mode[1] is None:
+                target_mode = (trans_mode, source_mode[1], target_mode[2])
+            if target_mode[2] is None:
+                target_mode = (trans_mode, target_mode[1], source_mode[2])
+            if source_mode == target_mode:
+                adapter = True
+            else:
+                adapter = adapters.get((source_mode, target_mode))
+            if adapter is not None:
+                value = cell.serialize(*source_mode)
+                if value is None:
+                    return None
+                if adapter is True:
+                    return value
+                else:
+                    return adapter(value)
+    target_mode = transfer_mode, access_mode, content_type                    
+    raise Exception("""Could not find adapter for cell %s
+
+Requested mode: %s
+
+Supported modes: %s
+
+""" % (cell, target_mode, source_modes))
+

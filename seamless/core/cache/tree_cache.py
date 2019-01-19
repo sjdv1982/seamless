@@ -13,29 +13,41 @@ Trees are fundamentally ephemeral and their caches are never stored,
 """
 
 import weakref
+import json
+from collections import OrderedDict
 
 class Tree:
     __slots__ = [
-        "cell_type",
+        "celltype",
         "storage_type",
-        "cell_buffer_checksum",
-        "subpath",
-        "source_access_type", # optional
-        "source_content_type" # optional
-        "target_access_type", # optional
-        "target_content_type" # optional
+        "buffer_checksum",
+        "subpath", # optional
+        "access_mode",
+        "content_type",
+        "source_access_mode", # optional
+        "source_content_type", # optional
     ]
     def __init__(self):
-        self.source_access_type = None
+        self.subpath = None
+        self.source_access_mode = None
         self.source_content_type = None
-        self.target_access_type = None
-        self.target_content_type = None
+
+    def __str__(self):
+        d = OrderedDict()        
+        for slot in self.__slots__:
+            d[slot] = getattr(self, slot)
+        d["buffer_checksum"] = self.buffer_checksum.hex()
+        return json.dumps(d, indent=2)
+
+    def __hash__(self):
+        return hash(str(self))
     
 class TreeCache:
     """Maintains tree caching
     
     Tree-to-semantic-key caches are maintained and never 
      automatically cleared.
+     (TODO: keep time order of entries; upon memory limit, clear oldest ones)
      Semantic keys can be used to retrieve values from object cache,
       or to build level 2 transformations
      If there is no semantic key, it can be built by applying the tree

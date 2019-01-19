@@ -32,6 +32,7 @@ def curr_macro():
 
 @contextmanager
 def macro_mode_on(macro=None):
+    from . import mount
     if macro is not None: raise NotImplementedError ###cache branch
     global _macro_mode, _curr_macro
     assert _macro_mode == False
@@ -39,13 +40,13 @@ def macro_mode_on(macro=None):
     _curr_macro = macro
     try:
         yield
-        mount.resolve_register(macro_register)
+        mount.resolve_register(macro_register.stack)
     finally:
         _macro_mode = False
         _curr_macro = None
         macro_register.stack.clear()
         for ctx in toplevel_register:
-            ctx._get_manager()._leave_macro_mode()
+            ctx._get_manager().leave_macro_mode()
 
 def with_macro_mode(func):
     def with_macro_mode_wrapper(self, *args, **kwargs):

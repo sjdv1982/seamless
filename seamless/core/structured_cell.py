@@ -398,6 +398,7 @@ class StructuredCell(SeamlessBase):
     _exported = True
     _observer = None
     _share_callback = None
+    _celltype = "structured"
     def __init__(
       self,
       name,

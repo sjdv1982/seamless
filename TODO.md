@@ -17,6 +17,7 @@ After discussion with Pierre, push distributed deployment sooner
        make a very simple Jupyter Docker image.
    1d: test deployment (native, then Dockerfile)
 2. Great Split (this is big!)
+***NOTE: documentation/plan for new low-level strategies are in core/cache/evaluate.py***
 
   A.
   - Put low-level execution code in BAK, DONE
@@ -25,15 +26,27 @@ After discussion with Pierre, push distributed deployment sooner
     For now, macro mode has no arguments.    
   - Minimal manager to store connections and cell values
   - Get rid of transfer_mode in protocol.py (and when porting serialize/deserialize).
-    objects are built in "ref" mode. If a copy is desired, this must be indicated in
-    the worker execution dict (containing also ncores, etc.)
-    If a copy is desired:
-    - No change for text
-    - No change for pythoncode. This should anyway be stored as text (else fork() problems)
-    - For binary and mixed where storage != "pure-plain": make a deepcopy
-    - For plain and mixed where storage == "pure-plain": reload from buffer
-    Also, do not return adapter when negotiating source/target modes,
-     make a separate function to adapt when a cache tree is given
+    If a copy is desired, this must be indicated in
+     the worker execution dict (containing also ncores, etc.)  
+    Note that there are now three operations available: 
+     deserialize, serialize-from-buffer, and serialize-from-object.
+    deserialize is always done in mode "ref". If a copy is desired, (i.e. inputpins and inchannels),
+    a copy is generated during serialization.
+    During serialization, what happens depends on the required mode:
+    - "buffer": done using serialize-from-buffer
+    - "ref": 
+      An object is always generated using serialize-from-object; 
+      if there is no format change, this simply returns it.
+      For connections between two non-structured cells, and for input pins that declare "ref".
+    - "copy": 
+       - same as "ref" for text.
+       - same as "ref" for pythoncode. This should anyway be stored as text (else fork() problems) 
+       - For binary and mixed where storage != "pure-plain": invoke serialize-from-object, which 
+          must make a deepcopy (after applying the subpath, if any)
+       - For plain and mixed where storage == "pure-plain": invoke serialize-from-buffer, which 
+          will re-parse the buffer (followed by applying the subpath, if any)    
+    Also, do not return adapter when negotiating source/target modes, simply fix the modes.
+    Adapters will be invoked on-the-fly.
   - Minimal manager to make simple example work, using the New Way
   - New Way statuses, including "overrule". Overrule is orthogonal to the other statuses,
     and a cell is overruled if *any* of its upstream inputs is overruled!
@@ -90,8 +103,11 @@ After discussion with Pierre, push distributed deployment sooner
    - Get all macro tests working 
 
   D.
-  - Revert the old mixed cells with two slave cells (storage and form).
-    Make sure that slave cells can never be mounted bidirectionally
+  - Keep the new mixed cells with no storage or form cells
+    Change serialization:
+    - Pure binary => numpy. Can be recognized because it starts with NUMPY magic characters
+    - Mixed => SEAMLESS magic characters, but then storage + form, then data.
+    - Pure plain => JSON. Recognized because it doesn't start with either magic
   - Get minimal mounting example working
   - Reimplement IPython (mainloop/asyncio) support 
     Test using Anaconda then Docker
@@ -125,7 +141,8 @@ The New Way and streams will be done early (this is big!)
   checksum-to-value caching (cell caching). Values will be pulled from there just-in-time.
   Contexts in equilibrium should now be very memory-frugal.
 - Every worker has a number of cores used (default 1). As many jobs are launched as there are cores
-- Fix asyncio compatibility, rip pythreadkernel, final test in Jupyter Docker image
+- Fix asyncio compatibility,. Add Manager.temprefmanager.purge in mainloop!
+  final test in Jupyter Docker image
 - Mixed cells (and structured cells) have cache-tree-depth (default 0).
   At 0, simple checksum => value. At level 1, dicts/lists will be checksum => {checksum:checksum}
   resp. checksum => [checksum] (Merkle trees), in a special Merkle tree cache.
