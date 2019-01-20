@@ -96,6 +96,6 @@ from .worker import Worker
 from .transformer import Transformer, transformer
 from .mount import mountmanager
 from .structured_cell import StructuredCell
-from .macro import macro
-from .reactor import reactor
+from .macro import Macro, macro
+from .reactor import Reactor, reactor
 from .link import link

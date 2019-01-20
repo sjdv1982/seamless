@@ -18,6 +18,7 @@ Use ``Cell.value`` to get its value.
 Use ``Cell.status()`` to get its status.
 """
     _celltype = None
+    _subcelltype = None
     _storage_type = None
     _default_access_mode = None
     _content_type = None
@@ -82,15 +83,15 @@ Use ``Cell.status()`` to get its status.
         if checksum is None:
             return None
         default_accessor = manager.get_default_accessor(self)
-        default_tree = default_accessor.to_tree(checksum)
-        semantic_key = manager.tree_cache.tree_to_semantic_key.get(hash(default_tree))
+        default_expression = default_accessor.to_expression(checksum)
+        semantic_key = manager.expression_cache.expression_to_semantic_key.get(hash(default_expression))
         if semantic_key is None:
             print("cache miss")
             buffer_item = manager.value_cache.get_buffer(checksum)
             if buffer_item is None:
                 raise ValueError("Checksum not in value cache") 
             _, _, buffer = buffer_item
-            _, semantic_key = manager.cache_tree(default_tree, buffer)
+            _, semantic_key = manager.cache_expression(default_expression, buffer)
         semantic_checksum, _, _, _ = semantic_key
         return semantic_checksum.hex()
 
@@ -109,8 +110,8 @@ Use ``Cell.status()`` to get its status.
         if checksum is None:
             return None
         default_accessor = manager.get_default_accessor(self)
-        default_tree = default_accessor.to_tree(checksum)
-        semantic_key = manager.tree_cache.tree_to_semantic_key.get(hash(default_tree))
+        default_expression = default_accessor.to_expression(checksum)
+        semantic_key = manager.expression_cache.expression_to_semantic_key.get(hash(default_expression))
         cache_hit = False
         if semantic_key is not None:
             value = manager.value_cache.get_object(semantic_key)
@@ -121,7 +122,7 @@ Use ``Cell.status()`` to get its status.
             if buffer_item is None:
                 raise ValueError("Checksum not in value cache") 
             _, _, buffer = buffer_item
-            value, _ = manager.cache_tree(default_tree, buffer)
+            value, _ = manager.cache_expression(default_expression, buffer)
         return value
 
     @property
@@ -176,10 +177,10 @@ Use ``Cell.status()`` to get its status.
         return self.from_buffer(filevalue)
 
     @with_macro_mode
-    def connect(self, target, transfer_mode=None):
+    def connect(self, target):
         """connects to a target cell"""
         manager = self._get_manager()
-        manager.connect_cell(self, target, transfer_mode=transfer_mode)
+        manager.connect_cell(self, target)
         return self
 
     def as_text(self):

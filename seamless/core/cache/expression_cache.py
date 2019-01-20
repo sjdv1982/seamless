@@ -1,8 +1,8 @@
 """
 Trees are accessors where the cell pointer has been replaced by a buffer 
  checksum.
-This means that a transformation in dict-of-trees form is reproducible.
-A tree can be evaluated (reading the buffer in storage mode, and 
+This means that a transformation in dict-of-expressions form is reproducible.
+A expression can be evaluated (reading the buffer in storage mode, and 
  following the path) which leads to an object with a semantic checksum.
 
 Applying the connection mode (transfer mode + access mode + content type,
@@ -16,7 +16,7 @@ import weakref
 import json
 from collections import OrderedDict
 
-class Tree:
+class Expression:
     __slots__ = [
         "celltype",
         "storage_type",
@@ -42,20 +42,20 @@ class Tree:
     def __hash__(self):
         return hash(str(self))
     
-class TreeCache:
-    """Maintains tree caching
+class ExpressionCache:
+    """Maintains expression caching
     
-    Tree-to-semantic-key caches are maintained and never 
+    Expression-to-semantic-key caches are maintained and never 
      automatically cleared.
      (TODO: keep time order of entries; upon memory limit, clear oldest ones)
      Semantic keys can be used to retrieve values from object cache,
       or to build level 2 transformations
-     If there is no semantic key, it can be built by applying the tree
+     If there is no semantic key, it can be built by applying the expression
       to the buffer (which builds the object also)
     
     Trees normally don't keep their own buffer checksum, instead
      retrieving the buffer checksum that they contain.
-    However, if a cell has cache tree depth > 0, a simplified tree is 
+    However, if a cell has cache expression depth > 0, a simplified expression is 
      constructed for each item (setting access type and semantic type to
      None)     
      and the buffer checksum of that item is computed and stored.
@@ -63,7 +63,7 @@ class TreeCache:
     
     def __init__(self, manager):
         self.manager = weakref.ref(manager)
-        self.tree_to_buffer_checksum = {} # only for tree depth > 0
-        self.tree_to_semantic_key = {}
+        self.expression_to_buffer_checksum = {} # only for expression depth > 0
+        self.expression_to_semantic_key = {}
 
 

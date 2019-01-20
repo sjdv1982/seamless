@@ -23,8 +23,8 @@ After discussion with Pierre, push distributed deployment sooner
   - Put low-level execution code in BAK, DONE
   - Rip execution code from low-level, DONE
   - Changes to macro mode. Essentially, worker execution and status propagation is disabled.
-    For now, macro mode has no arguments.    
-  - Minimal manager to store connections and cell values
+    For now, macro mode has no arguments.  DONE
+  - Minimal manager to store connections and cell values ALMOST DONE
   - Get rid of transfer_mode in protocol.py (and when porting serialize/deserialize).
     If a copy is desired, this must be indicated in
      the worker execution dict (containing also ncores, etc.)  

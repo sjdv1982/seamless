@@ -15,7 +15,7 @@ SemanticKey = namedtuple("SemanticKey",
 
 class ValueCache:
     """Checksum-to-value cache.
-    Every value is refered to by a tree (or more than one); non-tree values are
+    Every value is refered to by a expression (or more than one); non-expression values are
     cached elsewhere.
 
     Memory intensive. Like any other cache, does not persist unless offloaded.
@@ -24,12 +24,12 @@ class ValueCache:
     network, or offloaded to Redis.
      Keys are straightforward buffer checksums.
      Each item has two refcounts, authoritative and non-authoritative,
-     corresponding to the authority of refering tree(s).
+     corresponding to the authority of refering expression(s).
      Trees referring to structured-cells-with-partial-authority count as
      authoritative.
     Object cache items contain Python objects. They are strictly local.
      Keys are *semantic keys*: consisting of a *semantic checksum* (i.e.
-     different from the buffer checksum in case of CSON and Python code trees),
+     different from the buffer checksum in case of CSON and Python code expressions),
      an access mode, and a content type.
      They are maintained as a WeakValueDictionary, i.e. they get auto-cleaned-up
      if Python holds no reference to them.
@@ -41,7 +41,7 @@ class ValueCache:
     There are two ways an item can be requested:
     1. Explicitly from object cache or buffer cache, using a semantic key resp.
       a buffer checksum
-    2. Items can be requested using a tree, from which the buffer checksum can be
+    2. Items can be requested using a expression, from which the buffer checksum can be
      extracted, and a semantic key be generated or read from cache.
     Whenever a item is requested from object cache that is a partial miss
      (a miss from object cache but a hit from buffer cache), the item gets
@@ -49,9 +49,9 @@ class ValueCache:
      In this case, and also if a new object item is added explicitly,
      a temporary reference to  the item is added, that expires after 20 seconds.
 
-    For cells, there is normally only one buffer cache item, because all trees
+    For cells, there is normally only one buffer cache item, because all expressions
      of the same cell._storage_type are mapped to it.
-    In contrast, every tree typically has its own semantic checksum (reflecting
+    In contrast, every expression typically has its own semantic checksum (reflecting
      both cell type and subpath), and therefore its own object cache item.
     """
     def __init__(self, manager):
@@ -139,6 +139,6 @@ class ValueCache:
         return item
 
 """
-NOTE: value caches coming from treelevel>0 or from streams will never be
+NOTE: value caches coming from expressionlevel>0 or from streams will never be
 auto-removed if their cell value changes. Non-authoritative cells may be configured to expire,
 but authoritative values will now always be kept. """

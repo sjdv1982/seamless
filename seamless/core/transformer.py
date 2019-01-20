@@ -45,10 +45,15 @@ class Transformer(Worker):
                 self._output_name = p
             else:
                 raise ValueError(io)
-
+            
             if pin is not None:
                 self._pins[p] = pin
+
         super().__init__()
+
+    def _set_context(self, ctx, name):
+        super()._set_context(ctx, name)
+        self._get_manager().register_transformer(self)
 
     def __str__(self):
         ret = "Seamless transformer: " + self._format_path()

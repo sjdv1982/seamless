@@ -124,6 +124,7 @@ class InputPin(InputPinBase):
     cell.connect(pin) connects a cell to an inputpin
     pin.cell() returns or creates a cell that is connected to the inputpin
     """
+    io = "input"
 
     def cell(self, celltype=None):
         """Returns or creates a cell connected to the inputpin"""
@@ -161,6 +162,7 @@ class OutputPin(OutputPinBase):
     outputpin.connect(cell) connects an outputpin to a cell
     outputpin.cell() returns or creates a cell that is connected to the outputpin
     """
+    io = "output"
 
     @with_macro_mode
     def connect(self, target):
@@ -227,7 +229,7 @@ class EditPin(EditPinBase):
     outputpin.disconnect(cell) breaks an existing connection
     """
 
-    last_value = None
+    io = "edit"
 
     def cell(self, celltype=None):
         """Returns or creates a cell connected to the inputpin"""

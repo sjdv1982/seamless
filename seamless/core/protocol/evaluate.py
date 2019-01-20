@@ -4,8 +4,8 @@ All three are wrapped by the manager (and Cell), which checks for
   cache hits that make the entire evaluation superfluous.
 1. A Python value is assigned to something directly
    This is taken care of by "deserialize". 
-2. A tree is evaluated from the buffer
-3. A tree is evaluated from the object
+2. A expression is evaluated from the buffer
+3. A expression is evaluated from the object
 
 The following scenarios exist
 
@@ -38,34 +38,40 @@ Note that "type" is essentially the combination of access mode and content type,
 
 - Outchannel - cell connections
 3. if there is a cache hit, 2. if not.
-Note that if the StructuredCell has tree depth, the cache hits may be for individual outchannels
+Note that if the StructuredCell has expression depth, the cache hits may be for individual outchannels
 
 - Cell - inputpin connections
 3. if there is a cache hit, 2. if not.
+2. is enforced if transfer_mode = "buffer"
 
 - Outputpin-cell and editpin-cell connections
-3. only.
+In principle, 3. only.
+However: 
+- 2. is enforced if the outputpin/editpin has transfer_mode = "buffer"
+- 2. is an option since the buffer is computed anyway 
+  (for the buffer checksum under which the results are cached in transform cache)
+   [TODO: to think about...]
 
 """
 
 from .deserialize import deserialize
 
-def evaluate_from_buffer(tree, buffer):
+def evaluate_from_buffer(expression, buffer):
     from ..cache import SemanticKey
     result = deserialize(
-        tree.celltype, 
-        buffer, from_buffer = True,
-        source_access_mode = tree.source_access_mode,
-        source_content_type = tree.source_content_type
+        expression.celltype, "random_code_path", #TODO
+        buffer, from_buffer = True, buffer_checksum = -999,
+        source_access_mode = expression.source_access_mode,
+        source_content_type = expression.source_content_type
     )
     _, _, obj, semantic_checksum = result
-    if tree.subpath is not None:
+    if expression.subpath is not None:
         raise NotImplementedError
     else:
         semantic_key = SemanticKey(
             semantic_checksum, 
-            tree.access_mode, 
-            tree.content_type,
+            expression.access_mode, 
+            expression.content_type,
             None
         )
     return obj, semantic_key

@@ -9,20 +9,20 @@ Outputpin-to-cell connections do not create an accessor.
 Transformers maintain a list of cells to which they write.
 Reactors do the same, but then for every outputpin.
 
-Accessors are converted to trees when the underlying cell changes.
+Accessors are converted to expressions when the underlying cell changes.
 This fills in the buffer checksum of the cell.
 Normally, every cell change leads to conversion for all accessors.
 But:
 - Non-buffered, non-forked StructuredCells may report the path that has changed.
-- some cells have a tree depth, which leads to higher granularity of buffer checksums
-  (cell items are stored as simplified trees with their own buffer checksum)
+- some cells have a expression depth, which leads to higher granularity of buffer checksums
+  (cell items are stored as simplified expressions with their own buffer checksum)
 """
 
 import weakref
 import json
 from collections import OrderedDict
 
-from .tree_cache import Tree
+from .expression_cache import Expression
 
 class Accessor:
     __slots__ = [
@@ -40,16 +40,16 @@ class Accessor:
         self.source_access_mode = None
         self.source_content_type = None
 
-    def to_tree(self, buffer_checksum):
-        tree = Tree()
-        tree.celltype = self.celltype
-        tree.storage_type = self.storage_type
-        tree.buffer_checksum = buffer_checksum
-        tree.access_mode = self.access_mode
-        tree.content_type = self.content_type
-        tree.source_access_mode = self.source_access_mode
-        tree.source_content_type = self.source_content_type
-        return tree
+    def to_expression(self, buffer_checksum):
+        expression = Expression()
+        expression.celltype = self.celltype
+        expression.storage_type = self.storage_type
+        expression.buffer_checksum = buffer_checksum
+        expression.access_mode = self.access_mode
+        expression.content_type = self.content_type
+        expression.source_access_mode = self.source_access_mode
+        expression.source_content_type = self.source_content_type
+        return expression
     
     def __str__(self):
         d = OrderedDict()
