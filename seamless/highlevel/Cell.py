@@ -65,6 +65,16 @@ class Cell(Base):
     def self(self):
         raise NotImplementedError
 
+    def __getitem__(self, item):
+        if isinstance(item, int):
+            raise NotImplementedError  # TODO: x[int] outchannels
+        if isinstance(item, str):
+            raise NotImplementedError  # TODO: x[attr] as alternative for x.attr
+        elif isinstance(item, slice):
+            raise NotImplementedError  # TODO: x[min:max] outchannels
+        else:
+            raise TypeError(item)
+
     def __getattr__(self, attr):
         if attr == "value":
             raise AttributeError(attr) #property has failed
