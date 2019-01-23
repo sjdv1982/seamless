@@ -111,18 +111,7 @@ Use ``Cell.status()`` to get its status.
             return None
         default_accessor = manager.get_default_accessor(self)
         default_expression = default_accessor.to_expression(checksum)
-        semantic_key = manager.expression_cache.expression_to_semantic_key.get(hash(default_expression))
-        cache_hit = False
-        if semantic_key is not None:
-            value = manager.value_cache.get_object(semantic_key)
-            if value is not None:
-                cache_hit = True
-        if not cache_hit:
-            buffer_item = manager.value_cache.get_buffer(checksum)
-            if buffer_item is None:
-                raise ValueError("Checksum not in value cache") 
-            _, _, buffer = buffer_item
-            value, _ = manager.cache_expression(default_expression, buffer)
+        value = manager.get_expression(default_expression)
         return value
 
     @property

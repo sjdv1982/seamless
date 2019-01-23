@@ -1,5 +1,4 @@
 import weakref
-from enum import Enum
 
 class IpyString(str):
     def _repr_pretty_(self, p, cycle):
@@ -10,22 +9,12 @@ from .macro_mode import with_macro_mode
 class SeamlessBase:
     _destroyed = False
     _context = None
-    _fallback_path = None
     name = None
-
-    StatusFlags = Enum('StatusFlags', ('OK', 'PENDING', 'UNDEFINED', 'UNCONNECTED', 'ERROR'))
-    _status = StatusFlags.UNDEFINED
-
-    def _is_sealed(self):
-        assert self._context is not None #worker/cell must have a context
-        return self._context()._is_sealed()
 
     @property
     def path(self):
         if self._context is None:
             return ()
-        elif self._fallback_path is not None:
-            return self._fallback_path
         elif self._context().path is None:
             return ("<None>", self.name)
         else:

@@ -24,12 +24,12 @@ with macro_mode_on():
 
 print(ctx.cell1.value)
 print(ctx.code.value)
-#ctx.equilibrate()
-'''
+print(ctx.equilibrate(1))
 print(ctx.result.value)
 ctx.cell1.set(10)
 ctx.equilibrate()
 print(ctx.result.value)
+'''
 ctx.code.set("c = a + b + 1000")
 ctx.equilibrate()
 print(ctx.result.value)

@@ -54,7 +54,13 @@ After discussion with Pierre, push distributed deployment sooner
     New-way style, auth update propagate forward (potentially leading to multiple interrupts).
     Interrupt happens in 20 secs, or when the transformer re-executes, whichever happens sooner
   
-  B.
+  B. Implement some remote computing:
+    - ipyparallel remote job executors
+    - Setup in-seamless REST cache server (similar to shareserver )
+    - registration of remote cache server
+    - Redis cache server (for multiple kind of cache)
+
+  C.
   - Get reactors working. reactcache can be set up similar to transformcache.
     The result of a reaction is the buffer checksum of all of its outputpins.
     Editpin-connected cells are an explicit part of the reaction input dict. 
@@ -67,7 +73,7 @@ After discussion with Pierre, push distributed deployment sooner
     Pure reactors get shut down after every reaction. Impure reactors receive delta updates.
     very much the same as in the current situation.
 
-  C.
+  D.
   - Macros. Immediate macro execution is disabled, e.g. macros never
    get immediately evaluated while they are being defined and connected
    in macro mode.
@@ -102,7 +108,7 @@ After discussion with Pierre, push distributed deployment sooner
      new macro reach stable status, whichever happens sooner.
    - Get all macro tests working 
 
-  D.
+  E.
   - Keep the new mixed cells with no storage or form cells
     Change serialization:
     - Pure binary => numpy. Can be recognized because it starts with NUMPY magic characters
@@ -112,7 +118,7 @@ After discussion with Pierre, push distributed deployment sooner
   - Reimplement IPython (mainloop/asyncio) support 
     Test using Anaconda then Docker
 
-  E.
+  F.
   - For Monitor, replace direct data storage + hooks with API
   - Get mixed tests working
   - Adapt StructuredCell to have direct manager API instead of slave cells.
@@ -123,10 +129,16 @@ After discussion with Pierre, push distributed deployment sooner
     have changed.
   - Get StructuredCell tests working
   
-  F.
-  - Gradually, get all low-level tests working, extending the manager, using the New Way 
+  G. Get module injection working again.
+  Store module objects either in object cache or a new module object cache.
+  Building these module objects is similar to cache expression evaluation in the hierarchy (i.e. local).
+  The injection machinery itself should stay similar.
 
-  G. Get the high level working. Should be quite straightforward now.
+  H.
+  - Gradually, get all low-level tests working, extending the manager, using the New Way 
+  - Implement annotation dict, including execute_debug, ncores
+
+  I. Get the high level working. Should be quite straightforward now.
 
 Details:
 The New Way and streams will be done early (this is big!)

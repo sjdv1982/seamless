@@ -1,12 +1,14 @@
 """Module for Context class."""
 from weakref import WeakValueDictionary
 from collections import OrderedDict
+import time
+import asyncio
+from contextlib import contextmanager
+
 from . import SeamlessBase
 from .mount import MountItem, is_dummy_mount
 from . import get_macro_mode, macro_register
 from .macro_mode import toplevel_register, macro_mode_on, with_macro_mode
-import time
-from contextlib import contextmanager
 
 @contextmanager
 def null_context():
@@ -28,7 +30,6 @@ class Context(SeamlessBase):
     _seal = None
     _direct_mode = False
     _exported = True
-    _equilibrating = False
 
     def __init__(
         self, *,
@@ -189,18 +190,13 @@ context : context or None
          "timeout" seconds, returning the remaining set of unstable workers
         Report the workers that are not stable every "report" seconds
         """
-        if not self._toplevel:
-            return self._root().equilibrate()
-        if self._equilibrating:
-            return
-        if get_macro_mode():
-            raise Exception("ctx.equilibrate() will not work in macro mode")
-        assert self._get_manager().active
-        try:
-            self._equilibrating = True
-            return self._get_manager().equilibrate(timeout, report)
-        finally:
-            self._equilibrating = False
+        manager = self._get_manager()
+        loop = asyncio.get_event_loop()
+        print("TODO: Context.equilibrate: pass self.path to Manager, to act as a filter")
+        coroutine = manager.equilibrate(timeout, report)
+        future = asyncio.ensure_future(coroutine)
+        loop.run_until_complete(future)
+        return future.result()
         
     @property
     def unstable_workers(self):
