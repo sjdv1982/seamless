@@ -122,8 +122,11 @@ class Status:
 
     @data.setter
     def data(self, value):
-        v = getattr(self.StatusDataEnum, value.upper())
-        self.data_status = v
+        if isinstance(value, str):
+            value = getattr(self.StatusDataEnum, value.upper())
+        if not isinstance(value, self.StatusDataEnum):
+            raise TypeError
+        self.data_status = value
 
     @property
     def exec(self):
@@ -131,8 +134,11 @@ class Status:
 
     @exec.setter
     def exec(self, value):
-        v = getattr(self.StatusExecEnum, value.upper())
-        self.exec_status = v
+        if isinstance(value, str):
+            value = getattr(self.StatusExecEnum, value.upper())
+        if not isinstance(value, self.StatusExecEnum):
+            raise TypeError
+        self.exec_status = value
 
     @property
     def auth(self):
@@ -140,8 +146,11 @@ class Status:
 
     @auth.setter
     def auth(self, value):
-        v = getattr(self.StatusAuthEnum, value.upper())
-        self.auth_status = v
+        if isinstance(value, str):
+            value = getattr(self.StatusAuthEnum, value.upper())
+        if not isinstance(value, self.StatusAuthEnum):
+            raise TypeError
+        self.auth_status = value
 
     def __eq__(self, other):
         return str(self) == str(other)
@@ -161,6 +170,7 @@ class Manager:
         # for now, just a single global workqueue
         from .mainloop import workqueue
         self.workqueue = workqueue
+        self.flush_future = asyncio.ensure_future(self._flushloop())
         # for now, just a single global mountmanager
         from .mount import mountmanager
         self.mountmanager = mountmanager
@@ -171,6 +181,7 @@ class Manager:
         self.value_cache = ValueCache(self)
         self.transform_cache = TransformCache(self)
         self.temprefmanager = TempRefManager()
+        asyncio.ensure_future(self.temprefmanager.loop())
         self.jobscheduler = JobScheduler(self)
 
         self.status = {}
@@ -181,7 +192,7 @@ class Manager:
                              # type = "macro", schedop = Macro object
                              # type = "reactor", schedop = (Reactor object, pin name, expression)
         self._temp_tf_level1 = {}
-    
+
     def schedule_jobs(self):
         if not len(self.scheduled):
             return
@@ -206,8 +217,8 @@ class Manager:
             scheduled_clean[key] = schedop, count + dif
         for key, value in scheduled_clean.items():
             type, _ = key
-            schedop, count = value             
-            
+            schedop, count = value
+
             if count == 0:
                 continue
             if type == "transformer":
@@ -219,17 +230,24 @@ class Manager:
                         self.set_transformer_result(tf_level1, None, None, result, False)
                         continue
                 print("TODO: Manager.schedule_jobs(): try to launch a remote job")
-                tf_level2 = tcache.build_level2(tf_level1)                 
-                if count > 0:
-                    result = tcache.result_hlevel2.get(hash(tf_level2))
-                    if result is not None:
-                        self.set_transformer_result(tf_level1, tf_level2, None, result, False)
+                if 1:
+                    tf_level2 = tcache.build_level2(tf_level1)
+                    if count > 0:
+                        result = tcache.result_hlevel2.get(hash(tf_level2))
+                        if result is not None:
+                            self.set_transformer_result(tf_level1, tf_level2, None, result, False)
+                            continue
+                        tcache.set_level2(tf_level1, tf_level2)                    
+                    self.jobscheduler.schedule(tf_level2, count)
+                for ttf, ttf_level1 in tcache.transformer_to_level1.items():
+                    if hash(ttf_level1) != hlevel1:
                         continue
-                    tcache.set_level2(tf_level1, tf_level2)
-                self.jobscheduler.schedule(tf_level2, count)
-            elif type == "macro":   
+                    status = self.status[ttf]
+                    if status.exec == "READY":
+                        status.exec = "EXECUTING"
+            elif type == "macro":
                 raise NotImplementedError ### cache branch
-            elif type == "reactor":   
+            elif type == "reactor":
                 raise NotImplementedError ### cache branch
             else:
                 raise ValueError(type)
@@ -238,35 +256,44 @@ class Manager:
 
 
     def set_transformer_result(self, level1, level2, value, checksum, prelim):
-        print("SET-TRANSFORMER-RESULT", value)
-        print("TODO: Manager.set_transformer_result: expand properly, see evaluate.py")
+        print("TODO: Manager.set_transformer_result: expand code properly, see evaluate.py")
         assert value is not None
         tcache = self.transform_cache
-        hlevel1 = hash(level1)        
-        for tf, tf_level1 in tcache.transformer_to_level1.items(): #could be more efficient...
+        hlevel1 = hash(level1)
+        for tf, tf_level1 in list(tcache.transformer_to_level1.items()): #could be more efficient...
             if hash(tf_level1) != hlevel1:
                 continue
             tstatus = self.status[tf]
             tstatus.exec = "FINISHED"
             tstatus.data = "OK"
+            tstatus.auth = "OBSOlETE" # To provoke an update
             for cell in tcache.transformer_to_cells[tf]:
                 status = self.status[cell]
-                if prelim:                    
+                if prelim:
                     if status.auth == "FRESH":
                         status.auth = "PRELIMINARY"
                 else:
                     if status.auth == "PRELIMINARY":
                         status.auth = "FRESH"
                 self.set_cell(cell, value)
-            self.update_transformer_status(tf)
+            self.update_transformer_status(tf,full=False)
 
-    def flush(self):
-        assert threading.current_thread() == threading.main_thread()
+    async def _flush(self):
         self.flushing = True
         try:
-            self.workqueue.flush()
+            async for dummy in self.workqueue.flush():
+                pass
         finally:
             self.flushing = False
+
+    async def _flushloop(self):
+        while 1:
+            try:
+                await self._flush()
+            except:
+                import traceback
+                traceback.print_exc()
+            await asyncio.sleep(0.1)
 
     def destroy(self,from_del=False):
         if self.destroyed:
@@ -303,7 +330,7 @@ class Manager:
             checksum = expression.buffer_checksum
             buffer_item = self.value_cache.get_buffer(checksum)
             if buffer_item is None:
-                raise ValueError("Checksum not in value cache") 
+                raise ValueError("Checksum not in value cache")
             _, _, buffer = buffer_item
             value = self.cache_expression(default_expression, buffer)
         return value
@@ -315,7 +342,7 @@ class Manager:
             return None
         return accessor.to_expression(buffer_checksum)
 
-        
+
 
     def get_default_accessor(self, cell):
         default_accessor = Accessor()
@@ -345,7 +372,7 @@ class Manager:
         old_level1 = self._temp_tf_level1.get(transformer)
         if old_level1 is None:
             old_level1 = tcache.transformer_to_level1.get(transformer)
-        new_level1 = tcache.build_level1(transformer)        
+        new_level1 = tcache.build_level1(transformer)
         if old_level1 != new_level1:
             if old_level1 is not None:
                 self.scheduled.append(("transformer", old_level1, False))
@@ -362,11 +389,12 @@ class Manager:
             self.scheduled.append(("transformer", old_level1, False))
             self._temp_tf_level1[transformer] = None
 
-    def _propagate_status(self, cell, data_status, auth_status):
+    def _propagate_status(self, cell, data_status, auth_status, full):
+        # "full" indicates a value change, but it is just propagated to update_worker
         if cell._celltype == "structured": raise NotImplementedError ### cache branch
         status = self.status[cell]
-        new_data_status = status.data  
-        new_auth_status = status.auth      
+        new_data_status = status.data
+        new_auth_status = status.auth
         if data_status is not None:
             dstatus = status.data
             if data_status == "PENDING":
@@ -374,26 +402,38 @@ class Manager:
                     new_data_status = "PENDING"
             if data_status == "UPSTREAM_ERROR":
                 if dstatus == "PENDING":
-                    new_data_status = "UPSTREAM_ERROR"        
+                    new_data_status = "UPSTREAM_ERROR"
         if auth_status is not None:
             new_auth_status = auth_status
+        status.data = new_data_status
+        status.auth = new_auth_status
 
-        if new_auth_status is not None or new_data_status is not None:
-            for accessor in self.cell_cache.cell_to_accessors[cell]:
-                for target_cell in self.accessor_cache.accessor_to_cells[accessor]:
+        if full or new_auth_status is not None or new_data_status is not None:
+            acache = self.accessor_cache
+            accessors = itertools.chain(
+                self.cell_cache.cell_to_accessors[cell],
+                ( self.get_default_accessor(cell), ),
+            )
+            for accessor in accessors:
+                haccessor = hash(accessor)
+                for target_cell in acache.haccessor_to_cells.get(haccessor, []):
                     self._propagate_status(
-                      target_cell, new_data_status, new_auth_status
+                      target_cell, new_data_status, new_auth_status, full
                     )
-                for worker in self.accessor_cache.accessor_to_workers[accessor]:                    
-                    self.update_worker_status(worker)
+                for worker in acache.haccessor_to_workers.get(haccessor, []):
+                    self.update_worker_status(worker, full)
 
-    def update_transformer_status(self, transformer):
+    def update_transformer_status(self, transformer, full):
         tcache = self.transform_cache
         accessor_dict = tcache.transformer_to_level0[transformer]
+        if full:
+            level1 = tcache.transformer_to_level1.pop(transformer, None)
+            if level1 is not None:
+                tcache.decref(level1)
         old_status = self.status[transformer]
         new_status = Status("transformer")
         new_status.data, new_status.exec, new_status.auth = "OK", "READY", "FRESH"
-        if old_status is not None and old_status.exec == "FINISHED":
+        if old_status is not None and old_status.exec == "FINISHED" and not full:
             new_status.exec = "FINISHED"
         for pin in transformer._pins:
             if transformer._pins[pin].io == "output":
@@ -405,7 +445,7 @@ class Manager:
             cell_status = self.status[accessor.cell]
 
             s = cell_status.data_status
-            if s == Status.StatusDataEnum.INVALID:                
+            if s == Status.StatusDataEnum.INVALID:
                 s = Status.StatusDataEnum.UPSTREAM_ERROR
             if s.value > new_status.data_status.value:
                 new_status.data_status = s
@@ -413,11 +453,19 @@ class Manager:
             s = cell_status.auth_status
             if s.value > new_status.auth_status.value:
                 new_status.auth_status = s
-
+        
         if new_status.data_status.value > Status.StatusDataEnum.PENDING.value:
             new_status.exec = "BLOCKED"
         elif new_status.data_status.value == Status.StatusDataEnum.PENDING.value:
             new_status.exec = "PENDING"
+        
+        backup_auth = None
+        if full:
+            if old_status.exec == "FINISHED" and (str(new_status.exec) in ("READY", "PENDING")):
+                if new_status.auth == "FRESH":
+                    backup_auth = new_status.auth  # to propagate downstream cells as obsolete;
+                                                   # revert to backup_auth at the end of this function
+                new_status.auth = "OBSOLETE"            
 
         self.status[transformer] = new_status
         propagate_data = (new_status.data != old_status.data)
@@ -429,7 +477,10 @@ class Manager:
         elif new_status.exec == "READY":
             assert new_status.data in ("OK", "PENDING")
             self.unstable.add(transformer)
-            if len(target_cells) and new_status.auth == "FRESH":
+            if len(target_cells) and \
+              ( str(new_status.auth) in ("FRESH", "OVERRULED") \
+                or backup_auth is not None
+              ):
                 scheduled = self._schedule_transformer(transformer)
                 if not scheduled:
                     propagate_data = False
@@ -439,16 +490,19 @@ class Manager:
             if old_status.exec != "BLOCKED":
                 self._unschedule_transformer(transformer)
         if propagate_data or propagate_auth:
-            print("UPDATE", transformer, old_status, "=>", new_status)
             data_status = new_status.data if propagate_data else None
             auth_status = new_status.auth if propagate_auth else None
-            for cell in target_cells:
-                self._propagate_status(cell, data_status, auth_status)
+            for cell in target_cells:                
+                self._propagate_status(cell, data_status, auth_status, full=False)
+            if backup_auth is not None:
+                new_status.auth = backup_auth
+            #print("UPDATE", transformer, old_status, "=>", new_status)
 
-    def update_worker_status(self, worker):
+
+    def update_worker_status(self, worker, full):
         from . import Transformer, Reactor, Macro
         if isinstance(worker, Transformer):
-            return self.update_transformer_status(worker)
+            return self.update_transformer_status(worker, full=full)
         else:
             raise NotImplementedError ### cache branch
 
@@ -469,12 +523,13 @@ class Manager:
             accessor.source_content_type = accessor.content_type
             accessor.content_type = content_type
         acache = self.accessor_cache
-        if accessor not in acache.accessor_to_workers:
-            acache.accessor_to_workers[accessor] = [transformer]
+        haccessor = hash(accessor)
+        if haccessor not in acache.haccessor_to_workers:
+            acache.haccessor_to_workers[haccessor] = [transformer]
         else:
-            acache.accessor_to_workers[accessor].append(transformer)
+            acache.haccessor_to_workers[haccessor].append(transformer)
         accessor_dict[pin.name] = accessor
-        self.update_transformer_status(transformer)
+        self.update_transformer_status(transformer,full=False)
 
         if io == "input":
             pass
@@ -487,10 +542,13 @@ class Manager:
 
     def connect_cell(self, cell, other):
         from . import Transformer, Reactor, Macro
+        from .link import Link
         from .cell import Cell
         from .worker import PinBase
         if not isinstance(cell, Cell):
             raise TypeError(cell)
+        if isinstance(other, Link):
+            other = other.get_linked()
         if isinstance(other, PinBase):
             worker = other.worker_ref()
             if isinstance(worker, Transformer):
@@ -509,8 +567,11 @@ class Manager:
 
     def connect_pin(self, pin, cell):
         from . import Transformer, Reactor, Macro
+        from .link import Link
         from .cell import Cell
         from .worker import PinBase, InputPin, OutputPin, EditPin
+        if isinstance(cell, Link):
+            cell = cell.get_linked()
         if not isinstance(cell, Cell):
             raise TypeError(cell)
         if not isinstance(pin, PinBase) or isinstance(pin, InputPin):
@@ -521,7 +582,7 @@ class Manager:
         worker = pin.worker_ref()
         if isinstance(worker, Transformer):
             self.transform_cache.transformer_to_cells[worker].append(cell)
-            self.update_transformer_status(worker)            
+            self.update_transformer_status(worker,full=False)
         elif isinstance(worker, Macro):
             raise NotImplementedError ###cache branch
         elif isinstance(worker, Reactor):
@@ -542,9 +603,8 @@ class Manager:
             status.auth = "OVERRULED"
         new_data_status = status.data if status.data != old_data_status else None
         new_auth_status = status.auth if status.auth != old_auth_status else None
-        if new_auth_status is not None or new_data_status is not None:
-            self._propagate_status(cell, new_data_status, new_auth_status)
-            self.schedule_jobs()
+        self._propagate_status(cell, new_data_status, new_auth_status, full=True)
+        self.schedule_jobs()
 
     @main_thread_buffered
     def set_cell_checksum(self, cell, checksum):
@@ -636,31 +696,40 @@ class Manager:
     def leave_macro_mode(self):
         self.schedule_jobs()
 
-    async def equilibrate(self, timeout, report):
+    async def equilibrate(self, timeout, report, path):        
         delta = None
         if timeout is not None:
             deadline = time.time() + timeout
+        lpath = len(path)
+        def get_unstable():
+            return {w for w in self.unstable if w.path[:lpath] == path}
         while 1:
-            if not len(self.unstable):
+            unstable = get_unstable()
+            if not len(unstable):
                 break
             if timeout is not None:
                 remain = deadline - time.time()
                 if remain <= 0:
                     break
-                if delta is not None and remain < delta:
+                if delta is None or remain < delta:
                     delta = remain
             if report is not None:
-                if delta is not None and report < delta:
+                if delta is None or report < delta:
                     delta = report
+            jobs = []
+            for job in itertools.chain(
+                self.jobscheduler.jobs.values(),
+                self.jobscheduler.remote_jobs.values(),
+                ):
+                if job.future is not None:
+                    jobs.append(job.future)
             if delta is None:
-                jobs = []
-                for job in itertools.chain(
-                    self.jobscheduler.jobs.values(),
-                    self.jobscheduler.remote_jobs.values(),
-                  ):
-                    if job.coroutine is not None:
-                        jobs.append(job.coroutine)
                 await asyncio.gather(*jobs)
             else:
-                await asyncio.sleep(delta)
+                await asyncio.wait(jobs, timeout=delta)
+                if report is not None:
+                    unstable = get_unstable()                    
+                    if len(unstable):
+                        unstable = sorted(unstable,key=lambda w:w.path)
+                        print("Waiting for:", unstable)
         return self.unstable

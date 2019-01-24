@@ -63,10 +63,10 @@ Use ``Cell.status()`` to get its status.
         ret = "Seamless %s: " % type(self).__name__ + self._format_path()
         return ret
 
+    @property
     def status(self):
         """The cell's current status."""
-        raise NotImplementedError ###cache branch
-
+        return self._get_manager().status[self]
 
     @property
     def checksum(self):

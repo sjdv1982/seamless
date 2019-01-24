@@ -29,7 +29,6 @@ class WorkQueue:
         self._work = deque()
         self._priority_work = deque()
         self._flushing = False
-        self._signal_processing = 0
         self._append_lock = threading.Lock()
 
     def append(self, work, priority=False):
@@ -39,28 +38,14 @@ class WorkQueue:
             else:
                 self._work.append(work)
 
-    def flush(self, timeout=None):
+    async def flush(self, timeout=None):
         if threading.current_thread() is not threading.main_thread():
             return
 
-        if ipython is not None and not self._ipython_registered:
-            # It is annoying to do again and again, but the first time it doesn't work... bug in IPython?
-            ###self._ipython_registered = True
-            ipython.enable_gui("seamless")
-
-        ### NOTE: disabled the code below to avoid the hanging
-        #    of equilibrate() inside work
-        #   It remains to be seen if this has any negative effects
-        #if self._flushing:
-        #    return
-        ### /NOTE
         if timeout is not None:
             timeout_time = time.time() + timeout/1000
         self._flushing = True
-        work_count = 0
         works = (self._priority_work, self._work)
-        if self._signal_processing > 0:
-            works = (self._priority_work,)
         for w in works:
             while len(w):
                 if timeout is not None:
@@ -72,21 +57,7 @@ class WorkQueue:
                     work()
                 except Exception:
                     traceback.print_exc()
-                if work_count == 100 and not _signal_processing:
-                    run_qt() # Necessary to prevent freezes in glwindow
-                    work_count = 0
-        #Whenever work is done, do an asyncio flush
-        loop = asyncio.get_event_loop()
-        loop.run_until_complete(asyncio.sleep(0))
-        """
-        loop.call_soon(lambda loop: loop.stop(), loop)
-        if not loop.is_running():
-            loop.run_forever()
-        """
-
-        #print("flush")
-        if self._signal_processing == 0:
-            run_qt()
+                yield
 
         self._flushing = False
 

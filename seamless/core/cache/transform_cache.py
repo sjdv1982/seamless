@@ -143,9 +143,13 @@ class TransformCache:
         if refcount > 1:
             self.refcount_hlevel2[hlevel2] = refcount - 1
             return
-        self.result_hlevel2.pop(hlevel2)
+        self.result_hlevel2.pop(hlevel2, None)
         self.hlevel2_from_hlevel1.pop(hlevel2)
-        self.manager()._on_destroy_transformer_level2(level2)        
+
+    def _incref_level2(self, level2):
+        hlevel2 = hash(level2)
+        refcount = self.refcount_hlevel2.pop(hlevel2, 0)
+        self.refcount_hlevel2[hlevel2] = refcount + 1        
 
     def build_level2(self, level1):
         """Does not update any caches"""
@@ -182,5 +186,4 @@ class TransformCache:
         hlevel2 = hash(level2)
         if hlevel2 not in self.hlevel2_from_hlevel1:
             self.hlevel2_from_hlevel1[hlevel2] = hlevel1
-        refcount = self.refcount_hlevel2.pop(hlevel2, 0)
-        self.refcount_hlevel2[hlevel2] = refcount + 1
+        self._incref_level2(level2)

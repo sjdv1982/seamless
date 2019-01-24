@@ -14,6 +14,13 @@ from .macro_mode import toplevel_register, macro_mode_on, with_macro_mode
 def null_context():
     yield
 
+class StatusReport(dict):
+    def __str__(self):
+        result = {}
+        for k,v in self.items():
+            result[k] = str(v)
+        return "Status: " + str(result)
+
 class Context(SeamlessBase):
     """Context class. Organizes your cells and workers hierarchically.
     """
@@ -43,7 +50,7 @@ A context can contain cells, workers (= transformers and reactors),
 and other contexts.
 
 **Important methods and attributes**:
-    ``.equilibrate()``, ``.status()``
+    ``.equilibrate()``, ``.status``
 
 Parameters
 ----------
@@ -182,7 +189,7 @@ context : context or None
             finished = False
         return finished
 
-    def equilibrate(self, timeout=None, report=0.5):
+    def equilibrate(self, timeout=None, report=10):
         """
         Run workers and cell updates until all workers are stable,
          i.e. they have no more updates to process
@@ -192,8 +199,7 @@ context : context or None
         """
         manager = self._get_manager()
         loop = asyncio.get_event_loop()
-        print("TODO: Context.equilibrate: pass self.path to Manager, to act as a filter")
-        coroutine = manager.equilibrate(timeout, report)
+        coroutine = manager.equilibrate(timeout, report, path=self.path)
         future = asyncio.ensure_future(coroutine)
         loop.run_until_complete(future)
         return future.result()
@@ -205,21 +211,23 @@ context : context or None
         result = list(self._manager.unstable)
         return SeamlessBaseList(sorted(result, key=lambda p:p._format_path()))
 
+    @property
     def status(self):
         """The computation status of the context
         Returns a dictionary containing the status of all children that are not OK.
         If all children are OK, returns OK
         """
-        result = {}
+        result = StatusReport()
         for childname, child in self._children.items():
             if childname in self._auto:
                 continue
-            s = child.status()
-            if s != self.StatusFlags.OK.name:
+            s = child.status
+            if s != "OK" and s != "FINISHED":
                 result[childname] = s
         if len(result):
             return result
-        return self.StatusFlags.OK.name
+        else:
+            return "OK"
 
     def mount(self, path=None, mode="rw", authority="cell", persistent=False):
         """Performs a "lazy mount"; context is mounted to the directory path when macro mode ends

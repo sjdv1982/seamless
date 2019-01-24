@@ -1,8 +1,10 @@
 import time, copy
+import asyncio
 
 class TempRefManager:
     def __init__(self):
         self.refs = set()
+        self.running = False
     
     def add_ref(self, ref, lifetime):
         expiry_time = time.time() + lifetime
@@ -17,3 +19,16 @@ class TempRefManager:
                 self.refs.remove(item)
                 if callable(ref):
                     ref() 
+
+    async def loop(self):
+        if self.running:
+            return
+        self.running = True
+        while 1:
+            try:
+                self.purge()
+            except:
+                import traceback
+                traceback.print_exc()
+            await asyncio.sleep(0.1)
+        self.running = False

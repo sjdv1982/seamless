@@ -1,4 +1,8 @@
 """
+TODO: adapt from old protocol.py.
+BUT: Do not return adapter when negotiating source/target modes, simply fix the modes.
+     Adapters will be invoked on-the-fly.
+
 There are three ways evaluations can be made in Seamless.
 All three are wrapped by the manager (and Cell), which checks for 
   cache hits that make the entire evaluation superfluous.
@@ -7,7 +11,7 @@ All three are wrapped by the manager (and Cell), which checks for
 2. A expression is evaluated from the buffer
 3. A expression is evaluated from the object
 
-The following scenarios exist
+The following scenarios exist:
 
 - Command-line assignment to a cell: 
 1. only.

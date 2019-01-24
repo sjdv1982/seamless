@@ -24,41 +24,39 @@ After discussion with Pierre, push distributed deployment sooner
   - Rip execution code from low-level, DONE
   - Changes to macro mode. Essentially, worker execution and status propagation is disabled.
     For now, macro mode has no arguments.  DONE
-  - Minimal manager to store connections and cell values ALMOST DONE
-  - Get rid of transfer_mode in protocol.py (and when porting serialize/deserialize).
-    If a copy is desired, this must be indicated in
-     the worker execution dict (containing also ncores, etc.)  
-    Note that there are now three operations available: 
-     deserialize, serialize-from-buffer, and serialize-from-object.
-    deserialize is always done in mode "ref". If a copy is desired, (i.e. inputpins and inchannels),
-    a copy is generated during serialization.
-    During serialization, what happens depends on the required mode:
-    - "buffer": done using serialize-from-buffer
-    - "ref": 
-      An object is always generated using serialize-from-object; 
-      if there is no format change, this simply returns it.
-      For connections between two non-structured cells, and for input pins that declare "ref".
-    - "copy": 
-       - same as "ref" for text.
-       - same as "ref" for pythoncode. This should anyway be stored as text (else fork() problems) 
-       - For binary and mixed where storage != "pure-plain": invoke serialize-from-object, which 
-          must make a deepcopy (after applying the subpath, if any)
-       - For plain and mixed where storage == "pure-plain": invoke serialize-from-buffer, which 
-          will re-parse the buffer (followed by applying the subpath, if any)    
-    Also, do not return adapter when negotiating source/target modes, simply fix the modes.
-    Adapters will be invoked on-the-fly.
-  - Minimal manager to make simple example work, using the New Way
-  - New Way statuses, including "overrule". Overrule is orthogonal to the other statuses,
+  - Minimal manager to store connections and cell values DONE
+  - Get rid of transfer_mode in protocol.py (and when porting serialize/deserialize), DONE.
+  - Minimal manager to make simple example work, using the New Way, DONE
+  - New Way statuses, including "overrule", DONE.
+    Overrule is orthogonal to the other statuses,
     and a cell is overruled if *any* of its upstream inputs is overruled!
-  - Implement transformer interrupt action, upon destroy or by manager (upon auth update).
+  - Implement transformer interrupt action, upon destroy or by manager (upon auth update). TODO
+    (TODO: build upon JobScheduler.cancel, but add delay, and implement worker.destroy)
     New-way style, auth update propagate forward (potentially leading to multiple interrupts).
     Interrupt happens in 20 secs, or when the transformer re-executes, whichever happens sooner
   
   B. Implement some remote computing:
-    - ipyparallel remote job executors
-    - Setup in-seamless REST cache server (similar to shareserver )
-    - registration of remote cache server
-    - Redis cache server (for multiple kind of cache)
+    - label cache: a label-to-checksum cache. 
+      Labels can be .e.g "the ribosome", "the clustering code".
+      They must be unique, but they are ephemeral, not like checksum annotations which will be global
+    - Communion servers:
+      - accept connections over websockets; after that, "server" and "client" are just peers
+      - Peers negotatiate what they commune: 
+        - result cache
+        - value cache
+        - transformer cache
+        - remote transform jobs (send/receive)
+      All communed caches will be level 1, since evaluating an expression will normally be much faster
+       than interrogating the network. If not, there is always cache tree depth.      
+      Communed caches will be registered as external read caches
+      Communed job control will be connected as a remote job server / client
+      All cache/job commands will be received over the websocket
+    - Redis cache server app (for multiple kind of cache)
+      Note that this is an additional network app, in addition to Redis itself
+       (which will run as a different process under a different network port)      
+      - Will be registered as external read caches (same level as communed caches)
+      - In addition, Redis cache server may accept offloading, i.e.
+        values will be *written* to it every X seconds
 
   C.
   - Get reactors working. reactcache can be set up similar to transformcache.
@@ -72,6 +70,8 @@ After discussion with Pierre, push distributed deployment sooner
     In addition, reactors must be marked as pure or impure. 
     Pure reactors get shut down after every reaction. Impure reactors receive delta updates.
     very much the same as in the current situation.
+    UPDATE: a little more subtle: a reactor can be pure but reluctant to shut down,
+     e.g. because it can take a lot of time to build the internal state from input cells.
 
   D.
   - Macros. Immediate macro execution is disabled, e.g. macros never
@@ -115,7 +115,7 @@ After discussion with Pierre, push distributed deployment sooner
     - Mixed => SEAMLESS magic characters, but then storage + form, then data.
     - Pure plain => JSON. Recognized because it doesn't start with either magic
   - Get minimal mounting example working
-  - Reimplement IPython (mainloop/asyncio) support 
+  - Reimplement IPython (mainloop/asyncio) support, ALMOST DONE 
     Test using Anaconda then Docker
 
   F.

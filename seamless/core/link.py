@@ -18,14 +18,6 @@ class Link(SeamlessBase):
     def __hash__(self):
         return -self._counter
 
-    @property
-    def _seal(self):
-        return self._linked._seal
-
-    @_seal.setter
-    def _seal(self, value):
-        pass
-
     def get_linked(self):
         linked = self._linked
         if isinstance(linked, Link):
@@ -33,12 +25,10 @@ class Link(SeamlessBase):
         return linked
 
     def connect(self, target):
-        manager = self._get_manager()
-        manager.connect_link(self, target)
-        return self
+        return self.get_linked().connect(target)
 
     def __getattr__(self, attr):
-        from .layer import Path
+        from .context import Path
         linked = self.get_linked()
         result = getattr(linked, attr)
         if isinstance(result, Path):

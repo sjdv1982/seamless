@@ -80,7 +80,7 @@ class Job:
         self.level2 = level2
         self.remote = remote
         self.executor = None
-        self.coroutine = None
+        self.future = None
         if remote: raise NotImplementedError  ### cache branch
 
     async def _execute(self, transformer):
@@ -125,19 +125,17 @@ class Job:
             if done:
                 break
             if prelim is not None:
-                print("PRELIM", transformer, prelim)
                 manager.set_transformer_result(self.level1, self.level2, prelim, None, prelim=True)
             await asyncio.sleep(0.01)
         if not self.executor.is_alive():
             self.executor = None
         if result is not None:
-            print("RESULT", transformer, result)
             manager.set_transformer_result(self.level1, self.level2, result, None, prelim=False)
-        self.coroutine = None
+        self.future = None
 
     def execute(self, transformer):
-        assert self.coroutine is None
-        self.coroutine = self._execute(transformer)
+        assert self.future is None
+        self.future = asyncio.ensure_future(self._execute(transformer))
         
     def cancel(self):
         if self.remote: raise NotImplementedError  ### cache branch

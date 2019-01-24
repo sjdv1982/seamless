@@ -50,12 +50,10 @@ class Worker(SeamlessBase):
         return object.__dir__(self) + list(self._pins.keys())
 
 
+    @property
     def status(self):
-        """The computation status of the worker
-        Returns a dictionary containing the status of all pins that are not OK.
-        If all pins are OK, returns the status of the transformer itself: OK or pending
-        """
-        raise NotImplementedError ###cache branch
+        """The computation status of the worker"""
+        return self._get_manager().status[self]
 
 
 from .protocol import transfer_modes, access_modes, content_types
@@ -206,6 +204,7 @@ class OutputPin(OutputPinBase):
         my_cells = manager.pin_to_cells.get(self, [])
         return [c.target for c in my_cells]
 
+    @property
     def status(self):
         manager = self._get_manager()
         raise NotImplementedError ###cache branch
@@ -274,6 +273,7 @@ class EditPin(EditPinBase):
         other.connect_cell(target, self)
         return self
 
+    @property
     def status(self):
         manager = self._get_manager()
         raise NotImplementedError ###cache branch
