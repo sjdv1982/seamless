@@ -4,7 +4,11 @@ Custom validators that extend or overrule the standard JSON schema validators
 from ...mixed.get_form import get_form
 from jsonschema.exceptions import FormatError, ValidationError
 from jsonschema._validators import items as validator_items_ORIGINAL
-from jsonschema._validators import type_draft4 as validator_type_ORIGINAL
+try:
+    from jsonschema._validators import type as validator_type_ORIGINAL
+except ImportError:    
+    from jsonschema._validators import type_draft4 as validator_type_ORIGINAL
+
 from jsonschema._utils import indent
 from .formwrapper import FormWrapper
 from . import is_numpy_structure_schema, _types
