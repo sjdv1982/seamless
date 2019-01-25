@@ -1,9 +1,5 @@
 """
 Seamless mainloop routines
-
-Status:
-For now, the mainloop is controlled by Qt timers
-An overhaul to put it under asyncio control is most welcome.
 """
 
 import sys
@@ -13,6 +9,11 @@ import threading
 import asyncio
 import contextlib
 import traceback
+import asyncio
+import multiprocessing
+from multiprocessing import Process
+
+from .macro_mode import toplevel_register
 
 ipython = None
 try:
@@ -20,10 +21,8 @@ try:
     ipython = IPython.get_ipython()
 except ImportError:
     pass
-MAINLOOP_FLUSH_TIMEOUT = 30 #maximum duration of a mainloop flush in ms
 
 class WorkQueue:
-    FAILSAFE_FLUSH_LATENCY = 50 #latency of flush in ms
     _ipython_registered = False
     def __init__(self):
         self._work = deque()
@@ -64,55 +63,42 @@ class WorkQueue:
     def __len__(self):
         return len(self._work) + len(self._priority_work)
 
-def asyncio_finish():
-    try:
-        loop = asyncio.get_event_loop()
-        loop.stop()
-        loop.run_forever()
-    except RuntimeError:
-        pass
 
 workqueue = WorkQueue()
-def mainloop():
-    """Only run in non-IPython mode"""
-    while 1:
-        mainloop_one_iteration()
-
-def mainloop_one_iteration(timeout=MAINLOOP_FLUSH_TIMEOUT/1000):
-    workqueue.flush(timeout)
-    time.sleep(workqueue.FAILSAFE_FLUSH_LATENCY/1000)
-
 
 def test_qt():
     import PyQt5.QtCore, PyQt5.QtWidgets
     PyQt5.QtWidgets.QApplication(["  "])
     return True
 
-qt_app = None
-from multiprocessing import Process
-def run_qt():
-    global run_qt, qt_app
-    if qt_app is None: 
-        import multiprocessing
+async def qtloop():
+    qt_app = None
+    qtimport = False
+    try:
+        import PyQt5.QtCore, PyQt5.QtWidgets
+        qtimport = True
+    except ImportError:
+        pass
+    if qtimport:
         if multiprocessing.get_start_method() != "fork":
             print("""Cannot test if Qt can be started
-This is because forking is not possible, you are probably running under Windows
-If you are running from terminal (instead of Jupyter), you could enable Qt manually (TODO)
-""")
+    This is because forking is not possible, you are probably running under Windows
+    Starting Qt blindly is not supported, as it may result in segfaults
+    """,
+            file=sys.stderr)
         else:
             p = Process(target=test_qt)
             p.start()
             p.join()
             if not p.exitcode:
                 qt_app = PyQt5.QtWidgets.QApplication(["  "])
-        if qt_app is None:
-            msg = "Qt could not be started. Qt widgets will not work" #TODO: some kind of env variable to disable this warning
-            print(msg,file=sys.stderr)
-            run_qt = lambda: None
-            return
-    qt_app.processEvents()
+    if qt_app is None:
+        msg = "Qt could not be started. Qt widgets will not work" #TODO: some kind of env variable to disable this warning
+        print(msg,file=sys.stderr)
+        return
 
-try:
-    import PyQt5.QtCore, PyQt5.QtWidgets
-except ImportError:
-    run_qt = lambda: None
+    while 1:
+        qt_app.processEvents()
+        await asyncio.sleep(0.01)
+
+asyncio.ensure_future(qtloop())

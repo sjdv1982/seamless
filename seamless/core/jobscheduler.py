@@ -135,6 +135,7 @@ class Job:
 
     def execute(self, transformer):
         assert self.future is None
+        print("EXECUTE", transformer)
         self.future = asyncio.ensure_future(self._execute(transformer))
         
     def cancel(self):

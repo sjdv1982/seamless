@@ -116,7 +116,8 @@ After discussion with Pierre, push distributed deployment sooner
     - Pure plain => JSON. Recognized because it doesn't start with either magic
   - Get minimal mounting example working
   - Reimplement IPython (mainloop/asyncio) support, ALMOST DONE 
-    Test using Anaconda then Docker
+    Test Jupyter support, Qt support.
+    Test using Docker
 
   F.
   - For Monitor, replace direct data storage + hooks with API

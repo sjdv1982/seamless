@@ -7,7 +7,10 @@ import sys
 import time
 import functools
 import traceback
-import atexit
+
+import nest_asyncio
+nest_asyncio.apply()
+import asyncio
 
 from abc import abstractmethod
 class Wrapper:
@@ -31,10 +34,6 @@ if np.dtype(np.object).itemsize != 8:
 #silk must be imported before mixed
 from . import silk
 from . import mixed
-
-from .core import mainloop as _mainloop
-from .core.mainloop import mainloop, mainloop_one_iteration, asyncio_finish, workqueue
-atexit.register(asyncio_finish)
 
 ipython_instance = None
 ipy_error = None
@@ -64,33 +63,31 @@ if ipy_error is None:
         sys.excepthook = new_except_hook
     patch_excepthook()
 
-    def mainloop():
-        raise RuntimeError("Cannot run seamless.mainloop() in IPython mode")
-
-    def inputhook_terminal(context):
-        while not context.input_is_ready():
-            mainloop_one_iteration()
-    _register_integration_terminal("seamless", inputhook_terminal)
-
-    @_register_integration_kernel('seamless')
-    def inputhook_kernel(kernel):
-        while 1:
-            t = time.time()
-            while time.time() - t < kernel._poll_interval:
-                mainloop_one_iteration()
-            kernel.do_one_iteration()
-
-
-    ipython_instance.enable_gui("seamless")
-
 else:
     sys.stderr.write("    " + ipy_error + "\n")
-    sys.stderr.write("    Call seamless.mainloop(), seamless.flush() or context.equilibrate() to process cell updates\n")
-
-def flush():
-    from .core.mainloop import workqueue
-    workqueue.flush()
+    sys.stderr.write("    Call context.equilibrate() to process cell updates\n")
 
 from .silk import Silk
 from .debugger import pdb
 from .shareserver import shareserver
+
+
+def inputhook_terminal(context):
+    while not context.input_is_ready():
+        asyncio.get_event_loop().run_until_complete(asyncio.sleep(0.1))
+
+get_ipython = None
+try:    
+    from IPython.terminal.pt_inputhooks import register as _register_ipython
+    from IPython.core.interactiveshell import InteractiveShell    
+    from IPython import get_ipython
+    TerminalInteractiveShell = type(None)
+    from IPython.terminal.interactiveshell import TerminalInteractiveShell
+except ImportError:
+    pass
+if get_ipython is not None:
+    ipython_instance = get_ipython()
+    if ipython_instance is not None and isinstance(ipython_instance, TerminalInteractiveShell):
+        _register_ipython("seamless", inputhook_terminal)
+        ipython_instance.enable_gui("seamless")
+

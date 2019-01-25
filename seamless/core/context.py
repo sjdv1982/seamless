@@ -20,6 +20,8 @@ class StatusReport(dict):
         for k,v in self.items():
             result[k] = str(v)
         return "Status: " + str(result)
+    def _repr_pretty_(self, p, cycle):
+        return p.text(str(self))
 
 class Context(SeamlessBase):
     """Context class. Organizes your cells and workers hierarchically.
@@ -253,12 +255,10 @@ context : context or None
     def __dir__(self):
         result = []
         result[:] = self._methods
-        any_exported = any([c._exported for c in self._children.values()])
         for k, c in self._children.items():
             if k in result:
                 continue
-            if not any_exported or c._exported:
-                result.append(k)
+            result.append(k)
         return result
 
     @property

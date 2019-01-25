@@ -30,15 +30,21 @@ from enum import Enum
 from collections import OrderedDict
 
 def main_thread_buffered(func):
+    def not_destroyed_wrapper(self, func, *args, **kwargs):
+        if self._destroyed:
+            return
+        func(self, *args, **kwargs)
     def main_thread_buffered_wrapper(self, *args, **kwargs):
         if threading.current_thread() != threading.main_thread():
-            work = functools.partial(func, self, *args, **kwargs)
+            work = functools.partial(not_destroyed_wrapper,
+              self, func, *args, **kwargs
+            )
             self.workqueue.append(work)
         else:
+            if self._destroyed:
+                return
             func(self, *args, **kwargs)
     return main_thread_buffered_wrapper
-
-
 
 class Status:
     StatusDataEnum =  Enum('StatusDataEnum',
@@ -162,6 +168,7 @@ class Status:
             (self.auth_status != other.auth_status)
 
 class Manager:
+    _destroyed = False
     flushing = False
     def __init__(self, ctx):
         assert ctx._toplevel
@@ -181,7 +188,7 @@ class Manager:
         self.value_cache = ValueCache(self)
         self.transform_cache = TransformCache(self)
         self.temprefmanager = TempRefManager()
-        asyncio.ensure_future(self.temprefmanager.loop())
+        self.temprefmanager_future = asyncio.ensure_future(self.temprefmanager.loop())
         self.jobscheduler = JobScheduler(self)
 
         self.status = {}
@@ -332,7 +339,7 @@ class Manager:
             if buffer_item is None:
                 raise ValueError("Checksum not in value cache")
             _, _, buffer = buffer_item
-            value = self.cache_expression(default_expression, buffer)
+            value = self.cache_expression(expression, buffer)
         return value
 
     def build_expression(self, accessor):
@@ -733,3 +740,13 @@ class Manager:
                         unstable = sorted(unstable,key=lambda w:w.path)
                         print("Waiting for:", unstable)
         return self.unstable
+
+    def destroy(self):
+        if self._destroyed:
+            return
+        self._destroyed = True
+        self.temprefmanager_future.cancel()
+        self.flush_future.cancel()
+
+    def __del__(self):
+        self.destroy()
