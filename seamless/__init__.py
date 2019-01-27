@@ -70,6 +70,7 @@ else:
 from .silk import Silk
 from .debugger import pdb
 from .shareserver import shareserver
+from .communionserver import communionserver
 
 
 def inputhook_terminal(context):

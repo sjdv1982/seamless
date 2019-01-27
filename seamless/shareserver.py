@@ -1,7 +1,7 @@
 """
 Seamless shareserver REST protocol
 
-Extremely simple. 
+Extremely simple.
 
 Short version:
 ctx.a.share() =>
@@ -12,7 +12,7 @@ ctx.a.share() =>
   A timeout can be specified.
 
 Long version:
-There is a singleton ShareServer instance at localhost 
+There is a singleton ShareServer instance at localhost
 
 It opens an update websocket server, and a REST server.
 
@@ -32,7 +32,7 @@ import json
 import asyncio
 import weakref
 
-class ShareServer(object):    
+class ShareServer(object):
     DEFAULT_ADDRESS = '127.0.0.1'
     DEFAULT_SHARE_UPDATE_PORT = 5138
     DEFAULT_SHARE_REST_PORT = 5813
@@ -81,7 +81,7 @@ class ShareServer(object):
         varlist = [v for v in varlist if v != "self"]
         return await self._send(websocket, ("varlist", varlist))
 
-    async def _send_checksum(self, websocket, key, checksum, marker, prior=None):        
+    async def _send_checksum(self, websocket, key, checksum, marker, prior=None):
         if prior is not None:
             await prior
         if checksum is None:
@@ -104,7 +104,7 @@ class ShareServer(object):
             return
         for k,v in d.items():
             _, checksum, marker = v
-            if not await self._send_checksum(websocket, k, checksum, marker):            
+            if not await self._send_checksum(websocket, k, checksum, marker):
                 break
         self.connections[path].append(websocket)
         async for message in websocket: #keep connection open forever
@@ -113,16 +113,16 @@ class ShareServer(object):
             return
         self.connections[path].remove(websocket)
 
-    async def serve_update(self):   
+    async def serve_update(self):
         if self._update_server_started:
             return
         global websockets
-        import websockets     
+        import websockets
         while 1:
             try:
                 server = await websockets.serve(
-                    self._serve_update, 
-                    self.address, 
+                    self._serve_update,
+                    self.address,
                     self.update_port
                 )
                 break
@@ -131,7 +131,7 @@ class ShareServer(object):
         print("Opened the seamless share update server at port {0}".format(self.update_port))
         self._update_server_started = True
 
-    async def _handle_get(self, request):        
+    async def _handle_get(self, request):
         tail = request.match_info.get('tail')
         namespace, key = tail.split("/")
         try:
@@ -142,19 +142,19 @@ class ShareServer(object):
                 raise KeyError
             value = serialize(cell, "copy", "json", None)
             return web.Response(
-                status=200, 
-                body=json.dumps(value), 
+                status=200,
+                body=json.dumps(value),
                 content_type='application/json',
             )
         except KeyError:
             return web.Response(
-                status=404, 
-                body=json.dumps({'not found': 404}), 
+                status=404,
+                body=json.dumps({'not found': 404}),
                 content_type='application/json'
             )
 
-    async def _handle_put(self, request):        
-        text = await request.text()   
+    async def _handle_put(self, request):
+        text = await request.text()
         data = json.loads(text)
         value = data["value"]
         rq_marker = data.get("marker")
@@ -176,31 +176,31 @@ class ShareServer(object):
             else:
                 newmarker = marker
             return web.Response(
-                status=200, 
+                status=200,
                 text=str(newmarker),
             )
         except KeyError:
             return web.Response(
-                status=404, 
-                body=json.dumps({'not found': 404}), 
+                status=404,
+                body=json.dumps({'not found': 404}),
                 content_type='application/json'
             )
-    
+
     async def _handle_equilibrate(self, request):
         tail = request.match_info.get('tail')
         namespace, key = tail.split("/")
         print(namespace, key)
         if namespace not in self.namespaces or key != "equilibrate":
             return web.Response(
-                status=404, 
-                body=json.dumps({'not found': 404}), 
+                status=404,
+                body=json.dumps({'not found': 404}),
                 content_type='application/json'
             )
         ns = self.namespaces[namespace]
         if "self" not in ns:
             return web.Response(
-                status=404, 
-                body=json.dumps({'equilibrate is not shared': 404}), 
+                status=404,
+                body=json.dumps({'equilibrate is not shared': 404}),
                 content_type='application/json'
             )
         text = await request.text()
@@ -210,8 +210,8 @@ class ShareServer(object):
         ctx = ns["self"]()
         result = sorted(list(ctx.equilibrate(timeout)))
         return web.Response(
-            status=200, 
-            body=json.dumps(result), 
+            status=200,
+            body=json.dumps(result),
             content_type='application/json'
         )
 
@@ -225,7 +225,7 @@ class ShareServer(object):
             web.put('/{tail:.*}', self._handle_put),
             web.patch('/{tail:.*}', self._handle_equilibrate),
         ])
-        
+
         # Configure default CORS settings.
         cors = aiohttp_cors.setup(app, defaults={
             "*": aiohttp_cors.ResourceOptions(
@@ -242,12 +242,11 @@ class ShareServer(object):
 
         runner = web.AppRunner(app)
         await runner.setup()
-        site = web.TCPSite(runner, self.address, self.rest_port) #TODO: try more ports        
-        await site.start()        
+        site = web.TCPSite(runner, self.address, self.rest_port) #TODO: try more ports
+        await site.start()
         print("Opened the seamless REST server at port {0}".format(self.rest_port))
 
-    async def _start(self):        
-        print("START")
+    async def _start(self):
         s1 = self.serve_update()
         s2 = self.serve_rest()
         await s1
@@ -258,7 +257,7 @@ class ShareServer(object):
 
     def start(self):
         if self.started:
-            return        
+            return
         self._future_start = asyncio.ensure_future(self._start())
         return self._future_start
 
@@ -279,10 +278,10 @@ class ShareServer(object):
 
         any_send_update = False
         coros = []
-        for key, cell in celldict.items():            
+        for key, cell in celldict.items():
             if key == "self":
                 ctx = cell
-                ns[key] = weakref.ref(ctx)    
+                ns[key] = weakref.ref(ctx)
             if isinstance(cell, StructuredCell):
                 datacell = cell.data
             elif isinstance(cell, Cell):
@@ -294,7 +293,7 @@ class ShareServer(object):
                 checksum = datacell.checksum()
             if key not in ns:
                 send_update = True
-                marker = 0                
+                marker = 0
             else:
                 _, old_checksum, old_marker = ns[key]
                 if checksum == old_checksum:
@@ -304,8 +303,8 @@ class ShareServer(object):
                     send_update = True
                     marker = old_marker + 1
             ns[key] = [weakref.ref(cell), checksum, marker]
-                        
-            if send_update or diff_varlist:                
+
+            if send_update or diff_varlist:
                 for websocket in self.connections[namespace]:
                     prior = None
                     if diff_varlist:
@@ -313,10 +312,10 @@ class ShareServer(object):
                     if send_update:
                         any_send_update = True
                         coro = self._send_checksum(websocket, key, checksum, marker, prior=prior)
-                        coros.append(coro)        
+                        coros.append(coro)
         if not any_send_update:
             coros = fut.values()
-        await asyncio.gather(*coros)    
+        await asyncio.gather(*coros)
 
     def share(self, namespace, celldict):
         return asyncio.ensure_future(self._share(namespace, celldict))
@@ -347,11 +346,11 @@ class ShareServer(object):
 
         coros = []
         for websocket in self.connections[namespace]:
-            s = self._send_checksum(websocket, key, checksum, marker)            
+            s = self._send_checksum(websocket, key, checksum, marker)
             coros.append(s)
         await asyncio.gather(*coros)
-    
+
     def send_update(self, namespace, key):
         asyncio.ensure_future(self._send_update(namespace, key))
-        
+
 shareserver = ShareServer()

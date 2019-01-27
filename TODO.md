@@ -42,9 +42,9 @@ After discussion with Pierre, push distributed deployment sooner
     - Communion servers:
       - accept connections over websockets; after that, "server" and "client" are just peers
       - Peers negotatiate what they commune: 
-        - result cache
-        - value cache
-        - transformer cache
+        - label cache
+        - transformer result cache
+        - cell value cache
         - remote transform jobs (send/receive)
       All communed caches will be level 1, since evaluating an expression will normally be much faster
        than interrogating the network. If not, there is always cache tree depth.      
