@@ -115,7 +115,7 @@ After discussion with Pierre, push distributed deployment sooner
     - Mixed => SEAMLESS magic characters, but then storage + form, then data.
     - Pure plain => JSON. Recognized because it doesn't start with either magic
   - Get minimal mounting example working
-  - Reimplement IPython (mainloop/asyncio) support, ALMOST DONE 
+  - Reimplement IPython (mainloop/asyncio) support, DONE 
     Test Jupyter support, Qt support.
     Test using Docker
 
