@@ -12,7 +12,8 @@ from . import protocol
 from .protocol.deserialize import deserialize
 from ..mixed import MixedBase
 from .cache import (CellCache, AccessorCache, ExpressionCache, ValueCache,
-    TransformCache, Accessor, Expression, TempRefManager, SemanticKey)
+    TransformCache, Accessor, Expression, TempRefManager, SemanticKey,
+    CacheTaskManager)
 from .jobscheduler import JobScheduler
 from .macro_mode import get_macro_mode, curr_macro
 
@@ -190,6 +191,7 @@ class Manager:
         self.temprefmanager = TempRefManager()
         self.temprefmanager_future = asyncio.ensure_future(self.temprefmanager.loop())
         self.jobscheduler = JobScheduler(self)
+        self.cache_task_manager = CacheTaskManager()
 
         self.status = {}
         self.jobs = {}  # jobid-to-job
@@ -199,6 +201,35 @@ class Manager:
                              # type = "macro", schedop = Macro object
                              # type = "reactor", schedop = (Reactor object, pin name, expression)
         self._temp_tf_level1 = {}
+
+
+    async def _schedule_job(self, tf_level1, count):
+        """Runs until either a remote cache hit has been obtained, or a job has been submitted"""
+        tcache = self.transform_cache
+        task = None
+        try:
+            task = self.cache_task_manager.remote_transform_result(tf_level1)
+            if task is not None:
+                await task.future
+                result = task.future.result()
+                if result is not None:
+                    self.set_transformer_result(tf_level1, None, None, result, False)
+                    return
+            task = None
+            job = self.jobscheduler.schedule_remote(tf_level1, count)
+            if job is not None:
+                return
+            # TODO: make build_level2 async
+            tf_level2 = tcache.build_level2(tf_level1)
+            result = tcache.result_hlevel2.get(hash(tf_level2))
+            if result is not None:
+                self.set_transformer_result(tf_level1, tf_level2, None, result, False)
+                return
+            tcache.set_level2(tf_level1, tf_level2)                    
+            job = self.jobscheduler.schedule(tf_level2, count)
+        except asyncio.CancelledError:
+            if task is not None:
+                task.cancel()
 
     def schedule_jobs(self):
         if not len(self.scheduled):
@@ -225,33 +256,27 @@ class Manager:
         for key, value in scheduled_clean.items():
             type, _ = key
             schedop, count = value
-
             if count == 0:
                 continue
             if type == "transformer":
                 tf_level1 = schedop
                 hlevel1 = hash(tf_level1)
                 if count > 0:
+                    for ttf, ttf_level1 in tcache.transformer_to_level1.items():
+                        if hash(ttf_level1) != hlevel1:
+                            continue
+                        status = self.status[ttf]
+                        if status.exec == "READY":
+                            status.exec = "EXECUTING"
+                    task = self._schedule_job(tf_level1, count)
                     result = tcache.result_hlevel1.get(hash(tf_level1))
                     if result is not None:
                         self.set_transformer_result(tf_level1, None, None, result, False)
                         continue
-                print("TODO: Manager.schedule_jobs(): try to launch a remote job")
-                if 1:
+                    self.cache_task_manager.schedule_task(("transformer","all",tf_level1),task,count)
+                else:
                     tf_level2 = tcache.build_level2(tf_level1)
-                    if count > 0:
-                        result = tcache.result_hlevel2.get(hash(tf_level2))
-                        if result is not None:
-                            self.set_transformer_result(tf_level1, tf_level2, None, result, False)
-                            continue
-                        tcache.set_level2(tf_level1, tf_level2)                    
                     self.jobscheduler.schedule(tf_level2, count)
-                for ttf, ttf_level1 in tcache.transformer_to_level1.items():
-                    if hash(ttf_level1) != hlevel1:
-                        continue
-                    status = self.status[ttf]
-                    if status.exec == "READY":
-                        status.exec = "EXECUTING"
             elif type == "macro":
                 raise NotImplementedError ### cache branch
             elif type == "reactor":
@@ -259,12 +284,12 @@ class Manager:
             else:
                 raise ValueError(type)
         self.scheduled = []
-        self._temp_tf_level1 = {}
+        self._temp_tf_level1.clear()
 
 
     def set_transformer_result(self, level1, level2, value, checksum, prelim):
         print("TODO: Manager.set_transformer_result: expand code properly, see evaluate.py")
-        assert value is not None
+        assert value is not None or checksum is not None
         tcache = self.transform_cache
         hlevel1 = hash(level1)
         for tf, tf_level1 in list(tcache.transformer_to_level1.items()): #could be more efficient...
@@ -282,7 +307,10 @@ class Manager:
                 else:
                     if status.auth == "PRELIMINARY":
                         status.auth = "FRESH"
-                self.set_cell(cell, value)
+                if value is not None:
+                    self.set_cell(cell, value)
+                else:
+                    self.set_cell_checksum(cell, checksum)
             self.update_transformer_status(tf,full=False)
 
     async def _flush(self):
@@ -723,13 +751,20 @@ class Manager:
             if report is not None:
                 if delta is None or report < delta:
                     delta = report
+            cache_jobs = []
+            for k,v in self.cache_task_manager.tasks.items():
+                cache_jobs.append(v.future)
+            if len(cache_jobs):
+                await asyncio.gather(*cache_jobs)
             jobs = []
             for job in itertools.chain(
-                self.jobscheduler.jobs.values(),
-                self.jobscheduler.remote_jobs.values(),
+                  self.jobscheduler.jobs.values(),
+                  self.jobscheduler.remote_jobs.values(),
                 ):
                 if job.future is not None:
                     jobs.append(job.future)
+            if not len(jobs):
+                raise Exception("No jobs, but unstable workers: %s" % unstable)
             if delta is None:
                 await asyncio.gather(*jobs)
             else:

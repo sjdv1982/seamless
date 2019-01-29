@@ -153,6 +153,7 @@ class TransformCache:
 
     def build_level2(self, level1):
         """Does not update any caches"""
+        #TODO: make async for smoother experience
         if not isinstance(level1, TransformerLevel1):
             raise TypeError(level1)
 

@@ -21,20 +21,21 @@ class JobScheduler:
         if count < 0:
             count = -count
             if hlevel1 not in self.remote_jobs:
-                return False
+                return None
             job = self.remote_jobs[hlevel1]
             assert job.count >= count
             job.count -= count
             if job.count == 0:
                 job.cancel()
                 self.remote_jobs.pop(hlevel1)
-            return True
+                return None
+            return job
         if hlevel1 in self.remote_jobs:
             job = self.jobs[hlevel2]
             job.count += count
-            return
+            return job
         # TODO: create remote job if a server has been registered
-        return False ###
+        return None ###
         '''
         tcache = self.manager().transform_cache
         job = Job(self, level1, None, remote=True)
@@ -57,11 +58,12 @@ class JobScheduler:
             if job.count == 0:
                 job.cancel()
                 self.jobs.pop(hlevel2)
-            return
+                return None
+            return job
         if hlevel2 in self.jobs:
             job = self.jobs[hlevel2]
             job.count += count
-            return
+            return job
         tcache = self.manager().transform_cache
         hlevel1 = tcache.hlevel2_from_hlevel1[hlevel2]
         level1 = tcache.revhash_hlevel1[hlevel1]
@@ -70,6 +72,7 @@ class JobScheduler:
         self.jobs[hlevel2] = job
         transformer = tcache.transformer_from_hlevel1[hlevel1]
         job.execute(transformer)
+        return job
 
 
 class Job:

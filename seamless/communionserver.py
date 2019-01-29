@@ -53,7 +53,6 @@ class CommunionServer:
         cid = os.environ.get("SEAMLESS_COMMUNION_ID")
         if cid is None:
             cid = hash(int(id(self)) + int(10000*time.time()))
-        print(cid)
         self.id = cid
         self.peers = {}
     
