@@ -83,7 +83,7 @@ class TransformCache:
         self.transformer_to_cells = {}
         self.hlevel1_to_level2 = {}
         self.transformer_from_hlevel1 = {}  # This relation is not unique, but we need only one
-        self.hlevel2_from_hlevel1 = {}  # This relation is not unique, but we need only one
+        self.hlevel1_from_hlevel2 = {}  # This relation is not unique, but we need only one
         self.refcount_hlevel1 = {} 
         self.refcount_hlevel2 = {}
         self.revhash_hlevel1 = {}
@@ -144,7 +144,7 @@ class TransformCache:
             self.refcount_hlevel2[hlevel2] = refcount - 1
             return
         self.result_hlevel2.pop(hlevel2, None)
-        self.hlevel2_from_hlevel1.pop(hlevel2)
+        self.hlevel1_from_hlevel2.pop(hlevel2)
 
     def _incref_level2(self, level2):
         hlevel2 = hash(level2)
@@ -185,6 +185,6 @@ class TransformCache:
             return
         self.hlevel1_to_level2[hlevel1] = level2
         hlevel2 = hash(level2)
-        if hlevel2 not in self.hlevel2_from_hlevel1:
-            self.hlevel2_from_hlevel1[hlevel2] = hlevel1
+        if hlevel2 not in self.hlevel1_from_hlevel2:
+            self.hlevel1_from_hlevel2[hlevel2] = hlevel1
         self._incref_level2(level2)

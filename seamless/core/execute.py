@@ -1,3 +1,7 @@
+"""Code for local job execution
+Works well under Linux, should work well under OSX
+Contains some support code for Windows, but completely untested"""
+
 import traceback
 import multiprocessing
 from multiprocessing import Process
@@ -7,16 +11,38 @@ import sys
 import os
 import signal
 import platform
+import threading
+import inspect
+import ctypes
+if platform.system() == "Windows":
+    from ctypes import windll
 
-from .killable_thread import KillableThread
+
 from .cached_compile import cached_compile
 ###from .injector import transformer_injector
 
 ### TODO: injectors are not yet working
 
+def _async_raise(tid, exctype):
+    """raises the exception, performs cleanup if needed"""
+    if not inspect.isclass(exctype):
+        exctype = type(exctype)
+    res = ctypes.pythonapi.PyThreadState_SetAsyncExc(ctypes.c_long(tid), ctypes.py_object(exctype))
+    if res == 0:
+        raise ValueError("invalid thread id")
+    elif res != 1:
+        # """if it returns a number greater than one, you're in trouble,
+        # and you should call it again with exc=NULL to revert the effect"""
+        ctypes.pythonapi.PyThreadState_SetAsyncExc(tid, None)
+        raise SystemError("PyThreadState_SetAsyncExc failed")
 
-if platform.system() == "Windows":
-    from ctypes import windll
+class KillableThread(threading.Thread):
+    def kill(self, exctype=SystemError):
+        if not self.isAlive():
+            return
+        tid = self.ident
+        _async_raise(tid, exctype)
+    terminate = kill
 
 USE_PROCESSES = os.environ.get("SEAMLESS_USE_PROCESSES")
 if USE_PROCESSES is None:
@@ -52,7 +78,6 @@ def execute(name, code, identifier, namespace,
         exec(code_object, namespace) ###
     except:
         exc = traceback.format_exc()
-        print(exc)
         result_queue.put((1, exc))
     else:
         if output_name is None:

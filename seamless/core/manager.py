@@ -29,6 +29,7 @@ import asyncio
 from collections import namedtuple
 from enum import Enum
 from collections import OrderedDict
+import sys
 
 def main_thread_buffered(func):
     def not_destroyed_wrapper(self, func, *args, **kwargs):
@@ -89,14 +90,25 @@ class Status:
                 return dstatus + "," + astatus
 
     def _str_transformer(self):
-        dstatus = self.data
-        estatus = self.exec
+        dstatus = str(self.data)
+        estatus = str(self.exec)
+        astatus = str(self.auth)
         if dstatus == "UNCONNECTED":
             return dstatus
         elif estatus == "BLOCKED":
-            return self._str_cell()
+            result = self._str_cell()
+            if result == "UNDEFINED":
+                return "BLOCKED"
+            else:
+                return "BLOCKED,"+result
+        elif dstatus == "PENDING":
+            assert estatus in ("PENDING", "READY", "EXECUTING"), estatus
+            if astatus == "FRESH":
+                return estatus
+            else:
+                return estatus + "," + astatus
         else:
-            assert dstatus == "OK", (dstatus, estatus)
+            assert dstatus == "OK" or estatus == "ERROR", (dstatus, estatus)
             astatus = self.auth
             if astatus == "FRESH":
                 return estatus
@@ -287,6 +299,35 @@ class Manager:
         self._temp_tf_level1.clear()
 
 
+    def set_transformer_result_exception(self, level1, exception):
+        #TODO: store exception
+        transformer = None
+        tcache = self.transform_cache
+        hlevel1 = hash(level1)
+        for tf, tf_level1 in list(tcache.transformer_to_level1.items()): #could be more efficient...
+            if hash(tf_level1) != hlevel1:
+                continue
+            if transformer is None:
+                transformer = tf
+            tstatus = self.status[tf]
+            tstatus.exec = "ERROR"
+            tstatus.data = "UNDEFINED"
+            auth_status = None
+            if tstatus.auth != "FRESH":
+                auth_status = "FRESH"
+                tstatus.auth = "FRESH"
+            self.unstable.remove(tf)
+            for cell in tcache.transformer_to_cells[tf]:
+                self._propagate_status(cell,"UPSTREAM_ERROR", auth_status, full=False)
+        
+        if transformer is None:
+            transformer = "<Unknown transformer>"                            
+        exc = traceback.format_exception(type(exception), exception, exception.__traceback__)
+        exc = "".join(exc)
+        msg = "Exception in %s:\n" + exc
+        stars = "*" * 60 + "\n"
+        print(stars + (msg % transformer) + stars, file=sys.stderr)
+
     def set_transformer_result(self, level1, level2, value, checksum, prelim):
         print("TODO: Manager.set_transformer_result: expand code properly, see evaluate.py")
         assert value is not None or checksum is not None
@@ -298,7 +339,7 @@ class Manager:
             tstatus = self.status[tf]
             tstatus.exec = "FINISHED"
             tstatus.data = "OK"
-            tstatus.auth = "OBSOlETE" # To provoke an update
+            tstatus.auth = "OBSOLETE" # To provoke an update
             for cell in tcache.transformer_to_cells[tf]:
                 status = self.status[cell]
                 if prelim:
@@ -431,11 +472,11 @@ class Manager:
         new_data_status = status.data
         new_auth_status = status.auth
         if data_status is not None:
-            dstatus = status.data
+            dstatus = status.data            
             if data_status == "PENDING":
-                if dstatus == "UPSTREAM_ERROR":
+                if str(dstatus) in ("UNDEFINED", "UPSTREAM_ERROR"):
                     new_data_status = "PENDING"
-            if data_status == "UPSTREAM_ERROR":
+            elif data_status == "UPSTREAM_ERROR":              
                 if dstatus == "PENDING":
                     new_data_status = "UPSTREAM_ERROR"
         if auth_status is not None:
@@ -458,7 +499,7 @@ class Manager:
                 for worker in acache.haccessor_to_workers.get(haccessor, []):
                     self.update_worker_status(worker, full)
 
-    def update_transformer_status(self, transformer, full):
+    def update_transformer_status(self, transformer, full, new_connection=False):
         tcache = self.transform_cache
         accessor_dict = tcache.transformer_to_level0[transformer]
         if full:
@@ -496,11 +537,14 @@ class Manager:
         
         backup_auth = None
         if full:
-            if old_status.exec == "FINISHED" and (str(new_status.exec) in ("READY", "PENDING")):
-                if new_status.auth == "FRESH":
-                    backup_auth = new_status.auth  # to propagate downstream cells as obsolete;
-                                                   # revert to backup_auth at the end of this function
-                new_status.auth = "OBSOLETE"            
+            if str(new_status.exec) in ("READY", "PENDING"):
+                if old_status.exec == "FINISHED":
+                    if new_status.auth == "FRESH":
+                        backup_auth = new_status.auth  # to propagate downstream cells as obsolete;
+                                                    # revert to backup_auth at the end of this function
+                    new_status.auth = "OBSOLETE"
+                elif old_status.exec == "BLOCKED":  
+                    new_status.data = "PENDING"      
 
         self.status[transformer] = new_status
         propagate_data = (new_status.data != old_status.data)
@@ -516,17 +560,18 @@ class Manager:
               ( str(new_status.auth) in ("FRESH", "OVERRULED") \
                 or backup_auth is not None
               ):
-                scheduled = self._schedule_transformer(transformer)
-                if not scheduled:
-                    propagate_data = False
+                self._schedule_transformer(transformer)
         elif new_status.exec == "BLOCKED":
             if transformer in self.unstable:
                 self.unstable.remove(transformer)
             if old_status.exec != "BLOCKED":
                 self._unschedule_transformer(transformer)
-        if propagate_data or propagate_auth:
+        if propagate_data or propagate_auth or new_connection:
             data_status = new_status.data if propagate_data else None
             auth_status = new_status.auth if propagate_auth else None
+            if new_connection and new_status.data == "OK":
+                if str(new_status.exec) in ("PENDING", "READY", "EXECUTING"):
+                    data_status = "PENDING"
             for cell in target_cells:                
                 self._propagate_status(cell, data_status, auth_status, full=False)
             if backup_auth is not None:
@@ -576,6 +621,7 @@ class Manager:
             raise TypeError(io)
 
     def connect_cell(self, cell, other):
+        #print("connect_cell", cell, other)
         from . import Transformer, Reactor, Macro
         from .link import Link
         from .cell import Cell
@@ -601,6 +647,7 @@ class Manager:
         self.schedule_jobs()
 
     def connect_pin(self, pin, cell):
+        #print("connect_pin", pin, cell)
         from . import Transformer, Reactor, Macro
         from .link import Link
         from .cell import Cell
@@ -617,7 +664,7 @@ class Manager:
         worker = pin.worker_ref()
         if isinstance(worker, Transformer):
             self.transform_cache.transformer_to_cells[worker].append(cell)
-            self.update_transformer_status(worker,full=False)
+            self.update_transformer_status(worker,full=False, new_connection=True)
         elif isinstance(worker, Macro):
             raise NotImplementedError ###cache branch
         elif isinstance(worker, Reactor):
@@ -756,13 +803,17 @@ class Manager:
                 cache_jobs.append(v.future)
             if len(cache_jobs):
                 await asyncio.gather(*cache_jobs)
+            self.jobscheduler.cleanup()
+            unstable = get_unstable()
+            if not len(unstable):
+                break
             jobs = []
             for job in itertools.chain(
                   self.jobscheduler.jobs.values(),
                   self.jobscheduler.remote_jobs.values(),
                 ):
-                if job.future is not None:
-                    jobs.append(job.future)
+                jobs.append(job.future)
+                                    
             if not len(jobs):
                 raise Exception("No jobs, but unstable workers: %s" % unstable)
             if delta is None:

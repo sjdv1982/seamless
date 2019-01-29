@@ -1,8 +1,42 @@
 """Schedules asynchronous (transformer) jobs"""
 import weakref
 import asyncio
+import multiprocessing
+import sys
+import traceback
 
-from .localjob import Queue, Executor, execute ### TODO: also use execute_debug
+from .execute import Queue, Executor, execute ### TODO: also use execute_debug
+
+ncores = multiprocessing.cpu_count()
+locks = None  
+
+def initialize_locks():
+    global locks
+    if locks is not None:
+        if len(locks) != ncores:
+            if ncores == 0:
+                locks = []
+            else:
+                msg = "WARNING: ncores was changed from %d to %d but this is ignored, as jobs have already started"
+                print(msg % (len(locks), ncores), file=sys.stderr)
+        return
+    else:        
+        locks = [False] * ncores
+
+async def acquire_lock():
+    initialize_locks()
+    if not len(locks):
+        raise Exception("Local computation has been disabled for this Seamless instance")
+    while 1:        
+        for locknr, lock in enumerate(locks):
+            if lock == False:
+                locks[locknr] = True
+                return locknr                
+        await asyncio.sleep(0.01)
+
+def release_lock(locknr):
+    assert locks[locknr] == True
+    locks[locknr] = False
 
 class JobScheduler:
     _id = 0
@@ -65,7 +99,7 @@ class JobScheduler:
             job.count += count
             return job
         tcache = self.manager().transform_cache
-        hlevel1 = tcache.hlevel2_from_hlevel1[hlevel2]
+        hlevel1 = tcache.hlevel1_from_hlevel2[hlevel2]
         level1 = tcache.revhash_hlevel1[hlevel1]
         job = Job(self, level1, level2, remote=False)
         job.count = count
@@ -74,6 +108,22 @@ class JobScheduler:
         job.execute(transformer)
         return job
 
+    def cleanup(self):
+        manager= self.manager()
+        for jobs in (self.jobs, self.remote_jobs):
+            toclean = []
+            for key, job in jobs.items():
+                future = job.future
+                if future is None:
+                    toclean.append(key)
+                else:
+                    if future.done():
+                        toclean.append(key)
+                        exception = future.exception()
+                        if exception is not None:
+                            manager.set_transformer_result_exception(job.level1, exception)
+            for key in toclean:
+                jobs.pop(key)
 
 class Job:
     def __init__(self, scheduler, level1, level2, remote):
@@ -89,60 +139,63 @@ class Job:
     async def _execute(self, transformer):
         # transformer is just for tracebacks
         if self.remote: raise NotImplementedError  ### cache branch
-        manager = self.scheduler().manager()
-        namespace = {}
-        queue = Queue()
-        assert "code" in self.level2, list(self.level2._expressions.keys())
-        for pin in self.level2:
-            semantic_key = self.level2[pin]
-            value = manager.value_cache.get_object(semantic_key)
-            if pin == "code":
-                code = value
-            else:
-                namespace[pin] = value
-        args = (
-            transformer._format_path(), code,
-            str(transformer),
-            namespace, self.level2.output_name, queue
-        )
-        self.executor = Executor(target=execute,args=args, daemon=True)
-        self.executor.start()
-        result = None
-        done = False
-        while 1:
-            prelim = None
-            while not queue.empty():
-                status, msg = queue.get()
-                queue.task_done()
-                if status == -1:
-                    prelim = msg
-                elif status == 0:
-                    result = msg
+        lock = await acquire_lock()
+        try:
+            manager = self.scheduler().manager()
+            namespace = {}
+            queue = Queue()
+            assert "code" in self.level2, list(self.level2._expressions.keys())
+            for pin in self.level2:
+                semantic_key = self.level2[pin]
+                value = manager.value_cache.get_object(semantic_key)
+                if pin == "code":
+                    code = value
+                else:
+                    namespace[pin] = value
+            args = (
+                transformer._format_path(), code,
+                str(transformer),
+                namespace, self.level2.output_name, queue
+            )
+            self.executor = Executor(target=execute,args=args, daemon=True)
+            self.executor.start()
+            result = None
+            done = False
+            while 1:
+                prelim = None
+                while not queue.empty():
+                    status, msg = queue.get()
+                    queue.task_done()
+                    if status == -1:
+                        prelim = msg
+                    elif status == 0:
+                        result = msg
+                        done = True
+                        break
+                    elif status == 1:
+                        raise Exception(msg)
+                if not self.executor.is_alive():
                     done = True
+                if done:
                     break
-                elif status == 1:
-                    print("TODO: jobscheduler: set Manager.status[transformer].exec='ERR'")
-                    raise Exception(msg)
+                if prelim is not None:
+                    manager.set_transformer_result(self.level1, self.level2, prelim, None, prelim=True)
+                await asyncio.sleep(0.01)
             if not self.executor.is_alive():
-                done = True
-            if done:
-                break
-            if prelim is not None:
-                manager.set_transformer_result(self.level1, self.level2, prelim, None, prelim=True)
-            await asyncio.sleep(0.01)
-        if not self.executor.is_alive():
-            self.executor = None
-        if result is not None:
-            manager.set_transformer_result(self.level1, self.level2, result, None, prelim=False)
-        self.future = None
+                self.executor = None
+            if result is not None:
+                manager.set_transformer_result(self.level1, self.level2, result, None, prelim=False)
+            self.future = None
+        finally:
+            release_lock(lock)
 
     def execute(self, transformer):
         assert self.future is None
-        print("EXECUTE", transformer)
+        #print("EXECUTE", transformer)
         self.future = asyncio.ensure_future(self._execute(transformer))
         
     def cancel(self):
         if self.remote: raise NotImplementedError  ### cache branch
-        print("CANCEL", self.transformer)
+        #print("CANCEL", self.transformer)
         assert self.executor is not None
         self.executor.terminate()
