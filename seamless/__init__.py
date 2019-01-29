@@ -18,9 +18,6 @@ class Wrapper:
     def _unwrap(self):
         pass
 
-from . import silk
-from . import mixed
-
 #Dependencies of seamless
 
 # 1. hard dependencies; without these, "import seamless" will fail.
@@ -71,7 +68,8 @@ from .silk import Silk
 from .debugger import pdb
 from .shareserver import shareserver
 from .communionserver import communionserver
-
+from .core.jobscheduler import set_ncores
+from .get_hash import get_hash
 
 def inputhook_terminal(context):
     while not context.input_is_ready():

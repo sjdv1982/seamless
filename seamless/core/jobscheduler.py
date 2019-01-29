@@ -7,36 +7,29 @@ import traceback
 
 from .execute import Queue, Executor, execute ### TODO: also use execute_debug
 
-ncores = multiprocessing.cpu_count()
-locks = None  
+_locks = [False] * multiprocessing.cpu_count()
 
-def initialize_locks():
-    global locks
-    if locks is not None:
-        if len(locks) != ncores:
-            if ncores == 0:
-                locks = []
-            else:
-                msg = "WARNING: ncores was changed from %d to %d but this is ignored, as jobs have already started"
-                print(msg % (len(locks), ncores), file=sys.stderr)
-        return
-    else:        
-        locks = [False] * ncores
+def set_ncores(ncores):
+    if len(_locks) != ncores:
+        if any(_locks):
+            msg = "WARNING: Cannot change ncores from %d to %d since there are running jobs"
+            print(msg % (len(_locks), ncores), file=sys.stderr)
+        else:
+            _locks[:] = [False] * ncores
 
 async def acquire_lock():
-    initialize_locks()
-    if not len(locks):
+    if not len(_locks):
         raise Exception("Local computation has been disabled for this Seamless instance")
     while 1:        
-        for locknr, lock in enumerate(locks):
+        for locknr, lock in enumerate(_locks):
             if lock == False:
-                locks[locknr] = True
+                _locks[locknr] = True
                 return locknr                
         await asyncio.sleep(0.01)
 
 def release_lock(locknr):
-    assert locks[locknr] == True
-    locks[locknr] = False
+    assert _locks[locknr] == True
+    _locks[locknr] = False
 
 class JobScheduler:
     _id = 0

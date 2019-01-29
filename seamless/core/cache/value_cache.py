@@ -75,6 +75,7 @@ class ValueCache:
             - If a full item (with non-None buffer) is found, it is incref'ed
               (returns True)
         """
+        #print("INCREF", buffer_checksum.hex(), buffer)
         item = self._buffer_cache.get(buffer_checksum)
         if item is None:            
             if has_auth:
