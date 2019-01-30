@@ -84,7 +84,7 @@ Use ``Cell.status()`` to get its status.
             return None
         default_accessor = manager.get_default_accessor(self)
         default_expression = default_accessor.to_expression(checksum)
-        semantic_key = manager.expression_cache.expression_to_semantic_key.get(hash(default_expression))
+        semantic_key = manager.expression_cache.expression_to_semantic_key.get(default_expression.get_hash())
         if semantic_key is None:
             print("cache miss")
             buffer_item = manager.value_cache.get_buffer(checksum)

@@ -67,29 +67,31 @@ class CacheTaskManager:
             task.decref(count)            
         return task
     
-    def remote_checksum_from_label(self, label):
-        future = run_multi_remote(remote_checksum_from_label_servers, label)
+    def remote_checksum_from_label(self, label, origin=None):
+        future = run_multi_remote(remote_checksum_from_label_servers, label, origin)
         if future is None:
             return None                    
-        key = ("checksum_from_label", label)
+        key = ("label", label)
         def resultfunc(future):
             checksum = future.result()
-            for label_cache in label_caches:
-                label_cache.set(label, checksum)
+            if checksum is not None:
+                for label_cache in label_caches:
+                    label_cache.set(label, checksum)
         return self.schedule_task(key, future, 1, resultfunc=resultfunc)
 
     def remote_value(self, checksum):
         raise NotImplementedError  ### cache branch
 
-    def remote_transform_result(self, hlevel1):
-        future = run_multi_remote(remote_transformer_result_servers, hlevel1)
+    def remote_transform_result(self, hlevel1, origin=None):
+        future = run_multi_remote(remote_transformer_result_servers, hlevel1, origin)
         if future is None:
             return None
-        key = ("transform_result", hlevel1)
+        key = ("transformer_result", hlevel1)
         def resultfunc(future):
             checksum = future.result()
-            for transform_cache in transform_caches:
-                transform_cache.result_hlevel1[hlevel1] = checksum
+            if checksum is not None:
+                for transform_cache in transform_caches:
+                    transform_cache.result_hlevel1[hlevel1] = checksum
         return self.schedule_task(key, future, 1, resultfunc=resultfunc)
 
 from .transform_cache import transform_caches

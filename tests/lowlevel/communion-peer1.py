@@ -1,16 +1,29 @@
 from seamless.core import macro_mode_on
 from seamless.core import context, cell, transformer, pytransformercell, link
+from seamless import get_hash
+
 
 with macro_mode_on():
     ctx = context(toplevel=True)
-    ctx.cell1 = cell().set("Test string")
-    ctx.cell1.set_label("Test label")
+    ctx.cell1 = cell().set(2)
+    ctx.cell2 = cell().set(3)
+    ctx.result = cell()
+    ctx.tf = transformer({
+        "a": "input",
+        "b": "input",
+        "c": "output"
+    })
+    ctx.cell1.connect(ctx.tf.a)
+    ctx.cell2.connect(ctx.tf.b)
+    ctx.code = pytransformercell().set("c = a + b")
+    ctx.code.set_label("Secret source code")
+    ctx.code.connect(ctx.tf.code)
+    ctx.tf.c.connect(ctx.result)
 
-print("Peer 1", ctx.cell1.checksum)
+ctx.equilibrate()
+print(ctx.result.value)
+print("Secret source code ", ctx.code.checksum)
+print("hash verification  ", get_hash("c = a + b\n").hex())
 
 import asyncio
-#done = asyncio.sleep()
-#asyncio.get_event_loop().run_until_complete(done)
 asyncio.get_event_loop().run_forever()
-
-print("END peer1")

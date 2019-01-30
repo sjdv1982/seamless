@@ -15,6 +15,7 @@ Trees are fundamentally ephemeral and their caches are never stored,
 import weakref
 import json
 from collections import OrderedDict
+from ...get_hash import get_hash
 
 class Expression:
     __slots__ = [
@@ -41,6 +42,9 @@ class Expression:
 
     def __hash__(self):
         return hash(str(self))
+
+    def get_hash(self):
+        return get_hash(str(self)+"\n").hex()
     
 class ExpressionCache:
     """Maintains expression caching

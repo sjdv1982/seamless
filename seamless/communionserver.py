@@ -69,12 +69,15 @@ def communion_encode(msg):
     else:
         m += b'\x00\x00\x00\x00'
     content = msg["content"]
-    assert isinstance(content, (str, bytes))
-    is_str = b'\x01' if isinstance(content, str) else b'\x00'
-    m += is_str
-    if isinstance(content, str):
-        content = content.encode()
-    m += content
+    if content is None:
+        m += b'\x00'
+    else:
+        assert isinstance(content, (str, bytes)), content
+        is_str = b'\x02' if isinstance(content, str) else b'\x01'
+        m += is_str
+        if isinstance(content, str):
+            content = content.encode()
+        m += content
     assert communion_decode(m) == msg, (communion_decode(m), msg)
     return m
 
@@ -99,27 +102,33 @@ def communion_decode(m):
         message.update(rem)
         m = m[nrem:]
     is_str = m[:1]
-    assert is_str == b'\x01' or is_str == b'\x00'
-    content = m[1:]    
-    if is_str == b'\x01':
-        content = content.decode()
+    if is_str == b'\x00':
+        content = None
+    else:
+        assert is_str == b'\x02' or is_str == b'\x01'
+        content = m[1:]    
+        if is_str == b'\x02':
+            content = content.decode()
     message["content"] = content
     return message
     
-        
-
 
 class CommunionClient: 
     """wraps a remote servant"""
     destroyed = False
     cache_task_servers = None
+    config_type = None
 
     def __init__(self, servant):
         self.servant = servant
         self.cache_task_servers.append(self.submit)
     
-    async def submit(self, argument):
+    async def submit(self, argument, origin):
         #print("SUBMIT")
+        if origin is not None and origin == communionserver.peers[self.servant]["id"]:
+            return None
+        if not communionserver.config_master.get(self.config_type):
+            return
         message = self._prepare_message(argument)
         result = await communionserver.client_submit(message, self.servant)        
         return result
@@ -137,16 +146,28 @@ class CommunionClient:
             pass
 
 class CommunionLabelClient(CommunionClient):
+    config_type = "label"
     cache_task_servers = remote_checksum_from_label_servers
     def _prepare_message(self, label):
         return {
-            "type": "checksum_from_label",
+            "type": self.config_type,
             "content": label,
         }
 
-client_types = {
-    "label": CommunionLabelClient,
-}
+class CommunionTransformerResultClient(CommunionClient):
+    config_type = "transformer_result"
+    cache_task_servers = remote_transformer_result_servers
+    def _prepare_message(self, checksum):
+        return {
+            "type": self.config_type,
+            "content": checksum,
+        }
+
+
+client_types = (
+    CommunionLabelClient,
+    CommunionTransformerResultClient,
+)
 
 
 class CommunionServer:
@@ -171,8 +192,8 @@ class CommunionServer:
         self.managers.add(manager)
 
     def configure_master(self, config=None, **update):
-        if self.future is not None:
-            raise Exception("Cannot configure CommunionServer, it has already started")
+        if self.future is not None and any(update.values()):
+            print("Warning: CommunionServer has already started, added functionality will not be taken into account for existing peers", file=sys.stderr)
         if config is not None:
             self.config_master = config.copy()
         self.config_master.update(update)
@@ -186,14 +207,14 @@ class CommunionServer:
 
     def _add_clients(self, servant, peer_config):
         config = peer_config["servant"]
-        for key in client_types:
-            if key not in config:
+        for client_type in client_types:
+            config_type = client_type.config_type
+            if not config.get(config_type):
                 continue
-            if not config[key]:
+            if not self.config_master.get(config_type):
                 continue
-            client_type = client_types[key]
             client = client_type(servant)
-            #print("ADD SERVANT", key)
+            print("ADD SERVANT", config_type)
             self.clients[servant].add(client)
 
             
@@ -230,7 +251,9 @@ class CommunionServer:
             self.peers.pop(websocket)
             self.message_count.pop(websocket)
             self.futures.pop(websocket)
-            self.clients.pop(websocket)
+            clients = self.clients.pop(websocket)
+            for client in clients:
+                client.destroy()
 
     async def _connect_incoming(self, config, url):
         import websockets
@@ -278,10 +301,10 @@ class CommunionServer:
         message_id = message["id"]
         content = message["content"]
         result = None                
-        if type == "checksum_from_label":
+        if type == "label":
             cache_name = "label_cache"
             method_name = "get_checksum"
-        elif type == "transform_result":
+        elif type == "transformer_result":
             cache_name = "transform_cache"
             method_name = "get_result"
         else:
@@ -293,15 +316,17 @@ class CommunionServer:
             if result is not None:
                 break
         if result is None:
-            if type == "checksum_from_label":
-                cache_task = cache_task_manager.remote_checksum_from_label(argument)
-            elif type == "transform_result":
-                cache_task = cache_task_manager.remote_transform_result(argument)
+            peer_id = self.peers[peer]["id"]
+            if type == "label":
+                cache_task = cache_task_manager.remote_checksum_from_label(content, origin=peer_id)
+            elif type == "transformer_result":
+                checksum = bytes.fromhex(content)
+                cache_task = cache_task_manager.remote_transform_result(checksum, origin=peer_id)
             else:
-                raise NotImplementedError            
-            await cache_task.future      
+                raise NotImplementedError 
+            await cache_task.future
 
-            manager = iter(self.managers).next()  
+            manager = next(iter(self.managers))
             cache = getattr(manager, cache_name)
             method = getattr(cache, method_name)
             result = method(content)        

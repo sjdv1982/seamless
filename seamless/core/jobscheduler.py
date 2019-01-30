@@ -44,7 +44,7 @@ class JobScheduler:
         return cls._id
 
     def schedule_remote(self, level1, count):
-        hlevel1 = hash(level1)
+        hlevel1 = level1.get_hash()
         if count < 0:
             count = -count
             if hlevel1 not in self.remote_jobs:
@@ -75,7 +75,7 @@ class JobScheduler:
 
 
     def schedule(self, level2, count):
-        hlevel2 = hash(level2)
+        hlevel2 = level2.get_hash()
         if count < 0:
             count = -count
             assert hlevel2 in self.jobs

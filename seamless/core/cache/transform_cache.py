@@ -1,20 +1,24 @@
+import json
 import weakref
 import functools
 from .expression_cache import Expression
 from .value_cache import SemanticKey
+from ...get_hash import get_hash
 
 class TransformerLevel1:
     def __init__(self, expressions, output_name):
         self._expressions = expressions
         self.output_name = output_name
         a = []
-        for key in sorted(expressions.keys()):
+        for key in sorted(expressions.keys()):            
             assert isinstance(key, str)
             value = expressions[key]
             assert isinstance(value, Expression)
-            a.append(hash(value))
-        a.append(hash(output_name))
+            a.append(value.get_hash())
+        a.append(output_name)
         self._frozen_expressions = tuple(a)
+        aa = json.dumps(a)
+        self._hash = get_hash(aa+"\n").hex()
     
     def __hash__(self):
         return hash(self._frozen_expressions)
@@ -25,6 +29,10 @@ class TransformerLevel1:
     def __getitem__(self, key):
         return self._expressions[key]
 
+    def get_hash(self):    
+        return self._hash
+
+
 class TransformerLevel2:
     def __init__(self, semantic_keys, output_name):
         self._semantic_keys = semantic_keys
@@ -34,9 +42,18 @@ class TransformerLevel2:
             assert isinstance(key, str)
             value = semantic_keys[key]
             assert isinstance(value, SemanticKey)
-            a.append(hash(value))
-        a.append(hash(output_name))
+            v = (
+                value.semantic_checksum.hex(), 
+                value.access_mode,
+                value.content_type,
+                value.subpath
+            )
+            v = json.dumps(v)
+            a.append(get_hash(v+"\n").hex())
+        a.append(output_name)
         self._frozen_semantic_keys = tuple(a)
+        aa = json.dumps(a)
+        self._hash = get_hash(aa+"\n").hex()
     
     def __hash__(self):
         return hash(self._frozen_semantic_keys)
@@ -46,6 +63,9 @@ class TransformerLevel2:
 
     def __getitem__(self, key):
         return self._semantic_keys[key]
+
+    def get_hash(self):    
+        return self._hash
 
 transform_caches = weakref.WeakSet()  
 
@@ -95,13 +115,13 @@ class TransformCache:
         # TODO: caches for annotation purposes: reverse caches, ...
 
     def incref(self, level1):
-        hlevel1 = hash(level1)
+        hlevel1 = level1.get_hash()
         refcount = self.refcount_hlevel1.pop(hlevel1, 0)
         self.refcount_hlevel1[hlevel1] = refcount + 1
         self.revhash_hlevel1[hlevel1] = level1
 
     def decref(self, level1):
-        hlevel1 = hash(level1)
+        hlevel1 = level1.get_hash()
         refcount = self.refcount_hlevel1.pop(hlevel1)
         if refcount > 1:
             self.refcount_hlevel1[hlevel1] = refcount - 1
@@ -128,11 +148,11 @@ class TransformCache:
         curr_level1 = self.transformer_to_level1.get(transformer)
         if curr_level1 == level1:
             return
-        if curr_level1 is not None and hash(curr_level1) in self.refcount_hlevel1:
+        if curr_level1 is not None and curr_level1.get_hash() in self.refcount_hlevel1:
             callback = functools.partial(self.decref, curr_level1)
             self.manager().temprefmanager.add_ref(callback, 20.0)
         self.transformer_to_level1[transformer] = level1
-        hlevel1 = hash(level1)
+        hlevel1 = level1.get_hash()
         if hlevel1 not in self.transformer_from_hlevel1:
             self.transformer_from_hlevel1[hlevel1] = transformer
         self.incref(level1)
@@ -140,7 +160,7 @@ class TransformCache:
 
     def _decref_level2(self, level2):
         # Does not decref corresponding level1
-        hlevel2 = hash(level2)
+        hlevel2 = level2.get_hash()
         refcount = self.refcount_hlevel2.pop(hlevel2)
         if refcount > 1:
             self.refcount_hlevel2[hlevel2] = refcount - 1
@@ -149,7 +169,7 @@ class TransformCache:
         self.hlevel1_from_hlevel2.pop(hlevel2)
 
     def _incref_level2(self, level2):
-        hlevel2 = hash(level2)
+        hlevel2 = level2.get_hash()
         refcount = self.refcount_hlevel2.pop(hlevel2, 0)
         self.refcount_hlevel2[hlevel2] = refcount + 1        
 
@@ -161,7 +181,7 @@ class TransformCache:
 
         manager = self.manager()
         vcache = manager.value_cache
-        hlevel1 = hash(level1)
+        hlevel1 = level1.get_hash()
         result = self.hlevel1_to_level2.get(hlevel1)
         if result is not None:
             return result
@@ -180,13 +200,13 @@ class TransformCache:
 
 
     def set_level2(self, level1, level2):
-        hlevel1 = hash(level1)
+        hlevel1 = level1.get_hash()
         old_level2 = self.hlevel1_to_level2.get(hlevel1)
         if old_level2 is not None:
             assert hash(old_level2) == hash(level2)
             return
         self.hlevel1_to_level2[hlevel1] = level2
-        hlevel2 = hash(level2)
+        hlevel2 = level2.get_hash()
         if hlevel2 not in self.hlevel1_from_hlevel2:
             self.hlevel1_from_hlevel2[hlevel2] = hlevel1
         self._incref_level2(level2)

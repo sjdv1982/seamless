@@ -218,10 +218,12 @@ class Manager:
 
     async def _schedule_job(self, tf_level1, count):
         """Runs until either a remote cache hit has been obtained, or a job has been submitted"""
+        from .cache.transform_cache import TransformerLevel1
+        assert isinstance(tf_level1, TransformerLevel1)
         tcache = self.transform_cache
         task = None
         try:
-            task = self.cache_task_manager.remote_transform_result(hash(tf_level1))
+            task = self.cache_task_manager.remote_transform_result(tf_level1.get_hash())
             if task is not None:
                 await task.future
                 result = task.future.result()
@@ -234,7 +236,7 @@ class Manager:
                 return
             # TODO: make build_level2 async
             tf_level2 = tcache.build_level2(tf_level1)
-            result = tcache.result_hlevel2.get(hash(tf_level2))
+            result = tcache.result_hlevel2.get(tf_level2.get_hash())
             if result is not None:
                 self.set_transformer_result(tf_level1, tf_level2, None, result, False)
                 return
@@ -258,12 +260,12 @@ class Manager:
         tcache = self.transform_cache
         scheduled_clean = OrderedDict()
         for type, schedop, add_remove in self.scheduled:
-            key = type, hash(schedop)
+            key = type, schedop.get_hash()
             if key not in scheduled_clean:
                 count = 0
             else:
                 old_schedop, count = scheduled_clean[key][0]
-                assert hash(old_schedop) == hash(schedop)
+                assert old_schedop.get_hash() == schedop.get_hash()
             dif = 1 if add_remove else -1
             scheduled_clean[key] = schedop, count + dif
         for key, value in scheduled_clean.items():
@@ -273,15 +275,15 @@ class Manager:
                 continue
             if type == "transformer":
                 tf_level1 = schedop
-                hlevel1 = hash(tf_level1)
+                hlevel1 = tf_level1.get_hash()
                 if count > 0:
                     for ttf, ttf_level1 in tcache.transformer_to_level1.items():
-                        if hash(ttf_level1) != hlevel1:
+                        if ttf_level1.get_hash() != hlevel1:
                             continue
                         status = self.status[ttf]
                         if status.exec == "READY":
                             status.exec = "EXECUTING"                    
-                    result = tcache.result_hlevel1.get(hash(tf_level1))
+                    result = tcache.result_hlevel1.get(tf_level1.get_hash())
                     if result is not None:
                         self.set_transformer_result(tf_level1, None, None, result, False)
                         continue
@@ -307,9 +309,9 @@ class Manager:
         #TODO: store exception
         transformer = None
         tcache = self.transform_cache
-        hlevel1 = hash(level1)
+        hlevel1 = level1.get_hash()
         for tf, tf_level1 in list(tcache.transformer_to_level1.items()): #could be more efficient...
-            if hash(tf_level1) != hlevel1:
+            if tf_level1.get_hash() != hlevel1:
                 continue
             if transformer is None:
                 transformer = tf
@@ -336,9 +338,9 @@ class Manager:
         print("TODO: Manager.set_transformer_result: expand code properly, see evaluate.py")
         assert value is not None or checksum is not None
         tcache = self.transform_cache
-        hlevel1 = hash(level1)
+        hlevel1 = level1.get_hash()
         for tf, tf_level1 in list(tcache.transformer_to_level1.items()): #could be more efficient...
-            if hash(tf_level1) != hlevel1:
+            if tf_level1.get_hash() != hlevel1:
                 continue
             tstatus = self.status[tf]
             tstatus.exec = "FINISHED"
@@ -354,9 +356,14 @@ class Manager:
                         status.auth = "FRESH"
                 if value is not None:
                     self.set_cell(cell, value)
+                    if checksum is None:
+                        checksum = self.cell_cache.cell_to_buffer_checksums[cell]
                 else:
                     self.set_cell_checksum(cell, checksum)
             self.update_transformer_status(tf,full=False)
+        tcache.result_hlevel1[hlevel1] = checksum
+        if level2 is not None:
+            tcache.result_hlevel1[level2.get_hash()] = checksum
 
     async def _flush(self):
         self.flushing = True
@@ -393,14 +400,14 @@ class Manager:
 
         obj, semantic_key = protocol.evaluate_from_buffer(expression, buffer)
         self.value_cache.add_semantic_key(semantic_key, obj)
-        self.expression_cache.expression_to_semantic_key[hash(expression)] = semantic_key
+        self.expression_cache.expression_to_semantic_key[expression.get_hash()] = semantic_key
         return obj, semantic_key
 
 
     def get_expression(self, expression):
         if not isinstance(expression, Expression):
             raise TypeError(expression)
-        semantic_key = self.expression_cache.expression_to_semantic_key.get(hash(expression))
+        semantic_key = self.expression_cache.expression_to_semantic_key.get(expression.get_hash())
         cache_hit = False
         if semantic_key is not None:
             value = self.value_cache.get_object(semantic_key)
@@ -748,7 +755,7 @@ class Manager:
             vcache.add_semantic_key(semantic_key, obj)
             default_accessor = self.get_default_accessor(cell)
             default_expression = default_accessor.to_expression(checksum)
-            self.expression_cache.expression_to_semantic_key[hash(default_expression)] = semantic_key
+            self.expression_cache.expression_to_semantic_key[default_expression.get_hash()] = semantic_key
             if not is_dummy_mount(cell._mount):
                 if not get_macro_mode():
                     self.mountmanager.add_cell_update(cell)

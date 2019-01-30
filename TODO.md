@@ -40,12 +40,12 @@ After discussion with Pierre, push distributed deployment sooner
       Labels can be .e.g "the ribosome", "the clustering code".
       They must be unique, but they are ephemeral, not like checksum annotations which will be global
     - Communion servers: PARTIALLY DONE
-      - accept connections over websockets; after that, "server" and "client" are just peers
+      - accept connections over websockets; after that, "server" and "client" are just peers DONE
       - Peers negotatiate what they commune: 
-        - label cache
-        - transformer result cache
-        - cell value cache
-        - remote transform jobs (send/receive)
+        - label cache DONE
+        - transformer result cache DONE
+        - cell value cache TODO
+        - remote transform jobs (send/receive) TODO
       All communed caches will be level 1, since evaluating an expression will normally be much faster
        than interrogating the network. If not, there is always cache tree depth.      
       Communed caches will be registered as external read caches
