@@ -72,7 +72,8 @@ class CacheTaskManager:
         if future is None:
             return None                    
         key = ("checksum_from_label", label)
-        def resultfunc(checksum):
+        def resultfunc(future):
+            checksum = future.result()
             for label_cache in label_caches:
                 label_cache.set(label, checksum)
         return self.schedule_task(key, future, 1, resultfunc=resultfunc)
@@ -85,7 +86,8 @@ class CacheTaskManager:
         if future is None:
             return None
         key = ("transform_result", hlevel1)
-        def resultfunc(checksum):
+        def resultfunc(future):
+            checksum = future.result()
             for transform_cache in transform_caches:
                 transform_cache.result_hlevel1[hlevel1] = checksum
         return self.schedule_task(key, future, 1, resultfunc=resultfunc)

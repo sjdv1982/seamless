@@ -694,7 +694,6 @@ class Manager:
 
     @main_thread_buffered
     def set_cell_checksum(self, cell, checksum):
-        print("SET CELL CHECKSUM", checksum)
         from .macro_mode import macro_mode_on, get_macro_mode
         from .mount import is_dummy_mount
         assert cell._get_manager() is self

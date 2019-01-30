@@ -6,7 +6,7 @@ with macro_mode_on():
     ctx.cell1 = cell()
 
 import asyncio
-done = asyncio.sleep(7)
+done = asyncio.sleep(0.5)
 asyncio.get_event_loop().run_until_complete(done)
 
 print("peer2...")

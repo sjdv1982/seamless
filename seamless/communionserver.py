@@ -6,7 +6,7 @@ Upon startup:
 - Every Seamless instance has a unique and random identifier; communion is only established once for each ID
 """
 
-import os, sys, asyncio, time, functools, json, traceback
+import os, sys, asyncio, time, functools, json, traceback, base64, websockets
 from weakref import WeakSet
 
 from .core.cache.cache_task import (
@@ -49,6 +49,66 @@ default_servant_config = {
     "transformer_jobs": False,
 }
 
+import numpy as np
+def communion_encode(msg):
+    assert msg["mode"] in ("request", "response")
+    m = 'SEAMLESS'.encode()
+    tip = b'\x00' if msg["mode"] == "request" else b'\x01'
+    m += tip
+
+    m += np.uint32(msg["id"]).tobytes()
+    remainder = msg.copy()
+    remainder.pop("mode")
+    remainder.pop("id")
+    remainder.pop("content")    
+    if len(remainder.keys()):
+        rem = json.dumps(remainder).encode()
+        nrem = np.uint32(len(rem))
+        m += nrem
+        m += rem
+    else:
+        m += b'\x00\x00\x00\x00'
+    content = msg["content"]
+    assert isinstance(content, (str, bytes))
+    is_str = b'\x01' if isinstance(content, str) else b'\x00'
+    m += is_str
+    if isinstance(content, str):
+        content = content.encode()
+    m += content
+    assert communion_decode(m) == msg, (communion_decode(m), msg)
+    return m
+
+def communion_decode(m):    
+    assert isinstance(m, bytes)
+    message = {}
+    head = 'SEAMLESS'.encode()
+    assert m[:len(head)] == head
+    m = m[len(head):]
+    tip = m[:1]
+    m = m[1:]
+    assert tip == b'\x01' or tip == b'\x00', tip
+    message["mode"] = "request" if tip == b'\x00' else "response"
+    l1, l2 = m[:4], m[4:8]
+    m = m[8:]
+    message["id"] = np.frombuffer(l1,np.uint32)[0]
+    nrem = np.frombuffer(l2,np.uint32)[0] 
+    if nrem:
+        rem = m[:nrem]
+        rem = rem.decode()
+        rem = json.loads(rem)
+        message.update(rem)
+        m = m[nrem:]
+    is_str = m[:1]
+    assert is_str == b'\x01' or is_str == b'\x00'
+    content = m[1:]    
+    if is_str == b'\x01':
+        content = content.decode()
+    message["content"] = content
+    return message
+    
+        
+
+
 class CommunionClient: 
     """wraps a remote servant"""
     destroyed = False
@@ -59,8 +119,9 @@ class CommunionClient:
         self.cache_task_servers.append(self.submit)
     
     async def submit(self, argument):
+        #print("SUBMIT")
         message = self._prepare_message(argument)
-        result = await communionserver.client_submit(message, self.servant)
+        result = await communionserver.client_submit(message, self.servant)        
         return result
     
     def destroy(self):
@@ -77,8 +138,11 @@ class CommunionClient:
 
 class CommunionLabelClient(CommunionClient):
     cache_task_servers = remote_checksum_from_label_servers
-    def _prepare_message(self, checksum):
-        return ("checksum_from_label", checksum)
+    def _prepare_message(self, label):
+        return {
+            "type": "checksum_from_label",
+            "content": label,
+        }
 
 client_types = {
     "label": CommunionLabelClient,
@@ -129,7 +193,7 @@ class CommunionServer:
                 continue
             client_type = client_types[key]
             client = client_type(servant)
-            print("ADD SERVANT", key)
+            #print("ADD SERVANT", key)
             self.clients[servant].add(client)
 
             
@@ -139,10 +203,15 @@ class CommunionServer:
             return
         if peer_config["protocol"] != list(self.PROTOCOL):
             print("Protocol mismatch, peer '%s': %s, our protocol: %s" % (peer_config["id"], peer_config["protocol"], self.PROTOCOL))
-            websocket.send("Protocol mismatch: %s" % str(self.PROTOCOL))
+            await websocket.send("Protocol mismatch: %s" % str(self.PROTOCOL))
             websocket.close()
             return
-        print("LISTEN")
+        else:
+            await websocket.send("Protocol OK")
+        protocol_message = await websocket.recv()
+        if protocol_message != "Protocol OK":
+            return
+        #print("LISTEN")
         self.peers[websocket] = peer_config
         self.message_count[websocket] = 0
         self.futures[websocket] = {}
@@ -154,8 +223,10 @@ class CommunionServer:
                     await self._process_message_from_peer(websocket, message)
                 except:
                     traceback.print_exc()
+        except websockets.exceptions.ConnectionClosed:
+            pass
         finally:
-            print("END CONNECTION", websocket)
+            #print("END CONNECTION", websocket)
             self.peers.pop(websocket)
             self.message_count.pop(websocket)
             self.futures.pop(websocket)
@@ -202,26 +273,23 @@ class CommunionServer:
 
         await asyncio.gather(*coros)
     
-    async def _process_request_from_peer(self, peer, message):
-        from ..core.cache.cache_task import cache_task_manager
-        print("OK")
+    async def _process_request_from_peer(self, peer, message):        
         type = message["type"]
         message_id = message["id"]
+        content = message["content"]
         result = None                
         if type == "checksum_from_label":
             cache_name = "label_cache"
             method_name = "get_checksum"
-            argument = message["label"]
         elif type == "transform_result":
             cache_name = "transform_cache"
             method_name = "get_result"
-            argument = message["checksum"]
         else:
             raise NotImplementedError
         for manager in self.managers:
             cache = getattr(manager, cache_name)
             method = getattr(cache, method_name)
-            result = method(argument)
+            result = method(content)
             if result is not None:
                 break
         if result is None:
@@ -236,42 +304,59 @@ class CommunionServer:
             manager = iter(self.managers).next()  
             cache = getattr(manager, cache_name)
             method = getattr(cache, method_name)
-            result = method(argument)
-        print("REQUEST", message_id, type, argument, "=>", result)
+            result = method(content)        
+        #print("REQUEST", message_id)
         response = {
             "mode": "response",
             "id": message_id,
             "content": result
         }
-        response = json.dumps(response)
-        await peer.send(response)
+        msg = communion_encode(response)
+        assert isinstance(msg, bytes)
+        peer_id = self.peers[peer]["id"]
+        print("Communion response: send %d bytes to peer '%s' (#%d)" % (len(msg), peer_id, response["id"]))
+        await peer.send(msg)
         return result
         
     def _process_response_from_peer(self, peer, message):
         message_id = message["id"]
         content = message["content"]
-        print("RESPONSE", message_id, content)
+        #print("RESPONSE", message_id)
         self.futures[peer][message_id].set_result(content)
         
-    async def _process_message_from_peer(self, peer, msg):
-        print("message from peer", self.peers[peer]["id"], ": ", msg)
-        message = json.loads(msg)
+    async def _process_message_from_peer(self, peer, msg):        
+        message = communion_decode(msg)
+        report = "Communion %s: receive %d bytes from peer '%s' (#%d)"
+        peer_id = self.peers[peer]["id"]
+        print(report  % (message["mode"], len(msg), peer_id, message["id"]))
+        #print("message from peer", self.peers[peer]["id"], ": ", message)
         mode = message["mode"]
         assert mode in ("request", "response"), mode
         if mode == "request":
             return await self._process_request_from_peer(peer, message)
         else:
-            return await self._process_response_from_peer(peer, message)
+            return self._process_response_from_peer(peer, message)
 
-    async def client_submit(self, msg, peer):
+    async def client_submit(self, message, peer):
         assert peer in self.peers, (peer, self.peers.keys())
         message_id = self.message_count[peer] + 1
         self.message_count[peer] = message_id
         future = asyncio.Future()
         self.futures[peer][message_id] = future
+        message = message.copy()
+        message.update({
+            "mode": "request",
+            "id": message_id,
+        })
+        msg = communion_encode(message)
+        peer_id = self.peers[peer]["id"]
+        print("Communion request: send %d bytes to peer '%s' (#%d)" % (len(msg), peer_id, message["id"]))
+        await peer.send(msg)
         result = await future        
         self.futures[peer].pop(message_id)
         return result
 
 
 communionserver = CommunionServer()
+
+from .core.cache.cache_task import cache_task_manager

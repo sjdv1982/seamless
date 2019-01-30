@@ -86,7 +86,7 @@ context : context or None
                 toplevel_register.add(self)
             macro_register.add(self)
         from .. import communionserver
-        communionserver.register_manager(self)
+        communionserver.register_manager(self._manager)
 
     def _set_context(self, context, name):
         assert not self._toplevel

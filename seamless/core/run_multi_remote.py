@@ -6,6 +6,7 @@ import sys
 import traceback
 
 async def run_multi_remote(serverlist, *args, **kwargs):
+    #print("run_multi_remote", len(serverlist))
     if not len(serverlist):
         return None
     futures = []
