@@ -36,7 +36,7 @@ After discussion with Pierre, push distributed deployment sooner
     Interrupt happens in 20 secs, or when the transformer re-executes, whichever happens sooner
   
   B. Implement some remote computing:
-    - label cache: a label-to-checksum cache. 
+    - label cache: a label-to-checksum cache. DONE
       Labels can be .e.g "the ribosome", "the clustering code".
       They must be unique, but they are ephemeral, not like checksum annotations which will be global
     - Communion servers: PARTIALLY DONE

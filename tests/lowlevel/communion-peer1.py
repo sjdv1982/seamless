@@ -1,12 +1,14 @@
-from seamless.core import context
-from seamless import communionserver
-ctx = context(toplevel=True)
+from seamless.core import macro_mode_on
+from seamless.core import context, cell, transformer, pytransformercell, link
+
+with macro_mode_on():
+    ctx = context(toplevel=True)
+    ctx.cell1 = cell().set("Test string")
+    ctx.cell1.set_label("Test label")
+
+print("Peer 1", ctx.cell1.checksum)
 
 import asyncio
-done = asyncio.sleep(7)
+done = asyncio.sleep(9)
 asyncio.get_event_loop().run_until_complete(done)
 
-communionserver.send_message("Hello from 1")
-
-done = asyncio.sleep(12)
-asyncio.get_event_loop().run_until_complete(done)

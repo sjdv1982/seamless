@@ -9,6 +9,11 @@ Upon startup:
 import os, sys, asyncio, time, functools, json
 from weakref import WeakSet
 
+from .core.cache.cache_task import (
+    remote_checksum_from_label_servers, 
+    remote_transformer_result_servers
+)    
+
 incoming = []
 _incoming = os.environ.get("SEAMLESS_COMMUNION_INCOMING")
 if _incoming:
@@ -33,7 +38,7 @@ default_master_config = {
     "label": True,
     "transformer_result": False,
     "value_cache": True,
-    "transformer_jobs": True,
+    "transformer_jobs": False,
 }
 
 # Default configuration for being a servant, i.e. on providing services to other peers
@@ -44,8 +49,45 @@ default_servant_config = {
     "transformer_jobs": False,
 }
 
+class CommunionClient: 
+    """wraps a remote servant"""
+    destroyed = False
+    cache_task_servers = None
+
+    def __init__(self, servant):
+        self.servant = servant
+        cache_task_servers.append(self.submit)
+    
+    async def submit(self, argument):
+        message = self._prepare_message(argument)
+        result = await communionserver.client_submit(message, self.servant)
+        return result
+    
+    def destroy(self):
+        if self.destroyed:
+            return
+        self.destroyed = True
+        self.cache_task_servers.remove(self.submit)
+    
+    def __del__(self):
+        try:
+            self.destroy()
+        except:
+            pass
+
+class CommunionLabelClient(CommunionClient):
+    cache_task_servers = remote_checksum_from_label_servers
+    def _prepare_message(self, checksum):
+        return ("checksum_from_label", checksum)
+
+client_types = {
+    "label": CommunionLabelClient,
+}
+
+
 class CommunionServer:
     future = None
+    PROTOCOL = ("seamless", "communion", "0.1")
     def __init__(self):        
         self.managers = WeakSet()
         self.config_master = default_master_config.copy()
@@ -55,6 +97,8 @@ class CommunionServer:
             cid = hash(int(id(self)) + int(10000*time.time()))
         self.id = cid
         self.peers = {}
+        self.message_counts = {}
+        self.futures = {}
     
     def register_manager(self, manager):
         if self.future is None:
@@ -75,17 +119,30 @@ class CommunionServer:
             self.config_servant = config.copy()
         self.config_servant.update(update)
 
+    def _add_servants(self, servant, peer_config):
+        config = peer_config["servant"]
+        if "label" in config:
+            
+
     async def _listen_peer(self, websocket, peer_config):
         all_peer_ids = [peer["id"] for peer in self.peers.values()]
         if peer_config["id"] in all_peer_ids:
             return
+        if peer_config["protocol"] != self.PROTOCOL:
+            print("Protocol mismatch, peer '%s': %s" % (peer_config["id"], peer_config["protocol"]))
+            websocket.send("Protocol mismatch: %s" % self.PROTOCOL)
+            websocket.close()
         self.peers[websocket] = peer_config
+        self.message_count[websocket] = 0
+        self.futures[websocket] = {}
+        self._add_servants(websocket, peer_config)
         try:
             async for message in websocket:
-                print("MSG!!!")
                 self._process_message_from_peer(websocket, message)
         finally:
             self.peers.pop(websocket)
+            self.message_count.pop(websocket)
+            self.futures.pop(websocket)
 
     async def _connect_incoming(self, config, url):
         import websockets
@@ -105,7 +162,7 @@ class CommunionServer:
 
     async def _start(self):
         config = {
-            "protocol": ("seamless", "communion", "0.1"),
+            "protocol": self.PROTOCOL,
             "id": self.id,
             "master": self.config_master,
             "servant": self.config_servant
@@ -131,8 +188,12 @@ class CommunionServer:
     
     def _process_message_from_peer(self, websocket, msg):
         print("message from peer", self.peers[websocket]["id"], ": ", msg)
+        message = json.loads(msg)
+        type = message["type"]
+        assert
 
-    async def _send_message(self, msg):
+    async def _client_submit(self, msg, peer):
+        assert websocket in
         # TODO: filter destinations...
         print("SEND", msg, "Peers:", len(self.peers))
         coros = []

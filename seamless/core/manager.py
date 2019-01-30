@@ -770,12 +770,11 @@ class Manager:
     def _get_checksum_from_label(self, label):
         checksum = self.label_cache.get_checksum(label)
         if checksum is None:
-            coro = self.cache_task_manager.remote_checksum_from_label(label)
-            if coro is None:
+            cache_task = self.cache_task_manager.remote_checksum_from_label(label)
+            if cache_task is None:
                 return None
-            future = asyncio.ensure_future(coro)
-            asyncio.get_event_loop().run_until_finished(future)
-            checksum = future.result()
+            cache_task.join()            
+            checksum = self.label_cache.get_checksum(label)  #  Label will now have been added to cache
         return checksum
         
     @main_thread_buffered

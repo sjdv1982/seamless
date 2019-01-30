@@ -9,8 +9,10 @@ import asyncio
 from ..run_multi_remote import run_multi_remote
 
 remote_transformer_result_servers = []
-    
+remote_checksum_from_label_servers = []
+
 class CacheTask:
+    """Wrapper around an async future of which the result will be discarded"""
     def __init__(self,key,future,count,callback):
         if not isinstance(future, (asyncio.Future, asyncio.Task)):
             raise TypeError(future)
@@ -35,7 +37,9 @@ class CacheTask:
         if not future.cancelled():
             future.cancel()
             self.callback()
-    
+
+    def join(self):
+        asyncio.get_event_loop().run_until_finished(self.future)
 
 class CacheTaskManager:
     def __init__(self):
@@ -61,7 +65,11 @@ class CacheTaskManager:
         return task
 
     def remote_checksum_from_label(self, label):
-        raise NotImplementedError  ### cache branch
+        future = run_multi_remote(remote_checksum_from_label_servers, label)
+        if future is None:
+            return None
+        key = ("checksum_from_label", label)
+        return self.schedule_task(key, future, 1)
 
     def remote_value(self, checksum):
         raise NotImplementedError  ### cache branch
