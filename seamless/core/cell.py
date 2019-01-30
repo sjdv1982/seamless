@@ -143,6 +143,19 @@ Use ``Cell.status()`` to get its status.
         """Specifies the checksum of the data (hex format)"""
         return self._get_manager().set_cell_checksum(self, bytes.fromhex(checksum))
 
+    def set_label(self, label):
+        """Labels the current value of the cell
+        Until redefined, this label will continue to point to this value, 
+        even after the cell has changed"""
+        return self._get_manager().set_cell_label(self, label)
+
+    def from_label(self, label):
+        return self._get_manager().set_cell_from_label(self, label)
+
+    @property
+    def label(self):
+        return self._get_manager().get_cell_label(self)
+
     def from_buffer(self, value):
         """Sets a cell from a buffer value"""
         return self._set(value, True)

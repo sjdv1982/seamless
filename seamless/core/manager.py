@@ -12,7 +12,7 @@ from . import protocol
 from .protocol.deserialize import deserialize
 from ..mixed import MixedBase
 from .cache import (CellCache, AccessorCache, ExpressionCache, ValueCache,
-    TransformCache, Accessor, Expression, TempRefManager, SemanticKey,
+    TransformCache, LabelCache, Accessor, Expression, TempRefManager, SemanticKey,
     CacheTaskManager)
 from .jobscheduler import JobScheduler
 from .macro_mode import get_macro_mode, curr_macro
@@ -199,6 +199,7 @@ class Manager:
         self.accessor_cache = AccessorCache(self)
         self.expression_cache = ExpressionCache(self)
         self.value_cache = ValueCache(self)
+        self.label_cache = LabelCache(self)
         self.transform_cache = TransformCache(self)
         self.temprefmanager = TempRefManager()
         self.temprefmanager_future = asyncio.ensure_future(self.temprefmanager.loop())
@@ -413,10 +414,10 @@ class Manager:
 
     def build_expression(self, accessor):
         cell = accessor.cell
-        buffer_checksum = self.cell_cache.cell_to_buffer_checksums.get(cell)
-        if buffer_checksum is None:
+        checksum = self.cell_cache.cell_to_buffer_checksums.get(cell)
+        if checksum is None:
             return None
-        return accessor.to_expression(buffer_checksum)
+        return accessor.to_expression(checksum)
 
 
 
@@ -752,6 +753,37 @@ class Manager:
         else:
             # Just refresh the semantic key timeout
             vcache.add_semantic_key(semantic_key, obj)
+
+    @main_thread_buffered
+    def set_cell_label(self, cell, label):
+        checksum = self.cell_cache.cell_to_buffer_checksums.get(cell)
+        if checksum is None:
+            raise ValueError("cell is undefined")
+        self.label_cache.set(label, checksum)
+
+    def get_cell_label(self, cell):
+        checksum = self.cell_cache.cell_to_buffer_checksums.get(cell)
+        if checksum is None:
+            return None
+        return self.label_cache.get_label(checksum)
+
+    def _get_checksum_from_label(self, label):
+        checksum = self.label_cache.get_checksum(label)
+        if checksum is None:
+            coro = self.cache_task_manager.remote_checksum_from_label(label)
+            if coro is None:
+                return None
+            future = asyncio.ensure_future(coro)
+            asyncio.get_event_loop().run_until_finished(future)
+            checksum = future.result()
+        return checksum
+        
+    @main_thread_buffered
+    def set_cell_from_label(self, cell, label):        
+        checksum = self._get_checksum_from_label(label)
+        if checksum is None:
+            raise Exception("Label has no checksum")
+        return self.set_cell_checksum(cell, checksum)
 
 
     @main_thread_buffered

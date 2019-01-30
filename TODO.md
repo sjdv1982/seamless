@@ -39,7 +39,7 @@ After discussion with Pierre, push distributed deployment sooner
     - label cache: a label-to-checksum cache. 
       Labels can be .e.g "the ribosome", "the clustering code".
       They must be unique, but they are ephemeral, not like checksum annotations which will be global
-    - Communion servers:
+    - Communion servers: PARTIALLY DONE
       - accept connections over websockets; after that, "server" and "client" are just peers
       - Peers negotatiate what they commune: 
         - label cache
@@ -116,8 +116,8 @@ After discussion with Pierre, push distributed deployment sooner
     - Pure plain => JSON. Recognized because it doesn't start with either magic
   - Get minimal mounting example working
   - Reimplement IPython (mainloop/asyncio) support, DONE 
-    Test Jupyter support, Qt support.
-    Test using Docker
+    Test Jupyter support, Qt support, DONE
+    Test using Docker, DONE
 
   F.
   - For Monitor, replace direct data storage + hooks with API
@@ -137,7 +137,7 @@ After discussion with Pierre, push distributed deployment sooner
 
   H.
   - Gradually, get all low-level tests working, extending the manager, using the New Way 
-  - Implement annotation dict, including execute_debug, ncores
+  - Implement annotation dict, including execute_debug, ncores (ncores DONE)
 
   I. Get the high level working. Should be quite straightforward now.
 
@@ -153,7 +153,7 @@ The New Way and streams will be done early (this is big!)
   Transformers will be shut down (clearing namespaces etc.) unless annotated as "debug".  
   checksum-to-value caching (cell caching). Values will be pulled from there just-in-time.
   Contexts in equilibrium should now be very memory-frugal.
-- Every worker has a number of cores used (default 1). As many jobs are launched as there are cores
+- Every worker has a number of cores used (default 1). As many jobs are launched as there are cores 
 - Fix asyncio compatibility,. Add Manager.temprefmanager.purge in mainloop!
   final test in Jupyter Docker image
 - Mixed cells (and structured cells) have cache-tree-depth (default 0).

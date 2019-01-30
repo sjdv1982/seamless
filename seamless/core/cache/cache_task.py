@@ -60,6 +60,11 @@ class CacheTaskManager:
             task.decref(count)            
         return task
 
+    def remote_checksum_from_label(self, label):
+        raise NotImplementedError  ### cache branch
+
+    def remote_value(self, checksum):
+        raise NotImplementedError  ### cache branch
 
     def remote_transform_result(self, level1):                
         future = run_multi_remote(remote_transformer_result_servers, level1)
