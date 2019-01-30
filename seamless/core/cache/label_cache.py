@@ -4,6 +4,8 @@ def validate_label(label):
     assert isinstance(label, str)
     assert len(label) < 80
 
+label_caches = weakref.WeakSet()
+
 class LabelCache:
     """Label => checksum cache.
     Label are strings and can be up to 80 characters    
@@ -11,6 +13,7 @@ class LabelCache:
     Ephemeral, will never be cleared, but a label may be re-defined
     """
     def __init__(self, manager):
+        label_caches.add(self)
         self.manager = weakref.ref(manager)
         self._label_to_checksum = {}
         self._checksum_to_label = {}

@@ -13,7 +13,7 @@ from .protocol.deserialize import deserialize
 from ..mixed import MixedBase
 from .cache import (CellCache, AccessorCache, ExpressionCache, ValueCache,
     TransformCache, LabelCache, Accessor, Expression, TempRefManager, SemanticKey,
-    CacheTaskManager)
+    cache_task_manager)
 from .jobscheduler import JobScheduler
 from .macro_mode import get_macro_mode, curr_macro
 
@@ -204,7 +204,7 @@ class Manager:
         self.temprefmanager = TempRefManager()
         self.temprefmanager_future = asyncio.ensure_future(self.temprefmanager.loop())
         self.jobscheduler = JobScheduler(self)
-        self.cache_task_manager = CacheTaskManager()
+        self.cache_task_manager = cache_task_manager
 
         self.status = {}
         self.jobs = {}  # jobid-to-job
@@ -221,7 +221,7 @@ class Manager:
         tcache = self.transform_cache
         task = None
         try:
-            task = self.cache_task_manager.remote_transform_result(tf_level1)
+            task = self.cache_task_manager.remote_transform_result(hash(tf_level1))
             if task is not None:
                 await task.future
                 result = task.future.result()
@@ -280,13 +280,16 @@ class Manager:
                             continue
                         status = self.status[ttf]
                         if status.exec == "READY":
-                            status.exec = "EXECUTING"
-                    task = self._schedule_job(tf_level1, count)
+                            status.exec = "EXECUTING"                    
                     result = tcache.result_hlevel1.get(hash(tf_level1))
                     if result is not None:
                         self.set_transformer_result(tf_level1, None, None, result, False)
                         continue
-                    self.cache_task_manager.schedule_task(("transformer","all",tf_level1),task,count)
+                    task = self._schedule_job(tf_level1, count)
+                    self.cache_task_manager.schedule_task(
+                        ("transformer","all",tf_level1),task,count,
+                        cancelfunc=None, resultfunc=None
+                    )
                 else:
                     tf_level2 = tcache.build_level2(tf_level1)
                     self.jobscheduler.schedule(tf_level2, count)
@@ -691,6 +694,7 @@ class Manager:
 
     @main_thread_buffered
     def set_cell_checksum(self, cell, checksum):
+        print("SET CELL CHECKSUM", checksum)
         from .macro_mode import macro_mode_on, get_macro_mode
         from .mount import is_dummy_mount
         assert cell._get_manager() is self
@@ -773,7 +777,7 @@ class Manager:
             cache_task = self.cache_task_manager.remote_checksum_from_label(label)
             if cache_task is None:
                 return None
-            cache_task.join()            
+            cache_task.join()
             checksum = self.label_cache.get_checksum(label)  #  Label will now have been added to cache
         return checksum
         

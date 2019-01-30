@@ -9,6 +9,8 @@ with macro_mode_on():
 print("Peer 1", ctx.cell1.checksum)
 
 import asyncio
-done = asyncio.sleep(9)
-asyncio.get_event_loop().run_until_complete(done)
+#done = asyncio.sleep()
+#asyncio.get_event_loop().run_until_complete(done)
+asyncio.get_event_loop().run_forever()
 
+print("END peer1")

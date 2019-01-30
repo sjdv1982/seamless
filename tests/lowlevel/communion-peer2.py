@@ -9,5 +9,8 @@ import asyncio
 done = asyncio.sleep(7)
 asyncio.get_event_loop().run_until_complete(done)
 
+print("peer2...")
 ctx.cell1.from_label("Test label")
 print("Peer 2", ctx.cell1.checksum)
+
+print("END peer2")

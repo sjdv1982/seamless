@@ -5,4 +5,4 @@ from .value_cache import ValueCache, SemanticKey
 from .label_cache import LabelCache
 from .transform_cache import TransformCache
 from .tempref import TempRefManager
-from .cache_task import CacheTaskManager
+from .cache_task import cache_task_manager

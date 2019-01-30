@@ -47,7 +47,8 @@ class TransformerLevel2:
     def __getitem__(self, key):
         return self._semantic_keys[key]
 
-  
+transform_caches = weakref.WeakSet()  
+
 class TransformCache:
     """Caches transformer results
 
@@ -77,6 +78,7 @@ class TransformCache:
       a checksum available before computation commences.
     """
     def __init__(self, manager):
+        transform_caches.add(self)
         self.manager = weakref.ref(manager)        
         self.transformer_to_level0 = {} #id-to-dict-of-accessors
         self.transformer_to_level1 = {} #id-to-TransformerLevel1
@@ -188,3 +190,7 @@ class TransformCache:
         if hlevel2 not in self.hlevel1_from_hlevel2:
             self.hlevel1_from_hlevel2[hlevel2] = hlevel1
         self._incref_level2(level2)
+
+
+    def get_result(self, hlevel1):
+        return self.result_hlevel1.get(hlevel1)
