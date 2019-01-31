@@ -6,10 +6,11 @@ Every key will always have the same CacheTask
 """
 
 import asyncio
-from ..run_multi_remote import run_multi_remote
+from ..run_multi_remote import run_multi_remote, run_multi_remote_pair
 
 remote_transformer_result_servers = []
 remote_checksum_from_label_servers = []
+remote_checksum_value_servers = []
 
 class CacheTask:
     """Wrapper around an async future of which the result will be discarded"""

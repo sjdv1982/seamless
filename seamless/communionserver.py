@@ -8,11 +8,7 @@ Upon startup:
 
 import os, sys, asyncio, time, functools, json, traceback, base64, websockets
 from weakref import WeakSet
-
-from .core.cache.cache_task import (
-    remote_checksum_from_label_servers, 
-    remote_transformer_result_servers
-)    
+from .communionclient import communion_client_types
 
 incoming = []
 _incoming = os.environ.get("SEAMLESS_COMMUNION_INCOMING")
@@ -112,64 +108,6 @@ def communion_decode(m):
     message["content"] = content
     return message
     
-
-class CommunionClient: 
-    """wraps a remote servant"""
-    destroyed = False
-    cache_task_servers = None
-    config_type = None
-
-    def __init__(self, servant):
-        self.servant = servant
-        self.cache_task_servers.append(self.submit)
-    
-    async def submit(self, argument, origin):
-        #print("SUBMIT")
-        if origin is not None and origin == communionserver.peers[self.servant]["id"]:
-            return None
-        if not communionserver.config_master.get(self.config_type):
-            return
-        message = self._prepare_message(argument)
-        result = await communionserver.client_submit(message, self.servant)        
-        return result
-    
-    def destroy(self):
-        if self.destroyed:
-            return
-        self.destroyed = True
-        self.cache_task_servers.remove(self.submit)
-    
-    def __del__(self):
-        try:
-            self.destroy()
-        except:
-            pass
-
-class CommunionLabelClient(CommunionClient):
-    config_type = "label"
-    cache_task_servers = remote_checksum_from_label_servers
-    def _prepare_message(self, label):
-        return {
-            "type": self.config_type,
-            "content": label,
-        }
-
-class CommunionTransformerResultClient(CommunionClient):
-    config_type = "transformer_result"
-    cache_task_servers = remote_transformer_result_servers
-    def _prepare_message(self, checksum):
-        return {
-            "type": self.config_type,
-            "content": checksum,
-        }
-
-
-client_types = (
-    CommunionLabelClient,
-    CommunionTransformerResultClient,
-)
-
-
 class CommunionServer:
     future = None
     PROTOCOL = ("seamless", "communion", "0.1")
@@ -207,7 +145,7 @@ class CommunionServer:
 
     def _add_clients(self, servant, peer_config):
         config = peer_config["servant"]
-        for client_type in client_types:
+        for client_type in communion_client_types:
             config_type = client_type.config_type
             if not config.get(config_type):
                 continue

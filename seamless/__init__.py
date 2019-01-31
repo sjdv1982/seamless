@@ -61,8 +61,7 @@ if ipy_error is None:
     patch_excepthook()
 
 else:
-    sys.stderr.write("    " + ipy_error + "\n")
-    sys.stderr.write("    Call context.equilibrate() to process cell updates\n")
+    pass
 
 from .silk import Silk
 from .debugger import pdb
