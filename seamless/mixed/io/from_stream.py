@@ -170,9 +170,13 @@ def _from_stream_sub(
 def from_stream(stream, storage, form):
     """Reverses to_stream, returning data"""
     if storage == "pure-plain":
-        assert not stream.startswith(MAGIC_SEAMLESS)
-        assert not stream.startswith(MAGIC_NUMPY)
-        txt = stream.decode("utf-8")
+        print("STREAM", stream)
+        if isinstance(stream, str):
+            txt = stream            
+        else:
+            assert not stream.startswith(MAGIC_SEAMLESS)
+            assert not stream.startswith(MAGIC_NUMPY)
+            txt = stream.decode("utf-8")
         return json.loads(txt)
     elif storage == "pure-binary":
         b = BytesIO(stream)

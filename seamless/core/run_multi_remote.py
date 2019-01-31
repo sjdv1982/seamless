@@ -39,12 +39,12 @@ async def run_multi_remote(serverlist, *args, **kwargs):
 
 
 async def run_multi_remote_pair(serverlist, *args, **kwargs):
-    """Each server is a pair (p1,p2) of functions; for the first server where p1 succeeds, p2 is invoked"""
+    """Each server is a pair (p1,p2) of functions; for the first server where p1 returns True, p2 is invoked"""
     if not len(serverlist):
         return None
     futures = []
     serverlist = list(serverlist)
-    for servernr, server in serverlist:
+    for servernr, server in enumerate(serverlist):
         func = server[0]
         coro = func(*args, **kwargs)
         future = asyncio.ensure_future(coro)
@@ -72,11 +72,11 @@ async def run_multi_remote_pair(serverlist, *args, **kwargs):
                     exc = traceback.format_exception(type(exception), exception, exception.__traceback__)
                     exc = "".join(exc)
                     print("run_multi_remote_pair stage 1", exc, file=sys.stderr)
-            if result is not None:
+            if result == True:
                 break
             futures = pending
     except asyncio.CancelledError:        
-        for servernr, future in futures:
+        for servernr, future in enumerate(futures):
             if not future.done():
                 future.cancel()
     sequel_func = serverlist[result_servernr][1]

@@ -79,21 +79,10 @@ Use ``Cell.status()`` to get its status.
     @property
     def semantic_checksum(self):        
         manager = self._get_manager()
-        checksum = manager.cell_cache.cell_to_buffer_checksums.get(self)        
+        checksum = manager.cell_semantic_checksum(self)
         if checksum is None:
             return None
-        default_accessor = manager.get_default_accessor(self)
-        default_expression = default_accessor.to_expression(checksum)
-        semantic_key = manager.expression_cache.expression_to_semantic_key.get(default_expression.get_hash())
-        if semantic_key is None:
-            print("cache miss")
-            buffer_item = manager.value_cache.get_buffer(checksum)
-            if buffer_item is None:
-                raise ValueError("Checksum not in value cache") 
-            _, _, buffer = buffer_item
-            _, semantic_key = manager.cache_expression(default_expression, buffer)
-        semantic_checksum, _, _, _ = semantic_key
-        return semantic_checksum.hex()
+        return checksum.hex()
 
     @property
     def authoritative(self):

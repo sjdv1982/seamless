@@ -13,6 +13,8 @@ SemanticKey = namedtuple("SemanticKey",
     ("semantic_checksum", "access_mode", "content_type", "subpath")
 )
 
+value_caches = weakref.WeakSet()
+
 class ValueCache:
     """Checksum-to-value cache.
     Every value is refered to by a expression (or more than one); non-expression values are
@@ -55,6 +57,7 @@ class ValueCache:
      both cell type and subpath), and therefore its own object cache item.
     """
     def __init__(self, manager):
+        value_caches.add(self)
         self.manager = weakref.ref(manager)
         self._buffer_cache = {} #buffer-checksum-to-(refcount, refcount, value)
         self._object_cache = WeakValueDictionary() #semantic-key-to-value
@@ -138,6 +141,10 @@ class ValueCache:
         if item is None or item[2] is None:
             return None
         return item
+
+    def value_check(self, checksum):
+        """For the communionserver..."""
+        return checksum in self._buffer_cache
 
 """
 NOTE: value caches coming from expressionlevel>0 or from streams will never be

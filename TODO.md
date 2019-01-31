@@ -1,7 +1,3 @@
-NOTE: Seamless runs very well with Jupyter, but requires tornado-4.5.3, not tornado 5.1!
- Ipykernel 4.10 works best.
-NOTE: Seamless requires IPython 6, not IPython 7!
-
 Great Refactor is underway (see seamless-towards-02.md).
 
 Part 1 is now complete
@@ -9,8 +5,7 @@ Most of the high level is done.
 
 Things to do:
 
-After discussion with Pierre, push distributed deployment sooner
-1. Finish the Great Refactor early, by putting loose ends in OLD folder (DONE)
+1. Finish the Great Refactor early, by putting loose ends in OLD folder, DONE
    1a: merge the branch on Github, DONE
    1b: Configure gpu-node1 as a Docker repo: docker repo service, then ssh tunnel.
    1c: make a very simple Dockerfile (wget + pip), to be used with IPython
@@ -44,7 +39,7 @@ After discussion with Pierre, push distributed deployment sooner
       - Peers negotatiate what they commune: 
         - label cache DONE
         - transformer result cache DONE
-        - cell value cache TODO
+        - cell value cache DONE
         - remote transform jobs (send/receive) TODO
       All communed caches will be level 1, since evaluating an expression will normally be much faster
        than interrogating the network. If not, there is always cache tree depth.      

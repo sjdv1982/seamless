@@ -16,6 +16,7 @@ from .cache import (CellCache, AccessorCache, ExpressionCache, ValueCache,
     cache_task_manager)
 from .jobscheduler import JobScheduler
 from .macro_mode import get_macro_mode, curr_macro
+from ..mixed.io import deserialize as mixed_deserialize, serialize as mixed_serialize
 
 import threading
 import functools
@@ -216,7 +217,7 @@ class Manager:
         self._temp_tf_level1 = {}
 
 
-    async def _schedule_job(self, tf_level1, count):
+    async def _schedule_transform_all(self, tf_level1, count):
         """Runs until either a remote cache hit has been obtained, or a job has been submitted"""
         from .cache.transform_cache import TransformerLevel1
         assert isinstance(tf_level1, TransformerLevel1)
@@ -234,17 +235,22 @@ class Manager:
             job = self.jobscheduler.schedule_remote(tf_level1, count)
             if job is not None:
                 return
-            # TODO: make build_level2 async
-            tf_level2 = tcache.build_level2(tf_level1)
-            result = tcache.result_hlevel2.get(tf_level2.get_hash())
-            if result is not None:
-                self.set_transformer_result(tf_level1, tf_level2, None, result, False)
-                return
-            tcache.set_level2(tf_level1, tf_level2)                    
-            job = self.jobscheduler.schedule(tf_level2, count)
+            await self._schedule_transform_job(tf_level1, count)
         except asyncio.CancelledError:
             if task is not None:
                 task.cancel()
+
+    async def _schedule_transform_job(self, tf_level1, count):
+        from .cache.transform_cache import TransformerLevel1
+        assert isinstance(tf_level1, TransformerLevel1)
+        tcache = self.transform_cache
+        tf_level2 = await tcache.build_level2(tf_level1)
+        result = tcache.result_hlevel2.get(tf_level2.get_hash())
+        if result is not None:
+            self.set_transformer_result(tf_level1, tf_level2, None, result, False)
+            return
+        tcache.set_level2(tf_level1, tf_level2)                    
+        job = self.jobscheduler.schedule(tf_level2, count)  # job object is ignored
 
     def schedule_jobs(self):
         if not len(self.scheduled):
@@ -287,14 +293,16 @@ class Manager:
                     if result is not None:
                         self.set_transformer_result(tf_level1, None, None, result, False)
                         continue
-                    task = self._schedule_job(tf_level1, count)
+                    task = self._schedule_transform_all(tf_level1, count)
                     self.cache_task_manager.schedule_task(
-                        ("transformer","all",tf_level1),task,count,
+                        ("transform","all",tf_level1),task,count,
                         cancelfunc=None, resultfunc=None
                     )
                 else:
-                    tf_level2 = tcache.build_level2(tf_level1)
-                    self.jobscheduler.schedule(tf_level2, count)
+                    task = self._schedule_transform_job(tf_level1, count)
+                    self.cache_task_manager.schedule_task(
+                        ("transform","job",tf_level1),task,count,
+                        cancelfunc=None, resultfunc=None)
             elif type == "macro":
                 raise NotImplementedError ### cache branch
             elif type == "reactor":
@@ -415,11 +423,11 @@ class Manager:
                 cache_hit = True
         if not cache_hit:
             checksum = expression.buffer_checksum
-            buffer_item = self.value_cache.get_buffer(checksum)
+            buffer_item = self.get_value_from_checksum(checksum)
             if buffer_item is None:
                 raise ValueError("Checksum not in value cache")
-            _, _, buffer = buffer_item
-            value = self.cache_expression(expression, buffer)
+            _, _, buffer = buffer_item            
+            value, _ = self.cache_expression(expression, buffer)
         return value
 
     def build_expression(self, accessor):
@@ -430,7 +438,6 @@ class Manager:
         return accessor.to_expression(checksum)
 
 
-
     def get_default_accessor(self, cell):
         default_accessor = Accessor()
         default_accessor.celltype = cell._celltype
@@ -439,6 +446,27 @@ class Manager:
         default_accessor.access_mode = cell._default_access_mode
         default_accessor.content_type = cell._content_type
         return default_accessor
+
+    def cell_semantic_checksum(self, cell):
+        checksum = self.cell_cache.cell_to_buffer_checksums.get(cell)        
+        if checksum is None:
+            return None
+        default_accessor = self.get_default_accessor(cell)
+        default_expression = default_accessor.to_expression(checksum)
+        semantic_key = self.expression_cache.expression_to_semantic_key.get(default_expression.get_hash())
+        if semantic_key is None:
+            buffer_item = self.get_value_from_checksum(checksum)
+            if buffer_item is None:
+                raise ValueError("Checksum not in value cache") 
+            _, _, buffer = buffer_item
+            _, semantic_key = self.cache_expression(default_expression, buffer)
+        semantic_checksum, _, _, _ = semantic_key
+        return semantic_checksum        
+
+    def value_get(self, checksum):
+        """For communion server"""
+        value = self.value_cache.get_buffer(checksum)[2]
+        return value
 
 
     def register_cell(self, cell):
@@ -777,7 +805,7 @@ class Manager:
             return None
         return self.label_cache.get_label(checksum)
 
-    def _get_checksum_from_label(self, label):
+    def get_checksum_from_label(self, label):
         checksum = self.label_cache.get_checksum(label)
         if checksum is None:
             cache_task = self.cache_task_manager.remote_checksum_from_label(label)
@@ -786,10 +814,30 @@ class Manager:
             cache_task.join()
             checksum = self.label_cache.get_checksum(label)  #  Label will now have been added to cache
         return checksum
+
+    def get_value_from_checksum(self, checksum):
+        buffer_item = self.value_cache.get_buffer(checksum)
+        if buffer_item is None:
+            cache_task = self.cache_task_manager.remote_value(checksum)
+            if cache_task is None:
+                return None
+            cache_task.join()
+            buffer_item = self.value_cache.get_buffer(checksum)
+        return buffer_item
         
+    async def get_value_from_checksum_async(self, checksum):
+        buffer_item = self.value_cache.get_buffer(checksum)
+        if buffer_item is None:
+            cache_task = self.cache_task_manager.remote_value(checksum)
+            if cache_task is None:
+                return None
+            await cache_task.future
+            buffer_item = self.value_cache.get_buffer(checksum)
+        return buffer_item
+                
     @main_thread_buffered
     def set_cell_from_label(self, cell, label):        
-        checksum = self._get_checksum_from_label(label)
+        checksum = self.get_checksum_from_label(label)
         if checksum is None:
             raise Exception("Label has no checksum")
         return self.set_cell_checksum(cell, checksum)

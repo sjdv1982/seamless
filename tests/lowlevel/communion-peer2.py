@@ -23,8 +23,6 @@ with macro_mode_on():
     ctx.code.connect(ctx.tf.code)
     ctx.tf.c.connect(ctx.result)
 
-    ctx.dummy = cell().set(5) ###
-
 import asyncio
 done = asyncio.sleep(1)
 ctx.equilibrate()
@@ -32,11 +30,12 @@ asyncio.get_event_loop().run_until_complete(done)
 
 ctx.code.from_label("Secret source code")
 print("Secret source code", ctx.code.checksum)
+#print(ctx.code.value) ###
 
 ctx.equilibrate()
 print(ctx.status)
 
 print(ctx.result.value)
 
-communionserver.configure_master(value_cache=False)
-print(ctx.code.value)
+communionserver.configure_master(value=False)
+print(ctx.code.value) # Should raise Exception

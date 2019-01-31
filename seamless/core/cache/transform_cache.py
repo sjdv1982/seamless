@@ -1,6 +1,8 @@
 import json
 import weakref
 import functools
+import traceback
+import asyncio
 from .expression_cache import Expression
 from .value_cache import SemanticKey
 from ...get_hash import get_hash
@@ -173,9 +175,7 @@ class TransformCache:
         refcount = self.refcount_hlevel2.pop(hlevel2, 0)
         self.refcount_hlevel2[hlevel2] = refcount + 1        
 
-    def build_level2(self, level1):
-        """Does not update any caches"""
-        #TODO: make async for smoother experience
+    async def build_level2(self, level1):
         if not isinstance(level1, TransformerLevel1):
             raise TypeError(level1)
 
@@ -186,15 +186,23 @@ class TransformCache:
         if result is not None:
             return result
         semantic_keys = {}
-        for pin in level1:
+        tasks = []
+        pinnames = list(level1)
+        for pin in pinnames:
             expression = level1[pin]
             checksum = expression.buffer_checksum
-            buffer_item = vcache.get_buffer(checksum)
+            task = manager.get_value_from_checksum_async(checksum)
+            tasks.append(task)        
+        results = await asyncio.gather(*tasks)
+        for pinnr, pin in enumerate(pinnames):
+            expression = level1[pin]
+            buffer_item = results[pinnr]
             if buffer_item is None:
                 raise ValueError("Checksum not in value cache") 
             _, _, buffer = buffer_item
             _, semantic_key = manager.cache_expression(expression, buffer)
             semantic_keys[pin] = semantic_key
+
         result = TransformerLevel2(semantic_keys, level1.output_name)
         return result
 

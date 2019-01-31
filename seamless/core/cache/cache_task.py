@@ -1,7 +1,13 @@
-"""Asynchronous tasks involving local and remote cache accesses
+"""Asynchronous tasks involving (mostly remote) cache accesses
+These tasks interrogate caches and either generate a result, or schedule a transform job
+The result itself will be discarded, but a resultfunc can be defined that will be 
+ triggered upon task completion, and which may write the result into cache.
 Every key will always have the same CacheTask
-    key = ("transform", "all", level1) => manager._schedule_job(level1, count)
-    key = ("transform", level1) => remote transformer result cache
+    key = ("transform", "all", level1) => manager._schedule_transform_all(level1, count)
+    key = ("transform", "job", level1) => manager._schedule_transform_job(level1, count)
+    key = ("label", checksum) => remote label cache (label-to-checksum)
+    key = ("value", checksum) => remote value cache (value-to-checksum)
+    key = ("transformer_result", checksum) => remote transformer result cache
 
 """
 
@@ -80,8 +86,19 @@ class CacheTaskManager:
                     label_cache.set(label, checksum)
         return self.schedule_task(key, future, 1, resultfunc=resultfunc)
 
-    def remote_value(self, checksum):
-        raise NotImplementedError  ### cache branch
+    def remote_value(self, checksum, origin=None):
+        #from ..manager import mixed_deserialize
+        future = run_multi_remote_pair(remote_checksum_value_servers, checksum, origin)
+        if future is None:
+            return None                    
+        key = ("value", checksum)
+        def resultfunc(future):
+            result = future.result()
+            if result is not None:
+                buffer = result
+                for value_cache in value_caches:
+                    value_cache.incref(checksum, buffer, has_auth=False)
+        return self.schedule_task(key, future, 1, resultfunc=resultfunc)
 
     def remote_transform_result(self, hlevel1, origin=None):
         future = run_multi_remote(remote_transformer_result_servers, hlevel1, origin)
@@ -97,5 +114,6 @@ class CacheTaskManager:
 
 from .transform_cache import transform_caches
 from .label_cache import label_caches
+from .value_cache import value_caches
 
 cache_task_manager = CacheTaskManager()

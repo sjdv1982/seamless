@@ -2,6 +2,9 @@ from seamless.core import macro_mode_on
 from seamless.core import context, cell, transformer, pytransformercell, link
 from seamless import get_hash
 
+from seamless import communionserver
+communionserver.configure_master(transformer_result=True)
+communionserver.configure_servant(value=True)
 
 with macro_mode_on():
     ctx = context(toplevel=True)

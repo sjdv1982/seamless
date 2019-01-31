@@ -33,7 +33,7 @@ if _outgoing:
 default_master_config = {
     "label": True,
     "transformer_result": False,
-    "value_cache": True,
+    "value": True,
     "transformer_jobs": False,
 }
 
@@ -41,7 +41,7 @@ default_master_config = {
 default_servant_config = {
     "label": True,
     "transformer_result": True,
-    "value_cache": False,
+    "value": False,
     "transformer_jobs": False,
 }
 
@@ -68,13 +68,18 @@ def communion_encode(msg):
     if content is None:
         m += b'\x00'
     else:
-        assert isinstance(content, (str, bytes)), content
-        is_str = b'\x02' if isinstance(content, str) else b'\x01'
+        assert isinstance(content, (str, bytes, bool)), content
+        if isinstance(content, bool):
+            is_str = b'\x01'
+        else:
+            is_str = b'\x03' if isinstance(content, str) else b'\x02'
         m += is_str
         if isinstance(content, str):
             content = content.encode()
+        elif isinstance(content, bool):
+            content = b'\x01' if content else b'\x00'
         m += content
-    assert communion_decode(m) == msg, (communion_decode(m), msg)
+    #assert communion_decode(m) == msg, (communion_decode(m), msg)
     return m
 
 def communion_decode(m):    
@@ -100,10 +105,12 @@ def communion_decode(m):
     is_str = m[:1]
     if is_str == b'\x00':
         content = None
+    elif is_str == b'\x01':
+        content = True if m[1:] == b'\x01' else False
     else:
-        assert is_str == b'\x02' or is_str == b'\x01'
+        assert is_str == b'\x03' or is_str == b'\x02'
         content = m[1:]    
-        if is_str == b'\x02':
+        if is_str == b'\x03':
             content = content.decode()
     message["content"] = content
     return message
@@ -178,14 +185,12 @@ class CommunionServer:
         self._add_clients(websocket, peer_config)
         try:
             async for message in websocket:
-                try:
-                    await self._process_message_from_peer(websocket, message)
-                except:
-                    traceback.print_exc()
-        except websockets.exceptions.ConnectionClosed:
+                await self._process_message_from_peer(websocket, message)
+        except (websockets.exceptions.ConnectionClosed, ConnectionResetError):
             pass
+        except:
+            traceback.print_exc()
         finally:
-            #print("END CONNECTION", websocket)
             self.peers.pop(websocket)
             self.message_count.pop(websocket)
             self.futures.pop(websocket)
@@ -207,7 +212,7 @@ class CommunionServer:
         peer_config = json.loads(peer_config)
         print("OUTGOING", self.id, peer_config["id"])
         await websocket.send(json.dumps(config))
-        await self._listen_peer(websocket, peer_config)
+        await self._listen_peer(websocket, peer_config)        
 
     async def _start(self):
         config = {
@@ -234,52 +239,68 @@ class CommunionServer:
 
         await asyncio.gather(*coros)
     
-    async def _process_request_from_peer(self, peer, message):        
+    async def _process_request_from_peer(self, peer, message):
         type = message["type"]
         message_id = message["id"]
         content = message["content"]
-        result = None                
-        if type == "label":
-            cache_name = "label_cache"
-            method_name = "get_checksum"
-        elif type == "transformer_result":
-            cache_name = "transform_cache"
-            method_name = "get_result"
-        else:
-            raise NotImplementedError
-        for manager in self.managers:
-            cache = getattr(manager, cache_name)
-            method = getattr(cache, method_name)
-            result = method(content)
-            if result is not None:
-                break
-        if result is None:
-            peer_id = self.peers[peer]["id"]
+        result = None
+        try:
+            # Local cache      
             if type == "label":
-                cache_task = cache_task_manager.remote_checksum_from_label(content, origin=peer_id)
+                cache_name = "label_cache"
+                method_name = "get_checksum"
             elif type == "transformer_result":
-                checksum = bytes.fromhex(content)
-                cache_task = cache_task_manager.remote_transform_result(checksum, origin=peer_id)
+                cache_name = "transform_cache"
+                method_name = "get_result"
+            elif type == "value_check":
+                cache_name = "value_cache"
+                method_name = "value_check"
+            elif type == "value_get":
+                cache_name = None
+                method_name = "value_get"
             else:
-                raise NotImplementedError 
-            await cache_task.future
+                raise NotImplementedError(type)
+            for manager in self.managers:
+                if cache_name is None:
+                    method = getattr(manager, method_name)
+                else:
+                    cache = getattr(manager, cache_name)
+                    method = getattr(cache, method_name)
+                result = method(content)
+                if result is not None:
+                    break
+            # Remote cache
+            if result is None:
+                peer_id = self.peers[peer]["id"]
+                if type == "label":
+                    cache_task = cache_task_manager.remote_checksum_from_label(content, origin=peer_id)
+                elif type == "transformer_result":
+                    checksum = bytes.fromhex(content)
+                    cache_task = cache_task_manager.remote_transform_result(checksum, origin=peer_id)
+                elif type == "value":
+                    raise NotImplementedError
+                    checksum = bytes.fromhex(content)
+                    cache_task = cache_task_manager.remote_value(checksum, origin=peer_id)
+                else:
+                    raise NotImplementedError(type)
+                await cache_task.future
 
-            manager = next(iter(self.managers))
-            cache = getattr(manager, cache_name)
-            method = getattr(cache, method_name)
-            result = method(content)        
-        #print("REQUEST", message_id)
-        response = {
-            "mode": "response",
-            "id": message_id,
-            "content": result
-        }
-        msg = communion_encode(response)
-        assert isinstance(msg, bytes)
-        peer_id = self.peers[peer]["id"]
-        print("Communion response: send %d bytes to peer '%s' (#%d)" % (len(msg), peer_id, response["id"]))
-        await peer.send(msg)
-        return result
+                manager = next(iter(self.managers))
+                cache = getattr(manager, cache_name)
+                method = getattr(cache, method_name)
+                result = method(content)
+        finally:
+            #print("REQUEST", message_id)
+            response = {
+                "mode": "response",
+                "id": message_id,
+                "content": result
+            }
+            msg = communion_encode(response)
+            assert isinstance(msg, bytes)
+            peer_id = self.peers[peer]["id"]
+            print("Communion response: send %d bytes to peer '%s' (#%d)" % (len(msg), peer_id, response["id"]))
+            await peer.send(msg)
         
     def _process_response_from_peer(self, peer, message):
         message_id = message["id"]
