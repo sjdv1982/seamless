@@ -150,6 +150,8 @@ Use ``Cell.status()`` to get its status.
         return self._get_manager().set_cell_label(self, label)
 
     def from_label(self, label):
+        if get_macro_mode():
+            raise Exception("To guarantee macro determinism, this must not be run in macro mode")
         return self._get_manager().set_cell_from_label(self, label)
 
     @property

@@ -51,12 +51,13 @@ After discussion with Pierre, push distributed deployment sooner
       Communed caches will be registered as external read caches
       Communed job control will be connected as a remote job server / client
       All cache/job commands will be received over the websocket
-    - Redis cache server app (for multiple kind of cache)
-      Note that this is an additional network app, in addition to Redis itself
-       (which will run as a different process under a different network port)      
-      - Will be registered as external read caches (same level as communed caches)
-      - In addition, Redis cache server may accept offloading, i.e.
-        values will be *written* to it every X seconds
+    - Redis cache server module (for multiple kind of cache)
+      This is an internal Seamless cache server that works by being a client to Redis
+       (which will run as a different process than Seamless, exposed over the network)      
+      - Will be registered as communed caches
+      - In addition, Redis cache server may be set as a data sink, i.e.
+        cache values will be *written* to it. This will keep the local value cache 
+        (but not the other caches) empty.
 
   C.
   - Get reactors working. reactcache can be set up similar to transformcache.
