@@ -16,11 +16,10 @@ class TransformerLevel1:
             assert isinstance(key, str)
             value = expressions[key]
             assert isinstance(value, Expression)
-            a.append(value.get_hash())
+            a.append((key, str(value)))
         a.append(output_name)
-        self._frozen_expressions = tuple(a)
-        aa = json.dumps(a)
-        self._hash = get_hash(aa+"\n").hex()
+        self._frozen_expressions = tuple(a)        
+        self._hash = get_hash(self.serialize()).hex()
     
     def __hash__(self):
         return hash(self._frozen_expressions)
@@ -30,6 +29,23 @@ class TransformerLevel1:
 
     def __getitem__(self, key):
         return self._expressions[key]
+
+    def serialize(self):
+        return json.dumps(self._frozen_expressions)+"\n"
+
+    @classmethod
+    def deserialize(cls, stream):
+        frozen_expressions = json.loads(stream)
+        expressions0, output_name = frozen_expressions[:-1], frozen_expressions[-1]
+        expressions = {}
+        for key, expr in expressions0:
+            expr = json.loads(expr)
+            expr["buffer_checksum"] = bytes.fromhex(expr["buffer_checksum"])
+            expression = Expression()
+            for k,v in expr.items():
+                setattr(expression, k, v)
+            expressions[key] = expression
+        return cls(expressions, output_name)
 
     def get_hash(self):    
         return self._hash
@@ -221,4 +237,5 @@ class TransformCache:
 
 
     def get_result(self, hlevel1):
+        #print("GET_RESULT", hlevel1, self.result_hlevel1.keys())
         return self.result_hlevel1.get(hlevel1)

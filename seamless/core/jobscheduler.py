@@ -6,6 +6,11 @@ import sys
 import traceback
 
 from .execute import Queue, Executor, execute ### TODO: also use execute_debug
+from .run_multi_remote import run_multi_remote, run_multi_remote_pair
+
+###############################################################################
+# Local jobs
+###############################################################################
 
 _locks = [False] * multiprocessing.cpu_count()
 
@@ -30,6 +35,23 @@ async def acquire_lock():
 def release_lock(locknr):
     assert _locks[locknr] == True
     _locks[locknr] = False
+
+###############################################################################
+# Remote jobs
+###############################################################################
+
+remote_job_servers = []
+
+async def run_remote_job(level1, origin=None):
+    from .cache.transform_cache import TransformerLevel1
+    content = level1.serialize()
+    validate_content = TransformerLevel1.deserialize(content).serialize()    
+    assert content == validate_content, (content, "\n", validate_content)
+    future = run_multi_remote_pair(remote_job_servers, content, origin)
+    result = await future
+    return result
+
+###############################################################################
 
 class JobScheduler:
     _id = 0
@@ -61,18 +83,15 @@ class JobScheduler:
             job = self.jobs[hlevel2]
             job.count += count
             return job
-        # TODO: create remote job if a server has been registered
-        return None ###
-        '''
+        if not len(remote_job_servers):
+            return None
         tcache = self.manager().transform_cache
         job = Job(self, level1, None, remote=True)
         job.count = count
         self.remote_jobs[hlevel1] = job
         transformer = tcache.transformer_from_hlevel1[hlevel1]
         job.execute(transformer)
-        return True
-        '''
-
+        return job
 
     def schedule(self, level2, count):
         hlevel2 = level2.get_hash()
@@ -102,7 +121,7 @@ class JobScheduler:
         return job
 
     def cleanup(self):
-        manager= self.manager()
+        manager = self.manager()
         for jobs in (self.jobs, self.remote_jobs):
             toclean = []
             for key, job in jobs.items():
@@ -127,12 +146,32 @@ class Job:
         self.remote = remote
         self.executor = None
         self.future = None
-        if remote: raise NotImplementedError  ### cache branch
 
     async def _execute(self, transformer):
-        # transformer is just for tracebacks
-        if self.remote: raise NotImplementedError  ### cache branch
+        # transformer arg is just for tracebacks
+        if self.remote: 
+            await self._execute_remote()
+        else:
+            await self._execute_local(transformer)
+
+    async def _execute_remote(self):
+        manager = self.scheduler().manager()
+        result = await run_remote_job(self.level1)
+        if result is not None:
+            manager.set_transformer_result(self.level1, self.level2, None, result, prelim=False)
+        else:
+            # TODO: store exception! is not printed in run_multi_remote_pair...
+            raise Exception("Remote job execution failed")
+        self.future = None
+
+    async def _execute_local(self, transformer):
+        # transformer arg is just for tracebacks
+        print("Execute local")
         lock = await acquire_lock()
+        try:
+            transformer_path = transformer._format_path()
+        except:
+            transformer_path = "<Unknown transformer>"
         try:
             manager = self.scheduler().manager()
             namespace = {}
@@ -146,7 +185,7 @@ class Job:
                 else:
                     namespace[pin] = value
             args = (
-                transformer._format_path(), code,
+                transformer_path, code,
                 str(transformer),
                 namespace, self.level2.output_name, queue
             )

@@ -5,7 +5,8 @@ from seamless import get_hash
 
 seamless.set_ncores(0)
 from seamless import communionserver
-communionserver.configure_master(transformer_result=True)
+communionserver.configure_master(transformer_result=True, transformer_job=True)
+communionserver.configure_servant(value=True)
 
 with macro_mode_on():
     ctx = context(toplevel=True)
@@ -30,12 +31,27 @@ asyncio.get_event_loop().run_until_complete(done)
 
 ctx.code.from_label("Secret source code")
 print("Secret source code", ctx.code.checksum)
-#print(ctx.code.value) ###
 
 ctx.equilibrate()
 print(ctx.status)
 
 print(ctx.result.value)
 
-communionserver.configure_master(value=False)
-print(ctx.code.value) # Should raise Exception
+with macro_mode_on():
+    ctx.cell1.set(100)
+    ctx.cell2.set(200)
+
+ctx.equilibrate()
+print(ctx.status)
+print(ctx.result.value)
+
+with macro_mode_on():
+    ctx.cell1.set(3)
+    ctx.cell2.set(200)
+
+ctx.equilibrate()
+print(ctx.status)
+print(ctx.result.value)
+
+#communionserver.configure_master(value=False)
+#print(ctx.code.value)  # Should raise Exception, unless ctx.code.value has been fetched previously

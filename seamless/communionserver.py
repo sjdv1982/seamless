@@ -9,6 +9,7 @@ Upon startup:
 import os, sys, asyncio, time, functools, json, traceback, base64, websockets
 from weakref import WeakSet
 from .communionclient import communion_client_types
+from .core.cache.transform_cache import TransformerLevel1
 
 incoming = []
 _incoming = os.environ.get("SEAMLESS_COMMUNION_INCOMING")
@@ -34,7 +35,7 @@ default_master_config = {
     "label": True,
     "transformer_result": False,
     "value": True,
-    "transformer_jobs": False,
+    "transformer_job": False,
 }
 
 # Default configuration for being a servant, i.e. on providing services to other peers
@@ -42,7 +43,7 @@ default_servant_config = {
     "label": True,
     "transformer_result": True,
     "value": False,
-    "transformer_jobs": False,
+    "transformer_job": False,
 }
 
 import numpy as np
@@ -163,7 +164,7 @@ class CommunionServer:
             self.clients[servant].add(client)
 
             
-    async def _listen_peer(self, websocket, peer_config):
+    async def _listen_peer(self, websocket, peer_config, incoming=False):
         all_peer_ids = [peer["id"] for peer in self.peers.values()]
         if peer_config["id"] in all_peer_ids:
             return
@@ -179,13 +180,14 @@ class CommunionServer:
             return
         #print("LISTEN")
         self.peers[websocket] = peer_config
-        self.message_count[websocket] = 0
+        self.message_count[websocket] = 1000 if incoming else 0
         self.futures[websocket] = {}
         self.clients[websocket] = set()
         self._add_clients(websocket, peer_config)
         try:
-            async for message in websocket:
-                await self._process_message_from_peer(websocket, message)
+            while 1:
+                message = await websocket.recv()
+                asyncio.ensure_future(self._process_message_from_peer(websocket, message))
         except (websockets.exceptions.ConnectionClosed, ConnectionResetError):
             pass
         except:
@@ -205,7 +207,7 @@ class CommunionServer:
             peer_config = await websocket.recv()
             peer_config = json.loads(peer_config)
             print("INCOMING", self.id, peer_config["id"])
-            await self._listen_peer(websocket, peer_config)
+            await self._listen_peer(websocket, peer_config, incoming=True)
 
     async def _serve_outgoing(self, config, websocket, path):
         peer_config = await websocket.recv()
@@ -245,7 +247,7 @@ class CommunionServer:
         content = message["content"]
         result = None
         try:
-            # Local cache      
+            # Local cache
             if type == "label":
                 cache_name = "label_cache"
                 method_name = "get_checksum"
@@ -258,37 +260,58 @@ class CommunionServer:
             elif type == "value_get":
                 cache_name = None
                 method_name = "value_get"
+            elif type == "transformer_job_check":
+                level1 = TransformerLevel1.deserialize(content)
+                result = True  # TODO: analyze transformer, configure acceptance criteria
+            elif type == "transformer_job_run":
+                level1 = TransformerLevel1.deserialize(content)
+                content = level1
             else:
                 raise NotImplementedError(type)
-            for manager in self.managers:
-                if cache_name is None:
-                    method = getattr(manager, method_name)
-                else:
-                    cache = getattr(manager, cache_name)
-                    method = getattr(cache, method_name)
-                result = method(content)
-                if result is not None:
-                    break
+            if result is None:
+                for manager in self.managers:
+                    if type == "transformer_job_run":
+                        result = await manager.run_remote_transform_job(content)
+                    else:
+                        if cache_name is None:                            
+                            method = getattr(manager, method_name)
+                        else:
+                            cache = getattr(manager, cache_name)
+                            method = getattr(cache, method_name)
+                        result = method(content)
+                    if result is not None:
+                        break
             # Remote cache
             if result is None:
+                cache_task = None
                 peer_id = self.peers[peer]["id"]
                 if type == "label":
                     cache_task = cache_task_manager.remote_checksum_from_label(content, origin=peer_id)
                 elif type == "transformer_result":
                     checksum = bytes.fromhex(content)
                     cache_task = cache_task_manager.remote_transform_result(checksum, origin=peer_id)
-                elif type == "value":
-                    raise NotImplementedError
-                    checksum = bytes.fromhex(content)
-                    cache_task = cache_task_manager.remote_value(checksum, origin=peer_id)
+                elif type == "value_check":
+                    pass #TODO: forward value_check requests
+                    #checksum = bytes.fromhex(content)
+                    #cache_task = cache_task_manager.remote_value(checksum, origin=peer_id)
+                elif type == "value_get":
+                    pass #TODO: forward value_get requests
+                    #checksum = bytes.fromhex(content)
+                    #cache_task = cache_task_manager.remote_value(checksum, origin=peer_id)
+                elif type == "transformer_job_check":
+                    pass #TODO: forward transform_job_check requests
+                elif type == "transformer_job_run":
+                    pass #TODO: forward transform_job_run requests
                 else:
-                    raise NotImplementedError(type)
-                await cache_task.future
-
-                manager = next(iter(self.managers))
-                cache = getattr(manager, cache_name)
-                method = getattr(cache, method_name)
-                result = method(content)
+                    raise ValueError(type)
+                if cache_task is not None:
+                    await cache_task.future
+                    if cache_name is None:
+                        method = getattr(manager, method_name)
+                    else:
+                        cache = getattr(manager, cache_name)
+                        method = getattr(cache, method_name)
+                    result = method(content)
         finally:
             #print("REQUEST", message_id)
             response = {
@@ -299,7 +322,7 @@ class CommunionServer:
             msg = communion_encode(response)
             assert isinstance(msg, bytes)
             peer_id = self.peers[peer]["id"]
-            print("Communion response: send %d bytes to peer '%s' (#%d)" % (len(msg), peer_id, response["id"]))
+            print("  Communion response: send %d bytes to peer '%s' (#%d)" % (len(msg), peer_id, response["id"]))
             await peer.send(msg)
         
     def _process_response_from_peer(self, peer, message):
@@ -310,9 +333,9 @@ class CommunionServer:
         
     async def _process_message_from_peer(self, peer, msg):        
         message = communion_decode(msg)
-        report = "Communion %s: receive %d bytes from peer '%s' (#%d)"
+        report = "  Communion %s: receive %d bytes from peer '%s' (#%d)"
         peer_id = self.peers[peer]["id"]
-        print(report  % (message["mode"], len(msg), peer_id, message["id"]))
+        print(report  % (message["mode"], len(msg), peer_id, message["id"]), message.get("type"))
         #print("message from peer", self.peers[peer]["id"], ": ", message)
         mode = message["mode"]
         assert mode in ("request", "response"), mode
@@ -334,7 +357,7 @@ class CommunionServer:
         })
         msg = communion_encode(message)
         peer_id = self.peers[peer]["id"]
-        print("Communion request: send %d bytes to peer '%s' (#%d)" % (len(msg), peer_id, message["id"]))
+        print("  Communion request: send %d bytes to peer '%s' (#%d)" % (len(msg), peer_id, message["id"]), message["type"])
         await peer.send(msg)
         result = await future        
         self.futures[peer].pop(message_id)

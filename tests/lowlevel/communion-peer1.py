@@ -3,8 +3,8 @@ from seamless.core import context, cell, transformer, pytransformercell, link
 from seamless import get_hash
 
 from seamless import communionserver
-communionserver.configure_master(transformer_result=True)
-communionserver.configure_servant(value=True)
+communionserver.configure_master(value=True, transformer_result=True)
+communionserver.configure_servant(value=True, transformer_job=True)
 
 with macro_mode_on():
     ctx = context(toplevel=True)
@@ -25,7 +25,9 @@ with macro_mode_on():
 
 ctx.equilibrate()
 print(ctx.result.value)
-print("Secret source code ", ctx.code.checksum)
+print(ctx.cell1, ctx.cell1.value, ctx.cell1.checksum)
+print(ctx.cell2, ctx.cell2.value, ctx.cell2.checksum)
+print("Secret source code ", ctx.code.checksum, ctx._manager.value_get(bytes.fromhex(ctx.code.checksum)))
 print("hash verification  ", get_hash("c = a + b\n").hex())
 
 import asyncio

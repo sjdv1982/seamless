@@ -34,13 +34,13 @@ Things to do:
     - label cache: a label-to-checksum cache. DONE
       Labels can be .e.g "the ribosome", "the clustering code".
       They must be unique, but they are ephemeral, not like checksum annotations which will be global
-    - Communion servers: PARTIALLY DONE
+    - Communion servers:  DONE
       - accept connections over websockets; after that, "server" and "client" are just peers DONE
       - Peers negotatiate what they commune: 
         - label cache DONE
         - transformer result cache DONE
         - cell value cache DONE
-        - remote transform jobs (send/receive) TODO
+        - remote transform jobs (send/receive) DONE
       All communed caches will be level 1, since evaluating an expression will normally be much faster
        than interrogating the network. If not, there is always cache tree depth.      
       Communed caches will be registered as external read caches

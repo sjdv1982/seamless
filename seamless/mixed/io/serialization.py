@@ -26,7 +26,8 @@ def deserialize(data):
     assert isinstance(data, bytes)
     if data.startswith(MAGIC_NUMPY):
         return from_stream(data, "pure-binary", None)
-    assert data.startswith(MAGIC_SEAMLESS_MIXED)
+    elif not data.startswith(MAGIC_SEAMLESS_MIXED):
+        return from_stream(data.decode(), "pure-plain", None)
     offset = len(MAGIC_SEAMLESS_MIXED)
     lh1 = np.frombuffer(data[offset:offset+1], np.uint8)[0]
     offset += 1

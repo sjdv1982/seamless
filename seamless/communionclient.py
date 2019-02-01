@@ -3,6 +3,7 @@ from .core.cache.cache_task import (
     remote_transformer_result_servers,
     remote_checksum_value_servers
 )    
+from .core.jobscheduler import remote_job_servers
 
 class CommunionClient: 
     """wraps a remote servant"""
@@ -109,9 +110,25 @@ class CommunionValueCacheClient(CommunionPairClient):
                 "content": checksum,
             }
 
+class CommunionTransformerJobClient(CommunionPairClient):
+    config_type = "transformer_job"
+    cache_task_servers = remote_job_servers
+    def _prepare_message(self, funcmode, checksum):
+        if funcmode == "check":
+            return {
+                "type": "transformer_job_check",
+                "content": checksum,
+            }
+        elif funcmode == "run":
+            return {
+                "type": "transformer_job_run",
+                "content": checksum,
+            }
+
 
 communion_client_types = (
     CommunionLabelClient,
     CommunionTransformerResultClient,
     CommunionValueCacheClient,
+    CommunionTransformerJobClient,
 )

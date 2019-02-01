@@ -217,25 +217,30 @@ class Manager:
         self._temp_tf_level1 = {}
 
 
-    async def _schedule_transform_all(self, tf_level1, count):
+    async def _schedule_transform_all(self, tf_level1, count, run_remote=True):
         """Runs until either a remote cache hit has been obtained, or a job has been submitted"""
         from .cache.transform_cache import TransformerLevel1
         assert isinstance(tf_level1, TransformerLevel1)
-        tcache = self.transform_cache
+        tcache = self.transform_cache        
+        result = tcache.result_hlevel1.get(tf_level1.get_hash())
+        if result is not None:
+            self.set_transformer_result(tf_level1, None, None, result, False)
+            return
         task = None
         try:
-            task = self.cache_task_manager.remote_transform_result(tf_level1.get_hash())
-            if task is not None:
-                await task.future
-                result = task.future.result()
-                if result is not None:
-                    self.set_transformer_result(tf_level1, None, None, result, False)
+            if run_remote:
+                task = self.cache_task_manager.remote_transform_result(tf_level1.get_hash())
+                if task is not None:
+                    await task.future
+                    result = task.future.result()
+                    if result is not None:
+                        self.set_transformer_result(tf_level1, None, None, result, False)
+                        return
+                task = None
+                job = self.jobscheduler.schedule_remote(tf_level1, count)
+                if job is not None:
                     return
-            task = None
-            job = self.jobscheduler.schedule_remote(tf_level1, count)
-            if job is not None:
-                return
-            await self._schedule_transform_job(tf_level1, count)
+            return await self._schedule_transform_job(tf_level1, count)
         except asyncio.CancelledError:
             if task is not None:
                 task.cancel()
@@ -250,7 +255,37 @@ class Manager:
             self.set_transformer_result(tf_level1, tf_level2, None, result, False)
             return
         tcache.set_level2(tf_level1, tf_level2)                    
-        job = self.jobscheduler.schedule(tf_level2, count)  # job object is ignored
+        job = self.jobscheduler.schedule(tf_level2, count)
+        return job
+
+    async def run_remote_transform_job(self, tf_level1):
+        tcache = self.transform_cache
+        vcache = self.value_cache
+        tcache.incref(tf_level1)
+        hlevel1 = tf_level1.get_hash()        
+        if hlevel1 not in tcache.transformer_from_hlevel1:
+            tcache.transformer_from_hlevel1[hlevel1] = None
+        try:
+            coros = []
+            for k in tf_level1._expressions:
+                checksum = tf_level1._expressions[k].buffer_checksum
+                coro = self.get_value_from_checksum_async(checksum)
+                coros.append(coro)
+            await asyncio.gather(*coros)
+            for k in tf_level1._expressions:
+                checksum = tf_level1._expressions[k].buffer_checksum
+                assert vcache.get_buffer(checksum) is not None, (k, checksum.hex())
+            job = await self._schedule_transform_all(tf_level1, 1, run_remote=False)
+            if job.future is not None:
+                await job.future                        
+            k = list(tcache.result_hlevel1.keys())[0]
+            result = tcache.result_hlevel1.get(hlevel1)
+            return result
+        finally:            
+            #tcache.decref(tf_level1) #TODO: transformers that expire...
+            real_transformer = tcache.transformer_from_hlevel1.pop(hlevel1, None)
+            if real_transformer is not None:
+                tcache.transformer_from_hlevel1[hlevel1] = real_transformer
 
     def schedule_jobs(self):
         if not len(self.scheduled):
@@ -270,7 +305,7 @@ class Manager:
             if key not in scheduled_clean:
                 count = 0
             else:
-                old_schedop, count = scheduled_clean[key][0]
+                old_schedop, count = scheduled_clean[key]
                 assert old_schedop.get_hash() == schedop.get_hash()
             dif = 1 if add_remove else -1
             scheduled_clean[key] = schedop, count + dif
@@ -288,11 +323,7 @@ class Manager:
                             continue
                         status = self.status[ttf]
                         if status.exec == "READY":
-                            status.exec = "EXECUTING"                    
-                    result = tcache.result_hlevel1.get(tf_level1.get_hash())
-                    if result is not None:
-                        self.set_transformer_result(tf_level1, None, None, result, False)
-                        continue
+                            status.exec = "EXECUTING" 
                     task = self._schedule_transform_all(tf_level1, count)
                     self.cache_task_manager.schedule_task(
                         ("transform","all",tf_level1),task,count,
@@ -369,9 +400,12 @@ class Manager:
                 else:
                     self.set_cell_checksum(cell, checksum)
             self.update_transformer_status(tf,full=False)
+        if checksum is None: #result conforms to no cell (probably remote transformation)
+            checksum, buffer = protocol.calc_buffer(value)
+            self.value_cache.incref(checksum, buffer, has_auth=False) 
         tcache.result_hlevel1[hlevel1] = checksum
         if level2 is not None:
-            tcache.result_hlevel1[level2.get_hash()] = checksum
+            tcache.result_hlevel2[level2.get_hash()] = checksum
 
     async def _flush(self):
         self.flushing = True
@@ -826,9 +860,9 @@ class Manager:
         return buffer_item
         
     async def get_value_from_checksum_async(self, checksum):
-        buffer_item = self.value_cache.get_buffer(checksum)
+        buffer_item = self.value_cache.get_buffer(checksum)        
         if buffer_item is None:
-            cache_task = self.cache_task_manager.remote_value(checksum)
+            cache_task = self.cache_task_manager.remote_value(checksum)            
             if cache_task is None:
                 return None
             await cache_task.future

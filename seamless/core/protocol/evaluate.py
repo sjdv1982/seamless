@@ -57,8 +57,20 @@ However:
    [TODO: to think about...]
 
 """
+import json
 
 from .deserialize import deserialize
+from ...mixed.io import to_stream, get_form
+from ...get_hash import get_hash
+
+def calc_buffer(value):
+    storage, form = get_form(value)
+    if storage == "pure-plain":
+        data = json.dumps(value)
+        return get_hash(data + "\n"), data
+    else:
+        stream = to_stream(value, storage, form)
+        return get_hash(stream), stream
 
 def evaluate_from_buffer(expression, buffer):
     from ..cache import SemanticKey
