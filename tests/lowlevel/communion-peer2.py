@@ -8,6 +8,8 @@ from seamless import communionserver
 communionserver.configure_master(transformer_result=True, transformer_job=True)
 communionserver.configure_servant(value=True)
 
+redis_cache = seamless.RedisCache()
+
 with macro_mode_on():
     ctx = context(toplevel=True)
     ctx.cell1 = cell().set(2)
@@ -36,7 +38,6 @@ ctx.equilibrate()
 print(ctx.status)
 
 print(ctx.result.value)
-
 with macro_mode_on():
     ctx.cell1.set(100)
     ctx.cell2.set(200)

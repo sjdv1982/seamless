@@ -7,6 +7,8 @@ from .expression_cache import Expression
 from .value_cache import SemanticKey
 from ...get_hash import get_hash
 
+from .redis_client import redis_sinks, redis_caches
+
 class TransformerLevel1:
     def __init__(self, expressions, output_name):
         self._expressions = expressions
@@ -237,5 +239,11 @@ class TransformCache:
 
 
     def get_result(self, hlevel1):
-        #print("GET_RESULT", hlevel1, self.result_hlevel1.keys())
-        return self.result_hlevel1.get(hlevel1)
+        result = self.result_hlevel1.get(hlevel1)
+        if result is not None:
+            return result
+        return redis_caches.get_transform_result(bytes.fromhex(hlevel1))
+
+    def set_result(self, hlevel1, checksum):
+        self.result_hlevel1[hlevel1] = checksum
+        redis_sinks.set_transform_result(bytes.fromhex(hlevel1), checksum)       

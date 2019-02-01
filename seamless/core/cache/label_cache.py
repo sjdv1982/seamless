@@ -1,5 +1,7 @@
 import weakref
 
+from .redis_client import redis_sinks, redis_caches
+
 def validate_label(label):
     assert isinstance(label, str)
     assert len(label) < 80
@@ -29,9 +31,13 @@ class LabelCache:
             assert old_checksum == checksum
         self._label_to_checksum[label] = checksum
         self._checksum_to_label[checksum] = label      
+        redis_sinks.set_label(label, checksum)
 
     def get_label(self, checksum):
         return self._checksum_to_label.get(checksum)      
 
     def get_checksum(self, label):
-        return self._label_to_checksum.get(label)
+        result = self._label_to_checksum.get(label)
+        if result is not None:
+            return result
+        return redis_caches.get_label(label)

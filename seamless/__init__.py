@@ -69,6 +69,7 @@ from .shareserver import shareserver
 from .communionserver import communionserver
 from .core.jobscheduler import set_ncores
 from .get_hash import get_hash
+from .core.cache.redis_client import RedisSink, RedisCache
 
 def inputhook_terminal(context):
     while not context.input_is_ready():

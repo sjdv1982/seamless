@@ -4,6 +4,8 @@ from weakref import WeakValueDictionary
 import functools
 from collections import namedtuple
 
+from .redis_client import redis_sinks, redis_caches
+
 class WeakrefableWrapper:
     __slots__ = ["value", "__weakref__"]
     def __init__(self, value):
@@ -99,6 +101,8 @@ class ValueCache:
         tempref = functools.partial(self.decref, buffer_checksum, has_auth=False)
         self.manager().temprefmanager.add_ref(tempref, 20.0)
         self._buffer_cache[buffer_checksum] = item
+        redis_sinks.set_value(buffer_checksum, buffer)
+
         return success
 
     def decref(self, buffer_checksum, *, has_auth):
@@ -139,12 +143,17 @@ class ValueCache:
     def get_buffer(self, checksum):
         item = self._buffer_cache.get(checksum)
         if item is None or item[2] is None:
-            return None
+            item = None
+            value = redis_caches.get_value(checksum)
+            if value is not None:
+                item = 1, 1, value
         return item
 
     def value_check(self, checksum):
         """For the communionserver..."""
-        return checksum in self._buffer_cache
+        if checksum in self._buffer_cache:
+            return True
+        return redis_caches.has_value(checksum)
 
 """
 NOTE: value caches coming from expressionlevel>0 or from streams will never be

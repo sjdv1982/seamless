@@ -66,8 +66,8 @@ from ...get_hash import get_hash
 def calc_buffer(value):
     storage, form = get_form(value)
     if storage == "pure-plain":
-        data = json.dumps(value)
-        return get_hash(data + "\n"), data
+        data = json.dumps(value).encode()
+        return get_hash(data + b"\n"), data
     else:
         stream = to_stream(value, storage, form)
         return get_hash(stream), stream

@@ -222,7 +222,7 @@ class Manager:
         from .cache.transform_cache import TransformerLevel1
         assert isinstance(tf_level1, TransformerLevel1)
         tcache = self.transform_cache        
-        result = tcache.result_hlevel1.get(tf_level1.get_hash())
+        result = tcache.get_result(tf_level1.get_hash())
         if result is not None:
             self.set_transformer_result(tf_level1, None, None, result, False)
             return
@@ -279,7 +279,7 @@ class Manager:
             if job.future is not None:
                 await job.future                        
             k = list(tcache.result_hlevel1.keys())[0]
-            result = tcache.result_hlevel1.get(hlevel1)
+            result = tcache.get_result(hlevel1)
             return result
         finally:            
             #tcache.decref(tf_level1) #TODO: transformers that expire...
@@ -375,6 +375,8 @@ class Manager:
 
     def set_transformer_result(self, level1, level2, value, checksum, prelim):
         print("TODO: Manager.set_transformer_result: expand code properly, see evaluate.py")
+        # TODO: this function is not checked for exceptions when called from a remote job...""
+        #print("transformer result", value)
         assert value is not None or checksum is not None
         tcache = self.transform_cache
         hlevel1 = level1.get_hash()
@@ -403,7 +405,7 @@ class Manager:
         if checksum is None: #result conforms to no cell (probably remote transformation)
             checksum, buffer = protocol.calc_buffer(value)
             self.value_cache.incref(checksum, buffer, has_auth=False) 
-        tcache.result_hlevel1[hlevel1] = checksum
+        tcache.set_result(hlevel1, checksum)        
         if level2 is not None:
             tcache.result_hlevel2[level2.get_hash()] = checksum
 
@@ -458,9 +460,15 @@ class Manager:
         if not cache_hit:
             checksum = expression.buffer_checksum
             buffer_item = self.get_value_from_checksum(checksum)
+            is_none = False
             if buffer_item is None:
-                raise ValueError("Checksum not in value cache")
-            _, _, buffer = buffer_item            
+                is_none = True
+            else:
+                _, _, buffer = buffer_item
+                if buffer is None:
+                    is_none = True
+            if is_none:
+                raise ValueError("Checksum not in value cache")            
             value, _ = self.cache_expression(expression, buffer)
         return value
 

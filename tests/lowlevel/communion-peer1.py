@@ -6,6 +6,11 @@ from seamless import communionserver
 communionserver.configure_master(value=True, transformer_result=True)
 communionserver.configure_servant(value=True, transformer_job=True)
 
+import seamless
+redis_sink = seamless.RedisSink()
+redis_cache = seamless.RedisCache()
+
+
 with macro_mode_on():
     ctx = context(toplevel=True)
     ctx.cell1 = cell().set(2)
@@ -24,11 +29,9 @@ with macro_mode_on():
     ctx.tf.c.connect(ctx.result)
 
 ctx.equilibrate()
-print(ctx.result.value)
-print(ctx.cell1, ctx.cell1.value, ctx.cell1.checksum)
-print(ctx.cell2, ctx.cell2.value, ctx.cell2.checksum)
 print("Secret source code ", ctx.code.checksum, ctx._manager.value_get(bytes.fromhex(ctx.code.checksum)))
 print("hash verification  ", get_hash("c = a + b\n").hex())
+print(ctx.result.checksum)
 
 import asyncio
 asyncio.get_event_loop().run_forever()
