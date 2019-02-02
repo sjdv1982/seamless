@@ -46,7 +46,7 @@ Things to do:
       Communed caches will be registered as external read caches
       Communed job control will be connected as a remote job server / client
       All cache/job commands will be received over the websocket
-    - Redis cache server module (for multiple kind of cache)
+    - Redis cache server module (for multiple kind of cache) DONE
       This is an internal Seamless cache server that works by being a client to Redis
        (which will run as a different process than Seamless, exposed over the network)      
       - Will be registered as communed caches
@@ -55,19 +55,21 @@ Things to do:
         (but not the other caches) empty.
 
   C.
-  - Get reactors working. reactcache can be set up similar to transformcache.
-    The result of a reaction is the buffer checksum of all of its outputpins.
-    Editpin-connected cells are an explicit part of the reaction input dict. 
-    When an editpin is changed, a new reaction is defined, 
-    with a new value of the editpin. 
-    But the reaction is only executed if the editpin was changed externally.
-    If not, the new reaction is cached with the same result (outputpin checksums)
-    as the old one.
-    In addition, reactors must be marked as pure or impure. 
-    Pure reactors get shut down after every reaction. Impure reactors receive delta updates.
-    very much the same as in the current situation.
-    UPDATE: a little more subtle: a reactor can be pure but reluctant to shut down,
+  - Get reactors working. 
+    Reactors must be marked as pure or impure.
+    Pure reactors get shut down after every reaction. They cannot have editpins.    
+    Impure reactors receive delta updates.
+    A semi-pure reactor is a pure reactor that is reluctant to shut down,
      e.g. because it can take a lot of time to build the internal state from input cells.
+
+    The result of a reaction is the buffer checksum of all of its outputpins.
+    It must be a deterministic result of the reaction input dict, consisting of 
+     inputpins only.
+    Editpin-connected cells are NOT an explicit part of the reaction input dict. 
+    When an editpin is changed, the reactor is informed, but its outputpins 
+     may depend ONLY on inputpins.
+    TODO later: non-deterministic outputpins
+    TODO later: reactor caches and jobs, remote execution (see below)
 
   D.
   - Macros. Immediate macro execution is disabled, e.g. macros never
@@ -97,15 +99,15 @@ Things to do:
     This is always in macro mode, hance all worker execution is disabled (beyond what is already running)
     When macro execution is complete, the old macro is being destroyed.
     Destruction:
-    1. Shuts down all non-pure reactors
+    1. Shuts down all interactive execution (non-pure reactors)
     2. May clean up cache items associated with the old macro 
-    3. Will also interrupt all transforms and pure reactors.
+    3. Will also interrupt all async execution (transforms and pure reactors).
     Part 1. will happen immediately; 2. and 3. will happen with a 20 sec delay, or when all cells in the
      new macro reach stable status, whichever happens sooner.
    - Get all macro tests working 
 
   E.
-  - Keep the new mixed cells with no storage or form cells
+  - Keep the new mixed cells with no storage or form cells PARTIALLY DONE
     Change serialization:
     - Pure binary => numpy. Can be recognized because it starts with NUMPY magic characters
     - Mixed => SEAMLESS magic characters, but then storage + form, then data.
@@ -136,6 +138,11 @@ Things to do:
   - Implement annotation dict, including execute_debug, ncores (ncores DONE)
 
   I. Get the high level working. Should be quite straightforward now.
+     
+  J. (Maybe delay this until after the presentation) 
+    Add cache graph serialization where just the checksums and status flags are stored.
+     In addition, implement simple cache archives (zip files of mixed cell streams)
+      that can be saved and loaded into value cache at will.
 
 Details:
 The New Way and streams will be done early (this is big!)
@@ -170,6 +177,26 @@ The New Way and streams will be done early (this is big!)
   Stream-annotated transformers have stream inputpins.
   Stream cells are possible and can be connected (and only to stream cells or stream pins;
     special transformer for cell <=> stream cell)
+- Allow any worker inputpin to be annotated as must_be_defined=False.
+  Remove must_be_defined from editpins, as None is always a valid value for them.
+- Annotation for reduction streams. reduction streams have ordered input; in case of
+   an input that is a dict, a secondary input must be designated that contains all the keys
+   in order.
+   The stream is mapped to two inputpins of the transformer, the first of which must be
+   must_be_defined=False.
+   For reduction streams, given a transformer F(X,Y)->Z, Stream([A,B,C]) => Z is implemented as:
+   F(None,A) => P, F(P,B) => Q, F(Q,C) => Z.    
+   As the checksums of all intermediate stages are computed, this is very efficient towards
+    adding new elements to the stream, as long as they are appended at the end.
+   A reduction stream can be annotated as order-independent. In that case:
+    - In case of a input list, the elements must be sortable.
+    - Stream([C,B,A]) is the same as Stream([A,B,C]). Therefore, after a level1 cache miss,
+      first [C,B,A] is sorted and rewritten as [A,B,C], and only then the level2 checksum is 
+      computed.
+    - For evaluation, the elements are NOT sorted. For list inputs, you should put them in such
+      an order to maximize cache efficiency.
+    - For dicts, the secondary input pin with sorted keys is optional.
+      (it is still recommended for cache efficiency)
 - Simple transformer caching, using the old request format (with no values now)
   Done twice: once with stream annotation, once without
 - Set up Redis backends for cell caching and simple transformer caching, in Docker images.
@@ -197,9 +224,6 @@ The New Way and streams will be done early (this is big!)
 - Set up simple transformer slave that uses Merkle trees (used in caching) as requests
 
 # Notes about the New Way:
-- Faking a cycle with a reactor will no longer work. In general,
- hiding a dependency by using an edit pin instead of an outputpin
- will not work.
 - For structured cells, synthetic (i.e. dependent, non-authoritative)
   schemas are a legit use case (i.e. synthesize from XML or Spyder).
   StructuredCell should support this, disabling all type inference
@@ -238,14 +262,7 @@ Seamless is now usable by me, to port RPBS/Galaxy services
   - Interject merge for manual edit
   - Hook up browser for visualization
 
-intermezzo:
-- convert "json" to "plain" everywhere (JsonCell etc).
-- Look into "gracefully shutting down transformers"; slows things down,
-   but proper caching may rely on it?
-   UPDATE: for now, needs to have USE_PROCESSES is True,
-    else causes segfault for BCSearch/test.py
-  Make it case-by-case possible to do thread evaluation, and wait-for-shutdown
-- re-run all tests
+intermezzo: re-run all tests
 
 Part 3 (low-level / cleanup): Towards the merge
    - Add back in int/float/str/bool cells because they are so convenient.
@@ -274,6 +291,31 @@ Part 3 (low-level / cleanup): Towards the merge
 Merge into master; end of the Great Refactor
 Seamless is now kind-of ready to be started to be used by other devs, at their peril, caveat emptor, etc.
 Limiting factor: lack of documentation/examples
+
+*****************************************************************
+UPDATE, Feb 2019 
+The New Way/Great Split prioritization has rendered moot much of the roadmap below.
+It needs to be reorganized, and the following tasks to be added:
+(and integrated in cloudless/"Towards flexible and cloud-compatible evaluation")
+1.
+- Reactor execution.
+  - Pure and semi-pure reactors can be executed async, just like transformers.
+  - Because of this, they can be cached and submitted as remote jobs.
+    Reactcache could be set up similar to transformcache.
+    Better: generalize transformcache into async_cache to include pure reactors and graphs.  
+- Remote interactive mode execution.
+  Semi-pure reactors can be remotely executed in interactive mode. Deltas are sent,
+  and responses are received. The state itself must be labeled with an increasing ID,
+  just as for shareserver. (Semi-)pure graphs can be executed in the same way.
+- Graph remote execution. Only for pure graphs, i.e. that contain no impure reactors.
+  They can be executed non-interactively (as if a transformer) or interactively 
+  (as if a semi-pure reactor).
+- This is all orthogonal to collaborative mode, which deals with graphs but allows dynamic
+  modification of the entire graph (whereas interactive mode is just the value of pins/cells).
+2. 
+- Non-deterministic outputpins. These are essentially editpins, except that
+   the reactor is NOT notified if they are changed by some external source.
+*****************************************************************
 
 Part 4: Towards release
 
@@ -446,7 +488,6 @@ Part 8:
 Seamless is now in beta. Shift attention to API stability, unit tests, etc. Learn about best practices,
  and ask for help.
 
-
 Medium-term:
 - (UPDATE: DONE. Just get my patch into pandas...)
   Add Pandas as a query engine. Querying in Pandas is fantastic (much better than numexpr).
@@ -465,7 +506,7 @@ Long-term:
 - Meta-schema for schema editing (jsonschema has it)
 - More love to the GUI around report channels (to visualize) and around high-level context (to edit)
   At this point, some proof-of-principle should exist already.
-- Windows support? Or never?
+- Windows support? Or never? Or just with local jobs disabled?
 - An extra "table" celltype, for text (like awk or org-mode) or binary (like Pandas)
 - Reconsider the restrictions on transformers and reactors. [Give transformers
   edit pins and cache pins, allow them to have reactor pin API => YAGNI?].
@@ -519,6 +560,8 @@ Very long-term:
 
 Call graph serialization
 =========================
+UPDATE: never ever save values in a call graph, only checksums and statuses!
+
 Seamless has fundamentally the following sources of authority:
 - Dependence: cells dependent on upstream transformers, reactor outputpins,
   or low-level macros.
@@ -892,6 +935,16 @@ There is also a stricter formulation of purity: namely that B) and C) do not hap
 Non-pure (i.e. only "kind-of-pure") transformers are not normally shut down. It is assumed that when they shut down, they must be
  re-executed (which may be expensive). Reactors have explicit start-up and shutdown code, so they can be shut down at will.
 
+"Transform lazily, react eagerly"
+=================================
+Imagine the case where a graph has just been loaded. You know all checksums, but not the values.
+For now, all values must be stored in an accompanying cache archive.
+In the future, make it possible to store just the authoritative values.
+When a non-authoritative cell value is requested, and there is a cache miss, 
+ travel back the graph and evaluate the transformers to re-compute the result.
+This should be enabled/disabled on a by-cell basis (if any cell upstream has it
+ disabled, don't do it).
+
 Blocks
 ======
 In Seamless, workers are expected to send values, for which they allocate the memory themselves.
@@ -1162,23 +1215,27 @@ Use cases:
 - Reactor 1 and 2 both maintain a GUI using a native widget. By exposing their widget objects to reactor 3,
   reactor 3 can display them in a common window.
 
+Why Seamless is not dataflow or Functional Reactive Programming
+===============================================================
+- "History doesn't matter". Dataflow and all flavors of RP react to 
+   event streams that produce and consume in real time.
+  In this sense, Seamless is most akin to a spreadsheet.
+- "Code is just another kind of data". Dataflow and FRP all assume the code as a given.
+- Unlike dataflow (but like FRP), Seamless is really strict about determinism 
+  (purity, referential transparency etc.)
+- "Always resubmit your entire computation."
+  Seamless is very fanatic about caching. If you really want to react to event streams, 
+   just give it an initial value, e.g. [E1, E2, E3], and feed it into a Seamless cell. 
+  When a new event E4 comes, just replace the cell value with [E1, E2, E3, E4]. 
+  Seamless will model it just as if it was [E1, E2, E3, E4] all along (history doesn't matter).
+  But in most of the cases, it will re-use the computations that were done before,
+   instead of recomputing from scratch.
+
 NOTE: TO DOCUMENT:
-Seamless should make it easy to write code that runs fast (e.g. in parallel, in C, on the GPU) with
-minimal effort. However, Seamless does *not* by default have a high performance in terms of
-data handling: a lot of things are copied and have their checksums computed, repeatedly.
-Seamless should provide the facilities to make data handling faster, usually at the expense of error
-control, but users will have to enable them if they see that their data load gets too heavy.
-TO DOCUMENT (= example of the above):
-Structured cells are pretty efficient when it comes to state-modification-to-outchannel mapping.
-When you set .a.b, it will fire on outchannels .a.b.c, .a and self, but not on .a.d, a.d.e or .f .
-For other outchannels, not even the checksums will be computed (TODO: not true at present)
-This holds no matter if .a.b is set from an inchannel or from the terminal.
-However, this efficiency is *lost* when you use any kind of buffering or forking. This will set the entire
- state, causing all checksums to be recomputed.
-In addition, it is pretty *inefficient* if you make repeated state modifications; for example,
-"for i in range(100): cell.a.b.append(i)". Outchannels connected to a transformer will repeatedly cancel
- the transformer, and those to a reactor will *wait* on each append until the reactor has finished!
-Therefore, any Silk method that modifies the data should normally use fork().
+Seamless has a lot of principles but its current implementation is not a miracle of engineering.
+Seamless *should* make it easy to write code that runs fast (e.g. in parallel, in C, on the GPU) with
+minimal effort. In practice, things can be slowed down by having checksums computed, repeatedly.
+For example, Silk buffering and forking will cause a full checksum recomputation.
 (to think about:
 - storing some selected bytes of a big array, to quickly detect huge changes w/o recomputing full checksum
 - Make a special StructuredCell Silk mode where set/setitem are not intercepted by the monitor, but where

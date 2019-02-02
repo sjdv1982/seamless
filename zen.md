@@ -1,19 +1,21 @@
 Seamless Zen
 ============
 
-Checksums are best.
-
-Cells are good, files are bad, URLs are ugly.
-
-All state is in cells, unless it is ephemeral.
-
 History doesn't matter.
+
+Code is just another kind of input.
+
+Cells are good, files are bad, URLs are ugly. Checksums are best.
+
+Keeping the checksum is enough, if you can look up the value later.
 
 Always resubmit your entire computation.
 
+All state is in cells, unless it is ephemeral.
+
 Always be prepared to rebuild from cells.
 
-Errors can always happen, but wrong answers are unforgivable.
+Errors can happen, but wrong answers are unforgivable.
 
 Random generators must not be random.
 
