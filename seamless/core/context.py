@@ -29,8 +29,7 @@ class Context(SeamlessBase):
 
     _name = None
     _children = {}
-    _manager = None
-    _pins = []
+    _manager = None    
     _auto = None
     _toplevel = False
     _naming_pattern = "ctx"
@@ -79,7 +78,6 @@ context : context or None
             else:
                 assert context is not None
 
-            self._pins = {}
             self._children = {}
             self._auto = set()
             if toplevel:
@@ -135,18 +133,13 @@ context : context or None
     def __setattr__(self, attr, value):
         if attr.startswith("_") or hasattr(self.__class__, attr):
             return object.__setattr__(self, attr, value)
-        if attr in self._pins:
-            raise AttributeError(
-             "Cannot assign to pin '%s'" % attr)
         if attr in self._children and self._children[attr] is not value:
             raise AttributeError(
              "Cannot assign to child '%s'" % attr)
         self._add_child(attr, value)
 
     def __getattr__(self, attr):
-        if attr in self._pins:
-            return self._pins[attr]
-        elif attr in self._children:
+        if attr in self._children:
             return self._children[attr]
         raise AttributeError(attr)
 
@@ -154,8 +147,6 @@ context : context or None
         if hasattr(self.__class__, attr):
             return True
         if attr in self._children:
-            return True
-        if attr in self._pins:
             return True
         return False
 

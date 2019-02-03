@@ -6,7 +6,7 @@ from .protocol import content_types
 class Reactor(Worker):
     #can't have with_schema because multiple outputs are possible
     # reactors will have construct their own Silk objects from schema pins
-    def __init__(self, reactor_params):
+    def __init__(self, reactor_params, pure):
         self.outputs = {}
         self.inputs = {
             "code_start":("ref", "pythoncode", "reactor", True),
@@ -22,6 +22,8 @@ class Reactor(Worker):
                         "code_stop": self.code_stop,
                      }
         self._reactor_params = OrderedDict()
+        assert pure in (True, False, "semi")
+        self._pure = pure
 
         forbidden = list(self.inputs.keys())
         for p in sorted(reactor_params.keys()):
@@ -69,12 +71,20 @@ class Reactor(Worker):
                 self._pins[p] = pin
         super().__init__()
 
+    @property
+    def pure(self):
+        return self._pure
+
+    def _set_context(self, ctx, name):
+        super()._set_context(ctx, name)
+        self._get_manager().register_reactor(self)
+
     def __str__(self):
         ret = "Seamless reactor: " + self._format_path()
         return ret
 
 
-def reactor(params):
+def reactor(params, pure=False):
     """TODO: port documentation from 0.1"""
-    return Reactor(params)
+    return Reactor(params, pure=pure)
 

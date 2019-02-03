@@ -17,6 +17,8 @@ from .cache import (CellCache, AccessorCache, ExpressionCache, ValueCache,
 from .jobscheduler import JobScheduler
 from .macro_mode import get_macro_mode, curr_macro
 from ..mixed.io import deserialize as mixed_deserialize, serialize as mixed_serialize
+from .runtime_reactor import RuntimeReactor
+from .status import Status
 
 import threading
 import functools
@@ -28,8 +30,8 @@ import time
 import itertools
 import asyncio
 from collections import namedtuple
-from enum import Enum
 from collections import OrderedDict
+from weakref import WeakKeyDictionary
 import sys
 
 def main_thread_buffered(func):
@@ -48,138 +50,6 @@ def main_thread_buffered(func):
                 return
             func(self, *args, **kwargs)
     return main_thread_buffered_wrapper
-
-class Status:
-    StatusDataEnum =  Enum('StatusDataEnum',
-        ('OK', 'PENDING', 'UNDEFINED', 'UPSTREAM_ERROR', 'INVALID', 'UNCONNECTED')
-    )
-    # "UNCONNECTED" is only for workers
-    # "INVALID" means parsing error or schema violation (with error message) (cell only)
-    # "UPSTREAM_ERROR" means 'INVALID', 'UNDEFINED' or 'UNCONNECTED' upstream
-    StatusExecEnum =  Enum('StatusExecEnum',
-        ('FINISHED', 'EXECUTING', 'READY', 'PENDING', 'BLOCKED', 'ERROR')
-    ) # "BLOCKED" means essentially "something in the data prevents me from running"
-      # "ERROR" means an error in execution (with error message)
-    StatusAuthEnum = Enum('StatusAuthEnum',
-        ("FRESH", "PRELIMINARY", "OVERRULED", "OBSOLETE")
-    )
-    data_status = None  # in case of workers, the result of dependency propagation
-    auth_status = None  # in case of workers, the result of dependency propagation
-    exec_status = None  # only for workers: the result of execution
-    _overruled = False
-    def __init__(self, type):
-        assert type in ("cell", "transformer", "macro", "reactor")
-        self._type = type
-        if type == "cell":
-            self.data_status = self.StatusDataEnum.UNDEFINED
-        else:
-            self.data_status = self.StatusDataEnum.UNCONNECTED
-            self.exec_status = self.StatusExecEnum.BLOCKED
-        self.auth_status = self.StatusAuthEnum.FRESH
-
-    def _str_cell(self):
-        dstatus = self.data
-        if dstatus == "UNDEFINED":
-            return dstatus
-        else:
-            astatus = self.auth
-            if astatus == "FRESH":
-                return dstatus
-            elif dstatus == "OK":
-                return astatus
-            else:
-                return dstatus + "," + astatus
-
-    def _str_transformer(self):
-        dstatus = str(self.data)
-        estatus = str(self.exec)
-        astatus = str(self.auth)
-        if dstatus == "UNCONNECTED":
-            return dstatus
-        elif estatus == "BLOCKED":
-            result = self._str_cell()
-            if result == "UNDEFINED":
-                return "BLOCKED"
-            else:
-                return "BLOCKED,"+result
-        elif dstatus == "PENDING":
-            assert estatus in ("PENDING", "READY", "EXECUTING"), estatus
-            if astatus == "FRESH":
-                return estatus
-            else:
-                return estatus + "," + astatus
-        else:
-            assert dstatus == "OK" or estatus == "ERROR", (dstatus, estatus)
-            astatus = self.auth
-            if astatus == "FRESH":
-                return estatus
-            elif estatus == "FINISHED":
-                return astatus
-            else:
-                return estatus + "," + astatus
-
-    def _str_macro(self):
-        return self._str_transformer()
-
-    def _str_reactor(self):
-        raise NotImplementedError ### cache branch
-
-    def __str__(self):
-        if self._type == "cell":
-            return self._str_cell()
-        elif self._type == "transformer":
-            return self._str_transformer()
-        elif self._type == "macro":
-            return self._str_macro()
-        elif self._type == "reactor":
-            return self._str_reactor()
-        else:
-            raise TypeError(self._type)
-
-    @property
-    def data(self):
-        return self.data_status.name
-
-    @data.setter
-    def data(self, value):
-        if isinstance(value, str):
-            value = getattr(self.StatusDataEnum, value.upper())
-        if not isinstance(value, self.StatusDataEnum):
-            raise TypeError
-        self.data_status = value
-
-    @property
-    def exec(self):
-        return self.exec_status.name
-
-    @exec.setter
-    def exec(self, value):
-        if isinstance(value, str):
-            value = getattr(self.StatusExecEnum, value.upper())
-        if not isinstance(value, self.StatusExecEnum):
-            raise TypeError
-        self.exec_status = value
-
-    @property
-    def auth(self):
-        return self.auth_status.name
-
-    @auth.setter
-    def auth(self, value):
-        if isinstance(value, str):
-            value = getattr(self.StatusAuthEnum, value.upper())
-        if not isinstance(value, self.StatusAuthEnum):
-            raise TypeError
-        self.auth_status = value
-
-    def __eq__(self, other):
-        return str(self) == str(other)
-
-    def is_different(self, other):
-        assert isinstance(other, Status)
-        return (self.data_status != other.data_status) or \
-            (self.exec_status != other.exec_status) or \
-            (self.auth_status != other.auth_status)
 
 class Manager:
     _destroyed = False
@@ -208,6 +78,7 @@ class Manager:
         self.cache_task_manager = cache_task_manager
 
         self.status = {}
+        self.reactors = WeakKeyDictionary() # RuntimeReactors
         self.jobs = {}  # jobid-to-job
         self.executing = {}  # level2-transformer-to-jobid
         self.scheduled = []  # list of type-schedop-(add/remove) tuples
@@ -409,6 +280,30 @@ class Manager:
         if level2 is not None:
             tcache.result_hlevel2[level2.get_hash()] = checksum
 
+    @main_thread_buffered
+    def set_reactor_result(self, rtreactor, pinname, value):
+        print("TODO: Manager.set_reactor_result: expand code properly, see evaluate.py")
+        reactor = rtreactor.reactor()
+        if pinname in rtreactor.output_dict:
+            cells = rtreactor.output_dict[pinname]
+        elif pinname in rtreactor.edit_dict:
+            cells = [rtreactor.edit_dict[pinname]]
+        else:
+            raise ValueError(pinname)
+        for cell in cells:
+            status = self.status[cell]
+            status.auth = "FRESH"
+            self.set_cell(cell, value)
+
+    def set_reactor_exception(self, rtreactor, codename, exception):
+        # TODO: store exception? log it?
+        reactor = rtreactor.reactor()
+        exc = traceback.format_exception(type(exception), exception, exception.__traceback__)
+        exc = "".join(exc)
+        msg = "Exception in %s:\n" + exc
+        stars = "*" * 60 + "\n"
+        print(stars + (msg % (str(reactor)+":"+codename)) + stars, file=sys.stderr)
+
     async def _flush(self):
         self.flushing = True
         try:
@@ -524,6 +419,10 @@ class Manager:
         tcache.transformer_to_cells[transformer] = []
         self.status[transformer] = Status("transformer")
 
+    def register_reactor(self, reactor):
+        self.reactors[reactor] = RuntimeReactor(self, reactor)
+        self.status[reactor] = Status("reactor")
+
     def _schedule_transformer(self, transformer):
         tcache = self.transform_cache
         old_level1 = self._temp_tf_level1.get(transformer)
@@ -548,6 +447,7 @@ class Manager:
 
     def _propagate_status(self, cell, data_status, auth_status, full):
         # "full" indicates a value change, but it is just propagated to update_worker
+        from .reactor import Reactor
         if cell._celltype == "structured": raise NotImplementedError ### cache branch
         status = self.status[cell]
         new_data_status = status.data
@@ -578,6 +478,14 @@ class Manager:
                       target_cell, new_data_status, new_auth_status, full
                     )
                 for worker in acache.haccessor_to_workers.get(haccessor, []):
+                    if full and isinstance(worker, Reactor):
+                        rtreactor = self.reactors[worker]
+                        for pinname, accessor in rtreactor.input_dict.items():
+                            if accessor.cell is cell:
+                                rtreactor.updated.add(pinname)
+                        for pinname, pincell in rtreactor.edit_dict.items():
+                            if pincell is cell:
+                                rtreactor.updated.add(pinname)
                     self.update_worker_status(worker, full)
 
     def update_transformer_status(self, transformer, full, new_connection=False):
@@ -660,12 +568,60 @@ class Manager:
             #print("UPDATE", transformer, old_status, "=>", new_status)
 
 
+    def update_reactor_status(self, reactor, full):
+        rtreactor = self.reactors[reactor]
+        old_status = self.status[reactor]
+        new_status = Status("reactor")
+        new_status.data, new_status.exec, new_status.auth = "OK", "FINISHED", "FRESH"
+        updated_pins = []
+        for pinname, pin in reactor._pins.items():
+            if pin.io in ("output", "edit"):
+                continue
+            accessor = rtreactor.input_dict[pinname]
+            cell = accessor.cell
+            cell_status = self.status[cell]
+
+            s = cell_status.data_status
+            if s == Status.StatusDataEnum.INVALID:
+                s = Status.StatusDataEnum.UPSTREAM_ERROR
+            if s.value > new_status.data_status.value:
+                new_status.data_status = s
+
+            s = cell_status.auth_status
+            if s.value > new_status.auth_status.value:
+                new_status.auth_status = s
+        
+        if new_status.data_status.value > Status.StatusDataEnum.PENDING.value:
+            new_status.exec = "BLOCKED"
+        if new_status.data_status.value == Status.StatusDataEnum.PENDING.value:
+            new_status.exec = "PENDING"
+        else:
+            if full and len(rtreactor.updated) and rtreactor.live is not None:
+                ok = rtreactor.execute()
+                rtreactor.updated.clear()
+        if old_status != new_status:
+            #print("reactor update", reactor)
+            #print("reactor status OLD", old_status, "(", old_status.data, old_status.exec, old_status.auth, ")")
+            #print("reactor status NEW", new_status, "(", new_status.data, new_status.exec, new_status.auth, ")")
+            self.status[reactor] = new_status
+            if not full:
+                propagate_data = (new_status.data != old_status.data)
+                propagate_auth = (new_status.auth != old_status.auth)
+                data_status = new_status.data if propagate_data else None
+                auth_status = new_status.auth if propagate_auth else None
+                for pinname, pin in reactor._pins.items():
+                    if pin.io != "output":
+                        continue
+                    for cell in rtreactor.output_dict[pinname]:
+                        self._propagate_status(cell, data_status, auth_status, full=False)
+
+
     def update_worker_status(self, worker, full):
         from . import Transformer, Reactor, Macro
         if isinstance(worker, Transformer):
             return self.update_transformer_status(worker, full=full)
         else:
-            raise NotImplementedError ### cache branch
+            return self.update_reactor_status(worker, full=full)
 
     def _connect_cell_transformer(self, cell, pin):
         """Connects cell to transformer inputpin"""
@@ -676,6 +632,14 @@ class Manager:
         io, access_mode, content_type = (
             pin.io,  pin.access_mode, pin.content_type
         )
+
+        if io == "input":
+            pass
+        elif io == "output":
+            raise TypeError(pin) #outputpin, cannot connect a cell to that...
+        else:
+            raise TypeError(pin)
+
         accessor = self.get_default_accessor(cell)
         if access_mode is not None and access_mode != accessor.access_mode:
             accessor.source_access_mode = accessor.access_mode
@@ -692,14 +656,74 @@ class Manager:
         accessor_dict[pin.name] = accessor
         self.update_transformer_status(transformer,full=False)
 
+    def _connect_reactor(self, pin, cell, inout):
+        """Connects cell to/from reactor pin"""
+        reactor = pin.worker_ref()
+        rtreactor = self.reactors[reactor]        
+        io, access_mode, content_type = (
+            pin.io,  pin.access_mode, pin.content_type
+        )
+
         if io == "input":
-            pass
+            if not inout == "in":
+                raise TypeError(pin) # input pin must be the target
         elif io == "edit":
-            raise NotImplementedError ### cache branch
+            pass # pin.connect(cell) and cell.connect(pin) are equivalent
         elif io == "output":
-            raise TypeError(io) #outputpin, cannot connect a cell to that...
+            if inout == "in":
+                raise TypeError(pin) # output pin cannot be the target
         else:
-            raise TypeError(io)
+            raise TypeError(pin)
+        
+        if io == "edit":
+            if pin.name in rtreactor.edit_dict:
+                raise TypeError(pin) #Edit pin can connect to only one cell
+            current_upstream = self.cell_cache.cell_from_upstream.get(cell)
+            if current_upstream is None:
+                current_upstream = []
+                self.cell_cache.cell_from_upstream[cell] = current_upstream
+            if not isinstance(current_upstream, list):
+                raise TypeError("Cell %s is already connected to %s" % (cell, current_upstream))                
+            self.cell_cache.cell_from_upstream[cell].append(pin)
+            rtreactor.edit_dict[pin.name] = cell
+        elif inout == "in":
+            assert pin.name not in rtreactor.input_dict, pin #double connection
+            accessor = self.get_default_accessor(cell)
+            if access_mode is not None and access_mode != accessor.access_mode:
+                accessor.source_access_mode = accessor.access_mode
+                accessor.access_mode = access_mode
+            if content_type is not None and content_type != accessor.content_type:
+                accessor.source_content_type = accessor.content_type
+                accessor.content_type = content_type
+            acache = self.accessor_cache
+            haccessor = hash(accessor)
+            if haccessor not in acache.haccessor_to_workers:
+                acache.haccessor_to_workers[haccessor] = [reactor]
+            else:
+                acache.haccessor_to_workers[haccessor].append(reactor)
+            rtreactor.input_dict[pin.name] = accessor
+        elif inout == "out":
+            output_dict = rtreactor.output_dict
+            if not pin.name in output_dict:
+                output_dict[pin.name] = []
+            output_dict[pin.name].append(cell)
+        else:
+            raise ValueError(inout)
+
+        for pinname, pin in reactor._pins.items():
+            if pin.io == "input":
+                io_dict = rtreactor.input_dict
+            elif pin.io == "output":
+                io_dict = rtreactor.output_dict
+            elif pin.io == "edit":
+                io_dict = rtreactor.edit_dict
+            if pinname not in io_dict:
+                break
+        else:
+            rtreactor.live = False
+            rtreactor.updated = set(reactor._pins.keys())
+            self.update_reactor_status(reactor, full=True)
+
 
     def connect_cell(self, cell, other):
         #print("connect_cell", cell, other)
@@ -716,7 +740,7 @@ class Manager:
             if isinstance(worker, Transformer):
                 self._connect_cell_transformer(cell, other)
             elif isinstance(worker, Reactor):
-                raise NotImplementedError ###cache branch
+                self._connect_reactor(other, cell, "in")
             elif isinstance(worker, Macro):
                 raise NotImplementedError ###cache branch
             else:
@@ -740,16 +764,22 @@ class Manager:
         if not isinstance(pin, PinBase) or isinstance(pin, InputPin):
             raise TypeError(pin)
         if isinstance(pin, EditPin):
-            raise NotImplementedError ###cache branch
+            if not isinstance(worker, Reactor):
+                raise TypeError((pin, worker)) # Editpin must be connected to reactor
+        else:    
+            current_upstream = self.cell_cache.cell_from_upstream.get(cell)
+            if current_upstream is not None:
+                raise TypeError("Cell %s is already connected to %s" % (cell, current_upstream))
+            self.cell_cache.cell_from_upstream[cell] = pin
 
         worker = pin.worker_ref()
         if isinstance(worker, Transformer):
-            self.transform_cache.transformer_to_cells[worker].append(cell)
+            self.transform_cache.transformer_to_cells[worker].append(cell)            
             self.update_transformer_status(worker,full=False, new_connection=True)
         elif isinstance(worker, Macro):
             raise NotImplementedError ###cache branch
         elif isinstance(worker, Reactor):
-            raise NotImplementedError ###cache branch
+            self._connect_reactor(pin, cell, "out")
         else:
             raise TypeError(worker)
         self.schedule_jobs()
