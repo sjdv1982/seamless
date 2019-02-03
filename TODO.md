@@ -141,6 +141,7 @@ Things to do:
      
   J. (Maybe delay this until after the presentation) 
     Add cache graph serialization where just the checksums and status flags are stored.
+    (See the TEMP problem below; for now, require a successful translation upon save)
      In addition, implement simple cache archives (zip files of mixed cell streams)
       that can be saved and loaded into value cache at will.
 
@@ -354,21 +355,18 @@ Seamless is now becoming usable by other devs, but needs a lot of patience (corr
 Lack of documentation still a big issue.
 
 - macros (by definition low-level) with language (python) and api (seamless.core) fields.
-- Call graph serialization
+- Call graph serialization. WILL HAVE BEEN DONE ALREADY.
 
 - The New Way of execution management (see below).
 - Seamless mainloop and equilibrate should now integrate with asyncio/nest_asyncio. No more dirty things
   regarding work flushes. This should make Seamless compatible with modern (autumn 2018) versions of
   IPython, ipykernel and tornado.
   Don't forget to look into the stdout swallowing that currently happens (Wurlitzer?)  
-- Finalize caching:
-  - structured cells: outchannels have a get_path dependency on an inchannel
-  - structured cells: calculate outchannel checksum (see remarks in source code)
-  - re-enable caching for high level (test if simple.py works now)
-  - low-level reactors: they give a cache hit not just if the value of all cells are the same, but also:
+- Re-introduce caching for non-pure low-level reactors
+    They give a cache hit not just if the value of all cells are the same, but also:
          - if the connection topology stays the same, and
          - the value of all three code cells stays the same
-     In that case, the regeneration of the reactor essentially becomes an update() event  
+    In that case, the regeneration of the reactor essentially becomes an update() event  
 
 - Bring back slash0. Probably eliminate a lot of features, but the macro principle is good. This allows
   new pins to be declared at the slash0 unrelated to the call graph, thus avoiding retranslation and
@@ -409,12 +407,12 @@ Part 5:
   UPDATE: better to consider everything as pure by default, unless a cell is marked as ephemeral and is connected
   to/from the outside directly.
 
-- Build upon services proof-of-principle (cloudless)
+- Build upon services proof-of-principle (cloudless) MOSTLY DONE
 - HMTL gen from schema
   non-interactive => relatively easy but unimportant; need to think about result display
   interactive (REST calls) => tricky
-- Implement all the checksum servers
-- Improved docker integration: bundle with servers, cache server, cache volumes
+- Implement all the checksum servers DONE
+- Improved docker integration: bundle with servers, cache server, cache volumes MOSTLY DONE
 
 0.4 release
 Documentation  
@@ -508,13 +506,6 @@ Long-term:
   At this point, some proof-of-principle should exist already.
 - Windows support? Or never? Or just with local jobs disabled?
 - An extra "table" celltype, for text (like awk or org-mode) or binary (like Pandas)
-- Reconsider the restrictions on transformers and reactors. [Give transformers
-  edit pins and cache pins, allow them to have reactor pin API => YAGNI?].
-  At least in theory, allow transformers/reactors to declare as sync/async, and thread/process.
-  In the same vein, transformers should be able to be declared as "immediate", which means:
-  sync and activated during translation / macro construction.
-  (Macros are also "immediate" workers already).
-  This allows a macro to depend on an immediate transformer, to avoid async macros (= cache misses).
 - Support more foreign languages: Julia, R, JavaScript. IPython magics, also have a look at python-bond
 - Simplified implementations, with various levels of reduced interactivity
   1. Frozen libraries. Libcell becomes a kind of symlink.
@@ -857,14 +848,15 @@ Execution cells are cells that contain only execution details and do not influen
 Ephemeral cells are the same, but they indicate some hidden dependency.
   Examples: session ID, temporary file name, file with pointers in it (ATTRACT grid header)
   A reactor may have an editpin to an ephemeral cell, used for caching.
-  Workers with an ephemeral output pin are never pure. But it is assumed that as long as the
-   worker is not shut down, the ephemeral output is accurate.
-Ephemeral cells are not authoritative and never eager. Usually, they are not stored.
-Changes in execution cells or ephemeral cells do not trigger re-computation, but the worker
+  Reactors with an ephemeral editpin are never pure. But it is assumed that as long as the
+   reactor is not shut down, the ephemeral output is accurate.
+Ephemeral cells are not authoritative and are not stored.
+Changes in execution cells or ephemeral cells do not trigger re-computation, but the reactor
  will receive the new value once something else triggers re-computation.
- Auxiliary cells/workers/contexts are high-level only. Auxiliary cells and workers (as are ephemeral cells and
-  execution cells) are stripped from a high-level graph before its grand computational checksum
-  is computed. Examples: editors, loggers, visualizers.
+Ephemeral/Status/Report/Evaluation cells can be "cast" to normal cells (with authority).
+Any cell or worker that depends on such a cast cell is considered auxiliary. Reactors that have no
+ outputpin are also auxiliary. Auxiliary workers are by definition editors/loggers/visualizers
+that do not influence the result. Auxiliary cells/workers are stripped from a high-level graph before its grand computational checksum is computed.
 
 
 Reactor start and stop side effects
@@ -930,10 +922,14 @@ This loose formulation of purity gives the following liberties:
    (that accumulate values).
  - C) They are allowed to change cells via edit pins. This is considered an "act of authority", as if the programmer himself had
     changed this cell.
-There is also a stricter formulation of purity: namely that B) and C) do not happen. Workers and contexts may be marked "pure"
+There is also a stricter formulation of purity: namely that B) and C) do not happen. Reactors and contexts may be marked "pure"
  accordingly. In that case, they function as a single caching unit.
-Non-pure (i.e. only "kind-of-pure") transformers are not normally shut down. It is assumed that when they shut down, they must be
- re-executed (which may be expensive). Reactors have explicit start-up and shutdown code, so they can be shut down at will.
+Transformers must always be pure, no side effects allowed other than Report/Logging cells.
+Impure reactors are not cachable and will always be executed (unless they are part of a pure context
+ that gave a cache hit). Only impure reactors can take Report/Logging cells as inputpins. But you
+  can always "cast" them to a normal cell (this normal cell will be authoritative).
+Semi-pure reactors are not normally shut down, because of performance.
+
 
 "Transform lazily, react eagerly"
 =================================
@@ -996,6 +992,10 @@ BlockManager-BlockManager is not possible, but block *pins* get processed as nor
 
 Streams
 =======
+UPDATE: save this for a later stage. For now, go for a simpler scheme where streams only exist within
+ a transformer, and all cells contain all values.
+This disables the chaining of streams; now, one streamed transformer has to wait for a previous one to complete.
+/UPDATE  
 Streams are sequences of messages. The number of messages is not always a priori known, and may arrive in any order.
 A standard message has a key, a celltype, a checksum and (optionally) a value.
 The checksum/value corresponds to a "buffer" representation of a standard cell, or a "state" representation for a structured_cell.
@@ -1039,6 +1039,8 @@ Each special construct has a reference implementation. The checksums of the
 They can be executed as every other Seamless service in this way.
 However, services may accept reference-implementation special construct requests,
 but process them with a very different optimized implementation under the hood.
+UPDATE: now that the New Way is there, the reference implementation should be the
+ most efficient already. Just need some extra conf about cache clearing prefs.
 All special constructs are implemented as transformers.
 
 - Apply
@@ -1146,8 +1148,8 @@ Strategies to model them:
 1. Don't model cycles with seamless (keep cycles inside a single worker)
 2. Explicit cells for every assignment (if number of iterations is known).
    First assignment to cell x becomes cell x1, second assignment to cell becomes x2, etc.
-   Would be feasible on very long term, with cells being very low-footprint
-    and caches eager to be cleared. Otherwise very space-intensive.
+   Has become feasable now that cells are very low-footprint, but
+   caches must be cleared or memory consumption is too high.
 3. Use an CyclicIterator (see Special Constructs). if number of iterations is known.
    Build a high-level graph g that performs the computation, and send it as data   
 4. Nested asynchronous macros (but seamless will warn of cache misses, and
@@ -1155,6 +1157,7 @@ Strategies to model them:
    Example: collatz.py in low-level tests
    but Seamless cannot currently deal with this beyond 10-16 iterations or so,
      even though this example is in fact synchronous
+  UPDATE: now that the New Way is there, test this again.
 Solutions can be combined, of course.
 
 Registering commands with domain-specific languages
@@ -1167,7 +1170,7 @@ of registered commands. This is done as follows:
 - A dictionary with commands, containing the command name, a unique command ID,
   and a mapping of each parameter to the name of a pin/cell/channel in Z.
   This dict is generated as an additional "magic-name" cell in Z by the macro.
-- Instantiation code for each command. Essentially, macro code which can constructors
+- Instantiation code for each command. Essentially, macro code which can construct
   a live instance (context or worker) that can execute the command. This will almost
   always be a macro that must be bound to a lib.
 - An instantiator. It receives both dictionaries, and the instantiation code for
@@ -1196,10 +1199,13 @@ Lazy output cq. lazy input cells in Seamless services can be exposed as callback
  (CFFI supports this) cq. callbacks-into-Idris-functions
  (Haskell FFI at least supports this; Idris FFI does not support closures, that's bad).
 
- NOTE: seamless will never have any global undo system. It is up to individual editor-reactors to implement their own systems.
+Undo
+====
+NOTE: seamless will never have any global undo system. It is up to individual editor-reactors to implement their own systems.
 
-Plugin-socket connection system
+Plugin-socket connection system 
 ===============================
+Spooky effects at a distance.
 Seamless will have a hive-like plugin-socket connection system to connect reactors.
 These reactor connections are *not* meant to influence computations, but only to improve visualization
  and authority control.
@@ -1214,6 +1220,11 @@ Use cases:
   callback triggered by the windowing system; With Vulkan, this may no longer be necessary).
 - Reactor 1 and 2 both maintain a GUI using a native widget. By exposing their widget objects to reactor 3,
   reactor 3 can display them in a common window.
+Plugins/sockets will be named by keys. You can hard-code the keys or send them as cells.
+This system is obviously only for impure reactors. They are allowed to modify editpins as a result,
+ but never outputpins.
+Signals and callbacks will be implemented as part of the same system. 
+
 
 Why Seamless is not dataflow or Functional Reactive Programming
 ===============================================================
@@ -1224,7 +1235,7 @@ Why Seamless is not dataflow or Functional Reactive Programming
 - Unlike dataflow (but like FRP), Seamless is really strict about determinism 
   (purity, referential transparency etc.)
 - "Always resubmit your entire computation."
-  Seamless is very fanatic about caching. If you really want to react to event streams, 
+  Seamless is very fanatical about caching. If you really want to react to event streams, 
    just give it an initial value, e.g. [E1, E2, E3], and feed it into a Seamless cell. 
   When a new event E4 comes, just replace the cell value with [E1, E2, E3, E4]. 
   Seamless will model it just as if it was [E1, E2, E3, E4] all along (history doesn't matter).
