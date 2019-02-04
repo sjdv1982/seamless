@@ -147,7 +147,7 @@ class TransformCache:
             self.refcount_hlevel1[hlevel1] = refcount - 1
             return
         self.transformer_from_hlevel1.pop(hlevel1)
-        self.result_hlevel1.pop(hlevel1, None)        
+        ###self.result_hlevel1.pop(hlevel1, None)  # for now, hold on to this forever
         level2 = self.hlevel1_to_level2.pop(hlevel1, None)        
         if level2 is not None:
             self._decref_level2(level2)
@@ -185,7 +185,7 @@ class TransformCache:
         if refcount > 1:
             self.refcount_hlevel2[hlevel2] = refcount - 1
             return
-        self.result_hlevel2.pop(hlevel2, None)
+        ###self.result_hlevel2.pop(hlevel2, None) # for now, hold on to this forever
         self.hlevel1_from_hlevel2.pop(hlevel2)
 
     def _incref_level2(self, level2):

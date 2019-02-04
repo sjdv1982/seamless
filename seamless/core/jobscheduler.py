@@ -106,7 +106,7 @@ class JobScheduler:
                 self.jobs.pop(hlevel2)
                 return None
             return job
-        if hlevel2 in self.jobs and 0: ###
+        if hlevel2 in self.jobs:
             job = self.jobs[hlevel2]
             job.count += count
             return job
@@ -162,6 +162,7 @@ class Job:
         else:
             # TODO: store exception! is not printed in run_multi_remote_pair...
             raise Exception("Remote job execution failed")
+        self.scheduler().cleanup() # maybe a bit overkill, but better safe than sorry
         self.future = None
 
     async def _execute_local(self, transformer):
@@ -218,6 +219,7 @@ class Job:
             if result is not None:
                 manager.set_transformer_result(self.level1, self.level2, result, None, prelim=False)
             self.future = None
+            self.scheduler().cleanup() # maybe a bit overkill, but better safe than sorry
         finally:
             release_lock(lock)
 

@@ -94,7 +94,7 @@ class Manager:
         assert isinstance(tf_level1, TransformerLevel1)
         tcache = self.transform_cache        
         result = tcache.get_result(tf_level1.get_hash())
-        if result is not None and 0: ###
+        if result is not None:
             self.set_transformer_result(tf_level1, None, None, result, False)
             return
         task = None
@@ -122,12 +122,11 @@ class Manager:
         tcache = self.transform_cache
         tf_level2 = await tcache.build_level2(tf_level1)
         result = tcache.result_hlevel2.get(tf_level2.get_hash())
-        if result is not None and 0: ###
+        if result is not None:
             self.set_transformer_result(tf_level1, tf_level2, None, result, False)
             return
         tcache.set_level2(tf_level1, tf_level2)  
         job = self.jobscheduler.schedule(tf_level2, count)
-        print("SCHEDULE")
         return job
 
     async def run_remote_transform_job(self, tf_level1):
