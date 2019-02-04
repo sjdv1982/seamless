@@ -78,7 +78,7 @@ def deserialize_plain(
         buffer = str(value).rstrip("\n") + "\n"
         obj = json.loads(buffer.rstrip("\n"))        
     else:
-        obj = value.rstrip("\n")
+        obj = value
         buffer = json.dumps(value) + "\n"
     
     if buffer_checksum is None:
@@ -100,7 +100,7 @@ def deserialize_pythoncode(
 
     if isinstance(value, bytes):
         value = value.decode()
-    buffer = value.rstrip("\n") + "\n"
+    buffer = str(value).rstrip("\n") + "\n"
     if buffer_checksum is None:
         buffer_checksum = get_hash(buffer)
 
