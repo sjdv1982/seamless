@@ -2,6 +2,27 @@ import weakref
 from . import SeamlessBase
 from .macro_mode import get_macro_mode, with_macro_mode
 
+def _cell_from_pin(self, celltype):
+    assert isinstance(self, (InputPin, EditPin))
+    from .cell import cell
+    manager = self._get_manager()
+    my_cell = manager.cell_from_pin(self)
+    if celltype is None:
+        celltype = self.content_type # for now, a 1:1 correspondence between content type and cell type
+        if celltype is None:
+            celltype = default_cell_types.get(self.access_mode, "plain")
+    if my_cell is None:
+        worker = self.worker_ref()
+        if worker is None:
+            raise ValueError("Worker has died")
+        my_cell = cell(celltype)
+        ctx = worker._context
+        assert ctx is not None
+        ctx = ctx()
+        ctx._add_new_cell(my_cell)
+        my_cell.connect(self)
+    return my_cell
+
 
 class Worker(SeamlessBase):
     """Base class for all workers."""
@@ -126,28 +147,7 @@ class InputPin(InputPinBase):
 
     def cell(self, celltype=None):
         """Returns or creates a cell connected to the inputpin"""
-        raise NotImplementedError ###cache branch        
-        from .cell import cell
-        manager = self._get_manager()
-        my_cell = manager.pin_from_cell.get(self)
-        if celltype is None:
-            celltype = self.content_type # for now, a 1:1 correspondence between content type and cell type
-            if celltype is None:
-                celltype = default_cell_types[self.access_mode]
-        if my_cell is None:
-            worker = self.worker_ref()
-            if worker is None:
-                raise ValueError("Worker has died")
-            my_cell = cell(celltype)
-            ctx = worker._context
-            assert ctx is not None
-            ctx = ctx()
-            ctx._add_new_cell(my_cell)
-            assert my_cell._context() is ctx
-            my_cell.connect(self)
-        else:
-            my_cell = my_cell.source
-        return my_cell
+        return _cell_from_pin(self, celltype)
 
     def set(self, *args, **kwargs):
         """Sets the value of the connected cell"""
@@ -173,12 +173,11 @@ class OutputPin(OutputPinBase):
         """returns or creates a cell that is connected to the pin"""
         from .cell import cell
         manager = self._get_manager()
-        raise NotImplementedError ###cache branch
-        my_cells = manager.pin_to_cells.get(self, [])
+        my_cells = manager.cell_from_pin(self)
         if celltype is None:
             celltype = self.content_type # for now, a 1:1 correspondence between content type and cell type
             if celltype is None:
-                celltype = default_cell_types[self.access_mode]
+                celltype = default_cell_types.get(self.access_mode, "plain")
         l = len(my_cells)
         if l == 0:
             worker = self.worker_ref()
@@ -200,9 +199,8 @@ class OutputPin(OutputPinBase):
     def cells(self):
         """Returns all cells connected to the outputpin"""
         manager = self._get_manager()
-        raise NotImplementedError ###cache branch
-        my_cells = manager.pin_to_cells.get(self, [])
-        return [c.target for c in my_cells]
+        my_cells = manager.cell_from_pin(self)
+        return mycells
 
     @property
     def status(self):
@@ -219,6 +217,14 @@ class EditPinBase(PinBase):
     def _set_context(self, context, childname):
         pass
 
+    def cell(self, celltype=None):
+        """Returns or creates a cell connected to the editpin"""
+        return _cell_from_pin(self, celltype)
+
+    def __str__(self):
+        ret = "Seamless editpin: " + self._format_path()
+        return ret
+
 class EditPin(EditPinBase):
     """Connects a cell as both the input and output of a reactor
 
@@ -229,33 +235,6 @@ class EditPin(EditPinBase):
     """
 
     io = "edit"
-
-    def cell(self, celltype=None):
-        """Returns or creates a cell connected to the inputpin"""
-        from .cell import cell
-        manager = self._get_manager()
-        raise NotImplementedError ###cache branch
-        my_cells = manager.editpin_to_cells(self)
-        if celltype is None:
-            celltype = self.content_type # for now, a 1:1 correspondence between content type and cell type
-            if celltype is None:
-                celltype = default_cell_types[self.access_mode]
-        l = len(my_cells)
-        if l == 0:
-            worker = self.worker_ref()
-            if worker is None:
-                raise ValueError("Worker has died")
-            my_cell = cell(celltype)
-            ctx = worker._context
-            assert ctx is not None
-            ctx = ctx()
-            ctx._add_new_cell(my_cell)
-            my_cell.connect(self)
-        elif l == 1:
-            my_cell = my_cells[0].source
-        elif l > 1:
-            raise TypeError("cell() is ambiguous, multiple cells are connected")
-        return my_cell
 
     def set(self, *args, **kwargs):
         """Sets the value of the connected cell"""

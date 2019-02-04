@@ -106,7 +106,7 @@ class JobScheduler:
                 self.jobs.pop(hlevel2)
                 return None
             return job
-        if hlevel2 in self.jobs:
+        if hlevel2 in self.jobs and 0: ###
             job = self.jobs[hlevel2]
             job.count += count
             return job

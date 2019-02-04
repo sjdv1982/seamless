@@ -18,7 +18,7 @@ teparams = {
 }
 
 from seamless.core import macro_mode_on
-from seamless.core import context, transformer, reactor
+from seamless.core import context, transformer, reactor, cell
 
 ctx = context(toplevel=True)
 cont = ctx.cont = transformer(tparams)
@@ -27,6 +27,24 @@ c_data.set(4)
 c_code = cont.code.cell()
 c_output = cont.outp.cell()
 c_code.set("outp = value*2")
+
+c_output2 = ctx.c_output2 = cell("plain")
+
+cont2 = ctx.cont2 = reactor({
+  "x": "input",
+  "xcopy": "edit",
+})
+c_output.connect(cont2.x)
+###cont2.xcopy.connect(c_output2)
+c_output2.connect(cont2.xcopy)
+cont2.code_start.cell().set("")
+cont2.code_stop.cell().set("")
+cont2.code_update.cell().set(
+  """
+if PINS.x.updated:
+    PINS.xcopy.set(PINS.x.get())
+  """
+)
 
 ctx.equilibrate()
 print("VALUE", c_data.value, "'" + c_code.value + "'", c_output.value)
@@ -68,7 +86,8 @@ ed2.title.cell("text").set("Editor #2")
 make_editor(ed1)
 make_editor(ed2)
 c_data.connect(ed1.value)
-c_output.connect(ed2.value)
+c_output2.connect(ed2.value)
+
 ted1 = ctx.ted1 = reactor(teparams)
 ted1.title.cell().set("Formula editor")
 make_text_editor(ted1)

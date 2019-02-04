@@ -122,7 +122,7 @@ context : context or None
         count = 0
         while 1:
             count += 1
-            cell_name = cell._naming_pattern + str(count)
+            cell_name = "cell" + str(count)
             if not self._hasattr(cell_name):
                 break
         self._auto.add(cell_name)

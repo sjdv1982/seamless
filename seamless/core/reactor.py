@@ -1,6 +1,6 @@
 from collections import OrderedDict
 
-from .worker import Worker, InputPin, OutputPin
+from .worker import Worker, InputPin, OutputPin, EditPin
 from .protocol import content_types
 
 class Reactor(Worker):

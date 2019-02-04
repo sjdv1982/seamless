@@ -87,7 +87,7 @@ class RuntimeReactor:
             else:
                 value = manager.get_expression(expression)
             if pinname in ("code_start", "code_update", "code_stop"):
-                assert value is not None
+                assert value is not None, pinname
                 self.build_code(pinname, value)
                 continue
             pin = ReactorInput(value)
@@ -126,8 +126,13 @@ class RuntimeReactor:
         assert self.live in (True, False)
         assert len(self.updated)
         assert not self.executing
+        codes = ("code_start", "code_update", "code_stop")
         try:
             self.executing = True
+            if self.live and any([c in self.updated for c in codes]):
+                self.run_code("code_stop")
+                self.clear()
+                self.live = False
             if not self.live:
                 self.prepare_namespace(None)
                 self.live = True

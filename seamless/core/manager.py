@@ -94,7 +94,7 @@ class Manager:
         assert isinstance(tf_level1, TransformerLevel1)
         tcache = self.transform_cache        
         result = tcache.get_result(tf_level1.get_hash())
-        if result is not None:
+        if result is not None and 0: ###
             self.set_transformer_result(tf_level1, None, None, result, False)
             return
         task = None
@@ -122,11 +122,12 @@ class Manager:
         tcache = self.transform_cache
         tf_level2 = await tcache.build_level2(tf_level1)
         result = tcache.result_hlevel2.get(tf_level2.get_hash())
-        if result is not None:
+        if result is not None and 0: ###
             self.set_transformer_result(tf_level1, tf_level2, None, result, False)
             return
-        tcache.set_level2(tf_level1, tf_level2)                    
+        tcache.set_level2(tf_level1, tf_level2)  
         job = self.jobscheduler.schedule(tf_level2, count)
+        print("SCHEDULE")
         return job
 
     async def run_remote_transform_job(self, tf_level1):
@@ -293,7 +294,7 @@ class Manager:
         for cell in cells:
             status = self.status[cell]
             status.auth = "FRESH"
-            self.set_cell(cell, value)
+            self.set_cell(cell, value, origin=reactor)
 
     def set_reactor_exception(self, rtreactor, codename, exception):
         # TODO: store exception? log it?
@@ -445,7 +446,7 @@ class Manager:
             self.scheduled.append(("transformer", old_level1, False))
             self._temp_tf_level1[transformer] = None
 
-    def _propagate_status(self, cell, data_status, auth_status, full):
+    def _propagate_status(self, cell, data_status, auth_status, full, origin=None):
         # "full" indicates a value change, but it is just propagated to update_worker
         from .reactor import Reactor
         if cell._celltype == "structured": raise NotImplementedError ### cache branch
@@ -483,10 +484,19 @@ class Manager:
                         for pinname, accessor in rtreactor.input_dict.items():
                             if accessor.cell is cell:
                                 rtreactor.updated.add(pinname)
-                        for pinname, pincell in rtreactor.edit_dict.items():
-                            if pincell is cell:
-                                rtreactor.updated.add(pinname)
                     self.update_worker_status(worker, full)
+                
+            if full:
+                upstream = self.cell_cache.cell_from_upstream.get(cell)
+                if isinstance(upstream, list):
+                    for editpin in upstream:
+                        reactor = editpin.worker_ref()
+                        assert isinstance(reactor, Reactor)
+                        if reactor is origin:
+                            continue
+                        rtreactor = self.reactors[reactor]
+                        rtreactor.updated.add(editpin.name)
+                        self.update_reactor_status(reactor, full=True)
 
     def update_transformer_status(self, transformer, full, new_connection=False):
         tcache = self.transform_cache
@@ -595,7 +605,7 @@ class Manager:
             new_status.exec = "BLOCKED"
         if new_status.data_status.value == Status.StatusDataEnum.PENDING.value:
             new_status.exec = "PENDING"
-        else:
+        elif new_status.data != "UNDEFINED":
             if full and len(rtreactor.updated) and rtreactor.live is not None:
                 ok = rtreactor.execute()
                 rtreactor.updated.clear()
@@ -621,7 +631,18 @@ class Manager:
         if isinstance(worker, Transformer):
             return self.update_transformer_status(worker, full=full)
         else:
-            return self.update_reactor_status(worker, full=full)
+            rtreactor = self.reactors[worker]
+            for pinname, pin in worker._pins.items():
+                if pin.io == "input":
+                    io_dict = rtreactor.input_dict
+                elif pin.io == "output":
+                    io_dict = rtreactor.output_dict
+                elif pin.io == "edit":
+                    io_dict = rtreactor.edit_dict
+                if pinname not in io_dict:
+                    break
+            else:
+                return self.update_reactor_status(worker, full=full)
 
     def _connect_cell_transformer(self, cell, pin):
         """Connects cell to transformer inputpin"""
@@ -751,6 +772,40 @@ class Manager:
             raise TypeError(type(other))
         self.schedule_jobs()
 
+    def cell_from_pin(self, pin):
+        from . import Transformer, Reactor, Macro
+        from .worker import InputPin, OutputPin, EditPin
+        worker = pin.worker_ref()
+        if worker is None:
+            raise ValueError("Worker has died")
+        if isinstance(worker, Transformer):            
+            if isinstance(pin, InputPin):
+                accessor_dict = self.transform_cache.transformer_to_level0[worker]
+                return accessor_dict.get(pin.name)
+            elif isinstance(pin, OutputPin):
+                return self.transform_cache.transformer_to_cells.get(worker, [])
+            else:
+                raise TypeError(pin)
+        elif isinstance(worker, Reactor):
+            rt_reactor = self.reactors[worker]
+            if isinstance(pin, InputPin):
+                accessor = rt_reactor.input_dict.get(pin.name)
+                if accessor is None:
+                    return None
+                else:
+                    return accessor.cell
+            elif isinstance(pin, EditPin):
+                return rt_reactor.edit_dict.get(pin.name)
+            elif isinstance(pin, OutputPin):
+                return rt_reactor.output_dict.get(pin.name, [])
+            else:
+                raise TypeError(pin)
+        elif isinstance(worker, Macro):
+            raise NotImplementedError ### cache branch
+        else:
+            raise TypeError(worker)
+
+
     def connect_pin(self, pin, cell):
         #print("connect_pin", pin, cell)
         from . import Transformer, Reactor, Macro
@@ -784,7 +839,7 @@ class Manager:
             raise TypeError(worker)
         self.schedule_jobs()
 
-    def _update_status(self, cell, checksum, *, has_auth):
+    def _update_status(self, cell, checksum, *, has_auth, origin):
         status = self.status[cell]
         old_data_status = status.data
         old_auth_status = status.auth
@@ -796,7 +851,10 @@ class Manager:
             status.auth = "OVERRULED"
         new_data_status = status.data if status.data != old_data_status else None
         new_auth_status = status.auth if status.auth != old_auth_status else None
-        self._propagate_status(cell, new_data_status, new_auth_status, full=True)
+        self._propagate_status(
+            cell, new_data_status, new_auth_status, 
+            full=True, origin=origin
+        )
         self.schedule_jobs()
 
     @main_thread_buffered
@@ -821,10 +879,11 @@ class Manager:
             if buffer_known and not is_dummy_mount(cell._mount):
                 if not get_macro_mode():
                     self.mountmanager.add_cell_update(cell)
-            self._update_status(cell, checksum, has_auth=has_auth)
+            self._update_status(cell, checksum, has_auth=has_auth, origin=None)
 
     @main_thread_buffered
-    def set_cell(self, cell, value, *, from_buffer=False):
+    def set_cell(self, cell, value, *, from_buffer=False, origin=None):
+        # "origin" indicates the worker that generated the .set_cell call
         from .macro_mode import macro_mode_on, get_macro_mode
         from .mount import is_dummy_mount
         assert cell._get_manager() is self
@@ -859,7 +918,7 @@ class Manager:
             if not is_dummy_mount(cell._mount):
                 if not get_macro_mode():
                     self.mountmanager.add_cell_update(cell)
-            self._update_status(cell, checksum, has_auth=has_auth)
+            self._update_status(cell, checksum, has_auth=has_auth, origin=origin)
         else:
             # Just refresh the semantic key timeout
             vcache.add_semantic_key(semantic_key, obj)

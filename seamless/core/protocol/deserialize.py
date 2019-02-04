@@ -32,15 +32,24 @@ def deserialize(
             value, from_buffer, buffer_checksum,
             source_access_mode, source_content_type
         )
+    elif celltype == "text":
+        return deserialize_text(
+            value, from_buffer, buffer_checksum,
+            source_access_mode, source_content_type
+        )
     elif celltype  == "python":
         return deserialize_pythoncode(
             value, subcelltype, cellpath,
             from_buffer, buffer_checksum,
             source_access_mode, source_content_type
         )
-
+    elif celltype == "cson":
+        return deserialize_cson(
+            value, from_buffer, buffer_checksum,
+            source_access_mode, source_content_type
+        )
     else:
-        raise NotImplementedError ### cache branch
+        raise NotImplementedError(celltype) ### cache branch
 
 
 def deserialize_plain(
@@ -67,10 +76,10 @@ def deserialize_plain(
         if isinstance(value, bytes):
             value = value.decode()
         buffer = str(value).rstrip("\n") + "\n"
-        obj = json.loads(buffer)        
+        obj = json.loads(buffer.rstrip("\n"))        
     else:
-        obj = value
-        buffer = json.dumps(value).rstrip("\n") + "\n"
+        obj = value.rstrip("\n")
+        buffer = json.dumps(value) + "\n"
     
     if buffer_checksum is None:
         buffer_checksum = get_hash(buffer)
@@ -106,3 +115,57 @@ def deserialize_pythoncode(
             raise SyntaxError((codename, err))
 
     return buffer, buffer_checksum, buffer, semantic_checksum    
+
+
+def deserialize_text(
+    value, 
+    from_buffer, buffer_checksum,
+    source_access_mode, source_content_type
+):
+    if source_access_mode in ("text", "python", "cson"):
+        pass
+    elif source_access_mode == "binary":
+        if isinstance(value, np.ndtype):
+            value = value.tolist()
+        else:
+            raise TypeError(type(value))
+    elif source_access_mode == "plain":
+        if from_buffer:
+            value = json.dumps(value)
+    else:
+        raise TypeError(source_access_mode)
+        
+    if isinstance(value, bytes):
+        value = value.decode()
+    value = str(value)
+    buffer = value.rstrip("\n") + "\n"
+
+    if buffer_checksum is None:
+        buffer_checksum = get_hash(buffer)
+    semantic_checksum = buffer_checksum
+    return buffer, buffer_checksum, value, semantic_checksum
+
+def deserialize_cson(
+    value, 
+    from_buffer, buffer_checksum,
+    source_access_mode, source_content_type
+):
+    if source_access_mode in ("text", "python", "cson"):
+        pass
+    elif source_access_mode == "plain":
+        if from_buffer:
+            value = json.dumps(value)
+    else:
+        raise TypeError(source_access_mode)
+        
+    if isinstance(value, bytes):
+        value = value.decode()
+    value = str(value)
+    plain = cson2json(value)
+    plainbuffer = json.dumps(value) + "\n"
+    buffer = value.rstrip("\n") + "\n"
+
+    if buffer_checksum is None:
+        buffer_checksum = get_hash(buffer)
+    semantic_checksum = get_hash(plainbuffer)
+    return buffer, buffer_checksum, value, semantic_checksum
