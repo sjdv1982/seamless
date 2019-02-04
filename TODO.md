@@ -94,6 +94,8 @@ Things to do:
    Therefore, though a macro often creates path connections into a submacro context, it is illegal for a macro to create path connections
    where *both* endpoints are within the *same* submacro.
     
+  - Get general clean worker destruction working
+
   - While a macro context is being created (i.e. when its macro is
     evaluated), it is specified as "orphaned".
     This is always in macro mode, hance all worker execution is disabled (beyond what is already running)
@@ -137,9 +139,11 @@ Things to do:
   - Gradually, get all low-level tests working, extending the manager, using the New Way 
   - Implement annotation dict, including execute_debug, ncores (ncores DONE)
 
-  I. Get the high level working. Should be quite straightforward now.
+  I. Streams (part 3, below) and cache-tree-depth.
+
+  J. Get the high level working. Should be quite straightforward now.
      
-  J. (Maybe delay this until after the presentation) 
+  K. (Maybe delay this until after the presentation) 
     Add cache graph serialization where just the checksums and status flags are stored.
     (See the TEMP problem below; for now, require a successful translation upon save)
      In addition, implement simple cache archives (zip files of mixed cell streams)
@@ -149,26 +153,27 @@ Details:
 The New Way and streams will be done early (this is big!)
 - Create a cache branch DONE
 - Replace all md5sum with sha3-256 DONE
-- Rip the ._val attribute, store all values in a checksum-to-cell dictionary.
-  Move from values to checksums. No local cache dict, no local cell values. Everything comes from generic caching. Cell paths keep cache alive.
+- Rip the ._val attribute, store all values in a checksum-to-cell dictionary. DONE
+  Move from values to checksums. No local cache dict, no local cell values. Everything comes from generic caching. Cell paths keep cache alive. DONE
 - Rip pythreadkernel and construct a request object instead (see tests/lowlevel/simpler-remote),
   but with checksums instead of values, and add access mode as well. 
-  as local cache.
-  Transformers will be shut down (clearing namespaces etc.) unless annotated as "debug".  
+  as local cache. DONE
+  Transformers will be shut down (clearing namespaces etc.) unless annotated as "debug".  TODO
   checksum-to-value caching (cell caching). Values will be pulled from there just-in-time.
   Contexts in equilibrium should now be very memory-frugal.
-- Every worker has a number of cores used (default 1). As many jobs are launched as there are cores 
-- Fix asyncio compatibility,. Add Manager.temprefmanager.purge in mainloop!
-  final test in Jupyter Docker image
-- Mixed cells (and structured cells) have cache-tree-depth (default 0).
+- Every worker has a number of cores used (default 1). As many jobs are launched as there are cores TODO
+- Fix asyncio compatibility. Add Manager.temprefmanager.purge in mainloop! 
+  final test in Jupyter Docker image DONE
+- Mixed cells (and structured cells) have cache-tree-depth (default 0). TODO
   At 0, simple checksum => value. At level 1, dicts/lists will be checksum => {checksum:checksum}
   resp. checksum => [checksum] (Merkle trees), in a special Merkle tree cache.
-- Structured cells have their own Merkle tree, corresponding to what is now State.
-- Outchannels will store their own checksums (can be easy with Merkle trees)
+- Structured cells have their own Merkle tree, corresponding to what is now State. TODO
+- Outchannels will store their own checksums (can be easy with Merkle trees) TODO
   Outchannels will never refer to buffered or invalid state, they will be undefined in that case
   (NOTE: should be like that already, right?)
 - Fully implement New Way execution. Changing an authoritative value forward-invalidates. Changing
-  non-authoritative sets "overrule" as before, but now also in a forward sense.
+  non-authoritative sets "overrule" as before, but now also in a forward sense. DONE
+
 3. Streams
 - Basic implementation in manager/protocol
 - Stream annotations for transformer
@@ -198,18 +203,8 @@ The New Way and streams will be done early (this is big!)
       an order to maximize cache efficiency.
     - For dicts, the secondary input pin with sorted keys is optional.
       (it is still recommended for cache efficiency)
-- Simple transformer caching, using the old request format (with no values now)
-  Done twice: once with stream annotation, once without
-- Set up Redis backends for cell caching and simple transformer caching, in Docker images.
-- In the future:
-  - Every cell will be associated with one or more seamless top context IDs (scids)
-  - scids, cells, transformers can be annotated. Best front-end is probably to annotate
-    an entire top-level graph and then submit it to annotation server.
-  - Extend simple transformer caching with high-level graph caching
-  - When scids get re-defined, it is possible to obsolete associated checksums
-    (clearing value cache, define obsoletion server entries)
-  - Use username/origin on transformer caching, user authority on scid/annotation
-  - Lots of reverse servers
+- Simple transformer caching, one-to-many mapping from accessor to expression
+- Set up Redis backends for cell caching and simple transformer caching, in Docker images. DONE
 - Docker run transformer. Implementation similar to bash transformer, but needs
   docker image digest (supported by docker run).
   Global config for:
@@ -221,8 +216,8 @@ The New Way and streams will be done early (this is big!)
   If you find this chafing, you are not doing it right anyway: consider using Seamless inside of a
   Docker service, running reproducible computations locally,
   and defining capabilities to build the Docker image to provide the proper environment.
-- Set up caching servers as Docker services
-- Set up simple transformer slave that uses Merkle trees (used in caching) as requests
+- Set up caching servers DONE
+- Set up simple transformer slave that uses Merkle trees (used in caching) as requests DONE
 
 # Notes about the New Way:
 - For structured cells, synthetic (i.e. dependent, non-authoritative)
@@ -316,6 +311,16 @@ It needs to be reorganized, and the following tasks to be added:
 2. 
 - Non-deterministic outputpins. These are essentially editpins, except that
    the reactor is NOT notified if they are changed by some external source.
+3.
+- In the future:
+  - Every cell will be associated with one or more seamless top context IDs (scids)
+  - scids, cells, transformers can be annotated. Best front-end is probably to annotate
+    an entire top-level graph and then submit it to annotation server.
+  - Extend simple transformer caching with high-level graph caching
+  - When scids get re-defined, it is possible to obsolete associated checksums
+    (clearing value cache, define obsoletion server entries)
+  - Use username/origin on transformer caching, user authority on scid/annotation
+  - Lots of reverse servers
 *****************************************************************
 
 Part 4: Towards release
@@ -354,10 +359,10 @@ Make new videos:
 Seamless is now becoming usable by other devs, but needs a lot of patience (correct Jupyter version etc.)
 Lack of documentation still a big issue.
 
-- macros (by definition low-level) with language (python) and api (seamless.core) fields.
+- High-level construct for macros (by definition low-level) with language (python) and api (seamless.core) fields.
 - Call graph serialization. WILL HAVE BEEN DONE ALREADY.
 
-- The New Way of execution management (see below).
+- The New Way of execution management (see below).  WILL HAVE BEEN DONE ALREADY.
 - Seamless mainloop and equilibrate should now integrate with asyncio/nest_asyncio. No more dirty things
   regarding work flushes. This should make Seamless compatible with modern (autumn 2018) versions of
   IPython, ipykernel and tornado.
