@@ -106,7 +106,7 @@ Things to do:
     3. Will also interrupt all async execution (transforms and pure reactors).
     Part 1. will happen immediately; 2. and 3. will happen with a 20 sec delay, or when all cells in the
      new macro reach stable status, whichever happens sooner.
-   - Get all macro tests working 
+   - Get basic macro test working 
 
   E.
   - Keep the new mixed cells with no storage or form cells PARTIALLY DONE
@@ -128,20 +128,28 @@ Things to do:
     Non-buffered, non-forked monitors should report the path that has changed through the API
     manager and accessorcache should respect this path to determine which accessors (outchannels)
     have changed.
-  - Get StructuredCell tests working
+  - Get basic StructuredCell tests working
   
   G. Get module injection working again.
+  (Maybe do H1 first?)
   Store module objects either in object cache or a new module object cache.
   Building these module objects is similar to cache expression evaluation in the hierarchy (i.e. local).
   The injection machinery itself should stay similar.
 
   H.
   - Gradually, get all low-level tests working, extending the manager, using the New Way 
+    1. Easy-ish: Cson + cell-cell connection, generic deserialization (see protocol/evaluate.py)
+    2. Easy-ish: advanced mounting, ipython
+    3. Medium: debugging, library, advanced macro/collatz, shell
+    4. Hard: all StructuredCell tests
   - Implement annotation dict, including execute_debug, ncores (ncores DONE)
 
   I. Streams (part 3, below) and cache-tree-depth.
 
-  J. Get the high level working. Should be quite straightforward now.
+  J. Get the high level working again. Should be quite straightforward now, but:
+  - Streams
+  - Re-enable type inference (i.e. tf.pin = ... is inferred like tf.example.pin = ...)
+  but only if set from terminal (never from pin).
      
   K. (Maybe delay this until after the presentation) 
     Add cache graph serialization where just the checksums and status flags are stored.
