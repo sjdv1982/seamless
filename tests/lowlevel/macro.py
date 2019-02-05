@@ -5,7 +5,7 @@ from seamless.core import context, cell, transformer, pymacrocell, macro
 
 with macro_mode_on():
     ctx = context(toplevel=True)
-    ctx.param = cell("json").set(1)
+    ctx.param = cell().set(1)
 
     ctx.macro = macro({
         "param": "copy",
@@ -14,9 +14,9 @@ with macro_mode_on():
     ctx.param.connect(ctx.macro.param)
     ctx.macro_code = pymacrocell().set("""
 ctx.sub = context(context=ctx,name="sub")
-ctx.a = cell("json").set(1000 + param)
-ctx.b = cell("json").set(2000 + param)
-ctx.result = cell("json")
+ctx.a = cell().set(1000 + param)
+ctx.b = cell().set(2000 + param)
+ctx.result = cell()
 ctx.tf = transformer({
     "a": "input",
     "b": "input",
@@ -29,7 +29,7 @@ ctx.code.connect(ctx.tf.code)
 ctx.tf.c.connect(ctx.result)
 assert param != 999   # on purpose
 if param > 1:
-    ctx.d = cell("json").set(42)
+    ctx.d = cell().set(42)
     #raise Exception("on purpose") #causes the macro reconstruction to fail; comment it out to make it succeed
 """)
     ctx.macro_code.connect(ctx.macro.code)

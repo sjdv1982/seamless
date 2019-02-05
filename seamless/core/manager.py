@@ -304,6 +304,14 @@ class Manager:
         stars = "*" * 60 + "\n"
         print(stars + (msg % (str(reactor)+":"+codename)) + stars, file=sys.stderr)
 
+    def set_macro_exception(self, macro, exception):
+        # TODO: store exception? log it?
+        exc = traceback.format_exception(type(exception), exception, exception.__traceback__)
+        exc = "".join(exc)
+        msg = "Exception in %s:\n" + exc
+        stars = "*" * 60 + "\n"
+        print(stars + msg % str(macro) + stars, file=sys.stderr)
+
     async def _flush(self):
         self.flushing = True
         try:
@@ -422,6 +430,9 @@ class Manager:
     def register_reactor(self, reactor):
         self.reactors[reactor] = RuntimeReactor(self, reactor)
         self.status[reactor] = Status("reactor")
+
+    def register_macro(self, macro):
+        self.status[macro] = Status("macro")
 
     def _schedule_transformer(self, transformer):
         tcache = self.transform_cache
@@ -606,13 +617,14 @@ class Manager:
             new_status.exec = "PENDING"
         elif new_status.data != "UNDEFINED":
             if full and len(rtreactor.updated) and rtreactor.live is not None:
+                self.status[reactor] = new_status
                 ok = rtreactor.execute()
+                new_status = self.status[reactor]
                 rtreactor.updated.clear()
         if old_status != new_status:
             #print("reactor update", reactor)
             #print("reactor status OLD", old_status, "(", old_status.data, old_status.exec, old_status.auth, ")")
-            #print("reactor status NEW", new_status, "(", new_status.data, new_status.exec, new_status.auth, ")")
-            self.status[reactor] = new_status
+            #print("reactor status NEW", new_status, "(", new_status.data, new_status.exec, new_status.auth, ")")            
             if not full:
                 propagate_data = (new_status.data != old_status.data)
                 propagate_auth = (new_status.auth != old_status.auth)
@@ -625,11 +637,42 @@ class Manager:
                         self._propagate_status(cell, data_status, auth_status, full=False)
 
 
+    def update_macro_status(self, macro):
+        old_status = self.status[macro]
+        new_status = Status("macro")
+        new_status.data, new_status.exec, new_status.auth = "OK", "FINISHED", "FRESH"
+        updated_pins = []
+        for pinname, pin in macro._pins.items():
+            accessor = macro.input_dict[pinname]
+            cell = accessor.cell
+            cell_status = self.status[cell]
+
+            s = cell_status.data_status
+            if s == Status.StatusDataEnum.INVALID:
+                s = Status.StatusDataEnum.UPSTREAM_ERROR
+            if s.value > new_status.data_status.value:
+                new_status.data_status = s
+
+            s = cell_status.auth_status
+            if s.value > new_status.auth_status.value:
+                new_status.auth_status = s
+        
+        if new_status.data_status.value > Status.StatusDataEnum.PENDING.value:
+            new_status.exec = "BLOCKED"
+        if new_status.data_status.value == Status.StatusDataEnum.PENDING.value:
+            new_status.exec = "PENDING"
+        elif new_status.data != "UNDEFINED":
+            self.status[macro] = new_status
+            macro._execute()
+            new_status = self.status[macro]
+        if old_status != new_status:
+            self.status[macro] = new_status
+
     def update_worker_status(self, worker, full):
         from . import Transformer, Reactor, Macro
         if isinstance(worker, Transformer):
             return self.update_transformer_status(worker, full=full)
-        else:
+        elif isinstance(worker, Reactor):
             rtreactor = self.reactors[worker]
             for pinname, pin in worker._pins.items():
                 if pin.io == "input":
@@ -642,6 +685,10 @@ class Manager:
                     break
             else:
                 return self.update_reactor_status(worker, full=full)
+        elif isinstance(worker, Macro):
+            return self.update_macro_status(worker)
+        else:
+            raise TypeError(worker)
 
     def _connect_cell_transformer(self, cell, pin):
         """Connects cell to transformer inputpin"""
@@ -745,6 +792,38 @@ class Manager:
             self.update_reactor_status(reactor, full=True)
 
 
+    def _connect_cell_macro(self, cell, pin):
+        """Connects cell to macro pin"""
+        macro = pin.worker_ref()
+        io, access_mode, content_type = (
+            pin.io,  pin.access_mode, pin.content_type
+        )
+
+        if io != "input":
+            raise TypeError(pin) # input pin must be the target
+
+        assert pin.name not in macro.input_dict, pin #double connection
+        accessor = self.get_default_accessor(cell)
+        if access_mode is not None and access_mode != accessor.access_mode:
+            accessor.source_access_mode = accessor.access_mode
+            accessor.access_mode = access_mode
+        if content_type is not None and content_type != accessor.content_type:
+            accessor.source_content_type = accessor.content_type
+            accessor.content_type = content_type
+        acache = self.accessor_cache
+        haccessor = hash(accessor)
+        if haccessor not in acache.haccessor_to_workers:
+            acache.haccessor_to_workers[haccessor] = [macro]
+        else:
+            acache.haccessor_to_workers[haccessor].append(macro)
+        macro.input_dict[pin.name] = accessor
+
+        for pinname, pin in macro._pins.items():
+            if pinname not in macro.input_dict:
+                break
+        else:
+            self.update_macro_status(macro)
+
     def connect_cell(self, cell, other):
         #print("connect_cell", cell, other)
         from . import Transformer, Reactor, Macro
@@ -762,7 +841,7 @@ class Manager:
             elif isinstance(worker, Reactor):
                 self._connect_reactor(other, cell, "in")
             elif isinstance(worker, Macro):
-                raise NotImplementedError ###cache branch
+                self._connect_cell_macro(cell, other)
             else:
                 raise TypeError(type(worker))
         elif isinstance(other, Cell):

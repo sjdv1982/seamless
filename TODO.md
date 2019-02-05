@@ -30,7 +30,7 @@ Things to do:
     New-way style, auth update propagate forward (potentially leading to multiple interrupts).
     Interrupt happens in 20 secs, or when the transformer re-executes, whichever happens sooner
   
-  B. Implement some remote computing:
+  B. Implement some remote computing: DONE
     - label cache: a label-to-checksum cache. DONE
       Labels can be .e.g "the ribosome", "the clustering code".
       They must be unique, but they are ephemeral, not like checksum annotations which will be global
@@ -54,8 +54,8 @@ Things to do:
         cache values will be *written* to it. This will keep the local value cache 
         (but not the other caches) empty.
 
-  C.
-  - Get reactors working. 
+  C. DONE
+  - Get reactors working. DONE
     Reactors must be marked as pure or impure.
     Pure reactors get shut down after every reaction. They cannot have editpins.    
     Impure reactors receive delta updates.
@@ -72,33 +72,32 @@ Things to do:
     TODO later: reactor caches and jobs, remote execution (see below)
 
   D.
-  - Macros. Immediate macro execution is disabled, e.g. macros never
-   get immediately evaluated while they are being defined and connected
-   in macro mode.
-   In this phase, the underlying macro.ctx handle is "unbound". Whenever
-   a macro is successfully evaluated, the ctx handle becomes "bound".
-   Unbound ctx handles cannot support __dir__; any attribute can be
+  - Macros. 
+   When macro-generated contexts are built, they are "unbound". Whenever
+   a macro is successfully evaluated, the context becomes "bound".
+   Unbound contexts cannot support __dir__; any attribute can be
    accessed and leads to a Path object (TODO: relocate Path class).
+   Any setattr on the context is logged.
    Connecting a Path object to anything results in a Path connection,
    where one (or both) of the endpoints are paths.
-   Whenever a macro is evaluated, relevant Path connections 
+   Whenever the context becomes bound, relevant Path connections 
    are converted to accessors (a list of converted accessors is kept)
-   Bound macro.ctx handles are just macro-generated contexts.
-   However, connecting an item in a macro-generated context *also*
-    results in a Path connection rather than a accessor.
+   Note that any macro-generated context can only be connected to
+    in non-empty macro mode.
+
    There is always an active macro (the one that is being evaluated,
    the argument to macro_mode)
    Path connections are *not* labeled with the active macro; instead,
-   when a macro-generated context gets destroyed, all path connections
+   when a macro-generated context gets destroyed, all path-converted connections
    get destroyed where both endpoints are within the context.
-   Therefore, though a macro often creates path connections into a submacro context, it is illegal for a macro to create path connections
+   Therefore, though a macro often creates path connections into a submacro context, 
+   it is illegal for a macro to create path connections
    where *both* endpoints are within the *same* submacro.
     
   - Get general clean worker destruction working
 
-  - While a macro context is being created (i.e. when its macro is
-    evaluated), it is specified as "orphaned".
-    This is always in macro mode, hance all worker execution is disabled (beyond what is already running)
+  - Creation of a macro is synchronous, so subreactor/submacro jobs won't happen (see above) and
+    transformer jobs are not being processed.
     When macro execution is complete, the old macro is being destroyed.
     Destruction:
     1. Shuts down all interactive execution (non-pure reactors)
@@ -110,10 +109,11 @@ Things to do:
 
   E.
   - Keep the new mixed cells with no storage or form cells PARTIALLY DONE
-    Change serialization:
+    Change serialization: TODO
     - Pure binary => numpy. Can be recognized because it starts with NUMPY magic characters
     - Mixed => SEAMLESS magic characters, but then storage + form, then data.
     - Pure plain => JSON. Recognized because it doesn't start with either magic
+    - (Maybe do H1 now)
   - Get minimal mounting example working
   - Reimplement IPython (mainloop/asyncio) support, DONE 
     Test Jupyter support, Qt support, DONE
@@ -138,11 +138,11 @@ Things to do:
 
   H.
   - Gradually, get all low-level tests working, extending the manager, using the New Way 
-    1. Easy-ish: Cson + cell-cell connection, generic deserialization (see protocol/evaluate.py)
+    1. Easy-ish: Cson test + cell-cell connection, generic deserialization (see protocol/evaluate.py)
     2. Easy-ish: advanced mounting, ipython
     3. Medium: debugging, library, advanced macro/collatz, shell
     4. Hard: all StructuredCell tests
-  - Implement annotation dict, including execute_debug, ncores (ncores DONE)
+  - Implement annotation dict, including execute_debug, ncores (ncores DONE), and a field for streams
 
   I. Streams (part 3, below) and cache-tree-depth.
 

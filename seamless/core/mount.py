@@ -781,6 +781,8 @@ def resolve_register(reg):
         return result
     for r in reg:
         root = r._root()
+        if root is None:
+            return
         if root not in mountmanager.paths:
             mountmanager.paths[root] = set()
         if isinstance(r, Worker):

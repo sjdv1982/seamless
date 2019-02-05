@@ -87,7 +87,7 @@ def deserialize_plain(
     return buffer, buffer_checksum, obj, semantic_checksum
         
 def deserialize_pythoncode(
-    value, subcelltype, codename, 
+    value, subcelltype, cellpath, 
     from_buffer, buffer_checksum,
     source_access_mode, source_content_type
 ):
@@ -109,7 +109,8 @@ def deserialize_pythoncode(
     semantic_checksum = get_hash(dump)
 
     if subcelltype in ("reactor", "macro"):
-        mode, _ = analyze_code(code, codename)
+        codename = ".".join(cellpath)
+        mode, _ = analyze_code(value, codename)
         if mode in ("expr", "lambda"):
             err = "subcelltype '%s' does not support code mode '%s'" % (subcelltype, mode)
             raise SyntaxError((codename, err))

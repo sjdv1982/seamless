@@ -28,8 +28,8 @@ class SeamlessBase:
         return required_path
 
     def _set_context(self, context, name):
-        from .context import Context
-        assert isinstance(context, Context)
+        from .context import Context, UnboundContext
+        assert isinstance(context, (Context, UnboundContext))
         assert self._context is None
         ctx = weakref.ref(context)
         self._context = ctx
@@ -42,7 +42,8 @@ class SeamlessBase:
         return self._context()._get_manager()
 
     def _root(self):
-        assert self._context is not None #worker/cell must have a context
+        if self._context is None:
+            return None
         return self._context()._root()
 
     def _format_path(self):
@@ -80,7 +81,8 @@ from .cell import textcell, pythoncell, pytransformercell, pymacrocell, \
  pyreactorcell, ipythoncell, plaincell, csoncell, arraycell, mixedcell
 from .library import libcell, libmixedcell
 from . import context as context_module
-from .context import Context, context, path
+from .context import Context, context
+from .unbound_context import path
 from .worker import Worker
 from .transformer import Transformer, transformer
 from .mount import mountmanager

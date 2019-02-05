@@ -50,6 +50,7 @@ Use ``Cell.status()`` to get its status.
 
     def _set_context(self, ctx, name):
         super()._set_context(ctx, name)
+        assert self._context() is ctx
         self._get_manager().register_cell(self)
         if self._prelim_val is not None:
             value, from_buffer = self._prelim_val

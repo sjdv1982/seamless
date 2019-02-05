@@ -8,7 +8,7 @@ from contextlib import contextmanager
 from . import SeamlessBase
 from .mount import MountItem, is_dummy_mount
 from . import get_macro_mode, macro_register
-from .macro_mode import toplevel_register, macro_mode_on, with_macro_mode
+from .macro_mode import toplevel_register, macro_mode_on, with_macro_mode, curr_macro
 
 @contextmanager
 def null_context():
@@ -35,9 +35,7 @@ class Context(SeamlessBase):
     _naming_pattern = "ctx"
     _mount = None
     _unmounted = False
-    _seal = None
     _direct_mode = False
-    _exported = True
 
     def __init__(
         self, *,
@@ -63,6 +61,10 @@ context : context or None
         if get_macro_mode():
             direct_mode = False
             macro_mode_context = null_context
+            if curr_macro() is None:
+                assert toplevel or context is not None
+            else:
+                assert context is not None
         else:
             direct_mode = True
             macro_mode_context = macro_mode_on
@@ -84,7 +86,8 @@ context : context or None
                 toplevel_register.add(self)
             macro_register.add(self)
         from .. import communionserver
-        communionserver.register_manager(self._manager)
+        if toplevel:
+            communionserver.register_manager(self._manager)
 
     def _set_context(self, context, name):
         assert not self._toplevel
@@ -171,9 +174,6 @@ context : context or None
         if self._toplevel:
             return self
         return super()._root()
-
-    def _is_sealed(self):
-        return self._seal is not None
 
     def _flush_workqueue(self):
         from .macro import Macro
@@ -282,7 +282,8 @@ context : context or None
         if self._unmounted:
             return
         object.__setattr__(self, "_unmounted" , True) #can be outside macro mode
-        mountmanager = self._manager.mountmanager
+        manager = self._root()._manager
+        mountmanager = manager.mountmanager
         for childname, child in self._children.items():
             if isinstance(child, (Cell, Link)):
                 if not is_dummy_mount(child._mount):
@@ -328,6 +329,9 @@ Context._methods += [m for m in SeamlessBase.__dict__  if not m.startswith("_") 
       and m not in Context._methods]
 
 def context(**kwargs):
+    if get_macro_mode() and curr_macro() is not None:
+        assert "toplevel" not in kwargs or kwargs["toplevel"] == False
+        return UnboundContext(**kwargs)
     ctx = Context(**kwargs)
     return ctx
 context.__doc__ = Context.__init__.__doc__
@@ -359,15 +363,7 @@ class _InternalChildrenWrapper:
     def __setattr__(self, attr, value):
         raise AttributeError("_InternalChildrenWrapper is read-only")
 
-class Path:
-    def __init__(self, obj):
-        path = obj.path
-        raise NotImplementedError ###cache branch
-
-def path(obj):
-    return Path(obj)
-
-
+from .unbound_context import UnboundContext, Path
 from .link import Link
 from .cell import Cell
 from .worker import Worker, InputPinBase, OutputPinBase, EditPinBase

@@ -33,20 +33,22 @@ def curr_macro():
 @contextmanager
 def macro_mode_on(macro=None):
     from . import mount
-    if macro is not None: raise NotImplementedError ###cache branch
     global _macro_mode, _curr_macro
-    assert _macro_mode == False
+    old_macro_mode = _macro_mode
+    old_curr_macro = _curr_macro
     _macro_mode = True
     _curr_macro = macro
     try:
         yield
-        mount.resolve_register(macro_register.stack)
+        if not old_macro_mode:
+            mount.resolve_register(macro_register.stack)
     finally:
-        _macro_mode = False
-        _curr_macro = None
-        macro_register.stack.clear()
-        for ctx in toplevel_register:
-            ctx._get_manager().leave_macro_mode()
+        _macro_mode = old_macro_mode
+        _curr_macro = old_curr_macro
+        if not old_macro_mode:
+            macro_register.stack.clear()
+            for ctx in toplevel_register:
+                ctx._get_manager().leave_macro_mode()
 
 def with_macro_mode(func):
     def with_macro_mode_wrapper(self, *args, **kwargs):
