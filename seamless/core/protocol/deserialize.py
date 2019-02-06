@@ -24,6 +24,8 @@ def deserialize(
             source_access_mode = "binary"
         elif isinstance(value, (Scalar, Container)):
             source_access_mode = "plain"
+        elif inspect.isfunction(value):
+            source_access_mode = "_pyfunction"
         else:
             raise TypeError(type(value))
 
@@ -92,7 +94,7 @@ def deserialize_pythoncode(
     source_access_mode, source_content_type
 ):
     if not from_buffer:
-        if inspect.isfunction(value):
+        if source_access_mode == "_pyfunction":
             code = inspect.getsource(value)
             code = strip_source(code)
             value = code

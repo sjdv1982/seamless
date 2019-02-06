@@ -10,15 +10,6 @@ def _destroy_toplevels():
 
 atexit.register(_destroy_toplevels)
 
-
-class MacroRegister:
-    def __init__(self):
-        self.stack = WeakSet()
-    def add(self, item):
-        self.stack.add(item)
-
-macro_register = MacroRegister()
-
 _macro_mode = False
 _curr_macro = None
 
@@ -34,34 +25,28 @@ def curr_macro():
 def macro_mode_on(macro=None):
     from . import mount
     global _macro_mode, _curr_macro
-    old_macro_mode = _macro_mode
-    old_curr_macro = _curr_macro
+    assert _macro_mode == False
     _macro_mode = True
     _curr_macro = macro
     try:
         yield
-        if not old_macro_mode:
-            mount.resolve_register(macro_register.stack)
+        if macro is None:
+            for ctx in list(toplevel_register):
+                if isinstance(ctx, UnboundContext):
+                    top = Context(toplevel=True)                    
+                    ctx._bind(top)
+                    toplevel_register.add(top)
     finally:
-        _macro_mode = old_macro_mode
-        _curr_macro = old_curr_macro
-        if not old_macro_mode:
-            macro_register.stack.clear()
-            for ctx in toplevel_register:
-                ctx._get_manager().leave_macro_mode()
-
-def with_macro_mode(func):
-    def with_macro_mode_wrapper(self, *args, **kwargs):
-        if not get_macro_mode():
-            if self._context is None: #worker construction
-                return func(self, *args, **kwargs)
-            ctx = self._root()
-            if not ctx._direct_mode:
-                raise Exception("This operation requires macro mode, since the toplevel context was constructed in macro mode")
-            else:
-                with macro_mode_on():
-                    result = func(self, *args, **kwargs)
-                return result
+        _macro_mode = False
+        _curr_macro = None
+        if macro is None:
+            for ctx in list(toplevel_register):
+                if isinstance(ctx, UnboundContext):
+                    toplevel_register.remove(ctx)
+                else:
+                    mount.scan(ctx)
         else:
-            return func(self, *args, **kwargs)
-    return with_macro_mode_wrapper
+            mount.scan(macro.ctx)
+
+from .context import Context
+from .unbound_context import UnboundContext            

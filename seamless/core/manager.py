@@ -161,14 +161,6 @@ class Manager:
     def schedule_jobs(self):
         if not len(self.scheduled):
             return
-        if get_macro_mode():
-            if curr_macro() is None:
-                return
-            else:
-                raise NotImplementedError #TODO:
-                # - Determine which paths are under active macro control
-                # - Add those paths to scheduled_later; at the end, add set self.scheduled to scheduled_later
-                # /TODO
         tcache = self.transform_cache
         scheduled_clean = OrderedDict()
         for type, schedop, add_remove in self.scheduled:
@@ -240,9 +232,9 @@ class Manager:
             transformer = "<Unknown transformer>"                            
         exc = traceback.format_exception(type(exception), exception, exception.__traceback__)
         exc = "".join(exc)
-        msg = "Exception in %s:\n" + exc
+        msg = "Exception in %s:\n" % transformer + exc
         stars = "*" * 60 + "\n"
-        print(stars + (msg % transformer) + stars, file=sys.stderr)
+        print(stars + msg + stars, file=sys.stderr)
 
     def set_transformer_result(self, level1, level2, value, checksum, prelim):
         print("TODO: Manager.set_transformer_result: expand code properly, see evaluate.py")
@@ -690,6 +682,27 @@ class Manager:
         else:
             raise TypeError(worker)
 
+    def _verify_connect(self, source, target):
+        assert source._root()._manager is self
+        assert source._root() is target._root()
+        source_macro = source._get_macro()
+        target_macro = target._get_macro()
+        if source_macro is not None or target_macro is not None:
+            if not get_macro_mode():
+                raise Exception("Macro-generated contexts can be connected only in macro mode")
+            current_macro = curr_macro()
+            if current_macro is not None:
+                if not source_macro._context()._part_of2(current_macro._context()):
+                    msg = "%s is not part of current %s"
+                    raise Exception(msg % (source_macro, current_macro))
+                if not target_macro._context()._part_of2(current_macro._context()):
+                    msg = "%s is not part of current %s"
+                    raise Exception(msg % (target_macro, current_macro))
+            if not ((source_macro is current_macro) \
+                     or (target_macro is current_macro)):
+                msg = "Neither %s nor %s was created by current macro %s"
+                raise Exception(msg % (source, macro, current_macro))
+
     def _connect_cell_transformer(self, cell, pin):
         """Connects cell to transformer inputpin"""
         transformer = pin.worker_ref()
@@ -834,6 +847,8 @@ class Manager:
             raise TypeError(cell)
         if isinstance(other, Link):
             other = other.get_linked()
+
+        self._verify_connect(cell, other)
         if isinstance(other, PinBase):
             worker = other.worker_ref()
             if isinstance(worker, Transformer):
@@ -885,7 +900,7 @@ class Manager:
 
 
     def connect_pin(self, pin, cell):
-        #print("connect_pin", pin, cell)
+        #print("connect_pin", pin, cell)            
         from . import Transformer, Reactor, Macro
         from .link import Link
         from .cell import Cell
@@ -896,6 +911,9 @@ class Manager:
             raise TypeError(cell)
         if not isinstance(pin, PinBase) or isinstance(pin, InputPin):
             raise TypeError(pin)
+
+        self._verify_connect(pin, cell)
+
         if isinstance(pin, EditPin):
             if not isinstance(worker, Reactor):
                 raise TypeError((pin, worker)) # Editpin must be connected to reactor

@@ -6,13 +6,9 @@ import asyncio
 from contextlib import contextmanager
 
 from . import SeamlessBase
-from .mount import MountItem, is_dummy_mount
-from . import get_macro_mode, macro_register
-from .macro_mode import toplevel_register, macro_mode_on, with_macro_mode, curr_macro
+from .macro_mode import get_macro_mode, curr_macro, toplevel_register
+from .mount import is_dummy_mount
 
-@contextmanager
-def null_context():
-    yield
 
 class StatusReport(dict):
     def __str__(self):
@@ -35,17 +31,16 @@ class Context(SeamlessBase):
     _naming_pattern = "ctx"
     _mount = None
     _unmounted = False
-    _direct_mode = False
+    _macro = None # The macro that created this context
 
     def __init__(
         self, *,
         name=None,
-        context=None,
-        toplevel=False
+        toplevel=False,
     ):
         """Construct a new context.
 
-A context can contain cells, workers (= transformers and reactors),
+A context can contain cells, workers (= transformers, reactors and macros),
 and other contexts.
 
 **Important methods and attributes**:
@@ -55,36 +50,16 @@ Parameters
 ----------
 name: str
     name of the context within the parent context
-context : context or None
-    parent context
 """
-        if get_macro_mode():
-            direct_mode = False
-            macro_mode_context = null_context
-            if curr_macro() is None:
-                assert toplevel or context is not None
-            else:
-                assert context is not None
-        else:
-            direct_mode = True
-            macro_mode_context = macro_mode_on
-        with macro_mode_context():
-            super().__init__()
-            self._direct_mode = direct_mode
-            if context is not None:
-                self._set_context(context, name)
-            if toplevel:
-                assert context is None
-                self._toplevel = True
-                self._manager = Manager(self)
-            else:
-                assert context is not None
+        super().__init__()
+        if toplevel:
+            self._toplevel = True
+            self._manager = Manager(self)
 
-            self._children = {}
-            self._auto = set()
-            if toplevel:
-                toplevel_register.add(self)
-            macro_register.add(self)
+        self._children = {}
+        self._auto = set()
+        if toplevel:
+            toplevel_register.add(self)
         from .. import communionserver
         if toplevel:
             communionserver.register_manager(self._manager)
@@ -108,7 +83,6 @@ context : context or None
         ret = "Seamless context: " + p
         return ret
 
-    @with_macro_mode
     def _add_child(self, childname, child):
         assert isinstance(child, (Context, Worker, Cell, Link, StructuredCell))
         if isinstance(child, Context):
@@ -132,7 +106,6 @@ context : context or None
         self._add_child(cell_name, cell)
         return cell_name
 
-    @with_macro_mode
     def __setattr__(self, attr, value):
         if attr.startswith("_") or hasattr(self.__class__, attr):
             return object.__setattr__(self, attr, value)
@@ -173,16 +146,27 @@ context : context or None
     def _root(self):
         if self._toplevel:
             return self
+        if self._macro is not None:
+            return self._macro._root()
         return super()._root()
 
+    @property
+    def path(self):
+        if self._macro is not None and self._macro._gen_context is self:
+            return self._macro.path + (self.name,)
+        else:
+            return super().path
+
     def _flush_workqueue(self):
-        from .macro import Macro
         manager = self._get_manager()
         manager.flush()
         finished = True
         if len(self.unstable_workers):
             finished = False
         return finished
+
+    def _get_macro(self):
+        return self._macro
 
     def equilibrate(self, timeout=None, report=10):
         """
@@ -225,25 +209,7 @@ context : context or None
             return "OK"
 
     def mount(self, path=None, mode="rw", authority="cell", persistent=False):
-        """Performs a "lazy mount"; context is mounted to the directory path when macro mode ends
-        path: directory path (can be None if an ancestor context has been mounted)
-        mode: "r", "w" or "rw" (passed on to children)
-        authority: "cell", "file" or "file-strict" (passed on to children)
-        persistent: whether or not the directory persists after the context has been destroyed
-                    The same setting is applied to all children
-                    May also be None, in which case the directory is emptied, but remains
-        """
-        assert self._mount is None #Only the mountmanager may modify this further!
-        if self._root()._direct_mode:
-            raise Exception("Root context must have been constructed in macro mode")
-        self._mount = {
-            "autopath": False,
-            "path": path,
-            "mode": mode,
-            "authority": authority,
-            "persistent": persistent
-        }
-        MountItem(None, self, dummy=True, **self._mount) #to validate parameters
+        raise Exception("This method must be called in macro mode")
 
     def __dir__(self):
         result = []
@@ -263,7 +229,6 @@ context : context or None
         return _InternalChildrenWrapper(self)
 
     def destroy(self, from_del=False):
-        from .macro import Macro
         self._unmount(from_del=from_del)
         if self._destroyed:
             return
@@ -287,6 +252,7 @@ context : context or None
         for childname, child in self._children.items():
             if isinstance(child, (Cell, Link)):
                 if not is_dummy_mount(child._mount):
+                    raise NotImplementedError ### cache branch
                     if not from_del:
                         assert mountmanager.reorganizing
                     mountmanager.unmount(child, from_del=from_del)
@@ -298,7 +264,7 @@ context : context or None
 
     def _remount(self):
         """Undo an _unmount"""
-        from .macro import Macro
+        raise NotImplementedError ### cache branch
         object.__setattr__(self, "_unmounted" , False) #can be outside macro mode
         for childname, child in self._children.items():
             if isinstance(child, (Context, Macro)):
@@ -307,6 +273,7 @@ context : context or None
     def full_destroy(self, from_del=False):
         #all work buffers (work queue and manager work buffers) are now empty
         # time to free memory
+        raise NotImplementedError ### cache branch
         from .macro import Macro
         path = self.path
         for childname, child in self._children.items():
@@ -329,11 +296,13 @@ Context._methods += [m for m in SeamlessBase.__dict__  if not m.startswith("_") 
       and m not in Context._methods]
 
 def context(**kwargs):
-    if get_macro_mode() and curr_macro() is not None:
-        assert "toplevel" not in kwargs or kwargs["toplevel"] == False
+    if get_macro_mode():
+        if curr_macro() is not None:
+            assert "toplevel" not in kwargs or kwargs["toplevel"] == False        
         return UnboundContext(**kwargs)
-    ctx = Context(**kwargs)
-    return ctx
+    else:
+        ctx = Context(**kwargs)
+        return ctx
 context.__doc__ = Context.__init__.__doc__
 
 class _ContextWrapper:

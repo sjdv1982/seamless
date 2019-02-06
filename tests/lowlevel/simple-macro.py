@@ -1,16 +1,22 @@
 from seamless.core import macro_mode, context, cell, macro
-from seamless.core.macro_mode import macro_mode_on
 
-with macro_mode_on():
-    ctx = context(toplevel=True)
-    ctx.macro = macro({
-        "a": "ref",
-    })
-    ctx.a = cell().set(42)
-    ctx.code = cell("macro").set("""
-ctx.answer = cell().set(a)
-ctx.tf = transformer({"test": "input"})
-ctx.answer.connect(ctx.tf.test)
-    """)
-    ctx.a.connect(ctx.macro.a)
-    ctx.code.connect(ctx.macro.code)
+ctx = context(toplevel=True)
+ctx.macro = macro({
+    "a": "ref",
+})
+ctx.a = cell().set(42)
+
+def code(ctx, a):
+    ctx.answer = cell().set(a)
+    ctx.double = transformer({"test": "input", "result": "output"})
+    ctx.answer.connect(ctx.double.test)
+    ctx.double.code.cell().set("test * 2")
+    ctx.result = cell()
+    ctx.double.result.connect(ctx.result)
+
+ctx.code = cell("macro").set(code)
+ctx.a.connect(ctx.macro.a)
+ctx.code.connect(ctx.macro.code)
+ctx.equilibrate()
+print(ctx.macro.ctx.answer.value)
+print(ctx.macro.ctx.result.value)

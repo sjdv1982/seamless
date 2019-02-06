@@ -7,13 +7,11 @@ link_counter = 0
 class Link(SeamlessBase):
     _mount = None
     def __init__(self, obj):
-        from . import macro_register
         global link_counter
         assert isinstance(obj, SeamlessBase)
         self._linked = obj
         link_counter += 1
         self._counter = link_counter
-        macro_register.add(self)
 
     def __hash__(self):
         return -self._counter

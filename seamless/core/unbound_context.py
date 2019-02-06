@@ -1,49 +1,80 @@
 import weakref
 
 from . import SeamlessBase
-from .macro_mode import curr_macro
+from .macro_mode import curr_macro, toplevel_register
+from .mount import MountItem, is_dummy_mount
 
-print("""TODO: 
-- Implement "originating macro" (in macro_mode)
-- when making a connection, check that for both source and target:
-   curr_macro is None or "originating macro" is a subpath of curr_macro
-- when making a connection, check that for either source or target:
-   "originating macro" is the same as curr_macro
-
-""")
 class UnboundManager:
     def __init__(self, ctx):
         self._ctx = weakref.ref(ctx)
+        self._registered = set()
+        self.commands = []
 
     def register_cell(self, cell):
-        print("UnboundManager REGISTER CELL", cell)
+        self._registered.add(cell)
 
     def register_transformer(self, transformer):
-        print("UnboundManager REGISTER TRANSFORMER", transformer)
+        self._registered.add(transformer)
 
     def register_reactor(self, reactor):
-        print("UnboundManager REGISTER reactor", reactor)
+        self._registered.add(reactor)
 
     def register_macro(self, macro):
-        print("UnboundManager REGISTER macro", macro)
+        self._registered.add(macro)
 
     def set_cell(self, cell, value, *, from_buffer):
-        print("UnboundManager SET CELL", cell, value, from_buffer)
+        assert cell._get_manager() is self
+        assert cell in self._registered
+        self.commands.append(("set cell", (cell, value, from_buffer)))
 
     def connect_cell(self, cell, other):
-        print("UnboundManager CONNECT CELL", cell, other)
-
-    def set_cell_checksum(self, cell, checksum):
-        print("UnboundManager SET CELL CHECKSUM", cell, checksum)
-
-    def set_cell_label(self, cell, label):
-        print("UnboundManager SET CELL LABEL", label)
-
-    def cell_from_pin(self, pin):
-        raise NotImplementedError ### cache branch
+        assert cell._get_manager() is self
+        assert cell in self._registered
+        self.commands.append(("connect cell", (cell, other)))
 
     def connect_pin(self, pin, cell):
-        print("UnboundManager CONNECT PIN", pin, cell)
+        assert pin._get_manager() is self
+        assert pin.worker_ref() in self._registered
+        self.commands.append(("connect pin", (pin, cell)))
+
+    def set_cell_checksum(self, cell, checksum):
+        assert cell._get_manager() is self
+        assert cell in self._registered
+        self.commands.append(("set cell checksum", (cell, checksum)))
+
+    def set_cell_label(self, cell, label):
+        assert cell._get_manager() is self
+        assert cell in self._registered
+        self.commands.append(("set cell label", (cell, label)))
+
+    def cell_from_pin(self, pin):
+        from .worker import InputPin, OutputPin, EditPin
+        worker = pin.worker_ref()
+        cells = []
+        if worker is None:
+            raise ValueError("Worker has died")
+        if isinstance(pin, (InputPin, EditPin)):
+            for com, args in self.commands:
+                if com != "connect cell":
+                    continue
+                cell, other = args
+                if other is pin:
+                    cells.append(cell)
+        elif isinstance(pin, OutputPin):
+            for com, args in self.commands:
+                if com != "connect pin":
+                    continue
+                pin2, cell = args
+                if pin2 is pin:
+                    cells.append(cell)
+        else:
+            raise TypeError(pin)
+        if isinstance(pin, InputPin):
+            return cells[0] if len(cells) else None
+        else:
+            return cells
+
+
 
 class UnboundContext(SeamlessBase):
 
@@ -54,17 +85,23 @@ class UnboundContext(SeamlessBase):
     _toplevel = False
     _naming_pattern = "ctx"
     _mount = None
-    _unmounted = False
-    _direct_mode = False
+    _bound = None
 
     def __init__(
         self, *,
         name=None,
-        context=None
+        toplevel=False
     ):
+        super().__init__()
         self._manager = UnboundManager(self)
+        self._name = name
+        self._toplevel = toplevel
+        self._auto = set()
+        if toplevel:
+            toplevel_register.add(self)
 
     def __setattr__(self, attr, value):
+        assert not self._bound
         if attr.startswith("_") or hasattr(self.__class__, attr):
             return object.__setattr__(self, attr, value)
         if attr in self._children and self._children[attr] is not value:
@@ -73,6 +110,8 @@ class UnboundContext(SeamlessBase):
         self._add_child(attr, value)
 
     def __getattr__(self, attr):
+        if self._bound is not None:
+            return getattr(self._bound, attr)
         if attr in self._children:
             return self._children[attr]
         raise AttributeError(attr)
@@ -86,8 +125,88 @@ class UnboundContext(SeamlessBase):
             self._children[childname] = child
             child._set_context(self, childname)
 
+    def _add_new_cell(self, cell):
+        assert isinstance(cell, Cell)
+        assert cell._context is None
+        count = 0
+        while 1:
+            count += 1
+            cell_name = "cell" + str(count)
+            if not cell_name in self._children:
+                break
+        self._auto.add(cell_name)
+        self._add_child(cell_name, cell)
+        return cell_name
+
     def _get_manager(self):
         return self._manager
+
+    def mount(self, path=None, mode="rw", authority="cell", persistent=False):
+        """Performs a "lazy mount"; context is mounted to the directory path when macro mode ends
+        path: directory path (can be None if an ancestor context has been mounted)
+        mode: "r", "w" or "rw" (passed on to children)
+        authority: "cell", "file" or "file-strict" (passed on to children)
+        persistent: whether or not the directory persists after the context has been destroyed
+                    The same setting is applied to all children
+                    May also be None, in which case the directory is emptied, but remains
+        """
+        assert self._mount is None #Only the mountmanager may modify this further!
+        self._mount = {
+            "autopath": False,
+            "path": path,
+            "mode": mode,
+            "authority": authority,
+            "persistent": persistent
+        }
+        MountItem(None, self, dummy=True, **self._mount) #to validate parameters
+
+
+    def _bind_stage1(self, ctx=None):
+        from .context import Context
+        if ctx is None:
+            assert not self._toplevel
+            ctx = Context(name=self._name)
+            ctx._macro = curr_macro()                
+        for childname, child in self._children.items():
+            if isinstance(child, Context):
+                continue
+            else:
+                setattr(ctx, childname, child)
+        for childname, child in self._children.items():
+            if isinstance(child, Context):
+                bound_ctx = child._bind_stage1()
+                setattr(ctx, childname, bound_ctx)
+            else:
+                continue     
+        ctx._auto = self._auto
+        self._bound = ctx
+        return ctx
+
+    def _bind_stage2(self, manager):
+        for com, args in self._manager.commands:
+            if com == "set cell":
+                cell, value, from_buffer = args
+                manager.set_cell(cell, value, from_buffer=from_buffer)
+            elif com == "connect cell":
+                cell, other = args                
+                manager.connect_cell(cell, other)
+            elif com == "connect pin":
+                pin, cell = args
+                manager.connect_pin(pin, cell)
+            elif com == "set cell checksum":
+                cell, checksum = args
+                manager.set_cell_checksum(cell, checksum)
+            elif com == "set cell label":
+                cell, label = args
+                manager.set_cell_label(cell, label)
+            else:
+                raise ValueError(com)
+
+    def _bind(self, ctx):
+        from .context import Context        
+        assert self._toplevel == ctx._toplevel
+        self._bind_stage1(ctx)
+        self._bind_stage2(ctx._get_manager())
 
 
 class Path:

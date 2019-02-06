@@ -177,6 +177,7 @@ class Job:
             manager = self.scheduler().manager()
             namespace = {}
             queue = Queue()
+            inputs = []
             assert "code" in self.level2, list(self.level2._expressions.keys())
             for pin in self.level2:
                 semantic_key = self.level2[pin]
@@ -185,10 +186,11 @@ class Job:
                     code = value
                 else:
                     namespace[pin] = value
+                    inputs.append(pin)
             args = (
                 transformer_path, code,
                 str(transformer),
-                namespace, self.level2.output_name, queue
+                namespace, inputs, self.level2.output_name, queue
             )
             self.executor = Executor(target=execute,args=args, daemon=True)
             self.executor.start()

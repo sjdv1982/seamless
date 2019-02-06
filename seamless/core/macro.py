@@ -1,20 +1,20 @@
 from collections import OrderedDict
 import traceback
+import weakref
 
 from .worker import Worker, InputPin, OutputPin
 from .protocol import content_types
 from .injector import macro_injector as injector
 from .unbound_context import UnboundContext
 from .macro_mode import macro_mode_on
-from .cached_compile import cached_compile
+from .cached_compile import exec_code
 
 class ExecError(Exception): pass
 
 class Macro(Worker):
     injected_modules = None
     def __init__(self, macro_params, *, lib=None):
-        self.gen_context = None
-        self.macro_context_name = None
+        self._gen_context = None
         self.code = InputPin(self, "code", "ref", "pythoncode", "transformer")
         self._pins = {"code":self.code}
         self._macro_params = OrderedDict()
@@ -56,10 +56,11 @@ class Macro(Worker):
             injector.define_workspace(self, injected_modules)
 
     def _execute(self):
+        from .context import Context
         if self.lib is not None:
             raise NotImplementedError ### cache branch
         manager = self._get_manager()
-        values = {}
+        values = {}        
         for pinname, accessor in self.input_dict.items():            
             expression = manager.build_expression(accessor)
             if expression is None:
@@ -68,40 +69,46 @@ class Macro(Worker):
                 value = manager.get_expression(expression)
             if pinname == "code":
                 code = value
-                identifier = str(self)
-                try:
-                    code_object = cached_compile(code, identifier, "exec")
-                except Exception as exception:
-                    manager.set_macro_exception(self, exception)
             else:
-                values[pinname] = values
+                values[pinname] = value
         with macro_mode_on(self):
-            ctx = UnboundContext()
+            unbound_ctx = UnboundContext()
             keep = {k:v for k,v in self.namespace.items() if k.startswith("_")}
             self.namespace.clear()
             #self.namespace["__name__"] = self.name
             self.namespace["__name__"] = "macro"
             self.namespace.update(keep)
             self.namespace.update( self.default_namespace.copy())
-            self.namespace["ctx"] = ctx
+            self.namespace["ctx"] = unbound_ctx
             self.namespace.update(values)
             #workspace = self if self.injected_modules else None
             #with injector.active_workspace(workspace):
             #    with library.bind(self.lib):
             #        exec(code_object, self.namespace)
-            exec(code_object, self.namespace)
-            if self.namespace["ctx"] is not ctx:
+            inputs = ["ctx"] +  list(values.keys())
+            exec_code(code, str(self), self.namespace, inputs, None)
+            if self.namespace["ctx"] is not unbound_ctx:
                 raise Exception("Macro must return ctx")
 
-        print("execute macro", self)
+            ctx = Context(name="ctx", toplevel=False)
+            ctx._set_context(self._context(), "MACRO:" + self.name + ".ctx")
+            ctx._macro = self            
+            unbound_ctx._bind(ctx)
+            if self._gen_context is not None:
+                self._gen_context.destroy()
+            self._gen_context = ctx
 
     def _set_context(self, ctx, name):
         super()._set_context(ctx, name)
         self._get_manager().register_macro(self)
 
     def _unmount(self,from_del=False):
-        if self.gen_context is not None:
-            return self.gen_context._unmount(from_del)
+        if self._gen_context is not None:
+            return self._gen_context._unmount(from_del)
+
+    @property
+    def ctx(self):
+        return self._gen_context
 
     def __str__(self):
         ret = "Seamless macro: " + self._format_path()

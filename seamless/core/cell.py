@@ -1,6 +1,5 @@
 from . import SeamlessBase
-from .macro_mode import with_macro_mode
-from . import macro_register, get_macro_mode
+from .macro_mode import get_macro_mode
 
 cell_counter = 0
 
@@ -45,8 +44,6 @@ Use ``Cell.status()`` to get its status.
         super().__init__()
         cell_counter += 1
         self._counter = cell_counter
-        if get_macro_mode():
-            macro_register.add(self)
 
     def _set_context(self, ctx, name):
         super()._set_context(ctx, name)
@@ -170,7 +167,6 @@ Use ``Cell.status()`` to get its status.
             filevalue = f.read()
         return self.from_buffer(filevalue)
 
-    @with_macro_mode
     def connect(self, target):
         """connects to a target cell"""
         manager = self._get_manager()

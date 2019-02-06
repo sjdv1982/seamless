@@ -1,6 +1,5 @@
 import weakref
 from . import SeamlessBase
-from .macro_mode import get_macro_mode, with_macro_mode
 
 def _cell_from_pin(self, celltype):
     assert isinstance(self, (InputPin, EditPin))
@@ -27,13 +26,6 @@ def _cell_from_pin(self, celltype):
 class Worker(SeamlessBase):
     """Base class for all workers."""
     _pins = None
-
-    @with_macro_mode
-    def __init__(self):
-        super().__init__()
-        if get_macro_mode():
-            from . import macro_register
-            macro_register.add(self)
 
     def __getattr__(self, attr):
         if self._pins is None or attr not in self._pins:
@@ -123,6 +115,10 @@ class PinBase(SeamlessBase):
             return None
         return worker._context
 
+    def _get_macro(self):
+        return self._context()._macro
+
+
 class InputPinBase(PinBase):
     def _set_context(self, context, childname):
         pass
@@ -162,7 +158,6 @@ class OutputPin(OutputPinBase):
     """
     io = "output"
 
-    @with_macro_mode
     def connect(self, target):
         """connects to a target cell"""
         manager = self._get_manager()
@@ -240,7 +235,6 @@ class EditPin(EditPinBase):
         """Sets the value of the connected cell"""
         return self.cell().set(*args, **kwargs)
 
-    @with_macro_mode
     def connect(self, target):
         """connects to a target cell"""
         raise NotImplementedError ###cache branch

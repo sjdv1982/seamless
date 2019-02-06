@@ -18,7 +18,7 @@ if platform.system() == "Windows":
     from ctypes import windll
 
 
-from .cached_compile import cached_compile
+from .cached_compile import exec_code
 ###from .injector import transformer_injector
 
 ### TODO: injectors are not yet working
@@ -64,18 +64,19 @@ def return_preliminary(result_queue, value):
     result_queue.put((-1, value))
 
 def execute(name, code, identifier, namespace,
-    output_name, result_queue):
+    inputs, output_name, result_queue):
     namespace["return_preliminary"] = functools.partial(
         return_preliminary, result_queue
     )
     try:
-        code_object = cached_compile(code, identifier, "exec")
+        namespace.pop(output_name, None)
+        exec_code(code, identifier, namespace, inputs, output_name)
+        ###code_object = cached_compile(code, identifier, "exec")
         ###if USE_PROCESSES and multiprocessing.get_start_method() != "fork":
         ###    injector.restore()
-        namespace.pop(output_name, None)
         ###with injector.active_workspace(workspace):
         ###    exec(code_object, namespace)
-        exec(code_object, namespace) ###
+        ###exec(code_object, namespace)
     except:
         exc = traceback.format_exc()
         result_queue.put((1, exc))
@@ -93,7 +94,7 @@ def execute(name, code, identifier, namespace,
     result_queue.join()
 
 def execute_debug(name, code, identifier, namespace,
-    output_name, result_queue):
+    inputs, output_name, result_queue):
     if platform.system() == "Windows":
         while True:
             if windll.kernel32.IsDebuggerPresent() != 0:
@@ -110,5 +111,5 @@ def execute_debug(name, code, identifier, namespace,
         except DebuggerAttached:
             pass
     execute(name, code, identifier, namespace,
-        output_name, result_queue)
+        inputs, output_name, result_queue)
 

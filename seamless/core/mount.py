@@ -878,6 +878,11 @@ def get_extension(c):
     return ""
 
 from .link import Link
+
+
+def scan(ctx):
+    print("TODO: mount.scan")
+    # Also rip fork, overhaul reorganize
 """
 *****
 TODO: filehash option (cell stores hash of the file, necessary for slash-0)

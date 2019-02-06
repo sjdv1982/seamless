@@ -4,12 +4,13 @@ class IpyString(str):
     def _repr_pretty_(self, p, cycle):
         return p.text(str(self))
 
-from .macro_mode import with_macro_mode
-
 class SeamlessBase:
     _destroyed = False
     _context = None
     name = None
+
+    def _get_macro(self):
+        return self._context()._macro
 
     @property
     def path(self):
@@ -30,7 +31,10 @@ class SeamlessBase:
     def _set_context(self, context, name):
         from .context import Context, UnboundContext
         assert isinstance(context, (Context, UnboundContext))
-        assert self._context is None
+        if isinstance(context, UnboundContext):
+            assert self._context is None
+        else:
+            assert self._context is None or isinstance(self._context(), UnboundContext), self._context
         ctx = weakref.ref(context)
         self._context = ctx
         self.name = name
@@ -74,7 +78,7 @@ class SeamlessBaseList(list):
     def __str__(self):
         return str([v._format_path() for v in self])
 
-from .macro_mode import get_macro_mode, macro_register, macro_mode_on
+from .macro_mode import get_macro_mode, macro_mode_on
 from . import cell as cell_module
 from .cell import Cell, cell
 from .cell import textcell, pythoncell, pytransformercell, pymacrocell, \
