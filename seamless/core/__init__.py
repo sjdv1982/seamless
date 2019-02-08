@@ -86,11 +86,10 @@ from .cell import textcell, pythoncell, pytransformercell, pymacrocell, \
 from .library import libcell, libmixedcell
 from . import context as context_module
 from .context import Context, context
-from .unbound_context import path
 from .worker import Worker
 from .transformer import Transformer, transformer
 from .mount import mountmanager
 from .structured_cell import StructuredCell
-from .macro import Macro, macro
+from .macro import Macro, macro, path
 from .reactor import Reactor, reactor
 from .link import link

@@ -332,7 +332,7 @@ class _InternalChildrenWrapper:
     def __setattr__(self, attr, value):
         raise AttributeError("_InternalChildrenWrapper is read-only")
 
-from .unbound_context import UnboundContext, Path
+from .unbound_context import UnboundContext
 from .link import Link
 from .cell import Cell
 from .worker import Worker, InputPinBase, OutputPinBase, EditPinBase

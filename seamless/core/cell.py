@@ -1,5 +1,9 @@
+import inspect
+from weakref import WeakSet
+
 from . import SeamlessBase
 from .macro_mode import get_macro_mode
+from .utils import strip_source
 
 cell_counter = 0
 
@@ -27,6 +31,7 @@ Use ``Cell.status()`` to get its status.
     _mount_kwargs = None
     _mount_setter = None
     _lib_path = None # Set by library.libcell
+    _paths = None #WeakSet of Path object weakrefs
     """
       Sovereignty
       A low level cell may be sovereign if it has a 1:1 correspondence to a mid-level element.
@@ -44,6 +49,7 @@ Use ``Cell.status()`` to get its status.
         super().__init__()
         cell_counter += 1
         self._counter = cell_counter
+        self._paths = WeakSet()
 
     def _set_context(self, ctx, name):
         super()._set_context(ctx, name)
@@ -190,8 +196,6 @@ Use ``Cell.status()`` to get its status.
         """
         from .mount import is_dummy_mount
         assert is_dummy_mount(self._mount) #Only the mountmanager may modify this further!
-        if self._root()._direct_mode:
-            raise Exception("Root context must have been constructed in macro mode")
         if self._mount_kwargs is None:
             raise NotImplementedError #cannot mount this type of cell
         kwargs = self._mount_kwargs
@@ -215,6 +219,12 @@ Use ``Cell.status()`` to get its status.
     def _set_share_callback(self, share_callback):
         self._share_callback = share_callback
 
+    def destroy(self, *, from_del=False):
+        if not from_del and self._path is not None:
+            path = self._path
+            self._path = None
+            path._bind(None)
+        super().destroy(from_del=from_del)
 
 class ArrayCell(Cell):
     """A cell in binary array (Numpy) format"""
@@ -260,6 +270,16 @@ class PythonCell(Cell):
     _default_access_mode = "pythoncode"
     _content_type = "python"
     _mount_kwargs = {"encoding": "utf-8", "binary": False}
+
+
+    def set(self, value):
+        """Update cell data from the terminal.
+        Python function objects are converted to source code"""
+        if inspect.isfunction(value):
+            code = inspect.getsource(value)
+            code = strip_source(code)
+            value = code
+        return self._set(value, False)
 
     def __str__(self):
         ret = "Seamless Python cell: " + self._format_path()

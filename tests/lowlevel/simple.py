@@ -17,6 +17,8 @@ ctx.code = pytransformercell().set("c = a + b")
 ctx.code.connect(ctx.tf.code)
 ctx.result_link = link(ctx.result)
 ctx.tf.c.connect(ctx.result_link)
+ctx.result_copy = cell()
+ctx.result.connect(ctx.result_copy)
 
 print(ctx.cell1.value)
 print(ctx.code.value)

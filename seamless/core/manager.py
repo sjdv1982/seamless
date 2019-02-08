@@ -86,6 +86,7 @@ class Manager:
                              # type = "macro", schedop = Macro object
                              # type = "reactor", schedop = (Reactor object, pin name, expression)
         self._temp_tf_level1 = {}
+        self.cell_to_cell = [] # list of (source-accessor-or-path, target-accessor-or-path)
 
 
     async def _schedule_transform_all(self, tf_level1, count, run_remote=True):
@@ -487,7 +488,7 @@ class Manager:
                             if accessor.cell is cell:
                                 rtreactor.updated.add(pinname)
                     self.update_worker_status(worker, full)
-                
+            self.update_cell_to_cells(cell, data_status, auth_status, full, origin)
             if full:
                 upstream = self.cell_cache.cell_from_upstream.get(cell)
                 if isinstance(upstream, list):
@@ -556,11 +557,11 @@ class Manager:
                 self.unstable.remove(transformer)
         elif new_status.exec == "READY":
             assert new_status.data in ("OK", "PENDING")
-            self.unstable.add(transformer)
             if len(target_cells) and \
               ( str(new_status.auth) in ("FRESH", "OVERRULED") \
                 or backup_auth is not None
               ):
+                self.unstable.add(transformer)
                 self._schedule_transformer(transformer)
         elif new_status.exec == "BLOCKED":
             if transformer in self.unstable:
@@ -687,10 +688,10 @@ class Manager:
         assert source._root() is target._root()
         source_macro = source._get_macro()
         target_macro = target._get_macro()
+        current_macro = curr_macro()
         if source_macro is not None or target_macro is not None:
-            if not get_macro_mode():
-                raise Exception("Macro-generated contexts can be connected only in macro mode")
-            current_macro = curr_macro()
+            #if not get_macro_mode():
+            #    raise Exception("Macro-generated contexts can be connected only in macro mode")            
             if current_macro is not None:
                 if not source_macro._context()._part_of2(current_macro._context()):
                     msg = "%s is not part of current %s"
@@ -698,10 +699,12 @@ class Manager:
                 if not target_macro._context()._part_of2(current_macro._context()):
                     msg = "%s is not part of current %s"
                     raise Exception(msg % (target_macro, current_macro))
-            if not ((source_macro is current_macro) \
-                     or (target_macro is current_macro)):
-                msg = "Neither %s nor %s was created by current macro %s"
-                raise Exception(msg % (source, macro, current_macro))
+        path_source = (source_macro is not current_macro)
+        path_target = (target_macro is not current_macro)
+        if path_source and path_target:
+            msg = "Neither %s nor %s was created by current macro %s"
+            raise Exception(msg % (source, macro, current_macro))
+        return path_source, path_target
 
     def _connect_cell_transformer(self, cell, pin):
         """Connects cell to transformer inputpin"""
@@ -837,6 +840,128 @@ class Manager:
         else:
             self.update_macro_status(macro)
 
+    def _find_cell_to_cell(self, cell_or_path):
+        # Find to which other cells a cell or path connects
+        # inefficient (linear-time) lookup, to be improved
+        # Results are returned as accessors
+        from .macro import Path
+        if isinstance(cell_or_path, Path):
+            cell = _cell
+            if cell is None:
+                return []
+        else:
+            cell = cell_or_path
+        accessors = []
+        for source_accessor, target_accessor in self.cell_to_cell:
+            if source_accessor.cell is cell:
+                accessors.append(target_accessor)
+        return accessors
+
+    def _find_cell_from_cell(self, cell_or_path):
+        # Find which other cell connects to a cell or path
+        # inefficient (linear-time) lookup, to be improved
+        # Result is returned as an accessors
+        from .macro import Path
+        if isinstance(cell_or_path, Path):
+            cell = path._cell
+            if cell is None:
+                return None
+            return path._incoming
+        cell = cell_or_path
+        for source_accessor, target_accessor in self.cell_to_cell:
+            if target_accessor.cell is cell:
+                return target_accessor
+        return None
+
+    def _cell_upstream(self, cell, skip_path=None):
+        # Returns the upstream dependency of a cell
+        for path in cell._paths:
+            if path is skip_path:
+                continue
+            result = self._find_cell_from_cell(path)
+            if result is not None:
+                return result
+        result = self._find_cell_from_cell(cell)
+        if result is not None:
+            return result
+        return self.cell_cache.cell_from_upstream.get(cell)
+
+    def _connect_cell_cell(self, source, target):
+        from .macro import create_path
+        path_source, path_target = self._verify_connect(source, target)        
+        current_upstream = self._cell_upstream(target)
+        if current_upstream is not None:
+            raise TypeError("Cell %s is already connected to %s" % (target, current_upstream))            
+
+        accessors = []
+        for cell, path_cell in (source, path_source), (target, path_target):
+            if cell._celltype == "structured": raise NotImplementedError ### cache branch
+            if path_cell:
+                path = create_path(cell)
+                accessor = self.get_default_accessor(path)
+            else:
+                accessor = self.get_default_accessor(cell)
+            accessors.append(accessor)
+        self.cell_to_cell.append(accessors)
+
+    def update_accessor_accessor(self, source, target):
+        assert source.source_access_mode is None
+        assert source.source_content_type is None
+        assert target.source_access_mode is None
+        assert target.source_content_type is None
+        if source.subpath is not None or target.subpath is not None:
+            raise NotImplementedError ### cache branch
+        same = True
+        for attr in ("celltype", "storage_type", "access_mode", "content_type"):
+            if getattr(source, attr) != getattr(target, attr):
+                raise NotImplementedError ### cache branch
+                same = False
+        if same:
+            checksum = self.cell_cache.cell_to_buffer_checksums.get(source.cell)
+            self.set_cell_checksum(target.cell, checksum, self.status[source.cell])
+        else:
+            raise NotImplementedError            
+
+    def update_path_value(self, path):
+        # Slow! needs to be improved (TODO)
+        for source, target in self.cell_to_cell:
+            if isinstance(source, Path):
+                if source._cell is None:
+                    continue
+                source = self.get_default_accessor(source._cell)
+            else: #accessor
+                if source.cell is not cell:
+                    continue
+            if isinstance(target, Path):
+                if target._cell is None:
+                    continue
+                target = self.get_default_accessor(target._cell)
+            self.update_accessor_accessor(source, target)
+
+    def update_cell_to_cells(self, cell, data_status, auth_status, full, origin):
+        # Slow! needs to be improved (TODO)
+        from .macro import Path            
+        for source, target in self.cell_to_cell:
+            if isinstance(source, Path):
+                if source._cell is None:
+                    continue
+                source = self.get_default_accessor(source._cell)
+            else: #accessor
+                if source.cell is not cell:
+                    continue
+            if isinstance(target, Path):
+                tcell = target._cell
+                if tcell is None:
+                    continue
+                target_accessor = self.get_default_accessor(tcell)
+            else:
+                target_accessor = target
+                tcell = target.cell
+            if full:                
+                self.update_accessor_accessor(source, target_accessor)
+            else:
+                self._propagate_status(tcell, data_status, auth_status, False)
+
     def connect_cell(self, cell, other):
         #print("connect_cell", cell, other)
         from . import Transformer, Reactor, Macro
@@ -847,9 +972,12 @@ class Manager:
             raise TypeError(cell)
         if isinstance(other, Link):
             other = other.get_linked()
-
-        self._verify_connect(cell, other)
+        
         if isinstance(other, PinBase):
+            path_cell, path_other = self._verify_connect(cell, other)
+            if path_other:
+                msg = str(other) + ": macro-generated pins may not be connected outside the macro"
+                raise Exception(msg)
             worker = other.worker_ref()
             if isinstance(worker, Transformer):
                 self._connect_cell_transformer(cell, other)
@@ -859,8 +987,8 @@ class Manager:
                 self._connect_cell_macro(cell, other)
             else:
                 raise TypeError(type(worker))
-        elif isinstance(other, Cell):
-            raise NotImplementedError ###cache branch
+        elif isinstance(other, Cell): # TODO: channels also go here 
+            self._connect_cell_cell(cell, other)
         else:
             raise TypeError(type(other))
         self.schedule_jobs()
@@ -904,28 +1032,39 @@ class Manager:
         from . import Transformer, Reactor, Macro
         from .link import Link
         from .cell import Cell
+        from .macro import Path
         from .worker import PinBase, InputPin, OutputPin, EditPin
         if isinstance(cell, Link):
             cell = cell.get_linked()
-        if not isinstance(cell, Cell):
+        if not isinstance(cell, (Cell, Path)):
             raise TypeError(cell)
         if not isinstance(pin, PinBase) or isinstance(pin, InputPin):
             raise TypeError(pin)
 
-        self._verify_connect(pin, cell)
+        path_pin, path_cell = self._verify_connect(pin, cell)
+        if path_pin:
+            msg = str(pin) + ": macro-generated pins may not be connected outside the macro"
+            raise Exception(msg)
 
         if isinstance(pin, EditPin):
             if not isinstance(worker, Reactor):
                 raise TypeError((pin, worker)) # Editpin must be connected to reactor
-        else:    
-            current_upstream = self.cell_cache.cell_from_upstream.get(cell)
+        else:
+            current_upstream = self._cell_upstream(cell)
             if current_upstream is not None:
                 raise TypeError("Cell %s is already connected to %s" % (cell, current_upstream))
             self.cell_cache.cell_from_upstream[cell] = pin
 
         worker = pin.worker_ref()
         if isinstance(worker, Transformer):
-            self.transform_cache.transformer_to_cells[worker].append(cell)            
+            tcache = self.transform_cache
+            tcache.transformer_to_cells[worker].append(cell)
+            level1 = tcache.transformer_to_level1.get(worker)
+            if level1 is not None:
+                hlevel1 = level1.get_hash()
+                checksum = tcache.get_result(hlevel1)
+                if checksum is not None:
+                    self.set_cell_checksum(cell, checksum)
             self.update_transformer_status(worker,full=False, new_connection=True)
         elif isinstance(worker, Macro):
             raise NotImplementedError ###cache branch
@@ -954,7 +1093,7 @@ class Manager:
         self.schedule_jobs()
 
     @main_thread_buffered
-    def set_cell_checksum(self, cell, checksum):
+    def set_cell_checksum(self, cell, checksum, status=None):
         from .macro_mode import macro_mode_on, get_macro_mode
         from .mount import is_dummy_mount
         assert cell._get_manager() is self
@@ -975,6 +1114,8 @@ class Manager:
             if buffer_known and not is_dummy_mount(cell._mount):
                 if not get_macro_mode():
                     self.mountmanager.add_cell_update(cell)
+            if status is not None:
+                self.status[cell] = copy.deepcopy(status)
             self._update_status(cell, checksum, has_auth=has_auth, origin=None)
 
     @main_thread_buffered

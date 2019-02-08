@@ -154,6 +154,11 @@ Things to do:
   K. (Maybe delay this until after the presentation) 
     Add cache graph serialization where just the checksums and status flags are stored.
     (See the TEMP problem below; for now, require a successful translation upon save)
+    UPDATE:
+    - Python funcs get auto-converted to source code (in every circumstance),
+      for the rest, every TEMP is just mixed data
+    - If translation is out-of-date, just give a warning and save what you have
+    - Get rid of StructuredCellState, only store checksums
      In addition, implement simple cache archives (zip files of mixed cell streams)
       that can be saved and loaded into value cache at will.
 

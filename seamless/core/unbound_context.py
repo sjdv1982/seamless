@@ -9,9 +9,11 @@ class UnboundManager:
         self._ctx = weakref.ref(ctx)
         self._registered = set()
         self.commands = []
+        self.cells = {}
 
     def register_cell(self, cell):
         self._registered.add(cell)
+        self.cells[cell.path] = cell
 
     def register_transformer(self, transformer):
         self._registered.add(transformer)
@@ -97,6 +99,7 @@ class UnboundContext(SeamlessBase):
         self._name = name
         self._toplevel = toplevel
         self._auto = set()
+        self._children = {}
         if toplevel:
             toplevel_register.add(self)
 
@@ -208,14 +211,6 @@ class UnboundContext(SeamlessBase):
         self._bind_stage1(ctx)
         self._bind_stage2(ctx._get_manager())
 
-
-class Path:
-    def __init__(self, obj):
-        path = obj.path
-        raise NotImplementedError ###cache branch
-
-def path(obj):
-    return Path(obj)
 
 from .link import Link
 from .cell import Cell

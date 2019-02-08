@@ -26,13 +26,9 @@ class Link(SeamlessBase):
         return self.get_linked().connect(target)
 
     def __getattr__(self, attr):
-        from .context import Path
         linked = self.get_linked()
         result = getattr(linked, attr)
-        if isinstance(result, Path):
-            return getattr(Path(self), attr)
-        else:
-            return result
+        return result
 
     def __str__(self):
         ret = "Seamless link: %s to %s" % (self._format_path(), self._linked)
