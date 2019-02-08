@@ -264,6 +264,8 @@ class Manager:
                     if checksum is None:
                         checksum = self.cell_cache.cell_to_buffer_checksums[cell]
                 else:
+                    if cell._destroyed:
+                        raise Exception(cell.name)
                     self.set_cell_checksum(cell, checksum)
             self.update_transformer_status(tf,full=False)
         if checksum is None: #result conforms to no cell (probably remote transformation)
@@ -322,11 +324,6 @@ class Manager:
                 traceback.print_exc()
             await asyncio.sleep(0.1)
 
-    def destroy(self,from_del=False):
-        if self.destroyed:
-            return
-        self.destroyed = True
-        self.ctx().destroy(from_del=from_del)
 
     def get_id(self):
         self._ids += 1
@@ -377,6 +374,9 @@ class Manager:
 
 
     def get_default_accessor(self, cell):
+        from .cell import Cell
+        if not isinstance(cell, Cell):
+            raise TypeError(cell)
         default_accessor = Accessor()
         default_accessor.celltype = cell._celltype
         default_accessor.storage_type = cell._storage_type
@@ -888,21 +888,26 @@ class Manager:
 
     def _connect_cell_cell(self, source, target):
         from .macro import create_path
-        path_source, path_target = self._verify_connect(source, target)        
+        path_source, path_target = self._verify_connect(source, target)     
         current_upstream = self._cell_upstream(target)
         if current_upstream is not None:
             raise TypeError("Cell %s is already connected to %s" % (target, current_upstream))            
 
+        connection = []
         accessors = []
         for cell, path_cell in (source, path_source), (target, path_target):
             if cell._celltype == "structured": raise NotImplementedError ### cache branch
+            accessor = self.get_default_accessor(cell)
             if path_cell:
                 path = create_path(cell)
-                accessor = self.get_default_accessor(path)
+                connect = path
+                print("PATH!", cell, list(cell._paths))
             else:
-                accessor = self.get_default_accessor(cell)
+                connect = accessor
+            connection.append(connect)
             accessors.append(accessor)
-        self.cell_to_cell.append(accessors)
+        self.cell_to_cell.append(connection)
+        self.update_accessor_accessor(*accessors)
 
     def update_accessor_accessor(self, source, target):
         assert source.source_access_mode is None
@@ -1284,7 +1289,33 @@ class Manager:
                         print("Waiting for:", unstable)
         return self.unstable
 
-    def destroy(self):
+    def _destroy_cell(self, cell):
+        ccache = self.cell_cache
+        ccache.cell_to_accessors.pop(cell, None)
+        ccache.cell_to_authority.pop(cell, None)
+        ccache.cell_to_buffer_checksums.pop(cell, None)
+        ccache.cell_from_upstream.pop(cell, None)
+
+        for source, target in list(self.cell_to_cell):
+            if source.cell is cell or target.cell is cell:
+                self.cell_to_cell.remove((source, target))
+
+    def _destroy_transformer(self, transformer):
+        tcache = self.transform_cache
+        tcache.transformer_to_level0.pop(transformer)
+        level1 = tcache.transformer_to_level1.pop(transformer, None)
+        if level1 is not None:
+            hlevel1 = level1.get_hash()
+            tcache.decref(level1)
+            tf = tcache.transformer_from_hlevel1.pop(hlevel1, None)
+            if tf is not transformer:
+                tcache.transformer_from_hlevel1[hlevel1] = tf
+            #TODO: use reverse cache to restore transformer_from_hlevel1 to an alternative tf
+        tcache.transformer_to_cells.pop(transformer, None) 
+        self.unstable.discard(transformer)
+
+
+    def destroy(self, from_del=False):
         if self._destroyed:
             return
         self._destroyed = True
@@ -1292,4 +1323,4 @@ class Manager:
         self.flush_future.cancel()
 
     def __del__(self):
-        self.destroy()
+        self.destroy(from_del=True)

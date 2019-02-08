@@ -56,9 +56,6 @@ class Worker(SeamlessBase):
             manager.touch_worker(self)
         """
     
-    def destroy(self, *, from_del):
-        print("TODO: Worker.destroy")
-
     def __dir__(self):
         return object.__dir__(self) + list(self._pins.keys())
 

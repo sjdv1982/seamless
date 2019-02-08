@@ -173,8 +173,8 @@ class TransformCache:
             self.manager().temprefmanager.add_ref(callback, 20.0)
         self.transformer_to_level1[transformer] = level1
         hlevel1 = level1.get_hash()
-        if hlevel1 not in self.transformer_from_hlevel1:
-            self.transformer_from_hlevel1[hlevel1] = transformer
+        #if hlevel1 not in self.transformer_from_hlevel1:
+        self.transformer_from_hlevel1[hlevel1] = transformer
         self.incref(level1)
         
 

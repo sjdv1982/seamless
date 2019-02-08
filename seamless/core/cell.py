@@ -220,10 +220,11 @@ Use ``Cell.status()`` to get its status.
         self._share_callback = share_callback
 
     def destroy(self, *, from_del=False):
-        if not from_del and self._path is not None:
-            path = self._path
-            self._path = None
-            path._bind(None)
+        if not from_del:
+            self._get_manager()._destroy_cell(self)
+            for path in list(self._paths):
+                self._paths.pop(path)
+                path._bind(None)
         super().destroy(from_del=from_del)
 
 class ArrayCell(Cell):

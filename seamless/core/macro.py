@@ -95,32 +95,33 @@ class Macro(Worker):
                 if self.namespace["ctx"] is not unbound_ctx:
                     raise Exception("Macro must return ctx")
 
-                paths = [(p._path, p) for p in self._paths]
+                paths = [(k,v) for k,v in self._paths.items()]
                 pctx = self._context
                 pmacro = self
-                ctx_path = self.path() + ("ctx",)
+                ctx_path = self.path + ("ctx",)
                 lctx_path = len(ctx_path)
 
-                def add_paths(pmacro_path, paths):
-                    for p in paths:
-                        fullpath = pmacro_path + p._path
+                def add_paths(pmacro_path, pmpaths):
+                    for path, p in pmpaths.items():
+                        fullpath = pmacro_path + path
                         if fullpath[:lctx_path] == ctx_path:
-                            path = fullpath[lctx_path:]
-                            paths.append((path, p))
+                            path2 = fullpath[lctx_path:]
+                            paths.append((path2, p))
 
                 while pctx is not None:
                     if pmacro is not pctx()._macro:                    
                         pmacro = pctx()._macro
-                        add_paths(pmacro.path(), pmacro.paths)
-                        paths += pmacro._paths
+                        if pmacro is None:
+                            break
+                        add_paths(pmacro.path, pmacro.paths)
                     pctx = pctx()._context
                 add_paths((), _global_paths)
                 
                 ub_cells = unbound_ctx._manager.cells
                 newly_bound = []
-                for path, p in paths.items():
+                for path, p in paths:
                     if path not in ub_cells:
-                        if path._cell is not None:
+                        if p._cell is not None:
                             continue
                     cell = ub_cells[path]
                     assert p._can_bind(cell), path
@@ -133,9 +134,9 @@ class Macro(Worker):
                 if self._gen_context is not None:
                     self._gen_context.destroy()
                 self._gen_context = ctx
-        except:
-            self._paths = _old_paths
-        for path, p in paths.items():
+        finally:
+            self._paths = old_paths
+        for path, p in paths:
             p._bind(None, trigger=True)
         for path, p in newly_bound:
             cell = ub_cells[path]
@@ -172,7 +173,9 @@ class Path:
         self._cell = None
     
     def __getattr__(self, attr):
-        return Path(self._macro, path + (attr,))
+        if attr.startswith("_"):
+            raise AttributeError(attr)
+        return Path(self._macro, self._path + (attr,))
 
     def _bind(self, cell, trigger):
         if cell is self._cell:

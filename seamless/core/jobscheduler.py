@@ -89,7 +89,9 @@ class JobScheduler:
         job = Job(self, level1, None, remote=True)
         job.count = count
         self.remote_jobs[hlevel1] = job
-        transformer = tcache.transformer_from_hlevel1[hlevel1]
+        transformer = tcache.transformer_from_hlevel1.get(hlevel1)
+        if transformer is None:
+            return None
         job.execute(transformer)
         return job
 

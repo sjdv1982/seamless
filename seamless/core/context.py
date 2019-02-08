@@ -234,7 +234,7 @@ name: str
             return
         object.__setattr__(self, "_destroyed", True)
         for childname, child in self._children.items():
-            if isinstance(child, (Context, Worker)):
+            if isinstance(child, (Cell, Context, Worker)):
                 child.destroy(from_del=from_del)
         if self._toplevel:
             toplevel_register.remove(self)

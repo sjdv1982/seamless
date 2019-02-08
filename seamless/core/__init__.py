@@ -42,7 +42,8 @@ class SeamlessBase:
         return self
 
     def _get_manager(self):
-        assert self._context is not None #worker/cell must have a context
+        assert self._context is not None, self.name #worker/cell must have a context
+        assert self._context() is not None, self.name #worker/cell must have a context
         return self._context()._get_manager()
 
     def _root(self):
@@ -71,7 +72,7 @@ class SeamlessBase:
     def self(self):
         return self
 
-    def destroy(self):
+    def destroy(self, **kwargs):
         self._destroyed = True
 
 class SeamlessBaseList(list):
