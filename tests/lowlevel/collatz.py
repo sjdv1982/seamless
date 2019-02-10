@@ -7,73 +7,78 @@ Overhead is terrible and space requirements are atrocious, but there could be
  a scenario where this could be useful.
 """
 
-import sys
-sys.USE_TRANSFORMER_CODE = False #kludge to share a variable without an extra slowdown
-
 from seamless.core import context, cell, macro
 ctx = context(toplevel=True)
 
-def collatz(ctx, value, macro_code, macro_params):
-  import sys #kludge
-  print("COLLATZ", value)
-  ctx.series = cell("json")
-  if value == 1:
-      ctx.series.set([1])
-      return
-  if value % 2:
-      newvalue = value * 3 + 1
-  else:
-      newvalue = value // 2
-  ###ctx.value = cell("int").set(value)
-  ###ctx.newvalue = cell("int").set(newvalue)
-  ctx.value = cell().set(value)
-  ctx.newvalue = cell().set(newvalue)
-  ctx.macro_params = cell("json").set(macro_params)
-  m = ctx.macro = macro(ctx.macro_params.value)
-  ctx.newvalue.connect(m.value)
-  ctx.macro_code = cell("macro").set(macro_code)
-  ctx.macro_code.connect(m.code)
-  ctx.macro_code.connect(m.macro_code)
-  ctx.macro_params.connect(m.macro_params)
-  if sys.USE_TRANSFORMER_CODE: ###transformer code version
-      ctx.tf = transformer({"a": "input", "b": "input", "c": "output"})
-      m.gen_context.series.connect(ctx.tf.a)
-      ctx.value.connect(ctx.tf.b)
-      ctx.tf.code.set("c = [b] + a")
-      ctx.tf.c.connect(ctx.series)
-      print("/COLLATZ", value)
-  else: #no transformer code, exploits that macro is synchronous
-      series = [value] + m.gen_context.series.value
-      ctx.series.set(series)
-      print("/COLLATZ", series)
+def refe_collatz(value):
+    if value == 1:
+        return [1]
+    if value % 2:
+        newvalue = value * 3 + 1
+    else:
+        newvalue = value // 2
+    return [value] + refe_collatz(newvalue)
+
+def collatz(ctx, value, macro_code, macro_params):    
+    print("COLLATZ", value)
+    ctx.series = cell()
+    if value == 1:
+        ctx.series.set([1])
+        return
+    if value % 2:
+        newvalue = value * 3 + 1
+    else:
+        newvalue = value // 2
+    ###ctx.value = cell("int").set(value)
+    ###ctx.newvalue = cell("int").set(newvalue)
+    ctx.value = cell().set(value)
+    ctx.newvalue = cell().set(newvalue)
+    ctx.macro_params = cell().set(macro_params)
+    m = ctx.macro = macro(macro_params)
+    ctx.newvalue.connect(m.value)
+    ctx.macro_code = cell("macro").set(macro_code)
+    ctx.macro_code.connect(m.code)
+    ctx.macro_code.connect(m.macro_code)
+    ctx.macro_params.connect(m.macro_params)
+    ctx.tf = transformer({"a": "input", "b": "input", "c": "output"})
+    ctx.a = cell()
+    ctx.a.connect(ctx.tf.a)
+    ctx.b = cell()
+    ctx.b.connect(ctx.tf.b)
+    m.ctx.series.connect(ctx.a)
+    ctx.value.connect(ctx.b)
+    ctx.tf.code.set("c = [b] + a")
+    ctx.tf.c.connect(ctx.series)
+    print("/COLLATZ", value)
 
 ctx.start = cell()
 
 ctx.code = cell("macro").set(collatz)
 macro_params = {k: "ref" for k in ("value", "macro_code", "macro_params")}
-ctx.macro_params = cell("json").set(macro_params)
+ctx.macro_params = cell().set(macro_params)
 m = ctx.macro = macro(ctx.macro_params.value)
 ctx.start.connect(m.value)
 ctx.code.connect(m.code)
 ctx.code.connect(m.macro_code)
 ctx.macro_params.connect(m.macro_params)
-ctx.series = cell("json")
-ctx.start.set(10) #7-level nesting here works well for tf and non-tf code
-###ctx.start.set(12) #10-level nesting works with non-tf,  but equilibrate for tf is getting very slow
-###ctx.start.set(23) #16-level nesting here works well only for non-tf code (equilibrate stalls for tf)
-                     # and rebuilding is terribly slow (1-2 minutes)
-###ctx.start.set(27) #111-level nesting
-# - equilibrate() does not work well with transformer code
-# - activate() is too slow, even for non-transformer code
+ctx.series = cell()
+start = 27
+###start = 10 #7-level nesting
+###start = 12 #10-level nesting
+###start = 23 #16-level nesting
+###start = 27 #111-level nesting
+refe = refe_collatz(start)
+ctx.start.set(start)
 
 print("building done")
-if sys.USE_TRANSFORMER_CODE:
-    ctx.equilibrate() #only needed for tf code
-print(ctx.macro.gen_context.series.value)
+ctx.equilibrate()
+print(ctx.macro.ctx.series.value)
+assert ctx.macro.ctx.series.value == refe
 
-#import sys; sys.exit()
-ctx.start.set(32)
+start = 32
+refe = refe_collatz(start)
+print(refe)
+ctx.start.set(start)
 print("building done, 2nd time")
-if sys.USE_TRANSFORMER_CODE:
-    ctx.equilibrate() #only needed for tf code, but doesn't work
-print(ctx.macro.gen_context.series.value)
+ctx.equilibrate()    
+print(ctx.macro.ctx.series.value)

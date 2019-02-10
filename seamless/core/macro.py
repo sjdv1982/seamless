@@ -7,7 +7,7 @@ from .worker import Worker, InputPin, OutputPin
 from .protocol import content_types
 from .injector import macro_injector as injector
 from .unbound_context import UnboundContext
-from .macro_mode import macro_mode_on, curr_macro
+from .macro_mode import macro_mode_on, curr_macro, get_macro_mode
 from .cached_compile import exec_code
 
 class ExecError(Exception): pass
@@ -16,6 +16,7 @@ class Macro(Worker):
     injected_modules = None
     def __init__(self, macro_params, *, lib=None):
         self._gen_context = None
+        self._unbound_gen_context = None
         self.code = InputPin(self, "code", "ref", "pythoncode", "transformer")
         self._pins = {"code":self.code}
         self._macro_params = OrderedDict()
@@ -79,6 +80,7 @@ class Macro(Worker):
             self._paths = weakref.WeakValueDictionary()
             with macro_mode_on(self):
                 unbound_ctx = UnboundContext()
+                self._unbound_gen_context = unbound_ctx
                 keep = {k:v for k,v in self.namespace.items() if k.startswith("_")}
                 self.namespace.clear()
                 #self.namespace["__name__"] = self.name
@@ -105,7 +107,7 @@ class Macro(Worker):
 
                 def add_paths(pmacro_path, pmpaths):
                     for path, p in pmpaths.items():
-                        fullpath = pmacro_path + path
+                        fullpath = pmacro_path + ("ctx",) + path
                         if fullpath[:lctx_path] == ctx_path:
                             path2 = fullpath[lctx_path:]
                             paths.append((path2, p))
@@ -115,7 +117,7 @@ class Macro(Worker):
                         pmacro = pctx()._macro
                         if pmacro is None:
                             break
-                        add_paths(pmacro.path, pmacro.paths)
+                        add_paths(pmacro.path, pmacro._paths)
                     pctx = pctx()._context
                 add_paths((), _global_paths)
                 
@@ -123,23 +125,24 @@ class Macro(Worker):
                 newly_bound = []
                 for path, p in paths:
                     if path not in ub_cells:
-                        if p._cell is not None:
-                            continue
+                        continue
                     cell = ub_cells[path]
                     assert p._can_bind(cell), path
                     newly_bound.append((path, p))
 
                 ctx = Context(name="ctx", toplevel=False)
                 ctx._set_context(self._context(), "ctx")
-                ctx._macro = self            
-                unbound_ctx._bind(ctx)
+                ctx._macro = self                                                
                 if self._gen_context is not None:
                     self._gen_context.destroy()
+                unbound_ctx._bind(ctx)
                 self._gen_context = ctx
+                ctx._cache_paths()
                 ok = True
         except Exception as exception:
             manager.set_macro_exception(self, exception)
         finally:
+            self._unbound_gen_context = None
             self._paths = old_paths
         if ok:
             for path, p in paths:
@@ -163,6 +166,9 @@ class Macro(Worker):
 
     @property
     def ctx(self):
+        if get_macro_mode():
+            current_macro = curr_macro()
+            return Path(current_macro, self.path).ctx
         return self._gen_context
 
     def __str__(self):
@@ -182,11 +188,26 @@ class Path:
         self._path = path
         self._incoming = False
         self._cell = None
-    
+
+    def _get_macro(self):
+        return self._macro
+
+    def _root(self):
+        return self._macro._root()
+
     def __getattr__(self, attr):
         if attr.startswith("_"):
             raise AttributeError(attr)
         return Path(self._macro, self._path + (attr,))
+
+    def connect(self, other):
+        if self._cell is not None:
+            return self._cell.connect(other)
+        elif self._macro._unbound_gen_context is not None:
+            manager = self._macro._unbound_gen_context._manager
+            return manager.connect_cell(self, other)
+        else:
+            raise AttributeError
 
     def _bind(self, cell, trigger):
         if cell is self._cell:
@@ -198,8 +219,7 @@ class Path:
             self._cell._paths.remove(self)
         if cell is not None:
             for path in cell._paths:
-                assert path is not self, self._path
-                assert path._macro is not self._macro, (path._path, self._path)
+                assert path is not self, self._path                
             cell._paths.add(self)
         if cell is None:
             manager = self._cell._get_manager()
@@ -220,6 +240,16 @@ class Path:
             if manager._cell_upstream(cell, skip_path=self) is not None:
                 return False
         return True
+
+    def __str__(self):
+        ret = "(Seamless path: ." + ".".join(self._path)
+        if self._macro is not None:
+            ret += " from %s)" % str(self._macro)
+        return ret
+
+    def __repr__(self):
+        return self.__str__()
+
 
 def path(obj):
     return Path(obj._macro, obj.path)

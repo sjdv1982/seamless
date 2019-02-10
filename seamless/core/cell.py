@@ -70,11 +70,16 @@ Use ``Cell.status()`` to get its status.
     @property
     def status(self):
         """The cell's current status."""
+        manager = self._get_manager()
+        if isinstance(manager, UnboundManager):
+            raise Exception("Cannot ask the cell value of a context that is being constructed by a macro")
         return self._get_manager().status[self]
 
     @property
     def checksum(self):
         manager = self._get_manager()
+        if isinstance(manager, UnboundManager):
+            raise Exception("Cannot ask the cell value of a context that is being constructed by a macro")
         checksum = manager.cell_cache.cell_to_buffer_checksums.get(self)
         if checksum is None:
             return None
@@ -83,6 +88,8 @@ Use ``Cell.status()`` to get its status.
     @property
     def semantic_checksum(self):        
         manager = self._get_manager()
+        if isinstance(manager, UnboundManager):
+            raise Exception("Cannot ask the cell value of a context that is being constructed by a macro")
         checksum = manager.cell_semantic_checksum(self)
         if checksum is None:
             return None
@@ -91,6 +98,8 @@ Use ``Cell.status()`` to get its status.
     @property
     def authoritative(self):
         manager = self._get_manager()
+        if isinstance(manager, UnboundManager):
+            raise Exception("Cannot ask the cell value of a context that is being constructed by a macro")
         return manager.cell_cache.cell_to_authority[self]
 
 
@@ -99,6 +108,8 @@ Use ``Cell.status()`` to get its status.
         """Returns the value of the cell
         Usually, this is the same as the data"""
         manager = self._get_manager()
+        if isinstance(manager, UnboundManager):
+            raise Exception("Cannot ask the cell value of a context that is being constructed by a macro")
         checksum = manager.cell_cache.cell_to_buffer_checksums.get(self)        
         if checksum is None:
             return None
@@ -412,6 +423,7 @@ extensions = {
     ArrayCell: ".npy",
 }
 
+from .unbound_context import UnboundManager
 """
 TODO Documentation: only-text changes
      adding comments / breaking up lines to a Python cell will affect a syntax highlighter, but not a transformer, it is only text
@@ -419,3 +431,4 @@ TODO Documentation: only-text changes
      Same for CSON cells: if the CSON is changed but the corresponding JSON stays the same, the checksum stays the same.
      But the text checksum changes, and a text cell or text inputpin will receive an update.
 """
+

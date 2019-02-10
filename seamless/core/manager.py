@@ -164,7 +164,7 @@ class Manager:
             return
         tcache = self.transform_cache
         scheduled_clean = OrderedDict()
-        for type, schedop, add_remove in self.scheduled:
+        for type, schedop, add_remove in self.scheduled:            
             key = type, schedop.get_hash()
             if key not in scheduled_clean:
                 count = 0
@@ -240,8 +240,9 @@ class Manager:
     def set_transformer_result(self, level1, level2, value, checksum, prelim):
         print("TODO: Manager.set_transformer_result: expand code properly, see evaluate.py")
         # TODO: this function is not checked for exceptions when called from a remote job...""
-        #print("transformer result", value)
         assert value is not None or checksum is not None
+        if self._destroyed:
+            return
         tcache = self.transform_cache
         hlevel1 = level1.get_hash()
         for tf, tf_level1 in list(tcache.transformer_to_level1.items()): #could be more efficient...
@@ -274,6 +275,7 @@ class Manager:
         tcache.set_result(hlevel1, checksum)        
         if level2 is not None:
             tcache.result_hlevel2[level2.get_hash()] = checksum
+        self.schedule_jobs()
 
     @main_thread_buffered
     def set_reactor_result(self, rtreactor, pinname, value):
@@ -289,6 +291,7 @@ class Manager:
             status = self.status[cell]
             status.auth = "FRESH"
             self.set_cell(cell, value, origin=reactor)
+        self.schedule_jobs()
 
     def set_reactor_exception(self, rtreactor, codename, exception):
         # TODO: store exception? log it?
@@ -303,9 +306,9 @@ class Manager:
         # TODO: store exception? log it?
         exc = traceback.format_exception(type(exception), exception, exception.__traceback__)
         exc = "".join(exc)
-        msg = "Exception in %s:\n" + exc
+        msg = "Exception in %s:\n"% str(macro) + exc
         stars = "*" * 60 + "\n"
-        print(stars + msg % str(macro) + stars, file=sys.stderr)
+        print(stars + msg + stars, file=sys.stderr)
 
     async def _flush(self):
         self.flushing = True
@@ -504,6 +507,7 @@ class Manager:
                         self.update_reactor_status(reactor, full=True)
 
     def update_transformer_status(self, transformer, full, new_connection=False):
+        if transformer._destroyed: return ### TODO, shouldn't happen...
         tcache = self.transform_cache
         accessor_dict = tcache.transformer_to_level0[transformer]
         if full:
@@ -549,7 +553,6 @@ class Manager:
                     new_status.auth = "OBSOLETE"
                 elif old_status.exec == "BLOCKED":  
                     new_status.data = "PENDING"      
-
         self.status[transformer] = new_status
         propagate_data = (new_status.data != old_status.data)
         propagate_auth = (new_status.auth != old_status.auth)
@@ -584,6 +587,7 @@ class Manager:
 
 
     def update_reactor_status(self, reactor, full):
+        if reactor._destroyed: return ### TODO, shouldn't happen...
         rtreactor = self.reactors[reactor]
         old_status = self.status[reactor]
         new_status = Status("reactor")
@@ -633,6 +637,7 @@ class Manager:
 
 
     def update_macro_status(self, macro):
+        if macro._destroyed: return ### TODO, shouldn't happen...
         old_status = self.status[macro]
         new_status = Status("macro")
         new_status.data, new_status.exec, new_status.auth = "OK", "FINISHED", "FRESH"
@@ -932,6 +937,7 @@ class Manager:
                 raise NotImplementedError ### cache branch
                 same = False
         if same:
+            if source.cell._destroyed or target.cell._destroyed: return ### TODO, shouldn't happen...
             checksum = self.cell_cache.cell_to_buffer_checksums.get(source.cell)
             self.set_cell_checksum(target.cell, checksum, self.status[source.cell])
         else:
@@ -944,14 +950,16 @@ class Manager:
             if isinstance(source, Path):
                 if source._cell is None:
                     continue
-                source = self.get_default_accessor(source._cell)
+                if source._cell._destroyed: continue ### TODO, shouldn't happen...
+                source = self.get_default_accessor(source._cell)                
             else: #accessor
-                if source.cell is not cell:
+                if source.cell is None:
                     continue
             if isinstance(target, Path):
                 if target._cell is None:
                     continue
-                target = self.get_default_accessor(target._cell)
+                if target._cell._destroyed: continue ### TODO, shouldn't happen...
+                target = self.get_default_accessor(target._cell)                
             self.update_accessor_accessor(source, target)
 
     def update_cell_to_cells(self, cell, data_status, auth_status, full, origin):
@@ -993,10 +1001,13 @@ class Manager:
             other = other.get_linked()
         
         if isinstance(other, PinBase):
-            path_cell, path_other = self._verify_connect(cell, other)
+            path_cell, path_other = self._verify_connect(cell, other)            
             if path_other:
-                msg = str(other) + ": macro-generated pins may not be connected outside the macro"
+                msg = str(other) + ": macro-generated pins/paths may not be connected outside the macro"
                 raise Exception(msg)
+            if path_cell:
+                msg = str(cell) + ": macro-generated cells/paths may only be connected to cells"
+                raise Exception(msg)                
             worker = other.worker_ref()
             if isinstance(worker, Transformer):
                 self._connect_cell_transformer(cell, other)
@@ -1096,7 +1107,7 @@ class Manager:
     def _update_status(self, cell, checksum, *, has_auth, origin):
         status = self.status[cell]
         old_data_status = status.data
-        old_auth_status = status.auth
+        old_auth_status = status.auth        
         if checksum is None:
             status.data = "UNDEFINED"
         else:
@@ -1133,8 +1144,8 @@ class Manager:
             if buffer_known and not is_dummy_mount(cell._mount):
                 if not get_macro_mode():
                     self.mountmanager.add_cell_update(cell)
-            if status is not None:
-                self.status[cell] = copy.deepcopy(status)
+            ###if status is not None:
+            ###    self.status[cell] = copy.deepcopy(status)
             self._update_status(cell, checksum, has_auth=has_auth, origin=None)
 
     @main_thread_buffered
@@ -1286,12 +1297,16 @@ class Manager:
             jobs = []
             for job in itertools.chain(
                   self.jobscheduler.jobs.values(),
-                  self.jobscheduler.remote_jobs.values(),
+                  self.jobscheduler.remote_jobs.values(),                  
                 ):
                 jobs.append(job.future)
                                     
             if not len(jobs):
-                raise Exception("No jobs, but unstable workers: %s" % unstable)
+                tasks = list(self.cache_task_manager.tasks.values())
+                if not len(tasks):
+                    raise Exception("No jobs, but unstable workers: %s" % unstable)
+                asyncio.wait(tasks,return_when=asyncio.FIRST_COMPLETED)
+                continue
             if delta is None:
                 await asyncio.gather(*jobs)
             else:
@@ -1310,9 +1325,10 @@ class Manager:
         ccache.cell_to_buffer_checksums.pop(cell, None)
         ccache.cell_from_upstream.pop(cell, None)
 
-        for source, target in list(self.cell_to_cell):
+        for item in list(self.cell_to_cell):
+            source, target = item
             if source.cell is cell or target.cell is cell:
-                self.cell_to_cell.remove((source, target))
+                self.cell_to_cell.remove(item)
 
     def _destroy_worker(self, worker):
         cache = self.accessor_cache.haccessor_to_workers        
@@ -1334,7 +1350,7 @@ class Manager:
             else:
                 # restore transformer_from_hlevel1 to an alternative tf
                 #TODO: use reverse cache
-                for tf, tf_level1 in tcache.transformer_to_level1:
+                for tf, tf_level1 in tcache.transformer_to_level1.items():
                     if tf_level1.get_hash() == hlevel1:
                         tcache.transformer_from_hlevel1[hlevel1] = tf
                         break            
@@ -1342,6 +1358,10 @@ class Manager:
         self.unstable.discard(transformer)
 
     def _destroy_macro(self, macro):
+        if macro._unbound_gen_context is not None:
+            macro._unbound_gen_context.destroy()
+        if macro._gen_context is not None:
+            macro._gen_context.destroy()
         self._destroy_worker(macro)
 
     def _destroy_reactor(self, reactor):

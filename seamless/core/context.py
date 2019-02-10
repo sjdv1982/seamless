@@ -153,10 +153,18 @@ name: str
 
     @property
     def path(self):
-        if self._macro is not None and self._macro._gen_context is self:
+        if self._macro is not None:
             return self._macro.path + (self.name,)
         else:
             return super().path
+
+    def _cache_paths(self):
+        for child in self._children.values():
+            child._cached_path = None
+            child._cached_path = child.path
+            if isinstance(child, (Context, UnboundContext)):
+                child._cache_paths()
+
 
     def _flush_workqueue(self):
         manager = self._get_manager()

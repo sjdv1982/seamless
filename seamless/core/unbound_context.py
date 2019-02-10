@@ -30,8 +30,10 @@ class UnboundManager:
         self.commands.append(("set cell", (cell, value, from_buffer)))
 
     def connect_cell(self, cell, other):
-        assert cell._get_manager() is self
-        assert cell in self._registered
+        from .macro import Path
+        if not isinstance(cell, Path):
+            assert cell._get_manager() is self
+            assert cell in self._registered
         self.commands.append(("connect cell", (cell, other)))
 
     def connect_pin(self, pin, cell):
@@ -186,12 +188,21 @@ class UnboundContext(SeamlessBase):
         return ctx
 
     def _bind_stage2(self, manager):
+        from .macro import Path
         for com, args in self._manager.commands:
             if com == "set cell":
                 cell, value, from_buffer = args
                 manager.set_cell(cell, value, from_buffer=from_buffer)
             elif com == "connect cell":
-                cell, other = args                
+                cell, other = args
+                if isinstance(cell, Path):
+                    cell = cell._cell
+                    if cell is None:
+                        continue           
+                if isinstance(other, Path):
+                    other = other._cell
+                    if other is None:
+                        continue           
                 manager.connect_cell(cell, other)
             elif com == "connect pin":
                 pin, cell = args
@@ -204,13 +215,27 @@ class UnboundContext(SeamlessBase):
                 manager.set_cell_label(cell, label)
             else:
                 raise ValueError(com)
+        manager.schedule_jobs()
 
     def _bind(self, ctx):
         from .context import Context        
         assert self._toplevel == ctx._toplevel
         self._bind_stage1(ctx)
+        ctx._cache_paths()
         self._bind_stage2(ctx._get_manager())
+    
+    def destroy(self, *, from_del=False):
+        for childname, child in self._children.items():
+            child.destroy(from_del=from_del)
 
+    """
+    def _cache_paths(self):
+        for child in self._children.values():
+            child._cached_path = None
+            child._cached_path = child.path
+            if isinstance(child, UnboundContext):
+                child._cache_paths()
+    """
 
 from .link import Link
 from .cell import Cell

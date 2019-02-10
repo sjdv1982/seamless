@@ -1,4 +1,5 @@
 import weakref
+from functools import lru_cache
 
 class IpyString(str):
     def _repr_pretty_(self, p, cycle):
@@ -7,13 +8,16 @@ class IpyString(str):
 class SeamlessBase:
     _destroyed = False
     _context = None
+    _cached_path = None
     name = None
 
     def _get_macro(self):
         return self._context()._macro
 
-    @property
+    @property    
     def path(self):
+        if self._cached_path is not None:
+            return self._cached_path
         if self._context is None:
             return ()
         if self._context() is None:
@@ -51,13 +55,16 @@ class SeamlessBase:
     def _root(self):
         if self._context is None:
             return None
+        if self._context() is None:
+            return None
         return self._context()._root()
 
     def _format_path(self):
-        if self.path is None:
+        path = self.path
+        if path is None:
             ret = "<None>"
         else:
-            ret = "." + ".".join(self.path)
+            ret = "." + ".".join(path)
         return ret
 
     def __str__(self):
