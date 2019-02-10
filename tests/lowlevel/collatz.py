@@ -47,7 +47,7 @@ def collatz(ctx, value, macro_code, macro_params):
     ctx.b.connect(ctx.tf.b)
     m.ctx.series.connect(ctx.a)
     ctx.value.connect(ctx.b)
-    ctx.tf.code.set("c = [b] + a")
+    ctx.tf.code.set("[b] + a")
     ctx.tf.c.connect(ctx.series)
     print("/COLLATZ", value)
 

@@ -72,7 +72,7 @@ Things to do:
     TODO later: reactor caches and jobs, remote execution (see below)
 
   D.
-  - Macros. 
+  - Macros. DONE
    When macro-generated contexts are built, they are "unbound". Whenever
    a macro is successfully evaluated, the context becomes "bound".
    Unbound contexts cannot support __dir__; any attribute can be
@@ -94,7 +94,7 @@ Things to do:
    it is illegal for a macro to create path connections
    where *both* endpoints are within the *same* submacro.
     
-  - Get general clean worker destruction working
+  - Get general clean worker destruction working DONE
 
   - Creation of a macro is synchronous, so subreactor/submacro jobs won't happen (see above) and
     transformer jobs are not being processed.
@@ -104,8 +104,9 @@ Things to do:
     2. May clean up cache items associated with the old macro 
     3. Will also interrupt all async execution (transforms and pure reactors).
     Part 1. will happen immediately; 2. and 3. will happen with a 20 sec delay, or when all cells in the
-     new macro reach stable status, whichever happens sooner.
-   - Get basic macro test working 
+     new macro reach stable status, whichever happens sooner. DONE
+   - Get basic macro test working  DONE
+   - Collatz test DONE
 
   E.
   - Keep the new mixed cells with no storage or form cells PARTIALLY DONE
@@ -140,7 +141,7 @@ Things to do:
   - Gradually, get all low-level tests working, extending the manager, using the New Way 
     1. Easy-ish: Cson test + cell-cell connection, generic deserialization (see protocol/evaluate.py)
     2. Easy-ish: advanced mounting, ipython
-    3. Medium: debugging, library, advanced macro/collatz, shell
+    3. Medium: debugging, library, shell
     4. Hard: all StructuredCell tests
   - Implement annotation dict, including execute_debug, ncores (ncores DONE), and a field for streams
 
