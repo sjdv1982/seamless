@@ -79,6 +79,11 @@ class Reactor(Worker):
         super()._set_context(ctx, name)
         self._get_manager().register_reactor(self)
 
+    def destroy(self, *, from_del):
+        if not from_del:
+            self._get_manager()._destroy_reactor(self)
+        super().destroy(from_del=from_del)
+
     def __str__(self):
         ret = "Seamless reactor: " + self._format_path()
         return ret

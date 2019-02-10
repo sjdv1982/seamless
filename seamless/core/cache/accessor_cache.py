@@ -59,7 +59,8 @@ class Accessor:
         return json.dumps(d, indent=2)
 
     def __hash__(self):
-        return hash(str(self))
+        # Hash is NOT unique! useful for haccessor bucketing
+        return hash((self.celltype, self.storage_type, self.cell.path, self.subpath))
 
 
 class AccessorCache:
@@ -67,4 +68,4 @@ class AccessorCache:
     def __init__(self, manager):
         self.manager = weakref.ref(manager)
         self.haccessor_to_cells = {} # hash of input accessor => list of output cellids
-        self.haccessor_to_workers = {} # hash of input accessor => list of output worker IDs (input/edit pins)
+        self.haccessor_to_workers = {} # hash of input accessor => list of output workers

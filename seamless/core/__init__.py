@@ -16,6 +16,8 @@ class SeamlessBase:
     def path(self):
         if self._context is None:
             return ()
+        if self._context() is None:
+            return ("<None>", self.name)
         elif self._context().path is None:
             return ("<None>", self.name)
         else:

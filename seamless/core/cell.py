@@ -223,8 +223,7 @@ Use ``Cell.status()`` to get its status.
         if not from_del:
             self._get_manager()._destroy_cell(self)
             for path in list(self._paths):
-                self._paths.pop(path)
-                path._bind(None)
+                path._bind(None, trigger=True)
         super().destroy(from_del=from_del)
 
 class ArrayCell(Cell):

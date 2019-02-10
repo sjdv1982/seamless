@@ -472,20 +472,22 @@ class Manager:
         if full or new_auth_status is not None or new_data_status is not None:
             acache = self.accessor_cache
             accessors = itertools.chain(
-                self.cell_cache.cell_to_accessors[cell],
+                ( self.cell_cache.cell_to_accessors[cell] ),
                 ( self.get_default_accessor(cell), ),
             )
-            for accessor in accessors:
+            for accessor in accessors:                
                 haccessor = hash(accessor)
                 for target_cell in acache.haccessor_to_cells.get(haccessor, []):
                     self._propagate_status(
                       target_cell, new_data_status, new_auth_status, full
                     )
-                for worker in acache.haccessor_to_workers.get(haccessor, []):
+                for worker, acc in acache.haccessor_to_workers.get(haccessor, []):
+                    if acc is None:
+                        acc = accessor
                     if full and isinstance(worker, Reactor):
                         rtreactor = self.reactors[worker]
-                        for pinname, accessor in rtreactor.input_dict.items():
-                            if accessor.cell is cell:
+                        for pinname, accessor2 in rtreactor.input_dict.items():
+                            if accessor2.cell is cell:
                                 rtreactor.updated.add(pinname)
                     self.update_worker_status(worker, full)
             self.update_cell_to_cells(cell, data_status, auth_status, full, origin)
@@ -681,7 +683,7 @@ class Manager:
         elif isinstance(worker, Macro):
             return self.update_macro_status(worker)
         else:
-            raise TypeError(worker)
+            raise TypeError(worker, type(worker))
 
     def _verify_connect(self, source, target):
         assert source._root()._manager is self
@@ -724,18 +726,21 @@ class Manager:
             raise TypeError(pin)
 
         accessor = self.get_default_accessor(cell)
+        acc = None
         if access_mode is not None and access_mode != accessor.access_mode:
             accessor.source_access_mode = accessor.access_mode
             accessor.access_mode = access_mode
+            acc = accessor
         if content_type is not None and content_type != accessor.content_type:
             accessor.source_content_type = accessor.content_type
             accessor.content_type = content_type
+            acc = accessor
         acache = self.accessor_cache
         haccessor = hash(accessor)
         if haccessor not in acache.haccessor_to_workers:
-            acache.haccessor_to_workers[haccessor] = [transformer]
+            acache.haccessor_to_workers[haccessor] = [(transformer, acc)]
         else:
-            acache.haccessor_to_workers[haccessor].append(transformer)
+            acache.haccessor_to_workers[haccessor].append((transformer, acc))
         accessor_dict[pin.name] = accessor
         self.update_transformer_status(transformer,full=False)
 
@@ -772,18 +777,21 @@ class Manager:
         elif inout == "in":
             assert pin.name not in rtreactor.input_dict, pin #double connection
             accessor = self.get_default_accessor(cell)
+            acc = None
             if access_mode is not None and access_mode != accessor.access_mode:
                 accessor.source_access_mode = accessor.access_mode
                 accessor.access_mode = access_mode
+                acc = accessor
             if content_type is not None and content_type != accessor.content_type:
                 accessor.source_content_type = accessor.content_type
                 accessor.content_type = content_type
+                acc = accessor
             acache = self.accessor_cache
             haccessor = hash(accessor)
             if haccessor not in acache.haccessor_to_workers:
-                acache.haccessor_to_workers[haccessor] = [reactor]
+                acache.haccessor_to_workers[haccessor] = [(reactor,acc)]
             else:
-                acache.haccessor_to_workers[haccessor].append(reactor)
+                acache.haccessor_to_workers[haccessor].append((reactor,acc))
             rtreactor.input_dict[pin.name] = accessor
         elif inout == "out":
             output_dict = rtreactor.output_dict
@@ -820,18 +828,21 @@ class Manager:
 
         assert pin.name not in macro.input_dict, pin #double connection
         accessor = self.get_default_accessor(cell)
+        acc = None
         if access_mode is not None and access_mode != accessor.access_mode:
             accessor.source_access_mode = accessor.access_mode
             accessor.access_mode = access_mode
+            acc = accessor
         if content_type is not None and content_type != accessor.content_type:
             accessor.source_content_type = accessor.content_type
             accessor.content_type = content_type
+            acc = accessor
         acache = self.accessor_cache
         haccessor = hash(accessor)
         if haccessor not in acache.haccessor_to_workers:
-            acache.haccessor_to_workers[haccessor] = [macro]
+            acache.haccessor_to_workers[haccessor] = [(macro,acc)]
         else:
-            acache.haccessor_to_workers[haccessor].append(macro)
+            acache.haccessor_to_workers[haccessor].append((macro,acc))
         macro.input_dict[pin.name] = accessor
 
         for pinname, pin in macro._pins.items():
@@ -901,7 +912,6 @@ class Manager:
             if path_cell:
                 path = create_path(cell)
                 connect = path
-                print("PATH!", cell, list(cell._paths))
             else:
                 connect = accessor
             connection.append(connect)
@@ -929,6 +939,7 @@ class Manager:
 
     def update_path_value(self, path):
         # Slow! needs to be improved (TODO)
+        from .macro import Path
         for source, target in self.cell_to_cell:
             if isinstance(source, Path):
                 if source._cell is None:
@@ -945,16 +956,18 @@ class Manager:
 
     def update_cell_to_cells(self, cell, data_status, auth_status, full, origin):
         # Slow! needs to be improved (TODO)
-        from .macro import Path            
+        from .macro import Path  
         for source, target in self.cell_to_cell:
             if isinstance(source, Path):
                 if source._cell is None:
                     continue
-                source = self.get_default_accessor(source._cell)
+                if source._cell is not cell:
+                    continue
+                source = self.get_default_accessor(source._cell)                
             else: #accessor
                 if source.cell is not cell:
                     continue
-            if isinstance(target, Path):
+            if isinstance(target, Path):                
                 tcell = target._cell
                 if tcell is None:
                     continue
@@ -962,6 +975,7 @@ class Manager:
             else:
                 target_accessor = target
                 tcell = target.cell
+            assert tcell is not cell, (source, target, source.cell, cell)
             if full:                
                 self.update_accessor_accessor(source, target_accessor)
             else:
@@ -1300,7 +1314,14 @@ class Manager:
             if source.cell is cell or target.cell is cell:
                 self.cell_to_cell.remove((source, target))
 
+    def _destroy_worker(self, worker):
+        cache = self.accessor_cache.haccessor_to_workers        
+        for k,v in cache.items():
+            v[:] = [vv for vv in v if vv[0] is not worker]
+    
+
     def _destroy_transformer(self, transformer):
+        self._destroy_worker(transformer)
         tcache = self.transform_cache
         tcache.transformer_to_level0.pop(transformer)
         level1 = tcache.transformer_to_level1.pop(transformer, None)
@@ -1310,10 +1331,21 @@ class Manager:
             tf = tcache.transformer_from_hlevel1.pop(hlevel1, None)
             if tf is not transformer:
                 tcache.transformer_from_hlevel1[hlevel1] = tf
-            #TODO: use reverse cache to restore transformer_from_hlevel1 to an alternative tf
+            else:
+                # restore transformer_from_hlevel1 to an alternative tf
+                #TODO: use reverse cache
+                for tf, tf_level1 in tcache.transformer_to_level1:
+                    if tf_level1.get_hash() == hlevel1:
+                        tcache.transformer_from_hlevel1[hlevel1] = tf
+                        break            
         tcache.transformer_to_cells.pop(transformer, None) 
         self.unstable.discard(transformer)
 
+    def _destroy_macro(self, macro):
+        self._destroy_worker(macro)
+
+    def _destroy_reactor(self, reactor):
+        self._destroy_worker(macro)
 
     def destroy(self, from_del=False):
         if self._destroyed:

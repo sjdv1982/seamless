@@ -73,6 +73,7 @@ class Macro(Worker):
                 code = value
             else:
                 values[pinname] = value
+        ok = False
         try:
             old_paths = self._paths
             self._paths = weakref.WeakValueDictionary()
@@ -91,6 +92,7 @@ class Macro(Worker):
                 #    with library.bind(self.lib):
                 #        exec(code_object, self.namespace)
                 inputs = ["ctx"] +  list(values.keys())
+                print("Execute macro")
                 exec_code(code, str(self), self.namespace, inputs, None)
                 if self.namespace["ctx"] is not unbound_ctx:
                     raise Exception("Macro must return ctx")
@@ -134,13 +136,17 @@ class Macro(Worker):
                 if self._gen_context is not None:
                     self._gen_context.destroy()
                 self._gen_context = ctx
+                ok = True
+        except Exception as exception:
+            manager.set_macro_exception(self, exception)
         finally:
             self._paths = old_paths
-        for path, p in paths:
-            p._bind(None, trigger=True)
-        for path, p in newly_bound:
-            cell = ub_cells[path]
-            p._bind(cell, trigger=True)
+        if ok:
+            for path, p in paths:
+                p._bind(None, trigger=True)
+            for path, p in newly_bound:
+                cell = ub_cells[path]
+                p._bind(cell, trigger=True)
             
     def _set_context(self, ctx, name):
         super()._set_context(ctx, name)
@@ -149,6 +155,11 @@ class Macro(Worker):
     def _unmount(self,from_del=False):
         if self._gen_context is not None:
             return self._gen_context._unmount(from_del)
+
+    def destroy(self, *, from_del):
+        if not from_del:
+            self._get_manager()._destroy_macro(self)
+        super().destroy(from_del=from_del)
 
     @property
     def ctx(self):
@@ -184,20 +195,23 @@ class Path:
         if cell is not None:
             assert self._cell is None
         if self._cell is not None:
-            self._cell._paths.pop(self)
+            self._cell._paths.remove(self)
         if cell is not None:
             for path in cell._paths:
                 assert path is not self, self._path
                 assert path._macro is not self._macro, (path._path, self._path)
             cell._paths.add(self)
+        if cell is None:
+            manager = self._cell._get_manager()
+        else:
+            manager = cell._get_manager()
         self._cell = cell
         if trigger:
-            manager = self._macro._get_manager()
-            if self._incoming and cell is not None:
+            if self._incoming and cell is not None:                
                 upstream = manager._cell_upstream(cell)
                 if isinstance(upstream, Cell):
                     a = manager.get_default_accessor(cell)
-                    manager.update_accessor_accessor(upstream, a)
+                    manager.update_accessor_accessor(upstream, a)                
             manager.update_path_value(self)
     
     def _can_bind(self, cell):

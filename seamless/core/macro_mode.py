@@ -25,7 +25,8 @@ def curr_macro():
 def macro_mode_on(macro=None):
     from . import mount
     global _macro_mode, _curr_macro
-    assert _macro_mode == False
+    old_macro_mode = _macro_mode
+    old_curr_macro = _curr_macro
     _macro_mode = True
     _curr_macro = macro
     try:
@@ -37,15 +38,15 @@ def macro_mode_on(macro=None):
                     ctx._bind(top)
                     toplevel_register.add(top)
     finally:
-        _macro_mode = False
-        _curr_macro = None
+        _macro_mode = old_macro_mode
+        _curr_macro = old_curr_macro
         if macro is None:
             for ctx in list(toplevel_register):
                 if isinstance(ctx, UnboundContext):
                     toplevel_register.remove(ctx)
                 else:
                     mount.scan(ctx)
-        else:
+        elif not _macro_mode:
             mount.scan(macro.ctx)
 
 from .context import Context

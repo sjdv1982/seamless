@@ -12,43 +12,44 @@ with macro_mode_on():
     })
 
     ctx.param.connect(ctx.macro.param)
-    ctx.macro_code = pymacrocell().set("""
-ctx.sub = context(context=ctx,name="sub")
-ctx.a = cell().set(1000 + param)
-ctx.b = cell().set(2000 + param)
-ctx.result = cell()
-ctx.tf = transformer({
-    "a": "input",
-    "b": "input",
-    "c": "output"
-})
-ctx.a.connect(ctx.tf.a)
-ctx.b.connect(ctx.tf.b)
-ctx.code = cell("transformer").set("c = a + b")
-ctx.code.connect(ctx.tf.code)
-ctx.tf.c.connect(ctx.result)
-assert param != 999   # on purpose
-if param > 1:
-    ctx.d = cell().set(42)
-    #raise Exception("on purpose") #causes the macro reconstruction to fail; comment it out to make it succeed
-""")
+    def macro_code(ctx, param):
+        ctx.sub = context(name="sub")
+        ctx.a = cell().set(1000 + param)
+        ctx.b = cell().set(2000 + param)
+        ctx.result = cell()
+        ctx.tf = transformer({
+            "a": "input",
+            "b": "input",
+            "c": "output"
+        })
+        ctx.a.connect(ctx.tf.a)
+        ctx.b.connect(ctx.tf.b)
+        ctx.code = cell("transformer").set("c = a + b")
+        ctx.code.connect(ctx.tf.code)
+        ctx.tf.c.connect(ctx.result)
+        assert param != 999   # on purpose
+        if param > 1:
+            ctx.d = cell().set(42)
+            #raise Exception("on purpose") #causes the macro reconstruction to fail; comment it out to make it succeed
+        pass # For some reason, comments at the end are not captured with inspect.get_source?
+
+    ctx.macro_code = pymacrocell().set(macro_code)
     ctx.macro_code.connect(ctx.macro.code)
 
-    ctx.mount("/tmp/mount-test", persistent=None)
+    ###ctx.mount("/tmp/mount-test", persistent=None)
 
 
 print("START")
-import time; time.sleep(0.5) #doing this instead of equilibrate() will cause the result update to be delayed until macro reconstruction
-# if the macro reconstruction fails, the result update will still be accepted
 ### ctx.equilibrate()
-print(ctx.MACRO_macro.a.value)
-print(ctx.MACRO_macro.b.value)
-print(hasattr(ctx.MACRO_macro, "d"))
-print(ctx.MACRO_macro.result.value) #None instead of 3002, unless you enable ctx.equilibrate above
+print(ctx.macro.ctx.a.value)
+print(ctx.macro.ctx.b.value)
+print(hasattr(ctx.macro.ctx, "d"))
+print(ctx.macro.ctx.result.value) #None instead of 3002, unless you enable ctx.equilibrate above
 
 def mount_check():
+    return ###
     from seamless.core.mount import mountmanager #singleton
-    for c in (ctx.macro_code, ctx.param, ctx.MACRO_macro.a, ctx.MACRO_macro.b, ctx.MACRO_macro.code):
+    for c in (ctx.macro_code, ctx.param, ctx.macro.ctx.a, ctx.macro.ctx.b, ctx.macro.ctx.code):
         path = c._mount["path"]
         assert c in mountmanager.mounts, c
         assert path in mountmanager.paths, (c, path)
@@ -59,16 +60,16 @@ mount_check()
 print("Change 1")
 ctx.param.set(2)
 ctx.equilibrate()
-# Note that ctx.MACRO_macro is now a new context, and
+# Note that ctx.macro.ctx is now a new context, and
 #   any old references to the old context are invalid
 # But this is a concern for the high-level!
 
-print(ctx.MACRO_macro.a.value)
-print(ctx.MACRO_macro.b.value)
-print(ctx.MACRO_macro.hasattr("d"))
-if ctx.MACRO_macro.hasattr("d"):
-    print(ctx.MACRO_macro.d.value)
-print(ctx.MACRO_macro.result.value) #will never be None! 3002 if the reconstruction failed, 3004 if it succeeded
+print(ctx.macro.ctx.a.value)
+print(ctx.macro.ctx.b.value)
+print(ctx.macro.ctx.hasattr("d"))
+if ctx.macro.ctx.hasattr("d"):
+    print(ctx.macro.ctx.d.value)
+print(ctx.macro.ctx.result.value) #will never be None! 3002 if the reconstruction failed, 3004 if it succeeded
 
 mount_check()
 
@@ -76,7 +77,7 @@ print("Change 2")
 ctx.macro_code.set(
     ctx.macro_code.value + "   "
 )
-ctx.equilibrate()
+ctx.equilibrate() # No execution
 
 mount_check()
 
@@ -85,12 +86,13 @@ ctx.macro_code.set(
     ctx.macro_code.value.replace("#raise Exception", "raise Exception")
 )
 ctx.equilibrate()
-print(ctx.MACRO_macro.a.value)
-print(ctx.MACRO_macro.b.value)
-print(ctx.MACRO_macro.hasattr("d"))
-if ctx.MACRO_macro.hasattr("d"):
-    print(ctx.MACRO_macro.d.value)
-print(ctx.MACRO_macro.result.value) #will never be None! 3002 if the reconstruction failed, 3004 if it succeeded
+
+print(ctx.macro.ctx.a.value)
+print(ctx.macro.ctx.b.value)
+print(ctx.macro.ctx.hasattr("d"))
+if ctx.macro.ctx.hasattr("d"):
+    print(ctx.macro.ctx.d.value)
+print(ctx.macro.ctx.result.value) #will never be None! 3002 if the reconstruction failed, 3004 if it succeeded
 
 mount_check()
 
@@ -99,39 +101,33 @@ ctx.macro_code.set(
     ctx.macro_code.value.replace("raise Exception", "#raise Exception")
 )
 ctx.equilibrate()
-print(ctx.MACRO_macro.a.value)
-print(ctx.MACRO_macro.b.value)
-print(ctx.MACRO_macro.hasattr("d"))
-if ctx.MACRO_macro.hasattr("d"):
-    print(ctx.MACRO_macro.d.value)
-print(ctx.MACRO_macro.result.value) #will never be None! 3002 if the reconstruction failed, 3004 if it succeeded
+print(ctx.macro.ctx.a.value)
+print(ctx.macro.ctx.b.value)
+print(ctx.macro.ctx.hasattr("d"))
+if ctx.macro.ctx.hasattr("d"):
+    print(ctx.macro.ctx.d.value)
+print(ctx.macro.ctx.result.value) #will never be None! 3002 if the reconstruction failed, 3004 if it succeeded
 
 print("Change 5")
-"""
-ctx.macro_code.set(
-    ctx.macro_code.value.replace("raise Exception", "#raise Exception")
-)
-ctx.equilibrate()
-"""
 ctx.param.set(0)
 ctx.equilibrate()
-print(ctx.MACRO_macro.a.value)
-print(ctx.MACRO_macro.b.value)
-print(ctx.MACRO_macro.hasattr("d"))
-if ctx.MACRO_macro.hasattr("d"):
-    print(ctx.MACRO_macro.d.value)
-print(ctx.MACRO_macro.result.value) #will never be None! 3002 if the reconstruction failed, 3004 if it succeeded
+print(ctx.macro.ctx.a.value)
+print(ctx.macro.ctx.b.value)
+print(ctx.macro.ctx.hasattr("d"))
+if ctx.macro.ctx.hasattr("d"):
+    print(ctx.macro.ctx.d.value)
+print(ctx.macro.ctx.result.value) #will never be None! 3002 if the reconstruction failed, 3004 if it succeeded
 
 mount_check()
 
 print("Change 6")
 ctx.param.set(999)
-print(ctx.MACRO_macro.a.value)
-print(ctx.MACRO_macro.b.value)
-print(ctx.MACRO_macro.hasattr("d"))
-if ctx.MACRO_macro.hasattr("d"):
-    print(ctx.MACRO_macro.d.value)
-print(ctx.MACRO_macro.result.value) #will never be None! 3002 if the reconstruction failed, 3004 if it succeeded
+print(ctx.macro.ctx.a.value)
+print(ctx.macro.ctx.b.value)
+print(ctx.macro.ctx.hasattr("d"))
+if ctx.macro.ctx.hasattr("d"):
+    print(ctx.macro.ctx.d.value)
+print(ctx.macro.ctx.result.value) #will never be None! 3002 if the reconstruction failed, 3004 if it succeeded
 
 mount_check()
 

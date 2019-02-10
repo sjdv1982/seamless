@@ -122,7 +122,7 @@ class UnboundContext(SeamlessBase):
     def _add_child(self, childname, child):
         assert isinstance(child, (UnboundContext, Worker, Cell, Link, StructuredCell))
         if isinstance(child, UnboundContext):
-            assert child._context() is self
+            assert child._context is None
             self._children[childname] = child
         else:
             self._children[childname] = child
@@ -171,12 +171,12 @@ class UnboundContext(SeamlessBase):
             ctx = Context(name=self._name)
             ctx._macro = curr_macro()                
         for childname, child in self._children.items():
-            if isinstance(child, Context):
+            if isinstance(child, UnboundContext):
                 continue
             else:
                 setattr(ctx, childname, child)
         for childname, child in self._children.items():
-            if isinstance(child, Context):
+            if isinstance(child, UnboundContext):
                 bound_ctx = child._bind_stage1()
                 setattr(ctx, childname, bound_ctx)
             else:

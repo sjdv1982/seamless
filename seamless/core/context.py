@@ -84,9 +84,10 @@ name: str
         return ret
 
     def _add_child(self, childname, child):
-        assert isinstance(child, (Context, Worker, Cell, Link, StructuredCell))
+        if not isinstance(child, (Context, Worker, Cell, Link, StructuredCell)):
+            raise TypeError(child, type(child))
         if isinstance(child, Context):
-            assert child._context() is self
+            assert child._context is None
             self._children[childname] = child
         else:
             self._children[childname] = child
