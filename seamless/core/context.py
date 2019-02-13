@@ -67,6 +67,7 @@ name: str
     def _set_context(self, context, name):
         assert not self._toplevel
         super()._set_context(context, name)
+        assert self._context() is context
         context_name = context._name
         if context_name is None:
             context_name = ()
@@ -88,10 +89,8 @@ name: str
             raise TypeError(child, type(child))
         if isinstance(child, Context):
             assert child._context is None
-            self._children[childname] = child
-        else:
-            self._children[childname] = child
-            child._set_context(self, childname)
+        self._children[childname] = child
+        child._set_context(self, childname)
         
 
     def _add_new_cell(self, cell):

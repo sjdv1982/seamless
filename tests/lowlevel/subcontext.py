@@ -4,7 +4,7 @@ from seamless.core import context, cell, transformer, pytransformercell
 
 with macro_mode_on():
     topctx = context(toplevel=True)
-    ctx = topctx.sub = context(toplevel=False, context=topctx, name="sub")
+    ctx = topctx.sub = context(toplevel=False)
     assert topctx.sub is ctx
     ctx.cell1 = cell().set(1)
     ctx.cell2 = cell().set(2)

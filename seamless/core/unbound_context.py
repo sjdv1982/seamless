@@ -166,12 +166,16 @@ class UnboundContext(SeamlessBase):
         MountItem(None, self, dummy=True, **self._mount) #to validate parameters
 
 
-    def _bind_stage1(self, ctx=None):
+    def _bind_stage1(self, ctx):
         from .context import Context
-        if ctx is None:
-            assert not self._toplevel
-            ctx = Context(name=self._name)
-            ctx._macro = curr_macro()                
+        ctxmap = {}              
+
+        for childname, child in self._children.items():
+            if isinstance(child, UnboundContext):
+                bound_ctx = Context(name=self._name)
+                bound_ctx._macro = curr_macro()
+                setattr(ctx, childname, bound_ctx)
+                ctxmap[childname] = bound_ctx
         for childname, child in self._children.items():
             if isinstance(child, UnboundContext):
                 continue
@@ -179,13 +183,13 @@ class UnboundContext(SeamlessBase):
                 setattr(ctx, childname, child)
         for childname, child in self._children.items():
             if isinstance(child, UnboundContext):
-                bound_ctx = child._bind_stage1()
-                setattr(ctx, childname, bound_ctx)
+                bound_ctx = ctxmap[childname]
+                self._manager.commands += child._manager.commands
+                child._bind_stage1(bound_ctx)                
             else:
                 continue     
         ctx._auto = self._auto
         self._bound = ctx
-        return ctx
 
     def _bind_stage2(self, manager):
         from .macro import Path

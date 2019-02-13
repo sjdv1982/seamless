@@ -139,7 +139,7 @@ Things to do:
 
   H.
   - Gradually, get all low-level tests working, extending the manager, using the New Way 
-    1. Easy-ish: Cson test + cell-cell connection, generic deserialization (see protocol/evaluate.py)
+    1. Easy-ish: Cson test + cell-cell connection (also with int/float/str/bool cells), generic deserialization (see protocol/evaluate.py)
     2. Easy-ish: advanced mounting, ipython
     3. Medium: debugging, library, shell
     4. Hard: all StructuredCell tests
@@ -181,7 +181,7 @@ The New Way and streams will be done early (this is big!)
 - Mixed cells (and structured cells) have cache-tree-depth (default 0). TODO
   At 0, simple checksum => value. At level 1, dicts/lists will be checksum => {checksum:checksum}
   resp. checksum => [checksum] (Merkle trees), in a special Merkle tree cache.
-- Structured cells have their own Merkle tree, corresponding to what is now State. TODO
+- Structured cells have their own Merkle tree, corresponding to what is now State. TODO, YAGNI??
 - Outchannels will store their own checksums (can be easy with Merkle trees) TODO
   Outchannels will never refer to buffered or invalid state, they will be undefined in that case
   (NOTE: should be like that already, right?)
