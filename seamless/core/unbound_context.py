@@ -1,4 +1,5 @@
 import weakref
+import copy
 
 from . import SeamlessBase
 from .macro_mode import curr_macro, toplevel_register
@@ -168,8 +169,8 @@ class UnboundContext(SeamlessBase):
 
     def _bind_stage1(self, ctx):
         from .context import Context
-        ctxmap = {}              
-
+        ctx._mount = copy.deepcopy(self._mount)
+        ctxmap = {}        
         for childname, child in self._children.items():
             if isinstance(child, UnboundContext):
                 bound_ctx = Context(name=self._name)

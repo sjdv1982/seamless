@@ -240,7 +240,7 @@ class Manager:
     def set_transformer_result(self, level1, level2, value, checksum, prelim):
         print("TODO: Manager.set_transformer_result: expand code properly, see evaluate.py")
         # TODO: this function is not checked for exceptions when called from a remote job...""
-        assert value is not None or checksum is not None
+        assert value is not None or checksum is not None        
         if self._destroyed:
             return
         tcache = self.transform_cache
@@ -275,6 +275,8 @@ class Manager:
         tcache.set_result(hlevel1, checksum)        
         if level2 is not None:
             tcache.result_hlevel2[level2.get_hash()] = checksum
+        print("set_transformer_result", value, checksum)
+        print(self.value_cache.get_buffer(checksum))
         self.schedule_jobs()
 
     @main_thread_buffered
@@ -1147,20 +1149,27 @@ class Manager:
             ###if status is not None:
             ###    self.status[cell] = copy.deepcopy(status)
             self._update_status(cell, checksum, has_auth=has_auth, origin=None)
+            if not is_dummy_mount(cell._mount):
+                self.get_value_from_checksum(checksum)
+                if not get_macro_mode():
+                    self.mountmanager.add_cell_update(cell)
 
     @main_thread_buffered
-    def set_cell(self, cell, value, *, from_buffer=False, origin=None):
+    def set_cell(self, cell, value, *, 
+      from_buffer=False, origin=None, buffer_checksum=None,
+      ):
         # "origin" indicates the worker that generated the .set_cell call
         from .macro_mode import macro_mode_on, get_macro_mode
         from .mount import is_dummy_mount
         assert cell._get_manager() is self
+        assert buffer_checksum is None or from_buffer == True
         ccache = self.cell_cache
         auth = ccache.cell_to_authority[cell]
         has_auth = (auth != False)
         old_checksum = ccache.cell_to_buffer_checksums.get(cell)
         result = deserialize(
             cell._celltype, cell._subcelltype, cell.path,
-            value, from_buffer=from_buffer, buffer_checksum=None,
+            value, from_buffer=from_buffer, buffer_checksum=buffer_checksum,
             source_access_mode=None,
             source_content_type=None
         )

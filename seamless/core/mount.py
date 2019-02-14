@@ -1,10 +1,4 @@
 """
-For now, there is a single _read() and a single _write() method, tied to the
- file system. In the future, these will be code cells in a context, and it
- will be possible to register custom _read() and _write() cells, e.g. for
- storage in a database.
-Same for _exists.
-
 _init() is invoked at startup:
  If authority is "file" or "file-strict":
   This may invoke _read(), but only if the file exists
@@ -20,8 +14,6 @@ Periodically, conditional_read() and conditional_write() are invoked,
 
 NOTE: resolve_register returns immediately if there has been an exception raised
 """
-from .protocol import cson2json, json_encode
-
 from weakref import WeakValueDictionary, WeakKeyDictionary, WeakSet, ref
 from threading import Thread, RLock, Event
 from collections import deque, OrderedDict
@@ -31,8 +23,9 @@ import traceback
 import copy
 from contextlib import contextmanager
 import json
+import itertools
 
-NoStash = 1
+from .protocol import deserialize
 
 def is_dummy_mount(mount):
     if mount is None:
@@ -78,80 +71,51 @@ class MountItem:
         if cell is None:
             return
         exists = self._exists()
-        cell_empty = (cell.status() != "OK")
+        cell_empty = (cell.checksum is None)
         if self.authority in ("file", "file-strict"):
             if exists:
                 with self.lock:
-                    filevalue = self._read()
+                    file_buffer = self._read()
                     update_file = True
                     file_checksum = None
                     if not cell_empty:
-                        file_checksum = cell._checksum(filevalue, buffer=True)
-                        if file_checksum == cell.text_checksum():
+                        cell_checksum, cell_buffer = self._get(cell)
+                        file_checksum = self._get_file_checksum(file_buffer, cell)
+                        if file_checksum == cell_checksum:
                             update_file = False
                         else:
                             print("Warning: File path '%s' has a different value, overwriting cell" % self.path) #TODO: log warning
                     self._after_read(file_checksum)
                 if update_file:
-                    self.set(filevalue, checksum=file_checksum)
+                    self.set(file_buffer, checksum=file_checksum)
             elif self.authority == "file-strict":
                 raise Exception("File path '%s' does not exist, but authority is 'file-strict'" % self.path)
             else:
                 if "w" in self.mode and not cell_empty:
-                    value = cell.serialize_buffer()
-                    checksum = cell.text_checksum()
+                    checksum, buffer = self._get(cell)
                     with self.lock:
-                        self._write(value)
+                        self._write(buffer)
                         self._after_write(checksum)
         else: #self.authority == "cell"
-            must_read = ("r" in self.mode)
-            if not must_read and cell._master is not None and \
-              cell._master[1] in ("form", "storage"):
-                must_read = True
             if not cell_empty:
-                value = cell.serialize_buffer()
-                checksum = cell.text_checksum()
-                if exists and must_read:
-                    with self.lock:
-                        filevalue = self._read()
-                        file_checksum = cell._checksum(filevalue, buffer=True)
-                        if file_checksum != checksum:
-                            if "w" in self.mode:
-                                print("Warning: File path '%s' has a different value, overwriting file" % self.path) #TODO: log warning
-                            else:
-                                print("Warning: File path '%s' has a different value, no overwriting enabled" % self.path) #TODO: log warning
-                        self._after_read(file_checksum)
+                checksum, buffer = self._get(cell)
                 if "w" in self.mode:
                     with self.lock:
-                        self._write(value)
+                        self._write(buffer)
                         self._after_write(checksum)
-            else:
-                if exists and must_read:
-                    with self.lock:
-                        filevalue = self._read()
-                        file_checksum = cell._checksum(filevalue, buffer=True)
-                        self.set(filevalue, checksum=file_checksum)
-                        self._after_read(file_checksum)
-
-    def set(self, filevalue, checksum):
-        from .cell import JsonCell
+ 
+    def set(self, file_buffer, checksum):
         if self._destroyed:
             return
         cell = self.cell()
         if cell is None:
             return
-        #Special mount mode for JSON: whatever is read will be passed through cson2json
-        if filevalue is not None and isinstance(cell, JsonCell) and "w" in self.mode:
-            d = cson2json(filevalue)
-            filevalue2 = json_encode(d, sort_keys=True, indent=2)
-            if filevalue2 != filevalue:
-                filevalue = filevalue2
-                self._write(filevalue)
         if cell._mount_setter is not None:
-            cell._mount_setter(filevalue, checksum)
+            raise NotImplementedError ### cache branch
+            cell._mount_setter(file_buffer, checksum)
             cell._get_manager().cell_send_update(cell, False, None)
         else:
-            cell.from_buffer(filevalue, checksum=checksum)
+            cell._set(file_buffer, from_buffer=True, buffer_checksum=checksum)
 
     @property
     def lock(self):
@@ -166,20 +130,20 @@ class MountItem:
         with open(self.path.replace("/", os.sep), filemode, encoding=encoding) as f:
             return f.read()
 
-    def _write(self, filevalue, with_none=False):
+    def _write(self, file_buffer, with_none=False):
         assert "w" in self.mode
         binary = self.kwargs["binary"]
         encoding = self.kwargs.get("encoding")
         filemode = "wb" if binary else "w"
         filepath = self.path.replace("/", os.sep)
-        if filevalue is None:
+        if file_buffer is None:
             if not with_none:
                 if os.path.exists(filepath):
                     os.unlink(filepath)
                 return
-            filevalue = b"" if binary else ""
+            file_buffer = b"" if binary else ""
         with open(filepath, filemode, encoding=encoding) as f:
-            f.write(filevalue)
+            f.write(file_buffer)
 
     def _exists(self):
         return os.path.exists(self.path.replace("/", os.sep))
@@ -194,23 +158,22 @@ class MountItem:
         except Exception:
             pass
 
-    def conditional_write(self, with_none=False):
+    def conditional_write(self, with_none=False):        
         if self._destroyed:
             return
         if not "w" in self.mode:
             return
         cell = self.cell()
         if cell is None:
-            return
-        status = cell.status()
-        if status != "OK":
-            if not with_none or status != "UNDEFINED":
+            return        
+        checksum, value = self._get(cell)
+        if checksum is None:
+            if not with_none:
                 return
-        checksum = cell.text_checksum()
+            status = manager.status[cell].data
+            if status in ("INVALID", "UNCONNECTED"):
+                return        
         if checksum is None or self.last_checksum != checksum:
-            value = cell.serialize_buffer()
-            if value is not None:
-                assert cell._checksum(value, buffer=True) == checksum, cell._format_path()
             with self.lock:
                 self._write(value, with_none=with_none)
                 self._after_write(checksum)
@@ -235,22 +198,33 @@ class MountItem:
             mtime = stat.st_mtime
             file_checksum = None
             if self.last_mtime is None or mtime > self.last_mtime:
-                filevalue = self._read()
-                file_checksum = cell._checksum(filevalue, buffer=True)
-                self._after_read(file_checksum, mtime=mtime)
-        cell_checksum = None
-        if cell.value is not None:
-            cell_checksum = cell.text_checksum()
+                file_buffer = self._read()
+                file_checksum = self._get_file_checksum(file_buffer, cell)
+                self._after_read(file_checksum, mtime=mtime)        
+        cell_value, cell_checksum = self._get(cell)
         if file_checksum is not None and file_checksum != cell_checksum:
             if "r" in self.mode:
-                self.set(filevalue, checksum=file_checksum)
+                self.set(file_buffer, checksum=file_checksum)
             else:
                 print("Warning: write-only file %s (%s) has changed on disk, overruling" % (self.path, self.cell()))
-                value = cell.serialize_buffer()
-                assert cell._checksum(value, buffer=True) == cell_checksum, cell._format_path()
                 with self.lock:
-                    self._write(value)
+                    self._write(cell_value)
                     self._after_write(cell_checksum)
+
+    def _get(self, cell):
+        manager = cell._get_manager()
+        checksum = manager.cell_cache.cell_to_buffer_checksums.get(cell)
+        _, _, buffer = manager.value_cache.get_buffer(checksum)
+        return checksum, buffer
+
+    def _get_file_checksum(self, file_buffer, cell):
+        _, file_checksum, _, _ = deserialize(
+            cell._celltype, cell._subcelltype, cell.path,
+            file_buffer, from_buffer=True, buffer_checksum=None,
+            source_access_mode=None,
+            source_content_type=None
+        )
+        return file_checksum
 
     def destroy(self):
         if self._destroyed:
@@ -464,7 +438,7 @@ class MountManagerStash:
                     cell = new_mountitem.cell()
                     if cell._val is not None:
                         value = cell.serialize_buffer()
-                        checksum = cell.text_checksum()
+                        checksum = manager.cell_cache.cell_to_buffer_checksums.get(cell)
                         if "w" in old_mountitem.mode:
                             if type(old_mountitem.cell()) != type(cell):
                                 rewrite = True
@@ -511,39 +485,7 @@ class MountManager:
         self.lock = RLock()
         self.cell_updates = deque()
         self._tick = Event()
-        self.stash = None
         self.paths = WeakKeyDictionary()
-
-    @property
-    def reorganizing(self):
-        return self.stash is not None
-
-    @contextmanager
-    def reorganize(self, context):
-        if context is None:
-            self.stash = NoStash
-            yield
-            self.stash = None
-            return
-        if self.stash is not None:
-            assert context._part_of2(self.stash.context)
-            yield
-            return
-        with self.lock:
-            self.stash = MountManagerStash(self, context)
-            try:
-                self.stash.activate()
-                yield
-                #print("reorganize success")
-                if self.stash is None:
-                    return
-                self.stash.join()
-            except Exception as e:
-                #print("reorganize failure")
-                self.stash.undo()
-                raise e
-            finally:
-                self.stash = None
 
     def add_mount(self, cell, path, mode, authority, persistent, **kwargs):
         root = cell._root()
@@ -556,12 +498,11 @@ class MountManager:
         #print("add mount", path, cell)
         paths.add(path)
         self.mounts[cell] = MountItem(self, cell, path, mode, authority, persistent, **kwargs)
-        if self.stash is None or self.stash is NoStash:
-            try:
-                self._mounting = True
-                self.mounts[cell].init()
-            finally:
-                self._mounting = False
+        try:
+            self._mounting = True
+            self.mounts[cell].init()
+        finally:
+            self._mounting = False
 
     def add_link(self, link, path, persistent):
         paths = self.paths[link._root()]
@@ -569,8 +510,7 @@ class MountManager:
         #print("add link", path, link)
         paths.add(path)
         self.mounts[link] = LinkItem(link, path, persistent)
-        if self.stash is None or self.stash is NoStash:
-            self.mounts[link].init()
+        self.mounts[link].init()
 
     def unmount(self, cell_or_link, from_del=False):
         #print("UNMOUNT", cell_or_link, cell_or_link._mount)
@@ -590,11 +530,6 @@ class MountManager:
         #print("unmount context", context)
         self.contexts.discard(context) # may or may not exist, especially at __del__ time
         mount = context._mount
-        """context._mount is authoritative!
-        If context is destroyed while an unmount is undesired,
-          (because of stash replacement)
-        context._mount MUST have been set to None!
-        """
         if context._root() is context:
             self.paths.pop(context, None)
             if mount is None:
@@ -627,10 +562,7 @@ class MountManager:
         else:
             if path in paths:
                 assert context in self.contexts, (path, context)
-        if self.stash is None or self.stash is NoStash:
-            self._check_context(context, as_parent)
-        else:
-            self.stash.context_as_parent[context] = as_parent
+        self._check_context(context, as_parent)
 
     def _check_context(self, context, as_parent):
         mount = context._mount
@@ -646,8 +578,8 @@ class MountManager:
             os.mkdir(dirpath)
 
     def add_cell_update(self, cell):
-        #print("add_cell_update", cell, self.reorganizing, self.mounting)
-        if self.reorganizing or self._mounting:
+        #print("add_cell_update", cell, self.mounting)
+        if self._mounting:
             return
         assert cell in self.mounts, (cell, hex(id(cell)))
         self.cell_updates.append(cell)
@@ -719,14 +651,14 @@ class MountManager:
         for context in sorted(self.contexts,key=lambda l:-len(l.path)):
             self.unmount_context(context)
 
-def resolve_register(reg):
+def scan(ctx):
     from .context import Context
     from .cell import Cell
     from . import Worker
     from .structured_cell import Inchannel, Outchannel
-    contexts = set([r for r in reg if isinstance(r, Context)])
-    cells = set([r for r in reg if isinstance(r, Cell)])
-    links = set([r for r in reg if isinstance(r, Link)])
+    contexts = set()
+    cells = set()
+    links = set()
     mounts = mountmanager.mounts.copy()
     if sys.exc_info()[0] is not None:
         return #No mounting if there is an exception
@@ -757,7 +689,7 @@ def resolve_register(reg):
             result = None
             cc = c
             if isinstance(c, Link):
-                cc = c.get_linked()
+                cc = c.get_linked()      
             if isinstance(cc, (Context, Cell)):
                 result = find_mount(parent, as_parent=True,child=c)
         if not as_parent:
@@ -779,15 +711,25 @@ def resolve_register(reg):
                 extension = get_extension(child)
             result["path"] += extension
         return result
-    for r in reg:
-        root = r._root()
-        if root is None:
-            return
-        if root not in mountmanager.paths:
-            mountmanager.paths[root] = set()
-        if isinstance(r, Worker):
-            continue
-        find_mount(r)
+
+    root = ctx._root()
+    if root is not None and root not in mountmanager.paths:
+        mountmanager.paths[root] = set()
+    
+    def enumerate_context(cctx):
+        contexts.add(cctx)
+        for child in cctx._children.values():
+            if isinstance(child, Cell):
+                cells.add(child)
+            elif isinstance(child, Context):
+                enumerate_context(child)
+    enumerate_context(ctx)
+
+
+    for context in contexts:
+        find_mount(context)
+    for cell in cells:
+        find_mount(cell)
 
     done_contexts = set()
     contexts_to_mount = {}
@@ -824,11 +766,9 @@ def resolve_register(reg):
         assert parent is not None, c
         parent = parent()
         propagate_persistency(parent, persistent)
-    for r in reg:
-        if isinstance(r, Worker):
-            continue
-        if not is_dummy_mount(r._mount):
-            propagate_persistency(r)
+    for child in itertools.chain(contexts, cells):
+        if not is_dummy_mount(child._mount):
+            propagate_persistency(child)
 
     mount_cells = []
     for cell in cells:
@@ -839,7 +779,8 @@ def resolve_register(reg):
                 print("Warning: Unable to mount file path '%s': cannot mount this type of cell (%s)" % (path, type(cell).__name__))
                 continue
             mount.update(cell._mount_kwargs)
-            if cell._master and (cell._mount_setter is None or cell._master[1] in ("form", "storage")):
+            if 0: ###
+            #if cell._master and (cell._mount_setter is None or cell._master[1] in ("form", "storage")):
                 if mount.get("mode") == "r":
                     continue
                 else:
@@ -879,10 +820,6 @@ def get_extension(c):
 
 from .link import Link
 
-
-def scan(ctx):
-    print("TODO: mount.scan")
-    # Also rip fork, overhaul reorganize
 """
 *****
 TODO: filehash option (cell stores hash of the file, necessary for slash-0)

@@ -52,7 +52,6 @@ class WorkQueue:
                         break
                 work = w.popleft()
                 try:
-                    work_count += 1
                     work()
                 except Exception:
                     traceback.print_exc()

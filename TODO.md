@@ -7,9 +7,9 @@ Things to do:
 
 1. Finish the Great Refactor early, by putting loose ends in OLD folder, DONE
    1a: merge the branch on Github, DONE
-   1b: Configure gpu-node1 as a Docker repo: docker repo service, then ssh tunnel.
-   1c: make a very simple Dockerfile (wget + pip), to be used with IPython
+   1b: make a very simple Dockerfile (wget + pip), to be used with IPython
        make a very simple Jupyter Docker image.
+   1c: push it on docker repo v2
    1d: test deployment (native, then Dockerfile)
 2. Great Split (this is big!)
 ***NOTE: documentation/plan for new low-level strategies are in core/cache/evaluate.py***
@@ -109,13 +109,18 @@ Things to do:
    - Collatz test DONE
 
   E.
-  - Keep the new mixed cells with no storage or form cells PARTIALLY DONE
-    Change serialization: TODO
+  - Keep the new mixed cells with no storage or form cells 
+  - Change serialization: PARTIALLY DONE
     - Pure binary => numpy. Can be recognized because it starts with NUMPY magic characters
     - Mixed => SEAMLESS magic characters, but then storage + form, then data.
     - Pure plain => JSON. Recognized because it doesn't start with either magic
     - (Maybe do H1 now)
-  - Get minimal mounting example working
+  - Mounting: IN PROGRESS
+    - Get minimal mounting example working DONE
+    - Implement unmounting upon exit
+    - Make it work in direct mode
+    - Make it work with macros (adapt stash)
+    - Make it work with mixed/structured cells (keep mount setters?)
   - Reimplement IPython (mainloop/asyncio) support, DONE 
     Test Jupyter support, Qt support, DONE
     Test using Docker, DONE
@@ -132,7 +137,6 @@ Things to do:
   - Get basic StructuredCell tests working
   
   G. Get module injection working again.
-  (Maybe do H1 first?)
   Store module objects either in object cache or a new module object cache.
   Building these module objects is similar to cache expression evaluation in the hierarchy (i.e. local).
   The injection machinery itself should stay similar.
@@ -140,8 +144,8 @@ Things to do:
   H.
   - Gradually, get all low-level tests working, extending the manager, using the New Way 
     1. Easy-ish: Cson test + cell-cell connection (also with int/float/str/bool cells), generic deserialization (see protocol/evaluate.py)
-    2. Easy-ish: advanced mounting, ipython
-    3. Medium: debugging, library, shell
+    2. Easy-ish: advanced mounting WILL BE DONE, ipython
+    3. Medium: debugging (TODO: test Jupyter), library, shell
     4. Hard: all StructuredCell tests
   - Implement annotation dict, including execute_debug, ncores (ncores DONE), and a field for streams
 

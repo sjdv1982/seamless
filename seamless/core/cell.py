@@ -131,12 +131,15 @@ Use ``Cell.status()`` to get its status.
         manager.touch_cell(self)
         return self
 
-    def _set(self, value, from_buffer):
+    def _set(self, value, from_buffer, buffer_checksum=None):
         if self._context is None:
             self._prelim_val = value, False
         else:
             manager = self._get_manager()
-            manager.set_cell(self, value, from_buffer=from_buffer)
+            manager.set_cell(
+              self, value, 
+              from_buffer=from_buffer, buffer_checksum=buffer_checksum
+            )
         return self
 
     def set(self, value):
@@ -424,6 +427,8 @@ extensions = {
 }
 
 from .unbound_context import UnboundManager
+from .mount import MountItem
+
 """
 TODO Documentation: only-text changes
      adding comments / breaking up lines to a Python cell will affect a syntax highlighter, but not a transformer, it is only text
