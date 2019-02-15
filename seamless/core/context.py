@@ -35,7 +35,6 @@ class Context(SeamlessBase):
 
     def __init__(
         self, *,
-        name=None,
         toplevel=False,
         mount=None,
     ):
@@ -98,7 +97,8 @@ name: str
         return ret
 
     def _add_child(self, childname, child):
-        if not isinstance(child, (Context, Worker, Cell, Link, StructuredCell)):
+        from .unbound_context import UnboundContext
+        if not isinstance(child, (Context, UnboundContext, Worker, Cell, Link, StructuredCell)):
             raise TypeError(child, type(child))
         if isinstance(child, Context):
             assert child._context is None
@@ -126,8 +126,8 @@ name: str
         if attr.startswith("_") or hasattr(self.__class__, attr):
             return object.__setattr__(self, attr, value)
         if attr in self._children and self._children[attr] is not value:
-            raise AttributeError(
-             "Cannot assign to child '%s'" % attr)
+            msg = "Cannot re-assign to child '%s', do you mean child.set(...)?"
+            raise AttributeError(msg % attr)
         self._add_child(attr, value)
 
     def __getattr__(self, attr):
@@ -248,7 +248,8 @@ name: str
             "persistent": persistent
         }
         MountItem(None, self, dummy=True, **self._mount) #to validate parameters
-        mount_scan(self)
+        if not get_macro_mode():
+            mount_scan(self)
         return self
 
     def __dir__(self):

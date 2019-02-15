@@ -32,11 +32,23 @@ def macro_mode_on(macro=None):
     try:
         yield
         if macro is None:
+            def bind_all(cctx):
+                for childname, child in list(cctx._children.items()):
+                    if not isinstance(child, UnboundContext):
+                        continue
+                    bound_ctx = Context()
+                    bound_ctx._set_context(cctx, childname)
+                    cctx._children[childname] = bound_ctx
+                    child._bind(bound_ctx)                                        
+                    bind_all(child)
             for ctx in list(toplevel_register):
                 if isinstance(ctx, UnboundContext):
                     top = Context(toplevel=True)                    
                     ctx._bind(top)
                     toplevel_register.add(top)
+                else:
+                    bind_all(ctx)
+
     finally:
         _macro_mode = old_macro_mode
         _curr_macro = old_curr_macro

@@ -556,9 +556,10 @@ class MountManager:
         #print("add context", path, context, as_parent, context._mount["persistent"])
         paths = self.paths[context._root()]
         if not as_parent:
-            assert path not in paths, path
-            paths.add(path)
-            self.contexts.add(context)
+            if context not in self.contexts:
+                assert path not in paths, path
+                paths.add(path)
+                self.contexts.add(context)
         else:
             if path in paths:
                 assert context in self.contexts, (path, context)
@@ -727,7 +728,6 @@ def scan(ctx_or_cell):
         enumerate_context(ctx_or_cell)
     else:
         cells.add(ctx_or_cell)
-
 
     for context in contexts:
         find_mount(context)

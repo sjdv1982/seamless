@@ -88,8 +88,7 @@ class UnboundContext(SeamlessBase):
     _manager = None    
     _auto = None
     _toplevel = False
-    _naming_pattern = "ctx"
-    _mount = None
+    _naming_pattern = "ctx"    
     _bound = None
 
     def __init__(
@@ -103,11 +102,13 @@ class UnboundContext(SeamlessBase):
         self._toplevel = toplevel
         self._auto = set()
         self._children = {}
+        self._mount = None
         if toplevel:
             toplevel_register.add(self)
 
     def __setattr__(self, attr, value):
-        assert not self._bound
+        if self._bound is not None:
+            return setattr(self._bound, attr, value)
         if attr.startswith("_") or hasattr(self.__class__, attr):
             return object.__setattr__(self, attr, value)
         if attr in self._children and self._children[attr] is not value:
@@ -166,6 +167,18 @@ class UnboundContext(SeamlessBase):
         }
         MountItem(None, self, dummy=True, **self._mount) #to validate parameters
 
+    @property
+    def _mount(self):
+        if not self._bound:
+            return self.__dict__["_mount"]
+        else:
+            return self._bound._mount
+    @_mount.setter
+    def _mount(self, value):
+        if not self._bound:
+            self.__dict__["_mount"] = value
+        else:
+            self._bound._mount = value
 
     def _bind_stage1(self, ctx):
         from .context import Context
