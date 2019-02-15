@@ -209,9 +209,14 @@ Use ``Cell.status()`` to get its status.
         persistent: whether or not the file persists after the context has been destroyed
         """
         from .mount import is_dummy_mount
+        from .context import Context
         assert is_dummy_mount(self._mount) #Only the mountmanager may modify this further!
         if self._mount_kwargs is None:
             raise NotImplementedError #cannot mount this type of cell
+        if not get_macro_mode():
+            if self._context is not None and isinstance(self._context(), Context):
+                msg = "In direct mode, mounting must happen before a cell is assigned to a context"
+                raise Exception(msg)
         kwargs = self._mount_kwargs
         if self._mount is None:
             self._mount = {}
@@ -223,7 +228,8 @@ Use ``Cell.status()`` to get its status.
             "persistent": persistent,
         })
         self._mount.update(self._mount_kwargs)
-        MountItem(None, self, dummy=True, **self._mount) #to validate parameters
+        MountItem(None, self, dummy=True, **self._mount) #to validate parameters        
+        return self
 
     def _set_observer(self, observer):
         self._observer = observer

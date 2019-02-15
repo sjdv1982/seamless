@@ -7,7 +7,7 @@ from contextlib import contextmanager
 
 from . import SeamlessBase
 from .macro_mode import get_macro_mode, curr_macro, toplevel_register
-from .mount import is_dummy_mount
+from .mount import is_dummy_mount, MountItem, scan as mount_scan
 
 
 class StatusReport(dict):
@@ -37,6 +37,7 @@ class Context(SeamlessBase):
         self, *,
         name=None,
         toplevel=False,
+        mount=None,
     ):
         """Construct a new context.
 
@@ -55,7 +56,19 @@ name: str
         if toplevel:
             self._toplevel = True
             self._manager = Manager(self)
-
+        if mount is not None:
+            if not get_macro_mode():
+                self._mount = {
+                    "autopath": False,
+                    "path": mount,
+                    "mode": "rw",
+                    "authority": "file",
+                    "persistent": True
+                }
+                MountItem(None, self, dummy=True, **self._mount) #to validate parameters
+                mount_scan(self)
+            else:
+                self.mount(mount)
         self._children = {}
         self._auto = set()
         if toplevel:
@@ -91,6 +104,9 @@ name: str
             assert child._context is None
         self._children[childname] = child
         child._set_context(self, childname)
+        if not get_macro_mode():
+            if not isinstance(child, Worker):
+                mount_scan(child)
         
 
     def _add_new_cell(self, cell):
@@ -217,7 +233,23 @@ name: str
             return "OK"
 
     def mount(self, path=None, mode="rw", authority="cell", persistent=False):
-        raise Exception("This method must be called in macro mode")
+        if not get_macro_mode():
+            if self._toplevel:
+                msg = "In direct mode, toplevel contexts must be mounted at construction"
+                raise Exception(msg)
+            if self._context is not None and isinstance(self._context(), Context):
+                msg = "In direct mode, mounting must happen before a context is assigned to a parent"
+                raise Exception(msg)
+        self._mount = {
+            "autopath": False,
+            "path": path,
+            "mode": mode,
+            "authority": authority,
+            "persistent": persistent
+        }
+        MountItem(None, self, dummy=True, **self._mount) #to validate parameters
+        mount_scan(self)
+        return self
 
     def __dir__(self):
         result = []

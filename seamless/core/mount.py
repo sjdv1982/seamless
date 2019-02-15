@@ -651,7 +651,7 @@ class MountManager:
         for context in sorted(self.contexts,key=lambda l:-len(l.path)):
             self.unmount_context(context)
 
-def scan(ctx):
+def scan(ctx_or_cell):
     from .context import Context
     from .cell import Cell
     from . import Worker
@@ -712,7 +712,7 @@ def scan(ctx):
             result["path"] += extension
         return result
 
-    root = ctx._root()
+    root = ctx_or_cell._root()
     if root is not None and root not in mountmanager.paths:
         mountmanager.paths[root] = set()
     
@@ -723,7 +723,10 @@ def scan(ctx):
                 cells.add(child)
             elif isinstance(child, Context):
                 enumerate_context(child)
-    enumerate_context(ctx)
+    if isinstance(ctx_or_cell, Context):
+        enumerate_context(ctx_or_cell)
+    else:
+        cells.add(ctx_or_cell)
 
 
     for context in contexts:
@@ -772,19 +775,13 @@ def scan(ctx):
 
     mount_cells = []
     for cell in cells:
-        if cell in mounts and not is_dummy_mount(mounts[cell]):
-            mount = mounts[cell]
+        mount = mounts.get(cell)
+        if isinstance(mount, dict) and not is_dummy_mount(mount):
             path = mount["path"]
             if cell._mount_kwargs is None:
                 print("Warning: Unable to mount file path '%s': cannot mount this type of cell (%s)" % (path, type(cell).__name__))
                 continue
             mount.update(cell._mount_kwargs)
-            if 0: ###
-            #if cell._master and (cell._mount_setter is None or cell._master[1] in ("form", "storage")):
-                if mount.get("mode") == "r":
-                    continue
-                else:
-                    mount["mode"] = "w"
             object.__setattr__(cell, "_mount", mount) #not in macro mode
             mount_cells.append(cell)
 

@@ -275,8 +275,6 @@ class Manager:
         tcache.set_result(hlevel1, checksum)        
         if level2 is not None:
             tcache.result_hlevel2[level2.get_hash()] = checksum
-        print("set_transformer_result", value, checksum)
-        print(self.value_cache.get_buffer(checksum))
         self.schedule_jobs()
 
     @main_thread_buffered
