@@ -186,7 +186,7 @@ class UnboundContext(SeamlessBase):
         ctxmap = {}        
         for childname, child in self._children.items():
             if isinstance(child, UnboundContext):
-                bound_ctx = Context(name=self._name)
+                bound_ctx = Context()
                 bound_ctx._macro = curr_macro()
                 setattr(ctx, childname, bound_ctx)
                 ctxmap[childname] = bound_ctx
