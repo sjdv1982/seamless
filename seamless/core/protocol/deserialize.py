@@ -19,6 +19,12 @@ def deserialize(
             source_access_mode = "silk"
         elif isinstance(value, (np.void, np.ndarray)):
             source_access_mode = "binary"
+        elif isinstance(value, str):
+            try:
+                json.loads(value)
+                source_access_mode = "plain"
+            except:
+                source_access_mode = "text"
         elif isinstance(value, (Scalar, Container)):
             source_access_mode = "plain"
         else:
@@ -117,15 +123,16 @@ def deserialize_text(
     source_access_mode, source_content_type
 ):
     if source_access_mode in ("text", "python", "cson"):
-        pass
+        if from_buffer:
+            value = value.rstrip("\n")
     elif source_access_mode == "binary":
         if isinstance(value, np.ndtype):
             value = value.tolist()
         else:
             raise TypeError(type(value))
-    elif source_access_mode == "plain":
+    elif source_access_mode == "plain":        
         if from_buffer:
-            value = json.dumps(value)
+            value = str(json.loads(value.rstrip("\n")))
     else:
         raise TypeError(source_access_mode)
         

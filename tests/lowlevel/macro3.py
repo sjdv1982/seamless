@@ -1,18 +1,11 @@
-raise NotImplementedError("""
-With the changes to Path, this example can no longer work
-For one thing, Context construction is delayed until after macro mode
-For another, Paths need a manager when created, ergo a top level context
-""")
-
 import seamless
-#seamless.core.cache.use_caching = False ###
 from seamless.core import macro_mode_on
 from seamless.core import context, cell, transformer, pymacrocell, \
   macro, link, path
 
 with macro_mode_on():
     ctx = context(toplevel=True)
-    ctx.mount("/tmp/mount-test", persistent=None)
+    ctx.mount("/tmp/mount-test")
     ctx.param = cell("plain").set(0)
 
     ctx.macro = macro({
@@ -43,6 +36,10 @@ if param > 1:
         "e2": "output"
     })
     ctx.tf2.code.cell().set("e2 = 10 * e")
+    ctx.tf2e = cell("plain")
+    ctx.tf2e.connect(ctx.tf2.e)
+    ctx.tf2e2 = cell("plain")
+    ctx.tf2.e2.connect(ctx.tf2e2)
 
     #raise Exception("on purpose") #causes the macro reconstruction to fail; comment it out to make it succeed
 ctx.x0 = cell("text").set("x" + str(param))
@@ -64,9 +61,13 @@ ctx.rr_link = link(ctx.rr)
         "x": "output"
     })
     ctx.tfx.code.cell().set("x = x0 + '!'")
-    ctx.macro.ctx.x0.connect(ctx.tfx.x0)
+    ctx.tfx_x0 = cell("text")
+    ctx.tfx_x0.connect(ctx.tfx.x0)
+    ctx.macro.ctx.x0.connect(ctx.tfx_x0)
     ctx.x = cell("text")
-    ctx.tfx.x.connect(ctx.macro.ctx.x_link)
+    ctx.tfxx = cell("text")
+    ctx.tfx.x.connect(ctx.tfxx)
+    ctx.tfxx.connect(ctx.macro.ctx.x_link)
     ctx.tfx.x.connect(ctx.x)
     ctx.y = cell("text")
     ctx.macro.ctx.y.connect(ctx.y)
@@ -74,23 +75,22 @@ ctx.rr_link = link(ctx.rr)
     ctx.e2 = cell("plain")
     p_d = path(ctx.macro.ctx).d
     p_d.connect(ctx.e)
-    p_tf2 = path(ctx.macro.ctx).tf2
-    ctx.e.connect(p_tf2.e)
-    p_tf2.e2.connect(ctx.e2)
+    p_tf2e = path(ctx.macro.ctx).tf2e
+    p_tf2e2 = path(ctx.macro.ctx).tf2e2
+    ctx.e.connect(p_tf2e)
+    p_tf2e2.connect(ctx.e2)
     ctx.z = cell("text").set("z")
     ctx.z_link = link(ctx.z)
     ctx.z_link.connect(ctx.macro.ctx.z)
     ctx.q = cell("text")
     ctx.macro.ctx.q_link.connect(ctx.q)
-    ctx.macro.ctx.q.connect(ctx.macro.ctx.qq)
+    ctx.subq = cell("text")
+    ctx.macro.ctx.q.connect(ctx.subq)
+    ctx.subq.connect(ctx.macro.ctx.qq)
     ctx.r = cell("text")
     ctx.r_link = link(ctx.r)
     ctx.macro.ctx.r_link.connect(ctx.r_link)
     ctx.r.connect(ctx.macro.ctx.rr_link)
-
-    ctx.async_macro = macro({})
-    ctx.dummycode = pymacrocell().set("pass")
-    ctx.dummycode.connect(ctx.macro.ctx.not_async_submacro.code)
 
 def report():
     d = "<non-existent>"
@@ -131,6 +131,7 @@ print("""Change to 1
 Should change to non-existent for .d
 Should change to None for .e, .e2
 """)
+raise NotImplementedError #should change to None!
 ctx.param.set(1)
 ctx.equilibrate()
 report()

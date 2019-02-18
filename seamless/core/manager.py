@@ -238,6 +238,8 @@ class Manager:
         print(stars + msg + stars, file=sys.stderr)
 
     def set_transformer_result(self, level1, level2, value, checksum, prelim):
+        from .link import Link
+        from .macro import Path
         print("TODO: Manager.set_transformer_result: expand code properly, see evaluate.py")
         # TODO: this function is not checked for exceptions when called from a remote job...""
         assert value is not None or checksum is not None        
@@ -253,6 +255,12 @@ class Manager:
             tstatus.data = "OK"
             tstatus.auth = "OBSOLETE" # To provoke an update
             for cell in tcache.transformer_to_cells[tf]:
+                if isinstance(cell, Link):
+                    cell = cell.linked()
+                if isinstance(cell, Path):
+                    cell = cell._cell
+                    if cell is None:
+                        continue    
                 status = self.status[cell]
                 if prelim:
                     if status.auth == "FRESH":
@@ -455,6 +463,11 @@ class Manager:
     def _propagate_status(self, cell, data_status, auth_status, full, origin=None):
         # "full" indicates a value change, but it is just propagated to update_worker
         from .reactor import Reactor
+        from .macro import Path
+        if isinstance(cell, Path):
+            cell = cell._cell
+            if cell is None:
+                return
         if cell._celltype == "structured": raise NotImplementedError ### cache branch
         status = self.status[cell]
         new_data_status = status.data
@@ -698,6 +711,7 @@ class Manager:
             raise TypeError(worker, type(worker))
 
     def _verify_connect(self, source, target):
+        from .macro import Path
         assert source._root()._manager is self
         assert source._root() is target._root()
         source_macro = source._get_macro()
@@ -713,11 +727,11 @@ class Manager:
                 if not target_macro._context()._part_of2(current_macro._context()):
                     msg = "%s is not part of current %s"
                     raise Exception(msg % (target_macro, current_macro))
-        path_source = (source_macro is not current_macro)
-        path_target = (target_macro is not current_macro)
+        path_source = (source_macro is not current_macro or isinstance(source, Path))
+        path_target = (target_macro is not current_macro or isinstance(target, Path))
         if path_source and path_target:
-            msg = "Neither %s nor %s was created by current macro %s"
-            raise Exception(msg % (source_macro, target_macro, current_macro))
+            msg = "Neither %s (governing %s) nor %s (governing %s) was created by current macro %s"
+            raise Exception(msg % (source_macro, source, target_macro, target, current_macro))
         return path_source, path_target
 
     def _connect_cell_transformer(self, cell, pin):
@@ -897,19 +911,22 @@ class Manager:
 
     def _cell_upstream(self, cell, skip_path=None):
         # Returns the upstream dependency of a cell
-        for path in cell._paths:
-            if path is skip_path:
-                continue
-            result = self._find_cell_from_cell(path)
-            if result is not None:
-                return result
+        from .cell import Cell
+        if isinstance(cell, Cell):
+            for path in cell._paths:
+                if path is skip_path:
+                    continue
+                result = self._find_cell_from_cell(path)
+                if result is not None:
+                    return result
         result = self._find_cell_from_cell(cell)
         if result is not None:
             return result
         return self.cell_cache.cell_from_upstream.get(cell)
 
     def _connect_cell_cell(self, source, target):
-        from .macro import create_path
+        from .macro import Path, create_path
+        from .cell import Cell
         path_source, path_target = self._verify_connect(source, target)     
         current_upstream = self._cell_upstream(target)
         if current_upstream is not None:
@@ -918,17 +935,24 @@ class Manager:
         connection = []
         accessors = []
         for cell, path_cell in (source, path_source), (target, path_target):
-            if cell._celltype == "structured": raise NotImplementedError ### cache branch
-            accessor = self.get_default_accessor(cell)
+            if isinstance(cell, Cell):
+                if cell._celltype == "structured": raise NotImplementedError ### cache branch
+                accessor = self.get_default_accessor(cell)
+            else:
+                assert isinstance(cell, Path)
+                assert path_cell, (cell, path_cell)
+                accessor = None
             if path_cell:
                 path = create_path(cell)
                 connect = path
             else:
                 connect = accessor
             connection.append(connect)
-            accessors.append(accessor)
+            if accessor is not None:
+                accessors.append(accessor)
         self.cell_to_cell.append(connection)
-        self.update_accessor_accessor(*accessors)
+        if len(accessors) == 2:
+            self.update_accessor_accessor(*accessors)
 
     def update_accessor_accessor(self, source, target):
         assert source.source_access_mode is None
@@ -952,7 +976,7 @@ class Manager:
     def update_path_value(self, path):
         # Slow! needs to be improved (TODO)
         from .macro import Path
-        for source, target in self.cell_to_cell:
+        for source, target in self.cell_to_cell:            
             if isinstance(source, Path):
                 if source._cell is None:
                     continue
@@ -1001,7 +1025,10 @@ class Manager:
         from .link import Link
         from .cell import Cell
         from .worker import PinBase
-        if not isinstance(cell, Cell):
+        from .macro import Path
+        if isinstance(cell, Link):
+            cell = cell.get_linked()
+        if not isinstance(cell, (Cell, Path)):
             raise TypeError(cell)
         if isinstance(other, Link):
             other = other.get_linked()
@@ -1012,8 +1039,8 @@ class Manager:
                 msg = str(other) + ": macro-generated pins/paths may not be connected outside the macro"
                 raise Exception(msg)
             if path_cell:
-                msg = str(cell) + ": macro-generated cells/paths may only be connected to cells"
-                raise Exception(msg)                
+                msg = str(cell) + ": macro-generated cells/paths may only be connected to cells, not %s"
+                raise Exception(msg % other)                
             worker = other.worker_ref()
             if isinstance(worker, Transformer):
                 self._connect_cell_transformer(cell, other)
@@ -1023,7 +1050,7 @@ class Manager:
                 self._connect_cell_macro(cell, other)
             else:
                 raise TypeError(type(worker))
-        elif isinstance(other, Cell): # TODO: channels also go here 
+        elif isinstance(other, (Cell, Path)): # TODO: channels also go here 
             self._connect_cell_cell(cell, other)
         else:
             raise TypeError(type(other))

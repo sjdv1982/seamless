@@ -173,7 +173,8 @@ class Macro(Worker):
     def ctx(self):
         if get_macro_mode():
             current_macro = curr_macro()
-            return Path(current_macro, self.path).ctx
+            path = Path(current_macro, self.path, manager=self._get_manager())
+            return path.ctx
         assert self._gen_context is not None
         return self._gen_context
 
@@ -183,10 +184,19 @@ class Macro(Worker):
 
 
 class Path:
-    def __init__(self, macro, path):
+    def __new__(cls, macro, path, *, manager=None):
+        if not isinstance(path, tuple):
+            raise TypeError(path)
+        from .unbound_context import UnboundManager
+        from .manager import Manager
         if macro is None:
-            assert path not in _global_paths, path
-            _global_paths[path] = self
+            if path in _global_paths:
+                return _global_paths[path]
+        self = object.__new__(cls)
+        if macro is None:
+            assert manager is not None
+            assert isinstance(manager, (Manager, UnboundManager)), type(manager)
+            _global_paths[path] = self            
         else:
             assert path not in macro._paths, path
             macro._paths[path] = self
@@ -194,26 +204,44 @@ class Path:
         self._path = path
         self._incoming = False
         self._cell = None
+        self._manager = manager
+        return self
 
     def _get_macro(self):
         return self._macro
 
     def _root(self):
-        return self._macro._root()
+        from .unbound_context import UnboundManager
+        if self._macro is not None:
+            return self._macro._root()
+        elif self._manager is not None:
+            if isinstance(self._manager, UnboundManager):
+                root = self._manager._ctx()
+                assert root._bound is not None
+                return root._bound
+            else:
+                root = self._manager.ctx()
+                return root
+        else:
+            raise AttributeError
 
     def __getattr__(self, attr):
         if attr.startswith("_"):
             raise AttributeError(attr)
-        return Path(self._macro, self._path + (attr,))
+        return Path(self._macro, self._path + (attr,), manager=self._manager)
 
     def connect(self, other):
         if self._cell is not None:
             return self._cell.connect(other)
-        elif self._macro is not None and self._macro._unbound_gen_context is not None:
-            manager = self._macro._unbound_gen_context._manager
-            return manager.connect_cell(self, other)
         else:
-            raise AttributeError
+            manager = self._manager
+            if manager is None:
+                if self._macro is not None and \
+                  self._macro._unbound_gen_context is not None:
+                    manager = self._macro._unbound_gen_context._manager
+                else:
+                    raise AttributeError
+            return manager.connect_cell(self, other)
 
     def _bind(self, cell, trigger):
         if cell is self._cell:
@@ -258,7 +286,17 @@ class Path:
 
 
 def path(obj):
-    return Path(obj._macro, obj.path)
+    from .unbound_context import UnboundManager
+    try:
+        try:
+            manager = obj._get_manager()
+        except AttributeError:
+            manager = obj._manager
+        if not isinstance(manager, UnboundManager):
+            raise AttributeError
+    except AttributeError:
+        manager = None
+    return Path(obj._macro, obj._path, manager=manager)
 
 _global_paths = weakref.WeakValueDictionary() # Paths created in direct mode, or macro mode 
 
@@ -287,6 +325,8 @@ def replace_path(v, toplevel):
 
 def create_path(cell):
     from .cell import Cell
+    if isinstance(cell, Path):
+        return cell
     if not isinstance(cell, Cell):
         raise TypeError(cell)
     path = cell.path
@@ -297,18 +337,19 @@ def create_path(cell):
     else:
         if path in current_macro._paths:
             return current_macro._paths[path]
-    path = Path(current_macro, cell.path)
+    path = Path(current_macro, path, manager=cell._get_manager())
     path._bind(cell, trigger=False)
     return path
 
 def macro(params, *, lib=None):
     return Macro(params, lib=lib)
 
-from . import cell, transformer, pytransformercell, link, \
+from . import cell, transformer, pytransformercell, \
  reactor, pyreactorcell, pymacrocell, plaincell, csoncell,  \
  arraycell, mixedcell, pythoncell
 from .structured_cell import StructuredCell, BufferWrapper
 from .context import context
+from .link import link
 names = ("cell", "transformer", "context", "pytransformercell", "link", 
  "reactor", "pyreactorcell", "pymacrocell", "plaincell", "csoncell",
  "mixedcell", "arraycell", "pythoncell") #TODO: , "ipythoncell", "libcell", "libmixedcell") ### cache branch

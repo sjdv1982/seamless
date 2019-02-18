@@ -228,6 +228,7 @@ class UnboundContext(SeamlessBase):
 
     def _bind_stage2(self, manager):
         from .macro import replace_path
+        macro = self._macro
         for com, args in self._manager.commands:
             if com == "set cell":
                 cell, value, from_buffer, buffer_checksum = args
@@ -238,12 +239,18 @@ class UnboundContext(SeamlessBase):
                 )
             elif com == "connect cell":                
                 cell, other = args
-                cell = replace_path(cell, manager.ctx())
-                if cell is None:
-                    continue
-                other = replace_path(other, manager.ctx())
-                if other is None:
-                    continue
+                cell2 = replace_path(cell, manager.ctx())
+                if cell2 is None:
+                    if macro is not None:
+                        continue
+                else:
+                    cell = cell2
+                other2 = replace_path(other, manager.ctx())
+                if other2 is None:
+                    if macro is not None:
+                        continue
+                else:
+                    other = other2
                 manager.connect_cell(cell, other)
             elif com == "connect pin":
                 pin, cell = args
