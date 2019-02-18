@@ -478,7 +478,7 @@ class Manager:
                 ( self.cell_cache.cell_to_accessors[cell] ),
                 ( self.get_default_accessor(cell), ),
             )
-            for accessor in accessors:                
+            for accessor in accessors:
                 haccessor = hash(accessor)
                 for target_cell in acache.haccessor_to_cells.get(haccessor, []):
                     self._propagate_status(
@@ -487,13 +487,15 @@ class Manager:
                 for worker, acc in acache.haccessor_to_workers.get(haccessor, []):
                     if acc is None:
                         acc = accessor
+                    else:
+                        if acc.cell is not cell:
+                            continue
                     if full and isinstance(worker, Reactor):
                         rtreactor = self.reactors[worker]
                         for pinname, accessor2 in rtreactor.input_dict.items():
                             if accessor2.cell is cell:
                                 rtreactor.updated.add(pinname)
-                    if not worker._active: #this can happen!
-                        return 
+                    if not worker._active: return ###TODO: should not happen (and so far, doesn't seem to)
                     self.update_worker_status(worker, full)
             self.update_cell_to_cells(cell, data_status, auth_status, full, origin)
             if full:
