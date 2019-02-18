@@ -75,6 +75,7 @@ ctx.equilibrate()
 print(ctx.macro.ctx.series.value)
 assert ctx.macro.ctx.series.value == refe
 
+#import sys; sys.exit()
 start = 32
 refe = refe_collatz(start)
 print(refe)

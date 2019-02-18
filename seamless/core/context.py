@@ -7,7 +7,7 @@ from contextlib import contextmanager
 
 from . import SeamlessBase
 from .macro_mode import get_macro_mode, curr_macro, toplevel_register
-from .mount import is_dummy_mount, MountItem, scan as mount_scan
+from .mount import is_dummy_mount
 
 
 class StatusReport(dict):
@@ -56,18 +56,13 @@ name: str
             self._toplevel = True
             self._manager = Manager(self)
         if mount is not None:
-            if not get_macro_mode():
-                self._mount = {
-                    "autopath": False,
-                    "path": mount,
-                    "mode": "rw",
-                    "authority": "file",
-                    "persistent": True
-                }
-                MountItem(None, self, dummy=True, **self._mount) #to validate parameters
-                mount_scan(self)
-            else:
-                self.mount(mount)
+            mount_params = {
+                "path": mount,
+                "mode": "rw",
+                "authority": "file",
+                "persistent": True
+            }
+            self.mount(**mount_params)
         self._children = {}
         self._auto = set()
         if toplevel:
@@ -86,7 +81,7 @@ name: str
         self._name = context_name + (name,)
 
     def _get_manager(self):
-        assert self._toplevel or self._context is not None  #context must have a parent, or be toplevel
+        assert self._toplevel or self._context is not None or self._macro is not None #context must have a parent, or be toplevel, or have a macro
         return self._root()._manager
 
     def __str__(self):
@@ -98,15 +93,14 @@ name: str
 
     def _add_child(self, childname, child):
         from .unbound_context import UnboundContext
-        if not isinstance(child, (Context, UnboundContext, Worker, Cell, Link, StructuredCell)):
+        if isinstance(child, UnboundContext):
+            raise TypeError("Cannot add an unbound context to a bound one")
+        if not isinstance(child, (Context, Worker, Cell, Link, StructuredCell)):
             raise TypeError(child, type(child))
         if isinstance(child, Context):
             assert child._context is None
         self._children[childname] = child
         child._set_context(self, childname)
-        if not get_macro_mode():
-            if not isinstance(child, Worker):
-                mount_scan(child)
         
 
     def _add_new_cell(self, cell):
@@ -168,8 +162,8 @@ name: str
 
     @property
     def path(self):
-        if self._macro is not None:
-            return self._macro.path + (self.name,)
+        if self._macro is not None and self._context is None:
+            return self._macro.path + ("ctx",)
         else:
             return super().path
 
@@ -177,7 +171,7 @@ name: str
         for child in self._children.values():
             child._cached_path = None
             child._cached_path = child.path
-            if isinstance(child, (Context, UnboundContext)):
+            if isinstance(child, Context):
                 child._cache_paths()
 
 
@@ -234,23 +228,8 @@ name: str
 
     def mount(self, path=None, mode="rw", authority="cell", persistent=False):
         if not get_macro_mode():
-            if self._toplevel:
-                msg = "In direct mode, toplevel contexts must be mounted at construction"
-                raise Exception(msg)
-            if self._context is not None and isinstance(self._context(), Context):
-                msg = "In direct mode, mounting must happen before a context is assigned to a parent"
-                raise Exception(msg)
-        self._mount = {
-            "autopath": False,
-            "path": path,
-            "mode": mode,
-            "authority": authority,
-            "persistent": persistent
-        }
-        MountItem(None, self, dummy=True, **self._mount) #to validate parameters
-        if not get_macro_mode():
-            mount_scan(self)
-        return self
+            msg = "Mounting in direct mode is not possible"
+            raise Exception(msg)
 
     def __dir__(self):
         result = []
@@ -270,7 +249,6 @@ name: str
         return _InternalChildrenWrapper(self)
 
     def destroy(self, from_del=False):
-        self._unmount(from_del=from_del)
         if self._destroyed:
             return
         object.__setattr__(self, "_destroyed", True)
@@ -279,49 +257,17 @@ name: str
                 child.destroy(from_del=from_del)
         if self._toplevel:
             toplevel_register.remove(self)
+        self._unmount(from_del=from_del)
 
     def _unmount(self, from_del=False):
-        """Unmounts a context while the mountmanager is reorganizing (during macro execution)
-        The unmount will set all x._mount to None, but only if and when the reorganization succeeds
-        """
         from .macro import Macro
         if self._unmounted:
             return
-        object.__setattr__(self, "_unmounted" , True) #can be outside macro mode
+        self._unmounted = True
         manager = self._root()._manager
         mountmanager = manager.mountmanager
-        for childname, child in self._children.items():
-            if isinstance(child, (Cell, Link)):
-                if not is_dummy_mount(child._mount):
-                    raise NotImplementedError ### cache branch
-                    if not from_del:
-                        assert mountmanager.reorganizing
-                    mountmanager.unmount(child, from_del=from_del)
-        for childname, child in self._children.items():
-            if isinstance(child, (Context, Macro)):
-                child._unmount(from_del=from_del)
         if not is_dummy_mount(self._mount) or self._root() is self:
-            mountmanager.unmount_context(self, from_del=True)
-
-    def _remount(self):
-        """Undo an _unmount"""
-        raise NotImplementedError ### cache branch
-        object.__setattr__(self, "_unmounted" , False) #can be outside macro mode
-        for childname, child in self._children.items():
-            if isinstance(child, (Context, Macro)):
-                child._remount()
-
-    def full_destroy(self, from_del=False):
-        #all work buffers (work queue and manager work buffers) are now empty
-        # time to free memory
-        raise NotImplementedError ### cache branch
-        from .macro import Macro
-        path = self.path
-        for childname, child in self._children.items():
-            if isinstance(child, Worker):
-                child.full_destroy(from_del=from_del)
-            if isinstance(child, (Context, Macro)):
-                child.full_destroy(from_del=from_del)
+            mountmanager.unmount_context(self, from_del=from_del)
 
     def __del__(self):
         if self._destroyed:
@@ -331,9 +277,9 @@ name: str
 
 
 Context._methods = [m for m in Context.__dict__ if not m.startswith("_") \
-      and m not in ("destroy", "full_destroy") ]
+      and m not in ("destroy", ) ]
 Context._methods += [m for m in SeamlessBase.__dict__  if not m.startswith("_") \
-      and m != "StatusFlags" and m not in ("destroy", "full_destroy") \
+      and m != "StatusFlags" and m not in ("destroy",) \
       and m not in Context._methods]
 
 def context(**kwargs):
@@ -347,7 +293,7 @@ def context(**kwargs):
 context.__doc__ = Context.__init__.__doc__
 
 class _ContextWrapper:
-    _methods = Context._methods + ["destroy", "full_destroy"]
+    _methods = Context._methods + ["destroy"]
     def __init__(self, wrapped):
         super().__setattr__("_wrapped", wrapped)
     def __getattr__(self, attr):

@@ -310,7 +310,6 @@ class Context:
                     layer.clear_objects(self._gen_context)
                     self._gen_context.self.destroy()
                     self._gen_context._manager.flush()
-                    self._gen_context.full_destroy()
             self._gen_context = ctx
         except Exception as exc:
             if not ok:
@@ -318,7 +317,6 @@ class Context:
                 try:
                     if ctx is not None:
                         ctx.self.destroy()
-                        ctx.full_destroy()
                     if self._gen_context is not None:
                         with macro_mode_on():
                             self._gen_context._remount()

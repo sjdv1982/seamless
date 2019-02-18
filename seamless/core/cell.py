@@ -26,6 +26,7 @@ Use ``Cell.status()`` to get its status.
     _default_access_mode = None
     _content_type = None
     _prelim_val = None
+    _unmounted = False
 
     _mount = None
     _mount_kwargs = None
@@ -208,15 +209,17 @@ Use ``Cell.status()`` to get its status.
         authority: "cell", "file" or "file-strict"
         persistent: whether or not the file persists after the context has been destroyed
         """
-        from .mount import is_dummy_mount
         from .context import Context
         assert is_dummy_mount(self._mount) #Only the mountmanager may modify this further!
         if self._mount_kwargs is None:
             raise NotImplementedError #cannot mount this type of cell
         if not get_macro_mode():
-            if self._context is not None and isinstance(self._context(), Context):
-                msg = "In direct mode, mounting must happen before a cell is assigned to a context"
-                raise Exception(msg)
+            msg = "Mounting in direct mode is not possible"
+            raise Exception(msg)
+        if self._context is not None and isinstance(self._context(), Context):
+            msg = "The parent of this cell has already been constructed"
+            raise Exception(msg)
+
         kwargs = self._mount_kwargs
         if self._mount is None:
             self._mount = {}
@@ -240,11 +243,22 @@ Use ``Cell.status()`` to get its status.
         self._share_callback = share_callback
 
     def destroy(self, *, from_del=False):
+        super().destroy(from_del=from_del)
         if not from_del:
             self._get_manager()._destroy_cell(self)
             for path in list(self._paths):
                 path._bind(None, trigger=True)
-        super().destroy(from_del=from_del)
+        self._unmount()
+        
+    def _unmount(self, from_del=False):
+        from .macro import Macro
+        if self._unmounted:
+            return
+        self._unmounted = True
+        manager = self._root()._manager
+        mountmanager = manager.mountmanager
+        if not is_dummy_mount(self._mount):
+            mountmanager.unmount(self, from_del=from_del)
 
 class ArrayCell(Cell):
     """A cell in binary array (Numpy) format"""
@@ -434,6 +448,7 @@ extensions = {
 
 from .unbound_context import UnboundManager
 from .mount import MountItem
+from .mount import is_dummy_mount
 
 """
 TODO Documentation: only-text changes

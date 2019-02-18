@@ -7,13 +7,13 @@ with macro_mode_on():
     ctx = context(toplevel=True)
     ctx.param = cell().set(1)
 
-    ctx.macro = macro({
+    ctx.mymacro = macro({
         "param": "copy",
     })
 
-    ctx.param.connect(ctx.macro.param)
+    ctx.param.connect(ctx.mymacro.param)
     def macro_code(ctx, param):
-        ctx.sub = context(name="sub")
+        ctx.sub = context()
         ctx.a = cell().set(1000 + param)
         ctx.b = cell().set(2000 + param)
         ctx.result = cell()
@@ -33,26 +33,26 @@ with macro_mode_on():
             #raise Exception("on purpose") #causes the macro reconstruction to fail; comment it out to make it succeed
         pass # For some reason, comments at the end are not captured with inspect.get_source?
 
-    ctx.macro_code = pymacrocell().set(macro_code)
-    ctx.macro_code.connect(ctx.macro.code)
+    ctx.mymacro_code = pymacrocell().set(macro_code)
+    ctx.mymacro_code.connect(ctx.mymacro.code)
 
-    ###ctx.mount("/tmp/mount-test", persistent=None)
+    ctx.mount("/tmp/mount-test", persistent=False)
 
 
 print("START")
 ### ctx.equilibrate()
-print(ctx.macro.ctx.a.value)
-print(ctx.macro.ctx.b.value)
-print(hasattr(ctx.macro.ctx, "d"))
-print(ctx.macro.ctx.result.value) #None instead of 3002, unless you enable ctx.equilibrate above
+print(ctx.mymacro.ctx.a.value)
+print(ctx.mymacro.ctx.b.value)
+print(hasattr(ctx.mymacro.ctx, "d"))
+print(ctx.mymacro.ctx.result.value) #None instead of 3002, unless you enable ctx.equilibrate above
 
 def mount_check():
-    return ###
     from seamless.core.mount import mountmanager #singleton
-    for c in (ctx.macro_code, ctx.param, ctx.macro.ctx.a, ctx.macro.ctx.b, ctx.macro.ctx.code):
+    paths = mountmanager.paths[ctx._root()]
+    for c in (ctx.mymacro_code, ctx.param, ctx.mymacro.ctx.a, ctx.mymacro.ctx.b, ctx.mymacro.ctx.code):
         path = c._mount["path"]
         assert c in mountmanager.mounts, c
-        assert path in mountmanager.paths, (c, path)
+        assert path in paths, (c, path)
         assert mountmanager.mounts[c].path == path, (c, path, mountmanager.mounts[c].path)
 
 mount_check()
@@ -60,80 +60,80 @@ mount_check()
 print("Change 1")
 ctx.param.set(2)
 ctx.equilibrate()
-# Note that ctx.macro.ctx is now a new context, and
+# Note that ctx.mymacro.ctx is now a new context, and
 #   any old references to the old context are invalid
 # But this is a concern for the high-level!
 
-print(ctx.macro.ctx.a.value)
-print(ctx.macro.ctx.b.value)
-print(ctx.macro.ctx.hasattr("d"))
-if ctx.macro.ctx.hasattr("d"):
-    print(ctx.macro.ctx.d.value)
-print(ctx.macro.ctx.result.value) #will never be None! 3002 if the reconstruction failed, 3004 if it succeeded
+print(ctx.mymacro.ctx.a.value)
+print(ctx.mymacro.ctx.b.value)
+print(ctx.mymacro.ctx.hasattr("d"))
+if ctx.mymacro.ctx.hasattr("d"):
+    print(ctx.mymacro.ctx.d.value)
+print(ctx.mymacro.ctx.result.value) #will never be None! 3002 if the reconstruction failed, 3004 if it succeeded
 
 mount_check()
 
 print("Change 2")
-ctx.macro_code.set(
-    ctx.macro_code.value + "   "
+ctx.mymacro_code.set(
+    ctx.mymacro_code.value + "   "
 )
 ctx.equilibrate() # No execution
 
 mount_check()
 
 print("Change 3")
-ctx.macro_code.set(
-    ctx.macro_code.value.replace("#raise Exception", "raise Exception")
+ctx.mymacro_code.set(
+    ctx.mymacro_code.value.replace("#raise Exception", "raise Exception")
 )
 ctx.equilibrate()
 
-print(ctx.macro.ctx.a.value)
-print(ctx.macro.ctx.b.value)
-print(ctx.macro.ctx.hasattr("d"))
-if ctx.macro.ctx.hasattr("d"):
-    print(ctx.macro.ctx.d.value)
-print(ctx.macro.ctx.result.value) #will never be None! 3002 if the reconstruction failed, 3004 if it succeeded
+print(ctx.mymacro.ctx.a.value)
+print(ctx.mymacro.ctx.b.value)
+print(ctx.mymacro.ctx.hasattr("d"))
+if ctx.mymacro.ctx.hasattr("d"):
+    print(ctx.mymacro.ctx.d.value)
+print(ctx.mymacro.ctx.result.value) #will never be None! 3002 if the reconstruction failed, 3004 if it succeeded
 
 mount_check()
 
 print("Change 4")
-ctx.macro_code.set(
-    ctx.macro_code.value.replace("raise Exception", "#raise Exception")
+ctx.mymacro_code.set(
+    ctx.mymacro_code.value.replace("raise Exception", "#raise Exception")
 )
 ctx.equilibrate()
-print(ctx.macro.ctx.a.value)
-print(ctx.macro.ctx.b.value)
-print(ctx.macro.ctx.hasattr("d"))
-if ctx.macro.ctx.hasattr("d"):
-    print(ctx.macro.ctx.d.value)
-print(ctx.macro.ctx.result.value) #will never be None! 3002 if the reconstruction failed, 3004 if it succeeded
+print(ctx.mymacro.ctx.a.value)
+print(ctx.mymacro.ctx.b.value)
+print(ctx.mymacro.ctx.hasattr("d"))
+if ctx.mymacro.ctx.hasattr("d"):
+    print(ctx.mymacro.ctx.d.value)
+print(ctx.mymacro.ctx.result.value) #will never be None! 3002 if the reconstruction failed, 3004 if it succeeded
 
 print("Change 5")
 ctx.param.set(0)
 ctx.equilibrate()
-print(ctx.macro.ctx.a.value)
-print(ctx.macro.ctx.b.value)
-print(ctx.macro.ctx.hasattr("d"))
-if ctx.macro.ctx.hasattr("d"):
-    print(ctx.macro.ctx.d.value)
-print(ctx.macro.ctx.result.value) #will never be None! 3002 if the reconstruction failed, 3004 if it succeeded
+print(ctx.mymacro.ctx.a.value)
+print(ctx.mymacro.ctx.b.value)
+print(ctx.mymacro.ctx.hasattr("d"))
+if ctx.mymacro.ctx.hasattr("d"):
+    print(ctx.mymacro.ctx.d.value)
+print(ctx.mymacro.ctx.result.value) #will never be None! 3002 if the reconstruction failed, 3004 if it succeeded
 
 mount_check()
 
 print("Change 6")
 ctx.param.set(999)
-print(ctx.macro.ctx.a.value)
-print(ctx.macro.ctx.b.value)
-print(ctx.macro.ctx.hasattr("d"))
-if ctx.macro.ctx.hasattr("d"):
-    print(ctx.macro.ctx.d.value)
-print(ctx.macro.ctx.result.value) #will never be None! 3002 if the reconstruction failed, 3004 if it succeeded
+print(ctx.mymacro.ctx.a.value)
+print(ctx.mymacro.ctx.b.value)
+print(ctx.mymacro.ctx.hasattr("d"))
+if ctx.mymacro.ctx.hasattr("d"):
+    print(ctx.mymacro.ctx.d.value)
+print(ctx.mymacro.ctx.result.value) #will never be None! 3002 if the reconstruction failed, 3004 if it succeeded
 
 mount_check()
 
+print("CTX2")
 with macro_mode_on():
     ctx2 = context(toplevel=True)
 del ctx2
 
 print("STOP")
-#import sys; sys.exit()

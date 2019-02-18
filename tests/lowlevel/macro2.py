@@ -1,42 +1,50 @@
 import seamless
-#seamless.core.cache.use_caching = False ###
 from seamless.core import macro_mode_on
 from seamless.core import context, cell, transformer, pymacrocell, macro
 
 with macro_mode_on():
     ctx = context(toplevel=True)
-    ctx.param = cell("json").set(1)
+    ctx.param = cell("plain").set(1)
 
-    ctx.macro = macro({
+    ctx.mymacro = macro({
         "param": "copy",
     })
 
-    ctx.param.connect(ctx.macro.param)
+    ctx.param.connect(ctx.mymacro.param)
     ctx.inp = cell("text").set("INPUT")
-    ctx.macro_code = pymacrocell().set("""
-print("Execute macro")
+    ctx.mymacro_code = pymacrocell().set("""
+print("Executing 'mymacro'...")
 ctx.submacro = macro({
     "inp": "copy"
 })
 ctx.submacro_code = pymacrocell().set('''
-print("Execute submacro")
-ctx.inp = cell("text").set(inp + "!!!")
-''')
+print("Executing 'submacro, param = %s'...")
+ctx.myinp = cell("text").set(inp + "!!!")
+''' % param)
 ctx.submacro_code.connect(ctx.submacro.code)
-    """)
-    ctx.macro_code.connect(ctx.macro.code)
-    ctx.inp.connect(ctx.macro.ctx.submacro.inp)
+ctx.inp2 = cell("text")
+ctx.inp2.connect(ctx.submacro.inp)
+""")
+    ctx.mymacro_code.connect(ctx.mymacro.code)
+    ctx.inp.connect(ctx.mymacro.ctx.inp2)
 
-print(ctx.macro.ctx.submacro.ctx.inp.value)
-ctx.macro.ctx.submacro.ctx.inp.set(10)
-print(ctx.macro.ctx.submacro.ctx.inp.value)
+print(ctx.mymacro.ctx.submacro.ctx.myinp.value)
+ctx.mymacro.ctx.submacro.ctx.myinp.set(10)
+print(ctx.mymacro.ctx.submacro.ctx.myinp.value)
+print("*" * 60)
 print("Stage 1")
+print("*" * 60)
 ctx.inp.set("INP")
-print(ctx.macro.ctx.submacro.ctx.inp.value)
-ctx.macro.ctx.submacro.ctx.inp.set(20)
-print(ctx.macro.ctx.submacro.ctx.inp.value)
+print(ctx.mymacro.ctx.submacro.ctx.myinp.value)
+ctx.mymacro.ctx.submacro.ctx.myinp.set(20)
+print(ctx.mymacro.ctx.submacro.ctx.myinp.value)
+print("*" * 60)
 print("Stage 2")
+print("*" * 60)
 ctx.param.set(2)
+print(ctx.mymacro.ctx.submacro.ctx.myinp.value)
+print("*" * 60)
 print("Stage 3")
+print("*" * 60)
 ctx.inp.set("INP2")
-print(ctx.macro.ctx.submacro.ctx.inp.value)
+print(ctx.mymacro.ctx.submacro.ctx.myinp.value)

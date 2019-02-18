@@ -8,6 +8,6 @@ with macro_mode_on():
         "b": "input",
         "c": "output"
     })
-    ctx.a = cell("json").set({"1": 2})
-    ctx.b = cell("json").set(2)
+    ctx.a = cell("plain").set({"1": 2})
+    ctx.b = cell("plain").set(2)
     ctx.mount("/tmp/mount-test")

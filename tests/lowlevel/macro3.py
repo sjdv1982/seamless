@@ -1,3 +1,9 @@
+raise NotImplementedError("""
+With the changes to Path, this example can no longer work
+For one thing, Context construction is delayed until after macro mode
+For another, Paths need a manager when created, ergo a top level context
+""")
+
 import seamless
 #seamless.core.cache.use_caching = False ###
 from seamless.core import macro_mode_on
@@ -7,7 +13,7 @@ from seamless.core import context, cell, transformer, pymacrocell, \
 with macro_mode_on():
     ctx = context(toplevel=True)
     ctx.mount("/tmp/mount-test", persistent=None)
-    ctx.param = cell("json").set(0)
+    ctx.param = cell("plain").set(0)
 
     ctx.macro = macro({
         "param": "copy",
@@ -15,10 +21,10 @@ with macro_mode_on():
 
     ctx.param.connect(ctx.macro.param)
     ctx.macro_code = pymacrocell().set("""
-ctx.sub = context(context=ctx,name="sub")
-ctx.a = cell("json").set(1000 + param)
-ctx.b = cell("json").set(2000 + param)
-ctx.result = cell("json")
+ctx.sub = context()
+ctx.a = cell("plain").set(1000 + param)
+ctx.b = cell("plain").set(2000 + param)
+ctx.result = cell("plain")
 ctx.tf = transformer({
     "a": "input",
     "b": "input",
@@ -31,7 +37,7 @@ ctx.code.connect(ctx.tf.code)
 ctx.tf.c.connect(ctx.result)
 assert param != 999   # on purpose
 if param > 1:
-    ctx.d = cell("json").set(4200+param)
+    ctx.d = cell("plain").set(4200+param)
     ctx.tf2 = transformer({
         "e": "input",
         "e2": "output"
@@ -51,9 +57,6 @@ ctx.r = cell("text").set("r" + str(param))
 ctx.r_link = link(ctx.r)
 ctx.rr = cell("text")
 ctx.rr_link = link(ctx.rr)
-
-ctx.async_submacro = macro({})
-ctx.not_async_submacro = macro({})
 """)
     ctx.macro_code.connect(ctx.macro.code)
     ctx.tfx = transformer({
@@ -67,8 +70,8 @@ ctx.not_async_submacro = macro({})
     ctx.tfx.x.connect(ctx.x)
     ctx.y = cell("text")
     ctx.macro.ctx.y.connect(ctx.y)
-    ctx.e = cell("json")
-    ctx.e2 = cell("json")
+    ctx.e = cell("plain")
+    ctx.e2 = cell("plain")
     p_d = path(ctx.macro.ctx).d
     p_d.connect(ctx.e)
     p_tf2 = path(ctx.macro.ctx).tf2

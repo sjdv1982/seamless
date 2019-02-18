@@ -26,6 +26,7 @@ def _cell_from_pin(self, celltype):
 class Worker(SeamlessBase):
     """Base class for all workers."""
     _pins = None
+    _active = True
 
     def __getattr__(self, attr):
         if self._pins is None or attr not in self._pins:

@@ -492,6 +492,8 @@ class Manager:
                         for pinname, accessor2 in rtreactor.input_dict.items():
                             if accessor2.cell is cell:
                                 rtreactor.updated.add(pinname)
+                    if not worker._active: #this can happen!
+                        return 
                     self.update_worker_status(worker, full)
             self.update_cell_to_cells(cell, data_status, auth_status, full, origin)
             if full:
@@ -508,6 +510,7 @@ class Manager:
 
     def update_transformer_status(self, transformer, full, new_connection=False):
         if transformer._destroyed: return ### TODO, shouldn't happen...
+        if not transformer._active: return ### TODO, shouldn't happen...
         tcache = self.transform_cache
         accessor_dict = tcache.transformer_to_level0[transformer]
         if full:
@@ -588,6 +591,7 @@ class Manager:
 
     def update_reactor_status(self, reactor, full):
         if reactor._destroyed: return ### TODO, shouldn't happen...
+        if not reactor._active: return ### TODO, shouldn't happen...
         rtreactor = self.reactors[reactor]
         old_status = self.status[reactor]
         new_status = Status("reactor")
@@ -638,6 +642,7 @@ class Manager:
 
     def update_macro_status(self, macro):
         if macro._destroyed: return ### TODO, shouldn't happen...
+        if not macro._active: return ### TODO, shouldn't happen...
         old_status = self.status[macro]
         new_status = Status("macro")
         new_status.data, new_status.exec, new_status.auth = "OK", "FINISHED", "FRESH"
@@ -710,7 +715,7 @@ class Manager:
         path_target = (target_macro is not current_macro)
         if path_source and path_target:
             msg = "Neither %s nor %s was created by current macro %s"
-            raise Exception(msg % (source, macro, current_macro))
+            raise Exception(msg % (source_macro, target_macro, current_macro))
         return path_source, path_target
 
     def _connect_cell_transformer(self, cell, pin):
@@ -879,10 +884,9 @@ class Manager:
         # Result is returned as an accessors
         from .macro import Path
         if isinstance(cell_or_path, Path):
-            cell = path._cell
-            if cell is None:
+            if not cell_or_path._incoming:
                 return None
-            return path._incoming
+            return cell_or_path._cell
         cell = cell_or_path
         for source_accessor, target_accessor in self.cell_to_cell:
             if target_accessor.cell is cell:
@@ -1052,7 +1056,11 @@ class Manager:
             else:
                 raise TypeError(pin)
         elif isinstance(worker, Macro):
-            raise NotImplementedError ### cache branch
+            accessor = worker.input_dict.get(pin, None)
+            if accessor is None:
+                return None
+            else:
+                return accessor.cell
         else:
             raise TypeError(worker)
 
@@ -1271,6 +1279,28 @@ class Manager:
 
     def leave_macro_mode(self):
         self.schedule_jobs()
+
+    def _activate_context(self, ctx, value):
+        from .context import Context
+        from .reactor import Reactor
+        from .macro import Macro
+        from .transformer import Transformer
+        def activate(child):
+            if isinstance(child, Context):
+                for cchild in child._children.values():
+                    activate(cchild)
+            elif isinstance(child, Macro):
+                child._active = value
+                cctx = child._gen_context
+                if cctx is not None:
+                    activate(cctx)
+            elif isinstance(child, (Reactor, Transformer)):
+                child._active = value
+        activate(ctx)
+    def deactivate_context(self, ctx):
+        self._activate_context(ctx, False)                
+    def activate_context(self, ctx):
+        self._activate_context(ctx, True)                
 
     async def equilibrate(self, timeout, report, path):        
         delta = None

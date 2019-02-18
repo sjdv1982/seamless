@@ -6,7 +6,7 @@ with macro_mode_on():
     ctx = context(toplevel=True)
     ctx.cell1 = cell().set(1)
     ctx.cell2 = cell().set(2)
-    ctx.result = cell("json")
+    ctx.result = cell("plain")
     ctx.tf = transformer({
         "a": "input",
         "b": "input",
@@ -18,7 +18,7 @@ with macro_mode_on():
     ctx.code = pytransformercell().set("c = a + b")
     ctx.code.connect(ctx.tf.code)
     ctx.tf.c.connect(ctx.result)
-    ctx.f = cell("json").set({"f1": 10, "f2": 20})
+    ctx.f = cell("plain").set({"f1": 10, "f2": 20})
     ctx.f.connect(ctx.tf.f)
 
     ctx.mount("/tmp/mount-test")
@@ -33,7 +33,7 @@ c = a * f.f1 + b * f.f2
 """)
 ctx.equilibrate()
 print(ctx.result.value)
-print(ctx.status())
+print(ctx.status)
 print(ctx.f.value)
 
 shell = ctx.tf.shell()

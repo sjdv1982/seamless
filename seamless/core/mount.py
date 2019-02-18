@@ -35,6 +35,18 @@ def is_dummy_mount(mount):
         return True
     return False
 
+def lockmethod(func):
+    def wrapper(self, *args, **kwargs):
+        with self.lock:
+            return func(self, *args, **kwargs)
+    return wrapper
+
+def lockfunc(func):
+    def wrapper(*args, **kwargs):
+        with mountmanager.lock:
+            return func(*args, **kwargs)
+    return wrapper
+
 class MountItem:
     last_exc = None
     parent = None
@@ -75,6 +87,8 @@ class MountItem:
         if self.authority in ("file", "file-strict"):
             if exists:
                 with self.lock:
+                    if self._destroyed:
+                        return
                     file_buffer = self._read()
                     update_file = True
                     file_checksum = None
@@ -94,6 +108,8 @@ class MountItem:
                 if "w" in self.mode and not cell_empty:
                     checksum, buffer = self._get(cell)
                     with self.lock:
+                        if self._destroyed:
+                            return
                         self._write(buffer)
                         self._after_write(checksum)
         else: #self.authority == "cell"
@@ -101,6 +117,8 @@ class MountItem:
                 checksum, buffer = self._get(cell)
                 if "w" in self.mode:
                     with self.lock:
+                        if self._destroyed:
+                            return
                         self._write(buffer)
                         self._after_write(checksum)
  
@@ -142,6 +160,13 @@ class MountItem:
                     os.unlink(filepath)
                 return
             file_buffer = b"" if binary else ""
+        else:
+            if isinstance(file_buffer, bytes):
+                if not binary:
+                    file_buffer = file_buffer.decode()
+            elif isinstance(file_buffer, str):
+                if binary:
+                    file_buffer = file_buffer.encode()
         with open(filepath, filemode, encoding=encoding) as f:
             f.write(file_buffer)
 
@@ -172,9 +197,11 @@ class MountItem:
                 return
             status = manager.status[cell].data
             if status in ("INVALID", "UNCONNECTED"):
-                return        
+                return
         if checksum is None or self.last_checksum != checksum:
             with self.lock:
+                if self._destroyed:
+                    return
                 self._write(value, with_none=with_none)
                 self._after_write(checksum)
 
@@ -194,6 +221,8 @@ class MountItem:
         if not self._exists():
             return
         with self.lock:
+            if self._destroyed:
+                return
             stat = os.stat(self.path)
             mtime = stat.st_mtime
             file_checksum = None
@@ -201,19 +230,23 @@ class MountItem:
                 file_buffer = self._read()
                 file_checksum = self._get_file_checksum(file_buffer, cell)
                 self._after_read(file_checksum, mtime=mtime)        
-        cell_value, cell_checksum = self._get(cell)
+        cell_checksum, cell_value = self._get(cell)
         if file_checksum is not None and file_checksum != cell_checksum:
             if "r" in self.mode:
                 self.set(file_buffer, checksum=file_checksum)
             else:
                 print("Warning: write-only file %s (%s) has changed on disk, overruling" % (self.path, self.cell()))
                 with self.lock:
+                    if self._destroyed:
+                        return
                     self._write(cell_value)
                     self._after_write(cell_checksum)
 
     def _get(self, cell):
         manager = cell._get_manager()
         checksum = manager.cell_cache.cell_to_buffer_checksums.get(cell)
+        if checksum is None:
+            return None, None
         _, _, buffer = manager.value_cache.get_buffer(checksum)
         return checksum, buffer
 
@@ -292,186 +325,106 @@ class LinkItem:
         print("undestroyed link path %s" % self.path)
 
 
-class MountManagerStash:
-    """Stashes away a part of the mounts that are all under a single context
-    They can later be destroyed or restored, depending on what happens to the context
-    NOTE: While the stash is active, there are ._mount objects (in cells and contexts)
-     and MountItems that point to the same path, but with different cells and contexts
-     Therefore, for the duration of the stash, it is imperative that all those are
-      kept alive and not garbage-collected, until the stash is undone.
-     This means that stashing must be done in a Python context (= with statement)
-    """
-    def __init__(self, parent, context):
-        self._active = False
-        self.root = context._root()
-        self.parent = parent
-        self.context = context
-        self.mounts = WeakKeyDictionary()
-        self.contexts = WeakSet()
-        self.context_as_parent = WeakKeyDictionary()
-        self.paths = set()
+def build_paths(path_context, top_paths, remove):
+    path_mounts, path_contexts, path_paths = {}, set(), {}
+    if path_context is None:
+        return path_mounts, path_contexts, path_paths
+    for ctx in list(mountmanager.contexts):
+        assert not is_dummy_mount(ctx._mount), ctx
+        path = ctx._mount["path"]
+        if ctx._part_of(path_context):
+            path_paths[path] = ctx
+            path_contexts.add(ctx)
+            if remove:
+                top_paths.remove(path)
+                mountmanager.contexts.remove(ctx)
+    for cell, mountitem in mountmanager.mounts.items():        
+        assert not is_dummy_mount(cell._mount), cell
+        path = cell._mount["path"]
+        if cell._context()._part_of(path_context):
+            path_mounts[cell] = mountitem
+            path_paths[path] = cell
+            if remove:
+                top_paths.remove(path)
+    return path_mounts, path_contexts, path_paths
 
-    def activate(self):
-        assert not self._active
-        self._active = True
-        parent, context = self.parent, self.context
-        for ctx in list(parent.contexts):
-            assert not is_dummy_mount(ctx._mount), ctx
-            if ctx._root() is self.root and ctx._part_of2(context):
-                self.contexts.add(ctx)
-                parent.contexts.remove(ctx)
-                path = ctx._mount["path"]
-                parent.paths[self.root].remove(path)
-                self.paths.add(path)
-        for cell, mountitem in list(parent.mounts.items()):
-            assert not is_dummy_mount(cell._mount), cell
-            ctx = cell._context()
-            assert ctx is not None, cell
-            if ctx._root() is self.root and ctx._part_of2(context):
-                self.mounts[cell] = mountitem
-                parent.mounts.pop(cell)
-                path = cell._mount["path"]
-                parent.paths[self.root].remove(path)
-                self.paths.add(path)
+def join(items, contexts_to_mount, new, old):
+    from .context import Context
+    from .cell import Cell
+    mounts = mountmanager.mounts
+    contexts = mountmanager.contexts
+    new_mounts, new_contexts, new_paths = new
+    old_mounts, old_contexts, old_paths = old
 
-    def _build_new_paths(self):
-        """paths added by the parent since stash activation"""
-        new_paths = {}
+    for ctx in contexts_to_mount:
+        path = ctx._mount["path"]
+        new_paths[path] = ctx
+        new_contexts.add(ctx)
+    for obj, mountitem in items:        
+        assert not is_dummy_mount(obj._mount), obj
+        path = obj._mount["path"]
+        new_paths[path] = obj
+        new_mounts[obj] = mountitem
 
-        parent, context = self.parent, self.context
-        for ctx in list(parent.contexts):
-            path = ctx._mount["path"]
-            if ctx._root() is self.root and ctx._part_of2(context):
-                new_paths[path] = ctx
-        for cell, mountitem in list(parent.mounts.items()):
-            assert not is_dummy_mount(cell._mount), cell
-            ctx = cell._context()
-            if ctx._root() is self.root and ctx._part_of2(context):
-                path = cell._mount["path"]
-                new_paths[path] = mountitem
-        return new_paths
+    old_mountitems = {}
+    for old_cell, old_mountitem in list(old_mounts.items()):
+        path = old_cell._mount["path"]
+        if path in new_paths:
+            if isinstance(old_mountitem, MountItem):
+                old_mountitem._destroyed = True
+            old_mountitems[path] = old_mountitem
 
-    def undo(self):
-        from .context import Context
-        assert self._active
-        new_paths = self._build_new_paths()
-        parent, context = self.parent, self.context
-        for ctx in sorted(self.contexts, key=lambda l: -len(l.path)):
-            assert not is_dummy_mount(ctx._mount), ctx
-            path = ctx._mount["path"]
-            if path in new_paths:
-                new_context = new_paths[path]
-                object.__setattr__(new_context, "_mount", None) #since we are not in macro mode
-                new_paths.pop(path)
-            parent.contexts.add(ctx)
-            parent.paths[self.root].add(path)
-        for cell, mountitem in self.mounts.items():
-            assert not is_dummy_mount(cell._mount), cell
-            path = cell._mount["path"]
-            if path in new_paths:
-                new_mountitem = new_paths[path]
-                new_mountitem._destroyed = True
-                if isinstance(mountitem, LinkItem):
-                    new_link = new_mountitem.link()
-                    object.__setattr__(new_link, "_mount", None) #since we are not in macro mode
-                else:
-                    new_cell = new_mountitem.cell()
-                    object.__setattr__(new_cell, "_mount", None) #since we are not in macro mode
-                new_paths.pop(path)
-            parent.mounts[cell] = mountitem
-            parent.paths[self.root].add(path)
-
-        context_to_unmount = []
-        for path, obj in new_paths.items():
-            if isinstance(obj, Context):
-                context_to_unmount.append(obj)
-            elif isinstance(obj, LinkItem):
-                parent.unmount(obj.link())
-            else:
-                parent.unmount(obj.cell())
-
-        for context in sorted(context_to_unmount, key=lambda l: -len(l.path)):
-            parent.unmount_context(context)
-
-    def join(self):
-        from .context import Context
-        from .cell import Cell
-        assert self._active
-        new_paths = self._build_new_paths()
-        parent, context = self.parent, self.context
-
-        old_mountitems = {}
-        for old_cell, old_mountitem in list(self.mounts.items()):
-            assert not is_dummy_mount(old_cell._mount), old_cell
-            path = old_cell._mount["path"]
-            object.__setattr__(old_cell, "_mount", None) #since we are not in macro mode
-            if path in new_paths:
-                if isinstance(old_mountitem, MountItem):
-                    old_mountitem._destroyed = True
-                old_mountitems[path] = old_mountitem
-            else:
-                old_mountitem.destroy()
-
-        old_paths = set()
-        for old_ctx in sorted(self.contexts, key=lambda l: -len(l.path)):
-            assert not is_dummy_mount(old_ctx._mount), old_ctx
-            path = old_ctx._mount["path"]
-            if path in new_paths:
-                old_paths.add(path)
-                new_context = new_paths[path]
-                object.__setattr__(old_ctx, "_mount", None) #since we are not in macro mode
-        for path in sorted(new_paths.keys(), key=lambda p:len(p)):
-            obj = new_paths[path]
-            if isinstance(obj, Context):
-                new_context = obj
-                if path not in old_paths:
-                    assert new_context in self.context_as_parent, context
-                    parent._check_context(new_context, self.context_as_parent[new_context])
-        for path in sorted(new_paths.keys(), key=lambda p:len(p)):
-            obj = new_paths[path]
-            if isinstance(obj, MountItem):
-                new_mountitem = obj
-                #print("new_path", obj, hex(id(obj)), path in old_mountitems)
-                if path in old_mountitems:
-                    old_mountitem = old_mountitems[path]
-                    rewrite = False
-                    cell = new_mountitem.cell()
-                    if cell._val is not None:
-                        value = cell.serialize_buffer()
-                        checksum = manager.cell_cache.cell_to_buffer_checksums.get(cell)
-                        if "w" in old_mountitem.mode:
-                            if type(old_mountitem.cell()) != type(cell):
+    for new_ctx in sorted(new_contexts, key=lambda l: len(l.path)):        
+        path = new_ctx._mount["path"]
+        if path not in old_paths:
+            mountmanager._check_context(new_ctx, False)
+    
+    for path in sorted(new_paths.keys(), key=lambda p:len(p)):
+        cell = new_paths[path]
+        if isinstance(cell, Context):
+            continue
+        obj = new_mounts[cell]        
+        if isinstance(obj, MountItem):
+            new_mountitem = obj
+            if path in old_paths:
+                old_mountitem = old_mountitems[path]
+                rewrite = False
+                cell = new_mountitem.cell()
+                checksum, buffer = new_mountitem._get(cell)
+                if checksum is not None:
+                    if "w" in old_mountitem.mode:
+                        if type(old_mountitem.cell()) != type(cell):
+                            rewrite = True
+                        else:
+                            if checksum != old_mountitem.last_checksum:
                                 rewrite = True
-                            else:
-                                if checksum != old_mountitem.last_checksum:
-                                    rewrite = True
-                    if rewrite:
-                        with new_mountitem.lock:
-                            new_mountitem._write(value)
-                            new_mountitem._after_write(checksum)
-                    else:
-                        new_mountitem.last_mtime = old_mountitem.last_mtime
-                        new_mountitem.last_checksum = old_mountitem.last_checksum
+                if rewrite:
+                    with new_mountitem.lock:
+                        new_mountitem._write(buffer)
+                        new_mountitem._after_write(checksum)
                 else:
-                    new_mountitem.init()
-            elif isinstance(obj, LinkItem):
-                new_linkitem = obj
-                identical = False
-                if path in old_mountitems:
-                    old_linkitem = old_mountitems[path]
-                    linked = new_linkitem.get_linked()
-                    if linked._mount["path"] == old_linkitem.linked_path:
-                        old = old_linkitem.get_linked()
-                        if isinstance(old, Context) and isinstance(linked, Context):
-                            identical = True
-                        elif isinstance(old, Cell) and isinstance(linked, Cell):
-                            identical = True
-                    if identical:
-                        old_linkitem._destroyed = True
-                    else:
-                        old_linkitem.destroy()
-                if not identical:
-                    new_linkitem.init()
+                    new_mountitem.last_mtime = old_mountitem.last_mtime
+                    new_mountitem.last_checksum = old_mountitem.last_checksum
+            else:
+                new_mountitem.init()
+        elif isinstance(obj, LinkItem):
+            new_linkitem = obj
+            identical = False
+            if path in old_mountitems:
+                old_linkitem = old_mountitems[path]
+                linked = new_linkitem.get_linked()
+                if linked._mount["path"] == old_linkitem.linked_path:
+                    old = old_linkitem.get_linked()
+                    if isinstance(old, Context) and isinstance(linked, Context):
+                        identical = True
+                    elif isinstance(old, Cell) and isinstance(linked, Cell):
+                        identical = True
+                if identical:
+                    old_linkitem._destroyed = True
+                else:
+                    old_linkitem.destroy()
+            if not identical:
+                new_linkitem.init()
 
 class MountManager:
     _running = False
@@ -487,6 +440,7 @@ class MountManager:
         self._tick = Event()
         self.paths = WeakKeyDictionary()
 
+    @lockmethod
     def add_mount(self, cell, path, mode, authority, persistent, **kwargs):
         root = cell._root()
         if root not in self.paths:
@@ -497,48 +451,52 @@ class MountManager:
         assert path not in paths, path
         #print("add mount", path, cell)
         paths.add(path)
-        self.mounts[cell] = MountItem(self, cell, path, mode, authority, persistent, **kwargs)
-        try:
-            self._mounting = True
-            self.mounts[cell].init()
-        finally:
-            self._mounting = False
+        item = MountItem(self, cell, path, mode, authority, persistent, **kwargs)
+        self.mounts[cell] = item
+        return item
 
+    @lockmethod
     def add_link(self, link, path, persistent):
         paths = self.paths[link._root()]
         assert path not in paths, path
         #print("add link", path, link)
         paths.add(path)
-        self.mounts[link] = LinkItem(link, path, persistent)
-        self.mounts[link].init()
+        item = LinkItem(link, path, persistent)
+        self.mounts[link] = item
+        return item
 
+    @lockmethod
     def unmount(self, cell_or_link, from_del=False):
-        #print("UNMOUNT", cell_or_link, cell_or_link._mount)
         assert not is_dummy_mount(cell_or_link._mount), cell_or_link
         root = cell_or_link._root()
         if from_del and (cell_or_link not in self.mounts or root not in self.paths):
             return
-        paths = self.paths[root]
-        path = cell_or_link._mount["path"]
-        assert path in paths
-        paths.remove(path)
-        assert cell_or_link in self.mounts, (cell_or_link, path)  #... but path is in paths
         mountitem = self.mounts.pop(cell_or_link)
-        mountitem.destroy()
+        if not mountitem._destroyed:
+            paths = self.paths[root]
+            path = cell_or_link._mount["path"]
+            paths.discard(path)            
+            mountitem.destroy()
 
+    @lockmethod
     def unmount_context(self, context, from_del=False):
-        #print("unmount context", context)
-        self.contexts.discard(context) # may or may not exist, especially at __del__ time
+        if context in self.contexts:
+            self.contexts.remove(context)
+        elif not from_del:
+            return
         mount = context._mount
         if context._root() is context:
             self.paths.pop(context, None)
             if mount is None:
                 return
+        #print("unmount context", context)
         assert not is_dummy_mount(mount), context
         try:
             paths = self.paths[context._root()]
         except KeyError:
-            return
+            if not from_del:
+                return
+            paths = set()
         try:
             paths.remove(mount["path"])
         except KeyError:
@@ -551,7 +509,7 @@ class MountManager:
             except:
                 print("Error: cannot remove directory %s" % dirpath)
 
-
+    @lockmethod
     def add_context(self, context, path, as_parent):
         #print("add context", path, context, as_parent, context._mount["persistent"])
         paths = self.paths[context._root()]
@@ -562,8 +520,7 @@ class MountManager:
                 self.contexts.add(context)
         else:
             if path in paths:
-                assert context in self.contexts, (path, context)
-        self._check_context(context, as_parent)
+                assert context in self.contexts, (path, context)        
 
     def _check_context(self, context, as_parent):
         mount = context._mount
@@ -578,8 +535,8 @@ class MountManager:
                 raise Exception("Directory path '%s' does not exist, but authority is 'file-strict'" % dirpath)
             os.mkdir(dirpath)
 
+    @lockmethod
     def add_cell_update(self, cell):
-        #print("add_cell_update", cell, self.mounting)
         if self._mounting:
             return
         assert cell in self.mounts, (cell, hex(id(cell)))
@@ -652,155 +609,217 @@ class MountManager:
         for context in sorted(self.contexts,key=lambda l:-len(l.path)):
             self.unmount_context(context)
 
-def scan(ctx_or_cell):
+@lockfunc
+def scan(ctx_or_cell, *, old_context):
+    """Scans a cell or a context and its children for _mount attributes, and mounts them
+    If an old context (of the same path) is given, it will be simultaneously unmounted
+     (reusing all common mounts)
+    """
     from .context import Context
     from .cell import Cell
-    from . import Worker
+    from . import Worker, Macro
     from .structured_cell import Inchannel, Outchannel
-    contexts = set()
-    cells = set()
-    links = set()
-    mounts = mountmanager.mounts.copy()
-    if sys.exc_info()[0] is not None:
-        return #No mounting if there is an exception
-    def find_mount(c, as_parent=False, child=None):
-        if as_parent:
-            assert child is not None
-        if c in mounts:
-            result = mounts[c]
-        elif not is_dummy_mount(c._mount):
-            result = c._mount.copy()
-            if result["path"] is None:
-                parent = c._context
-                assert parent is not None, c
-                parent = parent()
-                parent_result = find_mount(parent, as_parent=True,child=c)
-                if parent_result is None:
-                    raise Exception("No path provided for mount of %s, but no ancestor context is mounted" % c)
-                result["path"] = parent_result["path"]
-                result["autopath"] = True
-        elif isinstance(c, (Inchannel, Outchannel)):
-            result = None
-        elif isinstance(c, Context) and c._toplevel:
-            result = None
-        else:
-            parent = c._context
-            assert parent is not None, c
-            parent = parent()
-            result = None
-            cc = c
-            if isinstance(c, Link):
-                cc = c.get_linked()      
-            if isinstance(cc, (Context, Cell)):
-                result = find_mount(parent, as_parent=True,child=c)
-        if not as_parent:
-            mounts[c] = result
-        if as_parent and result is not None:
-            result = copy.deepcopy(result)
-            if result["persistent"] is None:
-                result["persistent"] = False
-            result["autopath"] = True
-            result["path"] += "/" + child.name
-            if isinstance(child, Link):
-                child = child.get_linked()
-            extension = None
-            if child._mount is not None:
-                extension = child._mount.get("extension")
-            if extension is not None:
-                extension = "." + extension
-            else:
-                extension = get_extension(child)
-            result["path"] += extension
-        return result
+    assert not mountmanager._mounting
 
     root = ctx_or_cell._root()
     if root is not None and root not in mountmanager.paths:
         mountmanager.paths[root] = set()
-    
-    def enumerate_context(cctx):
-        contexts.add(cctx)
-        for child in cctx._children.values():
-            if isinstance(child, Cell):
-                cells.add(child)
-            elif isinstance(child, Context):
-                enumerate_context(child)
-    if isinstance(ctx_or_cell, Context):
-        enumerate_context(ctx_or_cell)
+    top_paths = mountmanager.paths[root]
+
+    if old_context is not None:
+        assert isinstance(ctx_or_cell, Context)
+        assert ctx_or_cell.path == old_context.path
+        new_context = ctx_or_cell
+        assert not old_context._part_of(new_context)
+        assert not new_context._part_of(old_context)
+        assert old_context._root() is root        
     else:
-        cells.add(ctx_or_cell)
+        new_context = None
+    old = build_paths(old_context, top_paths, remove=True)
 
-    for context in contexts:
-        find_mount(context)
-    for cell in cells:
-        find_mount(cell)
-
-    done_contexts = set()
-    contexts_to_mount = {}
-    def mount_context_delayed(context, as_parent=False):
-        if not context in mounts or mounts[context] is None:
-            return
-        if context in done_contexts:
+    try:
+        ok = False
+        mountitems = []
+        contexts = set()
+        cells = set()
+        links = set()
+        mounts = mountmanager.mounts.copy()
+        if sys.exc_info()[0] is not None:
+            return #No mounting if there is an exception
+        def find_mount(c, as_parent=False, child=None):
+            if as_parent:
+                assert child is not None
+            if c in mounts:
+                result = mounts[c]
+            elif not is_dummy_mount(c._mount):
+                result = c._mount.copy()
+                if result["path"] is None:
+                    parent = c._context
+                    assert parent is not None, c
+                    parent = parent()
+                    parent_result = find_mount(parent, as_parent=True,child=c)
+                    if parent_result is None:
+                        raise Exception("No path provided for mount of %s, but no ancestor context is mounted" % c)
+                    result["path"] = parent_result["path"]
+                    result["autopath"] = True
+            elif isinstance(c, (Inchannel, Outchannel)):
+                result = None
+            elif isinstance(c, Context) and c._toplevel:
+                result = None
+            else:
+                if isinstance(c, Context) and c._macro is not None and c._context is None:
+                    parent = c._macro._context
+                else:
+                    parent = c._context
+                    assert parent is not None, c
+                parent = parent()
+                result = None
+                cc = c
+                if isinstance(c, Link):
+                    cc = c.get_linked()      
+                if isinstance(cc, (Context, Cell)):
+                    result = find_mount(parent, as_parent=True,child=c)
+                elif isinstance(cc, Macro):
+                    result = find_mount(parent, as_parent=False, child=cc.ctx)
             if not as_parent:
-                contexts_to_mount[context][1] = False
-            return
-        parent = context._context
-        if parent is not None:
-            parent = parent()
-            mount_context_delayed(parent, as_parent=True)
-        object.__setattr__(context, "_mount", mounts[context]) #not in macro mode
-        contexts_to_mount[context] = [mounts[context]["path"], as_parent]
-        done_contexts.add(context)
+                mounts[c] = result
+            if as_parent and result is not None:
+                result = copy.deepcopy(result)
+                if result["persistent"] is None:
+                    result["persistent"] = False
+                result["autopath"] = True
+                if isinstance(child, Context) and child._context is None and child._macro is not None:
+                    result["path"] += "/" + child._macro.name
+                else:    
+                    result["path"] += "/" + child.name
+                if isinstance(child, Link):
+                    child = child.get_linked()
+                extension = None
+                if child._mount is not None:
+                    extension = child._mount.get("extension")
+                if extension is not None:
+                    extension = "." + extension
+                else:
+                    extension = get_extension(child)
+                result["path"] += extension
+            return result
+        
+        def enumerate_context(cctx):
+            contexts.add(cctx)
+            for child in cctx._children.values():
+                if isinstance(child, Cell):
+                    cells.add(child)
+                elif isinstance(child, Context):
+                    enumerate_context(child)
+                elif isinstance(child, Macro):
+                    if child._gen_context is not None:
+                        enumerate_context(child._gen_context)
+        if isinstance(ctx_or_cell, Context):
+            enumerate_context(ctx_or_cell)
+        else:
+            cells.add(ctx_or_cell)
 
-    for context in contexts:
-        mount_context_delayed(context)
+        for context in contexts:
+            find_mount(context)
+        for cell in cells:
+            find_mount(cell)
 
-    def propagate_persistency(c, persistent=False):
-        m = c._mount
-        if is_dummy_mount(m):
-            return
-        if persistent:
-            m["persistent"] = True
-        elif m["persistent"] == True and m["autopath"]:
-            persistent = True
-        if isinstance(c, Context):
-            if c._toplevel:
+        done_contexts = set()
+        contexts_to_mount = {}
+        def mount_context_delayed(context, as_parent=False):
+            if not context in mounts or mounts[context] is None:
                 return
-        parent = c._context
-        assert parent is not None, c
-        parent = parent()
-        propagate_persistency(parent, persistent)
-    for child in itertools.chain(contexts, cells):
-        if not is_dummy_mount(child._mount):
-            propagate_persistency(child)
+            if context in done_contexts:
+                if not as_parent:
+                    contexts_to_mount[context][1] = False
+                return
+            parent = context._context
+            if parent is not None:
+                parent = parent()
+                mount_context_delayed(parent, as_parent=True)
+            object.__setattr__(context, "_mount", mounts[context]) #not in macro mode
+            contexts_to_mount[context] = [mounts[context]["path"], as_parent]
+            done_contexts.add(context)
 
-    mount_cells = []
-    for cell in cells:
-        mount = mounts.get(cell)
-        if isinstance(mount, dict) and not is_dummy_mount(mount):
-            path = mount["path"]
-            if cell._mount_kwargs is None:
-                print("Warning: Unable to mount file path '%s': cannot mount this type of cell (%s)" % (path, type(cell).__name__))
-                continue
-            mount.update(cell._mount_kwargs)
-            object.__setattr__(cell, "_mount", mount) #not in macro mode
-            mount_cells.append(cell)
+        for context in contexts:
+            mount_context_delayed(context)
 
-    mount_links = []
-    for link in links:
-        if link in mounts and not is_dummy_mount(mounts[link]):
-            mount = mounts[link]
-            path = mount["path"]
-            object.__setattr__(link, "_mount", mount) #not in macro mode
-            mount_links.append(link)
+        def propagate_persistency(c, persistent=False):
+            m = c._mount
+            if is_dummy_mount(m):
+                return
+            if persistent:
+                m["persistent"] = True
+            elif m["persistent"] == True and m["autopath"]:
+                persistent = True
+            if isinstance(c, Context):
+                if c._toplevel:
+                    return                
+            parent = c._context
+            if isinstance(c, Context) and c._context is None and c._macro is not None:
+                parent = c._macro._context
+            assert parent is not None, c
+            parent = parent()
+            propagate_persistency(parent, persistent)
+        for child in itertools.chain(contexts, cells):
+            if not is_dummy_mount(child._mount):
+                propagate_persistency(child)
 
-    for context, v in contexts_to_mount.items():
-        path, as_parent = v
-        mountmanager.add_context(context, path, as_parent=as_parent)
-    for cell in mount_cells:
-        mountmanager.add_mount(cell, **cell._mount)
-    for link in mount_links:
-        mount = link._mount
-        mountmanager.add_link(link, mount["path"], mount["persistent"])
+        mount_cells = []
+        for cell in cells:
+            mount = mounts.get(cell)
+            if isinstance(mount, dict) and not is_dummy_mount(mount):
+                path = mount["path"]
+                if cell._mount_kwargs is None:
+                    print("Warning: Unable to mount file path '%s': cannot mount this type of cell (%s)" % (path, type(cell).__name__))
+                    continue
+                mount.update(cell._mount_kwargs)
+                object.__setattr__(cell, "_mount", mount) #not in macro mode
+                mount_cells.append(cell)
+
+        mount_links = []
+        for link in links:
+            if link in mounts and not is_dummy_mount(mounts[link]):
+                mount = mounts[link]
+                path = mount["path"]
+                object.__setattr__(link, "_mount", mount) #not in macro mode
+                mount_links.append(link)
+
+        for ctx, args in contexts_to_mount.items():
+            mountmanager.add_context(ctx, args[0], args[1])
+
+        for cell in mount_cells:
+            mountitem = mountmanager.add_mount(cell, **cell._mount)
+            mountitems.append((cell, mountitem))
+        for link in mount_links:
+            mount = link._mount
+            mountitem = mountmanager.add_link(link, mount["path"], mount["persistent"])
+            mountitems.append((link, mountitem))
+        ok = True
+    finally:
+        if not ok and old_context is not None:
+            _, old_contexts, old_paths = old
+            for ctx in old_contexts:
+                mountmanager.contexts.add(ctx)
+            for path in old_paths:
+                cell_or_context = old_paths[path]
+                top_paths.add(path)
+                if isinstance(cell_or_context, Context):
+                    continue
+                cell = cell_or_context
+                for mcell, mountitem in list(mountmanager.mounts.items()):
+                    if mountitem.path == path and mcell is not cell:
+                        try:
+                            mountitem.destroy()
+                        except:
+                            pass
+
+    new = build_paths(new_context, top_paths, remove=False)
+    try:
+        mountmanager._mounting = True
+        join(mountitems, contexts_to_mount, new, old)
+    finally:
+        mountmanager._mounting = False
 
 mountmanager = MountManager(0.2) #TODO: latency in config cell
 mountmanager.start()

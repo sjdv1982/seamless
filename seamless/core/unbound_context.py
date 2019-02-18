@@ -25,10 +25,12 @@ class UnboundManager:
     def register_macro(self, macro):
         self._registered.add(macro)
 
-    def set_cell(self, cell, value, *, from_buffer):
+    def set_cell(self, cell, value, *, 
+      from_buffer=False, buffer_checksum=None,
+      ):
         assert cell._get_manager() is self
         assert cell in self._registered
-        self.commands.append(("set cell", (cell, value, from_buffer)))
+        self.commands.append(("set cell", (cell, value, from_buffer, buffer_checksum)))
 
     def connect_cell(self, cell, other):
         from .macro import Path
@@ -93,12 +95,10 @@ class UnboundContext(SeamlessBase):
 
     def __init__(
         self, *,
-        name=None,
         toplevel=False
     ):
         super().__init__()
         self._manager = UnboundManager(self)
-        self._name = name
         self._toplevel = toplevel
         self._auto = set()
         self._children = {}
@@ -167,6 +167,14 @@ class UnboundContext(SeamlessBase):
         }
         MountItem(None, self, dummy=True, **self._mount) #to validate parameters
 
+
+    @property
+    def _macro(self):
+        if not self._bound:
+            return curr_macro()
+        else:
+            return self._bound._macro
+
     @property
     def _mount(self):
         if not self._bound:
@@ -179,6 +187,19 @@ class UnboundContext(SeamlessBase):
             self.__dict__["_mount"] = value
         else:
             self._bound._mount = value
+
+    @property
+    def _root(self):
+        if not self._bound:
+            return self.__dict__["_root"]
+        else:
+            return self._bound._root
+    @_root.setter
+    def _root(self, value):
+        if not self._bound:
+            self.__dict__["_root"] = value
+        else:
+            self._bound._root = value
 
     def _bind_stage1(self, ctx):
         from .context import Context
@@ -206,21 +227,23 @@ class UnboundContext(SeamlessBase):
         self._bound = ctx
 
     def _bind_stage2(self, manager):
-        from .macro import Path
+        from .macro import replace_path
         for com, args in self._manager.commands:
             if com == "set cell":
-                cell, value, from_buffer = args
-                manager.set_cell(cell, value, from_buffer=from_buffer)
-            elif com == "connect cell":
+                cell, value, from_buffer, buffer_checksum = args
+                manager.set_cell(
+                    cell, value, 
+                    from_buffer=from_buffer,
+                    buffer_checksum=buffer_checksum
+                )
+            elif com == "connect cell":                
                 cell, other = args
-                if isinstance(cell, Path):
-                    cell = cell._cell
-                    if cell is None:
-                        continue           
-                if isinstance(other, Path):
-                    other = other._cell
-                    if other is None:
-                        continue           
+                cell = replace_path(cell, manager.ctx())
+                if cell is None:
+                    continue
+                other = replace_path(other, manager.ctx())
+                if other is None:
+                    continue
                 manager.connect_cell(cell, other)
             elif com == "connect pin":
                 pin, cell = args
@@ -245,6 +268,19 @@ class UnboundContext(SeamlessBase):
     def destroy(self, *, from_del=False):
         for childname, child in self._children.items():
             child.destroy(from_del=from_del)
+
+
+    def __str__(self):
+        if self._bound:
+            return str(self._bound)
+        else:
+            return super().__str__()
+
+    def __dir__(self):
+        if self._bound:
+            return dir(self._bound)
+        else:
+            return super().__dir__()
 
     """
     def _cache_paths(self):

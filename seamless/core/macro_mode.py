@@ -29,8 +29,12 @@ def macro_mode_on(macro=None):
     old_curr_macro = _curr_macro
     _macro_mode = True
     _curr_macro = macro
+    old_context = macro._gen_context if macro is not None else None
+    if old_context is not None:
+        old_context._get_manager().deactivate_context(old_context)
     try:
-        yield
+        ok = False
+        yield        
         if macro is None:
             def bind_all(cctx):
                 for childname, child in list(cctx._children.items()):
@@ -48,18 +52,23 @@ def macro_mode_on(macro=None):
                     toplevel_register.add(top)
                 else:
                     bind_all(ctx)
-
+        ok = True
     finally:
         _macro_mode = old_macro_mode
         _curr_macro = old_curr_macro
+        if not ok and old_context is not None:
+            old_context._get_manager().activate_context(old_context)
         if macro is None:
-            for ctx in list(toplevel_register):
-                if isinstance(ctx, UnboundContext):
-                    toplevel_register.remove(ctx)
-                else:
-                    mount.scan(ctx)
+            for ub_ctx in list(toplevel_register):
+                if isinstance(ub_ctx, UnboundContext):
+                    toplevel_register.remove(ub_ctx)
+                    ctx = ub_ctx._bound
+                    if ctx is None or not ok:
+                        continue
+                    mount.scan(ctx, old_context=None)
         elif not _macro_mode:
-            mount.scan(macro.ctx)
+            if ok:
+                mount.scan(macro._gen_context, old_context=old_context)
 
 from .context import Context
 from .unbound_context import UnboundContext            

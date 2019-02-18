@@ -77,6 +77,7 @@ class Macro(Worker):
         ok = False
         try:
             old_paths = self._paths
+            old_gen_context = self._gen_context
             self._paths = weakref.WeakValueDictionary()
             with macro_mode_on(self):
                 unbound_ctx = UnboundContext()
@@ -95,7 +96,7 @@ class Macro(Worker):
                 #        exec(code_object, self.namespace)
                 inputs = ["ctx"] +  list(values.keys())
                 print("Execute macro")
-                exec_code(code, str(self), self.namespace, inputs, None)
+                exec_code(code, str(self), self.namespace, inputs, None)                
                 if self.namespace["ctx"] is not unbound_ctx:
                     raise Exception("Macro must return ctx")
 
@@ -107,7 +108,10 @@ class Macro(Worker):
 
                 def add_paths(pmacro_path, pmpaths):
                     for path, p in pmpaths.items():
-                        fullpath = pmacro_path + ("ctx",) + path
+                        if len(pmacro_path):
+                            fullpath = pmacro_path + ("ctx",) + path
+                        else:
+                            fullpath = path
                         if fullpath[:lctx_path] == ctx_path:
                             path2 = fullpath[lctx_path:]
                             paths.append((path2, p))
@@ -124,17 +128,18 @@ class Macro(Worker):
                 ub_cells = unbound_ctx._manager.cells
                 newly_bound = []
                 for path, p in paths:
+                    if p._cell is not None:
+                        mctx = p._cell._context()._macro._context()
+                        if mctx._part_of(self._context()):
+                            p._cell = None    
                     if path not in ub_cells:
                         continue
                     cell = ub_cells[path]
                     assert p._can_bind(cell), path
                     newly_bound.append((path, p))
-
-                ctx = Context(name="ctx", toplevel=False)
-                ctx._set_context(self._context(), "ctx")
-                ctx._macro = self                                                
-                if self._gen_context is not None:
-                    self._gen_context.destroy()
+                
+                ctx = Context(toplevel=False)
+                ctx._macro = self
                 unbound_ctx._bind(ctx)
                 self._gen_context = ctx
                 ctx._cache_paths()
@@ -145,6 +150,8 @@ class Macro(Worker):
             self._unbound_gen_context = None
             self._paths = old_paths
         if ok:
+            if old_gen_context is not None:
+                old_gen_context.destroy()
             for path, p in paths:
                 p._bind(None, trigger=True)
             for path, p in newly_bound:
@@ -155,20 +162,19 @@ class Macro(Worker):
         super()._set_context(ctx, name)
         self._get_manager().register_macro(self)
 
-    def _unmount(self,from_del=False):
-        if self._gen_context is not None:
-            return self._gen_context._unmount(from_del)
-
     def destroy(self, *, from_del):
+        super().destroy(from_del=from_del)
         if not from_del:
             self._get_manager()._destroy_macro(self)
-        super().destroy(from_del=from_del)
-
+        if self._gen_context is not None:
+            return self._gen_context.destroy(from_del)
+        
     @property
     def ctx(self):
         if get_macro_mode():
             current_macro = curr_macro()
             return Path(current_macro, self.path).ctx
+        assert self._gen_context is not None
         return self._gen_context
 
     def __str__(self):
@@ -203,7 +209,7 @@ class Path:
     def connect(self, other):
         if self._cell is not None:
             return self._cell.connect(other)
-        elif self._macro._unbound_gen_context is not None:
+        elif self._macro is not None and self._macro._unbound_gen_context is not None:
             manager = self._macro._unbound_gen_context._manager
             return manager.connect_cell(self, other)
         else:
@@ -255,6 +261,29 @@ def path(obj):
     return Path(obj._macro, obj.path)
 
 _global_paths = weakref.WeakValueDictionary() # Paths created in direct mode, or macro mode 
+
+def replace_path(v, toplevel):
+    if not isinstance(v, Path):
+        return v
+    c = v._cell
+    if c is not None:
+        return c
+    if curr_macro() is None and v._path in _global_paths:
+        result = toplevel
+        p = v._path
+        while len(p):
+            try:                
+                pp = p[0]
+                if isinstance(result, Macro) and pp == "ctx":
+                    pp = "_gen_context"
+                result = getattr(result, pp)
+                p = p[1:]
+            except AttributeError:
+                return None
+            if isinstance(result, Path):
+                return None
+        return result
+
 
 def create_path(cell):
     from .cell import Cell
