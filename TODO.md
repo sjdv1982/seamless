@@ -115,12 +115,11 @@ Things to do:
     - Mixed => SEAMLESS magic characters, but then storage + form, then data.
     - Pure plain => JSON. Recognized because it doesn't start with either magic
     - (Maybe do H1 now)
-  - Mounting: IN PROGRESS
+  - Mounting: NEARLY DONE
     - Get minimal mounting example working DONE
-    - Implement unmounting upon exit
-    - Make it work in direct mode
-    - Make it work with macros (adapt stash)
-    - Make it work with mixed/structured cells (keep mount setters?)
+    - Implement unmounting upon exit DONE
+    - Make it work with macros (adapt stash) DONE
+    - Make it work with mixed/structured cells (keep mount setters?) TODO
   - Reimplement IPython (mainloop/asyncio) support, DONE 
     Test Jupyter support, Qt support, DONE
     Test using Docker, DONE
@@ -144,7 +143,7 @@ Things to do:
   H.
   - Gradually, get all low-level tests working, extending the manager, using the New Way 
     1. Easy-ish: Cson test + cell-cell connection (also with int/float/str/bool cells), generic deserialization (see protocol/evaluate.py)
-    2. Easy-ish: advanced mounting WILL BE DONE, ipython
+    2. Easy-ish: advanced mounting DONE, ipython
     3. Medium: debugging (TODO: test Jupyter), library, shell
     4. Hard: all StructuredCell tests
   - Implement annotation dict, including execute_debug, ncores (ncores DONE), and a field for streams
