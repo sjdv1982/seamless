@@ -449,11 +449,12 @@ class Silk(SilkBase):
         if self._parent is not None:
             self._parent._setitem(self._parent_attr, value)
             return self.data
-        buffer = self._buffer is not None
+        if buffer:
+            buffer = self._buffer is not None
         data = self.data
         if buffer:
             data = self._buffer
-        raw_data = self._raw_data()
+        raw_data = self._raw_data(buffer=buffer)
         is_none = (raw_data is None)
         if is_none or not isinstance(raw_data, dict) or not isinstance(value, dict):
             self._set_value_simple(value, buffer=buffer)
@@ -489,7 +490,7 @@ class Silk(SilkBase):
             policy = self._get_policy(schema)
             schema_updated |= self._infer_type(schema, policy, value)
 
-        raw_data = self._raw_data()
+        raw_data = self._raw_data(buffer=buffer)        
         is_none = (raw_data is None)
         if isinstance(value, Scalar):
             self._set_value_simple(value, buffer)
@@ -548,7 +549,7 @@ class Silk(SilkBase):
             data = self.data
         schema = self._schema
         policy = self._get_policy(schema)
-        raw_data = self._raw_data()
+        raw_data = self._raw_data(buffer=True)
         schema_updated = False
         if raw_data is None:
             data = self._set_value_simple({}, buffer)
@@ -706,8 +707,8 @@ class Silk(SilkBase):
     #*  methods for getting
     #***************************************************
 
-    def _raw_data(self):
-        if self._buffer is not None:
+    def _raw_data(self, buffer):
+        if buffer and self._buffer is not None:
             data = self._buffer
         else:
             data = self.data

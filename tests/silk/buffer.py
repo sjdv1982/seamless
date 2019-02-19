@@ -11,6 +11,7 @@ s.add_validator(validate)
 print(s.schema)
 
 s.y = 7.0
+print(s.data, buf)
 s.y = 200
 print(s.data, buf)
 s.x = 1000

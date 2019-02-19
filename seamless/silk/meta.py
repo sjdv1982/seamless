@@ -13,8 +13,8 @@ def meta(name, bases, d):
     with s.fork():
         for key, value in d.items():
             if isinstance(value, Validator):
-                s._add_validator(value.func, attr=None, from_meta=True)
-            elif callable(value):
+                s._add_validator(value.func, attr=None, from_meta=True, name=None)
+            elif callable(value) or isinstance(value, property):
                 setattr(s, key, value)
             else:
                 try:
