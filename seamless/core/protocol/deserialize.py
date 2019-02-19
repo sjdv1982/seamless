@@ -79,7 +79,11 @@ def deserialize_plain(
         if isinstance(value, bytes):
             value = value.decode()
         buffer = str(value).rstrip("\n") + "\n"
-        obj = json.loads(buffer.rstrip("\n"))        
+        b = buffer.rstrip("\n")
+        if source_access_mode != "text":
+            obj = json.loads(b)
+        else:
+            obj = b
     else:
         obj = value
         buffer = json.dumps(value) + "\n"
