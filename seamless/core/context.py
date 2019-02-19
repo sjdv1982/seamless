@@ -7,7 +7,7 @@ from contextlib import contextmanager
 
 from . import SeamlessBase
 from .macro_mode import get_macro_mode, curr_macro, toplevel_register
-from .mount import is_dummy_mount
+from .mount import is_dummy_mount, scan as mount_scan
 
 
 class StatusReport(dict):
@@ -101,7 +101,10 @@ name: str
             assert child._context is None
         self._children[childname] = child
         child._set_context(self, childname)
-        
+        if not get_macro_mode():
+            if isinstance(child, (Cell, Context)):
+                mount_scan(child, old_context=None)
+
 
     def _add_new_cell(self, cell):
         assert isinstance(cell, Cell)
@@ -228,7 +231,7 @@ name: str
 
     def mount(self, path=None, mode="rw", authority="cell", persistent=False):
         if not get_macro_mode():
-            msg = "Mounting in direct mode is not possible"
+            msg = "Mounting contexts in direct mode is not possible"
             raise Exception(msg)
 
     def __dir__(self):

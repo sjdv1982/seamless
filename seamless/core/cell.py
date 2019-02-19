@@ -213,11 +213,8 @@ Use ``Cell.status()`` to get its status.
         assert is_dummy_mount(self._mount) #Only the mountmanager may modify this further!
         if self._mount_kwargs is None:
             raise NotImplementedError #cannot mount this type of cell
-        if not get_macro_mode():
-            msg = "Mounting in direct mode is not possible"
-            raise Exception(msg)
         if self._context is not None and isinstance(self._context(), Context):
-            msg = "The parent of this cell has already been constructed"
+            msg = "Mounting is not possible after a cell has been bound to a context"
             raise Exception(msg)
 
         kwargs = self._mount_kwargs

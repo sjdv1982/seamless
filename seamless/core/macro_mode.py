@@ -47,7 +47,8 @@ def macro_mode_on(macro=None):
                     bind_all(child)
             for ctx in list(toplevel_register):
                 if isinstance(ctx, UnboundContext):
-                    top = Context(toplevel=True)                    
+                    top = ctx._root_
+                    assert top is not None
                     ctx._bind(top)
                     toplevel_register.add(top)
                 else:

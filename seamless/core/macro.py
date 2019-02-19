@@ -80,7 +80,7 @@ class Macro(Worker):
             old_gen_context = self._gen_context
             self._paths = weakref.WeakValueDictionary()
             with macro_mode_on(self):
-                unbound_ctx = UnboundContext()
+                unbound_ctx = UnboundContext(root=self._root())
                 self._unbound_gen_context = unbound_ctx
                 keep = {k:v for k,v in self.namespace.items() if k.startswith("_")}
                 self.namespace.clear()
@@ -123,7 +123,8 @@ class Macro(Worker):
                             break
                         add_paths(pmacro.path, pmacro._paths)
                     pctx = pctx()._context
-                add_paths((), _global_paths)
+                root = self._root()
+                add_paths((), _global_paths.get(root, {}))
                 
                 ub_cells = unbound_ctx._manager.cells
                 newly_bound = []
@@ -170,10 +171,13 @@ class Macro(Worker):
             return self._gen_context.destroy(from_del)
         
     @property
-    def ctx(self):
+    def ctx(self):        
         if get_macro_mode():
             current_macro = curr_macro()
-            path = Path(current_macro, self.path, manager=self._get_manager())
+            try:
+                path = Path(current_macro, self.path, manager=self._get_manager())
+            except:
+                import traceback; traceback.print_exc(); raise
             return path.ctx
         assert self._gen_context is not None
         return self._gen_context
@@ -189,22 +193,24 @@ class Path:
             raise TypeError(path)
         from .unbound_context import UnboundManager
         from .manager import Manager
-        if macro is None:
-            if path in _global_paths:
-                return _global_paths[path]
         self = object.__new__(cls)
-        if macro is None:
-            assert manager is not None
-            assert isinstance(manager, (Manager, UnboundManager)), type(manager)
-            _global_paths[path] = self            
-        else:
-            assert path not in macro._paths, path
-            macro._paths[path] = self
         self._macro = macro
         self._path = path
         self._incoming = False
         self._cell = None
         self._manager = manager
+        if macro is None:
+            assert manager is not None
+            assert isinstance(manager, (Manager, UnboundManager)), type(manager)
+            gpaths = _global_paths.get(self._root(), {})
+            if path in gpaths:
+                return gpaths[path]
+            if self._root() not in _global_paths:
+                _global_paths[self._root()] = gpaths
+            gpaths[path] = self            
+        else:
+            assert path not in macro._paths, path
+            macro._paths[path] = self
         return self
 
     def _get_macro(self):
@@ -216,9 +222,8 @@ class Path:
             return self._macro._root()
         elif self._manager is not None:
             if isinstance(self._manager, UnboundManager):
-                root = self._manager._ctx()
-                assert root._bound is not None
-                return root._bound
+                root = self._manager._ctx()._root()
+                return root
             else:
                 root = self._manager.ctx()
                 return root
@@ -298,7 +303,7 @@ def path(obj):
         manager = None
     return Path(obj._macro, obj._path, manager=manager)
 
-_global_paths = weakref.WeakValueDictionary() # Paths created in direct mode, or macro mode 
+_global_paths = weakref.WeakKeyDictionary() # Paths created in direct mode, or macro mode None
 
 def replace_path(v, toplevel):
     if not isinstance(v, Path):
@@ -306,7 +311,8 @@ def replace_path(v, toplevel):
     c = v._cell
     if c is not None:
         return c
-    if curr_macro() is None and v._path in _global_paths:
+    gpaths = _global_paths.get(v._root(), {})
+    if curr_macro() is None and v._path in gpaths:
         result = toplevel
         p = v._path
         while len(p):
@@ -332,8 +338,9 @@ def create_path(cell):
     path = cell.path
     current_macro = curr_macro()
     if current_macro is None:
-        if path in _global_paths:
-            return _global_paths[path]
+        gpaths = _global_paths.get(cell._root(), {})
+        if path in gpaths:
+            return gpaths[path]
     else:
         if path in current_macro._paths:
             return current_macro._paths[path]

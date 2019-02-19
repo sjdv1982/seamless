@@ -92,10 +92,12 @@ class UnboundContext(SeamlessBase):
     _toplevel = False
     _naming_pattern = "ctx"    
     _bound = None
+    _context = None
 
     def __init__(
-        self, *,
-        toplevel=False
+        self, *, 
+        root=None,
+        toplevel=False,
     ):
         super().__init__()
         self._manager = UnboundManager(self)
@@ -103,6 +105,10 @@ class UnboundContext(SeamlessBase):
         self._auto = set()
         self._children = {}
         self._mount = None
+        if toplevel:
+            assert root is None
+            root = Context(toplevel=True)
+        self._root_ = root
         if toplevel:
             toplevel_register.add(self)
 
@@ -127,6 +133,8 @@ class UnboundContext(SeamlessBase):
         assert isinstance(child, (UnboundContext, Worker, Cell, Link, StructuredCell))
         if isinstance(child, UnboundContext):
             assert child._context is None
+            child._context = self
+            child._root_ = self._root()
             self._children[childname] = child
         else:
             self._children[childname] = child
@@ -188,18 +196,8 @@ class UnboundContext(SeamlessBase):
         else:
             self._bound._mount = value
 
-    @property
     def _root(self):
-        if not self._bound:
-            return self.__dict__["_root"]
-        else:
-            return self._bound._root
-    @_root.setter
-    def _root(self, value):
-        if not self._bound:
-            self.__dict__["_root"] = value
-        else:
-            self._bound._root = value
+        return self._root_
 
     def _bind_stage1(self, ctx):
         from .context import Context
@@ -302,3 +300,4 @@ from .link import Link
 from .cell import Cell
 from .worker import Worker, InputPinBase, OutputPinBase, EditPinBase
 from .structured_cell import StructuredCell
+from .context import Context
