@@ -44,7 +44,7 @@ class SeamlessBase:
         ctx = weakref.ref(context)
         self._context = ctx
         self.name = name
-        self._fallback_path =  self.path
+        self._fallback_path = self.path
         return self
 
     def _get_manager(self):

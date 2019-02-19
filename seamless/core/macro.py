@@ -126,13 +126,16 @@ class Macro(Worker):
                 root = self._root()
                 add_paths((), _global_paths.get(root, {}))
                 
+                manager = self._get_manager()
                 ub_cells = unbound_ctx._manager.cells
                 newly_bound = []
                 for path, p in paths:
                     if p._cell is not None:
                         mctx = p._cell._context()._macro._context()
-                        if mctx._part_of(self._context()):
-                            p._cell = None    
+                        if mctx._part_of(self._context()):                            
+                            if p._macro is None and path not in ub_cells:
+                                manager.set_cell(p._cell, None)
+                            p._cell = None
                     if path not in ub_cells:
                         continue
                     cell = ub_cells[path]
@@ -231,7 +234,7 @@ class Path:
             raise AttributeError
 
     def __getattr__(self, attr):
-        if attr.startswith("_"):
+        if attr.startswith("_") or attr == "cell":
             raise AttributeError(attr)
         return Path(self._macro, self._path + (attr,), manager=self._manager)
 

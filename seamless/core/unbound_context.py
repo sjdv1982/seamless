@@ -133,7 +133,7 @@ class UnboundContext(SeamlessBase):
         assert isinstance(child, (UnboundContext, Worker, Cell, Link, StructuredCell))
         if isinstance(child, UnboundContext):
             assert child._context is None
-            child._context = self
+            child._context = weakref.ref(self)
             child._root_ = self._root()
             self._children[childname] = child
         else:
@@ -286,15 +286,6 @@ class UnboundContext(SeamlessBase):
             return dir(self._bound)
         else:
             return super().__dir__()
-
-    """
-    def _cache_paths(self):
-        for child in self._children.values():
-            child._cached_path = None
-            child._cached_path = child.path
-            if isinstance(child, UnboundContext):
-                child._cache_paths()
-    """
 
 from .link import Link
 from .cell import Cell

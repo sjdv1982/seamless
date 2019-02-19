@@ -131,7 +131,6 @@ print("""Change to 1
 Should change to non-existent for .d
 Should change to None for .e, .e2
 """)
-print("TODO" + "!" * 80)
 ctx.param.set(1)
 ctx.equilibrate()
 report()

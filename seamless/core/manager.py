@@ -905,7 +905,10 @@ class Manager:
             return cell_or_path._cell
         cell = cell_or_path
         for source_accessor, target_accessor in self.cell_to_cell:
-            if target_accessor.cell is cell:
+            if isinstance(target_accessor, Path):
+                if target_accessor._cell is cell:
+                    return self.get_default_accessor(cell)
+            elif target_accessor.cell is cell:
                 return target_accessor
         return None
 
@@ -1393,7 +1396,12 @@ class Manager:
 
         for item in list(self.cell_to_cell):
             source, target = item
-            if source.cell is cell or target.cell is cell:
+            destroy = False
+            if isinstance(source, Accessor) and source.cell is cell:
+                destroy = True
+            if isinstance(target, Accessor) and target.cell is cell:
+                destroy = True
+            if destroy:
                 self.cell_to_cell.remove(item)
 
     def _destroy_worker(self, worker):
