@@ -790,12 +790,14 @@ class Manager:
         if io == "edit":
             if pin.name in rtreactor.edit_dict:
                 raise TypeError(pin) #Edit pin can connect to only one cell
+            if cell._monitor:
+                raise TypeError("Cell %s is being" % (cell, current_upstream))
             current_upstream = self.cell_cache.cell_from_upstream.get(cell)
             if current_upstream is None:
                 current_upstream = []
                 self.cell_cache.cell_from_upstream[cell] = current_upstream
             if not isinstance(current_upstream, list):
-                raise TypeError("Cell %s is already connected to %s" % (cell, current_upstream))                
+                raise TypeError("Cell %s is already connected to %s" % (cell, current_upstream))
             self.cell_cache.cell_from_upstream[cell].append(pin)
             rtreactor.edit_dict[pin.name] = cell
         elif inout == "in":

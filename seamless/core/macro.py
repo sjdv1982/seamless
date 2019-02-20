@@ -73,6 +73,9 @@ class Macro(Worker):
             if pinname == "code":
                 code = value
             else:
+                if expression.access_mode == "mixed":
+                    if value is not None:
+                        value = value[2]
                 values[pinname] = value
         ok = False
         try:

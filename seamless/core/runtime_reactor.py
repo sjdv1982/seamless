@@ -90,6 +90,9 @@ class RuntimeReactor:
                 assert value is not None, pinname
                 self.build_code(pinname, value)
                 continue
+            if expression.access_mode == "mixed":
+                if value is not None:
+                    value = value[2]
             pin = ReactorInput(value)
             self.PINS[pinname] = pin
         for pinname, cell in self.edit_dict.items():

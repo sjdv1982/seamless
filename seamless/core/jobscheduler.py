@@ -180,13 +180,16 @@ class Job:
             namespace = {}
             queue = Queue()
             inputs = []
-            assert "code" in self.level2, list(self.level2._expressions.keys())
+            assert "code" in self.level2, list(self.level2._expressions.keys())            
             for pin in self.level2:
                 semantic_key = self.level2[pin]
                 value = manager.value_cache.get_object(semantic_key)
                 if pin == "code":
                     code = value
                 else:
+                    if semantic_key.access_mode == "mixed":
+                        if value is not None:
+                            value = value[2]
                     namespace[pin] = value
                     inputs.append(pin)
             args = (

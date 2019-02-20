@@ -2,12 +2,17 @@ import json
 import ast
 from collections.abc import Container
 import numpy as np
+from io import BytesIO
 
 from .cson import cson2json
 from ...get_hash import get_hash
 from ...silk import Silk
 from ...silk.validation import Scalar
 from ..cached_compile import cached_compile, analyze_code
+from ...mixed.io import (
+    deserialize as mixed_deserialize, serialize as mixed_serialize
+)
+from ...mixed.get_form import get_form
 
 def deserialize(
     celltype, subcelltype, cellpath,
@@ -19,6 +24,8 @@ def deserialize(
             source_access_mode = "silk"
         elif isinstance(value, (np.void, np.ndarray)):
             source_access_mode = "binary"
+        elif celltype in ("plain", "mixed") or from_buffer:
+            source_access_mode = celltype
         elif isinstance(value, str):
             try:
                 json.loads(value)
@@ -48,6 +55,11 @@ def deserialize(
         )
     elif celltype == "cson":
         return deserialize_cson(
+            value, from_buffer, buffer_checksum,
+            source_access_mode, source_content_type
+        )
+    elif celltype == "mixed":
+        return deserialize_mixed(
             value, from_buffer, buffer_checksum,
             source_access_mode, source_content_type
         )
@@ -174,3 +186,46 @@ def deserialize_cson(
         buffer_checksum = get_hash(buffer)
     semantic_checksum = get_hash(plainbuffer)
     return buffer, buffer_checksum, value, semantic_checksum
+
+def deserialize_mixed(
+    value, 
+    from_buffer, buffer_checksum,
+    source_access_mode, source_content_type
+):
+    if source_access_mode == "text":
+        data = value
+        if source_content_type == "cson":
+            data = cson2json(value)
+        elif source_content_type == "plain":
+            data = json.loads(value)
+        storage, form = get_form(data)
+    elif source_access_mode in ("binary", "plain"):
+        if from_buffer:
+            if source_access_mode == "binary":
+                b = BytesIO(value)
+                value = np.load(b)
+            else:
+                data = json.loads(value)
+        else:
+            data = value
+        storage, form = get_form(data)
+    elif source_access_mode == "mixed":
+        if from_buffer:
+            data, storage, form = mixed_deserialize(value)
+        else:
+            storage, form, data = value
+    else:
+        raise ValueError(source_access_mode)
+
+    buffer = None
+    if from_buffer:
+        if source_access_mode in ("mixed", "binary", "plain"):
+            buffer = value
+    if buffer is None and data is not None:
+        buffer = mixed_serialize(data, storage=storage,form=form)
+    if buffer_checksum is None:
+        buffer_checksum = get_hash(buffer)
+
+    obj = storage, form, data
+    semantic_checksum = buffer_checksum
+    return buffer, buffer_checksum, obj, semantic_checksum

@@ -170,7 +170,6 @@ def _from_stream_sub(
 def from_stream(stream, storage, form):
     """Reverses to_stream, returning data"""
     if storage == "pure-plain":
-        print("STREAM", stream)
         if isinstance(stream, str):
             txt = stream            
         else:

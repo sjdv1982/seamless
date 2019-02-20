@@ -277,6 +277,33 @@ class MixedCell(Cell):
     _default_access_mode = "mixed"
     _content_type = "mixed"
 
+    def set(self, value):
+        storage, form = get_form(value)
+        v = (storage, form, value)
+        return self._set(v, False)
+
+    @property
+    def value(self):
+        v = super().value
+        if v is None:
+            return None
+        return v[2]
+
+    @property
+    def storage(self):
+        v = super().value
+        if v is None:
+            return None
+        return v[0]
+    
+    @property
+    def form(self):
+        v = super().value
+        if v is None:
+            return None
+        return v[1]
+
+
     def __str__(self):
         ret = "Seamless mixed cell: " + self._format_path()
         return ret
@@ -446,6 +473,7 @@ extensions = {
 from .unbound_context import UnboundManager
 from .mount import MountItem
 from .mount import is_dummy_mount
+from ..mixed.get_form import get_form
 
 """
 TODO Documentation: only-text changes
