@@ -1,10 +1,15 @@
 import numpy as np
-from seamless.mixed import MixedDict, mixed_dict
+from seamless.mixed import Monitor, DefaultBackend
 
-data = {}
-d = mixed_dict(data)
+def build_mixed(data):
+    backend = DefaultBackend(plain=False)
+    monitor = Monitor(backend, attribute_access=False)
+    monitor.set_path((), data)
+    d = monitor.get_path()
+    return d
+
+d = build_mixed({})
 d["a"] = 10
-assert d.value is data
 print(d.value)
 print(d.form)
 print(d["a"].value)
@@ -17,7 +22,7 @@ print(d["b"].value)
 print(d["b"]["bb"].value)
 d["b"]["bb"].set(50)
 print(d["b"]["bb"].value)
-print(data, d.form)
+print(d.value, d.form)
 print(d.storage, d["b"].storage, d["b"]["bb"].storage)
 d["a"] = np.arange(10)
 print(d.storage, d["a"].storage, d["b"].storage, d["b"]["bb"].storage)
@@ -28,5 +33,5 @@ print(d["a"].value, d["a"][3].value)
 print(d.storage, d["a"].storage, d["b"].storage, d["b"]["bb"].storage)
 
 dt = np.dtype([("m1", int),("m2",int)],align=True)
-d = mixed_dict(np.zeros(1,dt)[0])
+d = build_mixed(np.zeros(1,dt)[0])
 print(d.storage, d.form, d.value)

@@ -28,7 +28,7 @@ class MixedList(MixedBase, MutableSequence):
         return len(data)
 
 class MixedNumpyArray(MixedBase, MutableSequence):
-    def __getitem__(self, item):
+    def __getitem__(self, item):        
         path = self._path + (item,)
         return self._monitor.get_path(path)
     def __setitem__(self, item, value):
@@ -45,24 +45,3 @@ class MixedNumpyArray(MixedBase, MutableSequence):
         data = self._monitor.get_data(self._path)
         return len(data)
 
-from .Monitor import Monitor
-
-def mixed_list(data, storage=None, form=None, *,
-  MonitorClass=Monitor, **args
-):
-    """Mostly for demonstration use (outside of contexts)"""
-    if not isinstance(data, MutableMapping) and not is_np_struct(data):
-        raise TypeError(type(data))
-    if isinstance(data, MixedDict):
-        return MixedDict(data._monitor, data._path)
-    else:
-        if form is None:
-            storage, form = get_form_dict(data)
-        if not isinstance(storage, (dict, list)):
-            if "storage_hook" not in args:
-                args["storage_hook"] = lambda v: v
-        if not isinstance(form, (dict, list)):
-            if "form_hook" not in args:
-                args["form_hook"] = lambda v: v
-        monitor = MonitorClass(data, storage, form, **args)
-        return MixedList(monitor, ())

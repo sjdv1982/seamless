@@ -10,13 +10,11 @@ manager.set_cell and manager.pin_send_update are thread-safe (can be invoked fro
 
 from . import protocol
 from .protocol.deserialize import deserialize
-from ..mixed import MixedBase
 from .cache import (CellCache, AccessorCache, ExpressionCache, ValueCache,
     TransformCache, LabelCache, Accessor, Expression, TempRefManager, SemanticKey,
     cache_task_manager)
 from .jobscheduler import JobScheduler
 from .macro_mode import get_macro_mode, curr_macro
-from ..mixed.io import deserialize as mixed_deserialize, serialize as mixed_serialize
 from .runtime_reactor import RuntimeReactor
 from .status import Status
 

@@ -67,11 +67,6 @@ class MixedBase(SilkHasForm):
         return str(self.value)
     def __repr__(self):
         return str(self.value)
-    def _get_state(self):
-        #TODO: more economic => save just the path sub-state
-        return self._monitor._monitor_get_state()
-    def _set_state(self, state):
-        return self._monitor._monitor_set_state(state)
 
 def mixed_scalar_binary_method(self, other, name):
     if isinstance(other, MixedBase):
@@ -101,9 +96,8 @@ for name in binary_special_method_names:
     setattr(MixedScalar, name, m)
 
 
-from .MixedDict import MixedDict, mixed_dict
+from .MixedDict import MixedDict
 from .MixedObject import MixedObject
 from .Monitor import Monitor
-from .MakeParentMonitor import MakeParentMonitor
-from .OverlayMonitor import OverlayMonitor
+from .Backend import Backend, DefaultBackend
 from .get_form import is_contiguous, is_unsigned
