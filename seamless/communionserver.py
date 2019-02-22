@@ -290,6 +290,9 @@ class CommunionServer:
                 elif type == "transformer_result":
                     checksum = bytes.fromhex(content)
                     cache_task = cache_task_manager.remote_transform_result(checksum, origin=peer_id)
+                elif type == "transformer_result_level2":
+                    checksum = bytes.fromhex(content)
+                    cache_task = cache_task_manager.remote_transform_result_level2(checksum, origin=peer_id)
                 elif type == "value_check":
                     pass #TODO: forward value_check requests
                     #checksum = bytes.fromhex(content)

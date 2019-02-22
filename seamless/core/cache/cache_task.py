@@ -8,13 +8,14 @@ Every key will always have the same CacheTask
     key = ("label", checksum) => remote label cache (label-to-checksum)
     key = ("value", checksum) => remote value cache (value-to-checksum)
     key = ("transformer_result", checksum) => remote transformer result cache
-
+    key = ("transformer_result_level2", checksum) => remote level 2 transformer result cache
 """
 
 import asyncio
 from ..run_multi_remote import run_multi_remote, run_multi_remote_pair
 
 remote_transformer_result_servers = []
+remote_transformer_result_level2_servers = []
 remote_checksum_from_label_servers = []
 remote_checksum_value_servers = []
 
@@ -110,6 +111,18 @@ class CacheTaskManager:
             if checksum is not None:
                 for transform_cache in transform_caches:
                     transform_cache.set_result(hlevel1, checksum)
+        return self.schedule_task(key, future, 1, resultfunc=resultfunc)
+
+    def remote_transform_result_level2(self, hlevel2, origin=None):
+        future = run_multi_remote(remote_transformer_result_level2_servers, hlevel2, origin)
+        if future is None:
+            return None
+        key = ("transformer_result_level2", hlevel2)
+        def resultfunc(future):
+            checksum = future.result()
+            if checksum is not None:
+                for transform_cache in transform_caches:
+                    transform_cache.set_result(hlevel2, checksum)
         return self.schedule_task(key, future, 1, resultfunc=resultfunc)
 
 from .transform_cache import transform_caches

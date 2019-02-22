@@ -106,6 +106,14 @@ class Manager:
                     if result is not None:
                         self.set_transformer_result(tf_level1, None, None, result, False)
                         return
+                tf_level2 = await tcache.build_level2(tf_level1)
+                task = self.cache_task_manager.remote_transform_result_level2(tf_level2.get_hash())
+                if task is not None:
+                    await task.future
+                    result = task.future.result()
+                    if result is not None:
+                        self.set_transformer_result(tf_level1, tf_level2, None, result, False)
+                        return
                 task = None
                 job = self.jobscheduler.schedule_remote(tf_level1, count)
                 if job is not None:

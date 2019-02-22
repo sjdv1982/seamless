@@ -28,6 +28,11 @@ class RedisSink:
         key = b"tfresult:" + hlevel1
         r.set(key, checksum)
 
+    def set_transform_result_level2(self, hlevel2, checksum):
+        r = self.connection
+        key = b"tfresult2:" + hlevel2
+        r.set(key, checksum)
+
     def set_value(self, checksum, value):
         r = self.connection
         key = b"value:" + checksum
@@ -58,6 +63,14 @@ class RedisCache:
     def get_transform_result(self, checksum):
         r = self.connection
         key = b"tfresult:" + checksum
+        try:
+            return r.get(key)
+        except KeyError:
+            return None
+
+    def get_transform_result_level2(self, checksum):
+        r = self.connection
+        key = b"tfresult2:" + checksum
         try:
             return r.get(key)
         except KeyError:
@@ -95,6 +108,11 @@ class RedisSinks:
             return        
         for redis_sink in _redis_sinks:
             redis_sink.set_transform_result(hlevel1, checksum)
+    def set_transform_result_level2(self, hlevel2, checksum):
+        if hlevel2 is None or checksum is None:
+            return        
+        for redis_sink in _redis_sinks:
+            redis_sink.set_transform_result_level2(hlevel2, checksum)
 
 
 class RedisCaches:
@@ -106,6 +124,11 @@ class RedisCaches:
     def get_transform_result(self, hlevel1):
         for redis_cache in _redis_caches:
             value = redis_cache.get_transform_result(hlevel1)
+            if value is not None:
+                return value
+    def get_transform_result_level2(self, hlevel2):
+        for redis_cache in _redis_caches:
+            value = redis_cache.get_transform_result_level2(hlevel2)
             if value is not None:
                 return value
     def get_value(self, checksum):        

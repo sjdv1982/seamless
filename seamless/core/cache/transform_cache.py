@@ -247,3 +247,7 @@ class TransformCache:
     def set_result(self, hlevel1, checksum):
         self.result_hlevel1[hlevel1] = checksum
         redis_sinks.set_transform_result(bytes.fromhex(hlevel1), checksum)       
+
+    def set_result_level2(self, hlevel2, checksum):
+        self.result_hlevel2[hlevel2] = checksum
+        redis_sinks.set_transform_result_level2(bytes.fromhex(hlevel2), checksum)
