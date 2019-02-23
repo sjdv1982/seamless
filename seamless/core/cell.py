@@ -58,7 +58,7 @@ Use ``Cell.status()`` to get its status.
         self._get_manager().register_cell(self)
         if self._prelim_val is not None:
             value, from_buffer = self._prelim_val
-            self._get_manager().set_cell(self, value, from_buffer=from_buffer)
+            self._get_manager().set_cell(self, value, from_buffer=from_buffer, subpath=None)
             self._prelim_val = None
 
     def __hash__(self):
@@ -74,7 +74,11 @@ Use ``Cell.status()`` to get its status.
         manager = self._get_manager()
         if isinstance(manager, UnboundManager):
             raise Exception("Cannot ask the cell value of a context that is being constructed by a macro")
-        return self._get_manager().status[self]
+        status = self._get_manager().status[self]
+        if list(status.keys()) == [None]:
+            return status[None]
+        else:
+            raise NotImplementedError ### cache branch
 
     @property
     def checksum(self):
@@ -101,7 +105,7 @@ Use ``Cell.status()`` to get its status.
         manager = self._get_manager()
         if isinstance(manager, UnboundManager):
             raise Exception("Cannot ask the cell value of a context that is being constructed by a macro")
-        return manager.cell_cache.cell_to_authority[self]
+        return manager.cell_cache.cell_to_authority[self][None]
 
 
     @property
@@ -138,7 +142,8 @@ Use ``Cell.status()`` to get its status.
         else:
             manager = self._get_manager()
             manager.set_cell(
-              self, value, 
+              self, value,
+              subpath=None,
               from_buffer=from_buffer, buffer_checksum=buffer_checksum
             )
         return self
@@ -160,7 +165,7 @@ Use ``Cell.status()`` to get its status.
     def from_label(self, label):
         if get_macro_mode():
             raise Exception("To guarantee macro determinism, this must not be run in macro mode")
-        return self._get_manager().set_cell_from_label(self, label)
+        return self._get_manager().set_cell_from_label(self, label, subpath=None)
 
     @property
     def label(self):
@@ -191,7 +196,7 @@ Use ``Cell.status()`` to get its status.
     def connect(self, target):
         """connects to a target cell"""
         manager = self._get_manager()
-        manager.connect_cell(self, target)
+        manager.connect_cell(self, target, None)
         return self
 
     def as_text(self):

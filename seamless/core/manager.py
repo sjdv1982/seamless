@@ -5,7 +5,16 @@ Doing .set() on non-authoritative cells will result in a warning
 Connecting to a cell with a value (making it non-authoritative), will likewise result in a warning
 Cells can have only one outputpin writing to them, this is strictly enforced.
 
-manager.set_cell and manager.pin_send_update are thread-safe (can be invoked from any thread)
+NOTE: connection methods now accept a "subpath" as an extra argument
+Normal cells (cell.Cell) always have subpath=None; specifying subpath is principally
+ done by StructuredCell channels.
+
+From the manager's point of view, it is assumed that subpaths are *independent*:
+- A cell with input/edit subpath ('a',), does not have an additional input/edit subpath ('a', 'b')
+- For a cell with output subpaths ('a',) and ('a', 'b'), the manager will be informed of updates 
+  to each channel separately; sending an update to ('a',) is not enough.
+Manager does NOT verify independence; it is the responsibility of the caller
+ (i.e. StructuredCell) to do so.
 """
 
 from . import protocol
@@ -84,7 +93,7 @@ class Manager:
                              # type = "macro", schedop = Macro object
                              # type = "reactor", schedop = (Reactor object, pin name, expression)
         self._temp_tf_level1 = {}
-        self.cell_to_cell = [] # list of (source-accessor-or-path, target-accessor-or-path)
+        self.cell_to_cell = [] # list of (source-accessor-or-pathtuple, target-accessor-or-pathtuple); pathtuples are (Path, subpath)
 
 
     async def _schedule_transform_all(self, tf_level1, count, run_remote=True):
@@ -232,8 +241,11 @@ class Manager:
                 auth_status = "FRESH"
                 tstatus.auth = "FRESH"
             self.unstable.remove(tf)
-            for cell in tcache.transformer_to_cells[tf]:
-                self._propagate_status(cell,"UPSTREAM_ERROR", auth_status, full=False)
+            for cell, subpath in tcache.transformer_to_cells[tf]:
+                self._propagate_status(
+                  cell,"UPSTREAM_ERROR", auth_status, 
+                  cell_subpath=subpath, full=False
+                )
         
         if transformer is None:
             transformer = "<Unknown transformer>"                            
@@ -260,14 +272,14 @@ class Manager:
             tstatus.exec = "FINISHED"
             tstatus.data = "OK"
             tstatus.auth = "OBSOLETE" # To provoke an update
-            for cell in tcache.transformer_to_cells[tf]:
+            for cell, subpath in tcache.transformer_to_cells[tf]:
                 if isinstance(cell, Link):
                     cell = cell.linked()
                 if isinstance(cell, Path):
                     cell = cell._cell
                     if cell is None:
                         continue    
-                status = self.status[cell]
+                status = self.status[cell][subpath]
                 if prelim:
                     if status.auth == "FRESH":
                         status.auth = "PRELIMINARY"
@@ -275,18 +287,19 @@ class Manager:
                     if status.auth == "PRELIMINARY":
                         status.auth = "FRESH"
                 if value is not None:
-                    self.set_cell(cell, value)
-                    if checksum is None:
+                    self.set_cell(cell, value, subpath=subpath)
+                    if checksum is None and subpath is not None:
                         checksum = self.cell_cache.cell_to_buffer_checksums[cell]
                 else:
+                    if subpath is not None: raise NotImplementedError ###need either to retrieve value, or cache tree depth (not implemented yet)
                     if cell._destroyed:
                         raise Exception(cell.name)
                     self.set_cell_checksum(cell, checksum)
             self.update_transformer_status(tf,full=False)
-        if checksum is None: #result conforms to no cell (probably remote transformation)
+        if checksum is None: #result conforms to no cell (remote transformation, or subpath)
             checksum, buffer = protocol.calc_buffer(value)
             self.value_cache.incref(checksum, buffer, has_auth=False) 
-        tcache.set_result(hlevel1, checksum)        
+        tcache.set_result(hlevel1, checksum)
         if level2 is not None:
             tcache.result_hlevel2[level2.get_hash()] = checksum
         self.schedule_jobs()
@@ -301,10 +314,10 @@ class Manager:
             cells = [rtreactor.edit_dict[pinname]]
         else:
             raise ValueError(pinname)
-        for cell in cells:
-            status = self.status[cell]
+        for cell, subpath in cells:
+            status = self.status[cell][subpath]
             status.auth = "FRESH"
-            self.set_cell(cell, value, origin=reactor)
+            self.set_cell(cell, value, origin=reactor, subpath=subpath)
         self.schedule_jobs()
 
     def set_reactor_exception(self, rtreactor, codename, exception):
@@ -402,19 +415,20 @@ class Manager:
         default_accessor.content_type = cell._content_type
         return default_accessor
 
-    def cell_semantic_checksum(self, cell):
+    def cell_semantic_checksum(self, cell, subpath):
         checksum = self.cell_cache.cell_to_buffer_checksums.get(cell)        
         if checksum is None:
             return None
-        default_accessor = self.get_default_accessor(cell)
-        default_expression = default_accessor.to_expression(checksum)
-        semantic_key = self.expression_cache.expression_to_semantic_key.get(default_expression.get_hash())
+        accessor = self.get_default_accessor(cell)
+        accessor.subpath = subpath
+        expression = accessor.to_expression(checksum)
+        semantic_key = self.expression_cache.expression_to_semantic_key.get(expression.get_hash())
         if semantic_key is None:
             buffer_item = self.get_value_from_checksum(checksum)
             if buffer_item is None:
                 raise ValueError("Checksum not in value cache") 
             _, _, buffer = buffer_item
-            _, semantic_key = self.cache_expression(default_expression, buffer)
+            _, semantic_key = self.cache_expression(expression, buffer)
         semantic_checksum, _, _, _ = semantic_key
         return semantic_checksum        
 
@@ -425,11 +439,16 @@ class Manager:
 
 
     def register_cell(self, cell):
-        if cell._celltype == "structured": raise NotImplementedError ### cache branch
         ccache = self.cell_cache
-        ccache.cell_to_authority[cell] = True # upon registration, all cells are authoritative
-        ccache.cell_to_accessors[cell] = []
-        self.status[cell] = Status("cell")
+        ccache.cell_to_authority[cell] = {None: True} # upon registration, all cells are authoritative
+        ccache.cell_to_accessors[cell] = {None : []}
+        self.status[cell] = {None: Status("cell")}
+
+    def register_structured_cell(self, structured_cell):
+        ccache = self.cell_cache
+        cell = structured_cell.cell
+        assert cell in ccache.cell_to_authority
+        raise NotImplementedError ### cache branch; update cell_to_authority, cell_to_accessors, status
 
     def register_transformer(self, transformer):
         tcache = self.transform_cache
@@ -466,7 +485,7 @@ class Manager:
             self.scheduled.append(("transformer", old_level1, False))
             self._temp_tf_level1[transformer] = None
 
-    def _propagate_status(self, cell, data_status, auth_status, full, origin=None):
+    def _propagate_status(self, cell, data_status, auth_status, full, *, cell_subpath, origin=None):
         # "full" indicates a value change, but it is just propagated to update_worker
         from .reactor import Reactor
         from .macro import Path
@@ -474,8 +493,9 @@ class Manager:
             cell = cell._cell
             if cell is None:
                 return
-        if cell._celltype == "structured": raise NotImplementedError ### cache branch
-        status = self.status[cell]
+        if cell._celltype == "structured": 
+            raise TypeError
+        status = self.status[cell][cell_subpath]
         new_data_status = status.data
         new_auth_status = status.auth
         if data_status is not None:
@@ -494,15 +514,11 @@ class Manager:
         if full or new_auth_status is not None or new_data_status is not None:
             acache = self.accessor_cache
             accessors = itertools.chain(
-                ( self.cell_cache.cell_to_accessors[cell] ),
-                ( self.get_default_accessor(cell), ),
+                self.cell_cache.cell_to_accessors[cell][cell_subpath],
+                [self.get_default_accessor(cell)],
             )
             for accessor in accessors:
                 haccessor = hash(accessor)
-                for target_cell in acache.haccessor_to_cells.get(haccessor, []):
-                    self._propagate_status(
-                      target_cell, new_data_status, new_auth_status, full
-                    )
                 for worker, acc in acache.haccessor_to_workers.get(haccessor, []):
                     if acc is None:
                         acc = accessor
@@ -516,9 +532,15 @@ class Manager:
                                 rtreactor.updated.add(pinname)
                     if not worker._active: return ###TODO: should not happen (and so far, doesn't seem to)
                     self.update_worker_status(worker, full)
-            self.update_cell_to_cells(cell, data_status, auth_status, full, origin)
+            self.update_cell_to_cells(
+              cell, data_status, auth_status, 
+              full=full, origin=origin,subpath=cell_subpath
+            )
             if full:
-                upstream = self.cell_cache.cell_from_upstream.get(cell)
+                upstream = None
+                upstream0 = self.cell_cache.cell_from_upstream.get(cell)
+                if upstream0 is not None:
+                    upstream = upstream0.get(cell_subpath)
                 if isinstance(upstream, list):
                     for editpin in upstream:
                         reactor = editpin.worker_ref()
@@ -550,7 +572,7 @@ class Manager:
                 new_status.data = "UNCONNECTED"
                 continue
             accessor = accessor_dict[pin]
-            cell_status = self.status[accessor.cell]
+            cell_status = self.status[accessor.cell][accessor.subpath]
 
             s = cell_status.data_status
             if s == Status.StatusDataEnum.INVALID:
@@ -603,8 +625,10 @@ class Manager:
             if new_connection and new_status.data == "OK":
                 if str(new_status.exec) in ("PENDING", "READY", "EXECUTING"):
                     data_status = "PENDING"
-            for cell in target_cells:                
-                self._propagate_status(cell, data_status, auth_status, full=False)
+            for cell, subpath in target_cells:                
+                self._propagate_status(cell, data_status, auth_status, 
+                  full=False, cell_subpath=subpath
+                )
             if backup_auth is not None:
                 new_status.auth = backup_auth
             #print("UPDATE", transformer, old_status, "=>", new_status)
@@ -623,7 +647,8 @@ class Manager:
                 continue
             accessor = rtreactor.input_dict[pinname]
             cell = accessor.cell
-            cell_status = self.status[cell]
+            subpath = accessor.subpath
+            cell_status = self.status[cell][subpath]
 
             s = cell_status.data_status
             if s == Status.StatusDataEnum.INVALID:
@@ -657,8 +682,8 @@ class Manager:
                 for pinname, pin in reactor._pins.items():
                     if pin.io != "output":
                         continue
-                    for cell in rtreactor.output_dict[pinname]:
-                        self._propagate_status(cell, data_status, auth_status, full=False)
+                    for cell, subpath in rtreactor.output_dict[pinname]:
+                        self._propagate_status(cell, data_status, auth_status, full=False, cell_subpath=subpath)
 
 
     def update_macro_status(self, macro):
@@ -671,7 +696,8 @@ class Manager:
         for pinname, pin in macro._pins.items():
             accessor = macro.input_dict[pinname]
             cell = accessor.cell
-            cell_status = self.status[cell]
+            subpath = accessor.subpath
+            cell_status = self.status[cell][subpath]
 
             s = cell_status.data_status
             if s == Status.StatusDataEnum.INVALID:
@@ -724,8 +750,6 @@ class Manager:
         target_macro = target._get_macro()
         current_macro = curr_macro()
         if source_macro is not None or target_macro is not None:
-            #if not get_macro_mode():
-            #    raise Exception("Macro-generated contexts can be connected only in macro mode")            
             if current_macro is not None:
                 if not source_macro._context()._part_of2(current_macro._context()):
                     msg = "%s is not part of current %s"
@@ -740,7 +764,7 @@ class Manager:
             raise Exception(msg % (source_macro, source, target_macro, target, current_macro))
         return path_source, path_target
 
-    def _connect_cell_transformer(self, cell, pin):
+    def _connect_cell_transformer(self, cell, pin, cell_subpath):
         """Connects cell to transformer inputpin"""
         transformer = pin.worker_ref()
         tcache = self.transform_cache
@@ -759,6 +783,9 @@ class Manager:
 
         accessor = self.get_default_accessor(cell)
         acc = None
+        if cell_subpath is not None:
+            accessor.subpath = cell_subpath
+            acc = accessor
         if access_mode is not None and access_mode != accessor.access_mode:
             accessor.source_access_mode = accessor.access_mode
             accessor.access_mode = access_mode
@@ -776,8 +803,10 @@ class Manager:
         accessor_dict[pin.name] = accessor
         self.update_transformer_status(transformer,full=False)
 
-    def _connect_reactor(self, pin, cell, inout):
+    def _connect_reactor(self, pin, cell, inout, cell_subpath):
         """Connects cell to/from reactor pin"""
+        current_upstream = self.cell_cache.cell_from_upstream.get(cell)
+
         reactor = pin.worker_ref()
         rtreactor = self.reactors[reactor]        
         io, access_mode, content_type = (
@@ -798,20 +827,25 @@ class Manager:
         if io == "edit":
             if pin.name in rtreactor.edit_dict:
                 raise TypeError(pin) #Edit pin can connect to only one cell
-            if cell._monitor:
-                raise TypeError("Cell %s is being" % (cell, current_upstream))
             current_upstream = self.cell_cache.cell_from_upstream.get(cell)
             if current_upstream is None:
-                current_upstream = []
+                current_upstream = {}
                 self.cell_cache.cell_from_upstream[cell] = current_upstream
-            if not isinstance(current_upstream, list):
-                raise TypeError("Cell %s is already connected to %s" % (cell, current_upstream))
-            self.cell_cache.cell_from_upstream[cell].append(pin)
-            rtreactor.edit_dict[pin.name] = cell
+            current_upstream2 = current_upstream.get(cell_subpath)
+            if current_upstream2 is None:
+                current_upstream2 = []
+                current_upstream[cell_subpath] = current_upstream2
+            if not isinstance(current_upstream2, list):
+                raise TypeError("Cell %s is already connected to %s" % (cell, current_upstream2))
+            current_upstream2.append(pin)
+            rtreactor.edit_dict[pin.name] = (cell,cell_subpath)
         elif inout == "in":
             assert pin.name not in rtreactor.input_dict, pin #double connection
             accessor = self.get_default_accessor(cell)
             acc = None
+            if cell_subpath is not None:
+                accessor.subpath = cell_subpath
+                acc = accessor
             if access_mode is not None and access_mode != accessor.access_mode:
                 accessor.source_access_mode = accessor.access_mode
                 accessor.access_mode = access_mode
@@ -828,10 +862,18 @@ class Manager:
                 acache.haccessor_to_workers[haccessor].append((reactor,acc))
             rtreactor.input_dict[pin.name] = accessor
         elif inout == "out":
+            current_upstream = self.cell_cache.cell_from_upstream.get(cell)
+            if current_upstream is None:
+                current_upstream = {}
+                self.cell_cache.cell_from_upstream[cell] = current_upstream
+            current_upstream2 = current_upstream.get(cell_subpath)
+            if current_upstream2 is not None:
+                raise TypeError("%s is already connected from %s" % (cell, current_upstream2))
+            current_upstream[cell_subpath] = pin
             output_dict = rtreactor.output_dict
             if not pin.name in output_dict:
                 output_dict[pin.name] = []
-            output_dict[pin.name].append(cell)
+            output_dict[pin.name].append((cell, cell_subpath))
         else:
             raise ValueError(inout)
 
@@ -850,7 +892,7 @@ class Manager:
             self.update_reactor_status(reactor, full=True)
 
 
-    def _connect_cell_macro(self, cell, pin):
+    def _connect_cell_macro(self, cell, pin, cell_subpath):
         """Connects cell to macro pin"""
         macro = pin.worker_ref()
         io, access_mode, content_type = (
@@ -863,6 +905,9 @@ class Manager:
         assert pin.name not in macro.input_dict, pin #double connection
         accessor = self.get_default_accessor(cell)
         acc = None
+        if cell_subpath is not None:
+            accessor.subpath = cell_subpath
+            acc = accessor
         if access_mode is not None and access_mode != accessor.access_mode:
             accessor.source_access_mode = accessor.access_mode
             accessor.access_mode = access_mode
@@ -885,7 +930,7 @@ class Manager:
         else:
             self.update_macro_status(macro)
 
-    def _find_cell_to_cell(self, cell_or_path):
+    def _find_cell_to_cell(self, cell_or_path, subpath):
         # Find to which other cells a cell or path connects
         # inefficient (linear-time) lookup, to be improved
         # Results are returned as accessors
@@ -898,14 +943,34 @@ class Manager:
             cell = cell_or_path
         accessors = []
         for source_accessor, target_accessor in self.cell_to_cell:
-            if source_accessor.cell is cell:
-                accessors.append(target_accessor)
+            ok = False
+            if isinstance(source_accessor, tuple):
+                path, s_subpath = source_accessor
+                assert isinstance(path, Path)
+                if path._cell is cell and s_subpath == subpath:
+                    accessor = self.get_default_accessor(cell)
+                    accessor.subpath = subpath
+                    ok = True
+            else:
+                if source_accessor.cell is cell:
+                    if source_accessor.subpath == subpath:
+                        ok = True
+            if not ok:
+                continue
+            if isinstance(target_accessor, tuple):
+                path, t_subpath = target_accessor
+                assert isinstance(path, Path)
+                if path._cell is None:
+                    continue
+                    target_accessor = self.get_default_accessor(path._cell)
+                    target_accessor.subpath = t_subpath
+            accessors.append(target_accessor)
         return accessors
 
-    def _find_cell_from_cell(self, cell_or_path):
+    def _find_cell_from_cell(self, cell_or_path, subpath):
         # Find which other cell connects to a cell or path
         # inefficient (linear-time) lookup, to be improved
-        # Result is returned as an accessors
+        # Result is returned as an accessor
         from .macro import Path
         if isinstance(cell_or_path, Path):
             if not cell_or_path._incoming:
@@ -913,49 +978,80 @@ class Manager:
             return cell_or_path._cell
         cell = cell_or_path
         for source_accessor, target_accessor in self.cell_to_cell:
-            if isinstance(target_accessor, Path):
-                if target_accessor._cell is cell:
-                    return self.get_default_accessor(cell)
-            elif target_accessor.cell is cell:
-                return target_accessor
+            ok = False
+            if isinstance(target_accessor, tuple):
+                path, t_subpath = target_accessor
+                assert isinstance(path, Path)
+                if path._cell is cell and t_subpath == subpath:
+                    target_accessor = self.get_default_accessor(cell)
+                    target_accessor.subpath = subpath
+                    ok = True
+            elif target_accessor.cell is cell and target_accessor.subpath == subpath:
+                ok = True
+            if not ok:
+                continue
+            if isinstance(source_accessor, tuple):
+                path, s_subpath = source_accessor
+                assert isinstance(path, Path)
+                if path._cell is None:
+                    return None
+                accessor = self.get_default_accessor(path._cell)
+                accessor.subpath = s_subpath
+                return accessor
+            else:
+                return source_accessor
         return None
 
-    def _cell_upstream(self, cell, skip_path=None):
+    def _cell_upstream(self, cell, subpath, skip_path=None):
         # Returns the upstream dependency of a cell
         from .cell import Cell
-        if isinstance(cell, Cell):
-            for path in cell._paths:
-                if path is skip_path:
-                    continue
-                result = self._find_cell_from_cell(path)
+        result = None
+        while 1:
+            if isinstance(cell, Cell):
+                for path in cell._paths:
+                    if path is skip_path:
+                        continue
+                    result0 = self._find_cell_from_cell(path, subpath)
+                    if result0 is not None:
+                        if result is not None:
+                            warn("%s: multiple incoming bound paths have been bound; should not be possible!!" % cell)
+                            break
+                        result = result0
                 if result is not None:
-                    return result
-        result = self._find_cell_from_cell(cell)
-        if result is not None:
-            return result
-        return self.cell_cache.cell_from_upstream.get(cell)
+                    break
+            result = self._find_cell_from_cell(cell, subpath)
+            if result is not None:
+                break
+            result = self.cell_cache.cell_from_upstream.get(cell)
+            if result is not None:
+                result = result.get(subpath)
+            break
+        return copy.deepcopy(result)
 
-    def _connect_cell_cell(self, source, target):
+    def _connect_cell_cell(self, source, target, source_subpath, target_subpath):
         from .macro import Path, create_path
         from .cell import Cell
-        path_source, path_target = self._verify_connect(source, target)     
-        current_upstream = self._cell_upstream(target)
+        ispath_source, ispath_target = self._verify_connect(source, target)     
+        current_upstream = self._cell_upstream(target, target_subpath)
         if current_upstream is not None:
             raise TypeError("Cell %s is already connected to %s" % (target, current_upstream))            
 
         connection = []
         accessors = []
-        for cell, path_cell in (source, path_source), (target, path_target):
+        for cell, ispath_cell, subpath in \
+          (source, ispath_source, source_subpath), (target, ispath_target, target_subpath):
             if isinstance(cell, Cell):
-                if cell._celltype == "structured": raise NotImplementedError ### cache branch
+                if cell._celltype == "structured": 
+                    raise TypeError
                 accessor = self.get_default_accessor(cell)
+                accessor.subpath = subpath
             else:
                 assert isinstance(cell, Path)
-                assert path_cell, (cell, path_cell)
+                assert ispath_cell, (cell, ispath_cell)
                 accessor = None
-            if path_cell:
+            if ispath_cell:
                 path = create_path(cell)
-                connect = path
+                connect = (path, subpath)
             else:
                 connect = accessor
             connection.append(connect)
@@ -970,9 +1066,10 @@ class Manager:
         assert source.source_content_type is None
         assert target.source_access_mode is None
         assert target.source_content_type is None
+        same = True
         if source.subpath is not None or target.subpath is not None:
             raise NotImplementedError ### cache branch
-        same = True
+            same = False
         for attr in ("celltype", "storage_type", "access_mode", "content_type"):
             if getattr(source, attr) != getattr(target, attr):
                 raise NotImplementedError ### cache branch
@@ -980,47 +1077,59 @@ class Manager:
         if same:
             if source.cell._destroyed or target.cell._destroyed: return ### TODO, shouldn't happen...
             checksum = self.cell_cache.cell_to_buffer_checksums.get(source.cell)
-            self.set_cell_checksum(target.cell, checksum, self.status[source.cell])
+            self.set_cell_checksum(target.cell, checksum, self.status[source.cell][None])
         else:
             raise NotImplementedError            
 
     def update_path_value(self, path):
         # Slow! needs to be improved (TODO)
         from .macro import Path
-        for source, target in self.cell_to_cell:            
-            if isinstance(source, Path):
-                if source._cell is None:
+        assert path._cell is not None
+        if path._cell._destroyed: return ### TODO, shouldn't happen...
+        for source, target in self.cell_to_cell:
+            if isinstance(source, tuple):
+                spath, subpath = source
+                assert isinstance(spath, Path)
+                if spath != path:
                     continue
-                if source._cell._destroyed: continue ### TODO, shouldn't happen...
-                source = self.get_default_accessor(source._cell)                
-            else: #accessor
-                if source.cell is None:
+                source = self.get_default_accessor(path._cell)
+                source.subpath = subpath
+            if isinstance(target, tuple):
+                tpath, subpath = target
+                assert isinstance(tpath, Path)
+                if tpath._cell is None:
                     continue
-            if isinstance(target, Path):
-                if target._cell is None:
-                    continue
-                if target._cell._destroyed: continue ### TODO, shouldn't happen...
-                target = self.get_default_accessor(target._cell)                
+                if tpath._cell._destroyed: continue ### TODO, shouldn't happen...
+                target = self.get_default_accessor(tpath._cell)                
+                target.subpath = subpath
             self.update_accessor_accessor(source, target)
 
-    def update_cell_to_cells(self, cell, data_status, auth_status, full, origin):
+    def update_cell_to_cells(self, cell, data_status, auth_status, *, subpath, full, origin):
         # Slow! needs to be improved (TODO)
         from .macro import Path  
         for source, target in self.cell_to_cell:
-            if isinstance(source, Path):
-                if source._cell is None:
+            if isinstance(source, tuple):
+                path, s_subpath = source
+                assert isinstance(path, Path)
+                if path._cell is not cell:
                     continue
-                if source._cell is not cell:
+                if s_subpath != subpath:
                     continue
-                source = self.get_default_accessor(source._cell)                
+                source = self.get_default_accessor(path._cell)
+                source.subpath = s_subpath              
             else: #accessor
                 if source.cell is not cell:
                     continue
-            if isinstance(target, Path):                
-                tcell = target._cell
+                if source.subpath != subpath:
+                    continue
+            if isinstance(target, tuple):
+                path, t_subpath = target
+                assert isinstance(path, Path)
+                tcell = path._cell
                 if tcell is None:
                     continue
                 target_accessor = self.get_default_accessor(tcell)
+                target_accessor.subpath = t_subpath
             else:
                 target_accessor = target
                 tcell = target.cell
@@ -1028,23 +1137,34 @@ class Manager:
             if full:                
                 self.update_accessor_accessor(source, target_accessor)
             else:
-                self._propagate_status(tcell, data_status, auth_status, False)
+                self._propagate_status(
+                  tcell, data_status, auth_status, 
+                  full=False, cell_subpath=subpath
+                )
 
-    def connect_cell(self, cell, other):
+    def connect_cell(self, cell, other, cell_subpath):
         #print("connect_cell", cell, other)
         from . import Transformer, Reactor, Macro
         from .link import Link
         from .cell import Cell
-        from .worker import PinBase
+        from .worker import PinBase, EditPin
         from .macro import Path
+        from .structured_cell import Inchannel
         if isinstance(cell, Link):
             cell = cell.get_linked()
         if not isinstance(cell, (Cell, Path)):
             raise TypeError(cell)
         if isinstance(other, Link):
             other = other.get_linked()
-        
-        if isinstance(other, PinBase):
+
+        other_subpath = None
+        if isinstance(other, Inchannel):
+            other_subpath = other.path
+            other = other.structured_cell.cell        
+
+        if isinstance(other, (Cell, Path)):
+            self._connect_cell_cell(cell, other, cell_subpath, other_subpath)
+        elif isinstance(other, PinBase):
             path_cell, path_other = self._verify_connect(cell, other)            
             if path_other:
                 msg = str(other) + ": macro-generated pins/paths may not be connected outside the macro"
@@ -1054,15 +1174,14 @@ class Manager:
                 raise Exception(msg % other)                
             worker = other.worker_ref()
             if isinstance(worker, Transformer):
-                self._connect_cell_transformer(cell, other)
+                self._connect_cell_transformer(cell, other, cell_subpath)
             elif isinstance(worker, Reactor):
-                self._connect_reactor(other, cell, "in")
+                mode = "edit" if isinstance(other, EditPin) else "in"
+                self._connect_reactor(other, cell, mode, cell_subpath)
             elif isinstance(worker, Macro):
-                self._connect_cell_macro(cell, other)
+                self._connect_cell_macro(cell, other, cell_subpath)
             else:
                 raise TypeError(type(worker))
-        elif isinstance(other, (Cell, Path)): # TODO: channels also go here 
-            self._connect_cell_cell(cell, other)
         else:
             raise TypeError(type(other))
         self.schedule_jobs()
@@ -1088,7 +1207,7 @@ class Manager:
                 if accessor is None:
                     return None
                 else:
-                    return accessor.cell
+                    return accessor.cell, accessor.subpath
             elif isinstance(pin, EditPin):
                 return rt_reactor.edit_dict.get(pin.name)
             elif isinstance(pin, OutputPin):
@@ -1100,20 +1219,26 @@ class Manager:
             if accessor is None:
                 return None
             else:
-                return accessor.cell
+                return accessor.cell, accessor.subpath
         else:
             raise TypeError(worker)
 
 
     def connect_pin(self, pin, cell):
-        #print("connect_pin", pin, cell)            
+        #print("connect_pin", pin, cell)
         from . import Transformer, Reactor, Macro
         from .link import Link
         from .cell import Cell
         from .macro import Path
+        from .structured_cell import Inchannel
         from .worker import PinBase, InputPin, OutputPin, EditPin
+        cell_subpath = None
         if isinstance(cell, Link):
             cell = cell.get_linked()
+        cell_subpath = None
+        if isinstance(cell, Inchannel):
+            cell_subpath = cell.path
+            cell = cell.structured_cell.cell
         if not isinstance(cell, (Cell, Path)):
             raise TypeError(cell)
         if not isinstance(pin, PinBase) or isinstance(pin, InputPin):
@@ -1124,36 +1249,27 @@ class Manager:
             msg = str(pin) + ": macro-generated pins may not be connected outside the macro"
             raise Exception(msg)
 
-        if isinstance(pin, EditPin):
-            if not isinstance(worker, Reactor):
-                raise TypeError((pin, worker)) # Editpin must be connected to reactor
-        else:
-            current_upstream = self._cell_upstream(cell)
-            if current_upstream is not None:
-                raise TypeError("Cell %s is already connected to %s" % (cell, current_upstream))
-            self.cell_cache.cell_from_upstream[cell] = pin
-
         worker = pin.worker_ref()
         if isinstance(worker, Transformer):
             tcache = self.transform_cache
-            tcache.transformer_to_cells[worker].append(cell)
+            tcache.transformer_to_cells[worker].append((cell, cell_subpath))
             level1 = tcache.transformer_to_level1.get(worker)
             if level1 is not None:
                 hlevel1 = level1.get_hash()
                 checksum = tcache.get_result(hlevel1)
                 if checksum is not None:
+                    if cell_subpath is not None: raise NotImplementedError ###need either to retrieve value, or cache tree depth (not implemented)
                     self.set_cell_checksum(cell, checksum)
             self.update_transformer_status(worker,full=False, new_connection=True)
-        elif isinstance(worker, Macro):
-            raise NotImplementedError ###cache branch
         elif isinstance(worker, Reactor):
-            self._connect_reactor(pin, cell, "out")
+            mode = "edit" if isinstance(pin, EditPin) else "out"
+            self._connect_reactor(pin, cell, mode, cell_subpath)
         else:
             raise TypeError(worker)
         self.schedule_jobs()
 
-    def _update_status(self, cell, checksum, *, has_auth, origin):
-        status = self.status[cell]
+    def _update_status(self, cell, checksum, *, has_auth, origin, cell_subpath):
+        status = self.status[cell][cell_subpath]
         old_data_status = status.data
         old_auth_status = status.auth        
         if checksum is None:
@@ -1166,7 +1282,7 @@ class Manager:
         new_auth_status = status.auth if status.auth != old_auth_status else None
         self._propagate_status(
             cell, new_data_status, new_auth_status, 
-            full=True, origin=origin
+            full=True, origin=origin, cell_subpath=cell_subpath
         )
         self.schedule_jobs()
 
@@ -1176,12 +1292,12 @@ class Manager:
         from .mount import is_dummy_mount
         assert cell._get_manager() is self
         ccache = self.cell_cache
-        auth = ccache.cell_to_authority[cell]
+        auth = ccache.cell_to_authority[cell][None]
         has_auth = (auth != False)
         old_checksum = ccache.cell_to_buffer_checksums.get(cell)
         vcache = self.value_cache
         if checksum != old_checksum:
-            ccache.cell_to_authority[cell] = True
+            ccache.cell_to_authority[cell][None] = True
             ccache.cell_to_buffer_checksums[cell] = checksum
             if old_checksum is not None:
                 vcache.decref(old_checksum, has_auth=has_auth)
@@ -1192,16 +1308,10 @@ class Manager:
             if buffer_known and not is_dummy_mount(cell._mount):
                 if not get_macro_mode():
                     self.mountmanager.add_cell_update(cell)
-            ###if status is not None:
-            ###    self.status[cell] = copy.deepcopy(status)
-            self._update_status(cell, checksum, has_auth=has_auth, origin=None)
-            if not is_dummy_mount(cell._mount):
-                self.get_value_from_checksum(checksum)
-                if not get_macro_mode():
-                    self.mountmanager.add_cell_update(cell)
+            self._update_status(cell, checksum, has_auth=has_auth, origin=None, cell_subpath=None)
 
     @main_thread_buffered
-    def set_cell(self, cell, value, *, 
+    def set_cell(self, cell, value, *, subpath,
       from_buffer=False, origin=None, buffer_checksum=None,
       ):
         # "origin" indicates the worker that generated the .set_cell call
@@ -1210,8 +1320,12 @@ class Manager:
         assert cell._get_manager() is self
         assert buffer_checksum is None or from_buffer == True
         ccache = self.cell_cache
-        auth = ccache.cell_to_authority[cell]
-        has_auth = (auth != False)
+        auth = ccache.cell_to_authority[cell][subpath]
+        has_auth = (auth != False)        
+        if subpath is not None: raise NotImplementedError ### cache branch
+        # TODO: old_checksum is only valid for subpath=None
+        # Therefore, we need to cache cell+subpath => semantic key
+        # And this needs to be updated by external calls
         old_checksum = ccache.cell_to_buffer_checksums.get(cell)
         result = deserialize(
             cell._celltype, cell._subcelltype, cell.path,
@@ -1228,19 +1342,23 @@ class Manager:
             None
         )
         if checksum != old_checksum:
-            ccache.cell_to_authority[cell] = True
+            ccache.cell_to_authority[cell][subpath] = True
             ccache.cell_to_buffer_checksums[cell] = checksum
             if old_checksum is not None:
                 vcache.decref(old_checksum, has_auth=has_auth)
             vcache.incref(checksum, buffer, has_auth=has_auth)
             vcache.add_semantic_key(semantic_key, obj)
-            default_accessor = self.get_default_accessor(cell)
-            default_expression = default_accessor.to_expression(checksum)
-            self.expression_cache.expression_to_semantic_key[default_expression.get_hash()] = semantic_key
-            if not is_dummy_mount(cell._mount):
+            accessor = self.get_default_accessor(cell)
+            accessor.subpath = subpath
+            expression = accessor.to_expression(checksum)
+            self.expression_cache.expression_to_semantic_key[expression.get_hash()] = semantic_key
+            if subpath is None and not is_dummy_mount(cell._mount):
                 if not get_macro_mode():
                     self.mountmanager.add_cell_update(cell)
-            self._update_status(cell, checksum, has_auth=has_auth, origin=origin)
+            self._update_status(
+              cell, checksum, 
+              cell_subpath=subpath, has_auth=has_auth, origin=origin
+            )
         else:
             # Just refresh the semantic key timeout
             vcache.add_semantic_key(semantic_key, obj)
@@ -1289,7 +1407,8 @@ class Manager:
         return buffer_item
                 
     @main_thread_buffered
-    def set_cell_from_label(self, cell, label):        
+    def set_cell_from_label(self, cell, label, subpath):
+        if subpath is not None: raise NotImplementedError ###tree cache depth
         checksum = self.get_checksum_from_label(label)
         if checksum is None:
             raise Exception("Label has no checksum")
@@ -1316,9 +1435,6 @@ class Manager:
         assert worker._get_manager() is self
         raise NotImplementedError ###cache branch
         worker._touch()
-
-    def leave_macro_mode(self):
-        self.schedule_jobs()
 
     def _activate_context(self, ctx, value):
         from .context import Context
@@ -1439,7 +1555,22 @@ class Manager:
         tcache.transformer_to_cells.pop(transformer, None) 
         self.unstable.discard(transformer)
 
-    def _destroy_macro(self, macro):
+    def _destroy_macro(self, macro):        
+        """destroys macro and its generated context
+        NOTE: it is NOT necessary to destroy macro._paths or filter cell-cell connections
+        Reasons:
+        - Paths under macro control (i.e. non-global paths) are always expanded to cells first
+          So from a manager perspective, they do not really exist
+           and the cell is destroyed together with the macro.
+        - Global paths do exist at a cell-cell connection level (and as upstreams)
+          but they are never destroyed.
+        - The third kind of paths is those constructed on the direction of verify_connect
+          This involves connections into paths, whose target is controlled by a different macro.
+          The other end of the connection MUST be under the control of the current macro;
+           this is a requirement of verify_connect
+          Therefore, the other end is also destroyed at the same time, and this will clean up
+           the connection as well (self._destroy_cell).          
+        """
         if macro._unbound_gen_context is not None:
             macro._unbound_gen_context.destroy()
         if macro._gen_context is not None:

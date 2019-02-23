@@ -137,7 +137,7 @@ class Macro(Worker):
                         mctx = p._cell._context()._macro._context()
                         if mctx._part_of(self._context()):                            
                             if p._macro is None and path not in ub_cells:
-                                manager.set_cell(p._cell, None)
+                                manager.set_cell(p._cell, None, subpath=None)
                             p._cell = None
                     if path not in ub_cells:
                         continue
@@ -252,7 +252,7 @@ class Path:
                     manager = self._macro._unbound_gen_context._manager
                 else:
                     raise AttributeError
-            return manager.connect_cell(self, other)
+            return manager.connect_cell(self, other, None)
 
     def _bind(self, cell, trigger):
         if cell is self._cell:
@@ -277,7 +277,7 @@ class Path:
                 if isinstance(upstream, Cell):
                     a = manager.get_default_accessor(cell)
                     manager.update_accessor_accessor(upstream, a)                
-            manager.update_path_value(self)
+                manager.update_path_value(self)
     
     def _can_bind(self, cell):
         if self._incoming:

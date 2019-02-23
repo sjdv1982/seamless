@@ -19,7 +19,10 @@ def _cell_from_pin(self, celltype):
         assert ctx is not None
         ctx = ctx()
         ctx._add_new_cell(my_cell)
-        my_cell.connect(self)
+        manager.connect_cell(my_cell, self, None)
+    else:
+        # TODO: take subpath (my_cell[1]) into account? construct some kind of proxy?
+        my_cell = my_cell[0]
     return my_cell
 
 
@@ -182,17 +185,21 @@ class OutputPin(OutputPinBase):
             ctx = ctx()
             ctx._add_new_cell(my_cell)
             assert my_cell._context() is ctx
-            self.connect(my_cell)
+            manager.connect_pin(self, my_cell)
         elif l == 1:
-            my_cell = my_cells[0].target
+            # TODO: take subpath into account? construct some kind of proxy?           
+            my_cell, subpath = my_cells[0]
+            my_cell = my_cell.target
         elif l > 1:
             raise TypeError("cell() is ambiguous, multiple cells are connected")
         return my_cell
 
     def cells(self):
-        """Returns all cells connected to the outputpin"""
+        """Returns all cell/subpath tuples connected to the outputpin"""        
         manager = self._get_manager()
         my_cells = manager.cell_from_pin(self)
+        # TODO: take subpath (c[1]) into account? construct some kind of proxy?
+        my_cells = [c[0] for c in my_cells]
         return mycells
 
     @property
@@ -241,7 +248,7 @@ class EditPin(EditPinBase):
                                               #connect_cell will also invoke connect_pin
         assert not isinstance(target, Path) #Edit pins cannot be connected to paths
         other = target._get_manager()
-        other.connect_cell(target, self)
+        other.connect_cell(target, self, None, None)
         return self
 
     @property

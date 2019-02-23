@@ -16,6 +16,9 @@ class UnboundManager:
         self._registered.add(cell)
         self.cells[cell.path] = cell
 
+    def register_structured_cell(self, structured_cell):
+        self._registered.add(structured_cell)
+
     def register_transformer(self, transformer):
         self._registered.add(transformer)
 
@@ -25,19 +28,19 @@ class UnboundManager:
     def register_macro(self, macro):
         self._registered.add(macro)
 
-    def set_cell(self, cell, value, *, 
+    def set_cell(self, cell, value, *, subpath,
       from_buffer=False, buffer_checksum=None,
       ):
         assert cell._get_manager() is self
         assert cell in self._registered
-        self.commands.append(("set cell", (cell, value, from_buffer, buffer_checksum)))
+        self.commands.append(("set cell", (cell, value, subpath, from_buffer, buffer_checksum)))
 
-    def connect_cell(self, cell, other):
+    def connect_cell(self, cell, other, cell_subpath):
         from .macro import Path
         if not isinstance(cell, Path):
             assert cell._get_manager() is self
             assert cell in self._registered
-        self.commands.append(("connect cell", (cell, other)))
+        self.commands.append(("connect cell", (cell, other, cell_subpath)))
 
     def connect_pin(self, pin, cell):
         assert pin._get_manager() is self
@@ -64,16 +67,16 @@ class UnboundManager:
             for com, args in self.commands:
                 if com != "connect cell":
                     continue
-                cell, other = args
+                cell, other, cell_subpath = args
                 if other is pin:
-                    cells.append(cell)
+                    cells.append((cell, cell_subpath))
         elif isinstance(pin, OutputPin):
             for com, args in self.commands:
                 if com != "connect pin":
                     continue
-                pin2, cell = args
+                pin2, cell, cell_subpath = args
                 if pin2 is pin:
-                    cells.append(cell)
+                    cells.append((cell, cell_subpath))
         else:
             raise TypeError(pin)
         if isinstance(pin, InputPin):
@@ -229,14 +232,15 @@ class UnboundContext(SeamlessBase):
         macro = self._macro
         for com, args in self._manager.commands:
             if com == "set cell":
-                cell, value, from_buffer, buffer_checksum = args
+                cell, value, subpath, from_buffer, buffer_checksum = args
                 manager.set_cell(
                     cell, value, 
+                    subpath=subpath,
                     from_buffer=from_buffer,
                     buffer_checksum=buffer_checksum
                 )
             elif com == "connect cell":                
-                cell, other = args
+                cell, other, cell_subpath = args
                 cell2 = replace_path(cell, manager.ctx())
                 if cell2 is None:
                     if macro is not None:
@@ -249,7 +253,7 @@ class UnboundContext(SeamlessBase):
                         continue
                 else:
                     other = other2
-                manager.connect_cell(cell, other)
+                manager.connect_cell(cell, other, cell_subpath)
             elif com == "connect pin":
                 pin, cell = args
                 manager.connect_pin(pin, cell)

@@ -3,8 +3,7 @@ Accessors are joint description of:
   cell + outchannel (if exists) + connection + inputpin/inchannel
 Accessor param
 
-Cell-to-cell connections also create an accessor
- (maintained as haccessor_to_cells)
+Cell-to-cell connections do not create an accessor (TODO?)
 Outputpin-to-cell connections do not create an accessor. 
 Transformers maintain a list of cells to which they write.
 Reactors do the same, but then for every outputpin.
@@ -67,5 +66,4 @@ class AccessorCache:
     
     def __init__(self, manager):
         self.manager = weakref.ref(manager)
-        self.haccessor_to_cells = {} # hash of input accessor => list of output cellids
         self.haccessor_to_workers = {} # hash of input accessor => list of output workers

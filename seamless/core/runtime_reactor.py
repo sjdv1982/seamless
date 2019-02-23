@@ -61,8 +61,8 @@ class RuntimeReactor:
         self.manager = weakref.ref(manager)
         self.reactor = weakref.ref(reactor)
         self.input_dict = {} #inputpin => accessor
-        self.output_dict = {} #outputpin => list-of-cells
-        self.edit_dict = {} #editpin => cell
+        self.output_dict = {} #outputpin => list-of-(cell, subpath)
+        self.edit_dict = {} #editpin => (cell, subpath)
         self.updated = set()
         self.live = None  # None for unconnected; True for live; False for non-live
         self.namespace = {}
@@ -95,7 +95,9 @@ class RuntimeReactor:
                     value = value[2]
             pin = ReactorInput(value)
             self.PINS[pinname] = pin
-        for pinname, cell in self.edit_dict.items():
+        for pinname, cell_tuple in self.edit_dict.items():
+            cell, subpath = cell_tuple
+            if subpath is not None: raise NotImplementedError ### cache branch
             if updated is not None and pinname not in updated:
                 self.PINS[pinname].updated = False
                 continue

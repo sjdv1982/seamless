@@ -133,6 +133,11 @@ class ShareServer(object):
 
     async def _handle_get(self, request):
         tail = request.match_info.get('tail')
+        if tail == "favicon.ico":
+            return web.Response(
+                status=404
+            )
+
         namespace, key = tail.split("/")
         try:
             ns = self.namespaces[namespace]
@@ -140,12 +145,14 @@ class ShareServer(object):
             cell = cell()
             if cell is None:
                 raise KeyError
-            value = serialize(cell, "copy", "json", None)
+            if cell._celltype != "plain": raise NotImplementedError ### cache branch
+            # TODO (as well): allow paths into the data, if enabled
+            value = cell.value
             return web.Response(
                 status=200,
                 body=json.dumps(value),
                 content_type='application/json',
-            )
+            )            
         except KeyError:
             return web.Response(
                 status=404,
@@ -252,8 +259,8 @@ class ShareServer(object):
         await s1
         await s2
         self.started = True
-        global serialize
-        from .core.protocol import serialize
+        global deserialize
+        from .core.protocol import deserialize
 
     def start(self):
         if self.started:
@@ -282,15 +289,17 @@ class ShareServer(object):
             if key == "self":
                 ctx = cell
                 ns[key] = weakref.ref(ctx)
+                continue
             if isinstance(cell, StructuredCell):
+                raise NotImplementedError ### cache branch; maybe never implement this...
                 datacell = cell.data
             elif isinstance(cell, Cell):
                 datacell = cell
             else:
-                raise TypeError(cell)
+                raise TypeError((cell, key))
             checksum = None
             if datacell.value is not None:
-                checksum = datacell.checksum()
+                checksum = datacell.checksum
             if key not in ns:
                 send_update = True
                 marker = 0
@@ -329,7 +338,7 @@ class ShareServer(object):
         cell = cell()
         if cell is None:
             return
-        checksum = cell.checksum()
+        checksum = cell.checksum
         if old_checksum == checksum:
             return
         marker += 1

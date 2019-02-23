@@ -38,4 +38,4 @@ if __name__ == "__main__":
     ctx.code.set("c = a + b + 1000")
     ctx.equilibrate()
     print(ctx.result.value)
-    print(ctx.status())
+    print(ctx.status)

@@ -279,11 +279,13 @@ def translate_link(node, namespace, ctx):
     if (not first_simple) and isinstance(first, StructuredCell):
         first.connect_editchannel(subpath_first, second2)
     else:
+        raise NotImplementedError #subpath!
         first._get_manager().connect_cell(first, second2, duplex=True)
 
     if (not second_simple) and isinstance(second, StructuredCell):
         second.connect_editchannel(subpath_second, first2)
     else:
+        raise NotImplementedError #subpath!
         second._get_manager().connect_cell(second, first2, duplex=True)
 
 def translate(graph, ctx, from_lib_paths, is_lib):

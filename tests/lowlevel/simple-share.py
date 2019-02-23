@@ -8,15 +8,16 @@ import websockets
 import requests
 import asyncio
 import json
+import time
 
 shareserver_started = shareserver.start()
 
 def define_ctx():
     with macro_mode_on():
         ctx = context(toplevel=True)
-        ctx.cell1 = cell("json").set(1)
-        ctx.cell2 = cell("json").set(2)
-        ctx.result = cell("json")
+        ctx.cell1 = cell().set(1)
+        ctx.cell2 = cell().set(2)
+        ctx.result = cell()
         ctx.tf = transformer({
             "a": "input",
             "b": "input",
@@ -72,7 +73,7 @@ def thread(func, *args, **kwargs):
     t.start()
     while t.is_alive():
         t.join(0.05)
-        seamless.mainloop_one_iteration()
+        loop.run_until_complete(asyncio.sleep(0.01))
     return q.get()
 
 r = thread(requests.get, 'http://localhost:5813/ctx/cell1')
