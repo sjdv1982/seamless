@@ -29,10 +29,11 @@ class UnboundManager:
         self._registered.add(macro)
 
     def set_cell(self, cell, value, *, subpath,
-      from_buffer=False, buffer_checksum=None,
+      from_buffer=False, buffer_checksum=None,origin=None
       ):
         assert cell._get_manager() is self
         assert cell in self._registered
+        assert origin is None or isinstance(origin, UnboundContext)  # irrelevant
         self.commands.append(("set cell", (cell, value, subpath, from_buffer, buffer_checksum)))
 
     def connect_cell(self, cell, other, cell_subpath):
@@ -237,7 +238,8 @@ class UnboundContext(SeamlessBase):
                     cell, value, 
                     subpath=subpath,
                     from_buffer=from_buffer,
-                    buffer_checksum=buffer_checksum
+                    buffer_checksum=buffer_checksum,
+                    origin=None
                 )
             elif com == "connect cell":                
                 cell, other, cell_subpath = args
