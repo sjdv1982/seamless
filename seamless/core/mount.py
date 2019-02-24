@@ -821,7 +821,7 @@ def scan(ctx_or_cell, *, old_context):
     finally:
         mountmanager._mounting = False
 
-mountmanager = MountManager(0.2) #TODO: latency in config cell
+mountmanager = MountManager(0.2) #TODO: latency in config file
 mountmanager.start()
 
 def get_extension(c):

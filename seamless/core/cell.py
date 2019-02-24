@@ -58,7 +58,9 @@ Use ``Cell.status()`` to get its status.
         self._get_manager().register_cell(self)
         if self._prelim_val is not None:
             value, from_buffer = self._prelim_val
-            self._get_manager().set_cell(self, value, from_buffer=from_buffer, subpath=None)
+            self._get_manager().set_cell(self, value,
+             from_buffer=from_buffer, subpath=None, origin=ctx
+            )
             self._prelim_val = None
 
     def __hash__(self):

@@ -7,14 +7,18 @@ Things to do:
 
 1. Finish the Great Refactor early, by putting loose ends in OLD folder, DONE
    1a: merge the branch on Github, DONE
-   1b: make a very simple Dockerfile (wget + pip), to be used with IPython
-       make a very simple Jupyter Docker image.
-   1c: push it on docker repo v2
-   1d: test deployment (native, then Dockerfile)
+   1b: make a very simple Dockerfile (wget + pip), to be used with IPython DONE
+       make a very simple Jupyter Docker image. TODO
+   1c: push it on docker repo v2 TODO
+   1d: test deployment (native, then Dockerfile) DONE
+#NOTE (for presentation: with this, everything will run in a Docker file
+# - No more wrappers that invoke Docker/slurm, but that don't run in Docker
+# - No more dependencies on mounted files supplied as command line args
+# 
 2. Great Split (this is big!)
 ***NOTE: documentation/plan for new low-level strategies are in core/cache/evaluate.py***
 
-  A.
+  A. DONE
   - Put low-level execution code in BAK, DONE
   - Rip execution code from low-level, DONE
   - Changes to macro mode. Essentially, worker execution and status propagation is disabled.
@@ -25,10 +29,7 @@ Things to do:
   - New Way statuses, including "overrule", DONE.
     Overrule is orthogonal to the other statuses,
     and a cell is overruled if *any* of its upstream inputs is overruled!
-  - Implement transformer interrupt action, upon destroy or by manager (upon auth update). TODO
-    (TODO: build upon JobScheduler.cancel, but add delay, and implement worker.destroy)
-    New-way style, auth update propagate forward (potentially leading to multiple interrupts).
-    Interrupt happens in 20 secs, or when the transformer re-executes, whichever happens sooner
+  
   
   B. Implement some remote computing: DONE
     - label cache: a label-to-checksum cache. DONE
@@ -71,7 +72,7 @@ Things to do:
     TODO later: non-deterministic outputpins
     TODO later: reactor caches and jobs, remote execution (see below)
 
-  D.
+  D. DONE
   - Macros. DONE
    When macro-generated contexts are built, they are "unbound". Whenever
    a macro is successfully evaluated, the context becomes "bound".
@@ -96,7 +97,7 @@ Things to do:
     
   - Get general clean worker destruction working DONE
 
-  - Creation of a macro is synchronous, so subreactor/submacro jobs won't happen (see above) and
+  - DONE Creation of a macro is synchronous, so subreactor/submacro jobs won't happen (see above) and
     transformer jobs are not being processed.
     When macro execution is complete, the old macro is being destroyed.
     Destruction:
@@ -108,23 +109,22 @@ Things to do:
    - Get basic macro test working  DONE
    - Collatz test DONE
 
-  E.
+  E. DONE
   - Keep the new mixed cells with no storage or form cells 
-  - Change serialization: PARTIALLY DONE
+  - Change serialization: DONE
     - Pure binary => numpy. Can be recognized because it starts with NUMPY magic characters
     - Mixed => SEAMLESS magic characters, but then storage + form, then data.
-    - Pure plain => JSON. Recognized because it doesn't start with either magic
-    - (Maybe do H1 now)
-  - Mounting: NEARLY DONE
+    - Pure plain => JSON. Recognized because it doesn't start with either magic    
+  - Mounting: DONE
     - Get minimal mounting example working DONE
     - Implement unmounting upon exit DONE
     - Make it work with macros (adapt stash) DONE
-    - Make it work with mixed/structured cells (keep mount setters?) TODO
   - Reimplement IPython (mainloop/asyncio) support, DONE 
     Test Jupyter support, Qt support, DONE
     Test using Docker, DONE
 
   F.
+  - Add subpaths to all Manager API functions DONE
   - For Monitor, replace direct data storage + hooks with API
   - Get mixed tests working
   - Adapt StructuredCell to have direct manager API instead of slave cells.
@@ -172,12 +172,16 @@ The New Way and streams will be done early (this is big!)
 - Replace all md5sum with sha3-256 DONE
 - Rip the ._val attribute, store all values in a checksum-to-cell dictionary. DONE
   Move from values to checksums. No local cache dict, no local cell values. Everything comes from generic caching. Cell paths keep cache alive. DONE
+- Implement transformer interrupt action, upon destroy or by manager (upon auth update). TODO
+    (TODO: build upon JobScheduler.cancel, but add delay, and implement worker.destroy)
+    New-way style, auth update propagate forward (potentially leading to multiple interrupts).
+    Interrupt happens in 20 secs, or when the transformer re-executes, whichever happens sooner
 - Rip pythreadkernel and construct a request object instead (see tests/lowlevel/simpler-remote),
   but with checksums instead of values, and add access mode as well. 
   as local cache. DONE
   Transformers will be shut down (clearing namespaces etc.) unless annotated as "debug".  TODO
-  checksum-to-value caching (cell caching). Values will be pulled from there just-in-time.
-  Contexts in equilibrium should now be very memory-frugal.
+  checksum-to-value caching (cell caching). Values will be pulled from there just-in-time. DONE
+  Contexts in equilibrium should now be very memory-frugal. DONE
 - Every worker has a number of cores used (default 1). As many jobs are launched as there are cores TODO
 - Fix asyncio compatibility. Add Manager.temprefmanager.purge in mainloop! 
   final test in Jupyter Docker image DONE

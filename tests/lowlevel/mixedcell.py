@@ -5,7 +5,9 @@ import numpy as np
 ctx = context(toplevel=True)
 x = np.arange(10)
 y = np.log(x+1)
-ctx.cell1 = cell("mixed").set({"x": x, "y": y, "z": [1,2,"test",[3,4]]})
+cell1 = cell("mixed").set({"x": x, "y": y, "z": [1,2,"test",[3,4]]})
+cell1.mount("/tmp/mixedcell.mixed")
+ctx.cell1 = cell1
 print(ctx.cell1.storage)
 print(ctx.cell1.form)
 print(ctx.cell1.value)

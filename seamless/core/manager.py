@@ -290,7 +290,13 @@ class Manager:
                     if status.auth == "PRELIMINARY":
                         status.auth = "FRESH"
                 if value is not None:
-                    self.set_cell(cell, value, subpath=subpath)
+                    # TODO: dirty...
+                    value2 = value
+                    if cell._celltype == "mixed":
+                        from ..mixed.get_form import get_form
+                        storage, form = get_form(value)
+                        value2 = (storage, form, value)
+                    self.set_cell(cell, value2, subpath=subpath)
                     if checksum is None and subpath is not None:
                         checksum = self.cell_cache.cell_to_buffer_checksums[cell]
                 else:
@@ -1378,7 +1384,7 @@ class Manager:
             expression = accessor.to_expression(checksum)
             self.expression_cache.expression_to_semantic_key[expression.get_hash()] = semantic_key
             if subpath is None and not is_dummy_mount(cell._mount):
-                if not get_macro_mode():
+                if not get_macro_mode() and origin is not cell._context():
                     self.mountmanager.add_cell_update(cell)
             self._update_status(
               cell, checksum, 
