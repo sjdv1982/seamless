@@ -251,7 +251,7 @@ class MountItem:
         return checksum, buffer
 
     def _get_file_checksum(self, file_buffer, cell):
-        _, file_checksum, _, _ = deserialize(
+        _, file_checksum, _, _, _ = deserialize(
             cell._celltype, cell._subcelltype, cell.path,
             file_buffer, from_buffer=True, buffer_checksum=None,
             source_access_mode=None,

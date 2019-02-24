@@ -135,7 +135,7 @@ class JobScheduler:
                         toclean.append(key)
                         exception = future.exception()
                         if exception is not None:
-                            manager.set_transformer_result_exception(job.level1, exception)
+                            manager.set_transformer_result_exception(job.level1, job.level2, exception)
             for key in toclean:
                 jobs.pop(key)
 

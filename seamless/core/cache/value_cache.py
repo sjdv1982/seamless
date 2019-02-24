@@ -12,7 +12,7 @@ class WeakrefableWrapper:
         self.value = value
 
 SemanticKey = namedtuple("SemanticKey", 
-    ("semantic_checksum", "access_mode", "content_type", "subpath")
+    ("semantic_checksum", "access_mode", "subpath")
 )
 
 value_caches = weakref.WeakSet()

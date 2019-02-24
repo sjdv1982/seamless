@@ -80,14 +80,21 @@ def evaluate_from_buffer(expression, buffer):
         source_access_mode = expression.source_access_mode,
         source_content_type = expression.source_content_type
     )
-    _, _, obj, semantic_checksum = result
+    _, _, obj, semantic_obj, semantic_checksum = result
+    if expression.access_mode is not None:
+        if expression.access_mode == "text" and expression.celltype == "cson":
+            semantic_obj = obj
+        elif expression.celltype == "python":
+            semantic_obj = obj
+        # TODO
+    if expression.content_type is not None and expression.content_type != expression.celltype:
+        pass # TODO?
     if expression.subpath is not None:
         raise NotImplementedError
     else:
         semantic_key = SemanticKey(
             semantic_checksum, 
-            expression.access_mode, 
-            expression.content_type,
+            expression.access_mode,
             None
         )
-    return obj, semantic_key
+    return semantic_obj, semantic_key

@@ -26,6 +26,8 @@ def deserialize(
             source_access_mode = "binary"
         elif celltype in ("plain", "mixed") or from_buffer:
             source_access_mode = celltype
+        elif celltype == "cson":
+            source_access_mode = "plain"
         elif isinstance(value, str):
             try:
                 json.loads(value)
@@ -71,17 +73,19 @@ def deserialize_plain(
     value, 
     from_buffer, buffer_checksum,
     source_access_mode, source_content_type
-):
+):    
     if from_buffer:
         load_from_text = True
     elif source_access_mode == "text":
         if source_content_type == "cson":
             value = cson2json(value)
+            load_from_text = False
         else:
             load_from_text = True
     elif source_access_mode == "binary":
         if isinstance(value, np.ndtype):
             value = value.tolist()
+            load_from_text = False
         else:
             raise TypeError(type(value))
     else:
@@ -103,7 +107,7 @@ def deserialize_plain(
     if buffer_checksum is None:
         buffer_checksum = get_hash(buffer)
     semantic_checksum = buffer_checksum
-    return buffer, buffer_checksum, obj, semantic_checksum
+    return buffer, buffer_checksum, obj, obj, semantic_checksum
         
 def deserialize_pythoncode(
     value, subcelltype, cellpath, 
@@ -130,7 +134,7 @@ def deserialize_pythoncode(
             err = "subcelltype '%s' does not support code mode '%s'" % (subcelltype, mode)
             raise SyntaxError((codename, err))
 
-    return buffer, buffer_checksum, buffer, semantic_checksum    
+    return buffer, buffer_checksum, buffer, None, semantic_checksum    
 
 
 def deserialize_text(
@@ -160,7 +164,7 @@ def deserialize_text(
     if buffer_checksum is None:
         buffer_checksum = get_hash(buffer)
     semantic_checksum = buffer_checksum
-    return buffer, buffer_checksum, value, semantic_checksum
+    return buffer, buffer_checksum, value, value, semantic_checksum
 
 def deserialize_cson(
     value, 
@@ -178,14 +182,14 @@ def deserialize_cson(
     if isinstance(value, bytes):
         value = value.decode()
     value = str(value)
-    plain = cson2json(value)
-    plainbuffer = json.dumps(value) + "\n"
+    plainvalue = cson2json(value)
+    plainbuffer = json.dumps(plainvalue).rstrip("\n") + "\n"
     buffer = value.rstrip("\n") + "\n"
 
     if buffer_checksum is None:
         buffer_checksum = get_hash(buffer)
     semantic_checksum = get_hash(plainbuffer)
-    return buffer, buffer_checksum, value, semantic_checksum
+    return buffer, buffer_checksum, value, plainvalue, semantic_checksum
 
 def deserialize_mixed(
     value, 
@@ -228,4 +232,4 @@ def deserialize_mixed(
 
     obj = storage, form, data
     semantic_checksum = buffer_checksum
-    return buffer, buffer_checksum, obj, semantic_checksum
+    return buffer, buffer_checksum, obj, obj, semantic_checksum

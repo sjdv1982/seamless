@@ -137,11 +137,11 @@ class Manager:
         assert isinstance(tf_level1, TransformerLevel1)
         tcache = self.transform_cache
         tf_level2 = await tcache.build_level2(tf_level1)
+        tcache.set_level2(tf_level1, tf_level2)
         result = tcache.result_hlevel2.get(tf_level2.get_hash())
-        if result is not None:
+        if result is not None:            
             self.set_transformer_result(tf_level1, tf_level2, None, result, False)
             return
-        tcache.set_level2(tf_level1, tf_level2)  
         job = self.jobscheduler.schedule(tf_level2, count)
         return job
 
@@ -196,7 +196,7 @@ class Manager:
             if type == "transformer":
                 tf_level1 = schedop
                 hlevel1 = tf_level1.get_hash()
-                if count > 0:
+                if count > 0:                    
                     for ttf, ttf_level1 in tcache.transformer_to_level1.items():
                         if ttf_level1.get_hash() != hlevel1:
                             continue
@@ -223,14 +223,17 @@ class Manager:
         self._temp_tf_level1.clear()
 
 
-    def set_transformer_result_exception(self, level1, exception):
+    def set_transformer_result_exception(self, level1, level2, exception):
         #TODO: store exception
         transformer = None
         tcache = self.transform_cache
         hlevel1 = level1.get_hash()
+        hlevel2 = level2.get_hash()
         for tf, tf_level1 in list(tcache.transformer_to_level1.items()): #could be more efficient...
-            if tf_level1.get_hash() != hlevel1:
-                continue
+            htflevel1 = tf_level1.get_hash()
+            if htflevel1 != hlevel1:
+                if tcache.hlevel1_to_level2[htflevel1].get_hash() != hlevel2:
+                    continue
             if transformer is None:
                 transformer = tf
             tstatus = self.status[tf]
@@ -240,7 +243,7 @@ class Manager:
             if tstatus.auth != "FRESH":
                 auth_status = "FRESH"
                 tstatus.auth = "FRESH"
-            self.unstable.remove(tf)
+            self.unstable.discard(tf)
             for cell, subpath in tcache.transformer_to_cells[tf]:
                 self._propagate_status(
                   cell,"UPSTREAM_ERROR", auth_status, 
@@ -365,10 +368,10 @@ class Manager:
         the buffer checksum is a hit, but the semantic key is either
         unknown or has expired from object cache"""
 
-        obj, semantic_key = protocol.evaluate_from_buffer(expression, buffer)
-        self.value_cache.add_semantic_key(semantic_key, obj)
+        semantic_obj, semantic_key = protocol.evaluate_from_buffer(expression, buffer)
+        self.value_cache.add_semantic_key(semantic_key, semantic_obj)
         self.expression_cache.expression_to_semantic_key[expression.get_hash()] = semantic_key
-        return obj, semantic_key
+        return semantic_obj, semantic_key
 
 
     def get_expression(self, expression):
@@ -377,8 +380,8 @@ class Manager:
         semantic_key = self.expression_cache.expression_to_semantic_key.get(expression.get_hash())
         cache_hit = False
         if semantic_key is not None:
-            value = self.value_cache.get_object(semantic_key)
-            if value is not None:
+            semantic_value = self.value_cache.get_object(semantic_key)
+            if semantic_value is not None:
                 cache_hit = True
         if not cache_hit:
             checksum = expression.buffer_checksum
@@ -392,8 +395,8 @@ class Manager:
                     is_none = True
             if is_none:
                 raise ValueError("Checksum not in value cache")            
-            value, _ = self.cache_expression(expression, buffer)
-        return value
+            semantic_value, _ = self.cache_expression(expression, buffer)
+        return semantic_value
 
     def build_expression(self, accessor):
         cell = accessor.cell
@@ -429,7 +432,7 @@ class Manager:
                 raise ValueError("Checksum not in value cache") 
             _, _, buffer = buffer_item
             _, semantic_key = self.cache_expression(expression, buffer)
-        semantic_checksum, _, _, _ = semantic_key
+        semantic_checksum, _, _ = semantic_key
         return semantic_checksum        
 
     def value_get(self, checksum):
@@ -604,8 +607,7 @@ class Manager:
         propagate_auth = (new_status.auth != old_status.auth)
         target_cells = tcache.transformer_to_cells[transformer]
         if new_status.exec == "FINISHED":
-            if transformer in self.unstable:
-                self.unstable.remove(transformer)
+            self.unstable.discard(transformer)
         elif new_status.exec == "READY":
             assert new_status.data in ("OK", "PENDING")
             if len(target_cells) and \
@@ -1070,16 +1072,40 @@ class Manager:
         if source.subpath is not None or target.subpath is not None:
             raise NotImplementedError ### cache branch
             same = False
+        if source.cell._destroyed or target.cell._destroyed: return ### TODO, shouldn't happen...
+        checksum = self.cell_cache.cell_to_buffer_checksums.get(source.cell) # TODO in case of cache tree depth
+        """            
         for attr in ("celltype", "storage_type", "access_mode", "content_type"):
             if getattr(source, attr) != getattr(target, attr):
-                raise NotImplementedError ### cache branch
+                same = False
+        """
+        for attr in ("storage_type", "access_mode"):
+            if getattr(source, attr) != getattr(target, attr):
                 same = False
         if same:
-            if source.cell._destroyed or target.cell._destroyed: return ### TODO, shouldn't happen...
-            checksum = self.cell_cache.cell_to_buffer_checksums.get(source.cell)
-            self.set_cell_checksum(target.cell, checksum, self.status[source.cell][None])
+            if source.celltype != target.celltype:                
+                print("Manager.py, line 1087: kludge for cson-plain types")
+                assert source.celltype == "cson" and target.celltype == "plain"
+                expression = source.to_expression(checksum)
+                value = self.get_expression(expression)
+                result = deserialize(
+                    target.celltype, target.cell._subcelltype, target.cell.path,
+                    value, from_buffer=False, buffer_checksum=None,
+                    source_access_mode="plain", #bad
+                    source_content_type="cson" #bad
+                )
+                target_buffer, target_checksum, target_obj, target_semantic_obj, target_semantic_checksum = result
+                assert target.subpath is None
+                self.set_cell(
+                    target.cell, target_semantic_obj,
+                    subpath = None,
+                    from_buffer=False, 
+                    origin=source.cell
+                )
+            else:
+                self.set_cell_checksum(target.cell, checksum, self.status[source.cell][None])
         else:
-            raise NotImplementedError            
+            raise NotImplementedError ### cache branch            
 
     def update_path_value(self, path):
         # Slow! needs to be improved (TODO)
@@ -1333,12 +1359,11 @@ class Manager:
             source_access_mode=None,
             source_content_type=None
         )
-        buffer, checksum, obj, semantic_checksum = result
+        buffer, checksum, obj, semantic_obj, semantic_checksum = result
         vcache = self.value_cache
         semantic_key = SemanticKey(
             semantic_checksum,
             cell._default_access_mode,
-            cell._content_type,
             None
         )
         if checksum != old_checksum:
@@ -1347,7 +1372,7 @@ class Manager:
             if old_checksum is not None:
                 vcache.decref(old_checksum, has_auth=has_auth)
             vcache.incref(checksum, buffer, has_auth=has_auth)
-            vcache.add_semantic_key(semantic_key, obj)
+            vcache.add_semantic_key(semantic_key, semantic_obj)
             accessor = self.get_default_accessor(cell)
             accessor.subpath = subpath
             expression = accessor.to_expression(checksum)
@@ -1361,7 +1386,7 @@ class Manager:
             )
         else:
             # Just refresh the semantic key timeout
-            vcache.add_semantic_key(semantic_key, obj)
+            vcache.add_semantic_key(semantic_key, semantic_obj)
 
     @main_thread_buffered
     def set_cell_label(self, cell, label):
@@ -1552,7 +1577,7 @@ class Manager:
                     if tf_level1.get_hash() == hlevel1:
                         tcache.transformer_from_hlevel1[hlevel1] = tf
                         break            
-        tcache.transformer_to_cells.pop(transformer, None) 
+        tcache.transformer_to_cells.pop(transformer, None)
         self.unstable.discard(transformer)
 
     def _destroy_macro(self, macro):        

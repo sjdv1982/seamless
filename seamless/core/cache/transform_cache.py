@@ -65,7 +65,6 @@ class TransformerLevel2:
             v = (
                 value.semantic_checksum.hex(), 
                 value.access_mode,
-                value.content_type,
                 value.subpath
             )
             v = json.dumps(v)
@@ -228,6 +227,8 @@ class TransformCache:
     def set_level2(self, level1, level2):
         hlevel1 = level1.get_hash()
         old_level2 = self.hlevel1_to_level2.get(hlevel1)
+        if old_level2 is level2:
+            return
         if old_level2 is not None:
             assert hash(old_level2) == hash(level2)
             return

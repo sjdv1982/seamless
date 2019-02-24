@@ -95,7 +95,7 @@ Use ``Cell.status()`` to get its status.
         manager = self._get_manager()
         if isinstance(manager, UnboundManager):
             raise Exception("Cannot ask the cell value of a context that is being constructed by a macro")
-        checksum = manager.cell_semantic_checksum(self)
+        checksum = manager.cell_semantic_checksum(self, subpath=None)
         if checksum is None:
             return None
         return checksum.hex()
@@ -119,6 +119,8 @@ Use ``Cell.status()`` to get its status.
         if checksum is None:
             return None
         default_accessor = manager.get_default_accessor(self)
+        if self._celltype == "cson":
+            default_accessor.access_mode = "text"
         default_expression = default_accessor.to_expression(checksum)
         value = manager.get_expression(default_expression)
         return value

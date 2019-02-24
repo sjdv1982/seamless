@@ -259,8 +259,6 @@ class ShareServer(object):
         await s1
         await s2
         self.started = True
-        global deserialize
-        from .core.protocol import deserialize
 
     def start(self):
         if self.started:
