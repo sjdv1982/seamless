@@ -5,10 +5,15 @@ from seamless import get_hash
 
 seamless.set_ncores(0)
 from seamless import communionserver
-communionserver.configure_master(transformer_result=True, transformer_job=True)
+communionserver.configure_master(
+    value=True, 
+    transformer_job=True,
+    transformer_result=True,
+    transformer_result_level2=True
+)
 communionserver.configure_servant(value=True)
 
-redis_cache = seamless.RedisCache()
+#redis_cache = seamless.RedisCache()
 
 with macro_mode_on():
     ctx = context(toplevel=True)
@@ -36,23 +41,27 @@ print("Secret source code", ctx.code.checksum)
 
 ctx.equilibrate()
 print(ctx.status)
-
 print(ctx.result.value)
+
+communionserver.configure_master(value=False)
 with macro_mode_on():
     ctx.cell1.set(100)
     ctx.cell2.set(200)
 
 ctx.equilibrate()
 print(ctx.status)
+communionserver.configure_master(value=True)
 print(ctx.result.value)
 
+communionserver.configure_master(value=False)
 with macro_mode_on():
     ctx.cell1.set(3)
     ctx.cell2.set(200)
 
 ctx.equilibrate()
 print(ctx.status)
+communionserver.configure_master(value=True)
 print(ctx.result.value)
 
-#communionserver.configure_master(value=False)
-#print(ctx.code.value)  # Should raise Exception, unless ctx.code.value has been fetched previously
+communionserver.configure_master(value=False)
+print(ctx.code.value)  # Should raise Exception, unless ctx.code.value has been fetched previously

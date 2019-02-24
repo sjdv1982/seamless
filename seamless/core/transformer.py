@@ -55,6 +55,14 @@ class Transformer(Worker):
         super()._set_context(ctx, name)
         self._get_manager().register_transformer(self)
 
+    @property
+    def checksum(self):
+        manager = self._get_manager()
+        result = manager.transform_cache.transformer_to_level1.get(self)
+        if result is not None:
+            result = result.get_hash()
+        return result
+
     def destroy(self, *, from_del=False):
         if not from_del:
             self._get_manager()._destroy_transformer(self)

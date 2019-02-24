@@ -163,7 +163,7 @@ class TransformCache:
         return level1
     
     def set_level1(self, transformer, level1):
-        #print("SET LEVEL1", hash(level1))
+        #print("SET LEVEL1", level1.get_hash())
         curr_level1 = self.transformer_to_level1.get(transformer)
         if curr_level1 == level1:
             return
@@ -244,6 +244,12 @@ class TransformCache:
         if result is not None:
             return result
         return redis_caches.get_transform_result(bytes.fromhex(hlevel1))
+
+    def get_result_level2(self, hlevel2):
+        result = self.result_hlevel2.get(hlevel2)
+        if result is not None:
+            return result
+        return redis_caches.get_transform_result_level2(bytes.fromhex(hlevel2))
 
     def set_result(self, hlevel1, checksum):
         self.result_hlevel1[hlevel1] = checksum

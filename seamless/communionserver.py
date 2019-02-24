@@ -34,6 +34,7 @@ if _outgoing:
 default_master_config = {
     "label": True,
     "transformer_result": False,
+    "transformer_result_level2": False,
     "value": True,
     "transformer_job": False,
 }
@@ -42,6 +43,7 @@ default_master_config = {
 default_servant_config = {
     "label": True,
     "transformer_result": True,
+    "transformer_result_level2": True,
     "value": False,
     "transformer_job": False,
 }
@@ -254,6 +256,9 @@ class CommunionServer:
             elif type == "transformer_result":
                 cache_name = "transform_cache"
                 method_name = "get_result"
+            elif type == "transformer_result_level2":
+                cache_name = "transform_cache"
+                method_name = "get_result_level2"
             elif type == "value_check":
                 cache_name = "value_cache"
                 method_name = "value_check"

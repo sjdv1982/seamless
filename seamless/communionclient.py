@@ -1,6 +1,7 @@
 from .core.cache.cache_task import (
     remote_checksum_from_label_servers, 
     remote_transformer_result_servers,
+    remote_transformer_result_level2_servers,
     remote_checksum_value_servers
 )    
 from .core.jobscheduler import remote_job_servers
@@ -95,6 +96,16 @@ class CommunionTransformerResultClient(CommunionClient):
             "content": checksum,
         }
 
+class CommunionTransformerResultL2Client(CommunionClient):
+    config_type = "transformer_result_level2"
+    cache_task_servers = remote_transformer_result_level2_servers
+    def _prepare_message(self, checksum):
+        return {
+            "type": self.config_type,
+            "content": checksum,
+        }
+
+
 class CommunionValueCacheClient(CommunionPairClient):
     config_type = "value"
     cache_task_servers = remote_checksum_value_servers
@@ -129,6 +140,7 @@ class CommunionTransformerJobClient(CommunionPairClient):
 communion_client_types = (
     CommunionLabelClient,
     CommunionTransformerResultClient,
+    CommunionTransformerResultL2Client,
     CommunionValueCacheClient,
     CommunionTransformerJobClient,
 )

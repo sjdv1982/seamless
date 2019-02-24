@@ -3,12 +3,16 @@ from seamless.core import context, cell, transformer, pytransformercell, link
 from seamless import get_hash
 
 from seamless import communionserver
-communionserver.configure_master(value=True, transformer_result=True)
+communionserver.configure_master(
+    value=True, 
+    transformer_result=True,
+    transformer_result_level2=True
+)
 communionserver.configure_servant(value=True, transformer_job=True)
 
 import seamless
-redis_sink = seamless.RedisSink()
-redis_cache = seamless.RedisCache()
+#redis_sink = seamless.RedisSink()
+#redis_cache = seamless.RedisCache()
 
 
 with macro_mode_on():
@@ -29,7 +33,7 @@ with macro_mode_on():
     ctx.tf.c.connect(ctx.result)
 
 ctx.equilibrate()
-print("Secret source code ", ctx.code.checksum, ctx._manager.value_get(bytes.fromhex(ctx.code.checksum)))
+print("Secret source code ", ctx.code.checksum, ctx._get_manager().value_get(bytes.fromhex(ctx.code.checksum)))
 print("hash verification  ", get_hash("c = a + b\n").hex())
 print(ctx.result.checksum)
 

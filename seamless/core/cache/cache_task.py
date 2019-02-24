@@ -122,7 +122,7 @@ class CacheTaskManager:
             checksum = future.result()
             if checksum is not None:
                 for transform_cache in transform_caches:
-                    transform_cache.set_result(hlevel2, checksum)
+                    transform_cache.set_result_level2(hlevel2, checksum)
         return self.schedule_task(key, future, 1, resultfunc=resultfunc)
 
 from .transform_cache import transform_caches

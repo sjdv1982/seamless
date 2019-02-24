@@ -80,7 +80,7 @@ class JobScheduler:
                 return None
             return job
         if hlevel1 in self.remote_jobs:
-            job = self.jobs[hlevel2]
+            job = self.jobs[hlevel1]
             job.count += count
             return job
         if not len(remote_job_servers):
@@ -95,7 +95,7 @@ class JobScheduler:
         job.execute(transformer)
         return job
 
-    def schedule(self, level2, count):
+    def schedule(self, level2, count, from_remote=False):
         hlevel2 = level2.get_hash()
         if count < 0:
             count = -count
@@ -118,7 +118,9 @@ class JobScheduler:
         job = Job(self, level1, level2, remote=False)
         job.count = count
         self.jobs[hlevel2] = job
-        transformer = tcache.transformer_from_hlevel1[hlevel1]
+        transformer = tcache.transformer_from_hlevel1.get(hlevel1)
+        if not from_remote and transformer is None: # Transformer must have been overruled...
+            return None
         job.execute(transformer)
         return job
 

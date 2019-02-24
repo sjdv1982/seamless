@@ -158,6 +158,8 @@ class UnboundContext(SeamlessBase):
         return cell_name
 
     def _get_manager(self):
+        if self._bound:
+           return self._bound._get_manager() 
         return self._manager
 
     def mount(self, path=None, mode="rw", authority="cell", persistent=False):
