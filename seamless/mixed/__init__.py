@@ -99,5 +99,5 @@ for name in binary_special_method_names:
 from .MixedDict import MixedDict
 from .MixedObject import MixedObject
 from .Monitor import Monitor
-from .Backend import Backend, DefaultBackend
+from .Backend import Backend, DefaultBackend, CellBackend
 from .get_form import is_contiguous, is_unsigned

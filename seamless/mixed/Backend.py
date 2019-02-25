@@ -242,3 +242,167 @@ class DefaultBackend(Backend):
         self._storage = storage
         self._form = form
 
+
+
+class CellBackend(Backend):
+    def __init__(self, cell):
+        from ..core.cell import MixedCell, PlainCell
+        assert isinstance(cell, (MixedCell, PlainCell))
+        plain = (isinstance(cell, PlainCell))
+        super().__init__(plain)
+        self._cell = cell
+        self._tempdata = None
+        self._tempform = None
+        self._tempstorage = None
+        self._updated_paths = set()
+        self._deleted_paths = set()
+
+    def get_storage(self):
+        if self._plain:
+            return "pure-plain"
+        return self._cell.storage
+
+    def _set_storage(self, value):
+        if self._plain:
+            raise AttributeError
+        self._tempstorage = value
+
+    def get_data(self):
+        return self._cell.data
+
+    def get_form(self):
+        return self._cell.form
+
+    def get_path(self, path):
+        data = self.get_data()
+        return self._get_path(path, data)
+
+    def _get_path(self, path, data):
+        for pp in path:
+            assert isinstance(pp, (int, str))
+        if not len(path):
+            return data
+        result = data
+        for p in path:
+            if result is None:
+                return None
+            if isinstance(p, int):
+                if p >= len(result):
+                    return None
+            result = result[p]
+        return result
+
+    def _set_path(self, path, data):
+        self._updated_paths.add(tuple(path))
+        if not len(path):
+            self._tempdata = deepcopy(data)
+            return
+        elif self._tempdata is None:
+            self._tempdata = deepcopy(self._cell.data)
+        subdata = self._get_path(path[:-1], self._tempdata)
+        attr = path[-1]
+        if isinstance(attr, int):
+            assert isinstance(subdata, list)
+            for n in range(len(subdata), attr + 1):
+                subdata.append(None)
+        subdata[attr] = data
+
+    def _insert_path(self, data, path):
+        if self._tempdata is None:
+            self._tempdata = deepcopy(self._cell.data)
+        prepath = tuple(path[:-1])
+        subdata = self._get_path(prepath, self._tempdata)
+        attr = path[-1]
+        assert isinstance(attr, int)
+        assert isinstance(subdata, list)
+        if len(subdata) >= attr:
+            for n in range(len(subdata), attr+1):
+                path2 = prepath + (n,)
+                self._updated_paths.add(path2)
+                subdata.append(None)            
+            subdata[attr] = data
+        else:
+            subdata.insert(attr, data)
+        self._updated_paths.add(tuple(path))
+        
+    def _del_path(self, path):
+        if not len(path):
+            self._tempdata = None
+            return
+        elif self._tempdata is None:
+            self._tempdata = deepcopy(self._cell.data)
+        subdata = self._get_path(path[:-1], self._tempdata)
+        attr = path[-1]
+        subdata.pop(attr)
+        self._deleted_paths.add(tuple(path))
+
+    def _get_form(self, path):
+        if self._tempform is None:
+            self._tempform = deepcopy(self._cell.form)
+        if not len(path):
+            return self._tempform
+        subform = self._get_form(path[:-1])
+        attr = path[-1]
+        if isinstance(attr, int):
+            if subform["identical"]:
+                return subform["items"]
+            else:
+                return subform["items"][attr]
+        else:
+            return subform["properties"][attr]
+
+    def _set_form(self, form, path):
+        if not len(path):
+            self._tempform = deepcopy(form)
+            return
+        subform = self._get_form(path[:-1])
+        attr = path[-1]
+        if isinstance(attr, int):
+            if subform["identical"]:
+                subform["items"] = form
+            else:
+                subform["items"][attr] = form
+        else:
+            if "properties" not in subform:
+                subform["properties"] = {}
+            subform["properties"][attr] = form
+
+    def _update(self, path):
+        # TODO: proper form re-calculation
+        # for now, it doesn't work (since a storage change may propagate upstream)
+        assert not len(self._updated_paths) or not len(self._deleted_paths) # update OR delete
+        if len(self._deleted_paths):
+            deleted = True
+            updated = self._deleted_paths
+        else:
+            deleted = False
+            updated = self._updated_paths
+        updated2 = set()
+        for path in updated:
+            for n in range(len(path)):
+                p = path[:n]
+                if p not in updated:
+                    updated2.add(p)
+        # TODO: make a meaningful distinction between updated and updated2
+        # updated have independent values, whereas updated2 only changed b/c of children
+        # This makes only sense with cache tree depth
+        updated = updated.union(updated2)
+        data = self._tempdata
+        self._tempdata = None
+        self._tempform = None
+        self._tempstorage = None
+        self._updated_paths.clear()
+        self._cell.set(data) # will also compute storage and form
+        manager = self._cell._get_manager()
+        ccache = manager.cell_cache
+        cell = self._cell
+        for path in sorted(updated, key=lambda p:len(p)):
+            if not len(path):
+                continue
+            auth = ccache.cell_to_authority[cell][path]
+            has_auth = (auth != False)
+            manager._update_status(
+                self._cell, (not deleted), 
+                has_auth=has_auth, origin=None,
+                cell_subpath=path
+            )

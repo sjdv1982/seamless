@@ -131,7 +131,7 @@ Use ``Cell.status()`` to get its status.
     def data(self):
         """Returns the cell's data
         cell.set(cell.data) is guaranteed to be a no-op"""
-        raise NotImplementedError ###cache branch
+        return self.value # TODO: check that this is always correct
 
     def touch(self):
         """Forces a cell update, even though the value stays the same

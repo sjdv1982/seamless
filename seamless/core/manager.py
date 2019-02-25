@@ -468,11 +468,18 @@ class Manager:
         ccache.cell_to_accessors[cell] = {None : []}
         self.status[cell] = {None: Status("cell")}
 
+    def _register_cell_paths(self, cell, paths, has_auth):
+        ccache = self.cell_cache
+        for path in paths:
+            ccache.cell_to_authority[cell][path] = has_auth
+            ccache.cell_to_accessors[cell][path] = []
+            self.status[cell][path] = Status("cell")
+
     def register_structured_cell(self, structured_cell):
         ccache = self.cell_cache
         cell = structured_cell.cell
         assert cell in ccache.cell_to_authority
-        raise NotImplementedError ### cache branch; update cell_to_authority, cell_to_accessors, status
+        raise NotImplementedError ### cache branch; self._register_cell_paths with autority info
 
     def register_transformer(self, transformer):
         tcache = self.transform_cache
@@ -511,6 +518,7 @@ class Manager:
 
     def _propagate_status(self, cell, data_status, auth_status, full, *, cell_subpath, origin=None):
         # "full" indicates a value change, but it is just propagated to update_worker
+        # print("propagate status", cell, cell_subpath, data_status, auth_status, full)
         from .reactor import Reactor
         from .macro import Path
         if isinstance(cell, Path):
@@ -1315,11 +1323,11 @@ class Manager:
             raise TypeError(worker)
         self.schedule_jobs()
 
-    def _update_status(self, cell, checksum, *, has_auth, origin, cell_subpath):
+    def _update_status(self, cell, defined, *, has_auth, origin, cell_subpath):
         status = self.status[cell][cell_subpath]
         old_data_status = status.data
         old_auth_status = status.auth        
-        if checksum is None:
+        if not defined:
             status.data = "UNDEFINED"
         else:
             status.data = "OK"
@@ -1355,7 +1363,10 @@ class Manager:
             if buffer_known and not is_dummy_mount(cell._mount):
                 if not get_macro_mode():
                     self.mountmanager.add_cell_update(cell)
-            self._update_status(cell, checksum, has_auth=has_auth, origin=None, cell_subpath=None)
+            self._update_status(
+                cell, (checksum is not None), 
+                has_auth=has_auth, origin=None, cell_subpath=None
+            )
 
     @main_thread_buffered
     def set_cell(self, cell, value, *, subpath,
@@ -1368,11 +1379,10 @@ class Manager:
         assert buffer_checksum is None or from_buffer == True
         ccache = self.cell_cache
         auth = ccache.cell_to_authority[cell][subpath]
-        has_auth = (auth != False)        
-        if subpath is not None: raise NotImplementedError ### cache branch
-        # TODO: old_checksum is only valid for subpath=None
-        # Therefore, we need to cache cell+subpath => semantic key
-        # And this needs to be updated by external calls
+        has_auth = (auth != False)     
+        if subpath is not None: 
+            raise NotImplementedError ### cache tree depth
+
         old_checksum = ccache.cell_to_buffer_checksums.get(cell)
         result = deserialize(
             cell._celltype, cell._subcelltype, cell.path,
@@ -1402,7 +1412,7 @@ class Manager:
                 if not get_macro_mode() and origin is not cell._context():
                     self.mountmanager.add_cell_update(cell)
             self._update_status(
-              cell, checksum, 
+              cell, (checksum is not None), 
               cell_subpath=subpath, has_auth=has_auth, origin=origin
             )
         else:

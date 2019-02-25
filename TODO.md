@@ -125,8 +125,9 @@ Things to do:
 
   F.
   - Add subpaths to all Manager API functions DONE
-  - For Monitor, replace direct data storage + hooks with API
-  - Get mixed tests working
+  - For Monitor, replace direct data storage + hooks with API DONE
+  - Get mixed tests working DONE
+  - Simple streams (map for list/array and dict)
   - Adapt StructuredCell to have direct manager API instead of slave cells.
     Only three slave cells (data, schema, buffer) instead of seven
     The manager API will sync StructuredCell updates with cells (data, buffer) and their mounts
@@ -135,27 +136,23 @@ Things to do:
     have changed.
   - Get basic StructuredCell tests working
   
-  G. Get module injection working again.
+  G. Get the high level working again. Should be quite straightforward now, but:
+  - Simple streams (map for list/array and dict)
+  - Re-enable type inference (i.e. tf.pin = ... is inferred like tf.example.pin = ...)
+  but only if set from terminal (never from pin).
+  
+  H. (March)
+  - Get module injection working again.
   Store module objects either in object cache or a new module object cache.
   Building these module objects is similar to cache expression evaluation in the hierarchy (i.e. local).
   The injection machinery itself should stay similar.
-
-  H.
-  - Gradually, get all low-level tests working, extending the manager, using the New Way 
-    1. Easy-ish: Cson test + cell-cell connection (also with int/float/str/bool cells), generic deserialization (see protocol/evaluate.py)
-    2. Easy-ish: advanced mounting DONE, ipython
-    3. Medium: debugging (TODO: test Jupyter), library, shell
-    4. Hard: all StructuredCell tests
+  - Cell-cell connection (also with int/float/str/bool cells), generic deserialization (see protocol/evaluate.py)
+  - Get libraries working again
+  - Shell
   - Implement annotation dict, including execute_debug, ncores (ncores DONE), and a field for streams
-
-  I. Streams (part 3, below) and cache-tree-depth.
-
-  J. Get the high level working again. Should be quite straightforward now, but:
-  - Streams
-  - Re-enable type inference (i.e. tf.pin = ... is inferred like tf.example.pin = ...)
-  but only if set from terminal (never from pin).
-     
-  K. (Maybe delay this until after the presentation) 
+  - Deep cells / cache-tree-depth (see below).
+  
+  I. (Maybe delay this until after the presentation) 
     Add cache graph serialization where just the checksums and status flags are stored.
     (See the TEMP problem below; for now, require a successful translation upon save)
     UPDATE:
@@ -165,8 +162,8 @@ Things to do:
     - Get rid of StructuredCellState, only store checksums
      In addition, implement simple cache archives (zip files of mixed cell streams)
       that can be saved and loaded into value cache at will.
+    - Full streams (reduce, multiple arguments)
 
-Details:
 The New Way and streams will be done early (this is big!)
 - Create a cache branch DONE
 - Replace all md5sum with sha3-256 DONE
@@ -179,19 +176,23 @@ The New Way and streams will be done early (this is big!)
 - Rip pythreadkernel and construct a request object instead (see tests/lowlevel/simpler-remote),
   but with checksums instead of values, and add access mode as well. 
   as local cache. DONE
-  Transformers will be shut down (clearing namespaces etc.) unless annotated as "debug".  TODO
+  Transformers will be shut down (clearing namespaces etc.) unless annotated as "debug".  PARTIALLY DONE
   checksum-to-value caching (cell caching). Values will be pulled from there just-in-time. DONE
   Contexts in equilibrium should now be very memory-frugal. DONE
 - Every worker has a number of cores used (default 1). As many jobs are launched as there are cores TODO
-- Fix asyncio compatibility. Add Manager.temprefmanager.purge in mainloop! 
+- Fix asyncio compatibility. DONE
   final test in Jupyter Docker image DONE
-- Mixed cells (and structured cells) have cache-tree-depth (default 0). TODO
-  At 0, simple checksum => value. At level 1, dicts/lists will be checksum => {checksum:checksum}
+- Deep cells, with cache-tree-depth > 0. TODO
+  At 0, simple checksum => value (default, current situation). 
+  At level 1, dicts/lists will be checksum => {checksum:checksum}
   resp. checksum => [checksum] (Merkle trees), in a special Merkle tree cache.
-- Structured cells have their own Merkle tree, corresponding to what is now State. TODO, YAGNI??
-- Outchannels will store their own checksums (can be easy with Merkle trees) TODO
-  Outchannels will never refer to buffered or invalid state, they will be undefined in that case
-  (NOTE: should be like that already, right?)
+  UPDATE: 
+  No special Merkle tree cache. For deep cells, it is illegal to construct a default accessor. When a level 0 statement is converted to a level 1 (accessor), then:
+  - The value of the cell must be retrieved from its checksum.
+    ***For deep cells, this value is always a Merkle tree, never a buffer***
+  - The checksum of the desired element(s) is retrieved from the Merkle tree
+  - An accessor is constructed using this checksum, and with the first
+    element(s) removed from the subpath
 - Fully implement New Way execution. Changing an authoritative value forward-invalidates. Changing
   non-authoritative sets "overrule" as before, but now also in a forward sense. DONE
 
@@ -230,7 +231,7 @@ The New Way and streams will be done early (this is big!)
   docker image digest (supported by docker run).
   Global config for:
   - run with singularity (singularity run docker://...)
-  - infer digest from name (digest will be stored in separate output cell).
+  - Seamless API to infer digest from name
   No volumes, bind mounts or other options,
   everything needed must be in the image, and output must be in stdout (can be tar/tgz)
   Networking will be disabled (networking none), and the container will be removed (--rm)
@@ -286,11 +287,6 @@ Part 3 (low-level / cleanup): Towards the merge
      Their content type will be int/float/text/bool.
      Adapters will convert among them (e.g. int=>float) and between them and JSON/mixed/text.
      Supported access modes are JSON and text. Adapters will convert to Silk.
-   - Allow a "wrapping mode" for high-level cells. With wrapping mode on, a cell
-      tries to behave as much as possible as cell.value. Auto-wrapping can be
-      enabled at the context level.
-     (Must be stored in meta-data)
-     !!Big!! Will have a significant impact on examples, if enabled by default!
    - Implement old lib.gui.edit as a new library, with new editpin.
    - Terminology: context children can be private, in which case they are not in __dir__.
      By default, they are public. No more "export".
@@ -314,6 +310,8 @@ UPDATE, Feb 2019
 The New Way/Great Split prioritization has rendered moot much of the roadmap below.
 It needs to be reorganized, and the following tasks to be added:
 (and integrated in cloudless/"Towards flexible and cloud-compatible evaluation")
+
+Notes:
 1.
 - Reactor execution.
   - Pure and semi-pure reactors can be executed async, just like transformers.
@@ -559,9 +557,6 @@ Very long-term:
   would probably be good. Keep an eye on analogous developments in VS Code and JupyterLab.
 - Full feature implementation of Silk, e.g. constructs (see silk.md)
 - Other *host* implementations? JavaScript? Erlang? Elixir? Go?
-- "Activate" overhaul, the "onion" of Python with statements make it slow.
-  Test on Collatz test. This is a good test for the New Way and also for
-  simplified implementations.  
 - GPU-GPU triggering.
   This is possible with clEnqueueWaitForEvents / cudaStreamWaitEvent, by waiting for a *task*.
   The task you are waiting for must already have been dispatched to the GPU. In other words,
@@ -1016,8 +1011,8 @@ BlockManager-BlockManager is not possible, but block *pins* get processed as nor
  translated, all other messages are forwarded, with the contents serialized and put into the other buffer.
  Again, the Seamless pin protocol takes care of namespaces.
 
-Streams
-=======
+Advanced streams
+================
 UPDATE: save this for a later stage. For now, go for a simpler scheme where streams only exist within
  a transformer, and all cells contain all values.
 This disables the chaining of streams; now, one streamed transformer has to wait for a previous one to complete.
@@ -1178,12 +1173,8 @@ Strategies to model them:
    caches must be cleared or memory consumption is too high.
 3. Use an CyclicIterator (see Special Constructs). if number of iterations is known.
    Build a high-level graph g that performs the computation, and send it as data   
-4. Nested asynchronous macros (but seamless will warn of cache misses, and
-   space requirements can be atrocious)
-   Example: collatz.py in low-level tests
-   but Seamless cannot currently deal with this beyond 10-16 iterations or so,
-     even though this example is in fact synchronous
-  UPDATE: now that the New Way is there, test this again.
+4. Nested asynchronous macros (for recursion)
+   Example: collatz.py in low-level tests. Works well now
 Solutions can be combined, of course.
 
 Registering commands with domain-specific languages
@@ -1268,12 +1259,64 @@ Why Seamless is not dataflow or Functional Reactive Programming
   But in most of the cases, it will re-use the computations that were done before,
    instead of recomputing from scratch.
 
-NOTE: TO DOCUMENT:
-Seamless has a lot of principles but its current implementation is not a miracle of engineering.
-Seamless *should* make it easy to write code that runs fast (e.g. in parallel, in C, on the GPU) with
-minimal effort. In practice, things can be slowed down by having checksums computed, repeatedly.
-For example, Silk buffering and forking will cause a full checksum recomputation.
-(to think about:
-- storing some selected bytes of a big array, to quickly detect huge changes w/o recomputing full checksum
-- Make a special StructuredCell Silk mode where set/setitem are not intercepted by the monitor, but where
-  instead any outchannel update must be triggered manually by sending a dirty signal )
+Theoretical insights
+====================
+Seamless is an inter-Turing language. It focuses on decomposing a program that is
+Turing-complete into components.
+It is not about *concrete* decomposition, which concerns itself with reusability,
+ code clarity, etc. (this is a software engineering thing)
+Rather, it concerns itself with *abstract* decomposition, i.e. how to define 
+ elegant primitives of which any program can be composed. Composition is using a call graph.
+Programming languages do this also, but there, the primitives are not Turing-complete,
+ only the composition is.
+In contrast, Seamless is an inter-Turing language: it is about composing primitives that are by themselves already Turing complete. An inter-Turing language is concerned about the syntax and semantics of dependency graphs, and is completely disjoint from the syntax of the primitives. The primitives have their own namespace (Turing tape),
+which must be explicitly connected by the inter-Turing language. Seamless has a universal primitive for data transformation, which models source code as just another data input. It does not prescribe a syntax for this source code: any programming language can be used, as long as its execution has referential transparency. Seamless does not enforce this, violation simply leads to undefined behavior. 
+Similar languages: Linda, Data flow programming, Notebooks.
+
+Seamless is purely functional, reactive and interactive
+Purely functional => determinism and referential transparency, and side effects don't matter
+Interactive: You can modify the call graph while it is being executed
+Reactive: Seamless automatically reacts to changes
+
+Bash is inter-Turing and somewhat interactive, but not functional.
+Notebooks are interactive and somewhat inter-Turing: however, they share the same code namespace and variable namespace, unlike Bash. Magics can be used to regulate this.
+Neither Bash nor Notebooks are reactive. Since they are imperative, re-execution is expensive.
+GHCI is interactive but not inter-Turing and not reactive: if you re-define a function, expressions do not get updated. Therefore, while Haskell is functional, GHCI is not functionally reactive.
+Spreadsheets are functionally reactive and interactive.
+purely functional in the sense that they connect the cells and 
+ insert their values into the cell code.
+Cell code itself is imperative (for Excel: Visual Basic)
+Spreadsheets are not truly inter-Turing because they share the same code namespace
+ (like Notebooks)
+***Insight***: functional + reactive + caching makes trivially interactive: just re-evaluate the call graph every second!
+Gnu Make (and SnakeMake) is inter-Turing, functional and reactive (and trivially interactive)
+Still, it is a bad (de)composition tool because it composes binaries that have been compiled and installed. No access to the compilation Makefiles of those binaries, or to the installation scripts (which can be in a functional language, e.g Nix).
+So you cannot decompose a Makefile all the way down to the source code of the
+ individual binaries. This is only OK if the binaries have a formal spec regardless
+ of implementation (POSIX), otherwise it is not portable/reproducible.
+File modification time as a proxy for true (checksum-based) reactivity, bad!
+Worse: files can be modified externally, breaking determinism.
+Dataflows are bad because they treat data and code differently.
+Dataflow frameworks are often reactive towards data cells, but never towards code.
+I know of no dataflow framework that allows interactive programming with
+ separate namespaces for each code cell (inter-Turing).
+Things like Galaxy are somewhere halfway between (Snake)Make and dataflow, sharing
+ at least some of the vices of each.
+
+Notebooks are bad because there *are* no data cells, only code cells.
+Typically, there is only one namespace, and typically, the call graph is
+strictly linear.
+Spreadsheets are bad because they mix composition syntax (purely functional) 
+ and evaluation syntax (imperative) and have a single code namespace.
+ This makes it very hard to make polyglot spreadsheets.
+Seamless has a strong opinion about what it means to assign a cell's value.
+It is either an *evaluation assignment*, which means that it happens *once*,
+or an *authority assignment*. Assignments are constant.
+Seamless *cells* are not constant (in the sense that variables in functional 
+programming and mathematics are constant) but Seamless *checksums* are.
+Therefore, evaluation assignment happens once, but Seamless reacts to
+ *authority assignment*, which is: changing a cell that is not the output of
+an operation. Authority assignments can happen from the terminal, over the network
+(shareserver), or from a reactor. Seamless treats them all the same. An authority
+assignment discards the previous value of a cell, a cell's history is not modelled.
+This is the same as a spreadsheet, but different from FRP and reactive frameworks in imperative languages, which explicitly model the dynamic behavior of values (as event streams).
