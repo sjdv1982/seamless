@@ -132,13 +132,14 @@ class Macro(Worker):
                 manager = self._get_manager()
                 ub_cells = unbound_ctx._manager.cells
                 newly_bound = []
-                for path, p in paths:
+                for path, p in paths:                    
                     if p._cell is not None:
                         mctx = p._cell._context()._macro._context()
                         if mctx._part_of(self._context()):                            
                             if p._macro is None and path not in ub_cells:
                                 manager.set_cell(p._cell, None, subpath=None)
                             p._cell = None
+                    print(path, path in ub_cells)
                     if path not in ub_cells:
                         continue
                     cell = ub_cells[path]
@@ -163,6 +164,7 @@ class Macro(Worker):
                 p._bind(None, trigger=True)
             for path, p in newly_bound:
                 cell = ub_cells[path]
+                print("BIND", cell, path)
                 p._bind(cell, trigger=True)
             
     def _set_context(self, ctx, name):
@@ -255,6 +257,7 @@ class Path:
             return manager.connect_cell(self, other, None)
 
     def _bind(self, cell, trigger):
+        print("BINDING", cell, trigger, self._cell is cell)
         if cell is self._cell:
             return
         assert self._can_bind(cell)        
@@ -272,8 +275,10 @@ class Path:
             manager = cell._get_manager()
         self._cell = cell
         if trigger:
+            print("INCOMING", self, self._incoming)
             if self._incoming and cell is not None:                
                 upstream = manager._cell_upstream(cell)
+                print("UPSTREAM", upstream)
                 if isinstance(upstream, Cell):
                     a = manager.get_default_accessor(cell)
                     manager.update_accessor_accessor(upstream, a)                
