@@ -3,22 +3,29 @@ import weakref
 import functools
 import traceback
 import asyncio
+import copy
+
 from .expression_cache import Expression
 from .value_cache import SemanticKey
 from ...get_hash import get_hash
-
 from .redis_client import redis_sinks, redis_caches
 
 class TransformerLevel1:
-    def __init__(self, expressions, output_name):
+    def __init__(self, expressions, stream_params, output_name):
         self._expressions = expressions
-        self.output_name = output_name
+        self.stream_params = copy.deepcopy(stream_params)
+        self.output_name = output_name        
         a = []
-        for key in sorted(expressions.keys()):            
+        for key in sorted(expressions.keys()):
             assert isinstance(key, str)
             value = expressions[key]
             assert isinstance(value, Expression)
             a.append((key, str(value)))
+        if stream_params is not None:
+            for key in sorted(stream_params.keys()):
+                value = stream_params[key]
+                assert isinstance(value, (str, tuple)), (stream_params, key)
+                a.append((key, value))
         a.append(output_name)
         self._frozen_expressions = tuple(a)        
         self._hash = get_hash(self.serialize()).hex()
@@ -156,12 +163,11 @@ class TransformCache:
         for pin, accessor in accessors.items():
             expression = manager.build_expression(accessor)
             expressions[pin] = expression
-        level1 = TransformerLevel1(expressions, transformer._output_name)
+        level1 = TransformerLevel1(expressions, transformer._stream_params, transformer._output_name)
         return level1
     
     def set_level1(self, transformer, level1):
         #print("SET LEVEL1", level1.get_hash())
-        assert transformer._stream_params is None, transformer
         curr_level1 = self.transformer_to_level1.get(transformer)
         if curr_level1 == level1:
             return

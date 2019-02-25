@@ -147,9 +147,11 @@ class Manager:
             if task is not None:
                 task.cancel()
 
-    async def _schedule_transform_job(self, tf_level1, count, from_remote=False):
+    async def _schedule_transform_job(self, tf_level1, count, from_remote=False):        
         from .cache.transform_cache import TransformerLevel1
         assert isinstance(tf_level1, TransformerLevel1)
+        if tf_level1.stream_params is not None:
+            raise NotImplementedError
         tcache = self.transform_cache
         tf_level2 = await tcache.build_level2(tf_level1)
         tcache.set_level2(tf_level1, tf_level2)
@@ -530,7 +532,6 @@ class Manager:
         self.status[macro] = Status("macro")
 
     def _schedule_transformer(self, transformer):
-        assert transformer._stream_params is None, transformer
         tcache = self.transform_cache
         old_level1 = self._temp_tf_level1.get(transformer)
         if old_level1 is None:
@@ -544,7 +545,6 @@ class Manager:
         self.scheduled.append(("transformer", new_level1, True))
 
     def _unschedule_transformer(self, transformer):
-        assert transformer._stream_params is None, transformer
         tcache = self.transform_cache
         old_level1 = self._temp_tf_level1.get(transformer)
         if old_level1 is None:
