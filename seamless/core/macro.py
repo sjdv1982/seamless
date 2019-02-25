@@ -142,7 +142,6 @@ class Macro(Worker):
                     if path not in ub_cells:
                         continue
                     cell = ub_cells[path]
-                    assert p._can_bind(cell), path
                     newly_bound.append((path, p))
                 
                 ctx = Context(toplevel=False)
@@ -257,7 +256,6 @@ class Path:
     def _bind(self, cell, trigger):
         if cell is self._cell:
             return
-        assert self._can_bind(cell)        
         if cell is not None:
             assert self._cell is None
         if self._cell is not None:
@@ -273,19 +271,14 @@ class Path:
         self._cell = cell
         if trigger:
             if self._incoming and cell is not None:                
-                upstream = manager._cell_upstream(cell)
+                upstream = manager._cell_upstream(cell, None)
                 if isinstance(upstream, Cell):
-                    a = manager.get_default_accessor(cell)
-                    manager.update_accessor_accessor(upstream, a)                
+                    a1 = manager.get_default_accessor(upstream)
+                    a2 = manager.get_default_accessor(cell)
+                    manager.update_accessor_accessor(a1, a2)
+            if cell is not None:
                 manager.update_path_value(self)
     
-    def _can_bind(self, cell):
-        if self._incoming:
-            manager = cell._get_manager()
-            if manager._cell_upstream(cell, skip_path=self) is not None:
-                return False
-        return True
-
     def __str__(self):
         ret = "(Seamless path: ." + ".".join(self._path)
         if self._macro is not None:

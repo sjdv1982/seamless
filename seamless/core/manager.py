@@ -1097,7 +1097,7 @@ class Manager:
             if result is not None:
                 result = result.get(subpath)
             break
-        return copy.deepcopy(result)
+        return result
 
     def _connect_cell_cell(self, source, target, source_subpath, target_subpath):
         from .macro import Path, create_path
@@ -1122,6 +1122,9 @@ class Manager:
                 accessor = None
             if ispath_cell:
                 path = create_path(cell)
+                if cell is target:
+                    assert not path._incoming, cell
+                    path._incoming = True
                 connect = (path, subpath)
             else:
                 connect = accessor
