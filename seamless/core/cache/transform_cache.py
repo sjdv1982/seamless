@@ -106,10 +106,6 @@ class TransformCache:
     If it misses, level 1 and level 2 are sent out to remote computation
     If this fails, computation is performed locally using level 2
 
-    TODO (medium-term): if there is stream annotations,
-      level 1 is converted to a stream-of-level-2.
-      Everything that has a cache hit is bypassed, everything that is to be
-      performed locally is sent into the stream execution code
     TODO (long-term): Accessors may point to actual stream objects, with an API.
      In this way, streams can be connected to each other as they grow,
      reducing latency.
@@ -121,6 +117,7 @@ class TransformCache:
         self.manager = weakref.ref(manager)        
         self.transformer_to_level0 = {} #id-to-dict-of-accessors
         self.transformer_to_level1 = {} #id-to-TransformerLevel1
+        self.stream_transformer_to_levels1 = {} #id-to-dict-of-TransformerLevel1
         self.transformer_to_cells = {}
         self.hlevel1_to_level2 = {}
         self.transformer_from_hlevel1 = {}  # This relation is not unique, but we need only one
@@ -164,6 +161,7 @@ class TransformCache:
     
     def set_level1(self, transformer, level1):
         #print("SET LEVEL1", level1.get_hash())
+        assert transformer._stream_params is None, transformer
         curr_level1 = self.transformer_to_level1.get(transformer)
         if curr_level1 == level1:
             return
@@ -176,6 +174,9 @@ class TransformCache:
         self.transformer_from_hlevel1[hlevel1] = transformer
         self.incref(level1)
         
+    def set_stream_levels1(self, transformer, levels1):
+        assert transformer._stream_params is not None, transformer
+        raise NotImplementedError
 
     def _decref_level2(self, level2):
         # Does not decref corresponding level1

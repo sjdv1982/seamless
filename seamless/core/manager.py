@@ -87,6 +87,7 @@ class Manager:
         self.cache_task_manager = cache_task_manager
 
         self.status = {}
+        self.stream_status = {}
         self.reactors = WeakKeyDictionary() # RuntimeReactors
         self.jobs = {}  # jobid-to-job
         self.executing = {}  # level2-transformer-to-jobid
@@ -216,6 +217,13 @@ class Manager:
                         status = self.status[ttf]
                         if status.exec == "READY":
                             status.exec = "EXECUTING" 
+                    for ttf, ttf_levels1 in tcache.stream_transformer_to_levels1.items():
+                        for k, ttf_level1 in ttf_levels1.items():
+                            if ttf_level1.get_hash() != hlevel1:
+                                continue
+                            status = self.stream_status[ttf, k]
+                            if status.exec == "READY":
+                                status.exec = "EXECUTING" 
                     task = self._schedule_transform_all(tf_level1, count)
                     self.cache_task_manager.schedule_task(
                         ("transform","all",tf_level1),task,count,
@@ -240,6 +248,7 @@ class Manager:
         hlevel2 = None
         if level2 is not None:
             hlevel2 = level2.get_hash()
+        transformers = []
         for tf, tf_level1 in list(tcache.transformer_to_level1.items()): #could be more efficient...
             htflevel1 = tf_level1.get_hash()
             if htflevel1 != hlevel1:
@@ -248,8 +257,24 @@ class Manager:
                 if tcache.hlevel1_to_level2[htflevel1].get_hash() != hlevel2:
                     continue
             if transformer is None:
-                transformer = tf
-            tstatus = self.status[tf]
+                transformer = tf, None
+            transformers.append((tf, None))
+        for tf, tf_levels1 in list(tcache.stream_transformer_to_levels1.items()): #could be more efficient...
+            for k, tf_level in tf_levels1.items():
+                htflevel1 = tf_level1.get_hash()
+                if htflevel1 != hlevel1:
+                    if hlevel2 is None:
+                        continue
+                    if tcache.hlevel1_to_level2[htflevel1].get_hash() != hlevel2:
+                        continue
+                if transformer is None:
+                    transformer = tf, k
+                transformers.append((tf, k))
+        for tf, k in transformers:
+            if k is None:
+                tstatus = self.status[tf]
+            else:
+                tstatus = self.stream_status[tf, k]
             tstatus.exec = "ERROR"
             tstatus.data = "UNDEFINED"
             auth_status = None
@@ -264,10 +289,11 @@ class Manager:
                 )
         
         if transformer is None:
-            transformer = "<Unknown transformer>"                            
+            transformer = "<Unknown transformer>", None
         exc = traceback.format_exception(type(exception), exception, exception.__traceback__)
         exc = "".join(exc)
-        msg = "Exception in %s:\n" % transformer + exc
+        kstr = "" if k is None else ", stream element %s" % k
+        msg = "Exception in %s%s:\n" % transformer + exc
         stars = "*" * 60 + "\n"
         print(stars + msg + stars, file=sys.stderr)
 
@@ -318,13 +344,24 @@ class Manager:
                         raise Exception(cell.name)
                     self.set_cell_checksum(cell, checksum)
             self.update_transformer_status(tf,full=False)
-        if checksum is None: #result conforms to no cell (remote transformation, or subpath)
+        if checksum is None: #result conforms to no cell (remote transformation, stream transformation, or subpath)
             checksum, buffer = protocol.calc_buffer(value)
             self.value_cache.incref(checksum, buffer, has_auth=False) 
         tcache.set_result(hlevel1, checksum)
         if level2 is not None:
             tcache.set_result_level2(level2.get_hash(), checksum)
+        for tf, tf_levels1 in list(tcache.stream_transformer_to_levels1.items()): #could be more efficient...
+            for k, tf_level1 in tf_levels1:
+                if tf_level1.get_hash() != hlevel1:
+                    continue
+                self.set_transformer_stream_result(
+                    tf, k, level1, level2, value, checksum, prelim
+                )        
         self.schedule_jobs()
+
+    def set_transformer_stream_result(self, tf, k, level1, level2, value, checksum, prelim):
+        """Set one element k of a stream transformer result"""
+        raise NotImplementedError
 
     @main_thread_buffered
     def set_reactor_result(self, rtreactor, pinname, value):
@@ -493,6 +530,7 @@ class Manager:
         self.status[macro] = Status("macro")
 
     def _schedule_transformer(self, transformer):
+        assert transformer._stream_params is None, transformer
         tcache = self.transform_cache
         old_level1 = self._temp_tf_level1.get(transformer)
         if old_level1 is None:
@@ -506,6 +544,7 @@ class Manager:
         self.scheduled.append(("transformer", new_level1, True))
 
     def _unschedule_transformer(self, transformer):
+        assert transformer._stream_params is None, transformer
         tcache = self.transform_cache
         old_level1 = self._temp_tf_level1.get(transformer)
         if old_level1 is None:
@@ -589,6 +628,9 @@ class Manager:
         if full:
             level1 = tcache.transformer_to_level1.pop(transformer, None)
             if level1 is not None:
+                tcache.decref(level1)
+            levels1 = tcache.stream_transformer_to_levels1.pop(transformer, [])
+            for level1 in levels1:
                 tcache.decref(level1)
         old_status = self.status[transformer]
         new_status = Status("transformer")
@@ -1592,8 +1634,14 @@ class Manager:
         self._destroy_worker(transformer)
         tcache = self.transform_cache
         tcache.transformer_to_level0.pop(transformer)
+        levels1 = []
         level1 = tcache.transformer_to_level1.pop(transformer, None)
         if level1 is not None:
+            levels1.append(level1)
+        levels1a = tcache.stream_transformer_to_levels1.pop(transformer, None)
+        if levels1a is not None:
+            levels1.extend(levels1a.values())
+        for level1 in levels1:
             hlevel1 = level1.get_hash()
             tcache.decref(level1)
             tf = tcache.transformer_from_hlevel1.pop(hlevel1, None)
@@ -1605,7 +1653,7 @@ class Manager:
                 for tf, tf_level1 in tcache.transformer_to_level1.items():
                     if tf_level1.get_hash() == hlevel1:
                         tcache.transformer_from_hlevel1[hlevel1] = tf
-                        break            
+                        break
         tcache.transformer_to_cells.pop(transformer, None)
         self.unstable.discard(transformer)
 

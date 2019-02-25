@@ -5,11 +5,12 @@ from .protocol import content_types
 
 class Transformer(Worker):
 
-    def __init__(self, transformer_params):
+    def __init__(self, transformer_params, stream_params = None):
         self.code = InputPin(self, "code", "ref", "pythoncode", "transformer")
         self._pins = {"code":self.code}
         self._output_name = None
         self._transformer_params = OrderedDict()
+        self._stream_params = stream_params # TODO: validate
         forbidden = ("code",)
         for p in sorted(transformer_params.keys()):
             if p in forbidden:
@@ -72,6 +73,6 @@ class Transformer(Worker):
         ret = "Seamless transformer: " + self._format_path()
         return ret
 
-def transformer(params):
+def transformer(params, stream_params = None):
     """TODO: port documentation from 0.1"""
-    return Transformer(params)
+    return Transformer(params, stream_params)
