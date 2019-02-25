@@ -12,8 +12,8 @@ from .redis_client import redis_sinks, redis_caches
 
 class TransformerLevel1:
     def __init__(self, expressions, stream_params, output_name):
-        self._expressions = expressions
-        self.stream_params = copy.deepcopy(stream_params)
+        self._expressions = copy.deepcopy(expressions)
+        self._stream_params = copy.deepcopy(stream_params)
         self.output_name = output_name        
         a = []
         for key in sorted(expressions.keys()):
@@ -143,13 +143,13 @@ class TransformCache:
         self.refcount_hlevel1[hlevel1] = refcount + 1
         self.revhash_hlevel1[hlevel1] = level1
 
-    def decref(self, level1):
-        hlevel1 = level1.get_hash()
+    def decref(self, level1):        
+        hlevel1 = level1.get_hash()        
         refcount = self.refcount_hlevel1.pop(hlevel1)
         if refcount > 1:
             self.refcount_hlevel1[hlevel1] = refcount - 1
             return
-        self.transformer_from_hlevel1.pop(hlevel1)
+        self.transformer_from_hlevel1.pop(hlevel1, None)
         ###self.result_hlevel1.pop(hlevel1, None)  # for now, hold on to this forever
         level2 = self.hlevel1_to_level2.pop(hlevel1, None)        
         if level2 is not None:

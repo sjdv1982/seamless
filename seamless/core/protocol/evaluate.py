@@ -90,11 +90,24 @@ def evaluate_from_buffer(expression, buffer):
     if expression.content_type is not None and expression.content_type != expression.celltype:
         pass # TODO?
     if expression.subpath is not None:
-        raise NotImplementedError
-    else:
-        semantic_key = SemanticKey(
-            semantic_checksum, 
-            expression.access_mode,
-            None
-        )
+        try:
+            result = semantic_obj
+            for path in expression.subpath:
+                result = semantic_obj[path]
+            result2 = deserialize(
+                expression.celltype, None, "random_code_path", #TODO
+                result, from_buffer = False, buffer_checksum = None,
+                source_access_mode = None,
+                source_content_type = None
+            )
+            _, _, obj, semantic_obj, semantic_checksum = result2
+        except:
+            import traceback; traceback.print_exc()  ###TODO
+            semantic_checksum = None
+            semantic_obj = None
+    semantic_key = SemanticKey(
+        semantic_checksum, 
+        expression.access_mode,
+        None
+    )
     return semantic_obj, semantic_key

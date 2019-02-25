@@ -64,6 +64,24 @@ class Transformer(Worker):
             result = result.get_hash()
         return result
 
+    @property
+    def status(self):
+        """The computation status of the transformer"""
+        if self._stream_params is None:
+            return super().status
+        manager = self._get_manager()
+        status = manager.status[self]
+        statuses = OrderedDict()
+        if str(status.exec) in ("EXECUTING", "ERROR"):
+            for tf,k in sorted(manager.stream_status.keys(), key=lambda k:k[1]):
+                if tf is self:
+                    statuses[k] = str(manager.stream_status[self, k])
+            return statuses
+        else:
+            return status
+        
+
+
     def destroy(self, *, from_del=False):
         if not from_del:
             self._get_manager()._destroy_transformer(self)

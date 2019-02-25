@@ -95,7 +95,7 @@ class JobScheduler:
         job.execute(transformer)
         return job
 
-    def schedule(self, level2, count, from_remote=False):
+    def schedule(self, level2, count, transformer_can_be_none):
         hlevel2 = level2.get_hash()
         if count < 0:
             count = -count
@@ -119,17 +119,23 @@ class JobScheduler:
         job.count = count
         self.jobs[hlevel2] = job
         transformer = tcache.transformer_from_hlevel1.get(hlevel1)
-        if not from_remote and transformer is None: # Transformer must have been overruled...
+        if transformer is None and not transformer_can_be_none: # Transformer must have been overruled...
             return None
         job.execute(transformer)
         return job
+
+    def jobarray(self, jobs):
+        if len(jobs):
+            assert jobs[0].scheduler() is self
+        return JobArray(jobs)
 
     def cleanup(self):
         manager = self.manager()
         for jobs in (self.jobs, self.remote_jobs):
             toclean = []
-            for key, job in jobs.items():
+            for key, job in jobs.items():                
                 future = job.future
+                ft = future.done() if future else None                
                 if future is None:
                     toclean.append(key)
                 else:
@@ -137,7 +143,11 @@ class JobScheduler:
                         toclean.append(key)
                         exception = future.exception()
                         if exception is not None:
-                            manager.set_transformer_result_exception(job.level1, job.level2, exception)
+                            try:
+                                manager.set_transformer_result_exception(job.level1, job.level2, exception)
+                            except:
+                                traceback.print_exc()
+                        toclean.append(key)
             for key in toclean:
                 jobs.pop(key)
 
@@ -160,14 +170,16 @@ class Job:
 
     async def _execute_remote(self):
         manager = self.scheduler().manager()
-        result = await run_remote_job(self.level1)
-        if result is not None:
-            manager.set_transformer_result(self.level1, self.level2, None, result, prelim=False)
-        else:
-            # TODO: store exception! is not printed in run_multi_remote_pair...
-            raise Exception("Remote job execution failed")
-        self.scheduler().cleanup() # maybe a bit overkill, but better safe than sorry
-        self.future = None
+        try:
+            result = await run_remote_job(self.level1)
+            if result is not None:
+                manager.set_transformer_result(self.level1, self.level2, None, result, prelim=False)
+            else:
+                # TODO: store exception! is not printed in run_multi_remote_pair...
+                raise Exception("Remote job execution failed")
+        finally:
+            self.future = None
+            self.scheduler().cleanup() # maybe a bit overkill, but better safe than sorry            
 
     async def _execute_local(self, transformer):
         # transformer arg is just for tracebacks
@@ -227,9 +239,11 @@ class Job:
                 self.executor = None
             if result is not None:
                 manager.set_transformer_result(self.level1, self.level2, result, None, prelim=False)
+        except Exception as exception:
+            manager.set_transformer_result_exception(self.level1, self.level2, exception)
+        finally:            
             self.future = None
-            self.scheduler().cleanup() # maybe a bit overkill, but better safe than sorry
-        finally:
+            self.scheduler().cleanup() # maybe a bit overkill, but better safe than sorry            
             release_lock(lock)
 
     def execute(self, transformer):
@@ -242,3 +256,19 @@ class Job:
         #print("CANCEL", self.transformer)
         assert self.executor is not None
         self.executor.terminate()
+
+
+class JobArray:
+    def __init__(self, jobs):
+        self.jobs = jobs
+        for job in jobs:
+            assert isinstance(job, Job)
+            assert job.scheduler() is jobs[0].scheduler()
+        futures = [job.future for job in jobs]
+        self.future = asyncio.ensure_future(
+            asyncio.gather(*futures, return_exceptions=True)
+        )
+        
+    def cancel(self):
+        for job in self.jobs:
+            job.cancel()

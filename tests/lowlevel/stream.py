@@ -16,6 +16,10 @@ ctx.tf.result.connect(ctx.result)
 ctx.equilibrate()
 print(ctx.result.value)
 
-ctx.a.set({"first": 1, "second": 2, "third": 3})
+ctx.a.set([5, 10, 20, 50, 100, 200])
+ctx.equilibrate()
+print(ctx.result.value)
+
+ctx.a.set({"first": 1, "second": 2, "third": 3, "fourth": 4, "fifth": 5})
 ctx.equilibrate()
 print(ctx.result.value)

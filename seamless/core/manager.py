@@ -42,6 +42,7 @@ from collections import namedtuple
 from collections import OrderedDict
 from weakref import WeakKeyDictionary
 import sys
+import numpy as np
 
 def main_thread_buffered(func):
     def not_destroyed_wrapper(self, func, *args, **kwargs):
@@ -147,11 +148,11 @@ class Manager:
             if task is not None:
                 task.cancel()
 
-    async def _schedule_transform_job(self, tf_level1, count, from_remote=False):        
+    async def _schedule_transform_job(self, tf_level1, count, from_remote=False, from_stream=False):
         from .cache.transform_cache import TransformerLevel1
         assert isinstance(tf_level1, TransformerLevel1)
-        if tf_level1.stream_params is not None:
-            raise NotImplementedError
+        if tf_level1._stream_params is not None:
+            return await self._schedule_transform_stream_job(tf_level1, count, from_remote=from_remote)
         tcache = self.transform_cache
         tf_level2 = await tcache.build_level2(tf_level1)
         tcache.set_level2(tf_level1, tf_level2)
@@ -159,8 +160,58 @@ class Manager:
         if result is not None:            
             self.set_transformer_result(tf_level1, tf_level2, None, result, False)
             return
-        job = self.jobscheduler.schedule(tf_level2, count, from_remote=from_remote)
+        transformer_can_be_none = from_remote or from_stream
+        job = self.jobscheduler.schedule(tf_level2, count, transformer_can_be_none)
         return job
+
+    async def _schedule_transform_stream_job(self, tf_level1, count, from_remote=False):
+        from .cache.transform_cache import TransformerLevel1
+        tcache = self.transform_cache
+        stream_params = tf_level1._stream_params
+        if len(stream_params) > 1: raise NotImplementedError
+        for k,v in stream_params.items():
+            if v != "map": raise NotImplementedError
+        k = list(stream_params.keys())[0]
+        expressions = copy.deepcopy(tf_level1._expressions)
+        e = expressions[k]
+        value = self.get_expression(e)
+        if isinstance(value, (list, np.ndarray)):
+            items = range(len(value))
+        elif isinstance(value, dict):
+            items = value.keys()
+        old_subpath = () if e.subpath is None else e.subpath
+        items_level1 = {}
+        stream_status = self.stream_status
+        transformers = []
+        hlevel1 = tf_level1.get_hash()
+        for ttf, ttf_level1 in list(tcache.transformer_to_level1.items()): #could be more efficient...
+            if ttf_level1.get_hash() != hlevel1:
+                continue
+            transformers.append(ttf)
+        job_coros = []
+        for item in items:
+            e.subpath = old_subpath + (item,)
+            item_level1 = TransformerLevel1(expressions, None, tf_level1.output_name)
+            tcache.incref(item_level1)
+            items_level1[item] = item_level1            
+        for tf in transformers:
+            tcache.stream_transformer_to_levels1[tf] = copy.copy(items_level1)
+        
+        for item in items:
+            item_level1 = items_level1[item]
+            for tf in transformers:
+                stream_status[tf, item] = copy.deepcopy(self.status[tf])
+            job_coro = self._schedule_transform_job(
+                item_level1, count, from_remote=from_remote, from_stream=True
+            )
+            job_coros.append(job_coro)
+        jobs = []
+        if len(job_coros):
+            jobs0 = await asyncio.gather(*job_coros)
+            for job in jobs0:
+                if job is not None:   
+                    jobs.append(job)
+        return self.jobscheduler.jobarray(jobs)
 
     async def run_remote_transform_job(self, tf_level1):
         tcache = self.transform_cache
@@ -256,16 +307,20 @@ class Manager:
             if htflevel1 != hlevel1:
                 if hlevel2 is None:
                     continue
+                if htflevel1 not in tcache.hlevel1_to_level2:
+                    continue
                 if tcache.hlevel1_to_level2[htflevel1].get_hash() != hlevel2:
                     continue
             if transformer is None:
                 transformer = tf, None
             transformers.append((tf, None))
-        for tf, tf_levels1 in list(tcache.stream_transformer_to_levels1.items()): #could be more efficient...
-            for k, tf_level in tf_levels1.items():
+        for tf, tf_levels1 in list(tcache.stream_transformer_to_levels1.items()): #could be more efficient...            
+            for k, tf_level1 in tf_levels1.items():                
                 htflevel1 = tf_level1.get_hash()
                 if htflevel1 != hlevel1:
                     if hlevel2 is None:
+                        continue
+                    if htflevel1 not in tcache.hlevel1_to_level2:
                         continue
                     if tcache.hlevel1_to_level2[htflevel1].get_hash() != hlevel2:
                         continue
@@ -294,8 +349,8 @@ class Manager:
             transformer = "<Unknown transformer>", None
         exc = traceback.format_exception(type(exception), exception, exception.__traceback__)
         exc = "".join(exc)
-        kstr = "" if k is None else ", stream element %s" % k
-        msg = "Exception in %s%s:\n" % transformer + exc
+        kstr = "" if transformer is None else ", stream element %s" % transformer[1]
+        msg = "Exception in %s%s:\n" % (transformer[0], kstr) + exc
         stars = "*" * 60 + "\n"
         print(stars + msg + stars, file=sys.stderr)
 
@@ -352,18 +407,45 @@ class Manager:
         tcache.set_result(hlevel1, checksum)
         if level2 is not None:
             tcache.set_result_level2(level2.get_hash(), checksum)
-        for tf, tf_levels1 in list(tcache.stream_transformer_to_levels1.items()): #could be more efficient...
-            for k, tf_level1 in tf_levels1:
-                if tf_level1.get_hash() != hlevel1:
-                    continue
-                self.set_transformer_stream_result(
-                    tf, k, level1, level2, value, checksum, prelim
-                )        
+        if not prelim:
+            for tf, tf_levels1 in list(tcache.stream_transformer_to_levels1.items()): #could be more efficient...
+                for k, tf_level1 in tf_levels1.items():
+                    if tf_level1.get_hash() != hlevel1:
+                        continue
+                    self.set_transformer_stream_result(tf, k)        
         self.schedule_jobs()
 
-    def set_transformer_stream_result(self, tf, k, level1, level2, value, checksum, prelim):
+    def set_transformer_stream_result(self, tf, k):
         """Set one element k of a stream transformer result"""
-        raise NotImplementedError
+        tcache = self.transform_cache
+        vcache = self.value_cache
+        tstatus = self.stream_status[tf, k]
+        tstatus.exec = "FINISHED"
+        tstatus.data = "OK"
+        tf_levels1 = tcache.stream_transformer_to_levels1[tf]        
+        for k2, tf_level1 in tf_levels1.items():
+            tstatus2 = self.stream_status[tf, k2]
+            if tstatus2 != "FINISHED":
+                break
+        else:
+            result = {}
+            for k2, tf_level1 in tf_levels1.items():
+                k2_checksum = tcache.get_result(tf_level1.get_hash())
+                k2_buffer = self.value_cache.get_buffer(k2_checksum)[2]
+                k2_result = deserialize(
+                    "mixed", None,  (),
+                    k2_buffer, from_buffer=True, buffer_checksum=k2_checksum,
+                    source_access_mode=None, 
+                    source_content_type=None
+                )
+                k2_value = k2_result[2][2]
+                result[k2] = k2_value
+            if isinstance(k, int):
+                result = [result[n] for n in range(len(result))]
+            level1 = tcache.transformer_to_level1[tf]
+            self.set_transformer_result(level1, None, result, None, False)
+
+        #raise NotImplementedError
 
     @main_thread_buffered
     def set_reactor_result(self, rtreactor, pinname, value):
@@ -628,9 +710,6 @@ class Manager:
         if full:
             level1 = tcache.transformer_to_level1.pop(transformer, None)
             if level1 is not None:
-                tcache.decref(level1)
-            levels1 = tcache.stream_transformer_to_levels1.pop(transformer, [])
-            for level1 in levels1:
                 tcache.decref(level1)
         old_status = self.status[transformer]
         new_status = Status("transformer")
@@ -1581,7 +1660,11 @@ class Manager:
             for k,v in self.cache_task_manager.tasks.items():
                 cache_jobs.append(v.future)
             if len(cache_jobs):
-                await asyncio.gather(*cache_jobs)
+                if delta is None:
+                    await asyncio.gather(*cache_jobs)
+                else:
+                    await asyncio.wait(cache_jobs, timeout=delta)
+                    continue
             self.jobscheduler.cleanup()
             unstable = get_unstable()
             if not len(unstable):
@@ -1597,7 +1680,7 @@ class Manager:
                 tasks = list(self.cache_task_manager.tasks.values())
                 if not len(tasks):
                     raise Exception("No jobs, but unstable workers: %s" % unstable)
-                asyncio.wait(tasks,return_when=asyncio.FIRST_COMPLETED)
+                asyncio.wait(tasks,return_when=asyncio.FIRST_COMPLETED, timeout=delta)
                 continue
             if delta is None:
                 await asyncio.gather(*jobs)
