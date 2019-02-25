@@ -15,6 +15,8 @@ From the manager's point of view, it is assumed that subpaths are *independent*:
   to each channel separately; sending an update to ('a',) is not enough.
 Manager does NOT verify independence; it is the responsibility of the caller
  (i.e. StructuredCell) to do so.
+In addition, cell values are set as a whole: set_cell should only be invoked with subpath=None
+Exception: deep cells
 """
 
 from . import protocol
@@ -224,10 +226,6 @@ class Manager:
                     self.cache_task_manager.schedule_task(
                         ("transform","job",tf_level1),task,count,
                         cancelfunc=None, resultfunc=None)
-            elif type == "macro":
-                raise NotImplementedError ### cache branch
-            elif type == "reactor":
-                raise NotImplementedError ### cache branch
             else:
                 raise ValueError(type)
         self.scheduled = []
@@ -315,7 +313,7 @@ class Manager:
                     if checksum is None and subpath is not None:
                         checksum = self.cell_cache.cell_to_buffer_checksums[cell]
                 else:
-                    if subpath is not None: raise NotImplementedError ###need either to retrieve value, or cache tree depth (not implemented yet)
+                    if subpath is not None: raise NotImplementedError ###either streams, or deep cells
                     if cell._destroyed:
                         raise Exception(cell.name)
                     self.set_cell_checksum(cell, checksum)
@@ -479,7 +477,7 @@ class Manager:
         ccache = self.cell_cache
         cell = structured_cell.cell
         assert cell in ccache.cell_to_authority
-        raise NotImplementedError ### cache branch; self._register_cell_paths with autority info
+        raise NotImplementedError ### cache branch; self._register_cell_paths with authority info
 
     def register_transformer(self, transformer):
         tcache = self.transform_cache
@@ -1099,7 +1097,7 @@ class Manager:
         assert target.source_content_type is None
         same = True
         if source.subpath is not None or target.subpath is not None:
-            raise NotImplementedError ### cache branch
+            raise NotImplementedError ### cache branch; for source.subpath, get the value and apply subpath; for target.subpath, get the _monitor and set subpath
             same = False
         if source.cell._destroyed or target.cell._destroyed: return ### TODO, shouldn't happen...
         checksum = self.cell_cache.cell_to_buffer_checksums.get(source.cell) # TODO in case of cache tree depth
@@ -1134,7 +1132,7 @@ class Manager:
             else:
                 self.set_cell_checksum(target.cell, checksum, self.status[source.cell][None])
         else:
-            raise NotImplementedError ### cache branch            
+            raise NotImplementedError ### cache branch
 
     def update_path_value(self, path):
         # Slow! needs to be improved (TODO)
@@ -1313,7 +1311,7 @@ class Manager:
                 hlevel1 = level1.get_hash()
                 checksum = tcache.get_result(hlevel1)
                 if checksum is not None:
-                    if cell_subpath is not None: raise NotImplementedError ###need either to retrieve value, or cache tree depth (not implemented)
+                    if cell_subpath is not None: raise NotImplementedError ###see update_accessor_accessor
                     self.set_cell_checksum(cell, checksum)
             self.update_transformer_status(worker,full=False, new_connection=True)
         elif isinstance(worker, Reactor):
@@ -1381,7 +1379,7 @@ class Manager:
         auth = ccache.cell_to_authority[cell][subpath]
         has_auth = (auth != False)     
         if subpath is not None: 
-            raise NotImplementedError ### cache tree depth
+            raise NotImplementedError ### deep cells
 
         old_checksum = ccache.cell_to_buffer_checksums.get(cell)
         result = deserialize(
@@ -1464,7 +1462,7 @@ class Manager:
                 
     @main_thread_buffered
     def set_cell_from_label(self, cell, label, subpath):
-        if subpath is not None: raise NotImplementedError ###tree cache depth
+        if subpath is not None: raise NotImplementedError ###deep cells
         checksum = self.get_checksum_from_label(label)
         if checksum is None:
             raise Exception("Label has no checksum")
