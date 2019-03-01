@@ -13,7 +13,6 @@ graph = [
         "silk": False,
         "buffered": False,
         "checksum": '9809b7dfcfe29dd194c71c7d2da94af3aeef98f079eeff8e1d9e5099acef737c',
-        ###"value": math.pi,
         ###"schema": {'validators': [{'code': 'def validate(self):\n    assert self > 0\n', 'language': 'python'}]},
     },
     {
@@ -71,12 +70,12 @@ graph = [
 
 ctx0 = context(toplevel=True)
 ctx0.pi = cell("mixed").set(math.pi)
+assert ctx0.pi.checksum == '9809b7dfcfe29dd194c71c7d2da94af3aeef98f079eeff8e1d9e5099acef737c'
 
 with macro_mode_on():
     ctx = context(toplevel=True, manager=ctx0._get_manager())    
     translate(graph, ctx, [], False)
 
-print(ctx.pi)
 print(ctx.pi.value)
 ctx.code.set("result = a * 2")
 ctx.equilibrate()
