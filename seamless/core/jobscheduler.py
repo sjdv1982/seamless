@@ -201,8 +201,6 @@ class Job:
                 if pin == "code":
                     code = value
                 else:
-                    print(pin, semantic_key.access_mode, value)
-                    raise Exception
                     if semantic_key.access_mode == "mixed":
                         if value is not None:
                             value = value[2]

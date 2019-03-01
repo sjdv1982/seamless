@@ -23,7 +23,7 @@ from . import protocol
 from .protocol.deserialize import deserialize
 from .cache import (CellCache, AccessorCache, ExpressionCache, ValueCache,
     TransformCache, LabelCache, Accessor, Expression, TempRefManager, SemanticKey,
-    cache_task_manager)
+    cache_task_manager, CacheMissError)
 from .jobscheduler import JobScheduler
 from .macro_mode import get_macro_mode, curr_macro
 from .runtime_reactor import RuntimeReactor
@@ -387,13 +387,8 @@ class Manager:
                         status.auth = "FRESH"
                 if value is not None:
                     # TODO: dirty...
-                    value2 = value
-                    if cell._celltype == "mixed":
-                        from ..mixed.get_form import get_form
-                        storage, form = get_form(value)
-                        value2 = (storage, form, value)
                     if subpath is None:
-                        self.set_cell(cell, value2, subpath=None)
+                        self.set_cell(cell, value, subpath=None)
                     else:                        
                         monitor = cell._monitor
                         assert monitor is not None
@@ -539,7 +534,7 @@ class Manager:
                 if buffer is None:
                     is_none = True
             if is_none:
-                raise ValueError("Checksum not in value cache")            
+                raise CacheMissError("Checksum not in value cache")            
             semantic_value, _ = self.cache_expression(expression, buffer)
         return semantic_value
 
@@ -1275,29 +1270,21 @@ class Manager:
             expression = source.to_expression(checksum)
             try:
                 value = self.get_expression(expression)
-            except ValueError:
+            except CacheMissError:
                 value = None
-            result = deserialize(
-                source.celltype, source.cell._subcelltype, source.cell.path,
-                value, from_buffer=False, buffer_checksum=None,
-                source_access_mode = source.access_mode,
-                source_content_type = source.content_type
-            )            
-            target_buffer, target_checksum, target_obj, target_semantic_obj, target_semantic_checksum = result
-            if source.access_mode == "mixed":
-                storage, form, target_semantic_obj = target_semantic_obj
+            if source.access_mode == "mixed" and value is not None:
+                storage, form, value = value
             if target.subpath is None:
                 self.set_cell(
-                    target.cell, target_semantic_obj,
+                    target.cell, value,
                     subpath = None,
                     from_buffer=False, 
                     origin=source.cell
                 )
             else:
-                raise Exception(target_semantic_obj, value)
                 monitor = target.cell._monitor
                 assert monitor is not None
-                monitor.set_path(target.subpath, target_semantic_obj)
+                monitor.set_path(target.subpath, value)
         else:
             raise NotImplementedError ### cache branch
 

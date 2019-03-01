@@ -176,7 +176,8 @@ def from_stream(stream, storage, form):
             assert not stream.startswith(MAGIC_SEAMLESS)
             assert not stream.startswith(MAGIC_NUMPY)
             txt = stream.decode("utf-8")
-        return json.loads(txt)
+        result = json.loads(txt)
+        return result
     elif storage == "pure-binary":
         b = BytesIO(stream)
         return np.load(b)

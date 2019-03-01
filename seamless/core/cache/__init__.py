@@ -1,3 +1,6 @@
+class CacheMissError(Exception):
+    pass
+
 from .cell_cache import CellCache
 from .accessor_cache import AccessorCache, Accessor
 from .expression_cache import ExpressionCache, Expression

@@ -5,6 +5,7 @@ import traceback
 import asyncio
 import copy
 
+from . import CacheMissError
 from .expression_cache import Expression
 from .value_cache import SemanticKey
 from ...get_hash import get_hash
@@ -66,8 +67,9 @@ class TransformerLevel2:
         self.output_name = output_name
         a = []
         for key in sorted(semantic_keys.keys()):
-            assert isinstance(key, str)
+            assert isinstance(key, str)            
             value = semantic_keys[key]
+            assert value.semantic_checksum is not None, key
             assert isinstance(value, SemanticKey)
             v = (
                 value.semantic_checksum.hex(), 
@@ -222,7 +224,7 @@ class TransformCache:
             expression = level1[pin]
             buffer_item = results[pinnr]
             if buffer_item is None:
-                raise ValueError("Checksum not in value cache") 
+                raise CacheMissError("Checksum not in value cache") 
             _, _, buffer = buffer_item            
             _, semantic_key = manager.cache_expression(expression, buffer)
             semantic_keys[pin] = semantic_key

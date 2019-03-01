@@ -81,6 +81,8 @@ def evaluate_from_buffer(expression, buffer):
         source_content_type = expression.source_content_type
     )
     _, _, obj, semantic_obj, semantic_checksum = result
+    if expression.celltype == "mixed":
+        semantic_obj = semantic_obj[2]
     if expression.access_mode is not None:
         if expression.access_mode == "text" and expression.celltype == "cson":
             semantic_obj = obj
@@ -90,15 +92,10 @@ def evaluate_from_buffer(expression, buffer):
     if expression.content_type is not None and expression.content_type != expression.celltype:
         pass # TODO?
     if expression.subpath is not None:
-        try:
+        try:                        
             result = semantic_obj
-            if expression.celltype == "mixed":
-                semantic_obj = semantic_obj[2]
             for path in expression.subpath:
-                result = semantic_obj[path]
-            if expression.celltype == "mixed":
-                storage, form = get_form(result)
-                result = storage, form, result
+                result = result[path]
             result2 = deserialize(
                 expression.celltype, None, "random_code_path", #TODO
                 result, from_buffer = False, buffer_checksum = None,

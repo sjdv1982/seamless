@@ -1,5 +1,5 @@
 import seamless
-from seamless.core import macro_mode_on, context
+from seamless.core import macro_mode_on, context, cell
 from seamless.midlevel.translate import translate
 import math
 import json
@@ -70,9 +70,7 @@ graph = [
 ]
 
 ctx0 = context(toplevel=True)
-vcache = ctx0._get_manager().value_cache
-pi_checksum = bytes.fromhex('9809b7dfcfe29dd194c71c7d2da94af3aeef98f079eeff8e1d9e5099acef737c')
-vcache._buffer_cache[pi_checksum] = 1, 0, json.dumps(str(math.pi)+"\n").encode()
+ctx0.pi = cell("mixed").set(math.pi)
 
 with macro_mode_on():
     ctx = context(toplevel=True, manager=ctx0._get_manager())    

@@ -216,10 +216,10 @@ def deserialize_mixed(
     elif source_access_mode == "mixed":        
         if from_buffer:
             data, storage, form = mixed_deserialize(value)
-        elif value is None:
-            storage, form, data = None, None, None
-        else:            
-            storage, form, data = value
+        else:
+            data = value
+            assert not isinstance(value, tuple), value
+            storage, form = get_form(data)
     else:
         raise ValueError(source_access_mode)
 

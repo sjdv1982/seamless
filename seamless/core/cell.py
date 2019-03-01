@@ -288,9 +288,9 @@ class MixedCell(Cell):
     _monitor = None
 
     def set(self, value):
-        storage, form = get_form(value)
-        v = (storage, form, value)
-        return self._set(v, False)
+        #storage, form = get_form(value)
+        #v = (storage, form, value)
+        return self._set(value, False)
 
     @property
     def value(self):
