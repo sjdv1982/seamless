@@ -1320,3 +1320,9 @@ an operation. Authority assignments can happen from the terminal, over the netwo
 (shareserver), or from a reactor. Seamless treats them all the same. An authority
 assignment discards the previous value of a cell, a cell's history is not modelled.
 This is the same as a spreadsheet, but different from FRP and reactive frameworks in imperative languages, which explicitly model the dynamic behavior of values (as event streams).
+Seamless is also a functional language in the what-not-how sense. Let's take for example a piece of Python code "result = sorted(table)".
+This can be applied to a simple array cell ctx.table, with a 2D Numpy array. But ctx.table could also be a deep cell may span terabytes,
+ with each fragment checksum cached at different remote locations. In that case, it makes perfect sense for a Seamless implementation to
+ interpret "result = sorted(table)" as a Spark query. ctx.table can be converted to a Spark RDD on the fly, or it may already be a persistent
+ RDD, identified by a checksum-to-RDD cache server. The result will then be converted back from an RDD to another deep cell (using caching), or to a normal array cell (using a Spark action). Seamless does not care, since in terms of checksum calculus, the result is the same
+ (except of course that deep cells do not have a single checksum describing the whole data, but a framework like Spark could compute one).
