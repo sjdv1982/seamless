@@ -13,7 +13,7 @@ from seamless.core import cell as core_cell, link as core_link, \
  libcell, libmixedcell, transformer, reactor, context, macro, StructuredCell
 
 from . import copying
-from .util import as_tuple, get_path, find_channels, find_editchannels, build_structured_cell, try_set, try_set2
+from .util import as_tuple, get_path, find_channels, find_editchannels, build_structured_cell, try_set
 
 
 
@@ -92,24 +92,11 @@ def translate_py_reactor(node, root, namespace, inchannels, outchannels, editcha
         elif iomode == "output":
             io.connect_inchannel(target, (pinname,))
 
-    temp = node.get("TEMP")
-    if temp is None:
-        temp = {}
-    for attr in ("code_start", "code_stop", "code_update"):
-        if attr in temp:
-            try_set(getattr(ctx, attr), temp[attr])
-    iohandle = io.handle
-    for k,v in temp.items():
-        if k in ("code_start", "code_stop", "code_update"):
-            continue
-        setattr(iohandle, k, v)
-
     if not is_lib: #clean up cached state and in_equilibrium, unless a library context
         node.pop("cached_state_io", None)
 
     namespace[node["path"], True] = io, node
     namespace[node["path"], False] = io, node
-    node.pop("TEMP", None)
 
 def translate_cell(node, root, namespace, inchannels, outchannels, editchannels, lib_path0, is_lib, link_target=None):
     path = node["path"]
@@ -168,46 +155,27 @@ def translate_cell(node, root, namespace, inchannels, outchannels, editchannels,
                         child = core_cell(node["language"])
                 else:
                     child = core_cell("text")
-            elif ct in ("text", "json"):
+            elif ct in ("text", "plain", "mixed", "array"):
                 child = core_cell(ct)
-            elif ct in ("mixed", "array", "signal"):
-                raise NotImplementedError(ct)
             else:
                 raise ValueError(ct) #unknown celltype; should have been caught by high level
             child._sovereign = True
     setattr(parent, name, child)
     pathstr = "." + ".".join(path)
-    if node.get("TEMP") is not None:
+    if node.get("checksum") is not None:
         if link_target is not None:
             warn("Cell %s has a link target, cannot set construction constant" % pathstr)
         else:
-            try_set(child, node["TEMP"])
+            try_set(child, node["checksum"])
     if ct != "structured":
         if link_target is not None:
             if "mount" in node:
                 warn("Cell %s has a link target, cannot mount" % pathstr)
-            stored_value = node.get("stored_value")
-            if stored_value is not None:
-                warn("Cell %s has a link target, cannot set stored value" % pathstr)
-            cached_value = node.get("cached_value")
-            if cached_value is not None:
-                warn("Cell %s has a link target, cannot set cached value" % pathstr)
         else:
             if "file_extension" in node:
                 child.set_file_extension(node["file_extension"])
             if "mount" in node:
                 child.mount(**node["mount"])
-            stored_value = node.get("stored_value")
-            if stored_value is not None:
-                assert child.authoritative
-                try_set(child, stored_value)
-            else:
-                cached_value = node.get("cached_value")
-                if cached_value is not None:
-                    ###assert not child.authoritative
-                    if not child.authoritative:
-                        manager = child._get_manager()
-                        try_set2(child, manager, cached_value, from_pin=True)
 
 
     if not is_lib:
@@ -232,24 +200,22 @@ def translate_connection(node, namespace, ctx):
     )
     if isinstance(target, StructuredCell):
         target = target.inchannels[()]
+    # TODO: transfer mode
+    """
     transfer_mode = "copy"
     if target_node is not None and target_node["type"] == "transformer":
         transfer_mode = "ref"
+    """
 
     if isinstance(source, Outchannel):
         name, parent = source.name, source.structured_cell()
         if isinstance(name, str):
-            name = (name,)
-        parent.connect_outchannel(name, target, transfer_mode=transfer_mode)
-    elif isinstance(target, Inchannel):
-        name, parent = target.name, target.structured_cell()
-        if isinstance(name, str):
-            name = (name,)
-        parent.connect_inchannel(source, name, transfer_mode=transfer_mode)
-    elif isinstance(source, (Worker, PinBase)):
+            name = (name,)            
+        parent.outchannels[name].connect(target)
+    elif isinstance(source, (Worker, PinBase, Inchannel)):
         source.connect(target)
     else:
-        source.connect(target, transfer_mode=transfer_mode)
+        source.connect(target)
 
 def translate_link(node, namespace, ctx):
     from ..core.structured_cell import Inchannel, Outchannel, Editchannel, StructuredCell

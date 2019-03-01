@@ -104,17 +104,24 @@ class UnboundContext(SeamlessBase):
         self, *, 
         root=None,
         toplevel=False,
+        manager=None,
     ):
         super().__init__()
         if toplevel:
             self._manager = UnboundManager(self)
         self._toplevel = toplevel
+        if toplevel:
+            self._bound_manager = manager
         self._auto = set()
         self._children = {}
         self._mount = None
         if toplevel:
             assert root is None
             root = Context(toplevel=True)
+            if manager is not None:
+                root._manager = manager
+        else:
+            assert manager is None
         self._root_ = root
         if toplevel:
             toplevel_register.add(self)

@@ -1,23 +1,14 @@
 from seamless.core import cell as core_cell, link as core_link, \
  libcell, libmixedcell, transformer, reactor, context, macro, StructuredCell
-from seamless.core.structured_cell import BufferWrapper
 import traceback
 STRUC_ID = "_STRUC"
 
-def try_set(cell, value):
+def try_set(cell, checksum):
     #TODO: proper logging
     try:
-        cell.set(value)
+        cell.set_checksum(checksum)
     except:
         traceback.print_exc()
-
-def try_set2(cell, manager, value, *args, **kwargs):
-    #TODO: proper logging
-    try:
-        manager.set_cell(cell, value, *args, **kwargs)
-    except:
-        traceback.print_exc()
-
 
 def as_tuple(v):
     if isinstance(v, str):
@@ -98,63 +89,45 @@ def build_structured_cell(
 ):
     #print("build_structured_cell", name, lib_path)
     name2 = name + STRUC_ID
-    c = context(name=name2,context=ctx)
+    c = context(toplevel=False)
     setattr(ctx, name2, c)
     if mount is not None:
         c.mount(**mount)
     lib_path = lib_path0 + "." + name2 if lib_path0 is not None else None
     sovereign = True
-    if lib_path:
-        path = lib_path + ".form"
-        cc = libcell(path)
-    else:
-        cc = core_cell("json")
-        cc._sovereign = sovereign
-    c.form = cc
     if plain:
         if lib_path:
             path = lib_path + ".data"
             cc = libcell(path)
         else:
-            cc = core_cell("json")
+            cc = core_cell("mixed")
             cc._sovereign = sovereign
         c.data = cc
         storage = None
     else:
         if lib_path:
-            path = lib_path + ".storage"
-            storage = libcell(path)
-        else:
-            storage = core_cell("text")
-            storage._sovereign = sovereign
-        c.storage = storage
-        if lib_path:
             path = lib_path + ".data"
-            c.data = libmixedcell(path,
-                form_cell = c.form,
-                storage_cell = c.storage
-            )
+            c.data = libmixedcell(path)
         else:
-            c.data = core_cell("mixed",
-                form_cell = c.form,
-                storage_cell = c.storage
-            )
+            c.data = core_cell("mixed")
             c.data._sovereign = sovereign
     if silk:
+        raise NotImplementedError ###
         if lib_path:
             path = lib_path + ".schema"
             schema = libcell(path)
         else:
-            schema = core_cell("json")
+            schema = core_cell("plain")
         c.schema = schema
     else:
         schema = None
     if buffered:
+        raise NotImplementedError ### cache branch
         if lib_path:
             path = lib_path + ".buffer_form"
             cc = libcell(path)
         else:
-            cc = core_cell("json")
+            cc = core_cell("plain")
             cc._sovereign = sovereign
         c.buffer_form = cc
         if plain:
@@ -162,7 +135,7 @@ def build_structured_cell(
                 path = lib_path + ".buffer_data"
                 cc = libcell(path)
             else:
-                cc = core_cell("json")
+                cc = core_cell("plain")
                 cc._sovereign = sovereign
             c.buffer_data = cc
             buffer_storage = None
@@ -186,24 +159,23 @@ def build_structured_cell(
                     storage_cell = c.buffer_storage,
                 )
                 c.buffer_data._sovereign = sovereign
+        """
         bufferwrapper = BufferWrapper(
             c.buffer_data,
             buffer_storage,
             c.buffer_form
         )
-    else:
-        bufferwrapper = None
+        """
 
+    bufferwrapper = None ###
     sc = StructuredCell(
         name,
         c.data,
-        storage=storage,
-        form=c.form,
         schema=schema,
         buffer=bufferwrapper,
+        plain=plain,
         inchannels=inchannels,
         outchannels=outchannels,
-        state=state,
         editchannels=editchannels
     )
     if return_context:

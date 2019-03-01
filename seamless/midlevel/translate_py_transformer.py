@@ -8,7 +8,7 @@ def translate_py_transformer(node, root, namespace, inchannels, outchannels, lib
     parent = get_path(root, node["path"][:-1], None, None)
     name = node["path"][-1]
     lib_path0 = lib_path00 + "." + name if lib_path00 is not None else None
-    ctx = context(context=parent, name=name)
+    ctx = context(toplevel=False)
     setattr(parent, name, ctx)
 
     result_name = node["RESULT"]
@@ -28,11 +28,20 @@ def translate_py_transformer(node, root, namespace, inchannels, outchannels, lib
     mount = node.get("mount", {})
     if input_state is None:
         input_state = node.get("cached_state_input", None)
+    ### KLUDGE   
+    """
     inp, inp_ctx = build_structured_cell(
       ctx, input_name, True, plain, buffered, inchannels, interchannels,
       input_state, lib_path0,
       return_context=True
     )
+    """
+    inp, inp_ctx = build_structured_cell(
+      ctx, input_name, False, plain, buffered, inchannels, interchannels,
+      input_state, lib_path0,
+      return_context=True
+    )
+
     setattr(ctx, input_name, inp)
     if "input_schema" in mount:
         inp_ctx.schema.mount(**mount["input_schema"])
@@ -53,8 +62,7 @@ def translate_py_transformer(node, root, namespace, inchannels, outchannels, lib
             "io": "input", "transfer_mode": "json",
             "access_mode": "json", "content_type": "json"
         }
-    in_equilibrium = node.get("in_equilibrium", False)
-    ctx.tf = transformer(all_pins, in_equilibrium=in_equilibrium)
+    ctx.tf = transformer(all_pins)
     if node["debug"]:
         ctx.tf.debug = True
     if lib_path00 is not None:
@@ -79,17 +87,18 @@ def translate_py_transformer(node, root, namespace, inchannels, outchannels, lib
         temp = {}
     if "code" in temp:
         ctx.code.set(temp["code"])
-    inphandle = inp.handle
-    for k,v in temp.items():
+    for k,v in temp.items():        
         if k == "code":
             continue
+        raise NotImplementedError ### cache branch
+        inphandle = inp.handle
         setattr(inphandle, k, v)
     namespace[node["path"] + ("code",), True] = ctx.code, node
     namespace[node["path"] + ("code",), False] = ctx.code, node
 
     for pin in list(node["pins"].keys()):
         target = getattr(ctx.tf, pin)
-        inp.connect_outchannel( (pin,) ,  target )
+        inp.outchannels[(pin,)].connect(target )
 
     if with_result:
         plain_result = node["plain_result"]
@@ -114,12 +123,6 @@ def translate_py_transformer(node, root, namespace, inchannels, outchannels, lib
             assert len(c) == 0 #should have been checked by highlevel
         result = getattr(ctx.tf, result_name)
         namespace[node["path"] + (result_name,), False] = result, node
-
-    if not is_lib: #clean up cached state and in_equilibrium, unless a library context
-        node.pop("cached_state_input", None)
-        if not in_equilibrium:
-            node.pop("cached_state_result", None)
-        node.pop("in_equilibrium", None)
 
     namespace[node["path"], True] = inp, node
     namespace[node["path"], False] = result, node

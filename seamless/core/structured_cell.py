@@ -241,6 +241,13 @@ class StructuredCell(SeamlessBase):
         else:
             self.monitor.set_path((), value)
 
+
+    def set_checksum(self, checksum):
+        if self._is_silk or self.buffer is not None:
+            raise NotImplementedError ### cache branch
+        cell = self.monitor.backend._cell
+        cell.set_checksum(checksum)
+
     def __str__(self):
         ret = "Seamless structured cell: " + self._format_path()
         return ret

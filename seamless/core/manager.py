@@ -394,7 +394,7 @@ class Manager:
                         value2 = (storage, form, value)
                     if subpath is None:
                         self.set_cell(cell, value2, subpath=None)
-                    else:
+                    else:                        
                         monitor = cell._monitor
                         assert monitor is not None
                         monitor.set_path(subpath, value)                        
@@ -1231,7 +1231,6 @@ class Manager:
             self.update_accessor_accessor(*accessors)
 
     def update_accessor_accessor(self, source, target):
-        print("up", source.cell, source.subpath, target.cell, target.subpath)
         assert source.source_access_mode is None
         assert source.source_content_type is None
         assert target.source_access_mode is None
@@ -1295,6 +1294,7 @@ class Manager:
                     origin=source.cell
                 )
             else:
+                raise Exception(target_semantic_obj, value)
                 monitor = target.cell._monitor
                 assert monitor is not None
                 monitor.set_path(target.subpath, target_semantic_obj)
