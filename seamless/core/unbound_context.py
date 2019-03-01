@@ -227,7 +227,9 @@ class UnboundContext(SeamlessBase):
         for childname, child in self._children.items():
             if isinstance(child, UnboundContext):
                 bound_ctx = ctxmap[childname]
-                self._manager.commands += child._manager.commands
+                if self._manager is not child._manager:
+                    self._manager.commands += child._manager.commands
+                    child._manager.commands.clear()
                 child._bind_stage1(bound_ctx)                
             else:
                 continue     

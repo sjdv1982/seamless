@@ -392,7 +392,12 @@ class Manager:
                         from ..mixed.get_form import get_form
                         storage, form = get_form(value)
                         value2 = (storage, form, value)
-                    self.set_cell(cell, value2, subpath=subpath)
+                    if subpath is None:
+                        self.set_cell(cell, value2, subpath=None)
+                    else:
+                        monitor = cell._monitor
+                        assert monitor is not None
+                        monitor.set_path(subpath, value)                        
                     if checksum is None and subpath is not None:
                         checksum = self.cell_cache.cell_to_buffer_checksums[cell]
                 else:
@@ -716,11 +721,13 @@ class Manager:
         new_status.data, new_status.exec, new_status.auth = "OK", "READY", "FRESH"
         if old_status is not None and old_status.exec == "FINISHED" and not full:
             new_status.exec = "FINISHED"
+        unconnected_list = []
         for pin in transformer._pins:
             if transformer._pins[pin].io == "output":
                 continue
             if pin not in accessor_dict:
                 new_status.data = "UNCONNECTED"
+                unconnected_list.append(pin)
                 continue
             accessor = accessor_dict[pin]
             cell_status = self.status[accessor.cell][accessor.subpath]
@@ -734,6 +741,9 @@ class Manager:
             s = cell_status.auth_status
             if s.value > new_status.auth_status.value:
                 new_status.auth_status = s
+        
+        if len(unconnected_list):
+            new_status._unconnected_list = unconnected_list
         
         if new_status.data_status.value > Status.StatusDataEnum.PENDING.value:
             new_status.exec = "BLOCKED"
@@ -916,7 +926,7 @@ class Manager:
 
     def _connect_cell_transformer(self, cell, pin, cell_subpath):
         """Connects cell to transformer inputpin"""
-        print("connect cell transformer", cell, pin, cell)
+        #print("connect cell transformer", cell, pin, cell)
         transformer = pin.worker_ref()
         tcache = self.transform_cache
         accessor_dict = tcache.transformer_to_level0[transformer]
@@ -1221,21 +1231,21 @@ class Manager:
             self.update_accessor_accessor(*accessors)
 
     def update_accessor_accessor(self, source, target):
+        print("up", source.cell, source.subpath, target.cell, target.subpath)
         assert source.source_access_mode is None
         assert source.source_content_type is None
         assert target.source_access_mode is None
         assert target.source_content_type is None
         same = True
-        if source.subpath is not None or target.subpath is not None:
-            raise NotImplementedError ### cache branch; for source.subpath, get the value and apply subpath; for target.subpath, get the _monitor and set subpath
-            same = False
         if source.cell._destroyed or target.cell._destroyed: return ### TODO, shouldn't happen...
-        checksum = self.cell_cache.cell_to_buffer_checksums.get(source.cell) # TODO in case of cache tree depth
+        checksum = self.cell_cache.cell_to_buffer_checksums.get(source.cell) # TODO in case of cache tree depth        
         """            
         for attr in ("celltype", "storage_type", "access_mode", "content_type"):
             if getattr(source, attr) != getattr(target, attr):
                 same = False
         """
+        if source.subpath is not None or target.subpath is not None:
+            same = False
         for attr in ("storage_type", "access_mode"):
             if getattr(source, attr) != getattr(target, attr):
                 same = False
@@ -1259,8 +1269,35 @@ class Manager:
                     from_buffer=False, 
                     origin=source.cell
                 )
-            else:
+            else:                
                 self.set_cell_checksum(target.cell, checksum, self.status[source.cell][None])
+        elif source.subpath is not None or target.subpath is not None:
+            if source.celltype != target.celltype: raise NotImplementedError(source.cell, target.cell) ### cache branch
+            expression = source.to_expression(checksum)
+            try:
+                value = self.get_expression(expression)
+            except ValueError:
+                value = None
+            result = deserialize(
+                source.celltype, source.cell._subcelltype, source.cell.path,
+                value, from_buffer=False, buffer_checksum=None,
+                source_access_mode = source.access_mode,
+                source_content_type = source.content_type
+            )            
+            target_buffer, target_checksum, target_obj, target_semantic_obj, target_semantic_checksum = result
+            if source.access_mode == "mixed":
+                storage, form, target_semantic_obj = target_semantic_obj
+            if target.subpath is None:
+                self.set_cell(
+                    target.cell, target_semantic_obj,
+                    subpath = None,
+                    from_buffer=False, 
+                    origin=source.cell
+                )
+            else:
+                monitor = target.cell._monitor
+                assert monitor is not None
+                monitor.set_path(target.subpath, target_semantic_obj)
         else:
             raise NotImplementedError ### cache branch
 
@@ -1342,7 +1379,7 @@ class Manager:
 
         other_subpath = None
         if isinstance(other, Inchannel):
-            other_subpath = other.path
+            other_subpath = other.name
             other = other.structured_cell().data      
 
         if isinstance(other, (Cell, Path)):
@@ -1420,7 +1457,7 @@ class Manager:
             cell = cell.get_linked()
         cell_subpath = None
         if isinstance(cell, Inchannel):
-            cell_subpath = cell.path
+            cell_subpath = cell.name
             cell = cell.structured_cell().data
         if not isinstance(cell, (Cell, Path)):
             raise TypeError(cell)

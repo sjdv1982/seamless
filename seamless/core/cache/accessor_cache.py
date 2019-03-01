@@ -44,6 +44,7 @@ class Accessor:
         expression.celltype = self.celltype
         expression.storage_type = self.storage_type
         expression.buffer_checksum = buffer_checksum
+        expression.subpath = self.subpath
         expression.access_mode = self.access_mode
         expression.content_type = self.content_type
         expression.source_access_mode = self.source_access_mode

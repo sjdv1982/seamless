@@ -301,10 +301,18 @@ class CellBackend(Backend):
             self._tempdata = deepcopy(self._cell.data)
         subdata = self._get_path(path[:-1], self._tempdata)
         attr = path[-1]
+
+        if subdata is None and len(path) == 1:
+            if isinstance(attr, int):
+                self.set_path((), [])
+            else:
+                self.set_path((), {})
+            return self._set_path(path, data)
+
         if isinstance(attr, int):
             assert isinstance(subdata, list)
             for n in range(len(subdata), attr + 1):
-                subdata.append(None)
+                subdata.append(None)            
         subdata[attr] = data
 
     def _insert_path(self, data, path):
@@ -397,10 +405,12 @@ class CellBackend(Backend):
         ccache = manager.cell_cache
         cell = self._cell
         for path in sorted(updated, key=lambda p:len(p)):
-            auth = ccache.cell_to_authority[cell][path]
-            has_auth = (auth != False)
-            manager._update_status(
-                self._cell, (not deleted), 
-                has_auth=has_auth, origin=None,
-                cell_subpath=path
-            )
+            auths = ccache.cell_to_authority[cell]
+            if path in auths: 
+                auth = auths[path]
+                has_auth = (auth != False)
+                manager._update_status(
+                    self._cell, (not deleted), 
+                    has_auth=has_auth, origin=None,
+                    cell_subpath=path
+                )

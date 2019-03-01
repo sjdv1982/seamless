@@ -285,6 +285,7 @@ class MixedCell(Cell):
     _storage_type = "mixed"
     _default_access_mode = "mixed"
     _content_type = "mixed"
+    _monitor = None
 
     def set(self, value):
         storage, form = get_form(value)

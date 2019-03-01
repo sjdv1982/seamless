@@ -34,8 +34,8 @@ with macro_mode_on():
         outchannels = [("y",)]
     )
 
-    ctx.x = cell()
-    ctx.code = pytransformercell().set("c = a + b")
+    ctx.x = cell("mixed")
+    ctx.code = pytransformercell().set("""c = a + b""")
     ctx.code.connect(ctx.tf.code)
     ctx.x.connect(ctx.result.inchannels[("x",)])
     ctx.tf.c.connect(ctx.result.inchannels[("y",)])
@@ -51,28 +51,33 @@ with macro_mode_on():
 
     #ctx.mount("/tmp/mount-test")
 
+result = ctx.result.handle
 ctx.x.set("x")
 
 inp = ctx.inp.handle
-#print(inp["q"])
+
+inp["q"] = {}
+inp["q"]["r"] = {}
 inp["q"]["r"]["x"] = "test"
 inp["a"] = 10
 inp["b"] = 20
-ctx.equilibrate()
+
 result = ctx.result.handle
+print("RESULT", result)
 result["x"] = 100
 ctx.x.set("x")
-print(ctx.result.value)
 
 #print(ctx.inp.outchannels[("a",)].status())
 print(ctx.tf.status)
 print(ctx.tf2.status)
-print(ctx.z.value)
+print("RESULT", ctx.result.value)
+print("Z", ctx.z.value)
 
 inp["b"] = 25
-print(inp)
+print("INP", inp)
 ctx.equilibrate()
-print(ctx.z.value)
+print("RESULT", ctx.result.value)
+print("Z", ctx.z.value)
 
 
 #shell = ctx.tf.shell()

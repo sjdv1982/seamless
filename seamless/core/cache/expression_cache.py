@@ -37,7 +37,10 @@ class Expression:
         d = OrderedDict()        
         for slot in self.__slots__:
             d[slot] = getattr(self, slot)
-        d["buffer_checksum"] = self.buffer_checksum.hex()
+        if self.buffer_checksum is not None:
+            d["buffer_checksum"] = self.buffer_checksum.hex()
+        else:
+            d["buffer_checksum"] = None
         return json.dumps(d, indent=2)
 
     def __hash__(self):

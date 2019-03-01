@@ -20,6 +20,7 @@ class Status:
     exec_status = None  # only for workers: the result of execution
     live_status = False # only for reactors; means that there is a live namespace
     _overruled = False
+    _unconnected_list = []
     def __init__(self, type):
         assert type in ("cell", "transformer", "macro", "reactor")
         self._type = type
@@ -48,7 +49,10 @@ class Status:
         estatus = str(self.exec)
         astatus = str(self.auth)
         if dstatus == "UNCONNECTED":
-            return dstatus
+            result = dstatus 
+            if len(self._unconnected_list):
+                result += ": " + ",".join(self._unconnected_list) 
+            return result
         elif estatus == "BLOCKED":
             result = self._str_cell()
             if result == "UNDEFINED":

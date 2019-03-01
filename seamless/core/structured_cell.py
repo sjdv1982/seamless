@@ -189,20 +189,27 @@ class StructuredCell(SeamlessBase):
                     err = "%s and %s overlap"
                     raise Exception(err % (inedchannel1, inedchannel2))
 
-        self.backend = CellBackend(self.data)
-        self.monitor = Monitor(self.backend, attribute_access=(not plain))
+        if self.data._monitor is None:
+            backend = CellBackend(self.data)
+            monitor = Monitor(backend, attribute_access=(not plain))
+            self.data._monitor = monitor
 
         if self._is_silk:
-            self.schema_backend = CellBackend(self.schema)
-            self.schema_monitor = Monitor(self.schema_backend, attribute_access=False)
+            if self.schema._monitor is None:
+                schema_backend = CellBackend(self.schema)
+                schema_monitor = Monitor(schema_backend, attribute_access=False)
+                self.schema._monitor = schema_monitor
+
             silk_buffer = None
             if buffer is not None:
-                self.bufbackend = CellBackend(self.buffer)
-                self.bufmonitor = Monitor(self.bufbackend, attribute_access=(not plain))
-                silk_buffer = self.bufmonitor.get_path()
+                if self.buffer._monitor is None:
+                    bufbackend = CellBackend(self.buffer)
+                    bufmonitor = Monitor(bufbackend, attribute_access=(not plain))
+                    self.buffer._monitor = weakref.ref(bufmonitor)
+                silk_buffer = self.buffer._monitor.get_path()
             self._silk = Silk(
-                schema=self.schema_monitor,
-                data=self.monitor.get_path(),
+                schema=self.schema._monitor,
+                data=self.data._monitor.get_path(),
                 buffer=silk_buffer,
             )
 
@@ -220,6 +227,10 @@ class StructuredCell(SeamlessBase):
             inpaths = [p for p in self.inchannels if p not in outedpaths]
             manager._register_cell_paths(self.data, inpaths, has_auth=False)
             manager._register_cell_paths(self.data, outedpaths, has_auth=True)
+
+    @property
+    def monitor(self):
+        return self.data._monitor
 
     def checksum(self):
         return self.data.checksum()

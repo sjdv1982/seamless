@@ -216,7 +216,9 @@ def deserialize_mixed(
     elif source_access_mode == "mixed":        
         if from_buffer:
             data, storage, form = mixed_deserialize(value)
-        else:
+        elif value is None:
+            storage, form, data = None, None, None
+        else:            
             storage, form, data = value
     else:
         raise ValueError(source_access_mode)
@@ -228,7 +230,10 @@ def deserialize_mixed(
     if buffer is None and data is not None:
         buffer = mixed_serialize(data, storage=storage,form=form)
     if buffer_checksum is None:
-        buffer_checksum = get_hash(buffer)
+        if buffer is None:
+            buffer_checksum = None
+        else:
+            buffer_checksum = get_hash(buffer)
 
     obj = storage, form, data
     semantic_checksum = buffer_checksum

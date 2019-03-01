@@ -92,8 +92,13 @@ def evaluate_from_buffer(expression, buffer):
     if expression.subpath is not None:
         try:
             result = semantic_obj
+            if expression.celltype == "mixed":
+                semantic_obj = semantic_obj[2]
             for path in expression.subpath:
                 result = semantic_obj[path]
+            if expression.celltype == "mixed":
+                storage, form = get_form(result)
+                result = storage, form, result
             result2 = deserialize(
                 expression.celltype, None, "random_code_path", #TODO
                 result, from_buffer = False, buffer_checksum = None,
