@@ -85,6 +85,8 @@ class UnboundManager:
         else:
             return cells
 
+    def _register_cell_paths(self, cell, paths, has_auth):
+        self.commands.append(("_register_cell_paths", (cell, paths, has_auth)))
 
 
 class UnboundContext(SeamlessBase):
@@ -104,7 +106,8 @@ class UnboundContext(SeamlessBase):
         toplevel=False,
     ):
         super().__init__()
-        self._manager = UnboundManager(self)
+        if toplevel:
+            self._manager = UnboundManager(self)
         self._toplevel = toplevel
         self._auto = set()
         self._children = {}
@@ -137,6 +140,7 @@ class UnboundContext(SeamlessBase):
         assert isinstance(child, (UnboundContext, Worker, Cell, Link, StructuredCell))
         if isinstance(child, UnboundContext):
             assert child._context is None
+            child._manager = self._manager
             child._context = weakref.ref(self)
             child._root_ = self._root()
             self._children[childname] = child
@@ -267,6 +271,10 @@ class UnboundContext(SeamlessBase):
             elif com == "set cell label":
                 cell, label = args
                 manager.set_cell_label(cell, label)
+            elif com == "_register_cell_paths":
+                cell, paths, has_auth = args
+                assert cell._get_manager() is manager, (cell._get_manager(), manager)
+                manager._register_cell_paths(cell, paths, has_auth)
             else:
                 raise ValueError(com)
         manager.schedule_jobs()

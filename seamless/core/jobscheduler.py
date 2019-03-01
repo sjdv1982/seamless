@@ -149,7 +149,7 @@ class JobScheduler:
                                 traceback.print_exc()
                         toclean.append(key)
             for key in toclean:
-                jobs.pop(key)
+                jobs.pop(key, None)
 
 class Job:
     def __init__(self, scheduler, level1, level2, remote):
@@ -189,8 +189,8 @@ class Job:
             transformer_path = transformer._format_path()
         except:
             transformer_path = "<Unknown transformer>"
-        try:
-            manager = self.scheduler().manager()
+        manager = self.scheduler().manager()
+        try:            
             namespace = {}
             queue = Queue()
             inputs = []
@@ -210,7 +210,7 @@ class Job:
                 transformer_path, code,
                 str(transformer),
                 namespace, inputs, self.level2.output_name, queue
-            )
+            )            
             self.executor = Executor(target=execute,args=args, daemon=True)
             self.executor.start()
             result = None

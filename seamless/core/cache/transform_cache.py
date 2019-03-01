@@ -216,14 +216,14 @@ class TransformCache:
             expression = level1[pin]
             checksum = expression.buffer_checksum
             task = manager.get_value_from_checksum_async(checksum)
-            tasks.append(task)        
-        results = await asyncio.gather(*tasks)
+            tasks.append(task)
+        results = await asyncio.gather(*tasks)        
         for pinnr, pin in enumerate(pinnames):
             expression = level1[pin]
             buffer_item = results[pinnr]
             if buffer_item is None:
                 raise ValueError("Checksum not in value cache") 
-            _, _, buffer = buffer_item
+            _, _, buffer = buffer_item            
             _, semantic_key = manager.cache_expression(expression, buffer)
             semantic_keys[pin] = semantic_key
 

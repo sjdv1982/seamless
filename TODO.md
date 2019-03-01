@@ -127,7 +127,7 @@ Things to do:
   - Add subpaths to all Manager API functions DONE
   - For Monitor, replace direct data storage + hooks with API DONE
   - Get mixed tests working DONE
-  - Simple streams (map for list/array and dict)
+  - Simple streams (map for list/array and dict) DONE
   - Adapt StructuredCell to have direct manager API instead of slave cells.
     Only three slave cells (data, schema, buffer) instead of seven
     The manager API will sync StructuredCell updates with cells (data, buffer) and their mounts

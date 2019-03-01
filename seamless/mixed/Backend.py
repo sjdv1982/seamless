@@ -397,8 +397,6 @@ class CellBackend(Backend):
         ccache = manager.cell_cache
         cell = self._cell
         for path in sorted(updated, key=lambda p:len(p)):
-            if not len(path):
-                continue
             auth = ccache.cell_to_authority[cell][path]
             has_auth = (auth != False)
             manager._update_status(
