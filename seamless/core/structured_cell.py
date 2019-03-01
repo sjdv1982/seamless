@@ -40,7 +40,7 @@ If there is buffering, only the buffer should be edited via mount
 
 class Inchannel(SeamlessBase):
     def __init__(self, structured_cell, name):
-        assert isinstance(inchannel, tuple)
+        assert isinstance(name, tuple)
         self.structured_cell = weakref.ref(structured_cell)
         #assert all([isinstance(v, str) for v in channel])
         self.name = name
@@ -180,13 +180,11 @@ class StructuredCell(SeamlessBase):
         inedchannels = list(self.inchannels.keys())
         inedchannels += list(self.editchannels.keys())
         
-        for inedchannel1 in inedchannels:
-            path1 = inedchannel1.path
+        for path1 in inedchannels:
             lpath1 = len(path1)
-            for inedchannel2 in inedchannels:                
-                if inedchannel1 is inedchannel2:
+            for path2 in inedchannels:                
+                if path1 is path2:
                     continue
-                path2 = inedchannel2.path
                 if path2[:lpath1] == path1:
                     err = "%s and %s overlap"
                     raise Exception(err % (inedchannel1, inedchannel2))
@@ -209,12 +207,19 @@ class StructuredCell(SeamlessBase):
             )
 
     def _set_context(self, context, name):
-        super()._set_context(context, name) 
-        manager = self._get_manager()        
-        outedpaths = list(self.outchannels.keys()) + list(self.editchannels.keys())
-        inpaths = [p for p in self.inchannels if p not in outedpaths]
-        manager._register_cell_paths(self.data, inpaths, has_auth=False)
-        manager._register_cell_paths(self.data, outedpaths, has_auth=True)
+        from .manager import Manager
+        from .unbound_context import UnboundContext, UnboundManager
+        old_manager = None if self._context is None else self._get_manager()
+        if old_manager is not None:
+            assert isinstance(old_manager, UnboundManager)
+        super()._set_context(context, name)
+        manager = self._get_manager()
+        assert not (isinstance(manager, Manager) and isinstance(context, UnboundContext))
+        if old_manager is None:
+            outedpaths = list(self.outchannels.keys()) + list(self.editchannels.keys())
+            inpaths = [p for p in self.inchannels if p not in outedpaths]
+            manager._register_cell_paths(self.data, inpaths, has_auth=False)
+            manager._register_cell_paths(self.data, outedpaths, has_auth=True)
 
     def checksum(self):
         return self.data.checksum()

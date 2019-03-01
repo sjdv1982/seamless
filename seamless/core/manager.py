@@ -596,7 +596,7 @@ class Manager:
 
     def register_structured_cell(self, structured_cell):
         ccache = self.cell_cache
-        cell = structured_cell.cell
+        cell = structured_cell().data
         assert cell in ccache.cell_to_authority
         raise NotImplementedError ### cache branch; self._register_cell_paths with authority info
 
@@ -1343,7 +1343,7 @@ class Manager:
         other_subpath = None
         if isinstance(other, Inchannel):
             other_subpath = other.path
-            other = other.structured_cell.cell        
+            other = other.structured_cell().data      
 
         if isinstance(other, (Cell, Path)):
             self._connect_cell_cell(cell, other, cell_subpath, other_subpath)
@@ -1421,7 +1421,7 @@ class Manager:
         cell_subpath = None
         if isinstance(cell, Inchannel):
             cell_subpath = cell.path
-            cell = cell.structured_cell.cell
+            cell = cell.structured_cell().data
         if not isinstance(cell, (Cell, Path)):
             raise TypeError(cell)
         if not isinstance(pin, PinBase) or isinstance(pin, InputPin):
