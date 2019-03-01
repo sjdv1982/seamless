@@ -213,7 +213,7 @@ def deserialize_mixed(
         else:
             data = value
         storage, form = get_form(data)
-    elif source_access_mode == "mixed":
+    elif source_access_mode == "mixed":        
         if from_buffer:
             data, storage, form = mixed_deserialize(value)
         else:

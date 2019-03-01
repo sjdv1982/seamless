@@ -120,7 +120,7 @@ class Manager:
                     if result is not None:
                         self.set_transformer_result(tf_level1, None, None, result, False)
                         return
-                try:
+                try:                    
                     tf_level2 = await tcache.build_level2(tf_level1)
                 except ValueError:
                     pass
@@ -136,7 +136,7 @@ class Manager:
                         result = task.future.result()
                         if result is not None:
                             self.set_transformer_result(tf_level1, tf_level2, None, result, False)
-                            return
+                            return                
                 task = None
                 job = self.jobscheduler.schedule_remote(tf_level1, count)
                 if job is not None:
@@ -510,7 +510,7 @@ class Manager:
 
         semantic_obj, semantic_key = protocol.evaluate_from_buffer(expression, buffer)
         self.value_cache.add_semantic_key(semantic_key, semantic_obj)
-        self.expression_cache.expression_to_semantic_key[expression.get_hash()] = semantic_key
+        self.expression_cache.expression_to_semantic_key[expression.get_hash()] = semantic_key        
         return semantic_obj, semantic_key
 
 
@@ -916,6 +916,7 @@ class Manager:
 
     def _connect_cell_transformer(self, cell, pin, cell_subpath):
         """Connects cell to transformer inputpin"""
+        print("connect cell transformer", cell, pin, cell)
         transformer = pin.worker_ref()
         tcache = self.transform_cache
         accessor_dict = tcache.transformer_to_level0[transformer]
@@ -944,6 +945,11 @@ class Manager:
             accessor.source_content_type = accessor.content_type
             accessor.content_type = content_type
             acc = accessor
+        if cell_subpath is not None:
+            ccache = self.cell_cache
+            if cell_subpath not in ccache.cell_to_accessors[cell]:
+                ccache.cell_to_accessors[cell][cell_subpath] = []
+            ccache.cell_to_accessors[cell][cell_subpath].append(acc)
         acache = self.accessor_cache
         haccessor = hash(accessor)
         if haccessor not in acache.haccessor_to_workers:
@@ -1320,7 +1326,7 @@ class Manager:
                 )
 
     def connect_cell(self, cell, other, cell_subpath):
-        #print("connect_cell", cell, other)
+        #print("connect_cell", cell, other, cell_subpath)
         from . import Transformer, Reactor, Macro
         from .link import Link
         from .cell import Cell

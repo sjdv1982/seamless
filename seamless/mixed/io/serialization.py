@@ -24,13 +24,24 @@ def serialize(data, *, storage=None, form=None):
 def deserialize(data):
     from .. import MAGIC_SEAMLESS
     from .from_stream import MAGIC_NUMPY
+    from ..get_form import get_form
+    pure_plain, pure_binary = False, False
     if isinstance(data, str):
-        return from_stream(data, "pure-plain", None), "pure-plain", None
+        pure_plain = True        
     assert isinstance(data, bytes)
-    if data.startswith(MAGIC_NUMPY):
-        return from_stream(data, "pure-binary", None), "pure-binary", None
-    elif not data.startswith(MAGIC_SEAMLESS_MIXED):
-        return from_stream(data.decode(), "pure-plain", None), "pure-plain", None
+    if not pure_plain:
+        if data.startswith(MAGIC_NUMPY):
+            pure_binary = True
+        elif not data.startswith(MAGIC_SEAMLESS_MIXED):
+            pure_plain = True
+    if pure_plain or pure_binary:        
+        mode = "pure-plain" if pure_plain else "pure-binary"
+        if pure_plain and not isinstance(data, str):
+            data = data.decode()
+        value = from_stream(data, mode, None)
+        _, form = get_form(value)
+        return value, mode, form
+
     offset = len(MAGIC_SEAMLESS_MIXED)
     lh1 = np.frombuffer(data[offset:offset+1], np.uint8)[0]
     offset += 1
