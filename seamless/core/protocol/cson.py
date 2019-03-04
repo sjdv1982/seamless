@@ -2,6 +2,11 @@ import subprocess
 from subprocess import PIPE
 import json
 
+# ***
+import cson as cson_lib
+cson_lib.loads
+has_cson_lib, has_cson_cmd = True, False
+"""
 try:
     import cson as cson_lib
     cson_lib.loads
@@ -23,6 +28,7 @@ except Exception:
 if not has_cson_lib and not has_cson_cmd:
     msg = "You need either the cson Python package or the cson2json command line utility"
     raise ImportError(msg)
+"""
 
 def _cson2json_cmd(cson):
     p = subprocess.Popen(["cson2json"], stdin=PIPE, stdout=PIPE, stderr=PIPE)

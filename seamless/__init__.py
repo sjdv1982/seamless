@@ -33,19 +33,20 @@ from . import silk
 from . import mixed
 
 ipython_instance = None
-ipy_error = None
-try:
-    from IPython import get_ipython
-    from IPython.core.error import UsageError
-    from IPython.terminal.pt_inputhooks import register as _register_integration_terminal
-    from ipykernel.eventloops import register_integration as _register_integration_kernel
-except ImportError:
-    raise
-    ipy_error = "Cannot find IPython"
-else:
-    ipython_instance = get_ipython()
-    if ipython_instance is None:
-        ipy_error = "Seamless was not imported inside IPython"
+ipy_error = "Seamless was not imported inside IPython"
+if "get_ipython" in sys.modules["__main__"].__dict__:
+    try:
+        from IPython import get_ipython
+        from IPython.core.error import UsageError
+        from IPython.terminal.pt_inputhooks import register as _register_integration_terminal
+        from ipykernel.eventloops import register_integration as _register_integration_kernel
+    except ImportError:
+        raise
+        ipy_error = "Cannot find IPython"
+    else:
+        ipython_instance = get_ipython()
+        if ipython_instance is None:
+            ipy_error = "Seamless was not imported inside IPython"
 
 if ipy_error is None:
     last_exception = None
