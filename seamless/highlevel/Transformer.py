@@ -6,7 +6,6 @@ from .proxy import Proxy, CodeProxy
 from .pin import InputPin, OutputPin, PinsWrapper
 from .Base import Base
 from .Library import test_lib_lowlevel
-from ..midlevel import TRANSLATION_PREFIX
 from .mime import language_to_mime
 from ..core.context import Context as CoreContext
 from . import parse_function_code
@@ -38,10 +37,10 @@ def new_transformer(ctx, path, code, parameters):
         "plain_result": False,
         "main_module": {"compiler_verbose": True},
         "debug": False,
-        "TEMP": None, #to mark as non-translated
+        "UNTRANSLATED": True
     }
     if code is not None:
-        transformer["code"] = code
+        transformer["TEMP"] = {"code": code}
     ### json.dumps(transformer)
     ctx._graph[0][path] = transformer
     return transformer
@@ -226,7 +225,6 @@ class Transformer(Base):
 
     def _setattr(self, attr, value):
         from .assign import assign_connection
-        from ..midlevel.copying import fill_structured_cell_value
         translate = False
         parent = self._parent()
         htf = self._get_htf()
@@ -243,6 +241,8 @@ class Transformer(Base):
                 value = value.data
             if "TEMP" not in htf or htf["TEMP"] is None:
                 htf["TEMP"] = {}
+            if attr == "code" and callable(value):
+                code, _, _ = parse_function_code(value)
             htf["TEMP"][attr] = value
             self._parent()._translate()
             return
@@ -257,13 +257,12 @@ class Transformer(Base):
                 assign_connection(parent, value._path, target_path, False)
                 translate = True
             elif isinstance(value, Resource):
-                htf["code"] = value.data
+                tf.code.set(value.data)                
                 translate = True
             else:
                 if callable(value):
                     value, _, _ = parse_function_code(value)
-                tf.code.set(value)
-                htf["code"] = tf.code.value
+                tf.code.set(value)                
         elif attr == htf["INPUT"]:
             target_path = self._path
             assert value._parent() == parent
@@ -319,7 +318,7 @@ class Transformer(Base):
     def _has_tf(self):
         parent = self._parent()
         try:
-            p = getattr(parent._ctx, TRANSLATION_PREFIX)
+            p = parent._gen_context
             for subpath in self._path:
                 p = getattr(p, subpath)
             if not isinstance(p, CoreContext):
@@ -335,7 +334,7 @@ class Transformer(Base):
         else:
             if not self._has_tf():
                 return None
-        p = getattr(parent._ctx, TRANSLATION_PREFIX)
+        p = parent._gen_context
         for subpath in self._path:
             p = getattr(p, subpath)
         assert isinstance(p, CoreContext)
@@ -524,7 +523,6 @@ class Transformer(Base):
             if value is not None:
                 assert isinstance(value, str), type(value)
                 cell["TEMP"] = value
-            htf["code"] = None
         else:
             inp = getattr(tf, htf["INPUT"])
             p = getattr(inp.value, attr)
@@ -549,6 +547,40 @@ class Transformer(Base):
         target_path = self._path + (attr,)
         assign_connection(parent, other._path, target_path, False)
         parent._translate()
+
+    def _set_temp_input(self, checksum):
+        htf = self._get_htf()
+        if htf.get("checksum") is None:
+            htf["checksum"] = {}
+        htf["checksum"]["INPUT"] = checksum
+
+    def _set_temp_code(self, checksum):
+        htf = self._get_htf()
+        if htf.get("checksum") is None:
+            htf["checksum"] = {}
+        htf["checksum"]["code"] = checksum
+
+    def _set_temp_result(self, checksum):
+        htf = self._get_htf()
+        if htf.get("checksum") is None:
+            htf["checksum"] = {}
+        htf["checksum"]["RESULT"] = checksum
+
+    def _set_observers(self):        
+        htf = self._get_htf()
+        if htf["compiled"] or htf["language"] not in ("python", "ipython"):
+            raise NotImplementedError ### cache branch
+            # NOTE: observers depend on the implementation of translate_XXX_transformer (midlevel)
+        tf = self._get_tf()
+        tf.code._set_observer(self._set_temp_code)
+        inp = htf["INPUT"]
+        inpcell = getattr(tf, inp)
+        inpcell._set_observer(self._set_temp_input)
+        if htf["with_result"]:
+            result = htf["RESULT"]
+            resultcell = getattr(tf, result)
+            resultcell._set_observer(self._set_temp_result)
+
 
     def __delattr__(self, attr):
         htf = self._get_htf()

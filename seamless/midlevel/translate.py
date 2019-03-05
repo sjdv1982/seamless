@@ -178,9 +178,6 @@ def translate_cell(node, root, namespace, inchannels, outchannels, editchannels,
                 child.mount(**node["mount"])
 
 
-    if not is_lib:
-        node.pop("cached_state", None)
-    node.pop("TEMP", None)
     return child
 
 def translate_connection(node, namespace, ctx):
@@ -256,7 +253,8 @@ def translate_link(node, namespace, ctx):
 
 def translate(graph, ctx, from_lib_paths, is_lib):
     ###import traceback; stack = traceback.extract_stack(); print("TRANSLATE:"); print("".join(traceback.format_list(stack[:3])))
-    contexts = {con["path"]: con for con in graph if con["type"] == "context"}
+    nodes, connections = graph["nodes"], graph["connections"]
+    contexts = {con["path"]: con for con in nodes if con["type"] == "context"}
     for path in sorted(contexts.keys(), key=lambda k:len(k)):
         parent = get_path(ctx, path[:-1], None, is_target=False)
         name = path[-1]
@@ -264,9 +262,8 @@ def translate(graph, ctx, from_lib_paths, is_lib):
         setattr(parent, name, c)
         # No need to add it to namespace, as long as the low-level graph structure is imitated
 
-    connections = [con for con in graph if con["type"] == "connection"]
     connection_paths = [(con["source"], con["target"]) for con in connections]
-    links = [con for con in graph if con["type"] == "link"]
+    links = [con for con in nodes if con["type"] == "link"]
     link_paths = [(node["first"]["path"], node["second"]["path"]) for node in links]
 
     lowlevel_links = {}
@@ -301,9 +298,9 @@ def translate(graph, ctx, from_lib_paths, is_lib):
     link_targets = {} #maps "first" paths of a link (aka link target paths, aka "real cells") to their translated cells
 
     namespace = {}
-    for node in graph:
+    for node in nodes:
         t = node["type"]
-        if t in ("context", "connection", "link"):
+        if t in ("context", "link"):
             continue
         path = node["path"]
         lib_path = get_lib_path(path[:-1], from_lib_paths)
@@ -317,9 +314,9 @@ def translate(graph, ctx, from_lib_paths, is_lib):
     #print("LOW-LEVEL LINKS", lowlevel_links)
     #print("LOW-LEVEL LINK TARGETS", link_targets)
 
-    for node in graph:
+    for node in nodes:
         t = node["type"]
-        if t in ("context", "connection", "link"):
+        if t in ("context", "link"):
             continue
         path = node["path"]
         lib_path = get_lib_path(path[:-1], from_lib_paths)
@@ -351,6 +348,7 @@ def translate(graph, ctx, from_lib_paths, is_lib):
             translate_cell(node, ctx, namespace, inchannels, outchannels, editchannels, lib_path, is_lib, link_target=link_target)
         else:
             raise TypeError(t)
+        node.pop("UNTRANSLATED", None)
 
     namespace2 = OrderedDict()
     for k in sorted(namespace.keys(), key=lambda k:-len(k)):
@@ -359,8 +357,8 @@ def translate(graph, ctx, from_lib_paths, is_lib):
     for node in links:
         translate_link(node, namespace2, ctx)
 
-    for node in connections:
-        translate_connection(node, namespace2, ctx)
+    for connection in connections:
+        translate_connection(connection, namespace2, ctx)
 
 from .library import get_lib_path
 from .translate_py_transformer import translate_py_transformer

@@ -4,7 +4,6 @@ import traceback
 import threading
 from types import LambdaType
 from .Base import Base
-from ..midlevel import TRANSLATION_PREFIX
 from ..core.lambdacode import lambdacode
 from ..silk import Silk
 from ..mixed import MixedBase
@@ -53,7 +52,7 @@ class Cell(Base):
         if not parent._translating:
             if threading.current_thread() == threading.main_thread():
                 parent._do_translate()
-        p = getattr(parent._ctx, TRANSLATION_PREFIX)
+        p = parent._gen_context
         if len(self._path):
             p = getattr(p, self._path[0])
         return self._get_cell_subpath(p, self._path[1:])
@@ -61,6 +60,10 @@ class Cell(Base):
     def _get_hcell(self):
         parent = self._parent()
         return parent._graph.nodes[self._path]
+
+    def _set_checksum(self, checksum):
+        hcell = self._get_hcell()
+        hcell["checksum"] = checksum
 
     def self(self):
         raise NotImplementedError
@@ -117,7 +120,7 @@ class Cell(Base):
         subcell = getattr(self, attr)
         #TODO: break links and connections from subcell
         assign_to_subcell(self, (attr,), value)
-        ctx = parent._ctx
+        ctx = parent._gen_context
         if parent._as_lib is not None:
             hcell = self._get_hcell()
             if hcell["path"] in parent._as_lib.partial_authority:
@@ -132,23 +135,9 @@ class Cell(Base):
         parent = self._parent()
         hcell = self._get_hcell()
         if parent._dummy:
-            if hcell["celltype"] == "structured":
-                state = hcell.get("stored_state", None)
-                if state is None:
-                    state = hcell.get("cached_state", None)
-                value = None
-                if state is not None:
-                    if hcell["silk"]:
-                        value = Silk(data=state.data, schema=state.schema)
-                    else:
-                        value = state.data
-            else:
-                value = hcell.get("stored_value", None)
-                if value is None:
-                    value = hcell.get("cached_value", None)
-            return value
-        elif "TEMP" in hcell:
-            return hcell["TEMP"]
+            raise NotImplementedError
+        elif hcell.get("UNTRANSLATED"):
+            return hcell.get("TEMP")
         else:
             try:
                 cell = self._get_cell()
@@ -157,10 +146,25 @@ class Cell(Base):
                 raise
             value = cell.value
             if hcell["celltype"] == "structured":
-                value = value.value
                 if hcell["silk"]:
                     value = Silk(data=value, schema=self.schema)
             return value
+
+    @property
+    def checksum(self):
+        parent = self._parent()
+        hcell = self._get_hcell()
+        if parent._dummy:
+            raise NotImplementedError
+        elif hcell.get("UNTRANSLATED"):
+            raise AttributeError
+        else:
+            try:
+                cell = self._get_cell()
+            except:
+                import traceback; traceback.print_exc()
+                raise
+            return cell.checksum
 
     @property
     def handle(self):
@@ -176,26 +180,11 @@ class Cell(Base):
         from . import set_hcell
         from ..silk import Silk
         hcell = self._get_hcell()
-        if "TEMP" in hcell:
+        if hcell.get("UNTRANSLATED"):
             hcell["TEMP"] = value
             return
-        try:
-            cell = self._get_cell()
-            cell.set(value)
-            value = cell.value
-        except AttributeError: #not yet been translated
-            if callable(value) and not isinstance(value, Silk):
-                code = inspect.getsource(value)
-                if isinstance(value, LambdaType) and func.__name__ == "<lambda>":
-                    code = lambdacode(value)
-                    if code is None:
-                        raise ValueError("Cannot extract source code from this lambda")
-                value = code
-        except: #error in setting
-            #TODO: logging
-            traceback.print_exc()
-            return
-        set_hcell(hcell, value)
+        cell = self._get_cell()
+        cell.set(value)
 
     def set(self, value):
         self._set(value)
@@ -212,8 +201,8 @@ class Cell(Base):
     def celltype(self, value):
         assert value in ("structured", "text", "code", "json", "mixed", "array", "signal"), value
         hcell = self._get_hcell()
-        if "TEMP" in hcell:
-            cellvalue = hcell["TEMP"]
+        if hcell.get("UNTRANSLATED"):
+            cellvalue = hcell.get("TEMP")
         else:
             cellvalue = self.value
         if isinstance(cellvalue, Silk):
@@ -221,7 +210,7 @@ class Cell(Base):
         if isinstance(cellvalue, MixedBase):
             cellvalue = cellvalue.value
         hcell["celltype"] = value
-        if cellvalue is not None and "TEMP" not in hcell:
+        if cellvalue is not None and not hcell.get("UNTRANSLATED"):
             self._parent()._do_translate(force=True) # This needs to be kept!
             self.set(cellvalue)
         else:

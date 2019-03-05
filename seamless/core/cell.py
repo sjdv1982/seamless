@@ -240,10 +240,10 @@ Use ``Cell.status()`` to get its status.
         MountItem(None, self, dummy=True, **self._mount) #to validate parameters        
         return self
 
-    def _set_observer(self, observer):
+    def _set_observer(self, observer, trigger=True):
         self._observer = observer
-        if self._val is not None:
-            observer(self._val)
+        if trigger and self.checksum is not None:
+            observer(self.checksum)
 
     def _set_share_callback(self, share_callback):
         self._share_callback = share_callback

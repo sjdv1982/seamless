@@ -9,13 +9,10 @@ from ..core.macro_mode import macro_mode_on, get_macro_mode
 from ..core.context import context, Context as CoreContext
 from ..core.cell import cell
 from ..core.mount import mountmanager #for now, just a single global mountmanager
-from ..core.cache import cache
-from ..core import layer
 from ..midlevel.translate import translate
 from .assign import assign
 from .proxy import Proxy
 from ..midlevel import copying
-from ..midlevel import TRANSLATION_PREFIX
 from ..midlevel.library import register_library
 from .Library import get_lib_paths, get_libitem
 from .depsgraph import DepsGraph
@@ -59,8 +56,9 @@ try:
             else:
                 raise TypeError(cell)
             if ccell is not None:
+                raise NotImplementedError  ### cache branch
                 print("traitlet %s:%s, observing" % (self.path, self.subpath))
-                ccell._set_observer(self.receive_update)
+                ###ccell._set_observer(self.receive_update)
 
         def receive_update(self, value):
             #print("Traitlet RECEIVE UPDATE", self.path, self.subpath, value)
@@ -99,12 +97,12 @@ class Context:
     _translating = False
     _as_lib = None
     _auto_register_library = False
-    _shares = None
+    _shares = None    
     def __init__(self, dummy=False):
         self._dummy = dummy
         if not dummy:
-            with macro_mode_on(self):
-                self._ctx = context(toplevel=True)
+            with macro_mode_on():
+                self._ctx0 = context(toplevel=True)
         self._graph = Graph({},[],{"from_lib": None})
         self._children = {}
         self._needs_translation = True
@@ -199,7 +197,7 @@ class Context:
             raise NotImplementedError
         if path is None:
             self._mount = None
-            self._ctx.mount(None)
+            self._ctx0.mount(None)
             return
         self._mount = {
             "path": path,
@@ -208,7 +206,7 @@ class Context:
             "persistent": persistent
         }
         with macro_mode_on():
-            ctx = self._ctx
+            ctx = self._ctx0
             ctx.mount(**self._mount)
             mountmanager.add_context(ctx,(), False)
             mountmanager.paths[ctx].add(path) #kludge
@@ -225,18 +223,21 @@ class Context:
             mountmanager.add_context(ctx,(), False)
             mountmanager.paths[ctx].add(mountdir) #kludge
         with macro_mode_on():
+            raise NotImplementedError ### cache branch
+            """
             ctx.topology = cell("json")
             ctx.values = cell("json") #TODO: change to mixed
             ctx.cached_values = cell("json") #TODO: change to mixed
             ctx.states = cell("json") #TODO: change to mixed
             ctx.cached_states = cell("json") #TODO: change to mixed
+            """
         self._translate()
 
     def equilibrate(self, timeout=None):
         if self._dummy:
             return
         self.translate()
-        return self._ctx.equilibrate(timeout)
+        return self._ctx0.equilibrate(timeout)
 
     def self(self):
         raise NotImplementedError
@@ -247,109 +248,84 @@ class Context:
     def translate(self, force=False):
         return self._do_translate(force=force, explicit=True)
 
+    def get_graph(self, copy=True):
+        try:
+            self._translating = True
+            manager = self._ctx0._get_manager()
+            copying.fill_checksums(manager, self._graph.nodes)
+            self._remount_graph()
+        finally:
+            self._translating = False
+        # put nodes in alphabetical order; shouldn't matter much except for reproducibility of Seamless bugs
+        nodes, connections, params = self._graph
+        nodes = [v for k,v in sorted(nodes.items(), key=lambda kv: kv[0])]
+        if copy:
+            connections = deepcopy(connections)
+            nodes = deepcopy(nodes)
+        graph = {"nodes": nodes, "connections": connections}
+        return graph
+
     def _do_translate(self, force=False, explicit=False):
         if self._dummy:
             return
         assert self._as_lib is None or self._from_lib is None
         is_lib = (self._as_lib is not None)
+        if is_lib:
+            raise NotImplementedError ### cache branch
         if not force and not self._needs_translation:
             return
         if self._translating:
             raise Exception("Nested invocation of ctx.translate")
         from ..core.macro_mode import get_macro_mode
         assert not get_macro_mode()
+        graph = self.get_graph(copy=False)
         try:
-            self._translating = True
-            if self._ctx is not None and hasattr(self._ctx, TRANSLATION_PREFIX):
-                copying.fill_cell_values(self, self._graph.nodes)
-            self._remount_graph()
-        finally:
-            self._translating = False
-        # nodes must be in alphabetical order; this matters for linked cells that each have their own value!
-        graph = [v for k,v in sorted(self._graph.nodes.items(), key=lambda kv: kv[0])]
-        graph += self._graph.connections
-        #from pprint import pprint; pprint(graph)
-        root = self._ctx._get_manager()._root()
-        old_cell_update_hook = root._cell_update_hook
-        try:
-            root._cell_update_hook = None
             self._translating = True
             ctx = None
             ok = False
-            if self._gen_context is not None:
-                self._gen_context._manager.deactivate()
-                old_layers = layer.get_layers(self)
-                layer.destroy_layer(self)
-            layer.create_layer(self)
-            with mountmanager.reorganize(self._gen_context):
-                with macro_mode_on():
-                    ctx = context(context=self._ctx, name=TRANSLATION_PREFIX)
-                    lib_paths = get_lib_paths(self)
-                    assert mountmanager.reorganizing
-                    translate(graph, ctx, lib_paths, is_lib)
-                    self._ctx._add_child(TRANSLATION_PREFIX, ctx)
-                    ctx._get_manager().activate(only_macros=True)
-                    ok = True
-                    layer.fill_objects(ctx, self)
-                    if self._gen_context is not None:
-                        #hits = cache(ctx, self._gen_context) ### TODO: re-enable caching
-                        hits = []
-
-            with macro_mode_on():
-                def seal(c):
-                    c._seal = self._ctx
-                    for child in c._children.values():
-                        if isinstance(child, CoreContext):
-                            seal(child)
-                seal(ctx)
-                layer.check_async_macro_contexts(ctx, self)
-                ctx._get_manager().activate(only_macros=False)
-
-            if self._gen_context is not None:
-                with mountmanager.reorganize(None):
-                    layer.clear_objects(self._gen_context)
-                    self._gen_context.self.destroy()
-                    self._gen_context._manager.flush()
-            self._gen_context = ctx
-        except Exception as exc:
-            if not ok:
-                ###traceback.print_exc()  #not if we raise...
-                try:
-                    if ctx is not None:
-                        ctx.self.destroy()
-                    if self._gen_context is not None:
-                        with macro_mode_on():
-                            self._gen_context._remount()
-                            self._ctx._add_child(TRANSLATION_PREFIX, self._gen_context)
-                        layer.restore_layers(self, old_layers)
-                        self._gen_context._manager.activate(only_macros=False)
-                except Exception as exc2:
-                    traceback.print_exc()
-                    self.secondary_exception = traceback.format_exc()
-            else:
-                # new context was constructed successfully
-                # but something went wrong in cleaning up the old context
-                # pretend that nothing happened...
-                # but store the exception as secondary exception, just in case
-                print("highlevel context CLEANUP error"); traceback.print_exc()
+            manager = self._ctx0._get_manager()
+            ctx = CoreContext(toplevel=True)
+            ctx._manager = manager
+            ctx._macro = self
+            old_gen_context = self._gen_context
+            with macro_mode_on(self):
+                ub_ctx = context(toplevel=True, manager=manager)
+                self._unbound_context = ub_ctx
+                lib_paths = get_lib_paths(self)
+                translate(graph, ub_ctx, lib_paths, is_lib)
+                ok = True
+                ub_ctx._bind(ctx)
                 self._gen_context = ctx
-            raise
+                if old_gen_context is not None:
+                    old_gen_context.destroy()
         finally:
-            root._cell_update_hook = old_cell_update_hook
             self._translating = False
-        if self._auto_register_library:
-            ctx._get_manager().cell_update_hook(self._library_update_hook)
-
-        try:
-            self._translating = True
-            copying.fill_cell_values(self, self._graph.nodes) #do it again, because we can get the real values from the low-level cells now
-            self._remount_graph() #do it again, because TEMP values may have been popped, and we have now real values instead
+            self._unbound_context = None
+        if ok:
             for traitlet in self._traitlets.values():
                 traitlet._connect()
             self._connect_share()
-        finally:
-            self._translating = False
+
+        """
+        # TODO: cell update hooks, for library
+        if self._auto_register_library:
+            ctx._get_manager().cell_update_hook(self._library_update_hook)
+        """
+
         self._needs_translation = False
+
+        if ok:
+            for path, child in self._children.items():
+                if isinstance(child, Cell):
+                    cell = child._get_cell()                    
+                    cell._set_observer(child._set_checksum)
+                elif isinstance(child, Transformer):
+                    child._set_observers()
+                elif isinstance(child, (InputPin, OutputPin)):
+                    continue
+                else:
+                    raise NotImplementedError(type(child)) ### cache branch
+
         if explicit and self._auto_register_library:
             #the timeout is just a precaution
             self.register_library(timeout=5)
@@ -380,12 +356,6 @@ class Context:
             sharefunc()
 
 
-    def _get_graph(self):
-        nodes, connections, params = self._graph
-        nodes, connections = deepcopy(nodes), deepcopy(connections)
-        copying.fill_cell_values(self, nodes)
-        return nodes, connections
-
     def _remount_graph(self):
         if self._dummy:
             return
@@ -405,12 +375,12 @@ class Context:
         assert not self._dummy
         assert self._as_lib is not None #must be a library
         libitem = self._as_lib
-        root = self._ctx._get_manager()._root()
+        root = self._ctx0._get_manager()._root()
         old_cell_update_hook = root._cell_update_hook
         try:
             root._cell_update_hook = None
             result = self.equilibrate(timeout)
-            ctx = getattr(self._ctx, TRANSLATION_PREFIX)
+            ctx = self._ctx0
             libname = self._as_lib.name
             partial_authority = register_library(ctx, self, libname)
             if partial_authority != libitem.partial_authority:
@@ -471,10 +441,19 @@ class Context:
             self._translate()
 
 
+    @property
     def status(self):
         assert not self._dummy
-        return self._ctx.status()
+        return self._ctx0.status
 
+    def _root(self):
+        # Needed so that Context can pretend to be a low-level macro
+        return self._ctx0._bound
+
+    def _context(self):
+        # Needed so that Context can pretend to be a low-level macro
+        return self._ctx0._bound
+        
     def _remove_connections(self, path):
         # Removes all connections starting with path
         lp = len(path)
@@ -562,3 +541,4 @@ class LibraryContextInstance:
 from .Reactor import Reactor
 from .Transformer import Transformer
 from .Cell import Cell
+from .pin import InputPin, OutputPin

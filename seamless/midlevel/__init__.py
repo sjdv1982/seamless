@@ -1,1 +1,0 @@
-TRANSLATION_PREFIX = "translated"

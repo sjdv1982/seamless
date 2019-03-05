@@ -25,11 +25,11 @@ def get_new_cell(path):
         "datatype": "mixed",
         "silk": True,
         "buffered": True,
+        "UNTRANSLATED": True,
     }
 
 
 def assign_constant(ctx, path, value):
-    from . import set_hcell
     ###if isinstance(value, (Silk, MixedBase)):
     ###    raise NotImplementedError
     #TODO: run it through Silk or something, to check that there aren't lists/dicts/tuples-of-whatever-custom-classes
@@ -148,13 +148,11 @@ def _assign_context2(ctx, new_nodes, new_connections, path):
     }
     new_nodes = deepcopy(new_nodes)
     new_connections = deepcopy(new_connections)
-    for p, node in new_nodes.items():
-        pp = path + p
-        node["path"] = pp
+    for node in new_nodes:
+        node["path"] += p
         nodes[pp] = node
         nodetype = node["type"]
-        if not "TEMP" in node:
-            node["TEMP"] = None #mark as non-translated
+        node["UNTRANSLATED"] = True
         if nodetype == "cell":
             Cell(ctx, pp)
         elif nodetype == "transformer":
@@ -180,7 +178,8 @@ def _assign_context(ctx, new_nodes, new_connections, path, from_lib):
 
 def assign_context(ctx, path, value):
     new_ctx = value
-    new_nodes, new_connections = new_ctx._get_graph()
+    graph = new_ctx.get_graph()
+    new_nodes, new_connections = graph["nodes"], graph["connections"]
     from_lib = new_ctx._as_lib
     _assign_context(ctx, new_nodes, new_connections, path, from_lib)
 
@@ -225,7 +224,6 @@ def assign(ctx, path, value):
         if value._parent is None:
             value._init(ctx, path)
             cell = get_new_cell(path)
-            cell["TEMP"] = None
             ctx._graph.nodes[path] = cell
         else:
             assert value._parent() is ctx
@@ -271,7 +269,6 @@ def assign(ctx, path, value):
         if path not in ctx._children:
             Cell(ctx, path) #inserts itself as child
             node = get_new_cell(path)
-            node["TEMP"] = None
             ctx._graph[0][path] = node
         #TODO: break links and connections from ctx._children[path]
         assign_connection(ctx, value._virtual_path, path, False)

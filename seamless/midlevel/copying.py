@@ -1,6 +1,8 @@
 from ..mixed import MixedBase
 from copy import deepcopy
 from ..core.link import Link as core_link
+from ..core.protocol import deserialize
+from ..core import context as core_context, cell as core_cell
 
 def copy_context(nodes, connections, path):
     new_nodes = {}
@@ -23,117 +25,114 @@ def copy_context(nodes, connections, path):
         new_con["target"] = target[len(path):]
         new_connections.append(new_con)
 
-def fill_structured_cell_value(cell, node, label_auth, label_cached):
-    from ..core.structured_cell import StructuredCellState
-    """
-    Fills the state of a structured cell into the node, in two forms:
-    - A. Containing only the authoritative state
-    - B. Containing the full state
-    For normal cells, these are redundant:
-      A == B for authoritative cells, A is None otherwise.
-    For structured cells, it is much less clear cut, as they may have
-     partial authority (having some but not all values dependent on inchannels)
-    In that case, both the authoritative part of the state (under label_auth)
-     and the full state (under label_cached) are stored
-    """
-    state = None
-    if cell.has_authority: #cell has at least some authority
-        state = StructuredCellState().set(cell, only_auth=True)
-        node[label_auth] = state
-    else:
-        node.pop(label_auth, None)
-    if not cell.authoritative: #cell has at least some non-authority
-        state = StructuredCellState().set(cell, only_auth=False)
-        node[label_cached] = state
-    else:
-        node.pop(label_cached, None)
-    return state
 
-def fill_simple_cell_value(cell, node, label_auth, label_cached):
-    if isinstance(cell, core_link):
-        node.pop(label_auth, None)
-        node.pop(label_cached, None)
+def fill_checksum(manager, node, temp_path):
+    checksum = None
+    subcelltype = None
+    if node["type"] == "cell":
+        celltype = node["celltype"]
+    elif node["type"] == "transformer":
+        if temp_path == "code":
+            celltype = "python"
+            subcelltype = "transformer"
+        else:
+            celltype = "structured"
+    else:
+        raise NotImplementedError ### cache branch
+    silk, buffered = False, False
+    if celltype == "structured":
+        buffered = node["buffered"]
+        if node["type"] in ("reactor", "transformer"):
+            silk = not node["plain"]
+            datatype = "mixed" if not node["plain"] else "plain"
+        else:
+            silk = node["silk"]
+            datatype = node["datatype"]
+    else:
+        datatype = celltype
+    temp_value = node.get("TEMP")
+    if temp_path:
+        if isinstance(temp_value, dict):
+            temp_value = temp_value.get(temp_path)
+        elif temp_value is None:
+            pass
+        else:
+            raise TypeError(temp_value)
+    if temp_value is None:
         return
-    value = cell.value
-    if isinstance(value, MixedBase):
-        value = value.value
-    if cell.authoritative:
-        node[label_auth] = value
-        node.pop(label_cached, None)
-    else:
-        node[label_cached] = value
-        node.pop(label_auth, None)
-    return value
+    
+    if silk:
+        raise NotImplementedError ### cache branch
+        if buffered:
+            raise NotImplementedError ### cache branch
 
-def fill_cell_value(cell, node):
-    from ..core import Cell
-    from ..core.structured_cell import StructuredCell
-    if isinstance(cell, StructuredCell):
-        return fill_structured_cell_value(cell, node, "stored_state", "cached_state")
-    elif isinstance(cell, Cell):
-        return fill_simple_cell_value(cell, node, "stored_value", "cached_value")
-    else:
-        raise TypeError(type(cell))
+    """
+    # TODO: something cleaner than deserialize
+    result = deserialize(
+        datatype, subcelltype, "",
+        temp_value, False, None,
+        None, None
+    )
+    buffer, buffer_checksum, _, _, _ = result
+    # TODO: fake cell is dirty!
+    ctx = core_context(toplevel=True)
+    ctx._manager=manager
+    ctx.cell = core_cell(datatype)
+    ctx.cell._set(buffer, 
+        from_buffer=True, buffer_checksum=buffer_checksum
+    )
+    checksum = buffer_checksum.hex()
+    """
+    ctx = core_context(toplevel=True)
+    ctx._manager=manager
+    ctx.cell = core_cell(datatype)
+    ctx.cell.set(temp_value)
+    checksum = ctx.cell.checksum
 
-def fill_cell_values(ctx, nodes, path=None):
-    from ..highlevel import Cell, Transformer, Reactor, Link
-    from ..core.structured_cell import StructuredCell
-    manager = ctx._ctx._get_manager()
-    try:
-        manager.deactivate()
-        for p in nodes:
+    if checksum is None:
+        return
+    if temp_path is not None:
+        if "checksum" not in node:
+            node["checksum"] = {}
+        node["checksum"][temp_path] = checksum       
+    else:
+        node["checksum"] = checksum
+        
+def fill_checksums(mgr, nodes, *, path=None):
+    """Fills checksums in the nodes from TEMP, if untranslated 
+    """
+    from ..core.structured_cell import StructuredCell    
+    for p in nodes:
+        node, old_checksum = None, None
+        try:
             pp = path + p if path is not None else p
-            child = ctx._children.get(pp)
             node = nodes[p]
-            if child is None:
-                assert node["type"] == "context"
+            if node["type"] in ("link", "context"):
                 continue
-            if "TEMP" in node:
-                continue #not yet translated
-            if isinstance(child, Transformer):
-                transformer = child._get_tf()
-                ###if transformer.status() == "OK":
-                ###    node["in_equilibrium"] = True
-                # Not nearly strong enough: upstream transformers may be engaged in long computation!
-                input_name = node["INPUT"]
-                inp = getattr(transformer, input_name)
-                assert isinstance(inp, StructuredCell)
-                fill_structured_cell_value(inp, node, "stored_state_input", "cached_state_input")
-                fill_simple_cell_value(transformer.code, node, "code", "cached_code")
+            untranslated = node.get("UNTRANSLATED")
+            if not untranslated:
+                assert "TEMP" not in node
+                continue
+            old_checksum = node.pop("checksum", None)
+            if node["type"] == "transformer":
+                fill_checksum(mgr, node, "input")
+                fill_checksum(mgr, node, "code")
                 if node["with_result"]:
-                    result_name = node["RESULT"]
-                    result = getattr(transformer, result_name, None)
-                    if result is not None:
-                        assert isinstance(result, StructuredCell)
-                        fill_structured_cell_value(result, node, "stored_state_result", "cached_state_result")
+                    fill_checksum(mgr, node, "result")
                 if node["compiled"]:
-                    if hasattr(transformer, "main_module"):
-                        fill_structured_cell_value(
-                            transformer.main_module, node,
-                            "stored_state_main_module", "cached_state_main_module"
-                        )
-            elif isinstance(child, Reactor):
-                reactor = child._get_rc()
-                io_name = node["IO"]
-                io = getattr(reactor, io_name)
-                assert isinstance(io, StructuredCell)
-                fill_structured_cell_value(io, node, "stored_state_io", "cached_state_io")
-                fill_simple_cell_value(reactor.code_start, node, "code_start", "cached_code_start")
-                fill_simple_cell_value(reactor.code_update, node, "code_update", "cached_code_update")
-                fill_simple_cell_value(reactor.code_stop, node, "code_stop", "cached_code_stop")
-            elif isinstance(child, Cell):
-                assert node["type"] == "cell", (pp, node["type"])
-                try:
-                    cell = child._get_cell()
-                except AttributeError: # cell may not have been translated yet
-                    continue
-                try:
-                    fill_cell_value(cell, node)
-                except TypeError as e:
-                    raise TypeError(p, node)
-            elif isinstance(child, Link):
-                continue
+                    fill_checksum(mgr, node, "main_module")
+            elif node["type"] == "reactor":
+                fill_checksum(mgr, node, "io")
+                fill_checksum(mgr, node, "code_start")
+                fill_checksum(mgr, node, "code_update")
+                fill_checksum(mgr, node, "code_stop")
+            elif node["type"] == "cell":
+                fill_checksum(mgr, node, None)
             else:
-                raise TypeError(p, type(child))
-    finally:
-        manager.activate(only_macros=False)
+                raise TypeError(p, node["type"])
+            node.pop("TEMP", None)
+        except:
+            import traceback
+            traceback.print_exc()
+            if node is not None and old_checksum is not None:
+                node["checksum"] = old_checksum

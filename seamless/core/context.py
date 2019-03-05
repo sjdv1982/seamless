@@ -82,7 +82,10 @@ name: str
 
     def _get_manager(self):
         assert self._toplevel or self._context is not None or self._macro is not None #context must have a parent, or be toplevel, or have a macro
-        return self._root()._manager
+        root = self._root()
+        if root is self:
+            return self._manager
+        return root._get_manager()
 
     def __str__(self):
         p = self._format_path()
@@ -157,10 +160,10 @@ name: str
         return self.path[:len(p)] == p
 
     def _root(self):
-        if self._toplevel:
-            return self
         if self._macro is not None:
             return self._macro._root()
+        if self._toplevel:
+            return self
         return super()._root()
 
     @property
@@ -286,8 +289,10 @@ Context._methods += [m for m in SeamlessBase.__dict__  if not m.startswith("_") 
       and m not in Context._methods]
 
 def context(**kwargs):
+    from .macro import Macro
     if get_macro_mode():
-        if curr_macro() is not None:
+        macro = curr_macro()
+        if macro is not None and isinstance(macro, Macro):
             assert "toplevel" not in kwargs or kwargs["toplevel"] == False        
         return UnboundContext(**kwargs)
     else:

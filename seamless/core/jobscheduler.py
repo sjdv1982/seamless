@@ -201,7 +201,7 @@ class Job:
                 if pin == "code":
                     code = value
                 else:
-                    if semantic_key.access_mode == "mixed":
+                    if semantic_key.access_mode in ("mixed", "default"):
                         if value is not None:
                             value = value[2]
                     namespace[pin] = value
@@ -236,9 +236,8 @@ class Job:
                     manager.set_transformer_result(self.level1, self.level2, prelim, None, prelim=True)
                 await asyncio.sleep(0.01)
             if not self.executor.is_alive():
-                self.executor = None
-            if result is not None:
-                manager.set_transformer_result(self.level1, self.level2, result, None, prelim=False)
+                self.executor = None            
+            manager.set_transformer_result(self.level1, self.level2, result, None, prelim=False)
         except Exception as exception:
             manager.set_transformer_result_exception(self.level1, self.level2, exception)
         finally:            

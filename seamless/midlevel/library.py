@@ -1,5 +1,5 @@
 from ..core.library import build, register
-from . import copying, TRANSLATION_PREFIX
+from . import copying
 from .translate import find_channels
 
 def register_library(ctx, hctx, libname):

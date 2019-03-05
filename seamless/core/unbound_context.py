@@ -223,7 +223,7 @@ class UnboundContext(SeamlessBase):
         for childname, child in self._children.items():
             if isinstance(child, UnboundContext):
                 bound_ctx = Context()
-                bound_ctx._macro = curr_macro()
+                bound_ctx._macro = curr_macro()                
                 setattr(ctx, childname, bound_ctx)
                 ctxmap[childname] = bound_ctx
         for childname, child in self._children.items():
@@ -304,7 +304,8 @@ class UnboundContext(SeamlessBase):
         if self._bound:
             return str(self._bound)
         else:
-            return super().__str__()
+            ret = "Seamless unbound context: " + self._format_path()
+            return ret
 
     def __dir__(self):
         if self._bound:

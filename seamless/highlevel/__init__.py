@@ -26,6 +26,7 @@ def set_resource(f):
         return data
 
 def set_hcell(cell, value):
+    raise NotImplementedError ### cache branch
     from ..core.structured_cell import StructuredCellState
     if cell["celltype"] == "structured":
         cell["stored_state"] = StructuredCellState.from_data(value)
@@ -66,7 +67,10 @@ from .Cell import Cell
 from .SubCell import SubCell
 from .Link import Link
 
+print("TODO: re-import lib (highlevel/__init__.py line 69)")
+"""
 from ..lib.compiled_transformer import compiled_transformer as _
 from ..lib.bash_transformer import bash_transformer as _
+"""
 
 __all__ = ["Context", "stdlib", "mylib", "Reactor", "Transformer", "Link"]

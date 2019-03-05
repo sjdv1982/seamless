@@ -4,6 +4,7 @@ from . import SeamlessBase
 def _cell_from_pin(self, celltype):
     assert isinstance(self, (InputPin, EditPin))
     from .cell import cell
+    from .macro import Path
     manager = self._get_manager()
     my_cell = manager.cell_from_pin(self)
     if celltype is None:
@@ -22,8 +23,17 @@ def _cell_from_pin(self, celltype):
         manager.connect_cell(my_cell, self, None)
     else:
         # TODO: take subpath (my_cell[1]) into account? construct some kind of proxy?
-        my_cell = my_cell[0]
-    return my_cell
+        if isinstance(self, EditPin):
+            if not len(my_cell):
+                my_cell = None
+            else:
+                my_cell = my_cell[0]
+    if my_cell is None:
+        return my_cell
+    if isinstance(my_cell, Path):
+        return my_cell._cell
+    else: # Accessor
+        return my_cell.cell
 
 
 class Worker(SeamlessBase):

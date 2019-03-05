@@ -27,7 +27,7 @@ class SubCell(Cell):
         #TODO: break links and connections from subcell
         path = self._subpath + (attr,)
         assign_to_subcell(self, path, value)
-        ctx = parent._ctx
+        ctx = parent._gen_context
         if parent._as_lib is not None:
             hcell = self._get_hcell()
             if hcell["path"] in parent._as_lib.partial_authority:

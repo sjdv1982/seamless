@@ -213,6 +213,9 @@ class StructuredCell(SeamlessBase):
                 buffer=silk_buffer,
             )
 
+    def _set_observer(self, observer, trigger=True):
+        self.data._set_observer(observer, trigger)
+
     def _set_context(self, context, name):
         from .manager import Manager
         from .unbound_context import UnboundContext, UnboundManager
@@ -232,9 +235,14 @@ class StructuredCell(SeamlessBase):
     def monitor(self):
         return self.data._monitor
 
+    @property
     def checksum(self):
-        return self.data.checksum()
+        return self.data.checksum
 
+    @property
+    def value(self):
+        return self.data.value
+        
     def set(self, value):
         if self._is_silk:
             self._silk.set(value)

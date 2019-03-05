@@ -24,10 +24,12 @@ def translate_py_transformer(node, root, namespace, inchannels, outchannels, lib
     buffered = node["buffered"]
     interchannels = [as_tuple(pin) for pin in node["pins"]]
     plain = node["plain"]
-    input_state = node.get("stored_state_input", None)
     mount = node.get("mount", {})
+    """
+    input_state = node.get("stored_state_input", None)    
     if input_state is None:
         input_state = node.get("cached_state_input", None)
+    """
     ### KLUDGE   
     """
     inp, inp_ctx = build_structured_cell(
@@ -36,9 +38,10 @@ def translate_py_transformer(node, root, namespace, inchannels, outchannels, lib
       return_context=True
     )
     """
+    # TODO: get input state from "checksum" field...
     inp, inp_ctx = build_structured_cell(
       ctx, input_name, False, plain, buffered, inchannels, interchannels,
-      input_state, lib_path0,
+      None, lib_path0,
       return_context=True
     )
 
@@ -82,17 +85,11 @@ def translate_py_transformer(node, root, namespace, inchannels, outchannels, lib
     if code is None:
         code = node.get("cached_code")
     ctx.code.set(code)
-    temp = node.get("TEMP")
-    if temp is None:
-        temp = {}
-    if "code" in temp:
-        ctx.code.set(temp["code"])
-    for k,v in temp.items():        
-        if k == "code":
-            continue
-        raise NotImplementedError ### cache branch
-        inphandle = inp.handle
-        setattr(inphandle, k, v)
+    checksum = node.get("checksum", {})
+    if "code" in checksum:
+        ctx.code.set_checksum(checksum["code"])
+    if "INPUT" in checksum:
+        inp.set_checksum(checksum["INPUT"])
     namespace[node["path"] + ("code",), True] = ctx.code, node
     namespace[node["path"] + ("code",), False] = ctx.code, node
 
@@ -101,8 +98,9 @@ def translate_py_transformer(node, root, namespace, inchannels, outchannels, lib
         inp.outchannels[(pin,)].connect(target )
 
     if with_result:
+        raise NotImplementedError ### cache branch
         plain_result = node["plain_result"]
-        result_state = node.get("cached_state_result", None)
+        ###result_state = node.get("cached_state_result", None)
         result, result_ctx = build_structured_cell(
             ctx, result_name, True, plain_result, False, [()],
             outchannels, result_state, lib_path0,
@@ -118,6 +116,8 @@ def translate_py_transformer(node, root, namespace, inchannels, outchannels, lib
         if node["SCHEMA"]:
             schema_pin = getattr(ctx.tf, node["SCHEMA"])
             result.schema.connect(schema_pin)
+        if "RESULT" in checksum:
+            inp.set_checksum(checksum["RESULT"])
     else:
         for c in outchannels:
             assert len(c) == 0 #should have been checked by highlevel

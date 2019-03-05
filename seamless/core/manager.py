@@ -276,7 +276,7 @@ class Manager:
                                 continue
                             status = self.stream_status[ttf, k]
                             if status.exec == "READY":
-                                status.exec = "EXECUTING" 
+                                status.exec = "EXECUTING"                    
                     task = self._schedule_transform_all(tf_level1, count)
                     self.cache_task_manager.schedule_task(
                         ("transform","all",tf_level1),task,count,
@@ -359,11 +359,11 @@ class Manager:
         from .macro import Path
         print("TODO: Manager.set_transformer_result: expand code properly, see evaluate.py")
         # TODO: this function is not checked for exceptions when called from a remote job...""
-        assert value is not None or checksum is not None        
         if self._destroyed:
             return
         tcache = self.transform_cache
         hlevel1 = level1.get_hash()
+        is_none = (value is None and checksum is None)
         for tf, tf_level1 in list(tcache.transformer_to_level1.items()): #could be more efficient...
             if tf_level1.get_hash() != hlevel1:
                 continue
@@ -385,18 +385,26 @@ class Manager:
                 else:
                     if status.auth == "PRELIMINARY":
                         status.auth = "FRESH"
-                if value is not None:
+                if not is_none or subpath is not None:
                     # TODO: dirty...
                     if subpath is None:
+                        if not is_none and value is None:
+                           self.set_cell_checksum(cell, checksum) 
                         self.set_cell(cell, value, subpath=None)
                     else:                        
                         monitor = cell._monitor
                         assert monitor is not None
+                        if value is None:
+                            accessor = self.get_default_accessor(cell)
+                            accessor.subpath = subpath
+                            expression = accessor.to_expression(checksum)
+                            value = self.get_expression(expression)
+                            if cell._celltype == "mixed":
+                                _, _, value = value
                         monitor.set_path(subpath, value)                        
-                    if checksum is None and subpath is not None:
+                    if checksum is None and value is not None and subpath is not None:
                         checksum = self.cell_cache.cell_to_buffer_checksums[cell]
                 else:
-                    if subpath is not None: raise NotImplementedError ###either streams, or deep cells
                     if cell._destroyed:
                         raise Exception(cell.name)
                     self.set_cell_checksum(cell, checksum)
@@ -662,7 +670,7 @@ class Manager:
         status.data = new_data_status
         status.auth = new_auth_status
 
-        if full or new_auth_status is not None or new_data_status is not None:
+        if full or new_auth_status is not None or new_data_status is not None:            
             acache = self.accessor_cache
             accessors = itertools.chain(
                 self.cell_cache.cell_to_accessors[cell][cell_subpath],
@@ -670,7 +678,7 @@ class Manager:
             )
             for accessor in accessors:
                 haccessor = hash(accessor)
-                for worker, acc in acache.haccessor_to_workers.get(haccessor, []):
+                for worker, acc in acache.haccessor_to_workers.get(haccessor, []):                    
                     if acc is None:
                         acc = accessor
                     else:
@@ -899,7 +907,7 @@ class Manager:
 
     def _verify_connect(self, source, target):
         from .macro import Path
-        assert source._root()._manager is self
+        assert source._get_manager() is self
         assert source._root() is target._root()
         source_macro = source._get_macro()
         target_macro = target._get_macro()
@@ -1272,8 +1280,14 @@ class Manager:
                 value = self.get_expression(expression)
             except CacheMissError:
                 value = None
-            if source.access_mode == "mixed" and value is not None:
-                storage, form, value = value
+            if value is not None:
+                from_mixed = False
+                if source.celltype == "mixed":
+                    from_mixed = True
+                elif source.access_mode == "mixed":
+                    from_mixed = True
+                if from_mixed:
+                    storage, form, value = value
             if target.subpath is None:
                 self.set_cell(
                     target.cell, value,
@@ -1475,7 +1489,7 @@ class Manager:
             raise TypeError(worker)
         self.schedule_jobs()
 
-    def _update_status(self, cell, defined, *, has_auth, origin, cell_subpath):
+    def _update_status(self, cell, defined, *, has_auth, origin, cell_subpath):        
         status = self.status[cell][cell_subpath]
         old_data_status = status.data
         old_auth_status = status.auth        
@@ -1515,6 +1529,8 @@ class Manager:
             if buffer_known and not is_dummy_mount(cell._mount):
                 if not get_macro_mode():
                     self.mountmanager.add_cell_update(cell)
+            if cell._observer is not None:
+                cell._observer(checksum.hex())
             self._update_status(
                 cell, (checksum is not None), 
                 has_auth=has_auth, origin=None, cell_subpath=None
@@ -1563,6 +1579,8 @@ class Manager:
             if subpath is None and not is_dummy_mount(cell._mount):
                 if not get_macro_mode() and origin is not cell._context():
                     self.mountmanager.add_cell_update(cell)
+            if cell._observer is not None:
+                cell._observer(checksum.hex())
             self._update_status(
               cell, (checksum is not None), 
               cell_subpath=subpath, has_auth=has_auth, origin=origin

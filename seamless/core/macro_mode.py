@@ -66,6 +66,7 @@ def macro_mode_on(macro=None):
                     ctx = ub_ctx._bound
                     if ctx is None or not ok:
                         continue
+                    assert isinstance(ctx, Context)
                     mount.scan(ctx, old_context=None)
         elif not _macro_mode:
             if ok:

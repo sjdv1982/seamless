@@ -616,10 +616,14 @@ def scan(ctx_or_cell, *, old_context):
      (reusing all common mounts)
     """
     from .context import Context
+    from .unbound_context import UnboundContext
     from .cell import Cell
     from . import Worker, Macro
     from .structured_cell import Inchannel, Outchannel
     assert not mountmanager._mounting
+
+    if isinstance(ctx_or_cell,UnboundContext):
+        raise TypeError(ctx_or_cell)
 
     root = ctx_or_cell._root()
     if root is not None and root not in mountmanager.paths:

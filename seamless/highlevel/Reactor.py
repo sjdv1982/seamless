@@ -7,7 +7,6 @@ from .proxy import Proxy, CodeProxy
 from .pin import InputPin, OutputPin
 from .Base import Base
 from .Library import test_lib_lowlevel
-from ..midlevel import TRANSLATION_PREFIX
 from .mime import language_to_mime
 from ..core.context import Context as CoreContext
 
@@ -31,7 +30,7 @@ class Reactor(Base):
             "IO": "io",
             "buffered": True,
             "plain": False,
-            "TEMP": None, #to mark as non-translated
+            "UNTRANSLATED": True
         }
         parent._graph.nodes[path] = hrc
 
@@ -270,7 +269,7 @@ class Reactor(Base):
     def _has_rc(self):
         parent = self._parent()
         try:
-            p = getattr(parent._ctx, TRANSLATION_PREFIX)
+            p = parent._gen_context
             for subpath in self._path:
                 p = getattr(p, subpath)
             if not isinstance(p, CoreContext):
@@ -286,7 +285,7 @@ class Reactor(Base):
         else:
             if not self._has_rc():
                 return None
-        p = getattr(parent._ctx, TRANSLATION_PREFIX)
+        p = parent._gen_context
         for subpath in self._path:
             p = getattr(p, subpath)
         assert isinstance(p, CoreContext)

@@ -64,6 +64,7 @@ class SeamlessBase:
         if path is None:
             ret = "<None>"
         else:
+            path = [str(p) for p in path]
             ret = "." + ".".join(path)
         return ret
 
