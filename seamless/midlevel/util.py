@@ -112,7 +112,6 @@ def build_structured_cell(
             c.data = core_cell("mixed")
             c.data._sovereign = sovereign
     if silk:
-        raise NotImplementedError ###
         if lib_path:
             path = lib_path + ".schema"
             schema = libcell(path)
@@ -121,58 +120,33 @@ def build_structured_cell(
         c.schema = schema
     else:
         schema = None
+        
     if buffered:
-        raise NotImplementedError ### cache branch
-        if lib_path:
-            path = lib_path + ".buffer_form"
-            cc = libcell(path)
-        else:
-            cc = core_cell("plain")
-            cc._sovereign = sovereign
-        c.buffer_form = cc
         if plain:
             if lib_path:
-                path = lib_path + ".buffer_data"
+                path = lib_path + ".buffer"
                 cc = libcell(path)
             else:
-                cc = core_cell("plain")
+                cc = core_cell("mixed")
                 cc._sovereign = sovereign
-            c.buffer_data = cc
-            buffer_storage = None
+            c.buffer = cc
+            storage = None
         else:
             if lib_path:
-                path = lib_path + ".buffer_storage"
-                buffer_storage = libcell(path)
+                path = lib_path + ".buffer"
+                c.buffer = libmixedcell(path)
             else:
-                buffer_storage = core_cell("text")
-                buffer_storage._sovereign = sovereign
-            c.buffer_storage = buffer_storage
-            if lib_path:
-                path = lib_path + ".buffer_data"
-                c.buffer_data = libmixedcell(path,
-                    form_cell = c.buffer_form,
-                    storage_cell = c.buffer_storage,
-                )
-            else:
-                c.buffer_data = core_cell("mixed",
-                    form_cell = c.buffer_form,
-                    storage_cell = c.buffer_storage,
-                )
-                c.buffer_data._sovereign = sovereign
-        """
-        bufferwrapper = BufferWrapper(
-            c.buffer_data,
-            buffer_storage,
-            c.buffer_form
-        )
-        """
-
-    bufferwrapper = None ###
+                c.buffer = core_cell("mixed")
+                c.buffer._sovereign = sovereign
+        buffer = c.buffer
+    else:
+        buffer = None
+        
     sc = StructuredCell(
         name,
         c.data,
         schema=schema,
-        buffer=bufferwrapper,
+        buffer=buffer,
         plain=plain,
         inchannels=inchannels,
         outchannels=outchannels,

@@ -39,8 +39,9 @@ def translate_py_transformer(node, root, namespace, inchannels, outchannels, lib
     )
     """
     # TODO: get input state from "checksum" field...
+    silk = (buffered or not plain)
     inp, inp_ctx = build_structured_cell(
-      ctx, input_name, False, plain, buffered, inchannels, interchannels,
+      ctx, input_name, silk, plain, buffered, inchannels, interchannels,
       None, lib_path0,
       return_context=True
     )
@@ -98,12 +99,10 @@ def translate_py_transformer(node, root, namespace, inchannels, outchannels, lib
         inp.outchannels[(pin,)].connect(target )
 
     if with_result:
-        raise NotImplementedError ### cache branch
         plain_result = node["plain_result"]
-        ###result_state = node.get("cached_state_result", None)
         result, result_ctx = build_structured_cell(
             ctx, result_name, True, plain_result, False, [()],
-            outchannels, result_state, lib_path0,
+            outchannels, None, lib_path0,
             return_context=True
         )
         if "result_schema" in mount:
@@ -112,12 +111,12 @@ def translate_py_transformer(node, root, namespace, inchannels, outchannels, lib
         setattr(ctx, result_name, result)
 
         result_pin = getattr(ctx.tf, result_name)
-        result.connect_inchannel(result_pin, ())
+        result_pin.connect(result.inchannels[()])
         if node["SCHEMA"]:
             schema_pin = getattr(ctx.tf, node["SCHEMA"])
             result.schema.connect(schema_pin)
         if "RESULT" in checksum:
-            inp.set_checksum(checksum["RESULT"])
+            result.set_checksum(checksum["RESULT"])
     else:
         for c in outchannels:
             assert len(c) == 0 #should have been checked by highlevel

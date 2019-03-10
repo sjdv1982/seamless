@@ -1,0 +1,61 @@
+TODO: Before the presentation:
+Silk in computation graphs (including buffer)
+Store and load computation graphs:
+- Tests to "color" the graph (use Redis to fill in values)
+- Tests for remote deployment of jobs
+- Test for remote execution of a graph
+- Get Bash transformer working again
+- Docker transformer
+- Conversions for Galaxy, Mobyle, SnakeMake
+- Simple protein-based example
+
+Presentation:
+Two distinct goals:
+- Seamless as Mobyle replacement at the RPBS
+- The RPBS as a center for provenance, reproducibility, and interoperability
+  (implications for deployment)
+Explain mechanics
+
+Time path: 
+I. Mobyle replacement
+    - Simple example
+    - End of the year: demo NAR web servers
+        DaReUS-Loop server, structural alphabet server (based on near-native ensembles)
+    - Time plan to replace all servers
+II. Deployment, caching servers
+    - Remote interactive mode execution
+    - Docker-level deployment (one seamless, one service; include Jupyter)
+    - Configuration! (job level, server level, ...) (endless talks with Julien)
+    - Docker environment config (Linux distro), ORCID authority
+III. Social context
+- Development blog; guardian
+- IFB interoperability workgroup, CAPRI evaluation
+
+Limiting factors:
+Examples (especially: more practical examples)
+Documentation (especially: explaining the concepts)
+
+Improvements: [two months fulltime of implementation]
+Bugs: missing code paths, especially type conversion (also int/float/... cells) [a few days]
+Bugs: interaction between Seamless features, smoother API (e.g. type inference) [continuous]
+Interaction with rest of the world (bring back polyglot, add R) [a few days]
+    => Compiled language without a compiler
+Easier to work with:
+- Automatic generation of web form GUIs [a day for initial proof-of-principle]
+- Graph GUI [a day for initial proof-of-principle]
+- Libraries/subcontexts/constructors [a few days]
+- Logging error messages, cache misses, network traffic, progress bars [one week for a first implementation ]
+- Job/cache control (canceling, job database, address cache memory leaks) [up to 2 weeks for a prototype]
+- Better control of execution details (execution options, non-deterministic input pins, ephemeral cells, reactor start/stop side effects) [one week for initial implementation]
+- Shells, or workers-as-Jupyter-kernels [a few days]
+Big Data: deep cells [a few days], full streams (reduction, multi-inputs) [a few days]
+Slash [a few days for reintegration]
+GPU support: block cells [a week]
+
+Long-term features:
+Special constructs
+Latency reduction: Stream-stream, GPU-GPU
+Full-featured Silk
+Git integration (with modularity)
+Debugger integration
+All the very-long-term stuff: DSL commands, Idris, plugin-socket

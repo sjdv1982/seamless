@@ -69,8 +69,8 @@ class TransformerLevel2:
         for key in sorted(semantic_keys.keys()):
             assert isinstance(key, str)            
             value = semantic_keys[key]
-            assert value.semantic_checksum is not None, key
             assert isinstance(value, SemanticKey)
+            assert value.semantic_checksum is not None, key            
             v = (
                 value.semantic_checksum.hex(), 
                 value.access_mode,

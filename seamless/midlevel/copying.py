@@ -61,33 +61,11 @@ def fill_checksum(manager, node, temp_path):
     if temp_value is None:
         return
     
-    if silk:
-        raise NotImplementedError ### cache branch
-        if buffered:
-            raise NotImplementedError ### cache branch
-
-    """
-    # TODO: something cleaner than deserialize
-    result = deserialize(
-        datatype, subcelltype, "",
-        temp_value, False, None,
-        None, None
-    )
-    buffer, buffer_checksum, _, _, _ = result
-    # TODO: fake cell is dirty!
     ctx = core_context(toplevel=True)
-    ctx._manager=manager
-    ctx.cell = core_cell(datatype)
-    ctx.cell._set(buffer, 
-        from_buffer=True, buffer_checksum=buffer_checksum
-    )
-    checksum = buffer_checksum.hex()
-    """
-    ctx = core_context(toplevel=True)
-    ctx._manager=manager
+    ctx._manager = manager
     ctx.cell = core_cell(datatype)
     ctx.cell.set(temp_value)
-    checksum = ctx.cell.checksum
+    checksum = ctx.cell.checksum    
 
     if checksum is None:
         return

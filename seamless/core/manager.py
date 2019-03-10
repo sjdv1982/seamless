@@ -1613,6 +1613,8 @@ class Manager:
         return checksum
 
     def get_value_from_checksum(self, checksum):
+        if checksum is None:
+            return None
         buffer_item = self.value_cache.get_buffer(checksum)
         if buffer_item is None:
             cache_task = self.cache_task_manager.remote_value(checksum)

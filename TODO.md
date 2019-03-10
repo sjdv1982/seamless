@@ -137,7 +137,7 @@ Things to do:
   - Get basic StructuredCell tests working
   
   G. Get the high level working again. Should be quite straightforward now, but:
-  - Simple streams (map for list/array and dict)
+  - Simple streams (map for list/array and dict) DONE
   - Re-enable type inference (i.e. tf.pin = ... is inferred like tf.example.pin = ...)
   but only if set from terminal (never from pin).
   
@@ -304,6 +304,9 @@ Part 3 (low-level / cleanup): Towards the merge
 Merge into master; end of the Great Refactor
 Seamless is now kind-of ready to be started to be used by other devs, at their peril, caveat emptor, etc.
 Limiting factor: lack of documentation/examples
+
+TODO: test graph serialization in combination with buffering, i.e. in cases where
+ the schema is violated, just to save buffered values
 
 *****************************************************************
 UPDATE, Feb 2019 
@@ -480,8 +483,6 @@ Part 7:
  Fix it with seamless.compiler which uses RLocks, need to be multiprocess!
    (transformers can compile!)
  - Silk: make add_validator a schema method!
-- Graph translation should be asynchronous and interruptible
-  (check regularly for interruption signals)
 - Start with report channels that catch error messages, cache hits/misses etc.
    Gradually make Seamless such that it never crashes, but reports everything
    Kernels should be killable from shell (deactivates manager too)
@@ -550,8 +551,6 @@ Long-term:
 - Set up user library directory and robogit. User contributions to the stdlib should be made easy.
 
 Very long-term:
-- Use the report system for detailed timings. Use this for precise measurements where
-  the seamless overhead is, and how much.
 - Python debugging / code editor (WIP) (see seamless-towards-02.md)
   UPDATE: native widgets are probably outdated, but some network channel (Jupyter protocol?)
   would probably be good. Keep an eye on analogous developments in VS Code and JupyterLab.

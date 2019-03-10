@@ -195,23 +195,22 @@ class StructuredCell(SeamlessBase):
             self.data._monitor = monitor
 
         if self._is_silk:
-            if self.schema._monitor is None:
-                schema_backend = CellBackend(self.schema)
-                schema_monitor = Monitor(schema_backend, attribute_access=False)
-                self.schema._monitor = schema_monitor
-
-            silk_buffer = None
+            bufmonitor = None
             if buffer is not None:
                 if self.buffer._monitor is None:
                     bufbackend = CellBackend(self.buffer)
                     bufmonitor = Monitor(bufbackend, attribute_access=(not plain))
-                    self.buffer._monitor = weakref.ref(bufmonitor)
-                silk_buffer = self.buffer._monitor.get_path()
+                    self.buffer._monitor = bufmonitor
+            self._schema_value = {}
             self._silk = Silk(
-                schema=self.schema._monitor,
-                data=self.data._monitor.get_path(),
-                buffer=silk_buffer,
+                schema=self._schema_value,
+                schema_update_hook=self._update_schema,
+                data=self.data._monitor,
+                buffer=bufmonitor,
             )
+
+    def _update_schema(self):
+        self.schema.set(self._schema_value)
 
     def _set_observer(self, observer, trigger=True):
         self.data._set_observer(observer, trigger)
@@ -251,10 +250,15 @@ class StructuredCell(SeamlessBase):
 
 
     def set_checksum(self, checksum):
-        if self._is_silk or self.buffer is not None:
-            raise NotImplementedError ### cache branch
+        from .unbound_context import UnboundManager
         cell = self.monitor.backend._cell
-        cell.set_checksum(checksum)
+        manager = cell._get_manager()
+        if not isinstance(manager, UnboundManager):
+            if self._is_silk and self.buffer is not None:                
+                value = manager.get_value_from_checksum(checksum)
+                self._silk.set(value)
+        else:
+            cell.set_checksum(checksum)
 
     def __str__(self):
         ret = "Seamless structured cell: " + self._format_path()
@@ -274,7 +278,7 @@ class StructuredCell(SeamlessBase):
         from ..silk import Silk
         if self._is_silk:
             result = Silk(
-                schema=self.schema._val,
+                schema=self._schema_value,
                 data=self.monitor.get_path()
             )
         else:

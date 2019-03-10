@@ -396,6 +396,7 @@ class PlainCell(Cell):
     _default_access_mode = "plain"
     _content_type = "plain"
     _mount_kwargs = {"encoding": "utf-8", "binary": False}
+    _monitor = None
 
     def __str__(self):
         ret = "Seamless plain cell: " + self._format_path()

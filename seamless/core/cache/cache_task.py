@@ -12,6 +12,8 @@ Every key will always have the same CacheTask
 """
 
 import asyncio
+import atexit
+import inspect
 from ..run_multi_remote import run_multi_remote, run_multi_remote_pair
 
 remote_transformer_result_servers = []
@@ -45,9 +47,8 @@ class CacheTask:
 
     def cancel(self):
         future = self.future
-        if not future.cancelled():
+        if not future.cancelled() and not future.done():
             future.cancel()
-            self.cancelfunc()
 
     def join(self):
         asyncio.get_event_loop().run_until_complete(self.future)
@@ -62,13 +63,19 @@ class CacheTaskManager:
             if key not in self.tasks:
                 future = asyncio.ensure_future(func)
                 def cancelfunc2(future): 
-                    self.tasks.pop(key)
+                    task = self.tasks.pop(key)
                     if cancelfunc is not None:
                         cancelfunc()
+                    if task.future.done():
+                        task.future.exception() # discarded
+                    else:
+                        task.cancel()
                 task = CacheTask(key, future, count, resultfunc, cancelfunc2)
                 self.tasks[key] = task
             else:
                 task = self.tasks[key]
+                if inspect.iscoroutine(func):
+                    asyncio.Task(func).cancel()
                 task.incref(count)            
         else:
             task = self.tasks[key]
@@ -125,8 +132,16 @@ class CacheTaskManager:
                     transform_cache.set_result_level2(hlevel2, checksum)
         return self.schedule_task(key, future, 1, resultfunc=resultfunc)
 
+    def destroy(self):
+        tasks = list(self.tasks.values())
+        self.tasks.clear()
+        for task in tasks:
+            task.cancel()
+            
+
 from .transform_cache import transform_caches
 from .label_cache import label_caches
 from .value_cache import value_caches
 
 cache_task_manager = CacheTaskManager()
+atexit.register(cache_task_manager.destroy)

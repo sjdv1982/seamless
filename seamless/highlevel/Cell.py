@@ -145,9 +145,6 @@ class Cell(Base):
                 import traceback; traceback.print_exc()
                 raise
             value = cell.value
-            if hcell["celltype"] == "structured":
-                if hcell["silk"]:
-                    value = Silk(data=value, schema=self.schema)
             return value
 
     @property
