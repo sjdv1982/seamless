@@ -369,9 +369,10 @@ class Transformer(Base):
         else:
             tf.tf.touch()
 
+    @property
     def status(self):
         tf = self._get_tf().tf
-        return tf.status()
+        return tf.status
 
     def __getattr__(self, attr):
         if attr.startswith("_"):
@@ -548,23 +549,29 @@ class Transformer(Base):
         assign_connection(parent, other._path, target_path, False)
         parent._translate()
 
-    def _set_temp_input(self, checksum):
+    def _observe_input(self, checksum):
         htf = self._get_htf()
         if htf.get("checksum") is None:
             htf["checksum"] = {}
         htf["checksum"]["INPUT"] = checksum
 
-    def _set_temp_code(self, checksum):
+    def _observe_code(self, checksum):
         htf = self._get_htf()
         if htf.get("checksum") is None:
             htf["checksum"] = {}
         htf["checksum"]["code"] = checksum
 
-    def _set_temp_result(self, checksum):
+    def _observe_result(self, checksum):
         htf = self._get_htf()
         if htf.get("checksum") is None:
             htf["checksum"] = {}
         htf["checksum"]["RESULT"] = checksum
+
+    def _observe_schema(self, checksum):
+        htf = self._get_htf()
+        if htf.get("checksum") is None:
+            htf["checksum"] = {}
+        htf["checksum"]["SCHEMA"] = checksum
 
     def _set_observers(self):        
         htf = self._get_htf()
@@ -572,14 +579,17 @@ class Transformer(Base):
             raise NotImplementedError ### cache branch
             # NOTE: observers depend on the implementation of translate_XXX_transformer (midlevel)
         tf = self._get_tf()
-        tf.code._set_observer(self._set_temp_code)
+        tf.code._set_observer(self._observe_code)
         inp = htf["INPUT"]
         inpcell = getattr(tf, inp)
-        inpcell._set_observer(self._set_temp_input)
+        inpcell._set_observer(self._observe_input)
         if htf["with_result"]:
             result = htf["RESULT"]
             resultcell = getattr(tf, result)
-            resultcell._set_observer(self._set_temp_result)
+            resultcell._set_observer(self._observe_result)
+            if htf["SCHEMA"]:
+                schemacell = getattr(tf, "schema")
+                schemacell._set_observer(self._observe_schema)
 
 
     def __delattr__(self, attr):

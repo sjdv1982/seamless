@@ -148,6 +148,9 @@ class Status:
         else:
             raise TypeError(self._type)
 
+    def __repr__(self):
+        return str(self)
+        
     @property
     def data(self):
         return self.data_status.name

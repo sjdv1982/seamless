@@ -297,20 +297,25 @@ class MixedCell(Cell):
         v = super().value
         if v is None:
             return None
+        if not isinstance(v, tuple): return v ### KLUDGE, shouldn't happen
         return v[2]
 
     @property
     def storage(self):
+        from ..mixed.get_form import get_form
         v = super().value
         if v is None:
             return None
+        if not isinstance(v, tuple): return get_form(v)[0] ### KLUDGE, shouldn't happen
         return v[0]
     
     @property
     def form(self):
+        from ..mixed.get_form import get_form
         v = super().value
         if v is None:
             return None
+        if not isinstance(v, tuple): return get_form(v)[1] ### KLUDGE, shouldn't happen
         return v[1]
 
 

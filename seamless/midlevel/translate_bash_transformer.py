@@ -39,13 +39,10 @@ def translate_bash_transformer(node, root, namespace, inchannels, outchannels, l
 
     interchannels = [as_tuple(pin) for pin in pins]
     plain = node["plain"]
-    input_state = node.get("stored_state_input", None)
     mount = node.get("mount", {})
-    if input_state is None:
-        input_state = node.get("cached_state_input", None)
     inp, inp_ctx = build_structured_cell(
       ctx, input_name, True, plain, buffered, inchannels, interchannels,
-      input_state, lib_path0,
+      lib_path0,
       return_context=True
     )
     setattr(ctx, input_name, inp)
@@ -111,10 +108,9 @@ def translate_bash_transformer(node, root, namespace, inchannels, outchannels, l
 
     if with_result:
         plain_result = node["plain_result"]
-        result_state = node.get("cached_state_result", None)
         result, result_ctx = build_structured_cell(
             ctx, result_name, True, plain_result, False, [()],
-            outchannels, result_state, lib_path0,
+            outchannels, lib_path0,
             return_context=True
         )
         if "result_schema" in mount:

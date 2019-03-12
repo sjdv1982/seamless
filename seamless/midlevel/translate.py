@@ -18,6 +18,7 @@ from .util import as_tuple, get_path, find_channels, find_editchannels, build_st
 
 
 def translate_py_reactor(node, root, namespace, inchannels, outchannels, editchannels, lib_path00, is_lib):
+    raise NotImplementedError ### cache branch
     #TODO: simple-mode translation, without a structured cell
     skip_channels = ("code_start", "code_update", "code_stop")
     inchannels = [ic for ic in inchannels if ic[0] not in skip_channels]
@@ -42,12 +43,9 @@ def translate_py_reactor(node, root, namespace, inchannels, outchannels, editcha
     all_editchannels = interchannels_edit + [p for p in editchannels if p not in interchannels_edit]
 
     plain = node["plain"]
-    io_state = node.get("stored_state_io", None)
-    if io_state is None:
-        io_state = node.get("cached_state_io", None)
     io = build_structured_cell(
       ctx, io_name, True, plain, buffered,
-      all_inchannels, all_outchannels, io_state, lib_path0,
+      all_inchannels, all_outchannels, lib_path0,
       editchannels=all_editchannels
     )
     setattr(ctx, io_name, io)
@@ -92,9 +90,6 @@ def translate_py_reactor(node, root, namespace, inchannels, outchannels, editcha
         elif iomode == "output":
             io.connect_inchannel(target, (pinname,))
 
-    if not is_lib: #clean up cached state and in_equilibrium, unless a library context
-        node.pop("cached_state_io", None)
-
     namespace[node["path"], True] = io, node
     namespace[node["path"], False] = io, node
 
@@ -115,14 +110,11 @@ def translate_cell(node, root, namespace, inchannels, outchannels, editchannels,
         else: #unknown datatype must be text
             plain = True
         silk = node["silk"]
-        state = node.get("stored_state")
-        if state is None:
-            state = node.get("cached_state")
         mount = node.get("mount")
         child = build_structured_cell(
           parent, name, silk, plain, buffered,
           inchannels, outchannels,
-          state, lib_path0, mount=mount, editchannels=editchannels
+          lib_path0, mount=mount, editchannels=editchannels
         )
         for inchannel in inchannels:
             cname = child.inchannels[inchannel].name

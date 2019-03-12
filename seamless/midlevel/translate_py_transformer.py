@@ -25,24 +25,10 @@ def translate_py_transformer(node, root, namespace, inchannels, outchannels, lib
     interchannels = [as_tuple(pin) for pin in node["pins"]]
     plain = node["plain"]
     mount = node.get("mount", {})
-    """
-    input_state = node.get("stored_state_input", None)    
-    if input_state is None:
-        input_state = node.get("cached_state_input", None)
-    """
-    ### KLUDGE   
-    """
-    inp, inp_ctx = build_structured_cell(
-      ctx, input_name, True, plain, buffered, inchannels, interchannels,
-      input_state, lib_path0,
-      return_context=True
-    )
-    """
-    # TODO: get input state from "checksum" field...
     silk = (buffered or not plain)
     inp, inp_ctx = build_structured_cell(
       ctx, input_name, silk, plain, buffered, inchannels, interchannels,
-      None, lib_path0,
+      lib_path0,
       return_context=True
     )
 
@@ -102,7 +88,7 @@ def translate_py_transformer(node, root, namespace, inchannels, outchannels, lib
         plain_result = node["plain_result"]
         result, result_ctx = build_structured_cell(
             ctx, result_name, True, plain_result, False, [()],
-            outchannels, None, lib_path0,
+            outchannels, lib_path0,
             return_context=True
         )
         if "result_schema" in mount:
@@ -115,8 +101,10 @@ def translate_py_transformer(node, root, namespace, inchannels, outchannels, lib
         if node["SCHEMA"]:
             schema_pin = getattr(ctx.tf, node["SCHEMA"])
             result.schema.connect(schema_pin)
-        if "RESULT" in checksum:
-            result.set_checksum(checksum["RESULT"])
+        if "result" in checksum:
+            result.set_checksum(checksum["result"])
+        if "schema" in checksum:
+            result.schema.set_checksum(checksum["schema"])
     else:
         for c in outchannels:
             assert len(c) == 0 #should have been checked by highlevel

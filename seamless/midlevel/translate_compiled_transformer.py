@@ -67,6 +67,7 @@ def _finalize(ctx, ctf, inp, c_inp, result, c_result, input_name, result_name):
 
 
 def translate_compiled_transformer(node, root, namespace, inchannels, outchannels, lib_path00, is_lib):
+    raise NotImplementedError ### cache branch
     #TODO: still a lot of common code with translate_py_transformer, put in functions
     inchannels = [ic for ic in inchannels if ic[0] != "code"]
 
@@ -92,12 +93,9 @@ def translate_compiled_transformer(node, root, namespace, inchannels, outchannel
 
     mount = node.get("mount", {})
     plain = node["plain"]
-    input_state = node.get("stored_state_input", None)
-    if input_state is None:
-        input_state = node.get("cached_state_input", None)
     inp, inp_ctx = build_structured_cell(
       ctx, input_name, True, plain, buffered, inchannels, [()],
-      input_state, lib_path0,
+      lib_path0,
       return_context=True
     )
     setattr(ctx, input_name, inp)
@@ -133,14 +131,10 @@ def translate_compiled_transformer(node, root, namespace, inchannels, outchannel
     # Compiler
     ctx.language = cell("text").set(node["language"])
 
-    main_module_state = node.get("stored_state_main_module", None)
-    if main_module_state is None:
-        main_module_state = node.get("cached_state_main_module", None)
-
     ctx.main_module = build_structured_cell(
       ctx, "main_module", False, True, False,
       main_module_inchannels, [()],
-      main_module_state, lib_path00,
+      lib_path00,
     )
 
     if "_main_module" in temp and len(temp["_main_module"]):
@@ -164,8 +158,6 @@ def translate_compiled_transformer(node, root, namespace, inchannels, outchannel
                       ("objects", objname), {}, forced=True
                     )
                 main_module_handle["objects"][objname][key] = value
-    elif main_module_state is None:
-        ctx.main_module.monitor.set_path((), {}, forced=True)
 
     for ic in main_module_inchannels:
         icpath = node["path"] + ("_main_module",) + ic[1:]
@@ -193,10 +185,9 @@ def translate_compiled_transformer(node, root, namespace, inchannels, outchannel
             ctx.code.mount(**mount["code"])
 
     plain_result = node["plain_result"]
-    result_state = node.get("cached_state_result", None)
     result, result_ctx = build_structured_cell(
         ctx, result_name, True, plain_result, False, [()],
-        outchannels, result_state, lib_path0,
+        outchannels, lib_path0,
         return_context=True
     )
     if "result_schema" in mount:
@@ -228,12 +219,6 @@ def translate_compiled_transformer(node, root, namespace, inchannels, outchannel
         setattr(inphandle, k, v)
     namespace[node["path"] + ("code",), True] = ctx.code, node
     namespace[node["path"] + ("code",), False] = ctx.code, node
-
-    if not is_lib: #clean up cached state and in_equilibrium, unless a library context
-        node.pop("cached_state_input", None)
-        if not in_equilibrium:
-            node.pop("cached_state_result", None)
-        node.pop("in_equilibrium", None)
 
     namespace[node["path"], True] = inp, node
     namespace[node["path"], False] = result, node

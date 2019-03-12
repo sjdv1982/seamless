@@ -183,6 +183,11 @@ class Cell(Base):
         cell = self._get_cell()
         cell.set(value)
 
+    @property
+    def status(self):
+        cell = self._get_cell()
+        return cell.status
+
     def set(self, value):
         self._set(value)
 

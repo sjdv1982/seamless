@@ -1286,6 +1286,7 @@ class Manager:
                     from_mixed = True
                 elif source.access_mode == "mixed":
                     from_mixed = True
+                if not isinstance(value, tuple): from_mixed=False ###KLUDGE
                 if from_mixed:
                     storage, form, value = value
             if target.subpath is None:
