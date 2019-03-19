@@ -6,7 +6,7 @@ import asyncio
 from contextlib import contextmanager
 
 from . import SeamlessBase
-from .macro_mode import get_macro_mode, curr_macro, toplevel_register
+from .macro_mode import get_macro_mode, curr_macro, toplevel_register, toplevel_registered
 from .mount import is_dummy_mount, scan as mount_scan
 
 
@@ -51,6 +51,13 @@ Parameters
 name: str
     name of the context within the parent context
 """
+        ''' #debugging
+        try:
+            raise Exception
+        except Exception as exc:
+            import traceback            
+            self._EXC = "\n".join(traceback.format_stack())
+        '''
         super().__init__()
         if toplevel:
             self._toplevel = True
@@ -262,7 +269,8 @@ name: str
             if isinstance(child, (Cell, Context, Worker)):
                 child.destroy(from_del=from_del)
         if self._toplevel:
-            toplevel_register.remove(self)
+            toplevel_register.discard(self)
+            toplevel_registered.discard(self)
         self._unmount(from_del=from_del)
 
     def _unmount(self, from_del=False):
@@ -279,7 +287,8 @@ name: str
         if self._destroyed:
             return
         self.__dict__["_destroyed"] = True
-        print("Undestroyed %s, mount points may remain" % self)
+        ###print(self._EXC) # debugging
+        print("Undestroyed %s (%s), mount points may remain" % (self, hex(id(self))))
 
 
 Context._methods = [m for m in Context.__dict__ if not m.startswith("_") \

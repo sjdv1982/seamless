@@ -73,4 +73,24 @@ from ..lib.compiled_transformer import compiled_transformer as _
 from ..lib.bash_transformer import bash_transformer as _
 """
 
-__all__ = ["Context", "stdlib", "mylib", "Reactor", "Transformer", "Link"]
+def load_graph(graph, *, cache_ctx=None):
+    """TODO: document"""
+    from ..core.context import Context as CoreContext
+    from ..core.manager import Manager
+    from ..core.unbound_context import UnboundManager
+    if isinstance(cache_ctx, Context):
+        manager = cache_ctx._ctx0._get_manager()        
+    elif isinstance(cache_ctx, CoreContext):
+        manager = cache_ctx._get_manager()
+    elif isinstance(cache_ctx, (Manager, UnboundManager)):
+        manager = cache_ctx
+    elif cache_ctx is None:
+        manager = None
+    else:
+        raise TypeError(cache_ctx)
+    if isinstance(manager, UnboundManager):
+        manager = manager._ctx._bound._get_manager()
+        assert isinstance(manager, Manager)
+    return Context.from_graph(graph, manager)
+
+__all__ = ["Context", "stdlib", "mylib", "Reactor", "Transformer", "Link", "load_graph"]

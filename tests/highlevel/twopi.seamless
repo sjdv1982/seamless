@@ -1,0 +1,79 @@
+{
+  "connections": [
+    {
+      "source": [
+        "pi"
+      ],
+      "target": [
+        "doubleit",
+        "a"
+      ],
+      "type": "connection"
+    },
+    {
+      "source": [
+        "doubleit"
+      ],
+      "target": [
+        "twopi"
+      ],
+      "type": "connection"
+    }
+  ],
+  "nodes": [
+    {
+      "INPUT": "inp",
+      "RESULT": "result",
+      "SCHEMA": null,
+      "buffered": true,
+      "checksum": {
+        "INPUT": "66aacfe442ff63a3dc537a3bfbfa204824fb8585ea89fab337ba99eb198c0ddc",
+        "code": "b24cb296a9e7872c592baedc5ba4166c90dc3c464e4e2ddfddb78f9c56837b89"
+      },
+      "compiled": false,
+      "debug": false,
+      "language": "python",
+      "main_module": {
+        "compiler_verbose": true
+      },
+      "path": [
+        "doubleit"
+      ],
+      "pins": {
+        "a": {
+          "access_mode": "default",
+          "content_type": null,
+          "transfer_mode": "copy"
+        }
+      },
+      "plain": false,
+      "plain_result": false,
+      "type": "transformer",
+      "with_result": true
+    },
+    {
+      "buffered": true,
+      "celltype": "structured",
+      "checksum": "9809b7dfcfe29dd194c71c7d2da94af3aeef98f079eeff8e1d9e5099acef737c",
+      "datatype": "mixed",
+      "path": [
+        "pi"
+      ],
+      "silk": true,
+      "type": "cell"
+    },
+    {
+      "buffered": true,
+      "celltype": "structured",
+      "datatype": "mixed",
+      "path": [
+        "twopi"
+      ],
+      "silk": true,
+      "type": "cell"
+    }
+  ],
+  "params": {
+    "from_lib": null
+  }
+}

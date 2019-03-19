@@ -1,13 +1,16 @@
 import math
 from seamless.highlevel import Context, Cell
 import json
-from pprint import pprint
 ctx = Context()
 ctx.pi = math.pi
 ctx.doubleit = lambda a: 2 * a
 ctx.doubleit.a = ctx.pi
 ctx.twopi = ctx.doubleit
 ctx.translate()
+
+graph = ctx.get_graph()
+print(json.dumps( graph, indent=2, sort_keys=True))
+json.dump(graph, open("twopi.seamless", "w"), indent=2, sort_keys=True)
 
 ctx.equilibrate()
 print(ctx.pi.value)
@@ -29,4 +32,5 @@ ctx.equilibrate()
 print(ctx.pi.value)
 print(ctx.twopi.value)
 
-print(ctx.get_graph())
+graph = ctx.get_graph()
+json.dump(graph, open("twopi-result.seamless", "w"), indent=2, sort_keys=True)

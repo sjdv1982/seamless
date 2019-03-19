@@ -109,6 +109,8 @@ def fill_checksums(mgr, nodes, *, path=None):
             else:
                 raise TypeError(p, node["type"])
             node.pop("TEMP", None)
+            if "checksum" not in node and old_checksum is not None:
+                node["checksum"] = old_checksum
         except:
             import traceback
             traceback.print_exc()

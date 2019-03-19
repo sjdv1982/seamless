@@ -3,9 +3,10 @@ from weakref import WeakSet
 from contextlib import contextmanager
 
 toplevel_register = set()
+toplevel_registered = set()
 
 def _destroy_toplevels():
-    for ctx in list(toplevel_register):
+    for ctx in list(toplevel_registered):
         ctx.destroy(from_del=True)
 
 atexit.register(_destroy_toplevels)
@@ -50,9 +51,10 @@ def macro_mode_on(macro=None):
                     top = ctx._root_
                     assert top is not None
                     ctx._bind(top)
-                    toplevel_register.add(top)
+                    toplevel_registered.add(top)
                 else:
-                    bind_all(ctx)
+                    toplevel_registered.add(ctx)
+                    bind_all(ctx)        
         ok = True
     finally:
         _macro_mode = old_macro_mode
@@ -69,6 +71,7 @@ def macro_mode_on(macro=None):
                     assert isinstance(ctx, Context)
                     mount.scan(ctx, old_context=None)
         elif not _macro_mode:
+            toplevel_register.clear()
             if ok:
                 mount.scan(macro._gen_context, old_context=old_context)
 

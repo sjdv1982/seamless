@@ -13,8 +13,6 @@ import asyncio
 import multiprocessing
 from multiprocessing import Process
 
-from .macro_mode import toplevel_register
-
 ipython = None
 try:
     import IPython

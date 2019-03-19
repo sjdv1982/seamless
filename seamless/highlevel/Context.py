@@ -98,6 +98,29 @@ class Context:
     _as_lib = None
     _auto_register_library = False
     _shares = None    
+
+    @classmethod
+    def from_graph(cls, graph, cache_manager):
+        self = cls()
+        if cache_manager is not None:
+            #self._ctx0._get_manager()._set_cache(cache_manager)
+            self._ctx0._manager = cache_manager
+        graph = deepcopy(graph)
+        nodes = {}        
+        for node in graph["nodes"]:
+            p = tuple(node["path"])
+            node["path"] = p
+            nodes[p] = node
+            nodetype = node["type"]
+            nodecls = nodeclasses[nodetype]
+            child = nodecls(parent=self,path=p)
+        connections = graph["connections"]
+        for con in connections:
+            con["source"] = tuple(con["source"])
+            con["target"] = tuple(con["target"])
+        self._graph = Graph(nodes, connections, graph["params"])
+        return self
+
     def __init__(self, dummy=False):
         self._dummy = dummy
         if not dummy:
@@ -262,7 +285,8 @@ class Context:
         if copy:
             connections = deepcopy(connections)
             nodes = deepcopy(nodes)
-        graph = {"nodes": nodes, "connections": connections}
+            params = deepcopy(params)
+        graph = {"nodes": nodes, "connections": connections, "params": params}
         return graph
 
     def _do_translate(self, force=False, explicit=False):
@@ -283,14 +307,14 @@ class Context:
             self._translating = True
             ctx = None
             ok = False
-            manager = self._ctx0._get_manager()
+            manager = self._ctx0._get_manager()            
             ctx = CoreContext(toplevel=True)
             ctx._manager = manager
             ctx._macro = self
-            old_gen_context = self._gen_context
+            old_gen_context = self._gen_context            
             with macro_mode_on(self):
-                ub_ctx = context(toplevel=True, manager=manager)
-                self._unbound_context = ub_ctx
+                ub_ctx = context(toplevel=True, manager=manager)                
+                self._unbound_context = ub_ctx                
                 lib_paths = get_lib_paths(self)
                 translate(graph, ub_ctx, lib_paths, is_lib)
                 ok = True
@@ -298,6 +322,7 @@ class Context:
                 self._gen_context = ctx
                 if old_gen_context is not None:
                     old_gen_context.destroy()
+                ub_ctx._root_.destroy()               
         finally:
             self._translating = False
             self._unbound_context = None
@@ -316,6 +341,7 @@ class Context:
 
         if ok:
             for path, child in self._children.items():
+                continue ###
                 if isinstance(child, Cell):
                     cell = child._get_cell()                    
                     cell._set_observer(child._set_checksum)
@@ -542,3 +568,9 @@ from .Reactor import Reactor
 from .Transformer import Transformer
 from .Cell import Cell
 from .pin import InputPin, OutputPin
+
+nodeclasses = {
+    "cell": Cell,
+    "transformer": Transformer,
+    "reactor": Reactor,
+}

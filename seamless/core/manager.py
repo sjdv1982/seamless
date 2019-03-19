@@ -99,7 +99,19 @@ class Manager:
         self._temp_tf_level1 = {}
         self.cell_to_cell = [] # list of (source-accessor-or-pathtuple, target-accessor-or-pathtuple); pathtuples are (Path, subpath)
 
-
+    """
+    def _set_cache(self, manager):
+        assert isinstance(manager, Manager)
+        self.cell_cache = manager.cell_cache
+        self.accessor_cache = manager.accessor_cache
+        self.expression_cache = manager.expression_cache
+        self.value_cache = manager.value_cache
+        self.label_cache = manager.label_cache
+        self.transform_cache = manager.transform_cache
+        self.temprefmanager = manager.temprefmanager
+        self.temprefmanager_future = manager.temprefmanager_future
+    """
+    
     async def _schedule_transform_all(self, tf_level1, count, from_remote=False):
         """Runs until either a remote cache hit has been obtained, or a job has been submitted"""
         from .cache.transform_cache import TransformerLevel1

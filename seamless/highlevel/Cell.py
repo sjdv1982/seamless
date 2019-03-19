@@ -154,7 +154,10 @@ class Cell(Base):
         if parent._dummy:
             raise NotImplementedError
         elif hcell.get("UNTRANSLATED"):
-            raise AttributeError
+            if "TEMP" in hcell:
+                cell = self._get_cell()
+                return cell.checksum
+            return hcell.get("checksum")
         else:
             try:
                 cell = self._get_cell()
@@ -162,6 +165,17 @@ class Cell(Base):
                 import traceback; traceback.print_exc()
                 raise
             return cell.checksum
+
+    @checksum.setter
+    def checksum(self, checksum):
+        from . import set_hcell
+        from ..silk import Silk
+        hcell = self._get_hcell()
+        if hcell.get("UNTRANSLATED"):
+            hcell["checksum"] = checksum
+            return
+        cell = self._get_cell()
+        cell.set_checksum(checksum)
 
     @property
     def handle(self):
