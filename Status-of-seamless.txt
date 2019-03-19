@@ -1,5 +1,4 @@
 TODO: Before the presentation:
-Silk in computation graphs (including buffer)
 Store and load computation graphs:
 - Tests to "color" the graph (use Redis to fill in values)
 - Tests for remote deployment of jobs
