@@ -3,5 +3,7 @@ redisID=`docker run --rm -p 6379:6379 --name redis-container -v /tmp/redis:/data
 
 python3 simple-pi-redis.py
 python3 twopi-graph-redis.py
+python3 color-graph.py twopi.seamless twopi-colored.seamless
+
 
 docker stop $redisID

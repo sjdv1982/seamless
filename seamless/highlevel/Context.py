@@ -341,7 +341,6 @@ class Context:
 
         if ok:
             for path, child in self._children.items():
-                continue ###
                 if isinstance(child, Cell):
                     cell = child._get_cell()                    
                     cell._set_observer(child._set_checksum)
