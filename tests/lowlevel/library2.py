@@ -27,8 +27,10 @@ def load_pi(ctx):
     })
     ctx.code = libcell(".pi.code")
     ctx.code.connect(ctx.tf.code)
-    ctx.iterations = link(ctx.tf.iterations)
-    ctx.result = link(ctx.tf.pi)
+    ctx.iterations = cell()
+    ctx.iterations.connect(ctx.tf.iterations)
+    ctx.result = cell()
+    ctx.tf.pi.connect(ctx.result)
 
 def load_e(ctx):
     ctx.tf = transformer({
@@ -37,8 +39,10 @@ def load_e(ctx):
     })
     ctx.code = libcell(".e.code")
     ctx.code.connect(ctx.tf.code)
-    ctx.iterations = link(ctx.tf.iterations)
-    ctx.result = link(ctx.tf.e)
+    ctx.iterations = cell()
+    ctx.iterations.connect(ctx.tf.iterations)
+    ctx.result = cell()
+    ctx.tf.e.connect(ctx.result)
 
 def select(ctx, which):
     assert which in ("pi", "e")
@@ -49,7 +53,7 @@ def select(ctx, which):
     else:
         ctx.load = libcell(".e.load")
     ctx.load.connect(ctx.loader.code)
-    compute = ctx.loader.gen_context
+    compute = ctx.loader.ctx
     ctx.iterations = cell()
     ctx.iterations.connect(compute.iterations)
     ctx.result = cell()
@@ -57,10 +61,10 @@ def select(ctx, which):
 
 lctx = context(toplevel=True)
 lctx.readme = cell("text").set("Compute pi or e iteratively")
-lctx.pi = context(context=lctx,name="pi")
+lctx.pi = context()
 lctx.pi.code = cell("python").set(compute_pi)
 lctx.pi.load = cell("macro").set(load_pi)
-lctx.e = context(context=lctx,name="e")
+lctx.e = context()
 lctx.e.code = cell("python").set(compute_e)
 lctx.e.load = cell("macro").set(load_e)
 lctx.select = cell("macro").set(select)
@@ -79,8 +83,12 @@ def main():
     ctx.select_compute = libcell("compute.select")
     ctx.compute = macro(select_params, lib="compute")
     ctx.select_compute.connect(ctx.compute.code)
-    ctx.compute.which.cell().set("pi")
-    compute = ctx.compute.gen_context
+    ###ctx.compute.which.cell().set("pi") # TODO: malfunctioning
+    ### KLUDGE
+    ctx.which_cell = cell().set("pi")
+    ctx.which_cell.connect(ctx.compute.which)
+    ### /KLUDGE
+    compute = ctx.compute.ctx
     ctx.iterations = cell().set(10000)
     ctx.iterations.connect(compute.iterations)
     ctx.result = cell()
@@ -92,18 +100,19 @@ main()
 print(compute.readme.value)
 ctx.equilibrate()
 
-print(ctx.status())
+print(ctx.status)
 print(ctx.result.value)
 print()
 
 ctx.iterations.set(100)
-ctx.compute.which.cell().set("e")
+###ctx.compute.which.cell().set("e") # TODO: malfunctioning
+ctx.which_cell.set("e") # KLUDGE
 ctx.equilibrate()
-print(ctx.status())
+print(ctx.status)
 print(ctx.result.value)
 print()
 
-compute = ctx.compute.gen_context
+compute = ctx.compute.ctx
 print(compute.readme.value)
 lctx.readme.set("test")
 lib = library.build(lctx)
@@ -114,7 +123,7 @@ lctx.select.set(lctx.select.value + "    ctx.readme2 = libcell('.readme')")
 lib = library.build(lctx)
 library.register("compute", lib)
 ctx.equilibrate()
-compute = ctx.compute.gen_context
+compute = ctx.compute.ctx
 print(compute.readme2.value)
 print(ctx.result.value)
 print()

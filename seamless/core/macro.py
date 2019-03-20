@@ -99,8 +99,16 @@ class Macro(Worker):
                 #    
                 #        exec(code_object, self.namespace)
                 inputs = ["ctx"] +  list(values.keys())
-                print("Execute macro")
-                with library.bind(self.lib):
+                macro = self
+                while 1:
+                    lib = macro.lib
+                    if lib is not None:
+                        break
+                    macro = macro._context()._macro
+                    if macro is None:
+                        break
+                print("Execute macro", lib)
+                with library.bind(lib):
                     exec_code(code, str(self), self.namespace, inputs, None)                
                 if self.namespace["ctx"] is not unbound_ctx:
                     raise Exception("Macro must return ctx")
