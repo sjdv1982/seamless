@@ -113,24 +113,14 @@ class CacheTaskManager:
         if future is None:
             return None
         key = ("transformer_result", hlevel1)
-        def resultfunc(future):
-            checksum = future.result()
-            if checksum is not None:
-                for transform_cache in transform_caches:
-                    transform_cache.set_result(hlevel1, checksum)
-        return self.schedule_task(key, future, 1, resultfunc=resultfunc)
+        return self.schedule_task(key, future, 1)
 
     def remote_transform_result_level2(self, hlevel2, origin=None):
         future = run_multi_remote(remote_transformer_result_level2_servers, hlevel2, origin)
         if future is None:
             return None
         key = ("transformer_result_level2", hlevel2)
-        def resultfunc(future):
-            checksum = future.result()
-            if checksum is not None:
-                for transform_cache in transform_caches:
-                    transform_cache.set_result_level2(hlevel2, checksum)
-        return self.schedule_task(key, future, 1, resultfunc=resultfunc)
+        return self.schedule_task(key, future, 1)
 
     def destroy(self):
         tasks = list(self.tasks.values())

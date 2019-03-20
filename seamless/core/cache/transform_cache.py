@@ -55,7 +55,7 @@ class TransformerLevel1:
             for k,v in expr.items():
                 setattr(expression, k, v)
             expressions[key] = expression
-        return cls(expressions, output_name)
+        return cls(expressions, None, output_name)
 
     def get_hash(self):    
         return self._hash

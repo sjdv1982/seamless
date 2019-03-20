@@ -132,10 +132,13 @@ class Manager:
                     if result is not None:
                         self.set_transformer_result(tf_level1, None, None, result, False)
                         return
-                try:                    
+                try:
                     tf_level2 = await tcache.build_level2(tf_level1)
-                except ValueError:
+                except (ValueError, CacheMissError):
                     pass
+                except:
+                    import traceback
+                    traceback.print_exc()
                 else:                    
                     htf_level2 = tf_level2.get_hash()
                     result = tcache.get_result_level2(htf_level2)
@@ -148,7 +151,7 @@ class Manager:
                         result = task.future.result()
                         if result is not None:
                             self.set_transformer_result(tf_level1, tf_level2, None, result, False)
-                            return                
+                            return
                 task = None
                 job = self.jobscheduler.schedule_remote(tf_level1, count)
                 if job is not None:
@@ -401,8 +404,9 @@ class Manager:
                     # TODO: dirty...
                     if subpath is None:
                         if not is_none and value is None:
-                           self.set_cell_checksum(cell, checksum) 
-                        self.set_cell(cell, value, subpath=None)
+                           self.set_cell_checksum(cell, checksum)
+                        else:
+                            self.set_cell(cell, value, subpath=None)
                     else:                        
                         monitor = cell._monitor
                         assert monitor is not None
@@ -423,7 +427,7 @@ class Manager:
             self.update_transformer_status(tf,full=False)
         if checksum is None: #result conforms to no cell (remote transformation, stream transformation, or subpath)
             checksum, buffer = protocol.calc_buffer(value)
-            self.value_cache.incref(checksum, buffer, has_auth=False) 
+            self.value_cache.incref(checksum, buffer, has_auth=False)
         tcache.set_result(hlevel1, checksum)
         if level2 is not None:
             tcache.set_result_level2(level2.get_hash(), checksum)

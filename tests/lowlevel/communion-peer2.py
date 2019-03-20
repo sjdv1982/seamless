@@ -41,6 +41,7 @@ print("Secret source code", ctx.code.checksum)
 
 ctx.equilibrate()
 print(ctx.status)
+print(ctx.result.checksum)
 print(ctx.result.value)
 
 communionserver.configure_master(value=False)

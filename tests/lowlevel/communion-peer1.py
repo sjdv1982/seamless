@@ -35,6 +35,7 @@ with macro_mode_on():
 ctx.equilibrate()
 print("Secret source code ", ctx.code.checksum, ctx._get_manager().value_get(bytes.fromhex(ctx.code.checksum)))
 print("hash verification  ", get_hash("c = a + b\n").hex())
+print(ctx.result.value)
 print(ctx.result.checksum)
 
 import asyncio
