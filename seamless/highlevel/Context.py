@@ -300,8 +300,9 @@ class Context:
             return
         if self._translating:
             raise Exception("Nested invocation of ctx.translate")
-        from ..core.macro_mode import get_macro_mode
-        assert not get_macro_mode()
+        ### TODO: check that current_macro is not part of self._ctx0
+        ###from ..core.macro_mode import get_macro_mode
+        ###assert not get_macro_mode()
         graph = self.get_graph(copy=False)
         try:
             self._translating = True

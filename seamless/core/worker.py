@@ -1,9 +1,9 @@
 import weakref
 from . import SeamlessBase
 
-def _cell_from_pin(self, celltype):
+def _cell_from_pin(self, celltype):    
     assert isinstance(self, (InputPin, EditPin))
-    from .cell import cell
+    from .cell import cell, Cell
     from .macro import Path
     manager = self._get_manager()
     my_cell = manager.cell_from_pin(self)
@@ -30,7 +30,9 @@ def _cell_from_pin(self, celltype):
                 my_cell = my_cell[0]
     if my_cell is None:
         return my_cell
-    if isinstance(my_cell, Path):
+    if isinstance(my_cell, Cell):
+        return my_cell
+    elif isinstance(my_cell, Path):
         return my_cell._cell
     else: # Accessor
         return my_cell.cell

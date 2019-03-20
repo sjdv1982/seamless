@@ -60,7 +60,7 @@ class ValueCache:
     """
     def __init__(self, manager):
         value_caches.add(self)
-        self.manager = weakref.ref(manager)
+        self.manager = weakref.ref(manager) if manager is not None else lambda: None
         self._buffer_cache = {} #buffer-checksum-to-(refcount, refcount, value)
         self._object_cache = WeakValueDictionary() #semantic-key-to-value
 
@@ -80,8 +80,8 @@ class ValueCache:
             - If a full item (with non-None buffer) is found, it is incref'ed
               (returns True)
         """
-        #print("INCREF", buffer_checksum.hex(), buffer)
-        item = self._buffer_cache.get(buffer_checksum)
+        #print("INCREF", buffer_checksum.hex(), buffer)        
+        item = self._buffer_cache.get(buffer_checksum)        
         if item is None:            
             if has_auth:
                 item = 1, 1, buffer
@@ -97,10 +97,12 @@ class ValueCache:
                 item = item[0] + 1, item[1] + 1, buffer
             else:
                 item = item[0], item[1] + 2, buffer
-        success = (buffer is not None)
-        tempref = functools.partial(self.decref, buffer_checksum, has_auth=False)
-        self.manager().temprefmanager.add_ref(tempref, 20.0)
-        self._buffer_cache[buffer_checksum] = item
+        success = (buffer is not None)                        
+        mgr = self.manager()
+        if mgr is not None:
+            tempref = functools.partial(self.decref, buffer_checksum, has_auth=False)
+            mgr.temprefmanager.add_ref(tempref, 20.0) 
+        self._buffer_cache[buffer_checksum] = item        
         redis_sinks.set_value(buffer_checksum, buffer)
 
         return success
@@ -141,6 +143,8 @@ class ValueCache:
             return item
 
     def get_buffer(self, checksum):
+        if checksum is None:
+            return None
         item = self._buffer_cache.get(checksum)
         if item is None or item[2] is None:
             item = None

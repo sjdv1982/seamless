@@ -26,6 +26,7 @@ Use ``Cell.status()`` to get its status.
     _default_access_mode = None
     _content_type = None
     _prelim_val = None
+    _prelim_checksum = None
     _unmounted = False
 
     _mount = None
@@ -62,6 +63,10 @@ Use ``Cell.status()`` to get its status.
              from_buffer=from_buffer, subpath=None, origin=ctx
             )
             self._prelim_val = None
+        if self._prelim_checksum is not None:
+            checksum = self._prelim_checksum
+            self._get_manager().set_cell_checksum(self, checksum)
+            self._prelim_checksum = None
 
     def __hash__(self):
         return self._counter

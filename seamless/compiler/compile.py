@@ -5,7 +5,7 @@ from .. import subprocess
 import numpy as np
 import os
 from copy import deepcopy
-from .get_hash import get_hash
+from ..get_hash import get_hash
 import shutil
 
 from threading import RLock

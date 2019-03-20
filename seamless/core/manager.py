@@ -165,11 +165,15 @@ class Manager:
 
     async def _schedule_transform_job(self, tf_level1, count, from_remote=False, from_stream=False):
         from .cache.transform_cache import TransformerLevel1
-        assert isinstance(tf_level1, TransformerLevel1)
+        assert isinstance(tf_level1, TransformerLevel1)        
         if tf_level1._stream_params is not None:
             return await self._schedule_transform_stream_job(tf_level1, count, from_remote=from_remote)
         tcache = self.transform_cache
-        tf_level2 = await tcache.build_level2(tf_level1)
+        try:
+            tf_level2 = await tcache.build_level2(tf_level1)
+        except CacheMissError as exc:
+            print("ERROR: build level 2, CacheMissError:", exc)
+            raise
         tcache.set_level2(tf_level1, tf_level2)
         result = tcache.result_hlevel2.get(tf_level2.get_hash())
         if result is not None:            
@@ -558,7 +562,7 @@ class Manager:
                 if buffer is None:
                     is_none = True
             if is_none:
-                raise CacheMissError("Checksum not in value cache")            
+                raise CacheMissError("Checksum not in value cache", checksum.hex())            
             semantic_value, _ = self.cache_expression(expression, buffer)
         return semantic_value
 
@@ -923,7 +927,7 @@ class Manager:
 
     def _verify_connect(self, source, target):
         from .macro import Path
-        assert source._get_manager() is self
+        assert source._get_manager() is self, source._get_manager()
         assert source._root() is target._root()
         source_macro = source._get_macro()
         target_macro = target._get_macro()
@@ -1632,7 +1636,9 @@ class Manager:
     def get_value_from_checksum(self, checksum):
         if checksum is None:
             return None
-        buffer_item = self.value_cache.get_buffer(checksum)
+        buffer_item = library.value_cache.get_buffer(checksum)
+        if buffer_item is None:
+            buffer_item = self.value_cache.get_buffer(checksum)
         if buffer_item is None:
             cache_task = self.cache_task_manager.remote_value(checksum)
             if cache_task is None:
@@ -1642,7 +1648,9 @@ class Manager:
         return buffer_item
         
     async def get_value_from_checksum_async(self, checksum):
-        buffer_item = self.value_cache.get_buffer(checksum)        
+        buffer_item = library.value_cache.get_buffer(checksum)
+        if buffer_item is None:
+            buffer_item = self.value_cache.get_buffer(checksum)        
         if buffer_item is None:
             cache_task = self.cache_task_manager.remote_value(checksum)            
             if cache_task is None:
@@ -1844,3 +1852,5 @@ class Manager:
 
     def __del__(self):
         self.destroy(from_del=True)
+
+from . import library

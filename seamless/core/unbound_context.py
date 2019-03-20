@@ -170,7 +170,8 @@ class UnboundContext(SeamlessBase):
 
     def _get_manager(self):
         if self._bound:
-           return self._bound._get_manager() 
+           return self._bound._get_manager()
+        assert self._manager is not None
         return self._manager
 
     def mount(self, path=None, mode="rw", authority="cell", persistent=False):

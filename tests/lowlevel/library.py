@@ -18,8 +18,10 @@ def load(ctx):
     })
     ctx.code = libcell(".code")
     ctx.code.connect(ctx.tf.code)
-    ctx.iterations = link(ctx.tf.iterations)
-    ctx.result = link(ctx.tf.pi)
+    ctx.iterations = cell()
+    ctx.iterations.connect(ctx.tf.iterations)
+    ctx.result = cell()
+    ctx.tf.pi.connect(ctx.result)
 
 lctx = context(toplevel=True)
 lctx.readme = cell("text").set("Compute pi iteratively")
@@ -34,7 +36,7 @@ ctx.load_compute = libcell("compute.load")
 
 ctx.compute = macro({}, lib="compute")
 ctx.load_compute.connect(ctx.compute.code)
-compute = ctx.compute.gen_context
+compute = ctx.compute.ctx
 print(compute.readme.value)
 ctx.iterations = cell().set(10000)
 ctx.iterations.connect(compute.iterations)
@@ -44,7 +46,7 @@ print()
 compute.result.connect(ctx.result)
 ctx.equilibrate()
 
-print(ctx.status())
+print(ctx.status)
 print(ctx.result.value)
 print()
 
@@ -59,5 +61,5 @@ library.register("compute", lib)
 
 print(compute.readme.value)
 ctx.equilibrate()
-print(ctx.status())
+print(ctx.status)
 print(ctx.result.value)

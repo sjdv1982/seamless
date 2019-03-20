@@ -5,8 +5,9 @@ import weakref
 from .cell import Cell
 from .worker import Worker, InputPin, OutputPin
 from .protocol import content_types
+from . import library
 from .injector import macro_injector as injector
-from .unbound_context import UnboundContext
+from .unbound_context import UnboundContext, UnboundManager
 from .macro_mode import macro_mode_on, curr_macro, get_macro_mode
 from .cached_compile import exec_code
 
@@ -60,8 +61,6 @@ class Macro(Worker):
 
     def _execute(self):
         from .context import Context
-        if self.lib is not None:
-            raise NotImplementedError ### cache branch
         manager = self._get_manager()
         values = {}        
         for pinname, accessor in self.input_dict.items():            
@@ -84,6 +83,8 @@ class Macro(Worker):
             self._paths = weakref.WeakValueDictionary()
             with macro_mode_on(self):
                 unbound_ctx = UnboundContext(root=self._root())
+                unbound_ctx._manager = UnboundManager(unbound_ctx)                
+                assert unbound_ctx._get_manager() is not None
                 self._unbound_gen_context = unbound_ctx
                 keep = {k:v for k,v in self.namespace.items() if k.startswith("_")}
                 self.namespace.clear()
@@ -95,11 +96,12 @@ class Macro(Worker):
                 self.namespace.update(values)
                 #workspace = self if self.injected_modules else None
                 #with injector.active_workspace(workspace):
-                #    with library.bind(self.lib):
+                #    
                 #        exec(code_object, self.namespace)
                 inputs = ["ctx"] +  list(values.keys())
                 print("Execute macro")
-                exec_code(code, str(self), self.namespace, inputs, None)                
+                with library.bind(self.lib):
+                    exec_code(code, str(self), self.namespace, inputs, None)                
                 if self.namespace["ctx"] is not unbound_ctx:
                     raise Exception("Macro must return ctx")
 
@@ -221,6 +223,9 @@ class Path:
     def _get_macro(self):
         return self._macro
 
+    def _get_manager(self):
+        return self._root()._get_manager()
+
     def _root(self):
         from .unbound_context import UnboundManager
         if self._macro is not None:
@@ -294,6 +299,8 @@ def path(obj):
     try:
         try:
             manager = obj._get_manager()
+            if not isinstance(manager, UnboundManager):
+                manager = obj._manager
         except AttributeError:
             manager = obj._manager
         if not isinstance(manager, UnboundManager):
@@ -352,13 +359,14 @@ def macro(params, *, lib=None):
 
 from . import cell, transformer, pytransformercell, \
  reactor, pyreactorcell, pymacrocell, plaincell, csoncell,  \
- arraycell, mixedcell, pythoncell
+ arraycell, mixedcell, pythoncell, ipythoncell
+from .library import libcell, libmixedcell
 from .structured_cell import StructuredCell
 from .context import context
 from .link import link
 names = ("cell", "transformer", "context", "pytransformercell", "link", 
  "reactor", "pyreactorcell", "pymacrocell", "plaincell", "csoncell",
- "mixedcell", "arraycell", "pythoncell") #TODO: , "ipythoncell", "libcell", "libmixedcell") ### cache branch
+ "mixedcell", "arraycell", "pythoncell", "ipythoncell", "libcell", "libmixedcell")
 names += ("StructuredCell",)
 names = names + ("macro", "path")
 Macro.default_namespace = {n:globals()[n] for n in names}
