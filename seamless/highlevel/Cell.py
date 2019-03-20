@@ -136,8 +136,8 @@ class Cell(Base):
         hcell = self._get_hcell()
         if parent._dummy:
             raise NotImplementedError
-        elif hcell.get("UNTRANSLATED"):
-            return hcell.get("TEMP")
+        elif hcell.get("UNTRANSLATED") and "TEMP" in hcell:
+            return hcell["TEMP"]
         else:
             try:
                 cell = self._get_cell()

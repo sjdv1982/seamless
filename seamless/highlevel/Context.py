@@ -294,8 +294,6 @@ class Context:
             return
         assert self._as_lib is None or self._from_lib is None
         is_lib = (self._as_lib is not None)
-        if is_lib:
-            raise NotImplementedError ### cache branch
         if not force and not self._needs_translation:
             return
         if self._translating:
@@ -401,20 +399,12 @@ class Context:
         assert not self._dummy
         assert self._as_lib is not None #must be a library
         libitem = self._as_lib
-        root = self._ctx0._get_manager()._root()
-        old_cell_update_hook = root._cell_update_hook
-        try:
-            root._cell_update_hook = None
-            result = self.equilibrate(timeout)
-            ctx = self._ctx0
-            libname = self._as_lib.name
-            partial_authority = register_library(ctx, self, libname)
-            if partial_authority != libitem.partial_authority:
-                libitem.needs_update = True
-                libitem.partial_authority = partial_authority
-            libitem.update()
-        finally:
-            root._cell_update_hook = old_cell_update_hook
+        result = self.equilibrate(timeout)
+        ctx = self._gen_context
+        libname = self._as_lib.name
+        register_library(ctx, self, libname)
+        libitem.needs_update = True
+        libitem.update()
 
     def _library_update_hook(self, cell, value):
         if self._translating:

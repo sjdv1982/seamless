@@ -278,6 +278,16 @@ class UnboundContext(SeamlessBase):
             elif com == "set cell checksum":
                 cell, checksum = args
                 manager.set_cell_checksum(cell, checksum)
+                if hasattr(cell, "_monitor"):
+                    monitor = cell._monitor
+                    if monitor is not None:  
+                        buffer_item = manager.get_value_from_checksum(checksum)
+                        if buffer_item is not None:
+                            _, _, buffer = buffer_item
+                            accessor = manager.get_default_accessor(cell)
+                            expression = accessor.to_expression(checksum)
+                            value, _ = manager.cache_expression(expression, buffer)
+                            monitor.set_path((), value)
             elif com == "set cell label":
                 cell, label = args
                 manager.set_cell_label(cell, label)

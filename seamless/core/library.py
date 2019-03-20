@@ -29,7 +29,7 @@ def _update_old_keys(oldkeys, oldlib, lib, on_macros):
                     exists = True
             if exists:
                 if old_checksum != checksum:
-                    value_cache.decref(old_checksum, has_auth=True)
+                    ###value_cache.decref(old_checksum, has_auth=True) #TODO: malfunctioning...
                     oldcell._get_manager().set_cell_checksum(oldcell, checksum)
             else:
                 if oldcell not in _boundcells:
@@ -100,7 +100,7 @@ def _libcell(path, mandated_celltype, *args, **kwargs):
         boundcell = False
     assert libname in _lib, libname #library name must have been registered
     lib = _lib[libname]
-    assert key in lib, key #library key must be in library
+    assert key in lib, (key, list(lib.keys())) #library key must be in library
     celltype, checksum = lib[key]
     assert mandated_celltype is None or mandated_celltype == celltype, (mandated_celltype, celltype)
     c = make_cell(celltype, *args, **kwargs)
@@ -118,15 +118,8 @@ def lib_has_path(libname, path):
     #print("lib_has_path", libname, path, path in _lib[libname], _lib[libname])
     return path in _lib[libname]
 
-def libcell(path):
-    return _libcell(path, None)
-
-def libmixedcell(path, *, storage_cell, form_cell):
-    return _libcell(
-      path, "mixed",
-     storage_cell= storage_cell,
-     form_cell=form_cell
-    )
+def libcell(path, celltype=None):
+    return _libcell(path, celltype)
 
 from .cache.value_cache import ValueCache
 value_cache = ValueCache(None)

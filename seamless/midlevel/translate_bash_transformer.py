@@ -1,5 +1,5 @@
 from seamless.core import cell as core_cell, link as core_link, \
- libcell, libmixedcell, transformer, reactor, context, macro, StructuredCell
+ libcell, transformer, reactor, context, macro, StructuredCell
 
 from seamless.core import library
 

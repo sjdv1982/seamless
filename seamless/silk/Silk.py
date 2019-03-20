@@ -542,6 +542,7 @@ class Silk(SilkBase):
         return self
 
     def _setitem(self, attr, value):
+        from ..mixed.Monitor import Monitor
         buffer = (self._buffer is not None)
         if buffer:
             data = self._buffer
@@ -554,6 +555,8 @@ class Silk(SilkBase):
         if raw_data is None:
             data = self._set_value_simple({}, buffer)
             schema_updated |= self._infer_type(schema, policy, {})
+        elif isinstance(data, Monitor):  ### TODO: kludge
+            data = data.get_path(())
         data[attr] = value
         value_schema = None
         if isinstance(value, Silk):
@@ -885,6 +888,11 @@ class Silk(SilkBase):
                 data, wdata = _prepare_for_validation(data)
                 if wdata is None and accept_none:
                     return
+                from ..mixed.Monitor import Monitor
+                if isinstance(data, Monitor): ### TODO: kludge
+                    data = data.get_path()
+                if isinstance(data, MixedBase): #hackish (see _prepare_for_validation)
+                    data = data.value
                 schema_validator(self._schema).validate(data)
             else:
                 schema = self._schema

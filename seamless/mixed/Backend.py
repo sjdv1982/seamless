@@ -384,17 +384,7 @@ class CellBackend(Backend):
             updated = self._deleted_paths
         else:
             deleted = False
-            updated = self._updated_paths
-        updated2 = set()
-        for path in updated:
-            for n in range(len(path)):
-                p = path[:n]
-                if p not in updated:
-                    updated2.add(p)
-        # TODO: make a meaningful distinction between updated and updated2
-        # updated have independent values, whereas updated2 only changed b/c of children
-        # This makes only sense with cache tree depth
-        updated = updated.union(updated2)
+            updated = self._updated_paths.copy()
         data = self._tempdata
         self._tempdata = None
         self._tempform = None
@@ -404,13 +394,32 @@ class CellBackend(Backend):
         manager = self._cell._get_manager()
         ccache = manager.cell_cache
         cell = self._cell
-        for path in sorted(updated, key=lambda p:len(p)):
-            auths = ccache.cell_to_authority[cell]
-            if path in auths: 
-                auth = auths[path]
-                has_auth = (auth != False)
-                manager._update_status(
-                    self._cell, (not deleted), 
-                    has_auth=has_auth, origin=None,
-                    cell_subpath=path
-                )
+        auths = ccache.cell_to_authority[cell]
+        authkeys = [p if p is not None else () for p in auths]
+        path_updated = set()
+        path_updated2 = set()
+        for path in authkeys:
+            if path in updated:
+                path_updated.add(path)
+                continue
+            for up_path in updated:
+                m = min(len(path), len(up_path))
+                if up_path[:m] == path[:m]:
+                    path_updated2.add(path)
+                    break
+        # There is a meaningful distinction between path_updated and path_updated2
+        # path_updated have independent values, whereas path_updated2 only changed b/c of children
+
+        path_updated_all = path_updated.union(path_updated2)
+        for path in sorted(authkeys, key=lambda p:len(p)):
+            if path not in path_updated_all:
+                continue
+            if path == ():
+                path = None                 
+            auth = auths[path]
+            has_auth = (auth != False)
+            manager._update_status(
+                self._cell, (not deleted), 
+                has_auth=has_auth, origin=None,
+                cell_subpath=path
+            )

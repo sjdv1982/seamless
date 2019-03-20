@@ -85,7 +85,10 @@ Use ``Cell.status()`` to get its status.
         if list(status.keys()) == [None]:
             return status[None]
         else:
-            raise NotImplementedError ### cache branch
+            result = {}
+            for k,v in status.items():
+                result[k] = str(v) 
+            return result
 
     @property
     def checksum(self):

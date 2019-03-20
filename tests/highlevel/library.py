@@ -14,6 +14,7 @@ ctx.myresult = ctx.transform
 print(ctx.myresult.value)
 
 ctx.transform.b = 777
+ctx.translate(force=True)
 stdlib.triple_it = ctx
 
 print("START")
@@ -24,6 +25,7 @@ ctx2.equilibrate()
 
 print(ctx2.sub.myresult.value)
 print(ctx2.sub2.myresult.value)
+print(ctx2.sub.transform.a.value)
 print(ctx2.sub.transform.b.value)
 
 print("UPDATE...")
@@ -32,7 +34,6 @@ def double_it(a, **kwargs):
     return 2 * a
 stdlib.triple_it.transform.code = double_it
 stdlib.triple_it.register_library()
-print(stdlib.triple_it.myresult.value)
 
 print("UPDATE")
 ctx2.equilibrate()

@@ -178,12 +178,12 @@ class Macro:
 
 from .. import cell, transformer, pytransformercell, link,  path, \
  reactor, pyreactorcell, pymacrocell, jsoncell, csoncell, mixedcell, \
- arraycell, mixedcell, signal, pythoncell, ipythoncell, libcell, libmixedcell
+ arraycell, mixedcell, signal, pythoncell, ipythoncell, libcell
 from ..structured_cell import StructuredCell, BufferWrapper
 from ..context import context
 names = ("cell", "transformer", "context", "pytransformercell", "link", 
  "path", "reactor", "pyreactorcell", "pymacrocell", "plaincell", "csoncell",
- "mixedcell", "arraycell", "pythoncell", "ipythoncell", "libcell", "libmixedcell")
+ "mixedcell", "arraycell", "pythoncell", "ipythoncell", "libcell")
 names += ("StructuredCell", "BufferWrapper")
 names = names + ("macro",)
 Macro.default_namespace = {n:globals()[n] for n in names}

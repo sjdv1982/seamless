@@ -5,6 +5,8 @@ from ..mixed import MixedBase, MonitorTypeError, Monitor, CellBackend
 #from ..mixed.get_form import get_form
 #from ..mixed.io.util import is_identical_debug
 
+print("WARNING: StructuredCell.buffer is disabled")
+
 import weakref
 import json
 import traceback
@@ -145,7 +147,7 @@ class StructuredCell(SeamlessBase):
         from .cell import MixedCell
         super().__init__()
         self.name = name
-
+        
         assert isinstance(data, MixedCell)
         self.data = data
         self._plain = plain
@@ -157,6 +159,7 @@ class StructuredCell(SeamlessBase):
             self._is_silk = True
         self.schema = schema
 
+        buffer = None ### print("WARNING: StructuredCell.buffer is disabled")
         if buffer is not None:
             assert self._is_silk
             assert isinstance(buffer, MixedCell)
@@ -255,7 +258,8 @@ class StructuredCell(SeamlessBase):
         manager = cell._get_manager()
         if not isinstance(manager, UnboundManager):
             if self._is_silk and self.buffer is not None:                
-                value = manager.get_value_from_checksum(checksum)
+                buffer_item = manager.get_value_from_checksum(checksum)
+                raise NotImplementedError ### cache branch (this is not correct)
                 self._silk.set(value)
         else:
             cell.set_checksum(checksum)

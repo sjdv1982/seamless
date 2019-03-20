@@ -94,7 +94,7 @@ from . import cell as cell_module
 from .cell import Cell, cell
 from .cell import textcell, pythoncell, pytransformercell, pymacrocell, \
  pyreactorcell, ipythoncell, plaincell, csoncell, arraycell, mixedcell
-from .library import libcell, libmixedcell
+from .library import libcell
 from . import context as context_module
 from .context import Context, context
 from .worker import Worker

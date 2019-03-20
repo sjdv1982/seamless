@@ -1,5 +1,5 @@
 from seamless.core import cell as core_cell, link as core_link, \
- libcell, libmixedcell, transformer, reactor, context, macro, StructuredCell
+ libcell, transformer, reactor, context, macro, StructuredCell
 
 def translate_py_transformer(node, root, namespace, inchannels, outchannels, lib_path00, is_lib):
     #TODO: simple translation, without a structured cell
@@ -15,8 +15,6 @@ def translate_py_transformer(node, root, namespace, inchannels, outchannels, lib
     if node["language"] == "ipython":
         assert result_name == "result"
     input_name = node["INPUT"]
-    if len(inchannels):
-        lib_path0 = None #partial authority or no authority; no library update in either case
     for c in inchannels:
         assert (not len(c)) or c[0] != result_name #should have been checked by highlevel
 

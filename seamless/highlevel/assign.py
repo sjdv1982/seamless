@@ -149,8 +149,8 @@ def _assign_context2(ctx, new_nodes, new_connections, path):
     new_nodes = deepcopy(new_nodes)
     new_connections = deepcopy(new_connections)
     for node in new_nodes:
-        node["path"] += p
-        nodes[pp] = node
+        pp = path + node["path"]
+        node["path"] = pp
         nodetype = node["type"]
         node["UNTRANSLATED"] = True
         if nodetype == "cell":
@@ -161,6 +161,7 @@ def _assign_context2(ctx, new_nodes, new_connections, path):
             pass
         else:
             raise TypeError(nodetype)
+        nodes[pp] = node
     for con in new_connections:
         con["source"] = path + con["source"]
         con["target"] = path + con["target"]

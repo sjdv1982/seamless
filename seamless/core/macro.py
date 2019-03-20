@@ -368,13 +368,13 @@ def macro(params, *, lib=None):
 from . import cell, transformer, pytransformercell, \
  reactor, pyreactorcell, pymacrocell, plaincell, csoncell,  \
  arraycell, mixedcell, pythoncell, ipythoncell
-from .library import libcell, libmixedcell
+from .library import libcell
 from .structured_cell import StructuredCell
 from .context import context
 from .link import link
 names = ("cell", "transformer", "context", "pytransformercell", "link", 
  "reactor", "pyreactorcell", "pymacrocell", "plaincell", "csoncell",
- "mixedcell", "arraycell", "pythoncell", "ipythoncell", "libcell", "libmixedcell")
+ "mixedcell", "arraycell", "pythoncell", "ipythoncell", "libcell")
 names += ("StructuredCell",)
 names = names + ("macro", "path")
 Macro.default_namespace = {n:globals()[n] for n in names}

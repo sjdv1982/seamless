@@ -414,9 +414,9 @@ class Manager:
                     else:                        
                         monitor = cell._monitor
                         assert monitor is not None
-                        if value is None:
+                        if value is None and not is_none:
                             accessor = self.get_default_accessor(cell)
-                            accessor.subpath = subpath
+                            accessor.subpath = subpath                            
                             expression = accessor.to_expression(checksum)
                             value = self.get_expression(expression)
                             if cell._celltype == "mixed":
@@ -562,7 +562,8 @@ class Manager:
                 if buffer is None:
                     is_none = True
             if is_none:
-                raise CacheMissError("Checksum not in value cache", checksum.hex())            
+                checksum_hex = checksum.hex() if checksum is not None else None
+                raise CacheMissError("Checksum not in value cache", checksum_hex)            
             semantic_value, _ = self.cache_expression(expression, buffer)
         return semantic_value
 
@@ -621,12 +622,6 @@ class Manager:
             ccache.cell_to_authority[cell][path] = has_auth
             ccache.cell_to_accessors[cell][path] = []
             self.status[cell][path] = Status("cell")
-
-    def register_structured_cell(self, structured_cell):
-        ccache = self.cell_cache
-        cell = structured_cell().data
-        assert cell in ccache.cell_to_authority
-        raise NotImplementedError ### cache branch; self._register_cell_paths with authority info
 
     def register_transformer(self, transformer):
         tcache = self.transform_cache

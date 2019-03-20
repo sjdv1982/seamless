@@ -109,6 +109,12 @@ class Monitor:
     def del_path(self, path):
         self.backend.del_path(path)
 
+    def __str__(self):
+        return str(self.get_path())
+
+    def __repr__(self):
+        return repr(self.get_path())
+
 from .MixedObject import MixedObject
 from .MixedDict import MixedDict, MixedNumpyStruct
 from .MixedList import MixedList, MixedNumpyArray

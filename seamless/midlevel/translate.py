@@ -10,7 +10,7 @@ from collections import OrderedDict
 from functools import partial
 
 from seamless.core import cell as core_cell, link as core_link, \
- libcell, libmixedcell, transformer, reactor, context, macro, StructuredCell
+ libcell, transformer, reactor, context, macro, StructuredCell
 
 from . import copying
 from .util import as_tuple, get_path, find_channels, find_editchannels, build_structured_cell, try_set
@@ -135,7 +135,6 @@ def translate_cell(node, root, namespace, inchannels, outchannels, editchannels,
             child = core_link(link_target)
         elif lib_path0:
             lib_path + lib_path0 + "." + name
-            if ct == "mixed": raise NotImplementedError #libmixedcell + cell args
             child = libcell(lib_path)
             #TODO: allow fork to be set
         else:
@@ -250,7 +249,7 @@ def translate(graph, ctx, from_lib_paths, is_lib):
     for path in sorted(contexts.keys(), key=lambda k:len(k)):
         parent = get_path(ctx, path[:-1], None, is_target=False)
         name = path[-1]
-        c = context(context=parent, name=name)
+        c = context()
         setattr(parent, name, c)
         # No need to add it to namespace, as long as the low-level graph structure is imitated
 
