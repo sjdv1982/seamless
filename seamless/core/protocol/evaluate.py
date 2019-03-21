@@ -93,7 +93,7 @@ def evaluate_from_buffer(expression, buffer):
         pass # TODO?
     if expression.subpath is not None:
         try:                        
-            result = semantic_obj            
+            result = semantic_obj
             for path in expression.subpath:
                 result = result[path]
             result2 = deserialize(
@@ -104,8 +104,8 @@ def evaluate_from_buffer(expression, buffer):
             )
             _, _, obj, semantic_obj, semantic_checksum = result2
         except:
-            if result is not None and result != {}:  ###TODO: dirty 
-                import traceback;traceback.print_exc()  ###TODO
+            ###if result is not None and result != {}:  ###TODO: dirty 
+            ###    import traceback;traceback.print_exc()  ###TODO
             semantic_checksum = None
             semantic_obj = None
     semantic_key = SemanticKey(

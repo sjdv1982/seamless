@@ -215,7 +215,7 @@ class Cell(Base):
 
     @celltype.setter
     def celltype(self, value):
-        assert value in ("structured", "text", "code", "json", "mixed", "array", "signal"), value
+        assert value in ("structured", "text", "code", "plain", "mixed", "array"), value
         hcell = self._get_hcell()
         if hcell.get("UNTRANSLATED"):
             cellvalue = hcell.get("TEMP")

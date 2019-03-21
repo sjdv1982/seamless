@@ -50,6 +50,11 @@ def fill_checksum(manager, node, temp_path):
             datatype = node["datatype"]
     else:
         datatype = celltype
+        if datatype == "code":
+            if node["language"] == "python":
+                datatype = "python"
+            else:
+                datatype = "text"
     temp_value = node.get("TEMP")
     if temp_path:
         if isinstance(temp_value, dict):

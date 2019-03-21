@@ -3,7 +3,7 @@ Store and load computation graphs:
 X Tests to "color" the graph (use Redis to fill in values)
 X Tests for remote deployment of jobs
 X Test for remote execution of a graph
-- Get Bash transformer working again
+X 01h00 Get Bash transformer working again (fix 2 bugsF)
 - Docker transformer (DELAY)
 - Conversions for Galaxy, Mobyle, SnakeMake (DELAY)
 - Simple protein-based example

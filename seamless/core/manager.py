@@ -389,7 +389,7 @@ class Manager:
             tstatus = self.status[tf]
             tstatus.exec = "FINISHED"
             tstatus.data = "OK"
-            tstatus.auth = "OBSOLETE" # To provoke an update
+            tstatus.auth = "OBSOLETE" # To provoke an update            
             for cell, subpath in tcache.transformer_to_cells[tf]:
                 if isinstance(cell, Link):
                     cell = cell.linked()
@@ -421,10 +421,10 @@ class Manager:
                             value = self.get_expression(expression)
                             if cell._celltype == "mixed":
                                 _, _, value = value
-                        monitor.set_path(subpath, value)                        
+                        monitor.set_path(subpath, value)
                     if checksum is None and value is not None and subpath is not None:
                         checksum = self.cell_cache.cell_to_buffer_checksums[cell]
-                else:
+                else:                    
                     if cell._destroyed:
                         raise Exception(cell.name)
                     self.set_cell_checksum(cell, checksum)
@@ -1268,7 +1268,7 @@ class Manager:
                 same = False
         if same:
             if source.celltype != target.celltype:                
-                print("Manager.py, line 1087: kludge for cson-plain types")
+                print("Manager.py, line 1271: kludge for cson-plain types")
                 assert source.celltype == "cson" and target.celltype == "plain"
                 expression = source.to_expression(checksum)
                 value = self.get_expression(expression)
@@ -1279,7 +1279,7 @@ class Manager:
                     source_content_type="cson" #bad
                 )
                 target_buffer, target_checksum, target_obj, target_semantic_obj, target_semantic_checksum = result
-                assert target.subpath is None
+                assert target.subpath is None                
                 self.set_cell(
                     target.cell, target_semantic_obj,
                     subpath = None,
@@ -1371,7 +1371,7 @@ class Manager:
                 target_accessor = target
                 tcell = target.cell
             assert tcell is not cell, (source, target, source.cell, cell)
-            if full:                
+            if full:                             
                 self.update_accessor_accessor(source, target_accessor)
             else:
                 self._propagate_status(

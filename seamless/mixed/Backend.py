@@ -395,7 +395,7 @@ class CellBackend(Backend):
         ccache = manager.cell_cache
         cell = self._cell
         auths = ccache.cell_to_authority[cell]
-        authkeys = [p if p is not None else () for p in auths]
+        authkeys = [p for p in auths if p is not None]
         path_updated = set()
         path_updated2 = set()
         for path in authkeys:
@@ -414,10 +414,8 @@ class CellBackend(Backend):
         for path in sorted(authkeys, key=lambda p:len(p)):
             if path not in path_updated_all:
                 continue
-            if path == ():
-                path = None                 
             auth = auths[path]
-            has_auth = (auth != False)
+            has_auth = (auth != False)            
             manager._update_status(
                 self._cell, (not deleted), 
                 has_auth=has_auth, origin=None,

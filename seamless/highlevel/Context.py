@@ -232,7 +232,7 @@ class Context:
             ctx = self._ctx0
             ctx.mount(**self._mount)
             mountmanager.add_context(ctx,(), False)
-            mountmanager.paths[ctx].add(path) #kludge
+            mountmanager.paths[ctx._root()].add(path) #kludge
         self._translate()
 
     def mount_graph(self, mountdir, persistent=None):

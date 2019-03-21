@@ -524,6 +524,7 @@ class Transformer(Base):
             if value is not None:
                 assert isinstance(value, str), type(value)
                 cell["TEMP"] = value
+                cell["UNTRANSLATED"] = True
         else:
             inp = getattr(tf, htf["INPUT"])
             p = getattr(inp.value, attr)

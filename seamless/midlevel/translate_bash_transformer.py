@@ -15,13 +15,11 @@ def translate_bash_transformer(node, root, namespace, inchannels, outchannels, l
     parent = get_path(root, node["path"][:-1], None, None)
     name = node["path"][-1]
     lib_path0 = lib_path00 + "." + name if lib_path00 is not None else None
-    ctx = context(context=parent, name=name)
+    ctx = context(toplevel=False)
     setattr(parent, name, ctx)
 
     result_name = node["RESULT"]
     input_name = node["INPUT"]
-    if len(inchannels):
-        lib_path0 = None #partial authority or no authority; no library update in either case
     for c in inchannels:
         assert (not len(c)) or c[0] != result_name #should have been checked by highlevel
 
