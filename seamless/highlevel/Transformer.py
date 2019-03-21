@@ -241,9 +241,11 @@ class Transformer(Base):
                 value = value.data
             if "TEMP" not in htf or htf["TEMP"] is None:
                 htf["TEMP"] = {}
+            if "input" not in htf["TEMP"]:
+                htf["TEMP"]["input"] = {}
             if attr == "code" and callable(value):
                 code, _, _ = parse_function_code(value)
-            htf["TEMP"][attr] = value
+            htf["TEMP"]["input"][attr] = value
             self._parent()._translate()
             return
 
@@ -554,7 +556,7 @@ class Transformer(Base):
         htf = self._get_htf()
         if htf.get("checksum") is None:
             htf["checksum"] = {}
-        htf["checksum"]["INPUT"] = checksum
+        htf["checksum"]["input"] = checksum
 
     def _observe_code(self, checksum):
         htf = self._get_htf()
@@ -566,13 +568,13 @@ class Transformer(Base):
         htf = self._get_htf()
         if htf.get("checksum") is None:
             htf["checksum"] = {}
-        htf["checksum"]["RESULT"] = checksum
+        htf["checksum"]["result"] = checksum
 
     def _observe_schema(self, checksum):
         htf = self._get_htf()
         if htf.get("checksum") is None:
             htf["checksum"] = {}
-        htf["checksum"]["SCHEMA"] = checksum
+        htf["checksum"]["schema"] = checksum
 
     def _set_observers(self):        
         htf = self._get_htf()

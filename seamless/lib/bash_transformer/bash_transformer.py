@@ -19,7 +19,6 @@ if __name__ == "__main__":
     ctx.executor.code = ctx.executor_code
     ctx.executor.bashcode = ctx.bashcode
     ctx.executor.testdata = ctx.testdata    
-    ctx.executor.pins = ["lines", "testdata"] ### TODO! duplication should not be needed
     ctx.executor.lines = 3
     ctx.result = ctx.executor
     ctx.equilibrate()

@@ -73,8 +73,8 @@ def translate_py_transformer(node, root, namespace, inchannels, outchannels, lib
     checksum = node.get("checksum", {})
     if "code" in checksum:
         ctx.code.set_checksum(checksum["code"])
-    if "INPUT" in checksum:
-        inp.set_checksum(checksum["INPUT"])
+    if "input" in checksum:
+        inp.set_checksum(checksum["input"])
     namespace[node["path"] + ("code",), True] = ctx.code, node
     namespace[node["path"] + ("code",), False] = ctx.code, node
 
