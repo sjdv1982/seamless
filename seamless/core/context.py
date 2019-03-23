@@ -58,6 +58,9 @@ name: str
             import traceback            
             self._EXC = "\n".join(traceback.format_stack())
         '''
+        global Macro
+        if Macro is None:
+            from .macro import Macro
         super().__init__()
         if toplevel:
             self._toplevel = True
@@ -174,11 +177,11 @@ name: str
         return super()._root()
 
     @property
-    def path(self):
-        from .macro import Macro
+    def path(self):        
+        if self._context is not None:
+            return super().path        
         if self._macro is not None \
-          and isinstance(self._macro, Macro) \
-          and self._context is None:
+          and isinstance(self._macro, Macro):
             return self._macro.path + ("ctx",)
         else:
             return super().path
@@ -345,3 +348,4 @@ from .worker import Worker, InputPinBase, OutputPinBase, EditPinBase
 from .structured_cell import StructuredCell
 
 from .manager import Manager
+Macro = None # import later

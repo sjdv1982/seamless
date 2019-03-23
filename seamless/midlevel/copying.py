@@ -76,7 +76,8 @@ def fill_checksum(manager, node, temp_path):
         ctx._manager = manager
         ctx.cell = core_cell(datatype)
         ctx.cell.set(temp_value)
-        checksum = ctx.cell.checksum    
+        checksum = ctx.cell.checksum 
+    ctx.destroy()  
 
     if checksum is None:
         return

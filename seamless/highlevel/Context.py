@@ -5,6 +5,7 @@ import weakref
 from functools import partial
 
 from .Base import Base
+from ..core import macro_mode
 from ..core.macro_mode import macro_mode_on, macro_mode_off, get_macro_mode
 from ..core.context import context, Context as CoreContext
 from ..core.cell import cell
@@ -123,12 +124,13 @@ class Context:
 
     def __init__(self, dummy=False):
         self._dummy = dummy
-        if not dummy:
+        if not dummy:            
             with macro_mode_on(self):
                 self._ctx0 = context(toplevel=True)
                 ctx = self._ctx0._root_
                 self._gen_context = ctx
                 self._ctx0._bind(ctx)
+            macro_mode._toplevel_registered.add(ctx)
         self._graph = Graph({},[],{"from_lib": None})
         self._children = {}
         self._needs_translation = True
@@ -274,11 +276,11 @@ class Context:
     def translate(self, force=False):
         return self._do_translate(force=force, explicit=True)
 
-    def get_graph(self, copy=True):
+    def get_graph(self, copy=True):        
         try:
             self._translating = True
-            manager = self._ctx0._bound._get_manager()
-            copying.fill_checksums(manager, self._graph.nodes)
+            manager = self._ctx0._bound._get_manager()            
+            copying.fill_checksums(manager, self._graph.nodes)            
             self._remount_graph()
         finally:
             self._translating = False
@@ -292,7 +294,7 @@ class Context:
         graph = {"nodes": nodes, "connections": connections, "params": params}
         return graph
 
-    def _do_translate(self, force=False, explicit=False):
+    def _do_translate(self, force=False, explicit=False):        
         if self._dummy:
             return
         assert self._as_lib is None or self._from_lib is None
@@ -305,13 +307,14 @@ class Context:
         ###from ..core.macro_mode import get_macro_mode
         ###assert not get_macro_mode()
         graph = self.get_graph(copy=False)
-        try:
+        try:            
             self._translating = True
             ctx = None
             ok = False
-            manager = self._ctx0._get_manager()            
+            manager = self._ctx0._get_manager()               
             with macro_mode_off():
                 ctx = CoreContext(toplevel=True)
+            macro_mode._toplevel_registered.add(ctx)
             ctx._manager = manager
             ctx._macro = self
             assert not len(ctx.path)
@@ -322,7 +325,7 @@ class Context:
                 lib_paths = get_lib_paths(self)
                 translate(graph, ub_ctx, lib_paths, is_lib)
                 ok = True
-                ub_ctx._bind(ctx)
+                ub_ctx._bind(ctx)                
                 assert not len(ctx.path)
                 self._gen_context = ctx
                 if old_gen_context is not None:
@@ -341,7 +344,7 @@ class Context:
         if self._auto_register_library:
             ctx._get_manager().cell_update_hook(self._library_update_hook)
         """
-
+        
         self._needs_translation = False
 
         if ok:
