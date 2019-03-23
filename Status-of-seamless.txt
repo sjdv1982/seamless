@@ -1,53 +1,12 @@
-TODO: Before the presentation:
+TODO: Following the presentation:
 Store and load computation graphs:
 X Tests to "color" the graph (use Redis to fill in values)
 X Tests for remote deployment of jobs
 X Test for remote execution of a graph
-X 01h00 Get Bash transformer working again (fix 2 bugsF)
-- Docker transformer (DELAY)
-- Conversions for Galaxy, Mobyle, SnakeMake (DELAY)
+X Get Bash transformer working again
+- Docker transformer
+- Conversions for Galaxy, Mobyle, SnakeMake
 - Simple protein-based example
-
-Presentation:
-Two distinct goals:
-- Seamless as Mobyle replacement at the RPBS
-  Seamless as an enhanced Jupyter notebook
-  Instead of using Jupyter directly to run the computations,
-   the developer uses Jupyter a dependency graph of Seamless cells
-   Seamless cells can be modified by the user (data cells) or the developer (code cells)
-    *independent* of Jupyter; 
-  Server, developer, user, collaboration
-  Show simple example (oscar-star)  
-- The RPBS as a center for provenance, reproducibility, and interoperability
-  (implications for deployment)
-  Explain about provenance and their relation to *banks*: you just re-submit the calculation
-  Unified description of protocol, computation, result
-  Goes far beyond Mobyle replacement (confirmed by people I talked with):
-  - Checksum calculus, mathematical foundation 
-  - FAIR principles, solves them at a technical level
-    and solves them cheaply; given raw CPU power and data storage, easy to build
-     valorization server (DNS server, Google)
-Regression
-Explain mechanics that currently work
-
-Time path: 
-I. Mobyle replacement
-    - Simple example
-    - End of the year: demo NAR web servers
-        DaReUS-Loop server, structural alphabet server (based on near-native ensembles)
-    - Time plan to replace all servers
-II. Deployment, caching servers
-    - Remote interactive mode execution
-    - Docker-level deployment (one seamless, one service; include Jupyter)
-    - Configuration! (job level, server level, ...) (endless talks with Julien)
-    - Docker environment config (Linux distro), ORCID authority
-III. Social context
-- Development blog; guardian
-- IFB interoperability workgroup, CAPRI evaluation
-
-Limiting factors:
-Examples (especially: more practical examples)
-Documentation (especially: explaining the concepts)
 
 Improvements: [two months fulltime of implementation]
 Bugs: missing code paths, especially type conversion (also int/float/... cells) [a few days]
