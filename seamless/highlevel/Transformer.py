@@ -243,9 +243,13 @@ class Transformer(Base):
                 htf["TEMP"] = {}
             if "input" not in htf["TEMP"]:
                 htf["TEMP"]["input"] = {}
-            if attr == "code" and callable(value):
-                code, _, _ = parse_function_code(value)
-            htf["TEMP"]["input"][attr] = value
+            if attr == "code":
+                code = value
+                if callable(value):
+                    code, _, _ = parse_function_code(value)
+                htf["TEMP"]["code"] = code
+            else:
+                htf["TEMP"]["input"][attr] = value
             self._parent()._translate()
             return
 
@@ -578,7 +582,7 @@ class Transformer(Base):
 
     def _set_observers(self):        
         htf = self._get_htf()
-        if htf["compiled"] or htf["language"] not in ("python", "ipython"):
+        if htf["compiled"] or htf["language"] not in ("python", "ipython", "bash"):
             raise NotImplementedError ### cache branch
             # NOTE: observers depend on the implementation of translate_XXX_transformer (midlevel)
         tf = self._get_tf()

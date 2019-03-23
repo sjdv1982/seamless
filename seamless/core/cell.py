@@ -82,8 +82,11 @@ Use ``Cell.status()`` to get its status.
         if isinstance(manager, UnboundManager):
             raise Exception("Cannot ask the cell value of a context that is being constructed by a macro")
         status = self._get_manager().status[self]
-        if list(status.keys()) == [None]:
+        keys = set(status.keys())
+        if keys == set([None]):
             return status[None]
+        elif keys == set([None, ()]):
+            return status[()]
         else:
             result = {}
             for k,v in status.items():

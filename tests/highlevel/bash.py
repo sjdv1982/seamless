@@ -7,6 +7,7 @@ ctx.tf.testdata = "a \nb \nc \nd \ne \nf \n"
 ctx.tf.lines = 3
 ctx.tf.code = "head -$lines testdata"
 ctx.result = ctx.tf
+ctx.translate(force=True)
 ctx.equilibrate()
 print(ctx.result.value)
 ctx.tf.code = "tar czf test.tgz testdata; cat test.tgz"

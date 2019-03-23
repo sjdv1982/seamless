@@ -3,6 +3,7 @@ from copy import deepcopy
 from ..core.link import Link as core_link
 from ..core.protocol import deserialize
 from ..core import context as core_context, cell as core_cell
+from ..core.macro_mode import macro_mode_off
 
 def copy_context(nodes, connections, path):
     new_nodes = {}
@@ -33,8 +34,12 @@ def fill_checksum(manager, node, temp_path):
         celltype = node["celltype"]
     elif node["type"] == "transformer":
         if temp_path == "code":
-            celltype = "python"
-            subcelltype = "transformer"
+            datatype = "code"
+            if node["language"] == "python":
+                celltype = "python"
+                subcelltype = "transformer"
+            else:
+                celltype = "text"
         else:
             celltype = "structured"
     else:
@@ -66,11 +71,12 @@ def fill_checksum(manager, node, temp_path):
     if temp_value is None:
         return
     
-    ctx = core_context(toplevel=True)
-    ctx._manager = manager
-    ctx.cell = core_cell(datatype)
-    ctx.cell.set(temp_value)
-    checksum = ctx.cell.checksum    
+    with macro_mode_off():
+        ctx = core_context(toplevel=True)
+        ctx._manager = manager
+        ctx.cell = core_cell(datatype)
+        ctx.cell.set(temp_value)
+        checksum = ctx.cell.checksum    
 
     if checksum is None:
         return

@@ -632,7 +632,7 @@ def scan(ctx_or_cell, *, old_context):
 
     if old_context is not None:
         assert isinstance(ctx_or_cell, Context)
-        assert ctx_or_cell.path == old_context.path
+        assert ctx_or_cell.path == old_context.path, (ctx_or_cell.path, old_context.path)
         new_context = ctx_or_cell
         assert not old_context._part_of(new_context)
         assert not new_context._part_of(old_context)

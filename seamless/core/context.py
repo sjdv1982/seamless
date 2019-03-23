@@ -6,7 +6,7 @@ import asyncio
 from contextlib import contextmanager
 
 from . import SeamlessBase
-from .macro_mode import get_macro_mode, curr_macro, toplevel_register, toplevel_registered
+from .macro_mode import get_macro_mode, curr_macro, register_toplevel, unregister_toplevel
 from .mount import is_dummy_mount, scan as mount_scan
 
 
@@ -72,8 +72,8 @@ name: str
             self.mount(**mount_params)
         self._children = {}
         self._auto = set()
-        if toplevel:
-            toplevel_register.add(self)
+        if toplevel:            
+            register_toplevel(self)
         from .. import communionserver
         if toplevel:
             communionserver.register_manager(self._manager)
@@ -175,7 +175,10 @@ name: str
 
     @property
     def path(self):
-        if self._macro is not None and self._context is None:
+        from .macro import Macro
+        if self._macro is not None \
+          and isinstance(self._macro, Macro) \
+          and self._context is None:
             return self._macro.path + ("ctx",)
         else:
             return super().path
@@ -269,8 +272,7 @@ name: str
             if isinstance(child, (Cell, Context, Worker)):
                 child.destroy(from_del=from_del)
         if self._toplevel:
-            toplevel_register.discard(self)
-            toplevel_registered.discard(self)
+            unregister_toplevel(self)
         self._unmount(from_del=from_del)
 
     def _unmount(self, from_del=False):

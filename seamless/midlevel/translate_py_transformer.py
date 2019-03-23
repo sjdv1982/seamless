@@ -3,6 +3,7 @@ from seamless.core import cell as core_cell, link as core_link, \
 
 def translate_py_transformer(node, root, namespace, inchannels, outchannels, lib_path00, is_lib):
     #TODO: simple translation, without a structured cell
+    assert not "code" in node ### node["code"] is an outdated attribute
     inchannels = [ic for ic in inchannels if ic[0] != "code"]
 
     parent = get_path(root, node["path"][:-1], None, None)
@@ -66,10 +67,6 @@ def translate_py_transformer(node, root, namespace, inchannels, outchannels, lib
         ctx.code._sovereign = True
 
     ctx.code.connect(ctx.tf.code)
-    code = node.get("code")
-    if code is None:
-        code = node.get("cached_code")
-    ctx.code.set(code)
     checksum = node.get("checksum", {})
     if "code" in checksum:
         ctx.code.set_checksum(checksum["code"])
@@ -80,7 +77,7 @@ def translate_py_transformer(node, root, namespace, inchannels, outchannels, lib
 
     for pin in list(node["pins"].keys()):
         target = getattr(ctx.tf, pin)
-        inp.outchannels[(pin,)].connect(target )
+        inp.outchannels[(pin,)].connect(target)
 
     if with_result:
         plain_result = node["plain_result"]
@@ -111,6 +108,5 @@ def translate_py_transformer(node, root, namespace, inchannels, outchannels, lib
 
     namespace[node["path"], True] = inp, node
     namespace[node["path"], False] = result, node
-    node.pop("TEMP", None)
 
 from .util import get_path, as_tuple, build_structured_cell

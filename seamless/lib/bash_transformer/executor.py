@@ -11,7 +11,6 @@ from seamless import subprocess
 from subprocess import PIPE
 env = os.environ.copy()
 
-
 def read_data(data):
     try:
         bdata = BytesIO(data)

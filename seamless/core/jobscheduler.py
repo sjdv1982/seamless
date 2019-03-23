@@ -135,7 +135,6 @@ class JobScheduler:
             toclean = []
             for key, job in jobs.items():                
                 future = job.future
-                ft = future.done() if future else None                
                 if future is None:
                     toclean.append(key)
                 else:

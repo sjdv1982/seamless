@@ -205,9 +205,6 @@ def translate_compiled_transformer(node, root, namespace, inchannels, outchannel
     if "header" in mount:
         ctx.header.mount(**mount["header"])
 
-    code = node.get("code")
-    if code is None:
-        code = node.get("cached_code")
     if code is not None:
         ctx.code.set(code)
     if "code" in temp:

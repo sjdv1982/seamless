@@ -2,7 +2,7 @@ import weakref
 import copy
 
 from . import SeamlessBase
-from .macro_mode import curr_macro, toplevel_register
+from .macro_mode import curr_macro, register_toplevel
 from .mount import MountItem, is_dummy_mount
 
 class UnboundManager:
@@ -124,7 +124,7 @@ class UnboundContext(SeamlessBase):
             assert manager is None
         self._root_ = root
         if toplevel:
-            toplevel_register.add(self)
+            register_toplevel(self)
 
     def __setattr__(self, attr, value):
         if self._bound is not None:

@@ -62,14 +62,19 @@ class CacheTaskManager:
         if count > 0:
             if key not in self.tasks:
                 future = asyncio.ensure_future(func)
-                def cancelfunc2(future): 
+                def cancelfunc2(f):
                     task = self.tasks.pop(key)
-                    if cancelfunc is not None:
-                        cancelfunc()
-                    if task.future.done():
-                        task.future.exception() # discarded
+                    if future.cancelled():                                         
+                        if cancelfunc is not None:
+                            cancelfunc()
+                    elif task.future.done():
+                        exc = task.future.exception()
+                        if exc is not None:
+                            raise exc
                     else:
                         task.cancel()
+                        if cancelfunc is not None:
+                            cancelfunc()
                 task = CacheTask(key, future, count, resultfunc, cancelfunc2)
                 self.tasks[key] = task
             else:

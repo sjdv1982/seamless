@@ -1733,7 +1733,8 @@ class Manager:
                 if delta is None:
                     await asyncio.gather(*cache_jobs)
                 else:
-                    await asyncio.wait(cache_jobs, timeout=delta)
+                    await asyncio.wait(cache_jobs, timeout=delta)                    
+                if delta is not None:
                     continue
             self.jobscheduler.cleanup()
             unstable = get_unstable()

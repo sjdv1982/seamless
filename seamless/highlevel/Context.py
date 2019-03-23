@@ -5,7 +5,7 @@ import weakref
 from functools import partial
 
 from .Base import Base
-from ..core.macro_mode import macro_mode_on, get_macro_mode
+from ..core.macro_mode import macro_mode_on, macro_mode_off, get_macro_mode
 from ..core.context import context, Context as CoreContext
 from ..core.cell import cell
 from ..core.mount import mountmanager #for now, just a single global mountmanager
@@ -124,8 +124,11 @@ class Context:
     def __init__(self, dummy=False):
         self._dummy = dummy
         if not dummy:
-            with macro_mode_on():
+            with macro_mode_on(self):
                 self._ctx0 = context(toplevel=True)
+                ctx = self._ctx0._root_
+                self._gen_context = ctx
+                self._ctx0._bind(ctx)
         self._graph = Graph({},[],{"from_lib": None})
         self._children = {}
         self._needs_translation = True
@@ -274,7 +277,7 @@ class Context:
     def get_graph(self, copy=True):
         try:
             self._translating = True
-            manager = self._ctx0._get_manager()
+            manager = self._ctx0._bound._get_manager()
             copying.fill_checksums(manager, self._graph.nodes)
             self._remount_graph()
         finally:
@@ -307,17 +310,20 @@ class Context:
             ctx = None
             ok = False
             manager = self._ctx0._get_manager()            
-            ctx = CoreContext(toplevel=True)
+            with macro_mode_off():
+                ctx = CoreContext(toplevel=True)
             ctx._manager = manager
             ctx._macro = self
-            old_gen_context = self._gen_context            
+            assert not len(ctx.path)
+            old_gen_context = self._gen_context
             with macro_mode_on(self):
-                ub_ctx = context(toplevel=True, manager=manager)                
+                ub_ctx = context(toplevel=True, manager=manager) 
                 self._unbound_context = ub_ctx                
                 lib_paths = get_lib_paths(self)
                 translate(graph, ub_ctx, lib_paths, is_lib)
                 ok = True
                 ub_ctx._bind(ctx)
+                assert not len(ctx.path)
                 self._gen_context = ctx
                 if old_gen_context is not None:
                     old_gen_context.destroy()
@@ -459,8 +465,24 @@ class Context:
 
     @property
     def status(self):
+        """The computation status of the context
+        Returns a dictionary containing the status of all children that are not OK.
+        If all children are OK, returns OK
+        """
+        from ..core.context import StatusReport
         assert not self._dummy
-        return self._ctx0.status
+        result = StatusReport()
+        for childname0, child in self._children.items():
+            if len(childname0) > 1:
+                continue
+            childname = childname0[0]
+            s = child.status
+            if s != "OK" and s != "FINISHED":
+                result[childname] = s
+        if len(result):
+            return result
+        else:
+            return "OK"
 
     def _root(self):
         # Needed so that Context can pretend to be a low-level macro

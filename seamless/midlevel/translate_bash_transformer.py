@@ -6,8 +6,10 @@ from seamless.core import library
 def translate_bash_transformer(node, root, namespace, inchannels, outchannels, lib_path00, is_lib):
     #TODO: simple translation, without a structured cell
     #TODO: there is a lot of common code with py transformer
+    assert not "code" in node ### node["code"] is an outdated attribute
 
     # Just to register the "bash_transformer" lib
+    from seamless.core.macro_mode import get_macro_mode, curr_macro    
     from seamless.lib.bash_transformer import bash_transformer as _
 
     inchannels = [ic for ic in inchannels if ic[0] != "code"]
@@ -30,10 +32,10 @@ def translate_bash_transformer(node, root, namespace, inchannels, outchannels, l
         assert extrapin not in node["pins"], extrapin
         pins[extrapin] =  {
             "transfer_mode": "ref",
-            "access_mode": "default",
+            "access_mode": "plain",
             "content_type": None,
         }
-    ctx.pins = core_cell("json").set(list(pins.keys()))    
+    ctx.pins = core_cell("plain").set(list(pins.keys()))
 
     interchannels = [as_tuple(pin) for pin in pins]
     plain = node["plain"]
@@ -56,53 +58,43 @@ def translate_bash_transformer(node, root, namespace, inchannels, outchannels, l
         p = {"io": "input"}
         p.update(pin)
         all_pins[pinname] = p
-    all_pins[result_name] = {"io": "output", "transfer_mode": "copy"}
+    all_pins[result_name] = {"io": "output", "transfer_mode": "copy"}    
     if node["SCHEMA"]:
         assert with_result
         all_pins[node["SCHEMA"]] = {
             "io": "input", "transfer_mode": "json",
             "access_mode": "json", "content_type": "json"
         }
-    in_equilibrium = node.get("in_equilibrium", False)
-    ctx.tf = transformer(all_pins, in_equilibrium=in_equilibrium)
+    ctx.tf = transformer(all_pins)
     if node["debug"]:
         ctx.tf.debug = True
     if lib_path00 is not None:
         lib_path = lib_path00 + "." + name + ".code"
         ctx.code = libcell(lib_path)
     else:
-        ctx.code = core_cell("json")
+        ctx.code = core_cell("text")
         if "code" in mount:
             ctx.code.mount(**mount["code"])
         ctx.code._sovereign = True
 
     ctx.pins.connect(ctx.tf.pins)
     ctx.code.connect(ctx.tf.bashcode)
-    code = node.get("code")
-    if code is None:
-        code = node.get("cached_code")
-    ctx.code.set(code)
-    temp = node.get("TEMP")
-    if temp is None:
-        temp = {}
-    if "code" in temp:
-        ctx.code.set(temp["code"])
+    checksum = node.get("checksum", {})
+    if "code" in checksum:
+        ctx.code.set_checksum(checksum["code"])
+    if "input" in checksum:
+        inp.set_checksum(checksum["input"])
 
     with library.bind("bash_transformer"):
         ctx.executor_code = libcell(".executor_code")    
     ctx.executor_code.connect(ctx.tf.code)
 
-    inphandle = inp.handle
-    for k,v in temp.items():
-        if k == "code":
-            continue
-        setattr(inphandle, k, v)
     namespace[node["path"] + ("code",), True] = ctx.code, node
     namespace[node["path"] + ("code",), False] = ctx.code, node
 
     for pin in list(node["pins"].keys()):
         target = getattr(ctx.tf, pin)
-        inp.connect_outchannel( (pin,) ,  target )
+        inp.outchannels[(pin,)].connect(target)
 
     if with_result:
         plain_result = node["plain_result"]
@@ -117,24 +109,21 @@ def translate_bash_transformer(node, root, namespace, inchannels, outchannels, l
         setattr(ctx, result_name, result)
 
         result_pin = getattr(ctx.tf, result_name)
-        result.connect_inchannel(result_pin, ())
+        result_pin.connect(result.inchannels[()])
         if node["SCHEMA"]:
             schema_pin = getattr(ctx.tf, node["SCHEMA"])
             result.schema.connect(schema_pin)
+        if "result" in checksum:
+            result.set_checksum(checksum["result"])
+        if "schema" in checksum:
+            result.schema.set_checksum(checksum["schema"])
     else:
         for c in outchannels:
             assert len(c) == 0 #should have been checked by highlevel
         result = getattr(ctx.tf, result_name)
         namespace[node["path"] + (result_name,), False] = result, node
 
-    if not is_lib: #clean up cached state and in_equilibrium, unless a library context
-        node.pop("cached_state_input", None)
-        if not in_equilibrium:
-            node.pop("cached_state_result", None)
-        node.pop("in_equilibrium", None)
-
     namespace[node["path"], True] = inp, node
     namespace[node["path"], False] = result, node
-    node.pop("TEMP", None)
 
 from .util import get_path, as_tuple, build_structured_cell
