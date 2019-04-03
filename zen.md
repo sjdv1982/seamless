@@ -5,7 +5,7 @@ History doesn't matter.
 
 Code is just another kind of input.
 
-Cells are good, files are bad, URLs are ugly. Checksums are best.
+Cells are good, files are bad, URLs are ugly. Checksums are forever.
 
 Keeping the checksum is enough, if you can look up the value later.
 
