@@ -14,6 +14,7 @@ from .policy import default_policy as silk_default_policy
 SILK_NO_METHODS = 1
 SILK_NO_VALIDATION = 2
 SILK_BUFFER_CHILD = 4
+SILK_NO_INFERENCE = 8
 
 _underscore_attribute_names =  set(["__array_struct__", "__array_interface__", "__array__"])
 # A set of magic names where it is expected that they raise NotImplementedError if
@@ -21,13 +22,6 @@ _underscore_attribute_names =  set(["__array_struct__", "__array_interface__", "
 _underscore_attribute_names2 =  set(["__deepcopy__"])
 # A set of magic names where it is expected that they raise AttributeError
 # not implemented, rather than returning NotImplemented
-
-"""
-"stateful" means:
-- a state can be obtained using ._get_state and restored using ._set_state
-- a value can be set using .set
-This applies to both data and buffer!
-"""
 
 """
 Buffering:
@@ -78,12 +72,12 @@ def init_object_schema(silk, schema):
 class Silk(SilkBase):
     __slots__ = [
             "_parent", "_parent_attr", "data", "_schema",
-            "_modifier", "_forks", "_buffer", "_stateful", "_buffer_nosync",
+            "_modifier", "_forks", "_buffer",  "_buffer_nosync",
             "_schema_update_hook", "_schema_dummy"
     ]
 
     def __init__(self, schema = None, *, parent = None, data = None,
-      modifier = 0, buffer = None, stateful = False, schema_update_hook = None,
+      modifier = 0, buffer = None, schema_update_hook = None,
       _parent_attr = None, schema_dummy = False):
         self._parent = parent
         self._parent_attr = _parent_attr
@@ -91,13 +85,14 @@ class Silk(SilkBase):
         self._forks = []
         self.data = data
         self._buffer = buffer
-        self._stateful = stateful
         self._buffer_nosync = False
         self._schema_dummy = schema_dummy
         assert not isinstance(data, Silk)
         if schema is None:
             schema = {}
         elif isinstance(schema, Wrapper):
+            assert schema_update_hook is None
+            schema_update_hook = schema._exported_update_hook
             schema = schema._unwrap()
         assert isinstance(schema, dict) #  Silk provides its own smart wrapper around schema
                                         #   for now, no other wrappers are allowed
@@ -107,17 +102,6 @@ class Silk(SilkBase):
         self._schema = schema
         self._schema_update_hook = schema_update_hook
 
-    """
-    def __deepcopy__(self, memo):
-        data = deepcopy(self.data, memo)
-        forks = deepcopy(self._forks, memo)
-        schema = deepcopy(self._schema, memo)
-        result = type(self)(
-          schema, parent=self._parent, data=data, modifier=self._modifier
-        )
-        result._forks = forks
-        return result
-    """
 
     def __call__(self, *args, **kwargs):
         data = self.data
@@ -193,6 +177,8 @@ class Silk(SilkBase):
         return self._parent._is_binary_array_item()
 
     def _infer_new_property(self, schema, attr, value, value_schema=None):
+        if self._modifier & SILK_NO_INFERENCE:
+            return False
         schema_updated = False
         policy = self._get_policy(schema)
         if not policy["infer_new_property"]:
@@ -213,6 +199,8 @@ class Silk(SilkBase):
         return schema_updated
 
     def _infer_object(self, schema, policy, value, value_schema=None):
+        if self._modifier & SILK_NO_INFERENCE:
+            return False
         if not policy["infer_object"]:
             return False
         schema_updated = False
@@ -242,6 +230,8 @@ class Silk(SilkBase):
         return schema_updated
 
     def _infer_new_item(self, schema, pos, value, value_item_schema=None):
+        if self._modifier & SILK_NO_INFERENCE:
+            return False
         if self._is_binary_array_item():
             return False
         schema_updated = False
@@ -276,6 +266,8 @@ class Silk(SilkBase):
         return schema_updated
 
     def _infer_array(self, schema, policy, value, value_schema=None):
+        if self._modifier & SILK_NO_INFERENCE:
+            return False
         schema_updated = False
         schema_updated |= self._infer_type(schema, policy, value)
         wvalue = value
@@ -398,6 +390,8 @@ class Silk(SilkBase):
         return schema_updated
 
     def _infer_type(self, schema, policy, value):
+        if self._modifier & SILK_NO_INFERENCE:
+            return False
         schema_updated = False
         if policy["infer_type"]:
             if "type" not in schema:
@@ -408,6 +402,8 @@ class Silk(SilkBase):
         return schema_updated
 
     def _infer(self, policy, value):
+        if self._modifier & SILK_NO_INFERENCE:
+            return False
         schema = self._schema
         if self._is_binary_array_item():
             if not isinstance(value, np.ndarray):
@@ -432,16 +428,16 @@ class Silk(SilkBase):
         if self._parent is not None:
             self._parent._setitem(self._parent_attr, value)
         elif buffer:
-            if self._stateful:
-                self._buffer.set(value)
-            else:
-                self._buffer = value
+            if isinstance(self._buffer, Monitor):
+                self._buffer.set_path((), value)
+                return
+            self._buffer = value
             return self._buffer
         else:
-            if self._stateful:
-                self.data.set(value)
-            else:
-                self.data = value
+            if isinstance(self.data, Monitor):
+                self.data.set_path((), value)
+                return
+            self.data = value
             return self.data
 
     def _set_value_dict(self, value, buffer):
@@ -454,9 +450,13 @@ class Silk(SilkBase):
         data = self.data
         if buffer:
             data = self._buffer
+        if isinstance(data, Monitor):  ### TODO: kludge
+            data = data.get_path()
         raw_data = self._raw_data(buffer=buffer)
         is_none = (raw_data is None)
-        if is_none or not isinstance(raw_data, dict) or not isinstance(value, dict):
+        if isinstance(data, MixedBase):
+            data.set(value)
+        elif is_none or not isinstance(raw_data, dict) or not isinstance(value, dict):
             self._set_value_simple(value, buffer=buffer)
         else:
             data.clear()
@@ -506,15 +506,17 @@ class Silk(SilkBase):
             else:
                 is_empty = (len(raw_data) == 0)
             if buffer:
-                if self._stateful:
-                    self._buffer.set(value)
+                buffer = self._buffer
+                if isinstance(buffer, Monitor):
+                    buffer.set_path((), value)
                 else:
-                    self._buffer[:] = value
+                    buffer[:] = value
             else:
-                if self._stateful:
-                    self.data.set(value)
-                else:
-                    self.data[:] = value
+                data = self.data
+                if isinstance(data, Monitor):
+                    data.set_path((), value)
+                else:                
+                    data[:] = value
             if is_empty and not lowlevel:
                 schema_updated |= self._infer_array(schema, policy, value, value_schema)
         elif isinstance(value, (dict, np.generic)):
@@ -542,7 +544,6 @@ class Silk(SilkBase):
         return self
 
     def _setitem(self, attr, value):
-        from ..mixed.Monitor import Monitor
         buffer = (self._buffer is not None)
         if buffer:
             data = self._buffer
@@ -556,7 +557,7 @@ class Silk(SilkBase):
             data = self._set_value_simple({}, buffer)
             schema_updated |= self._infer_type(schema, policy, {})
         elif isinstance(data, Monitor):  ### TODO: kludge
-            data = data.get_path(())
+            data = data.get_path()
         data[attr] = value
         value_schema = None
         if isinstance(value, Silk):
@@ -715,6 +716,8 @@ class Silk(SilkBase):
             data = self._buffer
         else:
             data = self.data
+        if isinstance(data, Monitor): #hackish, but necessary
+            data = data.get_path()
         if isinstance(data, MixedBase): #hackish, but necessary (see _prepare_for_validation)
             data = data.value
         return data
@@ -885,12 +888,11 @@ class Silk(SilkBase):
                     data = self._buffer
                 else:
                     data = self.data
+                if isinstance(data, Monitor): ### TODO: kludge
+                    data = data.get_path()                                
                 data, wdata = _prepare_for_validation(data)
                 if wdata is None and accept_none:
-                    return
-                from ..mixed.Monitor import Monitor
-                if isinstance(data, Monitor): ### TODO: kludge
-                    data = data.get_path()
+                    return                
                 if isinstance(data, MixedBase): #hackish (see _prepare_for_validation)
                     data = data.value
                 schema_validator(self._schema).validate(data)
@@ -898,6 +900,8 @@ class Silk(SilkBase):
                 schema = self._schema
                 proxy = self
                 data = self.data
+                if isinstance(data, Monitor): ### TODO: kludge
+                    data = data.get_path()
                 if self._buffer is not None:
                     data = self._buffer
                 if self._buffer is not None or isinstance(data, MixedBase):
@@ -922,17 +926,12 @@ class Silk(SilkBase):
         if self._parent is not None:
             self.parent.validate(full=False, accept_none=accept_none)
 
-    def _commit_buffer(self):
-        if self._stateful:
-            state = self._buffer._get_state()
-            b = self._buffer
-            try:
-                self._buffer = None
-                self.data._set_state(state)
-            finally:
-                self._buffer = b
-        else:
-            self._set(deepcopy(self._buffer),lowlevel=True,buffer=False)
+    def _commit_buffer(self):        
+        buffer = self._buffer
+        if isinstance(buffer, Monitor):
+            buffer = buffer.get_path().value
+        buffer = deepcopy(buffer)
+        self._set(buffer,lowlevel=True,buffer=False)
         self._buffer_nosync = False
 
     def validate(self, full=True, accept_none=False):
@@ -959,17 +958,11 @@ class Silk(SilkBase):
 
 class _SilkFork:
     _joined = False
-    _stateful = False
     def __init__(self, parent):
         self.parent = parent
          #for now, no smart wrappers around schema are allowed; see above
         assert isinstance(parent._schema, dict), type(parent._schema)
-        try:
-            state = parent.data._get_state()
-            self._stateful = True
-            self.data_state = state
-        except:
-            self.data = deepcopy(parent.data)
+        self.data = deepcopy(parent.data)
         self._schema = deepcopy(parent._schema)
         parent._forks.append(self)
 
@@ -982,10 +975,7 @@ class _SilkFork:
                 ok = True
         finally:
             if not ok:
-                if self._stateful:
-                    parent.data._set_state(self.data_state)
-                else:
-                    parent._set(self.data, lowlevel=True, buffer=False)
+                parent._set(self.data, lowlevel=True, buffer=False)
                 parent._schema.clear()
                 parent._schema.update(self._schema)
                 if parent._schema_update_hook is not None:
@@ -1012,11 +1002,10 @@ class _BufferedSilkFork(_SilkFork):
     def __init__(self, parent):
         super().__init__(parent)
         self.parent = parent
-        if parent._stateful:
-            state = parent._buffer._get_state()
-            self._buffer_state = state
-        else:
-            self._buffer = deepcopy(parent._buffer)
+        buffer = parent._buffer
+        if not isinstance(buffer, Monitor):
+            buffer = deepcopy(buffer)
+        self._buffer = buffer
 
     def _join(self, exception):
         parent = self.parent
@@ -1037,14 +1026,8 @@ class _BufferedSilkFork(_SilkFork):
             if not ok:
                 if exception is None:
                     if validated: #_commit_buffer went wrong, data may be corrupted
-                        if parent._stateful:
-                            parent.data._set_state(self.data_state)
-                        else:
-                            parent._set(self.data, lowlevel=True, buffer=False)
-                    if parent._stateful:
-                        parent._buffer._set_state(self._buffer_state)
-                    else:
-                        parent._set(self._buffer, lowlevel=True, buffer=True)
+                        parent._set(self.data, lowlevel=True, buffer=False)
+                    parent._set(self._buffer, lowlevel=True, buffer=True)
                 parent._schema.clear()
                 parent._schema.update(self._schema)
                 if parent._schema_update_hook is not None:
@@ -1056,3 +1039,4 @@ class _BufferedSilkFork(_SilkFork):
 from .modify_methods import try_modify_methods
 from ..mixed import MixedBase, is_contiguous, is_unsigned
 from .. import Wrapper
+from ..mixed.Monitor import Monitor

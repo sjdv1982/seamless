@@ -32,7 +32,7 @@ class SchemaWrapper(Wrapper):
     def copy(self):
         return SchemaWrapper(None, deepcopy(self._dict), None)
 
-    def update(self, value):
+    def update(self, value):        
         if isinstance(value, SchemaWrapper):
             value = value.dict
         self._dict.update(value)
@@ -66,8 +66,11 @@ class SchemaWrapper(Wrapper):
 
     def __setattr__(self, attribute, value):
         if isinstance(value, SchemaWrapper):
-            value = value.dict
+            value = value.dict        
         self._dict[attribute] = value
+        self._exported_update_hook()
+
+    def _exported_update_hook(self):
         parent = self._parent()
         if parent is not None:
             parent.validate(accept_none=True)

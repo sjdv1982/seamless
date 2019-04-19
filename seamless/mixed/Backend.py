@@ -81,7 +81,6 @@ class Backend:
         else:
             if not len(path):
                 self._set_storage(storage)
-
         self._update(path)
 
     def del_path(self, path):
@@ -93,13 +92,11 @@ class Backend:
         subdata = self.get_path(path[:-1])
         if subdata is None:
             return
-        subform = self._get_form(path[:-1])
+        subform, substorage = self._get_form(path[:-1])
         if isinstance(subform, str):
             subformtype = subform
-            substorage = "pure-plain"
         else:
             subformtype = subform["type"]
-            substorage = subform["storage"]
         attr = path[-1]
         if isinstance(attr, int):
             if subformtype != "array":
@@ -207,22 +204,25 @@ class DefaultBackend(Backend):
 
     def _get_form(self, path):
         if not len(path):
-            return self.get_form()
-        subform = self._get_form(path[:-1])
+            return self.get_form(), self.get_storage()
+        subform, substorage = self._get_form(path[:-1])
         attr = path[-1]
         if isinstance(attr, int):
             if subform["identical"]:
-                return subform["items"]
+                subform2 = subform["items"]
             else:
-                return subform["items"][attr]
+                subform2 = subform["items"][attr]
         else:
-            return subform["properties"][attr]
+            subform2 = subform["properties"][attr]
+        if "storage" in subform2:
+            substorage = subform2["storage"]
+        return subform2, substorage
 
     def _set_form(self, form, path):
         if not len(path):
             self._form = deepcopy(form)
             return
-        subform = self._get_form(path[:-1])
+        subform, _ = self._get_form(path[:-1])
         attr = path[-1]
         if isinstance(attr, int):
             if subform["identical"]:
@@ -292,7 +292,7 @@ class CellBackend(Backend):
             result = result[p]
         return result
 
-    def _set_path(self, path, data):
+    def _set_path(self, path, data):    
         self._updated_paths.add(tuple(path))
         if not len(path):
             self._tempdata = deepcopy(data)
@@ -334,6 +334,7 @@ class CellBackend(Backend):
         self._updated_paths.add(tuple(path))
         
     def _del_path(self, path):
+        if len(path): raise Exception
         if not len(path):
             self._tempdata = None
             return
@@ -348,22 +349,25 @@ class CellBackend(Backend):
         if self._tempform is None:
             self._tempform = deepcopy(self._cell.form)
         if not len(path):
-            return self._tempform
-        subform = self._get_form(path[:-1])
+            return self._tempform, self._tempstorage
+        subform, substorage = self._get_form(path[:-1])
         attr = path[-1]
         if isinstance(attr, int):
             if subform["identical"]:
-                return subform["items"]
+                subform2 = subform["items"]
             else:
-                return subform["items"][attr]
+                subform2 = subform["items"][attr]
         else:
-            return subform["properties"][attr]
+            subform2 = subform["properties"][attr]
+        if "storage" in subform2:
+            substorage = subform2["storage"]
+        return subform2, substorage
 
     def _set_form(self, form, path):
         if not len(path):
             self._tempform = deepcopy(form)
             return
-        subform = self._get_form(path[:-1])
+        subform, _ = self._get_form(path[:-1])
         attr = path[-1]
         if isinstance(attr, int):
             if subform["identical"]:
@@ -378,7 +382,7 @@ class CellBackend(Backend):
     def _update(self, path):
         # TODO: proper form re-calculation
         # for now, it doesn't work (since a storage change may propagate upstream)
-        assert not len(self._updated_paths) or not len(self._deleted_paths) # update OR delete
+        assert not len(self._updated_paths) or not len(self._deleted_paths) # update OR delete        
         if len(self._deleted_paths):
             deleted = True
             updated = self._deleted_paths

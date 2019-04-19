@@ -10,6 +10,7 @@ X Get Bash transformer working again
 
 Improvements: [two months fulltime of implementation]
 Bugs: missing code paths, especially type conversion (also int/float/... cells) [a few days]
+Bug: cleam up mounted context (see bash.py)
 Bugs: interaction between Seamless features, smoother API (e.g. type inference) [continuous]
 Interaction with rest of the world (bring back polyglot, add R) [a few days]
     => Compiled language without a compiler

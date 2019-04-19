@@ -5,8 +5,6 @@ from ..mixed import MixedBase, MonitorTypeError, Monitor, CellBackend
 #from ..mixed.get_form import get_form
 #from ..mixed.io.util import is_identical_debug
 
-print("WARNING: StructuredCell.buffer is disabled")
-
 import weakref
 import json
 import traceback
@@ -144,6 +142,7 @@ class StructuredCell(SeamlessBase):
       editchannels=[],
     ):
         from ..silk import Silk
+        from ..silk.Silk import SILK_NO_INFERENCE
         from .cell import MixedCell
         super().__init__()
         self.name = name
@@ -159,7 +158,6 @@ class StructuredCell(SeamlessBase):
             self._is_silk = True
         self.schema = schema
 
-        buffer = None ### print("WARNING: StructuredCell.buffer is disabled")
         if buffer is not None:
             assert self._is_silk
             assert isinstance(buffer, MixedCell)
@@ -198,9 +196,11 @@ class StructuredCell(SeamlessBase):
             self.data._monitor = monitor
 
         if self._is_silk:
+            assert self.data._silk is None
             bufmonitor = None
             if buffer is not None:
-                if self.buffer._monitor is None:
+                bufmonitor = self.buffer._monitor                
+                if bufmonitor is None:
                     bufbackend = CellBackend(self.buffer)
                     bufmonitor = Monitor(bufbackend, attribute_access=(not plain))
                     self.buffer._monitor = bufmonitor
@@ -211,6 +211,8 @@ class StructuredCell(SeamlessBase):
                 data=self.data._monitor,
                 buffer=bufmonitor,
             )
+            self._silk._modifier |= SILK_NO_INFERENCE
+            self.data._silk = self._silk
 
     def _update_schema(self):
         self.schema.set(self._schema_value)
@@ -254,15 +256,18 @@ class StructuredCell(SeamlessBase):
 
     def set_checksum(self, checksum):
         from .unbound_context import UnboundManager
-        cell = self.monitor.backend._cell
-        manager = cell._get_manager()
+        manager = self.data._get_manager()
         if not isinstance(manager, UnboundManager):
-            if self._is_silk and self.buffer is not None:                
+            if self._is_silk and self.buffer is not None:
                 buffer_item = manager.get_value_from_checksum(checksum)
                 raise NotImplementedError ### cache branch (this is not correct)
                 self._silk.set(value)
+            else:
+                raise NotImplementedError ### cache branch
         else:
-            cell.set_checksum(checksum)
+            self.data.set_checksum(checksum)
+            if self.buffer is not None:
+                self.buffer.set_checksum(checksum)
 
     def __str__(self):
         ret = "Seamless structured cell: " + self._format_path()

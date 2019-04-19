@@ -140,6 +140,9 @@ class Manager:
                     import traceback
                     traceback.print_exc()
                 else:                    
+                    if tf_level2 is None:
+                        self.set_transformer_undefined(tf_level1)
+                        return
                     htf_level2 = tf_level2.get_hash()
                     result = tcache.get_result_level2(htf_level2)
                     if result is not None:
@@ -372,6 +375,22 @@ class Manager:
         msg = "Exception in %s%s:\n" % (transformer[0], kstr) + exc
         stars = "*" * 60 + "\n"
         print(stars + msg + stars, file=sys.stderr)
+
+
+    def set_transformer_undefined(self, level1):
+        if self._destroyed:
+            return
+        tcache = self.transform_cache
+        hlevel1 = level1.get_hash()
+        for tf, tf_level1 in list(tcache.transformer_to_level1.items()): #could be more efficient...
+            if tf_level1.get_hash() != hlevel1:
+                continue
+            tstatus = self.status[tf]
+            tstatus.exec = "BLOCKED"
+            tstatus.data = "UNDEFINED"
+            tstatus.auth = "OBSOLETE" # To provoke an update            
+            self.update_transformer_status(tf,full=False)
+            self.unstable.discard(tf)
 
     def set_transformer_result(self, level1, level2, value, checksum, prelim):
         from .link import Link
@@ -747,7 +766,7 @@ class Manager:
                 new_status.data = "UNCONNECTED"
                 unconnected_list.append(pin)
                 continue
-            accessor = accessor_dict[pin]
+            accessor = accessor_dict[pin]            
             cell_status = self.status[accessor.cell][accessor.subpath]
 
             s = cell_status.data_status
@@ -1312,9 +1331,26 @@ class Manager:
                     origin=source.cell
                 )
             else:
-                monitor = target.cell._monitor
-                assert monitor is not None
-                monitor.set_path(target.subpath, value)
+                if target.cell._silk is not None:
+                    ### TODO: can be cleaner?                  
+                    silk = target.cell._silk
+                    if len(target.subpath):
+                        if silk.data.get_path().value is None:
+                            if isinstance(target.subpath[0], int):
+                                silk = silk.set([])
+                            else:
+                                silk = silk.set({})
+                        for p in target.subpath[:-1]:
+                            if p not in silk and not isinstance(p, int):
+                                silk[p] = {}
+                            silk = silk[p]
+                        silk[target.subpath[-1]] = value
+                    else:
+                        silk.set(value)
+                else:    
+                    monitor = target.cell._monitor
+                    assert monitor is not None
+                    monitor.set_path(target.subpath, value)
         else:
             raise NotImplementedError ### cache branch
 

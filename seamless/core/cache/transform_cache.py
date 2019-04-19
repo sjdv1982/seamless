@@ -226,9 +226,11 @@ class TransformCache:
             if buffer_item is None:
                 raise CacheMissError("Checksum not in value cache", pin, level1[pin].buffer_checksum.hex()) 
             _, _, buffer = buffer_item            
-            _, semantic_key = manager.cache_expression(expression, buffer)
+            sub_buffer, semantic_key = manager.cache_expression(expression, buffer)
+            if sub_buffer is None:
+                return None
             if semantic_key.semantic_checksum is None:
-                raise CacheMissError("Checksum not in value cache", pin, buffer) 
+                raise CacheMissError("Checksum not in value cache", pin, buffer, sub_buffer) 
             semantic_keys[pin] = semantic_key
 
         result = TransformerLevel2(semantic_keys, level1.output_name)

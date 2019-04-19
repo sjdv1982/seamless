@@ -198,8 +198,7 @@ class Transformer(Base):
         schema = inputcell.handle.schema
         example = Silk(
          schema=schema,
-         schema_dummy=True,
-         schema_update_hook=inputcell.handle._schema_update_hook
+         schema_dummy=True
         )
         self._example_cache = weakref.ref(tf), example
         return example
@@ -210,7 +209,6 @@ class Transformer(Base):
 
     def _assign_to(self, hctx, path):
         from .assign import assign_connection
-        tf = self._get_tf()
         htf = self._get_htf()
         parent = self._parent()
         result_path = self._path + (htf["RESULT"],)
@@ -252,10 +250,8 @@ class Transformer(Base):
                 htf["TEMP"]["input"][attr] = value
             self._parent()._translate()
             return
-
-        tf = self._get_tf()
+        
         if attr == "code":
-            assert not test_lib_lowlevel(parent, tf.code)
             if isinstance(value, Cell):
                 target_path = self._path + (attr,)
                 assert value._parent() == parent
@@ -263,9 +259,13 @@ class Transformer(Base):
                 assign_connection(parent, value._path, target_path, False)
                 translate = True
             elif isinstance(value, Resource):
+                tf = self._get_tf()
+                assert not test_lib_lowlevel(parent, tf.code)
                 tf.code.set(value.data)                
                 translate = True
             else:
+                tf = self._get_tf()
+                assert not test_lib_lowlevel(parent, tf.code)
                 if callable(value):
                     value, _, _ = parse_function_code(value)
                 tf.code.set(value)                
@@ -282,9 +282,7 @@ class Transformer(Base):
             # Example-based programming to set the schema
             # TODO: suppress inchannel warning
             result.handle.set(value)
-        else:
-            inp = getattr(tf, htf["INPUT"])
-            assert not test_lib_lowlevel(parent, inp)
+        else:                        
             if attr not in htf["pins"]:
                 htf["pins"][attr] = default_pin.copy()
                 translate = True
@@ -298,12 +296,11 @@ class Transformer(Base):
                 if parent._needs_translation:
                     translate = False #_get_tf() will translate
                 tf = self._get_tf()
+                assert not test_lib_lowlevel(parent, tf.code)
                 inp = getattr(tf, htf["INPUT"])
+                assert not test_lib_lowlevel(parent, inp)
                 parent._remove_connections(self._path + (attr,))
                 setattr(inp.handle, attr, value)
-                # superfluous, filling now happens upon translation
-                ###fill_structured_cell_value(inp, htf, "stored_state_input", "cached_state_input")
-            ###htf.pop("in_equilibrium", None) # a lot more things can break equilibrium!!
         if parent._as_lib is not None:
             if htf["path"] in parent._as_lib.partial_authority:
                 parent._as_lib.needs_update = True

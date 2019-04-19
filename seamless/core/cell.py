@@ -297,6 +297,7 @@ class MixedCell(Cell):
     _default_access_mode = "mixed"
     _content_type = "mixed"
     _monitor = None
+    _silk = None
 
     def set(self, value):
         #storage, form = get_form(value)
@@ -413,6 +414,7 @@ class PlainCell(Cell):
     _content_type = "plain"
     _mount_kwargs = {"encoding": "utf-8", "binary": False}
     _monitor = None
+    _silk = None
 
     def __str__(self):
         ret = "Seamless plain cell: " + self._format_path()
