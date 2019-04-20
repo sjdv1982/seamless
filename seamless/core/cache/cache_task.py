@@ -83,8 +83,9 @@ class CacheTaskManager:
                     asyncio.Task(func).cancel()
                 task.incref(count)            
         else:
-            task = self.tasks[key]
-            task.decref(count)            
+            task = self.tasks.get(key)
+            if task is not None:
+                task.decref(count)            
         return task
     
     def remote_checksum_from_label(self, label, origin=None):

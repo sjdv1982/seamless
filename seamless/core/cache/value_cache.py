@@ -129,6 +129,7 @@ class ValueCache:
         assert isinstance(semantic_key, SemanticKey)        
         try:
             self._object_cache[semantic_key] = value
+            hash(value)
         except TypeError:
             value = WeakrefableWrapper(value)
             self._object_cache[semantic_key] = value

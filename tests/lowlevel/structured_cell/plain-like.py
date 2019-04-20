@@ -19,8 +19,8 @@ with macro_mode_on():
         inchannels = None,
         outchannels = [("a",), ("b",)]
     )
-    ctx.inp.outchannels[("a",)].connect(ctx.tf.a)
-    ctx.inp.outchannels[("b",)].connect(ctx.tf.b)
+    ctx.inp.outchannels["a"].connect(ctx.tf.a)
+    ctx.inp.outchannels["b"].connect(ctx.tf.b)
 
     ctx.result_struc = context(toplevel=False)
     ctx.result_struc.data = cell("mixed")
@@ -37,8 +37,8 @@ with macro_mode_on():
     ctx.x = cell("mixed")
     ctx.code = pytransformercell().set("""c = a + b""")
     ctx.code.connect(ctx.tf.code)
-    ctx.x.connect(ctx.result.inchannels[("x",)])
-    ctx.tf.c.connect(ctx.result.inchannels[("y",)])
+    ctx.x.connect(ctx.result.inchannels["x"])
+    ctx.tf.c.connect(ctx.result.inchannels["y"])
 
     ctx.tf2 = transformer({
         "y": "input",
@@ -46,7 +46,7 @@ with macro_mode_on():
     })
     ctx.tf2.code.cell().set("z = y + 1000")
     ctx.z = cell("mixed")
-    ctx.result.outchannels[("y",)].connect(ctx.tf2.y)
+    ctx.result.outchannels["y"].connect(ctx.tf2.y)
     ctx.tf2.z.connect(ctx.z)
 
     #ctx.mount("/tmp/mount-test")
@@ -67,7 +67,6 @@ print("RESULT", result)
 result["x"] = 100
 ctx.x.set("x")
 
-#print(ctx.inp.outchannels[("a",)].status())
 print(ctx.tf.status)
 print(ctx.tf2.status)
 print("RESULT", ctx.result.value)

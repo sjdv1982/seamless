@@ -5,8 +5,8 @@ def validate(self):
     assert self.x > self.y
 
 s = Silk(buffer=buf)
-s.x = 10
-s.y = 2
+s.x = 10.0
+s.y = 2.0
 s.add_validator(validate)
 print(s.schema)
 

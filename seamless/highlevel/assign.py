@@ -126,11 +126,38 @@ def assign_connection(ctx, source, target, standalone_target, exempt=[]):
     ctx._graph[1].append(connection)
 
 
-def _assign_context2(ctx, new_nodes, new_connections, path):
+def copy_checksums(node, old_ctx, new_ctx):
+    if old_ctx is new_ctx:
+        return
+    if "checksum" not in node:
+        return
+    nchecksum = node["checksum"]
+    if isinstance(nchecksum, str):
+        checksums = [(None, nchecksum)]
+    else:
+        checksums = nchecksum.items()
+    old_mgr, new_mgr = old_ctx._get_manager(), new_ctx._get_manager()
+    old_vcache, new_vcache = old_mgr.value_cache, new_mgr.value_cache 
+    old_lcache, new_lcache = old_mgr.label_cache, new_mgr.label_cache 
+    for k,checksum0 in checksums:
+        checksum = bytes.fromhex(checksum0)
+        label = old_lcache.get_label(checksum)
+        if label is not None:
+            new_lcache.set(label, checksum)
+        buffer = old_vcache._buffer_cache.get(checksum)
+        if buffer is not None:
+            buffer = buffer[2]
+        if buffer is not None:
+            new_vcache.incref(checksum, buffer, has_auth=True)
+        
+
+def _assign_context2(ctx, new_nodes, new_connections, path, old_ctx):
     from .Context import Context
     from .Cell import Cell
     from .Transformer import Transformer
     assert isinstance(ctx, Context)
+    old_core_ctx = old_ctx._ctx0
+    new_core_ctx = ctx._ctx0
     nodes, connections, _ = ctx._graph
     for p in list(nodes.keys()):
         if p[:len(path)] == path:
@@ -162,14 +189,15 @@ def _assign_context2(ctx, new_nodes, new_connections, path):
         else:
             raise TypeError(nodetype)
         nodes[pp] = node
+        copy_checksums(node, old_core_ctx, new_core_ctx)
     for con in new_connections:
         con["source"] = path + con["source"]
         con["target"] = path + con["target"]
         connections.append(con)
 
-def _assign_context(ctx, new_nodes, new_connections, path, from_lib):
+def _assign_context(ctx, new_nodes, new_connections, path, old_ctx, from_lib):
     ctx._destroy_path(path)
-    _assign_context2(ctx, new_nodes, new_connections, path)
+    _assign_context2(ctx, new_nodes, new_connections, path, old_ctx)
     subctx = ctx._graph.nodes[path]
     assert subctx["type"] == "context", path
     if from_lib is not None:
@@ -178,11 +206,11 @@ def _assign_context(ctx, new_nodes, new_connections, path, from_lib):
     ctx._translate()
 
 def assign_context(ctx, path, value):
-    new_ctx = value
-    graph = new_ctx.get_graph()
+    old_ctx = value
+    graph = old_ctx.get_graph()
     new_nodes, new_connections = graph["nodes"], graph["connections"]
-    from_lib = new_ctx._as_lib
-    _assign_context(ctx, new_nodes, new_connections, path, from_lib)
+    from_lib = old_ctx._as_lib
+    _assign_context(ctx, new_nodes, new_connections, path, old_ctx, from_lib)
 
 def assign_to_subcell(cell, path, value):
     from ..midlevel.copying import fill_cell_value

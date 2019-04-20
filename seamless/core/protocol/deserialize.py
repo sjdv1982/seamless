@@ -24,6 +24,8 @@ def deserialize(
             source_access_mode = "silk"
         elif isinstance(value, (np.void, np.ndarray)):
             source_access_mode = "binary"
+        elif celltype == "array":
+            source_access_mode = "binary"
         elif celltype in ("plain", "mixed") or from_buffer:
             source_access_mode = celltype
         elif celltype == "cson":
@@ -62,6 +64,11 @@ def deserialize(
         )
     elif celltype == "mixed":
         return deserialize_mixed(
+            value, from_buffer, buffer_checksum,
+            source_access_mode, source_content_type
+        )
+    elif celltype == "array":
+        return deserialize_array(
             value, from_buffer, buffer_checksum,
             source_access_mode, source_content_type
         )
@@ -238,3 +245,34 @@ def deserialize_mixed(
     obj = storage, form, data
     semantic_checksum = buffer_checksum
     return buffer, buffer_checksum, obj, obj, semantic_checksum
+
+
+def deserialize_array(
+    value, 
+    from_buffer, buffer_checksum,
+    source_access_mode, source_content_type
+):
+    if source_access_mode in ("binary", "mixed"):
+        if from_buffer:
+            b = BytesIO(value)
+            data = np.load(b)
+        else:
+            data = value
+    else:
+        raise ValueError(source_access_mode)
+
+    buffer = None
+    if from_buffer:        
+        buffer = value
+    if buffer is None and data is not None:
+        b = BytesIO()
+        np.save(b, data, allow_pickle=False)
+        buffer = b.getvalue()
+    if buffer_checksum is None:
+        if buffer is None:
+            buffer_checksum = None
+        else:
+            buffer_checksum = get_hash(buffer)
+
+    semantic_checksum = buffer_checksum
+    return buffer, buffer_checksum, data, data, semantic_checksum

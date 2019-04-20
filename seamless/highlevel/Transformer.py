@@ -458,6 +458,9 @@ class Transformer(Base):
             language = htf["language"]
             mimetype = language_to_mime(language)
             return mimetype
+        elif attr == "checksum":
+            tf = self._get_tf()
+            return tf.code.checksum
         else:
             raise AttributeError(attr)
 
@@ -469,6 +472,8 @@ class Transformer(Base):
         inputcell = getattr(tf, htf["INPUT"])
         if attr == "value":
             return inputcell.value
+        elif attr == "checksum":
+            return inputcell.checksum
         elif attr == "schema":
             schema_mounter = functools.partial(self._sub_mount, "input_schema")
             return SchemaWrapper(inputcell.handle.schema, schema_mounter)

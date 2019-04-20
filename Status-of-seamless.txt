@@ -10,7 +10,7 @@ X Get Bash transformer working again
 
 Improvements: [two months fulltime of implementation]
 Bugs: missing code paths, especially type conversion (also int/float/... cells) [a few days]
-Bugs: interaction between Seamless features, smoother API (e.g. type inference) [continuous]
+Bugs: interaction between Seamless features (e.g. high-level reactors), smoother API [continuous]
 Interaction with rest of the world (bring back polyglot, add R) [a few days]
     => Compiled language without a compiler
 Easier to work with:

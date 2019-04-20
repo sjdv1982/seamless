@@ -38,6 +38,12 @@ If there is buffering, only the buffer should be edited via mount
                     return False, False
 """
 
+class PathDict(dict):
+    def __getitem__(self, item):
+        if isinstance(item, str):
+            item = (item,)
+        return super().__getitem__(item)
+
 class Inchannel(SeamlessBase):
     def __init__(self, structured_cell, name):
         assert isinstance(name, tuple)
@@ -129,6 +135,7 @@ class StructuredCell(SeamlessBase):
     _exported = True
     _share_callback = None
     _celltype = "structured"
+    _protected = False
     def __init__(
       self,
       name,
@@ -163,17 +170,17 @@ class StructuredCell(SeamlessBase):
             assert isinstance(buffer, MixedCell)
         self.buffer = buffer
 
-        self.inchannels = {}
+        self.inchannels = PathDict()
         if inchannels is not None:
             for inchannel in inchannels:
                 assert inchannel not in editchannels
                 self.inchannels[inchannel] = Inchannel(self, inchannel)
-        self.outchannels = {}
+        self.outchannels = PathDict()
         if outchannels is not None:
             for outchannel in outchannels:
                 assert outchannel not in editchannels
                 self.outchannels[outchannel] = Outchannel(self, outchannel)
-        self.editchannels = {}
+        self.editchannels = PathDict()
         if editchannels is not None:
             for channel in editchannels:
                 self.editchannels[channel] = Editchannel(self, channel)
@@ -213,7 +220,12 @@ class StructuredCell(SeamlessBase):
             )
             self._silk._modifier |= SILK_NO_INFERENCE
             self.data._silk = self._silk
+        self._protected = True
 
+    def __setattr__(self, attr, value):
+        if attr.startswith("_") or not self._protected:
+            return super().__setattr__(attr, value)
+        raise AttributeError("StructuredCell is protected; did you want to assign to .handle.%s instead?" % attr)    
     def _update_schema(self):
         self.schema.set(self._schema_value)
 
@@ -226,7 +238,11 @@ class StructuredCell(SeamlessBase):
         old_manager = None if self._context is None else self._get_manager()
         if old_manager is not None:
             assert isinstance(old_manager, UnboundManager)
-        super()._set_context(context, name)
+        try:
+            self._protected = False
+            super()._set_context(context, name)
+        finally:
+            self._protected = True
         manager = self._get_manager()
         assert not (isinstance(manager, Manager) and isinstance(context, UnboundContext))
         if old_manager is None:
@@ -306,7 +322,3 @@ class StructuredCell(SeamlessBase):
             monitor = self.monitor
             result = monitor.get_path()
         return result
-
-
-print("TODO: Runtime wrapper around StructuredCell that protects against .foo = bar\
- where .handle.foo = bar is intended")
