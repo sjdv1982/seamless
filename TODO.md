@@ -556,13 +556,6 @@ Very long-term:
   would probably be good. Keep an eye on analogous developments in VS Code and JupyterLab.
 - Full feature implementation of Silk, e.g. constructs (see silk.md)
 - Other *host* implementations? JavaScript? Erlang? Elixir? Go?
-- GPU-GPU triggering.
-  This is possible with clEnqueueWaitForEvents / cudaStreamWaitEvent, by waiting for a *task*.
-  The task you are waiting for must already have been dispatched to the GPU. In other words,
-  you can pre-emptively launch a GPU task once it is dependent only on other GPU tasks
-  (including H2D/D2H copying), and no purely CPU tasks (i.e. all of those must have finished).
-  The best bet for implementation is probably the rewriting of multiple CUDA/OpenCL transformers
-  into one.
 - Re-implement all high level classes as Silk classes with methods in their schema.
 - Serialize the topology of low-level contexts, including checksums.
   May help with faster caching of low-level macros.

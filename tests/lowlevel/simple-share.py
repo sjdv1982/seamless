@@ -37,7 +37,10 @@ namespace = shareserver.new_namespace("ctx")
 print("OK1")
 
 def share(namespace, shareddict):
-    shareserver.share(namespace, shareddict)
+    shareddict2 = {}
+    for key, cell in shareddict.items():
+        shareddict2[key] = (cell, "application/json")        
+    shareserver.share(namespace, shareddict2)
     for key, cell in shareddict.items():
         if key != "self":
             sharefunc = partial(shareserver.send_update, "ctx", key)

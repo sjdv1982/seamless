@@ -331,13 +331,12 @@ class Context:
                 if old_gen_context is not None:
                     old_gen_context.destroy()
                 ub_ctx._root_.destroy()               
+                for traitlet in self._traitlets.values():
+                    traitlet._connect()
+                self._connect_share()
         finally:
             self._translating = False
             self._unbound_context = None
-        if ok:
-            for traitlet in self._traitlets.values():
-                traitlet._connect()
-            self._connect_share()
 
         """
         # TODO: cell update hooks, for library
@@ -379,11 +378,12 @@ class Context:
                     pass #TODO: see above
                 else:
                     raise TypeError(cell)
-                sharedict[key] = cell
+                sharedict[key] = cell, hcell.mimetype
 
         if shareserver is not None:
             shareserver.share(self._share_namespace, sharedict)
-        for key, cell in sharedict.items():
+        for key, value in sharedict.items():
+            cell = value[0]
             sharefunc = partial(shareserver.send_update, self._share_namespace, key)
             cell._set_share_callback(sharefunc)
             sharefunc()

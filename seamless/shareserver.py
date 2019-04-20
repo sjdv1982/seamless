@@ -103,7 +103,7 @@ class ShareServer(object):
         if not await self._send_varlist(websocket, list(d.keys())):
             return
         for k,v in d.items():
-            _, checksum, marker = v
+            _, checksum, marker, _ = v
             if not await self._send_checksum(websocket, k, checksum, marker):
                 break
         self.connections[path].append(websocket)
@@ -141,17 +141,23 @@ class ShareServer(object):
         namespace, key = tail.split("/")
         try:
             ns = self.namespaces[namespace]
-            cell, checksum, marker = ns[key]
+            cell, checksum, marker, content_type = ns[key]
             cell = cell()
             if cell is None:
                 raise KeyError
-            if cell._celltype != "plain": raise NotImplementedError ### cache branch
+            celltype = cell._celltype
             # TODO (as well): allow paths into the data, if enabled
             value = cell.value
+            if celltype == "plain":
+                body = json.dumps(value)
+            elif celltype in ("text", "python", "cson", "ipython"):
+                body = value
+            else:
+                raise NotImplementedError ### cache branch
             return web.Response(
                 status=200,
-                body=json.dumps(value),
-                content_type='application/json',
+                body=body,
+                content_type=content_type,
             )            
         except KeyError:
             return web.Response(
@@ -169,7 +175,7 @@ class ShareServer(object):
         namespace, key = tail.split("/")
         try:
             ns = self.namespaces[namespace]
-            cell, checksum, marker = ns[key]
+            cell, checksum, marker, _ = ns[key]
             cell = cell()
             if cell is None:
                 raise KeyError
@@ -196,7 +202,6 @@ class ShareServer(object):
     async def _handle_equilibrate(self, request):
         tail = request.match_info.get('tail')
         namespace, key = tail.split("/")
-        print(namespace, key)
         if namespace not in self.namespaces or key != "equilibrate":
             return web.Response(
                 status=404,
@@ -283,7 +288,8 @@ class ShareServer(object):
 
         any_send_update = False
         coros = []
-        for key, cell in celldict.items():
+        for key, value in celldict.items():
+            cell, content_type = value
             if key == "self":
                 ctx = cell
                 ns[key] = weakref.ref(ctx)
@@ -302,14 +308,14 @@ class ShareServer(object):
                 send_update = True
                 marker = 0
             else:
-                _, old_checksum, old_marker = ns[key]
+                _, old_checksum, old_marker, _ = ns[key]
                 if checksum == old_checksum:
                     send_update = False
                     marker = old_marker
                 else:
                     send_update = True
                     marker = old_marker + 1
-            ns[key] = [weakref.ref(cell), checksum, marker]
+            ns[key] = [weakref.ref(cell), checksum, marker, content_type]
 
             if send_update or diff_varlist:
                 for websocket in self.connections[namespace]:
@@ -330,7 +336,7 @@ class ShareServer(object):
     def _get_update_marker(self, namespace, key):
         assert namespace in self.namespaces
         ns = self.namespaces[namespace]
-        cell, old_checksum, marker = ns[key]
+        cell, old_checksum, marker, _ = ns[key]
         if cell is None:
             return
         cell = cell()

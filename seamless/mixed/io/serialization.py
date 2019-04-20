@@ -27,9 +27,9 @@ def deserialize(data):
     from ..get_form import get_form
     pure_plain, pure_binary = False, False
     if isinstance(data, str):
-        pure_plain = True        
-    assert isinstance(data, bytes)
+        pure_plain = True            
     if not pure_plain:
+        assert isinstance(data, bytes)
         if data.startswith(MAGIC_NUMPY):
             pure_binary = True
         elif not data.startswith(MAGIC_SEAMLESS_MIXED):

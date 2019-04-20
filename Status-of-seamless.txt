@@ -4,6 +4,7 @@ X Tests to "color" the graph (use Redis to fill in values)
 X Tests for remote deployment of jobs
 X Test for remote execution of a graph
 X Get Bash transformer working again
+- Bug: re-integrate with Observable, first simple-share.py + JS, then Observable, then high-level test-html.py
 - Docker transformer
 - Conversions for Galaxy, Mobyle, SnakeMake
 - Simple protein-based example
@@ -29,7 +30,7 @@ GPU support: block cells [a week]
 
 Long-term features:
 Special constructs
-Latency reduction: Stream-stream, GPU-GPU
+Latency reduction: Stream-stream
 Full-featured Silk
 Git integration (with modularity)
 Debugger integration
