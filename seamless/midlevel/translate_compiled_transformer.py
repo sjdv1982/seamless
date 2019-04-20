@@ -69,6 +69,7 @@ def _finalize(ctx, ctf, inp, c_inp, result, c_result, input_name, result_name):
 def translate_compiled_transformer(node, root, namespace, inchannels, outchannels, lib_path00, is_lib):
     raise NotImplementedError ### cache branch
     #TODO: still a lot of common code with translate_py_transformer, put in functions
+    from seamless.lib.compiled_transformer import compiled_transformer as _
     inchannels = [ic for ic in inchannels if ic[0] != "code"]
 
     main_module_inchannels = [("objects",) + ic[1:] for ic in inchannels if ic[0] == "_main_module"]

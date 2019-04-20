@@ -12,8 +12,8 @@ def gen_header(input_schema, result_schema, input_name, result_name, inputpins):
     return None
 ctx.gen_header = gen_header
 pins = ctx.gen_header._get_htf()["pins"] ###
-pins["input_schema"]["access_mode"] = "json"
-pins["result_schema"]["access_mode"] = "json"
+pins["input_schema"]["access_mode"] = "plain"
+pins["result_schema"]["access_mode"] = "plain"
 pins["input_name"]["access_mode"] = "text"
 pins["result_name"]["access_mode"] = "text"
 ctx.gen_header.code = set_resource(gen_header_file)
@@ -24,8 +24,8 @@ pins = ctx.compiler._get_htf()["pins"] ###
 pins["lang"]["access_mode"] = "text"
 pins["compiled_code"]["access_mode"] = "text"
 pins["header"]["access_mode"] = "text"
-pins["main_module"]["access_mode"] = "json"
-pins["compiler_verbose"]["access_mode"] = "json"
+pins["main_module"]["access_mode"] = "plain"
+pins["compiler_verbose"]["access_mode"] = "plain"
 
 def func(binary_module, pins, input_schema, result_schema, input_name, result_name, kwargs):
     None
@@ -35,8 +35,8 @@ ctx.translator.code = set_resource(translator_file)
 ctx.translator.RESULT = "translator_result_"
 pins = ctx.translator._get_htf()["pins"] ###
 pins["binary_module"]["access_mode"] = "binary_module"
-pins["input_schema"]["access_mode"] = "json"
-pins["result_schema"]["access_mode"] = "json"
+pins["input_schema"]["access_mode"] = "plain"
+pins["result_schema"]["access_mode"] = "plain"
 pins["input_name"]["access_mode"] = "text"
 pins["result_name"]["access_mode"] = "text"
 
@@ -44,15 +44,15 @@ ctx.translate()
 
 gen_header_params = ctx.gen_header._get_tf().tf._transformer_params
 ctx.gen_header_params = gen_header_params
-ctx.gen_header_params.celltype = "json"
+ctx.gen_header_params.celltype = "plain"
 
 compiler_params = ctx.compiler._get_tf().tf._transformer_params
 ctx.compiler_params = compiler_params
-ctx.compiler_params.celltype = "json"
+ctx.compiler_params.celltype = "plain"
 
 translator_params = ctx.translator._get_tf().tf._transformer_params
 ctx.translator_params = translator_params
-ctx.translator_params.celltype = "json"
+ctx.translator_params.celltype = "plain"
 
 if __name__ == "__main__":
     ctx.mount("/tmp/seamless-test", persistent=False) #TODO: persistent=False (does not delete atm)
@@ -62,13 +62,13 @@ if __name__ == "__main__":
     ctx.header.celltype = "text"
 
     ctx.inputpins = Cell()
-    ctx.inputpins.celltype = "json"
+    ctx.inputpins.celltype = "plain"
 
     ctx.input_schema = Cell()
-    ctx.input_schema.celltype = "json"
+    ctx.input_schema.celltype = "plain"
 
     ctx.result_schema = Cell()
-    ctx.result_schema.celltype = "json"
+    ctx.result_schema.celltype = "plain"
 
     ctx.input_name = Cell()
     ctx.input_name.celltype = "text"

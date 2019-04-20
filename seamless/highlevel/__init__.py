@@ -67,12 +67,6 @@ from .Cell import Cell
 from .SubCell import SubCell
 from .Link import Link
 
-print("TODO: re-import lib (highlevel/__init__.py line 69)")
-"""
-from ..lib.compiled_transformer import compiled_transformer as _
-from ..lib.bash_transformer import bash_transformer as _
-"""
-
 def load_graph(graph, *, cache_ctx=None):
     """TODO: document"""
     from ..core.context import Context as CoreContext
