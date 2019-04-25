@@ -86,7 +86,6 @@ class ShareServer(object):
             await prior
         if checksum is None:
             return
-        print(key, marker, checksum)
         return await self._send(websocket, ("update", (key, checksum, marker)))
 
     async def _serve_update(self, websocket, path):
