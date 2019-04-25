@@ -297,7 +297,6 @@ class ShareServer(object):
                 ns[key] = weakref.ref(ctx)
                 continue
             if isinstance(cell, StructuredCell):
-                raise NotImplementedError ### cache branch; maybe never implement this...
                 datacell = cell.data
             elif isinstance(cell, Cell):
                 datacell = cell

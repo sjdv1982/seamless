@@ -415,7 +415,12 @@ class Manager:
                 if isinstance(cell, Path):
                     cell = cell._cell
                     if cell is None:
-                        continue    
+                        continue
+                if not hasattr(cell, "_monitor") or cell._monitor is None:                    
+                    if subpath == ():
+                        subpath = None            
+                    if subpath is not None:
+                        raise Exception(subpath)
                 status = self.status[cell][subpath]
                 if prelim:
                     if status.auth == "FRESH":
@@ -425,12 +430,13 @@ class Manager:
                         status.auth = "FRESH"
                 if not is_none or subpath is not None:
                     # TODO: dirty...
-                    if subpath is None:
+                    if subpath is None:                        
                         if not is_none and value is None:
                            self.set_cell_checksum(cell, checksum)
                         else:
                             self.set_cell(cell, value, subpath=None)
-                    else:                        
+                    else:              
+                        assert hasattr(cell, "_monitor")
                         monitor = cell._monitor
                         assert monitor is not None
                         if value is None and not is_none:
@@ -688,6 +694,11 @@ class Manager:
                 return
         if cell._celltype == "structured": 
             raise TypeError
+        if not hasattr(cell, "_monitor") or cell._monitor is None:
+            if cell_subpath == ():
+                cell_subpath = None            
+            if cell_subpath is not None:
+                raise Exception(cell_subpath)
         status = self.status[cell][cell_subpath]
         new_data_status = status.data
         new_auth_status = status.auth
@@ -1308,7 +1319,12 @@ class Manager:
             else:                
                 self.set_cell_checksum(target.cell, checksum, self.status[source.cell][None])
         elif source.subpath is not None or target.subpath is not None:
-            if source.celltype != target.celltype: raise NotImplementedError(source.cell, target.cell) ### cache branch
+            if source.celltype != target.celltype and target.celltype == "mixed" and source.celltype == "text": ## KLUDGE
+                pass
+            elif source.celltype != target.celltype and source.celltype == "mixed" and target.celltype == "text": ## KLUDGE
+                pass
+            elif source.celltype != target.celltype: 
+                raise NotImplementedError(source.cell, target.cell) ### cache branch
             expression = source.to_expression(checksum)
             try:
                 value = self.get_expression(expression)
@@ -1347,7 +1363,8 @@ class Manager:
                         silk[target.subpath[-1]] = value
                     else:
                         silk.set(value)
-                else:    
+                else:
+                    assert hasattr(target.cell, "_monitor")
                     monitor = target.cell._monitor
                     assert monitor is not None
                     monitor.set_path(target.subpath, value)

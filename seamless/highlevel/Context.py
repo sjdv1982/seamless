@@ -363,22 +363,23 @@ class Context:
             self.register_library(timeout=5)
 
     def _connect_share(self):
+        if self._shares is None:
+            return
         from ..core import StructuredCell, Cell as core_cell
-        sharedict = {}
-        if self._shares is not None:
-            for path in self._shares:
-                key = "/".join(path) #TODO: split in subpaths by inspecting and traversing ctx._children (recursively for subcontext children)
-                hcell = self._children[path]
-                if not isinstance(hcell, Cell):
-                    raise NotImplementedError(type(hcell))
-                cell = hcell._get_cell()
-                if isinstance(cell, StructuredCell):
-                    pass #TODO: see above
-                elif isinstance(cell, core_cell):
-                    pass #TODO: see above
-                else:
-                    raise TypeError(cell)
-                sharedict[key] = cell, hcell.mimetype
+        sharedict = {}        
+        for path in self._shares:
+            key = "/".join(path) #TODO: split in subpaths by inspecting and traversing ctx._children (recursively for subcontext children)
+            hcell = self._children[path]
+            if not isinstance(hcell, Cell):
+                raise NotImplementedError(type(hcell))
+            cell = hcell._get_cell()
+            if isinstance(cell, StructuredCell):
+                pass #TODO: see above
+            elif isinstance(cell, core_cell):
+                pass #TODO: see above
+            else:
+                raise TypeError(cell)
+            sharedict[key] = cell, hcell.mimetype
 
         if shareserver is not None:
             shareserver.share(self._share_namespace, sharedict)
