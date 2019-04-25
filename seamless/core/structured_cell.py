@@ -251,6 +251,9 @@ class StructuredCell(SeamlessBase):
             manager._register_cell_paths(self.data, inpaths, has_auth=False)
             manager._register_cell_paths(self.data, outedpaths, has_auth=True)
 
+    def _set_share_callback(self, sharefunc):
+        return self.data._set_share_callback(sharefunc)
+
     @property
     def monitor(self):
         return self.data._monitor

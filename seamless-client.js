@@ -3,6 +3,7 @@ function connect_seamless(websocketserver, restserver, namespace="ctx"){
     self: {
       oninput: function(value) {},
       onchange: function(value) {},
+      onvarlist: function(value) {},
       get_value: function(){
         let result = {}
         for (const key of varlist) {
@@ -20,7 +21,12 @@ function connect_seamless(websocketserver, restserver, namespace="ctx"){
     //$("#request").text("GET:" + rq)
     fetch(rq)
     .then(function(response) {
-      return response.json()
+      if (response.headers.get("Content-Type") == "application/json"){
+        return response.json()  
+      }
+      else {
+        return response.text()
+      }
     })
     .then(function(result) {
       ctx[key].value = result
@@ -89,6 +95,7 @@ function connect_seamless(websocketserver, restserver, namespace="ctx"){
         }
         get_value(key)
       }
+      ctx.onvarlist(varlist)
     }      
     else if (message[0] == "update") {
       let key = message[1][0]

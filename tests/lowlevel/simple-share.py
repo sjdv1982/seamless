@@ -39,7 +39,7 @@ print("OK1")
 def share(namespace, shareddict):
     shareddict2 = {}
     for key, cell in shareddict.items():
-        shareddict2[key] = (cell, "application/json")        
+        shareddict2[key] = (cell, "text/plain")        
     shareserver.share(namespace, shareddict2)
     for key, cell in shareddict.items():
         if key != "self":

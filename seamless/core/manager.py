@@ -1578,6 +1578,9 @@ class Manager:
             # an incref will take place anyway, possibly on a dummy item
             # The result value will tell us if the buffer value is known
             buffer_known = vcache.incref(checksum, buffer=None, has_auth=has_auth)
+            share_callback = cell._share_callback
+            if share_callback is not None:
+                share_callback()
             if buffer_known and not is_dummy_mount(cell._mount):
                 if not get_macro_mode():
                     self.mountmanager.add_cell_update(cell)
@@ -1628,6 +1631,9 @@ class Manager:
             accessor.subpath = subpath
             expression = accessor.to_expression(checksum)
             self.expression_cache.expression_to_semantic_key[expression.get_hash()] = semantic_key
+            share_callback = cell._share_callback
+            if share_callback is not None:
+                share_callback()
             if subpath is None and not is_dummy_mount(cell._mount):
                 if not get_macro_mode() and origin is not cell._context():
                     self.mountmanager.add_cell_update(cell)

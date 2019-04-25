@@ -103,6 +103,8 @@ class ShareServer(object):
         if not await self._send_varlist(websocket, list(d.keys())):
             return
         for k,v in d.items():
+            if k == "self":
+                continue
             _, checksum, marker, _ = v
             if not await self._send_checksum(websocket, k, checksum, marker):
                 break
