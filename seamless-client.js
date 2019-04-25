@@ -95,7 +95,7 @@ function connect_seamless(websocketserver, restserver, namespace="ctx"){
         }
         get_value(key)
       }
-      ctx.onvarlist(varlist)
+      ctx.self.onvarlist(varlist)
     }      
     else if (message[0] == "update") {
       let key = message[1][0]
