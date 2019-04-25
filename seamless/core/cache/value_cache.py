@@ -6,6 +6,8 @@ from collections import namedtuple
 
 from .redis_client import redis_sinks, redis_caches
 
+NO_EXPIRE_SIZE_LIMIT = 100000 ### TODO: configure this, also per-cell
+
 class WeakrefableWrapper:
     __slots__ = ["value", "__weakref__"]
     def __init__(self, value):
@@ -51,7 +53,7 @@ class ValueCache:
      (a miss from object cache but a hit from buffer cache), the item gets
      generated from buffer cache.
      In this case, and also if a new object item is added explicitly,
-     a temporary reference to  the item is added, that expires after 20 seconds.
+     a temporary reference to  the item is added, that expires after 20 seconds
 
     For cells, there is normally only one buffer cache item, because all expressions
      of the same cell._storage_type are mapped to it.
@@ -68,7 +70,7 @@ class ValueCache:
 
     def incref(self, buffer_checksum, buffer, *, has_auth):
         """Increase refcount for buffer checksum
-        Add an extra non-auth refcount that expires after 20 secs
+        Add an extra non-auth refcount that expires after 20 secs (unless smaller than 100k).
         
         Returns True if the full buffer has been successfully inserted
         If buffer is not None, this is always the case
@@ -110,6 +112,8 @@ class ValueCache:
     def decref(self, buffer_checksum, *, has_auth):
         item = self._buffer_cache[buffer_checksum]
         refcount_auth, refcount_nauth, buffer = item
+        if (buffer is None or len(buffer) <= NO_EXPIRE_SIZE_LIMIT):
+            return
         if has_auth:
             assert refcount_auth > 0
             if refcount_auth == 1 and refcount_nauth == 0:

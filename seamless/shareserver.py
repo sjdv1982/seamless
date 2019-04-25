@@ -86,6 +86,7 @@ class ShareServer(object):
             await prior
         if checksum is None:
             return
+        print(key, marker, checksum)
         return await self._send(websocket, ("update", (key, checksum, marker)))
 
     async def _serve_update(self, websocket, path):
@@ -278,6 +279,16 @@ class ShareServer(object):
         from .core.structured_cell import StructuredCell
         from .core.cell import Cell
         assert namespace in self.namespaces
+
+        for key, value in celldict.items():
+            cell, content_type = value            
+            if isinstance(cell, StructuredCell):
+                datacell = cell.data
+            elif isinstance(cell, Cell):
+                datacell = cell
+            if datacell._destroyed:
+                return # destroy before share
+
         ns = self.namespaces[namespace]
         old_varlist = sorted(list(ns.keys()))
         varlist = sorted(list(celldict.keys()))
@@ -291,7 +302,7 @@ class ShareServer(object):
         any_send_update = False
         coros = []
         for key, value in celldict.items():
-            cell, content_type = value
+            cell, content_type = value            
             if key == "self":
                 ctx = cell
                 ns[key] = weakref.ref(ctx)
@@ -332,6 +343,9 @@ class ShareServer(object):
         await asyncio.gather(*coros)
 
     def share(self, namespace, celldict):
+        for key, value in celldict.items():
+            cell, content_type = value            
+            cell._get_manager() 
         return asyncio.ensure_future(self._share(namespace, celldict))
 
     def _get_update_marker(self, namespace, key):
@@ -351,6 +365,8 @@ class ShareServer(object):
         return checksum, marker
 
     async def _send_update(self, namespace, key):
+        if key not in self.namespaces[namespace]:
+            return
         update_marker = self._get_update_marker(namespace, key)
         if update_marker is None:
             return

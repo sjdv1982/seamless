@@ -64,7 +64,7 @@ function connect_seamless(websocketserver, restserver, namespace="ctx"){
       return response.text()
     })
     .then(function(result) {
-      ctx[key]._marker = parseInt(result);
+      ctx[key]._marker = parseInt(result) - 1;
     })
     .catch(function(err) {
       console.log('Seamless client PUT Error:', namespace, key, err)
