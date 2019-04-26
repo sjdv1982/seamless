@@ -110,7 +110,7 @@ function connect_seamless(websocketserver, restserver, namespace="ctx"){
       //$("#message").text(message) 
     }
   }
-  var ws_url = "ws://" + websocketserver + "/" + namespace
+  var ws_url = "wss://" + websocketserver + "/" + namespace
   var ws = new WebSocket(ws_url)
   ws.onmessage = onmessage;  
   
