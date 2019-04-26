@@ -42,12 +42,13 @@ setup(
         'Programming Language :: Python :: 3.7',
     ],
 
-    keywords='framework interactive interoperability reproducible-science protocol incremental-computation distributed-computing'
+    keywords='framework interactive interoperability reproducible-science protocol incremental-computation distributed-computing',
     packages=find_packages(),
+    #data_files=[("", ["highlevel/*.types"]), ("", ["compiler/*.cson"])],
 
     install_requires=[
       'ipython', 'numpy', 'cson', 'websockets', 'tornado', 'requests',
-      'aiohttp', 'aiohttp_cors', 'wurlitzer', 'docker'
+      'aiohttp', 'aiohttp_cors', 'wurlitzer', 'nest_asyncio', 'redis', 'docker'
     ],
 
     extras_require={
