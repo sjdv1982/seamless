@@ -17,7 +17,7 @@ function connect_seamless(websocketserver, restserver, namespace="ctx"){
   let varlist = null    
   
   function get_value(key) {
-    var rq = "http://" + restserver + "/" + namespace + "/" + key
+    var rq = restserver + "/" + namespace + "/" + key
     //$("#request").text("GET:" + rq)
     fetch(rq)
     .then(function(response) {
@@ -47,7 +47,7 @@ function connect_seamless(websocketserver, restserver, namespace="ctx"){
     put_value(key, value)
   }
   function put_value(key, value) { 
-    var rq = "http://" + restserver + "/" + namespace + "/" + key
+    var rq = restserver + "/" + namespace + "/" + key
     const payload = JSON.stringify({"value":value})
     //$("#request").text(JSON.stringify({"rq": "PUT:" + rq, "value": value}))
     let options = {
@@ -110,7 +110,7 @@ function connect_seamless(websocketserver, restserver, namespace="ctx"){
       //$("#message").text(message) 
     }
   }
-  var ws_url = "wss://" + websocketserver + "/" + namespace
+  var ws_url = websocketserver + "/" + namespace
   var ws = new WebSocket(ws_url)
   ws.onmessage = onmessage;  
   
