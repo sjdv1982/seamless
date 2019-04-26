@@ -138,9 +138,10 @@ class Transformer(Base):
     @language.setter
     def language(self, value):
         from ..compiler import find_language
-        lang, language, extension = find_language(value)
+        lang, language, extension = find_language(value)        
         compiled = (language["mode"] == "compiled")
         htf = self._get_htf()
+        old_language = htf.get("language")
         htf["language"] = lang
         htf["compiled"] = compiled
         htf["file_extension"] = extension
@@ -148,6 +149,23 @@ class Transformer(Base):
             htf["with_result"] = True
             if "main_module" not in htf:
                 htf["main_module"] = {"compiler_verbose": True}
+        elif lang == "docker":
+            if old_language != "docker":
+                im = False
+                if "docker_image" not in htf["pins"]:
+                    htf["pins"]["docker_image"] = default_pin.copy()
+                    im = True
+                if "docker_options" not in htf["pins"]:
+                    htf["pins"]["docker_options"] = default_pin.copy()
+                    self.docker_options = {}
+                if im:
+                    self.docker_image = ""
+
+        else:
+            if old_language == "docker":
+                htf["pins"].pop("docker_options")
+                htf["pins"].pop("docker_image")
+
         self._parent()._translate()
 
     @property
@@ -584,7 +602,7 @@ class Transformer(Base):
 
     def _set_observers(self):        
         htf = self._get_htf()
-        if htf["compiled"] or htf["language"] not in ("python", "ipython", "bash"):
+        if htf["compiled"] or htf["language"] not in ("python", "ipython", "bash", "docker"):
             raise NotImplementedError ### cache branch
             # NOTE: observers depend on the implementation of translate_XXX_transformer (midlevel)
         tf = self._get_tf()

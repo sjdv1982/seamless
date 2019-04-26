@@ -6,10 +6,12 @@ X Test for remote execution of a graph
 X Get Bash transformer working again
 X Bug: re-integrate with Observable, first simple-share.py + JS, then Observable, then high-level test-html.py
 X Graph
-- Docker transformer, using Docker Python library
-- Embedded Observable Notebook
+X Docker transformer, using Docker Python library
 - Simple protein-based example
 - Docker images
+- Embedded Observable Notebook
+
+
 
 - Update interoperability document
 - Conversions for Galaxy, Mobyle, SnakeMake

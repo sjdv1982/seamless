@@ -27,8 +27,11 @@ with open(languages_cson_file) as f:
 languages = cson2json(languages_cson)
 
 def find_language(lang):
+    lang2 = lang
+    if lang == "docker":
+        lang2 = "bash"
     try:
-        language = languages[lang]
+        language = languages[lang2]
         extension = language.get("extension")
         if isinstance(extension, list):
             extension = extension[0]
@@ -37,14 +40,14 @@ def find_language(lang):
         for lang0, language in languages.items():
             ext = language.get("extension", [])
             if isinstance(ext, str):
-                if ext == lang:
+                if ext == lang2:
                     break
             else:
-                if lang in ext:
+                if lang2 in ext:
                     break
         else:
-            raise KeyError(lang) from None
-        extension = lang
+            raise KeyError(lang2) from None
+        extension = lang2
     return lang, language, extension
 
 from .compile import compile

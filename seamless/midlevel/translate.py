@@ -315,11 +315,13 @@ def translate(graph, ctx, from_lib_paths, is_lib):
             inchannels, outchannels = find_channels(node["path"], connection_paths)
             if node["compiled"]:
                 from .translate_compiled_transformer import translate_compiled_transformer
-                translate_compiled_transformer(node, ctx, namespace, inchannels, outchannels, lib_path, is_lib)
+                translate_compiled_transformer(node, ctx, namespace, inchannes, outchannels, lib_path, is_lib)
             elif node["language"] in ("python", "ipython"):
                 translate_py_transformer(node, ctx, namespace, inchannels, outchannels, lib_path, is_lib)
             elif node["language"] == "bash":
                 translate_bash_transformer(node, ctx, namespace, inchannels, outchannels, lib_path, is_lib)
+            elif node["language"] == "docker":
+                translate_docker_transformer(node, ctx, namespace, inchannels, outchannels, lib_path, is_lib)
             else:
                 raise NotImplementedError(node["language"])
         elif t == "reactor":
@@ -354,3 +356,4 @@ def translate(graph, ctx, from_lib_paths, is_lib):
 from .library import get_lib_path
 from .translate_py_transformer import translate_py_transformer
 from .translate_bash_transformer import translate_bash_transformer
+from .translate_docker_transformer import translate_docker_transformer
