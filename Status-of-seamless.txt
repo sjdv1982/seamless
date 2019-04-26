@@ -4,12 +4,15 @@ X Tests to "color" the graph (use Redis to fill in values)
 X Tests for remote deployment of jobs
 X Test for remote execution of a graph
 X Get Bash transformer working again
-- Bug: re-integrate with Observable, first simple-share.py + JS, then Observable, then high-level test-html.py
-- Docker transformer
-- Conversions for Galaxy, Mobyle, SnakeMake
+X Bug: re-integrate with Observable, first simple-share.py + JS, then Observable, then high-level test-html.py
+X Graph
+- Docker transformer, using Docker Python library
+- Embedded Observable Notebook
 - Simple protein-based example
-- Create example
+- Docker images
+
 - Update interoperability document
+- Conversions for Galaxy, Mobyle, SnakeMake
 
 Improvements: [two months fulltime of implementation]
 Bugs: missing code paths, especially type conversion (also int/float/... cells) [a few days]

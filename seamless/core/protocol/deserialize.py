@@ -151,6 +151,8 @@ def deserialize_text(
 ):
     if source_access_mode in ("text", "python", "cson"):
         if from_buffer:
+            if isinstance(value, bytes):
+                value = value.decode()
             value = value.rstrip("\n")
     elif source_access_mode == "binary":
         if isinstance(value, np.ndtype):
@@ -158,6 +160,8 @@ def deserialize_text(
         else:
             raise TypeError(type(value))
     elif source_access_mode == "plain":        
+        if isinstance(value, bytes):
+            value = value.decode()
         if from_buffer:
             value = str(json.loads(value.rstrip("\n")))
     else:

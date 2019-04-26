@@ -7,9 +7,9 @@ setup(
 
     version='0.2',
 
-    description='a cell-based reactive programming framework',
+    description='a cell-based programming framework',
 
-    long_description="""Seamless is a framework to set up computations (and visualizations) that respond live to changes in cells. Cells contain the input data as well as the source code of the computations, and all cells can be edited interactively. The main application domains are scientific protocols, data visualization, and interactive code development (shaders, algorithms, and GUIs).""",
+    long_description="""Seamless is a framework to set up computations (and visualizations) that respond to changes in cells. Cells contain the input data as well as the source code of the computations, and all cells can be edited interactively.""",
 
     url='https://github.com/sjdv1982/seamless',
 
@@ -39,15 +39,15 @@ setup(
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
     ],
 
-    keywords='live reactive interactive programming visualization',
-
+    keywords='framework interactive interoperability reproducible-science protocol incremental-computation distributed-computing'
     packages=find_packages(),
 
     install_requires=[
       'ipython', 'numpy', 'cson', 'websockets', 'tornado', 'requests',
-      'aiohttp', 'aiohttp_cors', 'wurlitzer'
+      'aiohttp', 'aiohttp_cors', 'wurlitzer', 'docker'
     ],
 
     extras_require={

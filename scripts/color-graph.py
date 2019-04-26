@@ -6,6 +6,7 @@ infile, outfile = sys.argv[1:]
 graph = json.load(open(infile))
 
 redis_cache = seamless.RedisCache()
+redis_sink = seamless.RedisSink()
 
 ctx = load_graph(graph)
 ctx.equilibrate()
