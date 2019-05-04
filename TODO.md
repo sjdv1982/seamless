@@ -1,188 +1,47 @@
-Great Refactor is underway (see seamless-towards-02.md).
+Great Refactor is almost complete (see seamless-towards-02.md).
 
 Part 1 is now complete
 Most of the high level is done.
 
+Part 2
 Things to do:
+2A. Preparation
+- Finish the testing of the docking transformers, in particular inside docker
+- Get reactors working again at the high level
+- Update interoperability document
+- PREPARE SIMPLE DEMO IN DOCUMENTATION
 
-1. Finish the Great Refactor early, by putting loose ends in OLD folder, DONE
-   1a: merge the branch on Github, DONE
-   1b: make a very simple Dockerfile (wget + pip), to be used with IPython DONE
-       make a very simple Jupyter Docker image. TODO
-   1c: push it on docker repo v2 TODO
-   1d: test deployment (native, then Dockerfile) DONE
-#NOTE (for presentation: with this, everything will run in a Docker file
-# - No more wrappers that invoke Docker/slurm, but that don't run in Docker
-# - No more dependencies on mounted files supplied as command line args
-# 
-2. Great Split (this is big!)
-***NOTE: documentation/plan for new low-level strategies are in core/cache/evaluate.py***
+2B. towards DaReUS-Loop example
+- Get module injection working again.
+    Store module objects either in object cache or a new module object cache.
+    Building these module objects is similar to cache expression evaluation in the hierarchy (i.e. local).
+    The injection machinery itself should stay similar.
+- Cell-cell connection (also with int/float/str/bool cells), generic deserialization (see protocol/evaluate.py)
+   Add back in int/float/str/bool cells because they are so convenient.
+     Their content type will be int/float/text/bool.
+     Adapters will convert among them (e.g. int=>float) and between them and JSON/mixed/text.
+     Supported access modes are JSON and text. Adapters will convert to Silk.
+- Shell (create new namespace upon request/upon update; either pre-execution or post-execution [post-execution may re-execute transformer/macro])
+- Implement annotation dict, including execute_debug, ncores (ncores DONE), and a field for streams
+- Deep cells / cache-tree-depth (see below).
 
-  A. DONE
-  - Put low-level execution code in BAK, DONE
-  - Rip execution code from low-level, DONE
-  - Changes to macro mode. Essentially, worker execution and status propagation is disabled.
-    For now, macro mode has no arguments.  DONE
-  - Minimal manager to store connections and cell values DONE
-  - Get rid of transfer_mode in protocol.py (and when porting serialize/deserialize), DONE.
-  - Minimal manager to make simple example work, using the New Way, DONE
-  - New Way statuses, including "overrule", DONE.
-    Overrule is orthogonal to the other statuses,
-    and a cell is overruled if *any* of its upstream inputs is overruled!
-  
-  
-  B. Implement some remote computing: DONE
-    - label cache: a label-to-checksum cache. DONE
-      Labels can be .e.g "the ribosome", "the clustering code".
-      They must be unique, but they are ephemeral, not like checksum annotations which will be global
-    - Communion servers:  DONE
-      - accept connections over websockets; after that, "server" and "client" are just peers DONE
-      - Peers negotatiate what they commune: 
-        - label cache DONE
-        - transformer result cache DONE
-        - cell value cache DONE
-        - remote transform jobs (send/receive) DONE
-      All communed caches will be level 1, since evaluating an expression will normally be much faster
-       than interrogating the network. If not, there is always cache tree depth.      
-      Communed caches will be registered as external read caches
-      Communed job control will be connected as a remote job server / client
-      All cache/job commands will be received over the websocket
-    - Redis cache server module (for multiple kind of cache) DONE
-      This is an internal Seamless cache server that works by being a client to Redis
-       (which will run as a different process than Seamless, exposed over the network)      
-      - Will be registered as communed caches
-      - In addition, Redis cache server may be set as a data sink, i.e.
-        cache values will be *written* to it. This will keep the local value cache 
-        (but not the other caches) empty.
 
-  C. DONE
-  - Get reactors working. DONE
-    Reactors must be marked as pure or impure.
-    Pure reactors get shut down after every reaction. They cannot have editpins.    
-    Impure reactors receive delta updates.
-    A semi-pure reactor is a pure reactor that is reluctant to shut down,
-     e.g. because it can take a lot of time to build the internal state from input cells.
+2C. DaReUS-Loop example, and others
+- Simple visualization for DaReUS-Loop
+- R transformer (use rmagic bridge)
+- PyPPP docker image: code is open source, but SVM model is secret
+- Make a simple Galaxy-XML-to-Seamless translator
+- Make a simple Mobyle-XML-to-Seamless translator
+- Make a simple SnakeMake transformer (on top of Docker transformer;
+  deeper transformation would require slash and/or macros)
 
-    The result of a reaction is the buffer checksum of all of its outputpins.
-    It must be a deterministic result of the reaction input dict, consisting of 
-     inputpins only.
-    Editpin-connected cells are NOT an explicit part of the reaction input dict. 
-    When an editpin is changed, the reactor is informed, but its outputpins 
-     may depend ONLY on inputpins.
-    TODO later: non-deterministic outputpins
-    TODO later: reactor caches and jobs, remote execution (see below)
-
-  D. DONE
-  - Macros. DONE
-   When macro-generated contexts are built, they are "unbound". Whenever
-   a macro is successfully evaluated, the context becomes "bound".
-   Unbound contexts cannot support __dir__; any attribute can be
-   accessed and leads to a Path object (TODO: relocate Path class).
-   Any setattr on the context is logged.
-   Connecting a Path object to anything results in a Path connection,
-   where one (or both) of the endpoints are paths.
-   Whenever the context becomes bound, relevant Path connections 
-   are converted to accessors (a list of converted accessors is kept)
-   Note that any macro-generated context can only be connected to
-    in non-empty macro mode.
-
-   There is always an active macro (the one that is being evaluated,
-   the argument to macro_mode)
-   Path connections are *not* labeled with the active macro; instead,
-   when a macro-generated context gets destroyed, all path-converted connections
-   get destroyed where both endpoints are within the context.
-   Therefore, though a macro often creates path connections into a submacro context, 
-   it is illegal for a macro to create path connections
-   where *both* endpoints are within the *same* submacro.
-    
-  - Get general clean worker destruction working DONE
-
-  - DONE Creation of a macro is synchronous, so subreactor/submacro jobs won't happen (see above) and
-    transformer jobs are not being processed.
-    When macro execution is complete, the old macro is being destroyed.
-    Destruction:
-    1. Shuts down all interactive execution (non-pure reactors)
-    2. May clean up cache items associated with the old macro 
-    3. Will also interrupt all async execution (transforms and pure reactors).
-    Part 1. will happen immediately; 2. and 3. will happen with a 20 sec delay, or when all cells in the
-     new macro reach stable status, whichever happens sooner. DONE
-   - Get basic macro test working  DONE
-   - Collatz test DONE
-
-  E. DONE
-  - Keep the new mixed cells with no storage or form cells 
-  - Change serialization: DONE
-    - Pure binary => numpy. Can be recognized because it starts with NUMPY magic characters
-    - Mixed => SEAMLESS magic characters, but then storage + form, then data.
-    - Pure plain => JSON. Recognized because it doesn't start with either magic    
-  - Mounting: DONE
-    - Get minimal mounting example working DONE
-    - Implement unmounting upon exit DONE
-    - Make it work with macros (adapt stash) DONE
-  - Reimplement IPython (mainloop/asyncio) support, DONE 
-    Test Jupyter support, Qt support, DONE
-    Test using Docker, DONE
-
-  F.
-  - Add subpaths to all Manager API functions DONE
-  - For Monitor, replace direct data storage + hooks with API DONE
-  - Get mixed tests working DONE
-  - Simple streams (map for list/array and dict) DONE
-  - Adapt StructuredCell to have direct manager API instead of slave cells.
-    Only three slave cells (data, schema, buffer) instead of seven
-    The manager API will sync StructuredCell updates with cells (data, buffer) and their mounts
-    Non-buffered, non-forked monitors should report the path that has changed through the API
-    manager and accessorcache should respect this path to determine which accessors (outchannels)
-    have changed.
-  - Get basic StructuredCell tests working
-  
-  G. Get the high level working again. Should be quite straightforward now, but:
-  - Simple streams (map for list/array and dict) DONE
-  - Re-enable type inference (i.e. tf.pin = ... is inferred like tf.example.pin = ...)
-  but only if set from terminal (never from pin).
-  
-  H. (March)
-  - Get module injection working again.
-  Store module objects either in object cache or a new module object cache.
-  Building these module objects is similar to cache expression evaluation in the hierarchy (i.e. local).
-  The injection machinery itself should stay similar.
-  - Cell-cell connection (also with int/float/str/bool cells), generic deserialization (see protocol/evaluate.py)
-  - Get libraries working again
-  - Shell
-  - Implement annotation dict, including execute_debug, ncores (ncores DONE), and a field for streams
-  - Deep cells / cache-tree-depth (see below).
-  
-  I. (Maybe delay this until after the presentation) 
-    Add cache graph serialization where just the checksums and status flags are stored.
-    (See the TEMP problem below; for now, require a successful translation upon save)
-    UPDATE:
-    - Python funcs get auto-converted to source code (in every circumstance),
-      for the rest, every TEMP is just mixed data
-    - If translation is out-of-date, just give a warning and save what you have
-    - Get rid of StructuredCellState, only store checksums
-     In addition, implement simple cache archives (zip files of mixed cell streams)
-      that can be saved and loaded into value cache at will.
-    - Full streams (reduce, multiple arguments)
-
-The New Way and streams will be done early (this is big!)
-- Create a cache branch DONE
-- Replace all md5sum with sha3-256 DONE
-- Rip the ._val attribute, store all values in a checksum-to-cell dictionary. DONE
-  Move from values to checksums. No local cache dict, no local cell values. Everything comes from generic caching. Cell paths keep cache alive. DONE
-- Implement transformer interrupt action, upon destroy or by manager (upon auth update). TODO
+- Allow any worker inputpin to be annotated as must_be_defined=False.
+- Implement transformer interrupt action, upon destroy or by manager (upon auth update).
     (TODO: build upon JobScheduler.cancel, but add delay, and implement worker.destroy)
     New-way style, auth update propagate forward (potentially leading to multiple interrupts).
     Interrupt happens in 20 secs, or when the transformer re-executes, whichever happens sooner
-- Rip pythreadkernel and construct a request object instead (see tests/lowlevel/simpler-remote),
-  but with checksums instead of values, and add access mode as well. 
-  as local cache. DONE
-  Transformers will be shut down (clearing namespaces etc.) unless annotated as "debug".  PARTIALLY DONE
-  checksum-to-value caching (cell caching). Values will be pulled from there just-in-time. DONE
-  Contexts in equilibrium should now be very memory-frugal. DONE
-- Every worker has a number of cores used (default 1). As many jobs are launched as there are cores TODO
-- Fix asyncio compatibility. DONE
-  final test in Jupyter Docker image DONE
-- Deep cells, with cache-tree-depth > 0. TODO
+- Every worker has a number of cores used (default 1). As many jobs are launched as there are cores
+- Deep cells, with cache-tree-depth > 0. 
   At 0, simple checksum => value (default, current situation). 
   At level 1, dicts/lists will be checksum => {checksum:checksum}
   resp. checksum => [checksum] (Merkle trees), in a special Merkle tree cache.
@@ -193,19 +52,38 @@ The New Way and streams will be done early (this is big!)
   - The checksum of the desired element(s) is retrieved from the Merkle tree
   - An accessor is constructed using this checksum, and with the first
     element(s) removed from the subpath
-- Fully implement New Way execution. Changing an authoritative value forward-invalidates. Changing
-  non-authoritative sets "overrule" as before, but now also in a forward sense. DONE
 
-3. Streams
-- Basic implementation in manager/protocol
-- Stream annotations for transformer
+    
+
+
+Seamless is now usable by me, to port RPBS/Galaxy services
+ Need some more months to make it usable:
+- by other devs
+- by sysadmins (job control, deployment)
+
+2D: Towards a first real example
+- Constructors, finish testing
+  Test library-containing-another-library    
+  Make sure constructors work correctly when copying parent contexts
+  Test indirect library update system, also with constructors
+- Finish browser lib
+-  First real example:
+  - Convert topology.json (of a different ctx!) to SVG
+  - Interject merge for manual edit
+  - Hook up browser for visualization
+
+intermezzo: re-run all tests
+
+
+2E:  Streams (maybe delay for later)
+- Basic implementation in manager/protocol DONE
+- Stream annotations for transformer DONE
   Outputpin + some inputpins are annotated as streams (multiple stream groups for cart combin)
   Stream execution code that does the execution (but is not semantically relevant), uses API
    for caching and stuff.
   Stream-annotated transformers have stream inputpins.
   Stream cells are possible and can be connected (and only to stream cells or stream pins;
     special transformer for cell <=> stream cell)
-- Allow any worker inputpin to be annotated as must_be_defined=False.
   Remove must_be_defined from editpins, as None is always a valid value for them.
 - Annotation for reduction streams. reduction streams have ordered input; in case of
    an input that is a dict, a secondary input must be designated that contains all the keys
@@ -225,21 +103,6 @@ The New Way and streams will be done early (this is big!)
       an order to maximize cache efficiency.
     - For dicts, the secondary input pin with sorted keys is optional.
       (it is still recommended for cache efficiency)
-- Simple transformer caching, one-to-many mapping from accessor to expression
-- Set up Redis backends for cell caching and simple transformer caching, in Docker images. DONE
-- Docker run transformer. Implementation similar to bash transformer, but needs
-  docker image digest (supported by docker run).
-  Global config for:
-  - run with singularity (singularity run docker://...)
-  - Seamless API to infer digest from name
-  No volumes, bind mounts or other options,
-  everything needed must be in the image, and output must be in stdout (can be tar/tgz)
-  Networking will be disabled (networking none), and the container will be removed (--rm)
-  If you find this chafing, you are not doing it right anyway: consider using Seamless inside of a
-  Docker service, running reproducible computations locally,
-  and defining capabilities to build the Docker image to provide the proper environment.
-- Set up caching servers DONE
-- Set up simple transformer slave that uses Merkle trees (used in caching) as requests DONE
 
 # Notes about the New Way:
 - For structured cells, synthetic (i.e. dependent, non-authoritative)
@@ -247,46 +110,7 @@ The New Way and streams will be done early (this is big!)
   StructuredCell should support this, disabling all type inference
   if the schema cell is dependent.
 
-Part 2: high level
-
-2A: prepare proof of principles
-- BC demo works now, at development level
-- Observable Notebook integration works now
-- Simple visualization for DaReUS-Loop
-- R transformer (use rmagic bridge)
-- PyPPP docker image: code is open source, but SVM model is secret
-- Put DaReUS-Loop on Github, also integrate into struclib
-
-- Make a bash transformer, DONE
-- Make a simple Galaxy-XML-to-Seamless translator
-- Make a simple Mobyle-XML-to-Seamless translator
-- Make a simple SnakeMake transformer (on top of Docker transformer;
-  deeper transformation would require slash and/or macros)
-
-Give demo for the RPBS platform
-Seamless is now usable by me, to port RPBS/Galaxy services
- Need some more months to make it usable:
-- by other devs
-- by sysadmins (job control, deployment)
-
-2B: Towards a first real example
-- Constructors, finish testing
-  Test library-containing-another-library    
-  Make sure constructors work correctly when copying parent contexts
-  Test indirect library update system, also with constructors
-- Finish browser lib
--  First real example:
-  - Convert topology.json (of a different ctx!) to SVG
-  - Interject merge for manual edit
-  - Hook up browser for visualization
-
-intermezzo: re-run all tests
-
 Part 3 (low-level / cleanup): Towards the merge
-   - Add back in int/float/str/bool cells because they are so convenient.
-     Their content type will be int/float/text/bool.
-     Adapters will convert among them (e.g. int=>float) and between them and JSON/mixed/text.
-     Supported access modes are JSON and text. Adapters will convert to Silk.
    - Implement old lib.gui.edit as a new library, with new editpin.
    - Terminology: context children can be private, in which case they are not in __dir__.
      By default, they are public. No more "export".
@@ -301,15 +125,15 @@ Part 3 (low-level / cleanup): Towards the merge
    - Cleanup of the code base, remove vestiges of 0.1 (except lib and tests).
    - Cleanup of the TODO and the documentation (put in limbo). Don't forget /docs/WIP!
 
-Merge into master; end of the Great Refactor
+End of the Great Refactor
 Seamless is now kind-of ready to be started to be used by other devs, at their peril, caveat emptor, etc.
 Limiting factor: lack of documentation/examples
 
-TODO: test graph serialization in combination with buffering, i.e. in cases where
- the schema is violated, just to save buffered values
+Next step: the roadmap of Status-of-seamless.txt
+
 
 *****************************************************************
-UPDATE, Feb 2019 
+UPDATE, Feb 2019  (pertains to text below)
 The New Way/Great Split prioritization has rendered moot much of the roadmap below.
 It needs to be reorganized, and the following tasks to be added:
 (and integrated in cloudless/"Towards flexible and cloud-compatible evaluation")

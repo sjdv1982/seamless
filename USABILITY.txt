@@ -4,35 +4,27 @@
    If you do something very different than I have been using Seamless for,
    it will likely not work. There are also areas of Seamless that are done poorly because I lack the
    proper expertise. Please be patient, send bug reports, etc.
-1. Unfortunately, if equilibrate() causes a graph re-translation, all transformers (and reactors)
-   will be re-executed. Seamless is not yet ready for long-running computations.
-2. In principle, you can re-define everything on the fly (i.e. re-execute Jupyter cells at will),
-   but in practice this may not always work.
-   Make big Jupyter cells.
-   Do equilibrate() often, at both the beginning and the end of the cell.
-   If necessary, restart your kernel and re-execute each cell (slowly!)
-   This also depends a lot on the Jupyter version you are running:
-   with ipykernel 4 and tornado 4, it goes much better than without.
-3. Error messages and warnings are printed out immediately, polluting your output.
+1. Error messages and warnings are printed out immediately, polluting your output.
    This is especially annoying with Jupyter, where they are dumped in the output
    of the last cell.
    You may want to select an empty-ish code cell (containing "pass") and execute
    it right before you modify some cells.
    A logging system is being planned.
-4. There is not yet any way to save context graphs. Will come soon.
-   In the meantime, Jupyter notebooks can hold the state. This can be a problem
-   because of mixed authority: e.g. if you mount a schema to a file and then
-   modify it both in Jupyter and on the file system.
-5. A mechanism to visualize context graphs is being planned.
-6. Caching in general is a can of worms. Right now, you won't realize it too much,
-   because (low-level) macros have not been exposed yet to the high-level. Macros
-   rewrite the low-level graph on the fly. Caching now tries to preserve workers
-   that have not changed. Bugs in this are likely, esp. in relation with the
-   mounting system. Once macros are there, you may want to disable their caching.
-   A second source of caching is result caching, which is also not implemented yet.
-   A third source of caching is caching-upon-translation (see point 2). This will
-   be re-enabled at some point, but may need to be disabled manually in case of bugs.
-7. Debugging is a pain in the ass. This is because debuggers for Python and C
+2. A mechanism to visualize context graphs is being planned.
+3. Right now, Seamless can kill transformers (cleanly, unless they are threads)
+   but does not wait for them to be killed (it used to, but it is slow!!).
+   You may want to re-enable this if needed (TODO).
+
+
+Other problems:
+1. SEEMS TO BE RESOLVED
+   In principle, you can re-define everything on the fly (i.e. re-execute Jupyter cells at will),
+   but in practice this may not always work.
+   Make big Jupyter cells.
+   Do equilibrate() often, at both the beginning and the end of the cell.
+   If necessary, restart your kernel and re-execute each cell (slowly!)
+2. SOMEWHAT OUTDATED (since compiled transformers are disabled for now)
+   Debugging is a pain in the ass. This is because debuggers for Python and C
    a) claim the tty; and/or: b) have a file-centric view of the world; and/or:
    c) are opinionated about threads vs processes.
    Seamless prefers to clean up its mess, i.e. delete files after compilation.
@@ -85,6 +77,3 @@
    - For flexibility, you may configure your transformer to be run as thread
    (TODO: now it is a global flag). Take care: transformer threads will be killed
    by a dirty hack when the transformer needs to restart.
-8. Right now, Seamless kills transformers (cleanly, unless they are threads)
-   but does not wait for them to be killed (it used to, but it is slow!!).
-   You may want to re-enable this if needed (TODO).

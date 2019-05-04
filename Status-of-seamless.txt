@@ -1,21 +1,3 @@
-TODO: Following the presentation:
-Store and load computation graphs:
-X Tests to "color" the graph (use Redis to fill in values)
-X Tests for remote deployment of jobs
-X Test for remote execution of a graph
-X Get Bash transformer working again
-X Bug: re-integrate with Observable, first simple-share.py + JS, then Observable, then high-level test-html.py
-X Graph
-X Docker transformer, using Docker Python library
-- Simple protein-based example
-- Docker images
-- Embedded Observable Notebook
-
-
-
-- Update interoperability document
-- Conversions for Galaxy, Mobyle, SnakeMake
-
 Improvements: [two months fulltime of implementation]
 Bugs: missing code paths, especially type conversion (also int/float/... cells) [a few days]
 Bugs: interaction between Seamless features (e.g. high-level reactors), smoother API [continuous]
