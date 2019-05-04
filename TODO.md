@@ -7,6 +7,7 @@ Part 2
 Things to do:
 2A. Preparation
 - Finish the testing of the docking transformers, in particular inside docker
+- Check jobslave-over-abathur
 - Get reactors working again at the high level
 - Update interoperability document
 - PREPARE SIMPLE DEMO IN DOCUMENTATION
