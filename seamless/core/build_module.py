@@ -48,7 +48,8 @@ def import_extension_module(full_module_name, module_code):
 
 def build_compiled_module(full_module_name, checksum, module_definition):
     from .cache.redis_client import redis_caches, redis_sinks
-    module_code = redis_caches.get_compile_result(checksum)
+    mchecksum = b"python-ext-" + checksum
+    module_code = redis_caches.get_compile_result(mchecksum)
     if module_code is None:
         objects = module_definition["objects"]
         binary_objects = {}
@@ -86,7 +87,7 @@ def build_compiled_module(full_module_name, checksum, module_definition):
           link_options, 
           compiler_verbose=COMPILE_VERBOSE
         )
-        redis_sinks.set_compile_result(checksum, module_code)
+        redis_sinks.set_compile_result(mchecksum, module_code)
     mod = build_compiled_module(full_module_name, module_code)
     return mod
 
