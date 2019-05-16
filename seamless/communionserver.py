@@ -139,6 +139,12 @@ class CommunionServer:
             self.future = asyncio.ensure_future(self._start())
         self.managers.add(manager)
 
+    def wait(self, time):
+        if self.future is None:
+            self.future = asyncio.ensure_future(self._start())
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(asyncio.sleep(time))
+
     def configure_master(self, config=None, **update):
         if self.future is not None and any(update.values()):
             print("Warning: CommunionServer has already started, added functionality will not be taken into account for existing peers", file=sys.stderr)

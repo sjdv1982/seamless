@@ -1784,7 +1784,7 @@ class Manager:
 
     async def equilibrate(self, timeout, report, path):
         await self.mountmanager.async_tick()
-        await self._flush()
+        await self._flush()        
         delta = None
         if timeout is not None:
             deadline = time.time() + timeout

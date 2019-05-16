@@ -8,6 +8,7 @@ import traceback
 from .execute import Queue, Executor, execute, execute_debug
 from .run_multi_remote import run_multi_remote, run_multi_remote_pair
 from .injector import transformer_injector as injector
+from .build_module import build_module
 
 ###############################################################################
 # Local jobs
@@ -207,7 +208,8 @@ class Job:
                         if value is not None:
                             value = value[2]
                     if semantic_key.access_mode == "module":
-                        module_workspace[pin] = value[1]
+                        mod = build_module(value)
+                        module_workspace[pin] = mod[1]
                     else:
                         namespace[pin] = value
                         inputs.append(pin)

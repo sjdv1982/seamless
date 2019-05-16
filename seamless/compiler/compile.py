@@ -22,11 +22,11 @@ def compile(binary_objects, build_dir, compiler_verbose=False):
     all_done = True
     result = {}
     
-    currdir = os.path.abspath(os.getcwd())
+    curr_dir = os.path.abspath(os.getcwd())
     build_dir = os.path.abspath(build_dir)
     all_headers = {}
     for objectname, object_ in binary_objects.items():
-        for headername, header in object_.headers.items():
+        for headername, header in object_["headers"].items():
             if headername in all_headers:
                 old_header = all_headers[headername]
                 if old_header != header:
@@ -44,7 +44,7 @@ def compile(binary_objects, build_dir, compiler_verbose=False):
             locks[build_dir] = lock
             lock.acquire()
         try:
-            os.mkdir(build_dir) #must be non-existing
+            os.makedirs(build_dir) #must be non-existing
         except FileExistsError:
             print("WARNING: compiler build dir %s already exists... this could be trouble!" % build_dir)
         os.chdir(build_dir)
@@ -53,18 +53,20 @@ def compile(binary_objects, build_dir, compiler_verbose=False):
             with open(header_file, "w") as f:
                 f.write(headercode)
         for objectname, object_ in binary_objects.items():
-            code_file = objectname + "." + extension
+            code_file = objectname + "." + object_["extension"]
             obj_file = objectname + ".o" #TODO: Windows
             cmd = [
               object_["compiler_binary"], 
               object_["compile_flag"], 
               code_file,
-              object_["options"],
+            ]
+            cmd += object_["options"]
+            cmd += [
               object_["output_flag"], 
               obj_file
             ]
             with open(code_file, "w") as f:
-                f.write(code)
+                f.write(object_["code"])
             cmd2 = " ".join(cmd)
             if compiler_verbose:
                 print(cmd2)
@@ -92,7 +94,7 @@ def complete(module_definition):
     overall_target = module_definition.get("target", "profile")
     m["target"] = overall_target
     m["link_options"] = module_definition.get("link_options", [])
-    project_headers = m.pop("headers")
+    project_headers = m.pop("headers", {})
     for objectname, object_ in module_definition["objects"].items():
         if "code" not in object_:
             raise Exception("Binary Module %s: no code in object" % objectname)

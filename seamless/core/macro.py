@@ -10,6 +10,7 @@ from .injector import macro_injector as injector
 from .unbound_context import UnboundContext, UnboundManager
 from .macro_mode import macro_mode_on, curr_macro, get_macro_mode
 from .cached_compile import exec_code
+from .build_module import build_module
 
 class ExecError(Exception): pass
 
@@ -26,8 +27,7 @@ class Macro(Worker):
         self.namespace = {}
         self.input_dict = {}  #pinname-to-accessor
         self._paths = weakref.WeakValueDictionary() #Path objects
-        super().__init__()
-        injected_modules = []
+        super().__init__()        
         for p in sorted(macro_params.keys()):
             param = macro_params[p]
             self._macro_params[p] = param
@@ -49,15 +49,9 @@ class Macro(Worker):
             if content_type is None and access_mode in content_types:
                 content_type = access_mode
             pin = InputPin(self, p, transfer_mode, access_mode)
-            if access_mode == "module":
-                injected_modules.append(p)
             self.function_expr_template += "%s=%s," % (p, p)
             self._pins[p] = pin
         self.function_expr_template = self.function_expr_template[:-1] + ")"
-        if len(injected_modules):
-            raise NotImplementedError ### cache branch
-            self.injected_modules = injected_modules
-            injector.define_workspace(self, injected_modules)
 
     def _execute(self):
         from .context import Context
@@ -77,7 +71,8 @@ class Macro(Worker):
                     if value is not None:
                         value = value[2]
                 if expression.access_mode == "module":
-                    module_workspace[pinname] = value[1]
+                    mod = build_module(value)
+                    module_workspace[pinname] = mod[1]
                 else:
                     values[pinname] = value
         ok = False

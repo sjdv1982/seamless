@@ -52,8 +52,7 @@ def _build(dist, tempdir, compiler_verbose=False, debug=None):
 
 def _write_objects(binary_objects, tempdir):
     objects = []
-    for objectname, (obj_array, _, _) in binary_objects.items():
-        objdata = obj_array.tobytes()
+    for objectname, objdata in binary_objects.items():
         objfile = objectname+".o"
         objfile = os.path.join(tempdir, objfile)
         with open(objfile, "wb") as f:
@@ -84,9 +83,9 @@ def _build_extension(
     full_module_name, binary_objects, c_header,
     extclass, distclass, link_options,
     compiler_verbose=False, debug=None
-  ):
+  ):    
     currdir = os.getcwd()
-    tempdir = os.path.join(tempfile.gettempdir(), "_build-" + full_module_name)
+    tempdir = os.path.join(tempfile.gettempdir(), "_cffi-" + full_module_name)
     tempdir = os.path.abspath(tempdir)
     with locklock:
         if tempdir not in locks:

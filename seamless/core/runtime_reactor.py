@@ -2,6 +2,7 @@ import weakref
 
 from .cached_compile import cached_compile
 from .injector import reactor_injector as injector
+from .build_module import build_module
 
 class ReactorInput:
     def __init__(self, value):
@@ -97,8 +98,9 @@ class RuntimeReactor:
                 if value is not None:
                     value = value[2]
             if expression.access_mode == "module":
-                self.module_workspace[pinname] = value[1]
-                pin = ReactorInput(value[1])
+                mod = build_module(value)
+                self.module_workspace[pinname] = mod[1]
+                pin = ReactorInput(mod[1])
             else:            
                 pin = ReactorInput(value)
             self.PINS[pinname] = pin

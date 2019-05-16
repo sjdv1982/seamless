@@ -1,3 +1,26 @@
+# run scripts/jobslave-noredis.py 
+
+import os
+os.environ["SEAMLESS_COMMUNION_ID"] = "compile-remote"
+os.environ["SEAMLESS_COMMUNION_INCOMING"] = "localhost:8602"
+
+import seamless
+seamless.set_ncores(0)
+from seamless import communionserver
+
+communionserver.configure_master(
+    value=True,
+    transformer_job=True,
+)
+communionserver.configure_servant(
+    value=True,
+)
+
+from seamless.core import context, cell, transformer, macro_mode_on
+with macro_mode_on():
+    ctx = context(toplevel=True)
+communionserver.wait(2)
+
 code = """
 #include <cmath>
 
@@ -20,9 +43,8 @@ testmodule = {
     }
 }
 
-from seamless.core import context, cell, transformer, macro_mode_on
+
 with macro_mode_on():
-    ctx = context(toplevel=True)
     ctx.testmodule = cell("plain")
     ctx.testmodule.set(testmodule)
     tf = ctx.tf = transformer({
@@ -42,5 +64,6 @@ result = testmodule.lib.add(a,b)
     ctx.result = cell("plain")
     ctx.tf.result.connect(ctx.result)
 
+communionserver.wait(2)
 ctx.equilibrate()
 print(ctx.result.value)

@@ -4,7 +4,10 @@ from numpy.distutils.core import Extension as NumpyExtension
 from numpy.distutils.core import NumpyDistribution, numpy_cmdclass
 from .cffi import _build_extension
 
-def build_extension_cffi(binary_objects, target, c_header, link_options, compiler_verbose=False):
+def build_extension_cffi(
+    full_module_name,
+    binary_objects, target, c_header, link_options, compiler_verbose=False
+):
     # TODO: check that there is no Cython
 
     debug = (target == "debug")
@@ -12,6 +15,7 @@ def build_extension_cffi(binary_objects, target, c_header, link_options, compile
         return Distribution(kwargs)
 
     return _build_extension(
+        full_module_name,
         binary_objects, c_header,
         Extension, distclass,
         link_options, compiler_verbose, debug

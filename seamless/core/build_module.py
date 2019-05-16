@@ -1,5 +1,6 @@
 import json
-import os
+import sys, os
+import importlib
 import tempfile
 from weakref import WeakValueDictionary
 from types import ModuleType
@@ -13,6 +14,7 @@ SEAMLESS_EXTENSION_DIR = os.path.join(tempfile.gettempdir(), "seamless-extension
 #  Here Seamless will write the compiled Python module .so files before importing
 
 COMPILE_VERBOSE = True
+CFFI_VERBOSE = True
 
 module_cache = WeakValueDictionary()
 
@@ -33,9 +35,9 @@ def import_extension_module(full_module_name, module_code):
     with locklock:
         if not os.path.exists(SEAMLESS_EXTENSION_DIR):
             os.makedirs(SEAMLESS_EXTENSION_DIR)
-        module_file = os.path.join(SEAMLESS_EXTENSION_DIR, full_module_name)
+        module_file = os.path.join(SEAMLESS_EXTENSION_DIR, full_module_name + ".so")
         with open(module_file, "wb") as f:
-            f.write(extension_code)
+            f.write(module_code)
         syspath_old = []
         syspath_old = sys.path[:]
         try:
@@ -45,6 +47,7 @@ def import_extension_module(full_module_name, module_code):
             return mod
         finally:
             sys.path[:] = syspath_old
+            os.remove(module_file)
 
 def build_compiled_module(full_module_name, checksum, module_definition):
     from .cache.redis_client import redis_caches, redis_sinks
@@ -56,18 +59,15 @@ def build_compiled_module(full_module_name, checksum, module_definition):
         remaining_objects = {}
         object_checksums = {}
         for objectname, object_ in objects.items():
-            object_checksum = get_dict_hash(object_, hex=True)
+            object_checksum = get_dict_hash(object_)
             binary_code = redis_caches.get_compile_result(object_checksum)
             if binary_code is not None:
-                binary_objects[objectname] = binary_code
-                object_checksums[objectname] = object_checksum
+                binary_objects[objectname] = binary_code                
             else:
                 remaining_objects[objectname] = object_
+            object_checksums[objectname] = object_checksum
         if len(remaining_objects):
-            with locklock:
-                build_dir = os.path.join(SEAMLESS_EXTENSION_DIR, full_module_name)
-                if not os.path.exists(build_dir):
-                    os.makedirs(build_dir)
+            build_dir = os.path.join(SEAMLESS_EXTENSION_DIR, full_module_name)
             new_binary_objects = compile(
               remaining_objects, build_dir, compiler_verbose=COMPILE_VERBOSE
             )
@@ -81,28 +81,29 @@ def build_compiled_module(full_module_name, checksum, module_definition):
         assert header["language"] == "c", header["language"]
         c_header = header["code"]
         module_code = build_extension_cffi(
+          full_module_name,
           binary_objects, 
           target, 
           c_header, 
           link_options, 
-          compiler_verbose=COMPILE_VERBOSE
+          compiler_verbose=CFFI_VERBOSE
         )
         redis_sinks.set_compile_result(mchecksum, module_code)
-    mod = build_compiled_module(full_module_name, module_code)
+    mod = import_extension_module(full_module_name, module_code)
     return mod
 
 def build_module(module_definition):
     mtype = module_definition["type"]
     assert mtype in ("interpreted", "compiled"), mtype
     json.dumps(module_definition)    
-    checksum = get_dict_hash(module_definition, hex=True)
-    full_module_name = "seamless_module_" + checksum
+    checksum = get_dict_hash(module_definition)
+    full_module_name = "seamless_module_" + checksum.hex()
     if full_module_name not in module_cache:
         if mtype == "interpreted":
             mod = build_interpreted_module(full_module_name, module_definition)
         elif mtype == "compiled":
             completed_module_definition = complete(module_definition)
-            completed_checksum = get_dict_hash(completed_module_definition, hex=True)
+            completed_checksum = get_dict_hash(completed_module_definition)
             mod = build_compiled_module(
               full_module_name, completed_checksum, completed_module_definition
             )
