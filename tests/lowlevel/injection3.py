@@ -10,7 +10,7 @@ with macro_mode_on():
     ctx.rc = reactor({
         "a": "input",
         "b": "input",
-        "testmodule": ("input", "ref", "module", "python"),
+        "testmodule": ("input", "module"),
         "c": "output"
     })
     ctx.cell1_link = link(ctx.cell1)
@@ -19,7 +19,7 @@ with macro_mode_on():
     ctx.code_start = pythoncell().set("")
     ctx.code_start.connect(ctx.rc.code_start)
     ctx.code_update = pythoncell().set("""
-print("macro execute")
+print("reactor execute")
 print(testmodule)
 print(testmodule.q)
 from .testmodule import q
@@ -30,7 +30,7 @@ print([m for m in sys.modules if m.find("testmodule") > -1])
 a = PINS.a.get()
 b = PINS.b.get()
 PINS.c.set(a+b)
-print("/macro execute")
+print("/reactor execute")
     """)
     ctx.code_update.connect(ctx.rc.code_update)
     ctx.code_stop = pythoncell().set("")
@@ -38,11 +38,17 @@ print("/macro execute")
     ctx.result_link = link(ctx.result)
     ctx.rc.c.connect(ctx.result_link)
 
-    ctx.testmodule = pythoncell().set("q = 10")
+    testmodule = {
+        "type": "interpreted",
+        "language": "python",
+        "code": "q = 10"
+    }
+    ctx.testmodule = cell("plain").set(testmodule)
     ctx.testmodule.connect(ctx.rc.testmodule)
 
 ctx.equilibrate()
 print(ctx.result.value)
+'''
 ctx.cell1.set(10)
 ctx.equilibrate()
 print(ctx.result.value)
@@ -53,4 +59,5 @@ PINS.c.set(a+b+1000)
 """)
 ctx.equilibrate()
 print(ctx.result.value)
-print(ctx.status())
+print(ctx.status)
+'''

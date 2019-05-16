@@ -48,8 +48,6 @@ testmodule = {
 }
     """)
     
-
-
     ctx.testmodule = cell("plain")
     ctx.gen_testmodule.testmodule.connect(ctx.testmodule)
     ctx.testmodule.connect(ctx.tf.testmodule)

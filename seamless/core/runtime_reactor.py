@@ -1,6 +1,7 @@
 import weakref
 
 from .cached_compile import cached_compile
+from .injector import reactor_injector as injector
 
 class ReactorInput:
     def __init__(self, value):
@@ -66,6 +67,7 @@ class RuntimeReactor:
         self.updated = set()
         self.live = None  # None for unconnected; True for live; False for non-live
         self.namespace = {}
+        self.module_workspace = {}
         self.PINS = PINS()
         self.code_start = None
         self.code_update = None
@@ -76,6 +78,7 @@ class RuntimeReactor:
         manager = self.manager()
         if updated is None:
             self.clear()
+        self.namespace["__name__"] = "reactor"
         for pinname, accessor in self.input_dict.items():            
             if updated is not None and pinname not in updated:
                 if pinname not in ("code_start", "code_update", "code_stop"):
@@ -93,7 +96,11 @@ class RuntimeReactor:
             if expression.access_mode == "mixed":
                 if value is not None:
                     value = value[2]
-            pin = ReactorInput(value)
+            if expression.access_mode == "module":
+                self.module_workspace[pinname] = value[1]
+                pin = ReactorInput(value[1])
+            else:            
+                pin = ReactorInput(value)
             self.PINS[pinname] = pin
         for pinname, cell_tuple in self.edit_dict.items():
             cell, subpath = cell_tuple
@@ -123,7 +130,11 @@ class RuntimeReactor:
         code_object = getattr(self, codename)        
         self.namespace["PINS"] = self.PINS
         try:
-            exec(code_object, self.namespace) 
+            if len(self.module_workspace):
+                with injector.active_workspace(self.module_workspace, self.namespace):
+                    exec(code_object, self.namespace) 
+            else:
+                exec(code_object, self.namespace) 
         except Exception as exception:
             self.manager().set_reactor_exception(self, codename, exception)
 
@@ -168,6 +179,7 @@ class RuntimeReactor:
     def clear(self):
         #print("CLEAR")
         self.namespace.clear()
+        self.module_workspace.clear()
         self.PINS = PINS()
         for code in "code_start", "code_update", "code_stop":
             setattr(self, code, None)

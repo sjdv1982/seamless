@@ -1,6 +1,6 @@
 import seamless
 from seamless.core import macro_mode_on
-from seamless.core import context, cell, reactor, pythoncell, ipythoncell
+from seamless.core import context, cell, reactor, transformer, pythoncell, ipythoncell
 
 with macro_mode_on():
     ctx = context(toplevel=True)
@@ -31,16 +31,31 @@ if PINS.testmodule.updated:
     ctx.code_stop.connect(ctx.rc.code_stop)
     ctx.rc.result.connect(ctx.result)
 
-    ctx.testmodule = ipythoncell()
-    ctx.testmodule.mount("cell-ipython.ipy")
+    ctx.ipy = ipythoncell()
+    ctx.ipy.mount("cell-ipython.ipy")
+    ctx.gen_testmodule = transformer({
+        "ipy": ("input", "ref", "text"),
+        "testmodule": "output",
+    })
+    ctx.ipy.connect(ctx.gen_testmodule.ipy)
+    ctx.gen_testmodule.code.cell().set("""
+testmodule = {
+    "type": "interpreted",
+    "language": "ipython",
+    "code": ipy
+}
+    """)
+    
+    ctx.testmodule = cell("plain")
+    ctx.gen_testmodule.testmodule.connect(ctx.testmodule)
+
     ctx.testmodule.connect(ctx.rc.testmodule)
     ctx.html = cell("text")
     ctx.html.mount("cell-ipython.html")
     ctx.rc.html.connect(ctx.html)
 ctx.equilibrate()
 print(ctx.result.value)
-ctx.i.set(200)
+ctx.i.set(6000)
 ctx.equilibrate()
 print(ctx.result.value)
-print(ctx.status())
-#print(ctx.testmodule.value)
+print(ctx.status)
