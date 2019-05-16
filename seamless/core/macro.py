@@ -62,7 +62,8 @@ class Macro(Worker):
     def _execute(self):
         from .context import Context
         manager = self._get_manager()
-        values = {}        
+        values = {} 
+        module_workspace = {}       
         for pinname, accessor in self.input_dict.items():            
             expression = manager.build_expression(accessor)
             if expression is None:
@@ -75,7 +76,10 @@ class Macro(Worker):
                 if expression.access_mode == "mixed":
                     if value is not None:
                         value = value[2]
-                values[pinname] = value
+                if expression.access_mode == "module":
+                    module_workspace[pinname] = value[1]
+                else:
+                    values[pinname] = value
         ok = False
         try:
             old_paths = self._paths
@@ -88,16 +92,11 @@ class Macro(Worker):
                 self._unbound_gen_context = unbound_ctx
                 keep = {k:v for k,v in self.namespace.items() if k.startswith("_")}
                 self.namespace.clear()
-                #self.namespace["__name__"] = self.name
                 self.namespace["__name__"] = "macro"
                 self.namespace.update(keep)
                 self.namespace.update( self.default_namespace.copy())
                 self.namespace["ctx"] = unbound_ctx
                 self.namespace.update(values)
-                #workspace = self if self.injected_modules else None
-                #with injector.active_workspace(workspace):
-                #    
-                #        exec(code_object, self.namespace)
                 inputs = ["ctx"] +  list(values.keys())
                 macro = self
                 while 1:
@@ -107,9 +106,14 @@ class Macro(Worker):
                     macro = macro._context()._macro
                     if macro is None:
                         break
-                print("Execute macro", lib)
+                print("Execute", self)
                 with library.bind(lib):
-                    exec_code(code, str(self), self.namespace, inputs, None)                
+                    identifier = str(self)
+                    if len(module_workspace):
+                        with injector.active_workspace(module_workspace, self.namespace):
+                            exec_code(code, identifier, self.namespace, inputs, None)
+                    else:
+                        exec_code(code, identifier, self.namespace, inputs, None)
                 if self.namespace["ctx"] is not unbound_ctx:
                     raise Exception("Macro must return ctx")
 

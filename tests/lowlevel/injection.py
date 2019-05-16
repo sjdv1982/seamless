@@ -4,11 +4,11 @@ from seamless.core import context, cell, transformer, pymacrocell, pythoncell, m
 
 with macro_mode_on():
     ctx = context(toplevel=True)
-    ctx.param = cell("json").set(1)
+    ctx.param = cell("plain").set(1)
 
     ctx.macro = macro({
         "param": "copy",
-        "testmodule": ("ref", "module", "python"),
+        "testmodule": "module",
     })
 
     ctx.param.connect(ctx.macro.param)
@@ -23,12 +23,17 @@ print([m for m in sys.modules if m.find("testmodule") > -1])
 print("/macro execute")
 """)
     ctx.macro_code.connect(ctx.macro.code)
-    ctx.testmodule = pythoncell().set("a = 10")
+    testmodule = {
+        "type": "interpreted",
+        "language": "python",
+        "code": "a = 10"
+    }
+    ctx.testmodule = cell("plain").set(testmodule)
     ctx.testmodule.connect(ctx.macro.testmodule)
 
 
     ctx.macro2 = macro({
-        "testmodule2": ("ref", "module", "python"),
+        "testmodule2": "module",
     })
     ctx.macro_code2 = pymacrocell().set("""
 print("macro2 execute")
@@ -49,6 +54,7 @@ print("/macro2 execute")
 print("START")
 ctx.equilibrate()
 print("stage 1")
-ctx.testmodule.set("a = 20")
+testmodule["code"] = "a = 20"
+ctx.testmodule.set(testmodule)
 print("stage 2")
 ctx.macro_code.set(ctx.macro_code.value + "\npass")
