@@ -31,13 +31,20 @@ def build_interpreted_module(full_module_name, module_definition):
         exec(code, namespace)
     return mod
 
-def import_extension_module(full_module_name, module_code):
+def import_extension_module(full_module_name, module_code, debug, source_files):
     with locklock:
         if not os.path.exists(SEAMLESS_EXTENSION_DIR):
             os.makedirs(SEAMLESS_EXTENSION_DIR)
         module_file = os.path.join(SEAMLESS_EXTENSION_DIR, full_module_name + ".so")
         with open(module_file, "wb") as f:
             f.write(module_code)
+        if debug:
+            module_dir = os.path.join(SEAMLESS_EXTENSION_DIR, full_module_name)
+            os.makedirs(module_dir)
+            for filename, data in source_files.items():
+                fn = os.path.join(module_dir, filename)
+                with open(fn, "w") as f:
+                    f.write(data)
         syspath_old = []
         syspath_old = sys.path[:]
         try:
@@ -47,7 +54,8 @@ def import_extension_module(full_module_name, module_code):
             return mod
         finally:
             sys.path[:] = syspath_old
-            os.remove(module_file)
+            if not debug:
+                os.remove(module_file)
 
 def build_compiled_module(full_module_name, checksum, module_definition):
     from .cache.redis_client import redis_caches, redis_sinks
@@ -68,7 +76,7 @@ def build_compiled_module(full_module_name, checksum, module_definition):
             object_checksums[objectname] = object_checksum
         if len(remaining_objects):
             build_dir = os.path.join(SEAMLESS_EXTENSION_DIR, full_module_name)
-            new_binary_objects = compile(
+            new_binary_objects, source_files = compile(
               remaining_objects, build_dir, compiler_verbose=COMPILE_VERBOSE
             )
             for objectname, binary_code in new_binary_objects.items():                
@@ -89,7 +97,8 @@ def build_compiled_module(full_module_name, checksum, module_definition):
           compiler_verbose=CFFI_VERBOSE
         )
         redis_sinks.set_compile_result(mchecksum, module_code)
-    mod = import_extension_module(full_module_name, module_code)
+    debug = (module_definition.get("target") == "debug")
+    mod = import_extension_module(full_module_name, module_code, debug, source_files)
     return mod
 
 def build_module(module_definition):

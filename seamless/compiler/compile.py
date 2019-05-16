@@ -25,6 +25,7 @@ def compile(binary_objects, build_dir, compiler_verbose=False):
     curr_dir = os.path.abspath(os.getcwd())
     build_dir = os.path.abspath(build_dir)
     all_headers = {}
+    source_files = {}
     for objectname, object_ in binary_objects.items():
         for headername, header in object_["headers"].items():
             if headername in all_headers:
@@ -52,6 +53,7 @@ def compile(binary_objects, build_dir, compiler_verbose=False):
             header_file = headername + ".h" # hard-code C/C++ for now
             with open(header_file, "w") as f:
                 f.write(headercode)
+            source_files[header_file] = header_code
         for objectname, object_ in binary_objects.items():
             code_file = objectname + "." + object_["extension"]
             obj_file = objectname + ".o" #TODO: Windows
@@ -67,6 +69,7 @@ def compile(binary_objects, build_dir, compiler_verbose=False):
             ]
             with open(code_file, "w") as f:
                 f.write(object_["code"])
+            source_files[code_file] = object_["code"]
             cmd2 = " ".join(cmd)
             if compiler_verbose:
                 print(cmd2)
@@ -85,7 +88,7 @@ def compile(binary_objects, build_dir, compiler_verbose=False):
             pass
         locks.pop(build_dir)
         lock.release()
-    return result
+    return result, source_files
 
 def complete(module_definition):
     assert module_definition["type"] == "compiled"

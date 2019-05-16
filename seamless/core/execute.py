@@ -19,9 +19,6 @@ if platform.system() == "Windows":
 
 
 from .cached_compile import exec_code
-###from .injector import transformer_injector
-
-### TODO: injectors are not yet working
 
 def _async_raise(tid, exctype):
     """raises the exception, performs cleanup if needed"""
@@ -98,13 +95,18 @@ def execute_debug(name, code,
       injector, module_workspace,
       identifier, namespace,
       inputs, output_name, result_queue
-    ):
+    ):    
     if platform.system() == "Windows":
         while True:
             if windll.kernel32.IsDebuggerPresent() != 0:
                 break
             time.sleep(0.1)
     else:
+        print("*" * 80)
+        print("Executing transformer %s in debug mode" % name)
+        print("Process ID: %s" % os.getpid())
+        print("Transformer execution will pause until SIGUSR1 has been received")
+        print("*" * 80)
         class DebuggerAttached(Exception):
             pass
         def handler(*args, **kwargs):

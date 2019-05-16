@@ -5,7 +5,7 @@ from .protocol import content_types
 
 class Transformer(Worker):
 
-    execute_in_debugger = False
+    debug = False
     def __init__(self, transformer_params, stream_params = None):
         self.code = InputPin(self, "code", "ref", "pythoncode", "transformer")
         self._pins = {"code":self.code}

@@ -112,7 +112,7 @@ class Manager:
         self.temprefmanager_future = manager.temprefmanager_future
     """
     
-    async def _schedule_transform_all(self, tf_level1, count, from_remote=False, execute_in_debugger=False):
+    async def _schedule_transform_all(self, tf_level1, count, from_remote=False, debug=False):
         """Runs until either a remote cache hit has been obtained, or a job has been submitted"""
         from .cache.transform_cache import TransformerLevel1
         assert isinstance(tf_level1, TransformerLevel1)
@@ -162,7 +162,7 @@ class Manager:
                 if tcache.transformer_from_hlevel1.get(htf_level1) is None: # job must have been cancelled
                     return
             return await self._schedule_transform_job(tf_level1, count, 
-              from_remote=from_remote, execute_in_debugger=execute_in_debugger
+              from_remote=from_remote, debug=debug
             )
         except asyncio.CancelledError:
             if task is not None:
@@ -170,11 +170,11 @@ class Manager:
 
     async def _schedule_transform_job(self, 
       tf_level1, count, *,
-      from_remote=False, from_stream=False, execute_in_debugger=False
+      from_remote=False, from_stream=False, debug=False
     ):
         from .cache.transform_cache import TransformerLevel1
         if from_stream or from_remote:
-            assert execute_in_debugger == False
+            assert debug == False
         assert isinstance(tf_level1, TransformerLevel1)        
         if tf_level1._stream_params is not None:
             return await self._schedule_transform_stream_job(tf_level1, count, from_remote=from_remote)
@@ -190,7 +190,7 @@ class Manager:
             self.set_transformer_result(tf_level1, tf_level2, None, result, False)
             return
         transformer_can_be_none = from_remote or from_stream
-        job = self.jobscheduler.schedule(tf_level2, count, transformer_can_be_none, execute_in_debugger=False)
+        job = self.jobscheduler.schedule(tf_level2, count, transformer_can_be_none, debug=debug)
         return job
 
     async def _schedule_transform_stream_job(self, tf_level1, count, from_remote=False):
@@ -275,7 +275,7 @@ class Manager:
             return
         tcache = self.transform_cache
         scheduled_clean = OrderedDict()
-        for type, schedop, add_remove, execute_in_debugger in self.scheduled:            
+        for type, schedop, add_remove, debug in self.scheduled:            
             key = type, schedop.get_hash()
             if key not in scheduled_clean:
                 count = 0
@@ -283,10 +283,10 @@ class Manager:
                 old_schedop, count, _ = scheduled_clean[key]
                 assert old_schedop.get_hash() == schedop.get_hash()
             dif = 1 if add_remove else -1
-            scheduled_clean[key] = schedop, count + dif, execute_in_debugger
+            scheduled_clean[key] = schedop, count + dif, debug
         for key, value in scheduled_clean.items():
             type, _ = key
-            schedop, count, execute_in_debugger = value
+            schedop, count, debug = value
             if count == 0:
                 continue
             if type == "transformer":
@@ -306,13 +306,13 @@ class Manager:
                             status = self.stream_status[ttf, k]
                             if status.exec == "READY":
                                 status.exec = "EXECUTING"                    
-                    task = self._schedule_transform_all(tf_level1, count, execute_in_debugger=execute_in_debugger)
+                    task = self._schedule_transform_all(tf_level1, count, debug=debug)
                     self.cache_task_manager.schedule_task(
                         ("transform","all",tf_level1),task,count,
                         cancelfunc=None, resultfunc=None
                     )
                 else:
-                    task = self._schedule_transform_job(tf_level1, count, execute_in_debugger=execute_in_debugger)
+                    task = self._schedule_transform_job(tf_level1, count, debug=debug)
                     self.cache_task_manager.schedule_task(
                         ("transform","job",tf_level1),task,count,
                         cancelfunc=None, resultfunc=None)
@@ -669,7 +669,7 @@ class Manager:
         self.status[macro] = Status("macro")
 
     def _schedule_transformer(self, transformer):
-        execute_in_debugger = transformer.execute_in_debugger
+        debug = transformer.debug
         tcache = self.transform_cache
         old_level1 = self._temp_tf_level1.get(transformer)
         if old_level1 is None:
@@ -680,7 +680,7 @@ class Manager:
                 self.scheduled.append(("transformer", old_level1, False, None))
             self._temp_tf_level1[transformer] = new_level1
             tcache.set_level1(transformer, new_level1)
-        self.scheduled.append(("transformer", new_level1, True, execute_in_debugger))
+        self.scheduled.append(("transformer", new_level1, True, debug))
 
     def _unschedule_transformer(self, transformer):
         tcache = self.transform_cache

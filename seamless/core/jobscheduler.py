@@ -88,7 +88,7 @@ class JobScheduler:
         if not len(remote_job_servers):
             return None
         tcache = self.manager().transform_cache
-        job = Job(self, level1, None, remote=True, execute_in_debugger=False)
+        job = Job(self, level1, None, remote=True, debug=False)
         job.count = count
         self.remote_jobs[hlevel1] = job
         transformer = tcache.transformer_from_hlevel1.get(hlevel1)
@@ -97,7 +97,7 @@ class JobScheduler:
         job.execute(transformer)
         return job
 
-    def schedule(self, level2, count, transformer_can_be_none, execute_in_debugger):
+    def schedule(self, level2, count, transformer_can_be_none, debug):
         hlevel2 = level2.get_hash()
         if count < 0:
             count = -count
@@ -117,7 +117,7 @@ class JobScheduler:
         tcache = self.manager().transform_cache
         hlevel1 = tcache.hlevel1_from_hlevel2[hlevel2]
         level1 = tcache.revhash_hlevel1[hlevel1]
-        job = Job(self, level1, level2, remote=False, execute_in_debugger=execute_in_debugger)
+        job = Job(self, level1, level2, remote=False, debug=debug)
         job.count = count
         self.jobs[hlevel2] = job
         transformer = tcache.transformer_from_hlevel1.get(hlevel1)
@@ -153,13 +153,13 @@ class JobScheduler:
                 jobs.pop(key, None)
 
 class Job:
-    def __init__(self, scheduler, level1, level2, remote, execute_in_debugger):
+    def __init__(self, scheduler, level1, level2, remote, debug):
         self.scheduler = weakref.ref(scheduler)
         self.job_id = scheduler.new_id()
         self.level1 = level1
         self.level2 = level2
         self.remote = remote
-        self.execute_in_debugger = execute_in_debugger
+        self.debug = debug
         self.executor = None
         self.future = None
 
@@ -219,7 +219,7 @@ class Job:
                 str(transformer),
                 namespace, inputs, self.level2.output_name, queue
             )            
-            execute_command = execute_debug if self.execute_in_debugger else execute 
+            execute_command = execute_debug if self.debug else execute 
             self.executor = Executor(target=execute_command,args=args, daemon=True)
             self.executor.start()
             result = None
