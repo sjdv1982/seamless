@@ -98,6 +98,9 @@ class PinBase(SeamlessBase):
         self.worker_ref = weakref.ref(worker)
         super().__init__()
         assert transfer_mode in transfer_modes, (transfer_mode, transfer_modes)
+        if transfer_mode == "module":
+            assert access_mode is None
+            assert content_type is None
         if access_mode is not None:
             if isinstance(self, InputPin):
                 assert access_mode in access_modes + ("default",), (access_mode, access_modes)

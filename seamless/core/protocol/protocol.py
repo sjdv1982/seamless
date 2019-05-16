@@ -45,7 +45,7 @@ They will never be something as rich as MIME types;
   support for this must be in some high-level annotation/schema field.
 """
 
-transfer_modes = ("buffer", "copy", "ref")
+transfer_modes = ("buffer", "copy", "ref", "module")
 access_modes = ("pythoncode", "plain", "mixed", "silk", "text", "module", "binary_module", "binary") # how the data is accessed
 content_types = ("text",
   "python", "ipython", "transformer", "reactor", "macro",

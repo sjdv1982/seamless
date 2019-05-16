@@ -1,46 +1,66 @@
 import seamless
 from seamless.core import macro_mode_on
-from seamless.core import context, cell, reactor, pythoncell, ipythoncell
+from seamless.core import context, cell, transformer, pythoncell, ipythoncell
 
 with macro_mode_on():
     ctx = context(toplevel=True)
     ctx.i = cell().set(100)
     ctx.result = cell()
-    ctx.rc = reactor({
+    ctx.tf = transformer({
         "i": "input",
-        "testmodule": ("input", "ref", "module", "ipython"),
+        "testmodule": ("input", "module"),
         "result": "output",
-        "html": "output"
     })
-    ctx.i.connect(ctx.rc.i)
-    ctx.code_start = pythoncell().set("")
-    ctx.code_start.connect(ctx.rc.code_start)
-    ctx.code_update = pythoncell().set("""
+    ctx.gen_html = transformer({
+        "testmodule": ("input", "module"),
+        "html": "output",
+    })
+
+    ctx.i.connect(ctx.tf.i)
+    ctx.code = pythoncell().set("""
 import time
 from .testmodule import func, func_html
-i = PINS.i.get()
 t = time.time()
 result = func(i)
 print("Time: %.1f" % (time.time() - t))
-PINS.result.set(result)
-if PINS.testmodule.updated:
-    PINS.html.set(func_html)
 """)
-    ctx.code_update.connect(ctx.rc.code_update)
-    ctx.code_stop = pythoncell().set("")
-    ctx.code_stop.connect(ctx.rc.code_stop)
-    ctx.rc.result.connect(ctx.result)
+    ctx.code.connect(ctx.tf.code)
+    ctx.tf.result.connect(ctx.result)
 
-    ctx.testmodule = ipythoncell()
-    ctx.testmodule.mount("cell-ipython.ipy")
-    ctx.testmodule.connect(ctx.rc.testmodule)
+    def gen_html():
+        from .testmodule import func, func_html
+        return func_html
+    ctx.code2 = pythoncell().set(gen_html)
+    ctx.code2.connect(ctx.gen_html.code)
+
+    ctx.ipy = ipythoncell()
+    ctx.ipy.mount("cell-ipython.ipy")
+    ctx.gen_testmodule = transformer({
+        "ipy": ("input", "ref", "text"),
+        "testmodule": "output",
+    })
+    ctx.ipy.connect(ctx.gen_testmodule.ipy)
+    ctx.gen_testmodule.code.cell().set("""
+testmodule = {
+    "type": "interpreted",
+    "language": "ipython",
+    "code": ipy
+}
+    """)
+    
+
+
+    ctx.testmodule = cell("plain")
+    ctx.gen_testmodule.testmodule.connect(ctx.testmodule)
+    ctx.testmodule.connect(ctx.tf.testmodule)
+    ctx.testmodule.connect(ctx.gen_html.testmodule)
+
     ctx.html = cell("text")
-    ctx.html.mount("cell-ipython.html")
-    ctx.rc.html.connect(ctx.html)
+    ctx.html.mount("cell-ipython.html", "w")
+    ctx.gen_html.html.connect(ctx.html)
 ctx.equilibrate()
 print(ctx.result.value)
-ctx.i.set(200)
+ctx.i.set(6000)
 ctx.equilibrate()
 print(ctx.result.value)
-print(ctx.status())
-#print(ctx.testmodule.value)
+print(ctx.status)

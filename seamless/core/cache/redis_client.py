@@ -6,9 +6,12 @@ _redis_sinks = []
 _redis_caches = []
 
 class RedisSink:
-    def __init__(self, *, host='localhost',port=6379):
+    def __init__(self, *, host='localhost',port=6379, 
+      store_compile_result=True
+    ):
         self.host = host
         self.port = port    
+        self.store_compile_result = store_compile_result
         key = (host, port)
         if key not in _redis_connections:
             r = redis.Redis(host=host, port=port, db=0)
@@ -38,6 +41,12 @@ class RedisSink:
         key = b"value:" + checksum
         r.set(key, value)
 
+    def set_compile_result(self, checksum, value):
+        if not self.store_compile_result:
+            return
+        r = self.connection
+        key = b"compiled:" + checksum
+        r.set(key, value)
 
 class RedisCache:
     def __init__(self, *, host='localhost',port=6379):
@@ -89,6 +98,14 @@ class RedisCache:
         key = b"value:" + checksum
         return r.exists(key)
 
+    def get_compile_result(self, checksum):
+        r = self.connection
+        key = b"compiled:" + checksum
+        try:
+            return r.get(key)
+        except KeyError:
+            return None
+
 class RedisSinks:
     @staticmethod
     def sinks():
@@ -113,6 +130,11 @@ class RedisSinks:
             return        
         for redis_sink in _redis_sinks:
             redis_sink.set_transform_result_level2(hlevel2, checksum)
+    def set_compile_result(self, checksum, value):   
+        if checksum is None or value is None:
+            return     
+        for redis_sink in _redis_sinks:
+            redis_sink.set_compile_result(checksum, value)
 
 
 class RedisCaches:
@@ -131,7 +153,7 @@ class RedisCaches:
             value = redis_cache.get_transform_result_level2(hlevel2)
             if value is not None:
                 return value
-    def get_value(self, checksum):        
+    def get_value(self, checksum): 
         for redis_cache in _redis_caches:
             value = redis_cache.get_value(checksum)
             if value is not None:
@@ -142,6 +164,11 @@ class RedisCaches:
             if value:
                 return True
         return False
+    def get_compile_result(self, checksum): 
+        for redis_cache in _redis_caches:
+            value = redis_cache.get_compile_result(checksum)
+            if value is not None:
+                return value
 
 redis_sinks = RedisSinks()
 redis_caches = RedisCaches()

@@ -50,4 +50,4 @@ def find_language(lang):
         extension = lang2
     return lang, language, extension
 
-from .compile import compile
+from .compile import compile, complete

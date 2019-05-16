@@ -1,8 +1,17 @@
 from hashlib import sha3_256
-def get_hash(content):
+import json
+
+def get_hash(content, hex=False):
     if isinstance(content, str):
         content = content.encode()
     if not isinstance(content, bytes):
         raise TypeError(type(content))
     hash = sha3_256(content)
-    return hash.digest()
+    result = hash.digest()
+    if hex:
+        result = result.hex()
+    return result
+
+def get_dict_hash(d, hex=False):
+    content = json.dumps(d, sort_keys=True, indent=2)
+    return get_hash(content,hex=hex)

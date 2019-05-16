@@ -5,8 +5,9 @@ import multiprocessing
 import sys
 import traceback
 
-from .execute import Queue, Executor, execute ### TODO: also use execute_debug
+from .execute import Queue, Executor, execute, execute_debug
 from .run_multi_remote import run_multi_remote, run_multi_remote_pair
+from .injector import transformer_injector as injector
 
 ###############################################################################
 # Local jobs
@@ -86,7 +87,7 @@ class JobScheduler:
         if not len(remote_job_servers):
             return None
         tcache = self.manager().transform_cache
-        job = Job(self, level1, None, remote=True)
+        job = Job(self, level1, None, remote=True, execute_in_debugger=False)
         job.count = count
         self.remote_jobs[hlevel1] = job
         transformer = tcache.transformer_from_hlevel1.get(hlevel1)
@@ -95,7 +96,7 @@ class JobScheduler:
         job.execute(transformer)
         return job
 
-    def schedule(self, level2, count, transformer_can_be_none):
+    def schedule(self, level2, count, transformer_can_be_none, execute_in_debugger):
         hlevel2 = level2.get_hash()
         if count < 0:
             count = -count
@@ -115,7 +116,7 @@ class JobScheduler:
         tcache = self.manager().transform_cache
         hlevel1 = tcache.hlevel1_from_hlevel2[hlevel2]
         level1 = tcache.revhash_hlevel1[hlevel1]
-        job = Job(self, level1, level2, remote=False)
+        job = Job(self, level1, level2, remote=False, execute_in_debugger=execute_in_debugger)
         job.count = count
         self.jobs[hlevel2] = job
         transformer = tcache.transformer_from_hlevel1.get(hlevel1)
@@ -151,12 +152,13 @@ class JobScheduler:
                 jobs.pop(key, None)
 
 class Job:
-    def __init__(self, scheduler, level1, level2, remote):
+    def __init__(self, scheduler, level1, level2, remote, execute_in_debugger):
         self.scheduler = weakref.ref(scheduler)
         self.job_id = scheduler.new_id()
         self.level1 = level1
         self.level2 = level2
         self.remote = remote
+        self.execute_in_debugger = execute_in_debugger
         self.executor = None
         self.future = None
 
@@ -189,8 +191,9 @@ class Job:
         except:
             transformer_path = "<Unknown transformer>"
         manager = self.scheduler().manager()
+        module_workspace = {}
         try:            
-            namespace = {}
+            namespace = {"__name__": "transformer"}
             queue = Queue()
             inputs = []
             assert "code" in self.level2, list(self.level2._expressions.keys())            
@@ -203,14 +206,19 @@ class Job:
                     if semantic_key.access_mode in ("mixed", "default"):
                         if value is not None:
                             value = value[2]
-                    namespace[pin] = value
-                    inputs.append(pin)
+                    if semantic_key.access_mode == "module":
+                        module_workspace[pin] = value[1]
+                    else:
+                        namespace[pin] = value
+                        inputs.append(pin)
             args = (
                 transformer_path, code,
+                injector, module_workspace,
                 str(transformer),
                 namespace, inputs, self.level2.output_name, queue
             )            
-            self.executor = Executor(target=execute,args=args, daemon=True)
+            execute_command = execute_debug if self.execute_in_debugger else execute 
+            self.executor = Executor(target=execute_command,args=args, daemon=True)
             self.executor.start()
             result = None
             done = False

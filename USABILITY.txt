@@ -14,7 +14,8 @@
 3. Right now, Seamless can kill transformers (cleanly, unless they are threads)
    but does not wait for them to be killed (it used to, but it is slow!!).
    You may want to re-enable this if needed (TODO).
-
+4. For compiled code, Seamless assumes a standard environment (i.e. the environment of the Docker image). 
+If you compile outside the standard environment, don't store the compile result in a RedisSink.
 
 Other problems:
 1. SEEMS TO BE RESOLVED

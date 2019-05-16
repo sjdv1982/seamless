@@ -46,7 +46,7 @@ def deserialize(
             value, from_buffer, buffer_checksum,
             source_access_mode, source_content_type
         )
-    elif celltype == "text":
+    elif celltype in ("text", "ipython"):
         return deserialize_text(
             value, from_buffer, buffer_checksum,
             source_access_mode, source_content_type
@@ -149,7 +149,7 @@ def deserialize_text(
     from_buffer, buffer_checksum,
     source_access_mode, source_content_type
 ):
-    if source_access_mode in ("text", "python", "cson"):
+    if source_access_mode in ("text", "python", "ipython", "cson"):
         if from_buffer:
             if isinstance(value, bytes):
                 value = value.decode()

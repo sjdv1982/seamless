@@ -62,6 +62,7 @@ import json
 from .deserialize import deserialize
 from ...mixed.io import to_stream, get_form
 from ...get_hash import get_hash
+from ..build_module import build_module
 
 def calc_buffer(value):
     storage, form = get_form(value)
@@ -86,8 +87,11 @@ def evaluate_from_buffer(expression, buffer):
     if expression.access_mode is not None:
         if expression.access_mode == "text" and expression.celltype == "cson":
             semantic_obj = obj
+        elif expression.access_mode == "module":
+            semantic_obj = build_module(obj)
         elif expression.celltype == "python":
             semantic_obj = obj
+        
         # TODO
     if expression.content_type is not None and expression.content_type != expression.celltype:
         pass # TODO?

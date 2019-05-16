@@ -22,7 +22,7 @@ def _init_from_library(ctf, debug):
         ctf.translator_params = libcell(".translator_params")
         ctf.translator = transformer(ctf.translator_params.value)
         if debug:
-            ctf.translator.debug = True
+            ctf.translator.execute_in_debugger = True
         ctf.translator_code.connect(ctf.translator.code)
 
 def _finalize(ctx, ctf, inp, c_inp, result, c_result, input_name, result_name):

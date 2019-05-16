@@ -22,6 +22,7 @@ import time
 import traceback
 import copy
 from contextlib import contextmanager
+import asyncio
 import json
 import itertools
 
@@ -73,7 +74,6 @@ class MountItem:
         self.last_time = None
         self.last_mtime = None
         self.persistent = persistent
-
 
     def init(self):
         if self._destroyed:
@@ -431,6 +431,7 @@ class MountManager:
     _last_run = None
     _stop = False
     _mounting = False
+    thread = None
     def __init__(self, latency):
         self.latency = latency
         self.mounts = WeakKeyDictionary()
@@ -602,6 +603,17 @@ class MountManager:
         if self._running:
             self._tick.clear()
             self._tick.wait()
+
+    async def async_tick(self):
+        assert self.thread is not None
+        while not self._running:
+            await asyncio.sleep(0.001)
+        self._tick.clear()
+        while 1:
+            if self._tick.is_set():
+                return
+            await asyncio.sleep(0.001)
+
 
     def destroy(self):
         for path in list(self.mounts.keys()):
@@ -839,9 +851,3 @@ def get_extension(c):
     return ""
 
 from .link import Link
-
-"""
-*****
-TODO: filehash option (cell stores hash of the file, necessary for slash-0)
-*****
-"""
