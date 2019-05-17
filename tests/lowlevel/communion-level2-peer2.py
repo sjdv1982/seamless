@@ -12,11 +12,6 @@ redis_cache = seamless.RedisCache()
 
 ctx = context(toplevel=True)
 
-import asyncio
-done = asyncio.sleep(1)
-ctx.equilibrate()
-asyncio.get_event_loop().run_until_complete(done)
-
 ctx.cell1 = cell("cson").set("a: 10")
 #ctx.cell1 = cell("plain").set({'a': 10})
 

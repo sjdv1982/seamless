@@ -19,8 +19,6 @@ communionserver.configure_servant(
 from seamless.core import context, cell, transformer, pytransformercell, link
 
 ctx = context(toplevel=True)
-communionserver.wait(2)
-
 ctx.cell1 = cell().set(1)
 ctx.cell2 = cell().set(2)    
 ctx.result = cell()

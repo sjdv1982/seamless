@@ -10,6 +10,8 @@ from ..compiler import compile, complete
 from ..compiler.build_extension import build_extension_cffi
 from ..ipython import execute as ipython_execute
 
+remote_build_model_servers = []
+
 SEAMLESS_EXTENSION_DIR = os.path.join(tempfile.gettempdir(), "seamless-extensions")
 #  Here Seamless will write the compiled Python module .so files before importing
 
@@ -57,10 +59,31 @@ def import_extension_module(full_module_name, module_code, debug, source_files):
             if not debug:
                 os.remove(module_file)
 
+def build_compiled_module_remote(full_module_name, checksum, module_definition):
+    from ..core.run_multi_remote import run_multi_remote
+    d_content = {
+        "full_module_name": full_module_name,
+        "checksum": checksum.hex(),
+        "module_definition": module_definition,
+    }
+    content = json.dumps(d_content)
+    future = run_multi_remote(remote_build_model_servers, content, origin=None)
+    import asyncio
+    asyncio.get_event_loop().run_until_complete(future)
+
 def build_compiled_module(full_module_name, checksum, module_definition):
     from .cache.redis_client import redis_caches, redis_sinks
     mchecksum = b"python-ext-" + checksum
     module_code = redis_caches.get_compile_result(mchecksum)
+    source_files = {}
+    debug = False
+    if module_code is None:
+        build_compiled_module_remote(
+          full_module_name, checksum, module_definition
+        )
+        module_code = redis_caches.get_compile_result(mchecksum)
+        if module_code is not None:
+            redis_sinks.set_compile_result(mchecksum, module_code)
     if module_code is None:
         objects = module_definition["objects"]
         binary_objects = {}
@@ -97,7 +120,7 @@ def build_compiled_module(full_module_name, checksum, module_definition):
           compiler_verbose=CFFI_VERBOSE
         )
         redis_sinks.set_compile_result(mchecksum, module_code)
-    debug = (module_definition.get("target") == "debug")
+        debug = (module_definition.get("target") == "debug")
     mod = import_extension_module(full_module_name, module_code, debug, source_files)
     return mod
 

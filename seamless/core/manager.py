@@ -271,6 +271,8 @@ class Manager:
                 tcache.transformer_from_hlevel1[hlevel1] = real_transformer
 
     def schedule_jobs(self):
+        from ..communionserver import communionserver
+        communionserver.wait(self)
         if not len(self.scheduled):
             return
         tcache = self.transform_cache
@@ -1695,6 +1697,8 @@ class Manager:
         return self.label_cache.get_label(checksum)
 
     def get_checksum_from_label(self, label):
+        from ..communionserver import communionserver
+        communionserver.wait(self)
         checksum = self.label_cache.get_checksum(label)
         if checksum is None:
             cache_task = self.cache_task_manager.remote_checksum_from_label(label)
@@ -1705,6 +1709,8 @@ class Manager:
         return checksum
 
     def get_value_from_checksum(self, checksum):
+        from ..communionserver import communionserver
+        communionserver.wait(self)
         if checksum is None:
             return None
         buffer_item = library.value_cache.get_buffer(checksum)
@@ -1719,6 +1725,8 @@ class Manager:
         return buffer_item
         
     async def get_value_from_checksum_async(self, checksum):
+        from ..communionserver import communionserver
+        await communionserver.wait_async(self)
         buffer_item = library.value_cache.get_buffer(checksum)
         if buffer_item is None:
             buffer_item = self.value_cache.get_buffer(checksum)        
@@ -1784,7 +1792,7 @@ class Manager:
 
     async def equilibrate(self, timeout, report, path):
         await self.mountmanager.async_tick()
-        await self._flush()        
+        await self._flush()
         delta = None
         if timeout is not None:
             deadline = time.time() + timeout

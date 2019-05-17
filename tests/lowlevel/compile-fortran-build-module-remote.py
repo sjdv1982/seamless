@@ -1,61 +1,54 @@
-# run scripts/jobslave-noredis.py 
-
+# run scripts/build-module-slave.py 
 import os
-os.environ["SEAMLESS_COMMUNION_ID"] = "compile-remote"
+os.environ["SEAMLESS_COMMUNION_ID"] = "compile-fortran-build-module-remote"
 os.environ["SEAMLESS_COMMUNION_INCOMING"] = "localhost:8602"
 
 import seamless
-seamless.set_ncores(0)
 from seamless import communionserver
 
 communionserver.configure_master(
-    value=True,
-    transformer_job=True,
-)
-communionserver.configure_servant(
-    value=True,
+    build_module=True,
 )
 
-from seamless.core import context, cell, transformer, macro_mode_on
-with macro_mode_on():
-    ctx = context(toplevel=True)
-communionserver.wait(2)
+redis_cache = seamless.RedisCache()
 
 code = """
-#include <cmath>
-
-extern "C" float add(int a, int b){
-    return a + b + M_PI;
-}
+function add(a, b) result(r) bind(C)
+    use iso_c_binding
+    implicit none
+    integer(c_int), VALUE:: a, b
+    real(c_float) r
+    r = a + b
+end function
 """
-testmodule = {
+module = {
     "type": "compiled",
     "objects": {
         "main": {
             "code": code,
-            "language": "cpp",
+            "language": "f90",
         },
     },
-    "link_options" : ["-lm"],
     "public_header": {
         "language": "c",
         "code": "float add(int a, int b);"
     }
 }
 
-
+from seamless.core import context, cell, transformer, macro_mode_on
 with macro_mode_on():
-    ctx.testmodule = cell("plain")
-    ctx.testmodule.set(testmodule)
+    ctx = context(toplevel=True)
+    ctx.module = cell("plain")
+    ctx.module.set(module)
     tf = ctx.tf = transformer({
         "a": ("input", "ref", "plain"),
         "b": ("input", "ref", "plain"),
         "testmodule": ("input", "module"),
         "result": ("output", "ref", "plain"),
     })
-    ctx.testmodule.connect(tf.testmodule)
-    tf.a.cell().set(2)
-    tf.b.cell().set(3)
+    ctx.module.connect(tf.testmodule)
+    tf.a.cell().set(12)
+    tf.b.cell().set(13)
     tf.code.cell().set("""
 from .testmodule import lib
 print("ADD", lib.add(a,b))
@@ -64,6 +57,5 @@ result = testmodule.lib.add(a,b)
     ctx.result = cell("plain")
     ctx.tf.result.connect(ctx.result)
 
-communionserver.wait(2)
 ctx.equilibrate()
 print(ctx.result.value)

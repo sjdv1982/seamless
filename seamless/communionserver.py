@@ -6,10 +6,23 @@ Upon startup:
 - Every Seamless instance has a unique and random identifier; communion is only established once for each ID
 """
 
+import logging
+logger = logging.getLogger('websockets.server')
+logger.setLevel(logging.ERROR)
+logger.addHandler(logging.StreamHandler())
+
+def is_port_in_use(port): # KLUDGE: For some reason, websockets does not test this??
+    import socket
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        return s.connect_ex(('localhost', port)) == 0
+
+WAIT_TIME = 1.5 # time to wait for network connections after a new manager
+
 import os, sys, asyncio, time, functools, json, traceback, base64, websockets
 from weakref import WeakSet
 from .communionclient import communion_client_types
 from .core.cache.transform_cache import TransformerLevel1
+from .core.build_module import build_compiled_module
 
 incoming = []
 _incoming = os.environ.get("SEAMLESS_COMMUNION_INCOMING")
@@ -37,6 +50,7 @@ default_master_config = {
     "transformer_result_level2": False,
     "value": True,
     "transformer_job": False,
+    "build_module": False,
 }
 
 # Default configuration for being a servant, i.e. on providing services to other peers
@@ -46,6 +60,7 @@ default_servant_config = {
     "transformer_result_level2": True,
     "value": False,
     "transformer_job": False,
+    "build_module": False,
 }
 
 import numpy as np
@@ -62,7 +77,7 @@ def communion_encode(msg):
     remainder.pop("content")    
     if len(remainder.keys()):
         rem = json.dumps(remainder).encode()
-        nrem = np.uint32(len(rem))
+        nrem = np.uint32(len(rem)).tobytes()
         m += nrem
         m += rem
     else:
@@ -133,18 +148,27 @@ class CommunionServer:
         self.message_count = {}
         self.clients = {}
         self.futures = {}
+        self.ready = WeakSet()
     
     def register_manager(self, manager):
         if self.future is None:
             self.future = asyncio.ensure_future(self._start())
         self.managers.add(manager)
 
-    def wait(self, time):
+    async def wait_async(self, manager):
+        if manager in self.ready:
+            return
+        if not incoming and not outgoing:
+            return
         if self.future is None:
             self.future = asyncio.ensure_future(self._start())
-        loop = asyncio.get_event_loop()
-        loop.run_until_complete(asyncio.sleep(time))
+        await asyncio.sleep(WAIT_TIME)
+        self.ready.add(manager)
 
+    def wait(self, manager):
+        future = asyncio.ensure_future(self.wait_async(manager))
+        asyncio.get_event_loop().run_until_complete(future)
+        
     def configure_master(self, config=None, **update):
         if self.future is not None and any(update.values()):
             print("Warning: CommunionServer has already started, added functionality will not be taken into account for existing peers", file=sys.stderr)
@@ -235,8 +259,9 @@ class CommunionServer:
 
         coros = []  
         if outgoing is not None:
-            async def server(websocket, path):
-                await self._serve_outgoing(config, websocket, path)
+            if is_port_in_use(outgoing): # KLUDGE
+                print("ERROR: outgoing port %d already in use" % outgoing)
+                raise Exception
             server = functools.partial(self._serve_outgoing, config)
             coro = websockets.serve(server, 'localhost', outgoing)
             coros.append(coro)
@@ -277,12 +302,20 @@ class CommunionServer:
             elif type == "transformer_job_run":
                 level1 = TransformerLevel1.deserialize(content)
                 content = level1
+            elif type == "build_module":
+                d_content = json.loads(content)
+                full_module_name = d_content["full_module_name"]
+                checksum = bytes.fromhex(d_content["checksum"])
+                module_definition = d_content["module_definition"]                
             else:
                 raise NotImplementedError(type)
             if result is None:
                 for manager in self.managers:
                     if type == "transformer_job_run":
                         result = await manager.run_remote_transform_job(content)
+                    elif type == "build_module":                      
+                        build_compiled_module(full_module_name, checksum, module_definition)
+                        break
                     else:
                         if cache_name is None:                            
                             method = getattr(manager, method_name)
@@ -316,6 +349,8 @@ class CommunionServer:
                     pass #TODO: forward transform_job_check requests
                 elif type == "transformer_job_run":
                     pass #TODO: forward transform_job_run requests
+                elif type == "build_module":
+                    pass #TODO: forward build_module requests
                 else:
                     raise ValueError(type)
                 if cache_task is not None:

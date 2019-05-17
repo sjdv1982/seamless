@@ -24,7 +24,7 @@ module = {
     },
     "public_header": {
         "language": "c",
-        "code": "float add2(int a, int b);"
+        "code": "float add(int a, int b);"
     }
 }
 

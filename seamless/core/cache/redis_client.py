@@ -64,34 +64,23 @@ class RedisCache:
     def get_label(self, label):
         r = self.connection
         key = b"label:" + label.encode()
-        try:
-            return r.get(key)
-        except KeyError:
-            return None
+        return r.get(key)
 
     def get_transform_result(self, checksum):
         r = self.connection
         key = b"tfresult:" + checksum
-        try:
-            return r.get(key)
-        except KeyError:
-            return None
+        return r.get(key)
+
 
     def get_transform_result_level2(self, checksum):
         r = self.connection
         key = b"tfresult2:" + checksum
-        try:
-            return r.get(key)
-        except KeyError:
-            return None
+        return r.get(key)
 
     def get_value(self, checksum):
         r = self.connection
         key = b"value:" + checksum
-        try:
-            return r.get(key)
-        except KeyError:
-            return None
+        return r.get(key)
 
     def has_value(self, checksum):
         r = self.connection
@@ -101,10 +90,7 @@ class RedisCache:
     def get_compile_result(self, checksum):
         r = self.connection
         key = b"compiled:" + checksum
-        try:
-            return r.get(key)
-        except KeyError:
-            return None
+        return r.get(key)        
 
 class RedisSinks:
     @staticmethod

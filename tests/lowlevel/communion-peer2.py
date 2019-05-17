@@ -31,11 +31,6 @@ with macro_mode_on():
     ctx.code.connect(ctx.tf.code)
     ctx.tf.c.connect(ctx.result)
 
-import asyncio
-done = asyncio.sleep(1)
-ctx.equilibrate()
-asyncio.get_event_loop().run_until_complete(done)
-
 ctx.code.from_label("Secret source code")
 print("Secret source code", ctx.code.checksum)
 

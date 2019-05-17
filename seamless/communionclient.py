@@ -5,6 +5,7 @@ from .core.cache.cache_task import (
     remote_checksum_value_servers
 )    
 from .core.jobscheduler import remote_job_servers
+from .core.build_module import remote_build_model_servers
 
 class CommunionClient: 
     """wraps a remote servant"""
@@ -87,6 +88,15 @@ class CommunionLabelClient(CommunionClient):
             "content": label,
         }
 
+class CommunionBuildModuleClient(CommunionClient):
+    config_type = "build_module"
+    cache_task_servers = remote_build_model_servers
+    def _prepare_message(self, content):
+        return {
+            "type": self.config_type,
+            "content": content,
+        }
+
 class CommunionTransformerResultClient(CommunionClient):
     config_type = "transformer_result"
     cache_task_servers = remote_transformer_result_servers
@@ -139,6 +149,7 @@ class CommunionTransformerJobClient(CommunionPairClient):
 
 communion_client_types = (
     CommunionLabelClient,
+    CommunionBuildModuleClient,
     CommunionTransformerResultClient,
     CommunionTransformerResultL2Client,
     CommunionValueCacheClient,

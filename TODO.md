@@ -6,36 +6,56 @@ Most of the high level is done.
 Part 2
 Things to do:
 2A. Preparation
+- Polyglot:
+  - remote Fortran compilation, in a Docker image
+  - Test at high level: first modules, then C/C++/Fortran transformers
 - Finish the testing of the docking transformers, in particular inside docker
 - Check jobslave-over-abathur
 - Get reactors working again at the high level
+- Constructors, finish testing
+  Test library-containing-another-library    
+  Make sure constructors work correctly when copying parent contexts
+  Test indirect library update system, also with constructors
+- Implement annotation dict, including debug, ncores (ncores DONE), and a field for streams
+  => high-level streams example
+
+Intermezzo: documentation
+- Prepare slides for Pierre
 - Update interoperability document
 - PREPARE SIMPLE DEMO IN DOCUMENTATION
 
-2B. towards DaReUS-Loop example
-- Get module injection working again.
-    Store module objects either in object cache or a new module object cache.
-    Building these module objects is similar to cache expression evaluation in the hierarchy (i.e. local).
-    The injection machinery itself should stay similar.
+2B. DaReUS-Loop example, and others
+- Simple visualization for DaReUS-Loop
+- R transformer (use rpy2 %%R bridge)
+- PyPPP docker image: code is open source, but SVM model is secret
+- Make a simple Galaxy-XML-to-Seamless translator
+- Make a simple Mobyle-XML-to-Seamless translator
+- Make a simple SnakeMake transformer (on top of Docker transformer;
+  deeper transformation would require slash and/or macros)
+  
+
+Seamless is now usable by me, to port RPBS/Galaxy services
+ Need some more months to make it usable:
+- by other devs
+- by sysadmins (job control, deployment)
+
+2C: Towards a first real example
+- Finish browser lib
+-  First real example:
+  - Convert topology.json (of a different ctx!) to SVG
+  - Interject merge for manual edit
+  - Hook up browser for visualization
+
+intermezzo: re-run all tests
+
+
+LATER:
 - Cell-cell connection (also with int/float/str/bool cells), generic deserialization (see protocol/evaluate.py)
    Add back in int/float/str/bool cells because they are so convenient.
      Their content type will be int/float/text/bool.
      Adapters will convert among them (e.g. int=>float) and between them and JSON/mixed/text.
      Supported access modes are JSON and text. Adapters will convert to Silk.
 - Shell (create new namespace upon request/upon update; either pre-execution or post-execution [post-execution may re-execute transformer/macro])
-- Implement annotation dict, including execute_debug, ncores (ncores DONE), and a field for streams
-- Deep cells / cache-tree-depth (see below).
-
-
-2C. DaReUS-Loop example, and others
-- Simple visualization for DaReUS-Loop
-- R transformer (use rmagic bridge)
-- PyPPP docker image: code is open source, but SVM model is secret
-- Make a simple Galaxy-XML-to-Seamless translator
-- Make a simple Mobyle-XML-to-Seamless translator
-- Make a simple SnakeMake transformer (on top of Docker transformer;
-  deeper transformation would require slash and/or macros)
-
 - Allow any worker inputpin to be annotated as must_be_defined=False.
 - Implement transformer interrupt action, upon destroy or by manager (upon auth update).
     (TODO: build upon JobScheduler.cancel, but add delay, and implement worker.destroy)
@@ -53,28 +73,8 @@ Things to do:
   - The checksum of the desired element(s) is retrieved from the Merkle tree
   - An accessor is constructed using this checksum, and with the first
     element(s) removed from the subpath
-
-    
-
-
-Seamless is now usable by me, to port RPBS/Galaxy services
- Need some more months to make it usable:
-- by other devs
-- by sysadmins (job control, deployment)
-
-2D: Towards a first real example
-- Constructors, finish testing
-  Test library-containing-another-library    
-  Make sure constructors work correctly when copying parent contexts
-  Test indirect library update system, also with constructors
-- Finish browser lib
--  First real example:
-  - Convert topology.json (of a different ctx!) to SVG
-  - Interject merge for manual edit
-  - Hook up browser for visualization
-
-intermezzo: re-run all tests
-
+- Seamless Hub to redirect shareserver traffic
+- Communionserver Hub 
 
 2E:  Streams (maybe delay for later)
 - Basic implementation in manager/protocol DONE
