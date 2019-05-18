@@ -8,7 +8,6 @@ try:
 except ImportError:
     print('Compiler transformer: Python package "wurlitzer" could not be found; "printf" etc. will show only in a terminal')
 
-print("1")
 ffi = module.ffi
 
 ARRAYS = [] #a list of Numpy arrays whose references must be kept alive
