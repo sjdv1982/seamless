@@ -4,6 +4,8 @@ assert header is not None
 
 m = deepcopy(main_module)
 m["type"] = "compiled"
+if debug_:
+    m["target"] = "debug"
 if not "objects" in m:
     m["objects"] = {}
 if not "main" in m["objects"]:

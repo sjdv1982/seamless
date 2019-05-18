@@ -16,7 +16,7 @@ SEAMLESS_EXTENSION_DIR = os.path.join(tempfile.gettempdir(), "seamless-extension
 #  Here Seamless will write the compiled Python module .so files before importing
 
 COMPILE_VERBOSE = True
-CFFI_VERBOSE = True
+CFFI_VERBOSE = False
 
 module_cache = WeakValueDictionary()
 

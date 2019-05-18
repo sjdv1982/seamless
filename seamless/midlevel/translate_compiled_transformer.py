@@ -7,6 +7,7 @@ from seamless.core import library
 def _init_from_library(ctf, debug):
     # Just to register the "compiled_transformer" lib
     from seamless.lib.compiled_transformer import compiled_transformer as _
+
     with library.bind("compiled_transformer"):
         ctf.gen_header_code = libcell(".gen_header.code")
         ctf.gen_header_params = libcell(".gen_header_params")
@@ -22,7 +23,7 @@ def _init_from_library(ctf, debug):
         ctf.translator_params = libcell(".translator_params")
         ctf.translator = transformer(ctf.translator_params.value)
         if debug:
-            ctf.translator.debug = True
+            ctf.translator.debug_ = True
         ctf.translator_code.connect(ctf.translator.code)
 
 def _finalize(ctx, ctf, inp, c_inp, result, c_result, input_name, result_name):

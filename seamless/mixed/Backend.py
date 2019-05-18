@@ -407,16 +407,31 @@ class CellBackend(Backend):
                 updated_paths.add(path)
         cache = {}
         updated_auths = set()
+        updated_parent_paths = set()
+        for path in updated_paths:
+            for n in range(len(path)):
+                updated_parent_paths.add(path[:n])
+        if DEBUG:
+            print("BACKEND DEBUG")
         for path in sorted(authkeys, key=lambda p:len(p)):
             done = False
+            if path in updated_parent_paths:
+                updated_auths.add(path)
+                continue
             for n in range(len(path)+1):
+                if DEBUG:
+                    print("NONE?", path, n, path[:n], path_is_none)
                 if path[:n] in path_is_none:
                     path_is_none.add(path)
                     done = True
                     break
+            if DEBUG:
+                print("DONE?", path, done)
             if done:
                 continue
             for n in range(len(path)+1):
+                if DEBUG:
+                    print("UP?", path, n, path[:n], updated_paths)
                 if path[:n] in updated_paths:
                     done = True
                     break
@@ -424,6 +439,8 @@ class CellBackend(Backend):
                 for n in range(len(path)+1):
                     subpath = path[:n]
                     v = cache.get(subpath)
+                    if DEBUG:
+                        print(path, n, subpath, str(v)[:50])
                     if v is None:
                         v = self.get_path(subpath)
                         if v is None:
@@ -434,9 +451,10 @@ class CellBackend(Backend):
                 else:
                     if path not in path_is_none:
                         updated_auths.add(path)
+                continue            
 
         if DEBUG:
-            print("BACKEND DEBUG")
+            print(updated_paths)
             print(updated_auths)
             print(path_is_none)               
             print("/BACKEND DEBUG") 

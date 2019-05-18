@@ -7,6 +7,8 @@ from seamless.core import StructuredCell
 from seamless.core import library
 from copy import deepcopy
 
+DEBUG = True # Run compiled transformer in debugging mode (attach using gdb)
+
 # 1: set up example data
 with macro_mode_on():
     ctx = context(toplevel=True)
@@ -39,13 +41,6 @@ with macro_mode_on():
     )
     ctf = ctx.tf = context()
 
-    # 1b. Example values
-    inp = ctx.inp.handle
-    inp.a = 2
-    inp.b = 3
-    result = ctx.result.handle
-    result.set(0.0)
-
     ctx.compiled_code = cell("text").set(
 """extern "C" double transform(int a, int b) {
     return a + b;
@@ -53,7 +48,6 @@ with macro_mode_on():
     )
     ctx.language = cell("text").set("cpp")
     ctx.main_module = cell("plain").set({})
-    ctx.compiler_verbose = cell("plain").set(True)
     ctx.pins = cell("plain").set({
         'a': {'io': 'input', 'transfer_mode': 'copy', 'access_mode': 'object'},
         'b': {'io': 'input', 'transfer_mode': 'copy', 'access_mode': 'object'},
@@ -61,6 +55,18 @@ with macro_mode_on():
     })
     ctx.inputpins = cell("plain").set(["a", "b"])
 
+# 1b. Example values
+inp = ctx.inp.example
+inp.set({})
+inp.a = 0
+inp.b = 0
+result = ctx.result.example
+result.set(0.0)
+
+inp = ctx.inp.handle
+inp.set({})
+inp.a = 2
+inp.b = 3
 
 # Just to register the "compiled_transformer" lib
 from seamless.lib.compiled_transformer import compiled_transformer as _
@@ -78,10 +84,11 @@ with macro_mode_on(), library.bind("compiled_transformer"):
     ctf.gen_header.result_name.cell().set("result")
     ctf.gen_header.input_name.cell().set("input")
 
-    ctf.compiler_code = libcell(".compiler.code")
-    ctf.compiler_params = libcell(".compiler_params")
-    ctf.compiler = transformer(ctf.compiler_params.value)
-    ctf.compiler_code.connect(ctf.compiler.code)
+    ctf.integrator_code = libcell(".integrator.code")
+    ctf.integrator_params = libcell(".integrator_params")
+    ctf.integrator = transformer(ctf.integrator_params.value)
+    ctf.integrator.debug_.cell().set(DEBUG)
+    ctf.integrator_code.connect(ctf.integrator.code)
 
     ctf.translator_code = libcell(".translator.code")
     ctf.translator_params = libcell(".translator_params")
@@ -90,14 +97,14 @@ with macro_mode_on(), library.bind("compiled_transformer"):
     ctf.translator.result_name.cell().set("result")
     ctf.translator.input_name.cell().set("input")
 
-    #ctf.translator.debug = True
+    ctf.translator.debug = DEBUG
 
 # 3: set up connections to library
 with macro_mode_on():
     #3a: between example and library
     ctx.pins.connect(ctf.translator.pins)
-    ctx.result.connect_inchannel(ctf.translator.translator_result_, ())
-    ctx.inp.connect_outchannel((), ctf.translator.kwargs)
+    ctf.translator.translator_result_.connect(ctx.result.inchannels[()])
+    ctx.inp.outchannels[()].connect(ctf.translator.kwargs)
     ctx.inputpins.connect(ctf.gen_header.inputpins)
     ctx.inp_struc.schema.connect(ctf.gen_header.input_schema)
     ctx.result_struc.schema.connect(ctf.gen_header.result_schema)
@@ -107,17 +114,16 @@ with macro_mode_on():
     #3b: among library cells
     ctx.header = cell("text")
     ctf.gen_header.result.connect(ctx.header)
-    ctx.header.connect(ctf.compiler.header)
+    ctx.header.connect(ctf.integrator.header)
 
-    ctx.language.connect(ctf.compiler.lang)
-    ctx.compiled_code.connect(ctf.compiler.compiled_code)
-    ctx.main_module.connect(ctf.compiler.main_module)
-    ctx.compiler_verbose.connect(ctf.compiler.compiler_verbose)
+    ctx.language.connect(ctf.integrator.lang)
+    ctx.compiled_code.connect(ctf.integrator.compiled_code)
+    ctx.main_module.connect(ctf.integrator.main_module)
 
-    ctx.binary_module = cell("mixed")
-    ctf.compiler.result.connect(ctx.binary_module)
+    ctx.module = cell("mixed")
+    ctf.integrator.result.connect(ctx.module)
 
-    ctx.binary_module.connect(ctf.translator.binary_module)
+    ctx.module.connect(ctf.translator.module)
 
 print("START")
 ctx.equilibrate()
@@ -125,14 +131,20 @@ print(ctx.pins.value)
 print(ctx.inp_struc.schema.value)
 print(ctx.result_struc.schema.value)
 print(ctx.header.value)
-print(ctx.binary_module.value)
+print(ctx.module.value)
 print(ctx.result.value)
+print(ctx.status)
+if DEBUG:
+    import sys; sys.exit()
 
-inp.a.set(10)
+print("update")
+inp = ctx.inp.handle
+inp.a = 10
 ctx.equilibrate()
 print(ctx.result.value)
 
-inp.q.set(100.0)
+inp.q = 100
+ctx.inp.example.q = 0.0
 pins = deepcopy(ctx.pins.value)
 pins.update({
     'q': {'io': 'input', 'transfer_mode': 'copy', 'access_mode': 'object'},
@@ -143,11 +155,10 @@ ctx.compiled_code.set(
 return a + b + q;
 }""")
 
-ctx.compiler_verbose.set(False)
 ctx.equilibrate()
 print(ctx.inp_struc.schema.value)
 print(ctx.result.value)
-print(ctx.status())
+print(ctx.status)
 
 ctx.compiled_code.set(
 """extern "C" double transform(int a, int b, double q) {
@@ -155,7 +166,7 @@ return a + b - q;
 }""")
 ctx.equilibrate()
 print(ctx.result.value)
-print(ctx.status())
+print(ctx.status)
 
 ctx.compiled_code.set(
 """
@@ -166,4 +177,4 @@ extern "C" double transform(int a, int b, double q) {
 }""")
 ctx.equilibrate()
 print(ctx.result.value)
-print(ctx.status())
+print(ctx.status)

@@ -18,9 +18,10 @@ pins["input_name"]["access_mode"] = "text"
 pins["result_name"]["access_mode"] = "text"
 ctx.gen_header.code = set_resource(gen_header_file)
 
-ctx.integrator = lambda lang, header, compiled_code, main_module: None
+ctx.integrator = lambda lang, header, compiled_code, main_module, debug_: None
 ctx.integrator.code = set_resource(integrator_file)
 pins = ctx.integrator.pins
+pins["debug_"]["access_mode"] = "plain"
 pins["lang"]["access_mode"] = "text"
 pins["compiled_code"]["access_mode"] = "text"
 pins["header"]["access_mode"] = "text"
@@ -109,12 +110,12 @@ if __name__ == "__main__":
     ctx.tf0.result.example = 0.0
 
     ctf = ctx.integrator
+    ctf.debug_ = False
     ctf.compiled_code = ctx.cppcode
     ctf.lang = "cpp"
     ctf.main_module = {
         "link_options" : ["-lm"],
     }
-    ctf.compiler_verbose = True
     ctx.input_schema = ctx.tf0.schema
     ctx.result_schema = ctx.tf0.result.schema
     ctx.input_name = ctx.tf0._get_htf()["INPUT"]

@@ -57,6 +57,8 @@ def compile(binary_objects, build_dir, compiler_verbose=False):
         for objectname, object_ in binary_objects.items():
             code_file = objectname + "." + object_["extension"]
             obj_file = objectname + ".o" #TODO: Windows
+            if os.path.exists(obj_file):
+                os.remove(obj_file)
             cmd = [
               object_["compiler_binary"], 
               object_["compile_flag"], 

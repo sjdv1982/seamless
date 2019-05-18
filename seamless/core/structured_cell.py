@@ -217,8 +217,12 @@ class StructuredCell(SeamlessBase):
         from ..silk import Silk
         from ..silk.Silk import SILK_NO_INFERENCE
         assert self.schema is not None
-        schema_value = {} if init else self.schema.value
-        self._schema_value = schema_value
+        if init:
+            d = {}
+            self.schema.set(d)
+            self._schema_value = d
+        else:
+            self._schema_value = self.schema.value
         bufmonitor = None
         if self.buffer is not None:
             bufmonitor = self.buffer._monitor
@@ -350,3 +354,15 @@ class StructuredCell(SeamlessBase):
             monitor = self.monitor
             result = monitor.get_path()
         return result
+
+    @property
+    def example(self):
+        """Returns example Silk structure, for schema definition"""
+        from ..silk import Silk
+        assert self._is_silk
+        if self._rebind_schema:
+            self._rebind()
+        return Silk(
+            schema=self._silk.schema,
+            schema_dummy=True
+        )    
