@@ -494,7 +494,7 @@ class Transformer(Base):
             return inputcell.checksum
         elif attr == "schema":
             schema_mounter = functools.partial(self._sub_mount, "input_schema")
-            return SchemaWrapper(inputcell.handle.schema, schema_mounter)
+            return SchemaWrapper(self, inputcell.handle.schema, schema_mounter, "SCHEMA")
         elif attr == "example":
             return self.example
         raise AttributeError(attr)
@@ -508,13 +508,12 @@ class Transformer(Base):
             return resultcell.value
         elif attr == "schema":
             schema_mounter = functools.partial(self._sub_mount, "result_schema")
-            return SchemaWrapper(resultcell.handle.schema, schema_mounter)
+            return SchemaWrapper(self, resultcell.handle.schema, schema_mounter, "RESULTSCHEMA")
         elif attr == "example":
             schema = resultcell.handle.schema
             return Silk(
              schema=schema,
              schema_dummy=True,
-             schema_update_hook=resultcell.handle._schema_update_hook
             )
         return getattr(resultcell, attr)
 
@@ -600,7 +599,13 @@ class Transformer(Base):
             htf["checksum"] = {}
         htf["checksum"]["schema"] = checksum
 
-    def _set_observers(self):        
+    def _observe_result_schema(self, checksum):
+        htf = self._get_htf()
+        if htf.get("checksum") is None:
+            htf["checksum"] = {}
+        htf["checksum"]["result_schema"] = checksum
+
+    def _set_observers(self):
         htf = self._get_htf()
         if htf["compiled"] or htf["language"] not in ("python", "ipython", "bash", "docker"):
             raise NotImplementedError ### cache branch
@@ -610,13 +615,14 @@ class Transformer(Base):
         inp = htf["INPUT"]
         inpcell = getattr(tf, inp)
         inpcell._set_observer(self._observe_input)
+        schemacell = inpcell.schema
+        schemacell._set_observer(self._observe_schema)
         if htf["with_result"]:
             result = htf["RESULT"]
             resultcell = getattr(tf, result)
             resultcell._set_observer(self._observe_result)
-            if htf["SCHEMA"]:
-                schemacell = getattr(tf, "schema")
-                schemacell._set_observer(self._observe_schema)
+            schemacell = resultcell.schema
+            schemacell._set_observer(self._observe_result_schema)
 
 
     def __delattr__(self, attr):

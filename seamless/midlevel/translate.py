@@ -13,7 +13,7 @@ from seamless.core import cell as core_cell, link as core_link, \
  libcell, transformer, reactor, context, macro, StructuredCell
 
 from . import copying
-from .util import as_tuple, get_path, find_channels, find_editchannels, build_structured_cell, try_set
+from .util import as_tuple, get_path, find_channels, find_editchannels, build_structured_cell, try_set, try_set_schema
 
 
 
@@ -153,11 +153,15 @@ def translate_cell(node, root, namespace, inchannels, outchannels, editchannels,
             child._sovereign = True
     setattr(parent, name, child)
     pathstr = "." + ".".join(path)
-    if node.get("checksum") is not None:
+    checksum = node.get("checksum")
+    if checksum is not None:
         if link_target is not None:
             warn("Cell %s has a link target, cannot set construction constant" % pathstr)
         else:
-            try_set(child, node["checksum"])
+            if "schema" in checksum and ct == "structured":
+                child.set_schema_checksum(checksum["schema"])
+            if "value" in checksum:
+                child.set_checksum(checksum["value"])
     if ct != "structured":
         if link_target is not None:
             if "mount" in node:

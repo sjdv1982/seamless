@@ -1,22 +1,23 @@
-from seamless.compiler import compile
 from copy import deepcopy
-import os, tempfile, shutil
+
+assert header is not None
 
 m = deepcopy(main_module)
+m["type"] = "compiled"
 if not "objects" in m:
     m["objects"] = {}
 if not "main" in m["objects"]:
     m["objects"]["main"] = {}
 mm =  m["objects"]["main"]
+if len(mm):
+    print("WARNING: main module will be overwritten")
 mm["code"] = compiled_code
 mm["language"] = lang
+if "public_header" in m:
+    print("WARNING: public header will be overwritten")
 m["public_header"] = {
     "language": "c",
     "code": header
 }
 
-tempdir = tempfile.gettempdir()
-build_dir = os.path.join(tempdir, __fullname__.replace(".","__"))
-binary_module = compile(m, build_dir, compiler_verbose=compiler_verbose)
-
-result = binary_module
+result = m

@@ -58,6 +58,11 @@ class InputPinWrapper:
         hpin["content_type"] = value
         self._parent()._parent()._translate()
 
+    def __getitem__(self, pinname):
+        return getattr(self, pinname)
+
+    def __setitem__(self, pinname, value):
+        return setattr(self, pinname, value)
 
 class PinsWrapper:
     def __init__(self, parent):
@@ -86,6 +91,12 @@ class PinsWrapper:
         else:
             raise NotImplementedError(io)
         return kls(self._parent(), pinname)
+
+    def __getitem__(self, pinname):
+        return getattr(self, pinname)
+
+    def __setitem__(self, pinname, value):
+        return setattr(self, pinname, value)
 
     def __dir__(self):
         hpins = self._get_hpins()

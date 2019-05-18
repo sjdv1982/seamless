@@ -10,6 +10,13 @@ def try_set(cell, checksum):
     except:
         traceback.print_exc()
 
+def try_set_schema(cell, checksum):
+    #TODO: proper logging
+    try:
+        cell.set_schema_checksum(checksum)
+    except:
+        traceback.print_exc()
+
 def as_tuple(v):
     if isinstance(v, str):
         return (v,)
@@ -19,7 +26,7 @@ def as_tuple(v):
 def get_path(root, path, namespace, is_target,
   *, until_structured_cell=False,
   return_node=False
- ):
+ ):    
     if namespace is not None:
         hit = namespace.get((path, is_target))
         if hit is None:

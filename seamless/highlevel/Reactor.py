@@ -167,8 +167,6 @@ class Reactor(Base):
                 rc = self._get_rc()
                 io = getattr(rc, hrc["IO"])
                 setattr(io.handle, attr, value)
-                # superfluous, filling now happens upon translation
-                ###fill_structured_cell_value(io, hrc, "stored_state_io", "cached_state_io")
         if parent._as_lib is not None:
             if hrc["path"] in parent._as_lib.partial_authority:
                 parent._as_lib.needs_update = True

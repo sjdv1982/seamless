@@ -8,8 +8,8 @@ try:
 except ImportError:
     print('Compiler transformer: Python package "wurlitzer" could not be found; "printf" etc. will show only in a terminal')
 
-
-ffi = binary_module.ffi
+print("1")
+ffi = module.ffi
 
 ARRAYS = [] #a list of Numpy arrays whose references must be kept alive
 
@@ -169,9 +169,9 @@ elif result_schema["type"] == "array":
 
 def run():
     if simple_result:
-        return binary_module.lib.transform(*args)
+        return module.lib.transform(*args)
     else:
-        binary_module.lib.transform(*args)
+        module.lib.transform(*args)
         return unpack_result_struct(args[-1], result_schema)
 
 if wurlitzer is not None:

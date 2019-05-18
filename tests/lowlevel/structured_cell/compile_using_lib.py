@@ -12,43 +12,32 @@ with macro_mode_on():
     ctx = context(toplevel=True)
 
     # 1a. Setup of StructuredCells
-    ctx.inp_struc = context(name="inp_struc",context=ctx)
-    ctx.inp_struc.storage = cell("text")
-    ctx.inp_struc.form = cell("json")
-    ctx.inp_struc.data = cell("mixed",
-        form_cell = ctx.inp_struc.form,
-        storage_cell = ctx.inp_struc.storage,
-    )
-    ctx.inp_struc.schema = cell("json")
+    ctx.inp_struc = context()
+    ctx.inp_struc.data = cell("mixed")
+    ctx.inp_struc.schema = cell("plain")
     ctx.inp = StructuredCell(
         "inp",
         ctx.inp_struc.data,
-        storage = ctx.inp_struc.storage,
-        form = ctx.inp_struc.form,
         schema = ctx.inp_struc.schema,
         buffer = None,
+        plain = True,
         inchannels = [],
         outchannels = [()]
     )
-    ctx.result_struc = context(name="result_struc",context=ctx)
-    ctx.result_struc.storage = cell("text")
-    ctx.result_struc.form = cell("json")
-    ctx.result_struc.data = cell("mixed",
-        form_cell = ctx.result_struc.form,
-        storage_cell = ctx.result_struc.storage,
-    )
-    ctx.result_struc.schema = cell("json")
+
+    ctx.result_struc = context()
+    ctx.result_struc.data = cell("mixed")    
+    ctx.result_struc.schema = cell("plain")
     ctx.result = StructuredCell(
         "result",
         ctx.result_struc.data,
-        storage = ctx.result_struc.storage,
-        form = ctx.result_struc.form,
         schema = ctx.result_struc.schema,
         buffer = None,
+        plain = True,
         inchannels = [()],
         outchannels = [()]
     )
-    ctf = ctx.tf = context(name="tf",context=ctx)
+    ctf = ctx.tf = context()
 
     # 1b. Example values
     inp = ctx.inp.handle
@@ -63,14 +52,14 @@ with macro_mode_on():
 }"""
     )
     ctx.language = cell("text").set("cpp")
-    ctx.main_module = cell("json").set({})
-    ctx.compiler_verbose = cell("json").set(True)
-    ctx.pins = cell("json").set({
+    ctx.main_module = cell("plain").set({})
+    ctx.compiler_verbose = cell("plain").set(True)
+    ctx.pins = cell("plain").set({
         'a': {'io': 'input', 'transfer_mode': 'copy', 'access_mode': 'object'},
         'b': {'io': 'input', 'transfer_mode': 'copy', 'access_mode': 'object'},
         'result': "output"
     })
-    ctx.inputpins = cell("json").set(["a", "b"])
+    ctx.inputpins = cell("plain").set(["a", "b"])
 
 
 # Just to register the "compiled_transformer" lib
@@ -101,6 +90,8 @@ with macro_mode_on(), library.bind("compiled_transformer"):
     ctf.translator.result_name.cell().set("result")
     ctf.translator.input_name.cell().set("input")
 
+    #ctf.translator.debug = True
+
 # 3: set up connections to library
 with macro_mode_on():
     #3a: between example and library
@@ -123,13 +114,7 @@ with macro_mode_on():
     ctx.main_module.connect(ctf.compiler.main_module)
     ctx.compiler_verbose.connect(ctf.compiler.compiler_verbose)
 
-    ctx.binary_module_storage = cell("text")
-    ctx.binary_module_form = cell("json")
-    ctx.binary_module = cell(
-        "mixed",
-        storage_cell = ctx.binary_module_storage,
-        form_cell = ctx.binary_module_form,
-    )
+    ctx.binary_module = cell("mixed")
     ctf.compiler.result.connect(ctx.binary_module)
 
     ctx.binary_module.connect(ctf.translator.binary_module)

@@ -4,6 +4,8 @@ ctx = Context()
 ctx.mount("/tmp/mount-test")
 
 ctx.a = 12
+ctx.a.example.set(50)
+print(ctx.a.schema)
 
 def triple_it(a):
     return 3 * a
@@ -11,8 +13,9 @@ def triple_it(a):
 def triple_it_b(a, b):
     return 3 * a + b
 
-ctx.transform = triple_it
+ctx.transform = triple_it_b
 ctx.transform.a = ctx.a
+ctx.transform.example.a = 99
 ctx.myresult = ctx.transform
 ctx.equilibrate()
 print(ctx.myresult.value)
@@ -48,3 +51,5 @@ ctx.transform.schema["properties"].pop("b") # KLUDGE
 ctx.transform.example.b = 999     # modification of schema
 print(ctx.transform.inp.value)    # {'a': 13, 'b': 120}
 """
+
+print(ctx.transform.inp.schema)

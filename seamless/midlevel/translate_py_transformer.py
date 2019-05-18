@@ -2,8 +2,8 @@ from seamless.core import cell as core_cell, link as core_link, \
  libcell, transformer, reactor, context, macro, StructuredCell
 
 def translate_py_transformer(node, root, namespace, inchannels, outchannels, lib_path00, is_lib):
-    #TODO: simple translation, without a structured cell
-    assert not "code" in node ### node["code"] is an outdated attribute
+    #TODO: simple translation, without a structured cell    
+
     inchannels = [ic for ic in inchannels if ic[0] != "code"]
 
     parent = get_path(root, node["path"][:-1], None, None)
@@ -32,6 +32,7 @@ def translate_py_transformer(node, root, namespace, inchannels, outchannels, lib
     )
 
     setattr(ctx, input_name, inp)
+    namespace[node["path"] + ("SCHEMA",), False] = inp.schema, node    
     if "input_schema" in mount:
         inp_ctx.schema.mount(**mount["input_schema"])
     for inchannel in inchannels:
@@ -70,6 +71,8 @@ def translate_py_transformer(node, root, namespace, inchannels, outchannels, lib
     checksum = node.get("checksum", {})
     if "code" in checksum:
         ctx.code.set_checksum(checksum["code"])
+    if "schema" in checksum:
+        inp.set_schema_checksum(checksum["schema"])
     if "input" in checksum:
         inp.set_checksum(checksum["input"])
     namespace[node["path"] + ("code",), True] = ctx.code, node
@@ -86,6 +89,7 @@ def translate_py_transformer(node, root, namespace, inchannels, outchannels, lib
             outchannels, lib_path0,
             return_context=True
         )
+        namespace[node["path"] + ("RESULTSCHEMA",), False] = result.schema, node
         if "result_schema" in mount:
             result_ctx.schema.mount(**mount["result_schema"])
 
@@ -98,8 +102,8 @@ def translate_py_transformer(node, root, namespace, inchannels, outchannels, lib
             result.schema.connect(schema_pin)
         if "result" in checksum:
             result.set_checksum(checksum["result"])
-        if "schema" in checksum:
-            result.schema.set_checksum(checksum["schema"])
+        if "result_schema" in checksum:
+            result.schema.set_checksum(checksum["result_schema"])
     else:
         for c in outchannels:
             assert len(c) == 0 #should have been checked by highlevel

@@ -25,14 +25,6 @@ def set_resource(f):
     else:
         return data
 
-def set_hcell(cell, value):
-    raise NotImplementedError ### cache branch
-    from ..core.structured_cell import StructuredCellState
-    if cell["celltype"] == "structured":
-        cell["stored_state"] = StructuredCellState.from_data(value)
-    else:
-        cell["stored_value"] = value
-
 def parse_function_code(code_or_func, identifier="<None>"):
     if callable(code_or_func):
         func = code_or_func

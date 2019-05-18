@@ -1,7 +1,16 @@
+from weakref import ref
+
 class SchemaWrapper:
-    def __init__(self, wrapped, schema_mounter):
+    def __init__(self, parent, wrapped, schema_mounter, path):
         self._wrapped = wrapped
         self._schema_mounter = schema_mounter
+        assert path in ("SCHEMA", "RESULTSCHEMA")        
+        self._path = path
+        self._parent = ref(parent)
+
+    @property
+    def _virtual_path(self):
+        return self._parent()._path + (self._path,)
 
     def __getattr__(self, attr):
         if attr in ("_wrapped", "_schema_mounter"):
@@ -10,7 +19,7 @@ class SchemaWrapper:
             return getattr(self._wrapped, attr)
 
     def __setattr__(self, attr, value):
-        if attr in ("_wrapped", "_schema_mounter"):
+        if attr in ("_wrapped", "_parent", "_schema_mounter", "_path"):
             object.__setattr__(self, attr, value)
         else:
             setattr(self._wrapped, attr, value)

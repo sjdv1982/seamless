@@ -81,12 +81,11 @@ def fill_checksum(manager, node, temp_path):
 
     if checksum is None:
         return
-    if temp_path is not None:
-        if "checksum" not in node:
-            node["checksum"] = {}
-        node["checksum"][temp_path] = checksum       
-    else:
-        node["checksum"] = checksum
+    if temp_path is None:
+        temp_path = "value"
+    if "checksum" not in node:
+        node["checksum"] = {}
+    node["checksum"][temp_path] = checksum       
         
 def fill_checksums(mgr, nodes, *, path=None):
     """Fills checksums in the nodes from TEMP, if untranslated 

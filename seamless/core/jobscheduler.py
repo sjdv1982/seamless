@@ -204,9 +204,6 @@ class Job:
                 if pin == "code":
                     code = value
                 else:
-                    if semantic_key.access_mode in ("mixed", "default"):
-                        if value is not None:
-                            value = value[2]
                     if semantic_key.access_mode == "module":
                         mod = build_module(value)
                         module_workspace[pin] = mod[1]

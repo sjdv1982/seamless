@@ -16,6 +16,7 @@ from ..midlevel import copying
 from . import parse_function_code
 from .Link import Link
 from .compiled import CompiledObjectDict, CompiledObjectWrapper
+from .SchemaWrapper import SchemaWrapper
 
 def get_new_cell(path):
     return {
@@ -78,12 +79,7 @@ def assign_connection(ctx, source, target, standalone_target, exempt=[]):
         t = ctx._children[target]
         assert isinstance(t, Cell)
         hcell = t._get_hcell()
-        if hcell["celltype"] == "structured":
-            hcell.pop("stored_state", None)
-            hcell.pop("cached_state", None)
-        else:
-            hcell.pop("stored_value", None)
-            hcell.pop("cached_value", None)
+        print("TODO: clear checksums/TEMP from the assigned target")
     lt = len(target)
     def keep_con(con):
         ctarget = con["target"]
@@ -98,6 +94,7 @@ def assign_connection(ctx, source, target, standalone_target, exempt=[]):
         t = ctx._children[target]
         assert not t.links
     assert source in ctx._children or source[:-1] in ctx._children, source
+    s = None
     if source in ctx._children:
         s = ctx._children[source]
         assert isinstance(s, (Cell, OutputPin))
@@ -105,13 +102,14 @@ def assign_connection(ctx, source, target, standalone_target, exempt=[]):
         source_parent = ctx._children[source[:-1]]
         assert isinstance(source_parent, (Transformer, Reactor))
         attr = source[-1]
-        s = getattr(source_parent, attr)
-        assert isinstance(s, Proxy)
-        if not isinstance(s, CodeProxy):
-            assert isinstance(source_parent, Reactor)
-            pin = source_parent.pins[attr]
-            assert pin["io"] in ("output", "edit"), (source, pin["io"])
-    if s._virtual_path is not None:
+        if attr not in ("SCHEMA", "RESULTSCHEMA"):
+            s = getattr(source_parent, attr)
+            assert isinstance(s, Proxy)
+            if not isinstance(s, CodeProxy):
+                assert isinstance(source_parent, Reactor)
+                pin = source_parent.pins[attr]
+                assert pin["io"] in ("output", "edit"), (source, pin["io"])
+    if s is not None and s._virtual_path is not None:
         source = s._virtual_path
     if standalone_target:
         t = ctx._children[target]
@@ -213,7 +211,6 @@ def assign_context(ctx, path, value):
     _assign_context(ctx, new_nodes, new_connections, path, old_ctx, from_lib)
 
 def assign_to_subcell(cell, path, value):
-    from ..midlevel.copying import fill_cell_value
     hcell = cell._get_hcell()
     if hcell["celltype"] != "structured":
         raise TypeError("Can only assign directly to properties of structured cells")
@@ -231,8 +228,6 @@ def assign_to_subcell(cell, path, value):
             setattr(handle, path[-1], value)
         else:
             structured_cell.monitor.set_path(path, value)
-        fill_cell_value(structured_cell, cell._get_hcell())
-        cell._parent()._remount_graph()
     else:
         raise TypeError(value)
 
@@ -293,7 +288,7 @@ def assign(ctx, path, value):
         if not done:
             assign_transformer(ctx, path, value)
             ctx._translate()
-    elif isinstance(value, Proxy):
+    elif isinstance(value, (Proxy, SchemaWrapper)):
         assert value._parent()._parent() is ctx
         if path not in ctx._children:
             Cell(ctx, path) #inserts itself as child

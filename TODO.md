@@ -7,7 +7,6 @@ Part 2
 Things to do:
 2A. Preparation
 - Polyglot:
-  - remote Fortran compilation, in a Docker image
   - Test at high level: first modules, then C/C++/Fortran transformers
 - Finish the testing of the docking transformers, in particular inside docker
 - Check jobslave-over-abathur

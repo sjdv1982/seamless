@@ -81,8 +81,6 @@ def evaluate_from_buffer(expression, buffer):
         source_content_type = expression.source_content_type
     )
     _, _, obj, semantic_obj, semantic_checksum = result
-    if expression.celltype == "mixed":
-        semantic_obj = semantic_obj[2]
     if expression.access_mode is not None:
         if expression.access_mode == "text" and expression.celltype == "cson":
             semantic_obj = obj
@@ -92,6 +90,9 @@ def evaluate_from_buffer(expression, buffer):
             semantic_obj = obj
         
         # TODO
+    if expression.celltype == "mixed":
+        semantic_obj = semantic_obj[2]
+
     if expression.content_type is not None and expression.content_type != expression.celltype:
         pass # TODO?
     if expression.subpath is not None:
@@ -102,10 +103,21 @@ def evaluate_from_buffer(expression, buffer):
             result2 = deserialize(
                 expression.celltype, None, "random_code_path", #TODO
                 result, from_buffer = False, buffer_checksum = None,
-                source_access_mode = None,
-                source_content_type = None
+                source_access_mode = expression.source_access_mode,
+                source_content_type = expression.source_content_type
             )
             _, _, obj, semantic_obj, semantic_checksum = result2
+            if expression.access_mode is not None:
+                if expression.access_mode == "text" and expression.celltype == "cson":
+                    semantic_obj = obj
+                elif expression.access_mode == "module":
+                    semantic_obj = obj # build module later
+                elif expression.celltype == "python":
+                    semantic_obj = obj
+            #TODO
+            if expression.celltype == "mixed":
+                semantic_obj = semantic_obj[2]
+            
         except:
             ###if result is not None and result != {}:  ###TODO: dirty 
             ###    import traceback;traceback.print_exc()  ###TODO

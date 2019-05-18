@@ -167,7 +167,10 @@ class CommunionServer:
 
     def wait(self, manager):
         future = asyncio.ensure_future(self.wait_async(manager))
-        asyncio.get_event_loop().run_until_complete(future)
+        try:
+            asyncio.get_event_loop().run_until_complete(future)
+        except IndexError: # KLUDGE
+            return self.wait(manager)
         
     def configure_master(self, config=None, **update):
         if self.future is not None and any(update.values()):

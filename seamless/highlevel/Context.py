@@ -281,7 +281,6 @@ class Context:
             self._translating = True
             manager = self._ctx0._bound._get_manager()            
             copying.fill_checksums(manager, self._graph.nodes)            
-            self._remount_graph()
         finally:
             self._translating = False
         # put nodes in alphabetical order; shouldn't matter much except for reproducibility of Seamless bugs
@@ -348,10 +347,7 @@ class Context:
 
         if ok:
             for path, child in self._children.items():
-                if isinstance(child, Cell):
-                    cell = child._get_cell()                    
-                    cell._set_observer(child._set_checksum)
-                elif isinstance(child, Transformer):
+                if isinstance(child, (Cell, Transformer)):
                     child._set_observers()
                 elif isinstance(child, (InputPin, OutputPin)):
                     continue
@@ -390,20 +386,6 @@ class Context:
             sharefunc()
 
 
-    def _remount_graph(self):
-        if self._dummy:
-            return
-        from ..midlevel.serialize import extract
-        if self._graph_ctx is not None:
-            ctx = self._graph_ctx
-            nodes, connections = self._graph.nodes, self._graph.connections
-            topology, values, states, cached_values, cached_states = extract(nodes, connections)
-            ctx.topology.set(topology)
-            ctx.values.set(values)
-            ctx.cached_values.set(cached_values)
-            ctx.states.set(states)
-            ctx.cached_states.set(cached_states)
-            mountmanager.tick()
 
     def register_library(self, timeout=None):
         assert not self._dummy

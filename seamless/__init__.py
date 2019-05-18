@@ -75,7 +75,10 @@ from .core.cache.redis_client import RedisSink, RedisCache
 
 def inputhook_terminal(context):
     while not context.input_is_ready():
-        asyncio.get_event_loop().run_until_complete(asyncio.sleep(0.1))
+        try:
+            asyncio.get_event_loop().run_until_complete(asyncio.sleep(0.1))
+        except IndexError: # nested event loop trouble
+            pass
 
 get_ipython = None
 try:    

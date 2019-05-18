@@ -13,10 +13,10 @@ def _init_from_library(ctf, debug):
         ctf.gen_header = transformer(ctf.gen_header_params.value)
         ctf.gen_header_code.connect(ctf.gen_header.code)
 
-        ctf.compiler_code = libcell(".compiler.code")
-        ctf.compiler_params = libcell(".compiler_params")
-        ctf.compiler = transformer(ctf.compiler_params.value)
-        ctf.compiler_code.connect(ctf.compiler.code)
+        ctf.integrator_code = libcell(".integrator.code")
+        ctf.integrator_params = libcell(".integrator_params")
+        ctf.integrator = transformer(ctf.integrator_params.value)
+        ctf.integrator_code.connect(ctf.integrator.code)
 
         ctf.translator_code = libcell(".translator.code")
         ctf.translator_params = libcell(".translator_params")
@@ -44,12 +44,12 @@ def _finalize(ctx, ctf, inp, c_inp, result, c_result, input_name, result_name):
     #2: among library cells
     ctx.header = cell("text")
     ctf.gen_header.result.connect(ctx.header)
-    ctx.header.connect(ctf.compiler.header)
+    ctx.header.connect(ctf.integrator.header)
 
-    ctx.language.connect(ctf.compiler.lang)
-    ctx.code.connect(ctf.compiler.compiled_code)
-    ctx.main_module.connect_outchannel((), ctf.compiler.main_module)
-    ctx.compiler_verbose.connect(ctf.compiler.compiler_verbose)
+    ctx.language.connect(ctf.integrator.lang)
+    ctx.code.connect(ctf.integrator.compiled_code)
+    ctx.main_module.connect_outchannel((), ctf.integrator.main_module)
+    ctx.compiler_verbose.connect(ctf.integrator.compiler_verbose)
 
     ctx.binary_module_storage = cell("text")
     ctx.binary_module_storage._sovereign = True
@@ -61,7 +61,7 @@ def _finalize(ctx, ctf, inp, c_inp, result, c_result, input_name, result_name):
         form_cell = ctx.binary_module_form,
     )
     ctx.binary_module._sovereign = True
-    ctf.compiler.result.connect(ctx.binary_module)
+    ctf.integrator.result.connect(ctx.binary_module)
 
     ctx.binary_module.connect(ctf.translator.binary_module)
 
@@ -100,6 +100,7 @@ def translate_compiled_transformer(node, root, namespace, inchannels, outchannel
       return_context=True
     )
     setattr(ctx, input_name, inp)
+    namespace[node["path"] + ("SCHEMA",), False] = inp.schema, node
     if "input_schema" in mount:
         inp_ctx.schema.mount(**mount["input_schema"])
     for inchannel in inchannels:
@@ -191,6 +192,7 @@ def translate_compiled_transformer(node, root, namespace, inchannels, outchannel
         outchannels, lib_path0,
         return_context=True
     )
+    namespace[node["path"] + ("RESULTSCHEMA",), False] = result.schema, node
     if "result_schema" in mount:
         result_ctx.schema.mount(**mount["result_schema"])
 

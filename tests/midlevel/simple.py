@@ -3,7 +3,7 @@ from seamless.core import macro_mode_on, context
 from seamless.midlevel.translate import translate
 import math
 
-raise NotImplementedError #structured_cell does not take value anymore, rather stored_state and cached_state
+raise NotImplementedError #structured_cell does not take value anymore, rather checksums
 graph = [
     {
         "path": ("pi",),

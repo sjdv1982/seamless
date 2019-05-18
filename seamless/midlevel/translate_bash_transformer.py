@@ -46,6 +46,7 @@ def translate_bash_transformer(node, root, namespace, inchannels, outchannels, l
       return_context=True
     )
     setattr(ctx, input_name, inp)
+    namespace[node["path"] + ("SCHEMA",), False] = inp.schema, node
     if "input_schema" in mount:
         inp_ctx.schema.mount(**mount["input_schema"])
     for inchannel in inchannels:
@@ -82,6 +83,8 @@ def translate_bash_transformer(node, root, namespace, inchannels, outchannels, l
     checksum = node.get("checksum", {})
     if "code" in checksum:
         ctx.code.set_checksum(checksum["code"])
+    if "schema" in checksum:
+        inp.set_schema_checksum(checksum["schema"])
     if "input" in checksum:
         inp.set_checksum(checksum["input"])
 
@@ -103,6 +106,7 @@ def translate_bash_transformer(node, root, namespace, inchannels, outchannels, l
             outchannels, lib_path0,
             return_context=True
         )
+        namespace[node["path"] + ("RESULTSCHEMA",), False] = result.schema, node
         if "result_schema" in mount:
             result_ctx.schema.mount(**mount["result_schema"])
 
@@ -115,8 +119,8 @@ def translate_bash_transformer(node, root, namespace, inchannels, outchannels, l
             result.schema.connect(schema_pin)
         if "result" in checksum:
             result.set_checksum(checksum["result"])
-        if "schema" in checksum:
-            result.schema.set_checksum(checksum["schema"])
+        if "result_schema" in checksum:
+            result.schema.set_checksum(checksum["result_schema"])
     else:
         for c in outchannels:
             assert len(c) == 0 #should have been checked by highlevel

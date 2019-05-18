@@ -108,6 +108,7 @@ class Backend:
             if subformtype != "object":
                 raise TypeError(subform) #must be "object" 
             self._del_path(path)
+        self._update(path)
 
     def insert_path(self, data, path):
         for pp in path:
@@ -130,6 +131,7 @@ class Backend:
         if substorage.endswith("binary"):
             raise TypeError #cannot insert items in binary
         self._insert_path(data, path)
+        self._update(path)
 
 class DefaultBackend(Backend):
     def __init__(self, plain):
@@ -243,7 +245,6 @@ class DefaultBackend(Backend):
         self._form = form
 
 
-
 class CellBackend(Backend):
     def __init__(self, cell):
         from ..core.cell import MixedCell, PlainCell
@@ -254,8 +255,7 @@ class CellBackend(Backend):
         self._tempdata = None
         self._tempform = None
         self._tempstorage = None
-        self._updated_paths = set()
-        self._deleted_paths = set()
+        self._modified_paths = {}
 
     def get_storage(self):
         if self._plain:
@@ -289,11 +289,14 @@ class CellBackend(Backend):
             if isinstance(p, int):
                 if p >= len(result):
                     return None
-            result = result[p]
+            try:
+                result = result[p]
+            except KeyError:
+                return None
         return result
 
-    def _set_path(self, path, data):    
-        self._updated_paths.add(tuple(path))
+    def _set_path(self, path, data):
+        self._modified_paths[tuple(path)] = False
         if not len(path):
             self._tempdata = deepcopy(data)
             return
@@ -326,15 +329,14 @@ class CellBackend(Backend):
         if len(subdata) >= attr:
             for n in range(len(subdata), attr+1):
                 path2 = prepath + (n,)
-                self._updated_paths.add(path2)
+                self._modified_paths[path2] = False
                 subdata.append(None)            
             subdata[attr] = data
         else:
             subdata.insert(attr, data)
-        self._updated_paths.add(tuple(path))
+        self._modified_paths[tuple(path)] = False
         
     def _del_path(self, path):
-        if len(path): raise Exception
         if not len(path):
             self._tempdata = None
             return
@@ -342,8 +344,9 @@ class CellBackend(Backend):
             self._tempdata = deepcopy(self._cell.data)
         subdata = self._get_path(path[:-1], self._tempdata)
         attr = path[-1]
-        subdata.pop(attr)
-        self._deleted_paths.add(tuple(path))
+        subdata.pop(attr, None)
+        self._modified_paths[tuple(path)] = True
+
 
     def _get_form(self, path):
         if self._tempform is None:
@@ -382,46 +385,75 @@ class CellBackend(Backend):
     def _update(self, path):
         # TODO: proper form re-calculation
         # for now, it doesn't work (since a storage change may propagate upstream)
-        assert not len(self._updated_paths) or not len(self._deleted_paths) # update OR delete        
-        if len(self._deleted_paths):
-            deleted = True
-            updated = self._deleted_paths
-        else:
-            deleted = False
-            updated = self._updated_paths.copy()
         data = self._tempdata
+        DEBUG = False
         self._tempdata = None
         self._tempform = None
-        self._tempstorage = None
-        self._updated_paths.clear()
+        self._tempstorage = None        
         self._cell.set(data) # will also compute storage and form
         manager = self._cell._get_manager()
         ccache = manager.cell_cache
         cell = self._cell
-        auths = ccache.cell_to_authority[cell]
+        auths = ccache.cell_to_authority[cell]        
         authkeys = [p for p in auths if p is not None]
-        path_updated = set()
-        path_updated2 = set()
-        for path in authkeys:
-            if path in updated:
-                path_updated.add(path)
-                continue
-            for up_path in updated:
-                m = min(len(path), len(up_path))
-                if up_path[:m] == path[:m]:
-                    path_updated2.add(path)
-                    break
-        # There is a meaningful distinction between path_updated and path_updated2
-        # path_updated have independent values, whereas path_updated2 only changed b/c of children
-
-        path_updated_all = path_updated.union(path_updated2)
+        updated_paths = set()
+        
+        path_is_none = set()
+        for path, deleted in self._modified_paths.items():
+            if deleted:
+               for n in range(len(path)):
+                   path_is_none.add(path[:n])
+            else:
+                updated_paths.add(path)
+        cache = {}
+        updated_auths = set()
         for path in sorted(authkeys, key=lambda p:len(p)):
-            if path not in path_updated_all:
+            done = False
+            for n in range(len(path)+1):
+                if path[:n] in path_is_none:
+                    path_is_none.add(path)
+                    done = True
+                    break
+            if done:
+                continue
+            for n in range(len(path)+1):
+                if path[:n] in updated_paths:
+                    done = True
+                    break
+            if done:                
+                for n in range(len(path)+1):
+                    subpath = path[:n]
+                    v = cache.get(subpath)
+                    if v is None:
+                        v = self.get_path(subpath)
+                        if v is None:
+                            path_is_none.add(subpath)
+                            break
+                        else:
+                            cache[subpath] = v
+                else:
+                    if path not in path_is_none:
+                        updated_auths.add(path)
+
+        if DEBUG:
+            print("BACKEND DEBUG")
+            print(updated_auths)
+            print(path_is_none)               
+            print("/BACKEND DEBUG") 
+        for path in auths:
+            authstatus = None
+            if path in updated_auths:
+                authstatus = True
+            elif path in path_is_none:
+                authstatus = False
+            if authstatus is None:
                 continue
             auth = auths[path]
             has_auth = (auth != False)            
             manager._update_status(
-                self._cell, (not deleted), 
+                self._cell, authstatus, 
                 has_auth=has_auth, origin=None,
                 cell_subpath=path
             )
+            
+        self._modified_paths.clear()

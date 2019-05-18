@@ -219,7 +219,7 @@ class TransformCache:
             checksum = expression.buffer_checksum
             task = manager.get_value_from_checksum_async(checksum)
             tasks.append(task)
-        results = await asyncio.gather(*tasks)        
+        results = await asyncio.gather(*tasks)
         for pinnr, pin in enumerate(pinnames):
             expression = level1[pin]
             buffer_item = results[pinnr]

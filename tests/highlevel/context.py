@@ -1,4 +1,5 @@
 from seamless.highlevel import Context
+import json
 
 ctx = Context()
 ctx.mount("/tmp/mount-test")
@@ -28,7 +29,5 @@ ctx2.equilibrate()
 print(ctx2.sub.myresult.value)
 print(ctx2.sub2.myresult.value)
 
-from seamless.midlevel.serialize import extract
-topology, _, _, _, _ = extract(*ctx2._graph[:2])
-import json
-json.dump(topology, open("context-graph.json", "w"), sort_keys=True, indent=2)
+graph = ctx.get_graph()
+json.dump(graph, open("context-graph.json", "w"), sort_keys=True, indent=2)

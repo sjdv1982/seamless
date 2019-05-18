@@ -141,6 +141,7 @@ class Manager:
                     traceback.print_exc()
                 else:                    
                     if tf_level2 is None:
+                        print("Cannot build transformer level 2")
                         self.set_transformer_undefined(tf_level1)
                         return
                     htf_level2 = tf_level2.get_hash()
@@ -167,6 +168,9 @@ class Manager:
         except asyncio.CancelledError:
             if task is not None:
                 task.cancel()
+        except:
+            print("ERR!")
+            raise
 
     async def _schedule_transform_job(self, 
       tf_level1, count, *,
@@ -404,7 +408,8 @@ class Manager:
     def set_transformer_result(self, level1, level2, value, checksum, prelim):
         from .link import Link
         from .macro import Path
-        print("TODO: Manager.set_transformer_result: expand code properly, see evaluate.py")
+        
+        # TODO: expand code properly, see evaluate.py"
         # TODO: this function is not checked for exceptions when called from a remote job...""
         if self._destroyed:
             return
@@ -453,8 +458,11 @@ class Manager:
                             accessor.subpath = subpath                            
                             expression = accessor.to_expression(checksum)
                             value = self.get_expression(expression)
-                            if cell._celltype == "mixed":
-                                _, _, value = value
+                            if expression.celltype == "mixed" and value is not None:
+                                try:
+                                    _, _, value = value
+                                except (TypeError, ValueError): #KLUDGE
+                                    pass
                         monitor.set_path(subpath, value)
                     if checksum is None and value is not None and subpath is not None:
                         checksum = self.cell_cache.cell_to_buffer_checksums[cell]
@@ -709,7 +717,12 @@ class Manager:
                 cell_subpath = None            
             if cell_subpath is not None:
                 raise Exception(cell_subpath)
-        status = self.status[cell][cell_subpath]
+        try:
+            status = self.status[cell][cell_subpath]
+        except KeyError: #KLUDGE
+            if cell_subpath == ():
+                cell_subpath = None
+                status = self.status[cell][cell_subpath]            
         new_data_status = status.data
         new_auth_status = status.auth
         if data_status is not None:
@@ -1338,7 +1351,7 @@ class Manager:
             else:                
                 self.set_cell_checksum(target.cell, checksum, self.status[source.cell][None])
         elif source.subpath is not None or target.subpath is not None:
-            if source.celltype != target.celltype and target.celltype == "mixed" and source.celltype == "text": ## KLUDGE
+            if source.celltype != target.celltype and target.celltype == "mixed" and source.celltype in ("plain","text"): ## KLUDGE
                 pass
             elif source.celltype != target.celltype and source.celltype == "mixed" and target.celltype == "text": ## KLUDGE
                 pass
@@ -1577,7 +1590,7 @@ class Manager:
             raise TypeError(worker)
         self.schedule_jobs()
 
-    def _update_status(self, cell, defined, *, has_auth, origin, cell_subpath):        
+    def _update_status(self, cell, defined, *, has_auth, origin, cell_subpath):
         status = self.status[cell][cell_subpath]
         old_data_status = status.data
         old_auth_status = status.auth        
@@ -1622,10 +1635,11 @@ class Manager:
                     self.mountmanager.add_cell_update(cell)
             if cell._observer is not None:
                 cell._observer(checksum.hex())
-            self._update_status(
-                cell, (checksum is not None), 
-                has_auth=has_auth, origin=None, cell_subpath=None
-            )
+            if not hasattr(cell, "_monitor") or cell._monitor is None:
+                self._update_status(
+                    cell, (checksum is not None), 
+                    has_auth=has_auth, origin=None, cell_subpath=None
+                )
 
     @main_thread_buffered
     def set_cell(self, cell, value, *, subpath,

@@ -136,6 +136,7 @@ class StructuredCell(SeamlessBase):
     _share_callback = None
     _celltype = "structured"
     _protected = False
+    _rebind_schema = False
     def __init__(
       self,
       name,
@@ -148,8 +149,6 @@ class StructuredCell(SeamlessBase):
       *,
       editchannels=[],
     ):
-        from ..silk import Silk
-        from ..silk.Silk import SILK_NO_INFERENCE
         from .cell import MixedCell
         super().__init__()
         self.name = name
@@ -210,17 +209,29 @@ class StructuredCell(SeamlessBase):
                 if bufmonitor is None:
                     bufbackend = CellBackend(self.buffer)
                     bufmonitor = Monitor(bufbackend, attribute_access=(not plain))
-                    self.buffer._monitor = bufmonitor
-            self._schema_value = {}
-            self._silk = Silk(
-                schema=self._schema_value,
-                schema_update_hook=self._update_schema,
-                data=self.data._monitor,
-                buffer=bufmonitor,
-            )
-            self._silk._modifier |= SILK_NO_INFERENCE
-            self.data._silk = self._silk
+                    self.buffer._monitor = bufmonitor            
+            self._rebind(init=True)
         self._protected = True
+
+    def _rebind(self, init=False):
+        from ..silk import Silk
+        from ..silk.Silk import SILK_NO_INFERENCE
+        assert self.schema is not None
+        schema_value = {} if init else self.schema.value
+        self._schema_value = schema_value
+        bufmonitor = None
+        if self.buffer is not None:
+            bufmonitor = self.buffer._monitor
+        self._silk = Silk(
+            schema=self._schema_value,
+            schema_update_hook=self._update_schema,
+            data=self.data._monitor,
+            buffer=bufmonitor,
+        )
+        self._silk._modifier |= SILK_NO_INFERENCE
+        self.data._silk = self._silk
+        self._rebind_schema = False
+
 
     def __setattr__(self, attr, value):
         if attr.startswith("_") or not self._protected:
@@ -261,32 +272,42 @@ class StructuredCell(SeamlessBase):
     @property
     def checksum(self):
         return self.data.checksum
-
-    @property
-    def value(self):
-        return self.data.value
         
     def set(self, value):
         if self._is_silk:
+            if self._rebind_schema:
+                self._rebind()
             self._silk.set(value)
         else:
             self.monitor.set_path((), value)
 
 
-    def set_checksum(self, checksum):
+    def _set_checksum(self, checksum, schema):
         from .unbound_context import UnboundManager
         manager = self.data._get_manager()
         if not isinstance(manager, UnboundManager):
             if self._is_silk and self.buffer is not None:
                 buffer_item = manager.get_value_from_checksum(checksum)
                 raise NotImplementedError ### cache branch (this is not correct)
+                if self._rebind_schema:
+                    self._rebind()
                 self._silk.set(value)
             else:
                 raise NotImplementedError ### cache branch
         else:
-            self.data.set_checksum(checksum)
-            if self.buffer is not None:
-                self.buffer.set_checksum(checksum)
+            if schema:
+                self.schema.set_checksum(checksum)
+                self._rebind_schema = True
+            else:
+                self.data.set_checksum(checksum)
+                if self.buffer is not None:
+                    self.buffer.set_checksum(checksum)
+
+    def set_checksum(self, checksum):
+        self._set_checksum(checksum, schema=False)
+
+    def set_schema_checksum(self, checksum):
+        self._set_checksum(checksum, schema=True)
 
     def __str__(self):
         ret = "Seamless structured cell: " + self._format_path()
@@ -305,6 +326,8 @@ class StructuredCell(SeamlessBase):
         """
         from ..silk import Silk
         if self._is_silk:
+            if self._rebind_schema:
+                self._rebind()
             result = Silk(
                 schema=self._schema_value,
                 data=self.monitor.get_path()
@@ -320,6 +343,8 @@ class StructuredCell(SeamlessBase):
         For buffered StructuredCells, its value may be against schema
         """
         if self._is_silk:
+            if self._rebind_schema:
+                self._rebind()
             result = self._silk
         else:
             monitor = self.monitor

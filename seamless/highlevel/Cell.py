@@ -11,6 +11,7 @@ from .mime import get_mime, language_to_mime, ext_to_mime
 
 class Cell(Base):
     _virtual_path = None
+    _example_cache = None
 
     def __init__(self, parent=None, path=None):
         assert (parent is None) == (path is None)
@@ -61,9 +62,17 @@ class Cell(Base):
         parent = self._parent()
         return parent._graph.nodes[self._path]
 
-    def _set_checksum(self, checksum):
+    def _observe_cell(self, checksum):
         hcell = self._get_hcell()
-        hcell["checksum"] = checksum
+        if hcell.get("checksum") is None:
+            hcell["checksum"] = {}
+        hcell["checksum"]["value"] = checksum
+
+    def _observe_schema(self, checksum):
+        hcell = self._get_hcell()
+        if hcell.get("checksum") is None:
+            hcell["checksum"] = {}
+        hcell["checksum"]["schema"] = checksum
 
     def self(self):
         raise NotImplementedError
@@ -148,6 +157,24 @@ class Cell(Base):
             return value
 
     @property
+    def example(self):
+        if self.celltype != "structured":
+            raise AttributeError
+        cell = self._get_cell()
+        if self._example_cache is not None:
+            cached_cell, cached_example = self._example_cache
+            cached_cell = cached_cell()
+            if cached_cell is not None and cached_cell is cell:
+                return cached_example
+        schema = cell.handle.schema        
+        example = Silk(
+         schema=schema,
+         schema_dummy=True
+        )
+        self._example_cache = weakref.ref(cell), example
+        return example
+
+    @property
     def checksum(self):
         parent = self._parent()
         hcell = self._get_hcell()
@@ -168,7 +195,6 @@ class Cell(Base):
 
     @checksum.setter
     def checksum(self, checksum):
-        from . import set_hcell
         from ..silk import Silk
         hcell = self._get_hcell()
         if hcell.get("UNTRANSLATED"):
@@ -188,7 +214,6 @@ class Cell(Base):
         return cell.data
 
     def _set(self, value):
-        from . import set_hcell
         from ..silk import Silk
         hcell = self._get_hcell()
         if hcell.get("UNTRANSLATED"):
@@ -304,6 +329,13 @@ class Cell(Base):
             except:
                 pass
         return result
+    
+    def _set_observers(self):
+        cell = self._get_cell()
+        cell._set_observer(self._observe_cell)
+        if self.celltype == "structured":
+            cell.schema._set_observer(self._observe_schema)        
+        
 
 
 from .Library import test_lib_lowlevel
