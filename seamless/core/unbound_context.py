@@ -247,9 +247,25 @@ class UnboundContext(SeamlessBase):
     def _bind_stage2(self, manager):
         from .macro import replace_path
         macro = self._macro
-        for com, args in self._manager.commands:
-            if com == "set cell":
+        for comnr, (com, args) in enumerate(self._manager.commands):            
+            if com == "set cell":                
                 cell, value, subpath, from_buffer, buffer_checksum = args
+                supersede = False
+                if subpath is None or subpath == ():
+                    for com2, args2 in self._manager.commands[comnr+1:]:
+                        if com2 == "set cell":         
+                            cell2, _, subpath2, _, _ = args2
+                        elif com2 == "set cell checksum":
+                            cell2, _ = args2
+                            subpath2 = subpath
+                        else:
+                            continue
+                        if cell2 == cell:
+                            if subpath2 is None or subpath2 == ():
+                                supersede = True
+                                break
+                if supersede:
+                    continue
                 manager.set_cell(
                     cell, value, 
                     subpath=subpath,
@@ -277,6 +293,7 @@ class UnboundContext(SeamlessBase):
                 manager.connect_pin(pin, cell)
             elif com == "set cell checksum":
                 cell, checksum = args
+                cell._prelim_checksum = None
                 manager.set_cell_checksum(cell, checksum)
                 if hasattr(cell, "_monitor"):
                     monitor = cell._monitor

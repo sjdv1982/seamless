@@ -1,7 +1,5 @@
 from copy import deepcopy
 
-assert header is not None
-
 m = deepcopy(main_module)
 m["type"] = "compiled"
 if debug_:

@@ -2,13 +2,15 @@ import os, tempfile
 from seamless.highlevel import Context, Cell
 
 ctx = Context()
-ctx.mount(os.path.join(tempfile.gettempdir(), "transformer-compiled"))
+#ctx.mount(os.path.join(tempfile.gettempdir(), "transformer-compiled")) ##not working for now
 
 ctx.transform = lambda a,b: a + b
+ctx.transform.a = 2
+ctx.transform.b = 3
 ctx.transform.example.a = 0
 ctx.transform.example.b = 0
 ctx.result = ctx.transform
-ctx.result.celltype = "json"
+ctx.result.celltype = "plain"
 ctx.equilibrate()
 print(ctx.result.value)
 
@@ -23,16 +25,16 @@ ctx.equilibrate()
 print(ctx.result.value)
 
 ctx.a = 10
-ctx.a.celltype = "json"
+ctx.a.celltype = "plain"
 ctx.transform.a = ctx.a
 
 ctx.b = 30
-ctx.b.celltype = "json"
+ctx.b.celltype = "plain"
 ctx.transform.b = ctx.b
 
 ctx.equilibrate()
 print(ctx.result.value)
-print(ctx.status())
+print(ctx.status)
 
 """
 ### The code generator itself  (gen_header, translator)
@@ -50,4 +52,4 @@ This is a design decision that can be overruled by specifying:
 See the documentation of highlevel/Library.py for more details.
 """
 
-ctx.transform.debug = True
+###ctx.transform.debug = True

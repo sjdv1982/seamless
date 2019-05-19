@@ -56,7 +56,8 @@ Use ``Cell.status()`` to get its status.
     def _set_context(self, ctx, name):
         super()._set_context(ctx, name)
         assert self._context() is ctx
-        self._get_manager().register_cell(self)
+        manager = self._get_manager()
+        manager.register_cell(self)
         if self._prelim_val is not None:
             value, from_buffer = self._prelim_val
             self._get_manager().set_cell(self, value,
@@ -65,8 +66,9 @@ Use ``Cell.status()`` to get its status.
             self._prelim_val = None
         if self._prelim_checksum is not None:
             checksum = self._prelim_checksum
-            self._get_manager().set_cell_checksum(self, checksum)
-            self._prelim_checksum = None
+            manager.set_cell_checksum(self, checksum)
+            if not isinstance(manager, UnboundManager):
+                self._prelim_checksum = None
 
     def __hash__(self):
         return self._counter
@@ -127,7 +129,11 @@ Use ``Cell.status()`` to get its status.
         Usually, this is the same as the data"""
         manager = self._get_manager()
         if isinstance(manager, UnboundManager):
-            raise Exception("Cannot ask the cell value of a context that is being constructed by a macro")
+            if self._lib_path is not None:
+                from .library import lib_get_value
+                return lib_get_value(self._prelim_checksum, self)                
+            else:
+                raise Exception("Cannot ask the cell value of a context that is being constructed by a macro")
         checksum = manager.cell_cache.cell_to_buffer_checksums.get(self)        
         if checksum is None:
             return None

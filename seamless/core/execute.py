@@ -14,9 +14,11 @@ import platform
 import threading
 import inspect
 import ctypes
+
+# TODO: decide when to kill an execution job!
+
 if platform.system() == "Windows":
     from ctypes import windll
-
 
 from .cached_compile import exec_code
 

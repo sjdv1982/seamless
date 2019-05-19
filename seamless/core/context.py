@@ -105,6 +105,7 @@ name: str
         return ret
 
     def _add_child(self, childname, child):
+        assert not self._destroyed
         from .unbound_context import UnboundContext
         if isinstance(child, UnboundContext):
             raise TypeError("Cannot add an unbound context to a bound one")

@@ -29,14 +29,13 @@
       "checksum": {
         "code": "b24cb296a9e7872c592baedc5ba4166c90dc3c464e4e2ddfddb78f9c56837b89",
         "input": "66aacfe442ff63a3dc537a3bfbfa204824fb8585ea89fab337ba99eb198c0ddc",
-        "result": "42edc3ac663285690d107f3b05f6f46f3da7fde403c39846261c938496802d60"
+        "result": "42edc3ac663285690d107f3b05f6f46f3da7fde403c39846261c938496802d60",
+        "result_schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
+        "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c"
       },
       "compiled": false,
       "debug": false,
       "language": "python",
-      "main_module": {
-        "compiler_verbose": true
-      },
       "path": [
         "doubleit"
       ],
@@ -55,7 +54,10 @@
     {
       "buffered": true,
       "celltype": "structured",
-      "checksum": "9809b7dfcfe29dd194c71c7d2da94af3aeef98f079eeff8e1d9e5099acef737c",
+      "checksum": {
+        "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
+        "value": "9809b7dfcfe29dd194c71c7d2da94af3aeef98f079eeff8e1d9e5099acef737c"
+      },
       "datatype": "mixed",
       "path": [
         "pi"
@@ -66,7 +68,10 @@
     {
       "buffered": true,
       "celltype": "structured",
-      "checksum": "42edc3ac663285690d107f3b05f6f46f3da7fde403c39846261c938496802d60",
+      "checksum": {
+        "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
+        "value": "42edc3ac663285690d107f3b05f6f46f3da7fde403c39846261c938496802d60"
+      },
       "datatype": "mixed",
       "path": [
         "twopi"

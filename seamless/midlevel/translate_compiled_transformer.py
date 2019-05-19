@@ -17,21 +17,23 @@ def _init_from_library(ctf, debug):
         ctf.integrator_code = libcell(".integrator.code")
         ctf.integrator_params = libcell(".integrator_params")
         ctf.integrator = transformer(ctf.integrator_params.value)
+        ctf.integrator.debug_.cell().set(debug)
         ctf.integrator_code.connect(ctf.integrator.code)
 
         ctf.translator_code = libcell(".translator.code")
         ctf.translator_params = libcell(".translator_params")
         ctf.translator = transformer(ctf.translator_params.value)
         if debug:
-            ctf.translator.debug_ = True
+            ctf.translator.debug = True
         ctf.translator_code.connect(ctf.translator.code)
 
 def _finalize(ctx, ctf, inp, c_inp, result, c_result, input_name, result_name):
     #1: between transformer and library
+
     ctx.inputpins.connect(ctf.gen_header.inputpins)
     ctx.pins.connect(ctf.translator.pins)
-    ctx.result.connect_inchannel(ctf.translator.translator_result_, ())
-    inp.connect_outchannel((), ctf.translator.kwargs)
+    ctf.translator.translator_result_.connect(ctx.result.inchannels[()])
+    ctx.inp.outchannels[()].connect(ctf.translator.kwargs)
     c_inp.schema.connect(ctf.gen_header.input_schema)
     c_result.schema.connect(ctf.gen_header.result_schema)
     c_inp.schema.connect(ctf.translator.input_schema)
@@ -49,26 +51,14 @@ def _finalize(ctx, ctf, inp, c_inp, result, c_result, input_name, result_name):
 
     ctx.language.connect(ctf.integrator.lang)
     ctx.code.connect(ctf.integrator.compiled_code)
-    ctx.main_module.connect_outchannel((), ctf.integrator.main_module)
-    ctx.compiler_verbose.connect(ctf.integrator.compiler_verbose)
+    ctx.main_module.outchannels[()].connect(ctf.integrator.main_module)
 
-    ctx.binary_module_storage = cell("text")
-    ctx.binary_module_storage._sovereign = True
-    ctx.binary_module_form = cell("json")
-    ctx.binary_module_form._sovereign = True
-    ctx.binary_module = cell(
-        "mixed",
-        storage_cell = ctx.binary_module_storage,
-        form_cell = ctx.binary_module_form,
-    )
-    ctx.binary_module._sovereign = True
-    ctf.integrator.result.connect(ctx.binary_module)
+    ctx.module = cell("mixed")
+    ctf.integrator.result.connect(ctx.module)
 
-    ctx.binary_module.connect(ctf.translator.binary_module)
-
+    ctx.module.connect(ctf.translator.module)
 
 def translate_compiled_transformer(node, root, namespace, inchannels, outchannels, lib_path00, is_lib):
-    raise NotImplementedError ### cache branch
     #TODO: still a lot of common code with translate_py_transformer, put in functions
     from seamless.lib.compiled_transformer import compiled_transformer as _
     inchannels = [ic for ic in inchannels if ic[0] != "code"]
@@ -79,13 +69,11 @@ def translate_compiled_transformer(node, root, namespace, inchannels, outchannel
     parent = get_path(root, node["path"][:-1], None, None)
     name = node["path"][-1]
     lib_path0 = lib_path00 + "." + name if lib_path00 is not None else None
-    ctx = context(context=parent, name=name)
+    ctx = context()
     setattr(parent, name, ctx)
 
     input_name = node["INPUT"]
     result_name = node["RESULT"]
-    if len(inchannels):
-        lib_path0 = None #partial authority or no authority; no library update in either case
     for c in inchannels:
         assert (not len(c)) or c[0] != result_name #should have been checked by highlevel
 
@@ -118,63 +106,29 @@ def translate_compiled_transformer(node, root, namespace, inchannels, outchannel
         if p["io"] == "input":
             inputpins.append(pinname)
         all_pins[pinname] = p
-    all_pins[result_name] = "output"
+    all_pins[result_name] = {"io": "output", "transfer_mode": "copy"}
     if node["SCHEMA"]:
         assert with_result
         all_pins[node["SCHEMA"]] = {
             "io": "input", "transfer_mode": "json",
             "access_mode": "json", "content_type": "json"
         }
-    in_equilibrium = node.get("in_equilibrium", False)
-
-    temp = node.get("TEMP")
-    if temp is None:
-        temp = {}
-
+    
     # Compiler
     ctx.language = cell("text").set(node["language"])
 
     ctx.main_module = build_structured_cell(
       ctx, "main_module", False, True, False,
       main_module_inchannels, [()],
-      lib_path00,
+      lib_path00
     )
-
-    if "_main_module" in temp and len(temp["_main_module"]):
-        temp_main_module = temp["_main_module"]
-        main_module_handle = ctx.main_module.handle
-        main_module_data = ctx.main_module.data.value
-        if main_module_data is None:
-            ctx.main_module.monitor.set_path((), {"objects":{}}, forced=True)
-            main_module_data = ctx.main_module.data.value
-        elif "objects" not in main_module_data:
-            main_module_handle["objects"] = {}
-        for objname, obj in temp_main_module.items():
-            for key, value in obj.items():
-                if objname in main_module_data["objects"] and \
-                 key in main_module_data["objects"][objname]:
-                    msg = "WARNING: %s main module object '%s': %s already defined"
-                    print(msg % (node["path"], objname, key))
-                    continue
-                if objname not in main_module_data["objects"]:
-                    ctx.main_module.monitor.set_path(
-                      ("objects", objname), {}, forced=True
-                    )
-                main_module_handle["objects"][objname][key] = value
 
     for ic in main_module_inchannels:
         icpath = node["path"] + ("_main_module",) + ic[1:]
         namespace[icpath, True] = ctx.main_module.inchannels[ic], node
 
-    compiler_verbose = node["main_module"]["compiler_verbose"]
-    ctx.compiler_verbose = cell("json").set(compiler_verbose)
-
-    target = node["main_module"].get("target")
-    if target is not None:
-        ctx.main_module.monitor.set_path(("target",), target, forced=True)
-
     # Transformer itself
-    ctf = ctx.tf = context(name="tf",context=ctx)
+    ctf = ctx.tf = context()
     debug = node["debug"]
     _init_from_library(ctf, debug)
 
@@ -187,12 +141,26 @@ def translate_compiled_transformer(node, root, namespace, inchannels, outchannel
         if "code" in mount:
             ctx.code.mount(**mount["code"])
 
+    checksum = node.get("checksum", {})
+    if "code" in checksum:
+        ctx.code.set_checksum(checksum["code"])
+    if "main_module" in checksum:
+        ctx.main_module.set_checksum(checksum["main_module"])
+    if "schema" in checksum:
+        inp.set_schema_checksum(checksum["schema"])
+    if "input" in checksum:
+        inp.set_checksum(checksum["input"])
+    namespace[node["path"] + ("code",), True] = ctx.code, node
+    namespace[node["path"] + ("code",), False] = ctx.code, node
+
     plain_result = node["plain_result"]
     result, result_ctx = build_structured_cell(
         ctx, result_name, True, plain_result, False, [()],
         outchannels, lib_path0,
         return_context=True
     )
+    if "result_schema" in checksum:
+        result.set_schema_checksum(checksum["result_schema"])
     namespace[node["path"] + ("RESULTSCHEMA",), False] = result.schema, node
     if "result_schema" in mount:
         result_ctx.schema.mount(**mount["result_schema"])
@@ -200,8 +168,8 @@ def translate_compiled_transformer(node, root, namespace, inchannels, outchannel
     setattr(ctx, result_name, result)
     assert not node["SCHEMA"]
 
-    ctx.pins = cell("json").set(all_pins)
-    ctx.inputpins = cell("json").set(inputpins)
+    ctx.pins = cell("plain").set(all_pins)
+    ctx.inputpins = cell("plain").set(inputpins)
     c_inp = getattr(ctx, input_name + STRUC_ID)
     c_result = getattr(ctx, result_name + STRUC_ID)
     _finalize(ctx, ctf, inp, c_inp, result, c_result, input_name, result_name)
@@ -209,20 +177,7 @@ def translate_compiled_transformer(node, root, namespace, inchannels, outchannel
     if "header" in mount:
         ctx.header.mount(**mount["header"])
 
-    if code is not None:
-        ctx.code.set(code)
-    if "code" in temp:
-        ctx.code.set(temp["code"])
-    inphandle = inp.handle
-    for k,v in temp.items():
-        if k in ("code", "_main_module"):
-            continue
-        setattr(inphandle, k, v)
-    namespace[node["path"] + ("code",), True] = ctx.code, node
-    namespace[node["path"] + ("code",), False] = ctx.code, node
-
     namespace[node["path"], True] = inp, node
     namespace[node["path"], False] = result, node
-    node.pop("TEMP", None)
 
 from .util import get_path, as_tuple, build_structured_cell, STRUC_ID

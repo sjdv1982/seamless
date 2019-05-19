@@ -204,7 +204,6 @@ class OutputPin(OutputPinBase):
         elif l == 1:
             # TODO: take subpath into account? construct some kind of proxy?           
             my_cell, subpath = my_cells[0]
-            my_cell = my_cell.target
         elif l > 1:
             raise TypeError("cell() is ambiguous, multiple cells are connected")
         return my_cell

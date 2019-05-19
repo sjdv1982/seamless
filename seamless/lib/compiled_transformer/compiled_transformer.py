@@ -33,7 +33,7 @@ def func(module, pins, input_schema, result_schema, input_name, result_name, kwa
 ctx.translator = func
 ctx.translator.code = set_resource(translator_file)
 ctx.translator.RESULT = "translator_result_"
-pins = ctx.translator._get_htf()["pins"] ###
+pins = ctx.translator._get_htf()["pins"] ### need to access like this; TODO: implement .self.pins
 pins["module"]["access_mode"] = "module"
 pins["input_schema"]["access_mode"] = "plain"
 pins["result_schema"]["access_mode"] = "plain"

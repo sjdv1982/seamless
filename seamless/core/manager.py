@@ -311,7 +311,8 @@ class Manager:
                                 continue
                             status = self.stream_status[ttf, k]
                             if status.exec == "READY":
-                                status.exec = "EXECUTING"                    
+                                status.exec = "EXECUTING"
+
                     task = self._schedule_transform_all(tf_level1, count, debug=debug)
                     self.cache_task_manager.schedule_task(
                         ("transform","all",tf_level1),task,count,
@@ -408,8 +409,9 @@ class Manager:
     def set_transformer_result(self, level1, level2, value, checksum, prelim):
         from .link import Link
         from .macro import Path
-        
-        # TODO: expand code properly, see evaluate.py"
+
+        # TODO: would be better if there was only checksum, generated with protocol.calc_buffer
+        #  This corresponds to the behavior of a cache hit from transform result
         # TODO: this function is not checked for exceptions when called from a remote job...""
         if self._destroyed:
             return
@@ -442,34 +444,31 @@ class Manager:
                 else:
                     if status.auth == "PRELIMINARY":
                         status.auth = "FRESH"
-                if not is_none or subpath is not None:
-                    # TODO: dirty...
+                if value is None and not is_none:
+                    accessor = self.get_default_accessor(cell)
+                    accessor.celltype = "mixed" #generated with protocol.calc_buffer
+                    accessor.subpath = subpath
+                    expression = accessor.to_expression(checksum)
+                    value = self.get_expression(expression)
+                    if value is not None:
+                        try:
+                            _, _, value = value
+                        except (TypeError, ValueError): #KLUDGE
+                            pass
+                if value is not None or subpath is not None:
                     if subpath is None:                        
-                        if not is_none and value is None:
-                           self.set_cell_checksum(cell, checksum)
-                        else:
-                            self.set_cell(cell, value, subpath=None)
+                        self.set_cell(cell, value, subpath=None)                        
                     else:              
                         assert hasattr(cell, "_monitor")
                         monitor = cell._monitor
                         assert monitor is not None
-                        if value is None and not is_none:
-                            accessor = self.get_default_accessor(cell)
-                            accessor.subpath = subpath                            
-                            expression = accessor.to_expression(checksum)
-                            value = self.get_expression(expression)
-                            if expression.celltype == "mixed" and value is not None:
-                                try:
-                                    _, _, value = value
-                                except (TypeError, ValueError): #KLUDGE
-                                    pass
                         monitor.set_path(subpath, value)
                     if checksum is None and value is not None and subpath is not None:
                         checksum = self.cell_cache.cell_to_buffer_checksums[cell]
                 else:                    
                     if cell._destroyed:
                         raise Exception(cell.name)
-                    self.set_cell_checksum(cell, checksum)
+                    self.set_cell(None)
             self.update_transformer_status(tf,full=False)
         if checksum is None: #result conforms to no cell (remote transformation, stream transformation, or subpath)
             checksum, buffer = protocol.calc_buffer(value)
@@ -722,7 +721,7 @@ class Manager:
         except KeyError: #KLUDGE
             if cell_subpath == ():
                 cell_subpath = None
-                status = self.status[cell][cell_subpath]            
+                status = self.status[cell][cell_subpath]
         new_data_status = status.data
         new_auth_status = status.auth
         if data_status is not None:
@@ -736,14 +735,14 @@ class Manager:
         if auth_status is not None:
             new_auth_status = auth_status
         status.data = new_data_status
-        status.auth = new_auth_status
+        status.auth = new_auth_status        
 
         if full or new_auth_status is not None or new_data_status is not None:            
             acache = self.accessor_cache
             accessors = itertools.chain(
                 self.cell_cache.cell_to_accessors[cell][cell_subpath],
                 [self.get_default_accessor(cell)],
-            )
+            )            
             for accessor in accessors:
                 haccessor = hash(accessor)
                 for worker, acc in acache.haccessor_to_workers.get(haccessor, []):                    
@@ -757,7 +756,6 @@ class Manager:
                         for pinname, accessor2 in rtreactor.input_dict.items():
                             if accessor2.cell is cell:
                                 rtreactor.updated.add(pinname)
-                    if not worker._active: return ###TODO: should not happen (and so far, doesn't seem to)
                     self.update_worker_status(worker, full)
             self.update_cell_to_cells(
               cell, data_status, auth_status, 
@@ -1308,16 +1306,18 @@ class Manager:
                 accessors.append(accessor)
         self.cell_to_cell.append(connection)
         if len(accessors) == 2:
-            self.update_accessor_accessor(*accessors)
+            self.update_accessor_accessor(*accessors, only_if_defined=True)
 
-    def update_accessor_accessor(self, source, target):
+    def update_accessor_accessor(self, source, target, only_if_defined=False):
         assert source.source_access_mode is None
         assert source.source_content_type is None
         assert target.source_access_mode is None
         assert target.source_content_type is None
         same = True
         if source.cell._destroyed or target.cell._destroyed: return ### TODO, shouldn't happen...
-        checksum = self.cell_cache.cell_to_buffer_checksums.get(source.cell) # TODO in case of cache tree depth        
+        checksum = self.cell_cache.cell_to_buffer_checksums.get(source.cell) # TODO in case of cache tree depth
+        if checksum is None and only_if_defined:
+            return
         """            
         for attr in ("celltype", "storage_type", "access_mode", "content_type"):
             if getattr(source, attr) != getattr(target, attr):
@@ -1354,6 +1354,8 @@ class Manager:
             if source.celltype != target.celltype and target.celltype == "mixed" and source.celltype in ("plain","text"): ## KLUDGE
                 pass
             elif source.celltype != target.celltype and source.celltype == "mixed" and target.celltype == "text": ## KLUDGE
+                pass
+            elif source.celltype != target.celltype and source.celltype == "mixed" and target.celltype == "plain": ## KLUDGE
                 pass
             elif source.celltype != target.celltype: 
                 raise NotImplementedError(source.cell, target.cell) ### cache branch
@@ -1635,17 +1637,19 @@ class Manager:
                     self.mountmanager.add_cell_update(cell)
             if cell._observer is not None:
                 cell._observer(checksum.hex())
-            if not hasattr(cell, "_monitor") or cell._monitor is None:
-                self._update_status(
-                    cell, (checksum is not None), 
-                    has_auth=has_auth, origin=None, cell_subpath=None
-                )
+            #if not hasattr(cell, "_monitor") or cell._monitor is None:
+            self._update_status(
+                cell, (checksum is not None), 
+                has_auth=has_auth, origin=None, cell_subpath=None
+            )
 
     @main_thread_buffered
     def set_cell(self, cell, value, *, subpath,
       from_buffer=False, origin=None, buffer_checksum=None,
       ):
         # "origin" indicates the worker that generated the .set_cell call
+        if value is None:
+            raise Exception
         from .macro_mode import macro_mode_on, get_macro_mode
         from .mount import is_dummy_mount
         assert cell._get_manager() is self

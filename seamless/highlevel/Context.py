@@ -98,7 +98,8 @@ class Context:
     _translating = False
     _as_lib = None
     _auto_register_library = False
-    _shares = None    
+    _shares = None
+    _translate_count = 0  
 
     @classmethod
     def from_graph(cls, graph, cache_manager):
@@ -305,6 +306,7 @@ class Context:
         ### TODO: check that current_macro is not part of self._ctx0
         ###from ..core.macro_mode import get_macro_mode
         ###assert not get_macro_mode()
+        self._translate_count += 1
         graph = self.get_graph(copy=False)
         try:            
             self._translating = True
@@ -318,6 +320,8 @@ class Context:
             ctx._macro = self
             assert not len(ctx.path)
             old_gen_context = self._gen_context
+            if old_gen_context is not None:
+                old_gen_context.destroy()
             with macro_mode_on(self):
                 ub_ctx = context(toplevel=True, manager=manager) 
                 self._unbound_context = ub_ctx                
@@ -327,8 +331,6 @@ class Context:
                 ub_ctx._bind(ctx)                
                 assert not len(ctx.path)
                 self._gen_context = ctx
-                if old_gen_context is not None:
-                    old_gen_context.destroy()
                 ub_ctx._root_.destroy()               
                 for traitlet in self._traitlets.values():
                     traitlet._connect()

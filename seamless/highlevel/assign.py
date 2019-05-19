@@ -79,7 +79,10 @@ def assign_connection(ctx, source, target, standalone_target, exempt=[]):
         t = ctx._children[target]
         assert isinstance(t, Cell)
         hcell = t._get_hcell()
-        print("TODO: clear checksums/TEMP from the assigned target")
+        if "TEMP" in hcell:
+            hcell.pop("TEMP")
+        elif "checksum" in hcell:
+            hcell["checksum"].pop("value", None)
     lt = len(target)
     def keep_con(con):
         ctarget = con["target"]

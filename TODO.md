@@ -6,15 +6,8 @@ Most of the high level is done.
 Part 2
 Things to do:
 2A. Preparation
-- Polyglot:
-  - Test at high level: first modules, then C/C++/Fortran transformers
 - Finish the testing of the docking transformers, in particular inside docker
 - Check jobslave-over-abathur
-- Get reactors working again at the high level
-- Constructors, finish testing
-  Test library-containing-another-library    
-  Make sure constructors work correctly when copying parent contexts
-  Test indirect library update system, also with constructors
 - Implement annotation dict, including debug, ncores (ncores DONE), and a field for streams
   => high-level streams example
 
@@ -39,6 +32,13 @@ Seamless is now usable by me, to port RPBS/Galaxy services
 - by sysadmins (job control, deployment)
 
 2C: Towards a first real example
+- high level: reassigning transformers does weird stuff, and equilibrate seems necessary everywhere
+- Get reactors working again at the high level
+- Constructors, finish testing
+  Test library-containing-another-library    
+  Make sure constructors work correctly when copying parent contexts
+  Test indirect library update system, also with constructors
+
 - Finish browser lib
 -  First real example:
   - Convert topology.json (of a different ctx!) to SVG

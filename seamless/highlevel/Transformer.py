@@ -35,7 +35,6 @@ def new_transformer(ctx, path, code, parameters):
         "buffered": True,
         "plain": False,
         "plain_result": False,
-        "main_module": {"compiler_verbose": True},
         "debug": False,
         "UNTRANSLATED": True
     }
@@ -106,31 +105,7 @@ class Transformer(Base):
         from ..core.transformer import Transformer as CoreTransformer
         htf = self._get_htf()
         htf["debug"] = value
-        if self._has_tf():
-            tf = self._get_tf().tf
-            if htf["compiled"]:
-                tf2 = tf.translator
-            else:
-                tf2 = tf
-            assert isinstance(tf2, CoreTransformer)
-            tf2.debug = value
-        if htf["compiled"]:
-            if self._has_tf():
-                main_module = self._get_tf().main_module
-                if main_module.data.value is None:
-                    main_module.monitor.set_path((), {"objects":{}}, forced=True)
-                if value:
-                    main_module.handle["target"] = "debug"
-                else:
-                    main_module.handle["target"] = "profile"
-            else:
-                self._parent()._translate()
-            if "main_module" not in htf:
-                htf["main_module"] = {"compiler_verbose": True}
-            if value:
-                htf["main_module"]["target"] = "debug"
-            else:
-                htf["main_module"]["target"] = "profile"
+        self._parent()._translate()
 
     @property
     def language(self):
@@ -145,10 +120,13 @@ class Transformer(Base):
         htf["language"] = lang
         htf["compiled"] = compiled
         htf["file_extension"] = extension
+        has_translated = False
         if compiled:
             htf["with_result"] = True
-            if "main_module" not in htf:
-                htf["main_module"] = {"compiler_verbose": True}
+            self._parent()._translate()
+            has_translated = True
+            tf = self._get_tf()
+            tf.main_module.set({"compiler_verbose": True})
         elif lang == "docker":
             if old_language != "docker":
                 im = False
@@ -166,7 +144,8 @@ class Transformer(Base):
                 htf["pins"].pop("docker_options")
                 htf["pins"].pop("docker_image")
 
-        self._parent()._translate()
+        if not has_translated:
+            self._parent()._translate()
 
     @property
     def header(self):
@@ -550,6 +529,8 @@ class Transformer(Base):
                 assert isinstance(value, str), type(value)
                 cell["TEMP"] = value
                 cell["UNTRANSLATED"] = True
+            if "checksum" in htf:
+                htf["checksum"].pop("code", None)
         else:
             inp = getattr(tf, htf["INPUT"])
             p = getattr(inp.value, attr)
@@ -605,11 +586,20 @@ class Transformer(Base):
             htf["checksum"] = {}
         htf["checksum"]["result_schema"] = checksum
 
+    def _observe_main_module(self, checksum):
+        htf = self._get_htf()
+        if htf.get("checksum") is None:
+            htf["checksum"] = {}
+        htf["checksum"]["main_module"] = checksum
+
     def _set_observers(self):
         htf = self._get_htf()
         if htf["compiled"] or htf["language"] not in ("python", "ipython", "bash", "docker"):
-            raise NotImplementedError ### cache branch
-            # NOTE: observers depend on the implementation of translate_XXX_transformer (midlevel)
+            if htf["compiled"]:
+                pass
+            else:
+                raise NotImplementedError ### cache branch
+                # NOTE: observers depend on the implementation of translate_XXX_transformer (midlevel)
         tf = self._get_tf()
         tf.code._set_observer(self._observe_code)
         inp = htf["INPUT"]
@@ -623,6 +613,8 @@ class Transformer(Base):
             resultcell._set_observer(self._observe_result)
             schemacell = resultcell.schema
             schemacell._set_observer(self._observe_result_schema)
+        if htf["compiled"]:
+            tf.main_module._set_observer(self._observe_main_module)
 
 
     def __delattr__(self, attr):

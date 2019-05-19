@@ -319,7 +319,7 @@ def translate(graph, ctx, from_lib_paths, is_lib):
             inchannels, outchannels = find_channels(node["path"], connection_paths)
             if node["compiled"]:
                 from .translate_compiled_transformer import translate_compiled_transformer
-                translate_compiled_transformer(node, ctx, namespace, inchannes, outchannels, lib_path, is_lib)
+                translate_compiled_transformer(node, ctx, namespace, inchannels, outchannels, lib_path, is_lib)
             elif node["language"] in ("python", "ipython"):
                 translate_py_transformer(node, ctx, namespace, inchannels, outchannels, lib_path, is_lib)
             elif node["language"] == "bash":

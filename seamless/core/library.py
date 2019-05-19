@@ -121,5 +121,23 @@ def lib_has_path(libname, path):
 def libcell(path, celltype=None):
     return _libcell(path, celltype)
 
+def lib_get_value(checksum, cell):
+    celltype = celltypes_rev[type(cell)]
+    buffer = value_cache.get_buffer(checksum)[2]
+    assert buffer is not None
+    result = deserialize(
+        celltype, None, "lib_get_value",
+        buffer, from_buffer = True, buffer_checksum = None,
+        source_access_mode = None,
+        source_content_type = None,
+    )    
+    obj = result[2]
+    if celltype == "mixed":
+        obj = obj[2]
+    return obj
+
+
+
 from .cache.value_cache import ValueCache
 value_cache = ValueCache(None)
+from .protocol.deserialize import deserialize
