@@ -297,6 +297,8 @@ class Transformer(Base):
                 inp = getattr(tf, htf["INPUT"])
                 assert not test_lib_lowlevel(parent, inp)
                 parent._remove_connections(self._path + (attr,))
+                if inp.value.value is None:
+                    inp.handle.set({})
                 setattr(inp.handle, attr, value)
         if parent._as_lib is not None:
             if htf["path"] in parent._as_lib.partial_authority:
