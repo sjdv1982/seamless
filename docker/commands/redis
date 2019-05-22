@@ -1,0 +1,9 @@
+#!/bin/bash
+set -u -e
+
+docker run \
+  --rm \
+  -p 6379:6379 \
+  --name redis-container \
+  -v ~/.seamless/redis:/data \
+  redis redis-server --appendonly yes

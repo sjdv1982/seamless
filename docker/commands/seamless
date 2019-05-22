@@ -1,0 +1,19 @@
+set -u -e
+
+# Runs a command inside the Seamless Docker image
+# - Current directory is mounted to /cwd, and the command is executed there
+# - /tmp is mounted as well
+# - Seamless has access to the Docker daemon, so it can launch its own Docker
+#    containers via the Docker transformer. This works only under Linux.
+
+# NOTE: it is recommended to run python scripts with 'python -u#
+
+firstarg=$1 #there must be at least one argument
+docker run --rm \
+  --network=host \
+  -v ~/.seamless/mount:/host \
+  -v `pwd`:/cwd \
+  -v /tmp:/tmp \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  --workdir /cwd \
+  seamless $*

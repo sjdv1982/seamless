@@ -326,8 +326,12 @@ class CommunionServer:
                             cache = getattr(manager, cache_name)
                             method = getattr(cache, method_name)
                         result = method(content)
-                    if result is not None:
-                        break
+                        if type.endswith("check"):
+                            if result == True:
+                                break
+                        else:
+                            if result is not None:
+                                break
             # Remote cache
             if result is None:
                 cache_task = None

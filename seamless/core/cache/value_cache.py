@@ -162,6 +162,7 @@ class ValueCache:
         """For the communionserver..."""
         if checksum in self._buffer_cache:
             return True
+        assert checksum is not None
         return redis_caches.has_value(checksum)
 
 """

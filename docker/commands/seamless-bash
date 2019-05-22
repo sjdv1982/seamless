@@ -1,0 +1,13 @@
+set -u -e
+
+# Version of the seamless command that creates an interactive bash shell inside the seamless image
+
+docker run --rm \
+  --network=host \
+  -v ~/.seamless/mount:/host \
+  -v `pwd`:/cwd \
+  -v /tmp:/tmp \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  --workdir /cwd \
+  -it \
+  seamless bash

@@ -23,6 +23,7 @@ remote_checksum_value_servers = []
 
 class CacheTask:
     """Wrapper around an async future of which the result will be discarded"""
+    _done = False
     def __init__(self,key,future,count,resultfunc, cancelfunc):
         if not isinstance(future, (asyncio.Future, asyncio.Task)):
             raise TypeError(future)
@@ -33,6 +34,7 @@ class CacheTask:
         self.cancelfunc = cancelfunc
         if resultfunc is not None:
             future.add_done_callback(resultfunc)
+            future._DONE = False #KLUDGE
         future.add_done_callback(cancelfunc)
     
     def incref(self, count=1):
@@ -51,7 +53,18 @@ class CacheTask:
             future.cancel()
 
     def join(self):
-        asyncio.get_event_loop().run_until_complete(self.future)
+        loop = asyncio.get_event_loop() 
+        loop.run_until_complete(self.future)
+        if self.resultfunc is not None: # KLUDGE
+            import time
+            t = time.time()
+            while 1:
+                if self.future._DONE:
+                    break
+                loop.run_until_complete(asyncio.sleep(0.01))
+                if time.time() - t > 2:
+                    print("WARNING: CacheTask result func did not set DONE")
+                    break
 
 class CacheTaskManager:
     def __init__(self):
@@ -98,6 +111,7 @@ class CacheTaskManager:
             if checksum is not None:
                 for label_cache in label_caches:
                     label_cache.set(label, checksum)
+            future._DONE = True # KLUDGE, should not be needed
         return self.schedule_task(key, future, 1, resultfunc=resultfunc)
 
     def remote_value(self, checksum, origin=None):
@@ -112,6 +126,7 @@ class CacheTaskManager:
                 buffer = result
                 for value_cache in value_caches:
                     value_cache.incref(checksum, buffer, has_auth=False)
+            future._DONE = True # KLUDGE, should not be needed
         return self.schedule_task(key, future, 1, resultfunc=resultfunc)
 
     def remote_transform_result(self, hlevel1, origin=None):

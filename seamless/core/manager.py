@@ -647,8 +647,10 @@ class Manager:
 
     def value_get(self, checksum):
         """For communion server"""
-        value = self.value_cache.get_buffer(checksum)[2]
-        return value
+        value = self.value_cache.get_buffer(checksum)
+        if value is None:
+            return None
+        return value[2]
 
 
     def register_cell(self, cell):

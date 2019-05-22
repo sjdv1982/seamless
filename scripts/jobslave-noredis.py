@@ -7,6 +7,9 @@ import asyncio
 import sys
 from seamless import communionserver
 
+communionserver.configure_master(
+    value=True,
+)
 communionserver.configure_servant(
     value=True,
     transformer_job=True,
