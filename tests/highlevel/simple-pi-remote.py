@@ -1,3 +1,5 @@
+#use with jobslave-noredis.py
+
 import os
 os.environ["SEAMLESS_COMMUNION_ID"] = "simple-pi-remote"
 os.environ["SEAMLESS_COMMUNION_INCOMING"] = "localhost:8602"
