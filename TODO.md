@@ -6,13 +6,10 @@ Most of the high level is done.
 Part 2
 Things to do:
 2A. Preparation
-- Finish the testing of the docking transformers, in particular inside docker
-- Check jobslave-over-abathur
 - Implement annotation dict, including debug, ncores (ncores DONE), and a field for streams
   => high-level streams example
 
 Intermezzo: documentation
-- Prepare slides for Pierre
 - Update interoperability document
 - PREPARE SIMPLE DEMO IN DOCUMENTATION
 
