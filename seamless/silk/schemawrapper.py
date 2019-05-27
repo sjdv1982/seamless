@@ -10,7 +10,7 @@ class SchemaWrapper(Wrapper):
         if _parent is not None:
             super().__setattr__("_parent", weakref.ref(_parent))
         if isinstance(_dict, SchemaWrapper):
-            _dict = _dict.dict
+            _dict = _dict._dict
         super().__setattr__("_dict", _dict)
         if _update_hook is not None:
             super().__setattr__("_update_hook", _update_hook)
@@ -34,7 +34,7 @@ class SchemaWrapper(Wrapper):
 
     def update(self, value):        
         if isinstance(value, SchemaWrapper):
-            value = value.dict
+            value = value._dict
         self._dict.update(value)
         parent = self._parent()
         if parent is not None:
@@ -66,7 +66,7 @@ class SchemaWrapper(Wrapper):
 
     def __setattr__(self, attribute, value):
         if isinstance(value, SchemaWrapper):
-            value = value.dict        
+            value = value._dict        
         self._dict[attribute] = value
         self._exported_update_hook()
 

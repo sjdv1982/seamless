@@ -37,7 +37,7 @@ class CompiledObjectDict:
             htf = worker._get_htf()
             main_module = htf.get("main_module")
             if main_module is None:
-                htf["main_module"] = {}
+                htf["main_module"] = main_module = {}                
             main_module["compiler_verbose"] = value
         else:
             raise TypeError("Cannot assign directly an entire module object; assign individual elements")

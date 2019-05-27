@@ -106,6 +106,7 @@ class Cell(Base):
         return SubCell(self._parent(), self, (attr,), readonly=readonly)
 
     def mount(self, path=None, mode="rw", authority="cell", persistent=False):
+        assert self.celltype != "structured"
         hcell = self._get_hcell()
         if path is None:
             hcell.pop("mount", None)
@@ -251,6 +252,8 @@ class Cell(Base):
         if isinstance(cellvalue, MixedBase):
             cellvalue = cellvalue.value
         hcell["celltype"] = value
+        if value == "code" and "language" not in hcell:
+            hcell["language"] = "python"
         if cellvalue is not None and not hcell.get("UNTRANSLATED"):
             self._parent()._do_translate(force=True) # This needs to be kept!
             self.set(cellvalue)

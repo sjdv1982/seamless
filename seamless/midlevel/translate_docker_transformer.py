@@ -123,7 +123,7 @@ def translate_docker_transformer(node, root, namespace, inchannels, outchannels,
         if "result" in checksum:
             result.set_checksum(checksum["result"])
         if "result_schema" in checksum:
-            result.schema.set_checksum(checksum["result_schema"])
+            result.set_schema_checksum(checksum["result_schema"])
     else:
         for c in outchannels:
             assert len(c) == 0 #should have been checked by highlevel

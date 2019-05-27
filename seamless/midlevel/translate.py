@@ -138,9 +138,9 @@ def translate_cell(node, root, namespace, inchannels, outchannels, editchannels,
             child = libcell(lib_path)
             #TODO: allow fork to be set
         else:
-            if ct == "code":
+            if ct == "code":                
                 if node["language"] in ("python", "ipython"):
-                    if node["transformer"]:
+                    if node.get("transformer"):
                         child = core_cell("transformer")
                     else:
                         child = core_cell(node["language"])

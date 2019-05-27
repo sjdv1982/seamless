@@ -260,6 +260,8 @@ class Transformer(Base):
                 assert not test_lib_lowlevel(parent, tf.code)
                 tf.code.set(value.data)                
                 translate = True
+            elif isinstance(value, Proxy):
+                raise AttributeError("".join(value._path))
             else:
                 tf = self._get_tf()
                 assert not test_lib_lowlevel(parent, tf.code)

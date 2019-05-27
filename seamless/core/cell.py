@@ -4,6 +4,7 @@ from weakref import WeakSet
 from . import SeamlessBase
 from .macro_mode import get_macro_mode
 from .utils import strip_source
+from copy import deepcopy
 
 cell_counter = 0
 
@@ -142,6 +143,7 @@ Use ``Cell.status()`` to get its status.
             default_accessor.access_mode = "text"
         default_expression = default_accessor.to_expression(checksum)
         value = manager.get_expression(default_expression)
+        value = deepcopy(value)
         return value
 
     @property

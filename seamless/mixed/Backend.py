@@ -14,7 +14,7 @@ def get_subform(form, path):
     if type_ == "object":
         assert isinstance(attr, str), attr
         if attr not in form["properties"]:
-            return False
+            return None
         subform = form["properties"][attr]
     elif type_ in ("array", "tuple"):
         assert isinstance(attr, int), attr

@@ -467,6 +467,8 @@ class Silk(SilkBase):
             return self.data
 
     def _set(self, value, lowlevel, buffer):
+        if isinstance(value, MixedBase): #hackish, but necessary (see _prepare_for_validation)
+            value = value.value
         def _get_schema():
             schema = self._schema
             updated = False
@@ -544,6 +546,8 @@ class Silk(SilkBase):
         return self
 
     def _setitem(self, attr, value):
+        if isinstance(value, MixedBase): #hackish, but necessary (see _prepare_for_validation)
+            value = value.value
         buffer = (self._buffer is not None)
         if buffer:
             data = self._buffer

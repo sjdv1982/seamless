@@ -118,11 +118,11 @@ class JobScheduler:
         hlevel1 = tcache.hlevel1_from_hlevel2[hlevel2]
         level1 = tcache.revhash_hlevel1[hlevel1]
         job = Job(self, level1, level2, remote=False, debug=debug)
-        job.count = count
-        self.jobs[hlevel2] = job
+        job.count = count                
         transformer = tcache.transformer_from_hlevel1.get(hlevel1)
         if transformer is None and not transformer_can_be_none: # Transformer must have been overruled...
             return None
+        self.jobs[hlevel2] = job
         job.execute(transformer)
         return job
 

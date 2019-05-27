@@ -59,8 +59,9 @@ class CompiledObjectWrapper:
                     main_module_data = main_module.data.value
                 if "objects" not in main_module_data:
                     main_module_handle["objects"] = {}
+                    main_module_data = main_module.data.value
                 if objname not in main_module_data["objects"]:
-                    main_module_handle["objects"][objname] = {}
+                    main_module_handle["objects"][objname] = {"code": ""}
                 main_module_handle["objects"][objname][attr] = value
                 parent.translate()
 
@@ -161,7 +162,7 @@ class CompiledObjectWrapper:
         }
         if value is not None:
             assert isinstance(value, str), type(value)
-            cell["TEMP"] = value
+            setattr(self, "code", value)
         child = Cell(parent, new_path) #inserts itself as child
         parent._graph[0][new_path] = cell
         mimetype = language_to_mime(language)

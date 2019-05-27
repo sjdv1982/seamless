@@ -100,7 +100,7 @@ def fill_checksums(mgr, nodes, *, path=None):
                 continue
             untranslated = node.get("UNTRANSLATED")
             if not untranslated:
-                assert "TEMP" not in node
+                assert "TEMP" not in node, (node["path"], str(node["TEMP"][:80]))
                 continue
             old_checksum = node.pop("checksum", None)
             if node["type"] == "transformer":
