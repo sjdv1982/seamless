@@ -270,7 +270,7 @@ class CommunionServer:
             coros.append(coro)
             print("Set up a communion outgoing port %d" % outgoing)            
         for url in incoming:
-            if not url.startswith("ws://"):
+            if not url.startswith("ws://") and not url.startswith("wss://"):
                 url = "ws://" + url
             coro = self._connect_incoming(config, url)
             coros.append(coro)
