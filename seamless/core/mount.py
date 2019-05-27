@@ -28,6 +28,10 @@ import itertools
 
 from .protocol import deserialize
 
+from ..get_hash import get_hash
+
+empty_checksums = {get_hash(json.dumps(v)+"\n",hex=True) for v in ("", {}, [])}
+
 def is_dummy_mount(mount):
     if mount is None:
         return True
@@ -84,6 +88,9 @@ class MountItem:
             return
         exists = self._exists()
         cell_empty = (cell.checksum is None)
+        if not cell_empty:
+            if cell.checksum in empty_checksums:
+                cell_empty = True
         if self.authority in ("file", "file-strict"):
             if exists:
                 with self.lock:
