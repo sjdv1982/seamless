@@ -220,7 +220,7 @@ class Context:
         self._auto_register_library = True
         self._do_translate(force=True)
 
-    def mount(self, path=None, mode="rw", authority="cell", persistent=False):
+    def mount(self, path=None, mode="rw", authority="cell", persistent=None):
         assert not self._dummy
         if self._parent() is not self:
             raise NotImplementedError

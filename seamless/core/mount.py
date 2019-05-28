@@ -130,6 +130,7 @@ class MountItem:
                         self._after_write(checksum)
  
     def set(self, file_buffer, checksum):
+        from .cell import PlainCell
         if self._destroyed:
             return
         cell = self.cell()
@@ -140,6 +141,17 @@ class MountItem:
             cell._mount_setter(file_buffer, checksum)
             cell._get_manager().cell_send_update(cell, False, None)
         else:
+            if isinstance(cell, PlainCell):
+                try:
+                    c = cson2json(file_buffer)
+                    j1 = json.dumps(c, sort_keys=True, indent=2) + "\n"
+                    file_buffer = j1
+                    old_checksum = checksum
+                    checksum = get_hash(j1)
+                    if checksum != old_checksum and "w" in self.mode:
+                        self._write(file_buffer)
+                except:
+                    buffer_checksum = self._get_file_checksum(file_buffer, cell, try_cson=False)
             cell._set(file_buffer, from_buffer=True, buffer_checksum=checksum)
 
     @property
@@ -257,13 +269,17 @@ class MountItem:
         _, _, buffer = manager.value_cache.get_buffer(checksum)
         return checksum, buffer
 
-    def _get_file_checksum(self, file_buffer, cell):
-        _, file_checksum, _, _, _ = deserialize(
-            cell._celltype, cell._subcelltype, cell.path,
-            file_buffer, from_buffer=True, buffer_checksum=None,
-            source_access_mode=None,
-            source_content_type=None
-        )
+    def _get_file_checksum(self, file_buffer, cell, try_cson=True):
+        from .cell import PlainCell
+        if isinstance(cell, PlainCell) and try_cson:
+            file_checksum = get_hash(file_buffer) # placeholder
+        else:    
+            _, file_checksum, _, _, _ = deserialize(
+                cell._celltype, cell._subcelltype, cell.path,
+                file_buffer, from_buffer=True, buffer_checksum=None,
+                source_access_mode=None,
+                source_content_type=None
+            )
         return file_checksum
 
     def destroy(self):
@@ -858,3 +874,4 @@ def get_extension(c):
     return ""
 
 from .link import Link
+from .protocol import cson2json

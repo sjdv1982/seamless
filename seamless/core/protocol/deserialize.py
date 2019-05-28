@@ -109,7 +109,7 @@ def deserialize_plain(
             obj = b
     else:
         obj = value
-        buffer = json.dumps(value) + "\n"
+        buffer = json.dumps(value,indent=2, sort_keys=True) + "\n"
     
     if buffer_checksum is None:
         buffer_checksum = get_hash(buffer)
@@ -186,7 +186,7 @@ def deserialize_cson(
         pass
     elif source_access_mode == "plain":
         if from_buffer:
-            value = json.dumps(value)
+            value = json.dumps(value,indent=2, sort_keys=True)
     else:
         raise TypeError(source_access_mode)
         
@@ -194,7 +194,7 @@ def deserialize_cson(
         value = value.decode()
     value = str(value)
     plainvalue = cson2json(value)
-    plainbuffer = json.dumps(plainvalue).rstrip("\n") + "\n"
+    plainbuffer = json.dumps(plainvalue,indent=2, sort_keys=True).rstrip("\n") + "\n"
     buffer = value.rstrip("\n") + "\n"
 
     if buffer_checksum is None:

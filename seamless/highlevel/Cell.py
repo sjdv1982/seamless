@@ -105,7 +105,7 @@ class Cell(Base):
         readonly = not test_lib_lowlevel(parent, self._get_cell())
         return SubCell(self._parent(), self, (attr,), readonly=readonly)
 
-    def mount(self, path=None, mode="rw", authority="cell", persistent=False):
+    def mount(self, path=None, mode="rw", authority="cell", persistent=True):
         assert self.celltype != "structured"
         hcell = self._get_hcell()
         if path is None:

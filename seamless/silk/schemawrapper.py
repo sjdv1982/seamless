@@ -1,6 +1,7 @@
 import weakref
 from pprint import pformat
-from copy import deepcopy
+from copy import copy, deepcopy
+import inspect
 
 from .. import Wrapper
 class SchemaWrapper(Wrapper):
@@ -61,6 +62,67 @@ class SchemaWrapper(Wrapper):
             self._update_hook()
         return result
 
+    def _add_validator(self, func, attr, *, from_meta, name):
+        assert callable(func)
+        code = inspect.getsource(func)
+
+        schema = self._dict
+        parent = self._parent()
+
+        validators = schema.get("validators", None)
+        if validators is None:
+            l = 1
+        else:
+            l = len(validators) + 1
+        v = {"code": code, "language": "python"}
+        func_name = "Silk validator %d" % l
+        if name is not None:
+            v["name"] = name
+            func_name = name
+        compile_function(v, func_name)
+
+        if isinstance(attr, int):
+            items_schema = schema.get("items", None)
+            if items_schema is None:
+                #TODO: check for uniform/pluriform
+                items_schema = {}
+                schema["items"] = items_schema
+            schema = items_schema
+        elif isinstance(attr, str):
+            prop_schema = schema.get("properties", None)
+            if prop_schema is None:
+                prop_schema = init_object_schema(self, schema)
+            attr_schema = prop_schema.get(attr, None)
+            if attr_schema is None:
+                attr_schema = {}
+                prop_schema[attr] = attr_schema
+            schema = attr_schema
+        if validators is None:
+            validators = []
+            schema["validators"] = validators
+        if name is not None:
+            validators[:] = [v for v in validators if v.get("name") != name]
+        validators.append(v)
+        if parent is not None and parent._schema_update_hook is not None:
+            parent._schema_update_hook()
+
+    def add_validator(self, func, attr=None, *, name=None):
+        schema = self._dict
+        old_validators = copy(schema.get("validators", None))
+        ok = False
+        parent = self._parent()
+        try:
+            self._add_validator(func, attr, from_meta=False,name=name)
+            if parent is not None:
+                parent.validate(full = False)
+            ok = True
+        finally:
+            if not ok:
+                schema.pop("validators", None)
+                if old_validators is not None:
+                    schema["validators"] = old_validators
+
+
     def __delattr__(self, attribute):
         self.pop(attribute)
 
@@ -83,7 +145,7 @@ class SchemaWrapper(Wrapper):
     def __getattribute__(self, attribute):
         if attribute == "dict": #TODO: property with docstring
             return super().__getattribute__("_dict")
-        if attribute in ("pop", "copy", "update"):
+        if attribute in ("pop", "copy", "update", "add_validator"):
             return super().__getattribute__(attribute)
         if isinstance(attribute, str) and attribute.startswith("_"):
             return super().__getattribute__(attribute)
@@ -97,3 +159,5 @@ class SchemaWrapper(Wrapper):
 
     def __str__(self):
         return pformat(self._dict)
+
+from .SilkBase import compile_function

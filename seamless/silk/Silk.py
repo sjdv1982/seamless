@@ -655,61 +655,8 @@ class Silk(SilkBase):
         if self._schema_update_hook is not None:
             self._schema_update_hook()
 
-    def _add_validator(self, func, attr, *, from_meta, name):
-        assert callable(func)
-        code = inspect.getsource(func)
-
-        schema = self._schema
-        validators = schema.get("validators", None)
-        if validators is None:
-            l = 1
-        else:
-            l = len(validators) + 1
-        v = {"code": code, "language": "python"}
-        func_name = "Silk validator %d" % l
-        if name is not None:
-            v["name"] = name
-            func_name = name
-        compile_function(v, func_name)
-
-        if isinstance(attr, int):
-            items_schema = schema.get("items", None)
-            if items_schema is None:
-                #TODO: check for uniform/pluriform
-                items_schema = {}
-                schema["items"] = items_schema
-            schema = items_schema
-        elif isinstance(attr, str):
-            prop_schema = schema.get("properties", None)
-            if prop_schema is None:
-                prop_schema = init_object_schema(self, schema)
-            attr_schema = prop_schema.get(attr, None)
-            if attr_schema is None:
-                attr_schema = {}
-                prop_schema[attr] = attr_schema
-            schema = attr_schema
-        if validators is None:
-            validators = []
-            schema["validators"] = validators
-        if name is not None:
-            validators[:] = [v for v in validators if v.get("name") != name]
-        validators.append(v)
-        if self._schema_update_hook is not None:
-            self._schema_update_hook()
-
     def add_validator(self, func, attr=None, *, name=None):
-        schema = self._schema
-        old_validators = copy(schema.get("validators", None))
-        ok = False
-        try:
-            self._add_validator(func, attr, from_meta=False,name=name)
-            self.validate(full = False)
-            ok = True
-        finally:
-            if not ok:
-                schema.pop("validators", None)
-                if old_validators is not None:
-                    schema["validators"] = old_validators
+        return self.schema.add_validator(func, attr=attr, name=name)
 
     #***************************************************
     #*  methods for getting
