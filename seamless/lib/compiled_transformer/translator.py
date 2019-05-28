@@ -11,6 +11,7 @@ except ImportError:
 ffi = module.ffi
 
 ARRAYS = [] #a list of Numpy arrays whose references must be kept alive
+FFI_OBJS = [] #a list of FFI objects whose references must be kept alive
 
 def get_dtype(type, unsigned, bytesize): #adapted from _form_to_dtype_scalar
     if type == "string":
@@ -71,8 +72,9 @@ def build_result_array_struct(name, schema):
     return array_struct
 
 def build_result_struct(schema):
+    global result_struct
     result_struct_name = gen_struct_name(result_name)
-    result_struct = ffi.new(result_struct_name + " *")
+    result_struct = ffi.new(result_struct_name+" *")
     props = schema["properties"]
     for propname, propschema in props.items():
         proptype = propschema["type"]
@@ -81,7 +83,8 @@ def build_result_struct(schema):
         elif proptype == "array":
             full_propname = (result_name, propname)
             form = propschema.get("form", {})
-            result_array_struct = build_result_array_struct(full_propname, propschema)
+            result_array_struct = build_result_array_struct(full_propname, propschema)            
+            FFI_OBJS.append(result_array_struct)
             setattr(result_struct, propname, result_array_struct)
         else:
             pass
@@ -120,8 +123,8 @@ def unpack_result_struct(result_struct, schema):
         if proptype == "object":
             raise NotImplementedError #nested result struct
         elif proptype == "array":
-            array_struct = getattr(result_struct, propname)
-            result_dict[propname] = unpack_result_array_struct(array_struct, propschema)
+            result_array_struct = getattr(result_struct, propname)
+            result_dict[propname] = unpack_result_array_struct(result_array_struct, propschema)
         else:
             result_dict[propname] = getattr(result_struct, propname)
     return result_dict
