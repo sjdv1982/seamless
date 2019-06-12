@@ -20,7 +20,7 @@ Intermezzo: documentation
 - Make a simple Galaxy-XML-to-Seamless translator
 - Make a simple Mobyle-XML-to-Seamless translator
 - Make a simple SnakeMake transformer (on top of Docker transformer;
-  deeper transformation would require slash and/or macros)
+  deeper transformation would require macros)
   
 
 Seamless is now usable by me, to port RPBS/Galaxy services
@@ -216,9 +216,6 @@ Lack of documentation still a big issue.
          - the value of all three code cells stays the same
     In that case, the regeneration of the reactor essentially becomes an update() event  
 
-- Bring back slash0. Probably eliminate a lot of features, but the macro principle is good. This allows
-  new pins to be declared at the slash0 unrelated to the call graph, thus avoiding retranslation and
-  supporting caching.
 
 Intermezzo:
   - Fully port over 0.1 lib: from .py files to Seamless library context files
@@ -247,13 +244,11 @@ Part 5:
    as does demanding their value from Python.
   Reactors and transformers can also be marked as pure (the high-level makes transformers pure by default).
   In both cases, all output pins are public.
-  However, an ephemeral output prevents a worker from being pure. Pure contexts can't have ephemeral public outputs, either.
   If they maintain their purity, a pure object is an independent caching unit. A hit in the
   computation checksum server will avoid the pure object to be (re-)translated at all.
   Also for the purpose of low-level caching, pure objects are a single dependency unit (a "virtual transformer"),
    so the low-level must be informed.  
-  UPDATE: better to consider everything as pure by default, unless a cell is marked as ephemeral and is connected
-  to/from the outside directly.
+  UPDATE: everything is pure now
 
 - Build upon services proof-of-principle (cloudless) MOSTLY DONE
 - HMTL gen from schema
@@ -274,7 +269,7 @@ Part 6:
   - Special constructs (see below)
   - Set virtual filenames for (non-compiled) transformers. See tests/highlevel/python-debugging.py
     Maybe integrate with gdbgui
-  - Signals (will always be ephemeral) UPDATE: rip them, or rather, make them a special case of plugin-socket (see below). Probably delay this until long-term
+  - Signals. UPDATE: make them a special case of plugin-socket (see below). Probably delay this until long-term
 
 Intermezzo:
 Do a bit of code cleanup
@@ -293,17 +288,6 @@ Part 7:
 - The high level should store all permanent state in the graph nodes,
     nothing in the class instances. This way, the user can add their own syntax
     to manipulate the graph. (highlevel.ctx.\_children should go as well).
-- Auxiliary, ephemeral and execution cells (see below)
-  apply ephemeral cells to slash0
-  Expand and document seamless shell language (slash)
-  Make a slash reproducable mode, where every file is pulled from the file system in advance.
-  However, POSIX commands are whitelisted (exempt).
-  Other files may be whitelisted, leading to explicit dependency registration.
-  The "compiled" slash graph should not access the file system at all
-  (One cannot forbid the code cells and pulled command lines to do so, but they aren't supposed to).    
- Fix it with seamless.compiler which uses RLocks, need to be multiprocess!
-   (transformers can compile!)
- - Silk: make add_validator a schema method!
 - Start with report channels that catch error messages, cache hits/misses etc.
    Gradually make Seamless such that it never crashes, but reports everything
    Kernels should be killable from shell (deactivates manager too)
@@ -675,22 +659,12 @@ Macros always ignore temporary results. Reactors and workers can be configured
  to accept them or not.
 
 
-Auxiliary, ephemeral and execution cells
+Execution cells
 ========================================
 Execution cells are cells that contain only execution details and do not influence the result.
   Examples: number of CPUs, temp directory where to execute slash in, caching locations
-Ephemeral cells are the same, but they indicate some hidden dependency.
-  Examples: session ID, temporary file name, file with pointers in it (ATTRACT grid header)
-  A reactor may have an editpin to an ephemeral cell, used for caching.
-  Reactors with an ephemeral editpin are never pure. But it is assumed that as long as the
-   reactor is not shut down, the ephemeral output is accurate.
-Ephemeral cells are not authoritative and are not stored.
-Changes in execution cells or ephemeral cells do not trigger re-computation, but the reactor
+Changes in execution cells do not trigger re-computation, but a reactor
  will receive the new value once something else triggers re-computation.
-Ephemeral/Status/Report/Evaluation cells can be "cast" to normal cells (with authority).
-Any cell or worker that depends on such a cast cell is considered auxiliary. Reactors that have no
- outputpin are also auxiliary. Auxiliary workers are by definition editors/loggers/visualizers
-that do not influence the result. Auxiliary cells/workers are stripped from a high-level graph before its grand computational checksum is computed.
 
 
 Reactor start and stop side effects

@@ -12,7 +12,6 @@ Easier to work with:
 - Better control of execution details (execution options, non-deterministic input pins, ephemeral cells, reactor start/stop side effects) [one week for initial implementation]
 - Shells, or workers-as-Jupyter-kernels [a few days]
 Big Data: deep cells [a few days], full streams (reduction, multi-inputs) [a few days]
-Slash [a few days for reintegration]
 GPU support: block cells [a week]
 
 Long-term features:

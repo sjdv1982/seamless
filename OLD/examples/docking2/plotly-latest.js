@@ -1,1 +1,0 @@
-../docking/plotly-latest.js
