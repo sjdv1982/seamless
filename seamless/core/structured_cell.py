@@ -247,6 +247,9 @@ class StructuredCell(SeamlessBase):
     def _set_observer(self, observer, trigger=True):
         self.data._set_observer(observer, trigger)
 
+    def _add_traitlet(self, traitlet, trigger=True):
+        self.data._add_traitlet(traitlet)
+
     def _set_context(self, context, name):
         from .manager import Manager
         from .unbound_context import UnboundContext, UnboundManager

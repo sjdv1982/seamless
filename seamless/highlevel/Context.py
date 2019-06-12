@@ -21,73 +21,7 @@ from .depsgraph import DepsGraph
 Graph = namedtuple("Graph", ("nodes", "connections", "params"))
 
 shareserver = None
-SeamlessTraitlet = None
-try:
-    import traitlets
-    class SeamlessTraitlet(traitlets.HasTraits):
-        value = traitlets.Instance(object)
-        _updating = False
-        path = None
-        subpath = None
-        parent = None
-        def _connect(self):
-            from ..core import StructuredCell, Cell as core_cell
-            hcell = self.parent()._children[self.path]
-            if not isinstance(hcell, Cell):
-                raise NotImplementedError(type(hcell))
-            cell = hcell._get_cell()
-            ccell = None
-            if isinstance(cell, StructuredCell):
-                subpath = self.subpath
-                if subpath is not None:
-                    subpath = ()
-                if subpath in cell.inchannels:
-                    raise NotImplementedError
-                    ccell = cell.inchannels[subpath]
-                elif subpath in cell.outchannels:
-                    if subpath == (): ###
-                        ccell = cell
-                    raise NotImplementedError
-                    #ccell = cell.outchannels[subpath]
-                else:
-                    ccell = cell
-            elif isinstance(cell, core_cell):
-                assert self.subpath is None
-                ccell = cell
-            else:
-                raise TypeError(cell)
-            if ccell is not None:
-                raise NotImplementedError  ### cache branch
-                print("traitlet %s:%s, observing" % (self.path, self.subpath))
-                ###ccell._set_observer(self.receive_update)
 
-        def receive_update(self, value):
-            #print("Traitlet RECEIVE UPDATE", self.path, self.subpath, value)
-            self._updating = True
-            old_value = self.value
-            self.value = value
-            # For some mysterious reason, traitlets observers are not notified...
-            self._notify_trait("value", old_value, value)
-            self._updating = False
-
-        @traitlets.observe('value')
-        def _value_changed(self, change):
-            if self.parent is None:
-                return
-            #print("Traitlet DETECT VALUE CHANGE", self.path, self.subpath, change, self._updating)
-            if self._updating:
-                return
-            value = change["new"]
-            hcell = self.parent()._children[self.path]
-            handle = hcell
-            if self.subpath is not None:
-                for p in self.subpath:
-                    handle = getattr(handle, p)
-            handle.set(value)
-
-
-except ImportError:
-    pass
 
 class Context:
     path = ()
@@ -200,11 +134,8 @@ class Context:
         self._destroy_path((attr,))
 
     def _add_traitlet(self, path, subpath, fresh):
+        from .SeamlessTraitlet import SeamlessTraitlet
         traitlet = self._traitlets.get((path, subpath))
-        if traitlet is not None and not fresh:
-            return traitlet
-        if SeamlessTraitlet is None:
-            raise ImportError("cannot find traitlets module")
         traitlet = SeamlessTraitlet(value=None)
         traitlet.parent = weakref.ref(self)
         traitlet.path = path

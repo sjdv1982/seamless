@@ -616,9 +616,11 @@ class Manager:
         return accessor.to_expression(checksum)
 
 
-    def get_default_accessor(self, cell):
-        from .cell import Cell
-        if not isinstance(cell, Cell):
+    def get_default_accessor(self, cell=None):
+        from .cell import Cell, MixedCell
+        if cell is None:
+            cell = MixedCell
+        elif not isinstance(cell, Cell):
             raise TypeError(cell)
         default_accessor = Accessor()
         default_accessor.celltype = cell._celltype
@@ -1636,9 +1638,11 @@ class Manager:
                 share_callback()
             if buffer_known and not is_dummy_mount(cell._mount):
                 if not get_macro_mode():
-                    self.mountmanager.add_cell_update(cell)
+                    self.mountmanager.add_cell_update(cell)            
             if cell._observer is not None:
                 cell._observer(checksum.hex())
+            for traitlet in cell._traitlets:
+                traitlet.receive_update(checksum.hex())
             #if not hasattr(cell, "_monitor") or cell._monitor is None:
             self._update_status(
                 cell, (checksum is not None), 
@@ -1695,6 +1699,8 @@ class Manager:
                     self.mountmanager.add_cell_update(cell)
             if cell._observer is not None:
                 cell._observer(checksum.hex())
+            for traitlet in cell._traitlets:
+                traitlet.receive_update(checksum.hex())
             self._update_status(
               cell, (checksum is not None), 
               cell_subpath=subpath, has_auth=has_auth, origin=origin

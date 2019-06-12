@@ -45,6 +45,7 @@ Use ``Cell.status()`` to get its status.
     """
     _sovereign = False
     _observer = None
+    _traitlets = None
     _share_callback = None
 
     def __init__(self):
@@ -53,6 +54,7 @@ Use ``Cell.status()`` to get its status.
         cell_counter += 1
         self._counter = cell_counter
         self._paths = WeakSet()
+        self._traitlets = []
 
     def _set_context(self, ctx, name):
         super()._set_context(ctx, name)
@@ -258,6 +260,14 @@ Use ``Cell.status()`` to get its status.
         self._mount.update(self._mount_kwargs)
         MountItem(None, self, dummy=True, **self._mount) #to validate parameters        
         return self
+
+    def _add_traitlet(self, traitlet, trigger=True):
+        from ..highlevel.SeamlessTraitlet import SeamlessTraitlet
+        assert isinstance(traitlet, SeamlessTraitlet)
+        self._traitlets.append(traitlet)
+        if trigger and self.checksum is not None:
+            traitlet.receive_update(self.checksum)
+
 
     def _set_observer(self, observer, trigger=True):
         self._observer = observer

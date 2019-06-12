@@ -70,6 +70,8 @@ def calc_buffer(value):
         return get_hash(data + b"\n"), data
     else:
         stream = to_stream(value, storage, form)
+        if isinstance(stream, bytearray):
+            stream = bytes(stream)
         return get_hash(stream), stream
 
 def evaluate_from_buffer(expression, buffer):

@@ -37,6 +37,7 @@ def deserialize(data):
     if pure_plain or pure_binary:        
         mode = "pure-plain" if pure_plain else "pure-binary"
         if pure_plain and not isinstance(data, str):
+            assert not data.startswith(MAGIC_SEAMLESS) #TODO: cache seems to have stored stream instead of mixed stream...
             data = data.decode()
         value = from_stream(data, mode, None)
         _, form = get_form(value)
