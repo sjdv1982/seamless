@@ -33,11 +33,13 @@ class Accessor:
         "content_type",
         "source_access_mode", # optional
         "source_content_type", # optional
+        "last_buffer_checksum", # optional
     ]
     def __init__(self):
         self.subpath = None
         self.source_access_mode = None
         self.source_content_type = None
+        self.last_buffer_checksum = None
 
     def to_expression(self, buffer_checksum):
         expression = Expression()
@@ -49,6 +51,7 @@ class Accessor:
         expression.content_type = self.content_type
         expression.source_access_mode = self.source_access_mode
         expression.source_content_type = self.source_content_type
+        self.last_buffer_checksum = buffer_checksum
         return expression
     
     def __str__(self):

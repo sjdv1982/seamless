@@ -99,7 +99,7 @@ class Manager:
                              # type = "reactor", schedop = (Reactor object, pin name, expression)
         self._temp_tf_level1 = {}
         self.cell_to_cell = [] # list of (source-accessor-or-pathtuple, target-accessor-or-pathtuple); pathtuples are (Path, subpath)
-
+        self._processed_accessors = {} # to prevent cycles in propagation
     """
     def _set_cache(self, manager):
         assert isinstance(manager, Manager)
@@ -708,7 +708,8 @@ class Manager:
             self._temp_tf_level1[transformer] = None
 
     def _resolve_propagations(self, propagations):
-        curr_propagations = propagations
+        curr_propagations = propagations    
+        self._processed_accessors.clear()    
         while len(curr_propagations):
             new_propagations = []
             for propagation in curr_propagations:
@@ -723,7 +724,7 @@ class Manager:
 
     def _propagate_status(self, cell, data_status, auth_status, full, *, cell_subpath, origin=None):
         # "full" indicates a value change, but it is just propagated to update_worker
-        # print("propagate status", cell, cell_subpath, data_status, auth_status, full)
+        # print("propagate status", cell, cell_subpath, data_status, auth_status, full)        
         propagations = []
         from .reactor import Reactor
         from .macro import Path
@@ -1343,9 +1344,16 @@ class Manager:
         assert target.source_access_mode is None
         assert target.source_content_type is None
         same = True
+        hsource = hash(source)
+        if hsource in self._processed_accessors:
+            return
+        self._processed_accessors[hsource] = source
         if source.cell._destroyed or target.cell._destroyed: return ### TODO, shouldn't happen...
         checksum = self.cell_cache.cell_to_buffer_checksums.get(source.cell) # TODO in case of cache tree depth
         if checksum is None and only_if_defined:
+            return
+        last_checksum = source.last_buffer_checksum
+        if checksum is not None and checksum == last_checksum:
             return
         """            
         for attr in ("celltype", "storage_type", "access_mode", "content_type"):
@@ -1624,7 +1632,22 @@ class Manager:
             raise TypeError(worker)
         self.schedule_jobs()
 
-    def _update_status(self, cell, defined, *, has_auth, origin, cell_subpath):
+    def _update_status(self, cell, defined, *, 
+      has_auth, origin, cell_subpath, delay=False
+    ):
+        if delay:
+            work = partial(self._update_status,
+                cell, defined, 
+                has_auth=has_auth,
+                origin=origin,
+                cell_subpath=cell_subpath,
+                delay=False
+            )
+            self.workqueue.append(work)
+            return
+
+        if cell._destroyed:
+            return
         status = self.status[cell][cell_subpath]
         old_data_status = status.data
         old_auth_status = status.auth        

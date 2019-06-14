@@ -472,7 +472,7 @@ class CellBackend(Backend):
             manager._update_status(
                 self._cell, authstatus, 
                 has_auth=has_auth, origin=None,
-                cell_subpath=path
+                cell_subpath=path, delay=True
             )
             
         self._modified_paths.clear()
