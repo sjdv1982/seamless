@@ -22,6 +22,9 @@ default_pin = {
 def new_transformer(ctx, path, code, parameters):
     if parameters is None:
         parameters = []
+    for param in parameters:
+        if param == "inp":
+            print("WARNING: parameter 'inp' for a transformer is NOT recommended (shadows the .inp attribute)")
     transformer =    {
         "path": path,
         "type": "transformer",

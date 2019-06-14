@@ -38,6 +38,7 @@ import copy
 import time
 import itertools
 import asyncio
+from functools import partial
 from collections import namedtuple
 from collections import OrderedDict
 from weakref import WeakKeyDictionary
@@ -51,7 +52,7 @@ def main_thread_buffered(func):
         func(self, *args, **kwargs)
     def main_thread_buffered_wrapper(self, *args, **kwargs):
         if threading.current_thread() != threading.main_thread():
-            work = functools.partial(not_destroyed_wrapper,
+            work = partial(not_destroyed_wrapper,
               self, func, *args, **kwargs
             )
             self.workqueue.append(work)
@@ -338,6 +339,7 @@ class Manager:
         if level2 is not None:
             hlevel2 = level2.get_hash()
         transformers = []
+        propagations = []
         for tf, tf_level1 in list(tcache.transformer_to_level1.items()): #could be more efficient...
             htflevel1 = tf_level1.get_hash()
             if htflevel1 != hlevel1:
@@ -376,7 +378,7 @@ class Manager:
                 tstatus.auth = "FRESH"
             self.unstable.discard(tf)
             for cell, subpath in tcache.transformer_to_cells[tf]:
-                self._propagate_status(
+                propagations += self._propagate_status(
                   cell,"UPSTREAM_ERROR", auth_status, 
                   cell_subpath=subpath, full=False
                 )
@@ -389,6 +391,7 @@ class Manager:
         msg = "Exception in %s%s:\n" % (transformer[0], kstr) + exc
         stars = "*" * 60 + "\n"
         print(stars + msg + stars, file=sys.stderr)
+        self._resolve_propagations(propagations)
 
 
     def set_transformer_undefined(self, level1):
@@ -704,9 +707,24 @@ class Manager:
             self.scheduled.append(("transformer", old_level1, False, None))
             self._temp_tf_level1[transformer] = None
 
+    def _resolve_propagations(self, propagations):
+        curr_propagations = propagations
+        while len(curr_propagations):
+            new_propagations = []
+            for propagation in curr_propagations:
+                assert callable(propagation), propagation
+                result = propagation()
+                if result is None:
+                    continue
+                if not isinstance(result, list):
+                    raise Exception(propagation, result)
+                new_propagations += result
+            curr_propagations = new_propagations
+
     def _propagate_status(self, cell, data_status, auth_status, full, *, cell_subpath, origin=None):
         # "full" indicates a value change, but it is just propagated to update_worker
         # print("propagate status", cell, cell_subpath, data_status, auth_status, full)
+        propagations = []
         from .reactor import Reactor
         from .macro import Path
         if isinstance(cell, Path):
@@ -761,10 +779,11 @@ class Manager:
                             if accessor2.cell is cell:
                                 rtreactor.updated.add(pinname)
                     self.update_worker_status(worker, full)
-            self.update_cell_to_cells(
+            propagation = partial(self.update_cell_to_cells,
               cell, data_status, auth_status, 
               full=full, origin=origin,subpath=cell_subpath
             )
+            propagations.append(propagation)
             if full:
                 upstream = None
                 upstream0 = self.cell_cache.cell_from_upstream.get(cell)
@@ -778,7 +797,11 @@ class Manager:
                             continue
                         rtreactor = self.reactors[reactor]
                         rtreactor.updated.add(editpin.name)
-                        self.update_reactor_status(reactor, full=True)
+                        propagation = partial(
+                            self.update_reactor_status, reactor, full=True
+                        )
+                        propagations.append(propagation)
+        return propagations
 
     def update_transformer_status(self, transformer, full, new_connection=False):
         if transformer._destroyed: return ### TODO, shouldn't happen...
@@ -852,20 +875,21 @@ class Manager:
                 self.unstable.remove(transformer)
             if old_status.exec != "BLOCKED":
                 self._unschedule_transformer(transformer)
+        propagations = []
         if propagate_data or propagate_auth or new_connection:
             data_status = new_status.data if propagate_data else None
             auth_status = new_status.auth if propagate_auth else None
             if new_connection and new_status.data == "OK":
                 if str(new_status.exec) in ("PENDING", "READY", "EXECUTING"):
-                    data_status = "PENDING"
+                    data_status = "PENDING"            
             for cell, subpath in target_cells:                
-                self._propagate_status(cell, data_status, auth_status, 
+                propagations += self._propagate_status(cell, data_status, auth_status, 
                   full=False, cell_subpath=subpath
                 )
             if backup_auth is not None:
                 new_status.auth = backup_auth
             #print("UPDATE", transformer, old_status, "=>", new_status)
-
+        self._resolve_propagations(propagations)
 
     def update_reactor_status(self, reactor, full):
         if reactor._destroyed: return ### TODO, shouldn't happen...
@@ -875,6 +899,7 @@ class Manager:
         new_status = Status("reactor")
         new_status.data, new_status.exec, new_status.auth = "OK", "FINISHED", "FRESH"
         updated_pins = []
+        propagations = []
         for pinname, pin in reactor._pins.items():
             if pin.io in ("output", "edit"):
                 continue
@@ -916,8 +941,8 @@ class Manager:
                     if pin.io != "output":
                         continue
                     for cell, subpath in rtreactor.output_dict[pinname]:
-                        self._propagate_status(cell, data_status, auth_status, full=False, cell_subpath=subpath)
-
+                        propagations += self._propagate_status(cell, data_status, auth_status, full=False, cell_subpath=subpath)
+        self._resolve_propagations(propagations)
 
     def update_macro_status(self, macro):
         if macro._destroyed: return ### TODO, shouldn't happen...
@@ -1434,6 +1459,7 @@ class Manager:
 
     def update_cell_to_cells(self, cell, data_status, auth_status, *, subpath, full, origin):
         # Slow! needs to be improved (TODO)
+        propagations = []
         from .macro import Path  
         for source, target in self.cell_to_cell:
             if isinstance(source, tuple):
@@ -1463,12 +1489,14 @@ class Manager:
                 tcell = target.cell
             assert tcell is not cell, (source, target, source.cell, cell)
             if full:                             
-                self.update_accessor_accessor(source, target_accessor)
+                propagation = partial(self.update_accessor_accessor, source, target_accessor)
+                propagations.append(propagation)
             else:
-                self._propagate_status(
+                propagations += self._propagate_status(
                   tcell, data_status, auth_status, 
                   full=False, cell_subpath=subpath
-                )
+                )            
+        self._resolve_propagations(propagations)
 
     def connect_cell(self, cell, other, cell_subpath):
         #print("connect_cell", cell, other, cell_subpath)
@@ -1608,10 +1636,11 @@ class Manager:
             status.auth = "OVERRULED"
         new_data_status = status.data if status.data != old_data_status else None
         new_auth_status = status.auth if status.auth != old_auth_status else None
-        self._propagate_status(
+        propagations = self._propagate_status(
             cell, new_data_status, new_auth_status, 
             full=True, origin=origin, cell_subpath=cell_subpath
         )
+        self._resolve_propagations(propagations)
         self.schedule_jobs()
 
     @main_thread_buffered

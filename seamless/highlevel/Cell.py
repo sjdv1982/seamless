@@ -78,10 +78,13 @@ class Cell(Base):
         raise NotImplementedError
 
     def __getitem__(self, item):
-        if isinstance(item, int):
-            raise NotImplementedError  # TODO: x[int] outchannels
-        if isinstance(item, str):
-            raise NotImplementedError  # TODO: x[attr] as alternative for x.attr
+        if isinstance(item, (int, str)):
+            hcell = self._get_hcell()
+            if not hcell["celltype"] == "structured":
+                raise AttributeError(item)
+            parent = self._parent()
+            readonly = not test_lib_lowlevel(parent, self._get_cell())
+            return SubCell(self._parent(), self, (item,), readonly=readonly)
         elif isinstance(item, slice):
             raise NotImplementedError  # TODO: x[min:max] outchannels
         else:
@@ -136,6 +139,22 @@ class Cell(Base):
             if hcell["path"] in parent._as_lib.partial_authority:
                 parent._as_lib.needs_update = True
         parent._translate()
+
+    def __setitem__(self, item, value):
+        if item in ("value", "schema"):
+            raise NotImplementedError # TODO: might work on shadowed inchannels, but probably need to adapt assign_to_subcell
+        if isinstance(item, str) and item.startswith("_"):
+            raise NotImplementedError # TODO: might work on shadowed inchannels, but need to adapt __setattr__
+
+        if isinstance(item, str):
+            return setattr(self, item, value)
+        elif isinstance(item, int):
+            raise NotImplementedError # TODO: should work, but need to adapt __setattr__
+        elif isinstance(item, slice):
+            raise NotImplementedError  # TODO: x[min:max] inchannels
+        else:
+            raise TypeError(item)
+
 
     def traitlet(self, fresh=False):
         return self._parent()._add_traitlet(self._path, None, fresh)
