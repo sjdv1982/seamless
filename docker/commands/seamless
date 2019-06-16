@@ -5,6 +5,7 @@ set -u -e
 # - /tmp is mounted as well
 # - Seamless has access to the Docker daemon, so it can launch its own Docker
 #    containers via the Docker transformer. This works only under Linux.
+#    NOTE: THIS IS A BIG SECURITY HOLE, IT CAN GIVE ROOT ACCESS TO YOUR SYSTEM
 
 # NOTE: it is recommended to run python scripts with 'python -u#
 
