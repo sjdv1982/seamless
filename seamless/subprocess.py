@@ -57,6 +57,7 @@ def run(*popenargs,
         stderr = b''.join(stderr)
         retcode = process.poll()
         if check and retcode:
+            print(stderr)
             raise CalledProcessError(retcode, process.args,
                                      output=stdout, stderr=stderr)
     return CompletedProcess(process.args, retcode, stdout, stderr)

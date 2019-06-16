@@ -13,14 +13,17 @@ env = os.environ.copy()
 
 def read_data(data):
     try:
-        bdata = BytesIO(data)
-        return np.load(bdata)
+        npdata = BytesIO(data)
+        return np.load(npdata)
     except (ValueError, OSError):
         try:
-            bdata = data.decode()
-            return json.loads(bdata)
+            try:
+                sdata = data.decode()
+            except:
+                return np.frombuffer(data, dtype=np.uint8)
+            return json.loads(sdata)
         except ValueError:
-            return bdata
+            return sdata
 
 old_cwd = os.getcwd()
 try:
@@ -42,9 +45,14 @@ try:
                 vv = json.dumps(v)
             with open(pin, "w") as pinf:
                 pinf.write(vv)
-        else:
-            with open(pin, "bw") as pinf:
-                np.save(pinf,vv,allow_pickle=False)
+        else: 
+            if v.dtype == np.uint8 and v.ndim == 1:
+                vv = v.tobytes()
+                with open(pin, "bw") as pinf:
+                    pinf.write(vv)
+            else:           
+                with open(pin, "bw") as pinf:
+                    np.save(pinf,v,allow_pickle=False)
     process = subprocess.run(
       bashcode, capture_output=True, shell=True, check=True,
       env=env

@@ -444,16 +444,35 @@ class SubContext(Base):
     def __getattr__(self, attr):
         if attr.startswith("_"):
             raise AttributeError(attr)
-        parent = self._parent()
+        parent = self._get_top_parent()
         path = self._path + (attr,)
         return parent._get_path(path)
 
     def __setattr__(self, attr, value):
         if attr.startswith("_"):
             return object.__setattr__(self, attr, value)
-        parent = self._parent()
+        parent = self._get_top_parent()
         path = self._path + (attr,)
-        assign(parent, path, value)
+        if isinstance(value, Reactor):            
+            value._init(parent, path)
+            parent._translate()
+        elif isinstance(value, Transformer):
+            if value._parent is None:
+                parent._graph[0][path] = value
+                parent._children[path] = value
+                value._init(parent, path )
+                parent._translate()
+            else:
+                assign(parent, path, value)
+        else:
+            assign(parent, path, value)
+
+    def _get_top_parent(self):
+        parent = self._parent()
+        if isinstance(parent, Context):
+            return parent
+        else:
+            return parent._get_parent()
 
     def __delattr__(self, attr):
         raise NotImplementedError
@@ -483,6 +502,9 @@ class SubContext(Base):
             return
         self._as_lib.library.touch(self)
 
+    def _translate(self):
+        self._parent()._translate()
+
     def __dir__(self):
         d = [p for p in type(self).__dict__ if not p.startswith("_")]
         l = len(self._path)
@@ -504,4 +526,5 @@ nodeclasses = {
     "cell": Cell,
     "transformer": Transformer,
     "reactor": Reactor,
+    "context": SubContext,
 }
