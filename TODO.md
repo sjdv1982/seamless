@@ -1005,7 +1005,7 @@ This is not always so for inputs and intermediate results. SnakeMake has two mec
  Checkpoint rules are to be used together with input functions. If an input function
  tries to access a checkpoint rule, the input function is halted until the checkpoint
  rule has been evaluated, and then re-triggered. (Note that in all other cases, input functions are evaluated while the DAG is being built, so no special Seamless-side support for input functions is necessary.)
-*Seamless will never, ever support either of these dynamic mechanisms*. However, it may support SnakeMake run-functions  (Python code using the SnakeMake API) within rules, inside a static DAG.
+*Seamless will never, ever support either of these dynamic mechanisms*. 
 If you need dynamic DAGs, you need to do the dynamic part in Seamless, letting it generate a (static-DAG) Snakefile if needed. 
 Example: 
 Snakefile 1 takes a static number of input files to create a single clustering file. Snakefile 1 can be simply wrapped in a Seamless macro that does the same as snakemake2seamless. It requires the target rule / file list, a Snakefile, and optionally and OUTPUTS (see below)
@@ -1021,6 +1021,9 @@ Snakefile 3 generates clusterX.stat and clusterX.log for every cluster X. Snakef
 is static, but has a dynamic number of inputs and outputs. Again, you have the choice
 between generating OUTPUTS or generating the target files.
 In all cases, the macro offers the option to pass either individual "files" in separate input pins, or to pass in a whole filesystem-like JSON, creating a binding for each input "file". The output is always a filesystem-like JSON.
+Long-term improvements:
+- Support SnakeMake run-functions  (Python code using the SnakeMake API) within rules, inside a static DAG.
+- Support for SnakeMake inputs/outputs that are a file list, rather than a single file.
 
 Idris evaluation
 ================
