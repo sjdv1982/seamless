@@ -95,3 +95,7 @@ if get_ipython is not None:
         _register_ipython("seamless", inputhook_terminal)
         ipython_instance.enable_gui("seamless")
 
+from . import pandeval
+from .pandeval.core.computation.eval import eval
+pandeval.eval = eval
+del eval
