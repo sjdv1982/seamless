@@ -6,7 +6,7 @@ from collections import namedtuple
 
 from .redis_client import redis_sinks, redis_caches
 
-NO_EXPIRE_SIZE_LIMIT = 100000 ### TODO: configure this, also per-cell
+NO_EXPIRE_SIZE_LIMIT = 1000000 ### TODO: configure this, also per-cell
 
 class WeakrefableWrapper:
     __slots__ = ["value", "__weakref__"]
