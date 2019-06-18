@@ -1,6 +1,6 @@
 numpy
 cson
-jsonschema
+jsonschema==3.*
 websockets
 requests
 aiohttp
@@ -12,5 +12,5 @@ tornado
 ipykernel
 nest_asyncio
 traitlets
-[-e] git://github.com/sjdv1982/seamless.git#egg=seamless-framework
+#-e git://github.com/sjdv1982/seamless.git#egg=seamless-framework
 

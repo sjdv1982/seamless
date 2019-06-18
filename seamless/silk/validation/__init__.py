@@ -4,7 +4,12 @@ import sys
 import numpy as np
 #from collections.abc import MutableSequence, MutableMapping
 from jsonschema.exceptions import FormatError, ValidationError
-_types = jsonschema.Draft4Validator.DEFAULT_TYPES.copy()
+_types = {
+    u"array": list,
+    u"boolean": bool,
+    u"null": type(None),
+    u"object": dict,
+}
 _integer_types =  (int, np.int8, np.int16, np.int32, np.int64, np.uint8, np.uint16, np.uint32, np.uint64)
 _unsigned_types = (np.uint8, np.uint16, np.uint32, np.uint64)
 _float_types = (float, np.float16, np.float32, np.float64, np.float128)
@@ -84,14 +89,22 @@ def is_numpy_structure_schema(schema):
 
 
 from .validators import *
+from jsonschema import TypeChecker
+def typecheck(checker, instance, types):
+    return isinstance(instance, types)
 
-validator0 = type("validator", (jsonschema.Draft4Validator,), {"DEFAULT_TYPES": _types})
-schema_validator0 = jsonschema.validators.extend(validator0, {
+import functools    
+type_checker = TypeChecker(
+    {k: functools.partial(typecheck,types=v) for k,v in _types.items()}
+)
+schema_validator0 = jsonschema.validators.extend(jsonschema.Draft4Validator, {
     "items": validator_items,
     "form": validator_form,
     "storage": validator_storage,
     "validators": validator_validators
-})
+    },
+    type_checker=type_checker
+)
 class schema_validator(schema_validator0):
     def is_type(self, instance, type):
         if isinstance(instance, FormWrapper):
