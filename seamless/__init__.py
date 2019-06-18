@@ -11,6 +11,18 @@ import traceback
 import nest_asyncio
 nest_asyncio.apply()
 import asyncio
+# Extra patch...
+_loop = asyncio.get_event_loop()
+from collections import deque
+class FakeHandle:
+    _cancelled = True
+class Deque2(deque):
+    def popleft(self):
+        try:
+            return super().popleft()
+        except IndexError:
+            return FakeHandle()
+_loop._ready = Deque2(_loop._ready)
 #asyncio.get_event_loop().set_debug(True)
 
 from abc import abstractmethod
@@ -70,7 +82,7 @@ from .debugger import pdb
 from .shareserver import shareserver
 from .communionserver import communionserver
 from .core.jobscheduler import set_ncores
-from .get_hash import get_hash
+from .get_hash import get_hash, get_dict_hash
 from .core.cache.redis_client import RedisSink, RedisCache
 
 def inputhook_terminal(context):

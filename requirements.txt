@@ -12,7 +12,7 @@ tornado>=6.*
 ipykernel>=5.*
 nbconvert>=5.5
 pyzmq>=18
-nest_asyncio
+nest_asyncio>=1
 traitlets
 #-e git://github.com/sjdv1982/seamless.git#egg=seamless-framework
 
