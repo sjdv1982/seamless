@@ -60,11 +60,16 @@ However:
 import json
 
 from .deserialize import deserialize
-from ...mixed.io import to_stream, get_form
+from ...mixed.io import to_stream, get_form, serialize
 from ...get_hash import get_hash
 
 def calc_buffer(value):
     storage, form = get_form(value)
+    stream = serialize(value, storage=storage, form=form)
+    if isinstance(stream, bytearray):
+        stream = bytes(stream)
+    return get_hash(stream), stream
+    """
     if storage == "pure-plain":
         data = json.dumps(value).encode()
         return get_hash(data + b"\n"), data
@@ -72,7 +77,10 @@ def calc_buffer(value):
         stream = to_stream(value, storage, form)
         if isinstance(stream, bytearray):
             stream = bytes(stream)
+        else:
+            stream 
         return get_hash(stream), stream
+    """
 
 def evaluate_from_buffer(expression, buffer):
     from ..cache import SemanticKey
