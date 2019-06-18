@@ -44,7 +44,7 @@ class SeamlessTraitlet(traitlets.HasTraits):
             value = manager.get_expression(expression)
             if value is not None and isinstance(value, tuple):
                 value = value[2]
-        print("Traitlet RECEIVE UPDATE", self.path, self.subpath, value)
+        #print("Traitlet RECEIVE UPDATE", self.path, self.subpath, value)
 
         self._updating = True
         old_value = self.value
@@ -69,3 +69,11 @@ class SeamlessTraitlet(traitlets.HasTraits):
             for p in self.subpath:
                 handle = getattr(handle, p)
         handle.set(value)
+
+    def _add_notifiers(self, handler, name, type):
+        super()._add_notifiers(handler, name, type)
+        try:
+            v = getattr(self, name)
+        except:
+            v = None
+        self._notify_trait(name, v, v)

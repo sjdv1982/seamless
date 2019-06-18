@@ -59,6 +59,9 @@ class Proxy:
             result += self._dirs
         return result
 
+    def mount(self, *args, **kwargs):
+        raise NotImplementedError
+
 class CodeProxy(Proxy):
     """A subclass of Proxy that points to a code cell
     The main difference is that a CodeProxy behaves as a simple (non-structured)
