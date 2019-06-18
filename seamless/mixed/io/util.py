@@ -259,6 +259,8 @@ def _form_to_dtype_scalar(form):
         result = "="
         result += "f"
         result += str(form["bytesize"])
+    elif type_ == "boolean":
+        result = "|b1"
     else:
         raise TypeError(type_)
     return np.dtype(result), None

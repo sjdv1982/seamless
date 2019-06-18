@@ -18,6 +18,7 @@ from . import ( Scalar, np_char,
 _string_types = (str,)  ##JSON cannot deal with bytes
 
 dt_builtins = (
+    np.dtype("bool"),
     np.dtype("int8"),
     np.dtype("int16"),
     np.dtype("int32"),
