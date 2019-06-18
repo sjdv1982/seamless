@@ -7,10 +7,10 @@ aiohttp
 aiohttp_cors
 wurlitzer
 cffi
-IPython
-tornado
-ipykernel
+IPython==7.*
+tornado>=6.*
+ipykernel>=5.*
 nest_asyncio
 traitlets
-#-e git://github.com/sjdv1982/seamless.git#egg=seamless-framework
+-e git://github.com/sjdv1982/seamless.git#egg=seamless-framework
 
