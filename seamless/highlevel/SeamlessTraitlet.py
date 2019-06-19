@@ -53,6 +53,11 @@ class SeamlessTraitlet(traitlets.HasTraits):
         self._notify_trait("value", old_value, value)
         self._updating = False
 
+    def _notify_trait(self, name, old_value, new_value):
+        if new_value is None:
+            return
+        super()._notify_trait(name, old_value, new_value)
+
     @traitlets.observe('value')
     def _value_changed(self, change):
         if self.parent is None:
