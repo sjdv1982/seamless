@@ -15,9 +15,13 @@ class MixedDict(MixedBase, MutableMapping):
         self._monitor.del_path(path)
     def __iter__(self):
         data = self._monitor.get_data(self._path)
+        if data is None:
+            data = {}
         return iter(data)
     def __len__(self):
         data = self._monitor.get_data(self._path)
+        if data is None:
+            data = {}
         return len(data)
     def clear(self):
         data = self._monitor.get_data(self._path)

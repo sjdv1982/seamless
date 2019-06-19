@@ -291,7 +291,7 @@ class CellBackend(Backend):
                     return None
             try:
                 result = result[p]
-            except KeyError:
+            except (KeyError, TypeError, IndexError, AttributeError):
                 return None
         return result
 
