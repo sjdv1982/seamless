@@ -38,7 +38,7 @@ celltype_to_ext = {
     "transformer": "py",
     "reactor": "py",
     "macro": "py",
-    "json": "json",
+    "plain": "json",
     "cson": "cson",
     "array": "npy",
     "mixed": "mixed",
