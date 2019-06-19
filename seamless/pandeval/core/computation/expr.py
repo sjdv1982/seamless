@@ -18,7 +18,7 @@ from seamless.pandeval.core.computation.ops import (
     UndefinedVariableError, _arith_ops_syms, _bool_ops_syms, _cmp_ops_syms,
     _mathops, _reductions, _unary_ops_syms, is_term)
 from seamless.pandeval.core.computation.scope import Scope
-from pandas.core.reshape.util import compose
+from seamless.pandeval.core.reshape.util import compose
 
 import pandas.io.formats.printing as printing
 
