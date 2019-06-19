@@ -185,7 +185,7 @@ class Job:
 
     async def _execute_local(self, transformer):
         # transformer arg is just for tracebacks
-        print("Execute local")
+        #print("Execute local")
         lock = await acquire_lock()
         try:
             transformer_path = transformer._format_path()

@@ -221,6 +221,8 @@ name: str
         future = asyncio.ensure_future(coroutine)
         try:
             loop.run_until_complete(future)
+            if timeout != 0: #KLUDGE
+                self.equilibrate(timeout=0,report=report)
             return future.result()
         except IndexError: #asyncio/base_events.py",  handle = self._ready.popleft() => IndexError
             if timeout is not None:

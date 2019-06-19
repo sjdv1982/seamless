@@ -1707,7 +1707,8 @@ class Manager:
       ):
         # "origin" indicates the worker that generated the .set_cell call
         if value is None:
-            raise Exception
+            #raise Exception
+            return
         from .macro_mode import macro_mode_on, get_macro_mode
         from .mount import is_dummy_mount
         assert cell._get_manager() is self
