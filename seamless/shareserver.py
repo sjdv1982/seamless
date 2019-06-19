@@ -155,7 +155,7 @@ class ShareServer(object):
             elif celltype in ("text", "python", "cson", "ipython"):
                 body = value
             else:
-                raise NotImplementedError ### cache branch
+                raise NotImplementedError(celltype) ### cache branch
             return web.Response(
                 status=200,
                 body=body,
