@@ -353,7 +353,11 @@ class Cell(Base):
         return result
     
     def _set_observers(self):
+        from ..core.cell import Cell as CoreCell
+        from ..core.structured_cell import StructuredCell
         cell = self._get_cell()
+        if not isinstance(cell, (CoreCell, StructuredCell)):
+            raise Exception(cell)
         cell._set_observer(self._observe_cell)
         if self.celltype == "structured":
             cell.schema._set_observer(self._observe_schema)        

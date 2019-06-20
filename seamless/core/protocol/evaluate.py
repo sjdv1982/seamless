@@ -86,7 +86,7 @@ def evaluate_from_buffer(expression, buffer):
     from ..cache import SemanticKey
     result = deserialize(
         expression.celltype, None, "random_code_path", #TODO
-        buffer, from_buffer = True, buffer_checksum = None,
+        buffer, from_buffer = True, buffer_checksum = expression.buffer_checksum,
         source_access_mode = expression.source_access_mode,
         source_content_type = expression.source_content_type
     )

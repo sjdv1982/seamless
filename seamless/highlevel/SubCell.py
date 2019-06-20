@@ -82,4 +82,7 @@ class SubCell(Cell):
             return None
         return p + self._subpath
 
+    def _set_observers(self):
+        pass
+
 from .Library import test_lib_lowlevel
