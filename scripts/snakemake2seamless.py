@@ -193,7 +193,7 @@ parser.add_argument("--snakefile", "-s",
                     help="The workflow definition in a snakefile.")
 
 parser.add_argument("--seamless",
-                    default="snakefile.seamless",
+                    default="snakegraph.seamless",
                     help="Seamless graph file to generate.")
 
 
@@ -218,6 +218,7 @@ fs = ctx.filesystem
 ctx.rules = Context()
 ctx.jobs = Context()
 ctx.results = Context()
+ctx.results2 = Context()
 
 import inspect
 
@@ -304,7 +305,9 @@ for rule in rules:
     assert not rule.is_checkpoint
     if rule.shellcmd is None and rule.name in run_functions:
         raise Exception("rule '%s' has a custom run function, this is not supported" % rule.name)
-    indummies, outdummies, wildcard_dummies = rule_dummies[rule]
+    if rule.shellcmd is None:
+        continue
+    indummies, outdummies, wildcard_dummies = rule_dummies[rule]    
     shellcmd = rule.shellcmd.format(**{
         "input": indummies, "output": outdummies, "wildcards": wildcard_dummies
     })
@@ -339,13 +342,16 @@ def get_jobname(job):
 for job in dag.jobs:
     rule = job.rule
     jobname =  get_jobname(job)
+    if not len(job.output):
+        print("Skipped job '%s', as it has no outputs" % jobname)
+        continue
     print("Creating job:", jobname)
 
     indummies, outdummies, wildcard_dummies = rule_dummies[rule]
     params = indummies._tf_params()
     tf = Transformer(parameters=params)
-
     setattr(ctx.jobs, jobname, tf)
+
     docker_image = job.singularity_img_url
     if docker_image is not None:
         if not docker_image.startswith("docker://"):
@@ -396,15 +402,20 @@ for job in dag.jobs:
     result = getattr(ctx.results, jobname)
     assert isinstance(result, Cell), type(result)
 
+    if not len(outputs):
+        continue
+
     multi_output = (len(outputs) > 1)
+
     if multi_output:
         tf.with_result = True
         for k,v in outputs.items():
-            fs[v] = getattr(result, k)
+            kk = getattr(outdummies,k)
+            fs[v] = getattr(result, kk)
     else:
         (v,) = outputs.values()
         fs[v] = result
 
 graph = ctx.get_graph()
 import json
-json.dump(graph, open(args.seamless, "w"))
+json.dump(graph, open(args.seamless, "w"), indent=2, sort_keys=True)

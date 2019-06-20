@@ -2,6 +2,7 @@
 import weakref
 
 class Proxy:
+    _getter = None
     def __init__(self, parent, path, mode, *, pull_source=None, getter=None, dirs=None):
         self._parent = weakref.ref(parent)
         self._path = path
@@ -50,7 +51,7 @@ class Proxy:
 
     def __getattr__(self, attr):
         if self._getter is None:
-            raise AttributeError
+            raise AttributeError(attr)
         return self._getter(attr)
 
     def __dir__(self):

@@ -14,6 +14,21 @@ from ...mixed.io import (
 )
 from ...mixed.get_form import get_form
 
+from ...pylru import lrucache
+buffer_checksum_cache = lrucache(100)
+
+def mixed_deserialize2(buffer, buffer_checksum):
+    if buffer_checksum is None:
+        buffer_checksum = get_hash(buffer)
+    if buffer_checksum in buffer_checksum_cache:
+        #print("HIT", len(buffer) )
+        data, storage, form = buffer_checksum_cache[buffer_checksum]
+    else:
+        #print("MISS", len(buffer))
+        data, storage, form = mixed_deserialize(buffer)
+        buffer_checksum_cache[buffer_checksum] = data, storage, form
+    return data, storage, form
+
 def deserialize(
     celltype, subcelltype, cellpath,
     value, from_buffer, buffer_checksum,
@@ -226,7 +241,7 @@ def deserialize_mixed(
         storage, form = get_form(data)
     elif source_access_mode == "mixed":        
         if from_buffer:
-            data, storage, form = mixed_deserialize(value)
+            data, storage, form = mixed_deserialize2(value, buffer_checksum)
         else:
             data = value
             assert not isinstance(value, tuple), value
