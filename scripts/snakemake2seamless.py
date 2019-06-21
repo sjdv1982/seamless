@@ -312,10 +312,10 @@ for rule in rules:
         "input": indummies, "output": outdummies, "wildcards": wildcard_dummies
     })
     if len(outdummies._keys) == 1:
-        shellcmd += "\ncat %s"  % list(outdummies._dict.values())[0]
+        shellcmd += ";cat %s"  % list(outdummies._dict.values())[0]
     else:
         outputs = " ".join(outdummies._dict.values())
-        shellcmd += "\ntar -cf /dev/stdout %s" % outputs
+        shellcmd += ";tar -cf /dev/stdout %s" % outputs
     if rule._singularity_img:
         shellcmd = "bash -c '" + shellcmd + "'"
 
