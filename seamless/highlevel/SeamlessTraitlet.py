@@ -24,7 +24,7 @@ class SeamlessTraitlet(traitlets.HasTraits):
             assert self.subpath is None
         else:
             raise TypeError(cell)
-        print("traitlet %s:%s, observing" % (self.path, self.subpath))        
+        #print("traitlet %s:%s, observing" % (self.path, self.subpath))        
         cell._add_traitlet(self)
 
     def receive_update(self, checksum):        

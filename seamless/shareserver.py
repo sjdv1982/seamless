@@ -356,6 +356,8 @@ class ShareServer(object):
         cell = cell()
         if cell is None:
             return
+        if cell._destroyed:
+            return
         checksum = cell.checksum
         if old_checksum == checksum:
             return
