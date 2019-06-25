@@ -15,5 +15,4 @@ pyzmq>=18
 nest_asyncio>=1
 pandas==0.24
 traitlets
-#-e git://github.com/sjdv1982/seamless.git#egg=seamless-framework
 

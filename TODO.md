@@ -1,34 +1,14 @@
 Great Refactor is almost complete (see seamless-towards-02.md).
-
-Part 1 is now complete
-Most of the high level is done.
-
-Part 2
 Things to do:
-2A. Preparation
-- Implement annotation dict, including debug, ncores (ncores DONE), and a field for streams
-  => high-level streams example
 
-Intermezzo: documentation
-- Update interoperability document
-- PREPARE SIMPLE DEMO IN DOCUMENTATION
-
-2B. DaReUS-Loop example, and others
-- Simple visualization for DaReUS-Loop
-- R transformer (use rpy2 %%R bridge)
-- PyPPP docker image: code is open source, but SVM model is secret
-- Make a simple Galaxy-XML-to-Seamless translator
-- Make a simple Mobyle-XML-to-Seamless translator
-- Make a simple SnakeMake transformer (on top of Docker transformer;
-  deeper transformation would require macros)
   
 
-Seamless is now usable by me, to port RPBS/Galaxy services
+Seamless is now usable by me, to port RPBS services/Snakemake workflows to interactive and reproducible services
  Need some more months to make it usable:
 - by other devs
 - by sysadmins (job control, deployment)
 
-2C: Towards a first real example
+1: Towards a first real example
 - high level: reassigning transformers does weird stuff, and equilibrate seems necessary everywhere
 - Get reactors working again at the high level
 - Constructors, finish testing
@@ -45,34 +25,79 @@ Seamless is now usable by me, to port RPBS/Galaxy services
 intermezzo: re-run all tests
 
 
-LATER:
-- Cell-cell connection (also with int/float/str/bool cells), generic deserialization (see protocol/evaluate.py)
-   Add back in int/float/str/bool cells because they are so convenient.
+2:
+
+
+A. Deployment: Seamless Hub
+  - Register graphs to spawn request
+  - Spawn request: Open a random channel, instantiate graph
+  - Redirect shareserver traffic (REST and wss) to instance.
+    - Notions of internal (localhost) and external URL
+  - Redirect communion traffic to instance 
+  - Advanced: monitor instance state. When long unchanged: translate back to graph, and store. 
+
+B. Usability
+- Implement reactor
+- Simple streams at high level
+- Implement annotation dict, including debug (DONE), ncores (ncores DONE), and a field for streams (TODO)
+  => high-level streams example
+- Every worker has a number of cores used (default 1). As many jobs are launched as there are cores
+- Shell (create new namespace upon request/upon update; either pre-execution or post-execution [post-execution may re-execute transformer/macro])
+- Allow any worker inputpin to be annotated as must_be_defined=False.
+
+C. DaReUS-Loop/PepCyclizer example:
+  - Banks!
+  - Not command-line based, i.e. don't use SnakeMake, use BCSearch routines
+  - PyPPP docker image: code is open source, but SVM model is secret
+
+D. Documentation
+- Update interoperability document
+- Prepare simple demo notebook
+- Prepare some docs (at least stubs)
+- Update Github
+
+
+Cleanup
+   - Implement old lib.gui.edit as a new library, with new editpin.
+   - Terminology: context children can be private, in which case they are not in __dir__.
+     By default, they are public. No more "export".
+     (In general, look at __dir__ in the context of Silk, mixed, and cells)
+     (NOTE: This has nothing to do with services. Services determine private and public based on
+     what connects into the serviced context.)
+   - Start with lib porting. Port Qt editors (including HTML), but no more seamless.qt
+     Port all macros, but store the code in plain Python modules in lib, that register a library context   
+   - Jettison Plotly and OpenGL for now; re-target main focus of Seamless towards scientific computations for now
+   - Cleanup tests. With direct mode, most low-level tests should work now? Other ones can be ported to high-level    
+    - Tests involving OpenGL can be jettisoned for now
+   - Cleanup of the code base, remove vestiges of 0.1 (except lib and tests).
+   - Cleanup of the TODO and the documentation (put in limbo). Don't forget /docs/WIP!
+
+=> Release 0.2
+
+2. 
+
+A. Logging and graph visualization, initial prototype
+(see Status-of-seamless.txt)
+
+B. Smarter data management policies.
+   - Inside Seamless:
+      - recalculate if the result checksum is known but value cannot be retrieved
+      - database offload policies
+   - Outside Seamless (Redis): discuss with Julien
+
+C. Redesign reactivity/cycles, and connection/serialization protocol
+  - Use more async; test on clustering example
+  - Cell-cell connection (also with int/float/str/bool cells), generic deserialization (see protocol/evaluate.py)
+  - Add back in int/float/str/bool cells because they are so convenient.
      Their content type will be int/float/text/bool.
      Adapters will convert among them (e.g. int=>float) and between them and JSON/mixed/text.
      Supported access modes are JSON and text. Adapters will convert to Silk.
-- Shell (create new namespace upon request/upon update; either pre-execution or post-execution [post-execution may re-execute transformer/macro])
-- Allow any worker inputpin to be annotated as must_be_defined=False.
-- Implement transformer interrupt action, upon destroy or by manager (upon auth update).
-    (TODO: build upon JobScheduler.cancel, but add delay, and implement worker.destroy)
-    New-way style, auth update propagate forward (potentially leading to multiple interrupts).
-    Interrupt happens in 20 secs, or when the transformer re-executes, whichever happens sooner
-- Every worker has a number of cores used (default 1). As many jobs are launched as there are cores
-- Deep cells, with cache-tree-depth > 0. 
-  At 0, simple checksum => value (default, current situation). 
-  At level 1, dicts/lists will be checksum => {checksum:checksum}
-  resp. checksum => [checksum] (Merkle trees), in a special Merkle tree cache.
-  UPDATE: 
-  No special Merkle tree cache. For deep cells, it is illegal to construct a default accessor. When a level 0 statement is converted to a level 1 (accessor), then:
-  - The value of the cell must be retrieved from its checksum.
-    ***For deep cells, this value is always a Merkle tree, never a buffer***
-  - The checksum of the desired element(s) is retrieved from the Merkle tree
-  - An accessor is constructed using this checksum, and with the first
-    element(s) removed from the subpath
-- Seamless Hub to redirect shareserver traffic
-- Communionserver Hub 
+  - Implement transformer interrupt action, upon destroy or by manager (upon auth update).
+      (TODO: build upon JobScheduler.cancel, but add delay, and implement worker.destroy)
+      New-way style, auth update propagate forward (potentially leading to multiple interrupts).
+      Interrupt happens in 20 secs, or when the transformer re-executes, whichever happens sooner
 
-2E:  Streams (maybe delay for later)
+D. Streams
 - Basic implementation in manager/protocol DONE
 - Stream annotations for transformer DONE
   Outputpin + some inputpins are annotated as streams (multiple stream groups for cart combin)
@@ -101,26 +126,23 @@ LATER:
     - For dicts, the secondary input pin with sorted keys is optional.
       (it is still recommended for cache efficiency)
 
-# Notes about the New Way:
-- For structured cells, synthetic (i.e. dependent, non-authoritative)
-  schemas are a legit use case (i.e. synthesize from XML or Spyder).
-  StructuredCell should support this, disabling all type inference
-  if the schema cell is dependent.
+E. Deep cells
+  Deep cells have cache-tree-depth > 0. 
+  At 0, simple checksum => value (default, current situation). 
+  At level 1, dicts/lists will be checksum => {checksum:checksum}
+  resp. checksum => [checksum] (Merkle trees), in a special Merkle tree cache.
+  UPDATE: 
+  No special Merkle tree cache. For deep cells, it is illegal to construct a default accessor. When a level 0 statement is converted to a level 1 (accessor), then:
+  - The value of the cell must be retrieved from its checksum.
+    ***For deep cells, this value is always a Merkle tree, never a buffer***
+  - The checksum of the desired element(s) is retrieved from the Merkle tree
+  - An accessor is constructed using this checksum, and with the first
+    element(s) removed from the subpath
+  UPDATE: not just levels, but descriptors. User normally indicates levels for cells.
+  The inputs of high-level transformers are level 1 by default, further managed by high-level assign statement.
 
-Part 3 (low-level / cleanup): Towards the merge
-   - Implement old lib.gui.edit as a new library, with new editpin.
-   - Terminology: context children can be private, in which case they are not in __dir__.
-     By default, they are public. No more "export".
-     (In general, look at __dir__ in the context of Silk, mixed, and cells)
-     (NOTE: This has nothing to do with services. Services determine private and public based on
-     what connects into the serviced context.)
-   - Start with lib porting. Port Qt editors (including HTML), but no more seamless.qt
-     Port all macros, but store the code in plain Python modules in lib, that register a library context   
-   - Jettison Plotly and OpenGL for now; re-target main focus of Seamless towards scientific computations for now
-   - Cleanup tests. With direct mode, most low-level tests should work now? Other ones can be ported to high-level    
-    - Tests involving OpenGL can be jettisoned for now
-   - Cleanup of the code base, remove vestiges of 0.1 (except lib and tests).
-   - Cleanup of the TODO and the documentation (put in limbo). Don't forget /docs/WIP!
+
+
 
 End of the Great Refactor
 Seamless is now kind-of ready to be started to be used by other devs, at their peril, caveat emptor, etc.
