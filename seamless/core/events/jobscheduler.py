@@ -145,7 +145,7 @@ class JobScheduler:
                         exception = future.exception()
                         if exception is not None:
                             try:
-                                manager.set_transformer_result_exception(job.level1, job.level2, exception)
+                                manager.set_transformation_result_exception(job.level1, job.level2, exception)
                             except:
                                 traceback.print_exc()
                         toclean.append(key)
@@ -175,7 +175,7 @@ class Job:
         try:
             result = await run_remote_job(self.level1)
             if result is not None:
-                manager.set_transformer_result(self.level1, self.level2, None, result, prelim=False)
+                manager.set_transformation_result(self.level1, self.level2, None, result, prelim=False)
             else:
                 # TODO: store exception! is not printed in run_multi_remote_pair...
                 raise Exception("Remote job execution failed")
@@ -239,13 +239,13 @@ class Job:
                 if done:
                     break
                 if prelim is not None:
-                    manager.set_transformer_result(self.level1, self.level2, prelim, None, prelim=True)
+                    manager.set_transformation_result(self.level1, self.level2, prelim, None, prelim=True)
                 await asyncio.sleep(0.01)
             if not self.executor.is_alive():
                 self.executor = None            
-            manager.set_transformer_result(self.level1, self.level2, result, None, prelim=False)
+            manager.set_transformation_result(self.level1, self.level2, result, None, prelim=False)
         except Exception as exception:
-            manager.set_transformer_result_exception(self.level1, self.level2, exception)
+            manager.set_transformation_result_exception(self.level1, self.level2, exception)
         finally:            
             self.future = None
             self.scheduler().cleanup() # maybe a bit overkill, but better safe than sorry            

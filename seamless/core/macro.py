@@ -282,6 +282,7 @@ class Path:
             manager = cell._get_manager()
         self._cell = cell
         if trigger:
+            raise NotImplementedError ### livegraph branch
             if self._incoming and cell is not None:                
                 upstream = manager._cell_upstream(cell, None)
                 if isinstance(upstream, Cell):

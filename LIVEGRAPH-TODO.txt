@@ -1,0 +1,67 @@
+TODO in parallel: 
+- status report, link to metainfo (see below)
+    - no need to store in graph, as it gets reconstituted
+- metainfo:
+    - store exception and stdout/stderr of a transformation, include in status report
+        also store if result was obtained from cache, or remotely
+    - same for macro and reactor (easier, because 1:1)
+    - same for cell:
+        - structuredcell validation error
+        - error in obtaining value from checksum (also if provenance fails)
+    - implement storage for metainfo in graph
+- logging system, based on event loop (in parallel to metainfo)
+
+The manager has too many functions. New concept of a "livegraph". This is what the manager
+currently maintains, i.e. accessors, statuses, ..., i.e. all that goes beyond the 
+simple static hierarchical low-level context.
+
+Code must be split up into the following:
+
+- Event loop management.
+(see core/events). 
+New concept of events that derive from Event, are processed asynchronously by adding them to workqueue. 
+Replaces workqueue and cachetask. Also, most manager methods will be replaced by Event classes. Get rid of all async/awaits.
+Each manager has its own event loop.
+Each event loop has a counter, which means that each event has a monotonically increasing number.
+ This number is not stored in the Event instance, but the loop keeps track of it through its counter.
+Three kinds of events: SyncEvent, AsyncEvent, SingletonEvent.
+When SyncEvent is executed, event loop is blocked. A SyncEvent should be fast, launching new
+ events rather than recursive/reactive execution of methods.
+AsyncEvents are non-blocking and cancelable (asyncio futures), and can take a long time.
+SingletonEvents are related to flushing and status updates.
+ When a SingletonEvent is pushed to the event loop, its event counter is stored.
+ When it is pushed again, its event counter is updated.
+ SingletonEvents that have an event counter higher than their actual event counter, are ignored
+ (because the same event will be executed later on) 
+TODO: manager must be active. Abolish context/worker _active prop (DONE).
+TODO: integrate with communionserver to accept remote events, and return their result
+ (keep track of origin connection to send response to; 
+  also makes it possible to fwd remote events to all communion partners
+  except their origin)
+
+- manager.py. 
+    Holds all other systems
+    Maintains centralized API :
+        - Section I: Registration (divide among subsystems)
+        - Section II: Connection (divide among subsystems)
+        - Section III: Set cell values
+        - Section IV: Get cell values
+        - Section V: Set worker results (passthrough)
+        - Section VI: Equilibration
+        - Section VII: Destruction
+  NEW: connecting updates authority (see below)
+
+- livegraph.py. Maintaining the livegraph: caches, accessors. Stores workers as well. Events for updates, integrate with
+  task/job/cache system.
+
+- authority.py. NEW: maintaining accessor authority (authoritative or not). It is illegal to modify
+ non-authoritative paths from command line.
+
+- Maintaining runtime statuses. Events for status update. NEW: preliminary.
+Get rid of OVERRULED.
+
+- Task/job/cache system, new classes that holds the mappings and launches tasks.
+1. values.py. Value manager. Deals with getting and setting values. NEW: provenance, that can launch jobs if needed.
+2. jobs.py. Job manager. Deals with jobs and their links to cells. Keep track of relevant caches. Maintain exceptions also.
+
+

@@ -2,18 +2,19 @@ from enum import Enum
 
 class Status:
     StatusDataEnum =  Enum('StatusDataEnum',
-        ('OK', 'PENDING', 'UNDEFINED', 'UPSTREAM_ERROR', 'INVALID', 'UNCONNECTED')
+        ('OK', 'PENDING', 'PRELIMINARY', 'INCOMPLETE', 'UNDEFINED', 'UPSTREAM_ERROR', 'INVALID', 'UNCONNECTED')
     )
     # "UNCONNECTED" is only for workers
     # "INVALID" means parsing error or schema violation (with error message) (cell only)
     # "UPSTREAM_ERROR" means 'INVALID', 'UNDEFINED' or 'UNCONNECTED' upstream
+    # "INCOMPLETE" means that some paths have been defined, but not others
     StatusExecEnum =  Enum('StatusExecEnum',
         ('FINISHED', 'EXECUTING', 'READY', 'PENDING', 'BLOCKED', 'ERROR')
     ) # "BLOCKED" means essentially "something in the data prevents me from running"
       # "ERROR" means an error in execution (with error message)
       # "EXECUTING" and "READY" are only for transformers, since macros and reactors execute immediately
     StatusAuthEnum = Enum('StatusAuthEnum',
-        ("FRESH", "PRELIMINARY", "OVERRULED", "OBSOLETE")
+        ("FRESH", "PRELIMINARY")
     )
     data_status = None  # in case of workers, the result of dependency propagation
     auth_status = None  # in case of workers, the result of dependency propagation
@@ -196,3 +197,8 @@ class Status:
             (self.exec_status != other.exec_status) or \
             (self.auth_status != other.auth_status)
 
+class StatusManager:
+    """
+            self.status = {}
+            self.stream_status = {}
+    """

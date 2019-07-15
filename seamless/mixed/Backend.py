@@ -468,7 +468,8 @@ class CellBackend(Backend):
             if authstatus is None:
                 continue
             auth = auths[path]
-            has_auth = (auth != False)            
+            has_auth = (auth != False)
+            raise NotImplementedError # livegraph branch           
             manager._update_status(
                 self._cell, authstatus, 
                 has_auth=has_auth, origin=None,

@@ -7,7 +7,7 @@ ctx.cell = cell("mixed").mount("/tmp/cell.mixed")
 
 PATHS = [("a",), ("b",), ("b", "bb"), ("m1",), ("m2",)]
 manager = ctx._get_manager()
-manager._register_cell_paths(ctx.cell, PATHS, has_auth=True)
+manager.register_cell_paths(ctx.cell, PATHS, has_auth=True)
 
 def build_mixed(data):
     backend = CellBackend(ctx.cell)

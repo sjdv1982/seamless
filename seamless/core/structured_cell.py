@@ -266,8 +266,8 @@ class StructuredCell(SeamlessBase):
         if old_manager is None:
             outedpaths = list(self.outchannels.keys()) + list(self.editchannels.keys())
             inpaths = [p for p in self.inchannels if p not in outedpaths]
-            manager._register_cell_paths(self.data, inpaths, has_auth=False)
-            manager._register_cell_paths(self.data, outedpaths, has_auth=True)
+            manager.register_cell_paths(self.data, inpaths, has_auth=False)
+            manager.register_cell_paths(self.data, outedpaths, has_auth=True)
 
     def _set_share_callback(self, sharefunc):
         return self.data._set_share_callback(sharefunc)

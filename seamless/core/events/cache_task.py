@@ -3,8 +3,8 @@ These tasks interrogate caches and either generate a result, or schedule a trans
 The result itself will be discarded, but a resultfunc can be defined that will be 
  triggered upon task completion, and which may write the result into cache.
 Every key will always have the same CacheTask
-    key = ("transform", "all", level1) => manager._schedule_transform_all(level1, count)
-    key = ("transform", "job", level1) => manager._schedule_transform_job(level1, count)
+    key = ("transform", "all", level1) => manager._schedule_transform_all(level1, count) #OUTDATED
+    key = ("transform", "job", level1) => manager._schedule_transform_job(level1, count) #OUTDATED
     key = ("label", checksum) => remote label cache (label-to-checksum)
     key = ("value", checksum) => remote value cache (value-to-checksum)
     key = ("transformer_result", checksum) => remote transformer result cache

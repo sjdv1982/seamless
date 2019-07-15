@@ -38,6 +38,7 @@ class SeamlessTraitlet(traitlets.HasTraits):
             celldata = cell
             if isinstance(cell, StructuredCell):
                 celldata = cell.data
+            raise NotImplementedError # livegraph branch
             accessor = manager.get_default_accessor(celldata)
             accessor.subpath = self.subpath
             expression = accessor.to_expression(bytes.fromhex(checksum))

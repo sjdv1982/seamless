@@ -214,6 +214,7 @@ class MountItem:
         if checksum is None:
             if not with_none:
                 return
+            raise NotImplementedError # livegraph branch
             status = manager.status[cell].data
             if status in ("INVALID", "UNCONNECTED"):
                 return

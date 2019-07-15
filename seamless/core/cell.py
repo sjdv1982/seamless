@@ -154,13 +154,6 @@ Use ``Cell.status()`` to get its status.
         cell.set(cell.data) is guaranteed to be a no-op"""
         return self.value # TODO: check that this is always correct
 
-    def touch(self):
-        """Forces a cell update, even though the value stays the same
-        This triggers all workers that are connected to the cell"""
-        manager = self._get_manager()
-        manager.touch_cell(self)
-        return self
-
     def _set(self, value, from_buffer, buffer_checksum=None):
         if self._context is None:
             self._prelim_val = value, False
