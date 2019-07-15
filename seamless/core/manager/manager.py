@@ -1,25 +1,31 @@
+# NOTE: no more unstable. Equilibrate returns when eventloop is empty.
+import weakref
+
 class Manager:
     _destroyed = False
     _active = True
+    _authority_mode = True # authoritative paths may be modified
     flushing = False
     def __init__(self, ctx):
+        from . import (ValueManager, StatusManager, AuthorityManager, 
+         LiveGraph, JobManager)
         assert ctx._toplevel
         self.ctx = weakref.ref(ctx)
 
-        from .events import WorkQueue
-        self.workqueue = WorkQueue(self)
-        # keep the workqueue flushing (flushloop? see below....)
+        from ..events import EventLoop
+        self.eventloop = EventLoop(self)
+        # keep the eventloop flushing (flushloop? see below....)
 
         # for now, just a single global mountmanager
-        from .mount import mountmanager
+        from ..mount import mountmanager
         self.mountmanager = mountmanager
 
         # adapt it to use the API correctly
-        self.valuemanager #from values.py
-        self.statusmanager #from status.py
-        self.authority #from authority.py
-        self.livegraph #from livegraph.py
-        self.jobs #from jobs.py  
+        self.values = ValueManager(self)
+        self.staatus = StatusManager(self) # TODO livegraph branch: change to "status" once refactor complete
+        self.authority = AuthorityManager(self)
+        self.livegraph = LiveGraph(self)
+        self.jobs = JobManager(self)
         
     ##########################################################################
     # API section I: Registration (divide among subsystems)
@@ -28,7 +34,12 @@ class Manager:
     def register_cell(self, cell):
         raise NotImplementedError # livegraph branch
         ccache = self.cell_cache
+        ###
+        raise NotImplementedError # livegraph branch; delegate to authority manager. 
+          # For StructuredCell, decide for outchannels based on inchannels (don't use connections!!!). 
+          # In all cases, assigning a value to a non-auth outchannel is an error!
         ccache.cell_to_authority[cell] = {None: True} # upon registration, all cells are authoritative
+        ###
         ccache.cell_to_accessors[cell] = {None : []}
         self.status[cell] = {None: Status("cell")}
 
@@ -661,6 +672,9 @@ class Manager:
             raise Exception("Label has no checksum")
         return self.set_cell_checksum(cell, checksum)
 
+    def check_modified_paths(self, modified_paths):
+        return self.authority.check_modified_paths(modified_paths, self._authority_mode)
+
     ##########################################################################
     # API section IV: Get cell values
     ##########################################################################
@@ -674,11 +688,11 @@ class Manager:
         return self.label_cache.get_label(checksum)
 
     def get_checksum_from_label(self, label):
-        return self.valuemanager.get_checksum_from_label(label)
+        return self.values.get_checksum_from_label(label)
 
     def get_value_from_checksum(self, checksum):
         raise NotImplementedError #livegraph branch
-        # This one is tricky; best to call valuemanager.get_value_from_checksum_async as an event, and wait for it
+        # This one is tricky; best to call values.get_value_from_checksum_async as an event, and wait for it
 
     ##########################################################################
     # API section V: Set worker results (passthrough)
@@ -694,13 +708,13 @@ class Manager:
         return self.livegraph.set_reactor_exception(rtreactor, codename, exception)
 
     def set_macro_exception(self, macro, exception):
-        return self.livegraph.set_macro_exception(macro, exception):
+        return self.livegraph.set_macro_exception(macro, exception)
 
     def set_transformation_result(self, level1, level2, value, checksum, prelim):
         return self.jobs.set_transformation_result(level1, level2, value, checksum, prelim)
 
-     def set_transformation_stream_result(self, tf, k):
-        return self.jobs.set_transformation_stream_result(self, tf, k):
+    def set_transformation_stream_result(self, tf, k):
+        return self.jobs.set_transformation_stream_result(self, tf, k)
 
     def set_transformation_result_exception(self, level1, level2, exception):
         return self.jobs.set_transformation_result_exception(level1, level2, exception)
@@ -817,7 +831,7 @@ class Manager:
     async def _flush(self):
         self.flushing = True
         try:
-            async for dummy in self.workqueue.flush():
+            async for dummy in self.eventloop.flush():
                 pass
         finally:
             self.flushing = False

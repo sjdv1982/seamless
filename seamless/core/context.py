@@ -194,15 +194,6 @@ name: str
             if isinstance(child, Context):
                 child._cache_paths()
 
-
-    def _flush_workqueue(self):
-        manager = self._get_manager()
-        manager.flush()
-        finished = True
-        if len(self.unstable_workers):
-            finished = False
-        return finished
-
     def _get_macro(self):
         return self._macro
 

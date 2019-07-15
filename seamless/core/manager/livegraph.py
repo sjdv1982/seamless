@@ -1,4 +1,14 @@
 #TODO: overhaul, and a lot of this goes to status.py
+#NOTE: "obsolete" is gone now. When a transformer or reactor has its inputs changed, set all output pins to None.
+#NOTE: If a transformer has all of its inputs AND its output defined:
+# - Add it to the transform cache
+# - Add it to the provenance cache    
+
+import weakref
+
+class LiveGraph:
+    def __init__(self, manager):
+        self.manager = weakref.ref(manager)
 
 """
         self.cell_cache = CellCache(self)
@@ -535,7 +545,7 @@
                 cell_subpath=cell_subpath,
                 delay=False
             )
-            self.workqueue.append(work)
+            self.eventloop.append(work)
             return
 
         if cell._destroyed:

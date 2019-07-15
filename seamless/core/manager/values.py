@@ -1,3 +1,10 @@
+import weakref
+
+class ValueManager:
+    def __init__(self, manager):
+        self.manager = weakref.ref(manager)
+
+
 '''
         self.expression_cache = ExpressionCache(self)
         self.value_cache = ValueCache(self)

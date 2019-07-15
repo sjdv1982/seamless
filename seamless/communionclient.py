@@ -1,10 +1,10 @@
-from .core.cache.cache_task import (
+from .core.events.cache_task import (
     remote_checksum_from_label_servers, 
     remote_transformer_result_servers,
     remote_transformer_result_level2_servers,
     remote_checksum_value_servers
 )    
-from .core.jobscheduler import remote_job_servers
+from .core.events.jobscheduler import remote_job_servers
 from .core.build_module import remote_build_model_servers
 
 class CommunionClient: 

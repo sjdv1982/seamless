@@ -1,5 +1,10 @@
+import weakref
+
+class ValueManager:
+    def __init__(self, manager):
+        self.manager = weakref.ref(manager)
+
 '''
-.unstable
 
         self.jobs = {}  # jobid-to-job
         self.executing = {}  # level2-transformer-to-jobid

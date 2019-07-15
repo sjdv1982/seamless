@@ -19,7 +19,7 @@ Code must be split up into the following:
 
 - Event loop management.
 (see core/events). 
-New concept of events that derive from Event, are processed asynchronously by adding them to workqueue. 
+New concept of events that derive from Event, are processed asynchronously by adding them to eventloop. 
 Replaces workqueue and cachetask. Also, most manager methods will be replaced by Event classes. Get rid of all async/awaits.
 Each manager has its own event loop.
 Each event loop has a counter, which means that each event has a monotonically increasing number.

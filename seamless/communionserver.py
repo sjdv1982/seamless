@@ -422,4 +422,4 @@ class CommunionServer:
 
 communionserver = CommunionServer()
 
-from .core.cache.cache_task import cache_task_manager
+from .core.events.cache_task import cache_task_manager
