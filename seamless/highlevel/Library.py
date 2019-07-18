@@ -157,10 +157,6 @@ class LibraryItem:
         self.copy_deps = set() # set of (weakref(Context), path)
                                # where path points to a SubContext copied from the library
         self.constructor_deps = set() # set of depsgraph items
-
-        # set of paths to partial-authority StructuredCells
-        # Any assignment to those paths must lead to an indirect library update
-        self.partial_authority = set()
         self.needs_update = False
 
     def set_constructor(self, constructor):

@@ -23,7 +23,6 @@ class Deque2(deque):
         except IndexError:
             return FakeHandle()
 _loop._ready = Deque2(_loop._ready)
-#asyncio.get_event_loop().set_debug(True)
 
 from abc import abstractmethod
 class Wrapper:

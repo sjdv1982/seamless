@@ -1,8 +1,5 @@
 #TODO: overhaul, and a lot of this goes to status.py
 #NOTE: "obsolete" is gone now. When a transformer or reactor has its inputs changed, set all output pins to None.
-#NOTE: If a transformer has all of its inputs AND its output defined:
-# - Add it to the transform cache
-# - Add it to the provenance cache    
 
 import weakref
 
@@ -10,7 +7,7 @@ class LiveGraph:
     def __init__(self, manager):
         self.manager = weakref.ref(manager)
 
-"""
+'''
         self.cell_cache = CellCache(self)
         self.accessor_cache = AccessorCache(self)
         self.transform_cache = TransformCache(self)
@@ -102,7 +99,7 @@ class LiveGraph:
                 return
         if cell._celltype == "structured": 
             raise TypeError
-        if not hasattr(cell, "_monitor") or cell._monitor is None:
+        if cell._monitor is None:
             if cell_subpath == ():
                 cell_subpath = None            
             if cell_subpath is not None:
@@ -463,7 +460,6 @@ class LiveGraph:
                     else:
                         silk.set(value)
                 else:
-                    assert hasattr(target.cell, "_monitor")
                     monitor = target.cell._monitor
                     assert monitor is not None
                     monitor.set_path(target.subpath, value)
@@ -568,4 +564,4 @@ class LiveGraph:
         self._resolve_propagations(propagations)
         self.schedule_jobs()
 
-"""
+'''

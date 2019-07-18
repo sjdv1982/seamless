@@ -1,3 +1,4 @@
+import weakref
 from enum import Enum
 
 class Status:
@@ -198,7 +199,7 @@ class Status:
             (self.auth_status != other.auth_status)
 
 class StatusManager:
-    """
-            self.status = {}
-            self.stream_status = {}
-    """
+    def __init__(self, manager):
+        self.manager = weakref.ref(manager)
+        self.status = {}
+        self.stream_status = {}

@@ -7,11 +7,9 @@ import json
 from copy import deepcopy
 
 class Monitor:
-    def __init__(self, backend, attribute_access):
+    def __init__(self, backend):
         assert isinstance(backend, Backend)
-        assert isinstance(attribute_access, bool)
         self.backend = backend
-        self.attribute_access = attribute_access
 
     def get_instance(self, subform, path):
         assert subform is not None #must initialize subform

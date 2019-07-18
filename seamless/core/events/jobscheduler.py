@@ -32,7 +32,7 @@ async def acquire_lock():
             if lock == False:
                 _locks[locknr] = True
                 return locknr                
-        await asyncio.sleep(0.01)
+        await asyncio.sleep(0)
 
 def release_lock(locknr):
     assert _locks[locknr] == True
@@ -240,7 +240,7 @@ class Job:
                     break
                 if prelim is not None:
                     manager.set_transformation_result(self.level1, self.level2, prelim, None, prelim=True)
-                await asyncio.sleep(0.01)
+                await asyncio.sleep(0)
             if not self.executor.is_alive():
                 self.executor = None            
             manager.set_transformation_result(self.level1, self.level2, result, None, prelim=False)

@@ -1,6 +1,6 @@
 import weakref
 
-class ValueManager:
+class JobManager:
     def __init__(self, manager):
         self.manager = weakref.ref(manager)
 
@@ -339,7 +339,7 @@ class ValueManager:
                     cell = cell._cell
                     if cell is None:
                         continue
-                if not hasattr(cell, "_monitor") or cell._monitor is None:                    
+                if cell._monitor is None:                    
                     if subpath == ():
                         subpath = None            
                     if subpath is not None:
@@ -366,7 +366,6 @@ class ValueManager:
                     if subpath is None:                        
                         self.set_cell(cell, value, subpath=None)                        
                     else:              
-                        assert hasattr(cell, "_monitor")
                         monitor = cell._monitor
                         assert monitor is not None
                         monitor.set_path(subpath, value)

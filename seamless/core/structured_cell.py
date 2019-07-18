@@ -124,6 +124,8 @@ class Outchannel(SeamlessBase):
 
 class Editchannel(Outchannel):
     def __init__(self, structured_cell, name):
+        raise NotImplementedError # livegraph branch
+        # TODO: tricky, because of authority question; see LIVEGRAPH-TODO.txt
         assert isinstance(name, tuple)
         #assert all([isinstance(v, str) for v in channel])
         self.structured_cell = weakref.ref(structured_cell)
@@ -143,7 +145,6 @@ class StructuredCell(SeamlessBase):
       data,
       buffer,
       schema,
-      plain,      
       inchannels,
       outchannels,
       *,
@@ -154,8 +155,9 @@ class StructuredCell(SeamlessBase):
         self.name = name
         
         assert isinstance(data, MixedCell)
+        assert isinstance(buffer, MixedCell)
         self.data = data
-        self._plain = plain
+        self.buffer = buffer
 
         if schema is None:
             self._is_silk = False
@@ -163,11 +165,6 @@ class StructuredCell(SeamlessBase):
             assert isinstance(schema, PlainCell)
             self._is_silk = True
         self.schema = schema
-
-        if buffer is not None:
-            assert self._is_silk
-            assert isinstance(buffer, MixedCell)
-        self.buffer = buffer
 
         self.inchannels = PathDict()
         if inchannels is not None:
@@ -198,7 +195,7 @@ class StructuredCell(SeamlessBase):
 
         if self.data._monitor is None:
             backend = CellBackend(self.data)
-            monitor = Monitor(backend, attribute_access=(not plain))
+            monitor = Monitor(backend)
             self.data._monitor = monitor
 
         if self._is_silk:
@@ -208,7 +205,7 @@ class StructuredCell(SeamlessBase):
                 bufmonitor = self.buffer._monitor                
                 if bufmonitor is None:
                     bufbackend = CellBackend(self.buffer)
-                    bufmonitor = Monitor(bufbackend, attribute_access=(not plain))
+                    bufmonitor = Monitor(bufbackend)
                     self.buffer._monitor = bufmonitor            
             self._rebind(init=True)
         self._protected = True
@@ -266,8 +263,7 @@ class StructuredCell(SeamlessBase):
         if old_manager is None:
             outedpaths = list(self.outchannels.keys()) + list(self.editchannels.keys())
             inpaths = [p for p in self.inchannels if p not in outedpaths]
-            manager.register_cell_paths(self.data, inpaths, has_auth=False)
-            manager.register_cell_paths(self.data, outedpaths, has_auth=True)
+            manager.register_cell_paths(self.data, inpaths, outedpaths)
 
     def _set_share_callback(self, sharefunc):
         return self.data._set_share_callback(sharefunc)

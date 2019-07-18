@@ -2,6 +2,8 @@ from copy import deepcopy
 
 from .get_form import get_form as calc_form
 
+print("TODO: Backend.py: BufferedBackend with .buffer and .data sub-backend attributes. With this, Monitor will operate on data+buffer instead of on each alone")
+
 def get_subform(form, path):
     if not len(path):
         return form
@@ -255,7 +257,6 @@ class CellBackend(Backend):
         self._tempdata = None
         self._tempform = None
         self._tempstorage = None
-        self._modified_paths = {}
 
     def get_storage(self):
         if self._plain:
@@ -296,7 +297,6 @@ class CellBackend(Backend):
         return result
 
     def _set_path(self, path, data):
-        self._modified_paths[tuple(path)] = False
         if not len(path):
             self._tempdata = deepcopy(data)
             return
@@ -329,12 +329,10 @@ class CellBackend(Backend):
         if len(subdata) >= attr:
             for n in range(len(subdata), attr+1):
                 path2 = prepath + (n,)
-                self._modified_paths[path2] = False
                 subdata.append(None)            
             subdata[attr] = data
         else:
             subdata.insert(attr, data)
-        self._modified_paths[tuple(path)] = False
         
     def _del_path(self, path):
         if not len(path):
@@ -345,7 +343,6 @@ class CellBackend(Backend):
         subdata = self._get_path(path[:-1], self._tempdata)
         attr = path[-1]
         subdata.pop(attr, None)
-        self._modified_paths[tuple(path)] = True
 
 
     def _get_form(self, path):
@@ -389,9 +386,16 @@ class CellBackend(Backend):
         DEBUG = False
         self._tempdata = None
         self._tempform = None
-        self._tempstorage = None        
-        self._cell.set(data) # will also compute storage and form
+        self._tempstorage = None
+        raise NotImplementedError # livegraph branch
+        # TODO: Delegate the code below to the manager set-buffercell-path task
+        
+        ###self._cell.set(data) # will also compute storage and form        
+        ### Above code is stupid. Buffer join is much better!
+
         manager = self._cell._get_manager()
+        manager.verify_modified_paths(self._cell, self._modified_paths.keys())
+
         ccache = manager.cell_cache
         cell = self._cell
         auths = ccache.cell_to_authority[cell]        

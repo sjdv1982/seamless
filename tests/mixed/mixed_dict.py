@@ -3,7 +3,7 @@ from seamless.mixed import Monitor, DefaultBackend
 
 def build_mixed(data):
     backend = DefaultBackend(plain=False)
-    monitor = Monitor(backend, attribute_access=False)
+    monitor = Monitor(backend)
     monitor.set_path((), data)
     d = monitor.get_path()
     return d

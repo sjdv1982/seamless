@@ -85,8 +85,8 @@ class UnboundManager:
         else:
             return cells
 
-    def register_cell_paths(self, cell, paths, has_auth):
-        self.commands.append(("register_cell_paths", (cell, paths, has_auth)))
+    def register_cell_paths(self, cell, inpaths, outedpaths):
+        self.commands.append(("register_cell_paths", (cell, inpaths, outedpaths)))
 
 
 class UnboundContext(SeamlessBase):
@@ -295,23 +295,22 @@ class UnboundContext(SeamlessBase):
                 cell, checksum = args
                 cell._prelim_checksum = None
                 manager.set_cell_checksum(cell, checksum)
-                if hasattr(cell, "_monitor"):
-                    monitor = cell._monitor
-                    if monitor is not None:  
-                        buffer_item = manager.get_value_from_checksum(checksum)
-                        if buffer_item is not None:
-                            _, _, buffer = buffer_item
-                            accessor = manager.get_default_accessor(cell)
-                            expression = accessor.to_expression(checksum)
-                            value, _ = manager.cache_expression(expression, buffer)
-                            monitor.set_path((), value)
+                monitor = cell._monitor
+                if monitor is not None:  
+                    buffer_item = manager.get_value_from_checksum(checksum)
+                    if buffer_item is not None:
+                        _, _, buffer = buffer_item
+                        accessor = manager.get_default_accessor(cell)
+                        expression = accessor.to_expression(checksum)
+                        value, _ = manager.cache_expression(expression, buffer)
+                        monitor.set_path((), value)
             elif com == "set cell label":
                 cell, label = args
                 manager.set_cell_label(cell, label)
             elif com == "register_cell_paths":
-                cell, paths, has_auth = args
+                cell, inpaths, outedpaths = args
                 assert cell._get_manager() is manager, (cell._get_manager(), manager)
-                manager.register_cell_paths(cell, paths, has_auth)
+                manager.register_cell_paths(cell, inpaths, outedpaths)
             else:
                 raise ValueError(com)
         manager.schedule_jobs()

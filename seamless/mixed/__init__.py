@@ -51,17 +51,15 @@ class MixedBase(SilkHasForm):
     def __setattr__(self, attr, value):
         if attr.startswith("_"):
             return super().__setattr__(attr, value)
-        if self._monitor.attribute_access:
-            return self.__setitem__(attr, value)
+        return self.__setitem__(attr, value)
         raise AttributeError(attr)
     def __getattr__(self, attr):
         if attr.startswith("_"):
             raise AttributeError(attr)
-        if self._monitor.attribute_access:
-            if isinstance(self.value, np.ndarray):
-                return getattr(self.value, attr)
-            else:
-                return self.__getitem__(attr)
+        if isinstance(self.value, np.ndarray):
+            return getattr(self.value, attr)
+        else:
+            return self.__getitem__(attr)
         raise AttributeError(attr)
     def __str__(self):
         return str(self.value)

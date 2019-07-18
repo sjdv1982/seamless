@@ -24,14 +24,15 @@ class SubCell(Cell):
         parent = self._parent()
         assert not test_lib_lowlevel(parent,self._cell()._get_cell())
         subcell = getattr(self, attr)
-        #TODO: break links and connections from subcell
+        # TODO: break links and connections from subcell
+        # It is very important that this check is made well, else you get problems with authority
+        # If any connection is broken, the graph must be rebuilt immediately (and parent._translate becomes unnecessary)
+        raise NotImplementedError # livegraph branch
         path = self._subpath + (attr,)
         assign_to_subcell(self, path, value)
         ctx = parent._gen_context
         if parent._as_lib is not None:
-            hcell = self._get_hcell()
-            if hcell["path"] in parent._as_lib.partial_authority:
-                parent._as_lib.needs_update = True
+            parent._as_lib.needs_update = True
         parent._translate()
 
     def __getattr__(self, attr):

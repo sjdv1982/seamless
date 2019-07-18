@@ -631,12 +631,12 @@ class MountManager:
     async def async_tick(self):
         assert self.thread is not None
         while not self._running:
-            await asyncio.sleep(0.001)
+            await asyncio.sleep(0)
         self._tick.clear()
         while 1:
             if self._tick.is_set():
                 return
-            await asyncio.sleep(0.001)
+            await asyncio.sleep(0)
 
 
     def destroy(self):

@@ -47,6 +47,7 @@ Use ``Cell.status()`` to get its status.
     _observer = None
     _traitlets = None
     _share_callback = None
+    _monitor = None # Only changed for MixedCells that are data or buffer of a structuredcell
 
     def __init__(self):
         global cell_counter
@@ -171,7 +172,7 @@ Use ``Cell.status()`` to get its status.
         return self._set(value, False)
 
     def set_checksum(self, checksum):
-        """Specifies the checksum of the data (hex format)"""
+        """Specifies the checksum of the data (hex format)"""        
         return self._get_manager().set_cell_checksum(self, bytes.fromhex(checksum))
 
     def set_label(self, label):
@@ -307,7 +308,6 @@ class MixedCell(Cell):
     _storage_type = "mixed"
     _default_access_mode = "mixed"
     _content_type = "mixed"
-    _monitor = None
     _silk = None
 
     def set(self, value):

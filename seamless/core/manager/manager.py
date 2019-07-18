@@ -38,14 +38,17 @@ class Manager:
         raise NotImplementedError # livegraph branch; delegate to authority manager. 
           # For StructuredCell, decide for outchannels based on inchannels (don't use connections!!!). 
           # In all cases, assigning a value to a non-auth outchannel is an error!
+        
         ccache.cell_to_authority[cell] = {None: True} # upon registration, all cells are authoritative
         ###
         ccache.cell_to_accessors[cell] = {None : []}
         self.status[cell] = {None: Status("cell")}
 
-    def register_cell_paths(self, cell, paths, has_auth):
+    def register_cell_paths(self, cell, inpaths, outedpaths):
+        self.authority.register_cell_paths(cell, inpaths, outedpaths)
         raise NotImplementedError # livegraph branch
-        ccache = self.cell_cache
+        # Previous args: (self, cell, paths, has_auth) (has_auth=True for outedpaths)
+        ccache = self.cell_cache        
         for path in paths:
             ccache.cell_to_authority[cell][path] = has_auth
             ccache.cell_to_accessors[cell][path] = []
@@ -53,6 +56,14 @@ class Manager:
 
     def register_transformer(self, transformer):
         raise NotImplementedError # livegraph branch
+        
+        
+        raise NotImplementedError 
+        # Generate transformer init event.
+        # If a transformer has all of its inputs AND its output defined:
+        # - Add it to the transform cache
+        # - Add it to the provenance cache    
+
         tcache = self.transform_cache
         tcache.transformer_to_level0[transformer] = {}
         tcache.transformer_to_cells[transformer] = []
@@ -60,6 +71,7 @@ class Manager:
 
     def register_reactor(self, reactor):
         raise NotImplementedError # livegraph branch
+
         self.reactors[reactor] = RuntimeReactor(self, reactor)
         self.status[reactor] = Status("reactor")
 
@@ -76,6 +88,10 @@ class Manager:
 
     def _verify_connect(self, source, target):
         raise NotImplementedError # livegraph branch
+
+        # TODO: make sure that buffer cells never have any connections!
+        # TODO: cell should have _unconnected property that describes this...
+
         from .macro import Path
         assert source._get_manager() is self, source._get_manager()
         assert source._root() is target._root()
@@ -560,16 +576,17 @@ class Manager:
 
     def set_cell_checksum(self, cell, checksum, status=None):
         raise NotImplementedError # livegraph branch
+        # TODO: 
+        # - Ditch status argument
+        # - Insert an event, and wait for it
+        # - NO CHECK that cell is authoritative! (assumed that you know what you are doing)
         from .macro_mode import macro_mode_on, get_macro_mode
         from .mount import is_dummy_mount
         assert cell._get_manager() is self
         ccache = self.cell_cache
-        auth = ccache.cell_to_authority[cell][None]
-        has_auth = (auth != False)
         old_checksum = ccache.cell_to_buffer_checksums.get(cell)
         vcache = self.value_cache
         if checksum != old_checksum:
-            ccache.cell_to_authority[cell][None] = True
             ccache.cell_to_buffer_checksums[cell] = checksum
             if old_checksum is not None:
                 vcache.decref(old_checksum, has_auth=has_auth)
@@ -587,10 +604,10 @@ class Manager:
                 cell._observer(checksum.hex())
             for traitlet in cell._traitlets:
                 traitlet.receive_update(checksum.hex())
-            #if not hasattr(cell, "_monitor") or cell._monitor is None:
+            #if cell._monitor is None:
             self._update_status(
                 cell, (checksum is not None), 
-                has_auth=has_auth, origin=None, cell_subpath=None
+                origin=None, cell_subpath=None
             )
 
     def set_cell(self, cell, value, *, subpath,
@@ -602,8 +619,12 @@ class Manager:
         # TODO: get rid of origin?
         # TODO: auth/non-auth mode (see LIVEGRAPH-TODO.txt)
 
+        # TODO: 
+        # - Insert an event, and wait for it
+        # - CHECK that cell is authoritative for that path! 
+
         if value is None:
-            #raise Exception
+            raise NotImplementedError # update!
             return
         from .macro_mode import macro_mode_on, get_macro_mode
         from .mount import is_dummy_mount
@@ -630,7 +651,6 @@ class Manager:
             None
         )
         if checksum != old_checksum:
-            ccache.cell_to_authority[cell][subpath] = True
             ccache.cell_to_buffer_checksums[cell] = checksum
             if old_checksum is not None:
                 vcache.decref(old_checksum, has_auth=has_auth)
@@ -672,8 +692,8 @@ class Manager:
             raise Exception("Label has no checksum")
         return self.set_cell_checksum(cell, checksum)
 
-    def check_modified_paths(self, modified_paths):
-        return self.authority.check_modified_paths(modified_paths, self._authority_mode)
+    def verify_modified_paths(self, cell, modified_paths):
+        return self.authority.verify_modified_paths(cell, modified_paths, self._authority_mode)
 
     ##########################################################################
     # API section IV: Get cell values
@@ -729,10 +749,10 @@ class Manager:
     ##########################################################################
 
     def _destroy_cell(self, cell):
+        self.authority.destroy_cell(cell)
         raise NotImplementedError # livegraph branch
         ccache = self.cell_cache
         ccache.cell_to_accessors.pop(cell, None)
-        ccache.cell_to_authority.pop(cell, None)
         ccache.cell_to_buffer_checksums.pop(cell, None)
         ccache.cell_from_upstream.pop(cell, None)
 
@@ -843,7 +863,7 @@ class Manager:
             except:
                 import traceback
                 traceback.print_exc()
-            await asyncio.sleep(0.1)
+            await asyncio.sleep(0)
 
     async def equilibrate(self, timeout, report, path):
         await self.mountmanager.async_tick()

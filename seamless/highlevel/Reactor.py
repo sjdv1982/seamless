@@ -168,8 +168,7 @@ class Reactor(Base):
                 io = getattr(rc, hrc["IO"])
                 setattr(io.handle, attr, value)
         if parent._as_lib is not None:
-            if hrc["path"] in parent._as_lib.partial_authority:
-                parent._as_lib.needs_update = True
+            parent._as_lib.needs_update = True
         if translate:
             parent._translate()
 

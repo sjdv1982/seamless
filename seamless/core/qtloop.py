@@ -36,6 +36,6 @@ async def qtloop():
 
     while 1:
         qt_app.processEvents()
-        await asyncio.sleep(0.01)
+        await asyncio.sleep(0)
 
 asyncio.ensure_future(qtloop())
