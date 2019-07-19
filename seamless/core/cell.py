@@ -23,9 +23,7 @@ Use ``Cell.status()`` to get its status.
 """
     _celltype = None
     _subcelltype = None
-    _storage_type = None
-    _default_access_mode = None
-    _content_type = None
+    _checksum = None
     _prelim_val = None
     _prelim_checksum = None
     _unmounted = False
@@ -58,6 +56,7 @@ Use ``Cell.status()`` to get its status.
         self._traitlets = []
 
     def _set_context(self, ctx, name):
+        assert self._checksum is None
         super()._set_context(ctx, name)
         assert self._context() is ctx
         manager = self._get_manager()
@@ -101,6 +100,9 @@ Use ``Cell.status()`` to get its status.
 
     @property
     def checksum(self):
+        raise NotImplementedError # livegraph branch
+        return self._checksum
+        ###
         manager = self._get_manager()
         if isinstance(manager, UnboundManager):
             raise Exception("Cannot ask the cell value of a context that is being constructed by a macro")
@@ -111,6 +113,7 @@ Use ``Cell.status()`` to get its status.
 
     @property
     def semantic_checksum(self):        
+        raise NotImplementedError # livegraph branch
         manager = self._get_manager()
         if isinstance(manager, UnboundManager):
             raise Exception("Cannot ask the cell value of a context that is being constructed by a macro")
@@ -131,6 +134,8 @@ Use ``Cell.status()`` to get its status.
     def value(self):
         """Returns the value of the cell
         Usually, this is the same as the data"""
+        raise NotImplementedError # livegraph branch
+        ###
         manager = self._get_manager()
         if isinstance(manager, UnboundManager):
             if self._lib_path is not None:
@@ -171,9 +176,20 @@ Use ``Cell.status()`` to get its status.
         """Update cell data from the terminal."""
         return self._set(value, False)
 
+    def _set_checksum(self, checksum, initial=False, is_buffercell=False):
+        """Specifies the checksum of the data (hex format)        
+        
+        If "initial" is True, it is assumed that the context is being initialized (e.g. when created from a graph).
+        Else, cell cannot be the .data or .buffer attribute of a StructuredCell, and cannot have any incoming connection.
+        
+        However, if "is_buffercell" is True, then the cell can be a .buffer attribute of a StructuredCell
+        """        
+        raise NotImplementedError # livegraph branch
+        return self._get_manager().set_cell_checksum(self, bytes.fromhex(checksum), initial, is_buffercell)
+
     def set_checksum(self, checksum):
-        """Specifies the checksum of the data (hex format)"""        
-        return self._get_manager().set_cell_checksum(self, bytes.fromhex(checksum))
+        """Specifies the checksum of the data (hex format)"""
+        return self._set_checksum(checksum)
 
     def set_label(self, label):
         """Labels the current value of the cell
@@ -294,9 +310,6 @@ class ArrayCell(Cell):
     
     _mount_kwargs = {"binary": True}
     _celltype = "array"
-    _storage_type = "binary"
-    _default_access_mode = "binary"
-    _content_type = "binary"
 
     def __str__(self):
         ret = "Seamless array cell: " + self._format_path()
@@ -305,9 +318,6 @@ class ArrayCell(Cell):
 class MixedCell(Cell):
     _mount_kwargs = {"binary": True}
     _celltype = "mixed"
-    _storage_type = "mixed"
-    _default_access_mode = "mixed"
-    _content_type = "mixed"
     _silk = None
 
     def set(self, value):
@@ -317,27 +327,30 @@ class MixedCell(Cell):
 
     @property
     def value(self):
+        raise NotImplementedError # livegraph branch
         v = super().value
         if v is None:
-            return None
+            return None        
         if not isinstance(v, tuple): return v ### KLUDGE, shouldn't happen
         return v[2]
 
     @property
     def storage(self):
+        raise NotImplementedError # livegraph branch
         from ..mixed.get_form import get_form
         v = super().value
         if v is None:
-            return None
+            return None        
         if not isinstance(v, tuple): return get_form(v)[0] ### KLUDGE, shouldn't happen
         return v[0]
     
     @property
     def form(self):
+        raise NotImplementedError # livegraph branch
         from ..mixed.get_form import get_form
         v = super().value
         if v is None:
-            return None
+            return None        
         if not isinstance(v, tuple): return get_form(v)[1] ### KLUDGE, shouldn't happen
         return v[1]
 
@@ -350,9 +363,6 @@ class MixedCell(Cell):
 class TextCell(Cell):
     _mount_kwargs = {"encoding": "utf-8", "binary": False}
     _celltype = "text"
-    _storage_type = "text"
-    _default_access_mode = "text"
-    _content_type = "text"
 
     def __str__(self):
         ret = "Seamless text cell: " + self._format_path()
@@ -362,14 +372,11 @@ class PythonCell(Cell):
     """Generic Python code object"""
     _celltype = "python"
     _subcelltype = None
-    _storage_type = "text"
-    _default_access_mode = "pythoncode"
-    _content_type = "python"
     _mount_kwargs = {"encoding": "utf-8", "binary": False}
 
 
     def set(self, value):
-        """Update cell data from the terminal.
+        """Update cell data from the command line.
         Python function objects are converted to source code"""
         if inspect.isfunction(value):
             code = inspect.getsource(value)
@@ -385,14 +392,13 @@ class PyReactorCell(PythonCell):
     """Python code object used for reactors
     a "PINS" object will be inserted into its namespace"""
     _subcelltype = "reactor"
-    _content_type = "reactor"
 
 
 class PyTransformerCell(PythonCell):
     """Python code object used for transformers
     Each input will be an argument"""
     _subcelltype = "transformer"
-    _content_type = "transformer"
+
 
 
 class PyMacroCell(PythonCell):
@@ -402,14 +408,9 @@ class PyMacroCell(PythonCell):
     If the macro is a function, ctx must be returned
     """
     _subcelltype = "macro"
-    _content_type = "macro"
-
 
 class IPythonCell(Cell):
     _celltype = "ipython"
-    _storage_type = "text"
-    _default_access_mode = "text"
-    _content_type = "ipython"
     _mount_kwargs = {"encoding": "utf-8", "binary": False}
 
     def __str__(self):
@@ -420,9 +421,6 @@ class IPythonCell(Cell):
 class PlainCell(Cell):
     """A cell in plain (i.e. JSON-serializable) format"""
     _celltype = "plain"
-    _storage_type = "text"
-    _default_access_mode = "plain"
-    _content_type = "plain"
     _mount_kwargs = {"encoding": "utf-8", "binary": False}
     _monitor = None
     _silk = None
@@ -438,9 +436,6 @@ class CsonCell(Cell):
     to plain.
     """
     _celltype = "cson"
-    _storage_type = "text"
-    _default_access_mode = "plain"
-    _content_type = "cson"
     _mount_kwargs = {"encoding": "utf-8", "binary": False}
 
     def __str__(self):

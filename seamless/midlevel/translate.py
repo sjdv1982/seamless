@@ -13,7 +13,7 @@ from seamless.core import cell as core_cell, link as core_link, \
  libcell, transformer, reactor, context, macro, StructuredCell
 
 from . import copying
-from .util import as_tuple, get_path, find_channels, find_editchannels, build_structured_cell, try_set, try_set_schema
+from .util import as_tuple, get_path, find_channels, find_editchannels, build_structured_cell
 
 
 
@@ -76,7 +76,12 @@ def translate_py_reactor(node, root, namespace, inchannels, outchannels, editcha
         code = node.get(attr)
         if code is None:
             code = node.get("cached_" + attr)
-        try_set(c, code)
+        try:
+            cell._set_checksum(checksum, initial=True)
+        except:
+            # TODO: proper logging
+            traceback.print_exc()
+
         namespace[node["path"] + (attr,), True] = c, node
         namespace[node["path"] + (attr,), False] = c, node
 
@@ -159,9 +164,9 @@ def translate_cell(node, root, namespace, inchannels, outchannels, editchannels,
             warn("Cell %s has a link target, cannot set construction constant" % pathstr)
         else:
             if "schema" in checksum and ct == "structured":
-                child.set_schema_checksum(checksum["schema"])
+                child._set_checksum(checksum["schema"], schema=True, initial=True)
             if "value" in checksum:
-                child.set_checksum(checksum["value"])
+                child._set_checksum(checksum["value"], initial=True)
     if ct != "structured":
         if link_target is not None:
             if "mount" in node:

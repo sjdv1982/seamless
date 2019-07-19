@@ -70,11 +70,11 @@ def translate_py_transformer(node, root, namespace, inchannels, outchannels, lib
     ctx.code.connect(ctx.tf.code)
     checksum = node.get("checksum", {})
     if "code" in checksum:
-        ctx.code.set_checksum(checksum["code"])
+        ctx.code._set_checksum(checksum["code"], initial=True)
     if "schema" in checksum:
-        inp.set_schema_checksum(checksum["schema"])
+        inp._set_checksum(checksum["schema"], schema=True, initial=True)
     if "input" in checksum:
-        inp.set_checksum(checksum["input"])
+        inp._set_checksum(checksum["input"], initial=True)
     namespace[node["path"] + ("code",), True] = ctx.code, node
     namespace[node["path"] + ("code",), False] = ctx.code, node
 
@@ -101,9 +101,9 @@ def translate_py_transformer(node, root, namespace, inchannels, outchannels, lib
             schema_pin = getattr(ctx.tf, node["SCHEMA"])
             result.schema.connect(schema_pin)
         if "result" in checksum:
-            result.set_checksum(checksum["result"])
+            result._set_checksum(checksum["result"], initial=True)
         if "result_schema" in checksum:
-            result.set_schema_checksum(checksum["result_schema"])
+            result._set_checksum(checksum["result_schema"], schema=True, initial=True)
     else:
         for c in outchannels:
             assert len(c) == 0 #should have been checked by highlevel

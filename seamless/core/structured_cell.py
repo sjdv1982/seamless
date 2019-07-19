@@ -285,32 +285,20 @@ class StructuredCell(SeamlessBase):
             self.monitor.set_path((), value)
 
 
-    def _set_checksum(self, checksum, schema):
+    def _set_checksum(self, checksum, *, initial, schema=False):
         from .unbound_context import UnboundManager
         manager = self.data._get_manager()
-        if not isinstance(manager, UnboundManager):
-            if self._is_silk and self.buffer is not None:
-                buffer_item = manager.get_value_from_checksum(checksum)
-                raise NotImplementedError ### cache branch (this is not correct)
-                if self._rebind_schema:
-                    self._rebind()
-                self._silk.set(value)
-            else:
-                raise NotImplementedError ### cache branch
+        if schema:
+            self.schema._set_checksum(checksum, initial=initial)
+            self._rebind_schema = True
         else:
-            if schema:
-                self.schema.set_checksum(checksum)
-                self._rebind_schema = True
+            if initial:
+                self.buffer._set_checksum(checksum, initial=True)
             else:
-                self.data.set_checksum(checksum)
-                if self.buffer is not None:
-                    self.buffer.set_checksum(checksum)
+                self.buffer._set_checksum(checksum, is_buffercell=True)
 
     def set_checksum(self, checksum):
-        self._set_checksum(checksum, schema=False)
-
-    def set_schema_checksum(self, checksum):
-        self._set_checksum(checksum, schema=True)
+        self._set_checksum(checksum)
 
     def __str__(self):
         ret = "Seamless structured cell: " + self._format_path()

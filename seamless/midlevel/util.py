@@ -3,20 +3,6 @@ from seamless.core import cell as core_cell, link as core_link, \
 import traceback
 STRUC_ID = "_STRUC"
 
-def try_set(cell, checksum):
-    #TODO: proper logging
-    try:
-        cell.set_checksum(checksum)
-    except:
-        traceback.print_exc()
-
-def try_set_schema(cell, checksum):
-    #TODO: proper logging
-    try:
-        cell.set_schema_checksum(checksum)
-    except:
-        traceback.print_exc()
-
 def as_tuple(v):
     if isinstance(v, str):
         return (v,)
