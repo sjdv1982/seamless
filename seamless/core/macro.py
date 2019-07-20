@@ -82,7 +82,7 @@ class Macro(Worker):
             self._paths = weakref.WeakValueDictionary()
             with macro_mode_on(self):
                 unbound_ctx = UnboundContext(root=self._root())
-                unbound_ctx._manager = UnboundManager(unbound_ctx)                
+                unbound_ctx._ubmanager = UnboundManager(unbound_ctx)                
                 assert unbound_ctx._get_manager() is not None
                 self._unbound_gen_context = unbound_ctx
                 keep = {k:v for k,v in self.namespace.items() if k.startswith("_")}
@@ -139,7 +139,7 @@ class Macro(Worker):
                 add_paths((), _global_paths.get(root, {}))
                 
                 manager = self._get_manager()
-                ub_cells = unbound_ctx._manager.cells
+                ub_cells = unbound_ctx._realmanager.cells
                 newly_bound = []
                 for path, p in paths:
                     if p._cell is not None:
@@ -212,7 +212,7 @@ class Path:
         self._path = path
         self._incoming = False
         self._cell = None
-        self._manager = manager
+        self._realmanager = manager
         if macro is None:
             assert manager is not None
             assert isinstance(manager, (Manager, UnboundManager)), type(manager)
@@ -237,12 +237,12 @@ class Path:
         from .unbound_context import UnboundManager
         if self._macro is not None:
             return self._macro._root()
-        elif self._manager is not None:
-            if isinstance(self._manager, UnboundManager):
-                root = self._manager._ctx()._root()
+        elif self._realmanager is not None:
+            if isinstance(self._realmanager, UnboundManager):
+                root = self._realmanager._ctx()._root()
                 return root
             else:
-                root = self._manager.ctx()
+                root = self._realmanager.ctx()
                 return root
         else:
             raise AttributeError
@@ -250,17 +250,17 @@ class Path:
     def __getattr__(self, attr):
         if attr.startswith("_") or attr == "cell":
             raise AttributeError(attr)
-        return Path(self._macro, self._path + (attr,), manager=self._manager)
+        return Path(self._macro, self._path + (attr,), manager=self._realmanager)
 
     def connect(self, other):
         if self._cell is not None:
             return self._cell.connect(other)
         else:
-            manager = self._manager
+            manager = self._realmanager
             if manager is None:
                 if self._macro is not None and \
                   self._macro._unbound_gen_context is not None:
-                    manager = self._macro._unbound_gen_context._manager
+                    manager = self._macro._unbound_gen_context._realmanager
                 else:
                     raise AttributeError
             return manager.connect_cell(self, other, None)
@@ -305,12 +305,9 @@ class Path:
 def path(obj):
     from .unbound_context import UnboundManager
     try:
-        try:
-            manager = obj._get_manager()
-            if not isinstance(manager, UnboundManager):
-                manager = obj._manager
-        except AttributeError:
-            manager = obj._manager
+        manager = obj._get_manager()
+        if not isinstance(manager, UnboundManager):
+            manager = obj._realmanager
         if not isinstance(manager, UnboundManager):
             raise AttributeError
     except AttributeError:

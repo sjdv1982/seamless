@@ -12,6 +12,16 @@ TODO in parallel:
 - logging system, based on event loop (in parallel to metainfo)
 - progress bar system
 
+TODO afterwards: dealing properly with explicit None values.
+Make it so that transformations and reactors CAN set None on their result
+ Same for None explicitly set on cells (cell.set_value(None), or cell.set_none() by a graph;
+  cell.set_void() explicitly sets a cell to void-None)
+ Read accessors that retrieve None when reading their path (as opposed to AttributeError/KeyError)
+  also are considered "explicit None".
+ Transformations that resulted in an exception are NOT explicit None (they are "void-None").
+ Explicit None values are NOT void and do NOT lead to void cancellation
+ Explicit None values are allowed on input pins that have their support explicitly enabled.
+
 ===================
 
 The manager has too many functions. New concept of a "livegraph". This is what the manager

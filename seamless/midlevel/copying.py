@@ -73,6 +73,9 @@ def fill_checksum(manager, node, temp_path):
     
     with macro_mode_off():
         ctx = core_context(toplevel=True)
+        raise NotImplementedError # livegraph branch        
+        manager._change_context(ctx) # to implement? is this a good idea to use it HERE???        
+        # Code below is also fishy...
         ctx._manager = manager
         ctx.cell = core_cell(datatype)
         ctx.cell.set(temp_value)

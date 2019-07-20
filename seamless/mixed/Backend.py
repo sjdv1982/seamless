@@ -2,7 +2,8 @@ from copy import deepcopy
 
 from .get_form import get_form as calc_form
 
-print("TODO: Backend.py: BufferedBackend with .buffer and .data sub-backend attributes. With this, Monitor will operate on data+buffer instead of on each alone")
+# TODO: livegraph branch
+# TODO: Backend.py: BufferedBackend with .buffer and .data sub-backend attributes. With this, Monitor will operate on data+buffer instead of on each alone
 
 def get_subform(form, path):
     if not len(path):
@@ -249,6 +250,7 @@ class DefaultBackend(Backend):
 
 class CellBackend(Backend):
     def __init__(self, cell):
+        raise NotImplementedError # livegraph branch
         from ..core.cell import MixedCell, PlainCell
         assert isinstance(cell, (MixedCell, PlainCell))
         plain = (isinstance(cell, PlainCell))

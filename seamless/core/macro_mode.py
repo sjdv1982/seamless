@@ -4,13 +4,20 @@ from contextlib import contextmanager
 
 _toplevel_register = set()
 _toplevel_registered = set()
+_toplevel_managers = set()
 
 def register_toplevel(ctx):
+    manager = ctx._get_manager()
+    assert manager is not None
+    _toplevel_managers.add(manager)
     if _macro_mode_off:
-        return
+        return    
     _toplevel_register.add(ctx)
 
 def unregister_toplevel(ctx):    
+    manager = ctx._get_manager()
+    if manager is not None:
+        _toplevel_managers.discard(manager)
     _toplevel_register.discard(ctx)
     _toplevel_registered.discard(ctx)
 

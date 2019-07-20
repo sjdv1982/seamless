@@ -1,3 +1,6 @@
+UPDATE: plan finished for Seamless data management (data_management.txt).
+Shoe-horn this into the roadmap in an appropriate place...
+
 Great Refactor is almost complete (see seamless-towards-02.md).
 Things to do:
 

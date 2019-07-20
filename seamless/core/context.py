@@ -1,4 +1,5 @@
 """Module for Context class."""
+import weakref
 from weakref import WeakValueDictionary
 from collections import OrderedDict
 import time
@@ -64,7 +65,8 @@ name: str
         super().__init__()
         if toplevel:
             self._toplevel = True
-            self._manager = Manager(self)
+            manager = Manager(self)
+            self._manager = weakref.ref(manager)
         if mount is not None:
             mount_params = {
                 "path": mount,
@@ -77,9 +79,6 @@ name: str
         self._auto = set()
         if toplevel:            
             register_toplevel(self)
-        from .. import communionserver
-        if toplevel:
-            communionserver.register_manager(self._manager)
 
     def _set_context(self, context, name):
         assert not self._toplevel
@@ -93,8 +92,11 @@ name: str
     def _get_manager(self):
         assert self._toplevel or self._context is not None or self._macro is not None #context must have a parent, or be toplevel, or have a macro
         root = self._root()
-        if root is self:
-            return self._manager
+        if self._toplevel or root is self:
+            manager = self._manager
+            if manager is None:
+                return None
+            return manager()
         return root._get_manager()
 
     def __str__(self):
@@ -205,6 +207,7 @@ name: str
          "timeout" seconds, returning the remaining set of unstable workers
         Report the workers that are not stable every "report" seconds
         """
+        raise NotImplementedError # livegraph branch
         t = time.time()
         manager = self._get_manager()
         loop = asyncio.get_event_loop()
@@ -224,18 +227,12 @@ name: str
             return self.equilibrate(timeout, report)
         
     @property
-    def unstable_workers(self):
-        """All unstable workers (not in equilibrium)"""
-        from . import SeamlessBaseList
-        result = list(self._manager.unstable)
-        return SeamlessBaseList(sorted(result, key=lambda p:p._format_path()))
-
-    @property
     def status(self):
         """The computation status of the context
         Returns a dictionary containing the status of all children that are not OK.
         If all children are OK, returns OK
         """
+        raise NotImplementedError # livegraph branch
         result = StatusReport()
         for childname, child in self._children.items():
             if childname in self._auto:
@@ -279,14 +276,16 @@ name: str
                 child.destroy(from_del=from_del)
         if self._toplevel:
             unregister_toplevel(self)
-        self._unmount(from_del=from_del)
+        else:
+            self._unmount(from_del=from_del)
 
-    def _unmount(self, from_del=False):
+    def _unmount(self, from_del=False, manager=None):
         from .macro import Macro
         if self._unmounted:
             return
         self._unmounted = True
-        manager = self._root()._manager
+        if manager is None:
+            manager = self._root()._get_manager()
         mountmanager = manager.mountmanager
         if not is_dummy_mount(self._mount) or self._root() is self:
             mountmanager.unmount_context(self, from_del=from_del)

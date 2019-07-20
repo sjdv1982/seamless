@@ -20,7 +20,10 @@ WAIT_TIME = 1.5 # time to wait for network connections after a new manager
 
 import os, sys, asyncio, time, functools, json, traceback, base64, websockets
 from weakref import WeakSet
+# TODO # livegraph branch
+"""
 from .communionclient import communion_client_types
+"""
 from .core.cache.transform_cache import TransformerLevel1
 from .core.build_module import build_compiled_module
 
@@ -136,7 +139,8 @@ def communion_decode(m):
 class CommunionServer:
     future = None
     PROTOCOL = ("seamless", "communion", "0.1")
-    def __init__(self):        
+    def __init__(self):
+        raise NotImplementedError # livegraph branch   
         self.managers = WeakSet()
         self.config_master = default_master_config.copy()
         self.config_servant = default_servant_config.copy()
@@ -420,6 +424,9 @@ class CommunionServer:
         return result
 
 
+# TODO # livegraph branch
+"""
 communionserver = CommunionServer()
 
 from .core.events.cache_task import cache_task_manager
+"""

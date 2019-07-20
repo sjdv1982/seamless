@@ -1,3 +1,5 @@
+# TODO # livegraph branch
+"""
 from .core.events.cache_task import (
     remote_checksum_from_label_servers, 
     remote_transformer_result_servers,
@@ -6,6 +8,7 @@ from .core.events.cache_task import (
 )    
 from .core.events.jobscheduler import remote_job_servers
 from .core.build_module import remote_build_model_servers
+"""
 
 class CommunionClient: 
     """wraps a remote servant"""
@@ -14,6 +17,7 @@ class CommunionClient:
     config_type = None
 
     def __init__(self, servant):
+        raise NotImplementedError # livegraph branch
         self.servant = servant
         self.cache_task_servers.append(self.submit)
     
@@ -79,6 +83,8 @@ class CommunionPairClient:
         except:
             pass
 
+# TODO # livegraph branch
+"""
 class CommunionLabelClient(CommunionClient):
     config_type = "label"
     cache_task_servers = remote_checksum_from_label_servers
@@ -155,3 +161,4 @@ communion_client_types = (
     CommunionValueCacheClient,
     CommunionTransformerJobClient,
 )
+"""

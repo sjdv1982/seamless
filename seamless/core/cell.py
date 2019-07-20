@@ -300,7 +300,7 @@ Use ``Cell.status()`` to get its status.
         if self._unmounted:
             return
         self._unmounted = True
-        manager = self._root()._manager
+        manager = self._root()._get_manager()
         mountmanager = manager.mountmanager
         if not is_dummy_mount(self._mount):
             mountmanager.unmount(self, from_del=from_del)

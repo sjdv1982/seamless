@@ -108,7 +108,7 @@ class UnboundContext(SeamlessBase):
     ):
         super().__init__()
         if toplevel:
-            self._manager = UnboundManager(self)
+            self._realmanager = UnboundManager(self)
         self._toplevel = toplevel
         if toplevel:
             self._bound_manager = manager
@@ -119,7 +119,7 @@ class UnboundContext(SeamlessBase):
             assert root is None
             root = Context(toplevel=True)
             if manager is not None:
-                root._manager = manager
+                root._realmanager = manager
         else:
             assert manager is None
         self._root_ = root
@@ -147,7 +147,7 @@ class UnboundContext(SeamlessBase):
         assert isinstance(child, (UnboundContext, Worker, Cell, Link, StructuredCell))
         if isinstance(child, UnboundContext):
             assert child._context is None
-            child._manager = self._manager
+            child._realmanager = self._realmanager
             child._context = weakref.ref(self)
             child._root_ = self._root()
             self._children[childname] = child
@@ -171,8 +171,8 @@ class UnboundContext(SeamlessBase):
     def _get_manager(self):
         if self._bound:
            return self._bound._get_manager()
-        assert self._manager is not None
-        return self._manager
+        assert self._realmanager is not None
+        return self._realmanager
 
     def mount(self, path=None, mode="rw", authority="cell", persistent=False):
         """Performs a "lazy mount"; context is mounted to the directory path when macro mode ends
@@ -235,9 +235,9 @@ class UnboundContext(SeamlessBase):
         for childname, child in self._children.items():
             if isinstance(child, UnboundContext):
                 bound_ctx = ctxmap[childname]
-                if self._manager is not child._manager:
-                    self._manager.commands += child._manager.commands
-                    child._manager.commands.clear()
+                if self._realmanager is not child._realmanager:
+                    self._realmanager.commands += child._realmanager.commands
+                    child._realmanager.commands.clear()
                 child._bind_stage1(bound_ctx)                
             else:
                 continue     
@@ -247,12 +247,12 @@ class UnboundContext(SeamlessBase):
     def _bind_stage2(self, manager):
         from .macro import replace_path
         macro = self._macro
-        for comnr, (com, args) in enumerate(self._manager.commands):            
+        for comnr, (com, args) in enumerate(self._realmanager.commands):            
             if com == "set cell":                
                 cell, value, subpath, from_buffer, buffer_checksum = args
                 supersede = False
                 if subpath is None or subpath == ():
-                    for com2, args2 in self._manager.commands[comnr+1:]:
+                    for com2, args2 in self._realmanager.commands[comnr+1:]:
                         if com2 == "set cell":         
                             cell2, _, subpath2, _, _ = args2
                         elif com2 == "set cell checksum":

@@ -85,10 +85,6 @@ class SeamlessBase:
     def destroy(self, **kwargs):
         self._destroyed = True
 
-class SeamlessBaseList(list):
-    def __str__(self):
-        return str([v._format_path() for v in self])
-
 from .macro_mode import get_macro_mode, macro_mode_on
 from . import cell as cell_module
 from .cell import Cell, cell

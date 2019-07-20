@@ -36,11 +36,15 @@ class Context:
     _translate_count = 0  
 
     @classmethod
-    def from_graph(cls, graph, cache_manager):
+    def from_graph(cls, graph, manager):
         self = cls()
-        if cache_manager is not None:
-            #self._ctx0._get_manager()._set_cache(cache_manager)
-            self._ctx0._manager = cache_manager
+        if manager is not None:
+            from seamless.core.manager import Manager
+            from seamless.core.context import Context
+            assert isinstance(self._ctx0, Context), type(self._ctx0)
+            assert isinstance(manager, Manager), type(manager)
+            manager._change_context(self._ctx0) # to implement? # livegraph branch
+            self._ctx0._manager = weakref.ref(manager)
         graph = deepcopy(graph)
         nodes = {}        
         for node in graph["nodes"]:
@@ -247,7 +251,9 @@ class Context:
             with macro_mode_off():
                 ctx = CoreContext(toplevel=True)
             macro_mode._toplevel_registered.add(ctx)
-            ctx._manager = manager
+            raise NotImplementedError # livegraph branch; TODO: "manager" part below looks fishy...
+            manager._change_context(ctx) # to implement?
+            ctx._manager = weakref.ref(manager)
             ctx._macro = self
             assert not len(ctx.path)
             old_gen_context = self._gen_context
