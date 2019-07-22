@@ -235,9 +235,17 @@ class StructuredCell(SeamlessBase):
 
 
     def __setattr__(self, attr, value):
+        assert not self._destroyed
         if attr.startswith("_") or not self._protected:
             return super().__setattr__(attr, value)
         raise AttributeError("StructuredCell is protected; did you want to assign to .handle.%s instead?" % attr)    
+        
+    def __getattribute__(self, attr):
+        if attr.startswith("_"):
+            return super().__getattribute__(attr)
+        assert not self._destroyed
+        return super().__getattribute__(attr)
+
     def _update_schema(self):
         self.schema.set(self._schema_value)
 
@@ -251,19 +259,15 @@ class StructuredCell(SeamlessBase):
         from .manager import Manager
         from .unbound_context import UnboundContext, UnboundManager
         old_manager = None if self._context is None else self._get_manager()
-        if old_manager is not None:
-            assert isinstance(old_manager, UnboundManager)
+        assert old_manager is None
         try:
             self._protected = False
             super()._set_context(context, name)
         finally:
             self._protected = True
         manager = self._get_manager()
-        assert not (isinstance(manager, Manager) and isinstance(context, UnboundContext))
-        if old_manager is None:
-            outedpaths = list(self.outchannels.keys()) + list(self.editchannels.keys())
-            inpaths = [p for p in self.inchannels if p not in outedpaths]
-            manager.register_cell_paths(self.data, inpaths, outedpaths)
+        assert not ( (isinstance(manager, Manager) and isinstance(context, UnboundContext)) )
+        manager.register_structured_cell(self)
 
     def _set_share_callback(self, sharefunc):
         return self.data._set_share_callback(sharefunc)
@@ -277,6 +281,7 @@ class StructuredCell(SeamlessBase):
         return self.data.checksum
         
     def set(self, value):
+        assert not self._destroyed
         if self._is_silk:
             if self._rebind_schema:
                 self._rebind()
@@ -286,6 +291,7 @@ class StructuredCell(SeamlessBase):
 
 
     def _set_checksum(self, checksum, *, initial, schema=False):
+        assert not self._destroyed
         from .unbound_context import UnboundManager
         manager = self.data._get_manager()
         if schema:
@@ -306,6 +312,7 @@ class StructuredCell(SeamlessBase):
 
     @property
     def status(self):
+        raise NotImplementedError # livegraph branch
         return self.data.status
 
     @property
@@ -345,6 +352,7 @@ class StructuredCell(SeamlessBase):
     @property
     def example(self):
         """Returns example Silk structure, for schema definition"""
+        assert not self._destroyed
         from ..silk import Silk
         assert self._is_silk
         if self._rebind_schema:
