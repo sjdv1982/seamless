@@ -176,17 +176,14 @@ TODO: semantic-to-syntactic-checksum cache
 TODO: provenance cache
 TODO: deepcell monitor
 TODO: two kind of accessors: read accessors and write accessor.
-Connections are then modelled as follows:
-simplecell-inputpin => read accessor (without path)
-outputpin-simplecell => write accessor (without path)
-outchannel-inputpin => read accessor
-outputpin-inchannel => write accessor
-simplecell-simplecell => write accessor (without path)
-simplecell-inchannel => write accessor
-outchannel-simplecell => read accessor (with path) + write accessor (without path)
-outchannel-inchannel => read accessor + write accessor
+Each connection is modelled as a read accessor + write accessor. 
+A read accessor has an associated expression.
+TODO: buffer size cache.
 TODO: exception cache. Works like transformer result cache, but needs better facilities to flush
- (after all, exceptions are less deterministic than results)
+ (after all, exceptions are less deterministic than results).
+TODO: expression cache policy. Normally, cache only if the result buffer is much smaller than 
+ the input buffer.
+ 
 
 Tasks
 =====
@@ -222,7 +219,7 @@ List of tasks:
   - Await cell checksum task
   - If the checksum is None, for each output accessor:
       - do a void cancellation
-    Else, for each output accessor:
+    Else, for each output read accessor:
       - construct (not evaluate!) their expression using the cell checksum 
         Constructing a downstream expression increfs the cell checksum
       - launch an accessor update task
@@ -232,17 +229,20 @@ List of tasks:
     - Await/incref expression evaluation task. Incref the expression. 
     - If the expression checksum is None: run a void cancellation and return
     - Select all downstream write accessors,set as their checksum the checksum of our expression
-        (this increfs the checksum)
-    - Select all downstream write accessors and workers, and launch an update task for each. 
-       For workers, cancel the previous update task if any. Decref the current transformation task.
+        (this increfs the checksum), and launch an update task.
   For a write accessor:
-    - Select target cell
-    - If cell is void, give a warning, and set to non-void
-    - If the path is empty:
-        Set the cell checksum (direct attribute access). If checksum is None, set void.
-    - Else, run a set-non-authorative-path *action*, which will launch a set-path task.
-    - Launch a cell update task (it will automatically await the set-path task, if any)
-
+    For each target:
+      If a cell:
+        - Select target cell
+        - If cell is void, give a warning, and set to non-void
+        - If the path is empty:
+          Set the cell checksum (direct attribute access). If checksum is None, set void.
+        - Else, run a set-non-authorative-path *action*, which will launch a set-path task.
+        - Launch a cell update task (it will automatically await the set-path task, if any)
+      If a worker:
+        - Cancel the previous update task if any
+        - Decref the current transformation task.
+        - Launch a new worker update task.
 
 - Worker update task.
   - Check that all inputpins/editpin accessors are connected and have valid checksums. If not, return.

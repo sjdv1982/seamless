@@ -17,7 +17,7 @@ class UnboundManager:
         self.cells[cell.path] = cell
 
     def register_structured_cell(self, structured_cell):
-        self._registered.add(structured_cell)
+        pass # no-op
 
     def register_transformer(self, transformer):
         self._registered.add(transformer)
@@ -84,10 +84,6 @@ class UnboundManager:
             return cells[0] if len(cells) else None
         else:
             return cells
-
-    def register_cell_paths(self, cell, inpaths, outedpaths):
-        self.commands.append(("register_cell_paths", (cell, inpaths, outedpaths)))
-
 
 class UnboundContext(SeamlessBase):
 
@@ -247,6 +243,11 @@ class UnboundContext(SeamlessBase):
     def _bind_stage2(self, manager):
         from .macro import replace_path
         macro = self._macro
+        for childname, child in self._children.items():
+            if isinstance(child, StructuredCell):
+                manager.register_structured_cell(child)
+            else:
+                continue
         for comnr, (com, args) in enumerate(self._realmanager.commands):            
             if com == "set cell":                
                 cell, value, subpath, from_buffer, buffer_checksum = args
@@ -307,10 +308,6 @@ class UnboundContext(SeamlessBase):
             elif com == "set cell label":
                 cell, label = args
                 manager.set_cell_label(cell, label)
-            elif com == "register_cell_paths":
-                cell, inpaths, outedpaths = args
-                assert cell._get_manager() is manager, (cell._get_manager(), manager)
-                manager.register_cell_paths(cell, inpaths, outedpaths)
             else:
                 raise ValueError(com)
         manager.schedule_jobs()

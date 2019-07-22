@@ -24,15 +24,45 @@ class Manager:
 
     def register_cell(self, cell):
         self.cachemanager.register_cell(cell)
+        self.livegraph.register_cell(cell)
 
+    def register_structured_cell(self, structured_cell):
+        self.livegraph.register_structured_cell(structured_cell)
+
+    ##########################################################################
+    # API section II: Actions
+    ##########################################################################
+
+    def connect_cell(self, cell, other, cell_subpath):
+        #print("connect_cell", cell, other, cell_subpath)
+        raise NotImplementedError # livegraph branch
+
+    def connect_pin(self, pin, cell):
+        raise NotImplementedError # livegraph branch
+
+
+    def set_cell_checksum(self, cell, checksum, status=None):
+        raise NotImplementedError # livegraph branch
+
+    def set_cell(self, cell, value):
+        assert self.livegraph.has_authority(cell)
+        self._cancel_cell(cell, value is None)
+        task = SetCellValueTask(self, cell, value)
+        task.launch()
+
+    ##########################################################################
+    # API section ???: Cancellation
+    ##########################################################################
+    def _cancel_cell(self, cell, void):
+        pass # TODO: livegraph branch
 
     ##########################################################################
     # API section ???: Destruction
     ##########################################################################
 
     def _destroy_cell(self, cell):
-        print("_destroy_cell", cell)
         self.cachemanager.destroy_cell(cell)
+        self.livegraph.destroy_cell(cell)
 
     def destroy(self, from_del=False):
         if self._destroyed:

@@ -160,21 +160,16 @@ Use ``Cell.status()`` to get its status.
         cell.set(cell.data) is guaranteed to be a no-op"""
         return self.value # TODO: check that this is always correct
 
-    def _set(self, value, from_buffer, buffer_checksum=None):
+    def set(self, value):
+        """Update cell data from the terminal."""
         if self._context is None:
             self._prelim_val = value, False
         else:
             manager = self._get_manager()
             manager.set_cell(
-              self, value,
-              subpath=None,
-              from_buffer=from_buffer, buffer_checksum=buffer_checksum
+              self, value
             )
         return self
-
-    def set(self, value):
-        """Update cell data from the terminal."""
-        return self._set(value, False)
 
     def _set_checksum(self, checksum, initial=False, is_buffercell=False):
         """Specifies the checksum of the data (hex format)        
@@ -504,6 +499,10 @@ extensions = {
     MixedCell: ".mixed",
     ArrayCell: ".npy",
 }
+_cellclasses = [cellclass for cellclass in globals().values() if isinstance(cellclass, type) \
+  and issubclass(cellclass, Cell)]
+celltypes = {cellclass._celltype:cellclass for cellclass in _cellclasses}
+subcelltypes = {cellclass._subcelltype:cellclass for cellclass in _cellclasses if cellclass._subcelltype is not None}
 
 from .unbound_context import UnboundManager
 from .mount import MountItem
