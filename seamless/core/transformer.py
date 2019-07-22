@@ -1,12 +1,12 @@
 from collections import OrderedDict
 
 from .worker import Worker, InputPin, OutputPin
-from .protocol import content_types
 
 class Transformer(Worker):
 
     debug = False
     def __init__(self, transformer_params, stream_params = None):
+        raise NotImplementedError # livegraph branch
         self.code = InputPin(self, "code", "ref", "pythoncode", "transformer")
         self._pins = {"code":self.code}
         self._output_name = None

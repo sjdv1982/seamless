@@ -1,12 +1,12 @@
 from collections import OrderedDict
 
 from .worker import Worker, InputPin, OutputPin, EditPin
-from .protocol import content_types
 
 class Reactor(Worker):
     #can't have with_schema because multiple outputs are possible
     # reactors will have construct their own Silk objects from schema pins
     def __init__(self, reactor_params, pure):
+        raise NotImplementedError # livegraph branch
         self.outputs = {}
         self.inputs = {
             "code_start":("ref", "pythoncode", "reactor", True),

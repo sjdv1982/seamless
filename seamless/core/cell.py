@@ -63,15 +63,15 @@ Use ``Cell.status()`` to get its status.
         manager.register_cell(self)
         if self._prelim_val is not None:
             value, from_buffer = self._prelim_val
-            self._get_manager().set_cell(self, value,
-             from_buffer=from_buffer, subpath=None, origin=ctx
-            )
+            if from_buffer:
+                self.set_buffer(value)
+            else:
+                self.set(value)
             self._prelim_val = None
-        if self._prelim_checksum is not None:
-            checksum = self._prelim_checksum
-            manager.set_cell_checksum(self, checksum)
-            if not isinstance(manager, UnboundManager):
-                self._prelim_checksum = None
+        elif self._prelim_checksum is not None:
+            checksum, initial, is_buffercell = self._prelim_checksum
+            self._set_checksum(self, checksum, initial, is_buffercell)
+            self._prelim_checksum = None
 
     def __hash__(self):
         return self._counter
@@ -163,11 +163,24 @@ Use ``Cell.status()`` to get its status.
     def set(self, value):
         """Update cell data from the terminal."""
         if self._context is None:
+            self._prelim_checksum = None
             self._prelim_val = value, False
         else:
             manager = self._get_manager()
             manager.set_cell(
               self, value
+            )
+        return self
+
+    def set_buffer(self, buffer):
+        """Update cell buffer from the terminal."""
+        if self._context is None:
+            self._prelim_checksum = None
+            self._prelim_val = buffer, True
+        else:
+            manager = self._get_manager()
+            manager.set_buffer(
+              self, buffer
             )
         return self
 
@@ -179,12 +192,20 @@ Use ``Cell.status()`` to get its status.
         
         However, if "is_buffercell" is True, then the cell can be a .buffer attribute of a StructuredCell
         """        
-        raise NotImplementedError # livegraph branch
-        return self._get_manager().set_cell_checksum(self, bytes.fromhex(checksum), initial, is_buffercell)
+        if self._context is None:
+            self._prelim_val = None
+            self._prelim_checksum = checksum, initial, is_buffercell
+        else:
+            manager = self._get_manager()
+            manager.set_cell_checksum(
+              self, bytes.fromhex(checksum), initial, is_buffercell
+            )
+        return self
 
     def set_checksum(self, checksum):
         """Specifies the checksum of the data (hex format)"""
-        return self._set_checksum(checksum)
+        self._set_checksum(checksum)
+        return self
 
     def set_label(self, label):
         """Labels the current value of the cell

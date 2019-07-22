@@ -4,7 +4,6 @@ import weakref
 
 from .cell import Cell
 from .worker import Worker, InputPin, OutputPin
-from .protocol import content_types
 from . import library
 from .injector import macro_injector as injector
 from .unbound_context import UnboundContext, UnboundManager
@@ -17,6 +16,7 @@ class ExecError(Exception): pass
 class Macro(Worker):
     injected_modules = None
     def __init__(self, macro_params, *, lib=None):
+        raise NotImplementedError # livegraph branch
         self._gen_context = None
         self._unbound_gen_context = None
         self.code = InputPin(self, "code", "ref", "pythoncode", "transformer")

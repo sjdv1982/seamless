@@ -2,6 +2,7 @@ import json
 import numpy as np
 from ...mixed import MixedScalar
 from ...silk.validation import _integer_types, _float_types
+
 def seamless_encoder(obj):
     from ..structured_cell import StructuredCellState
     retry = False
@@ -15,18 +16,6 @@ def seamless_encoder(obj):
         elif isinstance(obj, _float_types):
             obj = float(obj)
             retry = True
-    """
-    elif isinstance(obj, StructuredCellState):
-        result = {}
-        for k in [k for k in dir(StructuredCellState) if getattr(StructuredCellState,k) in (False, None)]:
-            v = getattr(obj, k)
-            try:
-                vv = default_encoder.encode(v)
-            except TypeError:
-                vv = seamless_encoder(v)
-            result[k] = vv
-        return result
-    """
     if retry:
         return default_encoder.encode(obj)
     else:

@@ -383,6 +383,10 @@ List of tasks:
   (Depends on cell ID, rather than checksum. Destroy mechanics must be implemented correctly)
   Sleep 20 seconds. Afterwards, remove cell ID from buffercell cache.
 
+- Serialization task (using celltype, from value)
+  Can be LRU-cached, from value object ID
+  Should be launched in a subprocess executor
+
 - Deserialization task (using celltype)
   Can be LRU-cached, and can also be incref'ed based on checksum+celltype.   
   Should be launched in a subprocess executor.

@@ -2,16 +2,16 @@ class Manager:
     _destroyed = False
     _active = True
     def __init__(self, ctx):
-        ###from . import (ValueManager, StatusManager, AuthorityManager, 
-        ### LiveGraph, JobManager)
         from .livegraph import LiveGraph
         from .cachemanager import CacheManager
+        from .taskmanager import TaskManager
         assert ctx._toplevel
         self.ctx = ctx
         from ... import communionserver
         ###communionserver.register_manager(self)
         self.livegraph = LiveGraph(self)
         self.cachemanager = CacheManager(self)
+        self.taskmanager = TaskManager(self)
 
         # for now, just a single global mountmanager
         from ..mount import mountmanager
@@ -25,6 +25,7 @@ class Manager:
     def register_cell(self, cell):
         self.cachemanager.register_cell(cell)
         self.livegraph.register_cell(cell)
+        self.taskmanager.register_cell(cell)
 
     def register_structured_cell(self, structured_cell):
         self.livegraph.register_structured_cell(structured_cell)
@@ -63,6 +64,7 @@ class Manager:
     def _destroy_cell(self, cell):
         self.cachemanager.destroy_cell(cell)
         self.livegraph.destroy_cell(cell)
+        self.taskmanager.destroy_cell(cell)
 
     def destroy(self, from_del=False):
         if self._destroyed:
@@ -75,3 +77,5 @@ class Manager:
 
     def __del__(self):
         self.destroy(from_del=True)
+
+from .tasks import SetCellValueTask

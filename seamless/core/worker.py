@@ -8,9 +8,7 @@ def _cell_from_pin(self, celltype):
     manager = self._get_manager()
     my_cell = manager.cell_from_pin(self)
     if celltype is None:
-        celltype = self.content_type # for now, a 1:1 correspondence between content type and cell type
-        if celltype is None:
-            celltype = default_cell_types.get(self.access_mode, "plain")
+        celltype = self.celltype
     if my_cell is None:
         worker = self.worker_ref()
         if worker is None:
@@ -35,6 +33,7 @@ def _cell_from_pin(self, celltype):
     elif isinstance(my_cell, Path):
         return my_cell._cell
     else: # Accessor
+        raise NotImplementedError # livegraph branch
         return my_cell.cell
 
 
@@ -81,37 +80,17 @@ class Worker(SeamlessBase):
         return self._get_manager().status[self]
 
 
-from .protocol import transfer_modes, access_modes, content_types
+from .cell import celltypes as celltypes0
+celltypes = list(celltypes0) + ["module"]
 
-default_cell_types = {
-    "pythoncode": "python",
-    "plain": "plain",
-    "silk": "plain",
-    "default": "plain",
-    "text": "text",
-    "module": "python",
-}
 class PinBase(SeamlessBase):
     access_mode = None
-    def __init__(self, worker, name, transfer_mode, access_mode=None, content_type=None):
+    def __init__(self, worker, name, celltype):
         self.worker_ref = weakref.ref(worker)
         super().__init__()
-        assert transfer_mode in transfer_modes, (transfer_mode, transfer_modes)
-        if transfer_mode == "module":
-            assert access_mode is None
-            assert content_type is None
-        if access_mode is not None:
-            if isinstance(self, InputPin):
-                assert access_mode in access_modes + ("default",), (access_mode, access_modes)
-            else:
-                assert access_mode in access_modes, (access_mode, access_modes)
+        assert celltype in celltypes, (celltype, celltypes)
         self.name = name
-        self.transfer_mode = transfer_mode
-        if content_type is not None:
-            assert content_type in content_types, (content_type, content_types)
-        self.content_type = content_type
-        if access_mode is not None:
-            self.access_mode = access_mode
+        self.celltype = celltypes
 
     @property
     def path(self):
@@ -184,10 +163,7 @@ class OutputPin(OutputPinBase):
         from .cell import cell
         manager = self._get_manager()
         my_cells = manager.cell_from_pin(self)
-        if celltype is None:
-            celltype = self.content_type # for now, a 1:1 correspondence between content type and cell type
-            if celltype is None:
-                celltype = default_cell_types.get(self.access_mode, "plain")
+        celltype = self.celltype
         l = len(my_cells)
         if l == 0:
             worker = self.worker_ref()

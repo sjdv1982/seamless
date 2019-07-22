@@ -1,2 +1,2 @@
-def deserialize(buffer, celltype):
+def serialize(value, celltype):
     raise NotImplementedError #livegraph branch
