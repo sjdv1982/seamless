@@ -24,6 +24,7 @@ Use ``Cell.status()`` to get its status.
     _celltype = None
     _subcelltype = None
     _checksum = None
+    _void = True
     _prelim_val = None
     _prelim_checksum = None
     _unmounted = False

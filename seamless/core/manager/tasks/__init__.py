@@ -10,6 +10,7 @@ thread_pool = ThreadPoolExecutor()
 class Task:
     _executor = None
     _realtask = None
+    _awaiting = False
     
     def __init__(self, manager, *args, **kwargs):        
         if isinstance(manager, weakref.ref):
@@ -17,13 +18,13 @@ class Task:
         assert isinstance(manager, Manager)
         if self.refkey is not None:
             taskmanager = manager.taskmanager
-            reftask = taskmanager.reftasks.get(refkey)
+            reftask = taskmanager.reftasks.get(self.refkey)
             if reftask is not None:
                 self.set_realtask(reftask)
                 return
             else:
-                taskmanager.reftasks[refkey] = self
-                taskmanager.rev_reftasks[self] = refkey
+                taskmanager.reftasks[self.refkey] = self
+                taskmanager.rev_reftasks[self] = self.refkey
         self.manager = weakref.ref(manager)        
         self.future = None
         self.dependencies = []
@@ -39,14 +40,18 @@ class Task:
         realtask.refholders.append(self)
 
     async def run(self):
+        print("RUN", self)
         realtask = self._realtask
         if realtask is not None:
             return realtask.run()
         self._launch()
+        self._awaiting = True
+        print("LAUNCHED", self)
         try:
             await asyncio.shield(self.future)
-        except CancelledError:
+        except CancelledError:                        
             self.cancel()
+        print("HAS RUN", self)
         return self.future.result()
     
     def _launch(self):
@@ -57,15 +62,14 @@ class Task:
         if self.future is not None:
             return taskmanager        
         if self._executor is None:
-            awaitable = self._run(manager)
+            awaitable = self._run()
         else:
             loop = taskmanager.loop
             with self._executor as executor:
                 awaitable = loop.run_in_executor(
                     executor,
-                    self._run,
-                    manager
-                )        
+                    self._run
+                )
         self.future = asyncio.ensure_future(awaitable)
         taskmanager.add_task(self)
         return taskmanager
@@ -82,7 +86,9 @@ class Task:
             return realtask.launch_and_await()
         # Blocking version of launch
         taskmanager = self._launch()
+        self._awaiting = True
         taskmanager.loop.run_until_complete(self.future)
+        return self.future.result()
 
     def cancel_refholder(self, refholder):
         assert self._realtask is None
@@ -107,5 +113,6 @@ class Task:
 
 from .set_value import SetCellValueTask
 from .serialize_buffer import SerializeBufferTask
-#from .calculate_checksum import CalculateChecksumTask
+from .checksum import CellChecksumTask, CalculateChecksumTask
+from .cell_update import CellUpdateTask
 from ..manager import Manager

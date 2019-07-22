@@ -1,9 +1,11 @@
 import weakref
+import asyncio
 from functools import partial
 
 class TaskManager:
     def __init__(self, manager):
         self.manager = weakref.ref(manager)
+        self.loop = asyncio.get_event_loop()
         self.tasks = []
         self.cell_to_task = {} # tasks that depend on cells
         self.reftasks = {}
@@ -64,6 +66,8 @@ class TaskManager:
             self._clean_dep(dep, task)
         for refholder in task.refholders:
             refholder.cancel()
+        if task.future is not None and not task._awaiting:
+            task.future.result() # to raise Exception; TODO: log it instead
 
     def destroy_cell(self, cell):
         for task in self.cell_to_task.get(cell, []):

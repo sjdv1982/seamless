@@ -1,0 +1,38 @@
+from . import Task
+
+class CellUpdateTask(Task):
+    def init(self, manager, cell):
+        self.cell = cell
+        self.dependencies.append(cell)
+
+    async def _run(self):
+        """
+        - If the cell's void attribute is True, log a warning and return.
+        - Await cell checksum task
+        - If the checksum is None, for each output accessor:
+            - do a void cancellation
+          Else, for each output read accessor:
+            - construct (not evaluate!) their expression using the cell checksum 
+            Constructing a downstream expression increfs the cell checksum
+            - launch an accessor update task
+        """
+        cell = self.cell
+        if cell._void:
+            print("WARNING: cell %s is void, shouldn't happen during cell update" % cell)
+            return
+        from . import SerializeBufferTask, CellChecksumTask, CellUpdateTask
+        manager = self.manager
+        cell = self.cell
+        await CellChecksumTask(manager, cell)
+        checksum, void = cell._checksum, cell._void
+        if checksum is None and not void:
+            manager.cancel_cell(cell, void=True)
+        assert not cell._monitor
+        accessors = manager.livegraph.cell_to_downstream[cell]
+        for accessor in accessor:
+            raise NotImplementedError #livegraph branch
+            #- construct (not evaluate!) their expression using the cell checksum 
+            #Constructing a downstream expression increfs the cell checksum
+            #- launch an accessor update task
+            #AccessorUpdateTask(manager, accessor).launch()
+        

@@ -42,20 +42,24 @@ class Manager:
         raise NotImplementedError # livegraph branch
 
 
-    def set_cell_checksum(self, cell, checksum, status=None):
+    def set_cell_checksum(self, cell, checksum):
         raise NotImplementedError # livegraph branch
+
+    def _set_cell_checksum(self, cell, checksum, void):
+        cell._checksum = checksum
+        cell._void = void
 
     def set_cell(self, cell, value):
         assert self.livegraph.has_authority(cell)
-        self._cancel_cell(cell, value is None)
+        self.cancel_cell(cell, value is None)
         task = SetCellValueTask(self, cell, value)
         task.launch()
 
     ##########################################################################
     # API section ???: Cancellation
     ##########################################################################
-    def _cancel_cell(self, cell, void):
-        pass # TODO: livegraph branch
+    def cancel_cell(self, cell, void):
+        print("# TODO: livegraph branch, manager.cancel_cell")
 
     ##########################################################################
     # API section ???: Destruction

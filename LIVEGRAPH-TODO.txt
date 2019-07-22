@@ -384,14 +384,15 @@ List of tasks:
   Sleep 20 seconds. Afterwards, remove cell ID from buffercell cache.
 
 - Serialization task (using celltype, from value)
-  Can be LRU-cached, from value object ID
+  Can be LRU-cached and incref'ed, from value object ID
   Should be launched in a subprocess executor
 
 - Deserialization task (using celltype)
-  Can be LRU-cached, and can also be incref'ed based on checksum+celltype.   
+  Can be LRU-cached and incref'ed, based on checksum+celltype.   
   Should be launched in a subprocess executor.
 
-- Calculate checksum task (from buffer)  
+- Calculate checksum task (from buffer) 
+  Can be LRU-cached and incref'ed, from value object ID
   Should be launched in a subprocess executor
 
 - Transformer activation task (depends on each input read accessor)
