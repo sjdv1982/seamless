@@ -12,6 +12,7 @@ class Task:
         if isinstance(manager, weakref.ref):
             manager = manager()        
         assert isinstance(manager, Manager)
+        self._dependencies = []
         if self.refkey is not None:
             taskmanager = manager.taskmanager
             reftask = taskmanager.reftasks.get(self.refkey)
@@ -21,14 +22,20 @@ class Task:
             else:
                 taskmanager.reftasks[self.refkey] = self
                 taskmanager.rev_reftasks[self] = self.refkey
-        self.manager = weakref.ref(manager)        
-        self.dependencies = []
+        self.manager = weakref.ref(manager)                
         self.refholders = [self] # tasks that are value-identical to this one, 
                                 # of which this one is the realtask
 
     @property
     def refkey(self):
         return None
+
+    @property
+    def dependencies(self):
+        if self._realtask is not None:
+            return self._realtask.dependencies
+        else:
+            return self._dependencies
 
     def set_realtask(self, realtask):
         self._realtask = realtask
@@ -44,10 +51,12 @@ class Task:
         self._launch()
         self._awaiting = True
         #print("LAUNCHED", self)
+        #if self.__class__.__name__ != "CellChecksumTask": await asyncio.sleep(2) ###
         try:
             await asyncio.shield(self.future)
         except CancelledError:                        
             self.cancel()
+            raise
         #print("HAS RUN", self)
         return self.future.result()
     

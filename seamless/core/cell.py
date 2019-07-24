@@ -134,11 +134,20 @@ Use ``Cell.status()`` to get its status.
             raise Exception("Cannot ask the cell value of a context that is being constructed by a macro")
         raise NotImplementedError # livegraph branch
 
-
     @property
-    def value(self):
-        """Returns the value of the cell
-        Usually, this is the same as the data"""
+    def buffer(self):
+        """Return the cell's buffer.        
+        The cell's checksum is the SHA3-256 hash of this."""
+        manager = self._get_manager()
+        if isinstance(manager, UnboundManager):
+            if self._lib_path is not None:
+                from .library import lib_get_buffer
+                return lib_get_buffer(self._prelim_checksum, self)                
+            else:
+                raise Exception("Cannot ask the cell value of a context that is being constructed by a macro")
+        return manager.get_cell_buffer(self)
+
+    def _get_value(self, copy):
         manager = self._get_manager()
         if isinstance(manager, UnboundManager):
             if self._lib_path is not None:
@@ -146,13 +155,19 @@ Use ``Cell.status()`` to get its status.
                 return lib_get_value(self._prelim_checksum, self)                
             else:
                 raise Exception("Cannot ask the cell value of a context that is being constructed by a macro")
-        return manager.get_cell_value(self, copy=True)
+        return manager.get_cell_value(self, copy=copy)
+
+    @property
+    def value(self):
+        """Returns a copy of the cell's value
+        cell.set(cell.value) is guaranteed to be a no-op"""
+        return self._get_value(copy=True)
 
     @property
     def data(self):
-        """Returns the cell's data
+        """Returns the cell's value, without making a copy
         cell.set(cell.data) is guaranteed to be a no-op"""
-        return self.value # TODO: check that this is always correct
+        return self._get_value(copy=False)
 
     def set(self, value):
         """Update cell data from the terminal."""

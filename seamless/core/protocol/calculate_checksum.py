@@ -8,6 +8,8 @@ calculate_checksum_cache = lrucache(100)
 checksum_cache = lrucache(100)
 
 async def calculate_checksum(buffer):
+    if buffer is None:
+        return None
     buf_id = id(buffer)
     cached_checksum = calculate_checksum_cache.get(buf_id)
     if cached_checksum:

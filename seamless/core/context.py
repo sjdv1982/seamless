@@ -199,7 +199,7 @@ name: str
     def _get_macro(self):
         return self._macro
 
-    def equilibrate(self, timeout=None, report=10):
+    def equilibrate(self, timeout=None, report=2):
         """
         Run workers and cell updates until all workers are stable,
          i.e. they have no more updates to process
@@ -207,24 +207,8 @@ name: str
          "timeout" seconds, returning the remaining set of unstable workers
         Report the workers that are not stable every "report" seconds
         """
-        raise NotImplementedError # livegraph branch
-        t = time.time()
         manager = self._get_manager()
-        loop = asyncio.get_event_loop()
-        coroutine = manager.equilibrate(timeout, report, path=self.path)
-        future = asyncio.ensure_future(coroutine)
-        try:
-            loop.run_until_complete(future)
-            if timeout != 0: #KLUDGE
-                self.equilibrate(timeout=0,report=report)
-            return future.result()
-        except IndexError: #asyncio/base_events.py",  handle = self._ready.popleft() => IndexError
-            if timeout is not None:
-                passed_time = time.time() - t
-                timeout -= passed_time
-                if timeout < 0:
-                    return None
-            return self.equilibrate(timeout, report)
+        return manager.taskmanager.equilibrate(timeout, report)
         
     @property
     def status(self):

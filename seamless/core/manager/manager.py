@@ -76,6 +76,7 @@ class Manager:
         self._set_cell_checksum(cell, checksum, (checksum is None))
 
     def _set_cell_checksum(self, cell, checksum, void):
+        # NOTE: any cell task depending on the old checksum must have been canceled already!
         assert checksum is None or isinstance(checksum, bytes), checksum
         assert isinstance(void, bool), void
         cell._checksum = checksum
@@ -97,10 +98,24 @@ class Manager:
         task.launch_and_await()
         return cell._void
 
+    def _get_buffer(self, checksum):
+        if checksum is None:
+            return None
+        buffer = checksum_cache.get(checksum)
+        if buffer is not None:
+            return buffer
+        return GetBufferTask(self, checksum).launch_and_await()
+
+    def get_cell_buffer(self, cell):
+        checksum = self.get_cell_checksum(cell)
+        return self._get_buffer(checksum)
+        
     def get_cell_value(self, cell, copy):
         checksum = self.get_cell_checksum(cell)
-        celltype = cell._celltype
-        buffer = GetBufferTask(self, checksum).launch_and_await()
+        if checksum is None:
+            return None
+        buffer = self._get_buffer(checksum)
+        celltype = cell._celltype            
         task = DeserializeBufferTask(self, buffer, checksum, celltype, copy)
         value = task.launch_and_await()
         return value
@@ -108,8 +123,22 @@ class Manager:
     ##########################################################################
     # API section ???: Cancellation
     ##########################################################################
-    def cancel_cell(self, cell, void):
-        print("# TODO: livegraph branch, manager.cancel_cell")
+    def cancel_cell(self, cell, void, origin_task=None):
+        """Cancels all tasks depending on cell, and sets all dependencies to None. 
+If void=True, all dependencies are set to void as well.
+If origin_task is provided, that task is not cancelled."""
+        self.taskmanager.cancel_cell(cell, origin_task=origin_task)
+        if cell._checksum is None:
+            if not void or cell._void:
+                return
+        livegraph = self.livegraph
+        accessors = livegraph.cell_to_downstream[cell]
+        for accessor in accessors:            
+            self.cancel_accessor(accessor, void)
+        self._set_cell_checksum(cell, None, void)
+
+    def cancel_accessor(self, accessor, void):
+        raise NotImplementedError #livegraph branch
 
     ##########################################################################
     # API section ???: Destruction
@@ -134,3 +163,5 @@ class Manager:
 
 from .tasks import (SetCellValueTask, CellChecksumTask, GetBufferTask,
   DeserializeBufferTask)
+
+from ..protocol.calculate_checksum import checksum_cache

@@ -20,3 +20,4 @@ class SetCellValueTask(Task):
             CellUpdateTask(manager, self.cell).launch()
         finally:
             taskmanager.cell_to_value.pop(cell)
+        return None

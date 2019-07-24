@@ -21,7 +21,7 @@ class CellChecksumTask(Task):
     def __init__(self, manager, cell): 
         self.cell = cell
         super().__init__(manager)
-        self.dependencies = [cell]
+        self.dependencies.append(cell)
 
     async def _run(self):
         """Updates the checksum of the cell.
@@ -44,13 +44,17 @@ class CellChecksumTask(Task):
             if cell in taskmanager.cell_to_value:
                 celltype = cell._celltype
                 value = taskmanager.cell_to_value[cell]
-                buffer = await SerializeToBufferTask(manager, value, celltype).run()
-                checksum = await CalculateChecksumTask(manager, buffer).run()
+                if value is None:
+                    checksum = None
+                else:
+                    buffer = await SerializeToBufferTask(manager, value, celltype).run()
+                    checksum = await CalculateChecksumTask(manager, buffer).run()
             else:
                 checksum = cell._checksum            
         void = cell._void
         manager._set_cell_checksum(cell, checksum, checksum is None)
         if void and checksum is None:
-            manager.cancel_cell(cell, void=True)
+            manager.cancel_cell(cell, void=True, origin_task=self)
+        return None
         
         

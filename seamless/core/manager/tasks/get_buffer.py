@@ -22,7 +22,9 @@ class GetBufferTask(Task):
     infinite loop).
 - If successful, add the buffer to local and/or Redis cache (with a tempref or a permanent ref).
 - If all fails, raise Exception
-"""
+"""     
+        if self.checksum is None:
+            return None
         buffer = checksum_cache.get(self.checksum)
         if buffer is not None:
             return buffer

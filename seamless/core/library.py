@@ -121,11 +121,16 @@ def lib_has_path(libname, path):
 def libcell(path, celltype=None):
     return _libcell(path, celltype)
 
-def lib_get_value(checksum, cell):
+def lib_get_buffer(checksum):
+    raise NotImplementedError # livegraph branch
+    buffer = value_cache.get_buffer(checksum)[2]
+
+def lib_get_value(checksum, cell):    
+    buffer = lib_get_buffer(checksum)
+    if buffer is None:
+        return None
     raise NotImplementedError # livegraph branch
     celltype = celltypes_rev[type(cell)]
-    buffer = value_cache.get_buffer(checksum)[2]
-    assert buffer is not None
     result = deserialize(
         celltype, None, "lib_get_value",
         buffer, from_buffer = True, buffer_checksum = None,

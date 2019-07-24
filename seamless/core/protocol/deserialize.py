@@ -15,10 +15,17 @@ def _deserialize(buffer, checksum, celltype, copy):
 
 
 async def deserialize(buffer, checksum, celltype, copy):
+    """Deserializes a buffer into a value
+    First, it is attempted to retrieve the value from cache.
+    In case of a cache hit, a copy is returned only if copy=True
+    In case of a cache miss, deserialization is performed in a subprocess
+     (and copy is irrelevant)."""
     value = deserialize_cache.get((checksum, celltype))
     if value is not None:
         if copy:
-            return deepcopy.copy(value)
+            newvalue = deepcopy.copy(value)
+            serialize_cache[id(newvalue), celltype] = buffer
+            return newvalue
         else:
             return value
     
@@ -30,5 +37,8 @@ async def deserialize(buffer, checksum, celltype, copy):
             buffer, checksum, celltype, copy
         )
 
-    deserialize_cache[(checksum, celltype)] = value
+    deserialize_cache[checksum, celltype] = value
+    serialize_cache[id(value), celltype] = buffer
     return value
+
+from .serialize import serialize_cache    
