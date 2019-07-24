@@ -1,13 +1,11 @@
-from . import Task, process_pool
-
 from collections import namedtuple
-Serialization = namedtuple("Serialization",["value_id", "celltype"])
 
+from . import Task
 from ...protocol import serialize
 
-class SerializeBufferTask(Task):
-    _executor = process_pool
+Serialization = namedtuple("Serialization",["value_id", "celltype"])
 
+class SerializeToBufferTask(Task):
     @property
     def refkey(self):
         return Serialization(id(self.value), self.celltype)
@@ -17,7 +15,10 @@ class SerializeBufferTask(Task):
         self.celltype = celltype
         super().__init__(manager)      
 
-    def _run(self): # not async, since we run in ProcessPoolExecutor
-        return serialize(self.value, self.celltype)
+    async def _run(self): 
+        taskmanager = self.manager().taskmanager
+        loop = taskmanager.loop
+        result = await serialize(self.value, self.celltype)
+        return result 
 
 

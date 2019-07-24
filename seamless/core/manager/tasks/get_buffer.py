@@ -1,9 +1,4 @@
-
-from . import Task, process_pool
-
-from collections import namedtuple
-Serialization = namedtuple("Serialization",["value_id", "celltype"])
-
+from . import Task
 from ...protocol import serialize
 from ...protocol.calculate_checksum import checksum_cache
 
@@ -11,11 +6,12 @@ class GetBufferTask(Task):
     @property
     def refkey(self):
         return self.checksum
-    def __init__(self, manager, checksum):
-        super.__init__(manager)
-        self.checksum = checksum
 
-    async def _run(self, manager):
+    def __init__(self, manager, checksum):
+        self.checksum = checksum
+        super().__init__(manager)
+
+    async def _run(self):
         """  Gets the buffer from its checksum
 - Check for a local checksum-to-buffer cache hit (synchronous)
 - Else, check Redis cache (currently synchronous; make it async in a future version)

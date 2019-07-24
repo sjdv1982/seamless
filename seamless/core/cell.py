@@ -101,16 +101,21 @@ Use ``Cell.status()`` to get its status.
 
     @property
     def checksum(self):
-        raise NotImplementedError # livegraph branch
-        return self._checksum
-        ###
         manager = self._get_manager()
         if isinstance(manager, UnboundManager):
             raise Exception("Cannot ask the cell value of a context that is being constructed by a macro")
-        checksum = manager.cell_cache.cell_to_buffer_checksums.get(self)
+        checksum = manager.get_cell_checksum(self)
         if checksum is None:
             return None
         return checksum.hex()
+
+    @property
+    def void(self):
+        manager = self._get_manager()
+        if isinstance(manager, UnboundManager):
+            raise Exception("Cannot ask the cell value of a context that is being constructed by a macro")
+        void = manager.get_cell_void(self)
+        return void
 
     @property
     def semantic_checksum(self):        
@@ -118,25 +123,22 @@ Use ``Cell.status()`` to get its status.
         manager = self._get_manager()
         if isinstance(manager, UnboundManager):
             raise Exception("Cannot ask the cell value of a context that is being constructed by a macro")
-        checksum = manager.cell_semantic_checksum(self, subpath=None)
-        if checksum is None:
-            return None
-        return checksum.hex()
+        checksum = manager.get_cell_checksum(self)
+        raise NotImplementedError # livegraph branch
+        #return checksum.hex()
 
     @property
     def authoritative(self):
         manager = self._get_manager()
         if isinstance(manager, UnboundManager):
             raise Exception("Cannot ask the cell value of a context that is being constructed by a macro")
-        return manager.cell_cache.cell_to_authority[self][None]
+        raise NotImplementedError # livegraph branch
 
 
     @property
     def value(self):
         """Returns the value of the cell
         Usually, this is the same as the data"""
-        raise NotImplementedError # livegraph branch
-        ###
         manager = self._get_manager()
         if isinstance(manager, UnboundManager):
             if self._lib_path is not None:
@@ -144,16 +146,7 @@ Use ``Cell.status()`` to get its status.
                 return lib_get_value(self._prelim_checksum, self)                
             else:
                 raise Exception("Cannot ask the cell value of a context that is being constructed by a macro")
-        checksum = manager.cell_cache.cell_to_buffer_checksums.get(self)        
-        if checksum is None:
-            return None
-        default_accessor = manager.get_default_accessor(self)
-        if self._celltype == "cson":
-            default_accessor.access_mode = "text"
-        default_expression = default_accessor.to_expression(checksum)
-        value = manager.get_expression(default_expression)
-        value = deepcopy(value)
-        return value
+        return manager.get_cell_value(self, copy=True)
 
     @property
     def data(self):

@@ -1,8 +1,9 @@
 from . import Task
 
 class CellUpdateTask(Task):
-    def init(self, manager, cell):
+    def __init__(self, manager, cell):
         self.cell = cell
+        super().__init__(manager)
         self.dependencies.append(cell)
 
     async def _run(self):
@@ -20,16 +21,16 @@ class CellUpdateTask(Task):
         if cell._void:
             print("WARNING: cell %s is void, shouldn't happen during cell update" % cell)
             return
-        from . import SerializeBufferTask, CellChecksumTask, CellUpdateTask
-        manager = self.manager
+        from . import SerializeToBufferTask, CellChecksumTask, CellUpdateTask
+        manager = self.manager()
         cell = self.cell
-        await CellChecksumTask(manager, cell)
+        await CellChecksumTask(manager, cell).run()
         checksum, void = cell._checksum, cell._void
         if checksum is None and not void:
             manager.cancel_cell(cell, void=True)
         assert not cell._monitor
         accessors = manager.livegraph.cell_to_downstream[cell]
-        for accessor in accessor:
+        for accessor in accessors:
             raise NotImplementedError #livegraph branch
             #- construct (not evaluate!) their expression using the cell checksum 
             #Constructing a downstream expression increfs the cell checksum

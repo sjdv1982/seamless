@@ -10,6 +10,7 @@ class TaskManager:
         self.cell_to_task = {} # tasks that depend on cells
         self.reftasks = {}
         self.rev_reftasks = {}
+        self.cell_to_value = {}
 
     def register_cell(self, cell):
         self.cell_to_task[cell] = []
@@ -73,6 +74,7 @@ class TaskManager:
         for task in self.cell_to_task.get(cell, []):
             task.cancel()
         self.cell_to_task.pop(cell)
+        self.cell_to_value.pop(cell, None)
 
 
 from ..cell import Cell

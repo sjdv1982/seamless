@@ -122,6 +122,7 @@ def libcell(path, celltype=None):
     return _libcell(path, celltype)
 
 def lib_get_value(checksum, cell):
+    raise NotImplementedError # livegraph branch
     celltype = celltypes_rev[type(cell)]
     buffer = value_cache.get_buffer(checksum)[2]
     assert buffer is not None

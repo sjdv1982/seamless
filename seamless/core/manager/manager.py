@@ -42,10 +42,42 @@ class Manager:
         raise NotImplementedError # livegraph branch
 
 
-    def set_cell_checksum(self, cell, checksum):
-        raise NotImplementedError # livegraph branch
+    def set_cell_checksum(self, cell, checksum, initial, is_buffercell):
+        """Setting a cell checksum.
+  (This is done from the command line, usually at graph loading)
+  initial=True in case of graph loading; is_buffercell=True when triggered from StructuredCell)
+  If "initial" is True, it is assumed that the context is being initialized (e.g. when created from a graph).
+  Else, cell cannot be the .data or .buffer attribute of a StructuredCell, and cannot have any incoming connection.
+  
+  However, if "is_buffercell" is True, then the cell can be a .buffer attribute of a StructuredCell
+
+  If the new checksum is None, do a cell void cancellation.  
+  Else: 
+    If old checksum is not None, do a cell cancellation.
+    Set the cell as being non-void, set the checksum (direct attribute access), and launch a cell update task. 
+
+        """
+        sc_data = self.livegraph.datacells.get(cell) 
+        sc_buf = self.livegraph.buffercells.get(cell)
+        if not initial:
+            assert sc_data is None
+            if is_buffercell:
+                if sc_buf is None:
+                    raise Exception("Cell was declared to be buffercell, but it is not known as such")                
+            else:
+                assert self.livegraph.has_authority(cell)
+                assert sc_buf is None
+        if checksum is None:
+            self.cancel_cell(cell, void=True)
+        else:
+            old_checksum = self.get_cell_checksum(cell)
+            if old_checksum is not None:
+                self.cancel_cell(cell, void=False)
+        self._set_cell_checksum(cell, checksum, (checksum is None))
 
     def _set_cell_checksum(self, cell, checksum, void):
+        assert checksum is None or isinstance(checksum, bytes), checksum
+        assert isinstance(void, bool), void
         cell._checksum = checksum
         cell._void = void
 
@@ -54,6 +86,24 @@ class Manager:
         self.cancel_cell(cell, value is None)
         task = SetCellValueTask(self, cell, value)
         task.launch()
+
+    def get_cell_checksum(self, cell):
+        task = CellChecksumTask(self, cell)
+        task.launch_and_await()
+        return cell._checksum
+
+    def get_cell_void(self, cell):
+        task = CellChecksumTask(self, cell)
+        task.launch_and_await()
+        return cell._void
+
+    def get_cell_value(self, cell, copy):
+        checksum = self.get_cell_checksum(cell)
+        celltype = cell._celltype
+        buffer = GetBufferTask(self, checksum).launch_and_await()
+        task = DeserializeBufferTask(self, buffer, checksum, celltype, copy)
+        value = task.launch_and_await()
+        return value
 
     ##########################################################################
     # API section ???: Cancellation
@@ -82,4 +132,5 @@ class Manager:
     def __del__(self):
         self.destroy(from_del=True)
 
-from .tasks import SetCellValueTask
+from .tasks import (SetCellValueTask, CellChecksumTask, GetBufferTask,
+  DeserializeBufferTask)

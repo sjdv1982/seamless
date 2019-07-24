@@ -305,10 +305,12 @@ List of tasks:
 
 - Set-cell-value task. 
     Value must not be None.
+    - Set cell-to-value cache
     - Await serialization task (using celltype)
     - Await calculate checksum task. If None, raise Exception.
     - Set cell checksum (direct attribute modification)
     - Launch cell update task
+    - Pop cell-to-value cache
 
 - Get-path task
     NOTE: only ever invoked through the command line (sync code) on buffercells; 
@@ -342,10 +344,12 @@ List of tasks:
       This may also spawn new get-path tasks.
   - Unmark the current task as re-entrant
   - Check if the checksum step has been disabled. If not:
+    - Set cell-to-value cache
     - Await serialization task (using celltype)
     - Await calculate checksum task
     - Cancel delayed-buffercell-clear task for this buffercell (if any)
     - Register a delayed-buffercell-clear task for this buffercell
+    - Pop cell-to-value cache
 
 - Set-path task (takes checksum + checksum_celltype as argument)
    (Will be invoked by write accessors on buffercell targets; NOTE: only invoked via an action!)
@@ -362,8 +366,10 @@ List of tasks:
     This may also spawn new get/set path tasks.
   - Unmark the current task as re-entrant
   - Check if the checksum step has been disabled. If not:
+    - Set cell-to-value cache
     - Await serialization task (using celltype)
     - Await calculate checksum task
+    - Pop cell-to-value cache
 
 - Buffercell-join task, indicating which paths were modified
   - Await asyncio.shield(awaitable) (2nd function argument)

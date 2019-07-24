@@ -1,28 +1,26 @@
-from . import Task, process_pool
+from . import Task
 from ...protocol import calculate_checksum
 
 class CalculateChecksumTask(Task):
-    _executor = process_pool
-
     @property
     def refkey(self):
         return id(self.buffer)
 
     def __init__(self, manager, buffer): 
-        super.__init__(manager)      
-        if self._realtask is not None:
-            return
         self.buffer = buffer
+        super().__init__(manager)      
 
-    def _run(self): # not async, since we run in ProcessPoolExecutor
-        return calculate_checksum(self.buffer)
+    async def _run(self):
+        manager = self.manager()
+        result = await calculate_checksum(self.buffer)
+        return result 
 
 
 class CellChecksumTask(Task):
 
     def __init__(self, manager, cell): 
-        super.__init__(manager)
         self.cell = cell
+        super().__init__(manager)
         self.dependencies = [cell]
 
     async def _run(self):
@@ -34,17 +32,25 @@ class CellChecksumTask(Task):
 - Set the cell's checksum attribute (direct attribute access)
 - If the checksum was None but the void attribute was not None, do a cell void cancellation.
         """
-        from . import GetBufferTask
+        from . import SerializeToBufferTask
+
+        manager = self.manager()
+        cell = self.cell
         if cell._monitor:
             # - Await current set-path/set-auth-path tasks for the cell. It doesn't matter if they were cancelled.  
             raise NotImplementedError # livegraph branch
-        manager = self.manager
-        cell = self.cell
-        buffer = await GetBufferTask(manager, cell).run()
-        checksum = await CalculateChecksumTask(manager, buffer).run()
+        else:
+            taskmanager = manager.taskmanager
+            if cell in taskmanager.cell_to_value:
+                celltype = cell._celltype
+                value = taskmanager.cell_to_value[cell]
+                buffer = await SerializeToBufferTask(manager, value, celltype).run()
+                checksum = await CalculateChecksumTask(manager, buffer).run()
+            else:
+                checksum = cell._checksum            
         void = cell._void
-        manager._set_cell_checksum(self, cell, checksum, checksum is None)
+        manager._set_cell_checksum(cell, checksum, checksum is None)
         if void and checksum is None:
-            manager.cancel_cell(void=True)
+            manager.cancel_cell(cell, void=True)
         
         

@@ -1,16 +1,12 @@
 import weakref
 import asyncio
 from asyncio import CancelledError
-from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
-# TODO: custom ProcessPool executor that plays nice with local transformations
-process_pool = ProcessPoolExecutor()
-thread_pool = ThreadPoolExecutor()
 
 
 class Task:
-    _executor = None
     _realtask = None
     _awaiting = False
+    future = None
     
     def __init__(self, manager, *args, **kwargs):        
         if isinstance(manager, weakref.ref):
@@ -26,7 +22,6 @@ class Task:
                 taskmanager.reftasks[self.refkey] = self
                 taskmanager.rev_reftasks[self] = self.refkey
         self.manager = weakref.ref(manager)        
-        self.future = None
         self.dependencies = []
         self.refholders = [self] # tasks that are value-identical to this one, 
                                 # of which this one is the realtask
@@ -40,18 +35,20 @@ class Task:
         realtask.refholders.append(self)
 
     async def run(self):
-        print("RUN", self)
+        #if self.future is not None:
+        #    print("RUN", self)
         realtask = self._realtask
         if realtask is not None:
-            return realtask.run()
+            result = await realtask.run()
+            return result
         self._launch()
         self._awaiting = True
-        print("LAUNCHED", self)
+        #print("LAUNCHED", self)
         try:
             await asyncio.shield(self.future)
         except CancelledError:                        
             self.cancel()
-        print("HAS RUN", self)
+        #print("HAS RUN", self)
         return self.future.result()
     
     def _launch(self):
@@ -60,16 +57,9 @@ class Task:
             return
         taskmanager = manager.taskmanager
         if self.future is not None:
-            return taskmanager        
-        if self._executor is None:
-            awaitable = self._run()
-        else:
-            loop = taskmanager.loop
-            with self._executor as executor:
-                awaitable = loop.run_in_executor(
-                    executor,
-                    self._run
-                )
+            return taskmanager
+        #print("LAUNCH", self)     
+        awaitable = self._run()
         self.future = asyncio.ensure_future(awaitable)
         taskmanager.add_task(self)
         return taskmanager
@@ -112,7 +102,9 @@ class Task:
 
 
 from .set_value import SetCellValueTask
-from .serialize_buffer import SerializeBufferTask
+from .serialize_buffer import SerializeToBufferTask
+from .deserialize_buffer import DeserializeBufferTask
 from .checksum import CellChecksumTask, CalculateChecksumTask
 from .cell_update import CellUpdateTask
+from .get_buffer import GetBufferTask
 from ..manager import Manager
