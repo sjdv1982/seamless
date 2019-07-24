@@ -1,12 +1,15 @@
 from . import Task
 
-class CellUpdateTask(Task):
-    def __init__(self, manager, cell):
-        self.cell = cell
+class AccessorUpdateTask(Task):
+    def __init__(self, manager, accessor):
+        assert isinstance(accessor, ReadAccessor)
+        self.accessor = accessor
         super().__init__(manager)
-        self.dependencies.append(cell)
+        self.dependencies.append(accessor)
 
     async def _run(self):
+        raise NotImplementedError #livegraph branch
+        ''' # for cell update
         """
         - If the cell's void attribute is True, log a warning and return.
         - Await cell checksum task
@@ -29,14 +32,13 @@ class CellUpdateTask(Task):
         if checksum is None and not void:
             manager.cancel_cell(cell, void=True)
         assert not cell._monitor
-        livegraph = manager.livegraph
-        accessors = livegraph.cell_to_downstream[cell]
+        accessors = manager.livegraph.cell_to_downstream[cell]
         for accessor in accessors:
+            raise NotImplementedError #livegraph branch
             #- construct (not evaluate!) their expression using the cell checksum 
             #Constructing a downstream expression increfs the cell checksum
-            accessor.build_expression(livegraph, checksum)
             #- launch an accessor update task
-            AccessorUpdateTask(manager, accessor).launch()
+            #AccessorUpdateTask(manager, accessor).launch()
         return None
-
-from .accessor_update import AccessorUpdateTask        
+        '''
+from ..accessor import ReadAccessor

@@ -13,7 +13,8 @@ async def calculate_checksum(buffer):
     buf_id = id(buffer)
     cached_checksum = calculate_checksum_cache.get(buf_id)
     if cached_checksum:
-        checksum_cache[checksum] = buffer
+        checksum_cache[cached_checksum] = buffer
+        value_cache.cache_buffer(cached_checksum, buffer)
         return cached_checksum
     loop = asyncio.get_event_loop()
     with ProcessPoolExecutor() as executor:
@@ -22,6 +23,9 @@ async def calculate_checksum(buffer):
             get_hash,
             buffer
         )
-    calculate_checksum_cache[buf_id] = checksum
+    calculate_checksum_cache[buf_id] = checksum    
     checksum_cache[checksum] = buffer
+    value_cache.cache_buffer(checksum, buffer)
     return checksum
+
+from ..cache.value_cache import value_cache

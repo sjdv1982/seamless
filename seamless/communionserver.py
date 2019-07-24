@@ -23,8 +23,8 @@ from weakref import WeakSet
 # TODO # livegraph branch
 """
 from .communionclient import communion_client_types
-"""
 from .core.cache.transform_cache import TransformerLevel1
+"""
 from .core.build_module import build_compiled_module
 
 incoming = []

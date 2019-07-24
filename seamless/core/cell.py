@@ -254,9 +254,20 @@ Use ``Cell.status()`` to get its status.
         return self.from_buffer(filevalue)
 
     def connect(self, target):
-        """connects to a target cell"""
+        """connects the cell to a target"""
         manager = self._get_manager()
-        manager.connect_cell(self, target, None)
+        target_subpath = None
+        if isinstance(target, Inchannel):
+            target_subpath = target.path
+            target = target.structured_cell().buffer
+        elif isinstance(target, Editchannel):
+            raise TypeError("Editchannels cannot be connected to cells, only to workers")
+        elif isinstance(target, Outchannel):
+            raise TypeError("Outchannels must be the source of a connection, not the target")
+        
+        if not isinstance(target, Cell):
+            raise TypeError(target)
+        manager.connect(self, None, target, target_subpath)
         return self
 
     def as_text(self):
@@ -538,6 +549,7 @@ from .unbound_context import UnboundManager
 from .mount import MountItem
 from .mount import is_dummy_mount
 from ..mixed.get_form import get_form
+from .structured_cell import Inchannel, Outchannel, Editchannel
 
 """
 TODO Documentation: only-text changes

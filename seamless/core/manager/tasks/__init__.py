@@ -116,4 +116,5 @@ from .deserialize_buffer import DeserializeBufferTask
 from .checksum import CellChecksumTask, CalculateChecksumTask
 from .cell_update import CellUpdateTask
 from .get_buffer import GetBufferTask
+from .upon_connection import UponConnectionTask
 from ..manager import Manager

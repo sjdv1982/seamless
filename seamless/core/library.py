@@ -143,7 +143,8 @@ def lib_get_value(checksum, cell):
     return obj
 
 
-
+""" # TODO: livegraph branch
 from .cache.value_cache import ValueCache
 value_cache = ValueCache(None)
+"""
 from .protocol.deserialize import deserialize

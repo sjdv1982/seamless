@@ -25,15 +25,18 @@ ctx.txt4 = cell("text")
 ctx.plain = cell("plain")
 
 print("*** Start ***")
+print(ctx.txt1.value)
+
+print("*** Stage 0 ***")
 ctx.txt1.set(value_json)
 
 print("*** Stage 1a ***")
-print("ctx.txt1", ctx.txt1.data)
+value = ctx.txt1.data
+print("ctx.txt1", value)
 
-ctx.txt2.set(ctx.txt1.data)
 print("*** Stage 1b ***")
-ctx.equilibrate()
-ctx.txt3.set(ctx.txt1.data)
+ctx.txt2.set(value)
+ctx.txt3.set(value)
 
 print("*** Stage 1c ***")
 print("ctx.txt2", ctx.txt2.data)
@@ -41,3 +44,6 @@ print("ctx.txt3", ctx.txt3.data)
 
 print("*** Stage 2 ***")
 ctx.txt3.connect(ctx.txt4)
+
+ctx.equilibrate()
+print("STOP")

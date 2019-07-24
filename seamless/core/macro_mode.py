@@ -14,7 +14,7 @@ def register_toplevel(ctx):
         return    
     _toplevel_register.add(ctx)
 
-def unregister_toplevel(ctx):    
+def unregister_toplevel(ctx):
     manager = ctx._get_manager()
     if manager is not None:
         _toplevel_managers.discard(manager)
@@ -24,6 +24,8 @@ def unregister_toplevel(ctx):
 def _destroy_toplevels():
     for ctx in list(_toplevel_registered):
         ctx.destroy(from_del=True)
+    for manager in list(_toplevel_managers):
+        manager.destroy(from_del=True)
 
 atexit.register(_destroy_toplevels)
 

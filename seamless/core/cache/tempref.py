@@ -32,3 +32,5 @@ class TempRefManager:
                 traceback.print_exc()
             await asyncio.sleep(0)
         self.running = False
+
+temprefmanager = TempRefManager()

@@ -11,6 +11,7 @@ class SetCellValueTask(Task):
         from . import SerializeToBufferTask, CalculateChecksumTask, CellUpdateTask
         manager = self.manager()
         taskmanager = manager.taskmanager
+        await taskmanager.await_upon_connection_tasks()
         cell = self.cell
         try:
             taskmanager.cell_to_value[cell] = self.value

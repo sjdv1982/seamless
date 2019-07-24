@@ -21,7 +21,7 @@ import weakref
 import json
 from collections import OrderedDict
 
-from .expression_cache import Expression
+from .expression import Expression
 
 class Accessor:
     __slots__ = [

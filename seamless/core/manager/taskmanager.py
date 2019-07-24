@@ -10,12 +10,21 @@ class TaskManager:
         self.loop = asyncio.get_event_loop()
         self.tasks = []
         self.cell_to_task = {} # tasks that depend on cells
+        self.accessor_to_task = {} # tasks that depend on accessors
+        self.expression_to_task = {} # tasks that depend on expressions
+        self.transformation_to_task = {} # tasks that depend on transformations
         self.reftasks = {}
         self.rev_reftasks = {}
         self.cell_to_value = {}
 
     def register_cell(self, cell):
         self.cell_to_task[cell] = []
+
+    def register_accessor(self, accessor):
+        self.accessor_to_task[accessor] = []
+
+    def register_expression(self, expression):
+        self.expression_to_task[expression] = []
 
     def add_task(self, task):
         manager = self.manager()
@@ -37,15 +46,41 @@ class TaskManager:
     def _add_dep(self, dep, task):
         if isinstance(dep, Cell):
             d = self.cell_to_task
+        elif isinstance(dep, ReadAccessor):
+            d = self.accessor_to_task
+        elif isinstance(dep, Expression):
+            d = self.expression_to_task
         else:
             raise TypeError(dep)
         dd = d[dep]
         
         dd.append(task)
 
+    def _get_upon_connection_tasks(self):
+        for task in self.tasks:
+            if isinstance(task, UponConnectionTask):
+                yield task
+
+    async def await_upon_connection_tasks(self, origin_task=None):
+        futures = []
+        for task in self._get_upon_connection_tasks():
+            if task is origin_task or task.future is None:
+                continue
+            futures.append(asyncio.shield(task.future))
+        if len(futures):
+            try:
+                await asyncio.gather(*futures)
+            except:
+                # If anything goes wrong in another task, consider this a cancel
+                raise CancelledError
+
     def _clean_dep(self, dep, task):
         if isinstance(dep, Cell):
             d = self.cell_to_task
+        elif isinstance(dep, ReadAccessor):
+            d = self.accessor_to_task
+        elif isinstance(dep, Expression):
+            d = self.expression_to_task
         else:
             raise TypeError(dep)
         dd = d[dep]
@@ -68,8 +103,8 @@ class TaskManager:
                 future = task.future
                 if future is None:
                     continue
-                if future.done():
-                    continue
+                #if future.done(): # done callback has not been completed...
+                #    continue
                 tasks.append(task)
                 futures.append(future)
             return tasks, futures
@@ -143,6 +178,9 @@ class TaskManager:
                 task.future.result() # to raise Exception; TODO: log it instead
             except CancelledError:
                 pass
+        refkey = self.rev_reftasks.pop(task, None)
+        if refkey is not None:
+            self.reftasks.pop(refkey)
 
     def cancel_cell(self, cell, origin_task=None):
         """Cancels all tasks depending on cell.
@@ -152,12 +190,50 @@ If origin_task is provided, that task is not cancelled."""
                 continue
             task.cancel()
 
+    def cancel_accessor(self, accessor):
+        """Cancels all tasks depending on accessor."""
+        for task in self.accessor_to_task.get(accessor, []):
+            task.cancel()
+
+    def cancel_expression(self, expression):
+        """Cancels all tasks depending on expression."""
+        for task in self.expression_to_task.get(expression, []):
+            task.cancel()
+
     def destroy_cell(self, cell):
         self.cancel_cell(cell)
         self.cell_to_task.pop(cell)
         self.cell_to_value.pop(cell, None)
 
+    def destroy_accessor(self, accessor):
+        self.cancel_accessor(accessor)
+        self.accessor_to_task.pop(accessor)
+
+    def destroy_expression(self, expression):
+        self.cancel_expression(expression)
+        self.expression_to_task.pop(expression)
+
+    def check_destroyed(self):
+        attribs = (
+            "tasks",
+            "cell_to_task",
+            "accessor_to_task",
+            "expression_to_task",
+            "transformation_to_task",
+            "reftasks",
+            "rev_reftasks",
+            "cell_to_value",
+        )
+        name = self.__class__.__name__        
+        for attrib in attribs:
+            a = getattr(self, attrib)
+            if len(a):
+                print(name + ", " + attrib + ": %d undestroyed"  % len(a))
+
 
 
 from ..cell import Cell
 from .. import SeamlessBase
+from .accessor import ReadAccessor
+from .expression import Expression
+from .tasks.upon_connection import UponConnectionTask

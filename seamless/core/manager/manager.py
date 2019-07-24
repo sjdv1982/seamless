@@ -1,3 +1,5 @@
+import weakref
+
 class Manager:
     _destroyed = False
     _active = True
@@ -6,12 +8,15 @@ class Manager:
         from .cachemanager import CacheManager
         from .taskmanager import TaskManager
         assert ctx._toplevel
-        self.ctx = ctx
+        self.ctx = weakref.ref(ctx)
         from ... import communionserver
         ###communionserver.register_manager(self)
         self.livegraph = LiveGraph(self)
         self.cachemanager = CacheManager(self)
         self.taskmanager = TaskManager(self)
+
+        # for now, just a single global temprefmanager
+        self.temprefmanager = temprefmanager
 
         # for now, just a single global mountmanager
         from ..mount import mountmanager
@@ -34,13 +39,12 @@ class Manager:
     # API section II: Actions
     ##########################################################################
 
-    def connect_cell(self, cell, other, cell_subpath):
-        #print("connect_cell", cell, other, cell_subpath)
-        raise NotImplementedError # livegraph branch
 
-    def connect_pin(self, pin, cell):
-        raise NotImplementedError # livegraph branch
-
+    def connect(self, source, source_subpath, target, target_subpath):
+        task = UponConnectionTask(
+            self, source, source_subpath, target, target_subpath
+        )
+        task.launch()
 
     def set_cell_checksum(self, cell, checksum, initial, is_buffercell):
         """Setting a cell checksum.
@@ -76,11 +80,18 @@ class Manager:
         self._set_cell_checksum(cell, checksum, (checksum is None))
 
     def _set_cell_checksum(self, cell, checksum, void):
-        # NOTE: any cell task depending on the old checksum must have been canceled already!
+        # NOTE: Any cell task depending on the old checksum must have been canceled already
         assert checksum is None or isinstance(checksum, bytes), checksum
         assert isinstance(void, bool), void
+        authority = self.livegraph.has_authority(cell)
+        cachemanager = self.cachemanager
+        old_checksum = cell._checksum
+        if old_checksum is not None and old_checksum != checksum:
+            cachemanager.decref_checksum(old_checksum, cell, authority)
         cell._checksum = checksum
         cell._void = void
+        if checksum != old_checksum:
+            cachemanager.incref_checksum(checksum, cell, authority)
 
     def set_cell(self, cell, value):
         assert self.livegraph.has_authority(cell)
@@ -146,22 +157,29 @@ If origin_task is provided, that task is not cancelled."""
 
     def _destroy_cell(self, cell):
         self.cachemanager.destroy_cell(cell)
-        self.livegraph.destroy_cell(cell)
+        self.livegraph.destroy_cell(self, cell)
         self.taskmanager.destroy_cell(cell)
 
     def destroy(self, from_del=False):
         if self._destroyed:
             return
         self._destroyed = True
-        ###self.temprefmanager_future.cancel()
-        ###self.flush_future.cancel()
-        self.ctx._unmount(from_del=from_del, manager=self)
-        self.ctx.destroy()
+        ctx = self.ctx()
+        if ctx is None:
+            return
+        ctx._unmount(from_del=from_del, manager=self)
+        ctx.destroy()
+        self.cachemanager.check_destroyed()
+        self.livegraph.check_destroyed()
+        self.taskmanager.check_destroyed()
+        
 
     def __del__(self):
         self.destroy(from_del=True)
 
 from .tasks import (SetCellValueTask, CellChecksumTask, GetBufferTask,
-  DeserializeBufferTask)
+  DeserializeBufferTask, UponConnectionTask)
 
 from ..protocol.calculate_checksum import checksum_cache
+from ..cache.tempref import temprefmanager
+from ..cell import Cell

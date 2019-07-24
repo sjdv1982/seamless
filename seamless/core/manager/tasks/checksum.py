@@ -25,6 +25,7 @@ class CellChecksumTask(Task):
 
     async def _run(self):
         """Updates the checksum of the cell.
+- Await all UponConnectionTasks
 - Await current set-path/set-auth-path tasks for the cell. It doesn't matter if they were cancelled.  
 - Await get buffer task
 - Await calculate checksum task
@@ -35,7 +36,9 @@ class CellChecksumTask(Task):
         from . import SerializeToBufferTask
 
         manager = self.manager()
+        await manager.taskmanager.await_upon_connection_tasks()
         cell = self.cell
+
         if cell._monitor:
             # - Await current set-path/set-auth-path tasks for the cell. It doesn't matter if they were cancelled.  
             raise NotImplementedError # livegraph branch

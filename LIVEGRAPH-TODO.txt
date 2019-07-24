@@ -111,13 +111,15 @@ The following actions are possible:
 - Register worker/cell. No tasks. 
   (but inform authoritymanager, caches etc.) 
 
-- Connection. If the source has no checksum, do nothing.
-  (but inform authoritymanager, caches etc.) 
-  If the source is void:
-    if source is a cell, do a cell cancellation, and launch a cell update task.
-    if source is an outputpin/editpin, do a worker cancellation (no-op until we support optional pins).
-     Then launch a worker update task.
-     Workers are no longer executed with any unconnected output pins.
+- Connection. 
+  
+  Launch an UponConnectionTask, which does the following:
+- Cancel any set-cell-value tasks on the target (if a cell)
+- Await all other UponConnectionTasks
+  Inform authoritymanager, caches etc., returning an accessor.
+  This accessor will automatically be updated if anything modifies the source
+  (even if it is already running, but not finished, now)
+- Launch an accessor update task
 
 - Setting a cell checksum.
   (This is done from the command line, usually at graph loading)
@@ -207,6 +209,7 @@ Some tasks use refcounting dependencies. This is because multiple accessors
 List of tasks:
 - Cell checksum task
     Updates the checksum of the cell.
+  - Await all UponConnectionTasks
   - Await current set-path/set-auth-path tasks for the cell. It doesn't matter if they were cancelled.  
   - Await get buffer task
   - Await calculate checksum task
@@ -225,6 +228,16 @@ List of tasks:
       - launch an accessor update task
 
 - Accessor update task.
+  TODO: update
+  """
+  # old stuff for UponConnectionTask...
+  If the source has no checksum, do nothing.
+  If the source is void:
+    if source is a cell, do a cell cancellation, and launch a cell update task.
+    if source is an outputpin/editpin, do a worker cancellation (no-op until we support optional pins).
+     Then launch a worker update task.
+     Note that workers are no longer executed with any unconnected output pins.
+  """
   For a read accessor:
     - Await/incref expression evaluation task. Incref the expression. 
     - If the expression checksum is None: run a void cancellation and return
@@ -305,6 +318,7 @@ List of tasks:
 
 - Set-cell-value task. 
     Value must not be None.
+    - Await all UponConnectionTasks
     - Set cell-to-value cache
     - Await serialization task (using celltype)
     - Await calculate checksum task. If None, raise Exception.
@@ -315,6 +329,7 @@ List of tasks:
 - Get-path task
     NOTE: only ever invoked through the command line (sync code) on buffercells; 
      in contrast, expression evaluation is a different task that does not use the Monitor
+  - Await all UponConnectionTasks
   - Cancel delayed-buffercell-clear task for this buffercell (if any)
   - Gather current set-path/set-auth-path tasks for the buffercell
   - Await the tasks (with shield), except if marked as re-entrant
