@@ -362,16 +362,15 @@ def create_path(cell):
 def macro(params, *, lib=None):
     return Macro(params, lib=lib)
 
-from . import cell, transformer, pytransformercell, \
- reactor, pyreactorcell, pymacrocell, plaincell, csoncell,  \
- arraycell, mixedcell, pythoncell, ipythoncell
+from .transformer import transformer
+from .reactor import reactor
+from .cell import cell
 from .library import libcell
 from .structured_cell import StructuredCell
 from .context import context
 from .link import link
-names = ("cell", "transformer", "context", "pytransformercell", "link", 
- "reactor", "pyreactorcell", "pymacrocell", "plaincell", "csoncell",
- "mixedcell", "arraycell", "pythoncell", "ipythoncell", "libcell")
+names = ("cell", "transformer", "context", "link", 
+ "reactor", "libcell")
 names += ("StructuredCell",)
 names = names + ("macro", "path")
 Macro.default_namespace = {n:globals()[n] for n in names}

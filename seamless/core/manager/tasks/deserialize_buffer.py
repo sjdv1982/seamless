@@ -1,7 +1,7 @@
 from collections import namedtuple
 
 from . import Task
-from ...protocol import deserialize
+from ...protocol.deserialize import deserialize
 
 Deserialization = namedtuple("Deserialization",["checksum", "celltype", "copy"])
 

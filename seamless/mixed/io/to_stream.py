@@ -155,7 +155,7 @@ def to_stream(data, storage, form):
     if storage == "pure-plain":
         data = _convert_np_void(data)
         txt = json_encode(data, sort_keys=True, indent=2)
-        return txt.encode("utf-8")
+        return txt.encode()
     elif storage == "pure-binary":
         b = BytesIO()
         np.save(b, data, allow_pickle=False)

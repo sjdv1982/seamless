@@ -67,6 +67,7 @@ class Task:
         taskmanager = manager.taskmanager
         if self.future is not None:
             return taskmanager
+        taskmanager.run_synctasks()
         #print("LAUNCH", self)     
         awaitable = self._run()
         self.future = asyncio.ensure_future(awaitable)

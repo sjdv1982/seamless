@@ -44,6 +44,8 @@ def curr_macro():
 @contextmanager
 def macro_mode_on(macro=None):
     from . import mount    
+    from .context import Context
+    from .unbound_context import UnboundContext                
     global _macro_mode, _curr_macro
     if macro is None:
         assert not _macro_mode 
@@ -112,5 +114,3 @@ def macro_mode_off():
         _curr_macro = old_macro
         _macro_mode_off = old_macro_mode_off
 
-from .context import Context
-from .unbound_context import UnboundContext            

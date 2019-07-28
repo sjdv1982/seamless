@@ -7,13 +7,16 @@ class CacheManager:
         self.checksum_refs = {}
         self.value_cache = value_cache
         self.cell_to_ref = {}
-        self.expression_to_ref = {}
+        self.hexpression_to_ref = {}        
 
     def register_cell(self, cell):
+        assert cell not in self.cell_to_ref
         self.cell_to_ref[cell] = None
 
     def register_expression(self, expression):
-        self.expression_to_ref[expression] = None
+        hexpression = expression.get_hash()
+        assert hexpression not in self.hexpression_to_ref
+        self.hexpression_to_ref[hexpression] = None
 
     def incref_checksum(self, checksum, refholder, authority):
         if checksum is None:
@@ -25,8 +28,9 @@ class CacheManager:
             assert self.cell_to_ref[refholder] is None
             self.cell_to_ref[refholder] = (checksum, authority) 
         elif isinstance(refholder, Expression):
-            assert refholder not in self.expression_to_ref
-            self.expression_to_ref[refholder] = (checksum, authority) 
+            refholder = refholder.get_hash()
+            assert self.hexpression_to_ref[refholder] is None
+            self.hexpression_to_ref[refholder] = (checksum, authority) 
         else:
             raise TypeError(refholder)
         self.checksum_refs[checksum].append((refholder, authority))
@@ -37,7 +41,9 @@ class CacheManager:
             assert self.cell_to_ref[refholder] is not None
             self.cell_to_ref[refholder] = None
         elif isinstance(refholder, Expression):
-            self.expression_to_ref.pop(refholder)
+            refholder = refholder.get_hash()
+            assert self.hexpression_to_ref[refholder] is not None
+            self.hexpression_to_ref.pop(refholder)
         else:
             raise TypeError(refholder)
         self.checksum_refs[checksum].remove((refholder, authority))
@@ -54,7 +60,7 @@ class CacheManager:
         self.cell_to_ref.pop(cell)
 
     def check_destroyed(self):        
-        attribs = ("checksum_refs", "cell_to_ref", "expression_to_ref")
+        attribs = ("checksum_refs", "cell_to_ref", "hexpression_to_ref")
         name = self.__class__.__name__        
         for attrib in attribs:
             a = getattr(self, attrib)

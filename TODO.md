@@ -1,10 +1,24 @@
+
+UPDATE: new checksum-based async execution engine will be much more stable
+
+TODO in documentation:
+1. Rip GPU cell scheme, this will never work.
+ Instead (long term plan):
+ - Annotate transformers as GPU-based. This will make all of their pins GPU-based.
+ - GPU-based transformers produce a GPU-based result. Checksum computation of this result is done on the GPU.
+ - Maintain a checksum-to-GPUbuffer cache that maintains which buffers are on the GPU
+   Can be done smarter for certain expressions (introduce offsets and stride)
+   Cache can be emptied based on memory requirements, or if certain checksums are foreseen to be not needed
+    anymore on the GPU.
+2. Pure reactors. Create a cache for them as transformers.
+
 UPDATE: plan finished for Seamless data management (data-management.txt).
 Shoe-horn this into the roadmap in an appropriate place...
 
+=======================================================  
+
 Great Refactor is almost complete (see seamless-towards-02.md).
 Things to do:
-
-  
 
 Seamless is now usable by me, to port RPBS services/Snakemake workflows to interactive and reproducible services
  Need some more months to make it usable:

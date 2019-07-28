@@ -10,7 +10,9 @@ In a typedict, a child's "storage" is stored by the parent into a child typedict
    1) the child is not pure; or 2) the child is binary and the parent is plain (or vice versa)
 """
 
+MAGIC_NUMPY = b"\x93NUMPY"
 MAGIC_SEAMLESS = b'\x93SEAMLESS'
+MAGIC_SEAMLESS_MIXED = b'\x94SEAMLESS-MIXED'
 
 import numpy as np
 from functools import partialmethod

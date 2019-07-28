@@ -85,17 +85,15 @@ class SeamlessBase:
     def destroy(self, **kwargs):
         self._destroyed = True
 
+from .mount import mountmanager
 from .macro_mode import get_macro_mode, macro_mode_on
 from . import cell as cell_module
 from .cell import Cell, cell
-from .cell import textcell, pythoncell, pytransformercell, pymacrocell, \
- pyreactorcell, ipythoncell, plaincell, csoncell, arraycell, mixedcell
 from .library import libcell
 from . import context as context_module
 from .context import Context, context
 from .worker import Worker
 from .transformer import Transformer, transformer
-from .mount import mountmanager
 from .structured_cell import StructuredCell
 from .macro import Macro, macro, path
 from .reactor import Reactor, reactor

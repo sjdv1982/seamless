@@ -9,22 +9,41 @@ class TaskManager:
         self.manager = weakref.ref(manager)
         self.loop = asyncio.get_event_loop()
         self.tasks = []
+        self.synctasks = []
         self.cell_to_task = {} # tasks that depend on cells
         self.accessor_to_task = {} # tasks that depend on accessors
-        self.expression_to_task = {} # tasks that depend on expressions
+        self.hexpression_to_task = {} # tasks that depend on expressions
         self.transformation_to_task = {} # tasks that depend on transformations
         self.reftasks = {}
         self.rev_reftasks = {}
         self.cell_to_value = {}
 
     def register_cell(self, cell):
+        assert cell not in self.cell_to_task
         self.cell_to_task[cell] = []
 
     def register_accessor(self, accessor):
+        assert accessor not in self.accessor_to_task
         self.accessor_to_task[accessor] = []
 
     def register_expression(self, expression):
-        self.expression_to_task[expression] = []
+        hexpression = expression.get_hash()
+        assert hexpression not in self.hexpression_to_task
+        self.hexpression_to_task[hexpression] = []
+
+    def run_synctasks(self):
+        synctasks = self.synctasks
+        self.synctasks = []
+        for synctask in synctasks:
+            callback, args, kwargs = synctask
+            try:
+                callback(*args, **kwargs)
+            except:
+                import traceback
+                traceback.print_exc()
+
+    def add_synctask(self, callback, args, kwargs):
+        self.synctasks.append((callback, args, kwargs))
 
     def add_task(self, task):
         manager = self.manager()
@@ -49,7 +68,8 @@ class TaskManager:
         elif isinstance(dep, ReadAccessor):
             d = self.accessor_to_task
         elif isinstance(dep, Expression):
-            d = self.expression_to_task
+            d = self.hexpression_to_task
+            dep = dep.get_hash()
         else:
             raise TypeError(dep)
         dd = d[dep]
@@ -80,7 +100,8 @@ class TaskManager:
         elif isinstance(dep, ReadAccessor):
             d = self.accessor_to_task
         elif isinstance(dep, Expression):
-            d = self.expression_to_task
+            d = self.hexpression_to_task
+            dep = dep.get_hash()
         else:
             raise TypeError(dep)
         dd = d[dep]
@@ -190,14 +211,18 @@ If origin_task is provided, that task is not cancelled."""
                 continue
             task.cancel()
 
-    def cancel_accessor(self, accessor):
-        """Cancels all tasks depending on accessor."""
+    def cancel_accessor(self, accessor, origin_task=None):
+        """Cancels all tasks depending on accessor.
+If origin_task is provided, that task is not cancelled."""        
         for task in self.accessor_to_task.get(accessor, []):
+            if task is origin_task:
+                continue
             task.cancel()
 
     def cancel_expression(self, expression):
         """Cancels all tasks depending on expression."""
-        for task in self.expression_to_task.get(expression, []):
+        hexpression = expression.get_hash()
+        for task in self.hexpression_to_task[hexpression]:
             task.cancel()
 
     def destroy_cell(self, cell):
@@ -211,14 +236,15 @@ If origin_task is provided, that task is not cancelled."""
 
     def destroy_expression(self, expression):
         self.cancel_expression(expression)
-        self.expression_to_task.pop(expression)
+        hexpression = expression.get_hash()
+        self.hexpression_to_task.pop(hexpression)
 
     def check_destroyed(self):
         attribs = (
             "tasks",
             "cell_to_task",
             "accessor_to_task",
-            "expression_to_task",
+            "hexpression_to_task",
             "transformation_to_task",
             "reftasks",
             "rev_reftasks",

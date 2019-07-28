@@ -23,6 +23,7 @@ class ValueCache:
     def __init__(self):
         self.buffer_cache = {} #buffer-checksum-to-value
         self.buffer_refcount = {} #buffer-checksum-to-refcount
+        self.hexpression_to_checksum = {} # hang onto this indefinitely
 
     def cache_buffer(self, checksum, buffer):
         if checksum not in self.buffer_refcount:

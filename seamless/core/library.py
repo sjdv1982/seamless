@@ -1,5 +1,5 @@
 from weakref import WeakValueDictionary, WeakSet
-from .cell import Cell, PythonCell, PyMacroCell, celltypes, cell as make_cell, mixedcell
+from .cell import Cell, PythonCell, PyMacroCell, celltypes, cell as make_cell
 from .context import Context
 from contextlib import contextmanager
 from copy import deepcopy

@@ -7,7 +7,7 @@ class LiveGraph:
         self.manager = weakref.ref(manager)
         self.accessor_to_upstream = {} # Mapping of read accessors to the cell or worker that defines it.
                                     # Mapping is a tuple (cell-or-worker, pinname), where pinname is None except for reactors.
-        self.expression_to_accessors = {} # Mapping of expressions to the list of read accessors that resolve to it
+        self.hexpression_to_accessors = {} # Mapping of expression.get_hash()s to the list of read accessors that resolve to it
         self.cell_to_upstream = {} # Mapping of simple cells to the read accessor that defines it.
         self.cell_to_downstream = {} # Mapping of simple cells to the read accessors that depend on it.
         self.paths_to_upstream = {} # Mapping of buffercells-to-dictionary-of-path:upstream-write-accessor.
@@ -53,18 +53,25 @@ class LiveGraph:
         self.paths_downstream[datacell] = outpathdict
 
     def incref_expression(self, expression, accessor):
-        if expression not in self.expression_to_accessors:
-            self.expression_to_accessors[expression] = []
+        hexpression = expression.get_hash()      
+        if hexpression not in self.hexpression_to_accessors:
+            #print("CREATE")
+            assert hexpression not in self.hexpression_to_accessors
+            self.hexpression_to_accessors[hexpression] = []
             manager = self.manager()
-            manager.cachemanager.incref_checksum(expression.checksum, expression, False)
             manager.taskmanager.register_expression(expression)
-        self.expression_to_accessors[expression].append(accessor)
+            manager.cachemanager.register_expression(expression)
+            manager.cachemanager.incref_checksum(expression.checksum, expression, False)
+        #print("INCREF", expression.celltype, expression.target_celltype)
+        self.hexpression_to_accessors[hexpression].append(accessor)
 
     def decref_expression(self, expression, accessor):
-        accessors = self.expression_to_accessors[expression]
-        accessors.remove(accessor)        
+        hexpression = expression.get_hash()
+        accessors = self.hexpression_to_accessors[hexpression]        
+        accessors.remove(accessor)
+        #print("DECREF", expression.celltype, expression.target_celltype, accessors)
         if not len(accessors):
-            self.expression_to_accessors.pop(expression)
+            self.hexpression_to_accessors.pop(hexpression)
             manager = self.manager()
             manager.cachemanager.decref_checksum(expression.checksum, expression, False)            
             manager.taskmanager.destroy_expression(expression)
@@ -76,17 +83,22 @@ class LiveGraph:
         
         manager = self.manager()
         read_accessor = ReadAccessor(
-            manager, None, source._celltype, source._subcelltype
+            manager, None, source._celltype
         )
         write_accessor = WriteAccessor(
-            read_accessor, target, None, None
+            read_accessor, target, 
+            celltype=target._celltype, 
+            subcelltype=target._subcelltype, 
+            pinname=None, 
+            path=None
         )
         read_accessor.write_accessor = write_accessor
         self.accessor_to_upstream[read_accessor] = source
         self.cell_to_downstream[source].append(read_accessor)
         self.cell_to_upstream[target] = read_accessor
         
-        manager.taskmanager.register_accessor(read_accessor)
+        manager.cancel_cell(target, void=False)
+        manager.taskmanager.register_accessor(read_accessor)        
         propagate_cell(self, target, void=False)
 
         return read_accessor
@@ -104,7 +116,6 @@ class LiveGraph:
         taskmanager.destroy_accessor(accessor)
         self.accessor_to_upstream.pop(accessor)
         expression = accessor.expression
-        print("")
         if expression is not None:
             self.decref_expression(expression, accessor)
         
@@ -140,7 +151,7 @@ class LiveGraph:
     def check_destroyed(self):        
         attribs = (
             "accessor_to_upstream",
-            "expression_to_accessors",
+            "hexpression_to_accessors",
             "cell_to_upstream",
             "cell_to_downstream",
             "paths_to_upstream",
@@ -154,6 +165,9 @@ class LiveGraph:
             a = getattr(self, attrib)
             if len(a):
                 print(name + ", " + attrib + ": %d undestroyed"  % len(a))
+
+    def set_pin(self, worker, pinname, checksum):
+        raise NotImplementedError # livegraph branch
 
 from .propagate import propagate_cell
 from .accessor import Accessor, ReadAccessor, WriteAccessor

@@ -33,10 +33,11 @@ class CellUpdateTask(Task):
         accessors = livegraph.cell_to_downstream[cell]
         for accessor in accessors:
             #- construct (not evaluate!) their expression using the cell checksum 
-            #Constructing a downstream expression increfs the cell checksum
-            accessor.build_expression(livegraph, checksum)
+            #  Constructing a downstream expression increfs the cell checksum
+            changed = accessor.build_expression(livegraph, checksum)
             #- launch an accessor update task
-            AccessorUpdateTask(manager, accessor).launch()
+            if changed:
+                AccessorUpdateTask(manager, accessor).launch()
         return None
 
 from .accessor_update import AccessorUpdateTask        

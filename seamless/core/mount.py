@@ -26,8 +26,6 @@ import asyncio
 import json
 import itertools
 
-from .protocol import deserialize
-
 from ..get_hash import get_hash
 
 empty_checksums = {get_hash(json.dumps(v)+"\n",hex=True) for v in ("", {}, [])}
@@ -875,4 +873,5 @@ def get_extension(c):
     return ""
 
 from .link import Link
-from .protocol import cson2json
+from .protocol.cson import cson2json
+from .protocol.deserialize import deserialize

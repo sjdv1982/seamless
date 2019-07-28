@@ -1,4 +1,23 @@
 import weakref
+import functools
+import threading
+
+def mainthread(func):
+    def func2(*args, **kwargs):
+        assert threading.current_thread() == threading.main_thread()
+        return func(*args, **kwargs)
+    functools.update_wrapper(func2, func)
+    return func2
+
+def run_in_mainthread(func):
+    def func2(*args, **kwargs):
+        manager = args[0]
+        if threading.current_thread() != threading.main_thread():
+            manager.taskmanager.add_synctask(func, args, kwargs)
+        else:
+            func(*args, **kwargs)    
+    functools.update_wrapper(func2, func)
+    return func2
 
 class Manager:
     _destroyed = False
@@ -27,11 +46,13 @@ class Manager:
     # API section I: Registration (divide among subsystems)
     ##########################################################################
 
+    @mainthread
     def register_cell(self, cell):
         self.cachemanager.register_cell(cell)
         self.livegraph.register_cell(cell)
         self.taskmanager.register_cell(cell)
 
+    @mainthread
     def register_structured_cell(self, structured_cell):
         self.livegraph.register_structured_cell(structured_cell)
 
@@ -39,13 +60,14 @@ class Manager:
     # API section II: Actions
     ##########################################################################
 
-
+    @mainthread
     def connect(self, source, source_subpath, target, target_subpath):
         task = UponConnectionTask(
             self, source, source_subpath, target, target_subpath
         )
         task.launch()
 
+    @run_in_mainthread
     def set_cell_checksum(self, cell, checksum, initial, is_buffercell):
         """Setting a cell checksum.
   (This is done from the command line, usually at graph loading)
@@ -93,17 +115,20 @@ class Manager:
         if checksum != old_checksum:
             cachemanager.incref_checksum(checksum, cell, authority)
 
+    @run_in_mainthread
     def set_cell(self, cell, value):
         assert self.livegraph.has_authority(cell)
         self.cancel_cell(cell, value is None)
         task = SetCellValueTask(self, cell, value)
         task.launch()
 
+    @mainthread
     def get_cell_checksum(self, cell):
         task = CellChecksumTask(self, cell)
         task.launch_and_await()
         return cell._checksum
 
+    @mainthread
     def get_cell_void(self, cell):
         task = CellChecksumTask(self, cell)
         task.launch_and_await()
@@ -117,23 +142,34 @@ class Manager:
             return buffer
         return GetBufferTask(self, checksum).launch_and_await()
 
+    @mainthread
     def get_cell_buffer(self, cell):
         checksum = self.get_cell_checksum(cell)
         return self._get_buffer(checksum)
         
+    @mainthread
     def get_cell_value(self, cell, copy):
         checksum = self.get_cell_checksum(cell)
         if checksum is None:
             return None
-        buffer = self._get_buffer(checksum)
-        celltype = cell._celltype            
-        task = DeserializeBufferTask(self, buffer, checksum, celltype, copy)
+        celltype = cell._celltype
+        subcelltype = cell._subcelltype
+        cached_value = deserialize_cache.get((checksum, celltype))
+        if cached_value is not None:
+            return cached_value
+        buffer = self._get_buffer(checksum)        
+        task = DeserializeBufferTask(
+            self, buffer, checksum, celltype, 
+            copy=copy
+        )
         value = task.launch_and_await()
         return value
 
     ##########################################################################
     # API section ???: Cancellation
     ##########################################################################
+
+    @run_in_mainthread
     def cancel_cell(self, cell, void, origin_task=None):
         """Cancels all tasks depending on cell, and sets all dependencies to None. 
 If void=True, all dependencies are set to void as well.
@@ -148,7 +184,27 @@ If origin_task is provided, that task is not cancelled."""
             self.cancel_accessor(accessor, void)
         self._set_cell_checksum(cell, None, void)
 
-    def cancel_accessor(self, accessor, void):
+    @run_in_mainthread
+    def cancel_accessor(self, accessor, void, origin_task=None):
+        self.taskmanager.cancel_accessor(accessor, origin_task=origin_task)
+        if accessor.expression is None:
+            if not void or expression._void:
+                return
+        target = accessor.write_accessor.target
+        if isinstance(target, Cell):
+            return self.cancel_cell(target, void=void)
+        elif isinstance(target, Worker):
+            if isinstance(target, Transformer):
+                return self.cancel_transformer(target, void=void)
+            elif isinstance(target, Reactor):
+                return self.cancel_reactor(target, void=void)
+
+    @run_in_mainthread
+    def cancel_transformer(self, reactor):
+        raise NotImplementedError #livegraph branch
+
+    @run_in_mainthread
+    def cancel_reactor(self, reactor):
         raise NotImplementedError #livegraph branch
 
     ##########################################################################
@@ -160,6 +216,7 @@ If origin_task is provided, that task is not cancelled."""
         self.livegraph.destroy_cell(self, cell)
         self.taskmanager.destroy_cell(cell)
 
+    @run_in_mainthread
     def destroy(self, from_del=False):
         if self._destroyed:
             return
@@ -181,5 +238,10 @@ from .tasks import (SetCellValueTask, CellChecksumTask, GetBufferTask,
   DeserializeBufferTask, UponConnectionTask)
 
 from ..protocol.calculate_checksum import checksum_cache
+from ..protocol.deserialize import deserialize_cache
 from ..cache.tempref import temprefmanager
 from ..cell import Cell
+from ..worker import Worker
+from ..transformer import Transformer
+from ..macro import Macro
+from ..reactor import Reactor

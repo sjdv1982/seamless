@@ -2,8 +2,6 @@ import inspect
 from weakref import WeakSet
 
 from . import SeamlessBase
-from .macro_mode import get_macro_mode
-from .utils import strip_source
 from copy import deepcopy
 
 cell_counter = 0
@@ -78,7 +76,7 @@ Use ``Cell.status()`` to get its status.
         return self._counter
 
     def __str__(self):
-        ret = "Seamless %s: " % type(self).__name__ + self._format_path()
+        ret = "Seamless %s cell: " % self._celltype + self._format_path()
         return ret
 
     @property
@@ -341,15 +339,12 @@ Use ``Cell.status()`` to get its status.
         if not is_dummy_mount(self._mount):
             mountmanager.unmount(self, from_del=from_del)
 
-class ArrayCell(Cell):
-    """A cell in binary array (Numpy) format"""
+class BinaryCell(Cell):
+    """A cell in binary (Numpy) format"""
     
     _mount_kwargs = {"binary": True}
-    _celltype = "array"
+    _celltype = "binary"
 
-    def __str__(self):
-        ret = "Seamless array cell: " + self._format_path()
-        return ret
 
 class MixedCell(Cell):
     _mount_kwargs = {"binary": True}
@@ -391,18 +386,10 @@ class MixedCell(Cell):
         return v[1]
 
 
-    def __str__(self):
-        ret = "Seamless mixed cell: " + self._format_path()
-        return ret
-
 
 class TextCell(Cell):
     _mount_kwargs = {"encoding": "utf-8", "binary": False}
     _celltype = "text"
-
-    def __str__(self):
-        ret = "Seamless text cell: " + self._format_path()
-        return ret
 
 class PythonCell(Cell):
     """Generic Python code object"""
@@ -429,11 +416,19 @@ class PyReactorCell(PythonCell):
     a "PINS" object will be inserted into its namespace"""
     _subcelltype = "reactor"
 
+    def __str__(self):
+        ret = "Seamless reactor Python cell: " + self._format_path()
+        return ret
+
 
 class PyTransformerCell(PythonCell):
     """Python code object used for transformers
     Each input will be an argument"""
     _subcelltype = "transformer"
+
+    def __str__(self):
+        ret = "Seamless transformer Python cell: " + self._format_path()
+        return ret
 
 
 
@@ -445,6 +440,10 @@ class PyMacroCell(PythonCell):
     """
     _subcelltype = "macro"
 
+    def __str__(self):
+        ret = "Seamless macro Python cell: " + self._format_path()
+        return ret
+
 class IPythonCell(Cell):
     _celltype = "ipython"
     _mount_kwargs = {"encoding": "utf-8", "binary": False}
@@ -454,32 +453,40 @@ class IPythonCell(Cell):
         return ret
 
 
-class PlainCell(Cell):
+class PlainCell(TextCell):
     """A cell in plain (i.e. JSON-serializable) format"""
     _celltype = "plain"
-    _mount_kwargs = {"encoding": "utf-8", "binary": False}
-    _monitor = None
-    _silk = None
-
-    def __str__(self):
-        ret = "Seamless plain cell: " + self._format_path()
-        return ret
 
 
-class CsonCell(Cell):
-    """A cell in CoffeeScript Object Notation (CSON) format
-    When necessary, the contents of a CSON cell are automatically converted
-    to plain.
-    """
+class CsonCell(TextCell):
+    """A cell in CoffeeScript Object Notation (CSON) format"""
     _celltype = "cson"
-    _mount_kwargs = {"encoding": "utf-8", "binary": False}
 
-    def __str__(self):
-        ret = "Seamless CSON cell: " + self._format_path()
-        return ret
+class YamlCell(TextCell):
+    """A cell in YAML format"""
+    _celltype = "yaml"
 
+class StrCell(TextCell):
+    """A cell containing a string, wrapped in double quotes"""
+    _celltype = "str"
 
-celltypes = {
+class BytesCell(TextCell):
+    """A cell containing bytes"""
+    _celltype = "bytes"
+
+class IntCell(TextCell):
+    """A cell containing an integer"""
+    _celltype = "int"
+
+class FloatCell(TextCell):
+    """A cell containing a float"""
+    _celltype = "float"
+
+class BoolCell(TextCell):
+    """A cell containing a bool"""
+    _celltype = "bool"
+
+cellclasses = {
     "text": TextCell,
     "python": PythonCell,
     "ipython": IPythonCell,
@@ -488,61 +495,40 @@ celltypes = {
     "macro": PyMacroCell,
     "plain": PlainCell,
     "cson": CsonCell,
-    "array": ArrayCell,
-    "mixed": MixedCell
+    "binary": BinaryCell,
+    "mixed": MixedCell,
+    "yaml": YamlCell,
+    "str": StrCell,
+    "bytes": BytesCell,
+    "int": IntCell,
+    "float": FloatCell,
+    "bool": BoolCell,
 }
 
 def cell(celltype="plain", **kwargs):
-    cellclass = celltypes[celltype]
+    cellclass = cellclasses[celltype]
     return cellclass(**kwargs)
 
-def textcell():
-    return TextCell()
+_cellclasses = [cellclass for cellclass in globals().values() if isinstance(cellclass, type) \
+  and issubclass(cellclass, Cell)]
 
-def pythoncell():
-    return PythonCell()
-
-def pytransformercell():
-    return PyTransformerCell()
-
-def pyreactorcell():
-    return PyReactorCell()
-
-def pymacrocell():
-    return PyMacroCell()
-
-def ipythoncell():
-    return IPythonCell()
-
-def plaincell():
-    return PlainCell()
-
-def csoncell():
-    return CsonCell()
-
-def arraycell():
-    return ArrayCell()
-
-def mixedcell():
-    return MixedCell()
-
-
-extensions = {
+extensions = {cellclass: ".txt" for cellclass in cellclasses}
+extensions.update({
     TextCell: ".txt",
     PlainCell: ".json",
     CsonCell: ".cson",
+    YamlCell: ".yaml",
+    BytesCell: ".dat",
     PythonCell: ".py",
-    IPythonCell: ".ipy",
     PyTransformerCell: ".py",
     PyReactorCell: ".py",
     PyMacroCell: ".py",
     IPythonCell: ".ipy",
     MixedCell: ".mixed",
-    ArrayCell: ".npy",
-}
-_cellclasses = [cellclass for cellclass in globals().values() if isinstance(cellclass, type) \
-  and issubclass(cellclass, Cell)]
-celltypes = {cellclass._celltype:cellclass for cellclass in _cellclasses}
+    BinaryCell: ".npy",
+})
+
+celltypes = {cellclass._celltype:cellclass for cellclass in _cellclasses if cellclass._celltype is not None}
 subcelltypes = {cellclass._subcelltype:cellclass for cellclass in _cellclasses if cellclass._subcelltype is not None}
 
 from .unbound_context import UnboundManager
@@ -550,6 +536,8 @@ from .mount import MountItem
 from .mount import is_dummy_mount
 from ..mixed.get_form import get_form
 from .structured_cell import Inchannel, Outchannel, Editchannel
+from .macro_mode import get_macro_mode
+from .utils import strip_source
 
 """
 TODO Documentation: only-text changes

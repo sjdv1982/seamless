@@ -6,8 +6,6 @@ import ctypes
 from .. import MAGIC_SEAMLESS
 from .util import get_buffersize, form_to_dtype, mul
 
-MAGIC_NUMPY = b"\x93NUMPY"
-
 def _load_from_buffer(storage, form, buffer, buffer_offset, buffersize, shape):
     dtype = form_to_dtype(form, storage)
     shape0 = (1,)
@@ -170,8 +168,9 @@ def _from_stream_sub(
 def from_stream(stream, storage, form):
     """Reverses to_stream, returning data"""
     if storage == "pure-plain":
+        assert isinstance(stream, str)
         if isinstance(stream, str):
-            txt = stream            
+            txt = stream
         else:
             assert not stream.startswith(MAGIC_SEAMLESS)
             assert not stream.startswith(MAGIC_NUMPY)
@@ -180,7 +179,12 @@ def from_stream(stream, storage, form):
         return result
     elif storage == "pure-binary":
         b = BytesIO(stream)
-        return np.load(b)
+        arr0 = np.load(b, allow_pickle=False)
+        if arr0.ndim == 0:
+            arr = np.frombuffer(arr0,arr0.dtype)
+            return arr[0]
+        else:
+            return arr0
     assert stream.startswith(MAGIC_SEAMLESS)
     l = len(MAGIC_SEAMLESS)
     s1 = stream[l:l+8]

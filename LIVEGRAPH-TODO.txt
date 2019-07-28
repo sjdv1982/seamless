@@ -217,6 +217,12 @@ List of tasks:
   - Set the cell's checksum attribute (direct attribute access)
   - If the checksum was None but the void attribute was not None, do a cell void cancellation.
 
+NOTE: among update tasks, only Cell update tasks will get an up-to-date checksum, guaranteed.
+This is because operations on cells must be well-ordered.
+In contrast, Accessor and Worker update tasks may see out-of-date checksums. But whenever the
+ checksum changes, an operation should be launched (cancellation or a new update task) that
+ corrects the earlier update.
+
 - Cell update task
   - If the cell's void attribute is True, log a warning and return.
   - Await cell checksum task
@@ -228,34 +234,20 @@ List of tasks:
       - launch an accessor update task
 
 - Accessor update task.
-  TODO: update
-  """
-  # old stuff for UponConnectionTask...
-  If the source has no checksum, do nothing.
-  If the source is void:
-    if source is a cell, do a cell cancellation, and launch a cell update task.
-    if source is an outputpin/editpin, do a worker cancellation (no-op until we support optional pins).
-     Then launch a worker update task.
-     Note that workers are no longer executed with any unconnected output pins.
-  """
-  For a read accessor:
-    - Await/incref expression evaluation task. Incref the expression. 
-    - If the expression checksum is None: run a void cancellation and return
-    - Select all downstream write accessors,set as their checksum the checksum of our expression
-        (this increfs the checksum), and launch an update task.
-  For a write accessor:
-    For each target:
-      If a cell:
-        - Select target cell
-        - If cell is void, give a warning, and set to non-void
-        - If the path is empty:
-          Set the cell checksum (direct attribute access). If checksum is None, set void.
-        - Else, run a set-non-authorative-path *action*, which will launch a set-path task.
+  - Get the expression. If it is None, do an accessor void cancellation
+  - If the expression is trivial, obtain its result checksum directly
+  - Else, get the expression result checksum from cache. 
+    If there is a cache miss, await expression evaluation task
+  - Select the write accessor's target. If the expression result checksum is None,
+    do an accessor void cancellation.
+    Else:
+  - If a worker, set the pin to the checksum, and launch a worker update task.
+  - If a cell:
+      ###If path is None: launch a set-cell-value task. 
+        This will launch an update task, when complete.
+      Else:
+        - Run a set-non-authorative-path *action*, which will launch a set-path task.
         - Launch a cell update task (it will automatically await the set-path task, if any)
-      If a worker:
-        - Cancel the previous update task if any
-        - Decref the current transformation task.
-        - Launch a new worker update task.
 
 - Worker update task.
   - Check that all inputpins/editpin accessors are connected and have valid checksums. If not, return.
@@ -459,3 +451,38 @@ Cancellations are sync, like actions.
 - Transformer cancellation (with possible void option).
   Decref the associated transformation, remove the transformer from its outputs.
   Select all downstream accessors, and do cancellation on them (propagating void).
+
+
+  
+  TODO: expression provenance cache: expression-result-to-expression. 
+  TODO: buffersize cache (checksum-to-buffersize) in ValueCache. Also in Redis and via communionserver
+    Both provenance caches (transformation and expression) are kept as local cache for any buffersize,
+    but they are offloaded to Redis only for larger buffers (>= 100 bytes)
+  TODO: implement and document text below:
+  TODO: graph storing/loading: Checksums of accessors (connections) are stored/loaded as well as the checksum of cells
+  NOTE: .protocol conversion/validation caches are never offloaded to Redis.
+  However, validation is only invoked if:
+  - The cell value (not the checksum!) is changed authoratively from the command line (SetCellValueTask)
+  - By an accessor, if the checksum of the accessor (or its target cell) changes
+  Therefore, graphs that contain results (including partial results; almost every graph contains some expression results)
+   can be loaded in trusted or non-trusted mode. In both cases, all checksums are set, but the differences are as follows.
+  
+   In non-trusted mode: 
+   No caches are filled at all. This means that all expressions get re-evaluated, starting from authorative cells.
+   All transformations will be re-executed as well. 
+   However, since all results will (should!) be the same as the checksums of their outputs, there will be no propagations.
+   Reactors and macros get re-launched also.
+   However, checksums of reactor output pin accessors are set to "provisional" (TODO). When a reactor outputs a value, the
+   provisional status cleared. Whenever a reactor gives an exception,
+    all provisional accessors are void-cancelled. After equilibration, all provisional accessors are void-cancelled as well.
+   
+   In trusted mode: 
+   All caches get filled:
+    - Transformation result cache
+    - Expression result cache
+    - Validation/conversion caches
+  This means that even though accessors/transformations will be initially re-evaluated, they all immediately get a cache hit.
+  In addition, since the cache hit is the same as their checksum, there will be no propagations.
+  Reactors and macros get re-launched anyway, which is as it should be (TODO: unless declared as pure). 
+  Reactors should give the same outputs, but if they do not, it gets overwritten.
+/TODO: implement and document text 

@@ -2,8 +2,8 @@ import json
 import numpy as np
 from .to_stream import to_stream
 from .from_stream import from_stream
+from .. import MAGIC_SEAMLESS_MIXED
 
-MAGIC_SEAMLESS_MIXED = b'\x94SEAMLESS-MIXED'
 def serialize(data, *, storage=None, form=None):
     from ..get_form import get_form
     if storage is None or form  is None:
