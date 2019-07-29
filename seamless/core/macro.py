@@ -190,7 +190,7 @@ class Macro(Worker):
             current_macro = curr_macro()
             try:
                 path = Path(current_macro, self.path, manager=self._get_manager())
-            except:
+            except Exception:
                 import traceback; traceback.print_exc(); raise
             return path.ctx
         assert self._gen_context is not None

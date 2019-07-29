@@ -1,5 +1,6 @@
 numpy
 cson
+ruamel.yaml
 jsonschema==3.*
 websockets
 requests

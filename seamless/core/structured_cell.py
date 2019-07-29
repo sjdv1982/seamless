@@ -31,7 +31,7 @@ If there is buffering, only the buffer should be edited via mount
                         assert isinstance(handle.data, MixedBase)
                         monitor.set_path(channel.inchannel, value, from_channel=True)
                     monitor._update_outchannels(channel.inchannel)
-                except:
+                except Exception:
                     print("*** Error in setting channel %s ***" % channel)
                     traceback.print_exc()
                     print("******")

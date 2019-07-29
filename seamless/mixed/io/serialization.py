@@ -6,7 +6,7 @@ from .. import MAGIC_SEAMLESS_MIXED
 
 def serialize(data, *, storage=None, form=None):
     from ..get_form import get_form
-    if storage is None or form  is None:
+    if storage is None or form is None:
         storage, form = get_form(data)
     content = to_stream(data, storage, form)
     if storage in ("pure-plain", "pure-binary"):
@@ -22,13 +22,12 @@ def serialize(data, *, storage=None, form=None):
     return result
 
 def deserialize(data):
-    from .. import MAGIC_SEAMLESS
-    from .from_stream import MAGIC_NUMPY
+    from .. import MAGIC_SEAMLESS, MAGIC_NUMPY
     from ..get_form import get_form
     pure_plain, pure_binary = False, False
     if isinstance(data, str):
         pure_plain = True            
-    if not pure_plain:
+    else:
         assert isinstance(data, bytes)
         if data.startswith(MAGIC_NUMPY):
             pure_binary = True
@@ -40,8 +39,7 @@ def deserialize(data):
             assert not data.startswith(MAGIC_SEAMLESS) #TODO: cache seems to have stored stream instead of mixed stream...
             data = data.decode()
         value = from_stream(data, mode, None)
-        _, form = get_form(value)
-        return value, mode, form
+        return value, mode
 
     offset = len(MAGIC_SEAMLESS_MIXED)
     lh1 = np.frombuffer(data[offset:offset+1], np.uint8)[0]
@@ -54,4 +52,4 @@ def deserialize(data):
     offset += lh2
     storage = h1.decode()
     form = json.loads(h2.decode())
-    return from_stream(data[offset:], storage, form), storage, form
+    return from_stream(data[offset:], storage, form), storage

@@ -23,10 +23,11 @@ class SetCellValueTask(Task):
             else:
                 value_cache = manager.cachemanager.value_cache
                 await validate_subcelltype(
-                    checksum, cell._celltype, cell._subcelltype, value_cache
+                    checksum, cell._celltype, cell._subcelltype, 
+                    str(cell), value_cache
                 )
-                if cell._checksum != checksum:
-                    manager._set_cell_checksum(cell, checksum, checksum is None)
+                if cell._checksum != checksum:                    
+                    manager._set_cell_checksum(cell, checksum, False)
                     CellUpdateTask(manager, self.cell).launch()
         finally:
             taskmanager.cell_to_value.pop(cell)

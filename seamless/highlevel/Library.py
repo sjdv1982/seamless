@@ -135,7 +135,7 @@ class ConstructorItem:
             else:
                 try:
                     get_form(a)
-                except:
+                except Exception:
                     raise ValueError("argument %s is not JSON or mixed" % name)
                 assert not tmpl["as_cell"], name #value passed for cell argument
                 is_path = False

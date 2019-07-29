@@ -94,7 +94,7 @@ def load(ctx):
     ctx.nauth = context(name="nauth", context=ctx)
     try:
         recreate(ctx.nauth, "nauth.struc", with_buffer=False, with_schema=False, inchannels=[("z",)])
-    except:
+    except Exception:
         import traceback; traceback.print_exc()
 
 with macro_mode_on():

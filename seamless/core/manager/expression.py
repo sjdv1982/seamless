@@ -10,18 +10,26 @@ class Expression:
         "celltype",
         "target_celltype",
         "target_subcelltype",
+        "target_cell_path",
     ]
-    def __init__(self, checksum, path, celltype, target_celltype, target_subcelltype):
+    def __init__(
+        self, checksum, path, celltype, 
+        target_celltype, target_subcelltype,
+        *, target_cell_path=None
+    ):
         self.checksum = checksum
         self.path = path
         self.celltype = celltype
         self.target_celltype = target_celltype
-        self.target_subcelltype = target_subcelltype        
+        self.target_subcelltype = target_subcelltype
+        self.target_cell_path = target_cell_path   
 
     def __str__(self):
         d = {}
         for slot in self.__slots__:
             v = getattr(self, slot)
+            if slot == "target_cell_path":
+                continue
             if slot == "checksum":
                 if v is not None:
                     v = v.hex()

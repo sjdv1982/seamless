@@ -78,7 +78,7 @@ def translate_py_reactor(node, root, namespace, inchannels, outchannels, editcha
             code = node.get("cached_" + attr)
         try:
             cell._set_checksum(checksum, initial=True)
-        except:
+        except Exception:
             # TODO: proper logging
             traceback.print_exc()
 

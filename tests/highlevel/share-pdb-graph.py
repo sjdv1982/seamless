@@ -8,7 +8,7 @@ try:
     import asyncio
     asyncio.get_event_loop().run_until_complete(asyncio.sleep(0.5))
     redis_sink.connection.info()
-except:
+except Exception:
     print("No Redis found! Exiting...")
     import sys; sys.exit()
 

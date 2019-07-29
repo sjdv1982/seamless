@@ -49,7 +49,7 @@ def deserialize(
             try:
                 json.loads(value)
                 source_access_mode = "plain"
-            except:
+            except Exception:
                 source_access_mode = "text"
         elif isinstance(value, (Scalar, Container)):
             source_access_mode = "plain"

@@ -28,7 +28,7 @@ class CellUpdateTask(Task):
         checksum, void = cell._checksum, cell._void
         if checksum is None and not void:
             manager.cancel_cell(cell, void=True)
-        assert not cell._monitor
+        assert not cell._monitor # cell update is not for StructuredCell cells
         livegraph = manager.livegraph
         accessors = livegraph.cell_to_downstream[cell]
         for accessor in accessors:

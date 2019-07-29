@@ -86,7 +86,7 @@ def compile(binary_objects, build_dir, compiler_verbose=False):
         os.chdir(curr_dir)
         try:
             shutil.rmtree(build_dir) #TODO: sometimes skip, for GDB
-        except:
+        except Exception:
             pass
         locks.pop(build_dir)
         lock.release()

@@ -19,7 +19,7 @@ def read_data(data):
         try:
             try:
                 sdata = data.decode()
-            except:
+            except Exception:
                 return np.frombuffer(data, dtype=np.uint8)
             return json.loads(sdata)
         except ValueError:

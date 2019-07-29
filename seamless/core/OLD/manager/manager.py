@@ -860,7 +860,7 @@ class Manager:
         while 1:
             try:
                 await self._flush()
-            except:
+            except Exception:
                 import traceback
                 traceback.print_exc()
             await asyncio.sleep(0)

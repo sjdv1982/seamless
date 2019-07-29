@@ -39,7 +39,7 @@ class JobManager:
                     tf_level2 = await tcache.build_level2(tf_level1)
                 except (ValueError, CacheMissError):
                     pass
-                except:
+                except Exception:
                     import traceback
                     traceback.print_exc()
                 else:                    
@@ -71,7 +71,7 @@ class JobManager:
         except asyncio.CancelledError:
             if task is not None:
                 task.cancel()
-        except:
+        except Exception:
             print("ERR!")
             raise
 

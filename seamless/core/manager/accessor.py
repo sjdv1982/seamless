@@ -16,10 +16,16 @@ class ReadAccessor(Accessor):
     
     def build_expression(self, livegraph, checksum):
         """Returns if expression has changed"""
+        from ...core.cell import Cell
+        target_cell_path = None
+        target = self.write_accessor.target
+        if isinstance(target, Cell):
+            target_cell_path = str(cell)
         expression = Expression(
             checksum, self.path, self.celltype, 
             self.write_accessor.celltype,
-            self.write_accessor.subcelltype
+            self.write_accessor.subcelltype,
+            target_cell_path=target_cell_path
         )
         if self.expression is not None:
             if expression.get_hash() == self.expression.get_hash():

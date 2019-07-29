@@ -5,7 +5,13 @@ from . import SeamlessBase
 from .macro_mode import curr_macro, register_toplevel
 from .mount import MountItem, is_dummy_mount
 
+class DummyTaskManager:
+    @staticmethod
+    def run_synctasks():
+        pass
+
 class UnboundManager:
+    taskmanager = DummyTaskManager
     def __init__(self, ctx):
         self._ctx = weakref.ref(ctx)
         self._registered = set()
@@ -28,13 +34,17 @@ class UnboundManager:
     def register_macro(self, macro):
         self._registered.add(macro)
 
-    def set_cell(self, cell, value, *, subpath,
-      from_buffer=False, buffer_checksum=None,origin=None
-      ):
+    def set_cell(self, cell, value):
         assert cell._get_manager() is self
         assert cell in self._registered
-        assert origin is None or isinstance(origin, UnboundContext)  # irrelevant
-        self.commands.append(("set cell", (cell, value, subpath, from_buffer, buffer_checksum)))
+        self.commands.append(("set cell", (cell, value)))
+
+    def connect(self, source, source_subpath, target, target_subpath):
+        from .macro import Path
+        if isinstance(source, (Cell, Path)) and source_subpath is None:
+            return self.connect_cell(source, target, None)
+        else:
+            raise NotImplementedError # livegraph branch
 
     def connect_cell(self, cell, other, cell_subpath):
         from .macro import Path
@@ -250,30 +260,22 @@ class UnboundContext(SeamlessBase):
                 continue
         for comnr, (com, args) in enumerate(self._realmanager.commands):            
             if com == "set cell":                
-                cell, value, subpath, from_buffer, buffer_checksum = args
+                cell, value
                 supersede = False
                 if subpath is None or subpath == ():
                     for com2, args2 in self._realmanager.commands[comnr+1:]:
                         if com2 == "set cell":         
-                            cell2, _, subpath2, _, _ = args2
+                            cell2, _ = args2
                         elif com2 == "set cell checksum":
                             cell2, _ = args2
-                            subpath2 = subpath
                         else:
                             continue
                         if cell2 == cell:
-                            if subpath2 is None or subpath2 == ():
-                                supersede = True
-                                break
+                            supersede = True
+                            break
                 if supersede:
                     continue
-                manager.set_cell(
-                    cell, value, 
-                    subpath=subpath,
-                    from_buffer=from_buffer,
-                    buffer_checksum=buffer_checksum,
-                    origin=None
-                )
+                manager.set_cell(cell, value)
             elif com == "connect cell":                
                 cell, other, cell_subpath = args
                 cell2 = replace_path(cell, manager.ctx())
@@ -288,7 +290,7 @@ class UnboundContext(SeamlessBase):
                         continue
                 else:
                     other = other2
-                manager.connect_cell(cell, other, cell_subpath)
+                manager.connect(cell, None, other, cell_subpath)
             elif com == "connect pin":
                 pin, cell = args
                 manager.connect_pin(pin, cell)
@@ -310,7 +312,6 @@ class UnboundContext(SeamlessBase):
                 manager.set_cell_label(cell, label)
             else:
                 raise ValueError(com)
-        manager.schedule_jobs()
 
     def _bind(self, ctx):
         from .context import Context        
@@ -320,6 +321,8 @@ class UnboundContext(SeamlessBase):
         self._bind_stage2(ctx._get_manager())
     
     def destroy(self, *, from_del=False):
+        if self._bound:
+            return self._bound.destroy(from_del=from_del)
         for childname, child in self._children.items():
             child.destroy(from_del=from_del)
 

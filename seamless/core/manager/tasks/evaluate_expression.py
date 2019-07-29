@@ -68,6 +68,7 @@ class EvaluateExpressionTask(Task):
                     expression_result_checksum, 
                     expression.target_celltype, 
                     expression.target_subcelltype, 
+                    expression.target_cell_path,
                     value_cache
                 )                    
         else:

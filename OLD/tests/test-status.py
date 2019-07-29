@@ -12,7 +12,7 @@ export(tf.inp)
 ctx.inp.set(2)
 try:
     ctx.inp.set("a")
-except:
+except Exception:
     pass
 print(tf.status())
 export(tf.outp)

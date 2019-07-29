@@ -19,7 +19,7 @@ def meta(name, bases, d):
             else:
                 try:
                     json.dumps(value)
-                except:
+                except Exception:
                     raise ValueError("'%s' is not JSON-serializable" % key)
                 prototype[key] = value
         if len(prototype):            

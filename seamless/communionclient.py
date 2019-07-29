@@ -41,7 +41,7 @@ class CommunionClient:
     def __del__(self):
         try:
             self.destroy()
-        except:
+        except Exception:
             pass
 
 class CommunionPairClient: 
@@ -80,7 +80,7 @@ class CommunionPairClient:
     def __del__(self):
         try:
             self.destroy()
-        except:
+        except Exception:
             pass
 
 # TODO # livegraph branch

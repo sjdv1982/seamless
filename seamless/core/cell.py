@@ -29,7 +29,6 @@ Use ``Cell.status()`` to get its status.
 
     _mount = None
     _mount_kwargs = None
-    _mount_setter = None
     _lib_path = None # Set by library.libcell
     _paths = None #WeakSet of Path object weakrefs
     """
@@ -143,7 +142,23 @@ Use ``Cell.status()`` to get its status.
                 return lib_get_buffer(self._prelim_checksum, self)                
             else:
                 raise Exception("Cannot ask the cell value of a context that is being constructed by a macro")
-        return manager.get_cell_buffer(self)
+        buffer, _ = manager.get_cell_buffer_and_checksum(self)
+        return buffer
+
+    @property
+    def buffer_and_checksum(self):
+        """Return the cell's buffer and checksum."""
+        manager = self._get_manager()
+        if isinstance(manager, UnboundManager):
+            if self._lib_path is not None:
+                from .library import lib_get_buffer
+                checksum = self._prelim_checksum
+                buffer = lib_get_buffer(checksum, self)                
+                return buffer, checksum
+            else:
+                raise Exception("Cannot ask the cell value of a context that is being constructed by a macro")
+        buffer, checksum = manager.get_cell_buffer_and_checksum(self)
+        return buffer, checksum
 
     def _get_value(self, copy):
         manager = self._get_manager()
@@ -179,15 +194,16 @@ Use ``Cell.status()`` to get its status.
             )
         return self
 
-    def set_buffer(self, buffer):
-        """Update cell buffer from the terminal."""
+    def set_buffer(self, buffer, checksum=None):
+        """Update cell buffer from the terminal.
+        If the checksum is known, it can be provided as well."""
         if self._context is None:
             self._prelim_checksum = None
             self._prelim_val = buffer, True
         else:
             manager = self._get_manager()
-            manager.set_buffer(
-              self, buffer
+            manager.set_cell_buffer(
+              self, buffer, checksum
             )
         return self
 
@@ -321,7 +337,7 @@ Use ``Cell.status()`` to get its status.
     def _set_share_callback(self, share_callback):
         self._share_callback = share_callback
 
-    def destroy(self, *, from_del=False):
+    def destroy(self, *, from_del=False):        
         super().destroy(from_del=from_del)
         if not from_del:
             self._get_manager()._destroy_cell(self)
@@ -392,7 +408,8 @@ class TextCell(Cell):
     _celltype = "text"
 
 class PythonCell(Cell):
-    """Generic Python code object"""
+    """Generic Python code object
+    Buffer ends with a newline"""
     _celltype = "python"
     _subcelltype = None
     _mount_kwargs = {"encoding": "utf-8", "binary": False}
@@ -405,7 +422,7 @@ class PythonCell(Cell):
             code = inspect.getsource(value)
             code = strip_source(code)
             value = code
-        return self._set(value, False)
+        return super().set(value)
 
     def __str__(self):
         ret = "Seamless Python cell: " + self._format_path()
@@ -413,7 +430,8 @@ class PythonCell(Cell):
 
 class PyReactorCell(PythonCell):
     """Python code object used for reactors
-    a "PINS" object will be inserted into its namespace"""
+    a "PINS" object will be inserted into its namespace
+    Buffer ends with a newline"""
     _subcelltype = "reactor"
 
     def __str__(self):
@@ -423,7 +441,8 @@ class PyReactorCell(PythonCell):
 
 class PyTransformerCell(PythonCell):
     """Python code object used for transformers
-    Each input will be an argument"""
+    Each input will be an argument
+    Buffer ends with a newline"""
     _subcelltype = "transformer"
 
     def __str__(self):
@@ -437,6 +456,7 @@ class PyMacroCell(PythonCell):
     The context "ctx" will be the first argument.
     Each input will be an argument
     If the macro is a function, ctx must be returned
+    Buffer ends with a newline
     """
     _subcelltype = "macro"
 
@@ -445,6 +465,7 @@ class PyMacroCell(PythonCell):
         return ret
 
 class IPythonCell(Cell):
+    """A cell in IPython format (e.g. a Jupyter cell). Buffer ends with a newline"""
     _celltype = "ipython"
     _mount_kwargs = {"encoding": "utf-8", "binary": False}
 
@@ -454,20 +475,20 @@ class IPythonCell(Cell):
 
 
 class PlainCell(TextCell):
-    """A cell in plain (i.e. JSON-serializable) format"""
+    """A cell in plain (i.e. JSON-serializable) format. Buffer ends with a newline"""
     _celltype = "plain"
 
 
 class CsonCell(TextCell):
-    """A cell in CoffeeScript Object Notation (CSON) format"""
+    """A cell in CoffeeScript Object Notation (CSON) format. Buffer ends with a newline"""
     _celltype = "cson"
 
 class YamlCell(TextCell):
-    """A cell in YAML format"""
+    """A cell in YAML format. Buffer ends with a newline"""
     _celltype = "yaml"
 
 class StrCell(TextCell):
-    """A cell containing a string, wrapped in double quotes"""
+    """A cell containing a string, wrapped in double quotes. Buffer ends with a newline"""
     _celltype = "str"
 
 class BytesCell(TextCell):
@@ -475,15 +496,15 @@ class BytesCell(TextCell):
     _celltype = "bytes"
 
 class IntCell(TextCell):
-    """A cell containing an integer"""
+    """A cell containing an integer. Buffer ends with a newline"""
     _celltype = "int"
 
 class FloatCell(TextCell):
-    """A cell containing a float"""
+    """A cell containing a float. Buffer ends with a newline"""
     _celltype = "float"
 
 class BoolCell(TextCell):
-    """A cell containing a bool"""
+    """A cell containing a bool. Buffer ends with a newline"""
     _celltype = "bool"
 
 cellclasses = {

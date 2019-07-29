@@ -2,6 +2,7 @@ import weakref
 import asyncio
 from asyncio import CancelledError
 from functools import partial
+import threading
 import time
 
 class TaskManager:
@@ -35,15 +36,23 @@ class TaskManager:
         synctasks = self.synctasks
         self.synctasks = []
         for synctask in synctasks:
-            callback, args, kwargs = synctask
+            callback, args, kwargs, event = synctask
             try:
-                callback(*args, **kwargs)
-            except:
+                result = callback(*args, **kwargs)
+            except Exception:
+                result = None
                 import traceback
                 traceback.print_exc()
+            if event is not None:
+                event.custom_result_value = result # hackish
+                event.set()
 
-    def add_synctask(self, callback, args, kwargs):
-        self.synctasks.append((callback, args, kwargs))
+    def add_synctask(self, callback, args, kwargs, with_event):
+        event = None
+        if with_event:
+            event = threading.Event()
+        self.synctasks.append((callback, args, kwargs, event))
+        return event
 
     def add_task(self, task):
         manager = self.manager()
@@ -90,9 +99,10 @@ class TaskManager:
         if len(futures):
             try:
                 await asyncio.gather(*futures)
-            except:
+            except Exception as exc:
                 # If anything goes wrong in another task, consider this a cancel
-                raise CancelledError
+                print("CANCEL?", type(exc))
+                ###raise CancelledError
 
     def _clean_dep(self, dep, task):
         if isinstance(dep, Cell):
@@ -203,11 +213,13 @@ class TaskManager:
         if refkey is not None:
             self.reftasks.pop(refkey)
 
-    def cancel_cell(self, cell, origin_task=None):
+    def cancel_cell(self, cell, *, origin_task=None, full=False):
         """Cancels all tasks depending on cell.
 If origin_task is provided, that task is not cancelled."""
         for task in self.cell_to_task.get(cell, []):
             if task is origin_task:
+                continue
+            if not full and isinstance(task, UponConnectionTask):
                 continue
             task.cancel()
 
@@ -225,8 +237,8 @@ If origin_task is provided, that task is not cancelled."""
         for task in self.hexpression_to_task[hexpression]:
             task.cancel()
 
-    def destroy_cell(self, cell):
-        self.cancel_cell(cell)
+    def destroy_cell(self, cell, full=False):
+        self.cancel_cell(cell, full=full)
         self.cell_to_task.pop(cell)
         self.cell_to_value.pop(cell, None)
 

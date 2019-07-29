@@ -27,7 +27,7 @@ class TempRefManager:
         while 1:
             try:
                 self.purge()
-            except:
+            except Exception:
                 import traceback
                 traceback.print_exc()
             await asyncio.sleep(0)

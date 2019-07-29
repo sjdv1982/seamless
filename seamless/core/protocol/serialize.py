@@ -1,33 +1,44 @@
 import asyncio
+import json
 from concurrent.futures import ProcessPoolExecutor
 
 from ...pylru import lrucache
 
+from ...mixed.io import serialize as mixed_serialize
+
 serialize_cache = lrucache(100)
 
+text_types = (
+    "text", "python", "ipython", "cson", "yaml",
+    "str", "int", "float", "bool",
+)
+
 def _serialize(value, celltype):
-    if celltype == "text":
+    if celltype in text_types:
         if isinstance(value, bytes):
-            buffer = value
-        else:
-            buffer = str(value).encode()
-    elif celltype == "bytes":
-        try:
-            buffer = value.tobytes()
-            return buffer
-        except:
-            pass
-        buffer = str(value).encode()
+            value = value.decode()
+        buffer = (str(value).rstrip("\n")+"\n").encode()
+    elif celltype == "plain":
+        txt = json.dumps(value, sort_keys=True, indent=2)
+        buffer = (txt + "\n").encode()
+    elif celltype == "mixed":
+        buffer = mixed_serialize(value)
     elif celltype == "binary":
         if isinstance(value, bytes):
             buffer = value
         else:
             value = np.array(value)
             buffer = value.tobytes()
+    elif celltype == "bytes":
+        try:
+            buffer = value.tobytes()
+            return buffer
+        except Exception:
+            pass
+        buffer = (str(value).rstrip("\n")+"\n").encode()
     else:
-        raise NotImplementedError # livegraph branch
+        raise TypeError(celltype)
     return buffer
-
 
 async def serialize(value, celltype):
     idvalue = id(value) 

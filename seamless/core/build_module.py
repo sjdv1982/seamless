@@ -8,7 +8,6 @@ from ..get_hash import get_dict_hash
 from ..compiler.locks import locks, locklock
 from ..compiler import compile, complete
 from ..compiler.build_extension import build_extension_cffi
-from ..ipython import execute as ipython_execute
 
 remote_build_model_servers = []
 
@@ -21,6 +20,7 @@ CFFI_VERBOSE = False
 module_cache = WeakValueDictionary()
 
 def build_interpreted_module(full_module_name, module_definition):
+    from ..ipython import execute as ipython_execute
     language = module_definition["language"]
     code = module_definition["code"]
     assert language in ("python", "ipython"), language

@@ -56,7 +56,7 @@ def validate_z(self):
     assert self.q < self.r
 try:
     s.z.add_validator(validate_z)
-except:
+except Exception:
     print(s.schema)
 
 print(s.schema)

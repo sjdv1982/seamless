@@ -54,7 +54,8 @@ class UponConnectionTask(Task):
         if isinstance(self.source, Cell):
             accessor = self._connect_cell()
             assert accessor is not None
-            CellUpdateTask(manager, self.source).launch()
+            if not self.source._void:
+                CellUpdateTask(manager, self.source).launch()
         else:
             raise NotImplementedError #livegraph branch
     

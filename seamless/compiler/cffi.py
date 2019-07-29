@@ -111,7 +111,7 @@ def _build_extension(
     finally:
         try:
             shutil.rmtree(tempdir) #skip, for GDB
-        except:
+        except Exception:
             pass
         lock.release()
         os.chdir(d)

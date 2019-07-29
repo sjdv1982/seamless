@@ -229,7 +229,7 @@ class CommunionServer:
                 asyncio.ensure_future(self._process_message_from_peer(websocket, message))
         except (websockets.exceptions.ConnectionClosed, ConnectionResetError):
             pass
-        except:
+        except Exception:
             traceback.print_exc()
         finally:
             self.peers.pop(websocket)

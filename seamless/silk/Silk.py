@@ -352,7 +352,7 @@ class Silk(SilkBase):
                         for n in range(1, len(value)):
                             try:
                                 validator.validate(value[n])
-                            except:
+                            except Exception:
                                 pluriform = True
                                 break
                     if pluriform:
@@ -757,7 +757,7 @@ class Silk(SilkBase):
                 return super().__getattribute__("_getitem")(attr)
             except (TypeError, KeyError, AttributeError, IndexError):
                 raise AttributeError(attr) from None
-            except:
+            except Exception:
                 raise exc from None
 
     def _getitem(self, item):
@@ -893,7 +893,7 @@ class Silk(SilkBase):
                 self._validate(full=full, accept_none=accept_none)
                 if self._buffer is not None:
                     self._commit_buffer()
-            except:
+            except Exception:
                 #TODO: store exception instead
                 print("Warning: exception in buffered Silk structure")
                 traceback.print_exc() ###

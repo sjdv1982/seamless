@@ -133,7 +133,7 @@ print("STAGE 0")
 #this will fail
 try:
     hub.m1 = 16
-except:
+except Exception:
     import traceback
     traceback.print_exc()
 print(ctx.hub.value, ctx.hub.handle)

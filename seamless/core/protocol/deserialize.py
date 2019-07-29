@@ -2,21 +2,37 @@ import asyncio
 import copy
 import json
 from concurrent.futures import ProcessPoolExecutor
+from ...mixed.io import deserialize as mixed_deserialize
 
 from ...pylru import lrucache
 
 deserialize_cache = lrucache(100)
 
-def _deserialize(buffer, checksum, celltype):
+text_types = (
+    "text", "python", "ipython", "cson", "yaml",
+    "str", "int", "float", "bool",
+)
 
-    if celltype == "text":
-        value = buffer.decode()
+def _deserialize(buffer, checksum, celltype):
+    if celltype in text_types:
+        s = buffer.decode()
+        assert s.endswith("\n")
+        value = s[:-1]
     elif celltype == "plain":
-        value = json.loads(buffer.decode())
+        value, storage = mixed_deserialize(buffer)
+        if storage != "pure-plain":
+            raise TypeError
+    elif celltype == "binary":
+        value, storage = mixed_deserialize(buffer)
+        if storage != "pure-binary":
+            raise TypeError
+    elif celltype == "mixed":
+        value, _ = mixed_deserialize(buffer)
+    elif celltype == "bytes":
+        value = buffer
     else:
-        raise NotImplementedError #livegraph branch
+        raise TypeError(celltype)
     
-    #print("DESERIALIZE", buffer, checksum, value)
     return value
 
 

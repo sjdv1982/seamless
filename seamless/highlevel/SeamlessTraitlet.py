@@ -80,6 +80,6 @@ class SeamlessTraitlet(traitlets.HasTraits):
         super()._add_notifiers(handler, name, type)
         try:
             v = getattr(self, name)
-        except:
+        except Exception:
             v = None
         self._notify_trait(name, v, v)

@@ -73,7 +73,7 @@ def link(cell, directory=None, filename=None, *,
         elif filepath is not None:
             try:
                 load_cell(cell, filepath)
-            except:
+            except Exception:
                 import traceback
                 traceback.print_exc()
 

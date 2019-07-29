@@ -46,6 +46,20 @@ from . import mixed
 
 ipython_instance = None
 ipy_error = "Seamless was not imported inside IPython"
+
+def inputhook_terminal(context):
+    while not context.input_is_ready():
+        for manager in _toplevel_managers:            
+            try:
+                manager.taskmanager.run_synctasks()
+            except Exception:
+                import traceback
+                traceback.print_exc()
+        try:            
+            asyncio.get_event_loop().run_until_complete(asyncio.sleep(0))
+        except IndexError: # nested event loop trouble
+            pass
+
 if "get_ipython" in sys.modules["__main__"].__dict__:
     try:
         from IPython import get_ipython
@@ -53,12 +67,22 @@ if "get_ipython" in sys.modules["__main__"].__dict__:
         from IPython.terminal.pt_inputhooks import register as _register_integration_terminal
         from ipykernel.eventloops import register_integration as _register_integration_kernel
     except ImportError:
-        raise
         ipy_error = "Cannot find IPython"
     else:
         ipython_instance = get_ipython()
         if ipython_instance is None:
             ipy_error = "Seamless was not imported inside IPython"
+        else:
+            TerminalInteractiveShell = type(None)
+            try:
+                from IPython.terminal.interactiveshell import TerminalInteractiveShell
+            except ImportError:
+                pass
+            if isinstance(ipython_instance, TerminalInteractiveShell):
+                from .core.macro_mode import _toplevel_managers
+                _register_integration_terminal("seamless", inputhook_terminal)
+                ipython_instance.enable_gui("seamless")
+
 
 if ipy_error is None:
     last_exception = None
@@ -86,29 +110,6 @@ from .core.events.jobscheduler import set_ncores
 """
 from .get_hash import get_hash, get_dict_hash
 from .core.cache.redis_client import RedisSink, RedisCache
-
-def inputhook_terminal(context):
-    while not context.input_is_ready():
-        try:
-            asyncio.get_event_loop().run_until_complete(asyncio.sleep(0.1))
-        except IndexError: # nested event loop trouble
-            pass
-
-get_ipython = None
-try:    
-    from IPython.terminal.pt_inputhooks import register as _register_ipython
-    from IPython.core.interactiveshell import InteractiveShell    
-    from IPython import get_ipython
-    TerminalInteractiveShell = type(None)
-    from IPython.terminal.interactiveshell import TerminalInteractiveShell
-except ImportError:
-    pass
-if get_ipython is not None:
-    ipython_instance = get_ipython()
-    if ipython_instance is not None and isinstance(ipython_instance, TerminalInteractiveShell):
-        _register_ipython("seamless", inputhook_terminal)
-        ipython_instance.enable_gui("seamless")
-
 from . import pandeval
 from .pandeval.core.computation.eval import eval
 pandeval.eval = eval

@@ -125,7 +125,7 @@ def fill_checksums(mgr, nodes, *, path=None):
             node.pop("TEMP", None)
             if "checksum" not in node and old_checksum is not None:
                 node["checksum"] = old_checksum
-        except:
+        except Exception:
             import traceback
             traceback.print_exc()
             if node is not None and old_checksum is not None:

@@ -146,7 +146,7 @@ class JobScheduler:
                         if exception is not None:
                             try:
                                 manager.set_transformation_result_exception(job.level1, job.level2, exception)
-                            except:
+                            except Exception:
                                 traceback.print_exc()
                         toclean.append(key)
             for key in toclean:
@@ -189,7 +189,7 @@ class Job:
         lock = await acquire_lock()
         try:
             transformer_path = transformer._format_path()
-        except:
+        except Exception:
             transformer_path = "<Unknown transformer>"
         manager = self.scheduler().manager()
         module_workspace = {}

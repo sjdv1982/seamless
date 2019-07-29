@@ -172,7 +172,7 @@ class Cell(Base):
         else:
             try:
                 cell = self._get_cell()
-            except:
+            except Exception:
                 import traceback; traceback.print_exc()
                 raise
             value = cell.value
@@ -210,7 +210,7 @@ class Cell(Base):
         else:
             try:
                 cell = self._get_cell()
-            except:
+            except Exception:
                 import traceback; traceback.print_exc()
                 raise
             return cell.checksum
@@ -350,7 +350,7 @@ class Cell(Base):
                 celltype = hcell["celltype"]
                 if celltype == "structured" and hcell["silk"]:
                     result += dir(self.value)
-            except:
+            except Exception:
                 pass
         return result
     

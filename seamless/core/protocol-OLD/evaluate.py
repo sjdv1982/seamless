@@ -128,7 +128,7 @@ def evaluate_from_buffer(expression, buffer):
             if expression.celltype == "mixed":
                 semantic_obj = semantic_obj[2]
             
-        except:
+        except Exception:
             ###if result is not None and result != {}:  ###TODO: dirty 
             ###    import traceback;traceback.print_exc()  ###TODO
             semantic_checksum = None

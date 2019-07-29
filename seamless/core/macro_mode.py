@@ -7,11 +7,12 @@ _toplevel_registered = set()
 _toplevel_managers = set()
 
 def register_toplevel(ctx):
+    if _macro_mode_off:
+        return
     manager = ctx._get_manager()
     assert manager is not None
+    # Add toplevel manager even if unbound; else it will be destroyed!!
     _toplevel_managers.add(manager)
-    if _macro_mode_off:
-        return    
     _toplevel_register.add(ctx)
 
 def unregister_toplevel(ctx):
@@ -22,10 +23,12 @@ def unregister_toplevel(ctx):
     _toplevel_registered.discard(ctx)
 
 def _destroy_toplevels():
-    for ctx in list(_toplevel_registered):
-        ctx.destroy(from_del=True)
     for manager in list(_toplevel_managers):
         manager.destroy(from_del=True)
+    for ctx in list(_toplevel_registered):
+        manager = ctx._get_manager()
+        if manager is not None:
+            manager.destroy(from_del=True)
 
 atexit.register(_destroy_toplevels)
 
@@ -73,10 +76,18 @@ def macro_mode_on(macro=None):
                 if isinstance(ctx, UnboundContext):
                     top = ctx._root_
                     assert top is not None
+                    old_manager = ctx._get_manager()
                     ctx._bind(top)
+                    assert ctx._bound
+                    new_manager = top._get_manager()                    
                     _toplevel_registered.add(top)
+                    # we kept the unbound manager alive, now we can get rid of it...
+                    _toplevel_managers.discard(old_manager)
+                    _toplevel_registered.add(top)
+                    _toplevel_managers.add(new_manager)
                 else:
                     _toplevel_registered.add(ctx)
+                    _toplevel_managers.add(ctx._get_manager())
                     bind_all(ctx)        
         ok = True
     finally:

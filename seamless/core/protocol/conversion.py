@@ -157,7 +157,7 @@ async def reinterpret(checksum, buffer, celltype, target_celltype):
         else:
             value = await deserialize(buffer, checksum, celltype, copy=False)
             _ = await serialize(value, target_celltype)
-    except:
+    except Exception:
         msg = "%s cannot be re-interpreted from %s to %s"
         raise ValueError(msg % (checksum.hex(), celltype, target_celltype))
     return
@@ -169,27 +169,34 @@ async def reformat(checksum, buffer, celltype, target_celltype):
     return result
 
 async def convert(checksum, buffer, celltype, target_celltype):
-    value = await deserialize(buffer, checksum, celltype, copy=False)
     key = (celltype, target_celltype)        
     try:
-        if key in ( 
-                ("ipython", "python"), 
-                ("cson", "plain"),
-                ("yaml", "plain"),
-            ):
-                raise NotImplementedError #livegraph branch
+        if key == ("cson", "plain"):
+            value = cson2json(buffer.decode())
+        elif key == ("cson", "plain"):
+            value = yaml.load(buffer.decode())
+        else:
+            value = await deserialize(buffer, checksum, celltype, copy=False)
+        if key == ("ipython", "python"):
+            pass # TODO: IPython syntax check
+            new_buffer = await serialize(value, target_celltype)
         else:
             new_buffer = await serialize(value, target_celltype)
-    except:
+    except Exception:
         msg = "%s cannot be converted from %s to %s"
         raise ValueError(msg % (checksum.hex(), celltype, target_celltype))
     result = await calculate_checksum(new_buffer)
     return result
+
+import ruamel.yaml
+yaml = ruamel.yaml.YAML(typ='safe')
 
 from ..cell import celltypes
 from .deserialize import deserialize
 from .serialize import serialize
 from .calculate_checksum import calculate_checksum
 from ...mixed import MAGIC_NUMPY, MAGIC_SEAMLESS_MIXED
+from .cson import cson2json
+
 
 check_conversions()

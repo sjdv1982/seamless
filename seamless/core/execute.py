@@ -77,7 +77,7 @@ def execute(name, code,
                 exec_code(code, identifier, namespace, inputs, output_name)
         else:
             exec_code(code, identifier, namespace, inputs, output_name)
-    except:
+    except Exception:
         exc = traceback.format_exc()
         result_queue.put((1, exc))
     else:

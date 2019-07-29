@@ -112,6 +112,7 @@ class Task:
 
 
 from .set_value import SetCellValueTask
+from .set_buffer import SetCellBufferTask
 from .serialize_buffer import SerializeToBufferTask
 from .deserialize_buffer import DeserializeBufferTask
 from .checksum import CellChecksumTask, CalculateChecksumTask

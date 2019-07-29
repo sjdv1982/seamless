@@ -15,6 +15,7 @@ Periodically, conditional_read() and conditional_write() are invoked,
 NOTE: resolve_register returns immediately if there has been an exception raised
 """
 from weakref import WeakValueDictionary, WeakKeyDictionary, WeakSet, ref
+import threading
 from threading import Thread, RLock, Event
 from collections import deque, OrderedDict
 import sys, os
@@ -22,13 +23,23 @@ import time
 import traceback
 import copy
 from contextlib import contextmanager
-import asyncio
 import json
 import itertools
+import functools
 
 from ..get_hash import get_hash
 
 empty_checksums = {get_hash(json.dumps(v)+"\n",hex=True) for v in ("", {}, [])}
+
+text_types = (
+    "text", "python", "ipython", "cson", "yaml",
+    "str", "int", "float", "bool",
+)
+
+def adjust_buffer(file_buffer, celltype):
+    if file_buffer not in text_types:
+        return file_buffer
+    return file_buffer.rstrip(b'\n') + b'\n'
 
 def is_dummy_mount(mount):
     if mount is None:
@@ -42,12 +53,14 @@ def lockmethod(func):
     def wrapper(self, *args, **kwargs):
         with self.lock:
             return func(self, *args, **kwargs)
+    functools.update_wrapper(wrapper, func)
     return wrapper
 
 def lockfunc(func):
     def wrapper(*args, **kwargs):
         with mountmanager.lock:
             return func(*args, **kwargs)
+    functools.update_wrapper(wrapper, func)
     return wrapper
 
 class MountItem:
@@ -76,8 +89,11 @@ class MountItem:
         self.last_time = None
         self.last_mtime = None
         self.persistent = persistent
+        self.cell_checksum = None
+        self.cell_buffer = None
 
     def init(self):
+        assert threading.current_thread() == threading.main_thread()
         if self._destroyed:
             return
         assert self.parent is not None
@@ -85,21 +101,24 @@ class MountItem:
         if cell is None:
             return
         exists = self._exists()
-        cell_empty = (cell.checksum is None)
+        cell_buffer, cell_checksum = cell.buffer_and_checksum
+        self.cell_buffer = cell_buffer
+        self.cell_checksum = cell_checksum
+        cell_empty = (cell_checksum is None)
         if not cell_empty:
-            if cell.checksum in empty_checksums:
+            if cell_checksum in empty_checksums:
                 cell_empty = True
         if self.authority in ("file", "file-strict"):
             if exists:
                 with self.lock:
                     if self._destroyed:
                         return
-                    file_buffer = self._read()
+                    file_buffer0 = self._read()
+                    file_buffer = adjust_buffer(file_buffer0, cell._celltype)
                     update_file = True
                     file_checksum = None
                     if not cell_empty:
-                        cell_checksum, cell_buffer = self._get(cell)
-                        file_checksum = self._get_file_checksum(file_buffer, cell)
+                        file_checksum = calculate_checksum(file_buffer)
                         if file_checksum == cell_checksum:
                             update_file = False
                         else:
@@ -111,46 +130,39 @@ class MountItem:
                 raise Exception("File path '%s' does not exist, but authority is 'file-strict'" % self.path)
             else:
                 if "w" in self.mode and not cell_empty:
-                    checksum, buffer = self._get(cell)
                     with self.lock:
                         if self._destroyed:
                             return
-                        self._write(buffer)
-                        self._after_write(checksum)
+                        self._write(cell_buffer)
+                        self._after_write(cell_checksum)
         else: #self.authority == "cell"
             if not cell_empty:
-                checksum, buffer = self._get(cell)
                 if "w" in self.mode:
                     with self.lock:
                         if self._destroyed:
                             return
-                        self._write(buffer)
-                        self._after_write(checksum)
+                        self._write(cell_buffer)
+                        self._after_write(cell_checksum)
  
     def set(self, file_buffer, checksum):
-        from .cell import PlainCell
         if self._destroyed:
             return
         cell = self.cell()
         if cell is None:
             return
-        if cell._mount_setter is not None:
-            raise NotImplementedError ### cache branch
-            cell._mount_setter(file_buffer, checksum)
-            cell._get_manager().cell_send_update(cell, False, None)
-        else:
-            if isinstance(cell, PlainCell):
-                try:
-                    c = cson2json(file_buffer)
-                    j1 = json.dumps(c, sort_keys=True, indent=2) + "\n"
-                    file_buffer = j1
+        if cell._celltype == "plain":
+            if "w" in self.mode:
+                try:                
+                    c = cson2json(file_buffer.decode())
+                    j1 = (json.dumps(c, sort_keys=True, indent=2) + "\n").encode()
                     old_checksum = checksum
-                    checksum = get_hash(j1)
-                    if checksum != old_checksum and "w" in self.mode:
+                    checksum = calculate_checksum(j1)
+                    file_buffer = j1
+                    if checksum != old_checksum:
                         self._write(file_buffer)
-                except:
-                    buffer_checksum = self._get_file_checksum(file_buffer, cell, try_cson=False)
-            cell._set(file_buffer, from_buffer=True, buffer_checksum=checksum)
+                except ValueError:  
+                    pass
+        cell.set_buffer(file_buffer, checksum)
 
     @property
     def lock(self):
@@ -163,7 +175,10 @@ class MountItem:
         encoding = self.kwargs.get("encoding")
         filemode = "rb" if binary else "r"
         with open(self.path.replace("/", os.sep), filemode, encoding=encoding) as f:
-            return f.read()
+            result = f.read()
+            if not binary:
+                result = result.encode()
+        return result
 
     def _write(self, file_buffer, with_none=False):
         assert "w" in self.mode
@@ -178,12 +193,9 @@ class MountItem:
                 return
             file_buffer = b"" if binary else ""
         else:
-            if isinstance(file_buffer, bytes):
-                if not binary:
-                    file_buffer = file_buffer.decode()
-            elif isinstance(file_buffer, str):
-                if binary:
-                    file_buffer = file_buffer.encode()
+            assert isinstance(file_buffer, bytes), type(file_buffer)
+            if not binary:
+                file_buffer = file_buffer.decode()
         with open(filepath, filemode, encoding=encoding) as f:
             f.write(file_buffer)
 
@@ -200,7 +212,7 @@ class MountItem:
         except Exception:
             pass
 
-    def conditional_write(self, with_none=False):        
+    def conditional_write(self, checksum, buffer, with_none=False):        
         if self._destroyed:
             return
         if not "w" in self.mode:
@@ -208,19 +220,16 @@ class MountItem:
         cell = self.cell()
         if cell is None:
             return        
-        checksum, value = self._get(cell)
         if checksum is None:
             if not with_none:
                 return
-            raise NotImplementedError # livegraph branch
-            status = manager.status[cell].data
-            if status in ("INVALID", "UNCONNECTED"):
-                return
+        self.cell_checksum = checksum
+        self.cell_buffer = buffer
         if checksum is None or self.last_checksum != checksum:
             with self.lock:
                 if self._destroyed:
                     return
-                self._write(value, with_none=with_none)
+                self._write(buffer, with_none=with_none)
                 self._after_write(checksum)
 
     def _after_read(self, checksum, *, mtime=None):
@@ -245,41 +254,22 @@ class MountItem:
             mtime = stat.st_mtime
             file_checksum = None
             if self.last_mtime is None or mtime > self.last_mtime:
-                file_buffer = self._read()
-                file_checksum = self._get_file_checksum(file_buffer, cell)
-                self._after_read(file_checksum, mtime=mtime)        
-        cell_checksum, cell_value = self._get(cell)
+                file_buffer0 = self._read()
+                file_buffer = adjust_buffer(file_buffer0, cell._celltype)
+                file_checksum = calculate_checksum(file_buffer)
+                self._after_read(file_checksum, mtime=mtime)                
+        cell_checksum = self.cell_checksum
         if file_checksum is not None and file_checksum != cell_checksum:
             if "r" in self.mode:
                 self.set(file_buffer, checksum=file_checksum)
             else:
                 print("Warning: write-only file %s (%s) has changed on disk, overruling" % (self.path, self.cell()))
+                cell_buffer = self.cell_buffer
                 with self.lock:
                     if self._destroyed:
                         return
-                    self._write(cell_value)
+                    self._write(cell_buffer)
                     self._after_write(cell_checksum)
-
-    def _get(self, cell):
-        manager = cell._get_manager()
-        checksum = manager.cell_cache.cell_to_buffer_checksums.get(cell)
-        if checksum is None:
-            return None, None
-        _, _, buffer = manager.value_cache.get_buffer(checksum)
-        return checksum, buffer
-
-    def _get_file_checksum(self, file_buffer, cell, try_cson=True):
-        from .cell import PlainCell
-        if isinstance(cell, PlainCell) and try_cson:
-            file_checksum = get_hash(file_buffer) # placeholder
-        else:    
-            _, file_checksum, _, _, _ = deserialize(
-                cell._celltype, cell._subcelltype, cell.path,
-                file_buffer, from_buffer=True, buffer_checksum=None,
-                source_access_mode=None,
-                source_content_type=None
-            )
-        return file_checksum
 
     def destroy(self):
         if self._destroyed:
@@ -412,7 +402,7 @@ def join(items, contexts_to_mount, new, old):
                 old_mountitem = old_mountitems[path]
                 rewrite = False
                 cell = new_mountitem.cell()
-                checksum, buffer = new_mountitem._get(cell)
+                buffer, checksum = cell.buffer_and_checksum
                 if checksum is not None:
                     if "w" in old_mountitem.mode:
                         if type(old_mountitem.cell()) != type(cell):
@@ -502,13 +492,13 @@ class MountManager:
             mountitem.destroy()
 
     @lockmethod
-    def unmount_context(self, context, from_del=False):
+    def unmount_context(self, context, from_del=False, toplevel=False):
         if context in self.contexts:
             self.contexts.remove(context)
-        elif not from_del:
+        elif not from_del and not toplevel:
             return
         mount = context._mount
-        if context._root() is context:
+        if toplevel:
             self.paths.pop(context, None)
             if mount is None:
                 return
@@ -529,7 +519,7 @@ class MountManager:
             try:
                 #print("rmdir", dirpath)
                 os.rmdir(dirpath)
-            except:
+            except Exception:
                 print("Error: cannot remove directory %s" % dirpath)
 
     @lockmethod
@@ -559,17 +549,20 @@ class MountManager:
             os.mkdir(dirpath)
 
     @lockmethod
-    def add_cell_update(self, cell):
+    def add_cell_update(self, cell, checksum, buffer):
         if self._mounting:
             return
         assert cell in self.mounts, (cell, hex(id(cell)))
-        self.cell_updates.append(cell)
+        self.cell_updates.append((cell, checksum, buffer))
 
     def _run(self):
+        cell_updates = {cell: (checksum, buffer) \
+            for cell, checksum, buffer in self.cell_updates}
+        self.cell_updates.clear()
         for cell, mount_item in list(self.mounts.items()):
             if isinstance(cell, Link):
                 continue
-            if cell in self.cell_updates:
+            if cell in cell_updates:
                 continue
             try:
                 mount_item.conditional_read()
@@ -578,16 +571,13 @@ class MountManager:
                 if exc != mount_item.last_exc:
                     print(exc)
                     mount_item.last_exc = exc
-        while 1:
-            try:
-                cell = self.cell_updates.popleft()
-            except IndexError:
-                break
+        for cell, checksum_buffer in cell_updates.items():
+            checksum, buffer = checksum_buffer
             mount_item = self.mounts.get(cell)
             if mount_item is None: #cell was deleted
                 continue
             try:
-                mount_item.conditional_write(with_none=True)
+                mount_item.conditional_write(checksum, buffer, with_none=True)
             except Exception:
                 exc = traceback.format_exc()
                 if exc != mount_item.last_exc:
@@ -600,15 +590,21 @@ class MountManager:
             self._running = True
             while not self._stop:
                 t = time.time()
-                self._run()
+                try:
+                    self._run()
+                except Exception:
+                    self._tick.set()
+                    import traceback
+                    traceback.print_exc()
                 while time.time() - t < self.latency:
-                    if not self._tick.is_set():
-                        break
-                    time.sleep(0.01)
+                    time.sleep(0.05)
         finally:
+            print("STOP!")
             self._running = False
 
     def start(self):
+        if self._running:
+            return
         self._stop = False
         t = self.thread = Thread(target=self.run)
         t.setDaemon(True)
@@ -625,16 +621,6 @@ class MountManager:
         if self._running:
             self._tick.clear()
             self._tick.wait()
-
-    async def async_tick(self):
-        assert self.thread is not None
-        while not self._running:
-            await asyncio.sleep(0)
-        self._tick.clear()
-        while 1:
-            if self._tick.is_set():
-                return
-            await asyncio.sleep(0)
 
 
     def destroy(self):
@@ -849,7 +835,7 @@ def scan(ctx_or_cell, *, old_context):
                     if mountitem.path == path and mcell is not cell:
                         try:
                             mountitem.destroy()
-                        except:
+                        except Exception:
                             pass
 
     new = build_paths(new_context, top_paths, remove=False)
@@ -860,7 +846,6 @@ def scan(ctx_or_cell, *, old_context):
         mountmanager._mounting = False
 
 mountmanager = MountManager(0.2) #TODO: latency in config file
-mountmanager.start()
 
 def get_extension(c):
     from .cell import extensions
@@ -874,4 +859,4 @@ def get_extension(c):
 
 from .link import Link
 from .protocol.cson import cson2json
-from .protocol.deserialize import deserialize
+from .protocol.calculate_checksum import calculate_checksum_sync as calculate_checksum
