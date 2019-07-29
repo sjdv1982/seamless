@@ -34,6 +34,8 @@ class Manager:
         self.livegraph = LiveGraph(self)
         self.cachemanager = CacheManager(self)
         self.taskmanager = TaskManager(self)
+        loop_run_synctasks = self.taskmanager.loop_run_synctasks()
+        asyncio.ensure_future(loop_run_synctasks)
 
         # for now, just a single global temprefmanager
         self.temprefmanager = temprefmanager
@@ -250,7 +252,7 @@ If origin_task is provided, that task is not cancelled."""
         self.cachemanager.check_destroyed()
         self.livegraph.check_destroyed()
         self.taskmanager.check_destroyed()
-        
+        self.taskmanager.destroy()
 
     def __del__(self):
         self.destroy(from_del=True)

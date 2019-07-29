@@ -6,6 +6,7 @@ import threading
 import time
 
 class TaskManager:
+    _destroyed = False
     def __init__(self, manager):
         self.manager = weakref.ref(manager)
         self.loop = asyncio.get_event_loop()
@@ -34,6 +35,8 @@ class TaskManager:
 
     def run_synctasks(self):
         synctasks = self.synctasks
+        if not len(synctasks):
+            return
         self.synctasks = []
         for synctask in synctasks:
             callback, args, kwargs, event = synctask
@@ -46,6 +49,15 @@ class TaskManager:
             if event is not None:
                 event.custom_result_value = result # hackish
                 event.set()
+
+    async def loop_run_synctasks(self):
+        while not self._destroyed:
+            try:
+                self.run_synctasks()
+            except Exception:
+                import traceback
+                traceback.print_exc()
+            await asyncio.sleep(0)
 
     def add_synctask(self, callback, args, kwargs, with_event):
         event = None
@@ -268,7 +280,10 @@ If origin_task is provided, that task is not cancelled."""
             if len(a):
                 print(name + ", " + attrib + ": %d undestroyed"  % len(a))
 
-
+    def destroy(self):
+        # just to stop the loop...
+        # all items must be manually destroyed!
+        self._destroyed = True
 
 from ..cell import Cell
 from .. import SeamlessBase
