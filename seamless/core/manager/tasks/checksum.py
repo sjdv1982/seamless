@@ -36,7 +36,7 @@ class CellChecksumTask(Task):
         from . import SerializeToBufferTask
 
         manager = self.manager()
-        await manager.taskmanager.await_upon_connection_tasks()
+        await manager.taskmanager.await_upon_connection_tasks(self.taskid)
         cell = self.cell
 
         if cell._monitor:

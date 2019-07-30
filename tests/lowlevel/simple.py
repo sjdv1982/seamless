@@ -1,3 +1,4 @@
+#import asyncio; asyncio.get_event_loop().set_debug(True)
 import seamless
 from seamless.core import context, cell, transformer, link
 
@@ -6,10 +7,6 @@ ctx.cell1 = cell().set(1)
 ctx.cell2 = cell().set(2)
 ctx.code = cell("transformer").set("a + b")
 ctx.result = cell()
-###
-ctx.equilibrate()
-###
-"""
 ctx.tf = transformer({
     "a": "input",
     "b": "input",
@@ -23,10 +20,11 @@ ctx.result_link = link(ctx.result)
 ctx.tf.c.connect(ctx.result_link)
 ctx.result_copy = cell()
 ctx.result.connect(ctx.result_copy)
-
+ctx.equilibrate()
+print("STOP")
 print(ctx.cell1.value)
 print(ctx.code.value)
-ctx.equilibrate()
+import sys; sys.exit()
 print(ctx.result.value, ctx.status)
 ctx.cell1.set(10)
 ctx.equilibrate()
@@ -43,4 +41,3 @@ print(ctx.result.value, ctx.status)
 print("...")
 ctx.equilibrate()
 print(ctx.result.value, ctx.status)
-"""

@@ -75,6 +75,8 @@ async def evaluate_from_checksum(checksum, celltype, target_celltype):
 async def evaluate_from_buffer(checksum, buffer, celltype, target_celltype, value_cache):
     if (celltype, target_celltype) in conversion_equivalent:
         celltype, target_celltype = conversion_equivalent[celltype, target_celltype]
+    if celltype == target_celltype:
+        return checksum
     if (celltype, target_celltype) in conversion_trivial:
         return checksum
 

@@ -25,14 +25,14 @@ class ValueManager:
 
         semantic_obj, semantic_key = protocol.evaluate_from_buffer(expression, buffer)
         self.value_cache.add_semantic_key(semantic_key, semantic_obj)
-        self.expression_cache.expression_to_semantic_key[expression.get_hash()] = semantic_key        
+        self.expression_cache.expression_to_semantic_key[expression] = semantic_key        
         return semantic_obj, semantic_key
 
 
     def get_expression(self, expression):
         if not isinstance(expression, Expression):
             raise TypeError(expression)
-        semantic_key = self.expression_cache.expression_to_semantic_key.get(expression.get_hash())
+        semantic_key = self.expression_cache.expression_to_semantic_key.get(expression)
         cache_hit = False
         if semantic_key is not None:
             semantic_value = self.value_cache.get_object(semantic_key)
@@ -82,7 +82,7 @@ class ValueManager:
         accessor = self.get_default_accessor(cell)
         accessor.subpath = subpath
         expression = accessor.to_expression(checksum)
-        semantic_key = self.expression_cache.expression_to_semantic_key.get(expression.get_hash())
+        semantic_key = self.expression_cache.expression_to_semantic_key.get(expression)
         if semantic_key is None:
             buffer_item = self.get_value_from_checksum(checksum)
             if buffer_item is None:

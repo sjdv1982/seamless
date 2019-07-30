@@ -18,7 +18,7 @@ class SetCellBufferTask(Task):
         from . import DeserializeBufferTask, CalculateChecksumTask, CellUpdateTask
         manager = self.manager()
         taskmanager = manager.taskmanager
-        await taskmanager.await_upon_connection_tasks()
+        await taskmanager.await_upon_connection_tasks(self.taskid)
         cell = self.cell
         buffer = self.buffer
         checksum = self.checksum        

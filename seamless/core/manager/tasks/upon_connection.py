@@ -4,13 +4,20 @@ from . import Task
 
 class UponConnectionTask(Task):
     def __init__(self, manager, source, source_subpath, target, target_subpath):
+        from ...worker import InputPin, OutputPin, EditPin
         self.source = source
         self.source_subpath = source_subpath
         self.target = target
         self.target_subpath = target_subpath
         super().__init__(manager)
-        self.dependencies.append(source)
-        self.dependencies.append(target)
+        if isinstance(source, (OutputPin, EditPin) ):
+            self.dependencies.append(source.worker_ref())
+        else:    
+            self.dependencies.append(source)
+        if isinstance(target, (InputPin, EditPin) ):
+            self.dependencies.append(target.worker_ref())
+        else:
+            self.dependencies.append(target)
 
     def _connect_cell_cell(self):
         source, target, source_subpath, target_subpath = (
@@ -22,10 +29,39 @@ class UponConnectionTask(Task):
             return livegraph.connect_cell_cell(source, target)
         raise NotImplementedError # livegraph branch
 
+    def _connect_pin_cell(self):
+        source, target, source_subpath, target_subpath = (
+          self.source, self.target, self.source_subpath, self.target_subpath
+        )
+        assert source_subpath is None
+        assert isinstance(target, Cell), target
+
+        livegraph = self.manager().livegraph
+        if target_subpath is None:
+            # simple pin-cell
+            return livegraph.connect_pin_cell(source, target)
+        raise NotImplementedError # livegraph branch
+
+    def _connect_cell_pin(self):
+        source, target, source_subpath, target_subpath = (
+          self.source, self.target, self.source_subpath, self.target_subpath
+        )
+
+        assert target_subpath is None
+
+        livegraph = self.manager().livegraph
+        if source_subpath is None:
+            # simple cell-pin
+            return livegraph.connect_cell_pin(source, target)
+        raise NotImplementedError # livegraph branch
+
     def _connect_cell(self):        
         if isinstance(self.target, Cell):
             return self._connect_cell_cell()
-        raise NotImplementedError # livegraph branch
+        elif isinstance(self.target, PinBase):
+            return self._connect_cell_pin()
+        else:
+            raise NotImplementedError # livegraph branch
 
     async def _run(self):
         """Perform actions upon connection.
@@ -41,25 +77,59 @@ class UponConnectionTask(Task):
         taskmanager = manager.taskmanager
 
         target = self.target
+        cancel_tasks = []
         if isinstance(target, Cell):
-            cancel_tasks = []
             for task in taskmanager.cell_to_task[target]:
                 if isinstance(task, SetCellValueTask):
                     cancel_tasks.append(task)
-            for task in cancel_tasks:
-                task.cancel()
+        elif isinstance(target, PinBase):
+            worker = target.worker_ref()
+            if isinstance(worker, Transformer):
+                cancel_tasks = taskmanager.transformer_to_task[worker]
+            elif isinstance(worker, Reactor):
+                cancel_tasks = taskmanager.reactor_to_task[worker]
+            elif isinstance(worker, Macro):
+                cancel_tasks = taskmanager.macro_to_task[worker]
+            else:
+                raise TypeError(type(worker))
+        else:
+            raise TypeError(type(target))
+        for task in cancel_tasks:
+            if isinstance(task, UponConnectionTask):
+                continue
+            task.cancel()
 
-        await taskmanager.await_upon_connection_tasks(origin_task=self)
+        await taskmanager.await_upon_connection_tasks(self.taskid)
 
-        if isinstance(self.source, Cell):
+        source = self.source
+        if isinstance(source, Cell):
             accessor = self._connect_cell()
             assert accessor is not None
-            if not self.source._void:
-                CellUpdateTask(manager, self.source).launch()
+            if not source._void:
+                CellUpdateTask(manager, source).launch()
+        elif isinstance(source, PinBase):
+            accessor = self._connect_pin_cell()
+            assert accessor is not None
+            worker = source.worker_ref()
+            if isinstance(worker, Transformer):
+                TransformerUpdateTask(manager, worker).launch()
+            elif isinstance(worker, Reactor):
+                ReactorUpdateTask(manager, worker).launch()
+            elif isinstance(worker, Macro):
+                MacroUpdateTask(manager, worker).launch()
+            else:
+                raise TypeError(type(worker))
         else:
-            raise NotImplementedError #livegraph branch
+            raise TypeError(type(source))
     
 
 from .cell_update import CellUpdateTask
+from .transformer_update import TransformerUpdateTask
+from .reactor_update import ReactorUpdateTask
+from .macro_update import MacroUpdateTask
 from .set_value import SetCellValueTask
 from ...cell import Cell
+from ...worker import PinBase
+from ...transformer import Transformer
+from ...reactor import Reactor
+from ...macro import Macro

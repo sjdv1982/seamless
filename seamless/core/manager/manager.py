@@ -60,12 +60,30 @@ class Manager:
     def register_structured_cell(self, structured_cell):
         self.livegraph.register_structured_cell(structured_cell)
 
+    @mainthread
+    def register_transformer(self, transformer):
+        self.cachemanager.register_transformer(transformer)
+        self.livegraph.register_transformer(transformer)
+        self.taskmanager.register_transformer(transformer)
+
+    @mainthread
+    def register_reactor(self, reactor):
+        self.cachemanager.register_reactor(reactor)
+        self.livegraph.register_reactor(reactor)
+        self.taskmanager.register_reactor(reactor)
+
+    @mainthread
+    def register_macro(self, macro):
+        self.livegraph.register_macro(macro)
+        self.taskmanager.register_macro(macro)
+
     ##########################################################################
     # API section II: Actions
     ##########################################################################
 
     @mainthread
     def connect(self, source, source_subpath, target, target_subpath):
+
         task = UponConnectionTask(
             self, source, source_subpath, target, target_subpath
         )
@@ -121,6 +139,19 @@ class Manager:
             if cell._mount is not None:
                 buffer, checksum = self.get_cell_buffer_and_checksum(cell)
                 self.mountmanager.add_cell_update(cell, checksum, buffer)
+
+    def _set_transformer_checksum(self, transformer, checksum, void):
+        # NOTE: Any cell task depending on the old checksum must have been canceled already
+        assert checksum is None or isinstance(checksum, bytes), checksum
+        assert isinstance(void, bool), void
+        cachemanager = self.cachemanager
+        old_checksum = cell._checksum
+        if old_checksum is not None and old_checksum != checksum:
+            cachemanager.decref_checksum(old_checksum, transformer, False)
+        transformer._checksum = checksum
+        transformer._void = void
+        if checksum != old_checksum:
+            cachemanager.incref_checksum(checksum, transformer, False)
 
     @run_in_mainthread
     def set_cell(self, cell, value):
@@ -223,11 +254,19 @@ If origin_task is provided, that task is not cancelled."""
                 return self.cancel_reactor(target, void=void)
 
     @mainthread
-    def cancel_transformer(self, reactor):
-        raise NotImplementedError #livegraph branch
+    def cancel_transformer(self, transformer, void):
+        self.taskmanager.cancel_transformer(transformer)
+        if transformer._checksum is None:
+            if not void or transformer._void:
+                return
+        livegraph = self.livegraph
+        accessors = livegraph.transformer_to_downstream[transformer]
+        for accessor in accessors:            
+            self.cancel_accessor(accessor, void)
+        self._set_transformer_checksum(transformer, None, void)
 
     @mainthread
-    def cancel_reactor(self, reactor):
+    def cancel_reactor(self, reactor, void):
         raise NotImplementedError #livegraph branch
 
     ##########################################################################
@@ -238,6 +277,20 @@ If origin_task is provided, that task is not cancelled."""
         self.cachemanager.destroy_cell(cell)
         self.livegraph.destroy_cell(self, cell)
         self.taskmanager.destroy_cell(cell, full=True)
+
+    def _destroy_transformer(self, transformer):
+        self.cachemanager.destroy_transformer(transformer)
+        self.livegraph.destroy_transformer(self, transformer)
+        self.taskmanager.destroy_transformer(transformer, full=True)
+
+    def _destroy_reactor(self, reactor):
+        self.cachemanager.destroy_reactor(reactor)
+        self.livegraph.destroy_reactor(self, reactor)
+        self.taskmanager.destroy_reactor(reactor, full=True)
+
+    def _destroy_macro(self, macro):
+        self.livegraph.destroy_macro(self, macro)
+        self.taskmanager.destroy_macro(macro, full=True)
 
     @mainthread
     def destroy(self, from_del=False):

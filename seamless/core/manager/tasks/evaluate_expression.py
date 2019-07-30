@@ -20,9 +20,9 @@ class EvaluateExpressionTask(Task):
         value_cache = self.manager().cachemanager.value_cache
 
         # Get the expression result checksum from cache.
-        hexpression = expression.get_hash()
+        expression = expression
         expression_result_checksum = \
-          value_cache.hexpression_to_checksum.get(hexpression)
+          value_cache.expression_to_checksum.get(expression)
         if expression_result_checksum is None:
             # If the expression is trivial, obtain its result checksum directly
             if expression.path is None and not needs_buffer_evaluation(
@@ -72,7 +72,7 @@ class EvaluateExpressionTask(Task):
                     value_cache
                 )                    
         else:
-            value_cache.hexpression_to_checksum[hexpression] = \
+            value_cache.expression_to_checksum[expression] = \
                 expression_result_checksum
         
         return expression_result_checksum

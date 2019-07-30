@@ -49,14 +49,6 @@ ipy_error = "Seamless was not imported inside IPython"
 
 def inputhook_terminal(context):
     while not context.input_is_ready():
-        """
-        for manager in _toplevel_managers:            
-            try:
-                manager.taskmanager.run_synctasks()
-            except Exception:
-                import traceback
-                traceback.print_exc()
-        """
         try:            
             asyncio.get_event_loop().run_until_complete(asyncio.sleep(0))
         except IndexError: # nested event loop trouble

@@ -28,7 +28,7 @@ class ReadAccessor(Accessor):
             target_cell_path=target_cell_path
         )
         if self.expression is not None:
-            if expression.get_hash() == self.expression.get_hash():
+            if expression == self.expression:
                 return False
             livegraph.decref_expression(self.expression, self)
         self.expression = expression

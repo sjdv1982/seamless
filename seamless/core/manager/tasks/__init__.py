@@ -6,15 +6,15 @@ from asyncio import CancelledError
 class Task:
     _realtask = None
     _awaiting = False
-    future = None
+    future = None    
     
-    def __init__(self, manager, *args, **kwargs):        
+    def __init__(self, manager, *args, **kwargs):
         if isinstance(manager, weakref.ref):
             manager = manager()        
         assert isinstance(manager, Manager)
         self._dependencies = []
-        if self.refkey is not None:
-            taskmanager = manager.taskmanager
+        taskmanager = manager.taskmanager
+        if self.refkey is not None:            
             reftask = taskmanager.reftasks.get(self.refkey)
             if reftask is not None:
                 self.set_realtask(reftask)
@@ -25,6 +25,9 @@ class Task:
         self.manager = weakref.ref(manager)                
         self.refholders = [self] # tasks that are value-identical to this one, 
                                 # of which this one is the realtask
+        
+        taskmanager._task_id_counter += 1
+        self.taskid = taskmanager._task_id_counter
 
     @property
     def refkey(self):
@@ -60,6 +63,10 @@ class Task:
         #print("HAS RUN", self)
         return self.future.result()
     
+    async def _run0(self, taskmanager):
+        await taskmanager.await_active()
+        return await self._run()
+
     def _launch(self):
         manager = self.manager()
         if manager is None or manager._destroyed:
@@ -69,7 +76,7 @@ class Task:
             return taskmanager
         taskmanager.run_synctasks()
         #print("LAUNCH", self)     
-        awaitable = self._run()
+        awaitable = self._run0(taskmanager)
         self.future = asyncio.ensure_future(awaitable)
         taskmanager.add_task(self)
         return taskmanager

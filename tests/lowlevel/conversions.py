@@ -11,8 +11,6 @@ import time
 start_time = time.time()
 print_ORIGINAL = print
 
-loop = asyncio.get_event_loop()
-
 def print(*args):
     if not len(args):
         print_ORIGINAL()   
@@ -27,6 +25,7 @@ ctx.txt3 = cell("text")
 ctx.txt4 = cell("text")
 ctx.plain = cell("plain")
 ctx.plain2 = cell("plain")
+ctx.mixed = cell("mixed")
 
 print("*** Start ***")
 print(ctx.txt1.value)
@@ -64,6 +63,12 @@ print("*** Stage 3a ***")
 ctx.txt3.connect(ctx.plain2)
 ctx.equilibrate()
 print("ctx.plain2", ctx.plain2.data)
+
+print("*** Stage 3b ***")
+ctx.txt3.connect(ctx.mixed)
+ctx.equilibrate()
+print("ctx.mixed", ctx.mixed.data)
+
 print()
 
 print("STOP")

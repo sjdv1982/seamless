@@ -40,6 +40,7 @@ def _cell_from_pin(self, celltype):
 class Worker(SeamlessBase):
     """Base class for all workers."""
     _pins = None
+    _last_inputs = None
 
     def __getattr__(self, attr):
         if self._pins is None or attr not in self._pins:
@@ -85,12 +86,13 @@ celltypes = list(celltypes0) + ["module"]
 
 class PinBase(SeamlessBase):
     access_mode = None
-    def __init__(self, worker, name, celltype):
+    def __init__(self, worker, name, celltype, subcelltype=None):
         self.worker_ref = weakref.ref(worker)
         super().__init__()
-        assert celltype in celltypes, (celltype, celltypes)
+        assert celltype is None or celltype in celltypes, (celltype, celltypes)
         self.name = name
-        self.celltype = celltypes
+        self.celltype = celltype
+        self.subcelltype = subcelltype
 
     @property
     def path(self):
@@ -153,9 +155,44 @@ class OutputPin(OutputPinBase):
     io = "output"
 
     def connect(self, target):
-        """connects to a target cell"""
+        """connects the pin to a target"""
+        from .transformer import Transformer
+        from .reactor import Reactor
+        from .macro import Macro, Path
+        from .link import Link
+
         manager = self._get_manager()
-        manager.connect_pin(self, target)
+
+        if isinstance(target, Link):
+            target = target.get_linked()
+
+        target_subpath = None
+        if isinstance(target, Inchannel):
+            target_subpath = target.path
+            target = target.structured_cell().buffer
+        elif isinstance(target, Editchannel):
+            raise TypeError("Editchannels cannot be connected to output pins, only to edit pins")
+        elif isinstance(target, Outchannel):
+            raise TypeError("Outchannels must be the source of a connection, not the target")
+
+        if isinstance(target, Path):
+            raise NotImplementedError # livegraph branch
+            # something like ._verify_connect...
+
+        if isinstance(target, Cell):
+            assert not target._monitor
+        elif isinstance(target, PinBase):
+            raise TypeError("Pin-pin connections are not allowed, create a cell")
+        elif isinstance(target, Transformer):
+            raise TypeError("Transformers cannot be targeted by pins")
+        elif isinstance(target, Reactor):
+            raise TypeError("Reactors cannot be targeted by pins")
+        elif isinstance(target, Macro):
+            raise TypeError("Macros cannot be targeted by pins")
+        else:
+            raise TypeError(type(target))
+
+        manager.connect(self, None, target, target_subpath)
         return self
 
     def cell(self, celltype=None):
@@ -230,14 +267,42 @@ class EditPin(EditPinBase):
         return self.cell().set(*args, **kwargs)
 
     def connect(self, target):
-        """connects to a target cell"""
-        raise NotImplementedError ###cache branch
-        ###manager = self._get_manager()
-        ###manager.connect_pin(self, target)  #NO; double connection has to be made
-                                              #connect_cell will also invoke connect_pin
+        """connects the pin to a target"""
+        from .transformer import Transformer
+        from .reactor import Reactor
+        from .macro import Macro, Path
+        from .link import Link
+        
+        manager = self._get_manager()
+        
+        if isinstance(target, Link):
+            target = target.get_linked()
+
         assert not isinstance(target, Path) #Edit pins cannot be connected to paths
-        other = target._get_manager()
-        other.connect_cell(target, self, None, None)
+
+        if isinstance(target, Editchannel):
+            target_subpath = target.path
+            target = target.structured_cell().buffer
+        elif isinstance(target, Inchannel):
+            raise TypeError("Inchannels cannot be connected to edit pins, only to output pins")
+        elif isinstance(target, Outchannel):
+            raise TypeError("Outchannels must be the source of a connection, not the target")
+
+        if isinstance(target, Cell):
+            assert not target._monitor
+        elif isinstance(target, PinBase):
+            raise TypeError("Pin-pin connections are not allowed, create a cell")
+        elif isinstance(target, Transformer):
+            raise TypeError("Transformers cannot be targeted by pins")
+        elif isinstance(target, Reactor):
+            raise TypeError("Reactors cannot be targeted by pins")
+        elif isinstance(target, Macro):
+            raise TypeError("Macros cannot be targeted by pins")
+        else:
+            raise TypeError(type(target))
+
+        manager.connect(self, None, target, target_subpath)
+        manager.connect(target, target_subpath, self, None) # dual connection
         return self
 
     @property
@@ -250,3 +315,6 @@ class EditPin(EditPinBase):
             return my_cell.status()
         else:
             return self.StatusFlags.UNCONNECTED.name
+
+from .structured_cell import Inchannel, Outchannel, Editchannel
+from .cell import Cell

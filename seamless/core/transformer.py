@@ -1,13 +1,21 @@
+"""
+NOTE: in theory, a transformer should have a "copy" attribute,
+ indicating if the input arguments will be protected against writing
+In practice, the input arguments, even if read from checksum-to-value cache,
+ will be in a subprocess. So even if they are modified, there is no
+ contamination of cache values.
+"""
 from collections import OrderedDict
 
 from .worker import Worker, InputPin, OutputPin
 
 class Transformer(Worker):
-
+    _checksum = None
+    _void = True
     debug = False
-    def __init__(self, transformer_params, stream_params = None):
-        raise NotImplementedError # livegraph branch
-        self.code = InputPin(self, "code", "ref", "pythoncode", "transformer")
+
+    def __init__(self, transformer_params, *,  stream_params=None):
+        self.code = InputPin(self, "code", "python", "transformer")
         self._pins = {"code":self.code}
         self._output_name = None
         self._transformer_params = OrderedDict()
@@ -19,30 +27,27 @@ class Transformer(Worker):
             param = transformer_params[p]
             self._transformer_params[p] = param
             pin = None
-            io, transfer_mode, access_mode, content_type = None, "copy", None, None
+            io, celltype, subcelltype = None, None, None
             if isinstance(param, str):
                 io = param
             elif isinstance(param, (list, tuple)):
                 io = param[0]
                 if len(param) > 1:
-                    transfer_mode = param[1]
+                    celltype = param[1]
                 if len(param) > 2:
-                    access_mode = param[2]
+                    subcelltype = param[2]
                 if len(param) > 3:
-                    content_type = param[3]
+                    raise ValueError(param)
             elif isinstance(param, dict):
                 io = param["io"]
-                transfer_mode = param.get("transfer_mode", transfer_mode)
-                access_mode = param.get("access_mode", access_mode)
-                content_type = param.get("content_type", content_type)
+                celltype = param.get("celltype", celltype)
+                subcelltype = param.get("subcelltype", subcelltype)
             else:
                 raise ValueError((p, param))
-            if content_type is None and access_mode in content_types:
-                content_type = access_mode
             if io == "input":
-                pin = InputPin(self, p, transfer_mode, access_mode)
+                pin = InputPin(self, p, celltype, subcelltype)
             elif io == "output":
-                pin = OutputPin(self, p, transfer_mode, access_mode)
+                pin = OutputPin(self, p, celltype, subcelltype)
                 assert self._output_name is None  # can have only one output
                 self._output_name = p
             else:
@@ -50,7 +55,7 @@ class Transformer(Worker):
             
             if pin is not None:
                 self._pins[p] = pin
-
+        
         super().__init__()
 
     def _set_context(self, ctx, name):
@@ -59,15 +64,17 @@ class Transformer(Worker):
 
     @property
     def checksum(self):
-        manager = self._get_manager()
-        result = manager.transform_cache.transformer_to_level1.get(self)
-        if result is not None:
-            result = result.get_hash()
-        return result
+        return self._checksum
+
+    @property
+    def void(self):
+        return self._void
 
     @property
     def status(self):
         """The computation status of the transformer"""
+        raise NotImplementedError #livegraph branch
+
         if self._stream_params is None:
             return super().status
         manager = self._get_manager()
@@ -82,7 +89,6 @@ class Transformer(Worker):
             return status
         
 
-
     def destroy(self, *, from_del=False):
         if not from_del:
             self._get_manager()._destroy_transformer(self)
@@ -92,6 +98,6 @@ class Transformer(Worker):
         ret = "Seamless transformer: " + self._format_path()
         return ret
 
-def transformer(params, stream_params = None):
+def transformer(params, *, stream_params=None):
     """TODO: port documentation from 0.1"""
-    return Transformer(params, stream_params)
+    return Transformer(params, stream_params=stream_params)

@@ -659,7 +659,7 @@ class Manager:
             accessor = self.get_default_accessor(cell)
             accessor.subpath = subpath
             expression = accessor.to_expression(checksum)
-            self.expression_cache.expression_to_semantic_key[expression.get_hash()] = semantic_key
+            self.expression_cache.expression_to_semantic_key[expression] = semantic_key
             share_callback = cell._share_callback
             if share_callback is not None:
                 share_callback()

@@ -12,14 +12,14 @@ class SetCellValueTask(Task):
         from . import SerializeToBufferTask, CalculateChecksumTask, CellUpdateTask
         manager = self.manager()
         taskmanager = manager.taskmanager
-        await taskmanager.await_upon_connection_tasks()
+        await taskmanager.await_upon_connection_tasks(self.taskid)
         cell = self.cell
         try:
             taskmanager.cell_to_value[cell] = self.value
             buffer = await SerializeToBufferTask(manager, self.value, cell._celltype).run()
             checksum = await CalculateChecksumTask(manager, buffer).run()
             if checksum is None:
-                manager.cancel_cell(cell)
+                manager.cancel_cell(cell, void=True)
             else:
                 value_cache = manager.cachemanager.value_cache
                 await validate_subcelltype(

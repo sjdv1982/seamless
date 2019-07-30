@@ -7,17 +7,28 @@ class CacheManager:
         self.checksum_refs = {}
         self.value_cache = value_cache
         self.cell_to_ref = {}
-        self.hexpression_to_ref = {}        
+        self.expression_to_ref = {}
+        self.transformer_to_ref = {}
+        self.reactor_to_refs = {}      
 
     def register_cell(self, cell):
         assert cell not in self.cell_to_ref
         self.cell_to_ref[cell] = None
 
     def register_expression(self, expression):
-        hexpression = expression.get_hash()
-        assert hexpression not in self.hexpression_to_ref
-        self.hexpression_to_ref[hexpression] = None
+        expression = expression
+        assert expression not in self.expression_to_ref
+        self.expression_to_ref[expression] = None
 
+    def register_transformer(self, transformer):
+        assert transformer not in self.transformer_to_ref
+        self.transformer_to_ref[transformer] = None
+
+    def register_reactor(self, transformer):
+        assert reactor not in self.reactor_to_ref
+        raise NotImplementedError # livegraph branch
+        # TODO: store a dictionary of outputpin/editpin-to-ref 
+        
     def incref_checksum(self, checksum, refholder, authority):
         if checksum is None:
             return
@@ -28,9 +39,8 @@ class CacheManager:
             assert self.cell_to_ref[refholder] is None
             self.cell_to_ref[refholder] = (checksum, authority) 
         elif isinstance(refholder, Expression):
-            refholder = refholder.get_hash()
-            assert self.hexpression_to_ref[refholder] is None
-            self.hexpression_to_ref[refholder] = (checksum, authority) 
+            assert self.expression_to_ref[refholder] is None
+            self.expression_to_ref[refholder] = (checksum, authority) 
         else:
             raise TypeError(refholder)
         self.checksum_refs[checksum].append((refholder, authority))
@@ -41,9 +51,14 @@ class CacheManager:
             assert self.cell_to_ref[refholder] is not None
             self.cell_to_ref[refholder] = None
         elif isinstance(refholder, Expression):
-            refholder = refholder.get_hash()
-            assert self.hexpression_to_ref[refholder] is not None
-            self.hexpression_to_ref.pop(refholder)
+            assert self.expression_to_ref[refholder] is not None
+            self.expression_to_ref.pop(refholder)
+        elif isinstance(refholder, Transformer):
+            assert self.transformer_to_ref[refholder] is not None
+            self.transformer_to_ref.pop(refholder)
+        elif isinstance(refholder, Reactor):
+            assert self.reactor_to_ref[refholder] is not None
+            raise NotImplementedError # livegraph branch
         else:
             raise TypeError(refholder)
         self.checksum_refs[checksum].remove((refholder, authority))
@@ -59,8 +74,24 @@ class CacheManager:
             self.decref_checksum(checksum, cell, authority)
         self.cell_to_ref.pop(cell)
 
+    def destroy_transformer(self, transformer):
+        ref = self.transformer_to_ref[transformer]
+        if ref is not None:
+            checksum = ref
+            self.decref_checksum(checksum, transformer, False)
+        self.transformer_to_ref.pop(transformer)
+
+    def destroy_reactor(self, reactor):
+        raise NotImplementedError # livegraph branch
+
     def check_destroyed(self):        
-        attribs = ("checksum_refs", "cell_to_ref", "hexpression_to_ref")
+        attribs = (
+            "checksum_refs", 
+            "cell_to_ref", 
+            "expression_to_ref",
+            "transformer_to_ref",
+            "reactor_to_refs"
+        )
         name = self.__class__.__name__        
         for attrib in attribs:
             a = getattr(self, attrib)
@@ -70,4 +101,6 @@ class CacheManager:
                 print(name + ", " + attrib + ": %d undestroyed"  % len(a))
 
 from ..cell import Cell
+from ..transformer import Transformer
+from ..reactor import Reactor
 from .expression import Expression

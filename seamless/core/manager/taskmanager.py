@@ -7,18 +7,37 @@ import time
 
 class TaskManager:
     _destroyed = False
+    _active = True
+    _task_id_counter = 0
+
     def __init__(self, manager):
         self.manager = weakref.ref(manager)
         self.loop = asyncio.get_event_loop()
         self.tasks = []
         self.synctasks = []
         self.cell_to_task = {} # tasks that depend on cells
-        self.accessor_to_task = {} # tasks that depend on accessors
-        self.hexpression_to_task = {} # tasks that depend on expressions
-        self.transformation_to_task = {} # tasks that depend on transformations
-        self.reftasks = {}
-        self.rev_reftasks = {}
-        self.cell_to_value = {}
+        self.accessor_to_task = {}  # ...
+        self.expression_to_task = {} 
+        self.transformer_to_task = {}
+        self.reactor_to_task = {}
+        self.macro_to_task = {}
+        self.reftasks = {} # tasks that hold a reference to (are a link to) another task 
+        self.rev_reftasks = {} # mapping of a task to their refholder tasks
+        self.cell_to_value = {} # very short term cache:
+                                # only while the checksum is being computed by a SetCellValueTask
+
+    def activate(self):
+        self._active = True
+
+    def deactivate(self):
+        """Deactivate the task manager. 
+        Running tasks are unaffected, but all future tasks (including those launched by running tasks)
+         will only commence after the task manager has been activated again."""
+        self._active = False
+
+    async def await_active(self):
+        while not self._active:
+            await asyncio.sleep(0)
 
     def register_cell(self, cell):
         assert cell not in self.cell_to_task
@@ -29,9 +48,20 @@ class TaskManager:
         self.accessor_to_task[accessor] = []
 
     def register_expression(self, expression):
-        hexpression = expression.get_hash()
-        assert hexpression not in self.hexpression_to_task
-        self.hexpression_to_task[hexpression] = []
+        assert expression not in self.expression_to_task
+        self.expression_to_task[expression] = []
+
+    def register_transformer(self, transformer):
+        assert transformer not in self.transformer_to_task
+        self.transformer_to_task[transformer] = []
+
+    def register_reactor(self, reactor):
+        assert reactor not in self.reactor_to_task
+        self.reactor_to_task[reactor] = []
+
+    def register_macro(self, macro):
+        assert macro not in self.macro_to_task
+        self.macro_to_task[macro] = []
 
     def run_synctasks(self):
         synctasks = self.synctasks
@@ -89,8 +119,13 @@ class TaskManager:
         elif isinstance(dep, ReadAccessor):
             d = self.accessor_to_task
         elif isinstance(dep, Expression):
-            d = self.hexpression_to_task
-            dep = dep.get_hash()
+            d = self.expression_to_task
+        elif isinstance(dep, Transformer):
+            d = self.transformer_to_task
+        elif isinstance(dep, Reactor):
+            d = self.reactor_to_task
+        elif isinstance(dep, Macro):
+            d = self.macro_to_task
         else:
             raise TypeError(dep)
         dd = d[dep]
@@ -102,19 +137,38 @@ class TaskManager:
             if isinstance(task, UponConnectionTask):
                 yield task
 
-    async def await_upon_connection_tasks(self, origin_task=None):
-        futures = []
+    async def await_upon_connection_tasks(self,taskid):
+        futures, tasks = [], []
         for task in self._get_upon_connection_tasks():
-            if task is origin_task or task.future is None:
+            if task.taskid >= taskid or task.future is None:
                 continue
-            futures.append(asyncio.shield(task.future))
+            futures.append(
+                asyncio.shield(task.future)
+            )
+            tasks.append(task)
         if len(futures):
-            try:
-                await asyncio.gather(*futures)
-            except Exception as exc:
-                # If anything goes wrong in another task, consider this a cancel
-                print("CANCEL?", type(exc))
-                ###raise CancelledError
+            await asyncio.wait(futures)
+            ok = True
+            for task, fut in zip(tasks, futures):
+                try:
+                    fut.result() # to get rid of "Future exception was never retrieved"
+                                 # since the shield has its own exception
+                except Exception as exc:
+                    pass
+                    
+                try:
+                    task.future.result() # This is the real future
+                except Exception as exc:
+                    if not isinstance(exc, CancelledError):
+                        if task._awaiting:
+                            continue
+                        import traceback
+                        traceback.print_exc()                
+                    task._awaiting = True
+                    # If anything goes wrong in another task, consider this a cancel
+                    ok = False
+            if not ok:
+                raise CancelledError
 
     def _clean_dep(self, dep, task):
         if isinstance(dep, Cell):
@@ -122,8 +176,13 @@ class TaskManager:
         elif isinstance(dep, ReadAccessor):
             d = self.accessor_to_task
         elif isinstance(dep, Expression):
-            d = self.hexpression_to_task
-            dep = dep.get_hash()
+            d = self.expression_to_task
+        elif isinstance(dep, Transformer):
+            d = self.transformer_to_task
+        elif isinstance(dep, Reactor):
+            d = self.reactor_to_task
+        elif isinstance(dep, Macro):
+            d = self.macro_to_task
         else:
             raise TypeError(dep)
         dd = d[dep]
@@ -146,8 +205,6 @@ class TaskManager:
                 future = task.future
                 if future is None:
                     continue
-                #if future.done(): # done callback has not been completed...
-                #    continue
                 tasks.append(task)
                 futures.append(future)
             return tasks, futures
@@ -159,7 +216,7 @@ class TaskManager:
                 for dep in task.dependencies:
                     if isinstance(dep, SeamlessBase):
                         running.add(dep)
-                        print(task)
+                        #print("TASK",task)
             if not len(running):
                 if not len(tasks):
                     return
@@ -183,11 +240,6 @@ class TaskManager:
                     curr_timeout = report
                 else:
                     curr_timeout = None
-            asyncio.wait(
-                futures,
-                timeout=curr_timeout,
-                return_when=asyncio.FIRST_COMPLETED
-            )
             self.loop.run_until_complete(asyncio.sleep(0))
             tasks, futures = select_pending_tasks()
             if curr_timeout is not None:
@@ -207,20 +259,29 @@ class TaskManager:
             return
         if task._realtask is not None:
             task.cancel()
-        else:
+        else:            
             task.future.cancel() # will call _clean_task soon
     
     def _clean_task(self, task, future):
         self.tasks.remove(task)        
         for dep in task.dependencies:
             self._clean_dep(dep, task)
+        if task.future is not None and task.future.done():
+            if task._awaiting:
+                try:
+                    task.future.result() # to get rid of "Future exception was never retrieved"
+                                         # seems not to trigger currently, but you never know...
+                except Exception:
+                    pass
+            else:
+                try:
+                    task.future.result() # to raise Exception; TODO: log it instead                
+                except CancelledError:
+                    pass
+                finally:
+                    task._awaiting = True
         for refholder in task.refholders:
             refholder.cancel()
-        if task.future is not None and not task._awaiting and task.future.done():
-            try:
-                task.future.result() # to raise Exception; TODO: log it instead
-            except CancelledError:
-                pass
         refkey = self.rev_reftasks.pop(task, None)
         if refkey is not None:
             self.reftasks.pop(refkey)
@@ -245,8 +306,28 @@ If origin_task is provided, that task is not cancelled."""
 
     def cancel_expression(self, expression):
         """Cancels all tasks depending on expression."""
-        hexpression = expression.get_hash()
-        for task in self.hexpression_to_task[hexpression]:
+        for task in self.expression_to_task[expression]:
+            task.cancel()
+
+    def cancel_transformer(self, transformer, full=False):
+        """Cancels all tasks depending on transformer."""
+        for task in self.transformer_to_task[transformer]:
+            if not full and isinstance(task, UponConnectionTask):
+                continue
+            task.cancel()
+
+    def cancel_reactor(self, reactor, full=False):
+        """Cancels all tasks depending on reactor."""
+        for task in self.reactor_to_task[reactor]:
+            if not full and isinstance(task, UponConnectionTask):
+                continue
+            task.cancel()
+
+    def cancel_macro(self, macro, full=False):
+        """Cancels all tasks depending on macro."""
+        for task in self.macro_to_task[macro]:
+            if not full and isinstance(task, UponConnectionTask):
+                continue
             task.cancel()
 
     def destroy_cell(self, cell, full=False):
@@ -256,20 +337,33 @@ If origin_task is provided, that task is not cancelled."""
 
     def destroy_accessor(self, accessor):
         self.cancel_accessor(accessor)
-        self.accessor_to_task.pop(accessor)
+        self.accessor_to_task.pop(accessor, None) # guard here for an invalid connection
 
     def destroy_expression(self, expression):
         self.cancel_expression(expression)
-        hexpression = expression.get_hash()
-        self.hexpression_to_task.pop(hexpression)
+        self.expression_to_task.pop(expression)
+
+    def destroy_transformer(self, transformer, full=False):
+        self.cancel_transformer(transformer, full=full)
+        self.transformer_to_task.pop(transformer)
+
+    def destroy_reactor(self, reactor, full=False):
+        self.cancel_reactor(reactor, full=full)
+        self.reactor_to_task.pop(reactor)
+
+    def destroy_macro(self, macro, full=False):
+        self.cancel_macro(macro, full=full)
+        self.macro_to_task.pop(macro)
 
     def check_destroyed(self):
         attribs = (
             "tasks",
             "cell_to_task",
             "accessor_to_task",
-            "hexpression_to_task",
-            "transformation_to_task",
+            "expression_to_task",            
+            "transformer_to_task",
+            "reactor_to_task",
+            "macro_to_task",
             "reftasks",
             "rev_reftasks",
             "cell_to_value",
@@ -286,6 +380,9 @@ If origin_task is provided, that task is not cancelled."""
         self._destroyed = True
 
 from ..cell import Cell
+from ..transformer import Transformer
+from ..macro import Macro
+from ..reactor import Reactor
 from .. import SeamlessBase
 from .accessor import ReadAccessor
 from .expression import Expression

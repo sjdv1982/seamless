@@ -269,8 +269,20 @@ Use ``Cell.status()`` to get its status.
 
     def connect(self, target):
         """connects the cell to a target"""
+        from .worker import InputPin, EditPin, OutputPin
+        from .transformer import Transformer
+        from .macro import Macro, Path
+        from .link import Link
         manager = self._get_manager()
         target_subpath = None
+
+        if isinstance(target, Link):
+            target = target.get_linked()
+
+        if isinstance(target, Path):
+            raise NotImplementedError # livegraph branch
+            # something like ._verify_connect...
+
         if isinstance(target, Inchannel):
             target_subpath = target.path
             target = target.structured_cell().buffer
@@ -279,8 +291,23 @@ Use ``Cell.status()`` to get its status.
         elif isinstance(target, Outchannel):
             raise TypeError("Outchannels must be the source of a connection, not the target")
         
-        if not isinstance(target, Cell):
-            raise TypeError(target)
+        if isinstance(target, Cell):
+            assert not target._monitor
+        elif isinstance(target, InputPin):
+            pass
+        elif isinstance(target, EditPin):
+            # dual connection
+            manager.connect(target, None, self, None)
+        elif isinstance(target, OutputPin):
+            raise TypeError("Output pins must be the source of a connection, not the target")
+        elif isinstance(target, Transformer):
+            raise TypeError("Transformers cannot be connected directly, select a pin")
+        elif isinstance(target, Reactor):
+            raise TypeError("Reactors cannot be connected directly, select a pin")
+        elif isinstance(target, Macro):
+            raise TypeError("Reactors cannot be connected directly, select a pin")
+        else:
+            raise TypeError(type(target))
         manager.connect(self, None, target, target_subpath)
         return self
 

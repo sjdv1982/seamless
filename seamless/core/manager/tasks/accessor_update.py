@@ -33,13 +33,19 @@ class AccessorUpdateTask(Task):
             return
         
         if isinstance(target, Worker):
-            # If a worker, set the pin to the checksum, and launch a worker update task.
-            pinname = accessor.write_accessor.pinname
-            manager.livegraph.set_pin(target, pinname, expression_result_checksum)
-            WorkerUpdateTask(manager, target).launch()
+            worker = target
+            # If a worker, launch a worker update task. The worker will retrieve the upstream checksums by itself.
+            if isinstance(worker, Transformer):
+                TransformerUpdateTask(manager, worker).launch()
+            elif isinstance(worker, Reactor):
+                ReactorUpdateTask(manager, worker).launch()
+            elif isinstance(worker, Macro):
+                MacroUpdateTask(manager, worker).launch()
+            else:
+                raise TypeError(type(worker))
         elif isinstance(target, Cell): # If a cell:
             if accessor.write_accessor.path is None:
-                await manager.taskmanager.await_upon_connection_tasks()
+                await manager.taskmanager.await_upon_connection_tasks(self.taskid)
                 manager._set_cell_checksum(target, expression_result_checksum, False)
             else:
                 # Run a set-non-authorative-path *action*, which will launch a set-path task.
@@ -51,7 +57,12 @@ class AccessorUpdateTask(Task):
             
 from ..accessor import ReadAccessor
 from .evaluate_expression import EvaluateExpressionTask
-from .worker_update import WorkerUpdateTask
+from .transformer_update import TransformerUpdateTask
+from .reactor_update import ReactorUpdateTask
+from .macro_update import MacroUpdateTask
 from .cell_update import CellUpdateTask
 from ...worker import Worker
+from ...transformer import Transformer
+from ...reactor import Reactor
+from ...macro import Macro
 from ...cell import Cell

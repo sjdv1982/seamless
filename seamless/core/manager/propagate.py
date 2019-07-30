@@ -18,7 +18,16 @@ def propagate_cell(livegraph, cell, void):
     if cell._monitor is not None:
         raise NotImplementedError # livegraph branch
     return propagate_simple_cell(livegraph, cell, void)
-    
+
+def propagate_transformer(livegraph, transformer, void):
+    transformer._void = void
+    for accessor in livegraph.transformer_to_downstream[transformer]:
+        if accessor._void != void:
+            propagate_accessor(livegraph, accessor, void)
+
+def propagate_reactor(livegraph, transformer, void):
+    raise NotImplementedError # livegraph branch
+
 from ..cell import Cell
 from ..transformer import Transformer
 from ..reactor import Reactor
