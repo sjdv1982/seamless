@@ -249,12 +249,32 @@ class TransformationCache:
         if exc is None:
             result_checksum = future.result()
             if result_checksum is None:
-                exc = ValueError(None)
+                exc = SeamlessUndefinedError(None)
         if exc is not None:
+            try:
+                future.result()
+            except:
+                print("!" * 80)
+                print("!      Transformer exception", job.codename)
+                print("!" * 80)
+                import traceback
+                traceback.print_exc()
+                print("!" * 80)
             self.transformation_exceptions[tf_checksum] = exc
             for transformer in transformers:
                 manager = transformer._get_manager()
-                manager.cancel_transformer(transformer, void=True)
+                
+                if isinstance(exc, SeamlessInvalidValueError):
+                    status_reason = StatusReasonEnum.INVALID
+                elif isinstance(exc, SeamlessUndefinedError):
+                    status_reason = StatusReasonEnum.UNDEFINED
+                else:
+                    status_reason = StatusReasonEnum.ERROR
+                manager.cancel_transformer(
+                    transformer, 
+                    void=True, 
+                    status_reason=status_reason
+                )
             return
 
         self.transformation_results[tf_checksum] = result_checksum
@@ -316,3 +336,4 @@ from ..protocol.deserialize import deserialize
 from ..protocol.calculate_checksum import calculate_checksum
 from .redis_client import redis_caches, redis_sinks
 from ..transformation import TransformationJob
+from ..status import SeamlessInvalidValueError, SeamlessUndefinedError, StatusReasonEnum

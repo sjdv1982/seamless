@@ -3,6 +3,7 @@ from weakref import WeakSet
 
 from . import SeamlessBase
 from copy import deepcopy
+from .status import StatusReasonEnum
 
 cell_counter = 0
 
@@ -23,6 +24,7 @@ Use ``Cell.status()`` to get its status.
     _subcelltype = None
     _checksum = None
     _void = True
+    _status_reason = StatusReasonEnum.UNDEFINED
     _prelim_val = None
     _prelim_checksum = None
     _unmounted = False

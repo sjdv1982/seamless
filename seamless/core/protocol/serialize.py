@@ -17,6 +17,12 @@ def _serialize(value, celltype):
     if celltype in text_types:
         if isinstance(value, bytes):
             value = value.decode()
+        if celltype == "int":
+            value = int(value)
+        elif celltype == "float":
+            value = float(value)
+        elif celltype == "bool":
+            value = bool(value)
         buffer = (str(value).rstrip("\n")+"\n").encode()
     elif celltype == "plain":
         txt = json.dumps(value, sort_keys=True, indent=2)

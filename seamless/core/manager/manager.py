@@ -117,17 +117,20 @@ class Manager:
                 assert self.livegraph.has_authority(cell)
                 assert sc_buf is None
         if checksum is None:
-            self.cancel_cell(cell, void=True)
+            reason = StatusReasonEnum.UNDEFINED
+            self.cancel_cell(cell, void=True, reason=reason)
         else:
             old_checksum = self.get_cell_checksum(cell)
             if old_checksum is not None:
                 self.cancel_cell(cell, void=False)
         self._set_cell_checksum(cell, checksum, (checksum is None))
 
-    def _set_cell_checksum(self, cell, checksum, void):
+    def _set_cell_checksum(self, cell, checksum, void, status_reason):
         # NOTE: Any cell task depending on the old checksum must have been canceled already
         assert checksum is None or isinstance(checksum, bytes), checksum
         assert isinstance(void, bool), void
+        if checksum is None:
+            assert status_reason is not None
         authority = self.livegraph.has_authority(cell)
         cachemanager = self.cachemanager
         old_checksum = cell._checksum
@@ -135,15 +138,18 @@ class Manager:
             cachemanager.decref_checksum(old_checksum, cell, authority)
         cell._checksum = checksum
         cell._void = void
+        cell._status_reason = status_reason
         if checksum != old_checksum:
             cachemanager.incref_checksum(checksum, cell, authority)
             if cell._mount is not None:
                 buffer, checksum = self.get_cell_buffer_and_checksum(cell)
                 self.mountmanager.add_cell_update(cell, checksum, buffer)
 
-    def _set_transformer_checksum(self, transformer, checksum, void):
+    def _set_transformer_checksum(self, transformer, checksum, void, status_reason=None):
         # NOTE: Any cell task depending on the old checksum must have been canceled already
         assert checksum is None or isinstance(checksum, bytes), checksum
+        if checksum is None:
+            assert status_reason is not None
         assert isinstance(void, bool), void
         cachemanager = self.cachemanager
         old_checksum = transformer._checksum
@@ -151,6 +157,7 @@ class Manager:
             cachemanager.decref_checksum(old_checksum, transformer, False)
         transformer._checksum = checksum
         transformer._void = void
+        transformer._status_reason = status_reason
         if checksum != old_checksum:
             cachemanager.incref_checksum(checksum, transformer, False)
 
@@ -225,49 +232,50 @@ class Manager:
     ##########################################################################
 
     @mainthread
-    def cancel_cell(self, cell, void, origin_task=None):
+    def cancel_cell(self, cell, void, origin_task=None, status_reason=None):
         """Cancels all tasks depending on cell, and sets all dependencies to None. 
 If void=True, all dependencies are set to void as well.
 If origin_task is provided, that task is not cancelled."""
         self.taskmanager.cancel_cell(cell, origin_task=origin_task)
         if cell._checksum is None:
-            if not void or cell._void:
+            if (not void) or cell._void:
                 return
         livegraph = self.livegraph
         accessors = livegraph.cell_to_downstream[cell]
         for accessor in accessors:            
             self.cancel_accessor(accessor, void)
-        self._set_cell_checksum(cell, None, void)
+        self._set_cell_checksum(cell, None, void, status_reason)
 
     @mainthread
     def cancel_accessor(self, accessor, void, origin_task=None):
         self.taskmanager.cancel_accessor(accessor, origin_task=origin_task)
         if accessor.expression is None:
-            if not void or expression._void:
+            if (not void) or accessor._void:
                 return
+        reason = StatusReasonEnum.UPSTREAM
         target = accessor.write_accessor.target
         if isinstance(target, Cell):
-            return self.cancel_cell(target, void=void)
+            return self.cancel_cell(target, void=void, reason=reason)
         elif isinstance(target, Worker):
             if isinstance(target, Transformer):
-                return self.cancel_transformer(target, void=void)
+                return self.cancel_transformer(target, void=void, reason=reason)
             elif isinstance(target, Reactor):
-                return self.cancel_reactor(target, void=void)
+                return self.cancel_reactor(target, void=void, reason=reason)
 
     @mainthread
-    def cancel_transformer(self, transformer, void):
+    def cancel_transformer(self, transformer, void, status_reason=None):
         self.taskmanager.cancel_transformer(transformer)
         if transformer._checksum is None:
-            if not void or transformer._void:
+            if (not void) or transformer._void:
                 return
         livegraph = self.livegraph
         accessors = livegraph.transformer_to_downstream[transformer]
         for accessor in accessors:            
             self.cancel_accessor(accessor, void)
-        self._set_transformer_checksum(transformer, None, void)
+        self._set_transformer_checksum(transformer, None, void, status_reason)
 
     @mainthread
-    def cancel_reactor(self, reactor, void):
+    def cancel_reactor(self, reactor, void, status_reason=None):
         raise NotImplementedError #livegraph branch
 
     ##########################################################################
@@ -324,3 +332,4 @@ from ..worker import Worker
 from ..transformer import Transformer
 from ..macro import Macro
 from ..reactor import Reactor
+from ..status import StatusReasonEnum

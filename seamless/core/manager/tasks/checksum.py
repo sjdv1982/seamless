@@ -55,9 +55,15 @@ class CellChecksumTask(Task):
             else:
                 checksum = cell._checksum            
         void = cell._void
-        manager._set_cell_checksum(cell, checksum, checksum is None)
+        status_reason = None
+        if checksum is None:
+            if manager.livegraph.has_authority(cell):
+                status_reason = StatusReasonEnum.UPSTREAM
+            else:
+                status_reason = StatusReasonEnum.UNDEFINED
+        manager._set_cell_checksum(cell, checksum, checksum is None, status_reason)
         if void and checksum is None:
-            manager.cancel_cell(cell, void=True, origin_task=self)
+            manager.cancel_cell(cell, void=True, origin_task=self, status_reason=status_reason)
         return None
         
-        
+from ...status import StatusReasonEnum        

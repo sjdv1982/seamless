@@ -6,6 +6,7 @@ class Accessor:
 class ReadAccessor(Accessor):
     _checksum = None
     _void = False
+    _status_reason = None
     def __init__(self, manager, path, celltype):
         self.manager = weakref.ref(manager)
         self.path = path
@@ -13,6 +14,7 @@ class ReadAccessor(Accessor):
         self.celltype = celltype   
         self.write_accessor = None
         self.expression = None
+        self._status_reason = StatusReasonEnum.UNDEFINED
     
     def build_expression(self, livegraph, checksum):
         """Returns if expression has changed"""
@@ -52,4 +54,5 @@ class WriteAccessor(Accessor):
         self.path = path
 
 from ...core.cell import celltypes, subcelltypes
+from ...core.status import StatusReasonEnum
 from .expression import Expression

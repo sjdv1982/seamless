@@ -18,9 +18,6 @@ class TransformerUpdateTask(Task):
 
     async def _run(self):
         transformer = self.transformer
-        if transformer._void:
-            print("WARNING: transformer %s is void, shouldn't happen during transformer update" % transformer)
-            return
         from . import SerializeToBufferTask
         manager = self.manager()
         livegraph = manager.livegraph
@@ -28,14 +25,26 @@ class TransformerUpdateTask(Task):
         inputpins = {}
         for pinname, accessor in upstreams.items():
             if accessor is None: #unconnected
-                continue
+                transformer._status_reason = StatusReasonEnum.UNCONNECTED
+                return
+                
+        status_reason = None        
+        for pinname, accessor in upstreams.items():
             if accessor._void: #undefined/upstream error
+                reason = accessor._status_reason
+            elif accessor._checksum is None:
+                reason = StatusReasonEnum.UNDEFINED
+            else:
                 continue
-            if accessor._checksum is None: #undefined
-                continue
-            inputpins[pinname] = accessor._checksum
-        if len(inputpins) != len(upstreams):
+            if status_reason is None or reason < status_reason:
+                status_reason = reason
+        self._status_reason = status_reason
+
+        if status_reason is not None:
             return
+
+        for pinname, accessor in upstreams.items():
+            inputpins[pinname] = accessor._checksum
         if is_equal(inputpins, transformer._last_inputs):
             return
         downstreams = livegraph.transformer_to_downstream[transformer]
@@ -88,4 +97,5 @@ class TransformerResultUpdateTask(Task):
                 AccessorUpdateTask(manager, accessor).launch()
         return None
 
-from .accessor_update import AccessorUpdateTask        
+from .accessor_update import AccessorUpdateTask
+from ...status import StatusReasonEnum

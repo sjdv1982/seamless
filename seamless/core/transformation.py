@@ -75,6 +75,7 @@ class TransformationJob:
         self.semantic_cache = semantic_cache
         self.debug = debug
         self.executor = None
+        self.codename = None
         self.future = None
 
     def execute(self, codename):
@@ -88,6 +89,7 @@ class TransformationJob:
         self.future = asyncio.ensure_future(awaitable)
 
     async def _execute_local(self, codename):
+        self.codename = codename
         buffer_cache = self.buffer_cache()
         values = {}
         module_workspace = {}
@@ -166,12 +168,15 @@ class TransformationJob:
         finally:            
             release_lock(lock)
         if result is not None:
-            result_buffer = await serialize(result, celltype)
-            await validate_subcelltype(
-                result_buffer, celltype, subcelltype, 
-                codename, buffer_cache
-            )
-            result_checksum = await calculate_checksum(result_buffer)
+            try:
+                result_buffer = await serialize(result, celltype)
+                await validate_subcelltype(
+                    result_buffer, celltype, subcelltype, 
+                    codename, buffer_cache
+                )
+                result_checksum = await calculate_checksum(result_buffer)
+            except Exception:
+                raise SeamlessInvalidValueError(result)
             #print("RESULT", result, result_buffer, result_checksum)
         return result_checksum
                 
@@ -184,3 +189,4 @@ from .protocol.calculate_checksum import calculate_checksum
 from .protocol.validate_subcelltype import validate_subcelltype
 from .cache import CacheMissError
 from .cache.transformation_cache import syntactic_is_semantic
+from .status import SeamlessInvalidValueError

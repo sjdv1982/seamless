@@ -10,7 +10,6 @@ deserialize_cache = lrucache(100)
 
 text_types = (
     "text", "python", "ipython", "cson", "yaml",
-    "str", "int", "float", "bool",
 )
 
 def _deserialize(buffer, checksum, celltype):
@@ -30,6 +29,34 @@ def _deserialize(buffer, checksum, celltype):
         value, _ = mixed_deserialize(buffer)
     elif celltype == "bytes":
         value = buffer
+    elif celltype == "str":
+        s = buffer.decode()
+        assert s.endswith("\n")
+        value = json.loads(s)
+        if not isinstance(value, str):
+            raise ValueError
+    elif celltype == "int":
+        s = buffer.decode()
+        assert s.endswith("\n")
+        value = json.loads(s)
+        if isinstance(value, (float, bool)):
+            value = int(value)
+        if not isinstance(value, int):
+            raise ValueError
+    elif celltype == "float":
+        s = buffer.decode()
+        assert s.endswith("\n")
+        value = json.loads(s)
+        if isinstance(value, (int, bool)):
+            value = float(value)        
+        if not isinstance(value, float):
+            raise ValueError
+    elif celltype == "bool":
+        s = buffer.decode()
+        assert s.endswith("\n")
+        value = json.loads(s)
+        if not isinstance(value, bool):
+            raise ValueError
     else:
         raise TypeError(celltype)
     

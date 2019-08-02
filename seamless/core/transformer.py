@@ -12,6 +12,7 @@ from .worker import Worker, InputPin, OutputPin
 class Transformer(Worker):
     _checksum = None
     _void = True
+    _status_reason = None
     debug = False
 
     def __init__(self, transformer_params, *,  stream_params=None):
@@ -85,23 +86,12 @@ class Transformer(Worker):
     def shell(self):
         raise NotImplementedError #livegraph branch
 
-    @property
+    #@property
     def status(self):
         """The computation status of the transformer"""
-        raise NotImplementedError #livegraph branch
-
-        if self._stream_params is None:
-            return super().status
-        manager = self._get_manager()
-        status = manager.status[self]
-        statuses = OrderedDict()
-        if str(status.exec) in ("EXECUTING", "ERROR"):
-            for tf,k in sorted(manager.stream_status.keys(), key=lambda k:k[1]):
-                if tf is self:
-                    statuses[k] = str(manager.stream_status[self, k])
-            return statuses
-        else:
-            return status
+        from .status import status_transformer
+        status, reason, pins = status_transformer(self)
+        print(status, reason, pins)
         
 
     def destroy(self, *, from_del=False):

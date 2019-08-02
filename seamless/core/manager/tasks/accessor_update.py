@@ -13,6 +13,7 @@ class AccessorUpdateTask(Task):
         expression = accessor.expression
         manager = self.manager()
         if expression is None:
+            accessor._status_reason = StatusReasonEnum.UNDEFINED
             manager.cancel_accessor(accessor, void=True, origin_task=self)
             return
 
@@ -20,12 +21,14 @@ class AccessorUpdateTask(Task):
 
         # If the expression result is None, do an accessor void cancellation
         if expression_result_checksum is None:
+            accessor._status_reason = StatusReasonEnum.INVALID
             manager.cancel_accessor(accessor, void=True, origin_task=self)
             return
         if accessor._checksum == expression_result_checksum:
             return
         accessor._checksum = expression_result_checksum
         accessor._void = False
+        accessor._status_reason = None
 
         # Select the write accessor's target.
         target = accessor.write_accessor.target()
@@ -46,7 +49,7 @@ class AccessorUpdateTask(Task):
         elif isinstance(target, Cell): # If a cell:
             if accessor.write_accessor.path is None:
                 await manager.taskmanager.await_upon_connection_tasks(self.taskid)
-                manager._set_cell_checksum(target, expression_result_checksum, False)
+                manager._set_cell_checksum(target, expression_result_checksum, False, None)
             else:
                 # Run a set-non-authorative-path *action*, which will launch a set-path task.
                 raise NotImplementedError #livegraph branch
@@ -66,3 +69,4 @@ from ...transformer import Transformer
 from ...reactor import Reactor
 from ...macro import Macro
 from ...cell import Cell
+from ...status import StatusReasonEnum

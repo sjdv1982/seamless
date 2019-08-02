@@ -27,7 +27,7 @@ class SetCellValueTask(Task):
                     str(cell), buffer_cache
                 )
                 if cell._checksum != checksum:                    
-                    manager._set_cell_checksum(cell, checksum, False)
+                    manager._set_cell_checksum(cell, checksum, False, None)
                     CellUpdateTask(manager, self.cell).launch()
         finally:
             taskmanager.cell_to_value.pop(cell)
