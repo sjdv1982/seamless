@@ -5,7 +5,7 @@ class Accessor:
 
 class ReadAccessor(Accessor):
     _checksum = None
-    _void = False
+    _void = True
     _status_reason = None
     def __init__(self, manager, path, celltype):
         self.manager = weakref.ref(manager)

@@ -36,9 +36,9 @@ class TransformerUpdateTask(Task):
                 reason = StatusReasonEnum.UNDEFINED
             else:
                 continue
-            if status_reason is None or reason < status_reason:
+            if status_reason is None or reason < status_reason:                
                 status_reason = reason
-        self._status_reason = status_reason
+        transformer._status_reason = status_reason
 
         if status_reason is not None:
             return

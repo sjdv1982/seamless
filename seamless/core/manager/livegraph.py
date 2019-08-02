@@ -109,6 +109,7 @@ class LiveGraph:
         read_accessor = ReadAccessor(
             manager, None, celltype
         )
+        read_accessor._void = False # To trigger propagation
         subcelltype = source.subcelltype
         if subcelltype is None:
             subcelltype = target._subcelltype
@@ -201,7 +202,7 @@ class LiveGraph:
         
         manager.cancel_cell(target, void=False)
         manager.taskmanager.register_accessor(read_accessor)        
-        propagate_cell(self, target, void=False)
+        propagate_cell(self, target, void=source._void)
 
         return read_accessor
 

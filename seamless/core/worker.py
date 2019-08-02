@@ -75,12 +75,6 @@ class Worker(SeamlessBase):
         return object.__dir__(self) + list(self._pins.keys())
 
 
-    @property
-    def status(self):
-        """The computation status of the worker"""
-        return self._get_manager().status[self]
-
-
 from .cell import celltypes as celltypes0
 celltypes = list(celltypes0) + ["module"]
 
@@ -228,16 +222,6 @@ class OutputPin(OutputPinBase):
         my_cells = [c[0] for c in my_cells]
         return mycells
 
-    @property
-    def status(self):
-        manager = self._get_manager()
-        raise NotImplementedError ###cache branch
-        my_cells = manager.pin_to_cells.get(self, [])
-        if len(my_cells):
-            my_cell = my_cells[0]
-            return my_cell.target.status()
-        else:
-            return self.StatusFlags.UNCONNECTED.name
 
 class EditPinBase(PinBase):
     def _set_context(self, context, childname):
@@ -307,14 +291,18 @@ class EditPin(EditPinBase):
 
     @property
     def status(self):
+        from .status import status_accessor, format_status
+        from .transformer import Transformer
         manager = self._get_manager()
-        raise NotImplementedError ###cache branch
-        my_cells = manager.pin_to_cells.get(self, [])
-        if len(my_cells):
-            my_cell = my_cells[0].target
-            return my_cell.status()
+        livegraph = manager.livegraph
+        worker = self.worker_ref()
+        if isinstance(worker, Transformer):
+            upstreams = livegraph.transformer_to_upstream[worker]
+            accessor = upstreams[self.name]        
         else:
-            return self.StatusFlags.UNCONNECTED.name
+            raise NotImplementedError ###cache branch
+        stat = status_accessor(accessor)
+        return format_status(stat)
 
 from .structured_cell import Inchannel, Outchannel, Editchannel
 from .cell import Cell

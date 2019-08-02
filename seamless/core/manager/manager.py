@@ -129,7 +129,7 @@ class Manager:
         # NOTE: Any cell task depending on the old checksum must have been canceled already
         assert checksum is None or isinstance(checksum, bytes), checksum
         assert isinstance(void, bool), void
-        if checksum is None:
+        if void:
             assert status_reason is not None
         authority = self.livegraph.has_authority(cell)
         cachemanager = self.cachemanager
@@ -148,7 +148,7 @@ class Manager:
     def _set_transformer_checksum(self, transformer, checksum, void, status_reason=None):
         # NOTE: Any cell task depending on the old checksum must have been canceled already
         assert checksum is None or isinstance(checksum, bytes), checksum
-        if checksum is None:
+        if void:
             assert status_reason is not None
         assert isinstance(void, bool), void
         cachemanager = self.cachemanager
@@ -164,7 +164,10 @@ class Manager:
     @run_in_mainthread
     def set_cell(self, cell, value):
         assert self.livegraph.has_authority(cell)
-        self.cancel_cell(cell, value is None)
+        reason = None
+        if value is None:
+            reason = StatusReasonEnum.UNDEFINED
+        self.cancel_cell(cell, value is None, reason)
         task = SetCellValueTask(self, cell, value)
         task.launch()
 
@@ -237,9 +240,7 @@ class Manager:
 If void=True, all dependencies are set to void as well.
 If origin_task is provided, that task is not cancelled."""
         self.taskmanager.cancel_cell(cell, origin_task=origin_task)
-        if cell._checksum is None:
-            if (not void) or cell._void:
-                return
+        print("CANCEL??", cell, status_reason, cell._status_reason )
         livegraph = self.livegraph
         accessors = livegraph.cell_to_downstream[cell]
         for accessor in accessors:            
@@ -249,9 +250,6 @@ If origin_task is provided, that task is not cancelled."""
     @mainthread
     def cancel_accessor(self, accessor, void, origin_task=None):
         self.taskmanager.cancel_accessor(accessor, origin_task=origin_task)
-        if accessor.expression is None:
-            if (not void) or accessor._void:
-                return
         reason = StatusReasonEnum.UPSTREAM
         target = accessor.write_accessor.target
         if isinstance(target, Cell):
@@ -265,13 +263,10 @@ If origin_task is provided, that task is not cancelled."""
     @mainthread
     def cancel_transformer(self, transformer, void, status_reason=None):
         self.taskmanager.cancel_transformer(transformer)
-        if transformer._checksum is None:
-            if (not void) or transformer._void:
-                return
         livegraph = self.livegraph
         accessors = livegraph.transformer_to_downstream[transformer]
         for accessor in accessors:            
-            self.cancel_accessor(accessor, void)
+            self.cancel_accessor(accessor, void)        
         self._set_transformer_checksum(transformer, None, void, status_reason)
 
     @mainthread

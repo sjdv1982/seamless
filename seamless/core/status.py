@@ -9,7 +9,13 @@ from enum import Enum
 
 class MyEnum(Enum):
     def __lt__(self, other):
+        if other is None:
+            return False
         return self.value < other.value
+    def __eq__(self, other):
+        if other is None:
+            return False
+        return self.value == other.value
 
 StatusEnum = MyEnum("StatusEnum", (
     "OK",
@@ -27,7 +33,16 @@ StatusReasonEnum = MyEnum("StatusReasonEnum",(
     "EXECUTING",
 ))
 
+def status_cell(cell):
+    if cell._checksum is not None:
+        return StatusEnum.OK, StatusReasonEnum.NONE
+    if not cell._void:
+        return StatusEnum.PENDING, StatusReasonEnum.UPSTREAM
+    return StatusEnum.VOID, cell._status_reason
+
 def status_accessor(accessor):
+    if accessor is None:
+        return StatusEnum.VOID, StatusReasonEnum.UNCONNECTED
     if accessor._checksum is not None:
         return StatusEnum.OK, StatusReasonEnum.NONE
     if not accessor._void:
@@ -62,8 +77,78 @@ def status_transformer(transformer):
         elif reason in (StatusReasonEnum.UNDEFINED, StatusReasonEnum.UPSTREAM):
             pins = {}
             for pinname, accessor in upstreams.items():
-                status = status_accessor(accessor)
-                if status[0] == StatusEnum.OK:
+                astatus = status_accessor(accessor)
+                if astatus[0] == StatusEnum.OK:
                     continue
-                pins[pinname] = status
+                pins[pinname] = astatus
     return status, reason, pins
+
+def status_reactor(reactor):
+    raise NotImplementedError # livegraph branch
+
+def status_macro(macro):
+    raise NotImplementedError # livegraph branch
+
+def format_status(stat):
+    status, reason = stat
+    if status == StatusEnum.OK:
+        return "OK"
+    elif status == StatusEnum.PENDING:
+        return "pending"
+    else:
+        if reason is None or reason == StatusReasonEnum.NONE:
+            return "void"
+        else:
+            return reason.name.lower()
+
+def format_worker_status(stat, as_child=False):
+    status, reason, pins = stat
+    if status == StatusEnum.OK:
+        return "OK"
+    elif status == StatusEnum.PENDING:
+        if reason == StatusReasonEnum.EXECUTING:
+            return "executing"
+        else:
+            return "pending"
+    else:
+        if reason == StatusReasonEnum.UNCONNECTED:
+            result = "unconnected => "
+            result += ", ".join(pins)
+        elif reason in (StatusReasonEnum.UNDEFINED, StatusReasonEnum.UPSTREAM):
+            result = reason.name.lower() + " => "
+            pinresult = []
+            for pinname, pstatus in pins.items():
+                if as_child:                                
+                    if pstatus[0] == reason:
+                        pinresult.append(pinname)
+                else:
+                    pinresult.append(pinname + " " + format_status(pstatus))
+            result += ", ".join(pinresult)
+        else:
+            result = reason.name.lower()
+        return result
+
+def format_context_status(stat):
+    from .worker import Worker
+    from .cell import Cell
+    from .context import Context
+    result = {}
+    for childname, value in stat.items():
+        child, childstat = value
+        if isinstance(child, Worker):            
+            res = childname + ": "
+            childresult = format_worker_status(childstat, as_child=True)
+        elif isinstance(child, Cell):
+            res = childname + ": "
+            childresult = format_status(childstat)            
+        elif isinstance(child, Context):
+            res = childname + "\n========\n"            
+            childresult = format_context_status(childstat)
+        else:
+            continue        
+        if childresult == "OK":
+            continue
+        result[res] = childresult
+    if not len(result):
+        result = "OK"
+    return result

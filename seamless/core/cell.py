@@ -80,23 +80,23 @@ Use ``Cell.status()`` to get its status.
         ret = "Seamless %s cell: " % self._celltype + self._format_path()
         return ret
 
-    @property
-    def status(self):
-        """The cell's current status."""
+    def _get_status(self):
+        from .status import status_cell, format_status      
         manager = self._get_manager()
         if isinstance(manager, UnboundManager):
-            raise Exception("Cannot ask the cell value of a context that is being constructed by a macro")
-        status = self._get_manager().status[self]
-        keys = set(status.keys())
-        if keys == set([None]):
-            return status[None]
-        elif keys == set([None, ()]):
-            return status[()]
-        else:
-            result = {}
-            for k,v in status.items():
-                result[k] = str(v) 
-            return result
+            raise Exception("Cannot ask the cell value of a context that is being constructed by a macro")        
+        status = status_cell(self)
+        return status
+
+    @property
+    def status(self):        
+        """The cell's current status."""        
+        from .status import format_status
+        if self._monitor is not None:
+            raise NotImplementedError # livegraph branch
+        status = self._get_status()
+        statustxt = format_status(status)
+        return "Status: " + statustxt 
 
     @property
     def checksum(self):
@@ -455,7 +455,7 @@ class PyReactorCell(PythonCell):
     _subcelltype = "reactor"
 
     def __str__(self):
-        ret = "Seamless reactor Python cell: " + self._format_path()
+        ret = "Seamless Python reactor code cell: " + self._format_path()
         return ret
 
 
@@ -466,7 +466,7 @@ class PyTransformerCell(PythonCell):
     _subcelltype = "transformer"
 
     def __str__(self):
-        ret = "Seamless transformer Python cell: " + self._format_path()
+        ret = "Seamless Python transformer code cell: " + self._format_path()
         return ret
 
 
@@ -481,7 +481,7 @@ class PyMacroCell(PythonCell):
     _subcelltype = "macro"
 
     def __str__(self):
-        ret = "Seamless macro Python cell: " + self._format_path()
+        ret = "Seamless Python macro code cell: " + self._format_path()
         return ret
 
 class IPythonCell(Cell):

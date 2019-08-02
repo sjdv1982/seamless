@@ -1,5 +1,5 @@
 import asyncio
-import copy
+from copy import deepcopy
 import json
 from concurrent.futures import ProcessPoolExecutor
 from ...mixed.io import deserialize as mixed_deserialize
@@ -72,7 +72,7 @@ async def deserialize(buffer, checksum, celltype, copy):
     value = deserialize_cache.get((checksum, celltype))
     if value is not None:
         if copy:
-            newvalue = deepcopy.copy(value)
+            newvalue = deepcopy(value)
             serialize_cache[id(newvalue), celltype] = buffer
             return newvalue
         else:

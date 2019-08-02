@@ -2,6 +2,7 @@
 import weakref
 from weakref import WeakValueDictionary
 from collections import OrderedDict
+import json
 import time
 import asyncio
 from contextlib import contextmanager
@@ -210,24 +211,26 @@ name: str
         manager = self._get_manager()
         return manager.taskmanager.equilibrate(timeout, report)
         
-    @property
+    def _get_status(self):
+        status = {}
+        for childname, child in self._children.items():
+            if childname in self._auto:
+                continue
+            status[childname] = (child, child._get_status())
+        return status
+
+    #@property
     def status(self):
         """The computation status of the context
         Returns a dictionary containing the status of all children that are not OK.
         If all children are OK, returns OK
         """
-        raise NotImplementedError # livegraph branch
-        result = StatusReport()
-        for childname, child in self._children.items():
-            if childname in self._auto:
-                continue
-            s = child.status
-            if s != "OK" and s != "FINISHED":
-                result[childname] = s
-        if len(result):
-            return result
-        else:
-            return "OK"
+        from .status import format_context_status
+        status = self._get_status()
+        statustxt = format_context_status(status)
+        if isinstance(statustxt, dict):
+            statustxt = json.dumps(statustxt, indent=2, sort_keys=True)
+        return "Status: " + statustxt
 
     def mount(self, path=None, mode="rw", authority="cell", persistent=False):
         if not get_macro_mode():

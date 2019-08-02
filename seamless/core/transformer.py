@@ -6,6 +6,7 @@ In practice, the input arguments, even if read from checksum-to-value cache,
  contamination of cache values.
 """
 from collections import OrderedDict
+import asyncio
 
 from .worker import Worker, InputPin, OutputPin
 
@@ -65,7 +66,10 @@ class Transformer(Worker):
 
     @property
     def checksum(self):
-        return self._checksum
+        checksum = self._checksum
+        if checksum is not None:
+            checksum = checksum.hex()
+        return checksum
 
     @property
     def void(self):
@@ -86,13 +90,65 @@ class Transformer(Worker):
     def shell(self):
         raise NotImplementedError #livegraph branch
 
-    #@property
+    def _get_status(self):
+        from .status import status_transformer
+        status = status_transformer(self)
+        return status
+
+    @property
     def status(self):
         """The computation status of the transformer"""
-        from .status import status_transformer
-        status, reason, pins = status_transformer(self)
-        print(status, reason, pins)
+        from .status import format_worker_status
+        status = self._get_status()
+        statustxt = format_worker_status(status)
+        return "Status: " + statustxt 
         
+    @property
+    def void(self):
+        return self._void
+
+    async def _get_buffer(self):
+        from .protocol.get_buffer import get_buffer_async
+        if self._checksum is None:
+            return None
+        buffer_cache = self._get_manager().cachemanager.buffer_cache
+        buffer = await get_buffer_async(self._checksum, buffer_cache)
+        return buffer
+
+    async def _get_value(self):
+        from .protocol.deserialize import deserialize
+        manager = self._get_manager()
+        livegraph = manager.livegraph
+        downstreams = livegraph.transformer_to_downstream[self]
+        if not len(downstreams):
+            return None
+        first_output = downstreams[0].write_accessor.target()
+        outputpin = self._pins[self._output_name]
+        output_celltype = outputpin.celltype
+        if output_celltype is None:
+            output_celltype = first_output._celltype
+        checksum = self._checksum
+        buffer = await self._get_buffer()
+        if buffer is None:
+            return None
+        value = await deserialize(buffer, checksum, output_celltype, True)
+        return value
+
+    @property
+    def buffer(self):
+        task = self._get_buffer()
+        loop = asyncio.get_event_loop()
+        future = asyncio.ensure_future(task)
+        loop.run_until_complete(future)
+        return future.result()
+
+    @property
+    def value(self):
+        task = self._get_value()
+        loop = asyncio.get_event_loop()
+        future = asyncio.ensure_future(task)
+        loop.run_until_complete(future)
+        return future.result()
 
     def destroy(self, *, from_del=False):
         if not from_del:
