@@ -31,7 +31,8 @@ with macro_mode_on():
     ctx.code.connect(ctx.tf.code)
     ctx.tf.c.connect(ctx.result)
 
-ctx.code.from_label("Secret source code")
+raise NotImplementedError # no more labels; use checksum literal
+###ctx.code.from_label("Secret source code")
 print("Secret source code", ctx.code.checksum)
 
 ctx.equilibrate()

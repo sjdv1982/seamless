@@ -29,7 +29,7 @@ def _update_old_keys(oldkeys, oldlib, lib, on_macros):
                     exists = True
             if exists:
                 if old_checksum != checksum:
-                    ###value_cache.decref(old_checksum, has_auth=True) #TODO: malfunctioning...
+                    ###buffer_cache.decref(old_checksum, has_auth=True) #TODO: malfunctioning...
                     oldcell._get_manager().set_cell_checksum(oldcell, checksum)
             else:
                 if oldcell not in _boundcells:
@@ -63,7 +63,7 @@ def bind(name):
 def _build(ctx, result, prepath):
     manager = ctx._get_manager()
     mgr_cell_cache = manager.cell_cache
-    mgr_value_cache = manager.value_cache
+    mgr_buffer_cache = manager.buffer_cache
     for childname, child in ctx._children.items():
         if prepath is None:
             path = childname
@@ -74,10 +74,10 @@ def _build(ctx, result, prepath):
         elif isinstance(child, Cell):
             celltype = celltypes_rev[type(child)]
             checksum = mgr_cell_cache.cell_to_buffer_checksums.get(child)            
-            buffer = mgr_value_cache.get_buffer(checksum)
+            buffer = mgr_buffer_cache.get_buffer(checksum)
             if buffer is not None:
                 _, _, buffer = buffer
-            value_cache.incref(checksum, buffer, has_auth=True)            
+            buffer_cache.incref(checksum, buffer, has_auth=True)            
             result[path] = celltype, checksum
 
 
@@ -123,7 +123,7 @@ def libcell(path, celltype=None):
 
 def lib_get_buffer(checksum):
     raise NotImplementedError # livegraph branch
-    buffer = value_cache.get_buffer(checksum)[2]
+    buffer = buffer_cache.get_buffer(checksum)[2]
 
 def lib_get_value(checksum, cell):    
     buffer = lib_get_buffer(checksum)
@@ -144,7 +144,7 @@ def lib_get_value(checksum, cell):
 
 
 """ # TODO: livegraph branch
-from .cache.value_cache import ValueCache
-value_cache = ValueCache(None)
+from .cache.buffer_cache import BufferCache
+buffer_cache = BufferCache(None)
 """
 from .protocol.deserialize import deserialize

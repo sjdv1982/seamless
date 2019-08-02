@@ -241,10 +241,12 @@ class LiveGraph:
             if path is not None:
                 raise NotImplementedError # livegraph branch
             else:
-                self.cell_to_upstream[target] = None
+                if target in self.cell_to_upstream:
+                    self.cell_to_upstream[target] = None
         elif isinstance(target, Transformer):
             pinname = accessor.write_accessor.pinname
-            self.transformer_to_upstream[target][pinname] = None
+            if target in self.transformer_to_upstream:
+                self.transformer_to_upstream[target][pinname] = None
         else:
             raise TypeError(target)
 
@@ -305,9 +307,9 @@ class LiveGraph:
             "buffercells",
             "schemacells",
         )
-        name = self.__class__.__name__        
+        name = self.__class__.__name__
         for attrib in attribs:
-            a = getattr(self, attrib)
+            a = getattr(self, attrib)            
             if len(a):
                 print(name + ", " + attrib + ": %d undestroyed"  % len(a))
 

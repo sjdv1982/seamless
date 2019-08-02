@@ -48,7 +48,6 @@ if _outgoing:
 
 # Default configuration for being a master, i.e. on using other peers as a service
 default_master_config = {
-    "label": True,
     "transformer_result": False,
     "transformer_result_level2": False,
     "value": True,
@@ -58,7 +57,6 @@ default_master_config = {
 
 # Default configuration for being a servant, i.e. on providing services to other peers
 default_servant_config = {
-    "label": True,
     "transformer_result": True,
     "transformer_result_level2": True,
     "value": False,
@@ -288,18 +286,15 @@ class CommunionServer:
         result = None
         try:
             # Local cache
-            if type == "label":
-                cache_name = "label_cache"
-                method_name = "get_checksum"
-            elif type == "transformer_result":
+            if type == "transformer_result":
                 cache_name = "transform_cache"
                 method_name = "get_result"
             elif type == "transformer_result_level2":
                 cache_name = "transform_cache"
                 method_name = "get_result_level2"
-            elif type == "value_check":
-                cache_name = "value_cache"
-                method_name = "value_check"
+            elif type == "buffer_check":
+                cache_name = "buffer_cache"
+                method_name = "buffer_check"
             elif type == "value_get":
                 cache_name = None
                 method_name = "value_get"
@@ -340,19 +335,17 @@ class CommunionServer:
             if result is None:
                 cache_task = None
                 peer_id = self.peers[peer]["id"]
-                if type == "label":
-                    cache_task = cache_task_manager.remote_checksum_from_label(content, origin=peer_id)
-                elif type == "transformer_result":
+                if type == "transformation":
+                    raise NotImplementedError # livegraph branch
                     checksum = bytes.fromhex(content)
                     cache_task = cache_task_manager.remote_transform_result(checksum, origin=peer_id)
-                elif type == "transformer_result_level2":
-                    checksum = bytes.fromhex(content)
-                    cache_task = cache_task_manager.remote_transform_result_level2(checksum, origin=peer_id)
-                elif type == "value_check":
-                    pass #TODO: forward value_check requests
+                elif type == "buffer_check":
+                    raise NotImplementedError # livegraph branch
+                    pass #TODO: forward buffer_check requests
                     #checksum = bytes.fromhex(content)
                     #cache_task = cache_task_manager.remote_value(checksum, origin=peer_id)
-                elif type == "value_get":
+                elif type == "buffer_get":
+                    raise NotImplementedError # livegraph branch
                     pass #TODO: forward value_get requests
                     #checksum = bytes.fromhex(content)
                     #cache_task = cache_task_manager.remote_value(checksum, origin=peer_id)

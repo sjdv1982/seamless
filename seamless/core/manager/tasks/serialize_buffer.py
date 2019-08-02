@@ -1,7 +1,7 @@
 from collections import namedtuple
 
 from . import Task
-from ...protocol import serialize
+from ...protocol.serialize import serialize
 
 Serialization = namedtuple("Serialization",["value_id", "celltype"])
 

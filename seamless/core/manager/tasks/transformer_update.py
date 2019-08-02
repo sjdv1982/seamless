@@ -38,11 +38,47 @@ class TransformerUpdateTask(Task):
             return
         if is_equal(inputpins, transformer._last_inputs):
             return
-        print("TRANSFORM!", transformer, inputpins)
+        downstreams = livegraph.transformer_to_downstream[transformer]
+        if not len(downstreams):
+            return
+        first_output = downstreams[0].write_accessor.target()
+        celltypes = {}
+        for pinname, accessor in upstreams.items():
+            wa = accessor.write_accessor
+            celltypes[pinname] = wa.celltype, wa.subcelltype
         transformer._last_inputs = inputpins
-        raise NotImplementedError # livegraph branch
-        # ...
+        cachemanager = manager.cachemanager
+        transformation_cache = cachemanager.transformation_cache
+        buffer_cache = cachemanager.buffer_cache
+        outputname = transformer._output_name
+        outputpin0 = transformer._pins[outputname]
+        output_celltype = outputpin0.celltype
+        output_subcelltype = outputpin0.subcelltype
+        if output_celltype is None:
+            output_celltype = first_output._celltype
+            output_subcelltype = first_output._subcelltype
+        outputpin = outputname, output_celltype, output_subcelltype
+        #print("TRANSFORM!", transformer)
+        await transformation_cache.update_transformer(
+            transformer, celltypes, inputpins, outputpin, buffer_cache
+        )
+        return None
+
+class TransformerResultUpdateTask(Task):
+    def __init__(self, manager, transformer):
+        self.transformer = transformer
+        super().__init__(manager)
+        self.dependencies.append(transformer)
+
+    async def _run(self):
+        transformer = self.transformer
+        if transformer._void:
+            print("WARNING: transformer %s is void, shouldn't happen during transformer update" % transformer)
+            return
+        manager = self.manager()
+        livegraph = manager.livegraph
         accessors = livegraph.transformer_to_downstream[transformer]
+        checksum = transformer._checksum
         for accessor in accessors:
             #- construct (not evaluate!) their expression using the cell checksum 
             #  Constructing a downstream expression increfs the cell checksum

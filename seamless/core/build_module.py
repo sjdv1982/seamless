@@ -9,6 +9,8 @@ from ..compiler.locks import locks, locklock
 from ..compiler import compile, complete
 from ..compiler.build_extension import build_extension_cffi
 
+from concurrent.futures import ProcessPoolExecutor
+
 remote_build_model_servers = []
 
 SEAMLESS_EXTENSION_DIR = os.path.join(tempfile.gettempdir(), "seamless-extensions")
@@ -142,4 +144,14 @@ def build_module(module_definition):
         module_cache[full_module_name] = mod
     else:
         mod = module_cache[full_module_name]
+    return full_module_name, mod
+
+async def build_module_async(module_definition):
+    loop = asyncio.get_event_loop()
+    with ProcessPoolExecutor() as executor:
+        full_module_name, mod = await loop.run_in_executor(
+            executor,
+            build_module,
+            module_definition
+        )
     return full_module_name, mod

@@ -38,6 +38,7 @@ class Manager:
         asyncio.ensure_future(loop_run_synctasks)
 
         # for now, just a single global temprefmanager
+        from ..cache.tempref import temprefmanager
         self.temprefmanager = temprefmanager
 
         # for now, just a single global mountmanager
@@ -145,7 +146,7 @@ class Manager:
         assert checksum is None or isinstance(checksum, bytes), checksum
         assert isinstance(void, bool), void
         cachemanager = self.cachemanager
-        old_checksum = cell._checksum
+        old_checksum = transformer._checksum
         if old_checksum is not None and old_checksum != checksum:
             cachemanager.decref_checksum(old_checksum, transformer, False)
         transformer._checksum = checksum
@@ -318,7 +319,6 @@ from .tasks import (
 
 from ..protocol.calculate_checksum import checksum_cache
 from ..protocol.deserialize import deserialize_cache
-from ..cache.tempref import temprefmanager
 from ..cell import Cell
 from ..worker import Worker
 from ..transformer import Transformer

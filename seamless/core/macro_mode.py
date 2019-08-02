@@ -29,6 +29,7 @@ def _destroy_toplevels():
         manager = ctx._get_manager()
         if manager is not None:
             manager.destroy(from_del=True)
+    transformation_cache.destroy()
 
 atexit.register(_destroy_toplevels)
 
@@ -125,3 +126,5 @@ def macro_mode_off():
         _curr_macro = old_macro
         _macro_mode_off = old_macro_mode_off
 
+
+from .cache.transformation_cache import transformation_cache

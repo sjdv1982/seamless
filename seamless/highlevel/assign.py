@@ -138,13 +138,9 @@ def copy_checksums(node, old_ctx, new_ctx):
     else:
         checksums = nchecksum.items()
     old_mgr, new_mgr = old_ctx._get_manager(), new_ctx._get_manager()
-    old_vcache, new_vcache = old_mgr.value_cache, new_mgr.value_cache 
-    old_lcache, new_lcache = old_mgr.label_cache, new_mgr.label_cache 
+    old_vcache, new_vcache = old_mgr.buffer_cache, new_mgr.buffer_cache 
     for k,checksum0 in checksums:
         checksum = bytes.fromhex(checksum0)
-        label = old_lcache.get_label(checksum)
-        if label is not None:
-            new_lcache.set(label, checksum)
         buffer = old_vcache._buffer_cache.get(checksum)
         if buffer is not None:
             buffer = buffer[2]

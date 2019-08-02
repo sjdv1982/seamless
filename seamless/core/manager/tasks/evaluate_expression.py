@@ -17,12 +17,13 @@ class EvaluateExpressionTask(Task):
             return None
         
         manager = self.manager()
-        value_cache = self.manager().cachemanager.value_cache
+        cachemanager = self.manager().cachemanager
+        buffer_cache = cachemanager.buffer_cache
 
         # Get the expression result checksum from cache.
         expression = expression
         expression_result_checksum = \
-          value_cache.expression_to_checksum.get(expression)
+          cachemanager.expression_to_checksum.get(expression)
         if expression_result_checksum is None:
             # If the expression is trivial, obtain its result checksum directly
             if expression.path is None and not needs_buffer_evaluation(
@@ -40,7 +41,7 @@ class EvaluateExpressionTask(Task):
                     expression_result_checksum = await evaluate_from_buffer(
                         expression.checksum, buffer, 
                         expression.celltype, expression.target_celltype,
-                        value_cache
+                        buffer_cache
                     )
                 else:
                     if (expression.celltype, expression.target_celltype) \
@@ -69,10 +70,10 @@ class EvaluateExpressionTask(Task):
                     expression.target_celltype, 
                     expression.target_subcelltype, 
                     expression.target_cell_path,
-                    value_cache
+                    buffer_cache
                 )                    
         else:
-            value_cache.expression_to_checksum[expression] = \
+            cachemanager.expression_to_checksum[expression] = \
                 expression_result_checksum
         
         return expression_result_checksum

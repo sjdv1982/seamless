@@ -63,11 +63,6 @@ class UnboundManager:
         assert cell in self._registered
         self.commands.append(("set cell checksum", (cell, checksum)))
 
-    def set_cell_label(self, cell, label):
-        assert cell._get_manager() is self
-        assert cell in self._registered
-        self.commands.append(("set cell label", (cell, label)))
-
     def cell_from_pin(self, pin):
         from .worker import InputPin, OutputPin, EditPin
         worker = pin.worker_ref()
@@ -307,9 +302,6 @@ class UnboundContext(SeamlessBase):
                         expression = accessor.to_expression(checksum)
                         value, _ = manager.cache_expression(expression, buffer)
                         monitor.set_path((), value)
-            elif com == "set cell label":
-                cell, label = args
-                manager.set_cell_label(cell, label)
             else:
                 raise ValueError(com)
 

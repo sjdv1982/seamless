@@ -11,7 +11,7 @@ from .redis_client import redis_sinks, redis_caches
 
 TEMP_KEEP_ALIVE = 20.0 # Keep buffer values alive for 20 secs after the last ref has expired
 
-class ValueCache:
+class BufferCache:
     """Checksum-to-buffer cache.
     Every buffer is referred to by a CacheManager (or more than one).
 
@@ -21,9 +21,8 @@ class ValueCache:
      Keys are straightforward buffer checksums.
     """
     def __init__(self):
-        self.buffer_cache = {} #buffer-checksum-to-value
+        self.buffer_cache = {} #checksum-to-buffer
         self.buffer_refcount = {} #buffer-checksum-to-refcount
-        self.expression_to_checksum = {} # hang onto this indefinitely
 
     def cache_buffer(self, checksum, buffer):
         if checksum not in self.buffer_refcount:
@@ -31,7 +30,7 @@ class ValueCache:
         if checksum in self.buffer_cache:
             return
         self.buffer_cache[checksum] = buffer
-        redis_sinks.set_value(checksum, buffer)
+        redis_sinks.set_buffer(checksum, buffer)
 
     def incref(self, checksum):
         if checksum in self.buffer_refcount:
@@ -52,14 +51,22 @@ class ValueCache:
             self.buffer_cache.pop(checksum)
             self.buffer_refcount.pop(checksum)
 
-    def value_check(self, checksum):
+    def get_buffer(self, checksum):
+        if checksum is None:
+            return None
+        buffer = self.buffer_cache.get(checksum)
+        if buffer is not None:
+            return buffer
+        return redis_caches.get_buffer(checksum)
+
+    def buffer_check(self, checksum):
         """For the communionserver..."""
         assert checksum is not None
         if checksum in self.buffer_cache:
             return True        
-        return redis_caches.has_value(checksum)
+        return redis_caches.has_buffer(checksum)
 
-value_cache = ValueCache()
+buffer_cache = BufferCache()
 
 from ..protocol.calculate_checksum import checksum_cache
 from .tempref import temprefmanager

@@ -59,7 +59,8 @@ async def deserialize(buffer, checksum, celltype, copy):
             buffer, checksum, celltype
         )
 
-    deserialize_cache[checksum, celltype] = value
+    if celltype not in text_types:
+        deserialize_cache[checksum, celltype] = value
     evaluation_cache_1.add((checksum, celltype))
     serialize_cache[id(value), celltype] = buffer
     return value

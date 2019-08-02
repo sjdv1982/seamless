@@ -1,4 +1,4 @@
-async def get_buffer_async(checksum, value_cache):
+async def get_buffer_async(checksum, buffer_cache):
         """  Gets the buffer from its checksum
 - Check for a local checksum-to-buffer cache hit (synchronous)
 - Else, check Redis cache (currently synchronous; make it async in a future version)
@@ -14,7 +14,12 @@ async def get_buffer_async(checksum, value_cache):
         buffer = checksum_cache.get(checksum)
         if buffer is not None:
             return buffer
-        # ...
-        raise NotImplementedError # livegraph branch
+        buffer = buffer_cache.get_buffer(checksum)
+        if buffer is not None:
+            return buffer
+        # TODO: remote # livegraph branch
+        # TODO: provenance # livegraph branch
+        raise CacheMissError(checksum)
 
 from .calculate_checksum import checksum_cache
+from ..cache import CacheMissError

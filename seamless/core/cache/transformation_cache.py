@@ -1,0 +1,318 @@
+# A transformation is a dictionary of semantic checksums, 
+#  representing the input pins, together with celltype and subcelltype
+# The checksum of a transformation is the hash of the JSON buffer of this dict.
+# A job consists of a transformation together with all relevant entries 
+#  from the semantic-to-syntactic checksum cache
+
+import json
+import ast
+import functools
+import asyncio
+
+from ...get_hash import get_dict_hash
+"""
+TODO: offload exceptions (as text) to Redis (also allow them to be cleared in Redis?)
+TODO: do the same with stdout, stderr
+TODO: add some metadata to the above? (when and where it was executed)
+"""
+
+TF_KEEP_ALIVE = 20.0 # Keep transformations alive for 20 secs after the last ref has expired
+
+def tf_get_hash(transformation):
+    d = {}
+    for k in transformation:
+        v = transformation[k]
+        if k == "__output__":
+            d[k] = v
+            continue
+        celltype, subcelltype, checksum = v
+        checksum = checksum.hex()
+        d[k] = celltype, subcelltype, checksum
+    return get_dict_hash(d)
+
+
+def syntactic_is_semantic(celltype, subcelltype):
+    return celltype not in ("cson", "yaml", "python")
+
+async def syntactic_to_semantic(
+    checksum, celltype, subcelltype, buffer_cache, codename
+):
+    if celltype not in ("cson", "yaml", "python"):
+        return checksum
+
+    buffer = await get_buffer_async(checksum, buffer_cache)    
+    if celltype in ("cson", "yaml"):
+        semantic_checksum = await convert(
+            checksum, buffer, celltype, "plain"
+        )
+    elif celltype == "python":
+        # TODO: consider subcelltype (?)
+        value = await deserialize(buffer, checksum, "python", False)
+        tree = ast.parse(value, filename=codename)
+        dump = ast.dump(tree).encode()
+        semantic_checksum = await calculate_checksum(dump)
+    else:
+        raise TypeError(celltype)
+    return semantic_checksum
+
+class TransformationCache:
+    _destroyed = False
+    def __init__(self):
+        self.transformations = {} # tf-checksum-to-transformation
+        self.debug = set() # set of debug tf-checksums
+        self.transformation_results = {} # tf-checksum-to-result-checksum
+        self.transformation_exceptions = {} # tf-checksum-to-result-checksum
+        self.transformation_jobs = {} # tf-checksum-to-job
+        self.rev_transformation_jobs = {} # job-to-tf-checksum
+
+        self.transformer_to_transformations = {} # 1:1, transformations as tf-checksums
+        self.transformations_to_transformers = {} # 1:list, transformations as tf-checksums
+
+        self.syntactic_to_semantic_checksums = {} #checksum-to-checksum
+        self.semantic_from_syntactic_checksums = {} #checksum-to-list-of-checksums
+        
+    @staticmethod
+    def syntactic_to_semantic(
+        checksum, celltype, subcelltype, buffer_cache, codename
+    ):
+        future = asyncio.ensure_future(
+            syntactic_to_semantic(
+                checksum, celltype, subcelltype, codename
+            )
+        )
+        asyncio.get_event_loop().run_until_complete(future)
+        return future.result()
+
+    def register_transformer(self, transformer):
+        assert transformer not in self.transformer_to_transformations
+        self.transformer_to_transformations[transformer] = None
+
+    def destroy_transformer(self, transformer):
+        tf_checksum = self.transformer_to_transformations.pop(transformer)
+        if tf_checksum is not None:
+            transformation = self.transformations[tf_checksum]
+            self.decref_transformation(transformation, transformer)
+
+    async def update_transformer(self, 
+        transformer, celltypes, inputpin_checksums, outputpin, buffer_cache
+    ):
+        outputname, celltype, subcelltype = outputpin
+        transformation = {"__output__": outputpin}
+        for pinname, checksum in inputpin_checksums.items():
+            pin = transformer._pins[pinname]            
+            celltype, subcelltype = celltypes[pinname]
+            if checksum is None:
+                sem_checksum = None
+            else:
+                sem_checksum = self.syntactic_to_semantic_checksums.get(checksum)                
+                if sem_checksum is None:
+                    codename = str(pin)
+                    sem_checksum = await syntactic_to_semantic(
+                        checksum, celltype, subcelltype, 
+                        buffer_cache, codename
+                    )
+                    if sem_checksum != checksum:
+                        self.syntactic_to_semantic_checksums[checksum] = sem_checksum
+                        if sem_checksum in self.semantic_from_syntactic_checksums:
+                            semsyn = self.semantic_from_syntactic_checksums[sem_checksum]
+                        else:
+                            semsyn = []
+                            self.semantic_from_syntactic_checksums[sem_checksum] = semsyn
+                        semsyn.append(checksum)
+            transformation[pinname] = celltype, subcelltype, sem_checksum
+        await self.incref_transformation(transformation, transformer)
+
+    async def incref_transformation(self, transformation, transformer):
+        from ..manager.tasks.transformer_update import TransformerUpdateTask
+        tf_checksum = tf_get_hash(transformation)
+        if transformer.debug:
+            if tf_checksum not in self.debug:
+                self.debug.add(tf_checksum)
+                self.clear_exception(transformer)
+        if tf_checksum not in self.transformations:
+            tf = []
+            self.transformations_to_transformers[tf_checksum] = tf
+            self.transformations[tf_checksum] = transformation
+        else:
+            tf = self.transformations_to_transformers[tf_checksum]
+        old_tf_checksum = self.transformer_to_transformations[transformer]
+        if old_tf_checksum == tf_checksum:
+            return
+        self.transformer_to_transformations[transformer] = tf_checksum
+        tf.append(transformer)
+        if old_tf_checksum is not None:
+            self.decref_transformation(old_tf_checksum, transformer)
+        result_checksum = self._get_transformation_result(tf_checksum)
+        if result_checksum is not None:            
+            manager = transformer._get_manager()
+            manager._set_transformer_checksum(transformer, result_checksum)
+            if result_checksum is not None:
+                TransformerUpdateTask(manager, transformer).launch()
+        else:
+            job = self.run_job(transformation)
+            if job is not None:
+                await asyncio.shield(job.future)
+
+    def touch_transformer(self, transformer):
+        if transformer not in self.transformer_to_transformations:
+            return
+        tf_checksum = self.transformer_to_transformations[checksum]
+        transformation = self.transformations[tf_checksum]
+        if tf_checksum in self.transformation_results:
+            return
+        if tf_checksum in self.transformation_exceptions:
+            return
+        return self.run_job(transformation) # NOTE: returns the job; caller must await job.future (with or without shield)
+        
+    def decref_transformation(self, transformation, transformer):
+        tf_checksum = tf_get_hash(transformation)
+        assert tf_checksum in self.transformations
+        transformers = self.transformations_to_transformers[tf_checksum]
+        assert transformer in transformers
+        transformers.remove(transformer)
+        debug = any([tf.debug for tf in transformers])
+        if not debug:
+            self.debug.discard(tf_checksum)
+        if not len(transformers):
+            tempref = functools.partial(self.destroy_transformation, transformation)
+            temprefmanager.add_ref(tempref, TF_KEEP_ALIVE)
+
+    def destroy_transformation(self, transformation):
+        tf_checksum = tf_get_hash(transformation)
+        assert tf_checksum in self.transformations
+        assert tf_checksum in self.transformations_to_transformers
+        if len(self.transformations_to_transformers):
+            return # A new transformer was registered in the meantime
+        self.transformations.pop(tf_checksum)
+        self.transformations_to_transformers.pop(tf_checksum)
+        job = self.transformation_jobs[tf_checksum]
+        if job is not None:
+            if job.future is not None:
+                job.future.cancel()
+
+    def run_job(self, transformation):
+        tf_checksum = tf_get_hash(transformation)
+        if tf_checksum in self.transformation_exceptions:
+            return
+        existing_job = self.transformation_jobs.get(tf_checksum)
+        if existing_job is not None:            
+            return existing_job        
+        transformers = self.transformations_to_transformers[tf_checksum]
+        if not len(transformers):
+            codename = "<Unknown>"
+        else:
+            codename = str(transformers[-1])
+        #print("RUN JOB!", codename)
+        debug = tf_checksum in self.debug
+        semantic_cache = {}
+        for k,v in transformation.items():
+            if k == "__output__":
+                continue
+            celltype, subcelltype, sem_checksum = v
+            if syntactic_is_semantic(celltype, subcelltype):
+                continue
+            checksums = self.semantic_from_syntactic_checksums[sem_checksum]
+            semantic_cache[sem_checksum] = checksums
+        job = TransformationJob(
+            buffer_cache, transformation, semantic_cache,
+            debug
+        )
+        job.execute(codename)
+        future = job.future
+        cb = functools.partial(self.job_done, job)
+        future.add_done_callback(cb)
+        #raise NotImplementedError # livegraph branch
+        #job future, add done callback self.job_done
+        self.transformation_jobs[tf_checksum] = job
+        self.rev_transformation_jobs[id(job)] = tf_checksum
+        return job
+
+    def job_done(self, job, future):
+        from ..manager.tasks.transformer_update import (
+            TransformerResultUpdateTask
+        )
+        if self._destroyed:
+            return
+        assert future.done()
+        tf_checksum = self.rev_transformation_jobs.pop(id(job))
+        if tf_checksum in self.transformations:
+            self.transformation_jobs[tf_checksum] = None
+        else:
+            self.transformation_jobs.pop(tf_checksum)
+            return  # transformation was destroyed
+        if future.cancelled():
+            return
+
+        transformers = self.transformations_to_transformers[tf_checksum]
+
+        exc = future.exception()
+        if exc is None:
+            result_checksum = future.result()
+            if result_checksum is None:
+                exc = ValueError(None)
+        if exc is not None:
+            self.transformation_exceptions[tf_checksum] = exc
+            for transformer in transformers:
+                manager = transformer._get_manager()
+                manager.cancel_transformer(transformer, void=True)
+            return
+
+        self.transformation_results[tf_checksum] = result_checksum
+        redis_sinks.set_transform_result(tf_checksum, result_checksum)
+        for transformer in transformers:
+            manager = transformer._get_manager()
+            if result_checksum is not None:
+                manager._set_transformer_checksum(
+                    transformer, 
+                    result_checksum, 
+                    False,
+                )            
+                TransformerResultUpdateTask(manager, transformer).launch()
+            else:
+                manager.cancel_transformer(transformer)
+
+    def _get_transformation_result(self, tf_checksum): 
+        result_checksum = self.transformation_results.get(tf_checksum, None)
+        if result_checksum is None:
+            result_checksum = redis_caches.get_transform_result(tf_checksum)
+        return result_checksum
+
+    def clear_exception(self, transformer):
+        tf_checksum = self.transformer_to_transformations.get(transformer)
+        if tf_checksum is None:
+            return
+        exc = self.transformation_exceptions.pop(tf_checksum, None)
+        if exc is None:
+            return
+        if tf_checksum in self.transformation_results:
+            return 
+        if tf_checksum in self.transformation_jobs:
+            return
+        return self.run_job(tf_checksum) # NOTE: returns the job; caller must await job.future (with or without shield)
+
+    def destroy(self):
+        # only called when Seamless shuts down
+        a = self.transformer_to_transformations
+        if a:
+            print("TransformationCache, transformer_to_transformations: %d undestroyed"  % len(a))
+        for tf_checksum, job in self.transformation_jobs.items():
+            if job is None:
+                continue
+            future = job.future
+            if future is None:
+                continue
+            try:
+                future.cancel()
+            except:
+                pass
+
+transformation_cache = TransformationCache()    
+
+from .tempref import temprefmanager
+from .buffer_cache import buffer_cache
+from ..protocol.get_buffer import get_buffer_async
+from ..protocol.conversion import convert
+from ..protocol.deserialize import deserialize
+from ..protocol.calculate_checksum import calculate_checksum
+from .redis_client import redis_caches, redis_sinks
+from ..transformation import TransformationJob

@@ -1,16 +1,26 @@
 import weakref
-from ..cache.value_cache import value_cache
+from ..cache.buffer_cache import buffer_cache
 
 class CacheManager:
     def __init__(self, manager):
         self.manager = weakref.ref(manager)
         self.checksum_refs = {}
-        self.value_cache = value_cache
+        self.buffer_cache = buffer_cache
         self.cell_to_ref = {}
         self.expression_to_ref = {}
         self.transformer_to_ref = {}
         self.reactor_to_refs = {}      
 
+        # Quick local expression cache
+        # Hang onto this indefinitely
+        # No expression cache at the level of communionserver or redis
+        #  (if expressions are really long to evaluate, use deepcells)
+        self.expression_to_checksum = {} 
+        
+        # for now, just a single global transformation cache
+        from ..cache.transformation_cache import transformation_cache
+        self.transformation_cache = transformation_cache
+        
     def register_cell(self, cell):
         assert cell not in self.cell_to_ref
         self.cell_to_ref[cell] = None
@@ -23,6 +33,7 @@ class CacheManager:
     def register_transformer(self, transformer):
         assert transformer not in self.transformer_to_ref
         self.transformer_to_ref[transformer] = None
+        self.transformation_cache.register_transformer(transformer)
 
     def register_reactor(self, transformer):
         assert reactor not in self.reactor_to_ref
@@ -33,7 +44,7 @@ class CacheManager:
         if checksum is None:
             return
         if checksum not in self.checksum_refs:
-            self.value_cache.incref(checksum)
+            self.buffer_cache.incref(checksum)
             self.checksum_refs[checksum] = []
         if isinstance(refholder, Cell):
             assert self.cell_to_ref[refholder] is None
@@ -41,6 +52,13 @@ class CacheManager:
         elif isinstance(refholder, Expression):
             assert self.expression_to_ref[refholder] is None
             self.expression_to_ref[refholder] = (checksum, authority) 
+        elif isinstance(refholder, Transformer):
+            assert not authority
+            assert self.transformer_to_ref[refholder] is None
+            self.transformer_to_ref[refholder] = checksum
+        elif isinstance(refholder, Reactor):
+            assert self.reactor_to_ref[refholder] is None
+            raise NotImplementedError # livegraph branch
         else:
             raise TypeError(refholder)
         self.checksum_refs[checksum].append((refholder, authority))
@@ -55,7 +73,7 @@ class CacheManager:
             self.expression_to_ref.pop(refholder)
         elif isinstance(refholder, Transformer):
             assert self.transformer_to_ref[refholder] is not None
-            self.transformer_to_ref.pop(refholder)
+            self.transformer_to_ref[refholder] = None
         elif isinstance(refholder, Reactor):
             assert self.reactor_to_ref[refholder] is not None
             raise NotImplementedError # livegraph branch
@@ -64,7 +82,7 @@ class CacheManager:
         self.checksum_refs[checksum].remove((refholder, authority))
         #print("DECREF", checksum.hex(), self.checksum_refs[checksum])
         if len(self.checksum_refs) == 0:
-            self.value_cache.decref(checksum)
+            self.buffer_cache.decref(checksum)
             self.checksum_refs.pop(checksum)        
 
     def destroy_cell(self, cell):
@@ -80,6 +98,7 @@ class CacheManager:
             checksum = ref
             self.decref_checksum(checksum, transformer, False)
         self.transformer_to_ref.pop(transformer)
+        self.transformation_cache.destroy_transformer(transformer)
 
     def destroy_reactor(self, reactor):
         raise NotImplementedError # livegraph branch

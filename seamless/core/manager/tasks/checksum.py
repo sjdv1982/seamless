@@ -1,5 +1,5 @@
 from . import Task
-from ...protocol import calculate_checksum
+from ...protocol.calculate_checksum import calculate_checksum
 
 class CalculateChecksumTask(Task):
     @property

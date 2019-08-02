@@ -36,10 +36,10 @@ class SetCellBufferTask(Task):
         if checksum is None:
             manager.cancel_cell(cell)
         else:
-            value_cache = manager.cachemanager.value_cache
+            buffer_cache = manager.cachemanager.buffer_cache
             await validate_subcelltype(
                 checksum, cell._celltype, cell._subcelltype, 
-                str(cell), value_cache
+                str(cell), buffer_cache
             )
             if cell._checksum != checksum:
                 manager._set_cell_checksum(cell, checksum, checksum is None)

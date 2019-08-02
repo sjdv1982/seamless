@@ -173,7 +173,7 @@ async def convert(checksum, buffer, celltype, target_celltype):
     try:
         if key == ("cson", "plain"):
             value = cson2json(buffer.decode())
-        elif key == ("cson", "plain"):
+        elif key == ("yaml", "plain"):
             value = yaml.load(buffer.decode())
         else:
             value = await deserialize(buffer, checksum, celltype, copy=False)

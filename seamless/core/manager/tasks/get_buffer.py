@@ -12,8 +12,8 @@ class GetBufferTask(Task):
     async def _run(self):
         if self.checksum is None:
             return None
-        value_cache = self.manager().cachemanager.value_cache
-        result = await get_buffer_async(self.checksum, value_cache)
+        buffer_cache = self.manager().cachemanager.buffer_cache
+        result = await get_buffer_async(self.checksum, buffer_cache)
         return result
 
 from ...protocol.get_buffer import get_buffer_async

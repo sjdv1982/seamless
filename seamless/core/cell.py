@@ -115,14 +115,19 @@ Use ``Cell.status()`` to get its status.
         return void
 
     @property
-    def semantic_checksum(self):        
-        raise NotImplementedError # livegraph branch
+    def semantic_checksum(self):
         manager = self._get_manager()
         if isinstance(manager, UnboundManager):
             raise Exception("Cannot ask the cell value of a context that is being constructed by a macro")
-        checksum = manager.get_cell_checksum(self)
-        raise NotImplementedError # livegraph branch
-        #return checksum.hex()
+        checksum = bytes.fromhex(self.checksum)
+        transformation_cache = manager.cachemanager.transformation_cache
+        sem_checksum = transformation_cache.syntactic_to_semantic(
+            checksum,
+            self._celltype,
+            self._subcelltype,
+            manager.buffer_cache
+        )
+        return sem_checksum.hex()
 
     @property
     def authoritative(self):
@@ -230,21 +235,6 @@ Use ``Cell.status()`` to get its status.
         self._set_checksum(checksum)
         return self
 
-    def set_label(self, label):
-        """Labels the current value of the cell
-        Until redefined, this label will continue to point to this value, 
-        even after the cell has changed"""
-        return self._get_manager().set_cell_label(self, label)
-
-    def from_label(self, label):
-        if get_macro_mode():
-            raise Exception("To guarantee macro determinism, this must not be run in macro mode")
-        return self._get_manager().set_cell_from_label(self, label, subpath=None)
-
-    @property
-    def label(self):
-        return self._get_manager().get_cell_label(self)
-
     def from_buffer(self, value):
         """Sets a cell from a buffer value"""
         return self._set(value, True)
@@ -318,6 +308,7 @@ Use ``Cell.status()`` to get its status.
         if self._mount is None:
             self._mount = {}
         self._mount.update({"extension": extension})
+        return self
 
     def mount(self, path=None, mode="rw", authority="cell", persistent=True):
         """Performs a "lazy mount"; cell is mounted to the file when macro mode ends
@@ -578,6 +569,7 @@ extensions.update({
 
 celltypes = {cellclass._celltype:cellclass for cellclass in _cellclasses if cellclass._celltype is not None}
 subcelltypes = {cellclass._subcelltype:cellclass for cellclass in _cellclasses if cellclass._subcelltype is not None}
+subcelltypes["module"] = None
 
 from .unbound_context import UnboundManager
 from .mount import MountItem

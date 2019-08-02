@@ -70,6 +70,21 @@ class Transformer(Worker):
     def void(self):
         return self._void
 
+    def clear_exception(self):
+        manager = self._get_manager()
+        tcache = manager.cachemanager.transformation_cache
+        tcache.clear_exception(self)
+
+    def touch(self):
+        """If a transformer was cancelled, relaunch it.
+        If running, the transformation job Future is returned"""
+        manager = self._get_manager()
+        tcache = manager.cachemanager.transformation_cache
+        return tcache.touch_transformer(self)
+
+    def shell(self):
+        raise NotImplementedError #livegraph branch
+
     @property
     def status(self):
         """The computation status of the transformer"""

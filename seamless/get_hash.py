@@ -13,5 +13,5 @@ def get_hash(content, hex=False):
     return result
 
 def get_dict_hash(d, hex=False):
-    content = json.dumps(d, sort_keys=True, indent=2)
+    content = json.dumps(d, sort_keys=True, indent=2) + "\n"
     return get_hash(content,hex=hex)

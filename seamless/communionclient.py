@@ -1,7 +1,6 @@
 # TODO # livegraph branch
 """
 from .core.events.cache_task import (
-    remote_checksum_from_label_servers, 
     remote_transformer_result_servers,
     remote_transformer_result_level2_servers,
     remote_checksum_value_servers
@@ -85,15 +84,6 @@ class CommunionPairClient:
 
 # TODO # livegraph branch
 """
-class CommunionLabelClient(CommunionClient):
-    config_type = "label"
-    cache_task_servers = remote_checksum_from_label_servers
-    def _prepare_message(self, label):
-        return {
-            "type": self.config_type,
-            "content": label,
-        }
-
 class CommunionBuildModuleClient(CommunionClient):
     config_type = "build_module"
     cache_task_servers = remote_build_model_servers
@@ -122,13 +112,13 @@ class CommunionTransformerResultL2Client(CommunionClient):
         }
 
 
-class CommunionValueCacheClient(CommunionPairClient):
+class CommunionBufferCacheClient(CommunionPairClient):
     config_type = "value"
     cache_task_servers = remote_checksum_value_servers
     def _prepare_message(self, funcmode, checksum):
         if funcmode == "check":
             return {
-                "type": "value_check",
+                "type": "buffer_check",
                 "content": checksum,
             }
         elif funcmode == "run":
@@ -158,7 +148,7 @@ communion_client_types = (
     CommunionBuildModuleClient,
     CommunionTransformerResultClient,
     CommunionTransformerResultL2Client,
-    CommunionValueCacheClient,
+    CommunionBufferCacheClient,
     CommunionTransformerJobClient,
 )
 """

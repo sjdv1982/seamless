@@ -9,27 +9,32 @@ import ast
 
 validation_cache = set()
 
-async def validate_subcelltype(checksum, celltype, subcelltype, codename, value_cache):
+async def validate_subcelltype(checksum, celltype, subcelltype, codename, buffer_cache):    
     if celltype != "python":
-        return
+        if celltype == "plain" and subcelltype == "module":
+            pass
+        else:
+            return
+            
     key = (checksum, celltype, subcelltype)
     if key in validation_cache:
         return
-    buffer = await get_buffer_async(checksum, value_cache)
+    buffer = await get_buffer_async(checksum, buffer_cache)
     value = buffer.decode()
     
-    tree = ast.parse(value, filename=codename)
-    # TODO: => semantic checksum calculation
-    ###dump = ast.dump(tree).encode("utf-8")
-    ###semantic_checksum = get_hash(dump)
+    if celltype == "plain" and subcelltype == "module":
+        await build_module_async(value)
+    else:    
+        tree = ast.parse(value, filename=codename)
 
-    if subcelltype in ("reactor", "macro"):
-        mode, _ = analyze_code(value, codename)
-        if mode in ("expression", "lambda"):
-            err = "subcelltype '%s' does not support code mode '%s'" % (subcelltype, mode)
-            raise SyntaxError((codename, err))
+        if subcelltype in ("reactor", "macro"):
+            mode, _ = analyze_code(value, codename)
+            if mode in ("expression", "lambda"):
+                err = "subcelltype '%s' does not support code mode '%s'" % (subcelltype, mode)
+                raise SyntaxError((codename, err))
 
     validation_cache.add(key)
     
 from .get_buffer import get_buffer_async
 from ..cached_compile import analyze_code
+from ..build_module import build_module
