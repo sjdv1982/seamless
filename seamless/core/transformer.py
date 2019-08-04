@@ -9,11 +9,12 @@ from collections import OrderedDict
 import asyncio
 
 from .worker import Worker, InputPin, OutputPin
+from .status import StatusReasonEnum
 
 class Transformer(Worker):
     _checksum = None
     _void = True
-    _status_reason = None
+    _status_reason = StatusReasonEnum.UNCONNECTED
     debug = False
 
     def __init__(self, transformer_params, *,  stream_params=None):

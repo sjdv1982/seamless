@@ -16,11 +16,12 @@ class TransformerUpdateTask(Task):
         super().__init__(manager)
         self.dependencies.append(transformer)
 
-    async def _run(self):
+    async def _run(self):        
         transformer = self.transformer
-        from . import SerializeToBufferTask
         manager = self.manager()
         livegraph = manager.livegraph
+        taskmanager = manager.taskmanager
+        await taskmanager.await_upon_connection_tasks(self.taskid)
         upstreams = livegraph.transformer_to_upstream[transformer]
         inputpins = {}
         for pinname, accessor in upstreams.items():
@@ -30,10 +31,8 @@ class TransformerUpdateTask(Task):
                 
         status_reason = None        
         for pinname, accessor in upstreams.items():
-            if accessor._void: #undefined/upstream error
-                reason = accessor._status_reason
-            elif accessor._checksum is None:
-                reason = StatusReasonEnum.UNDEFINED
+            if accessor._void or accessor._checksum is None: #undefined/upstream error
+                reason = StatusReasonEnum.UPSTREAM
             else:
                 continue
             if status_reason is None or reason < status_reason:                
@@ -41,15 +40,24 @@ class TransformerUpdateTask(Task):
         transformer._status_reason = status_reason
 
         if status_reason is not None:
+            if not transformer._void:
+                print("WARNING: transformer %s is not yet void, shouldn't happen during transformer update" % transformer)
+                manager.cancel_transformer(transformer, void=True)
+                return
             return
 
         for pinname, accessor in upstreams.items():
             inputpins[pinname] = accessor._checksum
         if is_equal(inputpins, transformer._last_inputs):
-            return
+            if not transformer._void:
+                return
+        manager._set_transformer_checksum(transformer, None, False)
+
         downstreams = livegraph.transformer_to_downstream[transformer]
         if not len(downstreams):
             return
+        for accessor in downstreams:
+            propagate_accessor(livegraph, accessor, transformer._void)
         first_output = downstreams[0].write_accessor.target()
         celltypes = {}
         for pinname, accessor in upstreams.items():
@@ -99,3 +107,4 @@ class TransformerResultUpdateTask(Task):
 
 from .accessor_update import AccessorUpdateTask
 from ...status import StatusReasonEnum
+from ..propagate import propagate_accessor

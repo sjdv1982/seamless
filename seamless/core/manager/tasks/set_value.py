@@ -18,17 +18,14 @@ class SetCellValueTask(Task):
             taskmanager.cell_to_value[cell] = self.value
             buffer = await SerializeToBufferTask(manager, self.value, cell._celltype).run()
             checksum = await CalculateChecksumTask(manager, buffer).run()
-            if checksum is None:
-                manager.cancel_cell(cell, void=True)
-            else:
+            if checksum is not None:
                 buffer_cache = manager.cachemanager.buffer_cache
                 await validate_subcelltype(
                     checksum, cell._celltype, cell._subcelltype, 
                     str(cell), buffer_cache
                 )
-                if cell._checksum != checksum:                    
-                    manager._set_cell_checksum(cell, checksum, False, None)
-                    CellUpdateTask(manager, self.cell).launch()
+                manager._set_cell_checksum(self.cell, checksum, False)
+                CellUpdateTask(manager, self.cell).launch()
         finally:
             taskmanager.cell_to_value.pop(cell)
         return None

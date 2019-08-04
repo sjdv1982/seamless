@@ -33,18 +33,10 @@ class SetCellBufferTask(Task):
         if checksum is None and buffer is not None:
             checksum = await CalculateChecksumTask(manager, buffer).run()
 
-        if checksum is None:
-            manager.cancel_cell(cell)
-        else:
-            buffer_cache = manager.cachemanager.buffer_cache
-            await validate_subcelltype(
-                checksum, cell._celltype, cell._subcelltype, 
-                str(cell), buffer_cache
-            )
-            if cell._checksum != checksum:
-                manager._set_cell_checksum(cell, checksum, checksum is None)
-                CellUpdateTask(manager, self.cell).launch()
+        if checksum is not None:
+            CellUpdateTask(manager, self.cell).launch()
         return None
 
 from ...protocol.validate_subcelltype import validate_subcelltype
 from ...protocol.evaluate import evaluation_cache_1
+from ...status import StatusReasonEnum

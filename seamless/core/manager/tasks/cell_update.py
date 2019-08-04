@@ -21,13 +21,11 @@ class CellUpdateTask(Task):
         if cell._void:
             print("WARNING: cell %s is void, shouldn't happen during cell update" % cell)
             return
-        from . import SerializeToBufferTask, CellChecksumTask, CellUpdateTask
+        from . import CellChecksumTask
         manager = self.manager()
         cell = self.cell
         await CellChecksumTask(manager, cell).run()
-        checksum, void = cell._checksum, cell._void
-        if checksum is None and not void:
-            manager.cancel_cell(cell, void=True)
+        checksum = cell._checksum
         assert not cell._monitor # cell update is not for StructuredCell cells
         livegraph = manager.livegraph
         accessors = livegraph.cell_to_downstream[cell]

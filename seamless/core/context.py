@@ -219,7 +219,7 @@ name: str
             status[childname] = (child, child._get_status())
         return status
 
-    #@property
+    @property
     def status(self):
         """The computation status of the context
         Returns a dictionary containing the status of all children that are not OK.

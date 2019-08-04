@@ -19,6 +19,7 @@ TODO: add some metadata to the above? (when and where it was executed)
 TF_KEEP_ALIVE = 20.0 # Keep transformations alive for 20 secs after the last ref has expired
 
 def tf_get_hash(transformation):
+    assert isinstance(transformation, dict)
     d = {}
     for k in transformation:
         v = transformation[k]
@@ -123,7 +124,7 @@ class TransformationCache:
         await self.incref_transformation(transformation, transformer)
 
     async def incref_transformation(self, transformation, transformer):
-        from ..manager.tasks.transformer_update import TransformerUpdateTask
+        from ..manager.tasks.transformer_update import TransformerResultUpdateTask
         tf_checksum = tf_get_hash(transformation)
         if transformer.debug:
             if tf_checksum not in self.debug:
@@ -141,13 +142,14 @@ class TransformationCache:
         self.transformer_to_transformations[transformer] = tf_checksum
         tf.append(transformer)
         if old_tf_checksum is not None:
-            self.decref_transformation(old_tf_checksum, transformer)
+            old_transformation = self.transformations[old_tf_checksum]
+            self.decref_transformation(old_transformation, transformer)
         result_checksum = self._get_transformation_result(tf_checksum)
         if result_checksum is not None:            
             manager = transformer._get_manager()
             manager._set_transformer_checksum(transformer, result_checksum)
             if result_checksum is not None:
-                TransformerUpdateTask(manager, transformer).launch()
+                TransformerResultUpdateTask(manager, transformer).launch()
         else:
             job = self.run_job(transformation)
             if job is not None:
@@ -192,12 +194,14 @@ class TransformationCache:
 
     def run_job(self, transformation):
         tf_checksum = tf_get_hash(transformation)
-        if tf_checksum in self.transformation_exceptions:
-            return
-        existing_job = self.transformation_jobs.get(tf_checksum)
-        if existing_job is not None:            
-            return existing_job        
         transformers = self.transformations_to_transformers[tf_checksum]
+        if tf_checksum in self.transformation_exceptions:            
+            return
+        for transformer in self.transformations_to_transformers[tf_checksum]:
+            transformer._status_reason = StatusReasonEnum.EXECUTING
+        existing_job = self.transformation_jobs.get(tf_checksum)
+        if existing_job is not None:
+            return existing_job                
         if not len(transformers):
             codename = "<Unknown>"
         else:
@@ -273,7 +277,7 @@ class TransformationCache:
                 manager.cancel_transformer(
                     transformer, 
                     void=True, 
-                    status_reason=status_reason
+                    reason=status_reason
                 )
             return
 
@@ -289,7 +293,11 @@ class TransformationCache:
                 )            
                 TransformerResultUpdateTask(manager, transformer).launch()
             else:
-                manager.cancel_transformer(transformer)
+                manager.cancel_transformer(
+                    transformer, 
+                    void=True, 
+                    reason=StatusReasonEnum.UNDEFINED
+                )
 
     def _get_transformation_result(self, tf_checksum): 
         result_checksum = self.transformation_results.get(tf_checksum, None)

@@ -125,7 +125,7 @@ class Manager:
                 self.cancel_cell(cell, void=False)
         self._set_cell_checksum(cell, checksum, (checksum is None))
 
-    def _set_cell_checksum(self, cell, checksum, void, status_reason):
+    def _set_cell_checksum(self, cell, checksum, void, status_reason=None):
         # NOTE: Any cell task depending on the old checksum must have been canceled already
         assert checksum is None or isinstance(checksum, bytes), checksum
         assert isinstance(void, bool), void
@@ -235,43 +235,54 @@ class Manager:
     ##########################################################################
 
     @mainthread
-    def cancel_cell(self, cell, void, origin_task=None, status_reason=None):
+    def cancel_cell(self, cell, void, origin_task=None, reason=None):
         """Cancels all tasks depending on cell, and sets all dependencies to None. 
 If void=True, all dependencies are set to void as well.
 If origin_task is provided, that task is not cancelled."""
+        if (not void) and cell._void:
+            return
         self.taskmanager.cancel_cell(cell, origin_task=origin_task)
-        print("CANCEL??", cell, status_reason, cell._status_reason )
+        if reason is None:
+            reason = StatusReasonEnum.UPSTREAM
+        self._set_cell_checksum(cell, None, void, status_reason=reason)
         livegraph = self.livegraph
         accessors = livegraph.cell_to_downstream[cell]
         for accessor in accessors:            
-            self.cancel_accessor(accessor, void)
-        self._set_cell_checksum(cell, None, void, status_reason)
+            self.cancel_accessor(accessor, void)        
 
     @mainthread
     def cancel_accessor(self, accessor, void, origin_task=None):
         self.taskmanager.cancel_accessor(accessor, origin_task=origin_task)
-        reason = StatusReasonEnum.UPSTREAM
-        target = accessor.write_accessor.target
+        target = accessor.write_accessor.target()
         if isinstance(target, Cell):
-            return self.cancel_cell(target, void=void, reason=reason)
+            return self.cancel_cell(target, void=void)
         elif isinstance(target, Worker):
             if isinstance(target, Transformer):
-                return self.cancel_transformer(target, void=void, reason=reason)
+                return self.cancel_transformer(target, void=void)
             elif isinstance(target, Reactor):
-                return self.cancel_reactor(target, void=void, reason=reason)
+                return self.cancel_reactor(target, void=void)
 
     @mainthread
-    def cancel_transformer(self, transformer, void, status_reason=None):
+    def cancel_transformer(self, transformer, void, reason=None):
         self.taskmanager.cancel_transformer(transformer)
+        if (not void) and transformer._void:
+            return
+        if void:
+            assert reason is not None        
+        self._set_transformer_checksum(transformer, None, void, status_reason=reason)
         livegraph = self.livegraph
         accessors = livegraph.transformer_to_downstream[transformer]
         for accessor in accessors:            
             self.cancel_accessor(accessor, void)        
-        self._set_transformer_checksum(transformer, None, void, status_reason)
 
     @mainthread
-    def cancel_reactor(self, reactor, void, status_reason=None):
+    def cancel_reactor(self, reactor, void, reason=None):
+        if (not void) and reactor._void:
+            return
+        if reason is None:
+            reason = StatusReasonEnum.UPSTREAM
         raise NotImplementedError #livegraph branch
+
 
     ##########################################################################
     # API section ???: Destruction

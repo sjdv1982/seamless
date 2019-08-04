@@ -1,4 +1,5 @@
 import weakref
+from ..status import StatusReasonEnum
 
 # NOTE: distinction between simple cells (no StructuredCell monitor), StructuredCell data cells, and StructuredCell buffer cells
 
@@ -96,10 +97,8 @@ class LiveGraph:
         
         if isinstance(worker, Transformer):
             to_downstream = self.transformer_to_downstream[worker]
-            propagate = propagate_transformer
         elif isinstance(worker, Reactor):
             to_downstream = self.reactor_to_downstream[worker][pinname]
-            propagate = propagate_reactor
         elif isinstance(worker, Macro):
             raise TypeError(worker)
 
@@ -108,8 +107,7 @@ class LiveGraph:
             celltype = target._celltype
         read_accessor = ReadAccessor(
             manager, None, celltype
-        )
-        read_accessor._void = False # To trigger propagation
+        )        
         subcelltype = source.subcelltype
         if subcelltype is None:
             subcelltype = target._subcelltype
@@ -126,8 +124,12 @@ class LiveGraph:
         self.cell_to_upstream[target] = read_accessor
         
         manager.cancel_cell(target, void=False)
-        manager.taskmanager.register_accessor(read_accessor)        
-        propagate(self, worker, void=False)
+        manager.taskmanager.register_accessor(read_accessor)
+        if not worker._void:
+            read_accessor._void = False # To trigger propagation
+            propagate_accessor(read_accessor)
+        else:
+            target._status_reason = StatusReasonEnum.UPSTREAM
 
         return read_accessor
 
@@ -141,15 +143,12 @@ class LiveGraph:
         if isinstance(worker, Transformer):
             to_upstream = self.transformer_to_upstream[worker]
             cancel = manager.cancel_transformer
-            propagate = propagate_transformer
         elif isinstance(worker, Reactor):
             to_upstream = self.reactor_to_upstream[worker]
             cancel = manager.cancel_reactor
-            propagate = propagate_reactor
         elif isinstance(worker, Macro):
             to_upstream = self.macro_to_upstream[worker]
             cancel = manager.cancel_macro
-            propagate = lambda *args, **kwargs: None
         assert to_upstream[pinname] is None, target # must have received no connections
 
         read_accessor = ReadAccessor(
@@ -175,7 +174,9 @@ class LiveGraph:
         
         cancel(worker, void=False)
         manager.taskmanager.register_accessor(read_accessor)        
-        propagate(self, worker, void=False)
+        if not source._void:
+            read_accessor._void = False # To trigger propagation
+            propagate_accessor(read_accessor)
 
         return read_accessor
 
@@ -201,8 +202,8 @@ class LiveGraph:
         self.cell_to_upstream[target] = read_accessor
         
         manager.cancel_cell(target, void=False)
-        manager.taskmanager.register_accessor(read_accessor)        
-        propagate_cell(self, target, void=source._void)
+        manager.taskmanager.register_accessor(read_accessor) 
+        target._status_reason = StatusReasonEnum.UPSTREAM       
 
         return read_accessor
 
@@ -255,7 +256,7 @@ class LiveGraph:
         up_accessors = self.transformer_to_upstream.pop(transformer)
         for up_accessor in up_accessors.values():
             if up_accessor is not None:
-                self.destroy_accessor(manager, accessor)
+                self.destroy_accessor(manager, up_accessor)
         down_accessors = self.transformer_to_downstream[transformer]
         while len(down_accessors):
             accessor = down_accessors[0]
@@ -314,7 +315,7 @@ class LiveGraph:
             if len(a):
                 print(name + ", " + attrib + ": %d undestroyed"  % len(a))
 
-from .propagate import propagate_cell, propagate_transformer, propagate_reactor
+from .propagate import propagate_accessor
 from .accessor import Accessor, ReadAccessor, WriteAccessor
 from ..transformer import Transformer
 from ..reactor import Reactor

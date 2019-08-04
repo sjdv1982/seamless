@@ -38,6 +38,8 @@ class CellChecksumTask(Task):
         manager = self.manager()
         await manager.taskmanager.await_upon_connection_tasks(self.taskid)
         cell = self.cell
+        invalid = False
+        checksum = None
 
         if cell._monitor:
             # - Await current set-path/set-auth-path tasks for the cell. It doesn't matter if they were cancelled.  
@@ -50,20 +52,32 @@ class CellChecksumTask(Task):
                 if value is None:
                     checksum = None
                 else:
-                    buffer = await SerializeToBufferTask(manager, value, celltype).run()
-                    checksum = await CalculateChecksumTask(manager, buffer).run()
+                    try:
+                        buffer = await SerializeToBufferTask(manager, value, celltype).run()
+                        checksum = await CalculateChecksumTask(manager, buffer).run()
+                    except Exception:
+                        invalid = True
             else:
-                checksum = cell._checksum            
-        void = cell._void
-        status_reason = None
-        if checksum is None:
-            if manager.livegraph.has_authority(cell):
+                checksum = cell._checksum   
+                if checksum is None:
+                    return         
+        old_void = cell._void
+        void = (checksum is None)
+        old_status_reason = cell._status_reason
+        if void:
+            if invalid:
+                status_reason = StatusReasonEnum.INVALID
+            elif manager.livegraph.has_authority(cell):
                 status_reason = StatusReasonEnum.UNDEFINED
             else:
                 status_reason = StatusReasonEnum.UPSTREAM        
-        if void and checksum is None:
-            manager.cancel_cell(cell, void=True, origin_task=self, status_reason=status_reason)
-        manager._set_cell_checksum(cell, checksum, checksum is None, status_reason)
+            if not old_void or status_reason != old_status_reason:
+                manager.cancel_cell(
+                    cell, 
+                    void=True, 
+                    origin_task=self,
+                    reason=status_reason
+                )
         return None
         
 from ...status import StatusReasonEnum        
