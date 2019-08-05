@@ -176,7 +176,11 @@ class LiveGraph:
         manager.taskmanager.register_accessor(read_accessor)        
         if not source._void:
             read_accessor._void = False # To trigger propagation
-            propagate_accessor(read_accessor)
+            propagate_accessor(
+                manager.livegraph,
+                read_accessor,
+                False
+            )
 
         return read_accessor
 

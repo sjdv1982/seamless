@@ -30,12 +30,12 @@ evaluation_cache_3 = {}
 
 
 def needs_buffer_evaluation(checksum, celltype, target_celltype):
+    if celltype == target_celltype:
+        return False
     if (checksum, celltype) not in evaluation_cache_1:
         # TODO: promotion
         # e.g. a buffer that correctly evaluates as plain, will also evaluate to mixed
         return True
-    if celltype == target_celltype:
-        return False
     if (celltype, target_celltype) in conversion_equivalent:
         celltype, target_celltype = conversion_equivalent[celltype, target_celltype]
     if (celltype, target_celltype) in conversion_trivial:
@@ -53,9 +53,9 @@ def needs_buffer_evaluation(checksum, celltype, target_celltype):
         raise TypeError((celltype, target_celltype)) # should never happen
 
 async def evaluate_from_checksum(checksum, celltype, target_celltype):
-    assert (checksum, celltype) in evaluation_cache_1
     if celltype == target_celltype:
-        return checksum    
+        return checksum
+    assert (checksum, celltype) in evaluation_cache_1
     if (celltype, target_celltype) in conversion_equivalent:
         celltype, target_celltype = conversion_equivalent[celltype, target_celltype]
     if (celltype, target_celltype) in conversion_trivial:

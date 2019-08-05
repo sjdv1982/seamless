@@ -66,11 +66,14 @@ def status_transformer(transformer):
         status = StatusEnum.VOID
         reason = transformer._status_reason
         upstreams = livegraph.transformer_to_upstream[transformer]
+        downstreams = livegraph.transformer_to_downstream[transformer] 
         if reason == StatusReasonEnum.UNCONNECTED:
             pins = []
             for pinname, accessor in upstreams.items():
                 if accessor is None:
                     pins.append(pinname)
+            if not len(downstreams):
+                pins.append(transformer._output_name)
         elif reason == StatusReasonEnum.UPSTREAM:
             pins = {}
             for pinname, accessor in upstreams.items():

@@ -15,9 +15,12 @@ class RedisSink:
         key = (host, port)
         if key not in _redis_connections:
             r = redis.Redis(host=host, port=port, db=0)
+            r.get("test")
             _redis_connections[key] = r
         else:
             r = _redis_connections[key]
+        if r is None:
+            raise redis.exceptions.ConnectionError
         self.connection = r
         _redis_sinks.append(self)
     
@@ -45,6 +48,7 @@ class RedisCache:
         key = (host, port)
         if key not in _redis_connections:
             r = redis.Redis(host=host, port=port, db=0)
+            r.get("test")
             _redis_connections[key] = r
         else:
             r = _redis_connections[key]
@@ -80,11 +84,11 @@ class RedisSinks:
             return     
         for redis_sink in _redis_sinks:
             redis_sink.set_buffer(checksum, buffer)
-    def set_transform_result(self, tf_checksum, checksum):
+    def set_transformation_result(self, tf_checksum, checksum):
         if tf_checksum is None or checksum is None:
             return        
         for redis_sink in _redis_sinks:
-            redis_sink.set_transform_result(tf_checksum, checksum)
+            redis_sink.set_transformation_result(tf_checksum, checksum)
     def set_compile_result(self, checksum, buffer):   
         if checksum is None or buffer is None:
             return     
@@ -95,7 +99,7 @@ class RedisSinks:
 class RedisCaches:
     def get_transform_result(self, tf_checksum):
         for redis_cache in _redis_caches:
-            checksum = redis_cache.get_transform_result(tf_checksum)
+            checksum = redis_cache.get_transformation_result(tf_checksum)
             if checksum is not None:
                 return checksum
     def get_buffer(self, checksum): 

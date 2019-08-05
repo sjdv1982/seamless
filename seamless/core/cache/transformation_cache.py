@@ -147,9 +147,8 @@ class TransformationCache:
         result_checksum = self._get_transformation_result(tf_checksum)
         if result_checksum is not None:            
             manager = transformer._get_manager()
-            manager._set_transformer_checksum(transformer, result_checksum)
-            if result_checksum is not None:
-                TransformerResultUpdateTask(manager, transformer).launch()
+            manager._set_transformer_checksum(transformer, result_checksum, False)
+            TransformerResultUpdateTask(manager, transformer).launch()
         else:
             job = self.run_job(transformation)
             if job is not None:
@@ -282,7 +281,7 @@ class TransformationCache:
             return
 
         self.transformation_results[tf_checksum] = result_checksum
-        redis_sinks.set_transform_result(tf_checksum, result_checksum)
+        redis_sinks.set_transformation_result(tf_checksum, result_checksum)
         for transformer in transformers:
             manager = transformer._get_manager()
             if result_checksum is not None:

@@ -10,6 +10,8 @@ def propagate_accessor(livegraph, accessor, void):
                 propagate_simple_cell(livegraph, target)
         else:
             raise NotImplementedError # livegraph branch
+    elif isinstance(target, Transformer):
+        propagate_transformer(livegraph, target)
     else:
         raise TypeError(target)
 

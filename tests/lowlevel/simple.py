@@ -2,6 +2,13 @@
 import seamless
 from seamless.core import context, cell, transformer, link
 
+seamless.set_ncores(0)
+
+try:
+    redis_sink = seamless.RedisSink()
+except Exception:
+    pass
+
 ctx = context(toplevel=True)
 ctx.cell1 = cell("int").set(1)
 ctx.cell2 = cell("int").set(2)

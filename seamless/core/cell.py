@@ -70,7 +70,7 @@ Use ``Cell.status()`` to get its status.
             self._prelim_val = None
         elif self._prelim_checksum is not None:
             checksum, initial, is_buffercell = self._prelim_checksum
-            self._set_checksum(self, checksum, initial, is_buffercell)
+            self._set_checksum(checksum, initial, is_buffercell)
             self._prelim_checksum = None
 
     def __hash__(self):

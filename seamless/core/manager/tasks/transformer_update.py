@@ -24,11 +24,14 @@ class TransformerUpdateTask(Task):
         await taskmanager.await_upon_connection_tasks(self.taskid)
         upstreams = livegraph.transformer_to_upstream[transformer]
         inputpins = {}
+        downstreams = livegraph.transformer_to_downstream[transformer] 
+        if not len(downstreams):
+            transformer._status_reason = StatusReasonEnum.UNCONNECTED
+            return
         for pinname, accessor in upstreams.items():
             if accessor is None: #unconnected
                 transformer._status_reason = StatusReasonEnum.UNCONNECTED
-                return
-                
+                return                
         status_reason = None        
         for pinname, accessor in upstreams.items():
             if accessor._void or accessor._checksum is None: #undefined/upstream error
@@ -53,9 +56,6 @@ class TransformerUpdateTask(Task):
                 return
         manager._set_transformer_checksum(transformer, None, False)
 
-        downstreams = livegraph.transformer_to_downstream[transformer]
-        if not len(downstreams):
-            return
         for accessor in downstreams:
             propagate_accessor(livegraph, accessor, transformer._void)
         first_output = downstreams[0].write_accessor.target()
