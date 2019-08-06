@@ -88,6 +88,8 @@ class Manager:
     @mainthread
     def connect(self, source, source_subpath, target, target_subpath):
 
+        if isinstance(target, Cell):
+            self.livegraph._will_lose_authority.add(target)
         task = UponConnectionTask(
             self, source, source_subpath, target, target_subpath
         )
@@ -194,6 +196,8 @@ class Manager:
 
     def _get_cell_checksum_and_void(self, cell):
         while 1:
+            if self._destroyed:
+                break
             try:
                 task = CellChecksumTask(self, cell)
                 task.launch_and_await()

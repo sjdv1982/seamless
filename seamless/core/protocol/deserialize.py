@@ -78,14 +78,16 @@ async def deserialize(buffer, checksum, celltype, copy):
         else:
             return value
     
-    loop = asyncio.get_event_loop()            
+    loop = asyncio.get_event_loop()
+    """
     with ProcessPoolExecutor() as executor:
         value = await loop.run_in_executor(
             executor,
             _deserialize,
             buffer, checksum, celltype
         )
-
+    """
+    return _deserialize(buffer, checksum, celltype)
     if celltype not in text_types:
         deserialize_cache[checksum, celltype] = value
     evaluation_cache_1.add((checksum, celltype))

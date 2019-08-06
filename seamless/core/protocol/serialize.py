@@ -53,12 +53,14 @@ async def serialize(value, celltype):
         return buffer
 
     loop = asyncio.get_event_loop()
+    """
     with ProcessPoolExecutor() as executor:
         buffer = await loop.run_in_executor(
             executor,
             _serialize,
             value, celltype
         )
-
+    """
+    buffer = _serialize(value, celltype)
     serialize_cache[idvalue] = buffer
     return buffer

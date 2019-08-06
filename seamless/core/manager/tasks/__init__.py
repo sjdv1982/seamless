@@ -1,6 +1,7 @@
 import weakref
 import asyncio
 from asyncio import CancelledError
+import atexit
 
 def is_equal(old, new):
     if new is None:
@@ -15,7 +16,7 @@ def is_equal(old, new):
 class Task:
     _realtask = None
     _awaiting = False
-    future = None    
+    future = None
     
     def __init__(self, manager, *args, **kwargs):
         if isinstance(manager, weakref.ref):
@@ -103,6 +104,8 @@ class Task:
         # Blocking version of launch
         taskmanager = self._launch()
         self._awaiting = True
+        if taskmanager is None:
+            raise CancelledError
         taskmanager.loop.run_until_complete(self.future)
         return self.future.result()
 

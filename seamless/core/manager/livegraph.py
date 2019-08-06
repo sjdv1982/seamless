@@ -23,6 +23,8 @@ class LiveGraph:
         self.buffercells = {}
         self.schemacells = {} # cell-to-structuredcell to which it serves as schema; can be multiple
 
+        self._will_lose_authority = set()
+
     def register_cell(self, cell):
         assert cell._monitor is None # StructuredCells get registered later
         self.cell_to_upstream[cell] = None
@@ -251,6 +253,9 @@ class LiveGraph:
         assert cell._monitor is None
         return self.cell_to_upstream[cell] is None
 
+    def will_lose_authority(self, cell):
+        return cell in self._will_lose_authority
+
     def destroy_accessor(self, manager, accessor):
         from ..cell import Cell
         from ..transformer import Transformer
@@ -341,6 +346,7 @@ class LiveGraph:
                 accessor = down_accessors[0]
                 self.destroy_accessor(manager, accessor)
             self.cell_to_downstream.pop(cell)
+        self._will_lose_authority.discard(cell)
 
     def check_destroyed(self):        
         attribs = (

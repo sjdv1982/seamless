@@ -17,12 +17,15 @@ async def calculate_checksum(buffer):
         buffer_cache.cache_buffer(cached_checksum, buffer)
         return cached_checksum
     loop = asyncio.get_event_loop()
+    """
     with ProcessPoolExecutor() as executor:
         checksum = await loop.run_in_executor(
             executor,
             get_hash,
             buffer
         )
+    """
+    checksum = get_hash(buffer)
     calculate_checksum_cache[buf_id] = checksum    
     checksum_cache[checksum] = buffer
     buffer_cache.cache_buffer(checksum, buffer)

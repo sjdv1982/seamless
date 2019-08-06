@@ -638,10 +638,9 @@ def scan(ctx_or_cell, *, old_context):
     from .unbound_context import UnboundContext
     from .cell import Cell
     from . import Worker, Macro
-    from .structured_cell import Inchannel, Outchannel
     assert not mountmanager._mounting
 
-    if isinstance(ctx_or_cell,UnboundContext):
+    if isinstance(ctx_or_cell, UnboundContext):
         raise TypeError(ctx_or_cell)
 
     root = ctx_or_cell._root()
@@ -685,8 +684,6 @@ def scan(ctx_or_cell, *, old_context):
                         raise Exception("No path provided for mount of %s, but no ancestor context is mounted" % c)
                     result["path"] = parent_result["path"]
                     result["autopath"] = True
-            elif isinstance(c, (Inchannel, Outchannel)):
-                result = None
             elif isinstance(c, Context) and c._toplevel:
                 result = None
             else:
@@ -717,6 +714,15 @@ def scan(ctx_or_cell, *, old_context):
                     result["path"] += "/" + child.name
                 if isinstance(child, Link):
                     child = child.get_linked()
+                if isinstance(child, Cell) and child._mount is None:
+                    if child._monitor:
+                        raise NotImplementedError # livegraph branch
+                    else:
+                        livegraph = child._get_manager().livegraph
+                        if livegraph.will_lose_authority(child):
+                            if result["mode"] == "r":
+                                return None
+                            result["mode"] = "w"
                 extension = None
                 if child._mount is not None:
                     extension = child._mount.get("extension")

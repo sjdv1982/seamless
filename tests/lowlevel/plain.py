@@ -16,7 +16,7 @@ with macro_mode_on():
     ctx.code.connect(ctx.tf.code)
     ctx.c = cell("plain")
     ctx.tf.c.connect(ctx.c)
-    ctx.mount("/tmp/mount-test")
+    ctx.mount("/tmp/mount-test", persistent=True)
 
 ctx.equilibrate()
 
@@ -28,3 +28,6 @@ asyncio.get_event_loop().run_until_complete(fut)
 ctx.equilibrate()
 print(ctx.b.value)
 
+with open("/tmp/mount-test/b.json", "w") as f:
+    f.write("2\n")
+ctx.equilibrate()
