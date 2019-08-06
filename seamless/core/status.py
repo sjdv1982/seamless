@@ -87,7 +87,31 @@ def status_reactor(reactor):
     raise NotImplementedError # livegraph branch
 
 def status_macro(macro):
-    raise NotImplementedError # livegraph branch
+    if macro._gen_context is not None:
+        return StatusEnum.OK, None, None
+    manager = macro._get_manager()
+    livegraph = manager.livegraph
+    pins = None
+    if not macro._void:
+        status = StatusEnum.PENDING
+        reason = StatusReasonEnum.UPSTREAM
+    else:
+        status = StatusEnum.VOID
+        reason = macro._status_reason
+        upstreams = livegraph.macro_to_upstream[macro]
+        if reason == StatusReasonEnum.UNCONNECTED:
+            pins = []
+            for pinname, accessor in upstreams.items():
+                if accessor is None:
+                    pins.append(pinname)
+        elif reason == StatusReasonEnum.UPSTREAM:
+            pins = {}
+            for pinname, accessor in upstreams.items():
+                astatus = status_accessor(accessor)
+                if astatus[0] == StatusEnum.OK:
+                    continue
+                pins[pinname] = astatus
+    return status, reason, pins
 
 def format_status(stat):
     status, reason = stat

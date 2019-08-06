@@ -21,7 +21,7 @@ class SetCellBufferTask(Task):
         await taskmanager.await_upon_connection_tasks(self.taskid)
         cell = self.cell
         buffer = self.buffer
-        checksum = self.checksum        
+        checksum = self.checksum
         if (checksum is None and buffer is not None) or \
             (checksum, cell._celltype) not in evaluation_cache_1:
                 if cell._celltype in text_types:
@@ -32,11 +32,19 @@ class SetCellBufferTask(Task):
                 ).run()
         if checksum is None and buffer is not None:
             checksum = await CalculateChecksumTask(manager, buffer).run()
-
         if checksum is not None:
+            buffer_cache = manager.cachemanager.buffer_cache
+            await validate_subcelltype(
+                checksum, cell._celltype, cell._subcelltype, 
+                str(cell), buffer_cache
+            )
+            checksum_cache[checksum] = buffer
+            buffer_cache.incref(checksum)
+            manager._set_cell_checksum(self.cell, checksum, False)
             CellUpdateTask(manager, self.cell).launch()
         return None
 
 from ...protocol.validate_subcelltype import validate_subcelltype
 from ...protocol.evaluate import evaluation_cache_1
+from ...protocol.calculate_checksum import checksum_cache
 from ...status import StatusReasonEnum

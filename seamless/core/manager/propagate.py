@@ -12,6 +12,8 @@ def propagate_accessor(livegraph, accessor, void):
             raise NotImplementedError # livegraph branch
     elif isinstance(target, Transformer):
         propagate_transformer(livegraph, target)
+    elif isinstance(target, Macro):
+        propagate_macro(livegraph, target)
     else:
         raise TypeError(target)
 
@@ -36,7 +38,14 @@ def propagate_transformer(livegraph, transformer):
 def propagate_reactor(livegraph, reactor):
     if reactor._void:
         return
-    raise NotImplementedError # livegraph branch
+    manager = reactor._get_manager()
+    ReactorUpdateTask(manager, reactor).launch()
+
+def propagate_macro(livegraph, macro):
+    if macro._void:
+        return
+    manager = macro._get_manager()
+    MacroUpdateTask(manager, macro).launch()
 
 from ..cell import Cell
 from ..transformer import Transformer
@@ -44,3 +53,5 @@ from ..reactor import Reactor
 from ..macro import Macro
 from ..status import StatusReasonEnum
 from ..manager.tasks.transformer_update import TransformerUpdateTask
+from ..manager.tasks.reactor_update import ReactorUpdateTask
+from ..manager.tasks.macro_update import MacroUpdateTask

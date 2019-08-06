@@ -9,7 +9,9 @@ class CacheManager:
         self.cell_to_ref = {}
         self.expression_to_ref = {}
         self.transformer_to_ref = {}
-        self.reactor_to_refs = {}      
+        self.reactor_to_refs = {}  
+        self.macro_exceptions = {}
+        self.reactor_exceptions = {}
 
         # Quick local expression cache
         # Hang onto this indefinitely
@@ -35,11 +37,16 @@ class CacheManager:
         self.transformer_to_ref[transformer] = None
         self.transformation_cache.register_transformer(transformer)
 
-    def register_reactor(self, transformer):
+    def register_macro(self, macro):
+        assert macro not in self.macro_exceptions
+        self.macro_exceptions[macro] = None
+
+    def register_reactor(self, reactor):
         assert reactor not in self.reactor_to_ref
         raise NotImplementedError # livegraph branch
         # TODO: store a dictionary of outputpin/editpin-to-ref 
-        
+        self.reactor_exceptions[reactor] = None
+
     def incref_checksum(self, checksum, refholder, authority):
         if checksum is None:
             return
@@ -100,8 +107,12 @@ class CacheManager:
         self.transformer_to_ref.pop(transformer)
         self.transformation_cache.destroy_transformer(transformer)
 
+    def destroy_macro(self, macro):
+        self.macro_exceptions.pop(macro)
+
     def destroy_reactor(self, reactor):
         raise NotImplementedError # livegraph branch
+        self.reactor_exceptions.pop(reactor)
 
     def check_destroyed(self):        
         attribs = (

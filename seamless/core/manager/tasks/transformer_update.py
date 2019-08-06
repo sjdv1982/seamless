@@ -1,15 +1,5 @@
 from . import Task
 
-def is_equal(old, new):
-    if new is None:
-        return False
-    if len(old) != len(new):
-        return False
-    for k in old:
-        if old[k] != new[k]:
-            return False
-    return True
-
 class TransformerUpdateTask(Task):
     def __init__(self, manager, transformer):
         self.transformer = transformer
@@ -108,3 +98,4 @@ class TransformerResultUpdateTask(Task):
 from .accessor_update import AccessorUpdateTask
 from ...status import StatusReasonEnum
 from ..propagate import propagate_accessor
+from . import is_equal

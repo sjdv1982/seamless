@@ -255,7 +255,7 @@ class MountItem:
             file_checksum = None
             if self.last_mtime is None or mtime > self.last_mtime:
                 file_buffer0 = self._read()
-                file_buffer = adjust_buffer(file_buffer0, cell._celltype)
+                file_buffer = adjust_buffer(file_buffer0, cell._celltype)                
                 file_checksum = calculate_checksum(file_buffer)
                 self._after_read(file_checksum, mtime=mtime)                
         cell_checksum = self.cell_checksum
@@ -599,7 +599,6 @@ class MountManager:
                 while time.time() - t < self.latency:
                     time.sleep(0.05)
         finally:
-            print("STOP!")
             self._running = False
 
     def start(self):

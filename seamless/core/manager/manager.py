@@ -2,6 +2,8 @@ import weakref
 import functools
 import threading
 import asyncio
+import traceback
+import sys
 
 def mainthread(func):
     def func2(*args, **kwargs):
@@ -75,6 +77,7 @@ class Manager:
 
     @mainthread
     def register_macro(self, macro):
+        self.cachemanager.register_macro(macro)
         self.livegraph.register_macro(macro)
         self.taskmanager.register_macro(macro)
 
@@ -161,6 +164,14 @@ class Manager:
         if checksum != old_checksum:
             cachemanager.incref_checksum(checksum, transformer, False)
 
+    def _set_macro_exception(self, macro, exception):
+        exc = traceback.format_exception(type(exception), exception, exception.__traceback__)
+        exc = "".join(exc)
+        msg = "Exception in %s:\n"% str(macro) + exc
+        stars = "*" * 60 + "\n"
+        print(stars + msg + stars, file=sys.stderr)
+        self.cachemanager.macro_exceptions[macro] = exception        
+
     @run_in_mainthread
     def set_cell(self, cell, value):
         assert self.livegraph.has_authority(cell)
@@ -174,7 +185,10 @@ class Manager:
     @run_in_mainthread
     def set_cell_buffer(self, cell, buffer, checksum):
         assert self.livegraph.has_authority(cell)
-        self.cancel_cell(cell, buffer is None)
+        reason = None
+        if buffer is None:
+            reason = StatusReasonEnum.UNDEFINED
+        self.cancel_cell(cell, buffer is None, reason)
         task = SetCellBufferTask(self, cell, buffer, checksum)
         task.launch()
 
@@ -254,13 +268,14 @@ If origin_task is provided, that task is not cancelled."""
     def cancel_accessor(self, accessor, void, origin_task=None):
         self.taskmanager.cancel_accessor(accessor, origin_task=origin_task)
         target = accessor.write_accessor.target()
+        reason = StatusReasonEnum.UPSTREAM
         if isinstance(target, Cell):
             return self.cancel_cell(target, void=void)
         elif isinstance(target, Worker):
             if isinstance(target, Transformer):
-                return self.cancel_transformer(target, void=void)
+                return self.cancel_transformer(target, void=void, reason=reason)
             elif isinstance(target, Reactor):
-                return self.cancel_reactor(target, void=void)
+                return self.cancel_reactor(target, void=void, reason=reason)
 
     @mainthread
     def cancel_transformer(self, transformer, void, reason=None):
@@ -283,6 +298,19 @@ If origin_task is provided, that task is not cancelled."""
             reason = StatusReasonEnum.UPSTREAM
         raise NotImplementedError #livegraph branch
 
+    @mainthread
+    def cancel_macro(self, macro, void, reason=None):
+        gen_context = macro._gen_context
+        if gen_context is not None:
+            gen_context.destroy()
+
+    ##########################################################################
+    # API section ???: Inline syntax support (e.g. pin.cell().connect)
+    ##########################################################################
+
+    def cell_from_pin(self):
+        return self.livegraph.cell_from_pin
+
 
     ##########################################################################
     # API section ???: Destruction
@@ -304,6 +332,7 @@ If origin_task is provided, that task is not cancelled."""
         self.taskmanager.destroy_reactor(reactor, full=True)
 
     def _destroy_macro(self, macro):
+        self.cachemanager.destroy_macro(macro)
         self.livegraph.destroy_macro(self, macro)
         self.taskmanager.destroy_macro(macro, full=True)
 

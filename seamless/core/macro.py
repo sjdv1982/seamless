@@ -2,24 +2,24 @@ from collections import OrderedDict
 import traceback
 import weakref
 
-from .cell import Cell
 from .worker import Worker, InputPin, OutputPin
-from . import library
 from .injector import macro_injector as injector
 from .unbound_context import UnboundContext, UnboundManager
 from .macro_mode import macro_mode_on, curr_macro, get_macro_mode
 from .cached_compile import exec_code
 from .build_module import build_module
+from .status import StatusReasonEnum
 
 class ExecError(Exception): pass
 
 class Macro(Worker):
+    _void = True
+    _status_reason = StatusReasonEnum.UNCONNECTED
     injected_modules = None
     def __init__(self, macro_params, *, lib=None):
-        raise NotImplementedError # livegraph branch
         self._gen_context = None
         self._unbound_gen_context = None
-        self.code = InputPin(self, "code", "ref", "pythoncode", "transformer")
+        self.code = InputPin(self, "code", "python", "macro")
         self._pins = {"code":self.code}
         self._macro_params = OrderedDict()
         self.function_expr_template = "{0}\n{1}(ctx=ctx,"
@@ -27,64 +27,60 @@ class Macro(Worker):
         self.namespace = {}
         self.input_dict = {}  #pinname-to-accessor
         self._paths = weakref.WeakValueDictionary() #Path objects
-        super().__init__()        
+        super().__init__()
+        forbidden = ("code",)    
         for p in sorted(macro_params.keys()):
+            if p in forbidden:
+                raise ValueError("Forbidden pin name: %s" % p)
             param = macro_params[p]
             self._macro_params[p] = param
-            transfer_mode, access_mode, content_type = "copy", None, None
+            celltype, subcelltype = None, None
             if isinstance(param, str):
-                transfer_mode = param
+                celltype = param
             elif isinstance(param, (list, tuple)):
-                transfer_mode = param[0]
+                celltype = param[0]
                 if len(param) > 1:
-                    access_mode = param[1]
+                    subcelltype = param[1]
                 if len(param) > 2:
-                    content_type = param[2]
+                    raise ValueError(param)
             elif isinstance(param, dict):
-                transfer_mode = param.get("transfer_mode", transfer_mode)
-                access_mode = param.get("access_mode", access_mode)
-                content_type = param.get("content_type", content_type)
+                celltype = param.get("celltype", celltype)
+                subcelltype = param.get("subcelltype", subcelltype)
             else:
                 raise ValueError((p, param))
-            if content_type is None and access_mode in content_types:
-                content_type = access_mode
-            pin = InputPin(self, p, transfer_mode, access_mode)
+            pin = InputPin(self, p, celltype, subcelltype)
             self.function_expr_template += "%s=%s," % (p, p)
             self._pins[p] = pin
         self.function_expr_template = self.function_expr_template[:-1] + ")"
 
-    def _execute(self):
+    def _get_status(self):
+        from .status import status_macro
+        status = status_macro(self)
+        return status
+
+    @property
+    def status(self):
+        """The computation status of the macro"""
+        from .status import format_worker_status
+        status = self._get_status()
+        statustxt = format_worker_status(status)
+        return "Status: " + statustxt 
+
+    def _execute(self, code, values, module_workspace):
         from .context import Context
         manager = self._get_manager()
-        values = {} 
-        module_workspace = {}       
-        for pinname, accessor in self.input_dict.items():            
-            expression = manager.build_expression(accessor)
-            if expression is None:
-                value = None
-            else:
-                value = manager.get_expression(expression)
-            if pinname == "code":
-                code = value
-            else:
-                if expression.access_mode == "mixed":
-                    if value is not None:
-                        value = value[2]
-                if expression.access_mode == "module":
-                    mod = build_module(value)
-                    module_workspace[pinname] = mod[1]
-                else:
-                    values[pinname] = value
         ok = False
         try:
             old_paths = self._paths
             old_gen_context = self._gen_context
+            old_ub_gen_context = self._unbound_gen_context
             self._paths = weakref.WeakValueDictionary()
-            with macro_mode_on(self):
-                unbound_ctx = UnboundContext(root=self._root())
-                unbound_ctx._ubmanager = UnboundManager(unbound_ctx)                
+            with macro_mode_on(self):                
+                unbound_ctx = UnboundContext(toplevel=False, macro=True)
+                ubmanager = unbound_ctx._realmanager
+                unbound_ctx._ubmanager = ubmanager
                 assert unbound_ctx._get_manager() is not None
-                self._unbound_gen_context = unbound_ctx
+                self._unbound_gen_context = unbound_ctx                
                 keep = {k:v for k,v in self.namespace.items() if k.startswith("_")}
                 self.namespace.clear()
                 self.namespace["__name__"] = "macro"
@@ -139,7 +135,7 @@ class Macro(Worker):
                 add_paths((), _global_paths.get(root, {}))
                 
                 manager = self._get_manager()
-                ub_cells = unbound_ctx._realmanager.cells
+                ub_cells = ubmanager.cells
                 newly_bound = []
                 for path, p in paths:
                     if p._cell is not None:
@@ -150,7 +146,7 @@ class Macro(Worker):
                             p._cell = None
                     if path not in ub_cells:
                         continue
-                    cell = ub_cells[path]
+                    cell = ub_cells[path]                    
                     newly_bound.append((path, p))
                 
                 ctx = Context(toplevel=False)
@@ -160,7 +156,7 @@ class Macro(Worker):
                 ctx._cache_paths()
                 ok = True
         except Exception as exception:
-            manager.set_macro_exception(self, exception)
+            manager._set_macro_exception(self, exception)
         finally:
             self._unbound_gen_context = None
             self._paths = old_paths
@@ -172,6 +168,10 @@ class Macro(Worker):
             for path, p in newly_bound:
                 cell = ub_cells[path]
                 p._bind(cell, trigger=True)
+        keep = {k:v for k,v in self.namespace.items() if k.startswith("_")}
+        self.namespace.clear()
+        self.namespace["__name__"] = "macro"
+        self.namespace.update(keep)
             
     def _set_context(self, ctx, name):
         super()._set_context(ctx, name)
@@ -260,7 +260,7 @@ class Path:
             if manager is None:
                 if self._macro is not None and \
                   self._macro._unbound_gen_context is not None:
-                    manager = self._macro._unbound_gen_context._realmanager
+                    manager = self._macro._unbound_gen_context._root()._realmanager
                 else:
                     raise AttributeError
             return manager.connect_cell(self, other, None)
@@ -374,3 +374,6 @@ names = ("cell", "transformer", "context", "link",
 names += ("StructuredCell",)
 names = names + ("macro", "path")
 Macro.default_namespace = {n:globals()[n] for n in names}
+
+from .cell import Cell
+from . import library

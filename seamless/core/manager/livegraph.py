@@ -15,6 +15,10 @@ class LiveGraph:
         self.paths_to_downstream = {} # Mapping of datacells-to-dictionary-of-path:list-of-downstream-read-accessors
         self.transformer_to_upstream = {} # input pin to read accessor
         self.transformer_to_downstream = {}
+        self.reactor_to_upstream = {} # input pin to read accessor
+        self.reactor_to_downstream = {} # Unlike all other X_to_downstream, this is a dict
+        self.macro_to_upstream = {} # input pin to read accessor
+
         self.datacells = {}
         self.buffercells = {}
         self.schemacells = {} # cell-to-structuredcell to which it serves as schema; can be multiple
@@ -31,7 +35,15 @@ class LiveGraph:
         upstream = {pinname:None for pinname in inputpins}
         self.transformer_to_upstream[transformer] = upstream
         self.transformer_to_downstream[transformer] = []
-        
+
+    def register_reactor(self, transformer):
+        raise NotImplementedError # livegraph branch; to-downstream and editpins make it tricky
+
+    def register_macro(self, macro):
+        inputpins = [pinname for pinname in macro._pins]
+        upstream = {pinname:None for pinname in inputpins}
+        self.macro_to_upstream[macro] = upstream
+
     def register_structured_cell(self, structured_cell):
         buffercell = structured_cell.buffer
         assert buffercell in self.cell_to_upstream
@@ -211,6 +223,26 @@ class LiveGraph:
 
         return read_accessor
 
+    def cell_from_pin(self, pin):
+        worker = pin.worker_ref()
+        if isinstance(worker, Transformer):
+            upstream = self.transformer_to_upstream[worker]
+        elif isinstance(worker, Reactor):
+            upstream = self.reactor_to_upstream[worker]
+        elif isinstance(worker, Macro):
+            upstream = self.macro_to_upstream[worker]
+        upstreams = upstream[pin.name]
+        if upstreams is None:
+            return None
+        result = []
+        for accessor in upstreams:
+            cell = self.accessor_to_upstream[accessor]
+            assert isinstance(cell, (Cell, Path))
+            result.append(cell)
+        if not len(result):
+            result = None
+        return result
+
     def has_authority(self, cell, path=None):
         if path is not None:
             assert cell._monitor is not None
@@ -222,6 +254,9 @@ class LiveGraph:
     def destroy_accessor(self, manager, accessor):
         from ..cell import Cell
         from ..transformer import Transformer
+        expression = accessor.expression
+        if expression is not None:
+            self.decref_expression(expression, accessor)
         taskmanager = manager.taskmanager
         taskmanager.destroy_accessor(accessor)
         upstream = self.accessor_to_upstream.pop(accessor)
@@ -239,20 +274,22 @@ class LiveGraph:
             raise TypeError(upstream)
 
         target = accessor.write_accessor.target()
-        expression = accessor.expression
-        if expression is not None:
-            self.decref_expression(expression, accessor)
         if isinstance(target, Cell):
             path = accessor.write_accessor.path
             if path is not None:
                 raise NotImplementedError # livegraph branch
             else:
+                manager.cancel_cell(target, True)
                 if target in self.cell_to_upstream:
                     self.cell_to_upstream[target] = None
         elif isinstance(target, Transformer):
             pinname = accessor.write_accessor.pinname
             if target in self.transformer_to_upstream:
                 self.transformer_to_upstream[target][pinname] = None
+        elif isinstance(target, Macro):
+            pinname = accessor.write_accessor.pinname
+            if target in self.macro_to_upstream:
+                self.macro_to_upstream[target][pinname] = None
         else:
             raise TypeError(target)
 
@@ -266,6 +303,12 @@ class LiveGraph:
             accessor = down_accessors[0]
             self.destroy_accessor(manager, accessor)
         self.transformer_to_downstream.pop(transformer)
+
+    def destroy_macro(self, manager, macro):
+        up_accessors = self.macro_to_upstream.pop(macro)
+        for up_accessor in up_accessors.values():
+            if up_accessor is not None:
+                self.destroy_accessor(manager, up_accessor)
 
     def destroy_cell(self, manager, cell):
         structured_cells = []
@@ -323,4 +366,5 @@ from .propagate import propagate_accessor
 from .accessor import Accessor, ReadAccessor, WriteAccessor
 from ..transformer import Transformer
 from ..reactor import Reactor
-from ..macro import Macro
+from ..macro import Macro, Path
+from ..cell import Cell

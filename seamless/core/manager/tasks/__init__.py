@@ -2,6 +2,15 @@ import weakref
 import asyncio
 from asyncio import CancelledError
 
+def is_equal(old, new):
+    if new is None:
+        return False
+    if len(old) != len(new):
+        return False
+    for k in old:
+        if old[k] != new[k]:
+            return False
+    return True
 
 class Task:
     _realtask = None

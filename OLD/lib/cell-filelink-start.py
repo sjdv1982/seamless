@@ -10,7 +10,6 @@ if __name__ == "__main__":
             self.value = value
             self.defined = True
         def set(self, value):
-            print("SET", value)
             self.value = value
         def get(self):
             return self.value

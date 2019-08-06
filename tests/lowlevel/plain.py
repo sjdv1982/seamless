@@ -1,6 +1,6 @@
 import seamless
 from seamless.core import macro_mode_on
-from seamless.core import context, cell, transformer, pytransformercell, StructuredCell
+from seamless.core import context, cell, transformer,  StructuredCell
 with macro_mode_on():
     ctx = context(toplevel=True)
     ctx.tf = transformer({
@@ -8,6 +8,23 @@ with macro_mode_on():
         "b": "input",
         "c": "output"
     })
-    ctx.a = cell("plain").set({"1": 2})
-    ctx.b = cell("plain").set(2)
+    ctx.a = cell("plain").set({"x": 2})
+    ctx.b = cell("plain").set(2)  
+    ctx.a.connect(ctx.tf.a)
+    ctx.b.connect(ctx.tf.b)
+    ctx.code = cell("transformer").set("a['x'] + b")
+    ctx.code.connect(ctx.tf.code)
+    ctx.c = cell("plain")
+    ctx.tf.c.connect(ctx.c)
     ctx.mount("/tmp/mount-test")
+
+ctx.equilibrate()
+
+with open("/tmp/mount-test/b.json", "w") as f:
+    f.write("10\n")
+import asyncio
+fut = asyncio.ensure_future(asyncio.sleep(0.5))
+asyncio.get_event_loop().run_until_complete(fut)
+ctx.equilibrate()
+print(ctx.b.value)
+

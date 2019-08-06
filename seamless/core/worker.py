@@ -3,22 +3,20 @@ from . import SeamlessBase
 
 def _cell_from_pin(self, celltype):    
     assert isinstance(self, (InputPin, EditPin))
-    from .cell import cell, Cell
-    from .macro import Path
+    worker = self.worker_ref()
+    if worker is None:
+        raise ValueError("Worker has died")
     manager = self._get_manager()
     my_cell = manager.cell_from_pin(self)
     if celltype is None:
         celltype = self.celltype
     if my_cell is None:
-        worker = self.worker_ref()
-        if worker is None:
-            raise ValueError("Worker has died")
         my_cell = cell(celltype)
         ctx = worker._context
         assert ctx is not None
         ctx = ctx()
         ctx._add_new_cell(my_cell)
-        manager.connect_cell(my_cell, self, None)
+        manager.connect(my_cell, None, self, None)
     else:
         # TODO: take subpath (my_cell[1]) into account? construct some kind of proxy?
         if isinstance(self, EditPin):
@@ -26,15 +24,12 @@ def _cell_from_pin(self, celltype):
                 my_cell = None
             else:
                 my_cell = my_cell[0]
+    if isinstance(my_cell, Path):
+        my_cell = my_cell._cell
     if my_cell is None:
-        return my_cell
-    if isinstance(my_cell, Cell):
-        return my_cell
-    elif isinstance(my_cell, Path):
-        return my_cell._cell
-    else: # Accessor
-        raise NotImplementedError # livegraph branch
-        return my_cell.cell
+        return None
+    assert isinstance(my_cell, Cell)
+    return my_cell
 
 
 class Worker(SeamlessBase):
@@ -206,7 +201,7 @@ class OutputPin(OutputPinBase):
             ctx = ctx()
             ctx._add_new_cell(my_cell)
             assert my_cell._context() is ctx
-            manager.connect_pin(self, my_cell)
+            manager.connect(self, None, my_cell, None)
         elif l == 1:
             # TODO: take subpath into account? construct some kind of proxy?           
             my_cell, subpath = my_cells[0]
@@ -305,4 +300,5 @@ class EditPin(EditPinBase):
         return format_status(stat)
 
 from .structured_cell import Inchannel, Outchannel, Editchannel
-from .cell import Cell
+from .cell import cell, Cell
+from .macro import Path

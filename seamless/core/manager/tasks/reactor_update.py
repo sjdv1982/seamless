@@ -8,9 +8,6 @@ class ReactorUpdateTask(Task):
 
     async def _run(self):
         reactor = self.reactor
-        if reactor._void:
-            print("WARNING: reactor %s is void, shouldn't happen during reactor update" % reactor)
-            return
         from . import SerializeToBufferTask
         manager = self.manager()
         livegraph = manager.livegraph

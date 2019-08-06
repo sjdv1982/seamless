@@ -2,7 +2,7 @@ from seamless.core import macro_mode, context, cell, macro
 
 ctx = context(toplevel=True)
 ctx.macro = macro({
-    "a": "ref",
+    "a": "mixed",
 })
 ctx.a = cell().set(42)
 
@@ -18,13 +18,19 @@ ctx.code = cell("macro").set(code)
 ctx.a.connect(ctx.macro.a)
 ctx.code.connect(ctx.macro.code)
 ctx.equilibrate()
+print(ctx.macro.status)
 print(ctx.macro.ctx.answer.value)
 print(ctx.macro.ctx.result.value)
 ctx.result0 = cell() 
 ctx.macro.ctx.result.connect(ctx.result0)
+ctx.equilibrate()
 print(ctx.result0.value)
+print("Update...")
 ctx.a.set(5)
 ctx.equilibrate()
 print(ctx.macro.ctx.answer.value)
 print(ctx.macro.ctx.result.value)
+print(ctx.result0.value)
+ctx.macro.ctx.result.connect(ctx.result0)
+ctx.equilibrate()
 print(ctx.result0.value)

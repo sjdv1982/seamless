@@ -43,6 +43,8 @@ class UnboundManager:
         from .macro import Path
         if isinstance(source, (Cell, Path)) and source_subpath is None:
             return self.connect_cell(source, target, None)
+        if isinstance(source, (OutputPinBase, EditPinBase)) and source_subpath is None:
+            return self.connect_pin(source, target)
         else:
             raise NotImplementedError # livegraph branch
 
@@ -90,6 +92,9 @@ class UnboundManager:
         else:
             return cells
 
+    def destroy(self, from_del):
+        pass
+
 class UnboundContext(SeamlessBase):
 
     _name = None
@@ -105,6 +110,7 @@ class UnboundContext(SeamlessBase):
         self, *, 
         root=None,
         toplevel=False,
+        macro=False,
         manager=None,
     ):
         super().__init__()
@@ -116,11 +122,17 @@ class UnboundContext(SeamlessBase):
         self._auto = set()
         self._children = {}
         self._mount = None
+        self._is_macro = macro
         if toplevel:
             assert root is None
+            assert not macro
             root = Context(toplevel=True)
-            if manager is not None:
+            if manager is not None:                
                 root._realmanager = manager
+        elif macro:
+            assert manager is None
+            manager = UnboundManager(self)
+            self._realmanager = manager
         else:
             assert manager is None
         self._root_ = root
@@ -143,6 +155,9 @@ class UnboundContext(SeamlessBase):
         if attr in self._children:
             return self._children[attr]
         raise AttributeError(attr)
+
+    def _set_context(self, ctx):
+        assert isinstance(ctx, Context) #unbound
 
     def _add_child(self, childname, child):
         assert isinstance(child, (UnboundContext, Worker, Cell, Link, StructuredCell))
@@ -172,8 +187,11 @@ class UnboundContext(SeamlessBase):
     def _get_manager(self):
         if self._bound:
            return self._bound._get_manager()
-        assert self._realmanager is not None
-        return self._realmanager
+        if self._toplevel or self._is_macro:
+            assert self._realmanager is not None
+            return self._realmanager
+        else:
+            return self._root_._realmanager
 
     def mount(self, path=None, mode="rw", authority="cell", persistent=False):
         """Performs a "lazy mount"; context is mounted to the directory path when macro mode ends
@@ -255,19 +273,18 @@ class UnboundContext(SeamlessBase):
                 continue
         for comnr, (com, args) in enumerate(self._realmanager.commands):            
             if com == "set cell":                
-                cell, value
+                cell, value = args
                 supersede = False
-                if subpath is None or subpath == ():
-                    for com2, args2 in self._realmanager.commands[comnr+1:]:
-                        if com2 == "set cell":         
-                            cell2, _ = args2
-                        elif com2 == "set cell checksum":
-                            cell2, _ = args2
-                        else:
-                            continue
-                        if cell2 == cell:
-                            supersede = True
-                            break
+                for com2, args2 in self._realmanager.commands[comnr+1:]:
+                    if com2 == "set cell":         
+                        cell2, _ = args2
+                    elif com2 == "set cell checksum":
+                        cell2, _ = args2
+                    else:
+                        continue
+                    if cell2 == cell:
+                        supersede = True
+                        break
                 if supersede:
                     continue
                 manager.set_cell(cell, value)
@@ -288,7 +305,7 @@ class UnboundContext(SeamlessBase):
                 manager.connect(cell, None, other, cell_subpath)
             elif com == "connect pin":
                 pin, cell = args
-                manager.connect_pin(pin, cell)
+                manager.connect(pin, None, cell, None)
             elif com == "set cell checksum":
                 cell, checksum = args
                 cell._prelim_checksum = None
@@ -306,8 +323,9 @@ class UnboundContext(SeamlessBase):
                 raise ValueError(com)
 
     def _bind(self, ctx):
-        from .context import Context        
-        assert self._toplevel == ctx._toplevel
+        from .context import Context
+        if ctx._toplevel:       
+            assert self._toplevel
         self._bind_stage1(ctx)
         ctx._cache_paths()
         self._bind_stage2(ctx._get_manager())
