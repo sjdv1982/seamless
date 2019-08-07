@@ -135,7 +135,7 @@ class TransformationCache:
             self.transformations_to_transformers[tf_checksum] = tf
             self.transformations[tf_checksum] = transformation
         else:
-            tf = self.transformations_to_transformers[tf_checksum]
+            tf = self.transformations_to_transformers[tf_checksum]        
         old_tf_checksum = self.transformer_to_transformations[transformer]
         if old_tf_checksum == tf_checksum:
             return
@@ -145,7 +145,7 @@ class TransformationCache:
             old_transformation = self.transformations[old_tf_checksum]
             self.decref_transformation(old_transformation, transformer)
         result_checksum = self._get_transformation_result(tf_checksum)
-        if result_checksum is not None:            
+        if result_checksum is not None:
             manager = transformer._get_manager()
             manager._set_transformer_checksum(transformer, result_checksum, False)
             TransformerResultUpdateTask(manager, transformer).launch()

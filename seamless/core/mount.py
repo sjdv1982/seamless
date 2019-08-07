@@ -181,6 +181,8 @@ class MountItem:
         return result
 
     def _write(self, file_buffer, with_none=False):
+        if self._destroyed:
+            return
         assert "w" in self.mode
         binary = self.kwargs["binary"]
         encoding = self.kwargs.get("encoding")
@@ -202,7 +204,6 @@ class MountItem:
     def _exists(self):
         return os.path.exists(self.path.replace("/", os.sep))
 
-
     def _after_write(self, checksum):
         self.last_checksum = checksum
         self.last_time = time.time()
@@ -212,7 +213,7 @@ class MountItem:
         except Exception:
             pass
 
-    def conditional_write(self, checksum, buffer, with_none=False):        
+    def conditional_write(self, checksum, buffer, with_none=False):
         if self._destroyed:
             return
         if not "w" in self.mode:
@@ -273,12 +274,11 @@ class MountItem:
 
     def destroy(self):
         if self._destroyed:
-            return
+            return        
         self._destroyed = True
         if self.dummy:
             return
         if self.persistent == False and os.path.exists(self.path):
-            #print("remove", self.path)
             os.unlink(self.path)
 
     def __del__(self):

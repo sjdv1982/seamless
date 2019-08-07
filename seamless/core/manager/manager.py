@@ -271,6 +271,10 @@ If origin_task is provided, that task is not cancelled."""
     @mainthread
     def cancel_accessor(self, accessor, void, origin_task=None):
         self.taskmanager.cancel_accessor(accessor, origin_task=origin_task)
+        if accessor.expression is not None:            
+            self.livegraph.decref_expression(accessor.expression, accessor)
+            accessor.expression = None
+            accessor._checksum = None
         target = accessor.write_accessor.target()
         reason = StatusReasonEnum.UPSTREAM
         if isinstance(target, Cell):

@@ -54,7 +54,7 @@ def collatz(ctx, value, macro_code, macro_params):
 ctx.start = cell()
 
 ctx.code = cell("macro").set(collatz)
-macro_params = {k: "ref" for k in ("value", "macro_code", "macro_params")}
+macro_params = {k: "plain" for k in ("value", "macro_code", "macro_params")}
 ctx.macro_params = cell().set(macro_params)
 m = ctx.macro = macro(ctx.macro_params.value)
 ctx.start.connect(m.value)
