@@ -34,6 +34,9 @@ class UnboundManager:
     def register_macro(self, macro):
         self._registered.add(macro)
 
+    def register_macropath(self, macropath):
+        self._registered.add(macropath)
+
     def set_cell(self, cell, value):
         assert cell._get_manager() is self
         assert cell in self._registered
@@ -239,7 +242,8 @@ class UnboundContext(SeamlessBase):
     def _bind_stage1(self, ctx):
         from .context import Context
         ctx._mount = copy.deepcopy(self._mount)
-        ctxmap = {}        
+        ctxmap = {}
+        manager = ctx._get_manager()
         for childname, child in self._children.items():
             if isinstance(child, UnboundContext):
                 bound_ctx = Context()
@@ -259,12 +263,11 @@ class UnboundContext(SeamlessBase):
                     child._realmanager.commands.clear()
                 child._bind_stage1(bound_ctx)                
             else:
-                continue     
+                continue
         ctx._auto = self._auto
-        self._bound = ctx
+        self._bound = ctx        
 
     def _bind_stage2(self, manager):
-        from .macro import replace_path
         macro = self._macro
         for childname, child in self._children.items():
             if isinstance(child, StructuredCell):
@@ -290,18 +293,6 @@ class UnboundContext(SeamlessBase):
                 manager.set_cell(cell, value)
             elif com == "connect cell":                
                 cell, other, cell_subpath = args
-                cell2 = replace_path(cell, manager.ctx())
-                if cell2 is None:
-                    if macro is not None:
-                        continue
-                else:
-                    cell = cell2
-                other2 = replace_path(other, manager.ctx())
-                if other2 is None:
-                    if macro is not None:
-                        continue
-                else:
-                    other = other2
                 manager.connect(cell, None, other, cell_subpath)
             elif com == "connect pin":
                 pin, cell = args
@@ -324,10 +315,14 @@ class UnboundContext(SeamlessBase):
 
     def _bind(self, ctx):
         from .context import Context
+        from .macro import Path
         if ctx._toplevel:       
-            assert self._toplevel
+            assert self._toplevel        
         self._bind_stage1(ctx)
-        ctx._cache_paths()
+        manager = ctx._get_manager()
+        for reg in self._realmanager._registered:
+            if isinstance(reg, Path):
+                manager.register_macropath(reg)
         self._bind_stage2(ctx._get_manager())
     
     def destroy(self, *, from_del=False):

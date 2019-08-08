@@ -26,7 +26,7 @@ class Macro(Worker):
         self.lib = lib
         self.namespace = {}
         self.input_dict = {}  #pinname-to-accessor
-        self._paths = weakref.WeakValueDictionary() #Path objects
+        self._paths = {} #Path objects
         super().__init__()
         forbidden = ("code",)    
         for p in sorted(macro_params.keys()):
@@ -107,12 +107,12 @@ class Macro(Worker):
                         exec_code(code, identifier, self.namespace, inputs, None)
                 if self.namespace["ctx"] is not unbound_ctx:
                     raise Exception("Macro must return ctx")
-
-                paths = [(k,v) for k,v in self._paths.items()]
+                
                 pctx = self._context
                 pmacro = self
                 ctx_path = self.path + ("ctx",)
                 lctx_path = len(ctx_path)
+                paths = [(ctx_path + k,v) for k,v in self._paths.items()]
 
                 def add_paths(pmacro_path, pmpaths):
                     for path, p in pmpaths.items():
@@ -121,9 +121,8 @@ class Macro(Worker):
                         else:
                             fullpath = path
                         if fullpath[:lctx_path] == ctx_path:
-                            path2 = fullpath[lctx_path:]
-                            paths.append((path2, p))
-
+                            paths.append((fullpath, p))
+                
                 while pctx is not None:
                     if pmacro is not pctx()._macro:                    
                         pmacro = pctx()._macro
@@ -135,14 +134,16 @@ class Macro(Worker):
                 add_paths((), _global_paths.get(root, {}))
                 
                 manager = self._get_manager()
-                ub_cells = ubmanager.cells
+                ub_cells = {ctx_path + k: v for k,v in ubmanager.cells.items()}
                 newly_bound = []
                 for path, p in paths:
                     if p._cell is not None:
                         mctx = p._cell._context()._macro._context()
                         if mctx._part_of(self._context()):                            
                             if p._macro is None and path not in ub_cells:
-                                manager.set_cell(p._cell, None, subpath=None)
+                                old_cell = p._cell
+                                p._cell = None
+                                manager.cancel_cell(old_cell, void=True)
                             p._cell = None
                     if path not in ub_cells:
                         continue
@@ -153,8 +154,8 @@ class Macro(Worker):
                 ctx._macro = self
                 unbound_ctx._bind(ctx)
                 self._gen_context = ctx
-                ctx._cache_paths()
                 ok = True
+                old_paths = self._paths
         except Exception as exception:
             manager._set_macro_exception(self, exception)
         finally:
@@ -178,11 +179,13 @@ class Macro(Worker):
         self._get_manager().register_macro(self)
 
     def destroy(self, *, from_del):
+        if self._destroyed:
+            return
         super().destroy(from_del=from_del)
         if not from_del:
             self._get_manager()._destroy_macro(self)
         if self._gen_context is not None:
-            return self._gen_context.destroy(from_del)
+            return self._gen_context.destroy(from_del=from_del)
         
     @property
     def ctx(self):        
@@ -221,11 +224,26 @@ class Path:
                 return gpaths[path]
             if self._root() not in _global_paths:
                 _global_paths[self._root()] = gpaths
-            gpaths[path] = self            
+            gpaths[path] = self     
         else:
             assert path not in macro._paths, path
             macro._paths[path] = self
+        manager.register_macropath(self)
         return self
+
+    @property
+    def _destroyed(self):
+        macro = self._macro
+        if macro is not None and macro._destroyed:
+            return True
+        manager = self._get_manager()
+        if manager is not None and manager._destroyed:
+            return True
+        return False
+
+    def destroy(self, from_del=False):
+        manager = self._get_manager()
+        manager._destroy_macropath(self)
 
     def _get_macro(self):
         return self._macro
@@ -253,45 +271,58 @@ class Path:
         return Path(self._macro, self._path + (attr,), manager=self._realmanager)
 
     def connect(self, other):
-        if self._cell is not None:
-            return self._cell.connect(other)
-        else:
-            manager = self._realmanager
-            if manager is None:
-                if self._macro is not None and \
-                  self._macro._unbound_gen_context is not None:
-                    manager = self._macro._unbound_gen_context._root()._realmanager
-                else:
-                    raise AttributeError
-            return manager.connect_cell(self, other, None)
+        manager = self._realmanager
+        if manager is None:
+            if self._macro is not None and \
+                self._macro._unbound_gen_context is not None:
+                manager = self._macro._unbound_gen_context._root()._realmanager
+            else:
+                raise AttributeError
+        return manager.connect(self, None, other, None)
 
-    def _bind(self, cell, trigger):
+    def _bind(self, cell, trigger):        
+        from .manager.propagate import propagate_cell
+        from .manager.tasks.cell_update import CellUpdateTask
+        from .manager.tasks.accessor_update import AccessorUpdateTask        
         if cell is self._cell:
             return
         if cell is not None:
             assert self._cell is None
-        if self._cell is not None:
-            self._cell._paths.remove(self)
-        if cell is not None:
-            for path in cell._paths:
-                assert path is not self, self._path                
-            cell._paths.add(self)
+        manager = self._get_manager()
+        livegraph = manager.livegraph
+        self_authority = livegraph.has_authority(self)
+        if self._cell is not None:            
+            oldcell = self._cell
+            self._cell = None
+            oldcell._paths.remove(self)            
+            if not oldcell._destroyed:
+                if not self_authority:
+                    manager.cancel_cell(
+                        oldcell, void=True, 
+                        reason=StatusReasonEnum.UNDEFINED
+                    )
         if cell is None:
-            manager = self._cell._get_manager()
-        else:
-            manager = cell._get_manager()
+            return
+        cell_authority = livegraph.has_authority(cell)
+        if not cell_authority and not self_authority:
+            msg = "Cannot bind %s to %s: both have no authority"
+            raise Exception(msg % (cell, self))
+        if cell_authority:
+            manager.cancel_cell(cell, void=False)                
+        for path in cell._paths:
+            assert path is not self, self._path                
+        cell._paths.add(self)
         self._cell = cell
-        if trigger:
-            raise NotImplementedError ### livegraph branch
-            if self._incoming and cell is not None:                
-                upstream = manager._cell_upstream(cell, None)
-                if isinstance(upstream, Cell):
-                    a1 = manager.get_default_accessor(upstream)
-                    a2 = manager.get_default_accessor(cell)
-                    manager.update_accessor_accessor(a1, a2)
-            if cell is not None:
-                manager.update_path_value(self)
-    
+        propagate_cell(livegraph, cell)
+        if trigger:            
+            if self_authority:
+                CellUpdateTask(manager, cell).launch()
+            else:
+                up_accessor = livegraph.macropath_to_upstream[self]
+                assert up_accessor is not None  # if no up accessor, how could we have authority?
+                AccessorUpdateTask(manager, up_accessor).launch()
+            
+
     def __str__(self):
         ret = "(Seamless path: ." + ".".join(self._path)
         if self._macro is not None:
@@ -314,7 +345,7 @@ def path(obj):
         manager = None
     return Path(obj._macro, obj._path, manager=manager)
 
-_global_paths = weakref.WeakKeyDictionary() # Paths created in direct mode, or macro mode None
+_global_paths = {} # Paths created in direct mode, or macro mode None
 
 def replace_path(v, toplevel):
     if not isinstance(v, Path):

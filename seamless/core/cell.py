@@ -47,6 +47,8 @@ Use ``Cell.status()`` to get its status.
     _share_callback = None
     _monitor = None # Only changed for MixedCells that are data or buffer of a structuredcell
 
+    _canceling = False
+
     def __init__(self):
         global cell_counter
         super().__init__()
@@ -303,8 +305,9 @@ Use ``Cell.status()`` to get its status.
         manager.connect(self, None, target, target_subpath)
         return self
 
-    def as_text(self):
-        raise NotImplementedError
+    def has_authority(self, path=None):
+        manager = self._get_manager()
+        return manager.livegraph.has_authority(self, path)
 
     def set_file_extension(self, extension):
         if self._mount is None:
@@ -357,12 +360,13 @@ Use ``Cell.status()`` to get its status.
     def _set_share_callback(self, share_callback):
         self._share_callback = share_callback
 
-    def destroy(self, *, from_del=False):        
+    def destroy(self, *, from_del=False): 
+        if self._destroyed:            
+            return 
         super().destroy(from_del=from_del)
-        if not from_del:
-            self._get_manager()._destroy_cell(self)
-            for path in list(self._paths):
-                path._bind(None, trigger=True)
+        self._get_manager()._destroy_cell(self)
+        for path in list(self._paths):
+            path._bind(None, trigger=True)
         self._unmount()
         
     def _unmount(self, from_del=False):
@@ -553,7 +557,7 @@ def cell(celltype="plain", **kwargs):
 _cellclasses = [cellclass for cellclass in globals().values() if isinstance(cellclass, type) \
   and issubclass(cellclass, Cell)]
 
-extensions = {cellclass: ".txt" for cellclass in cellclasses}
+extensions = {cellclass: ".txt" for cellclass in _cellclasses}
 extensions.update({
     TextCell: ".txt",
     PlainCell: ".json",

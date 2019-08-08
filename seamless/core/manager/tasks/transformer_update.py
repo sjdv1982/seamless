@@ -6,7 +6,7 @@ class TransformerUpdateTask(Task):
         super().__init__(manager)
         self.dependencies.append(transformer)
 
-    async def _run(self):        
+    async def _run(self):
         transformer = self.transformer
         manager = self.manager()
         livegraph = manager.livegraph
@@ -41,10 +41,12 @@ class TransformerUpdateTask(Task):
 
         for pinname, accessor in upstreams.items():
             inputpins[pinname] = accessor._checksum
+        set_tf = True
         if is_equal(inputpins, transformer._last_inputs):
             if not transformer._void:
-                return
-        manager._set_transformer_checksum(transformer, None, False)
+                set_tf = False
+        if set_tf:
+            manager._set_transformer_checksum(transformer, None, False)
 
         for accessor in downstreams:
             propagate_accessor(livegraph, accessor, transformer._void)

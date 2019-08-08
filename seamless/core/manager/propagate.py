@@ -23,6 +23,10 @@ def propagate_simple_cell(livegraph, cell):
         cell._void = False
     for accessor in livegraph.cell_to_downstream[cell]:
         propagate_accessor(livegraph, accessor, void=False)
+    if cell._paths is not None:
+        for macropath in cell._paths:
+            for accessor in livegraph.macropath_to_downstream[macropath]:
+                propagate_accessor(livegraph, accessor, void=False)
 
 def propagate_cell(livegraph, cell):
     if cell._monitor is not None:

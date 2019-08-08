@@ -18,11 +18,15 @@ class LiveGraph:
         self.reactor_to_upstream = {} # input pin to read accessor
         self.reactor_to_downstream = {} # Unlike all other X_to_downstream, this is a dict
         self.macro_to_upstream = {} # input pin to read accessor
+        self.macropath_to_upstream = {}
+        self.macropath_to_downstream = {}
+
 
         self.datacells = {}
         self.buffercells = {}
         self.schemacells = {} # cell-to-structuredcell to which it serves as schema; can be multiple
 
+        self.temp_auth = weakref.WeakKeyDictionary()
         self._will_lose_authority = set()
 
     def register_cell(self, cell):
@@ -76,6 +80,10 @@ class LiveGraph:
         outpathdict = {path: None for path in outchannels+editchannels}
         self.paths_downstream[datacell] = outpathdict
 
+    def register_macropath(self, macropath):
+        self.macropath_to_upstream[macropath] = None
+        self.macropath_to_downstream[macropath] = []
+
     def incref_expression(self, expression, accessor):
         expression = expression      
         if expression not in self.expression_to_accessors:
@@ -90,6 +98,8 @@ class LiveGraph:
         self.expression_to_accessors[expression].append(accessor)
 
     def decref_expression(self, expression, accessor):
+        if expression not in self.expression_to_accessors:
+            return
         expression = expression
         accessors = self.expression_to_accessors[expression]        
         accessors.remove(accessor)
@@ -100,10 +110,12 @@ class LiveGraph:
             manager.cachemanager.decref_checksum(expression.checksum, expression, False)            
             manager.taskmanager.destroy_expression(expression)
     
-    def connect_pin_cell(self, source, target):
+    def connect_pin_cell(self, current_macro, source, target):
         """Connect a pin to a simple cell"""
         assert target._monitor is None
         assert self.has_authority(target), target
+        if isinstance(source, EditPin):
+            assert target._get_macro() is None # Cannot connect edit pins to cells under macro control
 
         manager = self.manager()
         pinname = source.name
@@ -147,11 +159,19 @@ class LiveGraph:
 
         return read_accessor
 
-    def connect_cell_pin(self, source, target):
+    def connect_cell_pin(self, current_macro, source, target):
         """Connect a simple cell to a pin"""
         assert source._monitor is None
 
         manager = self.manager()
+        path_cell, path_pin = manager._verify_connect(current_macro, source, target)
+        if path_pin:
+            msg = str(target) + ": macro-generated pins/paths may not be connected outside the macro"
+            raise Exception(msg)
+        if path_cell:
+            msg = str(source) + ": macro-generated cells/paths may only be connected to cells, not %s"
+            raise Exception(msg % target)
+
         pinname = target.name
         worker = target.worker_ref()
         if isinstance(worker, Transformer):
@@ -198,7 +218,7 @@ class LiveGraph:
 
         return read_accessor
 
-    def connect_cell_cell(self, source, target):
+    def connect_cell_cell(self, current_macro, source, target):
         """Connect one simple cell to another"""
         assert source._monitor is None and target._monitor is None
         assert self.has_authority(target), target
@@ -218,6 +238,60 @@ class LiveGraph:
         self.accessor_to_upstream[read_accessor] = source
         self.cell_to_downstream[source].append(read_accessor)
         self.cell_to_upstream[target] = read_accessor
+        
+        manager.cancel_cell(target, void=False)
+        manager.taskmanager.register_accessor(read_accessor) 
+        target._status_reason = StatusReasonEnum.UPSTREAM       
+
+        return read_accessor
+
+    def connect_macropath_cell(self, current_macro, source, target):
+        """Connect a macropath to a simple cell"""
+        assert target._monitor is None
+        assert self.has_authority(target), target
+        
+        manager = self.manager()
+        read_accessor = ReadAccessor(
+            manager, None, source
+        )
+        write_accessor = WriteAccessor(
+            read_accessor, target, 
+            celltype=target._celltype, 
+            subcelltype=target._subcelltype, 
+            pinname=None, 
+            path=None
+        )
+        read_accessor.write_accessor = write_accessor
+        self.accessor_to_upstream[read_accessor] = source
+        self.macropath_to_downstream[source].append(read_accessor)
+        self.cell_to_upstream[target] = read_accessor
+        
+        manager.cancel_cell(target, void=False)
+        manager.taskmanager.register_accessor(read_accessor) 
+        target._status_reason = StatusReasonEnum.UPSTREAM       
+
+        return read_accessor
+
+    def connect_cell_macropath(self, current_macro, source, target):
+        """Connect a simple cell to a macropath"""
+        assert source._monitor is None
+        assert self.has_authority(target), target
+        
+        manager = self.manager()
+        read_accessor = ReadAccessor(
+            manager, None, source._celltype
+        )
+        write_accessor = WriteAccessor(
+            read_accessor, target, 
+            celltype=target, 
+            subcelltype=None, 
+            pinname=None, 
+            path=None
+        )
+        read_accessor.write_accessor = write_accessor
+        self.accessor_to_upstream[read_accessor] = source
+        self.cell_to_downstream[source].append(read_accessor)
+        self.macropath_to_upstream[target] = read_accessor
         
         manager.cancel_cell(target, void=False)
         manager.taskmanager.register_accessor(read_accessor) 
@@ -245,26 +319,33 @@ class LiveGraph:
             result = None
         return result
 
-    def has_authority(self, cell, path=None):
+    def has_authority(self, cell_or_macropath, path=None):
+        if isinstance(cell_or_macropath, Path):
+            macropath = cell_or_macropath            
+            assert path is None
+            if macropath._destroyed:
+                return True # TODO? would this ever be bad?
+            return self.macropath_to_upstream[macropath] is None
+        cell = cell_or_macropath
         if path is not None:
             assert cell._monitor is not None
             assert cell in self.buffercells
             raise NotImplementedError # livegraph branch
         assert cell._monitor is None
+        if cell._destroyed and cell in self.temp_auth:            
+            return self.temp_auth[cell]
         return self.cell_to_upstream[cell] is None
 
     def will_lose_authority(self, cell):
         return cell in self._will_lose_authority
 
     def destroy_accessor(self, manager, accessor):
-        from ..cell import Cell
-        from ..transformer import Transformer
         expression = accessor.expression
         if expression is not None:
             self.decref_expression(expression, accessor)
         taskmanager = manager.taskmanager
         taskmanager.destroy_accessor(accessor)
-        upstream = self.accessor_to_upstream.pop(accessor)
+        upstream = self.accessor_to_upstream.pop(accessor, None)
         if isinstance(upstream, Cell):
             path = accessor.path
             if path is not None:
@@ -273,6 +354,8 @@ class LiveGraph:
                 self.cell_to_downstream[upstream].remove(accessor)
         elif isinstance(upstream, Transformer):
             self.transformer_to_downstream[upstream].remove(accessor)
+        elif isinstance(upstream, Path):
+            self.macropath_to_downstream[upstream].remove(accessor)
         elif upstream is None:
             pass
         else:
@@ -295,6 +378,10 @@ class LiveGraph:
             pinname = accessor.write_accessor.pinname
             if target in self.macro_to_upstream:
                 self.macro_to_upstream[target][pinname] = None
+        elif isinstance(target, Path):
+            manager.cancel_macropath(target, True)
+            if target in self.macropath_to_upstream:
+                self.macropath_to_upstream[target] = None
         else:
             raise TypeError(target)
 
@@ -304,9 +391,11 @@ class LiveGraph:
             if up_accessor is not None:
                 self.destroy_accessor(manager, up_accessor)
         down_accessors = self.transformer_to_downstream[transformer]
-        while len(down_accessors):
+        while len(down_accessors):            
             accessor = down_accessors[0]
             self.destroy_accessor(manager, accessor)
+            if len(down_accessors) and down_accessors[0] is accessor:
+                down_accessors = down_accessors[1:]            
         self.transformer_to_downstream.pop(transformer)
 
     def destroy_macro(self, manager, macro):
@@ -337,7 +426,8 @@ class LiveGraph:
                 raise NotImplementedError # livegraph branch
                 #down_accessors = self.paths_to_downstream.pop(cell)
         else:
-            assert not len(structured_cells)            
+            assert not len(structured_cells)
+            self.temp_auth[cell] = self.has_authority(cell)
             up_accessor = self.cell_to_upstream.pop(cell)
             if up_accessor is not None:
                 self.destroy_accessor(manager, up_accessor)
@@ -345,8 +435,23 @@ class LiveGraph:
             while len(down_accessors):
                 accessor = down_accessors[0]
                 self.destroy_accessor(manager, accessor)
+                if len(down_accessors) and down_accessors[0] is accessor:
+                    down_accessors = down_accessors[1:]            
             self.cell_to_downstream.pop(cell)
         self._will_lose_authority.discard(cell)
+
+    def destroy_macropath(self, macropath):
+        manager = self.manager()
+        up_accessor = self.macropath_to_upstream.pop(macropath)
+        if up_accessor is not None:
+            self.destroy_accessor(manager, up_accessor)
+        down_accessors = self.macropath_to_downstream[macropath]
+        while len(down_accessors):
+            accessor = down_accessors[0]
+            self.destroy_accessor(manager, accessor)
+            if len(down_accessors) and down_accessors[0] is accessor:
+                down_accessors = down_accessors[1:]            
+        self.macropath_to_downstream.pop(macropath)
 
     def check_destroyed(self):        
         attribs = (
@@ -374,3 +479,4 @@ from ..transformer import Transformer
 from ..reactor import Reactor
 from ..macro import Macro, Path
 from ..cell import Cell
+from ..worker import EditPin

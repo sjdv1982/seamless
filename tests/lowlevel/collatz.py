@@ -54,17 +54,21 @@ def collatz(ctx, value, macro_code, macro_params):
 ctx.start = cell()
 
 ctx.code = cell("macro").set(collatz)
-macro_params = {k: "plain" for k in ("value", "macro_code", "macro_params")}
+macro_params = {
+    "value": "int",
+    "macro_params": "plain",
+    "macro_code": ("python", "macro")
+}
 ctx.macro_params = cell().set(macro_params)
 m = ctx.macro = macro(ctx.macro_params.value)
 ctx.start.connect(m.value)
 ctx.code.connect(m.code)
 ctx.code.connect(m.macro_code)
 ctx.macro_params.connect(m.macro_params)
-ctx.series = cell()
-start = 27
+start = 35
 ###start = 10 #7-level nesting
 ###start = 12 #10-level nesting
+###start = 35 #12-level nesting
 ###start = 23 #16-level nesting
 ###start = 27 #111-level nesting
 refe = refe_collatz(start)
@@ -73,9 +77,10 @@ ctx.start.set(start)
 print("building done")
 ctx.equilibrate()
 print(ctx.macro.ctx.series.value)
+print(refe)
 assert ctx.macro.ctx.series.value == refe
 
-#import sys; sys.exit()
+ctx.equilibrate()
 start = 32
 refe = refe_collatz(start)
 print(refe)

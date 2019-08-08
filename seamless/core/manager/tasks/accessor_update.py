@@ -32,6 +32,8 @@ class AccessorUpdateTask(Task):
 
         # Select the write accessor's target.
         target = accessor.write_accessor.target()
+        if isinstance(target, MacroPath):
+            target = target._cell
         if target is None:
             return
         
@@ -67,6 +69,6 @@ from .cell_update import CellUpdateTask
 from ...worker import Worker
 from ...transformer import Transformer
 from ...reactor import Reactor
-from ...macro import Macro
+from ...macro import Macro, Path as MacroPath
 from ...cell import Cell
 from ...status import StatusReasonEnum

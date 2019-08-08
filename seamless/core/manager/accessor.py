@@ -10,7 +10,7 @@ class ReadAccessor(Accessor):
     def __init__(self, manager, path, celltype):
         self.manager = weakref.ref(manager)
         self.path = path
-        assert celltype in celltypes
+        assert celltype in celltypes or isinstance(celltype, MacroPath)
         self.celltype = celltype   
         self.write_accessor = None
         self.expression = None
@@ -18,15 +18,30 @@ class ReadAccessor(Accessor):
     
     def build_expression(self, livegraph, checksum):
         """Returns if expression has changed"""
-        from ...core.cell import Cell
+        celltype = self.celltype
+        if isinstance(celltype, MacroPath):
+            macropath = celltype
+            if macropath._cell is None:
+                self._clear_expression(livegraph)
+                return
+            celltype = macropath._cell._celltype
+        target_celltype = self.write_accessor.celltype
+        target_subcelltype = self.write_accessor.subcelltype
+        if isinstance(target_celltype, MacroPath):
+            macropath = target_celltype
+            if macropath._cell is None:
+                self._clear_expression(livegraph)
+                return
+            target_celltype = macropath._cell._celltype
+            target_subcelltype = macropath._cell._subcelltype
         target_cell_path = None
         target = self.write_accessor.target
         if isinstance(target, Cell):
             target_cell_path = str(cell)
         expression = Expression(
-            checksum, self.path, self.celltype, 
-            self.write_accessor.celltype,
-            self.write_accessor.subcelltype,
+            checksum, self.path, celltype,
+            target_celltype,
+            target_subcelltype, 
             target_cell_path=target_cell_path
         )
         if self.expression is not None:
@@ -37,6 +52,11 @@ class ReadAccessor(Accessor):
         livegraph.incref_expression(expression, self)
         return True
 
+    def _clear_expression(self, livegraph):
+        if self.expression is None:
+            return
+        livegraph.decref_expression(self.expression, self)
+        self.expression = None
 
 class WriteAccessor(Accessor):
     def __init__(self, read_accessor, target, celltype, subcelltype, pinname, path):
@@ -47,12 +67,14 @@ class WriteAccessor(Accessor):
         assert pinname is None or path is None
         self.read_accessor = weakref.ref(read_accessor)
         self.target = weakref.ref(target)
+        assert celltype in celltypes or isinstance(celltype, MacroPath)
         self.celltype = celltype
         assert subcelltype is None or subcelltype in subcelltypes 
         self.subcelltype = subcelltype
         self.pinname = pinname
         self.path = path
 
-from ...core.cell import celltypes, subcelltypes
+from ...core.cell import Cell, celltypes, subcelltypes
+from ...core.macro import Path as MacroPath
 from ...core.status import StatusReasonEnum
 from .expression import Expression

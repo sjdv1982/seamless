@@ -1,6 +1,9 @@
 from seamless.core import macro_mode, context, cell, macro
 
-ctx = context(toplevel=True)
+with macro_mode.macro_mode_on(None):
+    ctx = context(toplevel=True)
+    ctx.mount("/tmp/test-mount-macro")
+
 ctx.macro = macro({
     "a": "mixed",
 })
@@ -33,4 +36,22 @@ print(ctx.macro.ctx.result.value)
 print(ctx.result0.value)
 ctx.macro.ctx.result.connect(ctx.result0)
 ctx.equilibrate()
+print(ctx.result0.value)
+
+print("Update 2 ...")
+ctx.a.set(6)
+ctx.equilibrate()
+print(ctx.macro.ctx.result.value)
+print(ctx.result0.value)
+
+print("Update 2a ...")
+with macro_mode.macro_mode_on(None):
+    ctx.macro.ctx.result.connect(ctx.result0)
+ctx.equilibrate()
+print(ctx.result0.value)
+
+print("Update 3 ...")
+ctx.a.set(7)
+ctx.equilibrate()
+print(ctx.macro.ctx.result.value)
 print(ctx.result0.value)

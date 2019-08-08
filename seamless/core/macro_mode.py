@@ -49,7 +49,9 @@ def curr_macro():
 def macro_mode_on(macro=None):
     from . import mount    
     from .context import Context
+    from .cell import Cell
     from .unbound_context import UnboundContext                
+    from .macro import _global_paths
     global _macro_mode, _curr_macro
     if macro is None:
         assert not _macro_mode 
@@ -87,7 +89,7 @@ def macro_mode_on(macro=None):
                 else:
                     _toplevel_registered.add(ctx)
                     _toplevel_managers.add(ctx._get_manager())
-                    bind_all(ctx)        
+                    bind_all(ctx)
         ok = True
     finally:
         _macro_mode = old_macro_mode
@@ -100,7 +102,18 @@ def macro_mode_on(macro=None):
                     if ctx is None or not ok:
                         continue
                     assert isinstance(ctx, Context)
-                    mount.scan(ctx, old_context=None)
+                    mount.scan(ctx, old_context=None)        
+            for ctx in _toplevel_registered:
+                for pathname, path in _global_paths.get(ctx, {}).items():
+                    cctx = ctx
+                    for subpathname in pathname:                    
+                        try:
+                            cctx = getattr(cctx, subpathname)
+                        except (AttributeError, KeyError, TypeError):
+                            break
+                    else:
+                        if isinstance(cctx, Cell):
+                            path._bind(cctx, True)
         elif not _macro_mode:
             _toplevel_register.clear()
             if ok:

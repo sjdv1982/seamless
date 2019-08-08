@@ -190,13 +190,6 @@ name: str
         else:
             return super().path
 
-    def _cache_paths(self):
-        for child in self._children.values():
-            child._cached_path = None
-            child._cached_path = child.path
-            if isinstance(child, Context):
-                child._cache_paths()
-
     def _get_macro(self):
         return self._macro
 
@@ -257,11 +250,16 @@ name: str
     def destroy(self, from_del=False):
         if self._destroyed:
             return
-        object.__setattr__(self, "_destroyed", True)
+        super().destroy(from_del=from_del)
         for childname, child in self._children.items():
             if isinstance(child, (Cell, Context, Worker)):
                 child.destroy(from_del=from_del)
         if self._toplevel:
+            from .macro import _global_paths
+            manager = self._get_manager()
+            paths = _global_paths.get(self, {})
+            for path in paths.values():
+                manager._destroy_macropath(path)
             unregister_toplevel(self)
         else:
             self._unmount(from_del=from_del)

@@ -29,6 +29,9 @@ class CellUpdateTask(Task):
         assert not cell._monitor # cell update is not for StructuredCell cells
         livegraph = manager.livegraph
         accessors = livegraph.cell_to_downstream[cell]
+        for path in cell._paths:            
+            path_accessors = livegraph.macropath_to_downstream[path]
+            accessors += path_accessors
         for accessor in accessors:
             #- construct (not evaluate!) their expression using the cell checksum 
             #  Constructing a downstream expression increfs the cell checksum

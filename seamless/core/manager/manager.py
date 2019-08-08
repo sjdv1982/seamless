@@ -81,19 +81,14 @@ class Manager:
         self.livegraph.register_macro(macro)
         self.taskmanager.register_macro(macro)
 
+    @mainthread
+    def register_macropath(self, macropath):
+        self.livegraph.register_macropath(macropath)
+        self.taskmanager.register_macropath(macropath)
+
     ##########################################################################
     # API section II: Actions
     ##########################################################################
-
-    @mainthread
-    def connect(self, source, source_subpath, target, target_subpath):
-
-        if isinstance(target, Cell):
-            self.livegraph._will_lose_authority.add(target)
-        task = UponConnectionTask(
-            self, source, source_subpath, target, target_subpath
-        )
-        task.launch()
 
     @run_in_mainthread
     def set_cell_checksum(self, cell, checksum, initial, is_buffercell):
@@ -136,6 +131,7 @@ class Manager:
         assert isinstance(void, bool), void
         if void:
             assert status_reason is not None
+            assert checksum is None
         authority = self.livegraph.has_authority(cell)
         cachemanager = self.cachemanager
         old_checksum = cell._checksum
@@ -257,16 +253,24 @@ class Manager:
         """Cancels all tasks depending on cell, and sets all dependencies to None. 
 If void=True, all dependencies are set to void as well.
 If origin_task is provided, that task is not cancelled."""
-        if (not void) and cell._void:
+        if cell._destroyed:
             return
-        self.taskmanager.cancel_cell(cell, origin_task=origin_task)
-        if reason is None:
-            reason = StatusReasonEnum.UPSTREAM
-        self._set_cell_checksum(cell, None, void, status_reason=reason)
-        livegraph = self.livegraph
-        accessors = livegraph.cell_to_downstream[cell]
-        for accessor in accessors:            
-            self.cancel_accessor(accessor, void)        
+        if cell._canceling:
+            return
+        try:
+            cell._canceling = True
+            if (not void) and cell._void:
+                return
+            self.taskmanager.cancel_cell(cell, origin_task=origin_task)
+            if reason is None:
+                reason = StatusReasonEnum.UPSTREAM
+            self._set_cell_checksum(cell, None, void, status_reason=reason)
+            livegraph = self.livegraph
+            accessors = livegraph.cell_to_downstream[cell]
+            for accessor in accessors:            
+                self.cancel_accessor(accessor, void)        
+        finally:
+            cell._canceling = False
 
     @mainthread
     def cancel_accessor(self, accessor, void, origin_task=None):
@@ -313,12 +317,43 @@ If origin_task is provided, that task is not cancelled."""
             gen_context.destroy()
 
     ##########################################################################
-    # API section ???: Inline syntax support (e.g. pin.cell().connect)
+    # API section ???: Connection support
     ##########################################################################
+
+    @mainthread
+    def connect(self, source, source_subpath, target, target_subpath):
+        if isinstance(target, Cell):
+            self.livegraph._will_lose_authority.add(target)
+        task = UponConnectionTask(
+            self, source, source_subpath, target, target_subpath
+        )
+        task.launch()
+
 
     def cell_from_pin(self):
         return self.livegraph.cell_from_pin
 
+
+    def _verify_connect(self, current_macro, source, target):        
+        from ..macro import Path
+        assert source._get_manager() is self, source._get_manager()
+        assert source._root() is target._root()
+        source_macro = source._get_macro()
+        target_macro = target._get_macro()
+        if source_macro is not None or target_macro is not None:
+            if current_macro is not None:
+                if not source_macro._context()._part_of2(current_macro._context()):
+                    msg = "%s is not part of current %s"
+                    raise Exception(msg % (source_macro, current_macro))
+                if not target_macro._context()._part_of2(current_macro._context()):
+                    msg = "%s is not part of current %s"
+                    raise Exception(msg % (target_macro, current_macro))
+        path_source = (source_macro is not current_macro or isinstance(source, Path))
+        path_target = (target_macro is not current_macro or isinstance(target, Path))
+        if path_source and path_target:
+            msg = "Neither %s (governing %s) nor %s (governing %s) was created by current macro %s"
+            raise Exception(msg % (source_macro, source, target_macro, target, current_macro))
+        return path_source, path_target
 
     ##########################################################################
     # API section ???: Destruction
@@ -343,9 +378,17 @@ If origin_task is provided, that task is not cancelled."""
         self.cachemanager.destroy_macro(macro)
         self.livegraph.destroy_macro(self, macro)
         self.taskmanager.destroy_macro(macro, full=True)
+        if len(macro._paths):
+            for path in macro._paths.values():
+                path.destroy()
+
+    def _destroy_macropath(self, macropath):
+        self.livegraph.destroy_macropath(macropath)
+        self.taskmanager.destroy_macropath(macropath)
 
     @mainthread
     def destroy(self, from_del=False):
+        from ..macro import _global_paths
         if self._destroyed:
             return
         self._destroyed = True
@@ -353,7 +396,12 @@ If origin_task is provided, that task is not cancelled."""
         if ctx is None:
             return
         ctx.destroy()
+        global_paths = _global_paths.pop(ctx, {})
+        for path in global_paths.values():
+            path.destroy()
         self.mountmanager.unmount_context(ctx, from_del=from_del, toplevel=True)
+        for path in list(self.livegraph.macropath_to_upstream.keys()):
+            path.destroy()
         self.cachemanager.check_destroyed()
         self.livegraph.check_destroyed()
         self.taskmanager.check_destroyed()

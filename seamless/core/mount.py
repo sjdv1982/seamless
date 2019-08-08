@@ -719,7 +719,7 @@ def scan(ctx_or_cell, *, old_context):
                         raise NotImplementedError # livegraph branch
                     else:
                         livegraph = child._get_manager().livegraph
-                        if livegraph.will_lose_authority(child):
+                        if child._get_macro() is not None or livegraph.will_lose_authority(child):
                             if result["mode"] == "r":
                                 return None
                             result["mode"] = "w"

@@ -21,6 +21,7 @@ class TaskManager:
         self.transformer_to_task = {}
         self.reactor_to_task = {}
         self.macro_to_task = {}
+        self.macropath_to_task = {}
         self.reftasks = {} # tasks that hold a reference to (are a link to) another task 
         self.rev_reftasks = {} # mapping of a task to their refholder tasks
         self.cell_to_value = {} # very short term cache:
@@ -58,6 +59,10 @@ class TaskManager:
     def register_reactor(self, reactor):
         assert reactor not in self.reactor_to_task
         self.reactor_to_task[reactor] = []
+
+    def register_macropath(self, macropath):
+        assert macropath not in self.macropath_to_task
+        self.macropath_to_task[macropath] = []
 
     def register_macro(self, macro):
         assert macro not in self.macro_to_task
@@ -126,6 +131,8 @@ class TaskManager:
             d = self.reactor_to_task
         elif isinstance(dep, Macro):
             d = self.macro_to_task
+        elif isinstance(dep, MacroPath):
+            d = self.macropath_to_task
         else:
             raise TypeError(dep)
         dd = d[dep]
@@ -183,6 +190,8 @@ class TaskManager:
             d = self.reactor_to_task
         elif isinstance(dep, Macro):
             d = self.macro_to_task
+        elif isinstance(dep, MacroPath):
+            d = self.macropath_to_task
         else:
             raise TypeError(dep)
         dd = d[dep]
@@ -330,6 +339,13 @@ If origin_task is provided, that task is not cancelled."""
                 continue
             task.cancel()
 
+    def cancel_macropath(self, macropath, full=False):
+        """Cancels all tasks depending on macropath."""
+        for task in self.macropath_to_task[macropath]:
+            if not full and isinstance(task, UponConnectionTask):
+                continue
+            task.cancel()
+
     def destroy_cell(self, cell, full=False):
         self.cancel_cell(cell, full=full)
         self.cell_to_task.pop(cell)
@@ -355,6 +371,10 @@ If origin_task is provided, that task is not cancelled."""
         self.cancel_macro(macro, full=full)
         self.macro_to_task.pop(macro)
 
+    def destroy_macropath(self, macropath, full=False):
+        self.cancel_macropath(macropath, full=full)
+        self.macropath_to_task.pop(macropath)
+
     def check_destroyed(self):
         attribs = (
             "tasks",
@@ -364,6 +384,7 @@ If origin_task is provided, that task is not cancelled."""
             "transformer_to_task",
             "reactor_to_task",
             "macro_to_task",
+            "macropath_to_task",
             "reftasks",
             "rev_reftasks",
             "cell_to_value",
@@ -381,7 +402,7 @@ If origin_task is provided, that task is not cancelled."""
 
 from ..cell import Cell
 from ..transformer import Transformer
-from ..macro import Macro
+from ..macro import Macro, Path as MacroPath
 from ..reactor import Reactor
 from .. import SeamlessBase
 from .accessor import ReadAccessor
