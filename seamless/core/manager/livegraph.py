@@ -441,6 +441,8 @@ class LiveGraph:
         self._will_lose_authority.discard(cell)
 
     def destroy_macropath(self, macropath):
+        if macropath not in self.macropath_to_upstream:
+            return
         manager = self.manager()
         up_accessor = self.macropath_to_upstream.pop(macropath)
         if up_accessor is not None:

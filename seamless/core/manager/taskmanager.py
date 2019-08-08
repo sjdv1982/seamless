@@ -341,6 +341,8 @@ If origin_task is provided, that task is not cancelled."""
 
     def cancel_macropath(self, macropath, full=False):
         """Cancels all tasks depending on macropath."""
+        if macropath not in self.macropath_to_task:
+            return
         for task in self.macropath_to_task[macropath]:
             if not full and isinstance(task, UponConnectionTask):
                 continue
@@ -372,6 +374,8 @@ If origin_task is provided, that task is not cancelled."""
         self.macro_to_task.pop(macro)
 
     def destroy_macropath(self, macropath, full=False):
+        if macropath not in self.macropath_to_task:
+            return
         self.cancel_macropath(macropath, full=full)
         self.macropath_to_task.pop(macropath)
 
