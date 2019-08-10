@@ -44,7 +44,8 @@ class MacroUpdateTask(Task):
             if not macro._void:
                 return
 
-        macro._last_inputs = inputpins
+        macro._last_inputs = inputpins.copy()
+        macro._void = False
         
         buffer_cache = manager.cachemanager.buffer_cache        
 

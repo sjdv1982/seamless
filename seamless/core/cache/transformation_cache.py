@@ -16,6 +16,8 @@ TODO: do the same with stdout, stderr
 TODO: add some metadata to the above? (when and where it was executed)
 """
 
+from .. import destroyer
+
 TF_KEEP_ALIVE = 20.0 # Keep transformations alive for 20 secs after the last ref has expired
 
 def tf_get_hash(transformation):
@@ -88,6 +90,7 @@ class TransformationCache:
         assert transformer not in self.transformer_to_transformations
         self.transformer_to_transformations[transformer] = None
 
+    @destroyer
     def destroy_transformer(self, transformer):
         tf_checksum = self.transformer_to_transformations.pop(transformer)
         if tf_checksum is not None:
@@ -178,11 +181,12 @@ class TransformationCache:
             tempref = functools.partial(self.destroy_transformation, transformation)
             temprefmanager.add_ref(tempref, TF_KEEP_ALIVE)
 
+    @destroyer
     def destroy_transformation(self, transformation):
         tf_checksum = tf_get_hash(transformation)
         assert tf_checksum in self.transformations
         assert tf_checksum in self.transformations_to_transformers
-        if len(self.transformations_to_transformers):
+        if len(self.transformations_to_transformers[tf_checksum]):
             return # A new transformer was registered in the meantime
         self.transformations.pop(tf_checksum)
         self.transformations_to_transformers.pop(tf_checksum)

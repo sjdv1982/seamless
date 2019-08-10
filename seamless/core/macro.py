@@ -97,7 +97,10 @@ class Macro(Worker):
                     macro = macro._context()._macro
                     if macro is None:
                         break
-                print("Execute", self)
+                str_self = str(self)
+                if len(str_self) > 80:
+                    str_self = str_self[:35] + "..%d.." % (len(str_self)-70) + str_self[-35:]
+                print("Execute", str_self)
                 with library.bind(lib):
                     identifier = str(self)
                     if len(module_workspace):

@@ -25,6 +25,8 @@ def propagate_simple_cell(livegraph, cell):
         propagate_accessor(livegraph, accessor, void=False)
     if cell._paths is not None:
         for macropath in cell._paths:
+            fullpath = macropath._macro.path + ("ctx",) + macropath._path
+            assert fullpath == cell.path, (fullpath, cell.path)
             for accessor in livegraph.macropath_to_downstream[macropath]:
                 propagate_accessor(livegraph, accessor, void=False)
 

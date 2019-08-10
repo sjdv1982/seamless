@@ -65,6 +65,9 @@ class TransformationJob:
         semantic_cache, debug
     ):
         assert "code" in transformation, transformation.keys()
+        for pinname in transformation:
+            if pinname != "__output__":
+                assert transformation[pinname][2] is not None, pinname
         outputpin = transformation["__output__"]
         outputname, celltype, subcelltype = outputpin
         self.outputpin = outputpin
@@ -108,7 +111,7 @@ class TransformationJob:
             if checksum is None:
                 values[pinname] = None
                 continue
-            buffer = await get_buffer_async(checksum, buffer_cache)
+            buffer = await get_buffer_async(checksum, buffer_cache)            
             assert buffer is not None
             value = await deserialize(buffer, checksum, celltype, False)
             if value is None:
@@ -132,7 +135,7 @@ class TransformationJob:
                 codename, code,
                 injector, module_workspace,
                 codename,
-                namespace, inputs, outputname, queue
+                namespace, inputs, outputname, celltype, queue
             )            
             execute_command = execute_debug if self.debug else execute 
             self.executor = Executor(target=execute_command,args=args, daemon=True)
@@ -167,14 +170,14 @@ class TransformationJob:
                 self.executor.terminate()
         finally:            
             release_lock(lock)
+        result_checksum = None
         if result is not None:
             try:
-                result_buffer = await serialize(result, celltype)
                 await validate_subcelltype(
-                    result_buffer, celltype, subcelltype, 
+                    result, celltype, subcelltype, 
                     codename, buffer_cache
                 )
-                result_checksum = await calculate_checksum(result_buffer)
+                result_checksum = await calculate_checksum(result)
             except Exception:
                 raise SeamlessInvalidValueError(result)
             #print("RESULT", result, result_buffer, result_checksum)

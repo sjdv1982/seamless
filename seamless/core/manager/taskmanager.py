@@ -5,6 +5,8 @@ from functools import partial
 import threading
 import time
 
+from .. import destroyer
+
 class TaskManager:
     _destroyed = False
     _active = True
@@ -26,6 +28,7 @@ class TaskManager:
         self.rev_reftasks = {} # mapping of a task to their refholder tasks
         self.cell_to_value = {} # very short term cache:
                                 # only while the checksum is being computed by a SetCellValueTask
+        self._destroying = set()
 
     def activate(self):
         self._active = True
@@ -297,7 +300,8 @@ class TaskManager:
 
     def cancel_cell(self, cell, *, origin_task=None, full=False):
         """Cancels all tasks depending on cell.
-If origin_task is provided, that task is not cancelled."""
+If origin_task is provided, that task is not cancelled.
+If full = True, cancels all UponConnectionTasks as well"""
         for task in self.cell_to_task.get(cell, []):
             if task is origin_task:
                 continue
@@ -340,7 +344,8 @@ If origin_task is provided, that task is not cancelled."""
             task.cancel()
 
     def cancel_macropath(self, macropath, full=False):
-        """Cancels all tasks depending on macropath."""
+        """Cancels all tasks depending on macropath.
+        If full = True, cancels all UponConnectionTasks as well"""
         if macropath not in self.macropath_to_task:
             return
         for task in self.macropath_to_task[macropath]:
@@ -348,32 +353,38 @@ If origin_task is provided, that task is not cancelled."""
                 continue
             task.cancel()
 
+    @destroyer
     def destroy_cell(self, cell, full=False):
         self.cancel_cell(cell, full=full)
         self.cell_to_task.pop(cell)
         self.cell_to_value.pop(cell, None)
 
+    @destroyer
     def destroy_accessor(self, accessor):
         self.cancel_accessor(accessor)
         self.accessor_to_task.pop(accessor, None) # guard here for an invalid connection
 
+    @destroyer
     def destroy_expression(self, expression):
         self.cancel_expression(expression)
         self.expression_to_task.pop(expression)
 
-    def destroy_transformer(self, transformer, full=False):
+    @destroyer
+    def destroy_transformer(self, transformer, *, full=False):
         self.cancel_transformer(transformer, full=full)
         self.transformer_to_task.pop(transformer)
 
-    def destroy_reactor(self, reactor, full=False):
+    def destroy_reactor(self, reactor, *, full=False):
         self.cancel_reactor(reactor, full=full)
         self.reactor_to_task.pop(reactor)
 
-    def destroy_macro(self, macro, full=False):
+    @destroyer
+    def destroy_macro(self, macro, *, full=False):
         self.cancel_macro(macro, full=full)
         self.macro_to_task.pop(macro)
 
-    def destroy_macropath(self, macropath, full=False):
+    @destroyer
+    def destroy_macropath(self, macropath, *, full=False):
         if macropath not in self.macropath_to_task:
             return
         self.cancel_macropath(macropath, full=full)

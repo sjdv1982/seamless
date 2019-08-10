@@ -1,3 +1,4 @@
+import asyncio
 from . import Task
 from ...protocol.calculate_checksum import calculate_checksum
 
@@ -33,7 +34,8 @@ class CellChecksumTask(Task):
 - Set the cell's checksum attribute (direct attribute access)
 - If the checksum was None but the void attribute was not None, do a cell void cancellation.
         """
-        from . import SerializeToBufferTask
+        from .serialize_buffer import SerializeToBufferTask
+        from .cell_update import CellUpdateTask
 
         manager = self.manager()
         await manager.taskmanager.await_upon_connection_tasks(self.taskid)
@@ -58,6 +60,18 @@ class CellChecksumTask(Task):
                     except Exception:
                         invalid = True
             else:
+                taskid = self.taskid
+                while 1:
+                    for task in taskmanager.tasks:
+                        if task.taskid >= taskid:
+                            continue
+                        if isinstance(task, CellUpdateTask):
+                            continue
+                        if cell in task.dependencies:
+                            break
+                    else:
+                        break
+                    await asyncio.sleep(0)
                 checksum = cell._checksum   
                 if checksum is None:
                     return         

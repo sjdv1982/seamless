@@ -1,5 +1,6 @@
 import weakref
 from ..status import StatusReasonEnum
+from .. import destroyer
 
 # NOTE: distinction between simple cells (no StructuredCell monitor), StructuredCell data cells, and StructuredCell buffer cells
 
@@ -19,8 +20,7 @@ class LiveGraph:
         self.reactor_to_downstream = {} # Unlike all other X_to_downstream, this is a dict
         self.macro_to_upstream = {} # input pin to read accessor
         self.macropath_to_upstream = {}
-        self.macropath_to_downstream = {}
-
+        self.macropath_to_downstream = {}        
 
         self.datacells = {}
         self.buffercells = {}
@@ -28,6 +28,8 @@ class LiveGraph:
 
         self.temp_auth = weakref.WeakKeyDictionary()
         self._will_lose_authority = set()
+
+        self._destroying = set()
 
     def register_cell(self, cell):
         assert cell._monitor is None # StructuredCells get registered later
@@ -85,7 +87,6 @@ class LiveGraph:
         self.macropath_to_downstream[macropath] = []
 
     def incref_expression(self, expression, accessor):
-        expression = expression      
         if expression not in self.expression_to_accessors:
             #print("CREATE")
             assert expression not in self.expression_to_accessors
@@ -97,10 +98,7 @@ class LiveGraph:
         #print("INCREF", expression.celltype, expression.target_celltype)
         self.expression_to_accessors[expression].append(accessor)
 
-    def decref_expression(self, expression, accessor):
-        if expression not in self.expression_to_accessors:
-            return
-        expression = expression
+    def decref_expression(self, expression, accessor):        
         accessors = self.expression_to_accessors[expression]        
         accessors.remove(accessor)
         #print("DECREF", expression.celltype, expression.target_celltype, accessors)
@@ -145,6 +143,7 @@ class LiveGraph:
             path=None
         )
         read_accessor.write_accessor = write_accessor
+        assert self.accessor_to_upstream.get(read_accessor) is None, (self.accessor_to_upstream[read_accessor], worker)
         self.accessor_to_upstream[read_accessor] = worker
         to_downstream.append(read_accessor)
         self.cell_to_upstream[target] = read_accessor
@@ -202,6 +201,7 @@ class LiveGraph:
             path=None
         )
         read_accessor.write_accessor = write_accessor
+        assert self.accessor_to_upstream.get(read_accessor) is None, (self.accessor_to_upstream[read_accessor], source)
         self.accessor_to_upstream[read_accessor] = source
         self.cell_to_downstream[source].append(read_accessor)
         to_upstream[pinname] = read_accessor
@@ -235,6 +235,7 @@ class LiveGraph:
             path=None
         )
         read_accessor.write_accessor = write_accessor
+        assert self.accessor_to_upstream.get(read_accessor) is None, (self.accessor_to_upstream[read_accessor], source)
         self.accessor_to_upstream[read_accessor] = source
         self.cell_to_downstream[source].append(read_accessor)
         self.cell_to_upstream[target] = read_accessor
@@ -262,6 +263,7 @@ class LiveGraph:
             path=None
         )
         read_accessor.write_accessor = write_accessor
+        assert self.accessor_to_upstream.get(read_accessor) is None, (self.accessor_to_upstream[read_accessor], source)
         self.accessor_to_upstream[read_accessor] = source
         self.macropath_to_downstream[source].append(read_accessor)
         self.cell_to_upstream[target] = read_accessor
@@ -289,6 +291,7 @@ class LiveGraph:
             path=None
         )
         read_accessor.write_accessor = write_accessor
+        assert self.accessor_to_upstream.get(read_accessor) is None, (self.accessor_to_upstream[read_accessor], source)
         self.accessor_to_upstream[read_accessor] = source
         self.cell_to_downstream[source].append(read_accessor)
         self.macropath_to_upstream[target] = read_accessor
@@ -339,13 +342,17 @@ class LiveGraph:
     def will_lose_authority(self, cell):
         return cell in self._will_lose_authority
 
-    def destroy_accessor(self, manager, accessor):
+    @destroyer
+    def destroy_accessor(self, manager, accessor, from_upstream=False):
+        #print("DESTROY", accessor)
         expression = accessor.expression
         if expression is not None:
-            self.decref_expression(expression, accessor)
+            accessor.expression = None
+            self.decref_expression(expression, accessor)            
+            accessor._checksum = None
         taskmanager = manager.taskmanager
         taskmanager.destroy_accessor(accessor)
-        upstream = self.accessor_to_upstream.pop(accessor, None)
+        upstream = self.accessor_to_upstream.pop(accessor)
         if isinstance(upstream, Cell):
             path = accessor.path
             if path is not None:
@@ -385,6 +392,7 @@ class LiveGraph:
         else:
             raise TypeError(target)
 
+    @destroyer
     def destroy_transformer(self, manager, transformer):
         up_accessors = self.transformer_to_upstream.pop(transformer)
         for up_accessor in up_accessors.values():
@@ -393,17 +401,21 @@ class LiveGraph:
         down_accessors = self.transformer_to_downstream[transformer]
         while len(down_accessors):            
             accessor = down_accessors[0]
-            self.destroy_accessor(manager, accessor)
+            assert self.accessor_to_upstream[accessor] is transformer
+            self.destroy_accessor(manager, accessor, from_upstream=True)
             if len(down_accessors) and down_accessors[0] is accessor:
+                print("WARNING: destruction of transformer downstream %s failed" % accessor)
                 down_accessors = down_accessors[1:]            
         self.transformer_to_downstream.pop(transformer)
 
+    @destroyer
     def destroy_macro(self, manager, macro):
         up_accessors = self.macro_to_upstream.pop(macro)
         for up_accessor in up_accessors.values():
             if up_accessor is not None:
                 self.destroy_accessor(manager, up_accessor)
 
+    @destroyer
     def destroy_cell(self, manager, cell):
         structured_cells = []
         buf_struc_cell = self.buffercells.pop(cell, None)
@@ -434,15 +446,16 @@ class LiveGraph:
             down_accessors = self.cell_to_downstream[cell]
             while len(down_accessors):
                 accessor = down_accessors[0]
-                self.destroy_accessor(manager, accessor)
+                assert self.accessor_to_upstream[accessor] is cell
+                self.destroy_accessor(manager, accessor, from_upstream=True)
                 if len(down_accessors) and down_accessors[0] is accessor:
-                    down_accessors = down_accessors[1:]            
+                    print("WARNING: destruction of cell downstream %s failed" % accessor)
+                    down_accessors = down_accessors[1:]
             self.cell_to_downstream.pop(cell)
         self._will_lose_authority.discard(cell)
 
+    @destroyer
     def destroy_macropath(self, macropath):
-        if macropath not in self.macropath_to_upstream:
-            return
         manager = self.manager()
         up_accessor = self.macropath_to_upstream.pop(macropath)
         if up_accessor is not None:
@@ -450,8 +463,10 @@ class LiveGraph:
         down_accessors = self.macropath_to_downstream[macropath]
         while len(down_accessors):
             accessor = down_accessors[0]
-            self.destroy_accessor(manager, accessor)
+            assert self.accessor_to_upstream[accessor] is macropath
+            self.destroy_accessor(manager, accessor, from_upstream=True)
             if len(down_accessors) and down_accessors[0] is accessor:
+                print("WARNING: destruction of macropath downstream %s failed" % accessor)
                 down_accessors = down_accessors[1:]            
         self.macropath_to_downstream.pop(macropath)
 

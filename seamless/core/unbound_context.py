@@ -323,6 +323,7 @@ class UnboundContext(SeamlessBase):
         for reg in self._realmanager._registered:
             if isinstance(reg, Path):
                 manager.register_macropath(reg)
+        ctx._root()._cache_paths()
         self._bind_stage2(ctx._get_manager())
     
     def destroy(self, *, from_del=False):

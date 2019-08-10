@@ -190,6 +190,17 @@ name: str
         else:
             return super().path
 
+    def _cache_paths(self):
+        for child in self._children.values():
+            child._cached_path = None
+            child._cached_path = child.path
+            if isinstance(child, Context):
+                child._cache_paths()
+            if isinstance(child, Macro):
+                cctx = child._gen_context
+                if cctx is not None:
+                    cctx._cache_paths()
+
     def _get_macro(self):
         return self._macro
 

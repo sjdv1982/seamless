@@ -21,6 +21,7 @@ if platform.system() == "Windows":
     from ctypes import windll
 
 from .cached_compile import exec_code
+from .protocol.serialize import _serialize as serialize
 
 def _async_raise(tid, exctype):
     """raises the exception, performs cleanup if needed"""
@@ -65,7 +66,7 @@ def return_preliminary(result_queue, value):
 def execute(name, code, 
       injector, module_workspace,
       identifier, namespace,
-      inputs, output_name, result_queue
+      inputs, output_name, celltype, result_queue
     ):
     namespace["return_preliminary"] = functools.partial(
         return_preliminary, result_queue
@@ -86,7 +87,8 @@ def execute(name, code,
         else:
             try:
                 result = namespace[output_name]
-                result_queue.put((0, result))
+                result_buffer = serialize(result, celltype)
+                result_queue.put((0, result_buffer))
             except KeyError:
                 result_queue.put((1, "Output variable name '%s' undefined" % output_name))
     if USE_PROCESSES:
@@ -96,7 +98,7 @@ def execute(name, code,
 def execute_debug(name, code, 
       injector, module_workspace,
       identifier, namespace,
-      inputs, output_name, result_queue
+      inputs, output_name, celltype, result_queue
     ):    
     if platform.system() == "Windows":
         while True:
@@ -121,6 +123,6 @@ def execute_debug(name, code,
     execute(name, code, 
       injector, module_workspace,
       identifier, namespace,
-      inputs, output_name, result_queue
+      inputs, output_name, celltype, result_queue
     )
 

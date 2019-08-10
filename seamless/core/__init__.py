@@ -1,5 +1,5 @@
 import weakref
-from functools import lru_cache
+from functools import lru_cache, update_wrapper
 
 class IpyString(str):
     def _repr_pretty_(self, p, cycle):
@@ -20,12 +20,12 @@ class SeamlessBase:
             return self._cached_path
         if self._context is None:
             return ()
-        if self._context() is None:
+        elif self._context() is None:
             return ("<None>", self.name)
         elif self._context().path is None:
             return ("<None>", self.name)
         else:
-            return self._context().path + (self.name,)
+            return self._context().path + (self.name,)        
 
     def _validate_path(self, required_path=None):
         if required_path is None:
@@ -44,7 +44,6 @@ class SeamlessBase:
         ctx = weakref.ref(context)
         self._context = ctx
         self.name = name
-        self._fallback_path = self.path
         return self
 
     def _get_manager(self):
@@ -84,6 +83,19 @@ class SeamlessBase:
 
     def destroy(self, **kwargs):
         self._destroyed = True
+
+def destroyer(func):
+    def wrapper(func, *args, **kwargs):
+        self = args[0]
+        lastarg = args[-1]
+        if lastarg in self._destroying:
+            return
+        try:
+            func(*args, **kwargs)
+        finally:
+            self._destroying.discard(lastarg)
+    update_wrapper(wrapper, func)
+    return func
 
 from .mount import mountmanager
 from .macro_mode import get_macro_mode, macro_mode_on

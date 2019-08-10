@@ -25,8 +25,6 @@ class BufferCache:
         self.buffer_refcount = {} #buffer-checksum-to-refcount
 
     def cache_buffer(self, checksum, buffer):
-        if checksum not in self.buffer_refcount:
-            return
         if checksum in self.buffer_cache:
             return
         self.buffer_cache[checksum] = buffer

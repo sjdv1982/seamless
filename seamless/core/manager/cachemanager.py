@@ -1,5 +1,6 @@
 import weakref
 from ..cache.buffer_cache import buffer_cache
+from .. import destroyer
 
 class CacheManager:
     def __init__(self, manager):
@@ -22,6 +23,8 @@ class CacheManager:
         # for now, just a single global transformation cache
         from ..cache.transformation_cache import transformation_cache
         self.transformation_cache = transformation_cache
+
+        self._destroying = set()
         
     def register_cell(self, cell):
         assert cell not in self.cell_to_ref
@@ -92,6 +95,7 @@ class CacheManager:
             self.buffer_cache.decref(checksum)
             self.checksum_refs.pop(checksum)        
 
+    @destroyer
     def destroy_cell(self, cell):
         ref = self.cell_to_ref[cell]
         if ref is not None:
@@ -99,6 +103,7 @@ class CacheManager:
             self.decref_checksum(checksum, cell, authority)
         self.cell_to_ref.pop(cell)
 
+    @destroyer
     def destroy_transformer(self, transformer):
         ref = self.transformer_to_ref[transformer]
         if ref is not None:
@@ -107,9 +112,11 @@ class CacheManager:
         self.transformer_to_ref.pop(transformer)
         self.transformation_cache.destroy_transformer(transformer)
 
+    @destroyer
     def destroy_macro(self, macro):
         self.macro_exceptions.pop(macro)
 
+    @destroyer
     def destroy_reactor(self, reactor):
         raise NotImplementedError # livegraph branch
         self.reactor_exceptions.pop(reactor)
