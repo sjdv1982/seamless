@@ -197,7 +197,9 @@ class TaskManager:
             d = self.macropath_to_task
         else:
             raise TypeError(dep)
-        dd = d[dep]
+        dd = d.get(dep)
+        if dd is None:
+            return
 
         try:
             dd.remove(task)

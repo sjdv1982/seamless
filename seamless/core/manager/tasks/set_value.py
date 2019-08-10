@@ -17,7 +17,7 @@ class SetCellValueTask(Task):
         try:
             taskmanager.cell_to_value[cell] = self.value
             buffer = await SerializeToBufferTask(manager, self.value, cell._celltype).run()
-            checksum = await CalculateChecksumTask(manager, buffer).run()
+            checksum = await CalculateChecksumTask(manager, buffer,).run()
             if checksum is not None:
                 buffer_cache = manager.cachemanager.buffer_cache
                 await validate_subcelltype(
@@ -27,7 +27,7 @@ class SetCellValueTask(Task):
                 manager._set_cell_checksum(self.cell, checksum, False)
                 CellUpdateTask(manager, self.cell).launch()
         finally:
-            taskmanager.cell_to_value.pop(cell)
+            taskmanager.cell_to_value.pop(cell, None)
         return None
 
 from ...protocol.validate_subcelltype import validate_subcelltype
