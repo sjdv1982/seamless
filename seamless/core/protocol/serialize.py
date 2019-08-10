@@ -1,6 +1,6 @@
 import asyncio
 import json
-from concurrent.futures import ProcessPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
 
 from ...pylru import lrucache
 
@@ -51,16 +51,22 @@ async def serialize(value, celltype):
     buffer = serialize_cache.get(idvalue)
     if buffer is not None:
         return buffer
-
-    loop = asyncio.get_event_loop()
+    
     """
+    # what can we do to make this async??
+    # ThreadPool doesn't work, and ProcessPool is slow
+    # (seems to make a copy of the Python structure)
+    
+    loop = asyncio.get_event_loop()
     with ProcessPoolExecutor() as executor:
         buffer = await loop.run_in_executor(
             executor,
             _serialize,
             value, celltype
         )
+    return buffer
     """
-    buffer = _serialize(value, celltype)
+
+    buffer = _serialize(value, celltype)  # KLUDGE
     serialize_cache[idvalue] = buffer
     return buffer

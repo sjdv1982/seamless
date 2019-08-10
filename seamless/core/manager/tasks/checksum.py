@@ -19,9 +19,10 @@ class CalculateChecksumTask(Task):
 
 class CellChecksumTask(Task):
 
-    def __init__(self, manager, cell): 
+    def __init__(self, manager, cell, awaiting_task = None): 
         self.cell = cell
         super().__init__(manager)
+        self.awaiting_task = awaiting_task
         self.dependencies.append(cell)
 
     async def _run(self):
@@ -35,6 +36,8 @@ class CellChecksumTask(Task):
 - If the checksum was None but the void attribute was not None, do a cell void cancellation.
         """
         from .serialize_buffer import SerializeToBufferTask
+        from .set_value import SetCellValueTask
+        from .set_buffer import SetCellBufferTask
         from .cell_update import CellUpdateTask
 
         manager = self.manager()
@@ -61,14 +64,17 @@ class CellChecksumTask(Task):
                         invalid = True
             else:
                 taskid = self.taskid
+                awaiting_task = self.awaiting_task
                 while 1:
                     for task in taskmanager.tasks:
                         if task.taskid >= taskid:
                             continue
-                        if isinstance(task, CellUpdateTask):
+                        if task is awaiting_task:
+                            continue
+                        if isinstance(task, (SetCellValueTask, SetCellBufferTask)):
                             continue
                         if cell in task.dependencies:
-                            break
+                            break                        
                     else:
                         break
                     await asyncio.sleep(0)

@@ -25,6 +25,10 @@ class BufferCache:
         self.buffer_refcount = {} #buffer-checksum-to-refcount
 
     def cache_buffer(self, checksum, buffer):
+        if checksum not in self.buffer_refcount:
+            self.buffer_refcount[checksum] = 1
+            tempref = functools.partial(self.decref, checksum, from_temp=True)
+            temprefmanager.add_ref(tempref, TEMP_KEEP_ALIVE)            
         if checksum in self.buffer_cache:
             return
         self.buffer_cache[checksum] = buffer

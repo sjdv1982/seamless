@@ -1,5 +1,5 @@
 import asyncio
-from concurrent.futures import ProcessPoolExecutor
+from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 
 from ...pylru import lrucache
 from ...get_hash import get_hash
@@ -16,16 +16,17 @@ async def calculate_checksum(buffer):
         checksum_cache[cached_checksum] = buffer
         buffer_cache.cache_buffer(cached_checksum, buffer)
         return cached_checksum
-    """
-    loop = asyncio.get_event_loop()    
-    with ProcessPoolExecutor() as executor:
-        checksum = await loop.run_in_executor(
-            executor,
-            get_hash,
-            buffer
-        )
-    """
-    checksum = get_hash(buffer)
+    if len(buffer) > 1000000:
+        # ThreadPoolExecutor does not work...
+        loop = asyncio.get_event_loop()    
+        with ProcessPoolExecutor() as executor:
+            checksum = await loop.run_in_executor(
+                executor,
+                get_hash,
+                buffer
+            )
+    else:
+        checksum = get_hash(buffer)
     calculate_checksum_cache[buf_id] = checksum    
     checksum_cache[checksum] = buffer
     buffer_cache.cache_buffer(checksum, buffer)

@@ -24,7 +24,7 @@ class CellUpdateTask(Task):
         from . import CellChecksumTask
         manager = self.manager()
         cell = self.cell
-        await CellChecksumTask(manager, cell).run()
+        await CellChecksumTask(manager, cell, self).run()
         checksum = cell._checksum
         assert not cell._monitor # cell update is not for StructuredCell cells
         livegraph = manager.livegraph
