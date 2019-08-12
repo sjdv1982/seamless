@@ -59,20 +59,20 @@ class PINS:
         return setattr(self, attr, value)
 
 class RuntimeReactor:
-    def __init__(self, manager, reactor):
+    def __init__(self, 
+        manager, reactor, inputpins, outputpins, editpins
+    ):
         self.manager = weakref.ref(manager)
         self.reactor = weakref.ref(reactor)
-        self.input_dict = {} #inputpin => accessor
-        self.output_dict = {} #outputpin => list-of-(cell, subpath)
-        self.edit_dict = {} #editpin => (cell, subpath)
+        self.inputpins = inputpins
+        self.outputpins = outputpins
+        self.editpins = editpins
         self.updated = set()
-        self.live = None  # None for unconnected; True for live; False for non-live
+        self.live = False
         self.namespace = {}
         self.module_workspace = {}
+        self.values = {}
         self.PINS = PINS()
-        self.code_start = None
-        self.code_update = None
-        self.code_stop = None
         self.executing = False
     
     def prepare_namespace(self, updated):
@@ -80,56 +80,34 @@ class RuntimeReactor:
         if updated is None:
             self.clear()
         self.namespace["__name__"] = "reactor"
-        for pinname, accessor in self.input_dict.items():            
+        for pinname in self.inputpins:
             if updated is not None and pinname not in updated:
                 if pinname not in ("code_start", "code_update", "code_stop"):
                     self.PINS[pinname].updated = False
                 continue
-            expression = manager.build_expression(accessor)
-            if expression is None:
-                value = None
-            else:
-                value = manager.get_expression(expression)
+            value = self.values[pinname]
             if pinname in ("code_start", "code_update", "code_stop"):
                 assert value is not None, pinname
-                self.build_code(pinname, value)
                 continue
-            if expression.access_mode == "mixed":
-                if value is not None:
-                    value = value[2]
-            if expression.access_mode == "module":
-                mod = build_module(value)
-                self.module_workspace[pinname] = mod[1]
-                pin = ReactorInput(mod[1])
-            else:            
-                pin = ReactorInput(value)
+            if pinname in self.module_workspace:
+                continue
+            pin = ReactorInput(value)
             self.PINS[pinname] = pin
-        for pinname, cell_tuple in self.edit_dict.items():
-            cell, subpath = cell_tuple
-            if subpath is not None: raise NotImplementedError ### cache branch
+        for pinname in self.editpins:
             if updated is not None and pinname not in updated:
                 self.PINS[pinname].updated = False
                 continue
-            value = cell.value
+            value = self.values[pinname]
             pin = ReactorEdit(self, pinname, value)
             self.PINS[pinname] = pin
-        for pinname, cell in self.output_dict.items():
+        for pinname in self.outputpins:
             pin = ReactorOutput(self, pinname)
             self.PINS[pinname] = pin
-
-    def build_code(self, codename, code):
-        assert codename in ("code_start", "code_stop", "code_update")
-        identifier = str(self.reactor()) + ":" + codename
-        try:
-            code_object = cached_compile(code, identifier, "exec")
-        except Exception as exception:
-            self.manager().set_reactor_exception(self, codename, exception)
-        setattr(self, codename, code_object)
 
     def run_code(self, codename):
         #print("REACTOR RUN CODE", codename, self.updated)
         assert codename in ("code_start", "code_stop", "code_update")
-        code_object = getattr(self, codename)        
+        code_object = self.values[codename]
         self.namespace["PINS"] = self.PINS
         try:
             if len(self.module_workspace):
@@ -138,19 +116,19 @@ class RuntimeReactor:
             else:
                 exec(code_object, self.namespace) 
         except Exception as exception:
-            self.manager().set_reactor_exception(self, codename, exception)
+            self.clear()
+            self.manager()._set_reactor_exception(self.reactor(), codename, exception)
 
     def execute(self):
-        assert self.live in (True, False)
         assert len(self.updated)
         assert not self.executing
+        self.manager()._set_reactor_exception(self.reactor(), None, None)
         codes = ("code_start", "code_update", "code_stop")
         try:
             self.executing = True
             if self.live and any([c in self.updated for c in codes]):
                 self.run_code("code_stop")
                 self.clear()
-                self.live = False
             if not self.live:
                 self.prepare_namespace(None)
                 self.live = True
@@ -161,27 +139,41 @@ class RuntimeReactor:
             if self.reactor().pure == True:
                 self.run_code("code_stop")
                 self.clear()
-                self.live = False
         finally:
             self.executing = False
-        #manager.set_reactor_result
-        #manager.set_reactor_exception
+        self.updated.clear()
 
     def set_pin(self, pinname, value, preliminary):
         from .worker import OutputPin, EditPin
-        pin = self.reactor()._pins[pinname]
+        reactor = self.reactor()
+        pin = reactor._pins[pinname]
         assert isinstance(pin, (OutputPin, EditPin))
         if not isinstance(pin, EditPin):
             assert not preliminary
             if not self.executing:
                 msg = "%s can set outputpin '%s' only while executing"
                 raise Exception(msg % (self.reactor(), pinname))
-        self.manager().set_reactor_result(self, pinname, value)
+        manager = self.manager()
+        livegraph = manager.livegraph
+        downstream = livegraph.reactor_to_downstream[reactor][pinname]
+        if not len(downstream):
+            celltype, subcelltype = reactor.outputs[pinname]
+            if celltype is None:
+                celltype = "plain"
+        else:
+            wa = downstream[0].write_accessor
+            celltype = wa.celltype
+            subcelltype = wa.subcelltype
+        ReactorResultTask(
+            manager, reactor, 
+            pinname, value,
+            celltype, subcelltype
+        ).launch()
 
     def clear(self):
         #print("CLEAR")
         self.namespace.clear()
-        self.module_workspace.clear()
         self.PINS = PINS()
-        for code in "code_start", "code_update", "code_stop":
-            setattr(self, code, None)
+        self.live = False
+
+from .manager.tasks.reactor_update import ReactorResultTask        

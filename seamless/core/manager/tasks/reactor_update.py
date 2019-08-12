@@ -8,19 +8,150 @@ class ReactorUpdateTask(Task):
 
     async def _run(self):
         reactor = self.reactor
-        from . import SerializeToBufferTask
         manager = self.manager()
         livegraph = manager.livegraph
-        raise NotImplementedError # livegraph branch
-        # ...
-        accessors = livegraph.reactor_to_downstream[reactor]
-        for accessor in accessors:
+        rtreactor = livegraph.rtreactors[reactor]
+        taskmanager = manager.taskmanager
+        await taskmanager.await_upon_connection_tasks(self.taskid)
+        upstreams = livegraph.reactor_to_upstream[reactor]
+        for pinname, accessor in upstreams.items():
+            if accessor is None: #unconnected
+                assert reactor._void
+                reactor._status_reason = StatusReasonEnum.UNCONNECTED
+                return                
+
+        upstream = False
+        status_reason = None
+        for pinname, accessor in upstreams.items():
+            if accessor._void:                
+                if not reactor._void:
+                    print("WARNING: reactor %s is not yet void, shouldn't happen during reactor update" % reactor)
+                    manager.cancel_reactor(reactor, void=True)
+                    return
+                reactor._status_reason = StatusReasonEnum.UPSTREAM
+                return        
+
+        if reactor._void:
+            for downstreams in livegraph.reactor_to_downstream[reactor].values():
+                for accessor in downstreams:
+                    propagate_accessor(livegraph, accessor, False)
+
+        reactor._void = False
+
+        for pinname, accessor in upstreams.items():
+            if accessor._checksum is None:
+                reactor._pending = True
+                return
+
+        reactor._pending = False
+
+        updated = set()
+        new_inputs = {}
+        old_checksums = reactor._last_inputs
+        if old_checksums is None:
+            old_checksums = {}
+        for pinname, accessor in upstreams.items():
+            old_checksum = old_checksums.get(pinname)
+            new_checksum = accessor._checksum
+            if old_checksum != new_checksum:
+                updated.add(pinname)
+            new_inputs[pinname] = new_checksum
+        reactor._last_inputs = new_inputs
+        
+        if not len(updated):
+            return
+
+        values = {}
+        module_workspace = {}
+        for pinname, accessor in upstreams.items():
+            if pinname not in updated:
+                continue
+            checksum = new_inputs[pinname]
+            if checksum is None:
+                values[pinname] = None
+                continue
+            
+            buffer = await GetBufferTask(manager, checksum).run()
+            assert buffer is not None
+            wa = accessor.write_accessor
+            value = await DeserializeBufferTask(
+                manager, buffer, checksum, wa.celltype, True
+            ).run()           
+            if value is None:
+                raise CacheMissError(pinname, reactor)
+            if (wa.celltype, wa.subcelltype) == ("plain", "module"):
+                mod = await build_module_async(value)
+                module_workspace[pinname] = mod[1]
+            else:
+                values[pinname] = value
+
+        rtreactor.module_workspace.update(module_workspace)
+        rtreactor.values.update(values)
+        rtreactor.updated = updated
+        rtreactor.execute()
+
+
+class ReactorResultTask(Task):
+    def __init__(self,
+        manager, reactor, 
+        pinname, value,
+        celltype, subcelltype
+    ):
+        self.reactor = reactor
+        super().__init__(manager)
+        self.dependencies.append(reactor)
+        self.pinname = pinname
+        self.value = value
+        self.celltype = celltype
+        assert celltype is not None
+        self.subcelltype = subcelltype
+
+    async def _run(self):
+        reactor = self.reactor
+        if reactor._void:
+            print("WARNING: reactor %s is void, shouldn't happen during reactor result task" % reactor)
+            return
+        manager = self.manager()
+        livegraph = manager.livegraph
+        accessors = livegraph.reactor_to_downstream[reactor][self.pinname]
+        celltype, subcelltype = self.celltype, self.subcelltype        
+        pinname = self.pinname
+        checksum = None
+        if self.value is not None:        
+            try:
+                buffer = await SerializeToBufferTask(
+                    manager, self.value, celltype
+                ).run()
+                checksum = await CalculateChecksumTask(manager, buffer).run()
+            except Exception as exc:
+                manager._set_reactor_exception(reactor, pinname, exc)
+                raise
+        if checksum is not None:
+            buffer_cache = manager.cachemanager.buffer_cache
+            await validate_subcelltype(
+                checksum, celltype, subcelltype, 
+                str(reactor) + ":" + pinname, 
+                buffer_cache
+            )
+        if reactor._last_outputs is None:
+            reactor._last_outputs = {}
+        reactor._last_outputs[pinname] = checksum
+        downstreams = livegraph.reactor_to_downstream[reactor][pinname]
+        for accessor in downstreams:
             #- construct (not evaluate!) their expression using the cell checksum 
             #  Constructing a downstream expression increfs the cell checksum
             changed = accessor.build_expression(livegraph, checksum)
             #- launch an accessor update task
             if changed:
                 AccessorUpdateTask(manager, accessor).launch()
+
         return None
 
-from .accessor_update import AccessorUpdateTask        
+from ...status import StatusReasonEnum
+from .accessor_update import AccessorUpdateTask
+from ..propagate import propagate_accessor
+from .deserialize_buffer import DeserializeBufferTask
+from .serialize_buffer import SerializeToBufferTask
+from .checksum import CalculateChecksumTask
+from .get_buffer import GetBufferTask
+from ...protocol.validate_subcelltype import validate_subcelltype

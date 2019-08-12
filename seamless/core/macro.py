@@ -13,8 +13,6 @@ from .status import StatusReasonEnum
 class ExecError(Exception): pass
 
 class Macro(Worker):
-    _void = True
-    _status_reason = StatusReasonEnum.UNCONNECTED
     injected_modules = None
     def __init__(self, macro_params, *, lib=None):
         self._gen_context = None
@@ -65,6 +63,16 @@ class Macro(Worker):
         status = self._get_status()
         statustxt = format_worker_status(status)
         return "Status: " + statustxt 
+
+    @property
+    def exception(self):
+        if not self._void:
+            return None
+        if self._status_reason != StatusReasonEnum.ERROR:
+            return None
+        manager = self._get_manager()
+        cachemanager = manager.cachemanager
+        return cachemanager.macro_exceptions[self]
 
     def _execute(self, code, values, module_workspace):
         from .context import Context
@@ -172,6 +180,7 @@ class Macro(Worker):
             for path, p in newly_bound:
                 cell = ub_cells[path]
                 p._bind(cell, trigger=True)
+            manager._set_macro_exception(self, None)
         keep = {k:v for k,v in self.namespace.items() if k.startswith("_")}
         self.namespace.clear()
         self.namespace["__name__"] = "macro"

@@ -84,7 +84,32 @@ def status_transformer(transformer):
     return status, reason, pins
 
 def status_reactor(reactor):
-    raise NotImplementedError # livegraph branch
+    manager = reactor._get_manager()
+    cachemanager = manager.cachemanager
+    livegraph = manager.livegraph
+    if reactor._pending:
+        return StatusEnum.PENDING, None, None
+    elif not reactor._void:
+        return StatusEnum.OK, None, None
+    rtreactor = livegraph.rtreactors[reactor]
+
+    status = StatusEnum.VOID
+    reason = reactor._status_reason
+    upstreams = livegraph.reactor_to_upstream[reactor]
+    pins = None
+    if reason == StatusReasonEnum.UNCONNECTED:
+        pins = []
+        for pinname, accessor in upstreams.items():
+            if accessor is None:
+                pins.append(pinname)
+    elif reason == StatusReasonEnum.UPSTREAM:
+        pins = {}
+        for pinname, accessor in upstreams.items():
+            astatus = status_accessor(accessor)
+            if astatus[0] == StatusEnum.OK:
+                continue
+            pins[pinname] = astatus
+    return status, reason, pins
 
 def status_macro(macro):
     if macro._gen_context is not None:

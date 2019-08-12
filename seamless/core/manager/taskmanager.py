@@ -230,7 +230,7 @@ class TaskManager:
                 for dep in task.dependencies:
                     if isinstance(dep, SeamlessBase):
                         running.add(dep)
-                        #print("TASK",task)
+                        print("TASK",task)
             if not len(running):
                 if not len(tasks):
                     return

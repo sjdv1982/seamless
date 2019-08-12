@@ -163,12 +163,16 @@ class Manager:
             cachemanager.incref_checksum(checksum, transformer, False)
 
     def _set_macro_exception(self, macro, exception):
+        if exception is None:
+            self.cachemanager.macro_exceptions[macro] = None
+            return
         exc = traceback.format_exception(type(exception), exception, exception.__traceback__)
         exc = "".join(exc)
         msg = "Exception in %s:\n"% str(macro) + exc
         stars = "*" * 60 + "\n"
         print(stars + msg + stars, file=sys.stderr)
-        self.cachemanager.macro_exceptions[macro] = exception        
+        self.cancel_macro(macro, True, reason=StatusReasonEnum.ERROR)
+        self.cachemanager.macro_exceptions[macro] = exc      
 
     @run_in_mainthread
     def set_cell(self, cell, value):
@@ -248,6 +252,20 @@ class Manager:
     # API section ???: Cancellation
     ##########################################################################
 
+    @run_in_mainthread
+    def _set_reactor_exception(self, reactor, codename, exception):
+        if exception is None:
+            self.cachemanager.reactor_exceptions[reactor] = None
+            return 
+        exc = traceback.format_exception(type(exception), exception, exception.__traceback__)
+        exc = "".join(exc)
+        msg = "Exception in %s, code name %s:\n"% (str(reactor), codename) + exc
+        stars = "*" * 60 + "\n"
+        print(stars + msg + stars, file=sys.stderr)
+        self.cachemanager.reactor_exceptions[reactor] = (codename, exc)
+        reason = StatusReasonEnum.ERROR
+        self.cancel_reactor(reactor, void=True, reason=reason)
+
     @mainthread
     def cancel_cell(self, cell, void, origin_task=None, reason=None):
         """Cancels all tasks depending on cell, and sets all dependencies to None. 
@@ -275,7 +293,7 @@ If origin_task is provided, that task is not cancelled."""
     @mainthread
     def cancel_accessor(self, accessor, void, origin_task=None):
         self.taskmanager.cancel_accessor(accessor, origin_task=origin_task)
-        if accessor.expression is not None:            
+        if accessor.expression is not None:           
             self.livegraph.decref_expression(accessor.expression, accessor)
             accessor.expression = None
             accessor._checksum = None
@@ -308,13 +326,23 @@ If origin_task is provided, that task is not cancelled."""
             return
         if reason is None:
             reason = StatusReasonEnum.UPSTREAM
-        raise NotImplementedError #livegraph branch
+        livegraph = self.livegraph
+        reactor._pending = (not void)
+        reactor._void = void
+        reactor._status_reason = reason        
+        for pinname in reactor.outputs:
+            accessors = livegraph.reactor_to_downstream[reactor][pinname]
+            for accessor in accessors:            
+                self.cancel_accessor(accessor, void)        
 
     @mainthread
     def cancel_macro(self, macro, void, reason=None):
         gen_context = macro._gen_context
         if gen_context is not None:
             gen_context.destroy()
+        if void:
+            macro._void = True
+            macro._status_reason = reason
 
     ##########################################################################
     # API section ???: Connection support
@@ -396,9 +424,6 @@ If origin_task is provided, that task is not cancelled."""
         if ctx is None:
             return
         ctx.destroy()
-        global_paths = _global_paths.pop(ctx, {})
-        for path in global_paths.values():
-            path.destroy()
         self.mountmanager.unmount_context(ctx, from_del=from_del, toplevel=True)
         for path in list(self.livegraph.macropath_to_upstream.keys()):
             path.destroy()

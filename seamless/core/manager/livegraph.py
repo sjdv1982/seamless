@@ -12,12 +12,14 @@ class LiveGraph:
         self.expression_to_accessors = {} # Mapping of expressions to the list of read accessors that resolve to it
         self.cell_to_upstream = {} # Mapping of simple cells to the read accessor that defines it.
         self.cell_to_downstream = {} # Mapping of simple cells to the read accessors that depend on it.
+        self.cell_to_editpins = {}
         self.paths_to_upstream = {} # Mapping of buffercells-to-dictionary-of-path:upstream-write-accessor.
         self.paths_to_downstream = {} # Mapping of datacells-to-dictionary-of-path:list-of-downstream-read-accessors
         self.transformer_to_upstream = {} # input pin to read accessor
         self.transformer_to_downstream = {}
         self.reactor_to_upstream = {} # input pin to read accessor
         self.reactor_to_downstream = {} # Unlike all other X_to_downstream, this is a dict
+        self.editpin_to_cell = {}
         self.macro_to_upstream = {} # input pin to read accessor
         self.macropath_to_upstream = {}
         self.macropath_to_downstream = {}        
@@ -25,6 +27,8 @@ class LiveGraph:
         self.datacells = {}
         self.buffercells = {}
         self.schemacells = {} # cell-to-structuredcell to which it serves as schema; can be multiple
+
+        self.rtreactors = {}
 
         self.temp_auth = weakref.WeakKeyDictionary()
         self._will_lose_authority = set()
@@ -35,6 +39,7 @@ class LiveGraph:
         assert cell._monitor is None # StructuredCells get registered later
         self.cell_to_upstream[cell] = None
         self.cell_to_downstream[cell] = []
+        self.cell_to_editpins[cell] = []
         self.schemacells[cell] = []
 
     def register_transformer(self, transformer):
@@ -44,8 +49,28 @@ class LiveGraph:
         self.transformer_to_upstream[transformer] = upstream
         self.transformer_to_downstream[transformer] = []
 
-    def register_reactor(self, transformer):
-        raise NotImplementedError # livegraph branch; to-downstream and editpins make it tricky
+    def register_reactor(self, reactor):
+        # Editpins are neither upstream nor downstream,
+        #  but have a separate cell_to_editpins mapping
+        manager = self.manager()
+        inputpins = [pinname for pinname in reactor._pins \
+            if reactor._pins[pinname].io == "input" ]
+        outputpins = [pinname for pinname in reactor._pins \
+            if reactor._pins[pinname].io == "output" ]
+        editpins = [pinname for pinname in reactor._pins \
+            if reactor._pins[pinname].io == "edit" ]
+        upstream = {pinname:None for pinname in inputpins}
+        self.reactor_to_upstream[reactor] = upstream
+        downstream = {pinname:[] for pinname in outputpins}
+        self.reactor_to_downstream[reactor] = downstream
+        editpin_cell = {pinname:None for pinname in editpins}
+        self.editpin_to_cell[reactor] = editpin_cell
+        self.rtreactors[reactor] = RuntimeReactor(
+            manager,
+            reactor,
+            inputpins, outputpins, editpins
+        )
+
 
     def register_macro(self, macro):
         inputpins = [pinname for pinname in macro._pins]
@@ -131,7 +156,9 @@ class LiveGraph:
             celltype = target._celltype
         read_accessor = ReadAccessor(
             manager, None, celltype
-        )        
+        )
+        if isinstance(worker, Reactor):
+            read_accessor.reactor_pinname = pinname
         subcelltype = source.subcelltype
         if subcelltype is None:
             subcelltype = target._subcelltype
@@ -361,6 +388,10 @@ class LiveGraph:
                 self.cell_to_downstream[upstream].remove(accessor)
         elif isinstance(upstream, Transformer):
             self.transformer_to_downstream[upstream].remove(accessor)
+        elif isinstance(upstream, Reactor):
+            pinname = accessor.reactor_pinname
+            assert pinname is not None
+            self.reactor_to_downstream[upstream][pinname].remove(accessor)
         elif isinstance(upstream, Path):
             self.macropath_to_downstream[upstream].remove(accessor)
         elif upstream is None:
@@ -381,6 +412,10 @@ class LiveGraph:
             pinname = accessor.write_accessor.pinname
             if target in self.transformer_to_upstream:
                 self.transformer_to_upstream[target][pinname] = None
+        elif isinstance(target, Reactor):
+            pinname = accessor.write_accessor.pinname
+            if target in self.reactor_to_upstream:
+                self.reactor_to_upstream[target][pinname] = None
         elif isinstance(target, Macro):
             pinname = accessor.write_accessor.pinname
             if target in self.macro_to_upstream:
@@ -414,6 +449,36 @@ class LiveGraph:
         for up_accessor in up_accessors.values():
             if up_accessor is not None:
                 self.destroy_accessor(manager, up_accessor)
+
+
+    @destroyer
+    def destroy_reactor(self, manager, reactor):
+        self.rtreactors.pop(reactor)
+        up_accessors = self.reactor_to_upstream.pop(reactor)
+        for up_accessor in up_accessors.values():
+            if up_accessor is not None:
+                self.destroy_accessor(manager, up_accessor)
+        down_accessor_dict = self.reactor_to_downstream[reactor]
+        for pinname, down_accessors in down_accessor_dict.items():
+            if down_accessors is None:
+                continue
+            while len(down_accessors):            
+                accessor = down_accessors[0]
+                assert self.accessor_to_upstream[accessor] is reactor
+                self.destroy_accessor(manager, accessor, from_upstream=True)
+                if len(down_accessors) and down_accessors[0] is accessor:
+                    print("WARNING: destruction of reactor pin %s downstream %s failed" % (pinname, accessor))
+                    down_accessors = down_accessors[1:]            
+        self.reactor_to_downstream.pop(reactor)
+        editpins_cell = self.editpin_to_cell.pop(reactor)
+        for pinname, cells in editpins_cell.items():
+            if cells is None:
+                continue
+            editpin = reactor.pins[pinname]
+            for cell in cells:
+                if cell._destroyed or cell in self._destroying:
+                    continue
+                self.cell_to_editpins[cell].remove(editpin)        
 
     @destroyer
     def destroy_cell(self, manager, cell):
@@ -452,6 +517,13 @@ class LiveGraph:
                     print("WARNING: destruction of cell downstream %s failed" % accessor)
                     down_accessors = down_accessors[1:]
             self.cell_to_downstream.pop(cell)
+            editpins = self.cell_to_editpins.pop(cell)
+            if editpins is not None:
+                for editpin in editpins:
+                    reactor = editpin.worker_ref()
+                    if reactor._destroyed or reactor in self._destroying:
+                        continue
+                    self.editpin_to_cell[reactor][editpin.name].pop(cell)
         self._will_lose_authority.discard(cell)
 
     @destroyer
@@ -497,3 +569,4 @@ from ..reactor import Reactor
 from ..macro import Macro, Path
 from ..cell import Cell
 from ..worker import EditPin
+from ..runtime_reactor import RuntimeReactor

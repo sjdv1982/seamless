@@ -13,8 +13,6 @@ from .status import StatusReasonEnum
 
 class Transformer(Worker):
     _checksum = None
-    _void = True
-    _status_reason = StatusReasonEnum.UNCONNECTED
     debug = False
 
     def __init__(self, transformer_params, *,  stream_params=None):
@@ -103,7 +101,18 @@ class Transformer(Worker):
         status = self._get_status()
         statustxt = format_worker_status(status)
         return "Status: " + statustxt 
-        
+
+    @property
+    def exception(self):
+        if not self._void:
+            return None
+        if self._status_reason != StatusReasonEnum.ERROR:
+            return None
+        manager = self._get_manager()
+        transformation_cache = manager.cachemanager.transformation_cache
+        transformation = transformation_cache.transformer_to_transformations[self]
+        return transformation_cache.transformation_exceptions[transformation]
+
     @property
     def void(self):
         return self._void

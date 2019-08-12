@@ -69,8 +69,9 @@ class CellChecksumTask(Task):
                     for task in taskmanager.tasks:
                         if task.taskid >= taskid:
                             continue
-                        if task is awaiting_task:
-                            continue
+                        if awaiting_task is not None:
+                            if task.taskid >= awaiting_task.taskid:
+                                continue
                         if isinstance(task, (SetCellValueTask, SetCellBufferTask)):
                             continue
                         if cell in task.dependencies:

@@ -1,5 +1,6 @@
 import weakref
 from . import SeamlessBase
+from .status import StatusReasonEnum
 
 def _cell_from_pin(self, celltype):    
     assert isinstance(self, (InputPin, EditPin))
@@ -34,6 +35,8 @@ def _cell_from_pin(self, celltype):
 
 class Worker(SeamlessBase):
     """Base class for all workers."""
+    _void = True
+    _status_reason = StatusReasonEnum.UNCONNECTED
     _pins = None
     _last_inputs = None
 

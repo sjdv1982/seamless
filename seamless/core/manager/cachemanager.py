@@ -45,9 +45,11 @@ class CacheManager:
         self.macro_exceptions[macro] = None
 
     def register_reactor(self, reactor):
-        assert reactor not in self.reactor_to_ref
-        raise NotImplementedError # livegraph branch
-        # TODO: store a dictionary of outputpin/editpin-to-ref 
+        assert reactor not in self.reactor_to_refs
+        refs = {}
+        for pinname in reactor.outputs:
+            refs[pinname] = None
+        self.reactor_to_refs[reactor] = refs
         self.reactor_exceptions[reactor] = None
 
     def incref_checksum(self, checksum, refholder, authority):
@@ -74,7 +76,13 @@ class CacheManager:
         self.checksum_refs[checksum].append((refholder, authority))
         #print("INCREF", checksum.hex(), self.checksum_refs[checksum])
 
-    def decref_checksum(self, checksum, refholder, authority):        
+    def decref_checksum(self, checksum, refholder, authority):
+        if checksum is None:
+            if isinstance(refholder, Expression):
+                if refholder in self.expression_to_ref:
+                    assert self.expression_to_ref[refholder] is None
+                    self.expression_to_ref.pop(refholder)
+            return
         if isinstance(refholder, Cell):
             assert self.cell_to_ref[refholder] is not None
             self.cell_to_ref[refholder] = None
@@ -118,7 +126,12 @@ class CacheManager:
 
     @destroyer
     def destroy_reactor(self, reactor):
-        raise NotImplementedError # livegraph branch
+        refs = self.reactor_to_refs.pop(reactor)
+        for pinname in reactor.outputs:
+            ref = refs[pinname]
+            if ref is not None:
+                checksum = ref
+                self.decref_checksum(checksum, reactor, False)
         self.reactor_exceptions.pop(reactor)
 
     def check_destroyed(self):        

@@ -11,6 +11,7 @@ class ReadAccessor(Accessor):
         self.manager = weakref.ref(manager)
         self.path = path
         assert celltype in celltypes or isinstance(celltype, MacroPath)
+        self.reactor_pinname = None
         self.celltype = celltype   
         self.write_accessor = None
         self.expression = None
