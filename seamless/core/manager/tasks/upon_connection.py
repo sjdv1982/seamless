@@ -52,6 +52,8 @@ class UponConnectionTask(Task):
 
         livegraph = self.manager().livegraph
         if source_subpath is None:
+            if isinstance(target, EditPin):
+                return
             # simple cell-pin
             return livegraph.connect_cell_pin(self.current_macro, source, target)
         raise NotImplementedError # livegraph branch
@@ -73,6 +75,18 @@ class UponConnectionTask(Task):
             raise NotImplementedError # livegraph branch ; will we ever support this?
         livegraph = self.manager().livegraph
         return livegraph.connect_macropath_cell(self.current_macro, self.source, self.target)
+
+    def _connect_editpin(self, pin, cell):
+        assert isinstance(pin, EditPin)
+        assert isinstance(cell, Cell)
+        reactor = pin.worker_ref()
+        assert reactor._void # safe assumption, as long as must_be_defined is enforced to be True        
+        manager = self.manager()
+        livegraph = manager.livegraph
+        assert livegraph.editpin_to_cell[reactor][pin.name] is None, (reactor, pin.name) # editpin can connect only to one cell
+        livegraph.editpin_to_cell[reactor][pin.name] = cell
+        livegraph.cell_to_editpins[cell].append(pin)
+        ReactorUpdateTask(manager, reactor).launch()
 
     async def _run(self):
         """Perform actions upon connection.
@@ -115,9 +129,14 @@ class UponConnectionTask(Task):
         source = self.source
         if isinstance(source, Cell):
             accessor = self._connect_cell()
+            if isinstance(target, EditPin):
+                return self._connect_editpin(target, source)
             assert accessor is not None
             if not source._void:
                 CellUpdateTask(manager, source).launch()
+        elif isinstance(source, EditPin):
+            assert isinstance(target, (Cell, MacroPath))
+            return self._connect_editpin(source, target)
         elif isinstance(source, PinBase):
             accessor = self._connect_pin_cell()
             assert accessor is not None
@@ -148,7 +167,7 @@ from .reactor_update import ReactorUpdateTask
 from .macro_update import MacroUpdateTask
 from .set_value import SetCellValueTask
 from ...cell import Cell
-from ...worker import PinBase
+from ...worker import PinBase, EditPin
 from ...transformer import Transformer
 from ...reactor import Reactor
 from ...macro import Macro, curr_macro, Path as MacroPath

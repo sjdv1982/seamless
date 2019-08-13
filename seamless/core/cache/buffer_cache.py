@@ -42,6 +42,8 @@ class BufferCache:
         buffer = checksum_cache.get(checksum)
         if buffer is not None:
             self.cache_buffer(checksum, buffer)
+        else:
+            assert checksum in self.buffer_cache
 
     def decref(self, checksum, from_temp=False):
         if not from_temp and self.buffer_refcount[checksum] == 1:

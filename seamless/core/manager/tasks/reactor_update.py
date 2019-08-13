@@ -13,17 +13,34 @@ class ReactorUpdateTask(Task):
         rtreactor = livegraph.rtreactors[reactor]
         taskmanager = manager.taskmanager
         await taskmanager.await_upon_connection_tasks(self.taskid)
+        editpins = rtreactor.editpins
+        editpin_to_cell = livegraph.editpin_to_cell[reactor]
         upstreams = livegraph.reactor_to_upstream[reactor]
         for pinname, accessor in upstreams.items():
             if accessor is None: #unconnected
                 assert reactor._void
                 reactor._status_reason = StatusReasonEnum.UNCONNECTED
-                return                
+                return
+        for pinname in editpins:
+            if editpin_to_cell[pinname] is None: #unconnected
+                assert reactor._void
+                reactor._status_reason = StatusReasonEnum.UNCONNECTED
+                return
 
         upstream = False
         status_reason = None
         for pinname, accessor in upstreams.items():
             if accessor._void:                
+                if not reactor._void:
+                    print("WARNING: reactor %s is not yet void, shouldn't happen during reactor update" % reactor)
+                    manager.cancel_reactor(reactor, void=True)
+                    return
+                reactor._status_reason = StatusReasonEnum.UPSTREAM
+                return        
+
+        for pinname in editpins:
+            cell = editpin_to_cell[pinname]
+            if cell._void:
                 if not reactor._void:
                     print("WARNING: reactor %s is not yet void, shouldn't happen during reactor update" % reactor)
                     manager.cancel_reactor(reactor, void=True)
@@ -37,16 +54,26 @@ class ReactorUpdateTask(Task):
                     propagate_accessor(livegraph, accessor, False)
 
         reactor._void = False
-
+        
         for pinname, accessor in upstreams.items():
             if accessor._checksum is None:
                 reactor._pending = True
                 return
 
+        editpin_checksums = {}
+        for pinname in editpins:
+            cell = editpin_to_cell[pinname]
+            checksum = cell._checksum
+            if checksum is None:
+                reactor._pending = True
+                return
+            editpin_checksums[pinname] = checksum            
+
         reactor._pending = False
 
         updated = set()
         new_inputs = {}
+        new_inputs2 = {}
         old_checksums = reactor._last_inputs
         if old_checksums is None:
             old_checksums = {}
@@ -56,30 +83,46 @@ class ReactorUpdateTask(Task):
             if old_checksum != new_checksum:
                 updated.add(pinname)
             new_inputs[pinname] = new_checksum
+            wa = accessor.write_accessor
+            new_inputs2[pinname] = wa.celltype, wa.subcelltype
+        for pinname in editpins:
+            old_checksum = old_checksums.get(pinname)
+            new_checksum = editpin_checksums[pinname]
+            if old_checksum != new_checksum:
+                updated.add(pinname)
+            new_inputs[pinname] = new_checksum
+            cell = editpin_to_cell[pinname]
+            new_inputs2[pinname] = cell._celltype, cell._subcelltype
+
         reactor._last_inputs = new_inputs
         
         if not len(updated):
             return
 
+        checksums = {}
         values = {}
         module_workspace = {}
         for pinname, accessor in upstreams.items():
             if pinname not in updated:
                 continue
             checksum = new_inputs[pinname]
+            checksums[pinname] = checksum
+
+        for pinname in updated:
+            checksum = new_inputs[pinname]
+            celltype, subcelltype = new_inputs2[pinname]
             if checksum is None:
                 values[pinname] = None
                 continue
             
             buffer = await GetBufferTask(manager, checksum).run()
             assert buffer is not None
-            wa = accessor.write_accessor
             value = await DeserializeBufferTask(
-                manager, buffer, checksum, wa.celltype, True
-            ).run()           
+                manager, buffer, checksum, celltype, True
+            ).run()
             if value is None:
                 raise CacheMissError(pinname, reactor)
-            if (wa.celltype, wa.subcelltype) == ("plain", "module"):
+            if (celltype, subcelltype) == ("plain", "module"):
                 mod = await build_module_async(value)
                 module_workspace[pinname] = mod[1]
             else:

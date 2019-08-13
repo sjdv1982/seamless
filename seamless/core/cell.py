@@ -206,6 +206,7 @@ Use ``Cell.status()`` to get its status.
     def set_buffer(self, buffer, checksum=None):
         """Update cell buffer from the terminal.
         If the checksum is known, it can be provided as well."""
+        assert buffer is None or isinstance(buffer, bytes)
         if self._context is None:
             self._prelim_checksum = None
             self._prelim_val = buffer, True
@@ -239,10 +240,6 @@ Use ``Cell.status()`` to get its status.
         self._set_checksum(checksum)
         return self
 
-    def from_buffer(self, value):
-        """Sets a cell from a buffer value"""
-        return self._set(value, True)
-
     def from_file(self, filepath):
         ok = False
         if self._mount_kwargs is not None:
@@ -259,7 +256,9 @@ Use ``Cell.status()`` to get its status.
         filemode = "rb" if binary else "r"
         with open(filepath, filemode, encoding=encoding) as f:
             filevalue = f.read()
-        return self.from_buffer(filevalue)
+        if not binary:
+            filevalue = filevalue.encode()
+        return self.set_buffer(filevalue)
 
     def connect(self, target):
         """connects the cell to a target"""
@@ -280,8 +279,6 @@ Use ``Cell.status()`` to get its status.
         if isinstance(target, Inchannel):
             target_subpath = target.path
             target = target.structured_cell().buffer
-        elif isinstance(target, Editchannel):
-            raise TypeError("Editchannels cannot be connected to cells, only to workers")
         elif isinstance(target, Outchannel):
             raise TypeError("Outchannels must be the source of a connection, not the target")
         
@@ -290,8 +287,7 @@ Use ``Cell.status()`` to get its status.
         elif isinstance(target, InputPin):
             pass
         elif isinstance(target, EditPin):
-            # dual connection
-            manager.connect(target, None, self, None)
+            pass
         elif isinstance(target, OutputPin):
             raise TypeError("Output pins must be the source of a connection, not the target")
         elif isinstance(target, Transformer):
@@ -551,6 +547,8 @@ cellclasses = {
 }
 
 def cell(celltype="plain", **kwargs):
+    if celltype is None:
+        celltype = "plain"
     cellclass = cellclasses[celltype]
     return cellclass(**kwargs)
 

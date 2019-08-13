@@ -91,21 +91,32 @@ class RuntimeReactor:
                 continue
             if pinname in self.module_workspace:
                 continue
-            pin = ReactorInput(value)
-            self.PINS[pinname] = pin
+            if not self.live:
+                pin = ReactorInput(value)
+                self.PINS[pinname] = pin
+            else:
+                self.PINS[pinname]._value = value
+                self.PINS[pinname].updated = True
         for pinname in self.editpins:
             if updated is not None and pinname not in updated:
                 self.PINS[pinname].updated = False
                 continue
             value = self.values[pinname]
-            pin = ReactorEdit(self, pinname, value)
-            self.PINS[pinname] = pin
+            if not self.live:
+                pin = ReactorEdit(self, pinname, value)
+                self.PINS[pinname] = pin
+            else:
+                if value == self.PINS[pinname]._value:
+                    self.PINS[pinname].updated = False
+                else:
+                    self.PINS[pinname]._value = value
+                    self.PINS[pinname].updated = True
         for pinname in self.outputpins:
-            pin = ReactorOutput(self, pinname)
-            self.PINS[pinname] = pin
+            if not self.live:
+                pin = ReactorOutput(self, pinname)
+                self.PINS[pinname] = pin
 
     def run_code(self, codename):
-        #print("REACTOR RUN CODE", codename, self.updated)
         assert codename in ("code_start", "code_stop", "code_update")
         code_object = self.values[codename]
         self.namespace["PINS"] = self.PINS
@@ -146,29 +157,38 @@ class RuntimeReactor:
     def set_pin(self, pinname, value, preliminary):
         from .worker import OutputPin, EditPin
         reactor = self.reactor()
+        manager = self.manager()
+        livegraph = manager.livegraph
         pin = reactor._pins[pinname]
         assert isinstance(pin, (OutputPin, EditPin))
-        if not isinstance(pin, EditPin):
+
+        if isinstance(pin, EditPin):
             assert not preliminary
+            cell = livegraph.editpin_to_cell[reactor][pinname]
+            if cell is None:
+                return
+            manager.set_cell(cell, value)            
+        else:
+            if preliminary:
+                raise NotImplementedError
             if not self.executing:
                 msg = "%s can set outputpin '%s' only while executing"
                 raise Exception(msg % (self.reactor(), pinname))
-        manager = self.manager()
-        livegraph = manager.livegraph
-        downstream = livegraph.reactor_to_downstream[reactor][pinname]
-        if not len(downstream):
-            celltype, subcelltype = reactor.outputs[pinname]
-            if celltype is None:
-                celltype = "plain"
-        else:
-            wa = downstream[0].write_accessor
-            celltype = wa.celltype
-            subcelltype = wa.subcelltype
-        ReactorResultTask(
-            manager, reactor, 
-            pinname, value,
-            celltype, subcelltype
-        ).launch()
+
+            downstream = livegraph.reactor_to_downstream[reactor][pinname]
+            if not len(downstream):
+                celltype, subcelltype = reactor.outputs[pinname]
+                if celltype is None:
+                    celltype = "plain"
+            else:
+                wa = downstream[0].write_accessor
+                celltype = wa.celltype
+                subcelltype = wa.subcelltype
+            ReactorResultTask(
+                manager, reactor, 
+                pinname, value,
+                celltype, subcelltype
+            ).launch()
 
     def clear(self):
         #print("CLEAR")

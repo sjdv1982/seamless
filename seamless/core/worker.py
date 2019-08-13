@@ -29,7 +29,7 @@ def _cell_from_pin(self, celltype):
         my_cell = my_cell._cell
     if my_cell is None:
         return None
-    assert isinstance(my_cell, Cell)
+    assert isinstance(my_cell, Cell), type(my_cell)
     return my_cell
 
 
@@ -193,7 +193,7 @@ class OutputPin(OutputPinBase):
         manager = self._get_manager()
         my_cells = manager.cell_from_pin(self)
         celltype = self.celltype
-        l = len(my_cells)
+        l = len(my_cells) if my_cells is not None else 0
         if l == 0:
             worker = self.worker_ref()
             if worker is None:
@@ -217,6 +217,8 @@ class OutputPin(OutputPinBase):
         manager = self._get_manager()
         my_cells = manager.cell_from_pin(self)
         # TODO: take subpath (c[1]) into account? construct some kind of proxy?
+        if my_cells is None:
+            return []
         my_cells = [c[0] for c in my_cells]
         return mycells
 
@@ -262,10 +264,7 @@ class EditPin(EditPinBase):
 
         assert not isinstance(target, Path) #Edit pins cannot be connected to paths
 
-        if isinstance(target, Editchannel):
-            target_subpath = target.path
-            target = target.structured_cell().buffer
-        elif isinstance(target, Inchannel):
+        if isinstance(target, Inchannel):
             raise TypeError("Inchannels cannot be connected to edit pins, only to output pins")
         elif isinstance(target, Outchannel):
             raise TypeError("Outchannels must be the source of a connection, not the target")
@@ -283,8 +282,7 @@ class EditPin(EditPinBase):
         else:
             raise TypeError(type(target))
 
-        manager.connect(self, None, target, target_subpath)
-        manager.connect(target, target_subpath, self, None) # dual connection
+        manager.connect(self, None, target, None)
         return self
 
     @property

@@ -40,7 +40,9 @@ class CellUpdateTask(Task):
             if changed:
                 AccessorUpdateTask(manager, accessor).launch()
         for editpin in livegraph.cell_to_editpins[cell]:
-            raise NotImplementedError  # livegraph branch
+            reactor = editpin.worker_ref()
+            ReactorUpdateTask(manager, reactor).launch()
         return None
 
-from .accessor_update import AccessorUpdateTask        
+from .accessor_update import AccessorUpdateTask
+from .reactor_update import ReactorUpdateTask

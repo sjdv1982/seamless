@@ -329,8 +329,10 @@ If origin_task is provided, that task is not cancelled."""
         livegraph = self.livegraph
         reactor._pending = (not void)
         reactor._void = void
-        reactor._status_reason = reason        
-        for pinname in reactor.outputs:
+        reactor._status_reason = reason 
+        outputpins = [pinname for pinname in reactor._pins \
+            if reactor._pins[pinname].io == "output" ]
+        for pinname in outputpins:
             accessors = livegraph.reactor_to_downstream[reactor][pinname]
             for accessor in accessors:            
                 self.cancel_accessor(accessor, void)        
@@ -358,8 +360,8 @@ If origin_task is provided, that task is not cancelled."""
         task.launch()
 
 
-    def cell_from_pin(self):
-        return self.livegraph.cell_from_pin
+    def cell_from_pin(self, pin):
+        return self.livegraph.cell_from_pin(pin)
 
 
     def _verify_connect(self, current_macro, source, target):        

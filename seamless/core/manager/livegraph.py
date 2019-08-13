@@ -179,7 +179,7 @@ class LiveGraph:
         manager.taskmanager.register_accessor(read_accessor)
         if not worker._void:
             read_accessor._void = False # To trigger propagation
-            propagate_accessor(read_accessor)
+            propagate_accessor(manager.livegraph, read_accessor, False)
         else:
             target._status_reason = StatusReasonEnum.UPSTREAM
 
@@ -219,7 +219,7 @@ class LiveGraph:
             celltype = source._celltype
         subcelltype = target.subcelltype
         if subcelltype is None:
-            subcelltype = source._subcelltype
+            subcelltype = source._subcelltype        
         write_accessor = WriteAccessor(
             read_accessor, worker, 
             celltype=celltype, 
@@ -330,21 +330,35 @@ class LiveGraph:
         return read_accessor
 
     def cell_from_pin(self, pin):
+        from ..worker import InputPin, OutputPin
         worker = pin.worker_ref()
-        if isinstance(worker, Transformer):
-            upstream = self.transformer_to_upstream[worker]
-        elif isinstance(worker, Reactor):
-            upstream = self.reactor_to_upstream[worker]
-        elif isinstance(worker, Macro):
-            upstream = self.macro_to_upstream[worker]
-        upstreams = upstream[pin.name]
-        if upstreams is None:
-            return None
-        result = []
-        for accessor in upstreams:
-            cell = self.accessor_to_upstream[accessor]
-            assert isinstance(cell, (Cell, Path))
-            result.append(cell)
+        if isinstance(pin, InputPin):
+            if isinstance(worker, Transformer):
+                upstream = self.transformer_to_upstream[worker]
+            elif isinstance(worker, Reactor):
+                upstream = self.reactor_to_upstream[worker]
+            elif isinstance(worker, Macro):
+                upstream = self.macro_to_upstream[worker]
+            accessor = upstream[pin.name]
+            if accessor is None:
+                return None
+            return self.accessor_to_upstream[accessor]
+        elif isinstance(pin, OutputPin):
+            if isinstance(worker, Transformer):
+                downstreams = self.transformer_to_downstream[worker]
+            elif isinstance(worker, Reactor):
+                downstreams = self.reactor_to_downstream[worker][pin.name]
+            if downstreams is None:
+                return None
+            result = []
+            for accessor in downstreams:
+                target = accessor.write_accessor.target
+                if isinstance(target, (Cell, Path)):                
+                    result.append(cell)
+        elif isinstance(pin, EditPin):
+            raise TypeError(EditPin)
+        else:
+            raise TypeError(type(pin))
         if not len(result):
             result = None
         return result
@@ -471,14 +485,13 @@ class LiveGraph:
                     down_accessors = down_accessors[1:]            
         self.reactor_to_downstream.pop(reactor)
         editpins_cell = self.editpin_to_cell.pop(reactor)
-        for pinname, cells in editpins_cell.items():
-            if cells is None:
+        for pinname, cell in editpins_cell.items():
+            if cell is None:
                 continue
-            editpin = reactor.pins[pinname]
-            for cell in cells:
-                if cell._destroyed or cell in self._destroying:
-                    continue
-                self.cell_to_editpins[cell].remove(editpin)        
+            editpin = reactor._pins[pinname]
+            if cell._destroyed or cell in self._destroying:
+                continue
+            self.cell_to_editpins[cell].remove(editpin)        
 
     @destroyer
     def destroy_cell(self, manager, cell):
@@ -523,7 +536,7 @@ class LiveGraph:
                     reactor = editpin.worker_ref()
                     if reactor._destroyed or reactor in self._destroying:
                         continue
-                    self.editpin_to_cell[reactor][editpin.name].pop(cell)
+                    self.editpin_to_cell[reactor][editpin.name] = None
         self._will_lose_authority.discard(cell)
 
     @destroyer

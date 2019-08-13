@@ -16,5 +16,5 @@ b = QTextEdit()
 #b.setTextColor(QColor(255,0,0))
 vbox.addWidget(b)
 def func():
-    PINS.value.set(b.toPlainText())
+    PINS.val.set(b.toPlainText())
 b.textChanged.connect(func)

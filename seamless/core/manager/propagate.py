@@ -12,6 +12,8 @@ def propagate_accessor(livegraph, accessor, void):
             raise NotImplementedError # livegraph branch
     elif isinstance(target, Transformer):
         propagate_transformer(livegraph, target)
+    elif isinstance(target, Reactor):
+        propagate_reactor(livegraph, target)
     elif isinstance(target, Macro):
         propagate_macro(livegraph, target)
     else:

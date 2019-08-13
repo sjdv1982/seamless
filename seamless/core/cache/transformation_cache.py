@@ -140,13 +140,12 @@ class TransformationCache:
         else:
             tf = self.transformations_to_transformers[tf_checksum]        
         old_tf_checksum = self.transformer_to_transformations[transformer]
-        if old_tf_checksum == tf_checksum:
-            return
-        self.transformer_to_transformations[transformer] = tf_checksum
-        tf.append(transformer)
-        if old_tf_checksum is not None:
-            old_transformation = self.transformations[old_tf_checksum]
-            self.decref_transformation(old_transformation, transformer)
+        if old_tf_checksum != tf_checksum:
+            self.transformer_to_transformations[transformer] = tf_checksum
+            tf.append(transformer)
+            if old_tf_checksum is not None:
+                old_transformation = self.transformations[old_tf_checksum]
+                self.decref_transformation(old_transformation, transformer)
         result_checksum = self._get_transformation_result(tf_checksum)
         if result_checksum is not None:
             manager = transformer._get_manager()

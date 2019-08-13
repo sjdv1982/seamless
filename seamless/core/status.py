@@ -109,6 +109,13 @@ def status_reactor(reactor):
             if astatus[0] == StatusEnum.OK:
                 continue
             pins[pinname] = astatus
+        for pinname in rtreactor.editpins:
+            cell = livegraph.editpin_to_cell[reactor][pinname]
+            astatus = status_accessor(cell)
+            if astatus[0] == StatusEnum.OK:
+                continue
+            pins[pinname] = astatus
+
     return status, reason, pins
 
 def status_macro(macro):

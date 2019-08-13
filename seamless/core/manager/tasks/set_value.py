@@ -24,6 +24,8 @@ class SetCellValueTask(Task):
                     checksum, cell._celltype, cell._subcelltype, 
                     str(cell), buffer_cache
                 )
+                checksum_cache[checksum] = buffer
+                buffer_cache.incref(checksum)
                 manager._set_cell_checksum(self.cell, checksum, False)
                 CellUpdateTask(manager, self.cell).launch()
         finally:
@@ -31,3 +33,4 @@ class SetCellValueTask(Task):
         return None
 
 from ...protocol.validate_subcelltype import validate_subcelltype
+from ...protocol.calculate_checksum import checksum_cache
