@@ -13,16 +13,15 @@ from seamless.core import cell as core_cell, link as core_link, \
  libcell, transformer, reactor, context, macro, StructuredCell
 
 from . import copying
-from .util import as_tuple, get_path, find_channels, find_editchannels, build_structured_cell
+from .util import as_tuple, get_path, find_channels, build_structured_cell
 
 
 
-def translate_py_reactor(node, root, namespace, inchannels, outchannels, editchannels, lib_path00, is_lib):
+def translate_py_reactor(node, root, namespace, inchannels, outchannels, lib_path00, is_lib):
     raise NotImplementedError ### cache branch
     #TODO: simple-mode translation, without a structured cell
     skip_channels = ("code_start", "code_update", "code_stop")
     inchannels = [ic for ic in inchannels if ic[0] not in skip_channels]
-    editchannels = [ec for ec in editchannels if ec[0] not in skip_channels]
     parent = get_path(root, node["path"][:-1], None, None)
     name = node["path"][-1]
     lib_path0 = lib_path00 + "." + name if lib_path00 is not None else None
@@ -40,13 +39,11 @@ def translate_py_reactor(node, root, namespace, inchannels, outchannels, editcha
 
     all_inchannels = interchannels_in + inchannels  #highlevel must check that there are no duplicates
     all_outchannels = interchannels_out + [p for p in outchannels if p not in interchannels_out]
-    all_editchannels = interchannels_edit + [p for p in editchannels if p not in interchannels_edit]
 
     plain = node["plain"]
     io = build_structured_cell(
       ctx, io_name, True, plain, buffered,
       all_inchannels, all_outchannels, lib_path0,
-      editchannels=all_editchannels
     )
     setattr(ctx, io_name, io)
     for inchannel in inchannels:
@@ -55,10 +52,6 @@ def translate_py_reactor(node, root, namespace, inchannels, outchannels, editcha
     for outchannel in outchannels:
         path = node["path"] + outchannel
         namespace[path, False] = io.outchannels[outchannel], node
-    for channel in editchannels:
-        path = node["path"] + channel
-        namespace[path, True] = io.editchannels[channel], node
-        namespace[path, False] = io.editchannels[channel], node
 
     ctx.rc = reactor(node["pins"])
     for attr in ("code_start", "code_stop", "code_update"):
@@ -98,7 +91,7 @@ def translate_py_reactor(node, root, namespace, inchannels, outchannels, editcha
     namespace[node["path"], True] = io, node
     namespace[node["path"], False] = io, node
 
-def translate_cell(node, root, namespace, inchannels, outchannels, editchannels, lib_path0, is_lib, link_target=None):
+def translate_cell(node, root, namespace, inchannels, outchannels, lib_path0, is_lib, link_target=None):
     path = node["path"]
     parent = get_path(root, path[:-1], None, None)
     name = path[-1]
@@ -119,7 +112,7 @@ def translate_cell(node, root, namespace, inchannels, outchannels, editchannels,
         child = build_structured_cell(
           parent, name, silk, plain, buffered,
           inchannels, outchannels,
-          lib_path0, mount=mount, editchannels=editchannels
+          lib_path0, mount=mount
         )
         for inchannel in inchannels:
             cname = child.inchannels[inchannel].name
@@ -134,7 +127,7 @@ def translate_cell(node, root, namespace, inchannels, outchannels, editchannels,
             cpath = path + outchannel
             namespace[cpath, False] = child.outchannels[outchannel], node
     else: #not structured
-        for c in inchannels + outchannels + editchannels:
+        for c in inchannels + outchannels:
             assert not len(c) #should have been checked by highlevel
         if link_target:
             child = core_link(link_target)
@@ -215,7 +208,8 @@ def translate_connection(node, namespace, ctx):
         source.connect(target)
 
 def translate_link(node, namespace, ctx):
-    from ..core.structured_cell import Inchannel, Outchannel, Editchannel, StructuredCell
+    raise NotImplementedError
+    from ..core.structured_cell import Inchannel, Outchannel, StructuredCell
     first, second = node["first"], node["second"]
     first_simple, second_simple = first["simple"], second["simple"]
     if first["simple"] and second["simple"]:
@@ -307,8 +301,7 @@ def translate(graph, ctx, from_lib_paths, is_lib):
         if t == "cell" and path in link_target_paths:
             assert node["celltype"] != "structured" #low-level links are between simple cells!
             inchannels, outchannels = find_channels(path, connection_paths)
-            editchannels = find_editchannels(path, link_paths)
-            translated_cell = translate_cell(node, ctx, namespace, inchannels, outchannels, editchannels, lib_path, is_lib)
+            translated_cell = translate_cell(node, ctx, namespace, inchannels, outchannels,  lib_path, is_lib)
             link_targets[path] = translated_cell
 
     #print("LOW-LEVEL LINKS", lowlevel_links)
@@ -337,17 +330,15 @@ def translate(graph, ctx, from_lib_paths, is_lib):
             if node["language"] not in ("python", "ipython"):
                 raise NotImplementedError(node["language"])
             inchannels, outchannels = find_channels(node["path"], connection_paths)
-            editchannels = find_editchannels(node["path"], link_paths)
-            translate_py_reactor(node, ctx, namespace, inchannels, outchannels, editchannels, lib_path, is_lib)
+            translate_py_reactor(node, ctx, namespace, inchannels, outchannels, lib_path, is_lib)
         elif t == "cell":
             if path in link_target_paths:
                 continue #done already before
             inchannels, outchannels = find_channels(path, connection_paths)
-            editchannels = find_editchannels(path, link_paths)
             link_target = None
             if path in lowlevel_links:
                 link_target = link_targets[lowlevel_links[path]]
-            translate_cell(node, ctx, namespace, inchannels, outchannels, editchannels, lib_path, is_lib, link_target=link_target)
+            translate_cell(node, ctx, namespace, inchannels, outchannels, lib_path, is_lib, link_target=link_target)
         else:
             raise TypeError(t)
         node.pop("UNTRANSLATED", None)

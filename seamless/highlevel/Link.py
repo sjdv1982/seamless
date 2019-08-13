@@ -1,11 +1,12 @@
 """
 Sets up bidirectional links
-Can be between:
+Must be between:
     Structured cell and structured cell (implemented as EditChannel)
-    Structured cell and simple cell (implemented as EditChannel) or vice versa
-    Simple cell and simple cell (implemented as core.link)
+    Structured cell and simple cell (implemented as EditChannel) or vice versaSimple cell and simple cell (implemented as core.link)
 StructuredCell can also be Proxy
 """
+
+raise NotImplementedError
 
 from .Base import Base
 

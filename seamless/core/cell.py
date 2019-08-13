@@ -579,7 +579,7 @@ from .unbound_context import UnboundManager
 from .mount import MountItem
 from .mount import is_dummy_mount
 from ..mixed.get_form import get_form
-from .structured_cell import Inchannel, Outchannel, Editchannel
+from .structured_cell import Inchannel, Outchannel
 from .macro_mode import get_macro_mode
 from .utils import strip_source
 

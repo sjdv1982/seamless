@@ -99,12 +99,11 @@ class LiveGraph:
 
         inchannels = list(structured_cell.inchannels.keys())
         outchannels = list(structured_cell.outchannels.keys())
-        editchannels = list(structured_cell.editchannels.keys())
 
-        inpathdict = {path: None for path in inchannels+editchannels}
+        inpathdict = {path: None for path in inchannels}
         self.paths_upstream[buffercell] = inpathdict
 
-        outpathdict = {path: None for path in outchannels+editchannels}
+        outpathdict = {path: None for path in outchannels}
         self.paths_downstream[datacell] = outpathdict
 
     def register_macropath(self, macropath):

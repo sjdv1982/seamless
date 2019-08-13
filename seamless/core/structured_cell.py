@@ -122,16 +122,6 @@ class Outchannel(SeamlessBase):
         except MonitorTypeError:
             return None
 
-class Editchannel(Outchannel):
-    def __init__(self, structured_cell, name):
-        raise NotImplementedError # livegraph branch
-        # TODO: tricky, because of authority question; see LIVEGRAPH-TODO.txt
-        assert isinstance(name, tuple)
-        #assert all([isinstance(v, str) for v in channel])
-        self.structured_cell = weakref.ref(structured_cell)
-        self.name = name
-
-
 class StructuredCell(SeamlessBase):
     _mount = None
     _exported = True
@@ -146,9 +136,7 @@ class StructuredCell(SeamlessBase):
       buffer,
       schema,
       inchannels,
-      outchannels,
-      *,
-      editchannels=[],
+      outchannels
     ):
         from .cell import MixedCell
         super().__init__()
@@ -169,24 +157,17 @@ class StructuredCell(SeamlessBase):
         self.inchannels = PathDict()
         if inchannels is not None:
             for inchannel in inchannels:
-                assert inchannel not in editchannels
                 self.inchannels[inchannel] = Inchannel(self, inchannel)
         self.outchannels = PathDict()
         if outchannels is not None:
             for outchannel in outchannels:
-                assert outchannel not in editchannels
                 self.outchannels[outchannel] = Outchannel(self, outchannel)
-        self.editchannels = PathDict()
-        if editchannels is not None:
-            for channel in editchannels:
-                self.editchannels[channel] = Editchannel(self, channel)
 
-        inedchannels = list(self.inchannels.keys())
-        inedchannels += list(self.editchannels.keys())
+        inchannels = list(self.inchannels.keys())
         
-        for path1 in inedchannels:
+        for path1 in inchannels:
             lpath1 = len(path1)
-            for path2 in inedchannels:                
+            for path2 in inchannels:                
                 if path1 is path2:
                     continue
                 if path2[:lpath1] == path1:

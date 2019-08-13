@@ -162,8 +162,6 @@ class OutputPin(OutputPinBase):
         if isinstance(target, Inchannel):
             target_subpath = target.path
             target = target.structured_cell().buffer
-        elif isinstance(target, Editchannel):
-            raise TypeError("Editchannels cannot be connected to output pins, only to edit pins")
         elif isinstance(target, Outchannel):
             raise TypeError("Outchannels must be the source of a connection, not the target")
 
@@ -300,6 +298,6 @@ class EditPin(EditPinBase):
         stat = status_accessor(accessor)
         return format_status(stat)
 
-from .structured_cell import Inchannel, Outchannel, Editchannel
+from .structured_cell import Inchannel, Outchannel
 from .cell import cell, Cell
 from .macro import Path

@@ -66,19 +66,10 @@ def find_channels(path, connection_paths):
             inchannels.append(p)
     return inchannels, outchannels
 
-def find_editchannels(path, link_paths):
-    editchannels = []
-    for first, second in link_paths:
-        for point in first, second:
-            if point[:len(path)] == path:
-                p = point[len(path):]
-                editchannels.append(p)
-    return editchannels
-
 def build_structured_cell(
   ctx, name, silk, plain, buffered,
   inchannels, outchannels, lib_path0,
-  *, editchannels=[], mount=None, return_context=False
+  *, mount=None, return_context=False
 ):
     #print("build_structured_cell", name, lib_path)
     name2 = name + STRUC_ID
@@ -142,8 +133,7 @@ def build_structured_cell(
         buffer=buffer,
         plain=plain,
         inchannels=inchannels,
-        outchannels=outchannels,
-        editchannels=editchannels
+        outchannels=outchannels
     )
     if return_context:
         return sc, c
