@@ -1,52 +1,85 @@
 from weakref import WeakValueDictionary, WeakSet
-from .cell import Cell, PythonCell, PyMacroCell, celltypes, cell as make_cell
-from .context import Context
 from contextlib import contextmanager
 from copy import deepcopy
 
+from .cell import Cell, PythonCell, PyMacroCell, celltypes, cell as make_cell
+
+class Library(dict):
+    pass
+
 _lib = {}
+_root_to_libname = {}
 _cells = {}
 _boundcells = WeakSet()
 
 celltypes_rev = {v:k for k,v in celltypes.items()}
 
-def _update_old_keys(oldkeys, oldlib, lib, on_macros):
+def _update_old_keys(oldkeys, oldlib, lib, old_root, root):
+    from .manager.tasks.macro_update import MacroUpdateTask
+    cachemanager = root._get_manager().cachemanager
+    old_cachemanager = old_root._get_manager().cachemanager
     for key in oldkeys:
         if key not in _cells:
             continue
         oldcells = _cells[key]
-        for oldcell in oldcells:
-            is_macro = isinstance(oldcell, (PythonCell, PyMacroCell))
-            if is_macro != on_macros:
-                continue
+        for oldcell, macro in oldcells:
             if oldcell._destroyed:
                 continue
             exists = False
             if key in lib:
-                celltype, checksum = lib[key]
-                old_celltype, old_checksum = oldlib[key]
+                celltype, checksum, _ = lib[key]
+                old_celltype, old_checksum, _ = oldlib[key]
                 if old_celltype == celltype:
                     exists = True
             if exists:
                 if old_checksum != checksum:
-                    ###buffer_cache.decref(old_checksum, has_auth=True) #TODO: malfunctioning...
-                    oldcell._get_manager().set_cell_checksum(oldcell, checksum)
+                    oldcell.set_checksum(checksum.hex())
+                if macro is not None:
+                    manager = macro._get_manager()
+                    manager.cancel_macro(macro, False)
+                    MacroUpdateTask(manager, macro).launch()
             else:
                 if oldcell not in _boundcells:
-                    print("Warning: Library key %s deleted, %s set to None" % (key, oldcell))
-                oldcell.set(None)
+                    print("Warning: Library key '%s' deleted, %s set to None" % (key, oldcell))
+                oldcell.set_checksum(None)
 
-def register(name, lib):
+def register(name, lib, root):
     assert isinstance(name, str)
     assert isinstance(lib, dict)
     if name not in _lib:
-        _lib[name] = lib
+        _lib[name] = lib, root
+        if root not in _root_to_libname:
+            _root_to_libname[root] = []
+        _root_to_libname[root].append(name)
         return
-    oldlib = _lib[name]
+    oldlib, old_root = _lib[name]
     oldkeys = list(oldlib.keys())
-    _update_old_keys(oldkeys, oldlib, lib, on_macros=True)
-    _update_old_keys(oldkeys, oldlib, lib, on_macros=False)
-    _lib[name] = lib
+    _update_old_keys(
+        oldkeys, oldlib, lib, 
+        old_root, root
+    )
+    unregister(name)
+    if root not in _root_to_libname:
+        _root_to_libname[root] = []
+    _root_to_libname[root].append(name)    
+    _lib[name] = lib, root
+
+def unregister(name):
+    lib, root = _lib[name]
+    cachemanager = root._get_manager().cachemanager
+    for entry in lib.values():
+        _, checksum, _ = entry
+        if checksum is None:
+            continue
+        cachemanager.decref_checksum(checksum, lib, True)
+    _root_to_libname[root].remove(name)
+
+def unregister_all(root):
+    if root not in _root_to_libname:
+        return
+    for libname in list(_root_to_libname[root]):
+        unregister(libname)
+    _root_to_libname.pop(root)
 
 _bound = None
 @contextmanager
@@ -62,8 +95,8 @@ def bind(name):
 
 def _build(ctx, result, prepath):
     manager = ctx._get_manager()
-    mgr_cell_cache = manager.cell_cache
-    mgr_buffer_cache = manager.buffer_cache
+    cachemanager = manager.cachemanager
+    livegraph = manager.livegraph
     for childname, child in ctx._children.items():
         if prepath is None:
             path = childname
@@ -72,21 +105,20 @@ def _build(ctx, result, prepath):
         if isinstance(child, Context):
             _build(child, result, path)
         elif isinstance(child, Cell):
-            celltype = celltypes_rev[type(child)]
-            checksum = mgr_cell_cache.cell_to_buffer_checksums.get(child)            
-            buffer = mgr_buffer_cache.get_buffer(checksum)
-            if buffer is not None:
-                _, _, buffer = buffer
-            buffer_cache.incref(checksum, buffer, has_auth=True)            
-            result[path] = celltype, checksum
+            is_buffercell = child in livegraph.buffercells
+            celltype, checksum = child._celltype, child._checksum
+            #print("INCREF", checksum.hex())
+            cachemanager.incref_checksum(checksum, result, True)            
+            result[path] = celltype, checksum, is_buffercell
 
 
 def build(ctx):
     from .context import Context
     assert isinstance(ctx, Context), type(ctx)
-    result = {}
+    result = Library()
+    root = ctx._root()
     _build(ctx, result, None)
-    return result
+    return result, root
 
 def _libcell(path, mandated_celltype, *args, **kwargs):
     if path.startswith("."):
@@ -99,15 +131,15 @@ def _libcell(path, mandated_celltype, *args, **kwargs):
         libname, key = path[:pos], path[pos+1:]
         boundcell = False
     assert libname in _lib, libname #library name must have been registered
-    lib = _lib[libname]
+    lib, _ = _lib[libname]
     assert key in lib, (key, list(lib.keys())) #library key must be in library
-    celltype, checksum = lib[key]
+    celltype, checksum, is_buffercell = lib[key]
     assert mandated_celltype is None or mandated_celltype == celltype, (mandated_celltype, celltype)
     c = make_cell(celltype, *args, **kwargs)
-    c._prelim_checksum = checksum
+    c._prelim_checksum = checksum, True, is_buffercell
     if key not in _cells:
-        _cells[key] = WeakSet()
-    _cells[key].add(c)
+        _cells[key] = set()
+    _cells[key].add((c, curr_macro()))
     if boundcell:
         _boundcells.add(c)
     c._lib_path = path
@@ -116,35 +148,10 @@ def _libcell(path, mandated_celltype, *args, **kwargs):
 def lib_has_path(libname, path):
     assert libname in _lib
     #print("lib_has_path", libname, path, path in _lib[libname], _lib[libname])
-    return path in _lib[libname]
+    return path in _lib[0][libname]
 
 def libcell(path, celltype=None):
     return _libcell(path, celltype)
 
-def lib_get_buffer(checksum):
-    raise NotImplementedError # livegraph branch
-    buffer = buffer_cache.get_buffer(checksum)[2]
-
-def lib_get_value(checksum, cell):    
-    buffer = lib_get_buffer(checksum)
-    if buffer is None:
-        return None
-    raise NotImplementedError # livegraph branch
-    celltype = celltypes_rev[type(cell)]
-    result = deserialize(
-        celltype, None, "lib_get_value",
-        buffer, from_buffer = True, buffer_checksum = None,
-        source_access_mode = None,
-        source_content_type = None,
-    )    
-    obj = result[2]
-    if celltype == "mixed":
-        obj = obj[2]
-    return obj
-
-
-""" # TODO: livegraph branch
-from .cache.buffer_cache import BufferCache
-buffer_cache = BufferCache(None)
-"""
-from .protocol.deserialize import deserialize
+from .macro_mode import curr_macro
+from .context import Context

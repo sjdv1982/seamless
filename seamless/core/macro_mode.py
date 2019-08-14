@@ -2,30 +2,33 @@ import atexit
 from weakref import WeakSet
 from contextlib import contextmanager
 
-_toplevel_register = set()
+_toplevel_registrable = set()
 _toplevel_registered = set()
 _toplevel_managers = set()
 
 def register_toplevel(ctx):
-    if _macro_mode_off:
-        return
     manager = ctx._get_manager()
     assert manager is not None
-    # Add toplevel manager even if unbound; else it will be destroyed!!
-    _toplevel_managers.add(manager)
-    _toplevel_register.add(ctx)
+    if not _macro_mode:
+        _toplevel_managers.add(manager)
+        _toplevel_registered.add(ctx)
+    else:
+        # Add toplevel manager even if unbound; else it will be destroyed!!
+        _toplevel_managers.add(manager)
+        _toplevel_registrable.add(ctx)
 
 def unregister_toplevel(ctx):
     manager = ctx._get_manager()
     if manager is not None:
         _toplevel_managers.discard(manager)
-    _toplevel_register.discard(ctx)
+    _toplevel_registrable.discard(ctx)
     _toplevel_registered.discard(ctx)
 
 def _destroy_toplevels():
     for manager in list(_toplevel_managers):
         manager.destroy(from_del=True)
     for ctx in list(_toplevel_registered):
+        unregister_all(ctx)
         manager = ctx._get_manager()
         if manager is not None:
             manager.destroy(from_del=True)
@@ -35,7 +38,6 @@ atexit.register(_destroy_toplevels)
 
 _macro_mode = False
 _curr_macro = None
-_macro_mode_off = False
 
 def get_macro_mode():
     return _macro_mode
@@ -73,7 +75,7 @@ def macro_mode_on(macro=None):
                     cctx._children[childname] = bound_ctx
                     child._bind(bound_ctx)                                        
                     bind_all(child)
-            for ctx in list(_toplevel_register):
+            for ctx in list(_toplevel_registrable):
                 if isinstance(ctx, UnboundContext):
                     top = ctx._root_
                     assert top is not None
@@ -95,9 +97,9 @@ def macro_mode_on(macro=None):
         _macro_mode = old_macro_mode
         _curr_macro = old_curr_macro
         if macro is None:
-            for ub_ctx in list(_toplevel_register):
+            for ub_ctx in list(_toplevel_registrable):
                 if isinstance(ub_ctx, UnboundContext):
-                    _toplevel_register.remove(ub_ctx)
+                    _toplevel_registrable.remove(ub_ctx)
                     ctx = ub_ctx._bound
                     if ctx is None or not ok:
                         continue
@@ -115,25 +117,10 @@ def macro_mode_on(macro=None):
                         if isinstance(cctx, Cell):
                             path._bind(cctx, True)
         elif not _macro_mode:
-            _toplevel_register.clear()
+            _toplevel_registrable.clear()
             if ok:
                 mount.scan(macro._gen_context, old_context=old_context)
 
-@contextmanager
-def macro_mode_off():
-    global _macro_mode, _curr_macro, _macro_mode_off
-    old_macro_mode = _macro_mode
-    old_macro_mode_off = _macro_mode_off
-    old_macro = _curr_macro
-    _macro_mode = False
-    _macro_mode_off = True
-    _curr_macro = None
-    try:
-        yield
-    finally:
-        _macro_mode = old_macro_mode
-        _curr_macro = old_macro
-        _macro_mode_off = old_macro_mode_off
-
 
 from .cache.transformation_cache import transformation_cache
+from .library import unregister_all

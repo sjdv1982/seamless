@@ -33,10 +33,10 @@ with macro_mode_on():
     ctx.testmodule = cell("plain")
     ctx.testmodule.set(testmodule)
     tf = ctx.tf = transformer({
-        "a": ("input", "ref", "plain"),
-        "b": ("input", "ref", "plain"),
-        "testmodule": ("input", "module"),
-        "result": ("output", "ref", "plain"),
+        "a": ("input", "plain"),
+        "b": ("input", "plain"),
+        "testmodule": ("input", "plain", "module"),
+        "result": ("output", "plain"),
     })
     ctx.testmodule.connect(tf.testmodule)
     ctx.tf.debug

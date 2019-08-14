@@ -62,7 +62,7 @@ class Macro(Worker):
         from .status import format_worker_status
         status = self._get_status()
         statustxt = format_worker_status(status)
-        return "Status: " + statustxt 
+        return "Status: " + str(statustxt )
 
     @property
     def exception(self):
@@ -277,8 +277,36 @@ class Path:
         else:
             raise AttributeError
 
+    @property
+    def value(self):
+        cell = self._cell
+        if cell is None:
+            raise AttributeError
+        return cell.value
+
+    @property
+    def checksum(self):
+        cell = self._cell
+        if cell is None:
+            raise AttributeError
+        return cell.checksum
+
+    @property
+    def buffer(self):
+        cell = self._cell
+        if cell is None:
+            raise AttributeError
+        return cell.buffer
+
+    @property
+    def exception(self):
+        cell = self._cell
+        if cell is None:
+            raise AttributeError
+        return cell.exception
+
     def __getattr__(self, attr):
-        if attr.startswith("_") or attr == "cell":
+        if attr.startswith("_") or attr == "cell" or attr in Path.__dict__:
             raise AttributeError(attr)
         return Path(self._macro, self._path + (attr,), manager=self._realmanager)
 
@@ -303,8 +331,8 @@ class Path:
         manager = self._get_manager()
         livegraph = manager.livegraph
         self_authority = livegraph.has_authority(self)
-        if self._cell is not None:            
-            oldcell = self._cell
+        oldcell = self._cell
+        if oldcell is not None:            
             self._cell = None
             oldcell._paths.remove(self)            
             if not oldcell._destroyed:
@@ -326,12 +354,13 @@ class Path:
         cell._paths.add(self)
         self._cell = cell
         propagate_cell(livegraph, cell)
-        if trigger:            
+        if trigger:
             if self_authority:
                 CellUpdateTask(manager, cell).launch()
             else:
                 up_accessor = livegraph.macropath_to_upstream[self]
                 assert up_accessor is not None  # if no up accessor, how could we have authority?
+                up_accessor._fizzled = True
                 AccessorUpdateTask(manager, up_accessor).launch()
             
 
@@ -339,6 +368,8 @@ class Path:
         ret = "(Seamless path: ." + ".".join(self._path)
         if self._macro is not None:
             ret += " from %s)" % str(self._macro)
+        else:
+            ret += ")"
         return ret
 
     def __repr__(self):

@@ -2,8 +2,6 @@ import weakref
 import copy
 
 from . import SeamlessBase
-from .macro_mode import curr_macro, register_toplevel
-from .mount import MountItem, is_dummy_mount
 
 class DummyTaskManager:
     @staticmethod
@@ -63,10 +61,12 @@ class UnboundManager:
         assert pin.worker_ref() in self._registered
         self.commands.append(("connect pin", (pin, cell)))
 
-    def set_cell_checksum(self, cell, checksum):
+    def set_cell_checksum(self, cell, checksum, initial, is_buffercell):
         assert cell._get_manager() is self
         assert cell in self._registered
-        self.commands.append(("set cell checksum", (cell, checksum)))
+        self.commands.append(
+            ("set cell checksum", (cell, checksum, initial, is_buffercell))
+        )
 
     def cell_from_pin(self, pin):
         from .worker import InputPin, OutputPin, EditPin
@@ -298,9 +298,11 @@ class UnboundContext(SeamlessBase):
                 pin, cell = args
                 manager.connect(pin, None, cell, None)
             elif com == "set cell checksum":
-                cell, checksum = args
+                cell, checksum, initial, is_buffercell = args
                 cell._prelim_checksum = None
-                manager.set_cell_checksum(cell, checksum)
+                manager.set_cell_checksum(
+                    cell, checksum, initial, is_buffercell
+                )
                 monitor = cell._monitor
                 if monitor is not None:  
                     buffer_item = manager.get_value_from_checksum(checksum)
@@ -351,3 +353,5 @@ from .cell import Cell
 from .worker import Worker, InputPinBase, OutputPinBase, EditPinBase
 from .structured_cell import StructuredCell
 from .context import Context
+from .macro_mode import curr_macro, register_toplevel
+from .mount import MountItem, is_dummy_mount

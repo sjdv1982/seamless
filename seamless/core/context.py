@@ -78,7 +78,7 @@ name: str
             self.mount(**mount_params)
         self._children = {}
         self._auto = set()
-        if toplevel:            
+        if toplevel:
             register_toplevel(self)
 
     def _set_context(self, context, name):
@@ -271,6 +271,7 @@ name: str
             paths = _global_paths.get(self, {})
             for path in paths.values():
                 manager._destroy_macropath(path)
+            lib_unregister_all(self)
             unregister_toplevel(self)
         else:
             self._unmount(from_del=from_del)
@@ -344,6 +345,7 @@ from .link import Link
 from .cell import Cell
 from .worker import Worker, InputPinBase, OutputPinBase, EditPinBase
 from .structured_cell import StructuredCell
+from .library import unregister_all as lib_unregister_all
 
 from .manager import Manager
 Macro = None # import later

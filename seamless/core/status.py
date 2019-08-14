@@ -4,7 +4,7 @@ class SeamlessInvalidValueError(ValueError):
 class SeamlessUndefinedError(ValueError):
     pass
 
-
+import json
 from enum import Enum
 
 class MyEnum(Enum):
@@ -20,6 +20,7 @@ class MyEnum(Enum):
 StatusEnum = MyEnum("StatusEnum", (
     "OK",
     "PENDING",
+    "SUB",
     "VOID",
 ))
 
@@ -120,6 +121,9 @@ def status_reactor(reactor):
 
 def status_macro(macro):
     if macro._gen_context is not None:
+        gen_status = macro._gen_context._get_status()                     
+        if format_context_status(gen_status) != "OK":
+            return StatusEnum.SUB, None, gen_status
         return StatusEnum.OK, None, None
     manager = macro._get_manager()
     livegraph = manager.livegraph
@@ -166,6 +170,11 @@ def format_worker_status(stat, as_child=False):
             return "executing"
         else:
             return "pending"
+    elif status == StatusEnum.SUB:
+        sub = pins
+        ctx_status = format_context_status(sub)
+        ctx_statustxt = json.dumps(ctx_status, indent=2, sort_keys=True)
+        return ("macro ctx =>", ctx_status)
     else:
         if reason == StatusReasonEnum.UNCONNECTED:
             result = "unconnected => "
@@ -194,19 +203,16 @@ def format_context_status(stat):
             if childstat[1] == StatusReasonEnum.UPSTREAM:
                 continue
         if isinstance(child, Worker):            
-            res = childname + ": "
             childresult = format_worker_status(childstat, as_child=True)
         elif isinstance(child, Cell):
-            res = childname + ": "
             childresult = format_status(childstat)            
         elif isinstance(child, Context):
-            res = childname + "\n========\n"            
             childresult = format_context_status(childstat)
         else:
             continue        
         if childresult == "OK":
             continue
-        result[res] = childresult
+        result[childname] = childresult
     if not len(result):
         result = "OK"
     return result

@@ -58,6 +58,13 @@ class UponConnectionTask(Task):
             return livegraph.connect_cell_pin(self.current_macro, source, target)
         raise NotImplementedError # livegraph branch
 
+    def _connect_cell_macropath(self):        
+        assert self.target_subpath is None
+        if self.source_subpath is not None:
+            raise NotImplementedError # livegraph branch ; will we ever support this?
+        livegraph = self.manager().livegraph
+        return livegraph.connect_cell_macropath(self.current_macro, self.source, self.target)
+
     def _connect_cell(self):        
         if isinstance(self.target, Cell):
             return self._connect_cell_cell()
@@ -107,6 +114,8 @@ class UponConnectionTask(Task):
             for task in taskmanager.cell_to_task[target]:
                 if isinstance(task, SetCellValueTask):
                     cancel_tasks.append(task)
+        elif isinstance(target, MacroPath):
+            cancel_tasks = taskmanager.macropath_to_task[target]
         elif isinstance(target, PinBase):
             worker = target.worker_ref()
             if isinstance(worker, Transformer):

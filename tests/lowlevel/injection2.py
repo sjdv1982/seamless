@@ -10,7 +10,7 @@ with macro_mode_on():
     ctx.tf = transformer({
         "a": "input",
         "b": "input",
-        "testmodule": ("input", "module"),
+        "testmodule": ("input", "plain", "module"),
         "c": "output",
     })
     ctx.cell1.connect(ctx.tf.a)

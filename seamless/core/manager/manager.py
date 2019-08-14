@@ -120,10 +120,14 @@ class Manager:
             reason = StatusReasonEnum.UNDEFINED
             self.cancel_cell(cell, void=True, reason=reason)
         else:
+            reason = None
             old_checksum = self.get_cell_checksum(cell)
             if old_checksum is not None:
                 self.cancel_cell(cell, void=False)
-        self._set_cell_checksum(cell, checksum, (checksum is None))
+        self._set_cell_checksum(
+            cell, checksum, 
+            (checksum is None), status_reason=reason
+        )
 
     def _set_cell_checksum(self, cell, checksum, void, status_reason=None):
         # NOTE: Any cell task depending on the old checksum must have been canceled already
@@ -196,7 +200,7 @@ class Manager:
 
     def _get_cell_checksum_and_void(self, cell):
         while 1:
-            if self._destroyed:
+            if self._destroyed or cell._destroyed:
                 break
             try:
                 task = CellChecksumTask(self, cell)
@@ -232,6 +236,8 @@ class Manager:
         
     @mainthread
     def get_cell_value(self, cell, copy):
+        if cell._destroyed:
+            return None
         checksum = self.get_cell_checksum(cell)
         if checksum is None:
             return None
@@ -271,6 +277,7 @@ class Manager:
         """Cancels all tasks depending on cell, and sets all dependencies to None. 
 If void=True, all dependencies are set to void as well.
 If origin_task is provided, that task is not cancelled."""
+        assert isinstance(cell, Cell)
         if cell._destroyed:
             return
         if cell._canceling:
@@ -292,6 +299,7 @@ If origin_task is provided, that task is not cancelled."""
 
     @mainthread
     def cancel_accessor(self, accessor, void, origin_task=None):
+        assert isinstance(accessor, ReadAccessor)
         self.taskmanager.cancel_accessor(accessor, origin_task=origin_task)
         if accessor.expression is not None:           
             self.livegraph.decref_expression(accessor.expression, accessor)
@@ -309,6 +317,7 @@ If origin_task is provided, that task is not cancelled."""
 
     @mainthread
     def cancel_transformer(self, transformer, void, reason=None):
+        assert isinstance(transformer, Transformer)
         self.taskmanager.cancel_transformer(transformer)
         if (not void) and transformer._void:
             return
@@ -322,6 +331,7 @@ If origin_task is provided, that task is not cancelled."""
 
     @mainthread
     def cancel_reactor(self, reactor, void, reason=None):
+        assert isinstance(reactor, Reactor)
         if (not void) and reactor._void:
             return
         if reason is None:
@@ -339,6 +349,15 @@ If origin_task is provided, that task is not cancelled."""
 
     @mainthread
     def cancel_macro(self, macro, void, reason=None):
+        assert isinstance(macro, Macro)
+        macro._last_inputs = None 
+        """
+        Macros are NOT fully deterministic on their inputs!
+        This is because of libcell, and libraries may change
+        Therefore, when a library is re-registered, it invokes
+         cancel_macro + macro update, and resetting _last_inputs
+         makes sure it gets re-executed
+        """
         gen_context = macro._gen_context
         if gen_context is not None:
             gen_context.destroy()
@@ -450,4 +469,5 @@ from ..worker import Worker
 from ..transformer import Transformer
 from ..macro import Macro
 from ..reactor import Reactor
+from .accessor import ReadAccessor
 from ..status import StatusReasonEnum

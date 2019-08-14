@@ -74,7 +74,7 @@ library.register("compute", lib)
 
 
 select_params = {
-    "which": ("ref", "text"),
+    "which": "text",
 }
 
 def main():

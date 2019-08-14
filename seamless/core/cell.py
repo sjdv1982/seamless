@@ -72,7 +72,7 @@ Use ``Cell.status()`` to get its status.
             self._prelim_val = None
         elif self._prelim_checksum is not None:
             checksum, initial, is_buffercell = self._prelim_checksum
-            self._set_checksum(checksum, initial, is_buffercell)
+            self._set_checksum(checksum.hex(), initial, is_buffercell)
             self._prelim_checksum = None
 
     def __hash__(self):
@@ -146,11 +146,7 @@ Use ``Cell.status()`` to get its status.
         The cell's checksum is the SHA3-256 hash of this."""
         manager = self._get_manager()
         if isinstance(manager, UnboundManager):
-            if self._lib_path is not None:
-                from .library import lib_get_buffer
-                return lib_get_buffer(self._prelim_checksum, self)                
-            else:
-                raise Exception("Cannot ask the cell value of a context that is being constructed by a macro")
+            raise Exception("Cannot ask the cell value of a context that is being constructed by a macro")
         buffer, _ = manager.get_cell_buffer_and_checksum(self)
         return buffer
 
@@ -159,13 +155,7 @@ Use ``Cell.status()`` to get its status.
         """Return the cell's buffer and checksum."""
         manager = self._get_manager()
         if isinstance(manager, UnboundManager):
-            if self._lib_path is not None:
-                from .library import lib_get_buffer
-                checksum = self._prelim_checksum
-                buffer = lib_get_buffer(checksum, self)                
-                return buffer, checksum
-            else:
-                raise Exception("Cannot ask the cell value of a context that is being constructed by a macro")
+            raise Exception("Cannot ask the cell value of a context that is being constructed by a macro")
         buffer, checksum = manager.get_cell_buffer_and_checksum(self)
         return buffer, checksum
 
@@ -230,8 +220,10 @@ Use ``Cell.status()`` to get its status.
             self._prelim_checksum = checksum, initial, is_buffercell
         else:
             manager = self._get_manager()
+            if checksum is not None:
+                checksum = bytes.fromhex(checksum)
             manager.set_cell_checksum(
-              self, bytes.fromhex(checksum), initial, is_buffercell
+              self, checksum, initial, is_buffercell
             )
         return self
 
@@ -272,10 +264,6 @@ Use ``Cell.status()`` to get its status.
         if isinstance(target, Link):
             target = target.get_linked()
 
-        if isinstance(target, Path):
-            raise NotImplementedError # livegraph branch
-            # something like ._verify_connect...
-
         if isinstance(target, Inchannel):
             target_subpath = target.path
             target = target.structured_cell().buffer
@@ -284,6 +272,8 @@ Use ``Cell.status()`` to get its status.
         
         if isinstance(target, Cell):
             assert not target._monitor
+        elif isinstance(target, Path):
+            pass
         elif isinstance(target, InputPin):
             pass
         elif isinstance(target, EditPin):

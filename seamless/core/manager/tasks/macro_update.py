@@ -36,7 +36,7 @@ class MacroUpdateTask(Task):
                 manager.cancel_macro(macro, void=True)
                 return
             return
-
+        
         inputpins = {}
         for pinname, accessor in upstreams.items():
             inputpins[pinname] = accessor._checksum

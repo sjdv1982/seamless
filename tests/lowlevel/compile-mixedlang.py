@@ -61,10 +61,10 @@ with macro_mode_on():
     ctx.module = cell("plain")
     ctx.module.set(module)
     tf = ctx.tf = transformer({
-        "a": ("input", "ref", "plain"),
-        "b": ("input", "ref", "plain"),
-        "testmodule": ("input", "module"),
-        "result": ("output", "ref", "plain"),
+        "a": ("input", "plain"),
+        "b": ("input", "plain"),
+        "testmodule": ("input", "plain", "module"),
+        "result": ("output", "plain"),
     })
     ctx.module.connect(tf.testmodule)
     tf.a.cell().set(12)

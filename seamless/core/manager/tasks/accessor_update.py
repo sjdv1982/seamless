@@ -10,12 +10,12 @@ class AccessorUpdateTask(Task):
     async def _run(self):
         accessor = self.accessor        
         # Get the expression. If it is None, do an accessor void cancellation
-        expression = accessor.expression
+        expression = accessor.expression        
         manager = self.manager()
         if expression is None:
             accessor._status_reason = StatusReasonEnum.UNDEFINED
             manager.cancel_accessor(accessor, void=True, origin_task=self)
-            return
+            return        
 
         expression_result_checksum = await EvaluateExpressionTask(manager, expression).run()
 
@@ -25,15 +25,21 @@ class AccessorUpdateTask(Task):
             manager.cancel_accessor(accessor, void=True, origin_task=self)
             return
         if accessor._checksum == expression_result_checksum:
-            return
+            if not accessor._fizzled:
+                return
         accessor._checksum = expression_result_checksum
         accessor._void = False
         accessor._status_reason = None
 
         # Select the write accessor's target.
         target = accessor.write_accessor.target()
-        if isinstance(target, MacroPath):
+        if isinstance(target, MacroPath):            
             target = target._cell
+            if target is None:
+                accessor._fizzled = True
+                return
+            else:
+                accessor._fizzled = False
         if target is None:
             return
         

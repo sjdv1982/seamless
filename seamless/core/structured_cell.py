@@ -11,8 +11,6 @@ import traceback
 import itertools
 from copy import deepcopy
 
-from .macro_mode import get_macro_mode
-
 """NOTE: data and schema can be edited via mount
 If there is buffering, only the buffer should be edited via mount
 """
@@ -342,3 +340,5 @@ class StructuredCell(SeamlessBase):
             schema=self._silk.schema,
             schema_dummy=True
         )    
+
+from .macro_mode import get_macro_mode

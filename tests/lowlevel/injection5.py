@@ -8,7 +8,7 @@ with macro_mode_on():
     ctx.result = cell()
     ctx.rc = reactor({
         "i": "input",
-        "testmodule": ("input", "module"),
+        "testmodule": ("input", "plain", "module"),
         "result": "output",
         "html": "output"
     })

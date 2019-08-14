@@ -68,13 +68,12 @@ class CacheManager:
             assert not authority
             assert self.transformer_to_ref[refholder] is None
             self.transformer_to_ref[refholder] = checksum
-        elif isinstance(refholder, Reactor):
-            assert self.reactor_to_ref[refholder] is None
-            raise NotImplementedError # livegraph branch
+        elif isinstance(refholder, Library):
+            pass
         else:
-            raise TypeError(refholder)
+            raise TypeError(type(refholder))
         self.checksum_refs[checksum].append((refholder, authority))
-        #print("INCREF", checksum.hex(), self.checksum_refs[checksum])
+        #print(self, "INCREF", checksum.hex(), self.checksum_refs[checksum])
 
     def decref_checksum(self, checksum, refholder, authority):
         if checksum is None:
@@ -92,13 +91,12 @@ class CacheManager:
         elif isinstance(refholder, Transformer):
             assert self.transformer_to_ref[refholder] is not None
             self.transformer_to_ref[refholder] = None
-        elif isinstance(refholder, Reactor):
-            assert self.reactor_to_ref[refholder] is not None
-            raise NotImplementedError # livegraph branch
+        elif isinstance(refholder, Library):
+            pass
         else:
-            raise TypeError(refholder)
-        self.checksum_refs[checksum].remove((refholder, authority))
-        #print("DECREF", checksum.hex(), self.checksum_refs[checksum])
+            raise TypeError(type(refholder))
+        #print(self, "DECREF", checksum.hex())
+        self.checksum_refs[checksum].remove((refholder, authority))        
         if len(self.checksum_refs) == 0:
             self.buffer_cache.decref(checksum)
             self.checksum_refs.pop(checksum)        
@@ -153,4 +151,5 @@ class CacheManager:
 from ..cell import Cell
 from ..transformer import Transformer
 from ..reactor import Reactor
+from ..library import Library
 from .expression import Expression

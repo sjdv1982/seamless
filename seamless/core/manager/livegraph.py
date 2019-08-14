@@ -322,7 +322,9 @@ class LiveGraph:
         self.cell_to_downstream[source].append(read_accessor)
         self.macropath_to_upstream[target] = read_accessor
         
-        manager.cancel_cell(target, void=False)
+        cell = target._cell
+        if cell is not None:
+            manager.cancel_cell(cell, void=False)
         manager.taskmanager.register_accessor(read_accessor) 
         target._status_reason = StatusReasonEnum.UPSTREAM       
 
@@ -434,7 +436,9 @@ class LiveGraph:
             if target in self.macro_to_upstream:
                 self.macro_to_upstream[target][pinname] = None
         elif isinstance(target, Path):
-            manager.cancel_macropath(target, True)
+            cell = target._cell
+            if cell is not None:
+                manager.cancel_macropath(cell, True)
             if target in self.macropath_to_upstream:
                 self.macropath_to_upstream[target] = None
         else:

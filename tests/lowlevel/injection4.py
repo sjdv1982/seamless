@@ -8,11 +8,11 @@ with macro_mode_on():
     ctx.result = cell()
     ctx.tf = transformer({
         "i": "input",
-        "testmodule": ("input", "module"),
+        "testmodule": ("input", "plain", "module"),
         "result": "output",
     })
     ctx.gen_html = transformer({
-        "testmodule": ("input", "module"),
+        "testmodule": ("input", "plain", "module"),
         "html": "output",
     })
 

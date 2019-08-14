@@ -7,6 +7,7 @@ class ReadAccessor(Accessor):
     _checksum = None
     _void = True
     _status_reason = None
+    _fizzled = False # if target is a macropath with no cell bound
     def __init__(self, manager, path, celltype):
         self.manager = weakref.ref(manager)
         self.path = path
@@ -24,7 +25,7 @@ class ReadAccessor(Accessor):
             macropath = celltype
             if macropath._cell is None:
                 self._clear_expression(livegraph)
-                return
+                return False
             celltype = macropath._cell._celltype
         target_celltype = self.write_accessor.celltype
         target_subcelltype = self.write_accessor.subcelltype
@@ -32,7 +33,7 @@ class ReadAccessor(Accessor):
             macropath = target_celltype
             if macropath._cell is None:
                 self._clear_expression(livegraph)
-                return
+                return False
             target_celltype = macropath._cell._celltype
             target_subcelltype = macropath._cell._subcelltype
         target_cell_path = None
@@ -64,11 +65,11 @@ class WriteAccessor(Accessor):
         from ...core.cell import Cell
         from ...core.worker import Worker
         assert isinstance(read_accessor, ReadAccessor)
-        assert isinstance(target, (Cell, Worker))
+        assert isinstance(target, (Cell, Worker, MacroPath))
         assert pinname is None or path is None
         self.read_accessor = weakref.ref(read_accessor)
         self.target = weakref.ref(target)
-        assert celltype in celltypes or isinstance(celltype, MacroPath)
+        assert celltype in celltypes or isinstance(celltype, MacroPath), celltype
         self.celltype = celltype
         assert subcelltype is None or subcelltype in subcelltypes 
         self.subcelltype = subcelltype

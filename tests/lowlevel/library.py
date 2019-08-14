@@ -1,5 +1,6 @@
 from seamless.core import context, cell, transformer, macro, libcell
 from seamless.core import library
+from seamless.core import macro_mode_on
 
 def compute_pi(iterations):
     from math import sqrt
@@ -28,26 +29,33 @@ lctx.readme = cell("text").set("Compute pi iteratively")
 lctx.code = cell("python").set(compute_pi)
 lctx.load = cell("macro").set(load)
 lctx.equilibrate()
-lib = library.build(lctx)
-library.register("compute", lib)
+lib, root = library.build(lctx)
+library.register("compute", lib, root)
 
 ctx = context(toplevel=True)
 ctx.load_compute = libcell("compute.load")
 
 ctx.compute = macro({}, lib="compute")
 ctx.load_compute.connect(ctx.compute.code)
-compute = ctx.compute.ctx
-print(compute.readme.value)
-ctx.iterations = cell().set(10000)
-ctx.iterations.connect(compute.iterations)
-ctx.result = cell()
-print("START")
-print()
-compute.result.connect(ctx.result)
 ctx.equilibrate()
 
+with macro_mode_on(None):
+    compute = ctx.compute.ctx
+    ctx.iterations = cell().set(10000)
+    ctx.iterations.connect(compute.iterations)
+    ctx.result = cell()
+    compute.result.connect(ctx.result)
+
+ctx.equilibrate()
+
+compute = ctx.compute.ctx  
+print(compute.readme.value)
+
+print("START")
 print(ctx.status)
 print(ctx.result.value)
+print(compute.result.value)
+print(compute.status)
 print()
 
 lctx = context(toplevel=True)
@@ -56,10 +64,11 @@ lctx.code = cell("python").set(compute_pi)
 lctx.code.set(lctx.code.value.replace("return ", "return -"))
 lctx.load = cell("macro").set(load)
 lctx.equilibrate()
-lib = library.build(lctx)
-library.register("compute", lib)
+lib, root = library.build(lctx)
+library.register("compute", lib, root)
 
-print(compute.readme.value)
 ctx.equilibrate()
+compute = ctx.compute.ctx
+print(compute.readme.value)
 print(ctx.status)
-print(ctx.result.value)
+print(ctx.compute.ctx.result.value)

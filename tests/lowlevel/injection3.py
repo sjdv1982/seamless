@@ -10,7 +10,7 @@ with macro_mode_on():
     ctx.rc = reactor({
         "a": "input",
         "b": "input",
-        "testmodule": ("input", "module"),
+        "testmodule": ("input", "plain", "module"),
         "c": "output"
     })
     ctx.cell1_link = link(ctx.cell1)
