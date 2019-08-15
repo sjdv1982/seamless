@@ -1,4 +1,5 @@
 from . import Task
+from ...cached_compile import cached_compile
 
 class ReactorUpdateTask(Task):
     def __init__(self, manager, reactor):
@@ -122,7 +123,10 @@ class ReactorUpdateTask(Task):
             ).run()
             if value is None:
                 raise CacheMissError(pinname, reactor)
-            if (celltype, subcelltype) == ("plain", "module"):
+            if pinname in ("code_start", "code_update", "code_stop"):
+                code_obj = cached_compile(value, str(reactor))
+                values[pinname] = code_obj                
+            elif (celltype, subcelltype) == ("plain", "module"):
                 mod = await build_module_async(value)
                 module_workspace[pinname] = mod[1]
             else:
@@ -198,3 +202,4 @@ from .serialize_buffer import SerializeToBufferTask
 from .checksum import CalculateChecksumTask
 from .get_buffer import GetBufferTask
 from ...protocol.validate_subcelltype import validate_subcelltype
+from ...build_module import build_module_async

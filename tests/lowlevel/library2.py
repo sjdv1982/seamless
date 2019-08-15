@@ -45,7 +45,7 @@ def load_e(ctx):
     ctx.tf.e.connect(ctx.result)
 
 def select(ctx, which):
-    assert which in ("pi", "e")
+    assert which in ("pi", "e"), which
     ctx.readme = libcell(".readme")
     ctx.loader = macro({})
     if which == "pi":
@@ -69,8 +69,8 @@ lctx.e.code = cell("python").set(compute_e)
 lctx.e.load = cell("macro").set(load_e)
 lctx.select = cell("macro").set(select)
 lctx.equilibrate()
-lib = library.build(lctx)
-library.register("compute", lib)
+lib, root = library.build(lctx)
+library.register("compute", lib, root)
 
 
 select_params = {
@@ -94,9 +94,13 @@ def main():
     ctx.result = cell()
     compute.result.connect(ctx.result)
 
-#with macro_mode_on():
-#    main()
-main()
+with macro_mode_on():
+    main()
+ctx.equilibrate()    
+print(ctx.status)
+import sys; sys.exit()
+
+compute = ctx.compute.ctx
 print(compute.readme.value)
 ctx.equilibrate()
 
@@ -115,13 +119,13 @@ print()
 compute = ctx.compute.ctx
 print(compute.readme.value)
 lctx.readme.set("test")
-lib = library.build(lctx)
-library.register("compute", lib)
+lib, root = library.build(lctx, root)
+library.register("compute", lib, root)
 print(compute.readme.value)
 
 lctx.select.set(lctx.select.value + "    ctx.readme2 = libcell('.readme')")
-lib = library.build(lctx)
-library.register("compute", lib)
+lib, root = library.build(lctx)
+library.register("compute", lib, root)
 ctx.equilibrate()
 compute = ctx.compute.ctx
 print(compute.readme2.value)

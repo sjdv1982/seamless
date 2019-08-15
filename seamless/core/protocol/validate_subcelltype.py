@@ -15,7 +15,9 @@ async def validate_subcelltype(checksum, celltype, subcelltype, codename, buffer
             pass
         else:
             return
-            
+
+    if codename is None:
+        codename = "<Unknown>"        
     key = (checksum, celltype, subcelltype)
     if key in validation_cache:
         return

@@ -68,32 +68,38 @@ def execute(name, code,
       identifier, namespace,
       inputs, output_name, celltype, result_queue
     ):
-    namespace["return_preliminary"] = functools.partial(
-        return_preliminary, result_queue
-    )
     try:
-        namespace.pop(output_name, None)
-        if len(module_workspace):
-            with injector.active_workspace(module_workspace, namespace):
+        old_stdio = sys.stdout, sys.stderr
+        sys.stdout, sys.stderr = sys.__stdout__, sys.__stderr__
+        namespace["return_preliminary"] = functools.partial(
+            return_preliminary, result_queue
+        )
+        try:
+            namespace.pop(output_name, None)
+            if len(module_workspace):
+                with injector.active_workspace(module_workspace, namespace):
+                    exec_code(code, identifier, namespace, inputs, output_name)
+            else:
                 exec_code(code, identifier, namespace, inputs, output_name)
+        except Exception:
+            exc = traceback.format_exc()
+            result_queue.put((1, exc))
         else:
-            exec_code(code, identifier, namespace, inputs, output_name)
-    except Exception:
-        exc = traceback.format_exc()
-        result_queue.put((1, exc))
-    else:
-        if output_name is None:
-            result_queue.put((0, None))
-        else:
-            try:
-                result = namespace[output_name]
-                result_buffer = serialize(result, celltype)
-                result_queue.put((0, result_buffer))
-            except KeyError:
-                result_queue.put((1, "Output variable name '%s' undefined" % output_name))
-    if USE_PROCESSES:
-        result_queue.close()
-    result_queue.join()
+            if output_name is None:
+                result_queue.put((0, None))
+            else:
+                try:
+                    result = namespace[output_name]
+                    result_buffer = serialize(result, celltype)
+                    result_queue.put((0, result_buffer))
+                except KeyError:
+                    result_queue.put((1, "Output variable name '%s' undefined" % output_name))
+        if USE_PROCESSES:
+            result_queue.close()
+        result_queue.join()
+    finally:
+        sys.stdout, sys.stderr = old_stdio
+
 
 def execute_debug(name, code, 
       injector, module_workspace,

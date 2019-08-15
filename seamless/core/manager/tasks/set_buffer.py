@@ -1,10 +1,5 @@
 from . import Task
 
-text_types = (
-    "text", "python", "ipython", "cson", "yaml",
-    "str", "int", "float", "bool",
-)
-
 class SetCellBufferTask(Task):
     # For buffers that come from the command line
     def __init__(self, manager, cell, buffer, checksum):
@@ -48,3 +43,4 @@ from ...protocol.validate_subcelltype import validate_subcelltype
 from ...protocol.evaluate import evaluation_cache_1
 from ...protocol.calculate_checksum import checksum_cache
 from ...status import StatusReasonEnum
+from ...cell import text_types

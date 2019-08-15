@@ -31,13 +31,8 @@ from ..get_hash import get_hash
 
 empty_checksums = {get_hash(json.dumps(v)+"\n",hex=True) for v in ("", {}, [])}
 
-text_types = (
-    "text", "python", "ipython", "cson", "yaml",
-    "str", "int", "float", "bool",
-)
-
 def adjust_buffer(file_buffer, celltype):
-    if file_buffer not in text_types:
+    if celltype not in text_types:
         return file_buffer
     return file_buffer.rstrip(b'\n') + b'\n'
 
@@ -100,6 +95,8 @@ class MountItem:
         cell = self.cell()
         if cell is None:
             return
+        if "r" in self.mode:
+            assert cell.has_authority(), cell # mount read mode only for authoritative cells
         exists = self._exists()
         cell_buffer, cell_checksum = cell.buffer_and_checksum
         self.cell_buffer = cell_buffer
@@ -849,6 +846,7 @@ def scan(ctx_or_cell, *, old_context):
         join(mountitems, contexts_to_mount, new, old)
     finally:
         mountmanager._mounting = False
+    return new
 
 mountmanager = MountManager(0.2) #TODO: latency in config file
 
@@ -865,3 +863,4 @@ def get_extension(c):
 from .link import Link
 from .protocol.cson import cson2json
 from .protocol.calculate_checksum import calculate_checksum_sync as calculate_checksum
+from .cell import text_types

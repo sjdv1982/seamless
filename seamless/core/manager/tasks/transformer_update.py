@@ -24,7 +24,7 @@ class TransformerUpdateTask(Task):
                 return                
         status_reason = None        
         for pinname, accessor in upstreams.items():
-            if accessor._void or accessor._checksum is None: #undefined/upstream error
+            if accessor._void: #upstream error
                 reason = StatusReasonEnum.UPSTREAM
             else:
                 continue
@@ -35,9 +35,13 @@ class TransformerUpdateTask(Task):
         if status_reason is not None:
             if not transformer._void:
                 print("WARNING: transformer %s is not yet void, shouldn't happen during transformer update" % transformer)
-                manager.cancel_transformer(transformer, void=True)
+                manager.cancel_transformer(transformer, void=True, reason=status_reason)
                 return
             return
+
+        for pinname, accessor in upstreams.items():
+            if accessor._checksum is None: #pending
+                return
 
         for pinname, accessor in upstreams.items():
             inputpins[pinname] = accessor._checksum

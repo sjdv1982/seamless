@@ -6,6 +6,8 @@
 # python, ipython, cson, yaml, plain, binary, mixed
 # str (with double quotes around value), bytes, int, float, bool
 
+from nbconvert.filters import ipython2python
+
 conversion_trivial = set([ # conversions that do not change checksum and are guaranteed to work (if the input is valid)
     ("text", "bytes"), # Use UTF-8, which can encode any Unicode string. This is already what Seamless uses internally
     ("python", "text"),
@@ -14,8 +16,7 @@ conversion_trivial = set([ # conversions that do not change checksum and are gua
     ("ipython", "text"),
     ("ipython", "mixed"), # see above
     ("cson", "text"),
-    ("yaml", "text"),
-    ("plain", "text"),
+    ("yaml", "text"),    
     ("plain", "cson"),
     ("plain", "yaml"),
     ("plain", "mixed"),
@@ -42,7 +43,8 @@ conversion_reinterpret = set([ # conversions that do not change checksum, but ar
 
 # buffer-to-buffer
 
-conversion_reformat = set([ # conversions that are guaranteed to work (if the input is valid), but change checksum    
+conversion_reformat = set([ # conversions that are guaranteed to work (if the input is valid), but change checksum
+    ("plain", "text"), # trivial if not a string, else chop off quotes
     ("text", "str"),   # use json.dumps, or repr 
     ("str", "text"),   # use json.loads, or eval. assert isinstance(str)
     ("str", "bytes"),   # str => text => bytes
@@ -177,9 +179,15 @@ async def convert(checksum, buffer, celltype, target_celltype):
             value = yaml.load(buffer.decode())
         else:
             value = await deserialize(buffer, checksum, celltype, copy=False)
+        
         if key == ("ipython", "python"):
-            pass # TODO: IPython syntax check
+            value = ipython2python(buffer) # TODO: needs to bind get_ipython() to the user namespace!
             new_buffer = await serialize(value, target_celltype)
+        elif key == ("plain", "text"):
+            if not isinstance(value, str):
+                new_buffer = buffer
+            else:
+                new_buffer = await serialize(value, target_celltype)    
         else:
             new_buffer = await serialize(value, target_celltype)
     except Exception:

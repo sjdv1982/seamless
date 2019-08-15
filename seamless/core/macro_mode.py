@@ -96,6 +96,7 @@ def macro_mode_on(macro=None):
     finally:
         _macro_mode = old_macro_mode
         _curr_macro = old_curr_macro
+        mount_changed = False
         if macro is None:
             for ub_ctx in list(_toplevel_registrable):
                 if isinstance(ub_ctx, UnboundContext):
@@ -104,14 +105,16 @@ def macro_mode_on(macro=None):
                     if ctx is None or not ok:
                         continue
                     assert isinstance(ctx, Context)
-                    mount.scan(ctx, old_context=None)        
+                    curr_mount_changed = mount.scan(ctx, old_context=None)
+                    if curr_mount_changed:
+                        mount_changed = True
             for ctx in _toplevel_registered:
                 for pathname, path in _global_paths.get(ctx, {}).items():
                     cctx = ctx
                     for subpathname in pathname:                    
                         try:
                             cctx = getattr(cctx, subpathname)
-                        except (AttributeError, KeyError, TypeError):
+                        except (AttributeError, KeyError, TypeError, AssertionError):
                             break
                     else:
                         if isinstance(cctx, Cell):
@@ -119,7 +122,11 @@ def macro_mode_on(macro=None):
         elif not _macro_mode:
             _toplevel_registrable.clear()
             if ok:
-                mount.scan(macro._gen_context, old_context=old_context)
+                curr_mount_changed = mount.scan(macro._gen_context, old_context=old_context)
+                if curr_mount_changed:
+                    mount_changed = True
+        if mount_changed:
+            mount.mountmanager.tick()
 
 
 from .cache.transformation_cache import transformation_cache

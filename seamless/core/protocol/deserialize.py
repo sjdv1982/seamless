@@ -8,12 +8,8 @@ from ...pylru import lrucache
 
 deserialize_cache = lrucache(100)
 
-text_types = (
-    "text", "python", "ipython", "cson", "yaml",
-)
-
 def _deserialize(buffer, checksum, celltype):
-    if celltype in text_types:
+    if celltype in text_types2:
         s = buffer.decode()
         assert s.endswith("\n")
         value = s[:-1]
@@ -92,7 +88,7 @@ async def deserialize(buffer, checksum, celltype, copy):
         return value
     else:
         return _deserialize(buffer, checksum, celltype)
-    if celltype not in text_types:
+    if celltype not in text_types2:
         deserialize_cache[checksum, celltype] = value
     evaluation_cache_1.add((checksum, celltype))
     serialize_cache[id(value), celltype] = buffer
@@ -100,3 +96,4 @@ async def deserialize(buffer, checksum, celltype, copy):
 
 from .serialize import serialize_cache
 from .evaluate import evaluation_cache_1
+from ..cell import text_types2

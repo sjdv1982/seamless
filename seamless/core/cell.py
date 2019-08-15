@@ -7,6 +7,15 @@ from .status import StatusReasonEnum
 
 cell_counter = 0
 
+text_types = (
+    "text", "python", "ipython", "cson", "yaml",
+    "str", "int", "float", "bool",
+)
+
+text_types2 = (
+    "text", "python", "ipython", "cson", "yaml",
+)
+
 class Cell(SeamlessBase):
     """Default class for cells.
     

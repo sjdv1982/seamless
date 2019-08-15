@@ -124,6 +124,24 @@ class TransformationJob:
             else:
                 namespace[pinname] = value
                 inputs.append(pinname)
+        for pinname in self.transformation:
+            if pinname == "__output__":
+                continue
+            celltype, _, _ = self.transformation[pinname]
+            if celltype != "mixed":
+                continue
+            schema_pinname = pinname + "_SCHEMA"
+            schema_pin = self.transformation.get(schema_pinname)
+            if schema_pin is None:
+                continue
+            schema_celltype, _, _ = schema_pin
+            assert schema_celltype == "plain", schema_pinname
+            v = Silk(
+                data=namespace[pinname], 
+                schema=namespace[schema_pinname]
+            )
+            namespace[pinname] = v
+
         assert code is not None
 
         lock = await acquire_lock()
@@ -193,3 +211,4 @@ from .protocol.validate_subcelltype import validate_subcelltype
 from .cache import CacheMissError
 from .cache.transformation_cache import syntactic_is_semantic
 from .status import SeamlessInvalidValueError
+from ..silk import Silk

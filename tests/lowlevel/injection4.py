@@ -1,6 +1,10 @@
 import seamless
 from seamless.core import macro_mode_on
-from seamless.core import context, cell, transformer, pythoncell, ipythoncell
+from seamless.core import context, cell, transformer
+
+with open("cell-ipython.ipy", "w") as f:
+    with open("cell-ipython-ORIGINAL.ipy", "r") as f2:
+        f.write(f2.read())
 
 with macro_mode_on():
     ctx = context(toplevel=True)
@@ -17,7 +21,7 @@ with macro_mode_on():
     })
 
     ctx.i.connect(ctx.tf.i)
-    ctx.code = pythoncell().set("""
+    ctx.code = cell("python").set("""
 import time
 from .testmodule import func, func_html
 t = time.time()
@@ -30,13 +34,13 @@ print("Time: %.1f" % (time.time() - t))
     def gen_html():
         from .testmodule import func, func_html
         return func_html
-    ctx.code2 = pythoncell().set(gen_html)
+    ctx.code2 = cell("python").set(gen_html)
     ctx.code2.connect(ctx.gen_html.code)
 
-    ctx.ipy = ipythoncell()
+    ctx.ipy = cell("ipython")
     ctx.ipy.mount("cell-ipython.ipy")
     ctx.gen_testmodule = transformer({
-        "ipy": ("input", "ref", "text"),
+        "ipy": ("input", "text"),
         "testmodule": "output",
     })
     ctx.ipy.connect(ctx.gen_testmodule.ipy)
@@ -58,7 +62,20 @@ testmodule = {
     ctx.gen_html.html.connect(ctx.html)
 ctx.equilibrate()
 print(ctx.result.value)
+
 ctx.i.set(6000)
 ctx.equilibrate()
 print(ctx.result.value)
 print(ctx.status)
+
+with open("cell-ipython.ipy", "w") as f:
+    with open("cell-ipython-OPTIMIZED.ipy", "r") as f2:
+        f.write(f2.read())
+
+
+import asyncio
+fut = asyncio.ensure_future(asyncio.sleep(0.5))
+asyncio.get_event_loop().run_until_complete(fut)
+ctx.equilibrate()
+print(ctx.result.value)
+

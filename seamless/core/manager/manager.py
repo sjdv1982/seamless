@@ -190,7 +190,7 @@ class Manager:
 
     @run_in_mainthread
     def set_cell_buffer(self, cell, buffer, checksum):
-        assert self.livegraph.has_authority(cell)
+        assert self.livegraph.has_authority(cell), cell
         reason = None
         if buffer is None:
             reason = StatusReasonEnum.UNDEFINED
@@ -342,10 +342,11 @@ If origin_task is provided, that task is not cancelled."""
         reactor._status_reason = reason 
         outputpins = [pinname for pinname in reactor._pins \
             if reactor._pins[pinname].io == "output" ]
-        for pinname in outputpins:
-            accessors = livegraph.reactor_to_downstream[reactor][pinname]
-            for accessor in accessors:            
-                self.cancel_accessor(accessor, void)        
+        if void:
+            for pinname in outputpins:
+                accessors = livegraph.reactor_to_downstream[reactor][pinname]
+                for accessor in accessors:            
+                    self.cancel_accessor(accessor, True)        
 
     @mainthread
     def cancel_macro(self, macro, void, reason=None):

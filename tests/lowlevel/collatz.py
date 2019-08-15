@@ -7,7 +7,7 @@ Overhead is terrible and space requirements are atrocious, but there could be
  a scenario where this could be useful.
 """
 
-from seamless.core import context, cell, macro
+from seamless.core import context, cell, macro, macro_mode_on
 import time
 ctx = context(toplevel=True)
 
@@ -64,8 +64,10 @@ ctx.start.connect(m.value)
 ctx.code.connect(m.code)
 ctx.code.connect(m.macro_code)
 ctx.macro_params.connect(m.macro_params)
+ctx.series = cell()
+with macro_mode_on(None):    
+    ctx.macro.ctx.series.connect(ctx.series)
 start = 27
-ctx._cache_paths()
 ###start = 10 #7-level nesting
 ###start = 12 #10-level nesting
 ###start = 35 #12-level nesting
@@ -77,19 +79,18 @@ t = time.time()
 ctx.start.set(start)
 print("building done: %d ms" % (1000 * (time.time() - t)))
 ctx.equilibrate()
-print(ctx.macro.ctx.series.value)
+print(ctx.series.value)
 print(refe)
-assert ctx.macro.ctx.series.value == refe
+assert ctx.series.value == refe
 print("computation done: %d ms" % (1000 * (time.time() - t)))
 
-ctx.equilibrate()
 start = 32
 refe = refe_collatz(start)
 print(refe)
 ctx.start.set(start)
 print("building done, control")
 ctx.equilibrate()    
-print(ctx.macro.ctx.series.value)
+print(ctx.series.value)
 
 start = 27
 refe = refe_collatz(start)
@@ -97,7 +98,7 @@ t = time.time()
 ctx.start.set(start)
 print("building done, 2nd time: %d ms" % (1000 * (time.time() - t)))
 ctx.equilibrate()
-print(ctx.macro.ctx.series.value)
+print(ctx.series.value)
 print(refe)
-assert ctx.macro.ctx.series.value == refe
+assert ctx.series.value == refe
 print("computation done, 2nd time: %d ms" % (1000 * (time.time() - t)))

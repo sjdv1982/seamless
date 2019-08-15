@@ -1,6 +1,5 @@
 import weakref
 
-from .cached_compile import cached_compile
 from .injector import reactor_injector as injector
 from .build_module import build_module
 
@@ -85,11 +84,11 @@ class RuntimeReactor:
                 if pinname not in ("code_start", "code_update", "code_stop"):
                     self.PINS[pinname].updated = False
                 continue
+            if pinname in self.module_workspace:
+                continue
             value = self.values[pinname]
             if pinname in ("code_start", "code_update", "code_stop"):
-                assert value is not None, pinname
-                continue
-            if pinname in self.module_workspace:
+                assert value is not None, pinname                
                 continue
             if not self.live:
                 pin = ReactorInput(value)
@@ -115,6 +114,17 @@ class RuntimeReactor:
             if not self.live:
                 pin = ReactorOutput(self, pinname)
                 self.PINS[pinname] = pin
+        for pinname in self.module_workspace:
+            value = self.module_workspace[pinname]
+            if not self.live:
+                self.PINS[pinname] = ReactorInput(value)
+                self.PINS[pinname] = pin
+            else:
+                self.PINS[pinname]._value = value
+            if updated is not None and pinname not in updated:
+                self.PINS[pinname].updated = False
+            else:
+                self.PINS[pinname].updated = True
 
     def run_code(self, codename):
         assert codename in ("code_start", "code_stop", "code_update")

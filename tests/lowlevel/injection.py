@@ -1,18 +1,18 @@
 import seamless
 from seamless.core import macro_mode_on
-from seamless.core import context, cell, transformer, pymacrocell, pythoncell, macro
+from seamless.core import context, cell, transformer, macro
 
 with macro_mode_on():
     ctx = context(toplevel=True)
     ctx.param = cell("plain").set(1)
 
     ctx.macro = macro({
-        "param": "copy",
-        "testmodule": "module",
+        "param": "plain",
+        "testmodule": ("plain", "module"),
     })
 
     ctx.param.connect(ctx.macro.param)
-    ctx.macro_code = pymacrocell().set("""
+    ctx.macro_code = cell("macro").set("""
 print("macro execute")
 print(testmodule)
 print(testmodule.a)
@@ -33,9 +33,9 @@ print("/macro execute")
 
 
     ctx.macro2 = macro({
-        "testmodule2": "module",
+        "testmodule2": ("plain", "module"),
     })
-    ctx.macro_code2 = pymacrocell().set("""
+    ctx.macro_code2 = cell("macro").set("""
 print("macro2 execute")
 print(testmodule2)
 print(testmodule2.a)
@@ -56,5 +56,7 @@ ctx.equilibrate()
 print("stage 1")
 testmodule["code"] = "a = 20"
 ctx.testmodule.set(testmodule)
+ctx.equilibrate()
 print("stage 2")
 ctx.macro_code.set(ctx.macro_code.value + "\npass")
+ctx.equilibrate()

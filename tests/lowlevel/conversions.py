@@ -69,6 +69,25 @@ ctx.txt3.connect(ctx.mixed)
 ctx.equilibrate()
 print("ctx.mixed", ctx.mixed.data)
 
+print("*** Stage 4 ***")
+ctx.ipy = cell("ipython").set("""
+%%timeit
+x = 42
+
+""")
+ctx.py = cell("python")
+ctx.ipy.connect(ctx.py)
+ctx.equilibrate()
+print("ctx.py", ctx.py.data)
 print()
 
-print("STOP")
+print("*** Stage 5 ***")
+ctx.plain3 = cell("plain").set("Test string!!")
+ctx.text = cell("text")
+ctx.plain3.connect(ctx.text)
+ctx.str = cell("str")
+ctx.plain3.connect(ctx.str)
+ctx.equilibrate()
+print("ctx.plain3", ctx.plain3.data, ctx.plain3.buffer)
+print("ctx.text", ctx.text.data, ctx.text.buffer)
+print("ctx.str", ctx.str.data, ctx.str.buffer)

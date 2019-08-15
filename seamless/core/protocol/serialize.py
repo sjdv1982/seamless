@@ -8,11 +8,6 @@ from ...mixed.io import serialize as mixed_serialize
 
 serialize_cache = lrucache(100)
 
-text_types = (
-    "text", "python", "ipython", "cson", "yaml",
-    "str", "int", "float", "bool",
-)
-
 def _serialize(value, celltype):
     if celltype in text_types:
         if isinstance(value, bytes):
@@ -70,3 +65,5 @@ async def serialize(value, celltype):
     buffer = _serialize(value, celltype)  # KLUDGE
     serialize_cache[idvalue] = buffer
     return buffer
+
+from ..cell import text_types
