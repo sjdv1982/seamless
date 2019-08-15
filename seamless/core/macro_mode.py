@@ -106,7 +106,7 @@ def macro_mode_on(macro=None):
                         continue
                     assert isinstance(ctx, Context)
                     curr_mount_changed = mount.scan(ctx, old_context=None)
-                    if curr_mount_changed:
+                    if curr_mount_changed is not None and curr_mount_changed != ({}, set(), {}):
                         mount_changed = True
             for ctx in _toplevel_registered:
                 for pathname, path in _global_paths.get(ctx, {}).items():
@@ -123,7 +123,7 @@ def macro_mode_on(macro=None):
             _toplevel_registrable.clear()
             if ok:
                 curr_mount_changed = mount.scan(macro._gen_context, old_context=old_context)
-                if curr_mount_changed:
+                if curr_mount_changed is not None and curr_mount_changed != ({}, set(), {}):
                     mount_changed = True
         if mount_changed:
             mount.mountmanager.tick()
