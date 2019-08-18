@@ -132,13 +132,19 @@ class TransformationJob:
                 continue
             schema_pinname = pinname + "_SCHEMA"
             schema_pin = self.transformation.get(schema_pinname)
-            if schema_pin is None:
+            schema = None            
+            if schema_pin is not None:
+                schema_celltype, _, _ = schema_pin
+                assert schema_celltype == "plain", schema_pinname
+                schema = namespace[schema_pinname]
+            if schema is None and isinstance(namespace[pinname], Scalar):
+                print("*** TODO: fix transformation.py Silk kludge ***")
                 continue
-            schema_celltype, _, _ = schema_pin
-            assert schema_celltype == "plain", schema_pinname
+            if schema is None:
+                schema = {}
             v = Silk(
                 data=namespace[pinname], 
-                schema=namespace[schema_pinname]
+                schema=schema
             )
             namespace[pinname] = v
 
@@ -211,4 +217,4 @@ from .protocol.validate_subcelltype import validate_subcelltype
 from .cache import CacheMissError
 from .cache.transformation_cache import syntactic_is_semantic
 from .status import SeamlessInvalidValueError
-from ..silk import Silk
+from ..silk import Silk, Scalar

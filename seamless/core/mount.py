@@ -62,6 +62,7 @@ class MountItem:
     last_exc = None
     parent = None
     _destroyed = False
+    _initialized = False
     def __init__(self, parent, cell, path, mode, authority, persistent, *,
       dummy=False, **kwargs
     ):
@@ -140,8 +141,9 @@ class MountItem:
                             return
                         self._write(cell_buffer)
                         self._after_write(cell_checksum)
+        self._initialized = True
  
-    def set(self, file_buffer, checksum):
+    def set(self, file_buffer, checksum):        
         if self._destroyed:
             return
         cell = self.cell()
@@ -211,6 +213,8 @@ class MountItem:
             pass
 
     def conditional_write(self, checksum, buffer, with_none=False):
+        if not self._initialized:
+            return
         if self._destroyed:
             return
         if not "w" in self.mode:
@@ -238,6 +242,8 @@ class MountItem:
         self.last_mtime = mtime
 
     def conditional_read(self):
+        if not self._initialized:
+            return
         if self._destroyed:
             return
         cell = self.cell()

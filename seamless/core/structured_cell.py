@@ -235,6 +235,7 @@ class StructuredCell(SeamlessBase):
         self.data._add_traitlet(traitlet)
 
     def _set_context(self, context, name):
+        raise NotImplementedError  # livegraph branch
         from .manager import Manager
         from .unbound_context import UnboundContext, UnboundManager
         old_manager = None if self._context is None else self._get_manager()

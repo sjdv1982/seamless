@@ -1,21 +1,30 @@
+
+def _propagate_cell_accessor(livegraph, accessor, target, void):
+    if accessor.write_accessor.path is None:
+        if void:
+            manager = target._get_manager()
+            manager.cancel_cell(target, None, True)
+        else:
+            propagate_simple_cell(livegraph, target)
+    else:
+        raise NotImplementedError # livegraph branch
+
 def propagate_accessor(livegraph, accessor, void):    
     accessor._void = void
-    target = accessor.write_accessor.target()
+    target = accessor.write_accessor.target()    
     if isinstance(target, Cell):
-        if accessor.write_accessor.path is None:
-            if void:
-                manager = target._get_manager()
-                manager.cancel_cell(target, None, True)
-            else:
-                propagate_simple_cell(livegraph, target)
-        else:
-            raise NotImplementedError # livegraph branch
+        _propagate_cell_accessor(livegraph, accessor, target, void)
     elif isinstance(target, Transformer):
         propagate_transformer(livegraph, target)
     elif isinstance(target, Reactor):
         propagate_reactor(livegraph, target)
     elif isinstance(target, Macro):
         propagate_macro(livegraph, target)
+    elif isinstance(target, MacroPath):
+        if target._cell is not None:
+            _propagate_cell_accessor(
+                livegraph, accessor, target._cell, void
+            )
     else:
         raise TypeError(target)
 
@@ -32,7 +41,7 @@ def propagate_simple_cell(livegraph, cell):
                 fullpath = macropath._path
             else:
                 fullpath = pmacro.path + ("ctx",) + macropath._path
-            assert fullpath == cell.path, (fullpath, cell.path)
+            #assert fullpath == cell.path, (fullpath, cell.path)  # no, because of links...
             for accessor in livegraph.macropath_to_downstream[macropath]:
                 propagate_accessor(livegraph, accessor, void=False)
 
@@ -62,7 +71,7 @@ def propagate_macro(livegraph, macro):
 from ..cell import Cell
 from ..transformer import Transformer
 from ..reactor import Reactor
-from ..macro import Macro
+from ..macro import Macro, Path as MacroPath
 from ..status import StatusReasonEnum
 from ..manager.tasks.transformer_update import TransformerUpdateTask
 from ..manager.tasks.reactor_update import ReactorUpdateTask

@@ -7,7 +7,7 @@ class ReadAccessor(Accessor):
     _checksum = None
     _void = True
     _status_reason = None
-    _fizzled = False # if target is a macropath with no cell bound
+    _new_macropath = False # if source or target is a newly bound macropath
     def __init__(self, manager, path, celltype):
         self.manager = weakref.ref(manager)
         self.path = path

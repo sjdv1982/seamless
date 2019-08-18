@@ -131,6 +131,8 @@ class Manager:
 
     def _set_cell_checksum(self, cell, checksum, void, status_reason=None):
         # NOTE: Any cell task depending on the old checksum must have been canceled already
+        if cell._destroyed:
+            return
         assert checksum is None or isinstance(checksum, bytes), checksum
         assert isinstance(void, bool), void
         if void:
@@ -372,6 +374,11 @@ If origin_task is provided, that task is not cancelled."""
 
     @mainthread
     def connect(self, source, source_subpath, target, target_subpath):
+        from ..link import Link
+        if isinstance(source, Link):
+            source = source.get_linked()
+        if isinstance(target, Link):
+            target = target.get_linked()            
         if isinstance(target, Cell):
             self.livegraph._will_lose_authority.add(target)
         task = UponConnectionTask(
@@ -410,6 +417,10 @@ If origin_task is provided, that task is not cancelled."""
     ##########################################################################
 
     def _destroy_cell(self, cell):
+        paths = cell._paths
+        if paths is not None:
+            for macropath in list(paths):
+                macropath._unbind()
         self.cachemanager.destroy_cell(cell)
         self.livegraph.destroy_cell(self, cell)
         self.taskmanager.destroy_cell(cell, full=True)

@@ -137,7 +137,7 @@ class TaskManager:
         elif isinstance(dep, MacroPath):
             d = self.macropath_to_task
         else:
-            raise TypeError(dep)
+            raise TypeError(type(dep))
         dd = d[dep]
         
         dd.append(task)

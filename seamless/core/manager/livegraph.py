@@ -438,7 +438,7 @@ class LiveGraph:
         elif isinstance(target, Path):
             cell = target._cell
             if cell is not None:
-                manager.cancel_macropath(cell, True)
+                manager.taskmanager.cancel_macropath(cell, True)
             if target in self.macropath_to_upstream:
                 self.macropath_to_upstream[target] = None
         else:

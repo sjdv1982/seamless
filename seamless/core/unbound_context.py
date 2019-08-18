@@ -138,6 +138,7 @@ class UnboundContext(SeamlessBase):
             self._realmanager = manager
         else:
             assert manager is None
+        assert root is None or isinstance(root, Context)
         self._root_ = root
         if toplevel:
             register_toplevel(self)
@@ -168,7 +169,7 @@ class UnboundContext(SeamlessBase):
             assert child._context is None
             child._realmanager = self._realmanager
             child._context = weakref.ref(self)
-            child._root_ = self._root()
+            child._root_ = self._root_
             self._children[childname] = child
         else:
             self._children[childname] = child
@@ -190,11 +191,8 @@ class UnboundContext(SeamlessBase):
     def _get_manager(self):
         if self._bound:
            return self._bound._get_manager()
-        if self._toplevel or self._is_macro:
-            assert self._realmanager is not None
-            return self._realmanager
-        else:
-            return self._root_._realmanager
+        assert self._realmanager is not None
+        return self._realmanager
 
     def mount(self, path=None, mode="rw", authority="cell", persistent=False):
         """Performs a "lazy mount"; context is mounted to the directory path when macro mode ends
@@ -244,6 +242,20 @@ class UnboundContext(SeamlessBase):
         ctx._mount = copy.deepcopy(self._mount)
         ctxmap = {}
         manager = ctx._get_manager()
+
+        def register(child):
+            if not isinstance(child, (Cell, Reactor, Transformer, Macro)):
+                return
+            assert child in self._realmanager._registered, child
+            if isinstance(child, Cell):
+                manager.register_cell(child)
+            elif isinstance(child, Reactor):
+                manager.register_reactor(child)
+            elif isinstance(child, Transformer):
+                manager.register_transformer(child)
+            elif isinstance(child, Macro):
+                manager.register_macro(child)
+
         for childname, child in self._children.items():
             if isinstance(child, UnboundContext):
                 bound_ctx = Context()
@@ -253,8 +265,9 @@ class UnboundContext(SeamlessBase):
         for childname, child in self._children.items():
             if isinstance(child, UnboundContext):
                 continue
-            else:
-                setattr(ctx, childname, child)
+            else:                
+                ctx._add_child(childname, child)
+                register(child)
         for childname, child in self._children.items():
             if isinstance(child, UnboundContext):
                 bound_ctx = ctxmap[childname]
@@ -351,6 +364,9 @@ class UnboundContext(SeamlessBase):
 from .link import Link
 from .cell import Cell
 from .worker import Worker, InputPinBase, OutputPinBase, EditPinBase
+from .transformer import Transformer
+from .reactor import Reactor
+from .macro import Macro
 from .structured_cell import StructuredCell
 from .context import Context
 from .macro_mode import curr_macro, register_toplevel

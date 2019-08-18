@@ -69,7 +69,8 @@ async def deserialize(buffer, checksum, celltype, copy):
     if value is not None:
         if copy:
             newvalue = deepcopy(value)
-            serialize_cache[id(newvalue), celltype] = buffer
+            id_newvalue = id(newvalue)
+            serialize_cache[id_newvalue, celltype] = buffer, newvalue
             return newvalue
         else:
             return value
@@ -91,7 +92,8 @@ async def deserialize(buffer, checksum, celltype, copy):
     if celltype not in text_types2:
         deserialize_cache[checksum, celltype] = value
     evaluation_cache_1.add((checksum, celltype))
-    serialize_cache[id(value), celltype] = buffer
+    id_value = id(value)
+    serialize_cache[id_value, celltype] = buffer, value
     return value
 
 from .serialize import serialize_cache

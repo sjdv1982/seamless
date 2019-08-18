@@ -1,6 +1,6 @@
 import seamless
 from seamless.core import macro_mode_on
-from seamless.core import context, cell, transformer, pytransformercell, link
+from seamless.core import context, cell, transformer, link
 import sys
 
 code = "raise Exception(a)"
@@ -12,7 +12,10 @@ with macro_mode_on():
     ctx.result = cell()
     ctx.tf = transformer({
         "a": "input",
+        "b": "output",
     })
     ctx.cell1.connect(ctx.tf.a)
     ctx.tf.code.set(code)
+    ctx.tf.b.cell()
 ctx.equilibrate(5)
+print(ctx.status)

@@ -1,6 +1,6 @@
 import seamless
 from seamless.core import macro_mode_on
-from seamless.core import context, cell, reactor, pythoncell, transformer
+from seamless.core import context, cell, reactor, transformer
 
 with macro_mode_on():
     ctx = context(toplevel=True)
@@ -10,7 +10,7 @@ with macro_mode_on():
         "a": "output"
     })
     ctx.aa.connect(ctx.tf.aa)
-    ctx.code = pythoncell().set("""import time
+    ctx.code = cell("python").set("""import time
 time.sleep(2)
 a = aa""")
     ctx.code.connect(ctx.tf.code)
@@ -26,15 +26,15 @@ a = aa""")
     }, pure=False) # change between pure=True/"semi"/False (default)
     ctx.a.connect(ctx.rc.a)
     ctx.b.connect(ctx.rc.b)
-    ctx.code_start = pythoncell().set("")
+    ctx.code_start = cell("python").set("")
     ctx.code_start.connect(ctx.rc.code_start)
-    ctx.code_update = pythoncell().set("""
+    ctx.code_update = cell("python").set("""
 a = PINS.a.get()
 b = PINS.b.get()
 PINS.c.set(a+b)
     """)
     ctx.code_update.connect(ctx.rc.code_update)
-    ctx.code_stop = pythoncell().set("")
+    ctx.code_stop = cell("python").set("")
     ctx.code_stop.connect(ctx.rc.code_stop)
     ctx.rc.c.connect(ctx.result)
 

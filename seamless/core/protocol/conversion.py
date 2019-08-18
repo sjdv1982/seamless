@@ -32,7 +32,7 @@ conversion_reinterpret = set([ # conversions that do not change checksum, but ar
     ("text", "ipython"),
     ("text", "cson"),
     ("text", "yaml"),
-    ("text", "plain"),
+    ("text", "str"),
     ("text", "int"), ("text", "float"), ("text", "bool"),
     ("plain", "str"), ("plain", "int"), ("plain", "float"), ("plain", "bool"),    
     ("mixed", "plain"), ("mixed", "binary"),
@@ -45,7 +45,7 @@ conversion_reinterpret = set([ # conversions that do not change checksum, but ar
 
 conversion_reformat = set([ # conversions that are guaranteed to work (if the input is valid), but change checksum
     ("plain", "text"), # trivial if not a string, else chop off quotes
-    ("text", "str"),   # use json.dumps, or repr 
+    ("text", "plain"),   # use json.dumps, or repr
     ("str", "text"),   # use json.loads, or eval. assert isinstance(str)
     ("str", "bytes"),   # str => text => bytes
     ("binary", "bytes"), # this will dump the binary buffer as bytes; note that this is not allowed for mixed
@@ -158,6 +158,8 @@ async def reinterpret(checksum, buffer, celltype, target_celltype):
             assert buffer.startswith(MAGIC_NUMPY)
         else:
             value = await deserialize(buffer, checksum, celltype, copy=False)
+            if key == ("plain", "str"):
+                assert isinstance(value, str)
             _ = await serialize(value, target_celltype)
     except Exception:
         msg = "%s cannot be re-interpreted from %s to %s"

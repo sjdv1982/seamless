@@ -39,6 +39,7 @@ class CellChecksumTask(Task):
         from .set_value import SetCellValueTask
         from .set_buffer import SetCellBufferTask
         from .cell_update import CellUpdateTask
+        from .macro_update import MacroUpdateTask
 
         manager = self.manager()
         await manager.taskmanager.await_upon_connection_tasks(self.taskid)
@@ -72,7 +73,12 @@ class CellChecksumTask(Task):
                         if awaiting_task is not None:
                             if task.taskid >= awaiting_task.taskid:
                                 continue
-                        if isinstance(task, (SetCellValueTask, SetCellBufferTask)):
+                        if isinstance(task,( 
+                                SetCellValueTask, 
+                                SetCellBufferTask, 
+                                MacroUpdateTask,
+                            )
+                        ):
                             continue
                         if cell in task.dependencies:
                             break                        

@@ -37,7 +37,7 @@ class CellUpdateTask(Task):
             #  Constructing a downstream expression increfs the cell checksum
             changed = accessor.build_expression(livegraph, checksum)
             #- launch an accessor update task
-            if changed:
+            if changed or accessor._new_macropath:
                 AccessorUpdateTask(manager, accessor).launch()
         for editpin in livegraph.cell_to_editpins[cell]:
             reactor = editpin.worker_ref()

@@ -1,16 +1,13 @@
 import seamless
 from seamless.core import macro_mode_on
-from seamless.core import context, cell, transformer, pytransformercell, macro
+from seamless.core import context, cell, transformer, macro
 
 def run(a,b):
     print("RUN")
-    """
     import time
-    for n in range(10):
-        print(n)
+    for n in range(3):
+        print("Running", n+1)
         time.sleep(1)
-    print(n)
-    """
     return a + b
 
 def build(ctx, param, run):
@@ -27,7 +24,7 @@ def build(ctx, param, run):
         ctx.tf_alt2 = tf
     ctx.tf = link(tf)
 
-    ctx.run = pytransformercell().set(run)
+    ctx.run = cell("transformer").set(run)
     ctx.run.connect(tf.code)
     ctx.a = cell()
     ctx.a.connect(tf.a)
@@ -40,12 +37,12 @@ def build(ctx, param, run):
 with macro_mode_on():
     ctx = context(toplevel=True)
     ctx.macro = macro({
-        "param":"copy",
-        "run": ("copy", "text"),
+        "param": "plain",
+        "run": "text",
     })
-    ctx.macro_code = pytransformercell().set(build)
+    ctx.macro_code = cell("macro").set(build)
     ctx.macro_code.connect(ctx.macro.code)
-    ctx.run = pytransformercell().set(run)
+    ctx.run = cell("transformer").set(run)
     ctx.run.connect(ctx.macro.run)
     ctx.param = cell().set("PARAM")
     ctx.param.connect(ctx.macro.param)
@@ -56,16 +53,17 @@ with macro_mode_on():
     ctx.b.connect(ctx.macro.ctx.b)
     ctx.macro.ctx.c.connect(ctx.c)
 
-
-ctx.equilibrate(0.5)
+ctx.equilibrate()
 print(ctx.c.value)
 print(ctx.macro.ctx.tf.status)
+print(ctx.status)
 print()
 print("CHANGE 1")
 ctx.param.set("PARAM2")
 ctx.equilibrate()
 print(ctx.c.value)
 print(ctx.macro.ctx.tf.status)
+
 print("CHANGE 2")
 ctx.param.set("x")
 ctx.equilibrate()

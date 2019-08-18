@@ -78,8 +78,10 @@ class Reactor(Worker):
         return self._pure
 
     def _set_context(self, ctx, name):
-        super()._set_context(ctx, name)
-        self._get_manager().register_reactor(self)
+        has_ctx = self._context is not None
+        super()._set_context(ctx, name)        
+        if not has_ctx:
+            self._get_manager().register_reactor(self)
 
     def _get_status(self):
         from .status import status_reactor
@@ -103,6 +105,9 @@ class Reactor(Worker):
         manager = self._get_manager()
         pinname, exc = manager.cachemanager.reactor_exceptions[self]
         return "Pin name: %s\n"  % pinname + exc
+
+    def shell(self):
+        raise NotImplementedError #livegraph branch
 
     def destroy(self, *, from_del):
         if not from_del:

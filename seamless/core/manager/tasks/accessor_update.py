@@ -12,6 +12,7 @@ class AccessorUpdateTask(Task):
         # Get the expression. If it is None, do an accessor void cancellation
         expression = accessor.expression        
         manager = self.manager()
+        
         if expression is None:
             accessor._status_reason = StatusReasonEnum.UNDEFINED
             manager.cancel_accessor(accessor, void=True, origin_task=self)
@@ -25,7 +26,7 @@ class AccessorUpdateTask(Task):
             manager.cancel_accessor(accessor, void=True, origin_task=self)
             return
         if accessor._checksum == expression_result_checksum:
-            if not accessor._fizzled:
+            if not accessor._new_macropath:
                 return
         accessor._checksum = expression_result_checksum
         accessor._void = False
@@ -35,14 +36,10 @@ class AccessorUpdateTask(Task):
         target = accessor.write_accessor.target()
         if isinstance(target, MacroPath):            
             target = target._cell
-            if target is None:
-                accessor._fizzled = True
-                return
-            else:
-                accessor._fizzled = False
         if target is None:
             return
         
+        accessor._new_macropath = False
         if isinstance(target, Worker):
             worker = target
             # If a worker, launch a worker update task. The worker will retrieve the upstream checksums by itself.

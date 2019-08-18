@@ -68,10 +68,12 @@ Use ``Cell.status()`` to get its status.
 
     def _set_context(self, ctx, name):
         assert self._checksum is None
+        has_ctx = self._context is not None
         super()._set_context(ctx, name)
         assert self._context() is ctx
         manager = self._get_manager()
-        manager.register_cell(self)
+        if not has_ctx:
+            manager.register_cell(self)
         if self._prelim_val is not None:
             value, from_buffer = self._prelim_val
             if from_buffer:
@@ -226,6 +228,8 @@ Use ``Cell.status()`` to get its status.
         """        
         if self._context is None:
             self._prelim_val = None
+            if checksum is not None:
+                checksum = bytes.fromhex(checksum)
             self._prelim_checksum = checksum, initial, is_buffercell
         else:
             manager = self._get_manager()
@@ -384,41 +388,22 @@ class BinaryCell(Cell):
 class MixedCell(Cell):
     _mount_kwargs = {"binary": True}
     _celltype = "mixed"
-    _silk = None
-
-    def set(self, value):
-        #storage, form = get_form(value)
-        #v = (storage, form, value)
-        return self._set(value, False)
-
-    @property
-    def value(self):
-        raise NotImplementedError # livegraph branch
-        v = super().value
-        if v is None:
-            return None        
-        if not isinstance(v, tuple): return v ### KLUDGE, shouldn't happen
-        return v[2]
 
     @property
     def storage(self):
-        raise NotImplementedError # livegraph branch
         from ..mixed.get_form import get_form
         v = super().value
         if v is None:
             return None        
-        if not isinstance(v, tuple): return get_form(v)[0] ### KLUDGE, shouldn't happen
-        return v[0]
+        return get_form(v)[0]
     
     @property
     def form(self):
-        raise NotImplementedError # livegraph branch
         from ..mixed.get_form import get_form
         v = super().value
         if v is None:
-            return None        
-        if not isinstance(v, tuple): return get_form(v)[1] ### KLUDGE, shouldn't happen
-        return v[1]
+            return None
+        return get_form(v)[1]  
 
 
 

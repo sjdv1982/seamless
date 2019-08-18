@@ -145,7 +145,14 @@ class Macro(Worker):
                 add_paths((), _global_paths.get(root, {}))
                 
                 manager = self._get_manager()
-                ub_cells = {ctx_path + k: v for k,v in ubmanager.cells.items()}
+                ub_cells = {ctx_path + k: v for k,v in ubmanager.cells.items()}                
+                for child in ubmanager._registered:
+                    if not isinstance(child, Link):
+                        continue
+                    path = ctx_path + child.path
+                    assert path not in ub_cells
+                    ub_cells[path] = child.get_linked()
+                    print(ctx_path + child.path, child.get_linked())
                 newly_bound = []
                 for path, p in paths:
                     if p._cell is not None:
@@ -172,23 +179,27 @@ class Macro(Worker):
         finally:
             self._unbound_gen_context = None
             self._paths = old_paths
+        if old_gen_context is not None:
+            old_gen_context.destroy()
         if ok:
-            if old_gen_context is not None:
-                old_gen_context.destroy()
             for path, p in paths:
                 p._bind(None, trigger=True)
             for path, p in newly_bound:
                 cell = ub_cells[path]
                 p._bind(cell, trigger=True)
             manager._set_macro_exception(self, None)
+        else:
+            self._gen_context = None
         keep = {k:v for k,v in self.namespace.items() if k.startswith("_")}
         self.namespace.clear()
         self.namespace["__name__"] = "macro"
         self.namespace.update(keep)
             
     def _set_context(self, ctx, name):
-        super()._set_context(ctx, name)
-        self._get_manager().register_macro(self)
+        has_ctx = self._context is not None
+        super()._set_context(ctx, name)        
+        if not has_ctx:
+            self._get_manager().register_macro(self)
 
     def destroy(self, *, from_del):
         if self._destroyed:
@@ -208,7 +219,8 @@ class Macro(Worker):
             except Exception:
                 import traceback; traceback.print_exc(); raise
             return path.ctx
-        assert self._gen_context is not None
+        if self._gen_context is None:
+            raise AttributeError
         return self._gen_context
 
     def __str__(self):
@@ -320,10 +332,31 @@ class Path:
                 raise AttributeError
         return manager.connect(self, None, other, None)
 
+    def _unbind(self):
+        if self._destroyed:
+            return
+        assert self._cell is not None           
+        oldcell = self._cell
+        assert oldcell._destroyed
+        self._cell = None
+        oldcell._paths.remove(self)
+        manager = self._get_manager()
+        livegraph = manager.livegraph
+        for accessor in livegraph.macropath_to_downstream[self]:
+            manager.cancel_accessor(accessor, True)
+        if not oldcell._destroyed:
+            if not self_authority:
+                manager.cancel_cell(
+                    oldcell, void=True, 
+                    reason=StatusReasonEnum.UNDEFINED
+                )
+
     def _bind(self, cell, trigger):        
         from .manager.propagate import propagate_cell
         from .manager.tasks.cell_update import CellUpdateTask
         from .manager.tasks.accessor_update import AccessorUpdateTask        
+        if self._destroyed:
+            return
         if cell is self._cell:
             return
         if cell is not None:
@@ -332,22 +365,14 @@ class Path:
         livegraph = manager.livegraph
         self_authority = livegraph.has_authority(self)
         oldcell = self._cell
-        if oldcell is not None:            
-            self._cell = None
-            oldcell._paths.remove(self)            
-            if not oldcell._destroyed:
-                if not self_authority:
-                    manager.cancel_cell(
-                        oldcell, void=True, 
-                        reason=StatusReasonEnum.UNDEFINED
-                    )
+        assert oldcell is None
         if cell is None:
             return
         cell_authority = livegraph.has_authority(cell)
         if not cell_authority and not self_authority:
             msg = "Cannot bind %s to %s: both have no authority"
             raise Exception(msg % (cell, self))
-        if cell_authority:
+        if cell_authority and not self_authority:
             manager.cancel_cell(cell, void=False)                
         for path in cell._paths:
             assert path is not self, self._path                
@@ -355,13 +380,19 @@ class Path:
         self._cell = cell
         propagate_cell(livegraph, cell)
         if trigger:
-            if self_authority:
-                CellUpdateTask(manager, cell).launch()
+            if self_authority:                
+                for accessor in livegraph.macropath_to_downstream[self]:
+                    accessor._new_macropath = True
+                if not cell._void:
+                    CellUpdateTask(manager, cell).launch()
             else:
                 up_accessor = livegraph.macropath_to_upstream[self]
                 assert up_accessor is not None  # if no up accessor, how could we have authority?
-                up_accessor._fizzled = True
-                AccessorUpdateTask(manager, up_accessor).launch()
+                up_accessor._new_macropath = True
+                upstream_cell = livegraph.accessor_to_upstream[up_accessor]
+                assert isinstance(upstream_cell, Cell)
+                if not upstream_cell._void:
+                    CellUpdateTask(manager, upstream_cell).launch()
             
 
     def __str__(self):
@@ -450,4 +481,5 @@ names = names + ("macro", "path")
 Macro.default_namespace = {n:globals()[n] for n in names}
 
 from .cell import Cell
+from .link import Link
 from . import library

@@ -153,7 +153,19 @@ class UponConnectionTask(Task):
             if isinstance(worker, Transformer):
                 TransformerUpdateTask(manager, worker).launch()
             elif isinstance(worker, Reactor):
-                ReactorUpdateTask(manager, worker).launch()
+                reactor = worker
+                last_outputs = reactor._last_outputs
+                if last_outputs is not None:
+                    checksum = last_outputs.get(pinname)
+                if checksum is not None:
+                    downstreams = livegraph.reactor_to_downstream[reactor][pinname]
+                    for accessor in downstreams:
+                        #- construct (not evaluate!) their expression using the cell checksum 
+                        #  Constructing a downstream expression increfs the cell checksum
+                        changed = accessor.build_expression(livegraph, checksum)
+                        #- launch an accessor update task
+                        if changed:
+                            AccessorUpdateTask(manager, accessor).launch()
             elif isinstance(worker, Macro):
                 MacroUpdateTask(manager, worker).launch()
             else:

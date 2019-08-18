@@ -1,4 +1,3 @@
-#import asyncio; asyncio.get_event_loop().set_debug(True)
 import seamless
 from seamless.core import context, cell, transformer, link
 

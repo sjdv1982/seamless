@@ -1,14 +1,13 @@
 import seamless
-#seamless.core.cache.use_caching = False ###
 from seamless.core import macro_mode_on
-from seamless.core import context, cell, transformer, pymacrocell, macro
+from seamless.core import context, cell, transformer, macro
 
 with macro_mode_on():
     ctx = context(toplevel=True)
     ctx.param = cell().set(1)
 
     ctx.mymacro = macro({
-        "param": "copy",
+        "param": "plain",
     })
 
     ctx.param.connect(ctx.mymacro.param)
@@ -24,27 +23,28 @@ with macro_mode_on():
         })
         ctx.a.connect(ctx.tf.a)
         ctx.b.connect(ctx.tf.b)
-        ctx.code = cell("transformer").set("c = a + b")
+        ctx.code = cell("transformer").set("print('TRANSFORM'); import time; time.sleep(2); c = a + b")
         ctx.code.connect(ctx.tf.code)
         ctx.tf.c.connect(ctx.result)
         assert param != 999   # on purpose
         if param > 1:
             ctx.d = cell().set(42)
-            #raise Exception("on purpose") #causes the macro reconstruction to fail; comment it out to make it succeed
+            raise Exception("on purpose") #causes the macro reconstruction to fail
         pass # For some reason, comments at the end are not captured with inspect.get_source?
 
-    ctx.mymacro_code = pymacrocell().set(macro_code)
+    ctx.mymacro_code = cell("macro").set(macro_code)
     ctx.mymacro_code.connect(ctx.mymacro.code)
 
     ctx.mount("/tmp/mount-test", persistent=False)
 
 
 print("START")
-### ctx.equilibrate()
+ctx.equilibrate(1)
+###ctx.equilibrate()
 print(ctx.mymacro.ctx.a.value)
 print(ctx.mymacro.ctx.b.value)
 print(hasattr(ctx.mymacro.ctx, "d"))
-print(ctx.mymacro.ctx.result.value) #None instead of 3002, unless you enable ctx.equilibrate above
+print(ctx.mymacro.ctx.result.value) #None instead of 3002, unless you enable ctx.equilibrate() above
 
 def mount_check():
     from seamless.core.mount import mountmanager #singleton
@@ -64,22 +64,31 @@ ctx.equilibrate()
 #   any old references to the old context are invalid
 # But this is a concern for the high-level!
 
-print(ctx.mymacro.ctx.a.value)
-print(ctx.mymacro.ctx.b.value)
-print(ctx.mymacro.ctx.hasattr("d"))
-if ctx.mymacro.ctx.hasattr("d"):
-    print(ctx.mymacro.ctx.d.value)
-print(ctx.mymacro.ctx.result.value) #will never be None! 3002 if the reconstruction failed, 3004 if it succeeded
-
-mount_check()
+try:
+    print(ctx.mymacro.ctx)
+except AttributeError:
+    print("ctx.mymacro.ctx is undefined")
+else:    
+    print(ctx.mymacro.ctx.a.value)
+    print(ctx.mymacro.ctx.b.value)
+    print(ctx.mymacro.ctx.hasattr("d"))
+    if ctx.mymacro.ctx.hasattr("d"):
+        print(ctx.mymacro.ctx.d.value)
+    print(ctx.mymacro.ctx.result.value)
+    mount_check()
 
 print("Change 2")
 ctx.mymacro_code.set(
     ctx.mymacro_code.value + "   "
 )
-ctx.equilibrate() # No execution
+ctx.equilibrate() # Macro execution, because macros are not cached. But no transformation
 
-mount_check()
+try:
+    ctx.mymacro.ctx
+except AttributeError:
+    pass
+else:
+    mount_check()
 
 print("Change 3")
 ctx.mymacro_code.set(
@@ -87,14 +96,18 @@ ctx.mymacro_code.set(
 )
 ctx.equilibrate()
 
-print(ctx.mymacro.ctx.a.value)
-print(ctx.mymacro.ctx.b.value)
-print(ctx.mymacro.ctx.hasattr("d"))
-if ctx.mymacro.ctx.hasattr("d"):
-    print(ctx.mymacro.ctx.d.value)
-print(ctx.mymacro.ctx.result.value) #will never be None! 3002 if the reconstruction failed, 3004 if it succeeded
-
-mount_check()
+try:
+    print(ctx.mymacro.ctx)
+except AttributeError:
+    print("ctx.mymacro.ctx is undefined")
+else:    
+    print(ctx.mymacro.ctx.a.value)
+    print(ctx.mymacro.ctx.b.value)
+    print(ctx.mymacro.ctx.hasattr("d"))
+    if ctx.mymacro.ctx.hasattr("d"):
+        print(ctx.mymacro.ctx.d.value)
+    print(ctx.mymacro.ctx.result.value)
+    mount_check()
 
 print("Change 4")
 ctx.mymacro_code.set(
@@ -106,7 +119,7 @@ print(ctx.mymacro.ctx.b.value)
 print(ctx.mymacro.ctx.hasattr("d"))
 if ctx.mymacro.ctx.hasattr("d"):
     print(ctx.mymacro.ctx.d.value)
-print(ctx.mymacro.ctx.result.value) #will never be None! 3002 if the reconstruction failed, 3004 if it succeeded
+print(ctx.mymacro.ctx.result.value)
 
 print("Change 5")
 ctx.param.set(0)
@@ -116,24 +129,25 @@ print(ctx.mymacro.ctx.b.value)
 print(ctx.mymacro.ctx.hasattr("d"))
 if ctx.mymacro.ctx.hasattr("d"):
     print(ctx.mymacro.ctx.d.value)
-print(ctx.mymacro.ctx.result.value) #will never be None! 3002 if the reconstruction failed, 3004 if it succeeded
+print(ctx.mymacro.ctx.result.value)
 
 mount_check()
 
 print("Change 6")
 ctx.param.set(999)
-print(ctx.mymacro.ctx.a.value)
-print(ctx.mymacro.ctx.b.value)
-print(ctx.mymacro.ctx.hasattr("d"))
-if ctx.mymacro.ctx.hasattr("d"):
-    print(ctx.mymacro.ctx.d.value)
-print(ctx.mymacro.ctx.result.value) #will never be None! 3002 if the reconstruction failed, 3004 if it succeeded
+ctx.equilibrate()
+try:
+    print(ctx.mymacro.ctx)
+except AttributeError:
+    print("ctx.mymacro.ctx is undefined")
+else:    
+    print(ctx.mymacro.ctx.a.value)
+    print(ctx.mymacro.ctx.b.value)
+    print(ctx.mymacro.ctx.hasattr("d"))
+    if ctx.mymacro.ctx.hasattr("d"):
+        print(ctx.mymacro.ctx.d.value)
+    print(ctx.mymacro.ctx.result.value)
 
-mount_check()
-
-print("CTX2")
-with macro_mode_on():
-    ctx2 = context(toplevel=True)
-del ctx2
+    mount_check()
 
 print("STOP")

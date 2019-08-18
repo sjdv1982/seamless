@@ -63,14 +63,12 @@ def return_preliminary(result_queue, value):
     #print("return_preliminary", value)
     result_queue.put((-1, value))
 
-def execute(name, code, 
+
+def _execute(name, code, 
       injector, module_workspace,
       identifier, namespace,
       inputs, output_name, celltype, result_queue
     ):
-    try:
-        old_stdio = sys.stdout, sys.stderr
-        sys.stdout, sys.stderr = sys.__stdout__, sys.__stderr__
         namespace["return_preliminary"] = functools.partial(
             return_preliminary, result_queue
         )
@@ -97,6 +95,20 @@ def execute(name, code,
         if USE_PROCESSES:
             result_queue.close()
         result_queue.join()
+
+def execute(name, code, 
+      injector, module_workspace,
+      identifier, namespace,
+      inputs, output_name, celltype, result_queue
+    ):
+    try:
+        old_stdio = sys.stdout, sys.stderr
+        sys.stdout, sys.stderr = sys.__stdout__, sys.__stderr__
+        _execute(name, code, 
+            injector, module_workspace,
+            identifier, namespace,
+            inputs, output_name, celltype, result_queue
+        )
     finally:
         sys.stdout, sys.stderr = old_stdio
 
@@ -106,29 +118,35 @@ def execute_debug(name, code,
       identifier, namespace,
       inputs, output_name, celltype, result_queue
     ):    
-    if platform.system() == "Windows":
-        while True:
-            if windll.kernel32.IsDebuggerPresent() != 0:
-                break
-            time.sleep(0.1)
-    else:
-        print("*" * 80)
-        print("Executing transformer %s in debug mode" % name)
-        print("Process ID: %s" % os.getpid())
-        print("Transformer execution will pause until SIGUSR1 has been received")
-        print("*" * 80)
-        class DebuggerAttached(Exception):
-            pass
-        def handler(*args, **kwargs):
-            raise DebuggerAttached
-        signal.signal(signal.SIGUSR1, handler)
-        try:
-            time.sleep(3600)
-        except DebuggerAttached:
-            pass
-    execute(name, code, 
-      injector, module_workspace,
-      identifier, namespace,
-      inputs, output_name, celltype, result_queue
-    )
+    try:
+        old_stdio = sys.stdout, sys.stderr
+        sys.stdout, sys.stderr = sys.__stdout__, sys.__stderr__
+
+        if platform.system() == "Windows":
+            while True:
+                if windll.kernel32.IsDebuggerPresent() != 0:
+                    break
+                time.sleep(0.1)
+        else:
+            print("*" * 80)
+            print("Executing transformer %s in debug mode" % name)
+            print("Process ID: %s" % os.getpid())
+            print("Transformer execution will pause until SIGUSR1 has been received")
+            print("*" * 80)
+            class DebuggerAttached(Exception):
+                pass
+            def handler(*args, **kwargs):
+                raise DebuggerAttached
+            signal.signal(signal.SIGUSR1, handler)
+            try:
+                time.sleep(3600)
+            except DebuggerAttached:
+                pass
+        _execute(name, code, 
+            injector, module_workspace,
+            identifier, namespace,
+            inputs, output_name, celltype, result_queue
+        )
+    finally:
+        sys.stdout, sys.stderr = old_stdio
 

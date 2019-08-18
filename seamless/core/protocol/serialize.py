@@ -1,12 +1,17 @@
 import asyncio
 import json
+import weakref
 from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
 
 from ...pylru import lrucache
 
 from ...mixed.io import serialize as mixed_serialize
 
+# serialize_cache: maps id(value),celltype to (buffer, value). 
+# Need to store (a ref to) value, 
+#  because id(value) is only unique while value does not die!!!
 serialize_cache = lrucache(100)
+
 
 def _serialize(value, celltype):
     if celltype in text_types:
@@ -42,8 +47,8 @@ def _serialize(value, celltype):
     return buffer
 
 async def serialize(value, celltype):
-    idvalue = id(value) 
-    buffer = serialize_cache.get(idvalue)
+    id_value = id(value) 
+    buffer, _ = serialize_cache.get((id_value, celltype), (None, None))
     if buffer is not None:
         return buffer
     
@@ -62,8 +67,9 @@ async def serialize(value, celltype):
     return buffer
     """
 
-    buffer = _serialize(value, celltype)  # KLUDGE
-    serialize_cache[idvalue] = buffer
+    buffer = _serialize(value, celltype)  ### for now...
+    serialize_cache[id_value, celltype] = buffer, value
     return buffer
 
 from ..cell import text_types
+

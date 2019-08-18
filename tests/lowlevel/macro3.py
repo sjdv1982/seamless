@@ -1,6 +1,6 @@
 import seamless
 from seamless.core import macro_mode_on
-from seamless.core import context, cell, transformer, pymacrocell, \
+from seamless.core import context, cell, transformer, \
   macro, link, path
 
 with macro_mode_on():
@@ -9,11 +9,11 @@ with macro_mode_on():
     ctx.param = cell("plain").set(0)
 
     ctx.macro = macro({
-        "param": "copy",
+        "param": "plain",
     })
 
     ctx.param.connect(ctx.macro.param)
-    ctx.macro_code = pymacrocell().set("""
+    ctx.macro_code = cell("macro").set("""
 ctx.sub = context()
 ctx.a = cell("plain").set(1000 + param)
 ctx.b = cell("plain").set(2000 + param)
@@ -121,11 +121,14 @@ Should be non-existent for .d
 Should be None for .e, .e2
 """)
 report()
+print(ctx.status)
 
 print("Change to 2")
 ctx.param.set(2)
 ctx.equilibrate()
 report()
+print(ctx.status)
+import sys; sys.exit()
 
 print("""Change to 1
 Should change to non-existent for .d
@@ -134,16 +137,19 @@ Should change to None for .e, .e2
 ctx.param.set(1)
 ctx.equilibrate()
 report()
+print(ctx.status)
 
 print("Change to 3")
 ctx.param.set(3)
 ctx.equilibrate()
 report()
+print(ctx.status)
 
 print("Change to 4")
 ctx.param.set(4)
 ctx.equilibrate()
 report()
+print(ctx.status)
 
 print("STOP")
 import sys; sys.exit()

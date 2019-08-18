@@ -1,5 +1,7 @@
+import asyncio
 from . import Task
 from ...build_module import build_module_async
+from ...macro_mode import get_macro_mode
 
 class MacroUpdateTask(Task):
     def __init__(self, manager, macro):
@@ -8,6 +10,8 @@ class MacroUpdateTask(Task):
         self.dependencies.append(macro)
 
     async def _run(self):
+        while get_macro_mode():
+            await asyncio.sleep(0)
         macro = self.macro
         from . import SerializeToBufferTask
         manager = self.manager()
@@ -53,12 +57,15 @@ class MacroUpdateTask(Task):
         values = {}
         module_workspace = {}        
         for pinname, accessor in upstreams.items():
-            checksum = inputpins[pinname]
+            expression_checksum = await EvaluateExpressionTask(
+                manager,
+                accessor.expression
+            ).run()
             celltype = accessor.write_accessor.celltype
             subcelltype = accessor.write_accessor.subcelltype
-            buffer = await get_buffer_async(checksum, buffer_cache)
+            buffer = await get_buffer_async(expression_checksum, buffer_cache)
             assert buffer is not None
-            value = await deserialize(buffer, checksum, celltype, False)
+            value = await deserialize(buffer, expression_checksum, celltype, False)
             if value is None:
                 raise CacheMissError(pinname, codename)
             if pinname == "code":
@@ -72,6 +79,7 @@ class MacroUpdateTask(Task):
         macro._execute(code, values, module_workspace)
 
 from .accessor_update import AccessorUpdateTask
+from .evaluate_expression import EvaluateExpressionTask
 from ...protocol.get_buffer import get_buffer_async
 from ...protocol.deserialize import deserialize
 from . import is_equal

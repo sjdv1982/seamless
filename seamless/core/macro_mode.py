@@ -55,14 +55,16 @@ def macro_mode_on(macro=None):
     from .unbound_context import UnboundContext                
     from .macro import _global_paths
     global _macro_mode, _curr_macro
-    if macro is None:
+    if _macro_mode:
+        raise Exception("macro mode cannot be re-entrant")
         assert not _macro_mode 
-    old_macro_mode = _macro_mode
-    old_curr_macro = _curr_macro
     _macro_mode = True
     _curr_macro = macro
-    old_context = macro._gen_context if macro is not None else None
+    old_context = macro._gen_context if macro is not None else None    
     try:
+        _mount_scans = []
+        if old_context is not None:
+            old_context.destroy()
         ok = False
         yield        
         if macro is None:
@@ -92,22 +94,14 @@ def macro_mode_on(macro=None):
                     _toplevel_registered.add(ctx)
                     _toplevel_managers.add(ctx._get_manager())
                     bind_all(ctx)
-        ok = True
-    finally:
-        _macro_mode = old_macro_mode
-        _curr_macro = old_curr_macro
-        mount_changed = False
-        if macro is None:
             for ub_ctx in list(_toplevel_registrable):
                 if isinstance(ub_ctx, UnboundContext):
                     _toplevel_registrable.remove(ub_ctx)
                     ctx = ub_ctx._bound
-                    if ctx is None or not ok:
+                    if ctx is None:
                         continue
                     assert isinstance(ctx, Context)
-                    curr_mount_changed = mount.scan(ctx, old_context=None)
-                    if curr_mount_changed is not None and curr_mount_changed != ({}, set(), {}):
-                        mount_changed = True
+                    _mount_scans.append((ctx, None))
             for ctx in _toplevel_registered:
                 for pathname, path in _global_paths.get(ctx, {}).items():
                     cctx = ctx
@@ -119,15 +113,26 @@ def macro_mode_on(macro=None):
                     else:
                         if isinstance(cctx, Cell):
                             path._bind(cctx, True)
-        elif not _macro_mode:
-            _toplevel_registrable.clear()
-            if ok:
-                curr_mount_changed = mount.scan(macro._gen_context, old_context=old_context)
-                if curr_mount_changed is not None and curr_mount_changed != ({}, set(), {}):
-                    mount_changed = True
+        if macro is not None:            
+            # TODO: recycle mount items
+            # Now, Old context has been destroyed already
+            ###_mount_scans.append((macro._gen_context, old_context))
+            _mount_scans.append((macro._gen_context, None))
+
+        mount_changed = False
+        for scan_ctx, old_scan_ctx in _mount_scans:
+            curr_mount_changed = mount.scan(
+                scan_ctx, old_context=old_scan_ctx
+            )
+            if curr_mount_changed is not None and curr_mount_changed != ({}, set(), {}):
+                mount_changed = True
+
         if mount_changed:
             mount.mountmanager.tick()
 
+    finally:
+        _toplevel_registrable.clear()
+        _macro_mode = False
 
 from .cache.transformation_cache import transformation_cache
 from .library import unregister_all

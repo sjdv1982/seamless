@@ -74,7 +74,9 @@ def status_transformer(transformer):
                 if accessor is None:
                     pins.append(pinname)
             if not len(downstreams):
-                pins.append(transformer._output_name)
+                outp = transformer._output_name
+                assert outp is not None
+                pins.append(outp)
         elif reason == StatusReasonEnum.UPSTREAM:
             pins = {}
             for pinname, accessor in upstreams.items():
@@ -121,7 +123,7 @@ def status_reactor(reactor):
 
 def status_macro(macro):
     if macro._gen_context is not None:
-        gen_status = macro._gen_context._get_status()                     
+        gen_status = macro._gen_context._get_status()
         if format_context_status(gen_status) != "OK":
             return StatusEnum.SUB, None, gen_status
         return StatusEnum.OK, None, None
@@ -199,10 +201,13 @@ def format_context_status(stat):
     result = {}
     for childname, value in stat.items():
         child, childstat = value
-        if childstat[0] == StatusEnum.VOID:
-            if childstat[1] == StatusReasonEnum.UPSTREAM:
-                continue
-        if isinstance(child, Worker):            
+        if not isinstance(child, Context):
+            if childstat[0] == StatusEnum.VOID:
+                if childstat[1] == StatusReasonEnum.UPSTREAM:
+                    continue
+            if childstat[0] == StatusEnum.PENDING:
+                continue  
+        if isinstance(child, Worker):
             childresult = format_worker_status(childstat, as_child=True)
         elif isinstance(child, Cell):
             childresult = format_status(childstat)            

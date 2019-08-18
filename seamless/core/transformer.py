@@ -56,12 +56,16 @@ class Transformer(Worker):
             
             if pin is not None:
                 self._pins[p] = pin
-        
+
+        if self._output_name is None:
+            raise Exception("Transformer must have an output")
         super().__init__()
 
     def _set_context(self, ctx, name):
-        super()._set_context(ctx, name)
-        self._get_manager().register_transformer(self)
+        has_ctx = self._context is not None
+        super()._set_context(ctx, name)        
+        if not has_ctx:
+            self._get_manager().register_transformer(self)
 
     @property
     def checksum(self):

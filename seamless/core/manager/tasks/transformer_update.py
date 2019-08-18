@@ -30,17 +30,18 @@ class TransformerUpdateTask(Task):
                 continue
             if status_reason is None or reason < status_reason:                
                 status_reason = reason
-        transformer._status_reason = status_reason
-
+                        
         if status_reason is not None:
             if not transformer._void:
                 print("WARNING: transformer %s is not yet void, shouldn't happen during transformer update" % transformer)
                 manager.cancel_transformer(transformer, void=True, reason=status_reason)
-                return
+            else:
+                transformer._status_reason = status_reason
             return
 
         for pinname, accessor in upstreams.items():
             if accessor._checksum is None: #pending
+                manager._set_transformer_checksum(transformer, None, False)
                 return
 
         for pinname, accessor in upstreams.items():
@@ -51,9 +52,16 @@ class TransformerUpdateTask(Task):
                 set_tf = False
         if set_tf:
             manager._set_transformer_checksum(transformer, None, False)
+        else:
+            transformer._void = False
 
         for accessor in downstreams:
             propagate_accessor(livegraph, accessor, transformer._void)
+
+        if not set_tf:
+            TransformerResultUpdateTask(manager, transformer).launch()
+            return
+    
         first_output = downstreams[0].write_accessor.target()
         celltypes = {}
         for pinname, accessor in upstreams.items():
