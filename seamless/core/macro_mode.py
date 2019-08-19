@@ -107,9 +107,12 @@ def macro_mode_on(macro=None):
                     cctx = ctx
                     for subpathname in pathname:                    
                         try:
+                            _macro_mode = False
                             cctx = getattr(cctx, subpathname)
                         except (AttributeError, KeyError, TypeError, AssertionError):
                             break
+                        finally:
+                            _macro_mode = True
                     else:
                         if isinstance(cctx, Cell):
                             path._bind(cctx, True)

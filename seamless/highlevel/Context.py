@@ -259,6 +259,7 @@ class Context:
             old_gen_context = self._gen_context
             if old_gen_context is not None:
                 old_gen_context.destroy()
+                self._gen_context = None
             with macro_mode_on(self):
                 ub_ctx = context(toplevel=True, manager=manager) 
                 self._unbound_context = ub_ctx                

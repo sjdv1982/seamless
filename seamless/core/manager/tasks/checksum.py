@@ -19,10 +19,9 @@ class CalculateChecksumTask(Task):
 
 class CellChecksumTask(Task):
 
-    def __init__(self, manager, cell, awaiting_task = None): 
+    def __init__(self, manager, cell): 
         self.cell = cell
         super().__init__(manager)
-        self.awaiting_task = awaiting_task
         self.dependencies.append(cell)
 
     async def _run(self):
@@ -42,52 +41,34 @@ class CellChecksumTask(Task):
         from .macro_update import MacroUpdateTask
 
         manager = self.manager()
-        await manager.taskmanager.await_upon_connection_tasks(self.taskid)
+        taskmanager = manager.taskmanager
+        await taskmanager.await_upon_connection_tasks(self.taskid)
         cell = self.cell
         invalid = False
         checksum = None
-
-        if cell._monitor:
-            # - Await current set-path/set-auth-path tasks for the cell. It doesn't matter if they were cancelled.  
-            raise NotImplementedError # livegraph branch
-        else:
-            taskmanager = manager.taskmanager
-            if cell in taskmanager.cell_to_value:
-                celltype = cell._celltype
-                value = taskmanager.cell_to_value[cell]
-                if value is None:
-                    checksum = None
-                else:
-                    try:
-                        buffer = await SerializeToBufferTask(manager, value, celltype).run()
-                        checksum = await CalculateChecksumTask(manager, buffer).run()
-                    except Exception:
-                        invalid = True
-            else:
-                taskid = self.taskid
-                awaiting_task = self.awaiting_task
-                while 1:
-                    for task in taskmanager.tasks:
-                        if task.taskid >= taskid:
-                            continue
-                        if awaiting_task is not None:
-                            if task.taskid >= awaiting_task.taskid:
-                                continue
-                        if isinstance(task,( 
-                                SetCellValueTask, 
-                                SetCellBufferTask, 
-                                MacroUpdateTask,
-                            )
-                        ):
-                            continue
-                        if cell in task.dependencies:
-                            break                        
+        lock = await taskmanager.acquire_cell_lock(cell)
+        try:            
+            if cell._monitor:
+                # - Await current set-path/set-auth-path tasks for the cell. It doesn't matter if they were cancelled.  
+                raise NotImplementedError # livegraph branch
+            else:                
+                if cell in taskmanager.cell_to_value:
+                    celltype = cell._celltype
+                    value = taskmanager.cell_to_value[cell]
+                    if value is None:
+                        checksum = None
                     else:
-                        break
-                    await asyncio.sleep(0)
-                checksum = cell._checksum   
-                if checksum is None:
-                    return         
+                        try:
+                            buffer = await SerializeToBufferTask(manager, value, celltype).run()
+                            checksum = await CalculateChecksumTask(manager, buffer).run()
+                        except Exception:
+                            invalid = True
+                else:                    
+                    checksum = cell._checksum   
+                    if checksum is None:
+                        return         
+        finally:
+            taskmanager.release_cell_lock(cell, lock)
         old_void = cell._void
         void = (checksum is None)
         old_status_reason = cell._status_reason

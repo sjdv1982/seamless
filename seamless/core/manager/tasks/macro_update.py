@@ -24,22 +24,23 @@ class MacroUpdateTask(Task):
             if accessor is None: #unconnected
                 macro._status_reason = StatusReasonEnum.UNCONNECTED
                 return                
+        
         status_reason = None        
         for pinname, accessor in upstreams.items():
-            if accessor._void or accessor._checksum is None: #undefined/upstream error
-                reason = StatusReasonEnum.UPSTREAM
-            else:
-                continue
-            if status_reason is None or reason < status_reason:                
-                status_reason = reason
-        macro._status_reason = status_reason
+            if accessor._void: #upstream error
+                status_reason = StatusReasonEnum.UPSTREAM
 
         if status_reason is not None:
             if not macro._void:
-                print("WARNING: macro %s is not yet void, shouldn't happen during transformer update" % macro)
-                manager.cancel_macro(macro, void=True)
+                print("WARNING: macro %s is not yet void, shouldn't happen during macro update" % macro)
+                macro._status_reason = StatusReasonEnum.UPSTREAM
                 return
             return
+
+        for pinname, accessor in upstreams.items():
+            if accessor._checksum is None: #pending
+                macro._void = False
+                return
         
         inputpins = {}
         for pinname, accessor in upstreams.items():
@@ -50,6 +51,7 @@ class MacroUpdateTask(Task):
 
         macro._last_inputs = inputpins.copy()
         macro._void = False
+        macro._status_reason = None
         
         buffer_cache = manager.cachemanager.buffer_cache        
 

@@ -45,6 +45,7 @@ def load_e(ctx):
     ctx.tf.e.connect(ctx.result)
 
 def select(ctx, which):
+    print("SELECT", which)
     assert which in ("pi", "e"), which
     ctx.readme = libcell(".readme")
     ctx.loader = macro({})
@@ -98,7 +99,6 @@ with macro_mode_on():
     main()
 ctx.equilibrate()    
 print(ctx.status)
-import sys; sys.exit()
 
 compute = ctx.compute.ctx
 print(compute.readme.value)
@@ -119,15 +119,22 @@ print()
 compute = ctx.compute.ctx
 print(compute.readme.value)
 lctx.readme.set("test")
-lib, root = library.build(lctx, root)
-library.register("compute", lib, root)
-print(compute.readme.value)
-
-lctx.select.set(lctx.select.value + "    ctx.readme2 = libcell('.readme')")
+lctx.equilibrate()
 lib, root = library.build(lctx)
 library.register("compute", lib, root)
 ctx.equilibrate()
 compute = ctx.compute.ctx
+print(compute.readme.value)
+
+print("START")
+lctx.select.set(lctx.select.value + "\n    ctx.readme2 = libcell('.readme')")
+lctx.equilibrate()
+lib, root = library.build(lctx)
+library.register("compute", lib, root)
+ctx.equilibrate()
+print("START2")
+print(ctx.status)
+compute = ctx.compute.ctx
+print(compute.status)
 print(compute.readme2.value)
 print(ctx.result.value)
-print()

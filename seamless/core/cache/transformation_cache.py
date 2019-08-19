@@ -80,7 +80,7 @@ class TransformationCache:
     ):
         future = asyncio.ensure_future(
             syntactic_to_semantic(
-                checksum, celltype, subcelltype, codename
+                checksum, celltype, subcelltype, buffer_cache, codename
             )
         )
         asyncio.get_event_loop().run_until_complete(future)

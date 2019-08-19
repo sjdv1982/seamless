@@ -78,10 +78,8 @@ class Macro(Worker):
         from .context import Context
         manager = self._get_manager()
         ok = False
+        assert self._gen_context is None
         try:
-            old_paths = self._paths
-            old_gen_context = self._gen_context
-            old_ub_gen_context = self._unbound_gen_context
             self._paths = weakref.WeakValueDictionary()
             with macro_mode_on(self):                
                 unbound_ctx = UnboundContext(toplevel=False, macro=True)
@@ -152,7 +150,6 @@ class Macro(Worker):
                     path = ctx_path + child.path
                     assert path not in ub_cells
                     ub_cells[path] = child.get_linked()
-                    print(ctx_path + child.path, child.get_linked())
                 newly_bound = []
                 for path, p in paths:
                     if p._cell is not None:
@@ -173,14 +170,10 @@ class Macro(Worker):
                 unbound_ctx._bind(ctx)
                 self._gen_context = ctx
                 ok = True
-                old_paths = self._paths
         except Exception as exception:
             manager._set_macro_exception(self, exception)
         finally:
             self._unbound_gen_context = None
-            self._paths = old_paths
-        if old_gen_context is not None:
-            old_gen_context.destroy()
         if ok:
             for path, p in paths:
                 p._bind(None, trigger=True)
@@ -209,6 +202,7 @@ class Macro(Worker):
             self._get_manager()._destroy_macro(self)
         if self._gen_context is not None:
             return self._gen_context.destroy(from_del=from_del)
+            self._gen_context = None
         
     @property
     def ctx(self):        

@@ -25,11 +25,7 @@ class TransformerUpdateTask(Task):
         status_reason = None        
         for pinname, accessor in upstreams.items():
             if accessor._void: #upstream error
-                reason = StatusReasonEnum.UPSTREAM
-            else:
-                continue
-            if status_reason is None or reason < status_reason:                
-                status_reason = reason
+                status_reason = StatusReasonEnum.UPSTREAM
                         
         if status_reason is not None:
             if not transformer._void:

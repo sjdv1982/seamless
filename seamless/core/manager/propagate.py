@@ -65,6 +65,9 @@ def propagate_reactor(livegraph, reactor):
 def propagate_macro(livegraph, macro):
     if macro._void:
         return
+    if macro._gen_context is not None:
+        macro._gen_context.destroy()
+        macro._gen_context = None
     manager = macro._get_manager()
     MacroUpdateTask(manager, macro).launch()
 

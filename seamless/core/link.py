@@ -9,7 +9,7 @@ class Link(SeamlessBase):
     def __init__(self, obj):
         from .cell import Cell
         global link_counter
-        assert isinstance(obj, Cell)
+        assert isinstance(obj, Cell), obj # only cells can be linked to!
         self._linked = obj
         link_counter += 1
         self._counter = link_counter

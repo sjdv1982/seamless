@@ -128,6 +128,8 @@ class Manager:
             cell, checksum, 
             (checksum is None), status_reason=reason
         )
+        if not initial:
+            CellUpdateTask(self, cell).launch()
 
     def _set_cell_checksum(self, cell, checksum, void, status_reason=None):
         # NOTE: Any cell task depending on the old checksum must have been canceled already
@@ -147,9 +149,9 @@ class Manager:
         cell._void = void
         cell._status_reason = status_reason
         if checksum != old_checksum:
-            cachemanager.incref_checksum(checksum, cell, authority)
+            cachemanager.incref_checksum(checksum, cell, authority)            
             if cell._mount is not None:
-                buffer, checksum = self.get_cell_buffer_and_checksum(cell)
+                buffer = self.cachemanager.buffer_cache.get_buffer(checksum)
                 self.mountmanager.add_cell_update(cell, checksum, buffer)
 
     def _set_transformer_checksum(self, transformer, checksum, void, status_reason=None):
@@ -364,6 +366,7 @@ If origin_task is provided, that task is not cancelled."""
         gen_context = macro._gen_context
         if gen_context is not None:
             gen_context.destroy()
+            macro._gen_context = None
         if void:
             macro._void = True
             macro._status_reason = reason
@@ -471,7 +474,7 @@ If origin_task is provided, that task is not cancelled."""
 from .tasks import (
     SetCellValueTask, SetCellBufferTask,
     CellChecksumTask, GetBufferTask,
-    DeserializeBufferTask, UponConnectionTask
+    DeserializeBufferTask, UponConnectionTask, CellUpdateTask
 )
 
 from ..protocol.calculate_checksum import checksum_cache

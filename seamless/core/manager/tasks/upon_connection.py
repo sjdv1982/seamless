@@ -155,6 +155,7 @@ class UponConnectionTask(Task):
             elif isinstance(worker, Reactor):
                 reactor = worker
                 last_outputs = reactor._last_outputs
+                checksum = None
                 if last_outputs is not None:
                     checksum = last_outputs.get(pinname)
                 if checksum is not None:

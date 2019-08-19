@@ -11,24 +11,21 @@ def run(a,b):
     return a + b
 
 def build(ctx, param, run):
-    print("BUILD")
-    tf = transformer(
-    {
+    print("BUILD")    
+    tf_params = {
         "a": "input",
         "b": "input",
         "c": "output",
-    })
-    if param.startswith("PARAM"):
-        ctx.tf_alt1 = tf
-    else:
-        ctx.tf_alt2 = tf
-    ctx.tf = link(tf)
+    }
+    ctx.tf1 = transformer(tf_params)
+    ctx.tf2 = transformer(tf_params)
+    tf = ctx.tf2 if param == "PARAM" else ctx.tf1
 
     ctx.run = cell("transformer").set(run)
     ctx.run.connect(tf.code)
-    ctx.a = cell()
-    ctx.a.connect(tf.a)
+    ctx.a = cell()    
     ctx.b = cell()
+    ctx.a.connect(tf.a)
     ctx.b.connect(tf.b)
     ctx.c = cell()
     tf.c.connect(ctx.c)
@@ -55,17 +52,20 @@ with macro_mode_on():
 
 ctx.equilibrate()
 print(ctx.c.value)
-print(ctx.macro.ctx.tf.status)
-print(ctx.status)
+print(ctx.macro.ctx.tf1.status)
+print(ctx.macro.ctx.tf2.status)
 print()
+
 print("CHANGE 1")
 ctx.param.set("PARAM2")
 ctx.equilibrate()
 print(ctx.c.value)
-print(ctx.macro.ctx.tf.status)
+print(ctx.macro.ctx.tf1.status)
+print(ctx.macro.ctx.tf2.status)
 
 print("CHANGE 2")
 ctx.param.set("x")
 ctx.equilibrate()
 print(ctx.c.value)
-print(ctx.macro.ctx.tf.status)
+print(ctx.macro.ctx.tf1.status)
+print(ctx.macro.ctx.tf2.status)

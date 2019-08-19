@@ -140,7 +140,8 @@ Use ``Cell.status()`` to get its status.
             checksum,
             self._celltype,
             self._subcelltype,
-            manager.buffer_cache
+            manager.cachemanager.buffer_cache,
+            str(self)
         )
         return sem_checksum.hex()
 
@@ -230,7 +231,7 @@ Use ``Cell.status()`` to get its status.
             self._prelim_val = None
             if checksum is not None:
                 checksum = bytes.fromhex(checksum)
-            self._prelim_checksum = checksum, initial, is_buffercell
+                self._prelim_checksum = checksum, initial, is_buffercell
         else:
             manager = self._get_manager()
             if checksum is not None:
@@ -361,7 +362,9 @@ Use ``Cell.status()`` to get its status.
 
     def destroy(self, *, from_del=False): 
         if self._destroyed:            
-            return 
+            return
+        if not from_del and self._lib_path is not None:
+            unregister_libcell(self)
         super().destroy(from_del=from_del)
         self._get_manager()._destroy_cell(self)
         for path in list(self._paths):
@@ -566,6 +569,7 @@ from ..mixed.get_form import get_form
 from .structured_cell import Inchannel, Outchannel
 from .macro_mode import get_macro_mode
 from .utils import strip_source
+from .library import unregister_libcell
 
 """
 TODO Documentation: only-text changes

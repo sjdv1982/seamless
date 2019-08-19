@@ -28,6 +28,8 @@ class TaskManager:
         self.rev_reftasks = {} # mapping of a task to their refholder tasks
         self.cell_to_value = {} # very short term cache:
                                 # only while the checksum is being computed by a SetCellValueTask
+        self.cell_locks = {} # The following tasks are in-order; they must acquire this lock
+                             # SetCellValue, SetCellBuffer, SetCellPath, CellChecksum
         self._destroying = set()
 
     def activate(self):
@@ -45,6 +47,7 @@ class TaskManager:
 
     def register_cell(self, cell):
         assert cell not in self.cell_to_task
+        self.cell_locks[cell] = []
         self.cell_to_task[cell] = []
 
     def register_accessor(self, accessor):
@@ -180,6 +183,25 @@ class TaskManager:
             if not ok:
                 raise CancelledError
 
+    async def acquire_cell_lock(self, cell):
+        if cell._destroyed:
+            return
+        locks = self.cell_locks[cell]
+        if not len(locks):
+            id = 1
+        else:
+            id = locks[-1] + 1
+        locks.append(id)
+        while locks[0] != id:
+            await asyncio.sleep(0.0001)   # 0.1 ms
+        return id
+
+    def release_cell_lock(self, cell, id):
+        if cell._destroyed:
+            return
+        locks = self.cell_locks[cell]
+        locks.remove(id)
+        
     def _clean_dep(self, dep, task):
         if isinstance(dep, Cell):
             d = self.cell_to_task
@@ -360,6 +382,7 @@ If origin_task is provided, that task is not cancelled."""
         self.cancel_cell(cell, full=full)
         self.cell_to_task.pop(cell)
         self.cell_to_value.pop(cell, None)
+        self.cell_locks.pop(cell)
 
     @destroyer
     def destroy_accessor(self, accessor):
@@ -381,7 +404,7 @@ If origin_task is provided, that task is not cancelled."""
         self.reactor_to_task.pop(reactor)
 
     @destroyer
-    def destroy_macro(self, macro, *, full=False):
+    def destroy_macro(self, macro, *, full=False):    
         self.cancel_macro(macro, full=full)
         self.macro_to_task.pop(macro)
 

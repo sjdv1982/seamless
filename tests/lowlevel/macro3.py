@@ -128,7 +128,6 @@ ctx.param.set(2)
 ctx.equilibrate()
 report()
 print(ctx.status)
-import sys; sys.exit()
 
 print("""Change to 1
 Should change to non-existent for .d

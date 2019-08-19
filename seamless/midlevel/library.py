@@ -18,6 +18,7 @@ def register_library(ctx, hctx, libname):
         hctx._translating = False
 
 def get_lib_path(nodepath, from_lib_paths):
+    raise NotImplementedError ### livegraph branch
     """Gets the path of nodepath within the library that the node comes from (if any)"""
     for p in range(len(nodepath), 0, -1):
         if nodepath[:p] in from_lib_paths:

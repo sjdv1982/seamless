@@ -24,9 +24,9 @@ class CellUpdateTask(Task):
         from . import CellChecksumTask
         manager = self.manager()
         cell = self.cell
-        await CellChecksumTask(manager, cell, self).run()
+        await CellChecksumTask(manager, cell).run()
         checksum = cell._checksum
-        assert not cell._monitor # cell update is not for StructuredCell cells
+        assert not cell._monitor # cell update is not for StructuredCell cells        
         livegraph = manager.livegraph
         accessors = livegraph.cell_to_downstream[cell]
         for path in cell._paths:            

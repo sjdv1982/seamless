@@ -123,6 +123,7 @@ def status_reactor(reactor):
 
 def status_macro(macro):
     if macro._gen_context is not None:
+        assert not macro._void
         gen_status = macro._gen_context._get_status()
         if format_context_status(gen_status) != "OK":
             return StatusEnum.SUB, None, gen_status
