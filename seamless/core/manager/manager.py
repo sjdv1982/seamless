@@ -123,7 +123,7 @@ class Manager:
             reason = None
             old_checksum = self.get_cell_checksum(cell)
             if old_checksum is not None:
-                self.cancel_cell(cell, void=False)
+                self.cancel_cell(cell, void=False)        
         self._set_cell_checksum(
             cell, checksum, 
             (checksum is None), status_reason=reason

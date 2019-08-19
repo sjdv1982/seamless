@@ -120,7 +120,7 @@ name: str
         child._set_context(self, childname)
         if not get_macro_mode():
             if isinstance(child, (Cell, Context)):
-                mount_scan(child, old_context=None)
+                mount_scan(child)
 
 
     def _add_new_cell(self, cell):

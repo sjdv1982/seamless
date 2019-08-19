@@ -16,6 +16,7 @@ from weakref import WeakValueDictionary, WeakKeyDictionary, WeakSet, ref
 import threading
 from threading import Thread, RLock, Event
 from collections import deque, OrderedDict
+from speg.peg import ParseError
 import sys, os
 import time
 import traceback
@@ -171,7 +172,7 @@ class MountItem:
                     file_buffer = j1
                     if checksum != old_checksum:
                         self._write(file_buffer)
-                except ValueError:  
+                except (ValueError, ParseError):
                     pass
         cell.set_buffer(file_buffer, checksum)
 

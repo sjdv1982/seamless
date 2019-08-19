@@ -1,6 +1,6 @@
 import seamless
 from seamless.core import macro_mode_on
-from seamless.core import context,textcell, cell, transformer, pytransformercell
+from seamless.core import context,cell, transformer
 
 with macro_mode_on():
     ctx = context(toplevel=True)
@@ -17,11 +17,11 @@ ctx.tf = transformer({
 })
 ctx.cell1.connect(ctx.tf.a)
 ctx.cell2.connect(ctx.tf.b)
-ctx.code = pytransformercell().set("c = a + b")
+ctx.code = cell("transformer").set("c = a + b")
 ctx.code.connect(ctx.tf.code)
 ctx.tf.c.connect(ctx.result)
 ctx.sub = context(toplevel=False)
-ctx.sub.mycell = textcell().set("This is my cell\nend")
+ctx.sub.mycell = cell("text").set("This is my cell\nend")
 
 ctx.equilibrate()
 print(ctx.result.value)
