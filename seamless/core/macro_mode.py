@@ -33,6 +33,7 @@ def _destroy_toplevels():
         if manager is not None:
             manager.destroy(from_del=True)
     transformation_cache.destroy()
+    mountmanager.clear()
 
 atexit.register(_destroy_toplevels)
 
@@ -101,7 +102,7 @@ def macro_mode_on(macro=None):
                     if ctx is None:
                         continue
                     assert isinstance(ctx, Context)
-                    _mount_scans.append((ctx, None))
+                    _mount_scans.append(ctx)
             for ctx in _toplevel_registered:
                 for pathname, path in _global_paths.get(ctx, {}).items():
                     cctx = ctx
@@ -117,16 +118,11 @@ def macro_mode_on(macro=None):
                         if isinstance(cctx, Cell):
                             path._bind(cctx, True)
         if macro is not None:            
-            # TODO: recycle mount items
-            # Now, Old context has been destroyed already
-            ###_mount_scans.append((macro._gen_context, old_context))
-            _mount_scans.append((macro._gen_context, None))
+            _mount_scans.append(macro._gen_context)
 
         mount_changed = False
-        for scan_ctx, old_scan_ctx in _mount_scans:
-            curr_mount_changed = mount.scan(
-                scan_ctx, old_context=old_scan_ctx
-            )
+        for scan_ctx in _mount_scans:
+            curr_mount_changed = mount.scan(scan_ctx)
             if curr_mount_changed is not None and curr_mount_changed != ({}, set(), {}):
                 mount_changed = True
 
@@ -139,3 +135,4 @@ def macro_mode_on(macro=None):
 
 from .cache.transformation_cache import transformation_cache
 from .library import unregister_all
+from .mount import mountmanager
