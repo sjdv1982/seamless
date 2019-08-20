@@ -1,0 +1,54 @@
+import seamless
+from seamless.core import context, cell, transformer, link
+
+try:
+    redis_sink = seamless.RedisSink()
+except Exception:
+    pass
+
+ctx = context(toplevel=True)
+ctx.cell1 = cell("int").set(1)
+ctx.cell2 = cell("int").set(2)
+def progress(a, b):
+    import time
+    for n in range(10):
+        print("PROGRESS", n+1)
+        set_progress((n+1)/10* 100)
+        if (n % 2) == 0:
+            return_preliminary((n+1)/10*(a+b))
+        time.sleep(1)
+    return a + b
+ctx.code = cell("transformer").set(progress)
+ctx.result = cell("float")
+ctx.result_duplex = cell("float")
+ctx.tf = transformer({
+    "a": "input",
+    "b": "input",
+    "c": "output"
+})
+ctx.tf_duplex = transformer({
+    "a": "input",
+    "b": "input",
+    "c": "output"
+})
+ctx.code.connect(ctx.tf.code)
+ctx.code.connect(ctx.tf_duplex.code)
+ctx.cell1.connect(ctx.tf.a)
+ctx.cell1.connect(ctx.tf_duplex.a)
+ctx.cell2.connect(ctx.tf.b)
+ctx.cell2.connect(ctx.tf_duplex.b)
+ctx.tf.c.connect(ctx.result)
+ctx.tf_duplex.c.connect(ctx.result_duplex)
+
+def report():
+    print("TF       ", ctx.tf.status)
+    print("TF DUPLEX", ctx.tf_duplex.status)
+    print("RESULT       ", "%.3f" % ctx.result.value, ctx.result.status)
+    print("RESULT DUPLEX", "%.3f" %  ctx.result_duplex.value, ctx.result_duplex.status)
+    print()
+
+for n in range(20):
+    ctx.equilibrate(0.5)
+    report()
+ctx.equilibrate()
+report()

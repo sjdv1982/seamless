@@ -174,7 +174,8 @@ class Manager:
         transformer._checksum = checksum
         transformer._void = void
         transformer._status_reason = status_reason
-        transformer._progress = 0.0
+        if not prelim:
+            transformer._progress = 0.0
         if checksum != old_checksum:
             cachemanager.incref_checksum(checksum, transformer, False)
 
