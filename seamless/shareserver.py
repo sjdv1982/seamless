@@ -7,7 +7,7 @@ Short version:
 ctx.a.share() =>
 - http://localhost:5813/ctx/a gives the value of the cell (HTTP GET)
 - At the same address, the value of the cell can be changed with a HTTP PUT request
-- Updates to ctx.a send a notification to ws://localhost:5138/ctx
+- An update to ctx.a sends a notification to ws://localhost:5138/ctx
 - http://localhost:5813/ctx/equilibrate with an HTTP PATCH request does ctx.equilibrate().
   A timeout can be specified.
 

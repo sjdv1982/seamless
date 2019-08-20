@@ -38,12 +38,12 @@ with macro_mode_on():
 
     ctx.tf1.limit.cell().set(9)
     ctx.tf1.factor.cell().set(1000)
-    ctx.tf1.delay.cell().set(0.7)
+    ctx.tf1.delay.cell().set(1.5)
     ctx.tf1.offset.cell().set(0)    
     
-    ctx.tf2.limit.cell().set(12)
+    ctx.tf2.limit.cell().set(15)
     ctx.tf2.factor.cell().set(10)
-    ctx.tf2.delay.cell().set(2)
+    ctx.tf2.delay.cell().set(0.7)
     ctx.tf2.offset.cell().set(0)
     
     ctx.tf3.limit.cell().set(9)
