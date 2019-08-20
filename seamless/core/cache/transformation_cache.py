@@ -185,7 +185,6 @@ class TransformationCache:
             tempref = functools.partial(self.destroy_transformation, transformation)
             temprefmanager.add_ref(tempref, TF_KEEP_ALIVE)
 
-    @destroyer
     def destroy_transformation(self, transformation):
         tf_checksum = tf_get_hash(transformation)
         assert tf_checksum in self.transformations
@@ -197,9 +196,11 @@ class TransformationCache:
         job = self.transformation_jobs[tf_checksum]
         if job is not None:
             if job.future is not None:
+                #print("CANCEL JOB!")
                 job.future.cancel()
+                self.job_done(job, job.future, cancelled=True)
 
-    def run_job(self, transformation):
+    def run_job(self, transformation):        
         tf_checksum = tf_get_hash(transformation)
         transformers = self.transformations_to_transformers[tf_checksum]
         if tf_checksum in self.transformation_exceptions:            
@@ -212,8 +213,7 @@ class TransformationCache:
         if not len(transformers):
             codename = "<Unknown>"
         else:
-            codename = str(transformers[-1])
-        #print("RUN JOB!", codename)
+            codename = str(transformers[-1])        
         debug = tf_checksum in self.debug
         semantic_cache = {}
         for k,v in transformation.items():
@@ -240,6 +240,7 @@ class TransformationCache:
         #job future, add done callback self.job_done
         self.transformation_jobs[tf_checksum] = job
         self.rev_transformation_jobs[id(job)] = tf_checksum
+        #print("RUN JOB!", codename, len(self.rev_transformation_jobs))
         return job
 
     def progress_callback(self, job, progress):
@@ -256,17 +257,22 @@ class TransformationCache:
         tf_checksum = self.rev_transformation_jobs[id(job)]
         self.set_transformation_result(tf_checksum, prelim_checksum, True)
 
-    def job_done(self, job, future):
+    def job_done(self, job, future, cancelled=False):
         if self._destroyed:
             return
-        assert future.done()
+        if job._cancelled:
+            return
+        assert future.done() or cancelled
+        if cancelled:
+            job._cancelled = True
         tf_checksum = self.rev_transformation_jobs.pop(id(job))
+        #print("/RUN JOB!", len(self.rev_transformation_jobs), cancelled)
         if tf_checksum in self.transformations:
             self.transformation_jobs[tf_checksum] = None
         else:
             self.transformation_jobs.pop(tf_checksum)
             return  # transformation was destroyed
-        if future.cancelled():
+        if cancelled:
             return
 
         transformers = self.transformations_to_transformers[tf_checksum]

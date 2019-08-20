@@ -30,7 +30,11 @@ class TempRefManager:
             except Exception:
                 import traceback
                 traceback.print_exc()
-            await asyncio.sleep(0)
+            await asyncio.sleep(0.001)
         self.running = False
 
 temprefmanager = TempRefManager()
+
+coro = temprefmanager.loop()
+import asyncio
+asyncio.ensure_future(coro)

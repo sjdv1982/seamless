@@ -192,7 +192,6 @@ class MountItem:
     def _read(self):
         if self._destroyed:
             return
-        assert "r" in self.mode
         #print("read", self.cell())                
         binary = self.kwargs["binary"]
         encoding = self.kwargs.get("encoding")
@@ -703,7 +702,8 @@ def scan(ctx_or_cell):
         contexts.add(cctx)
         for child in cctx._children.values():
             if isinstance(child, Cell):
-                cells.add(child)
+                if child.name not in cctx._auto:
+                    cells.add(child)
             elif isinstance(child, Context):
                 enumerate_context(child)
             elif isinstance(child, Macro):

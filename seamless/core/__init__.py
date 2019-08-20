@@ -37,6 +37,12 @@ class SeamlessBase:
     def _set_context(self, context, name):
         from .context import Context, UnboundContext
         assert isinstance(context, (Context, UnboundContext))
+        if self._context is not None and self._context() is context:
+            assert self.name in context._auto
+            context._children.pop(self.name)
+            context._auto.discard(self.name)
+            self.name = name
+            return
         if isinstance(context, UnboundContext):
             assert self._context is None
         else:

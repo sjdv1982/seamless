@@ -15,7 +15,6 @@ from .build_module import build_module_async
 ###############################################################################
 
 _locks = [False] * multiprocessing.cpu_count()
-
 def set_ncores(ncores):
     if len(_locks) != ncores:
         if any(_locks):
@@ -60,6 +59,7 @@ async def run_remote_job(level1, origin=None):
 
 class TransformationJob:
     _job_id_counter = 0
+    _cancelled = False
     def __init__(self, 
         buffer_cache, transformation, 
         semantic_cache, debug

@@ -16,12 +16,13 @@ There is a singleton ShareServer instance at localhost
 
 It opens an update websocket server, and a REST server.
 
-Shares are of the form http://<address>:<port>/<namespace>/<path>
-By default, namespace is "ctx", address is localhost, port is 5813
+If there is at least one share for a high-level Context,
+a new namespace is created with shareserver.new_namespace(<name>) ("ctx" by default).
+Every Cell.share() call is translated into a shareserver.share(<namespace>, <cell path>) call.
+This adds that cell the variable list of the namespace.
 
-Updates are on ws://<address>:<port>/<namespace>
-By default, port is 5138.
-The server only sends, never receives. All messages are JSON.
+Every webserver connection is namespace-specific. The server only sends, never receives.
+All messages are JSON.
 Upon connection, a client receives a handshake message: ["Seamless share update server", "0.01"]
 Then, it receives a variable list
 
