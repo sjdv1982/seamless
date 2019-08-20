@@ -54,7 +54,10 @@ class AccessorUpdateTask(Task):
         elif isinstance(target, Cell): # If a cell:
             if accessor.write_accessor.path is None:
                 await manager.taskmanager.await_upon_connection_tasks(self.taskid)
-                manager._set_cell_checksum(target, expression_result_checksum, False, None)
+                manager._set_cell_checksum(
+                    target, expression_result_checksum, 
+                    False, None, prelim=accessor._prelim
+                )
             else:
                 # Run a set-non-authorative-path *action*, which will launch a set-path task.
                 raise NotImplementedError #livegraph branch

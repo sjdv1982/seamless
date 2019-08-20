@@ -81,17 +81,21 @@ class TransformationJob:
         self.codename = None
         self.future = None
 
-    def execute(self, codename):
+    def execute(self, codename, prelim_callback, progress_callback):
         # TODO: use communion "transformer_job_check" to find a remote server
         # run_multi_remote_pair?
         remote = False ###
         if remote: 
             awaitable = run_remote_job(NotImplemented)
         else:
-            awaitable = self._execute_local(codename)
+            awaitable = self._execute_local(
+                codename, prelim_callback, progress_callback
+            )
         self.future = asyncio.ensure_future(awaitable)
 
-    async def _execute_local(self, codename):
+    async def _execute_local(self, 
+        codename, prelim_callback, progress_callback
+    ):
         self.codename = codename
         buffer_cache = self.buffer_cache()
         values = {}
@@ -150,6 +154,19 @@ class TransformationJob:
 
         assert code is not None
 
+        async def get_result_checksum(result):
+            if result is None:
+                return None
+            try:
+                await validate_subcelltype(
+                    result, celltype, subcelltype, 
+                    codename, buffer_cache
+                )
+                result_checksum = await calculate_checksum(result)
+            except Exception:
+                raise SeamlessInvalidValueError(result)
+            return result_checksum
+
         lock = await acquire_lock()
         running = False
         try:                        
@@ -172,20 +189,23 @@ class TransformationJob:
                 while not queue.empty():
                     status, msg = queue.get()
                     queue.task_done()
-                    if status == -1:
-                        prelim = msg
-                    elif status == 0:
+                    if status == 0:
                         result = msg
                         done = True
                         break
                     elif status == 1:
                         raise Exception(msg)
+                    elif status == 2:
+                        prelim = msg
+                        prelim_checksum = await get_result_checksum(prelim)
+                        prelim_callback(self, prelim_checksum)
+                    elif status == 3:
+                        progress = msg                        
+                        progress_callback(self, progress)
                 if not self.executor.is_alive():
                     done = True
                 if done:
                     break
-                if prelim is not None:
-                    raise NotImplementedError # livegraph branch
                 await asyncio.sleep(0)
             if not self.executor.is_alive():
                 self.executor = None
@@ -194,17 +214,7 @@ class TransformationJob:
                 self.executor.terminate()
         finally:            
             release_lock(lock)
-        result_checksum = None
-        if result is not None:
-            try:
-                await validate_subcelltype(
-                    result, celltype, subcelltype, 
-                    codename, buffer_cache
-                )
-                result_checksum = await calculate_checksum(result)
-            except Exception:
-                raise SeamlessInvalidValueError(result)
-            #print("RESULT", result, result_buffer, result_checksum)
+        result_checksum = await get_result_checksum(result)
         return result_checksum
                 
 

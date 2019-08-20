@@ -131,7 +131,7 @@ class Manager:
         if not initial:
             CellUpdateTask(self, cell).launch()
 
-    def _set_cell_checksum(self, cell, checksum, void, status_reason=None):
+    def _set_cell_checksum(self, cell, checksum, void, status_reason=None, prelim=False):
         # NOTE: Any cell task depending on the old checksum must have been canceled already
         if cell._destroyed:
             return
@@ -148,27 +148,38 @@ class Manager:
         cell._checksum = checksum
         cell._void = void
         cell._status_reason = status_reason
+        cell._prelim = prelim
         if checksum != old_checksum:
             cachemanager.incref_checksum(checksum, cell, authority)            
             if cell._mount is not None:
                 buffer = self.cachemanager.buffer_cache.get_buffer(checksum)
                 self.mountmanager.add_cell_update(cell, checksum, buffer)
 
-    def _set_transformer_checksum(self, transformer, checksum, void, status_reason=None):
+    def _set_transformer_checksum(self,
+        transformer, checksum, void, *,
+        prelim, status_reason=None
+    ):
         # NOTE: Any cell task depending on the old checksum must have been canceled already
         assert checksum is None or isinstance(checksum, bytes), checksum
         if void:
             assert status_reason is not None
+            assert checksum is None
+            assert prelim == False
         assert isinstance(void, bool), void
         cachemanager = self.cachemanager
         old_checksum = transformer._checksum
         if old_checksum is not None and old_checksum != checksum:
             cachemanager.decref_checksum(old_checksum, transformer, False)
+        transformer._prelim_result = prelim
         transformer._checksum = checksum
         transformer._void = void
         transformer._status_reason = status_reason
+        transformer._progress = 0.0
         if checksum != old_checksum:
             cachemanager.incref_checksum(checksum, transformer, False)
+
+    def _set_transformer_progress(self, transformer, progress):
+        transformer._progress = progress
 
     def _set_macro_exception(self, macro, exception):
         if exception is None:
@@ -326,8 +337,16 @@ If origin_task is provided, that task is not cancelled."""
         if (not void) and transformer._void:
             return
         if void:
-            assert reason is not None        
-        self._set_transformer_checksum(transformer, None, void, status_reason=reason)
+            assert reason is not None
+            if transformer._void:
+                curr_reason = transformer._status_reason
+                if curr_reason.value < reason.value:
+                    return
+        self._set_transformer_checksum(
+            transformer, None, void, 
+            status_reason=reason,
+            prelim = False
+        )
         livegraph = self.livegraph
         accessors = livegraph.transformer_to_downstream[transformer]
         for accessor in accessors:            
@@ -340,6 +359,10 @@ If origin_task is provided, that task is not cancelled."""
             return
         if reason is None:
             reason = StatusReasonEnum.UPSTREAM
+        if void and reactor._void:
+            curr_reason = reactor._status_reason
+            if curr_reason.value < reason.value:
+                return
         livegraph = self.livegraph
         reactor._pending = (not void)
         reactor._void = void
@@ -368,6 +391,10 @@ If origin_task is provided, that task is not cancelled."""
             gen_context.destroy()
             macro._gen_context = None
         if void:
+            if macro._void:
+                curr_reason = reactor._status_reason
+                if curr_reason.value < reason.value:
+                    return
             macro._void = True
             macro._status_reason = reason
 

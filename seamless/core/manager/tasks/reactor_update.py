@@ -188,6 +188,7 @@ class ReactorResultTask(Task):
             #- construct (not evaluate!) their expression using the cell checksum 
             #  Constructing a downstream expression increfs the cell checksum
             changed = accessor.build_expression(livegraph, checksum)
+            # TODO: prelim? tricky for a reactor...
             #- launch an accessor update task
             if changed:
                 AccessorUpdateTask(manager, accessor).launch()

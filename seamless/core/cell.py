@@ -34,8 +34,9 @@ Use ``Cell.status()`` to get its status.
     _checksum = None
     _void = True
     _status_reason = StatusReasonEnum.UNDEFINED
-    _prelim_val = None
-    _prelim_checksum = None
+    _prelim = False
+    _initial_val = None
+    _initial_checksum = None
     _unmounted = False
 
     _mount = None
@@ -74,17 +75,17 @@ Use ``Cell.status()`` to get its status.
         manager = self._get_manager()
         if not has_ctx:
             manager.register_cell(self)
-        if self._prelim_val is not None:
-            value, from_buffer = self._prelim_val
+        if self._initial_val is not None:
+            value, from_buffer = self._initial_val
             if from_buffer:
                 self.set_buffer(value)
             else:
                 self.set(value)
-            self._prelim_val = None
-        elif self._prelim_checksum is not None:
-            checksum, initial, is_buffercell = self._prelim_checksum
+            self._initial_val = None
+        elif self._initial_checksum is not None:
+            checksum, initial, is_buffercell = self._initial_checksum
             self._set_checksum(checksum.hex(), initial, is_buffercell)
-            self._prelim_checksum = None
+            self._initial_checksum = None
 
     def __hash__(self):
         return self._counter
@@ -176,7 +177,7 @@ Use ``Cell.status()`` to get its status.
         if isinstance(manager, UnboundManager):
             if self._lib_path is not None:
                 from .library import lib_get_value
-                return lib_get_value(self._prelim_checksum, self)                
+                return lib_get_value(self._initial_checksum, self)                
             else:
                 raise Exception("Cannot ask the cell value of a context that is being constructed by a macro")
         return manager.get_cell_value(self, copy=copy)
@@ -196,8 +197,8 @@ Use ``Cell.status()`` to get its status.
     def set(self, value):
         """Update cell data from the terminal."""
         if self._context is None:
-            self._prelim_checksum = None
-            self._prelim_val = value, False
+            self._initial_checksum = None
+            self._initial_val = value, False
         else:
             manager = self._get_manager()
             manager.set_cell(
@@ -210,8 +211,8 @@ Use ``Cell.status()`` to get its status.
         If the checksum is known, it can be provided as well."""
         assert buffer is None or isinstance(buffer, bytes)
         if self._context is None:
-            self._prelim_checksum = None
-            self._prelim_val = buffer, True
+            self._initial_checksum = None
+            self._initial_val = buffer, True
         else:
             manager = self._get_manager()
             manager.set_cell_buffer(
@@ -228,10 +229,10 @@ Use ``Cell.status()`` to get its status.
         However, if "is_buffercell" is True, then the cell can be a .buffer attribute of a StructuredCell
         """        
         if self._context is None:
-            self._prelim_val = None
+            self._initial_val = None
             if checksum is not None:
                 checksum = bytes.fromhex(checksum)
-                self._prelim_checksum = checksum, initial, is_buffercell
+                self._initial_checksum = checksum, initial, is_buffercell
         else:
             manager = self._get_manager()
             if checksum is not None:

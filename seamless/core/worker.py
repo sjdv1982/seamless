@@ -227,7 +227,7 @@ class EditPinBase(PinBase):
 
     def cell(self, celltype=None):
         """Returns or creates a cell connected to the editpin"""
-        return _cell_from_pin(self, celltype)
+        return _cell_from_pin(self, celltype)[0]
 
     def __str__(self):
         ret = "Seamless editpin: " + self._format_path()

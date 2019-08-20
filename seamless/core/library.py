@@ -195,7 +195,7 @@ def _libcell(path, mandated_celltype, *args, **kwargs):
     assert mandated_celltype is None or mandated_celltype == celltype, (mandated_celltype, celltype)
     c = make_cell(celltype, *args, **kwargs)
     if checksum is not None:
-        c._prelim_checksum = checksum, True, is_buffercell
+        c._initial_checksum = checksum, True, is_buffercell
     if (libname, key) not in _cells:
         _cells[libname, key] = {}
     _cells[libname, key][c] = curr_macro()

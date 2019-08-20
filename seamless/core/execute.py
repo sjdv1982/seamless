@@ -59,10 +59,14 @@ else:
     from queue import Queue
     Executor = KillableThread
 
-def return_preliminary(result_queue, value):
+def return_preliminary(result_queue, celltype, value):
     #print("return_preliminary", value)
-    result_queue.put((-1, value))
+    prelim_buffer = serialize(value, celltype)
+    result_queue.put((2, prelim_buffer))
 
+def set_progress(result_queue, value):
+    assert value >= 0 and value <= 100
+    result_queue.put((3, value))
 
 def _execute(name, code, 
       injector, module_workspace,
@@ -70,7 +74,10 @@ def _execute(name, code,
       inputs, output_name, celltype, result_queue
     ):
         namespace["return_preliminary"] = functools.partial(
-            return_preliminary, result_queue
+            return_preliminary, result_queue, celltype
+        )
+        namespace["set_progress"] = functools.partial(
+            set_progress, result_queue
         )
         try:
             namespace.pop(output_name, None)

@@ -8,6 +8,7 @@ class ReadAccessor(Accessor):
     _void = True
     _status_reason = None
     _new_macropath = False # if source or target is a newly bound macropath
+    _prelim = False # if accessor represents a preliminary result
     def __init__(self, manager, path, celltype):
         self.manager = weakref.ref(manager)
         self.path = path
@@ -17,6 +18,10 @@ class ReadAccessor(Accessor):
         self.write_accessor = None
         self.expression = None
         self._status_reason = StatusReasonEnum.UNDEFINED
+    
+    @property
+    def preliminary(self):
+        return self._prelim
     
     def build_expression(self, livegraph, checksum):
         """Returns if expression has changed"""

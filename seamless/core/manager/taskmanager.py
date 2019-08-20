@@ -246,8 +246,9 @@ class TaskManager:
             return tasks, futures
 
         tasks, futures = select_pending_tasks()
-        def print_report():
+        def print_report(verbose=True):
             running = set()
+            #print("TASKS", tasks)
             for task in tasks:
                 for dep in task.dependencies:
                     if isinstance(dep, SeamlessBase):
@@ -255,15 +256,17 @@ class TaskManager:
                         #print("TASK",task)
             if not len(running):
                 if not len(tasks):
-                    return
-                print("Waiting for background tasks")
-                return
+                    return [], False
+                if verbose:
+                    print("Waiting for background tasks")
+                return [], True
             result = sorted(running, key=lambda dep: dep.path)
-            print("Waiting for:",end=" ")            
-            for obj in result:
-                print(obj,end=" ")
-            print()
-            return result
+            if verbose:
+                print("Waiting for:",end=" ")            
+                for obj in result:
+                    print(obj,end=" ")
+                print()
+            return result, True
 
         while len(tasks):
             if timeout is not None:
@@ -288,7 +291,7 @@ class TaskManager:
                 remaining = timeout_time - time.time()
                 if remaining < 0:
                     break
-        return print_report()
+        return print_report(verbose=False)
     
     def cancel_task(self, task):
         if task.future is None or task.future.cancelled():

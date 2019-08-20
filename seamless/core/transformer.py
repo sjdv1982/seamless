@@ -13,6 +13,8 @@ from .status import StatusReasonEnum
 
 class Transformer(Worker):
     _checksum = None
+    _prelim_result = False
+    _progress = 0.0
     debug = False
 
     def __init__(self, transformer_params, *,  stream_params=None):
@@ -77,6 +79,19 @@ class Transformer(Worker):
     @property
     def void(self):
         return self._void
+
+    @property
+    def preliminary(self):
+        if self._void:
+            return False
+        if self._prelim_result:
+            return True
+        manager = self._get_manager()
+        livegraph = manager.livegraph
+        for accessor in livegraph.transformer_to_upstream[self].values():
+            if accessor.preliminary:
+                return True
+        return False
 
     def clear_exception(self):
         manager = self._get_manager()

@@ -36,6 +36,9 @@ class CellUpdateTask(Task):
             #- construct (not evaluate!) their expression using the cell checksum 
             #  Constructing a downstream expression increfs the cell checksum
             changed = accessor.build_expression(livegraph, checksum)
+            if cell._prelim != accessor._prelim:
+                accessor._prelim = cell._prelim
+                changed = True
             #- launch an accessor update task
             if changed or accessor._new_macropath:
                 AccessorUpdateTask(manager, accessor).launch()

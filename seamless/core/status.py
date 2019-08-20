@@ -33,25 +33,54 @@ StatusReasonEnum = MyEnum("StatusReasonEnum",(
     "EXECUTING" # only for workers, only for pending
 ))
 
+class WorkerStatus:
+    def __init__(self,
+        status,
+        reason=None,
+        pins=None,
+        preliminary=False,
+        progress=0.0
+    ):
+        self.status = status
+        self.reason = reason
+        self.pins = pins
+        self.preliminary = preliminary
+        self.progress = progress
+    
+    def __getitem__(self, index):
+        if index == 0:
+            return self.status
+        if index == 1:
+            return self.reason
+        raise IndexError(index)
+
+    def __str__(self):
+        return str(self.__dict__)
+
+    def __repr__(self):
+        return repr(self.__dict__)
+
 def status_cell(cell):
     if cell._checksum is not None:
-        return StatusEnum.OK, None
+        return StatusEnum.OK, None, cell._prelim
     if not cell._void:
-        return StatusEnum.PENDING, None
-    return StatusEnum.VOID, cell._status_reason
+        return StatusEnum.PENDING, None, None
+    return StatusEnum.VOID, cell._status_reason, None
 
 def status_accessor(accessor):
     if accessor is None:
-        return StatusEnum.VOID, StatusReasonEnum.UNCONNECTED
+        return StatusEnum.VOID, StatusReasonEnum.UNCONNECTED, None
     if accessor._checksum is not None:
-        return StatusEnum.OK, None
+        return StatusEnum.OK, None, accessor._prelim
     if not accessor._void:
-        return StatusEnum.PENDING, None
-    return StatusEnum.VOID, accessor._status_reason
+        return StatusEnum.PENDING, None, None
+    return StatusEnum.VOID, accessor._status_reason, None
     
 def status_transformer(transformer):
-    if transformer._checksum is not None:
-        return StatusEnum.OK, None, None
+    prelim = transformer.preliminary
+    checksum = transformer._checksum
+    if checksum is not None and not prelim:
+        return WorkerStatus(StatusEnum.OK)
     manager = transformer._get_manager()
     tcache = manager.cachemanager.transformation_cache
     livegraph = manager.livegraph
@@ -63,6 +92,10 @@ def status_transformer(transformer):
         if tf_checksum is not None:
             if tf_checksum in tcache.transformation_jobs:
                 reason = StatusReasonEnum.EXECUTING
+        if reason == StatusReasonEnum.UPSTREAM:
+            if checksum is not None:
+                assert prelim
+                return WorkerStatus(StatusEnum.OK, preliminary=True)
     else:
         status = StatusEnum.VOID
         reason = transformer._status_reason
@@ -84,16 +117,20 @@ def status_transformer(transformer):
                 if astatus[0] == StatusEnum.OK:
                     continue
                 pins[pinname] = astatus
-    return status, reason, pins
+    return WorkerStatus(
+        status, reason, pins,
+        preliminary = transformer.preliminary,
+        progress = transformer._progress
+    )
 
 def status_reactor(reactor):
     manager = reactor._get_manager()
     cachemanager = manager.cachemanager
     livegraph = manager.livegraph
     if reactor._pending:
-        return StatusEnum.PENDING, None, None
+        return WorkerStatus(StatusEnum.PENDING)
     elif not reactor._void:
-        return StatusEnum.OK, None, None
+        return WorkerStatus(StatusEnum.OK)
     rtreactor = livegraph.rtreactors[reactor]
 
     status = StatusEnum.VOID
@@ -119,15 +156,19 @@ def status_reactor(reactor):
                 continue
             pins[pinname] = astatus
 
-    return status, reason, pins
+    return WorkerStatus(
+        status, reason, pins
+    )
 
 def status_macro(macro):
     if macro._gen_context is not None:
         assert not macro._void
         gen_status = macro._gen_context._get_status()
         if format_context_status(gen_status) != "OK":
-            return StatusEnum.SUB, None, gen_status
-        return StatusEnum.OK, None, None
+            return WorkerStatus(
+                StatusEnum.SUB, None, gen_status
+            )
+        return WorkerStatus(StatusEnum.OK)
     manager = macro._get_manager()
     livegraph = manager.livegraph
     pins = None
@@ -150,12 +191,15 @@ def status_macro(macro):
                 if astatus[0] == StatusEnum.OK:
                     continue
                 pins[pinname] = astatus
-    return status, reason, pins
+    return WorkerStatus(status, reason, pins)
 
 def format_status(stat):
-    status, reason = stat
+    status, reason, prelim = stat
     if status == StatusEnum.OK:
-        return "OK"
+        if prelim:
+            return "preliminary"
+        else:
+            return "OK"
     elif status == StatusEnum.PENDING:
         return "pending"
     else:
@@ -165,12 +209,20 @@ def format_status(stat):
             return reason.name.lower()
 
 def format_worker_status(stat, as_child=False):
-    status, reason, pins = stat
+    status, reason, pins = (
+        stat.status, stat.reason, stat.pins
+    )
     if status == StatusEnum.OK:
+        if stat.preliminary:
+            return "preliminary"
         return "OK"
     elif status == StatusEnum.PENDING:
         if reason == StatusReasonEnum.EXECUTING:
-            return "executing"
+            progress = stat.progress
+            if progress > 0:
+                return "executing, %.1f %%" % progress
+            else:
+                return "executing"
         else:
             return "pending"
     elif status == StatusEnum.SUB:
@@ -207,7 +259,11 @@ def format_context_status(stat):
                 if childstat[1] == StatusReasonEnum.UPSTREAM:
                     continue
             if childstat[0] == StatusEnum.PENDING:
-                continue  
+                if isinstance(child, Worker):
+                    if childstat.reason != StatusReasonEnum.EXECUTING:
+                        continue  
+                else:
+                    continue
         if isinstance(child, Worker):
             childresult = format_worker_status(childstat, as_child=True)
         elif isinstance(child, Cell):

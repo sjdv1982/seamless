@@ -343,7 +343,7 @@ class LiveGraph:
             accessor = upstream[pin.name]
             if accessor is None:
                 return None
-            return self.accessor_to_upstream[accessor]
+            return self.accessor_to_upstream[accessor], accessor.subpath
         elif isinstance(pin, OutputPin):
             if isinstance(worker, Transformer):
                 downstreams = self.transformer_to_downstream[worker]
@@ -353,9 +353,10 @@ class LiveGraph:
                 return None
             result = []
             for accessor in downstreams:
-                target = accessor.write_accessor.target
+                target = accessor.write_accessor.target()
+                subpath = accessor.write_accessor.path
                 if isinstance(target, (Cell, Path)):                
-                    result.append(cell)
+                    result.append((target, subpath))
         elif isinstance(pin, EditPin):
             raise TypeError(EditPin)
         else:

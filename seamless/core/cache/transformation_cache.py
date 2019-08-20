@@ -63,7 +63,7 @@ class TransformationCache:
     def __init__(self):
         self.transformations = {} # tf-checksum-to-transformation
         self.debug = set() # set of debug tf-checksums
-        self.transformation_results = {} # tf-checksum-to-result-checksum
+        self.transformation_results = {} # tf-checksum-to-(result-checksum, prelim)
         self.transformation_exceptions = {} # tf-checksum-to-result-checksum
         self.transformation_jobs = {} # tf-checksum-to-job
         self.rev_transformation_jobs = {} # job-to-tf-checksum
@@ -146,10 +146,15 @@ class TransformationCache:
             if old_tf_checksum is not None:
                 old_transformation = self.transformations[old_tf_checksum]
                 self.decref_transformation(old_transformation, transformer)
-        result_checksum = self._get_transformation_result(tf_checksum)
+        result_checksum, prelim = self._get_transformation_result(tf_checksum)
         if result_checksum is not None:
             manager = transformer._get_manager()
-            manager._set_transformer_checksum(transformer, result_checksum, False)
+            manager._set_transformer_checksum(
+                transformer, 
+                result_checksum, 
+                False,
+                prelim=prelim
+            )
             TransformerResultUpdateTask(manager, transformer).launch()
         else:
             job = self.run_job(transformation)
@@ -223,7 +228,11 @@ class TransformationCache:
             buffer_cache, transformation, semantic_cache,
             debug
         )
-        job.execute(codename)
+        job.execute(
+            codename, 
+            self.prelim_callback, 
+            self.progress_callback
+        )
         future = job.future
         cb = functools.partial(self.job_done, job)
         future.add_done_callback(cb)
@@ -233,10 +242,21 @@ class TransformationCache:
         self.rev_transformation_jobs[id(job)] = tf_checksum
         return job
 
+    def progress_callback(self, job, progress):
+        tf_checksum = self.rev_transformation_jobs[id(job)]
+        transformers = self.transformations_to_transformers[tf_checksum]
+        for transformer in transformers:
+            manager = transformer._get_manager()
+            manager._set_transformer_progress(
+                transformer,
+                progress
+            )
+    
+    def prelim_callback(self, job, prelim_checksum):
+        tf_checksum = self.rev_transformation_jobs[id(job)]
+        self.set_transformation_result(tf_checksum, prelim_checksum, True)
+
     def job_done(self, job, future):
-        from ..manager.tasks.transformer_update import (
-            TransformerResultUpdateTask
-        )
         if self._destroyed:
             return
         assert future.done()
@@ -282,9 +302,16 @@ class TransformationCache:
                     reason=status_reason
                 )
             return
+        self.set_transformation_result(tf_checksum, result_checksum, False)
 
-        self.transformation_results[tf_checksum] = result_checksum
-        redis_sinks.set_transformation_result(tf_checksum, result_checksum)
+    def set_transformation_result(self, tf_checksum, result_checksum, prelim):
+        from ..manager.tasks.transformer_update import (
+            TransformerResultUpdateTask
+        )
+        self.transformation_results[tf_checksum] = result_checksum, prelim
+        if not prelim:
+            redis_sinks.set_transformation_result(tf_checksum, result_checksum)
+        transformers = self.transformations_to_transformers[tf_checksum]
         for transformer in transformers:
             manager = transformer._get_manager()
             if result_checksum is not None:
@@ -292,6 +319,7 @@ class TransformationCache:
                     transformer, 
                     result_checksum, 
                     False,
+                    prelim=prelim
                 )            
                 TransformerResultUpdateTask(manager, transformer).launch()
             else:
@@ -302,10 +330,13 @@ class TransformationCache:
                 )
 
     def _get_transformation_result(self, tf_checksum): 
-        result_checksum = self.transformation_results.get(tf_checksum, None)
+        result_checksum, prelim = self.transformation_results.get(
+            tf_checksum, (None, None)
+        )
         if result_checksum is None:
             result_checksum = redis_caches.get_transform_result(tf_checksum)
-        return result_checksum
+            prelim = False
+        return result_checksum, prelim
 
     def clear_exception(self, transformer):
         tf_checksum = self.transformer_to_transformations.get(transformer)

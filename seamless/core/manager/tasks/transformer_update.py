@@ -14,7 +14,7 @@ class TransformerUpdateTask(Task):
         await taskmanager.await_upon_connection_tasks(self.taskid)
         upstreams = livegraph.transformer_to_upstream[transformer]
         inputpins = {}
-        downstreams = livegraph.transformer_to_downstream[transformer] 
+        downstreams = livegraph.transformer_to_downstream[transformer]
         if not len(downstreams):
             transformer._status_reason = StatusReasonEnum.UNCONNECTED
             return
@@ -37,7 +37,9 @@ class TransformerUpdateTask(Task):
 
         for pinname, accessor in upstreams.items():
             if accessor._checksum is None: #pending
-                manager._set_transformer_checksum(transformer, None, False)
+                manager._set_transformer_checksum(
+                    transformer, None, False, prelim=False
+                )
                 return
 
         for pinname, accessor in upstreams.items():
@@ -47,7 +49,9 @@ class TransformerUpdateTask(Task):
             if not transformer._void:
                 set_tf = False
         if set_tf:
-            manager._set_transformer_checksum(transformer, None, False)
+            manager._set_transformer_checksum(
+                transformer, None, False, prelim=False
+            )
         else:
             transformer._void = False
 
@@ -96,10 +100,14 @@ class TransformerResultUpdateTask(Task):
         livegraph = manager.livegraph
         accessors = livegraph.transformer_to_downstream[transformer]
         checksum = transformer._checksum
+        preliminary = transformer.preliminary
         for accessor in accessors:
             #- construct (not evaluate!) their expression using the cell checksum 
-            #  Constructing a downstream expression increfs the cell checksum
+            #  Constructing a downstream expression increfs the cell checksum            
             changed = accessor.build_expression(livegraph, checksum)
+            if accessor._prelim != preliminary:
+                accessor._prelim = preliminary
+                changed = True
             #- launch an accessor update task
             if changed:
                 AccessorUpdateTask(manager, accessor).launch()

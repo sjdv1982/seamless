@@ -85,9 +85,9 @@ class UnboundManager:
             for com, args in self.commands:
                 if com != "connect pin":
                     continue
-                pin2, cell, cell_subpath = args
+                pin2, cell = args
                 if pin2 is pin:
-                    cells.append((cell, cell_subpath))
+                    cells.append((cell, None))
         else:
             raise TypeError(pin)
         if isinstance(pin, InputPin):
@@ -312,7 +312,7 @@ class UnboundContext(SeamlessBase):
                 manager.connect(pin, None, cell, None)
             elif com == "set cell checksum":
                 cell, checksum, initial, is_buffercell = args
-                cell._prelim_checksum = None
+                cell._initial_checksum = None
                 manager.set_cell_checksum(
                     cell, checksum, initial, is_buffercell
                 )
