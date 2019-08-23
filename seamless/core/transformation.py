@@ -206,7 +206,7 @@ class TransformationJob:
                     done = True
                 if done:
                     break
-                await asyncio.sleep(0)
+                await asyncio.sleep(0.001)
             if not self.executor.is_alive():
                 self.executor = None
         except asyncio.CancelledError:

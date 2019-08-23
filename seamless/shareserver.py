@@ -1,8 +1,6 @@
 """
 Seamless shareserver REST protocol
 
-Extremely simple.
-
 Short version:
 ctx.a.share() =>
 - http://localhost:5813/ctx/a gives the value of the cell (HTTP GET)
@@ -19,17 +17,279 @@ It opens an update websocket server, and a REST server.
 Shares are of the form http://<address>:<port>/<namespace>/<path>
 By default, namespace is "ctx", address is localhost, port is 5813
 
+All GET requests have a field URL parameter (default: "buffer"), which can have
+one of the following values.
+1. field=all:
+returns a JSON with 3 fields:
+- buffer (i.e. what would be in a file), UTF-encoded, with final newline.
+- checksum, as hex
+- marker.
+2. field=buffer:
+Just returns the buffer
+3. field=checksum:
+Just returns the checksum
+
+PUT messages are in JSON. They must contain a field "buffer"
+(although the final newline is optional) OR a field "checksum"
+They may contain a marker. If there is one, the PUT is only
+ accepted if the current marker is equal (or lower).
+If there is no marker, a new marker will be created, which is
+ the existing marker plus one. 
+If the PUT was successful, the marker is returned, else None.
+
+A share may be read-only, in which case it never accepts PUT requests.
+
 Updates are on ws://<address>:<port>/<namespace>
 By default, port is 5138.
-The server only sends, never receives. All messages are JSON.
+The server only sends, never receives. 
 Upon connection, a client receives a handshake message: ["Seamless share update server", "0.01"]
-Then, it receives a variable list
+Then, it receives a list of share keys (normally, each share key is bound to a cell).
+Then, it receives all checksums and markers. 
 
 """
 import os
-import json
 import asyncio
 import weakref
+import traceback
+import json
+
+from asyncio import CancelledError
+from websockets.exceptions import ConnectionClosed
+
+DEBUG = True
+
+def tailsplit(tail):
+    pos = tail.index("/")
+    return tail[:pos], tail[pos+1:]
+
+class Share:
+    _destroyed = False
+    def __init__(self, namespace, key, readonly):
+        assert isinstance(namespace, ShareNamespace)
+        self.namespace = weakref.ref(namespace)
+        self.key = key
+        self.readonly = readonly
+        self._checksum = None
+        self._marker = 0
+        self._calc_checksum_task = None
+        self._send_checksum_task = None       
+        self.requests = []
+        self.bound = None # bound ShareItem
+
+    def bind(self, share_item):
+        assert self.bound is None
+        self.bound = share_item
+    
+    def unbind(self):
+        self.bound = None
+
+    async def read(self, marker=None):
+        if marker is not None and marker <= self._marker:
+            return
+        while 1:
+            if self._calc_checksum_task is None:
+                break
+            await self._calc_checksum_task
+        return self._checksum, self._marker
+    
+    def set_checksum(self, checksum, marker=None):
+        if marker is not None and marker <= self._marker:
+            return None
+        if checksum == self._checksum:
+            return
+        if marker is None:
+            marker = self._marker + 1
+        self._cancel()        
+        if self._checksum is not None:
+            buffer_cache.decref(self._checksum)
+        self._checksum = checksum
+        if self.bound is not None:
+            self.bound.update(checksum)
+        if self._checksum is not None:
+            buffer_cache.incref(self._checksum)
+        self._marker = marker
+        send_checksum_task = self._send_checksum()
+        send_checksum_task = asyncio.ensure_future(send_checksum_task)
+        self._send_checksum_task = send_checksum_task
+        
+        return marker
+
+    async def set_buffer(self, buffer, marker=None):
+        from .core.protocol.calculate_checksum import calculate_checksum
+        if marker is not None and marker <= self._marker:
+            return None
+        if marker is None:
+            marker = self._marker + 1
+        self._cancel()
+        if buffer is None:
+            self._checksum = None
+            self._marker = marker
+            return marker
+        
+        if isinstance(buffer, str):
+            buffer = buffer.encode()
+        if not isinstance(buffer, bytes):
+            raise TypeError(type(buffer))
+        buffer = buffer.rstrip(b'\n') + b'\n'
+        task = self._calc_checksum(buffer)
+        task = asyncio.ensure_future(task)
+        self._calc_checksum_task = task
+        await task
+
+        checksum = task.result()
+        buffer_cache.cache_buffer(checksum, buffer)
+        return self.set_checksum(checksum, marker)
+
+    async def _calc_checksum(self, buffer):
+        init = self._calc_checksum_task
+        try:
+            return await calculate_checksum(buffer)
+        finally:
+            if self._calc_checksum_task is init:
+                self._calc_checksum_task = None
+
+    async def _send_checksum(self):
+        init = self._send_checksum_task 
+        try:        
+            await self.namespace().send_checksum(
+                self.key, self._checksum, self._marker
+            )
+        finally:
+            if self._send_checksum is init:
+                self._send_checksum_task = None
+
+    def _cancel(self):
+        if self._calc_checksum_task is not None:
+            self._calc_checksum_task.cancel()
+        if self._send_checksum_task is not None:
+            self._send_checksum_task.cancel()
+
+    def destroy(self):
+        if self._destroyed:
+            return
+        self._destroyed = True
+        if self._checksum is not None:
+            buffer_cache.decref(self._checksum)
+        self._cancel()
+        for rq in self.requests:
+            rq.cancel()
+
+        
+class ShareNamespace:
+    def __init__(self, name, ctx_root, share_equilibrate):
+        from .core.context import Context
+        assert isinstance(ctx_root, Context), type(ctx_root)
+        assert ctx_root._toplevel
+        self.name = name
+        self._ctx_root = weakref.ref(ctx_root)
+        self._share_equilibrate = share_equilibrate
+
+        self.shares = dict()
+        self.update_connections = []
+        self._send_sharelist_task = None
+        
+
+    def add_share(self, key, readonly):
+        shareserver.start()
+        changed = True
+        if key in self.shares:
+            self.shares[key].destroy()
+            changed = False
+        newshare = Share(self, key, readonly)
+        self.shares[key] = newshare
+        if changed:
+            self.refresh_sharelist()
+        return newshare
+    
+    def remove_share(self, key):
+        share = self.shares.pop(key)
+        share.destroy()
+        self.refresh_sharelist()
+
+    @property
+    def sharelist(self):
+        sharelist = list(self.shares.keys())
+        if self._share_equilibrate:
+            sharelist.append("self")
+        return sorted(sharelist)
+
+    def refresh_sharelist(self):
+        if self._send_sharelist_task is not None:
+            self._send_sharelist_task.cancel()            
+        task = self.send_sharelist()
+        task = asyncio.ensure_future(task)
+        self._send_sharelist_task = task
+
+    async def send_sharelist(self):
+        init = self._send_sharelist_task
+        try:
+            sharelist = sorted(list(self.shares.keys()))
+            coros = []
+            for connection in self.update_connections:
+                coro = shareserver._send_sharelist(self, connection)
+                coros.append(coro)
+            await asyncio.gather(*coros)
+        finally:
+            self._send_sharelist_task = None
+
+    async def _get(self, key, field):
+        assert field in ("checksum", "buffer", "all")
+        share = self.shares[key]
+        checksum, marker = await share.read()
+        if checksum is not None:
+            checksum2 = checksum.hex()
+        else:
+            checksum2 = None
+        if field == "checksum":
+            return checksum2
+        buffer = await get_buffer_async(checksum, buffer_cache)
+        if field == "buffer":
+            return buffer.decode()
+        return {
+            "checksum": checksum2,
+            "buffer": buffer,
+            "marker": marker,
+        }
+
+    async def get(self, key, field):
+        coro = self._get(key, field)
+        share = self.shares[key]
+        share.requests.append(coro)
+        return await coro
+
+    async def _put(self, share, value, mode, marker):
+        assert mode in ("checksum", "buffer")
+        if mode == "checksum":
+            checksum = value
+            if checksum is not None:
+                checksum = bytes.fromhex(checksum)
+            return await share.set_checksum(checksum, marker)
+        else:
+            buffer = value
+            return await share.set_buffer(buffer, marker)
+
+    async def put(self, key, value, mode, marker):        
+        share = self.shares[key]
+        assert not share.readonly
+        coro = self._put(share, value, mode, marker)
+        share.requests.append(coro)
+        return await coro
+
+    async def send_checksum(self, key, checksum, marker):
+        coros = []
+        for connection in self.update_connections:
+            coro = shareserver._send_checksum(self, connection, key, checksum, marker)
+            coros.append(coro)
+        await asyncio.gather(*coros)
+
+    def equilibrate(self, timeout):
+        assert self._share_equilibrate
+        ctx = self._ctx_root()
+        if ctx is None or ctx._destroyed:
+            return
+        waiting, background = ctx.equilibrate(timeout)
+        result = sorted(list(waiting))
+        return result
 
 class ShareServer(object):
     DEFAULT_ADDRESS = '127.0.0.1'
@@ -46,46 +306,78 @@ class ShareServer(object):
 
     def __init__(self):
         self.started = False
-        self.namespaces = {} #TODO: some cleanup, can be memory leak
-        self.connections = {} #TODO: some cleanup, can be (minor) memory leak
+        self.namespaces = {}
+        self.root_to_ns = weakref.WeakKeyDictionary()
 
-    def new_namespace(self, namespace=None):
-        if namespace is None:
-            namespace = self.DEFAULT_NAMESPACE
-        if namespace in self.namespaces:
+    def _new_namespace(
+        self, ctx_root, 
+        share_equilibrate, 
+        name=None
+    ):
+        if name is None:
+            name = self.DEFAULT_NAMESPACE
+        if name in self.namespaces:
             count = 1
+            name0 = name
             while 1:
-                ns = namespace + str(count)
-                if ns not in self.namespaces:
+                name = name0 + str(count)
+                if name not in self.namespaces:
                     break
                 count += 1
-            namespace = ns
-        self.namespaces[namespace] = {}
-        self.connections[namespace] = []
-        return namespace
-
-    def delete_namespace(self, namespace):
-        self.namespaces.pop(namespace, None)
-        self.connections.pop(namespace, None)
+        self.namespaces[name] = ShareNamespace(
+            name, ctx_root, share_equilibrate
+        )
+        self.root_to_ns[ctx_root] = name
+        return name
+    
+    def destroy_root(self, root):
+        name = self.root_to_ns.get(root)
+        if name is None:
+            return
+        namespace = self.namespaces.pop(name)
+        # policy for now: 
+        # - close existing update connections
+        # - don't touch existing requests
+        for con in namespace.update_connections:
+            con.close()
 
     async def _send(self, websocket, message):
         message = json.dumps(message)
+        await websocket.send(message)
+
+    async def _send_sharelist(self, namespace, websocket):
+        sharelist = namespace.sharelist
         try:
-            await websocket.send(message)
-            return True
-        except websockets.exceptions.ConnectionClosed:
-            return False
+            return await self._send(websocket, ("sharelist", sharelist))
+        except CancelledError:
+            raise
+        except ConnectionClosed:
+            try:
+                namespace.update_connections.remove(websocket)
+            except ValueError:
+                pass
+        except Exception as exc:                        
+            if DEBUG:
+                print("DEBUG shareserver._send_sharelist")
+                traceback.print_exc()
 
-    async def _send_varlist(self, websocket, varlist):
-        varlist = [v for v in varlist if v != "self"]
-        return await self._send(websocket, ("varlist", varlist))
-
-    async def _send_checksum(self, websocket, key, checksum, marker, prior=None):
+    async def _send_checksum(self, namespace, websocket, key, checksum, marker, prior=None):
         if prior is not None:
             await prior
         if checksum is None:
             return
-        return await self._send(websocket, ("update", (key, checksum, marker)))
+        checksum = checksum.hex()
+        try:
+            return await self._send(websocket, ("update", (key, checksum, marker)))
+        except ConnectionClosed:
+            try:
+                namespace.update_connections.remove(websocket)
+            except ValueError:
+                pass
+        except Exception as exc:                        
+            if DEBUG:
+                print("DEBUG shareserver._send_checksum")
+                traceback.print_exc()
 
     async def _serve_update(self, websocket, path):
         if path:
@@ -96,23 +388,23 @@ class ShareServer(object):
          or longer than a namespace (=> get part of a namespace)
         Combined with proxying, this can be used to effectively hide part of the shares from access through the proxy
         """
-        d = self.namespaces[path]
-        if not await self._send(websocket, ("Seamless share update server", "0.01")):
-            return
-        if not await self._send_varlist(websocket, list(d.keys())):
-            return
-        for k,v in d.items():
-            if k == "self":
-                continue
-            _, checksum, marker, _ = v
-            if not await self._send_checksum(websocket, k, checksum, marker):
-                break
-        self.connections[path].append(websocket)
-        async for message in websocket: #keep connection open forever
+        namespace = self.namespaces[path]
+        try:
+            await self._send(websocket, ("Seamless share update server", "0.01"))
+            namespace.update_connections.append(websocket)
+            await self._send_sharelist(namespace, websocket)
+        except ConnectionClosed:
+            return        
+        try:
+            async for message in websocket: #keep connection open forever, ignore all messages
+                pass
+        except ConnectionClosed:
             pass
-        if not path in self.connections:
-            return
-        self.connections[path].remove(websocket)
+        finally:
+            try:
+                namespace.update_connections.remove(websocket)
+            except ValueError:
+                pass
 
     async def serve_update(self):
         if self._update_server_started:
@@ -133,100 +425,202 @@ class ShareServer(object):
         self._update_server_started = True
 
     async def _handle_get(self, request):
-        tail = request.match_info.get('tail')
-        if tail == "favicon.ico":
+        try:
+            tail = request.match_info.get('tail')        
+            if tail == "favicon.ico":
+                return web.Response(
+                    status=404
+                )
+            ns, key = tailsplit(tail)
+        except:
+            if DEBUG:
+                traceback.print_exc()
             return web.Response(
-                status=404
+                status=404,
+                text="Invalid request",
+            )
+        
+        try:
+            namespace = self.namespaces[ns]
+            share = namespace.shares[key]
+        except KeyError:
+            if DEBUG:
+                traceback.print_exc()
+            return web.Response(
+                status=404,
+                body=json.dumps({'not found': 404}),
+                content_type='application/json'
             )
 
-        namespace, key = tail.split("/")
+        field = request.rel_url.query.get("field", "buffer")
+
+        if field not in ("buffer", "checksum", "all"):
+            err = 'if specified, field must be "buffer", "checksum" or "all"'
+            if DEBUG:
+                print("shareserver _handle.get", err, ns, key, field)
+            return web.Response(
+                status=404,
+                text=err,
+            )
+
         try:
-            ns = self.namespaces[namespace]
-            cell, checksum, marker, content_type = ns[key]
-            cell = cell()
-            if cell is None:
-                raise KeyError
-            celltype = cell._celltype
-            # TODO (as well): allow paths into the data, if enabled
-            value = cell.value
-            if celltype == "plain":
-                body = json.dumps(value)
-            elif celltype in ("text", "python", "cson", "ipython"):
-                body = value
+            result = await namespace.get(key, field)
+            if field != "checksum":
+                body = json.dumps(result, indent=2, sort_keys=True)
+                content_type = 'application/json'
             else:
-                raise NotImplementedError(celltype) ### cache branch
+                body = result
+                content_type = 'text/plain'
             return web.Response(
                 status=200,
                 body=body,
                 content_type=content_type,
             )            
-        except KeyError:
+        except CacheMissError:
+            if DEBUG:
+                checksum = share._checksum
+                if checksum is not None:
+                    checksum = checksum.hex()  
+                print("shareserver GET request, cache miss:", checksum)
+            err = "Cache miss"
             return web.Response(
                 status=404,
-                body=json.dumps({'not found': 404}),
-                content_type='application/json'
+                text=err,
             )
+        except CancelledError:
+            if DEBUG:
+                print("Share was destroyed", ns, key)
+            return web.Response(
+                status=404,
+                text="Share was destroyed"
+            )
+        except:
+            if DEBUG:
+                traceback.print_exc()
+            return web.Response(
+                status=404,
+                text="Unknown error"
+            )
+
 
     async def _handle_put(self, request):
-        text = await request.text()
-        data = json.loads(text)
-        value = data["value"]
-        rq_marker = data.get("marker")
-        tail = request.match_info.get('tail')
-        namespace, key = tail.split("/")
         try:
-            ns = self.namespaces[namespace]
-            cell, checksum, marker, _ = ns[key]
-            cell = cell()
-            if cell is None:
-                raise KeyError
-            if rq_marker is None or rq_marker >= marker:
-                cell.set(value)
-                up = self._send_update(namespace, key)
-                asyncio.ensure_future(up)
-                if rq_marker is None:
-                    rq_marker = marker
-                newmarker = rq_marker + 1
-            else:
-                newmarker = marker
+            tail = request.match_info.get('tail')        
+            ns, key = tailsplit(tail)        
+            text = await request.text()
+            data = json.loads(text)
+            assert isinstance(data, dict)
+        except:
+            if DEBUG:
+                traceback.print_exc()
             return web.Response(
-                status=200,
-                text=str(newmarker),
+                status=404,
+                text="Invalid request",
             )
+
+        if "buffer" in data:
+            if "checksum" in data:
+                if DEBUG:
+                    print("shareserver PUT: contains buffer AND checksum")
+                return web.Response(
+                    status=404,
+                    text="contains buffer AND checksum",
+                )
+            value = data["buffer"]
+            mode = "buffer"
+        elif "checksum" in data:
+            value = data["checkum"]
+            mode = "checksum"            
+        marker = data.get("marker")
+
+        tail = request.match_info.get('tail')
+        ns, key = tailsplit(tail)
+        try:
+            namespace = self.namespaces[ns]
+            share = namespace.shares[key]
         except KeyError:
+            if DEBUG:
+                traceback.print_exc()
             return web.Response(
                 status=404,
                 body=json.dumps({'not found': 404}),
                 content_type='application/json'
             )
 
+        if share.readonly:
+            return web.Response(
+                status=404,
+                text="Refused",
+            )
+        try:
+            newmarker = await namespace.put(key, value, mode, marker)
+            if newmarker is not None:
+                newmarker = str(newmarker)
+            return web.Response(
+                status=200,
+                text=newmarker,
+            )
+        except CancelledError:
+            if DEBUG:
+                print("Share was destroyed", ns, key)
+            return web.Response(
+                status=404,
+                text="Share was destroyed"
+            )
+        except:
+            if DEBUG:
+                traceback.print_exc()
+            return web.Response(
+                status=404,
+                text="Unknown error"
+            )
+
+
     async def _handle_equilibrate(self, request):
-        tail = request.match_info.get('tail')
-        namespace, key = tail.split("/")
-        if namespace not in self.namespaces or key != "equilibrate":
+        try:
+            tail = request.match_info.get('tail')        
+            ns, key = tailsplit(tail)        
+            text = await request.text()
+            data = json.loads(text)
+            timeout = data.get("timeout")
+            if timeout is not None:
+                timeout = float(timeout)
+        except:
+            if DEBUG:
+                traceback.print_exc()
+            return web.Response(
+                status=404,
+                text="Invalid request",
+            )
+            
+        if ns not in self.namespaces or key != "equilibrate":
             return web.Response(
                 status=404,
                 body=json.dumps({'not found': 404}),
                 content_type='application/json'
             )
-        ns = self.namespaces[namespace]
-        if "self" not in ns:
+        namespace = self.namespaces[ns]
+        if not namespace._share_equilibrate:
             return web.Response(
                 status=404,
                 body=json.dumps({'equilibrate is not shared': 404}),
                 content_type='application/json'
             )
-        text = await request.text()
-        data = json.loads(text)
-        timeout = data.get("timeout")
-
-        ctx = ns["self"]()
-        result = sorted(list(ctx.equilibrate(timeout)))
-        return web.Response(
-            status=200,
-            body=json.dumps(result),
-            content_type='application/json'
-        )
+    
+        try:
+            result = namespace.equilibrate(timeout)
+            return web.Response(
+                status=200,
+                body=json.dumps(result),
+                content_type='application/json'
+            )
+        except:
+            if DEBUG:
+                traceback.print_exc()
+            return web.Response(
+                status=404,
+                text="Unknown error"
+            )
 
     async def serve_rest(self):
         global web
@@ -267,120 +661,12 @@ class ShareServer(object):
         self.started = True
 
     def start(self):
-        if self.started:
-            return
-        self._future_start = asyncio.ensure_future(self._start())
+        if not self.started:
+            self._future_start = asyncio.ensure_future(self._start())
         return self._future_start
 
-    async def _share(self, namespace, celldict):
-        #TODO: support cells that are inchannels/outchannels
-        from .core.structured_cell import StructuredCell
-        from .core.cell import Cell
-        assert namespace in self.namespaces
-
-        for key, value in celldict.items():
-            cell, content_type = value            
-            if isinstance(cell, StructuredCell):
-                datacell = cell.data
-            elif isinstance(cell, Cell):
-                datacell = cell
-            if datacell._destroyed:
-                return # destroy before share
-
-        ns = self.namespaces[namespace]
-        old_varlist = sorted(list(ns.keys()))
-        varlist = sorted(list(celldict.keys()))
-        diff_varlist = (varlist != old_varlist)
-        fut = {}
-        if diff_varlist:
-            for websocket in self.connections[namespace]:
-                coro = self._send_varlist(websocket, varlist)
-                fut[websocket] = asyncio.ensure_future(coro)
-
-        any_send_update = False
-        coros = []
-        for key, value in celldict.items():
-            cell, content_type = value            
-            if key == "self":
-                ctx = cell
-                ns[key] = weakref.ref(ctx)
-                continue
-            if isinstance(cell, StructuredCell):
-                datacell = cell.data
-            elif isinstance(cell, Cell):
-                datacell = cell
-            else:
-                raise TypeError((cell, key))
-            checksum = None
-            if datacell.value is not None:
-                checksum = datacell.checksum
-            if key not in ns:
-                send_update = True
-                marker = 0
-            else:
-                _, old_checksum, old_marker, _ = ns[key]
-                if checksum == old_checksum:
-                    send_update = False
-                    marker = old_marker
-                else:
-                    send_update = True
-                    marker = old_marker + 1
-            ns[key] = [weakref.ref(cell), checksum, marker, content_type]
-
-            if send_update or diff_varlist:
-                for websocket in self.connections[namespace]:
-                    prior = None
-                    if diff_varlist:
-                        prior = fut[websocket]
-                    if send_update:
-                        any_send_update = True
-                        coro = self._send_checksum(websocket, key, checksum, marker, prior=prior)
-                        coros.append(coro)
-        if not any_send_update:
-            coros = fut.values()
-        await asyncio.gather(*coros)
-
-    def share(self, namespace, celldict):
-        for key, value in celldict.items():
-            cell, content_type = value            
-            cell._get_manager() 
-        return asyncio.ensure_future(self._share(namespace, celldict))
-
-    def _get_update_marker(self, namespace, key):
-        assert namespace in self.namespaces
-        ns = self.namespaces[namespace]
-        cell, old_checksum, marker, _ = ns[key]
-        if cell is None:
-            return
-        cell = cell()
-        if cell is None:
-            return
-        if cell._destroyed:
-            return
-        checksum = cell.checksum
-        if old_checksum == checksum:
-            return
-        marker += 1
-        ns[key][1:3] = checksum, marker
-        return checksum, marker
-
-    async def _send_update(self, namespace, key):
-        if key not in self.namespaces[namespace]:
-            return
-        update_marker = self._get_update_marker(namespace, key)
-        if update_marker is None:
-            return
-        checksum, marker = update_marker
-
-        await self._future_start
-
-        coros = []
-        for websocket in self.connections[namespace]:
-            s = self._send_checksum(websocket, key, checksum, marker)
-            coros.append(s)
-        await asyncio.gather(*coros)
-
-    def send_update(self, namespace, key):
-        asyncio.ensure_future(self._send_update(namespace, key))
-
 shareserver = ShareServer()
+
+from .core.cache.buffer_cache import buffer_cache
+from .core.protocol.calculate_checksum import calculate_checksum
+from .core.protocol.get_buffer import get_buffer_async, CacheMissError

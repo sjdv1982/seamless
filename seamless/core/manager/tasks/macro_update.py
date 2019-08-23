@@ -77,7 +77,7 @@ class MacroUpdateTask(Task):
                 module_workspace[pinname] = mod[1]
             else:
                 values[pinname] = value
-
+        
         macro._execute(code, values, module_workspace)
 
 from .accessor_update import AccessorUpdateTask

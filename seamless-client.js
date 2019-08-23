@@ -17,19 +17,17 @@ function connect_seamless(websocketserver, restserver, namespace="ctx"){
   let varlist = null    
   
   function get_value(key) {
-    var rq = restserver + "/" + namespace + "/" + key
+    var rq = restserver + "/" + namespace + "/" + key + "?field=all"
     //$("#request").text("GET:" + rq)
     fetch(rq)
     .then(function(response) {
-      if (response.headers.get("Content-Type") == "application/json"){
-        return response.json()  
-      }
-      else {
-        return response.text()
-      }
+      return response.json()  
     })
     .then(function(result) {
-      ctx[key].value = result
+      if (result["marker"] <= ctx[key]._marker) return
+      ctx[key].value = result["buffer"]
+      ctx[key]._marker = result["marker"]
+      ctx[key].checksum = result["checksum"]
       ctx[key].oninput()
       ctx[key].onchange()
       ctx.self.oninput()
@@ -48,8 +46,14 @@ function connect_seamless(websocketserver, restserver, namespace="ctx"){
   }
   function put_value(key, value) { 
     var rq = restserver + "/" + namespace + "/" + key
-    const payload = JSON.stringify({"value":value})
-    //$("#request").text(JSON.stringify({"rq": "PUT:" + rq, "value": value}))
+    if (ctx[key]._marker == null) ctx[key]._marker = 0
+    oldmarker = ctx[key]._marker 
+    newmarker = oldmarker + 1
+    const payload = JSON.stringify({
+      "buffer":value,
+      "marker":newmarker
+    })
+    //$("#request").text(JSON.stringify({"rq": "PUT:" + rq, "buffer": value}))
     let options = {
       method: "PUT", 
       body: payload,    
@@ -57,14 +61,16 @@ function connect_seamless(websocketserver, restserver, namespace="ctx"){
         "Content-Type": "application/json; charset=utf-8",
       }
     }
-    if (ctx[key]._marker == null) ctx[key]._marker = 0
-    ctx[key]._marker++;
     fetch(rq, options)
     .then(function(response) {
       return response.text()
     })
     .then(function(result) {
-      ctx[key]._marker = parseInt(result) - 1;
+      if parseInt(result) {
+        if (ctx[key]._marker == oldmarker) {
+          ctx[key]._marker = newmarker
+        }
+      }
     })
     .catch(function(err) {
       console.log('Seamless client PUT Error:', namespace, key, err)
@@ -86,6 +92,7 @@ function connect_seamless(websocketserver, restserver, namespace="ctx"){
         }
       }
       for (const key of varlist) {
+        if (key == "self") continue
         ctx[key] = {
           value: null,
           _marker: null,

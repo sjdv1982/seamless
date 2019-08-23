@@ -54,7 +54,7 @@ Use ``Cell.status()`` to get its status.
     _sovereign = False
     _observer = None
     _traitlets = None
-    _share_callback = None
+    _share = None
     _monitor = None # Only changed for MixedCells that are data or buffer of a structuredcell
 
     _canceling = False
@@ -358,12 +358,23 @@ Use ``Cell.status()`` to get its status.
         if trigger and self.checksum is not None:
             observer(self.checksum)
 
-    def _set_share_callback(self, share_callback):
-        self._share_callback = share_callback
+    def share(self, path=None, readonly=False):
+        oldshare = self._share
+        self._share = {
+            "readonly": readonly,
+            "path": path
+        }
+        if oldshare != self._share:
+            sharemanager.update_share(self)
+
+    def unshare(self):
+        if self._share is not None:
+            sharemanager.unshare(self)
 
     def destroy(self, *, from_del=False): 
         if self._destroyed:            
             return
+        self.unshare()
         if not from_del and self._lib_path is not None:
             unregister_libcell(self)
         super().destroy(from_del=from_del)
@@ -571,7 +582,7 @@ from .structured_cell import Inchannel, Outchannel
 from .macro_mode import get_macro_mode
 from .utils import strip_source
 from .library import unregister_libcell
-
+from .share import sharemanager
 """
 TODO Documentation: only-text changes
      adding comments / breaking up lines to a Python cell will affect a syntax highlighter, but not a transformer, it is only text

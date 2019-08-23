@@ -43,7 +43,7 @@ class TaskManager:
 
     async def await_active(self):
         while not self._active:
-            await asyncio.sleep(0)
+            await asyncio.sleep(0.01)
 
     def register_cell(self, cell):
         assert cell not in self.cell_to_task
@@ -98,7 +98,7 @@ class TaskManager:
             except Exception:
                 import traceback
                 traceback.print_exc()
-            await asyncio.sleep(0)
+            await asyncio.sleep(0.0001)
 
     def add_synctask(self, callback, args, kwargs, with_event):
         event = None
@@ -279,7 +279,7 @@ class TaskManager:
                     curr_timeout = report
                 else:
                     curr_timeout = None
-            self.loop.run_until_complete(asyncio.sleep(0))
+            self.loop.run_until_complete(asyncio.sleep(0.0001))
             tasks, futures = select_pending_tasks()
             if curr_timeout is not None:
                 curr_time = time.time()

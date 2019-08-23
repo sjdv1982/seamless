@@ -63,6 +63,9 @@ name: str
         global Macro
         if Macro is None:
             from .macro import Macro
+        global shareserver
+        if shareserver is None:
+            from .share import shareserver
         super().__init__()
         if toplevel:
             self._toplevel = True
@@ -273,6 +276,7 @@ name: str
                 manager._destroy_macropath(path)
             lib_unregister_all(self)
             unregister_toplevel(self)
+            shareserver.destroy_root(self)
         else:
             self._unmount(from_del=from_del)
 
@@ -349,3 +353,4 @@ from .library import unregister_all as lib_unregister_all
 
 from .manager import Manager
 Macro = None # import later
+shareserver = None # import later

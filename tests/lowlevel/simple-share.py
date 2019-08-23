@@ -1,7 +1,8 @@
 import seamless
 from seamless.core import macro_mode_on
-from seamless.core import context, cell, transformer, pytransformercell, link
-from seamless import shareserver
+from seamless.core import context, cell, transformer, link, macro
+from seamless.shareserver import shareserver
+from seamless.core.share import sharemanager
 from functools import partial
 
 import websockets
@@ -17,6 +18,8 @@ def define_ctx():
         ctx = context(toplevel=True)
         ctx.cell1 = cell().set(1)
         ctx.cell2 = cell().set(2)
+    ctx.equilibrate()
+    with macro_mode_on():
         ctx.result = cell()
         ctx.tf = transformer({
             "a": "input",
@@ -26,32 +29,19 @@ def define_ctx():
         ctx.cell1_link = link(ctx.cell1)
         ctx.cell1_link.connect(ctx.tf.a)
         ctx.cell2.connect(ctx.tf.b)
-        ctx.code = pytransformercell().set("c = a + b")
+        ctx.code = cell("transformer").set("c = a + b")
         ctx.code.connect(ctx.tf.code)
         ctx.result_link = link(ctx.result)
         ctx.tf.c.connect(ctx.result_link)
     return ctx
 
 ctx = define_ctx()
-namespace = shareserver.new_namespace("ctx")
-print("OK1")
+name = sharemanager.new_namespace(ctx, True, name="ctx")
+print("OK1", name)
 
-def share(namespace, shareddict):
-    shareddict2 = {}
-    for key, cell in shareddict.items():
-        shareddict2[key] = (cell, "text/plain")        
-    shareserver.share(namespace, shareddict2)
-    for key, cell in shareddict.items():
-        if key != "self":
-            sharefunc = partial(shareserver.send_update, "ctx", key)
-            cell._set_share_callback(sharefunc)
-
-
-share(namespace,{
-        "cell1": ctx.cell1,
-        "cell2": ctx.cell2,
-    }
-)
+print(ctx.cell1.value, ctx.cell2.value)
+ctx.cell1.share()
+ctx.cell2.share()
 
 async def echo(uri):
     async with websockets.connect(uri) as websocket:
@@ -82,28 +72,73 @@ def thread(func, *args, **kwargs):
 r = thread(requests.get, 'http://localhost:5813/ctx/cell1')
 print(r.json())
 
-r = thread(requests.put, 'http://localhost:5813/ctx/cell1',data=json.dumps({"value": 20}))
+r = thread(
+    requests.put, 'http://localhost:5813/ctx/cell1',
+    data=json.dumps({"buffer": "20\n"})
+)
 
 r = thread(requests.get, 'http://localhost:5813/ctx/cell1')
 print(r.json())
 
 ctx.cell1.set(99)
-shareserver.send_update(namespace, "cell1")
 loop.run_until_complete(asyncio.sleep(0.1))
 
-print("OK2")
+r = thread(requests.get, 'http://localhost:5813/ctx/cell1')
+print(r.json())
 
 ctx.destroy()
-ctx = define_ctx()
-share(namespace,{
-        "cell1": ctx.cell1,
-        "code": ctx.code,
-        "result": ctx.result,
-        "self": ctx, #for equilibrate
-    }
+
+ctx = context(toplevel=True)
+name = sharemanager.new_namespace(ctx, True, name="ctx")
+print("OK2", name)
+
+ws = echo('ws://localhost:5138/ctx')
+asyncio.ensure_future(ws)
+
+def macro_code(ctx, param_a):
+    ctx.a = cell().set(param_a + 1000)
+    ctx.a.share()
+    ctx.a0 = cell().set(999)
+    ctx.a0.share()
+
+def define_ctx2():    
+    ctx.macro = macro({"param_a": "int"})
+    ctx.macro.code.cell().set(macro_code)
+    ctx.param_a = cell().set(42)
+    ctx.param_a.share()
+    ctx.param_a.connect(ctx.macro.param_a)
+
+define_ctx2()
+
+r = thread(
+    requests.patch, 'http://localhost:5813/ctx/equilibrate', 
+    json={"timeout": None}
 )
-ctx.equilibrate()
-loop.run_until_complete(asyncio.sleep(0.1))
+print(r.text)
+print(ctx.param_a.value)
+print(ctx.macro.ctx.a.value)
+
+r = thread(requests.get, 'http://localhost:5813/ctx/macro/ctx/a')
+print(r.json())
 
 print("OK3")
-ctx.cell2.set(100)
+
+r = thread(
+    requests.put, 'http://localhost:5813/ctx/param_a',
+    data=json.dumps({"buffer": "43\n"})
+)
+print(r.json())
+print("OK3a")
+sharemanager.tick()
+
+print(ctx.param_a.value)
+print("OK3b")
+
+ctx.equilibrate()
+
+print(ctx.param_a.value)
+print(ctx.macro.ctx.a.value)
+
+sharemanager.tick()
+
+import sys; sys.exit()

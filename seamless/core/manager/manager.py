@@ -48,6 +48,10 @@ class Manager:
         self.mountmanager = mountmanager
         mountmanager.start()
 
+        # for now, just a single global sharemanager
+        from ..share import sharemanager
+        self.sharemanager = sharemanager
+        sharemanager.start()
 
     ##########################################################################
     # API section I: Registration (divide among subsystems)
@@ -123,7 +127,8 @@ class Manager:
             reason = None
             old_checksum = self.get_cell_checksum(cell)
             if old_checksum is not None:
-                self.cancel_cell(cell, void=False)        
+                self.cancel_cell(cell, void=False)
+        #and cell._context()._macro is None: # TODO: sovereignty...
         self._set_cell_checksum(
             cell, checksum, 
             (checksum is None), status_reason=reason
@@ -154,6 +159,8 @@ class Manager:
             if cell._mount is not None:
                 buffer = self.cachemanager.buffer_cache.get_buffer(checksum)
                 self.mountmanager.add_cell_update(cell, checksum, buffer)
+            if cell._share is not None:
+                self.sharemanager.add_cell_update(cell, checksum)
 
     def _set_transformer_checksum(self,
         transformer, checksum, void, *,
@@ -308,7 +315,7 @@ If origin_task is provided, that task is not cancelled."""
             self._set_cell_checksum(cell, None, void, status_reason=reason)
             livegraph = self.livegraph
             accessors = livegraph.cell_to_downstream[cell]
-            for accessor in accessors:            
+            for accessor in accessors:
                 self.cancel_accessor(accessor, void)        
         finally:
             cell._canceling = False
@@ -330,7 +337,10 @@ If origin_task is provided, that task is not cancelled."""
                 return self.cancel_transformer(target, void=void, reason=reason)
             elif isinstance(target, Reactor):
                 return self.cancel_reactor(target, void=void, reason=reason)
-
+            elif isinstance(target, Macro):
+                return self.cancel_macro(target, void=void, reason=reason)
+            else:
+                raise TypeError(target)
     @mainthread
     def cancel_transformer(self, transformer, void, reason=None):
         assert isinstance(transformer, Transformer)
