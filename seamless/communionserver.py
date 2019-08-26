@@ -6,6 +6,30 @@ Upon startup:
 - Every Seamless instance has a unique and random identifier; communion is only established once for each ID
 """
 
+
+"""
+Servable things:
+- Checksum to is-buffer-available
+- Checksum to buffer (very generic; make it that incref is done for tf_checksum-to-transformation-JSON)
+- Checksum to bufferlength 
+- Syntactic-to-semantic checksum
+- transformation jobs
+- build module jobs
+Jobs are submitted by checksum. There is also a job status API, which can return:
+    - Job checksum is unknown (cache miss in the server's checksum to buffer)
+    - Job input checksums are unknown
+    - Job is not runnable
+    - Job is runnable
+    - Job is running; progress and preliminary checksum are returned 
+    - Job is known; job checksum is returned.
+    - Job has exception (exception not returned, is job of provenance server)
+
+Submitting a job creates a long request; must be kept alive, else it is canceled
+The server may allow hard cancel of a job (by checksum)
+
+
+"""
+
 import logging
 logger = logging.getLogger('websockets.server')
 logger.setLevel(logging.ERROR)
@@ -23,7 +47,6 @@ from weakref import WeakSet
 # TODO # livegraph branch
 """
 from .communionclient import communion_client_types
-from .core.cache.transform_cache import TransformerLevel1
 """
 from .core.build_module import build_compiled_module
 
@@ -139,7 +162,6 @@ class CommunionServer:
     PROTOCOL = ("seamless", "communion", "0.1")
     def __init__(self):
         raise NotImplementedError # livegraph branch   
-        self.managers = WeakSet()
         self.config_master = default_master_config.copy()
         self.config_servant = default_servant_config.copy()
         cid = os.environ.get("SEAMLESS_COMMUNION_ID")
@@ -153,26 +175,10 @@ class CommunionServer:
         self.ready = WeakSet()
     
     def register_manager(self, manager):
+        raise NotImplementedError # just self._start
         if self.future is None:
             self.future = asyncio.ensure_future(self._start())
         self.managers.add(manager)
-
-    async def wait_async(self, manager):
-        if manager in self.ready:
-            return
-        if not incoming and not outgoing:
-            return
-        if self.future is None:
-            self.future = asyncio.ensure_future(self._start())
-        await asyncio.sleep(WAIT_TIME)
-        self.ready.add(manager)
-
-    def wait(self, manager):
-        future = asyncio.ensure_future(self.wait_async(manager))
-        try:
-            asyncio.get_event_loop().run_until_complete(future)
-        except IndexError: # KLUDGE
-            return self.wait(manager)
         
     def configure_master(self, config=None, **update):
         if self.future is not None and any(update.values()):
@@ -286,24 +292,27 @@ class CommunionServer:
         result = None
         try:
             # Local cache
-            if type == "transformer_result":
+            if type == "transformation_result":
                 cache_name = "transform_cache"
                 method_name = "get_result"
-            elif type == "transformer_result_level2":
-                cache_name = "transform_cache"
-                method_name = "get_result_level2"
             elif type == "buffer_check":
                 cache_name = "buffer_cache"
                 method_name = "buffer_check"
             elif type == "value_get":
                 cache_name = None
                 method_name = "value_get"
-            elif type == "transformer_job_check":
-                level1 = TransformerLevel1.deserialize(content)
-                result = True  # TODO: analyze transformer, configure acceptance criteria
-            elif type == "transformer_job_run":
-                level1 = TransformerLevel1.deserialize(content)
-                content = level1
+            elif type == "transformation_job_check":
+                ###level1 = TransformerLevel1.deserialize(content)
+                ###result = True  # TODO: analyze transformer, configure acceptance criteria
+                raise NotImplementedError
+            elif type == "transformation_job_run":
+                ###level1 = TransformerLevel1.deserialize(content)
+                ###content = level1
+                raise NotImplementedError
+            elif type == "transformation_cancel":
+                raise NotImplementedError
+            elif type == "transformation_full_cancel":
+                raise NotImplementedError
             elif type == "build_module":
                 d_content = json.loads(content)
                 full_module_name = d_content["full_module_name"]

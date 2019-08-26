@@ -4,6 +4,10 @@
 # A job consists of a transformation together with all relevant entries 
 #  from the semantic-to-syntactic checksum cache
 
+class HardCancelError(Exception):
+    def __str__(self):
+        return self.__class__.__name__
+
 import json
 import ast
 import functools
@@ -20,7 +24,12 @@ from .. import destroyer
 
 TF_KEEP_ALIVE = 20.0 # Keep transformations alive for 20 secs after the last ref has expired
 
-def tf_get_hash(transformation):
+print("""TODO, transformation_cache.py:
+- Fake transformers that represent jobs from remote communion peers
+- Transformations that represent remote jobs (some machinery is there); wrap the long request
+""")
+
+def tf_get_buffer(transformation):
     assert isinstance(transformation, dict)
     d = {}
     for k in transformation:
@@ -31,7 +40,9 @@ def tf_get_hash(transformation):
         celltype, subcelltype, checksum = v
         checksum = checksum.hex()
         d[k] = celltype, subcelltype, checksum
-    return get_dict_hash(d)
+    content = json.dumps(d, sort_keys=True, indent=2) + "\n"
+    buffer = content.encode()
+    return buffer
 
 
 def syntactic_is_semantic(celltype, subcelltype):
@@ -128,7 +139,10 @@ class TransformationCache:
 
     async def incref_transformation(self, transformation, transformer):
         from ..manager.tasks.transformer_update import TransformerResultUpdateTask
-        tf_checksum = tf_get_hash(transformation)
+        tf_buffer = tf_get_buffer(transformation)
+        tf_checksum = await calculate_checksum(tf_buffer)
+        buffer_cache.incref(tf_checksum) # transformation will be permanently in buffer cache
+
         if transformer.debug:
             if tf_checksum not in self.debug:
                 self.debug.add(tf_checksum)
@@ -156,24 +170,14 @@ class TransformationCache:
                 prelim=prelim
             )
             TransformerResultUpdateTask(manager, transformer).launch()
-        else:
+        if result_checksum is None or prelim:
             job = self.run_job(transformation)
             if job is not None:
                 await asyncio.shield(job.future)
-
-    def touch_transformer(self, transformer):
-        if transformer not in self.transformer_to_transformations:
-            return
-        tf_checksum = self.transformer_to_transformations[checksum]
-        transformation = self.transformations[tf_checksum]
-        if tf_checksum in self.transformation_results:
-            return
-        if tf_checksum in self.transformation_exceptions:
-            return
-        return self.run_job(transformation) # NOTE: returns the job; caller must await job.future (with or without shield)
         
     def decref_transformation(self, transformation, transformer):
-        tf_checksum = tf_get_hash(transformation)
+        tf_buffer = tf_get_buffer(transformation)
+        tf_checksum = calculate_checksum_sync(tf_buffer)
         assert tf_checksum in self.transformations
         transformers = self.transformations_to_transformers[tf_checksum]
         assert transformer in transformers
@@ -186,7 +190,8 @@ class TransformationCache:
             temprefmanager.add_ref(tempref, TF_KEEP_ALIVE)
 
     def destroy_transformation(self, transformation):
-        tf_checksum = tf_get_hash(transformation)
+        tf_buffer = tf_get_buffer(transformation)
+        tf_checksum = calculate_checksum_sync(tf_buffer)
         assert tf_checksum in self.transformations
         assert tf_checksum in self.transformations_to_transformers
         if len(self.transformations_to_transformers[tf_checksum]):
@@ -196,12 +201,13 @@ class TransformationCache:
         job = self.transformation_jobs[tf_checksum]
         if job is not None:
             if job.future is not None:
-                #print("CANCEL JOB!")
+                #print("CANCEL JOB!", job)
+                job._cancelled = True
                 job.future.cancel()
-                self.job_done(job, job.future, cancelled=True)
 
     def run_job(self, transformation):        
-        tf_checksum = tf_get_hash(transformation)
+        tf_buffer = tf_get_buffer(transformation)
+        tf_checksum = calculate_checksum_sync(tf_buffer)
         transformers = self.transformations_to_transformers[tf_checksum]
         if tf_checksum in self.transformation_exceptions:            
             return
@@ -236,8 +242,6 @@ class TransformationCache:
         future = job.future
         cb = functools.partial(self.job_done, job)
         future.add_done_callback(cb)
-        #raise NotImplementedError # livegraph branch
-        #job future, add done callback self.job_done
         self.transformation_jobs[tf_checksum] = job
         self.rev_transformation_jobs[id(job)] = tf_checksum
         #print("RUN JOB!", codename, len(self.rev_transformation_jobs))
@@ -257,16 +261,25 @@ class TransformationCache:
         tf_checksum = self.rev_transformation_jobs[id(job)]
         self.set_transformation_result(tf_checksum, prelim_checksum, True)
 
-    def job_done(self, job, future, cancelled=False):
+    def _hard_cancel(self, job):
         if self._destroyed:
             return
-        if job._cancelled:
+        future = job.future
+        assert future is not None
+        if future.done():
             return
+        #future.set_exception(HardCancelError()) # does not work...
+        job._hard_cancelled = True
+        future.cancel()
+
+    def job_done(self, job, future):
+        if self._destroyed:
+            return
+        #cancelled = future.cancelled() # does not work
+        cancelled = future.cancelled() or job._cancelled
         assert future.done() or cancelled
-        if cancelled:
-            job._cancelled = True
         tf_checksum = self.rev_transformation_jobs.pop(id(job))
-        #print("/RUN JOB!", len(self.rev_transformation_jobs), cancelled)
+        #print("/RUN JOB!",len(self.rev_transformation_jobs), cancelled)
         if tf_checksum in self.transformations:
             self.transformation_jobs[tf_checksum] = None
         else:
@@ -278,6 +291,8 @@ class TransformationCache:
         transformers = self.transformations_to_transformers[tf_checksum]
 
         exc = future.exception()
+        if job._hard_cancelled:
+            exc = HardCancelError()
         if exc is None:
             result_checksum = future.result()
             if result_checksum is None:
@@ -286,13 +301,17 @@ class TransformationCache:
             try:
                 future.result()
             except:
-                print("!" * 80)
-                print("!      Transformer exception", job.codename)
-                print("!" * 80)
-                import traceback
-                traceback.print_exc()
-                print("!" * 80)
+                if isinstance(exc, HardCancelError):
+                    print("Hard cancel:", job.codename)
+                else:
+                    print("!" * 80)
+                    print("!      Transformer exception", job.codename)
+                    print("!" * 80)
+                    import traceback
+                    traceback.print_exc()
+                    print("!" * 80)
             self.transformation_exceptions[tf_checksum] = exc
+            # TODO: offload to provenance? unless hard-canceled
             for transformer in transformers:
                 manager = transformer._get_manager()
                 
@@ -345,17 +364,25 @@ class TransformationCache:
         return result_checksum, prelim
 
     def clear_exception(self, transformer):
+        from ..manager.tasks.transformer_update import TransformerUpdateTask
         tf_checksum = self.transformer_to_transformations.get(transformer)
         if tf_checksum is None:
             return
         exc = self.transformation_exceptions.pop(tf_checksum, None)
         if exc is None:
             return
-        if tf_checksum in self.transformation_results:
-            return 
-        if tf_checksum in self.transformation_jobs:
+        for tf in self.transformations_to_transformers[tf_checksum]:
+            TransformerUpdateTask(tf._get_manager(), tf).launch()
+        
+
+    def hard_cancel(self, transformer):
+        tf_checksum = self.transformer_to_transformations.get(transformer)
+        if tf_checksum is None:
             return
-        return self.run_job(tf_checksum) # NOTE: returns the job; caller must await job.future (with or without shield)
+        job = self.transformation_jobs.get(tf_checksum)
+        if job is None:
+            return
+        self._hard_cancel(job)
 
     def destroy(self):
         # only called when Seamless shuts down
@@ -380,7 +407,7 @@ from .buffer_cache import buffer_cache
 from ..protocol.get_buffer import get_buffer_async
 from ..protocol.conversion import convert
 from ..protocol.deserialize import deserialize
-from ..protocol.calculate_checksum import calculate_checksum
+from ..protocol.calculate_checksum import calculate_checksum, calculate_checksum_sync
 from .redis_client import redis_caches, redis_sinks
 from ..transformation import TransformationJob
 from ..status import SeamlessInvalidValueError, SeamlessUndefinedError, StatusReasonEnum

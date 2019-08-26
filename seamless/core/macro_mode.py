@@ -25,6 +25,7 @@ def unregister_toplevel(ctx):
     _toplevel_registered.discard(ctx)
 
 def _destroy_toplevels():
+    from .mount import mountmanager
     for manager in list(_toplevel_managers):
         manager.destroy(from_del=True)
     for ctx in list(_toplevel_registered):

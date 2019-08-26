@@ -26,7 +26,7 @@ class TransformerUpdateTask(Task):
         for pinname, accessor in upstreams.items():
             if accessor._void: #upstream error
                 status_reason = StatusReasonEnum.UPSTREAM
-                        
+
         if status_reason is not None:
             if not transformer._void:
                 print("WARNING: transformer %s is not yet void, shouldn't happen during transformer update" % transformer)

@@ -60,6 +60,7 @@ async def run_remote_job(level1, origin=None):
 class TransformationJob:
     _job_id_counter = 0
     _cancelled = False
+    _hard_cancelled = False
     def __init__(self, 
         buffer_cache, transformation, 
         semantic_cache, debug

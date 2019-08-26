@@ -1,11 +1,6 @@
 import seamless
 from seamless.core import context, cell, transformer, link
 
-try:
-    redis_sink = seamless.RedisSink()
-except Exception:
-    pass
-
 ctx = context(toplevel=True)
 ctx.cell1 = cell("int").set(1)
 ctx.cell2 = cell("int").set(2)
@@ -43,9 +38,27 @@ ctx.tf_duplex.c.connect(ctx.result_duplex)
 def report():
     print("TF       ", ctx.tf.status)
     print("TF DUPLEX", ctx.tf_duplex.status)
-    print("RESULT       ", "%.3f" % ctx.result.value, ctx.result.status)
-    print("RESULT DUPLEX", "%.3f" %  ctx.result_duplex.value, ctx.result_duplex.status)
+    v1 = "%.3f" % ctx.result.value if ctx.result.value is not None else None
+    v2 = "%.3f" % ctx.result_duplex.value \
+      if ctx.result_duplex.value is not None else None
+    print("RESULT       ", v1, ctx.result.status)
+    print("RESULT DUPLEX", v2, ctx.result_duplex.status)
     print()
+
+for n in range(1): #3
+    ctx.equilibrate(0.5)
+    report()
+ctx.tf.cancel()
+ctx.equilibrate(0.5)
+report()
+print("EXCEPTION       ", ctx.tf.exception)
+print("EXCEPTION DUPLEX", ctx.tf_duplex.exception)
+print()
+
+ctx.tf.clear_exception()
+print("EXCEPTION       ", ctx.tf.exception)
+print("EXCEPTION DUPLEX", ctx.tf_duplex.exception)
+print()
 
 for n in range(20):
     ctx.equilibrate(0.5)
