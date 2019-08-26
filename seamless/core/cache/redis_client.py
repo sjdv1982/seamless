@@ -34,6 +34,16 @@ class RedisSink:
         key = b"buf:" + checksum
         r.set(key, buffer)
 
+    def set_buffer_length(self, checksum, length):
+        r = self.connection
+        key = b"bfl:" + checksum
+        r.set(key, length)
+
+    def add_small_buffer(self, checksum):
+        r = self.connection
+        key = b"smallbuffers"
+        r.sadd(key, checksum)
+
     def set_compile_result(self, checksum, buffer):
         if not self.store_compile_result:
             return
@@ -70,6 +80,14 @@ class RedisCache:
         key = b"buf:" + checksum
         return r.exists(key)
 
+    def get_buffer_length(checksum):
+        # 1 for small buffers
+        key = b"smallbuffers"
+        if r.sismember(key, checksum):
+            return 1
+        key = b"bfl:" + checksum
+        return r.get(key)
+
     def get_compile_result(self, checksum):
         r = self.connection
         key = b"cpl:" + checksum
@@ -84,6 +102,16 @@ class RedisSinks:
             return     
         for redis_sink in _redis_sinks:
             redis_sink.set_buffer(checksum, buffer)
+    def set_buffer_length(self, checksum, length):   
+        if checksum is None:
+            return     
+        for redis_sink in _redis_sinks:
+            redis_sink.set_buffer_length(checksum, length)
+    def add_small_buffer(self, checksum):
+        if checksum is None:
+            return     
+        for redis_sink in _redis_sinks:
+            redis_sink.add_small_buffer(checksum)
     def set_transformation_result(self, tf_checksum, checksum):
         if tf_checksum is None or checksum is None:
             return        
@@ -107,6 +135,11 @@ class RedisCaches:
             buffer = redis_cache.get_buffer(checksum)
             if buffer is not None:
                 return buffer
+    def get_buffer_length(self, checksum): 
+        for redis_cache in _redis_caches:
+            length = redis_cache.get_buffer_length(checksum)
+            if length is not None:
+                return length
     def has_buffer(self, checksum):        
         for redis_cache in _redis_caches:
             buffer = redis_cache.has_buffer(checksum)

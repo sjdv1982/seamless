@@ -23,6 +23,9 @@ class BufferCache:
     def __init__(self):
         self.buffer_cache = {} #checksum-to-buffer
         self.buffer_refcount = {} #buffer-checksum-to-refcount
+        # Buffer length caches (never expire)
+        self.small_buffers = set()
+        self.buffer_length = {} #checksum-to-bufferlength (large buffers)
 
     def cache_buffer(self, checksum, buffer):
         if checksum not in self.buffer_refcount:
@@ -30,9 +33,18 @@ class BufferCache:
             tempref = functools.partial(self.decref, checksum, from_temp=True)
             temprefmanager.add_ref(tempref, TEMP_KEEP_ALIVE)            
         if checksum in self.buffer_cache:
-            return
+            return            
         self.buffer_cache[checksum] = buffer
         redis_sinks.set_buffer(checksum, buffer)
+        l = len(buffer)
+        if l < 1000:
+            if checksum not in self.small_buffers:
+                self.small_buffers.add(checksum)
+                redis_sinks.add_small_buffer(checksum)
+        else:
+            if checksum not in self.buffer_length:
+                self.buffer_length[checksum] = l
+                redis_sinks.set_buffer_length(checksum, l)
 
     def incref(self, checksum):
         if checksum in self.buffer_refcount:
@@ -62,6 +74,16 @@ class BufferCache:
         if buffer is not None:
             return buffer
         return redis_caches.get_buffer(checksum)
+
+    def get_buffer_length(self, checksum):
+        if checksum is None:
+            return None
+        if checksum in self.small_buffers:
+            return 1
+        length = self.buffer_length.get(checksum)
+        if length is not None:
+            return length
+        return redis_caches.get_buffer_length(checksum)
 
     def buffer_check(self, checksum):
         """For the communionserver..."""
