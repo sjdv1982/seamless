@@ -6,13 +6,13 @@ os.environ["SEAMLESS_COMMUNION_INCOMING"] = "localhost:8602"
 
 import seamless
 seamless.set_ncores(0)
-from seamless import communionserver
+from seamless import communion_server
 
-communionserver.configure_master(
+communion_server.configure_master(
     value=True,
     transformer_job=True,
 )
-communionserver.configure_servant(
+communion_server.configure_servant(
     value=True,
 )
 

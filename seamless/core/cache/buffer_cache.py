@@ -86,7 +86,7 @@ class BufferCache:
         return redis_caches.get_buffer_length(checksum)
 
     def buffer_check(self, checksum):
-        """For the communionserver..."""
+        """For the communion_server..."""
         assert checksum is not None
         if checksum in self.buffer_cache:
             return True        

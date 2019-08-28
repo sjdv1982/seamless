@@ -31,8 +31,7 @@ class Manager:
         from .taskmanager import TaskManager
         assert ctx._toplevel
         self.ctx = weakref.ref(ctx)
-        from ... import communionserver
-        ###communionserver.register_manager(self)
+        from ... import communion_server
         self.livegraph = LiveGraph(self)
         self.cachemanager = CacheManager(self)
         self.taskmanager = TaskManager(self)
@@ -490,7 +489,6 @@ If origin_task is provided, that task is not cancelled."""
 
     @mainthread
     def destroy(self, from_del=False):
-        from ..macro import _global_paths
         if self._destroyed:
             return
         self._destroyed = True
@@ -520,7 +518,7 @@ from ..protocol.deserialize import deserialize_cache
 from ..cell import Cell
 from ..worker import Worker
 from ..transformer import Transformer
-from ..macro import Macro
+from ..macro import Macro, _global_paths
 from ..reactor import Reactor
 from .accessor import ReadAccessor
 from ..status import StatusReasonEnum

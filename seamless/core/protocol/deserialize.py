@@ -65,6 +65,8 @@ async def deserialize(buffer, checksum, celltype, copy):
     In case of a cache hit, a copy is returned only if copy=True
     In case of a cache miss, deserialization is performed in a subprocess
      (and copy is irrelevant)."""
+    if buffer is None:
+        return None
     value = deserialize_cache.get((checksum, celltype))
     if value is not None:
         if copy:

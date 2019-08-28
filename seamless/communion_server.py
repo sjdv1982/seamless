@@ -9,25 +9,47 @@ Upon startup:
 
 """
 Servable things:
-- Checksum to is-buffer-available
 - Checksum to buffer (very generic; make it that incref is done for tf_checksum-to-transformation-JSON)
+For this, there is a buffer status API, which can return:
+    -1: checksum unknown
+    0: buffer available remotely
+    1: buffer available locally
+
 - Checksum to bufferlength 
 - Syntactic-to-semantic checksum
 - transformation jobs
 - build module jobs
-Jobs are submitted by checksum. There is also a job status API, which can return:
-    - Job checksum is unknown (cache miss in the server's checksum to buffer)
-    - Job input checksums are unknown
-    - Job is not runnable
-    - Job is runnable
-    - Job is running; progress and preliminary checksum are returned 
-    - Job is known; job checksum is returned.
-    - Job has exception (exception not returned, is job of provenance server)
+Jobs are submitted by checksum. There is also a job status API, which can return
+    a code and a return value. The return value depends on the code:
+    -3: Job checksum is unknown (cache miss in the server's checksum to buffer)
+        None is returned.
+    -2: Job input checksums are unknown. None is returned.
+    -1: Job is not runnable. None is returned.
+    0: Job has exception. None is returned.
+    1: Job is runnable. None is returned.
+    2: Job is running; progress and preliminary checksum are returned as a single tuple
+    3: Job is known; job checksum is returned.
+Finally, the job API has an (async) wait method, that blocks until the job updates
+(final result, preliminary result, or new progress)
 
-Submitting a job creates a long request; must be kept alive, else it is canceled
+Submitting a job is quick. After submission, the wait method is called.
+Finally, the results are retrieved, resulting in a code 0, a code 3, or 
+ occasionally a negative code (leading to re-evaluation).
 The server may allow hard cancel of a job (by checksum)
-
-
+Checksum-to-buffer requests can be forwarded to remote Seamless instances,
+ but job requests are not.
+Submitting a job clears any exception associated with that job.
+Submitting a job may include a small dict of meta-data,
+ containing e.g. information about required packages, memory requirements,
+ estimated CPU time, etc.
+ But Seamless servants ignore these meta-data.
+A supervisor might accept job requests and forward them to registered
+ Seamless servants, based on the meta-data.
+Likewise, the job status API may return an exception checksum, but
+ Seamless servants never do. A provenance server might store
+ exceptions based on the job checksum and meta-data. These may be
+ managed by a supervisor, which may decide its status responses based
+ on it.
 """
 
 import logging
@@ -44,10 +66,7 @@ WAIT_TIME = 1.5 # time to wait for network connections after a new manager
 
 import os, sys, asyncio, time, functools, json, traceback, base64, websockets
 from weakref import WeakSet
-# TODO # livegraph branch
-"""
-from .communionclient import communion_client_types
-"""
+from .communion_client import communion_client_manager
 from .core.build_module import build_compiled_module
 
 incoming = []
@@ -71,20 +90,24 @@ if _outgoing:
 
 # Default configuration for being a master, i.e. on using other peers as a service
 default_master_config = {
-    "transformer_result": False,
-    "transformer_result_level2": False,
-    "value": True,
+    "buffer": True,
+    "buffer_available": True,
+    "buffer_length": True,
     "transformer_job": False,
-    "build_module": False,
+    "transformer_status": False,
+    "build_module_job": False,
+    "build_module_status": False,
 }
 
 # Default configuration for being a servant, i.e. on providing services to other peers
 default_servant_config = {
-    "transformer_result": True,
-    "transformer_result_level2": True,
-    "value": False,
+    "buffer": False,
+    "buffer_available": False,
+    "buffer_length": True,
     "transformer_job": False,
-    "build_module": False,
+    "transformer_status": False,
+    "build_module_job": False,
+    "build_module_status": False,
 }
 
 import numpy as np
@@ -159,7 +182,7 @@ def communion_decode(m):
     
 class CommunionServer:
     future = None
-    PROTOCOL = ("seamless", "communion", "0.1")
+    PROTOCOL = ("seamless", "communion", "0.2")
     def __init__(self):
         raise NotImplementedError # livegraph branch   
         self.config_master = default_master_config.copy()
@@ -170,20 +193,15 @@ class CommunionServer:
         self.id = cid
         self.peers = {}
         self.message_count = {}
-        self.clients = {}
         self.futures = {}
         self.ready = WeakSet()
-    
-    def register_manager(self, manager):
-        raise NotImplementedError # just self._start
-        if self.future is None:
-            self.future = asyncio.ensure_future(self._start())
-        self.managers.add(manager)
-        
+            
     def configure_master(self, config=None, **update):
         if self.future is not None and any(update.values()):
             print("Warning: CommunionServer has already started, added functionality will not be taken into account for existing peers", file=sys.stderr)
         if config is not None:
+            for key in config:
+                assert key in default_master_config, key
             self.config_master = config.copy()
         self.config_master.update(update)
         
@@ -191,20 +209,18 @@ class CommunionServer:
         if self.future is not None:
             raise Exception("Cannot configure CommunionServer, it has already started")
         if config is not None:
+            for key in config:
+                assert key in default_servant_config, key
             self.config_servant = config.copy()
         self.config_servant.update(update)
 
     def _add_clients(self, servant, peer_config):
         config = peer_config["servant"]
-        for client_type in communion_client_types:
-            config_type = client_type.config_type
-            if not config.get(config_type):
+        for communion_type in sorted(config.keys()):
+            if not self.config_master.get(communion_type):
                 continue
-            if not self.config_master.get(config_type):
-                continue
-            client = client_type(servant)
+            communion_client_manager.add_client(communion, servant)
             print("ADD SERVANT", config_type)
-            self.clients[servant].add(client)
 
             
     async def _listen_peer(self, websocket, peer_config, incoming=False):
@@ -225,7 +241,6 @@ class CommunionServer:
         self.peers[websocket] = peer_config
         self.message_count[websocket] = 1000 if incoming else 0
         self.futures[websocket] = {}
-        self.clients[websocket] = set()
         self._add_clients(websocket, peer_config)
         try:
             while 1:
@@ -239,9 +254,7 @@ class CommunionServer:
             self.peers.pop(websocket)
             self.message_count.pop(websocket)
             self.futures.pop(websocket)
-            clients = self.clients.pop(websocket)
-            for client in clients:
-                client.destroy()
+            communion_client_manager.remove_servant(websocket)
 
     async def _connect_incoming(self, config, url):
         import websockets
@@ -428,7 +441,7 @@ class CommunionServer:
 
 # TODO # livegraph branch
 """
-communionserver = CommunionServer()
+communion_server = CommunionServer()
 
 from .core.events.cache_task import cache_task_manager
 """

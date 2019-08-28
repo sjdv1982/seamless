@@ -5,9 +5,9 @@ os.environ["SEAMLESS_COMMUNION_INCOMING"] = "localhost:8600"
 import seamless
 import asyncio
 import sys
-from seamless import communionserver
+from seamless import communion_server
 
-communionserver.configure_servant(
+communion_server.configure_servant(
     build_module=True,
 )
 redis_sink = seamless.RedisSink()

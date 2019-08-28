@@ -73,6 +73,7 @@ def _execute(name, code,
       identifier, namespace,
       inputs, output_name, celltype, result_queue
     ):
+        assert identifier is not None
         namespace["return_preliminary"] = functools.partial(
             return_preliminary, result_queue, celltype
         )
@@ -108,6 +109,7 @@ def execute(name, code,
       identifier, namespace,
       inputs, output_name, celltype, result_queue
     ):
+    assert identifier is not None
     try:
         old_stdio = sys.stdout, sys.stderr
         sys.stdout, sys.stderr = sys.__stdout__, sys.__stderr__

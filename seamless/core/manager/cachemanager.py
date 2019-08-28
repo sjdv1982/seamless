@@ -16,7 +16,7 @@ class CacheManager:
 
         # Quick local expression cache
         # Hang onto this indefinitely
-        # No expression cache at the level of communionserver or redis
+        # No expression cache at the level of communion_server or redis
         #  (if expressions are really long to evaluate, use deepcells)
         self.expression_to_checksum = {} 
         

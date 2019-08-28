@@ -99,7 +99,7 @@ from .debugger import pdb
 from .shareserver import shareserver
 # TODO # livegraph branch
 """
-from .communionserver import communionserver
+from .communion_server import communion_server
 """
 from .core.transformation import set_ncores
 from .get_hash import get_hash, get_dict_hash

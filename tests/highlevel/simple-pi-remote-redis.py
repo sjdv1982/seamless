@@ -6,12 +6,12 @@ os.environ["SEAMLESS_COMMUNION_INCOMING"] = "localhost:8602"
 
 import seamless
 seamless.set_ncores(0)
-from seamless import communionserver
+from seamless import communion_server
 
 redis_sink = seamless.RedisSink()
 redis_cache = seamless.RedisCache()
 
-communionserver.configure_master(
+communion_server.configure_master(
     transformer_job=True,
 )
 

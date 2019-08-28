@@ -5,16 +5,12 @@ os.environ["SEAMLESS_COMMUNION_INCOMING"] = "localhost:8600"
 import seamless
 import asyncio
 import sys
-from seamless import communionserver
+from seamless import communion_server
 
-communionserver.configure_master(
-    value=True,
-)
-communionserver.configure_servant(
-    value=True,
+communion_server.configure_servant(
+    buffer=True,
     transformer_job=True,
-    transformer_result=True,
-    transformer_result_level2=True
+    build_module_job=True
 )
 
 from seamless.core import context

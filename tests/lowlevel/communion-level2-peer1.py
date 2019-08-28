@@ -1,11 +1,11 @@
 import seamless
 from seamless.core import cell, transformer, context
-from seamless import communionserver
-communionserver.configure_servant(
+from seamless import communion_server
+communion_server.configure_servant(
     value=True, 
     transformer_result_level2=True
 )
-communionserver.configure_master(value=True)
+communion_server.configure_master(value=True)
 
 redis_sink = seamless.RedisSink()
 

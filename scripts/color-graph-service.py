@@ -7,8 +7,8 @@ os.environ["SEAMLESS_COMMUNION_OUTGOING"] = "8600"
 import seamless
 seamless.set_ncores(0)
 
-from seamless import communionserver
-communionserver.configure_master(
+from seamless import communion_server
+communion_server.configure_master(
     value=True,
     transformer_job=True,
     transformer_result=True,
@@ -37,7 +37,7 @@ async def handler(request):
     )            
 
 async def start():
-    await communionserver._start()
+    await communion_server._start()
     app = web.Application()
     app.add_routes([
         web.get('/{tail:.*}', handler),

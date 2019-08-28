@@ -4,9 +4,9 @@ os.environ["SEAMLESS_COMMUNION_ID"] = "compile-fortran-build-module-remote"
 os.environ["SEAMLESS_COMMUNION_INCOMING"] = "localhost:8602"
 
 import seamless
-from seamless import communionserver
+from seamless import communion_server
 
-communionserver.configure_master(
+communion_server.configure_master(
     build_module=True,
 )
 

@@ -26,7 +26,6 @@ TF_KEEP_ALIVE = 20.0 # Keep transformations alive for 20 secs after the last ref
 
 print("""TODO, transformation_cache.py:
 - Fake transformers that represent jobs from remote communion peers
-- Transformations that represent remote jobs (some machinery is there); wrap the long request
 """)
 
 def tf_get_buffer(transformation):
@@ -172,7 +171,7 @@ class TransformationCache:
             TransformerResultUpdateTask(manager, transformer).launch()
         if result_checksum is None or prelim:
             job = self.run_job(transformation)
-            if job is not None:
+            if job is not None:                
                 await asyncio.shield(job.future)
         
     def decref_transformation(self, transformation, transformer):
@@ -231,21 +230,19 @@ class TransformationCache:
             checksums = self.semantic_from_syntactic_checksums[sem_checksum]
             semantic_cache[sem_checksum] = checksums
         job = TransformationJob(
+            tf_checksum, codename,
             buffer_cache, transformation, semantic_cache,
             debug
         )
         job.execute(
-            codename, 
             self.prelim_callback, 
             self.progress_callback
         )
-        future = job.future
-        cb = functools.partial(self.job_done, job)
-        future.add_done_callback(cb)
+        
         self.transformation_jobs[tf_checksum] = job
         self.rev_transformation_jobs[id(job)] = tf_checksum
-        #print("RUN JOB!", codename, len(self.rev_transformation_jobs))
         return job
+
 
     def progress_callback(self, job, progress):
         tf_checksum = self.rev_transformation_jobs[id(job)]
@@ -258,6 +255,8 @@ class TransformationCache:
             )
     
     def prelim_callback(self, job, prelim_checksum):
+        if prelim_checksum is None:
+            return
         tf_checksum = self.rev_transformation_jobs[id(job)]
         self.set_transformation_result(tf_checksum, prelim_checksum, True)
 
@@ -272,12 +271,14 @@ class TransformationCache:
         job._hard_cancelled = True
         future.cancel()
 
-    def job_done(self, job, future):
+    def job_done(self, job, _):
         if self._destroyed:
             return
-        #cancelled = future.cancelled() # does not work
-        cancelled = future.cancelled() or job._cancelled
-        assert future.done() or cancelled
+        #print("JOB DONE")
+
+        future = job.future
+        cancelled = (future.cancelled() or job._cancelled) and not job._hard_cancelled
+
         tf_checksum = self.rev_transformation_jobs.pop(id(job))
         #print("/RUN JOB!",len(self.rev_transformation_jobs), cancelled)
         if tf_checksum in self.transformations:
@@ -288,28 +289,32 @@ class TransformationCache:
         if cancelled:
             return
 
-        transformers = self.transformations_to_transformers[tf_checksum]
+        transformers = self.transformations_to_transformers[tf_checksum]        
 
         exc = future.exception()
-        if job._hard_cancelled:
-            exc = HardCancelError()
         if exc is None:
             result_checksum = future.result()
             if result_checksum is None:
                 exc = SeamlessUndefinedError(None)
+        if job._hard_cancelled:
+            exc = HardCancelError()
+            print("Hard cancel:", job.codename)
         if exc is not None:
             try:
                 future.result()
             except:
-                if isinstance(exc, HardCancelError):
-                    print("Hard cancel:", job.codename)
-                else:
+                if not isinstance(exc, HardCancelError):
                     print("!" * 80)
-                    print("!      Transformer exception", job.codename)
+                    if job.remote:
+                        print("!      Transformer exception", job.codename)
+                    else:
+                        print("!      Transformer remote exception", job.codename)
                     print("!" * 80)
                     import traceback
                     traceback.print_exc()
                     print("!" * 80)
+
+        if exc is not None:
             self.transformation_exceptions[tf_checksum] = exc
             # TODO: offload to provenance? unless hard-canceled
             for transformer in transformers:

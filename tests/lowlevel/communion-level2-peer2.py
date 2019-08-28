@@ -1,11 +1,11 @@
 import seamless
 from seamless.core import cell, transformer, context
-from seamless import communionserver
-communionserver.configure_master(
+from seamless import communion_server
+communion_server.configure_master(
     value=True, 
     transformer_result_level2=True
 )
-communionserver.configure_servant(value=True)
+communion_server.configure_servant(value=True)
 seamless.set_ncores(0) 
 
 redis_cache = seamless.RedisCache()
