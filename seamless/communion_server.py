@@ -97,12 +97,16 @@ default_master_config = {
     "transformer_status": False,
     "build_module_job": False,
     "build_module_status": False,
+    #
+    "hard_cancel": False,  # allow others to hard cancel our jobs
+    "clear_exception": False, # allow others to clear exceptions on our jobs
+
 }
 
 # Default configuration for being a servant, i.e. on providing services to other peers
 default_servant_config = {
-    "buffer": False,
-    "buffer_available": False,
+    "buffer": "small", # only return small buffers (< 10 000 bytes)
+    "buffer_available": "small",
     "buffer_length": True,
     "transformer_job": False,
     "transformer_status": False,

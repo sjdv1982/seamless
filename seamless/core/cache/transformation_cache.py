@@ -291,14 +291,15 @@ class TransformationCache:
 
         transformers = self.transformations_to_transformers[tf_checksum]        
 
-        exc = future.exception()
-        if exc is None:
-            result_checksum = future.result()
-            if result_checksum is None:
-                exc = SeamlessUndefinedError(None)
         if job._hard_cancelled:
             exc = HardCancelError()
             print("Hard cancel:", job.codename)
+        else:
+            exc = future.exception()
+            if exc is None:
+                result_checksum = future.result()
+                if result_checksum is None:
+                    exc = SeamlessUndefinedError(None)
         if exc is not None:
             try:
                 future.result()
