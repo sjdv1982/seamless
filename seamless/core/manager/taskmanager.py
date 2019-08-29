@@ -268,14 +268,7 @@ class TaskManager:
                 print()
             return result, True
 
-        def wait_for_communion():
-            if not communion_server._started_outgoing:
-                return False
-            if communion_server._to_start_incoming:
-                return False
-            return True
-
-        while len(tasks) or not wait_for_communion():
+        while len(tasks):
             if timeout is not None:
                 if report is not None:
                     curr_timeout=min(remaining, report)

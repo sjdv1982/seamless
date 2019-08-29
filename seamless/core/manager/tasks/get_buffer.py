@@ -10,10 +10,11 @@ class GetBufferTask(Task):
         super().__init__(manager)
 
     async def _run(self):
-        if self.checksum is None:
+        checksum = self.checksum
+        if checksum is None:
             return None
         buffer_cache = self.manager().cachemanager.buffer_cache
-        result = await get_buffer_async(self.checksum, buffer_cache)
+        result = await get_buffer_async(checksum, buffer_cache)
         assert result is None or isinstance(result, bytes)
         return result
 

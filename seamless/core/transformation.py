@@ -246,7 +246,8 @@ class TransformationJob:
                             traceback.print_exc()
                     continue
                 try:
-                    status, response = future.result()
+                    result = future.result()
+                    status = result[0]
                 except:
                     if DEBUG:
                         traceback.print_exc()
@@ -261,7 +262,7 @@ class TransformationJob:
                 elif status not in (2, 3): # erroneous behaviour
                     continue
                 elif status == 2:
-                    progress, prelim_checksum = response
+                    _, progress, prelim_checksum = result
                     progress_callback(self, progress)
                     prelim_callback(self, prelim_checksum)
                     n = rev.pop(future)
@@ -273,6 +274,7 @@ class TransformationJob:
                     go_on = True                    
                     continue
                 else: # status == 3
+                    _, response = result
                     return response
             if not go_on:
                 break

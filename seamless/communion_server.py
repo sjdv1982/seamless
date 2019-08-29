@@ -18,7 +18,7 @@ For this, there is a buffer status API, which can return:
     1: buffer available locally
 
 - Checksum to bufferlength 
-- Syntactic-to-semantic checksum
+- Semantic-to-syntactic checksum
 - transformation jobs
 - build module jobs
 Jobs are submitted by checksum. There is also a job status API, which can return
@@ -29,7 +29,7 @@ Jobs are submitted by checksum. There is also a job status API, which can return
     -1: Job is not runnable. None is returned.
     0: Job has exception. None is returned.
     1: Job is runnable. None is returned.
-    2: Job is running; progress and preliminary checksum are returned as a single tuple
+    2: Job is running; progress and preliminary checksum are returned
     3: Job is known; job checksum is returned.
 Finally, the job API has an (async) wait method, that blocks until the job updates
 (final result, preliminary result, or new progress)
@@ -62,6 +62,10 @@ class CommunionError(Exception):
     pass
 
 DEBUG = True
+
+def pr(*args, **kwargs):
+    if DEBUG:
+        print(*args, **kwargs)
 
 import logging
 logger = logging.getLogger('websockets.server')
@@ -108,6 +112,7 @@ default_master_config = {
     "transformation_status": False,
     "build_module_job": False,
     "build_module_status": False,
+    "semantic_to_syntactic": True,
     #
     "hard_cancel": False,  # allow others to hard cancel our jobs
     "clear_exception": False, # allow others to clear exceptions on our jobs
@@ -123,6 +128,7 @@ default_servant_config = {
     "transformation_status": False,
     "build_module_job": False,
     "build_module_status": False,
+    "semantic_to_syntactic": True,
 }
 
 import numpy as np
@@ -148,9 +154,11 @@ def communion_encode(msg):
     if content is None:
         m += b'\x00'
     else:
-        assert isinstance(content, (str, bytes, bool)), content
+        assert isinstance(content, (str, int, float, bytes, bool, tuple)), content
         if isinstance(content, bool):
             is_str = b'\x01'
+        elif isinstance(content, tuple):
+            is_str = b'\x04'
         else:
             is_str = b'\x03' if isinstance(content, str) else b'\x02'
         m += is_str
@@ -158,6 +166,11 @@ def communion_encode(msg):
             content = content.encode()
         elif isinstance(content, bool):
             content = b'\x01' if content else b'\x00'
+        elif isinstance(content, (int, float, tuple)):
+            if isinstance(content, tuple):
+                if isinstance(content[0], int) and content[-1] is not None:
+                    content = content[:-1] + (content[-1].hex(),)
+            content = json.dumps(content).encode()
         m += content
     #assert communion_decode(m) == msg, (communion_decode(m), msg)
     return m
@@ -187,6 +200,12 @@ def communion_decode(m):
         content = None
     elif is_str == b'\x01':
         content = True if m[1:] == b'\x01' else False
+    elif is_str == b'\x04':
+        content = json.loads(m[1:])
+        if isinstance(content, list):
+            if isinstance(content[0], int) and content[-1] is not None:
+                content[-1] = bytes.fromhex(content[-1])
+            content = tuple(content)
     else:
         assert is_str == b'\x03' or is_str == b'\x02'
         content = m[1:]    
@@ -213,12 +232,14 @@ class CommunionServer:
         self.ready = WeakSet()
             
     def configure_master(self, config=None, **update):
-        if self.future is not None and any(update.values()):
+        if self._started_outgoing and any(list(update.values())):
             print("Warning: CommunionServer has already started, added functionality will not be taken into account for existing peers", file=sys.stderr)
         if config is not None:
             for key in config:
                 assert key in default_master_config, key
             self.config_master = config.copy()
+        for key in update:
+            assert key in default_master_config, key
         self.config_master.update(update)
         
     def configure_servant(self, config=None, **update):
@@ -327,13 +348,20 @@ class CommunionServer:
         self._started_outgoing = True
         if len(coros):
             await asyncio.gather(*coros)
-        print("DONE!")
+
+    async def _startup(self):
+        while 1:
+            if communion_server._started_outgoing:
+                if not communion_server._to_start_incoming:
+                    break
+            await asyncio.sleep(0.05)
 
     def start(self):
         if self.future is not None:
             return
         coro = self._start()
         self.future = asyncio.ensure_future(coro)
+        self.startup = asyncio.ensure_future(self._startup())
 
     
     async def _process_request_from_peer(self, peer, message):
@@ -353,25 +381,30 @@ class CommunionServer:
                 checksum = bytes.fromhex(content)
                 transformation_cache.clear_exception(checksum)
                 result = "OK"
+            elif type == "transformation_cancel":
+                raise NotImplementedError ### livegraph branch
             elif type == "buffer_status":
                 assert self.config_servant["buffer_status"]
                 checksum = content
-                buffer = buffer_cache.get_buffer(checksum)
-                # TODO: use buffer_check instead, and obtain buffer length
-                if buffer is not None:
-                    if len(buffer) < 10000: # vs 1000 for buffer_cache small buffers
-                        return 1
-                    status = self.config_servant["buffer_status"]
-                    if status == "small":
-                        return -1
-                peer_id = self.peers[peer]["id"]
-                result = await communion_client_manager.remote_buffer_status(
-                    checksum, peer_id
-                )
-                if result == True:
-                    return 0
-                else:
-                    return -2
+                async def func():
+                    buffer = buffer_cache.get_buffer(checksum)
+                    # TODO: use buffer_check instead, and obtain buffer length
+                    #print("STATUS SERVE BUFFER", buffer, checksum.hex())
+                    if buffer is not None:
+                        if len(buffer) < 10000: # vs 1000 for buffer_cache small buffers
+                            return 1, None
+                        status = self.config_servant["buffer_status"]
+                        if status == "small":
+                            return -1, None
+                    peer_id = self.peers[peer]["id"]
+                    result = await communion_client_manager.remote_buffer_status(
+                        checksum, peer_id
+                    )
+                    if result == True:
+                        return 0, None
+                    else:
+                        return -2, None
+                result = await func()
             elif type == "buffer":
                 checksum = content
                 peer_id = self.peers[peer]["id"]
@@ -381,6 +414,34 @@ class CommunionServer:
                 )
             elif type == "buffer_length":
                 raise NotImplementedError ## livegraph branch 
+            elif type == "semantic_to_syntactic":
+                checksum = content
+                peer_id = self.peers[peer]["id"]
+                tcache = transformation_cache
+                result = await tcache.serve_semantic_to_syntactic(
+                    checksum, peer_id
+                )
+                if isinstance(result, list):
+                    result = tuple([r.hex() for r in result])
+            elif type == "transformation_status":
+                checksum = content
+                peer_id = self.peers[peer]["id"]
+                tcache = transformation_cache
+                result = await tcache.serve_transformation_status(
+                    checksum, peer_id
+                )
+            elif type == "transformation_job":
+                checksum = content
+                peer_id = self.peers[peer]["id"]
+                transformer = RemoteTransformer(
+                    checksum, peer_id
+                )
+                tcache = transformation_cache                
+                transformation = await tcache.serve_get_transformation(checksum)
+                await tcache.incref_transformation(
+                    transformation, transformer
+                )
+                result = "OK"                
             elif type == "build_module":
                 assert self.config_servant["build_module"]
                 raise NotImplementedError ## livegraph branch 
@@ -408,7 +469,7 @@ class CommunionServer:
             msg = communion_encode(response)
             assert isinstance(msg, bytes)
             peer_id = self.peers[peer]["id"]
-            #print("  Communion response: send %d bytes to peer '%s' (#%d)" % (len(msg), peer_id, response["id"]))
+            pr("  Communion response: send %d bytes to peer '%s' (#%d)" % (len(msg), peer_id, response["id"]))
             await peer.send(msg)
         
     def _process_response_from_peer(self, peer, message):
@@ -424,8 +485,8 @@ class CommunionServer:
     async def _process_message_from_peer(self, peer, msg):        
         message = communion_decode(msg)
         peer_id = self.peers[peer]["id"]
-        #report = "  Communion %s: receive %d bytes from peer '%s' (#%d)"        
-        #print(report  % (message["mode"], len(msg), peer_id, message["id"]), message.get("type"))
+        report = "  Communion %s: receive %d bytes from peer '%s' (#%d)"        
+        pr(report  % (message["mode"], len(msg), peer_id, message["id"]), message.get("type"))
         #print("message from peer", self.peers[peer]["id"], ": ", message)
         mode = message["mode"]
         assert mode in ("request", "response"), mode
@@ -447,7 +508,7 @@ class CommunionServer:
         })
         msg = communion_encode(message)
         peer_id = self.peers[peer]["id"]
-        #print("  Communion request: send %d bytes to peer '%s' (#%d)" % (len(msg), peer_id, message["id"]), message["type"])
+        pr("  Communion request: send %d bytes to peer '%s' (#%d)" % (len(msg), peer_id, message["id"]), message["type"])
         await peer.send(msg)
         result = await future        
         self.futures[peer].pop(message_id)
@@ -455,6 +516,6 @@ class CommunionServer:
 
 
 communion_server = CommunionServer()
-from .core.cache.transformation_cache import transformation_cache
+from .core.cache.transformation_cache import transformation_cache, RemoteTransformer
 from .core.cache.buffer_cache import buffer_cache
 from .core.protocol.get_buffer import get_buffer_async

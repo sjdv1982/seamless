@@ -75,6 +75,7 @@ class Task:
     
     async def _run0(self, taskmanager):
         await taskmanager.await_active()
+        await communion_server.startup
         return await self._run()
 
     def _launch(self):
@@ -139,3 +140,4 @@ from .cell_update import CellUpdateTask
 from .get_buffer import GetBufferTask
 from .upon_connection import UponConnectionTask
 from ..manager import Manager
+from ....communion_server import communion_server

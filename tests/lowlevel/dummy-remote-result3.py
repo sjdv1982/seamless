@@ -44,7 +44,7 @@ class DummyClient:
                 break
     async def status(self, checksum):
         if self.st == 2:
-            return self.st, (self.progress, self.prelim)
+            return self.st, self.progress, self.prelim
         elif self.st == 3:
             return self.st, self.result
         else:

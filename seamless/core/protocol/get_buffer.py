@@ -8,6 +8,7 @@ async def get_buffer_async(checksum, buffer_cache, remote_peer_id=None):
         """  Gets the buffer from its checksum
 - Check for a local checksum-to-buffer cache hit (synchronous)
 - Else, check Redis cache (currently synchronous; make it async in a future version)
+- Else, check transformation cache (if it hits, make buffer of it)
 - Else, await remote checksum-to-buffer cache
 - Else, if the checksum has provenance, the buffer may be obtained by launching a transformation.
     However, in this case, the transformation must be local OR it must be ensured that remote
@@ -23,6 +24,10 @@ async def get_buffer_async(checksum, buffer_cache, remote_peer_id=None):
             return buffer
         buffer = buffer_cache.get_buffer(checksum)
         if buffer is not None:
+            return buffer
+        transformation = transformation_cache.transformations.get(checksum)
+        if transformation is not None:
+            buffer = tf_get_buffer(transformation)
             return buffer
         clients = communion_client_manager.clients["buffer"]
         if len(clients):
@@ -66,6 +71,9 @@ async def get_buffer_async(checksum, buffer_cache, remote_peer_id=None):
                 if buffer is None:
                     raise CacheMissError(checksum.hex())
                 assert isinstance(buffer, bytes), buffer
+                if checksum in buffer_cache.missing_buffers:
+                    buffer_cache.missing_buffers.discard(checksum)
+                    buffer_cache.cache_buffer(checksum, buffer)
                 return buffer
         # TODO: provenance # livegraph branch
         raise CacheMissError(checksum.hex())
@@ -73,3 +81,4 @@ async def get_buffer_async(checksum, buffer_cache, remote_peer_id=None):
 from .calculate_checksum import checksum_cache
 from ..cache import CacheMissError
 from ...communion_client import communion_client_manager
+from ..cache.transformation_cache import transformation_cache, tf_get_buffer
