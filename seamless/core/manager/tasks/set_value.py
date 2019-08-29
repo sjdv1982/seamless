@@ -18,6 +18,7 @@ class SetCellValueTask(Task):
         try:
             taskmanager.cell_to_value[cell] = self.value
             buffer = await SerializeToBufferTask(manager, self.value, cell._celltype).run()
+            assert buffer is None or isinstance(buffer, bytes)
             checksum = await CalculateChecksumTask(manager, buffer).run()
             if checksum is not None:
                 buffer_cache = manager.cachemanager.buffer_cache

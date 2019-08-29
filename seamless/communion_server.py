@@ -1,3 +1,4 @@
+print("TODO: communion server: normal cancel (with peer ID), as a non-dummy test")
 """
 Seamless communion server
 Upon startup:
@@ -11,7 +12,8 @@ Upon startup:
 Servable things:
 - Checksum to buffer (very generic; make it that incref is done for tf_checksum-to-transformation-JSON)
 For this, there is a buffer status API, which can return:
-    -1: checksum unknown
+    -2: checksum unknown
+    -1: buffer too large
     0: buffer available remotely
     1: buffer available locally
 
@@ -35,22 +37,31 @@ Finally, the job API has an (async) wait method, that blocks until the job updat
 Submitting a job is quick. After submission, the wait method is called.
 Finally, the results are retrieved, resulting in a code 0, a code 3, or 
  occasionally a negative code (leading to re-evaluation).
-The server may allow hard cancel of a job (by checksum)
+
+The server may allow hard cancel/clear exception of a job (by checksum).
+Normally, this is only done for servers behind a supervisor front-end, where
+ the supervisor can do load-balancing and retries where needed.
+
 Checksum-to-buffer requests can be forwarded to remote Seamless instances,
- but job requests are not.
-Submitting a job clears any exception associated with that job.
-Submitting a job may include a small dict of meta-data,
+ (servant acting as a master) but job requests are not.
+
+Jobs may include meta-data,
  containing e.g. information about required packages, memory requirements,
  estimated CPU time, etc.
- But Seamless servants ignore these meta-data.
+However, this is beyond the scope of communion.
+Meta-data for a job may be stored in a provenance server.
 A supervisor might accept job requests and forward them to registered
- Seamless servants, based on the meta-data.
-Likewise, the job status API may return an exception checksum, but
- Seamless servants never do. A provenance server might store
- exceptions based on the job checksum and meta-data. These may be
- managed by a supervisor, which may decide its status responses based
- on it.
-"""
+ Seamless servants, based on the meta-data that it retrieves from this server.
+Likewise, the job status API never return an exception value or checksum.
+ A provenance server might store these exceptions based on the job checksum 
+ and meta-data. These may be managed by a supervisor, which may decide its
+ 
+ """
+
+class CommunionError(Exception):
+    pass
+
+DEBUG = True
 
 import logging
 logger = logging.getLogger('websockets.server')
@@ -91,10 +102,10 @@ if _outgoing:
 # Default configuration for being a master, i.e. on using other peers as a service
 default_master_config = {
     "buffer": True,
-    "buffer_available": True,
+    "buffer_status": True,
     "buffer_length": True,
-    "transformer_job": False,
-    "transformer_status": False,
+    "transformation_job": False,
+    "transformation_status": False,
     "build_module_job": False,
     "build_module_status": False,
     #
@@ -106,10 +117,10 @@ default_master_config = {
 # Default configuration for being a servant, i.e. on providing services to other peers
 default_servant_config = {
     "buffer": "small", # only return small buffers (< 10 000 bytes)
-    "buffer_available": "small",
+    "buffer_status": "small",
     "buffer_length": True,
-    "transformer_job": False,
-    "transformer_status": False,
+    "transformation_job": False,
+    "transformation_status": False,
     "build_module_job": False,
     "build_module_status": False,
 }
@@ -187,8 +198,9 @@ def communion_decode(m):
 class CommunionServer:
     future = None
     PROTOCOL = ("seamless", "communion", "0.2")
+    _started_outgoing = False
+    _to_start_incoming = None
     def __init__(self):
-        raise NotImplementedError # livegraph branch   
         self.config_master = default_master_config.copy()
         self.config_servant = default_servant_config.copy()
         cid = os.environ.get("SEAMLESS_COMMUNION_ID")
@@ -217,15 +229,6 @@ class CommunionServer:
                 assert key in default_servant_config, key
             self.config_servant = config.copy()
         self.config_servant.update(update)
-
-    def _add_clients(self, servant, peer_config):
-        config = peer_config["servant"]
-        for communion_type in sorted(config.keys()):
-            if not self.config_master.get(communion_type):
-                continue
-            communion_client_manager.add_client(communion, servant)
-            print("ADD SERVANT", config_type)
-
             
     async def _listen_peer(self, websocket, peer_config, incoming=False):
         all_peer_ids = [peer["id"] for peer in self.peers.values()]
@@ -245,7 +248,13 @@ class CommunionServer:
         self.peers[websocket] = peer_config
         self.message_count[websocket] = 1000 if incoming else 0
         self.futures[websocket] = {}
-        self._add_clients(websocket, peer_config)
+        communion_client_manager.add_servant(
+            websocket,
+            peer_config["id"],
+            config_servant=peer_config["servant"],
+            config_master=self.config_master 
+        )
+
         try:
             while 1:
                 message = await websocket.recv()
@@ -260,15 +269,26 @@ class CommunionServer:
             self.futures.pop(websocket)
             communion_client_manager.remove_servant(websocket)
 
-    async def _connect_incoming(self, config, url):
+    async def _connect_incoming(self, config, url, url0):
         import websockets
-        async with websockets.connect(url) as websocket:            
-            await websocket.send(json.dumps(config))
-            peer_config = await websocket.recv()
-            peer_config = json.loads(peer_config)
-            print("INCOMING", self.id, peer_config["id"])
-            await self._listen_peer(websocket, peer_config, incoming=True)
-
+        def start_incoming():
+            try:
+                self._to_start_incoming.remove(url0)
+            except (ValueError, AttributeError):
+                pass
+        try:
+            ok = False
+            async with websockets.connect(url) as websocket:
+                await websocket.send(json.dumps(config))
+                peer_config = await websocket.recv()
+                peer_config = json.loads(peer_config)
+                print("INCOMING", self.id, peer_config["id"])
+                start_incoming()
+                ok = True
+                await self._listen_peer(websocket, peer_config, incoming=True)
+        finally:
+            if not ok:
+                start_incoming()
     async def _serve_outgoing(self, config, websocket, path):
         peer_config = await websocket.recv()
         peer_config = json.loads(peer_config)
@@ -291,106 +311,91 @@ class CommunionServer:
                 print("ERROR: outgoing port %d already in use" % outgoing)
                 raise Exception
             server = functools.partial(self._serve_outgoing, config)
-            coro = websockets.serve(server, 'localhost', outgoing)
-            coros.append(coro)
-            print("Set up a communion outgoing port %d" % outgoing)            
+            coro_server = websockets.serve(server, 'localhost', outgoing)            
+            print("Set up a communion outgoing port %d" % outgoing)
+        if len(incoming):
+            self._to_start_incoming = incoming.copy()
         for url in incoming:
+            url0 = url
             if not url.startswith("ws://") and not url.startswith("wss://"):
                 url = "ws://" + url
-            coro = self._connect_incoming(config, url)
+            coro = self._connect_incoming(config, url, url0)
             coros.append(coro)
 
-        await asyncio.gather(*coros)
+        if outgoing is not None:
+            await coro_server
+        self._started_outgoing = True
+        if len(coros):
+            await asyncio.gather(*coros)
+        print("DONE!")
+
+    def start(self):
+        if self.future is not None:
+            return
+        coro = self._start()
+        self.future = asyncio.ensure_future(coro)
+
     
     async def _process_request_from_peer(self, peer, message):
         type = message["type"]
         message_id = message["id"]
         content = message["content"]
         result = None
+        error = False
         try:
-            # Local cache
-            if type == "transformation_result":
-                cache_name = "transform_cache"
-                method_name = "get_result"
-            elif type == "buffer_check":
-                cache_name = "buffer_cache"
-                method_name = "buffer_check"
-            elif type == "value_get":
-                cache_name = None
-                method_name = "value_get"
-            elif type == "transformation_job_check":
-                ###level1 = TransformerLevel1.deserialize(content)
-                ###result = True  # TODO: analyze transformer, configure acceptance criteria
-                raise NotImplementedError
-            elif type == "transformation_job_run":
-                ###level1 = TransformerLevel1.deserialize(content)
-                ###content = level1
-                raise NotImplementedError
-            elif type == "transformation_cancel":
-                raise NotImplementedError
-            elif type == "transformation_full_cancel":
-                raise NotImplementedError
+            if type == "transformation_hard_cancel":
+                assert self.config_servant["hard_cancel"]
+                checksum = bytes.fromhex(content)
+                transformation_cache.hard_cancel(checksum)
+                result = "OK"
+            elif type == "transformation_clear_exception":
+                assert self.config_servant["clear_exception"]
+                checksum = bytes.fromhex(content)
+                transformation_cache.clear_exception(checksum)
+                result = "OK"
+            elif type == "buffer_status":
+                assert self.config_servant["buffer_status"]
+                checksum = content
+                buffer = buffer_cache.get_buffer(checksum)
+                # TODO: use buffer_check instead, and obtain buffer length
+                if buffer is not None:
+                    if len(buffer) < 10000: # vs 1000 for buffer_cache small buffers
+                        return 1
+                    status = self.config_servant["buffer_status"]
+                    if status == "small":
+                        return -1
+                peer_id = self.peers[peer]["id"]
+                result = await communion_client_manager.remote_buffer_status(
+                    checksum, peer_id
+                )
+                if result == True:
+                    return 0
+                else:
+                    return -2
+            elif type == "buffer":
+                checksum = content
+                peer_id = self.peers[peer]["id"]
+                result = await get_buffer_async(
+                    checksum, buffer_cache, 
+                    remote_peer_id=peer_id
+                )
+            elif type == "buffer_length":
+                raise NotImplementedError ## livegraph branch 
             elif type == "build_module":
+                assert self.config_servant["build_module"]
+                raise NotImplementedError ## livegraph branch 
                 d_content = json.loads(content)
                 full_module_name = d_content["full_module_name"]
                 checksum = bytes.fromhex(d_content["checksum"])
-                module_definition = d_content["module_definition"]                
+                module_definition = d_content["module_definition"]                   
+                # build_compiled_module(full_module_name, checksum, module_definition)            
             else:
-                raise NotImplementedError(type)
-            if result is None:
-                for manager in self.managers:
-                    if type == "transformer_job_run":
-                        result = await manager.run_remote_transform_job(content)
-                    elif type == "build_module":                      
-                        build_compiled_module(full_module_name, checksum, module_definition)
-                        break
-                    else:
-                        if cache_name is None:                            
-                            method = getattr(manager, method_name)
-                        else:
-                            cache = getattr(manager, cache_name)
-                            method = getattr(cache, method_name)
-                        result = method(content)
-                        if type.endswith("check"):
-                            if result == True:
-                                break
-                        else:
-                            if result is not None:
-                                break
-            # Remote cache
-            if result is None:
-                cache_task = None
-                peer_id = self.peers[peer]["id"]
-                if type == "transformation":
-                    raise NotImplementedError # livegraph branch
-                    checksum = bytes.fromhex(content)
-                    cache_task = cache_task_manager.remote_transform_result(checksum, origin=peer_id)
-                elif type == "buffer_check":
-                    raise NotImplementedError # livegraph branch
-                    pass #TODO: forward buffer_check requests
-                    #checksum = bytes.fromhex(content)
-                    #cache_task = cache_task_manager.remote_value(checksum, origin=peer_id)
-                elif type == "buffer_get":
-                    raise NotImplementedError # livegraph branch
-                    pass #TODO: forward value_get requests
-                    #checksum = bytes.fromhex(content)
-                    #cache_task = cache_task_manager.remote_value(checksum, origin=peer_id)
-                elif type == "transformer_job_check":
-                    pass #TODO: forward transform_job_check requests
-                elif type == "transformer_job_run":
-                    pass #TODO: forward transform_job_run requests
-                elif type == "build_module":
-                    pass #TODO: forward build_module requests
-                else:
-                    raise ValueError(type)
-                if cache_task is not None:
-                    await cache_task.future
-                    if cache_name is None:
-                        method = getattr(manager, method_name)
-                    else:
-                        cache = getattr(manager, cache_name)
-                        method = getattr(cache, method_name)
-                    result = method(content)
+                raise ValueError(type)
+        except Exception as exc:
+            if DEBUG:
+                traceback.print_exc()
+            error = True
+            result = repr(exc)
         finally:
             #print("REQUEST", message_id)
             response = {
@@ -398,23 +403,29 @@ class CommunionServer:
                 "id": message_id,
                 "content": result
             }
+            if error:
+                response["error"] = True
             msg = communion_encode(response)
             assert isinstance(msg, bytes)
             peer_id = self.peers[peer]["id"]
-            print("  Communion response: send %d bytes to peer '%s' (#%d)" % (len(msg), peer_id, response["id"]))
+            #print("  Communion response: send %d bytes to peer '%s' (#%d)" % (len(msg), peer_id, response["id"]))
             await peer.send(msg)
         
     def _process_response_from_peer(self, peer, message):
         message_id = message["id"]
         content = message["content"]
         #print("RESPONSE", message_id)
-        self.futures[peer][message_id].set_result(content)
+        future = self.futures[peer][message_id]
+        if message.get("error"):
+            future.set_exception(CommunionError(content))
+        else:
+            future.set_result(content)
         
     async def _process_message_from_peer(self, peer, msg):        
         message = communion_decode(msg)
-        report = "  Communion %s: receive %d bytes from peer '%s' (#%d)"
         peer_id = self.peers[peer]["id"]
-        print(report  % (message["mode"], len(msg), peer_id, message["id"]), message.get("type"))
+        #report = "  Communion %s: receive %d bytes from peer '%s' (#%d)"        
+        #print(report  % (message["mode"], len(msg), peer_id, message["id"]), message.get("type"))
         #print("message from peer", self.peers[peer]["id"], ": ", message)
         mode = message["mode"]
         assert mode in ("request", "response"), mode
@@ -436,16 +447,14 @@ class CommunionServer:
         })
         msg = communion_encode(message)
         peer_id = self.peers[peer]["id"]
-        print("  Communion request: send %d bytes to peer '%s' (#%d)" % (len(msg), peer_id, message["id"]), message["type"])
+        #print("  Communion request: send %d bytes to peer '%s' (#%d)" % (len(msg), peer_id, message["id"]), message["type"])
         await peer.send(msg)
         result = await future        
         self.futures[peer].pop(message_id)
         return result
 
 
-# TODO # livegraph branch
-"""
 communion_server = CommunionServer()
-
-from .core.events.cache_task import cache_task_manager
-"""
+from .core.cache.transformation_cache import transformation_cache
+from .core.cache.buffer_cache import buffer_cache
+from .core.protocol.get_buffer import get_buffer_async

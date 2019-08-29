@@ -46,6 +46,8 @@ class DummyClient:
         print("Server CANCEL")
         self.job.cancel()
         self.st = 1
+        self.progress = 0
+        self.prelim = None
     async def clear_exception(self, checksum):
         pass # dummy
     async def status(self, checksum):
@@ -98,8 +100,9 @@ for n in range(5):
 ctx.tf.cancel()
 ctx.equilibrate(0.1)
 report()
+ctx.tf.clear_exception()
 
-for n in range(5):
+for n in range(25):
     print("STEP", n+1)
     report()
     ctx.equilibrate(0.5)

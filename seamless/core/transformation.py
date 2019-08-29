@@ -56,6 +56,7 @@ class TransformationJob:
     _job_id_counter = 0
     _cancelled = False
     _hard_cancelled = False
+    remote_futures = None
     def __init__(self,
         checksum, codename,
         buffer_cache, transformation, 
@@ -166,9 +167,13 @@ class TransformationJob:
         clients = list(communion_client_manager.clients["transformation"])
         await self._probe_remote(clients)
         if self.remote: 
-            result = await self._execute_remote(
-                prelim_callback, progress_callback
-            )
+            self.remote_futures = None
+            try:
+                result = await self._execute_remote(
+                    prelim_callback, progress_callback
+                )
+            finally:
+                self.remote_futures = None
         else:
             result = await self._execute_local(
                 prelim_callback, progress_callback
@@ -186,12 +191,22 @@ class TransformationJob:
     ):
 
         async def get_result1(client):
-            await client.submit(self.checksum)
-            return await client.status(self.checksum)
+            try:
+                await client.submit(self.checksum)
+                return await client.status(self.checksum)
+            except asyncio.CancelledError:
+                if self._hard_cancelled:
+                    await client.hard_cancel(self.checksum)
+                raise
 
         async def get_result2(client):
-            await client.wait(self.checksum)
-            return await client.status(self.checksum)
+            try:
+                await client.wait(self.checksum)
+                return await client.status(self.checksum)
+            except asyncio.CancelledError:
+                if self._hard_cancelled:
+                    await client.hard_cancel(self.checksum)
+                raise
 
         if self.remote_status == 3:
             result_checksum = self.remote_result
@@ -206,6 +221,7 @@ class TransformationJob:
         assert len(clients)
 
         futures = []
+        self.remote_futures = futures
         rev = {}
         for n, client in enumerate(clients):
             future = asyncio.ensure_future(get_result(client))

@@ -1,7 +1,7 @@
 """Define three servers that can perform dummy remote caching for transformer results
 The first one returns None; status should indicate that buffer is not available
 The second one raises an Exception; status should indicate that the buffer is remote
-The third one returns the correct value after 0.5 second
+The third one gives the correct result after 0.5 second
 """
 
 import asyncio
@@ -39,7 +39,7 @@ class DummyClient:
 from seamless.communion_client import communion_client_manager
 m = communion_client_manager
 m.clients["buffer"] = [DummyClient(s, st) 
-    for s,st in ((server1, -1), (server2, 0), (server3, 1))
+    for s,st in ((server1, -2), (server2, 0), (server3, 1))
 ]; m.clients["buffer"][0] # dirty hack
 
 with macro_mode_on():

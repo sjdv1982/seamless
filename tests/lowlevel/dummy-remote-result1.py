@@ -1,5 +1,5 @@
 """Define four servers that can perform dummy remote caching for transformer results
-The first one returns first, but returns -1 (cache miss)
+The first one returns first, but returns -3 (cache miss)
 The second one raises an Exception after 2 secs
 The third one returns 42 after 3 seconds
 The fourth one returns 43 after 5 seconds, i.e. it should be canceled

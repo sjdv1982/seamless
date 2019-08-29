@@ -1,8 +1,10 @@
 import asyncio
+import traceback
 
+DEBUG = True
 REMOTE_TIMEOUT = 5.0 
 
-async def get_buffer_async(checksum, buffer_cache):
+async def get_buffer_async(checksum, buffer_cache, remote_peer_id=None):
         """  Gets the buffer from its checksum
 - Check for a local checksum-to-buffer cache hit (synchronous)
 - Else, check Redis cache (currently synchronous; make it async in a future version)
@@ -41,6 +43,11 @@ async def get_buffer_async(checksum, buffer_cache):
                 if len(done):
                     for fut in done:
                         if fut.exception() is not None:
+                            if DEBUG:
+                                try:
+                                    fut.result()
+                                except:
+                                    traceback.print_exc()
                             continue
                         status = fut.result()
                         if status == -1:
@@ -58,6 +65,7 @@ async def get_buffer_async(checksum, buffer_cache):
                 buffer = await clients[best_client].submit(checksum)
                 if buffer is None:
                     raise CacheMissError(checksum.hex())
+                assert isinstance(buffer, bytes), buffer
                 return buffer
         # TODO: provenance # livegraph branch
         raise CacheMissError(checksum.hex())

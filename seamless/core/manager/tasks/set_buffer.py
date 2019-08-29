@@ -3,6 +3,7 @@ from . import Task
 class SetCellBufferTask(Task):
     # For buffers that come from the command line
     def __init__(self, manager, cell, buffer, checksum):
+        assert isinstance(buffer, bytes)
         super().__init__(manager)
         self.cell = cell
         self.buffer = buffer      

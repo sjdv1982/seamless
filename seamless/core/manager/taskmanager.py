@@ -268,7 +268,14 @@ class TaskManager:
                 print()
             return result, True
 
-        while len(tasks):
+        def wait_for_communion():
+            if not communion_server._started_outgoing:
+                return False
+            if communion_server._to_start_incoming:
+                return False
+            return True
+
+        while len(tasks) or not wait_for_communion():
             if timeout is not None:
                 if report is not None:
                     curr_timeout=min(remaining, report)
@@ -451,3 +458,4 @@ from .. import SeamlessBase
 from .accessor import ReadAccessor
 from .expression import Expression
 from .tasks.upon_connection import UponConnectionTask
+from ...communion_server import communion_server

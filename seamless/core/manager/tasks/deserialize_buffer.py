@@ -10,7 +10,8 @@ class DeserializeBufferTask(Task):
     def refkey(self):
         return Deserialization(self.checksum, self.celltype, self.copy)
 
-    def __init__(self, manager, buffer, checksum, celltype, copy): 
+    def __init__(self, manager, buffer, checksum, celltype, copy):
+        assert buffer is None or isinstance(buffer, bytes)
         self.buffer = buffer
         self.checksum = checksum
         self.celltype = celltype

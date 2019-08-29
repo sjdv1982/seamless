@@ -52,6 +52,9 @@ class Manager:
         self.sharemanager = sharemanager
         sharemanager.start()
 
+        from ...communion_server import communion_server
+        communion_server.start()
+
     ##########################################################################
     # API section I: Registration (divide among subsystems)
     ##########################################################################
@@ -247,6 +250,7 @@ class Manager:
             return None
         buffer = checksum_cache.get(checksum)
         if buffer is not None:
+            assert isinstance(buffer, bytes)
             return buffer
         return GetBufferTask(self, checksum).launch_and_await()
 

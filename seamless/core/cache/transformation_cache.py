@@ -269,6 +269,9 @@ class TransformationCache:
             return
         #future.set_exception(HardCancelError()) # does not work...
         job._hard_cancelled = True
+        if job.remote_futures is not None:
+            for fut in job.remote_futures:
+                fut.cancel()
         future.cancel()
 
     def job_done(self, job, _):
@@ -371,12 +374,17 @@ class TransformationCache:
 
     def clear_exception(self, transformer):
         from ..manager.tasks.transformer_update import TransformerUpdateTask
+        from ...communion_client import communion_client_manager
         tf_checksum = self.transformer_to_transformations.get(transformer)
         if tf_checksum is None:
             return
         exc = self.transformation_exceptions.pop(tf_checksum, None)
         if exc is None:
             return
+        clients = communion_client_manager.clients["transformation"]
+        for client in clients:
+            coro = client.clear_exception(tf_checksum)
+            asyncio.ensure_future(coro)
         for tf in self.transformations_to_transformers[tf_checksum]:
             TransformerUpdateTask(tf._get_manager(), tf).launch()
         

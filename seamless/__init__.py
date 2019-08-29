@@ -97,10 +97,7 @@ else:
 from .silk import Silk
 from .debugger import pdb
 from .shareserver import shareserver
-# TODO # livegraph branch
-"""
 from .communion_server import communion_server
-"""
 from .core.transformation import set_ncores
 from .get_hash import get_hash, get_dict_hash
 from .core.cache.redis_client import RedisSink, RedisCache

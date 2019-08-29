@@ -26,8 +26,11 @@ class BufferCache:
         # Buffer length caches (never expire)
         self.small_buffers = set()
         self.buffer_length = {} #checksum-to-bufferlength (large buffers)
+        self.missing_buffers = set()
 
     def cache_buffer(self, checksum, buffer):
+        assert checksum is not None
+        assert isinstance(buffer, bytes)
         if checksum not in self.buffer_refcount:
             self.buffer_refcount[checksum] = 1
             tempref = functools.partial(self.decref, checksum, from_temp=True)
@@ -35,6 +38,7 @@ class BufferCache:
         if checksum in self.buffer_cache:
             return            
         self.buffer_cache[checksum] = buffer
+        self.missing_buffers.discard(checksum)
         redis_sinks.set_buffer(checksum, buffer)
         l = len(buffer)
         if l < 1000:
@@ -49,13 +53,16 @@ class BufferCache:
     def incref(self, checksum):
         if checksum in self.buffer_refcount:
             self.buffer_refcount[checksum] += 1
-            return
-        self.buffer_refcount[checksum] = 1
+            if checksum not in self.missing_buffers:
+                return
+        else:
+            self.buffer_refcount[checksum] = 1
         buffer = checksum_cache.get(checksum)
         if buffer is not None:
             self.cache_buffer(checksum, buffer)
         else:
-            assert self.get_buffer(checksum) is not None
+            if self.get_buffer(checksum) is None:
+                self.missing_buffers.add(checksum)
 
     def decref(self, checksum, from_temp=False):
         if not from_temp and self.buffer_refcount[checksum] == 1:
@@ -64,7 +71,10 @@ class BufferCache:
             return
         self.buffer_refcount[checksum] -= 1
         if self.buffer_refcount[checksum] == 0:
-            self.buffer_cache.pop(checksum)
+            if checksum in self.missing_buffers:
+                self.missing_buffers.pop(checksum)
+            else:
+                self.buffer_cache.pop(checksum)
             self.buffer_refcount.pop(checksum)
 
     def get_buffer(self, checksum):
@@ -96,3 +106,4 @@ buffer_cache = BufferCache()
 
 from ..protocol.calculate_checksum import checksum_cache
 from .tempref import temprefmanager
+from . import CacheMissError
