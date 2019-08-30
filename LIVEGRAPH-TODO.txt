@@ -1,75 +1,8 @@
-TODO:
- Change "initial" in set checksum: only for auth portion of structuredcell
- When translating a graph, only set authoritative parts
- Everything else goes to expression cache, transformer cache!
-TODO:
-  Silk overhaul:
-    Rip buffer, fork; no automatic invocation of validate()
-  Structured cell overhaul:
-  - Authoritative portion (stored in cell)
-  - Inchannel checksums (_last_inputs, like transformers)
-  - Schema (stored in cell)
-  - Buffered checksum (stored in cell)
-  - Data checksum (stored in cell)
-  Setting a cell checksum is cached as usual:
-    - value is available while checksum is being computed
-    - overwriting the value resets the checksum computation
-  Monitor monitors set-subpath / get-subpath as before, for authorative portion
-    Set-cell is illegal on the authoritative portion (except "initial"!).
-    - Get-subpath triggers a cell get-value plus a subpath evaluation
-      (TODO: subpath evaluation machinery; also used by expression;
-       subpath evaluation has deep cell baked-in! )
-      It is blocking.
-    - Set-subpath triggers:
-      - Check that it is not completely covered by an inchannel.
-        If it is partially covered, the covered portion is removed.
-      - From the subpath, determine the outchannels that are now out of date
-        (out-of-date list)
-      - A cell get-value, followed by modification of the value
-      - A cell set-value
-      Non-blocking, waits for previous set-subpath. 
-  Inchannel modification: determine the outchannels that are now out of date
-  
-  Any modification of authportion, schema or inchannels leads to a cancel of the
-  data cell + a buffer join.
-  The buffer join task awaits all cell-checksum-tasks launched by cell set-value tasks.
-  (A new modification will cancel the previous buffer join and launch a new one)
-  The buffer join will do a get-value for the authportion and the inchannels
-  (hopefully cached by deserialize cache). Then it will join them into a joint value.
-  It will write the joint value into the buffer, and await its cell-checksum-task
-  Using the buffer checksum, it will morph the outchannel expressions that did not
-  change (directly modifying expression cache!), and clear the out-of-date list.
-  Finally, it will invoke the validation of the schema (Silk instance, try-except on .validate). 
-  Upon success, it will copy the buffer checksum into the data cell 
-  (launching a cell update of the data cell, 
-  which will trigger outchannel expression evaluations).
-TODO:
-  disallow modification of cells under macro control, unless sovereign.
 
+Current status (Aug 30 2019):
+Almost implemented, but some modifications were made (need to be documented)
+In particular, subpaths/deep cells/structured cells will be a different
 
-TODO in parallel: 
-- status report, link to metainfo (see below)
-    - no need to store in graph, as it gets reconstituted
-- metainfo:
-    - store exception and stdout/stderr of a transformation, include in status report
-        also store if result was obtained from cache, or remotely
-    - same for macro and reactor (easier, because 1:1)
-    - same for cell:
-        - structuredcell validation error
-        - error in obtaining value from checksum (also if provenance fails)
-    - implement storage for metainfo in graph
-- logging system, based on event loop (in parallel to metainfo)
-- progress bar system
-
-TODO afterwards: dealing properly with explicit None values.
-Make it so that transformations and reactors CAN set None on their result
- Same for None explicitly set on cells (cell.set_value(None), or cell.set_none() by a graph;
-  cell.set_void() explicitly sets a cell to void-None)
- Read accessors that retrieve None when reading their path (as opposed to AttributeError/KeyError)
-  also are considered "explicit None".
- Transformations that resulted in an exception are NOT explicit None (they are "void-None").
- Explicit None values are NOT void and do NOT lead to void cancellation
- Explicit None values are allowed on input pins that have their support explicitly enabled.
 
 ===================
 

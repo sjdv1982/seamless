@@ -11,12 +11,10 @@ Easier to work with:
 - Job/cache control (canceling, job database, address cache memory leaks) [up to 2 weeks for a prototype]
 - Better control of execution details (execution options, non-deterministic input pins, ephemeral cells, reactor start/stop side effects) [one week for initial implementation]
 - Shells, or workers-as-Jupyter-kernels [a few days]
-Big Data: deep cells [a few days], full streams (reduction, multi-inputs) [a few days]
-GPU support: block cells [a week]
+Big Data: deep cells [a few days]
 
 Long-term features:
 Special constructs
-Latency reduction: Stream-stream
 Full-featured Silk
 Git integration (with modularity)
 Debugger integration

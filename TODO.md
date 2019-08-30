@@ -1,21 +1,125 @@
+A. Do the final implementation of the low-level for the LiveGraph branch
+- Canceling of remote jobs
 
-UPDATE: new checksum-based async execution engine will be much more stable
+B. Silk / Structured cells
+  Silk overhaul:
+    Rip buffer, fork; no automatic invocation of validate()
+  Monitor: dummy stores paths in dict/list, then invokes validate()
+  Structured cell overhaul:
+  => Structured cell becomes a monitor
+  - Authoritative portion (stored in cell)
+  - Inchannel checksums (_last_inputs, like transformers)
+  - Schema (stored in cell)
+  - Buffered checksum (stored in cell)
+  - Data checksum (stored in cell)
+  (auth portion cell is optional)
+  (schema cell is optional)
+  (buffered checksum cell is optional if no schema )
+  Setting a cell checksum is cached as usual:
+    - value is available while checksum is being computed
+    - overwriting the value resets the checksum computation
+  Monitor monitors set-subpath / get-subpath as before, for authorative portion
+    Set-cell is illegal on the authoritative portion (except "initial"!).
+    - Get-subpath triggers a cell get-value plus a subpath evaluation
+      (TODO: subpath evaluation machinery; also used by expression;
+       subpath evaluation has deep cell baked-in! )
+      It is blocking.
+    - Set-subpath triggers:
+      - Check that it is not completely covered by an inchannel.
+        If it is partially covered, the covered portion is removed.
+      - From the subpath, determine the outchannels that are now out of date
+        (out-of-date list)
+      - Use  expression evaluation machinery; interacting with hash patterns.
+        If not a deep cell, what happens is the following:
+        - A cell get-value, followed by modification of the value
+        - lists are set to None for items previous to the index; 
+           dicts/dict items are created for missing keys
+        - A cell set-value
+      Non-blocking, waits for previous set-subpath. 
+  Inchannel modification: determine the outchannels that are now out of date
+  
+  Any modification of authportion, schema or inchannels leads to a cancel of the
+  data cell + a buffer join.
+  The buffer join task awaits all cell-checksum-tasks launched by cell set-value tasks.
+  (A new modification will cancel the previous buffer join and launch a new one)
+  The buffer join will do a get-value for the authportion and the inchannels
+  (hopefully cached by deserialize cache). Then it will join them into a joint value.
+  It will write the joint value into the buffer, and await its cell-checksum-task
+  Using the buffer checksum, it will morph the outchannel expressions that did not
+  change (directly modifying expression cache!), and clear the out-of-date list.
+  Finally, it will invoke the validation of the schema (Silk instance, try-except on .validate). 
+  Upon success, it will copy the buffer checksum into the data cell 
+  (launching a cell update of the data cell, 
+  which will trigger outchannel expression evaluations).
+TODO:
+  disallow modification of cells under macro control, unless sovereign.
 
-TODO in documentation:
-1. Rip GPU cell scheme, this will never work.
- Instead (long term plan):
- - Annotate transformers as GPU-based. This will make all of their pins GPU-based.
- - GPU-based transformers produce a GPU-based result. Checksum computation of this result is done on the GPU.
- - Maintain a checksum-to-GPUbuffer cache that maintains which buffers are on the GPU
-   Can be done smarter for certain expressions (introduce offsets and stride)
-   Cache can be emptied based on memory requirements, or if certain checksums are foreseen to be not needed
-    anymore on the GPU.
-2. Pure reactors. Create a cache for them as transformers.
+C. Deep cells
+As long as they are of cell type "mixed", a cell can be annotated with a *hash pattern*.
+A hash pattern describes how the value of the cell is stored as checksums.
+A hash pattern is either the symbol "#" ("hash", i.e. "checksum") or a dict.
+The default hash pattern (for non-deep cells) is "#" (value stored as a single checksum).
+For a hash pattern that is a dict, the values are themselves hash patterns ("sub-patterns"). 
+The dict can have the following keys: 
+- A string S. This means that at this level, the value must be a dict containing string keys,
+normally including S. Setting it to a non-dict will be a parse error. The item S in the value
+will be stored using the specified hash sub-pattern.
+- * . Same as above, except that it will match any item in the value dict, 
+not just a single item S. This pattern has lower priority (i.e. it will not match S if there is a
+specific hash pattern for S). If there is no *, the value dict may not contain other keys than
+the strings S that have been specified.
+- ? . Must be the only entry in the hash pattern.
+This means that at this level, the value must be a list. Every item in the list will be 
+stored using the specified hash sub-pattern. 
+- ?N . N must be a number. Must be the only entry in the hash pattern.
+This means that at this level, the value must be a list. 
+The list will be divided into chunks of length N (the last chunk may be smaller).
+Every item in the list will be stored using the specified hash sub-pattern.
 
-UPDATE: plan finished for Seamless data management (data-management.txt).
-Shoe-horn this into the roadmap in an appropriate place...
+How the checksums are stored exactly:
+
+Non-deep cells are always stored as checksum (in binary format) of a buffer. They hold
+a checksum reference to that buffer.
+Deep cells have an underlying deep structure. They are stored as a checksum 
+(in binary format) of the buffer of the deep structure. They hold a checksum reference 
+to this buffer. The deep structure stores checksums in hex format. 
+It holds a reference to (the underlying buffer of) every checksum in it.
+Deep structures use the expression evaluation engine to modify their values (each value
+is associated with a deep path).
+To convert their values to checksums, they use a set-deep-value task, similar to a set
+value task, except that it does not depend on a cell; rather, it is cancelled when the
+same deep path is modified.
+Internally, the deep structure is stored as follows. In general, the deep structure cannot
+be decoded without knowing the hash pattern using which it was encoded. Each deep structure 
+contains hex checksums and/or deep sub-structures.
+- If the hash pattern contains * and/or string keys, the deep structure is a dict with the same
+  keys as the corresponding value dict.
+- If the hash pattern contains ?, the deep structure is a list with the same length as the
+  corresponding value list.
+- If the hash pattern contains ?N, the deep structure is a list of two items. Item 1
+  contains the length of the original value list, and item 2 is a list with one hex checksum
+  (or deep sub-structure) for each chunk.
+
+D. Deep transformers.
+
+Deep transformers are the only way to achieve parallelism within a transformer.
+(earlier designs concerning streams and blocks are now OBSOLETED)
+...
+
+E. The mid/high level
+1. Change the call graph
+ Change "initial" in set checksum: only for auth portion of structuredcell
+ When translating a graph, only set authoritative parts
+ Everything else goes to expression cache, transformer cache!
+2. Change the translation macros (esp. for StructuredCell)
+3. Bring back sovereignty
+4. Run tests
+5. Test in Jupyter
+6. Test Observable Notebook (client JS has changed)
+7. Re-run examples
 
 =======================================================  
+SOMEWHAT OUTDATED: until: see below
 
 Great Refactor is almost complete (see seamless-towards-02.md).
 Things to do:
@@ -55,12 +159,9 @@ A. Deployment: Seamless Hub
 
 B. Usability
 - Implement reactor
-- Simple streams at high level
-- Implement annotation dict, including debug (DONE), ncores (ncores DONE), and a field for streams (TODO)
-  => high-level streams example
+- Implement annotation dict, including debug (DONE), ncores (ncores DONE)
 - Every worker has a number of cores used (default 1). As many jobs are launched as there are cores
 - Shell (create new namespace upon request/upon update; either pre-execution or post-execution [post-execution may re-execute transformer/macro])
-- Allow any worker inputpin to be annotated as must_be_defined=False.
 
 C. DaReUS-Loop/PepCyclizer example:
   - Banks!
@@ -89,76 +190,49 @@ Cleanup
    - Cleanup of the code base, remove vestiges of 0.1 (except lib and tests).
    - Cleanup of the TODO and the documentation (put in limbo). Don't forget /docs/WIP!
 
-=> Release 0.2
 
+/SOMEWHAT OUTDATED
 2. 
 
-A. Logging and graph visualization, initial prototype
+=> Release 0.2
+
+Build docker images
+
+A. Workspace manager (+ web interface), proof of principle.
+see data-management.txt
+Follow up:
+Needs some kind of provenance/Google-your-checksum server 
+Clean up Redis keys that are old and have no workspace/minispace associated with it. 
+
+B. Finishing touches (tests/TODO)
+
+C. Supervisor.
+Coordinate job submission on the cluster and provenance 
+
+D. Logging and graph visualization, initial prototype
 (see Status-of-seamless.txt)
+NOTES:
+- status mostly gets reconstituted (except reason for void)
+- metainfo:
+    - store exception and stdout/stderr of a transformation, include in status report
+        also store if result was obtained from cache, or remotely
+    - same for macro and reactor (easier, because 1:1)
+    - same for cell:
+        - structuredcell validation error
+        - error in obtaining value from checksum (also if provenance fails)
+    - implement storage for metainfo in graph
+- logging system, based on event loop (in parallel to metainfo)
+- progress bar system (connect to progress)
 
-B. Smarter data management policies.
-   - Inside Seamless:
-      - recalculate if the result checksum is known but value cannot be retrieved
-      - database offload policies
-   - Outside Seamless (Redis): discuss with Julien
-
-C. Redesign reactivity/cycles, and connection/serialization protocol
-  - Use more async; test on clustering example
-  - Cell-cell connection (also with int/float/str/bool cells), generic deserialization (see protocol/evaluate.py)
-  - Add back in int/float/str/bool cells because they are so convenient.
-     Their content type will be int/float/text/bool.
-     Adapters will convert among them (e.g. int=>float) and between them and JSON/mixed/text.
-     Supported access modes are JSON and text. Adapters will convert to Silk.
-  - Implement transformer interrupt action, upon destroy or by manager (upon auth update).
-      (TODO: build upon JobScheduler.cancel, but add delay, and implement worker.destroy)
-      New-way style, auth update propagate forward (potentially leading to multiple interrupts).
-      Interrupt happens in 20 secs, or when the transformer re-executes, whichever happens sooner
-
-D. Streams
-- Basic implementation in manager/protocol DONE
-- Stream annotations for transformer DONE
-  Outputpin + some inputpins are annotated as streams (multiple stream groups for cart combin)
-  Stream execution code that does the execution (but is not semantically relevant), uses API
-   for caching and stuff.
-  Stream-annotated transformers have stream inputpins.
-  Stream cells are possible and can be connected (and only to stream cells or stream pins;
-    special transformer for cell <=> stream cell)
-  Remove must_be_defined from editpins, as None is always a valid value for them.
-- Annotation for reduction streams. reduction streams have ordered input; in case of
-   an input that is a dict, a secondary input must be designated that contains all the keys
-   in order.
-   The stream is mapped to two inputpins of the transformer, the first of which must be
-   must_be_defined=False.
-   For reduction streams, given a transformer F(X,Y)->Z, Stream([A,B,C]) => Z is implemented as:
-   F(None,A) => P, F(P,B) => Q, F(Q,C) => Z.    
-   As the checksums of all intermediate stages are computed, this is very efficient towards
-    adding new elements to the stream, as long as they are appended at the end.
-   A reduction stream can be annotated as order-independent. In that case:
-    - In case of a input list, the elements must be sortable.
-    - Stream([C,B,A]) is the same as Stream([A,B,C]). Therefore, after a level1 cache miss,
-      first [C,B,A] is sorted and rewritten as [A,B,C], and only then the level2 checksum is 
-      computed.
-    - For evaluation, the elements are NOT sorted. For list inputs, you should put them in such
-      an order to maximize cache efficiency.
-    - For dicts, the secondary input pin with sorted keys is optional.
-      (it is still recommended for cache efficiency)
-
-E. Deep cells
-  Deep cells have cache-tree-depth > 0. 
-  At 0, simple checksum => value (default, current situation). 
-  At level 1, dicts/lists will be checksum => {checksum:checksum}
-  resp. checksum => [checksum] (Merkle trees), in a special Merkle tree cache.
-  UPDATE: 
-  No special Merkle tree cache. For deep cells, it is illegal to construct a default accessor. When a level 0 statement is converted to a level 1 (accessor), then:
-  - The value of the cell must be retrieved from its checksum.
-    ***For deep cells, this value is always a Merkle tree, never a buffer***
-  - The checksum of the desired element(s) is retrieved from the Merkle tree
-  - An accessor is constructed using this checksum, and with the first
-    element(s) removed from the subpath
-  UPDATE: not just levels, but descriptors. User normally indicates levels for cells.
-  The inputs of high-level transformers are level 1 by default, further managed by high-level assign statement.
-
-
+1. Rip GPU cell scheme, this will never work.
+ Instead (long term plan):
+ - Annotate transformers as GPU-based. This will make all of their pins GPU-based.
+ - GPU-based transformers produce a GPU-based result. Checksum computation of this result is done on the GPU.
+ - Maintain a checksum-to-GPUbuffer cache that maintains which buffers are on the GPU
+   Can be done smarter for certain expressions (introduce offsets and stride)
+   Cache can be emptied based on memory requirements, or if certain checksums are foreseen to be not needed
+    anymore on the GPU.
+2. Rip pure reactors. This will never be supported
 
 
 End of the Great Refactor
@@ -166,6 +240,19 @@ Seamless is now kind-of ready to be started to be used by other devs, at their p
 Limiting factor: lack of documentation/examples
 
 Next step: the roadmap of Status-of-seamless.txt
+
+Delay for later:
+1. Dealing properly with explicit None values.
+Make it so that transformations and reactors CAN set None on their result
+(Allow any worker inputpin to be annotated as must_be_defined=False.)
+ Same for None explicitly set on cells (cell.set_value(None), or cell.set_none() by a graph;
+  cell.set_void() explicitly sets a cell to void-None)
+ Read accessors that retrieve None when reading their path (as opposed to AttributeError/KeyError)
+  also are considered "explicit None".
+ Transformations that resulted in an exception are NOT explicit None (they are "void-None").
+ Explicit None values are NOT void and do NOT lead to void cancellation
+ Explicit None values are allowed on input pins that have their support explicitly enabled.
+
 
 
 *****************************************************************
@@ -304,8 +391,6 @@ Seamless starts to be usable as a service deployment tool. Limiting factor becom
 Contributing is still hard because the code is still a mess.
 
 Part 6:
-  - Streams (WILL BE DONE ALREADY)
-  - Special constructs (see below)
   - Set virtual filenames for (non-compiled) transformers. See tests/highlevel/python-debugging.py
     Maybe integrate with gdbgui
   - Signals. UPDATE: make them a special case of plugin-socket (see below). Probably delay this until long-term
@@ -337,7 +422,6 @@ Part 7:
 0.6 release
 
 Part 8:
-- Blocks
 - Foreign-language integration
   - Extends the C/C++/Fortran proof-of-principle
   - Support CUDA/OpenCL
@@ -376,6 +460,10 @@ Long-term:
 - Windows support? Or never? Or just with local jobs disabled?
 - An extra "table" celltype, for text (like awk or org-mode) or binary (like Pandas)
 - Support more foreign languages: Julia, R, JavaScript. IPython magics, also have a look at python-bond
+- API to construct transformations without low-level contexts, launch them, and to check for cache hits.
+  Application 1: to implement efficient non-deterministic execution that gives a deterministic result.
+  Examples are: reduce or sort on deep cells that arrive piece-meal, or where the data may be near or far.
+  Application 2: cyclic dependencies.
 - Simplified implementations, with various levels of reduced interactivity
   1. Frozen libraries. Libcell becomes a kind of symlink.
   No direct low-level library update, but also no high-level depsgraph.
@@ -409,6 +497,7 @@ Very long-term:
 Call graph serialization
 =========================
 UPDATE: never ever save values in a call graph, only checksums and statuses!
+UPDATE: only ever load authoritative values from a call graph, load the rest into cache
 
 Seamless has fundamentally the following sources of authority:
 - Dependence: cells dependent on upstream transformers, reactor outputpins,
@@ -485,7 +574,7 @@ Workers and modules can always be written in those languages.
 This would normally involve some kind of bidirectional JSON bridge. Some IPython magics implement marshalling as well.
 Memory is never shared, always copied.
 The interpreter is responsible for its own memory management.
-2) For a worker written in a compiled languages, that language MAY be marshalled.
+2) For a worker written in a compiled language, that language MAY be marshalled.
 This essentially means: filling up a data structure (generated from the input and result schemas)
 that can be passed on to the compiled language.
 In addition, a header must be generated of the worker function.
@@ -621,7 +710,6 @@ Therefore, "workers" will refer to reactors and transformers
 The New Way of execution management
 ===================================
 The New Way is purely a manager issue. Worker implementations are unaffected.
-(however, now there is a sleep hack in kernel/transformer.py to prevent premature equilibrium; this needs to be removed)
 - Need asyncio, to move beyond tornado 4 / ipykernel 4
 - There will be only a single manager for every top-level context
 - All checksums will be git-style but with SHA3-256
@@ -629,15 +717,7 @@ The New Way is purely a manager issue. Worker implementations are unaffected.
   For any other cell, only the checksum will be stored
   The value will be retrieved from a local cache dict
   The local cache dict takes checksums as keys.  
-- Caching will be tricky for StructuredCells; the solution is
-   a special Monitor backed up by caching.
-   The authoritative part of the StructuredCell is always stored.
-   Each outchannel and inchannel has its own relationship with the local cache dict, just as a cell does.
-   Outchannels have a fallback mechanism where they ask their value of the authoritative part
-   and/or the inchannels they depend on, as if they were the output of a transformer.  
-   Even while being accessed, values could be removed from the local cache dict at will,
-    and Python will eventually garbage-collect the accessed value.
-    But a cache miss must trigger re-computation!
+- Caching will be tricky for StructuredCells: UPDATE: see livegraph branch  
 - Setting a value to anything non-authoritative will now be an error in Seamless.
   (This is anyway pretty difficult, as a high-level assignment would just modify the graph)
 - Cells are (initially) considered "pending" if their checksum is known, else "undefined".
@@ -788,207 +868,6 @@ When a non-authoritative cell value is requested, and there is a cache miss,
 This should be enabled/disabled on a by-cell basis (if any cell upstream has it
  disabled, don't do it).
 
-Blocks
-======
-In Seamless, workers are expected to send values, for which they allocate the memory themselves.
-Blocks are a (low-level) mechanism to pass around pre-allocated buffers of fixed size.
-This mechanism can save memory, but more importantly, it is much more compatible with GPU computing.
-Memory is not copied back-and-forth by every worker. Instead, buffers reside permanently on the GPU.
-
-A BlockManager manages the block. It must be constructed with a namespace.
-Namespace can be "cpu", "opencl", "opengl" or "cuda". Maybe in the future, new namespaces can be registered.
-A block description consist of dtype, shape, stride, and offset.
-A block description can be passed in to the BlockManager constructor,
- in which case the BlockManager will allocate the memory by itself. Alternatively, a pre-allocated Python object
- (Numpy array, PyCUDA array, etc.) can be provided via a set_block() method. You can call set_block() multiple times,
- this will invalidate all workers connected to the BlockManager (both input and output).
-The BlockManager exposes a block inchannel and a block outchannel. Workers can declare their own block outputpins to
- write to the block inchannel. Once a worker has written there, the BlockManager will fire on the outchannel.
- Workers can declare their own block inputpins to receive Block outchannels.
- When the BlockManager allocates its block, each Block inchannel and outchannel sends two messages.
- The first message contains the pointer, the namespace, and the block descriptor of the block as a whole.
-  The second message contains the specific block descriptor for the pin. Workers must verify that descriptors
-  for input blocks and output blocks do not overlap in memory (see numpy.shares_memory and Diophantine equations),
-  which is illegal.
- Whenever a worker has set a block outputpin (i.e. when it is done modifying it), it sends a message containing the checksum of
-  the block content. Likewise, it receives such a checksum on its inputpin.
- Whenever a BlockManager receives checksum updates on its inchannel(s), it computes and stores checksum updates over
-  its outchannel(s).
- A BlockManager may define one *tiling shape* and many *tiling channels*.
- A tiling shape is like an array shape ("length" for each dimension). Length must be a divisor of the
-  number of elements for that dimension (this is verified as soon as the block descriptor is known).
-  The block is tiled over "length" tiles in that dimension, and the memory is divided equally over each block.
-   For every tile, a block inchannel and outchannel can be defined.
-   A tiling channel can be inchannel or outchannel, they work exactly like StructuredCell channels, but instead of
-   property paths, they contain index paths (although if referencing a struct array, the last few elements
-   of the index paths may be properties). Only single indices: ranges and steps are not supported.
-   This is a way to process parts of the buffer independently.
-   As for StructuredCells, it is checked that the inchannels and outchannels do not overlap. [HUH? they *should* overlap! an outchannel should fire whenever one of its inchannels is modified AND all constituent inchannels have submitted a value]   
-  The top-level block outchannel only fires when all tiles have been received. [*all* outchannels do so]
- Block inchannels can be invalidated, which is propagated to the outchannels.
- It is possible call a method swap_buffers: tile[1] points now to tile[0] and vice versa. Each connected inchannel
- and outchannel will get an invalidation signal and then receive the new block descriptor.
- [hmm... maybe not; let the users build the 8-shape topology themselves]
-Namespaces are part of the block pin declaration. Seamless pin protocol takes care of namespace mismatches, e.g.
- copying data between CPU and GPU (this is blocking, so not the most efficient).
-
-Caching of blocks works similar to caching of structured_cell, namely at the level of individual inchannels and outchannels.
-BlockManager-BlockManager is not possible, but block *pins* get processed as normal. The very first message has its pointer
- translated, all other messages are forwarded, with the contents serialized and put into the other buffer.
- Again, the Seamless pin protocol takes care of namespaces.
-
-Advanced streams
-================
-UPDATE: save this for a later stage. For now, go for a simpler scheme where streams only exist within
- a transformer, and all cells contain all values.
-This disables the chaining of streams; now, one streamed transformer has to wait for a previous one to complete.
-/UPDATE  
-Streams are sequences of messages. The number of messages is not always a priori known, and may arrive in any order.
-A standard message has a key, a celltype, a checksum and (optionally) a value.
-The checksum/value corresponds to a "buffer" representation of a standard cell, or a "state" representation for a structured_cell.
-A transformer may declare stream inputpins or a stream outputpin.  
-A stream may send standard messages, the "invalidate" message, the "no more keys" message, or the "close" message.
-It may receive a "value request" message, consisting of a key (and celltype+checksum, just to check), a "discard" message
-(meaning that no more value request will come for that particular key),  and the "finished" message
-(meaning that no more value requests will come for any key).
-Value requests are non-blocking, it simply means that a message with value will come.
-(In case of multiple consumers of the stream, Seamless will buffer the value message until discard messages have been received
-  from all other consumers)
-The transformer is expected to read all messages from stream inputpins before exiting. It may send back value requests,
-it should send back a "discard" message for the other keys, and finally, it must send a "finished" message back.
-(if not, it is considered as an error). If multiple transformers connect to the same inputstream, discard messages and finished
-messages are withheld by seamless until all transformers have sent the same message.
-A transformer with an output stream is expected to send standard messages followed by a "no more keys" message.
-In addition, it must poll the output for value requests, until a "finished" message has been received.
-Then, it should respond with a "close" message.
-Value request can be polled before or after the "no more keys" message, but exiting before is considered an error
-(and will invalidate the entire stream).
-The transformer should respond to value requests by sending the value for the requested key in a standard message, but not
- doing this is not an error. However, the value-requesting transformer should raise an error if it gets a "closed" message
- before its value request was honored.
-"Do-it-yourself" streams can be programmed in Python by inheriting from StreamInchannel or StreamOutchannel.
-In addition to observers, this is the only way to interact with Seamless in a reactive (rather than imperative) manner.
-You will need to provide some kind of callback or backend to process requests.
-NOTE: streams are fundamentally uncachable.
-A transformer or context with stream inputs can only be sent to an interactive service.
-A transformer with stream pins will always be re-executed after macro execution.
-For this reason, low-level macros that generate stream transformers are generally a bad idea.
-However, stream transformers (and low-level macros that generate them) can be part of a pure context that does not have
- any stream inputs or outputs. (At the high-level, streams that are part of non-pure contexts flag a big warning).
- Such a pure context gets cached independently (without translation, even), and this will elide the stream execution.
-
-Special constructs
-==================
-These are special constructs with generic application, as they use serialized high-level graphs.
-The graph must be pure and have one or more exported outputs.
-Each special construct has a reference implementation. The checksums of the
- reference implementation code are always considered as ground truth.
-They can be executed as every other Seamless service in this way.
-However, services may accept reference-implementation special construct requests,
-but process them with a very different optimized implementation under the hood.
-UPDATE: now that the New Way is there, the reference implementation should be the
- most efficient already. Just need some extra conf about cache clearing prefs.
-All special constructs are implemented as transformers.
-
-- Apply
-(non-interactive)
-Takes a serialized graph, a mixed-cell dict of input values with keys corresponding to the
- input cells/pins (i.e. a grand computation).
-The computation is checked for cache hits. Both the checksum and the value must be found.
-The graph is translated, the input values are connected, the context is equilibrated,
- the result values are returned.
- Store the result value in local cache.
-(interactive)
-The inputs can be changed. (syntactically, works much more like a normal transformer, except
-  that there is the additional graph pin).
-UPDATE: The text below will be true for all of seamless!
-(Cache hits are being explored as soon as the checksums are known; values can be lazy.
-By default, only the result checksum is returned.
-The service accepts value requests for the output.
-Serve all value requests from local cache; cache misses lead to recomputation.)
-
-
-- Map
-(Interactive)
-Takes in an input stream, a graph and an output stream. Applies the graph to every item in the stream.
-Needs a description to which input cell to bind the input stream, and from which cell to read the output.
-Does not support multiple streams, but you can do the zipping and unzipping yourself.
-Reference implementation:
-Import seamless and embeds the graph in an (interactive) Apply graph.
-Iterate over all input keys. Call the Apply graph and let equilibrate. Forward all returned key+checksums.
-Reverse-forward all value requests to the Apply graph.
-Forward all invalidate messages (interrupting embedded graph). Forward no more keys messages and close messages after computation.
-Forward all finish and discard messages from output to input.
-(Non-interactive)
-Embedded Apply graph is non-interactive.
-
-- Filter
-Like Map, but this time the graph must return a boolean (keep it or not).
-(Interactive):
-  send back discard messages if false. Forward the message otherwise. Reverse-forward
-  all downstream value requests.
-
-- Split
-Like filter, but produces two streams (the True stream and the False stream)
-
-- Reduce
-Takes in an input stream and a graph, and a result.
-Requires an initial value, and a secondary input cell in the graph (for accumulation).
-Use an interactive Apply graph to accumulate. Tell the graph not to cache the graph-as-a-whole,
- as keys are unordered.
-Iterate over the keys. Immediately ask the value of every key.
-For the first key, write the initial value in that cell before executing.
-For all subsequent keys, write the result for the last key.
-Once all keys have been processed, return the result.
-(Non-interactive)
-Embedded Apply graph is non-interactive.
-NOTE: for floating points values, reduce can easily lead to non-determinism,
- since streams are non-ordered and flops are non-commutative (see Order special op below)
-
-- CyclicIterator
-Performs a fixed number of iterations of a cyclic graph.
-There must be the fixed number of iterations N.
-There must be an iteration variable: a variable that has an initial value, and
- where the result of the computation becomes the input for the next computation.
-There may be multiple such iteration variables (although there is only one loop).
-Each variable can be indicated as "accumulate" or "last". "last" keeps only the last value.
-"accumulate" accumulates into an array or a Block.
-Reference implementation:
-- Allocate an array for every accumulated itervar
-- Allocate input cells for input
-- Allocate output cells for every itervar
-- Translate the graph, connect it to input and output cells (using non-interactive Apply)
-- Assign the (initial) input values to the input cells, and equilibrate.
-- For N iterations: read the itervars from the output cells. Accumulate if needed.
-- If not the last iteration: write the itervars to their input cells, and equilibrate.
-- Return the itervars (accumulated or not)
-It is possible that an itervar is an array or a Block.
-In that case, the input and output are a two-tile block,
- and swap_buffers is invoked after every iteration.
-CyclicIterator is always non-interactive.
-
-
-Utility functions
-=================
-Sort: stream1 => stream2. sorts the keys of stream1 and creates a stream2
- where the keys are the sorted indices.
-Order: stream1 => stream2, where stream1 has numeric keys.
-  stream2 is equal to stream1, but its behavior is now ordered:
-  key N+1 will only be returned after key N has been requested and returned.
-Zip: zips N streams into one, like Python zip.
-Convert from mixed/json to stream. Keys can be the first-level
- keys of the dict, but also second-level or deeper, or up-to-second-level.
-Convert from stream to mixed/json. Keys must either be strings, or the same
- level encoding as above, or integers (this will produce a mixed/json array)
- (In addition, array chunking must be possible as well)
-Convert between Block and stream; requires integer keys of the stream.
-Convert between Block and mixed/json; mixed/json must be organized as an array.
-NOTE: if the stream messages are big enough,
- the mixed/json cell that is converted from/to stream can be much more
- space-efficiently value-cached by storing the value as a set-of-checksums-of-messages,
- rather than the value as a whole.
- This is because each message will already be value-cached at some point.
-
 Cyclic graphs
 =============
 Strategies to model them:
@@ -997,10 +876,9 @@ Strategies to model them:
    First assignment to cell x becomes cell x1, second assignment to cell becomes x2, etc.
    Has become feasable now that cells are very low-footprint, but
    caches must be cleared or memory consumption is too high.
-3. Use an CyclicIterator (see Special Constructs). if number of iterations is known.
-   Build a high-level graph g that performs the computation, and send it as data   
-4. Nested asynchronous macros (for recursion)
+3. Nested macros (for recursion)
    Example: collatz.py in low-level tests. Works well now
+4. Explicit transformation/cache API within a single worker.
 Solutions can be combined, of course.
 
 Registering commands with domain-specific languages
@@ -1047,7 +925,7 @@ This is not always so for inputs and intermediate results. SnakeMake has two mec
 *Seamless will never, ever support either of these dynamic mechanisms*. 
 If you need dynamic DAGs, you need to do the dynamic part in Seamless, letting it generate a (static-DAG) Snakefile if needed. 
 Example: 
-Snakefile 1 takes a static number of input files to create a single clustering file. Snakefile 1 can be simply wrapped in a Seamless macro that does the same as snakemake2seamless. It requires the target rule / file list, a Snakefile, and optionally and OUTPUTS (see below)
+Snakefile 1 takes a static number of input files to create a single clustering file. Snakefile 1 can be simply wrapped in a Seamless macro that does the same as snakemake2seamless. It requires the target rule / file list, a Snakefile, and optionally an OUTPUTS (see below)
 Snakefile 2 splits the clustering file into a clusterX.list for each cluster X.
 It may be a single rule that generates all the outputs; in that case, it must depend on a list OUTPUTS, e.g. ["1", "2", "3"]. OUTPUTS must be generated dynamically by a custom Seamless transformer that reads the clustering file, counts the clusters.
 Snakefile 2 can then be generated by a general-purpose transformer that takes in a

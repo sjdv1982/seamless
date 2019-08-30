@@ -360,7 +360,6 @@ In general, a computation is defined by the following:
    c. authoritative, and connected to the outside.
    The server may impose restrictions, e.g. say that only category c. cells may be defined by the client,
     or refuse because a particular cell cannot be in category c. (for example, cells it considers private).
-   *Any worker or context that has external connections that involve blocks/allocators is ineligible for service*
 3. The value of authoritative cells, including the schemas.
   Checksums of those values will always be computed on the raw/text data (see above)
   The "grand cell value" includes the cell type (part of the topology).

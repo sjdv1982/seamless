@@ -52,11 +52,11 @@ However, in that case, the data and meta-data would still be stored with us, and
 
 Minispaces
 ==========
-Minispaces are live Seamless instances where all input cells are shared, i.e. accessible via REST.
-The Seamless instances have no *local* cache, they are only connected to Redis, 
+Minispaces are live Seamless instances where all input cells are shared, i.e. accessible via REST share server.
+These Seamless instances have no *local* cache, they are only connected to Redis, 
  so they use almost no memory (and no disk space) by themselves.
 They only receive *small values* and *checksums of big values*. Whenever they receive a small value,
- they compute-and-store the checksum and offload the value to Redis, in (semi-)permanent persistance.
+ they compute-and-store the checksum and offload the value to Redis, in (semi-)permanent persistence.
 Minispaces are tied to a web form. Whenever ...
 For non-interactive web forms, the minispace is a Seamless context of just cells
  (with potentially some schemas to perform validation). When a "run"  
