@@ -82,19 +82,38 @@ class CommunionTransformationClient(CommunionClient):
         self.servant = servant
         self.config_job = config["transformation_job"]
         self.config_status = config["transformation_status"]
+        self.config_hard_cancel = config["hard_cancel"]
+        self.config_clear_exception = config["clear_exception"]
+        self.future_clear_exception = None
 
-    async def status(self, checksum):
+    async def status(self, checksum):        
+        if self.future_clear_exception is not None:
+            await self.future_clear_exception
         assert checksum is not None
         if not self.config_status:
             return
         message = {
             "type": "transformation_status",
             "content": checksum
-        }
+        }        
         result = await communion_server.client_submit(message, self.servant)
+        #print("STATUS", result)
         return result
-    
+
+    async def wait(self, checksum):
+        if self.future_clear_exception is not None:
+            await self.future_clear_exception
+        if not self.config_job:
+            return
+        message = {
+            "type": "transformation_wait",
+            "content": checksum
+        }
+        await communion_server.client_submit(message, self.servant)
+
     async def submit(self, checksum):
+        if self.future_clear_exception is not None:
+            await self.future_clear_exception
         if not self.config_job:
             return
         message = {
@@ -103,6 +122,26 @@ class CommunionTransformationClient(CommunionClient):
         }
         result = await communion_server.client_submit(message, self.servant)
         return result
+
+    async def hard_cancel(self, checksum):
+        if self.future_clear_exception is not None:
+            await self.future_clear_exception
+        if not self.config_hard_cancel:
+            return
+        message = {
+            "type": "transformation_hard_cancel",
+            "content": checksum
+        }
+        await communion_server.client_submit(message, self.servant)
+
+    async def clear_exception(self, checksum):
+        message = {
+            "type": "transformation_clear_exception",
+            "content": checksum
+        }
+        await communion_server.client_submit(message, self.servant)
+        print("EXC CLEARED")
+        self.future_clear_exception = None
 
 
 class CommunionBuildModuleClient(CommunionClient):
@@ -157,14 +196,20 @@ class CommunionClientManager:
             "buffer": ["buffer", "buffer_status"],
             "buffer_length": ["buffer_length"],
             "semantic_to_syntactic": ["semantic_to_syntactic"],
-            "transformation": ["transformation_job", "transformation_status"],
+            "transformation": [
+                "transformation_job", "transformation_status",
+                "hard_cancel", "clear_exception",
+            ],
             "build_module": ["build_module_job", "build_module_status"],
         }
         for communion_type in communion_types:
             sub_communion_types = {}
             for sub_communion_type in communion_types[communion_type]:
-                c_master = config_master[sub_communion_type]
-                c_servant = config_servant[sub_communion_type]                
+                if sub_communion_type in ("hard_cancel", "clear_exception"):
+                    c_master = True
+                else:
+                    c_master = config_master[sub_communion_type]
+                c_servant = config_servant[sub_communion_type]               
                 if not c_master or not c_servant:
                     c = False
                 elif sub_communion_type == "buffer":

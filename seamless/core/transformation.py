@@ -107,8 +107,17 @@ class TransformationJob:
                 if fut.exception() is not None:
                     continue
                 try:
-                    status, response = fut.result()
+                    result = "<unknown>"
+                    result = fut.result()
+                    status = result[0]
+                    if status == 2:
+                        status, _, _ = result
+                    else:
+                        status, response = result
                 except:
+                    if DEBUG:
+                        print("STATUS RESULT", result)
+                        traceback.print_exc()
                     continue                    
                 if not isinstance(status, int):
                     continue
@@ -131,6 +140,7 @@ class TransformationJob:
                     return
                 self.remote = True
                 if best_status == 0:
+                    self.remote_status = 0
                     return
                 if best_status == 1:
                     client = clients[best_client]
@@ -142,11 +152,12 @@ class TransformationJob:
                     if fut.exception() is not None:
                         continue
                     try:
-                        status, response = fut.result()
+                        status = fut.result()[0]
                     except:
                         continue                    
                     if status == best_status:
                         best_clients.append(clients[n])
+                assert len(best_clients)
                 self.remote_status = best_status
                 self.remote_clients = best_clients
                 break
@@ -191,9 +202,11 @@ class TransformationJob:
     ):
 
         async def get_result1(client):
-            try:
+            try:            
                 await client.submit(self.checksum)
-                return await client.status(self.checksum)
+                print("SUBMITTED")
+                result = await client.status(self.checksum)
+                return result
             except asyncio.CancelledError:
                 if self._hard_cancelled:
                     await client.hard_cancel(self.checksum)
@@ -211,7 +224,9 @@ class TransformationJob:
         if self.remote_status == 3:
             result_checksum = self.remote_result
             return result_checksum
-        if self.remote_status == 1:
+        if self.remote_status == 0:
+            raise RemoteJobError()
+        elif self.remote_status == 1:
             get_result = get_result1
         elif self.remote_status == 2:
             get_result = get_result2
@@ -278,7 +293,7 @@ class TransformationJob:
                     return response
             if not go_on:
                 break
-        #print("DONE", has_negative_status, has_exceptions)
+        print("DONE", has_negative_status, has_exceptions, self._hard_cancelled)
         if has_negative_status and not has_exceptions:
             self.restart = True
         else:            

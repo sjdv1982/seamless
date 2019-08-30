@@ -1,4 +1,21 @@
+# first start scripts/jobslave-noredis.py
+import os
+os.environ["SEAMLESS_COMMUNION_ID"] = "simple-duplex-remote"
+os.environ["SEAMLESS_COMMUNION_INCOMING"] = "localhost:8602"
+
+
 import seamless
+seamless.set_ncores(0)
+
+from seamless import communion_server
+
+communion_server.configure_master(
+    transformation_job=True,
+    transformation_status=True,
+    build_module_job=True,
+    build_module_status=True,
+)
+
 from seamless.core import context, cell, transformer, link
 
 ctx = context(toplevel=True)
@@ -45,15 +62,17 @@ def report():
     print("RESULT DUPLEX", v2, ctx.result_duplex.status)
     print()
 
-for n in range(3):
+for n in range(5):
     ctx.equilibrate(0.5)
     report()
+
 ctx.tf.cancel()
 ctx.equilibrate(0.5)
 report()
 print("EXCEPTION       ", ctx.tf.exception)
 print("EXCEPTION DUPLEX", ctx.tf_duplex.exception)
 print()
+
 
 ctx.tf.clear_exception()
 print("EXCEPTION       ", ctx.tf.exception)
@@ -63,5 +82,6 @@ print()
 for n in range(20):
     ctx.equilibrate(0.5)
     report()
+
 ctx.equilibrate()
 report()

@@ -61,7 +61,7 @@ Likewise, the job status API never return an exception value or checksum.
 class CommunionError(Exception):
     pass
 
-DEBUG = True
+DEBUG = False
 
 def pr(*args, **kwargs):
     if DEBUG:
@@ -113,10 +113,6 @@ default_master_config = {
     "build_module_job": False,
     "build_module_status": False,
     "semantic_to_syntactic": True,
-    #
-    "hard_cancel": False,  # allow others to hard cancel our jobs
-    "clear_exception": False, # allow others to clear exceptions on our jobs
-
 }
 
 # Default configuration for being a servant, i.e. on providing services to other peers
@@ -129,6 +125,9 @@ default_servant_config = {
     "build_module_job": False,
     "build_module_status": False,
     "semantic_to_syntactic": True,
+    #
+    "hard_cancel": False,  # allow others to hard cancel our jobs
+    "clear_exception": False, # allow others to clear exceptions on our jobs
 }
 
 import numpy as np
@@ -370,21 +369,22 @@ class CommunionServer:
         content = message["content"]
         result = None
         error = False
+
         try:
             if type == "transformation_hard_cancel":
                 assert self.config_servant["hard_cancel"]
-                checksum = bytes.fromhex(content)
-                transformation_cache.hard_cancel(checksum)
+                checksum = content
+                transformation_cache.hard_cancel(tf_checksum=checksum)
                 result = "OK"
+            
             elif type == "transformation_clear_exception":
                 assert self.config_servant["clear_exception"]
-                checksum = bytes.fromhex(content)
-                transformation_cache.clear_exception(checksum)
+                checksum = content
+                transformation_cache.clear_exception(tf_checksum=checksum)
                 result = "OK"
-            elif type == "transformation_cancel":
-                raise NotImplementedError ### livegraph branch
+            
             elif type == "buffer_status":
-                assert self.config_servant["buffer_status"]
+                assert self.config_servant[type]
                 checksum = content
                 async def func():
                     buffer = buffer_cache.get_buffer(checksum)
@@ -405,7 +405,9 @@ class CommunionServer:
                     else:
                         return -2, None
                 result = await func()
+            
             elif type == "buffer":
+                assert self.config_servant[type]
                 checksum = content
                 peer_id = self.peers[peer]["id"]
                 result = await get_buffer_async(
@@ -413,8 +415,11 @@ class CommunionServer:
                     remote_peer_id=peer_id
                 )
             elif type == "buffer_length":
+                assert self.config_servant[type]
                 raise NotImplementedError ## livegraph branch 
+            
             elif type == "semantic_to_syntactic":
+                assert self.config_servant["semantic_to_syntactic"]
                 checksum = content
                 peer_id = self.peers[peer]["id"]
                 tcache = transformation_cache
@@ -423,33 +428,55 @@ class CommunionServer:
                 )
                 if isinstance(result, list):
                     result = tuple([r.hex() for r in result])
+            
             elif type == "transformation_status":
+                assert self.config_servant[type]
                 checksum = content
                 peer_id = self.peers[peer]["id"]
                 tcache = transformation_cache
                 result = await tcache.serve_transformation_status(
                     checksum, peer_id
                 )
+                #print("STATUS", result)
+            
             elif type == "transformation_job":
+                assert self.config_servant[type]
                 checksum = content
                 peer_id = self.peers[peer]["id"]
                 transformer = RemoteTransformer(
                     checksum, peer_id
                 )
-                tcache = transformation_cache                
+                tcache = transformation_cache
                 transformation = await tcache.serve_get_transformation(checksum)
-                await tcache.incref_transformation(
+                coro = tcache.incref_transformation(
                     transformation, transformer
                 )
-                result = "OK"                
-            elif type == "build_module":
-                assert self.config_servant["build_module"]
+                asyncio.ensure_future(coro)
+                result = "OK"
+            
+            elif type == "transformation_wait":
+                checksum = content
+                peer_id = self.peers[peer]["id"]
+                tcache = transformation_cache
+                await tcache.remote_wait(checksum, peer_id)
+                result = "OK"
+
+            elif type == "transformation_cancel":
+                assert self.config_servant["transformation_job"]
+                raise NotImplementedError ### livegraph branch
+
+            elif type == "build_module_job":
+                assert self.config_servant[type]
                 raise NotImplementedError ## livegraph branch 
                 d_content = json.loads(content)
                 full_module_name = d_content["full_module_name"]
                 checksum = bytes.fromhex(d_content["checksum"])
                 module_definition = d_content["module_definition"]                   
                 # build_compiled_module(full_module_name, checksum, module_definition)            
+            
+            elif type == "build_module_status":
+                assert self.config_servant[type]
+                raise NotImplementedError ## livegraph branch 
             else:
                 raise ValueError(type)
         except Exception as exc:
@@ -468,9 +495,13 @@ class CommunionServer:
                 response["error"] = True
             msg = communion_encode(response)
             assert isinstance(msg, bytes)
-            peer_id = self.peers[peer]["id"]
-            pr("  Communion response: send %d bytes to peer '%s' (#%d)" % (len(msg), peer_id, response["id"]))
-            await peer.send(msg)
+            try:
+                peer_id = self.peers[peer]["id"]
+                pr("  Communion response: send %d bytes to peer '%s' (#%d)" % (len(msg), peer_id, response["id"]))
+            except KeyError:
+                pass
+            else:
+                await peer.send(msg)
         
     def _process_response_from_peer(self, peer, message):
         message_id = message["id"]
@@ -480,7 +511,8 @@ class CommunionServer:
         if message.get("error"):
             future.set_exception(CommunionError(content))
         else:
-            future.set_result(content)
+            if not future.cancelled():
+                future.set_result(content)
         
     async def _process_message_from_peer(self, peer, msg):        
         message = communion_decode(msg)

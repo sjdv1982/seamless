@@ -7,11 +7,18 @@ import asyncio
 import sys
 from seamless import communion_server
 
+
 communion_server.configure_servant(
-    transformer_job=True,
-    transformer_result=True,
-    transformer_result_level2=True
+    buffer=True,
+    buffer_status=True,
+    transformation_job=True,
+    transformation_status=True,
+    build_module_job=True,
+    build_module_status=True,
+    clear_exception=True,
+    hard_cancel=True,
 )
+
 redis_sink = seamless.RedisSink()
 redis_cache = seamless.RedisCache()
 

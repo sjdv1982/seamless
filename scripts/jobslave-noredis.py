@@ -9,8 +9,13 @@ from seamless import communion_server
 
 communion_server.configure_servant(
     buffer=True,
-    transformer_job=True,
-    build_module_job=True
+    buffer_status=True,
+    transformation_job=True,
+    transformation_status=True,
+    build_module_job=True,
+    build_module_status=True,
+    clear_exception=True,
+    hard_cancel=True,
 )
 
 from seamless.core import context

@@ -219,7 +219,7 @@ def format_worker_status(stat, as_child=False):
     elif status == StatusEnum.PENDING:
         if reason == StatusReasonEnum.EXECUTING:
             progress = stat.progress
-            if progress > 0:
+            if progress is not None and progress > 0:
                 return "executing, %.1f %%" % progress
             else:
                 return "executing"
