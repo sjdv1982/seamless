@@ -12,6 +12,7 @@ import json
 import ast
 import functools
 import asyncio
+import time
 
 from ...get_hash import get_dict_hash
 """
@@ -22,7 +23,13 @@ TODO: add some metadata to the above? (when and where it was executed)
 
 from .. import destroyer
 
-TF_KEEP_ALIVE = 20.0 # Keep transformations alive for 20 secs after the last ref has expired
+# Keep transformations alive for 20 secs after the last ref has expired, 
+#  but only if they have been running locally for at least 20 secs, 
+# else, keep them alive for 1 sec
+TF_KEEP_ALIVE_MIN = 1.0
+TF_KEEP_ALIVE_MAX = 20.0 
+TF_ALIVE_THRESHOLD = 20.0 
+
 
 class RemoteTransformer:
     debug = False
@@ -225,8 +232,13 @@ class TransformationCache:
         if not debug:
             self.debug.discard(tf_checksum)
         if not len(transformers):
+            delay = TF_KEEP_ALIVE_MIN
+            job = self.transformation_jobs.get(tf_checksum)
+            if job is not None and job.start is not None and \
+              time.time() - job.start > TF_ALIVE_THRESHOLD:
+                delay = TF_KEEP_ALIVE_MAX
             tempref = functools.partial(self.destroy_transformation, transformation)
-            temprefmanager.add_ref(tempref, TF_KEEP_ALIVE)
+            temprefmanager.add_ref(tempref, delay)
 
     def destroy_transformation(self, transformation):
         tf_buffer = tf_get_buffer(transformation)
@@ -240,8 +252,10 @@ class TransformationCache:
         job = self.transformation_jobs[tf_checksum]
         if job is not None:
             if job.future is not None:
-                #print("CANCEL JOB!", job)
                 job._cancelled = True
+                if job.remote_futures is not None:
+                    for fut in job.remote_futures:
+                        fut.cancel()
                 job.future.cancel()
 
     def run_job(self, transformation):        
@@ -331,10 +345,9 @@ class TransformationCache:
     def job_done(self, job, _):
         if self._destroyed:
             return
-        #print("JOB DONE")
 
         future = job.future
-        cancelled = (future.cancelled() or job._cancelled) and not job._hard_cancelled
+        cancelled = (future.cancelled() or job._cancelled) and not job._hard_cancelled        
 
         tf_checksum = self.rev_transformation_jobs.pop(id(job))
         self.job_progress.pop(id(job), None)

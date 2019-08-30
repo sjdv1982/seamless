@@ -1,4 +1,3 @@
-print("TODO: communion server: normal cancel (with peer ID), as a non-dummy test")
 """
 Seamless communion server
 Upon startup:
@@ -463,7 +462,14 @@ class CommunionServer:
 
             elif type == "transformation_cancel":
                 assert self.config_servant["transformation_job"]
-                raise NotImplementedError ### livegraph branch
+                checksum = content
+                peer_id = self.peers[peer]["id"]
+                tcache = transformation_cache
+                key = checksum, peer_id
+                transformation = await tcache.serve_get_transformation(checksum)
+                rem_transformer = tcache.remote_transformers.get(key)
+                if key is not None:
+                    tcache.decref_transformation(transformation, rem_transformer)
 
             elif type == "build_module_job":
                 assert self.config_servant[type]

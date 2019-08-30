@@ -1,4 +1,5 @@
 import atexit
+import asyncio
 from weakref import WeakSet
 from contextlib import contextmanager
 
@@ -6,7 +7,11 @@ _toplevel_registrable = set()
 _toplevel_registered = set()
 _toplevel_managers = set()
 
+mountmanager = None # import later
+
 def register_toplevel(ctx):
+    global mountmanager
+    from .mount import mountmanager
     manager = ctx._get_manager()
     assert manager is not None
     if not _macro_mode:
@@ -24,17 +29,23 @@ def unregister_toplevel(ctx):
     _toplevel_registrable.discard(ctx)
     _toplevel_registered.discard(ctx)
 
-def _destroy_toplevels():
-    from .mount import mountmanager
+def _destroy_toplevels():    
     for manager in list(_toplevel_managers):
         manager.destroy(from_del=True)
+        manager.temprefmanager.purge_all()
     for ctx in list(_toplevel_registered):
         unregister_all(ctx)
         manager = ctx._get_manager()
         if manager is not None:
             manager.destroy(from_del=True)
     transformation_cache.destroy()
-    mountmanager.clear()
+    if mountmanager is not None:
+        mountmanager.clear()
+    # give cancelled futures some time to do their work
+    async def dummy():
+        pass
+    dummy_future = asyncio.ensure_future(dummy())
+    asyncio.get_event_loop().run_until_complete(dummy_future)
 
 atexit.register(_destroy_toplevels)
 

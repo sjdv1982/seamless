@@ -3,12 +3,22 @@ import asyncio
 
 class TempRefManager:
     def __init__(self):
-        self.refs = set()
+        self.refs = []
         self.running = False
     
     def add_ref(self, ref, lifetime):
         expiry_time = time.time() + lifetime
-        self.refs.add((ref, expiry_time))
+        self.refs.append((ref, expiry_time))
+
+    def purge_all(self):
+        """Purges all refs, regardless of expiry time
+        Only call this when Seamless is shutting down"""
+        while len(self.refs):
+            ref, _ = self.refs.pop(0)
+            try:
+                ref()
+            except:
+                pass
 
     def purge(self):
         """Purges expired refs"""
@@ -17,8 +27,7 @@ class TempRefManager:
             ref, expiry_time = item
             if expiry_time < t:
                 self.refs.remove(item)
-                if callable(ref):
-                    ref() 
+                ref() 
 
     async def loop(self):
         if self.running:

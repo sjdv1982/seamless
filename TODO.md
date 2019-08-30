@@ -1,6 +1,5 @@
 A. Do the final implementation of the low-level for the LiveGraph branch
-- Canceling of remote jobs
-- Canceling of any job that has not started yet
+DONE
 
 B. Silk / Structured cells
   Silk overhaul:

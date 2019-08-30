@@ -5,6 +5,7 @@ import multiprocessing
 import sys
 import traceback
 import functools
+import time
 
 from .execute import Queue, Executor, execute, execute_debug
 from .run_multi_remote import run_multi_remote, run_multi_remote_pair
@@ -17,28 +18,28 @@ DEBUG = True
 # Local jobs
 ###############################################################################
 
-_locks = [False] * multiprocessing.cpu_count()
+_locks = [None] * multiprocessing.cpu_count()
 def set_ncores(ncores):
     if len(_locks) != ncores:
         if any(_locks):
             msg = "WARNING: Cannot change ncores from %d to %d since there are running jobs"
             print(msg % (len(_locks), ncores), file=sys.stderr)
         else:
-            _locks[:] = [False] * ncores
+            _locks[:] = [None] * ncores
 
-async def acquire_lock():
+async def acquire_lock(tf_checksum):
     if not len(_locks):
         raise Exception("Local computation has been disabled for this Seamless instance")
     while 1:        
         for locknr, lock in enumerate(_locks):
-            if lock == False:
-                _locks[locknr] = True
+            if lock is None:
+                _locks[locknr] = tf_checksum
                 return locknr                
         await asyncio.sleep(0.01)
 
 def release_lock(locknr):
-    assert _locks[locknr] == True
-    _locks[locknr] = False
+    assert _locks[locknr] is not None
+    _locks[locknr] = None
 
 ###############################################################################
 # Remote jobs
@@ -57,6 +58,7 @@ class TransformationJob:
     _cancelled = False
     _hard_cancelled = False
     remote_futures = None
+    start = None
     def __init__(self,
         checksum, codename,
         buffer_cache, transformation, 
@@ -204,7 +206,6 @@ class TransformationJob:
         async def get_result1(client):
             try:            
                 await client.submit(self.checksum)
-                print("SUBMITTED")
                 result = await client.status(self.checksum)
                 return result
             except asyncio.CancelledError:
@@ -219,6 +220,8 @@ class TransformationJob:
             except asyncio.CancelledError:
                 if self._hard_cancelled:
                     await client.hard_cancel(self.checksum)
+                elif self._cancelled:
+                    await client.cancel(self.checksum)
                 raise
 
         if self.remote_status == 3:
@@ -293,7 +296,6 @@ class TransformationJob:
                     return response
             if not go_on:
                 break
-        print("DONE", has_negative_status, has_exceptions, self._hard_cancelled)
         if has_negative_status and not has_exceptions:
             self.restart = True
         else:            
@@ -372,7 +374,8 @@ class TransformationJob:
                 raise SeamlessInvalidValueError(result)
             return result_checksum
 
-        lock = await acquire_lock()
+        lock = await acquire_lock(self.checksum)
+        self.start = time.time()
         running = False        
         try:                        
             queue = Queue()

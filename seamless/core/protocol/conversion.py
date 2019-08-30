@@ -6,8 +6,6 @@
 # python, ipython, cson, yaml, plain, binary, mixed
 # str (with double quotes around value), bytes, int, float, bool
 
-from nbconvert.filters import ipython2python
-
 conversion_trivial = set([ # conversions that do not change checksum and are guaranteed to work (if the input is valid)
     ("text", "bytes"), # Use UTF-8, which can encode any Unicode string. This is already what Seamless uses internally
     ("python", "text"),
@@ -183,6 +181,7 @@ async def convert(checksum, buffer, celltype, target_celltype):
             value = await deserialize(buffer, checksum, celltype, copy=False)
         
         if key == ("ipython", "python"):
+            from nbconvert.filters import ipython2python
             value = ipython2python(buffer) # TODO: needs to bind get_ipython() to the user namespace!
             new_buffer = await serialize(value, target_celltype)
         elif key == ("plain", "text"):

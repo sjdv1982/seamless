@@ -228,7 +228,10 @@ class TaskManager:
         except ValueError:
             pass
 
-    def equilibrate(self, timeout, report):        
+    def equilibrate(self, timeout, report):  
+        manager = self.manager()
+        manager.temprefmanager.purge()
+
         if timeout is not None:
             timeout_time = time.time() + timeout
             remaining = timeout

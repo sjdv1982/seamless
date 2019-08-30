@@ -123,6 +123,17 @@ class CommunionTransformationClient(CommunionClient):
         result = await communion_server.client_submit(message, self.servant)
         return result
 
+    async def cancel(self, checksum):
+        if self.future_clear_exception is not None:
+            await self.future_clear_exception
+        if not self.config_job:
+            return
+        message = {
+            "type": "transformation_cancel",
+            "content": checksum
+        }
+        await communion_server.client_submit(message, self.servant)
+
     async def hard_cancel(self, checksum):
         if self.future_clear_exception is not None:
             await self.future_clear_exception
@@ -140,7 +151,6 @@ class CommunionTransformationClient(CommunionClient):
             "content": checksum
         }
         await communion_server.client_submit(message, self.servant)
-        print("EXC CLEARED")
         self.future_clear_exception = None
 
 
