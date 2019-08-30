@@ -1,5 +1,7 @@
 A. Do the final implementation of the low-level for the LiveGraph branch
+- Fix remote progress test
 - Canceling of remote jobs
+- Canceling of any job that has not started yet
 
 B. Silk / Structured cells
   Silk overhaul:
@@ -55,19 +57,20 @@ TODO:
   disallow modification of cells under macro control, unless sovereign.
 
 C. Deep cells
+(In parallel, implement/extend the expression evaluation engine)
 As long as they are of cell type "mixed", a cell can be annotated with a *hash pattern*.
 A hash pattern describes how the value of the cell is stored as checksums.
 A hash pattern is either the symbol "#" ("hash", i.e. "checksum") or a dict.
-The default hash pattern (for non-deep cells) is "#" (value stored as a single checksum).
-For a hash pattern that is a dict, the values are themselves hash patterns ("sub-patterns"). 
+The default hash pattern (i.e a non-deep cell) is "#" (value stored as a single checksum).
+For a hash pattern that is a dict, the values are themselves hash patterns (sub-patterns). 
 The dict can have the following keys: 
 - A string S. This means that at this level, the value must be a dict containing string keys,
-normally including S. Setting it to a non-dict will be a parse error. The item S in the value
+normally including S. The value being a non-dict will be a parse error. The item S in the value
 will be stored using the specified hash sub-pattern.
 - * . Same as above, except that it will match any item in the value dict, 
 not just a single item S. This pattern has lower priority (i.e. it will not match S if there is a
 specific hash pattern for S). If there is no *, the value dict may not contain other keys than
-the strings S that have been specified.
+the strings S that have been specified. Even is there is a *, the items must all be strings.
 - ? . Must be the only entry in the hash pattern.
 This means that at this level, the value must be a list. Every item in the list will be 
 stored using the specified hash sub-pattern. 
@@ -81,17 +84,15 @@ How the checksums are stored exactly:
 Non-deep cells are always stored as checksum (in binary format) of a buffer. They hold
 a checksum reference to that buffer.
 Deep cells have an underlying deep structure. They are stored as a checksum 
-(in binary format) of the buffer of the deep structure. They hold a checksum reference 
-to this buffer. The deep structure stores checksums in hex format. 
+(in binary format) of the buffer of that deep structure. They hold a checksum reference 
+to this buffer. The deep structure contains checksums in hex format. 
 It holds a reference to (the underlying buffer of) every checksum in it.
 Deep structures use the expression evaluation engine to modify their values (each value
-is associated with a deep path).
+is associated with a deep subpath).
 To convert their values to checksums, they use a set-deep-value task, similar to a set
 value task, except that it does not depend on a cell; rather, it is cancelled when the
-same deep path is modified.
-Internally, the deep structure is stored as follows. In general, the deep structure cannot
-be decoded without knowing the hash pattern using which it was encoded. Each deep structure 
-contains hex checksums and/or deep sub-structures.
+same deep subpath is modified.
+Internally, the deep structure is stored as follows.
 - If the hash pattern contains * and/or string keys, the deep structure is a dict with the same
   keys as the corresponding value dict.
 - If the hash pattern contains ?, the deep structure is a list with the same length as the
@@ -100,11 +101,65 @@ contains hex checksums and/or deep sub-structures.
   contains the length of the original value list, and item 2 is a list with one hex checksum
   (or deep sub-structure) for each chunk.
 
-D. Deep transformers.
+D. Checksum cells. Contain a checksum in hex value.
+Can be trivially converted to text, str. Can be re-interpreted from text, str.
+All other conversions are forbidden.
+If connected from a non-deep cell, the value is equal to that cell's checksum attribute.
+If connected from a deep cell, the value is equal to that cell's deep structure (as dict/list).
+
+E. Deep transformers.
 
 Deep transformers are the only way to achieve parallelism within a transformer.
 (earlier designs concerning streams and blocks are now OBSOLETED)
-...
+To make a transformer deep, it must have received a hash pattern parameter during construction.
+The hash pattern is a dict consisting of the following entries:
+- an __order__ entry, consisting of a list of input pins. The hash pattern must contain entries for
+all of those input pins (and no others)
+- One entry for each input pin, containing a hash pattern for that input pin. String keys are forbidden,
+only *, ?, and ?N are allowed.
+- One entry for the output pin, containing its hash pattern.
+Seamless will auto-compute the correct hash pattern for the output pin, and check that the supplied hash pattern is the same. The hash pattern is a nested dict formed by the Cartesian combination of input pin hash patterns.
+In case of chunks, the transformer operates on each chunk and returns one value, so the output pin hash pattern
+ will be a list.
+Simple example:
+{
+  "__order__": ["inp1"],
+  "inp1": {"*": "#"},
+  "outp": {"*": "#"},
+}
+Medium example:
+{
+  "__order__": ["inp1", "inp2"],
+  "inp1": {"*": "#"}, #dict
+  "inp2": {"?": "#"}, #list
+  "outp": {"*": {"?": "#"} }, #dict of lists
+}
+Complex example:
+{
+  "__order__": ["inp1", "inp2", "inp3"],
+  "inp1": {"*": "#"}, #dict
+  "inp2": {"?": "#"}, #list
+  "inp3": {"?5": "#"}, #list, to be chunked
+  "outp": {"*": {"?":  {"?": "#"}} }, #dict of lists of lists
+}
+Implementation: 
+The hash pattern is part of the transformation-as-a-whole.
+The transformation-as-a-whole is checked for cache hits and remote
+ status/submission, as usual. (For now, communion servers will
+ refuse to execute transformation jobs with hash patterns)
+If the transformation-as-a-whole must be executed locally,
+ it is easily divided into transformations 
+ based on the input pin deep structures
+All transformations are immediately spawned in parallel.
+set_transformer_result and incref_transformation will be adapted
+such as to accept a subpath argument. As they only involve checksums, no tasks need
+to be launched: the transformer simply keeps a deepcell structure and list of
+outstanding transformations (including their progress/prelim values).
+Whenever a new transformation checksum is received, the deepcell structure is
+quickly updated and its new checksum quickly computed. This checksum is then
+send as the transformer's result: prelim if any transformation is still missing
+(or is prelim), non-prelim otherwise. The transformation's overall progress is
+also computed based on the progresses of the outstanding transformations.
 
 E. The mid/high level
 1. Change the call graph
