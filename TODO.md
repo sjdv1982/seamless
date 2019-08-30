@@ -143,12 +143,14 @@ Complex example:
   "outp": {"*": {"?":  {"?": "#"}} }, #dict of lists of lists
 }
 Implementation: 
-The hash pattern is part of the transformation-as-a-whole.
+The hash pattern is part of the transformation-as-a-whole (__hash_pattern__ field).
 The transformation-as-a-whole is checked for cache hits and remote
- status/submission, as usual. (For now, communion servers will
- refuse to execute transformation jobs with hash patterns)
+ status/submission, as usual. (Communion servers will
+ refuse to execute transformation jobs with hash patterns.
+ Since expression evaluation is task-based, and progress is more than one number,
+ it would be very hard to implement!)
 If the transformation-as-a-whole must be executed locally,
- it is easily divided into transformations 
+ it is easily divided into transformations (which *can* be run remotely!)
  based on the input pin deep structures
 All transformations are immediately spawned in parallel.
 set_transformer_result and incref_transformation will be adapted
