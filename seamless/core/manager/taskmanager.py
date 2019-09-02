@@ -7,6 +7,10 @@ import time
 
 from .. import destroyer
 
+import sys
+def log(*args, **kwargs):
+    print(*args, **kwargs, file=sys.stderr)
+
 class TaskManager:
     _destroyed = False
     _active = True
@@ -439,7 +443,7 @@ If origin_task is provided, that task is not cancelled."""
         for attrib in attribs:
             a = getattr(self, attrib)
             if len(a):
-                print(name + ", " + attrib + ": %d undestroyed"  % len(a))
+                log(name + ", " + attrib + ": %d undestroyed"  % len(a))
 
     def destroy(self):
         # just to stop the loop...

@@ -177,6 +177,8 @@ class TransformationJob:
         )
 
     async def _execute(self, prelim_callback, progress_callback):
+        while not transformation_cache.active:
+            await asyncio.sleep(0.05)
         clients = list(communion_client_manager.clients["transformation"])
         await self._probe_remote(clients)
         if self.remote: 

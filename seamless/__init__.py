@@ -94,6 +94,19 @@ if ipy_error is None:
 else:
     pass
 
+def deactivate_transformations():
+    from .core.cache.transformation_cache import transformation_cache
+    transformation_cache.active = False
+
+def activate_transformations():
+    from .core.cache.transformation_cache import transformation_cache
+    transformation_cache.active = True
+
+def run_transformation(checksum):
+    from .core.cache.transformation_cache import transformation_cache
+    return transformation_cache.run_transformation(checksum)
+
+
 from .silk import Silk
 from .debugger import pdb
 from .shareserver import shareserver

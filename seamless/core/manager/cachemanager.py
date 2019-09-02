@@ -2,6 +2,10 @@ import weakref
 from ..cache.buffer_cache import buffer_cache
 from .. import destroyer
 
+import sys
+def log(*args, **kwargs):
+    print(*args, **kwargs, file=sys.stderr)
+
 class CacheManager:
     def __init__(self, manager):
         self.manager = weakref.ref(manager)
@@ -146,7 +150,7 @@ class CacheManager:
             if attrib == "checksum_refs":
                 a = [aa for aa in a.values() if aa != []]
             if len(a):                
-                print(name + ", " + attrib + ": %d undestroyed"  % len(a))
+                log(name + ", " + attrib + ": %d undestroyed"  % len(a))
 
 from ..cell import Cell
 from ..transformer import Transformer

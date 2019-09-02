@@ -2,6 +2,10 @@ import weakref
 from ..status import StatusReasonEnum
 from .. import destroyer
 
+import sys
+def log(*args, **kwargs):
+    print(*args, **kwargs, file=sys.stderr)
+
 # NOTE: distinction between simple cells (no StructuredCell monitor), StructuredCell data cells, and StructuredCell buffer cells
 
 class LiveGraph:
@@ -577,7 +581,7 @@ class LiveGraph:
         for attrib in attribs:
             a = getattr(self, attrib)            
             if len(a):
-                print(name + ", " + attrib + ": %d undestroyed"  % len(a))
+                log(name + ", " + attrib + ": %d undestroyed"  % len(a))
 
 from .propagate import propagate_accessor
 from .accessor import Accessor, ReadAccessor, WriteAccessor

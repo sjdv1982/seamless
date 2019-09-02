@@ -29,6 +29,12 @@ class RedisSink:
         key = b"tfr:" +  tf_checksum
         r.set(key, checksum)
 
+    def sem2syn(self, sem_checksum, syn_checksums):        
+        r = self.connection
+        key = b"s2s:" +  sem_checksum
+        for syn_checksum in syn_checksums:
+            r.sadd(key, syn_checksum)
+
     def set_buffer(self, checksum, buffer):
         r = self.connection
         key = b"buf:" + checksum
@@ -70,6 +76,12 @@ class RedisCache:
         key = b"tfr:" + checksum
         return r.get(key)
 
+    def sem2syn(self, sem_checksum):
+        r = self.connection
+        key = b"s2s:" +  sem_checksum
+        members = r.smembers(key)
+        return members
+
     def get_buffer(self, checksum):
         r = self.connection
         key = b"buf:" + checksum
@@ -97,6 +109,15 @@ class RedisSinks:
     @staticmethod
     def sinks():
         return _redis_sinks
+    def sem2syn(self, sem_checksum, syn_checksums):
+        assert isinstance(syn_checksums, list)
+        if sem_checksum is None or not len(syn_checksums):
+            return
+        members = set()
+        for redis_sink in _redis_sinks:
+            redis_sink.sem2syn(
+                sem_checksum, syn_checksums
+            )
     def set_buffer(self, checksum, buffer):   
         if checksum is None or buffer is None:
             return     
@@ -125,6 +146,16 @@ class RedisSinks:
 
 
 class RedisCaches:
+    def sem2syn(self, sem_checksum):
+        if sem_checksum is None:
+            return     
+        members = set()
+        for redis_cache in _redis_caches:
+            curr_members = redis_cache.sem2syn(sem_checksum)            
+            if curr_members is not None:
+                members.update(curr_members)
+        if len(members):
+            return list(members)
     def get_transform_result(self, tf_checksum):
         for redis_cache in _redis_caches:
             checksum = redis_cache.get_transformation_result(tf_checksum)

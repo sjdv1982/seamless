@@ -28,6 +28,10 @@ import functools
 
 from ..get_hash import get_hash
 
+import sys
+def log(*args, **kwargs):
+    print(*args, **kwargs, file=sys.stderr)
+
 empty_checksums = {get_hash(json.dumps(v)+"\n",hex=True) for v in ("", {}, [])}
 
 def adjust_buffer(file_buffer, celltype):
@@ -311,7 +315,7 @@ class MountItem:
         if self._destroyed:
             return
         self._destroyed = True
-        print("undestroyed mount path %s" % self.path)
+        log("undestroyed mount path %s" % self.path)
         #self.destroy()
 
 class LinkItem:
@@ -355,7 +359,7 @@ class LinkItem:
         if self._destroyed:
             return
         self._destroyed = True
-        print("undestroyed link path %s" % self.path)
+        log("undestroyed link path %s" % self.path)
 
 class MountManager:
     GARBAGE_DELAY = 20

@@ -1,6 +1,7 @@
 from . import Task
 
 class TransformerUpdateTask(Task):
+    waiting_for_job = False
     def __init__(self, manager, transformer):
         self.transformer = transformer
         super().__init__(manager)
@@ -80,6 +81,7 @@ class TransformerUpdateTask(Task):
             output_subcelltype = first_output._subcelltype
         outputpin = outputname, output_celltype, output_subcelltype
         #print("TRANSFORM!", transformer)
+        self.waiting_for_job = True
         await transformation_cache.update_transformer(
             transformer, celltypes, inputpins, outputpin, buffer_cache
         )

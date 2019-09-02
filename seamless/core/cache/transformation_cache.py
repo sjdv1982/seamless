@@ -8,6 +8,10 @@ class HardCancelError(Exception):
     def __str__(self):
         return self.__class__.__name__
 
+import sys
+def log(*args, **kwargs):
+    print(*args, **kwargs, file=sys.stderr)
+
 import json
 import ast
 import functools
@@ -37,6 +41,14 @@ class RemoteTransformer:
         self.tf_checksum = tf_checksum
         self.peer_id = peer_id
         self.queue = asyncio.Queue()
+
+class DummyTransformer:
+    _status_reason = None
+    debug = False
+    def __init__(self, tf_checksum):
+        self.tf_checksum = tf_checksum
+        self.progress = None
+        self.prelim = None
 
 def tf_get_buffer(transformation):
     assert isinstance(transformation, dict)
@@ -79,7 +91,8 @@ async def syntactic_to_semantic(
     return semantic_checksum
 
 class TransformationCache:
-    _destroyed = False
+    active = True
+    _destroyed = False    
     def __init__(self):
         self.transformations = {} # tf-checksum-to-transformation
         self.debug = set() # set of debug tf-checksums
@@ -146,9 +159,12 @@ class TransformationCache:
                         if sem_checksum in self.semantic_to_syntactic_checksums:
                             semsyn = self.semantic_to_syntactic_checksums[sem_checksum]
                         else:
-                            semsyn = []
+                            semsyn = redis_caches.sem2syn(sem_checksum)
+                            if semsyn is None:
+                                semsyn = []
                             self.semantic_to_syntactic_checksums[sem_checksum] = semsyn
                         semsyn.append(checksum)
+                        redis_sinks.sem2syn(sem_checksum, semsyn)
             transformation[pinname] = celltype, subcelltype, sem_checksum
         await self.incref_transformation(transformation, transformer)
 
@@ -166,7 +182,7 @@ class TransformationCache:
 
 
     async def incref_transformation(self, transformation, transformer):
-        assert isinstance(transformer, (Transformer, RemoteTransformer))
+        assert isinstance(transformer, (Transformer, RemoteTransformer, DummyTransformer))
         if isinstance(transformer, RemoteTransformer):
             key = transformer.tf_checksum, transformer.peer_id
             if key in self.remote_transformers:
@@ -187,7 +203,7 @@ class TransformationCache:
             self.transformations[tf_checksum] = transformation
         else:
             tf = self.transformations_to_transformers[tf_checksum]
-        if isinstance(transformer, RemoteTransformer):
+        if isinstance(transformer, (RemoteTransformer, DummyTransformer)):
             old_tf_checksum = None            
         else:
             old_tf_checksum = self.transformer_to_transformations[transformer]
@@ -214,7 +230,7 @@ class TransformationCache:
                 await asyncio.shield(job.future)
         
     def decref_transformation(self, transformation, transformer):
-        assert isinstance(transformer, (Transformer, RemoteTransformer))
+        assert isinstance(transformer, (Transformer, RemoteTransformer, DummyTransformer))
         if isinstance(transformer, RemoteTransformer):
             try:
                 transformer.queue.put_nowait(None)
@@ -281,7 +297,10 @@ class TransformationCache:
             celltype, subcelltype, sem_checksum = v
             if syntactic_is_semantic(celltype, subcelltype):
                 continue
-            checksums = self.semantic_to_syntactic_checksums[sem_checksum]
+            try:
+                checksums = self.semantic_to_syntactic_checksums[sem_checksum]
+            except KeyError:
+                raise KeyError(sem_checksum.hex()) from None
             semantic_cache[sem_checksum] = checksums
         job = TransformationJob(
             tf_checksum, codename,
@@ -309,6 +328,9 @@ class TransformationCache:
                 except asyncio.QueueFull:
                     pass
                 continue
+            if isinstance(transformer, DummyTransformer):
+                transformer.progress = progress
+                continue
             manager = transformer._get_manager()
             manager._set_transformer_progress(
                 transformer,
@@ -326,6 +348,8 @@ class TransformationCache:
                     transformer.queue.put_nowait(None)
                 except asyncio.QueueFull:
                     pass
+            if isinstance(transformer, DummyTransformer):
+                transformer.prelim = prelim_checksum
         self.set_transformation_result(tf_checksum, prelim_checksum, True)
 
     def _hard_cancel(self, job):
@@ -362,12 +386,14 @@ class TransformationCache:
         transformers = self.transformations_to_transformers[tf_checksum]
         
         for transformer in list(transformers):
-            if isinstance(transformer, RemoteTransformer):
+            if isinstance(transformer,RemoteTransformer):
                 try:
                     transformer.queue.put_nowait(None)
                 except asyncio.QueueFull:
                     pass
                 self.decref_transformation(transformation, transformer)
+            if isinstance(transformer, DummyTransformer):
+                self.decref_transformation(transformation, transformer)                
 
         if cancelled:
             return
@@ -403,7 +429,7 @@ class TransformationCache:
             self.transformation_exceptions[tf_checksum] = exc
             # TODO: offload to provenance? unless hard-canceled
             for transformer in list(transformers):
-                if isinstance(transformer, RemoteTransformer):
+                if isinstance(transformer, (RemoteTransformer, DummyTransformer)):
                     continue
 
                 manager = transformer._get_manager()
@@ -431,7 +457,7 @@ class TransformationCache:
             redis_sinks.set_transformation_result(tf_checksum, result_checksum)
         transformers = self.transformations_to_transformers[tf_checksum]
         for transformer in transformers:
-            if isinstance(transformer, RemoteTransformer):
+            if isinstance(transformer, (RemoteTransformer, DummyTransformer)):
                 continue
             manager = transformer._get_manager()
             if result_checksum is not None:
@@ -460,13 +486,18 @@ class TransformationCache:
 
     async def serve_semantic_to_syntactic(self, sem_checksum, peer_id):
         from ...communion_client import communion_client_manager
-        semsyn = self.semantic_to_syntactic_checksums.get(sem_checksum, [])
-        if len(semsyn):
+        semsyn = self.semantic_to_syntactic_checksums.get(sem_checksum)
+        if semsyn is not None:
+            return semsyn
+        semsyn = redis_caches.sem2syn(sem_checksum)
+        if semsyn is not None:
+            self.semantic_to_syntactic_checksums[sem_checksum] = semsyn
             return semsyn
         remote = communion_client_manager.remote_semantic_to_syntactic
         semsyn = await remote(sem_checksum, peer_id)
         if semsyn:
             self.semantic_to_syntactic_checksums[sem_checksum] = semsyn
+            redis_sinks.sem2syn(sem_checksum, semsyn)
         return semsyn
 
     async def serve_get_transformation(self, tf_checksum):
@@ -564,6 +595,8 @@ class TransformationCache:
 
                 self.remote_transformers.pop(key, None)
                 continue
+            if isinstance(tf, DummyTransformer):
+                continue
             TransformerUpdateTask(tf._get_manager(), tf).launch()
 
     def hard_cancel(self, transformer=None, *, tf_checksum=None):
@@ -579,11 +612,55 @@ class TransformationCache:
             return
         self._hard_cancel(job)
 
+    async def run_transformation_async(self, tf_checksum):
+        from . import CacheMissError
+        result_checksum, prelim = self._get_transformation_result(tf_checksum)
+        if result_checksum is not None and not prelim:
+            return result_checksum
+        transformation = await self.serve_get_transformation(tf_checksum)
+        if transformation is None:
+            raise CacheMissError
+        for k,v in transformation.items():
+            if k == "__output__":
+                continue
+            celltype, subcelltype, sem_checksum = v
+            if syntactic_is_semantic(celltype, subcelltype):
+                continue
+            await self.serve_semantic_to_syntactic(sem_checksum, None)
+        transformer = DummyTransformer(tf_checksum)
+        coro = self.incref_transformation(transformation, transformer)
+        fut = asyncio.ensure_future(coro)
+        last_result_checksum = None
+        last_progress = None
+        while 1:
+            if transformer._status_reason == StatusReasonEnum.EXECUTING:
+                if self.transformation_jobs.get(tf_checksum) is None:
+                    break
+            if transformer.prelim != last_result_checksum \
+              or transformer.progress != last_progress:
+                last_progress = transformer.progress
+                last_result_checksum = transformer.prelim
+                if last_result_checksum is None:
+                    log(last_progress)
+                else:
+                    log(last_progress, last_result_checksum.hex())
+            await asyncio.sleep(0.05)
+        if tf_checksum in self.transformation_exceptions:
+            raise self.transformation_exceptions[tf_checksum]
+        result_checksum, prelim = self._get_transformation_result(tf_checksum)
+        assert not prelim
+        return result_checksum
+
+    def run_transformation(self, tf_checksum):
+        fut = asyncio.ensure_future(self.run_transformation_async(tf_checksum))
+        asyncio.get_event_loop().run_until_complete(fut)
+        return fut.result()
+
     def destroy(self):
         # only called when Seamless shuts down
         a = self.transformer_to_transformations
         if a:
-            print("TransformationCache, transformer_to_transformations: %d undestroyed"  % len(a))
+            log("TransformationCache, transformer_to_transformations: %d undestroyed"  % len(a))
         for tf_checksum, job in self.transformation_jobs.items():
             if job is None:
                 continue

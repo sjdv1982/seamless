@@ -13,6 +13,10 @@ import asyncio
 
 from ..get_hash import get_hash
 
+import sys
+def log(*args, **kwargs):
+    print(*args, **kwargs, file=sys.stderr)
+
 class ShareItem:
     last_exc = None
     _destroyed = False
@@ -96,7 +100,7 @@ class ShareItem:
         if self._destroyed:
             return
         self._destroyed = True
-        print("undestroyed mount path %s" % self.path)
+        log("undestroyed mount path %s" % self.path)
         #self.destroy()
 
 

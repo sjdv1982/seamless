@@ -1,6 +1,13 @@
 A. Do the final implementation of the low-level for the LiveGraph branch
 DONE
 
+Intermezzo:
+- Disable/enable transformations DONE
+- Obtain a transformation's checksum DONE
+- Script/API to run a transformation by checksum, and print out the result checksum DONE
+- Script to resolve a checksum into a buffer/value from Redis cache DONE
+- Script to remove a transformation from the result cache in Redis DONE
+
 B. Silk / Structured cells
   Silk overhaul:
     Rip buffer, fork; no automatic invocation of validate()
