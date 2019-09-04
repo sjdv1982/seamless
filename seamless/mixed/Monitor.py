@@ -5,6 +5,7 @@ from . import MonitorTypeError
 from .Backend import Backend
 import json
 from copy import deepcopy
+from .. import Wrapper
 
 class Monitor:
     def __init__(self, backend):

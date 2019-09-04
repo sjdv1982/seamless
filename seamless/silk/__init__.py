@@ -1,11 +1,16 @@
+def test_none(obj):
+    if obj is None:
+        return True    
+    if isinstance(obj, Silk):
+        data = obj._data
+    else:
+        data = obj
+    if isinstance(data, Wrapper):
+        data = data._unwrap()
+    return data is None
+
 from .Silk import Silk
 from .validation import Scalar
-
-def is_none(obj):
-    if obj is None:
-        return True
-    if not isinstance(obj, Silk):
-        return False
-    return obj.data is None
+from .. import Wrapper
 
 from jsonschema.exceptions import FormatError, ValidationError

@@ -29,6 +29,9 @@ class Wrapper:
     @abstractmethod
     def _unwrap(self):
         pass
+    @abstractmethod
+    def set(self, value):
+        pass
 
 #Dependencies of seamless
 

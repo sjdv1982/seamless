@@ -17,11 +17,11 @@ MAGIC_SEAMLESS_MIXED = b'\x94SEAMLESS-MIXED'
 import numpy as np
 from functools import partialmethod
 
-from ..silk.SilkBase import SilkHasForm, binary_special_method_names
-
+from ..silk.SilkBase import binary_special_method_names
+from .. import Wrapper
 from ..silk.validation import (
   _array_types, _integer_types, _float_types, _string_types, _unsigned_types,
-  _allowed_types, Scalar, is_np_struct
+  _allowed_types, Scalar, is_np_struct, FormWrapper
 )
 
 scalars = ("boolean", "integer", "number", "string")
@@ -32,10 +32,12 @@ np_char = np.dtype('S1')
 class MonitorTypeError(TypeError):
     pass
 
-class MixedBase(SilkHasForm):
+class MixedBase(Wrapper):
     def __init__(self, _monitor, _path):
         self._monitor = _monitor
         self._path = _path
+    def _unwrap(self):
+        return FormWrapper(self.data, self.form, self.storage)
     @property
     def value(self):
         data = self._monitor.get_data(self._path)
@@ -48,8 +50,6 @@ class MixedBase(SilkHasForm):
         return self._monitor.get_storage(self._path)
     def set(self, value):
         self._monitor.set_path(self._path, value)
-    def _get_silk_form(self):
-        return self.storage, self.form
     def __setattr__(self, attr, value):
         if attr.startswith("_"):
             return super().__setattr__(attr, value)

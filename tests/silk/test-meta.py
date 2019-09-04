@@ -1,9 +1,10 @@
+from pprint import pprint
 from seamless.silk import Silk
 from functools import partial
 from seamless.silk.meta import meta, validator
 class Coordinate(metaclass=meta):
 
-    a = 10 # not a class default, but a type inference!
+    a = 1 # not a class default, but a type inference!
     # It is equivalent to: schema.properties.a.type = "integer"
     # If you want class default instead:
     #   - set schema.policy.infer_type to False
@@ -11,14 +12,16 @@ class Coordinate(metaclass=meta):
     # Note that the schema is only built *after* the class statement is complete
     #  but the direct schema manipulations are evaluated *first*
 
-    def __init__(self, a):
-        self.a = a
+    def __init__(self, a=None):
+        if a is not None:
+            self.a = a
 
     def aa(self):
         return(self.a+1)
 
     @validator
     def ok(self):
+        print("VALIDATE!", self.a.unsilk)
         assert self.a < 11
 
     @property
@@ -29,13 +32,18 @@ class Coordinate(metaclass=meta):
     def a2(self, value):
         self.a = value - 1000
 
-print(Coordinate.schema)
+pprint(Coordinate.schema)
+c = Coordinate()
+c.validate()
 c = Coordinate(3)
-print(c.schema)
-print(c)
+pprint(c.schema)
+print(c.unsilk)
 c.a = 10
 print(c.aa())
 print(c.a2)
 c.a2 = 1002
-print(c.a)
+c.validate()
+print(c.a.unsilk)
+c.validate()
 c.a = 11 # Error
+c.validate()

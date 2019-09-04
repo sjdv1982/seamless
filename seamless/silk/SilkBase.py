@@ -6,7 +6,7 @@ import linecache
 class SilkBase:
 
     def __delitem__(self, item):
-        data = self.data
+        data = self._data
         return data.__delitem__(item)
 
     def __contains__(self, item):
@@ -18,15 +18,13 @@ class SilkBase:
 
     def __str__(self):
         # TODO: proper string representation
-        data = self.data
-        if self._buffer is not None:
-            data = self._buffer
-        return str(data)
+        data = self._data
+        return "<Silk: " + str(data) + " >"
 
     def __dir__(self):
         result = super().__dir__()
-        result += ["data", "schema"]
-        data = self.data
+        result += ["data", "schema", "unsilk"]
+        data = self._data
         result += dir(data)
         if isinstance(data, dict):
             result += data.keys()
@@ -35,7 +33,7 @@ class SilkBase:
 
     def __repr__(self):
         # TODO: proper string representation
-        data = self.data
+        data = self._data
         return repr(data)
 
 def silk_unary_method(self, name):
@@ -68,7 +66,7 @@ def silk_unary_method_optional(self, name):
 
 unary_special_method_names_optional = (
     "__length_hint__", "__index__",
-    "__iter__", "__reversed__", "__bool__"
+    "__reversed__", "__bool__"
 )
 
 for name in unary_special_method_names_optional:
@@ -80,11 +78,20 @@ def silk_binary_method(self, other, name):
     method = self._get_special(name)
     if method is NotImplemented:
         return NotImplemented
-    result = method(other)
-    if result is NotImplemented and isinstance(other, SilkBase):
-        return method(other.data)
+    if isinstance(other, SilkBase):
+        other_data = other._data
+        if isinstance(other_data, FormWrapper):
+            other_data = other_data._wrapped
+        try:
+            result = method(other)
+        except TypeError: 
+            return method(other_data)
+        if result is NotImplemented:
+            return method(other_data)
+        else:
+            return result
     else:
-        return result
+        return method(other)
 
 binary_special_method_names = (
     "__add__", "__sub__", "__mul__", "__matmul__", "__truediv__",
@@ -168,9 +175,4 @@ class AlphabeticDict(dict):
         #return json.dumps(self, sort_keys=True, indent=2) #doesn't work for numpy
         return super().__str__() ###
 
-
-from abc import ABC, abstractmethod
-class SilkHasForm(ABC):
-    @abstractmethod
-    def _get_silk_form(self):
-        pass
+from .validation.formwrapper import FormWrapper

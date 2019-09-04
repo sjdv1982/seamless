@@ -1,4 +1,4 @@
-import sys
+import sys, os
 import asyncio
 import multiprocessing
 from multiprocessing import Process
@@ -38,4 +38,5 @@ async def qtloop():
         qt_app.processEvents()
         await asyncio.sleep(0.005)
 
-asyncio.ensure_future(qtloop())
+if os.environ.get("SEAMLESS_USE_QT", True) not in (False, "false", 0, "0"):
+    asyncio.ensure_future(qtloop())

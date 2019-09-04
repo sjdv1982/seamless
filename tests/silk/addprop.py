@@ -1,3 +1,4 @@
+from pprint import pprint
 import jsonschema
 from seamless.silk import Silk
 import json
@@ -8,14 +9,22 @@ def validate(self):
 s = Silk()
 s.x = 10
 s.y = 2
-print(s.schema)
+pprint(s.schema)
 s.add_validator(validate)
-s.schema.additionalProperties =  {"type": "string"}
-schema = dict(s.schema._dict)
-jsonschema.validate(dict(s.data), schema)
+s.validate()
+s.schema["additionalProperties"] =  {"type": "string"}
+jsonschema.validate(s.data, s.schema)
 
-s.schema.policy = {}
-s.schema.policy.infer_new_property = False
+s.schema["policy"] = {}
+s.schema["policy"]["infer_new_property"] = False
 s.z = "OK"
-print(s.schema)
-s.err = 1 #error
+pprint(s.schema)
+s.validate()
+
+print(s.items()) # NOTE: values are NOT wrapped in a Silk object!
+
+try:
+    s.err = 1 #error
+    s.validate()
+except Exception as exc:
+    print(exc)

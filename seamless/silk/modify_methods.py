@@ -11,13 +11,13 @@ def list_grow_method(self, name, *args, **kwargs):
         pos, item = args
     if item is not None:
         if isinstance(item, Silk):
-            item_schema = item.schema.dict
+            item_schema = item.schema
 
     method = self._get_special(name, skip_modify_methods = True)
 
     if isinstance(item, Silk):
-        item_schema = item.schema.dict
-        item = item.data
+        item_schema = item.schema
+        item = item._data
 
     schema = self._schema
     schema_updated = self._infer_new_item(
@@ -25,10 +25,6 @@ def list_grow_method(self, name, *args, **kwargs):
     )
 
     result = method(*args, **kwargs)
-    if not len(self._forks):
-        self.validate()
-    if schema_updated and self._schema_update_hook is not None:
-        self._schema_update_hook()
     return result
 
 def list_modify_method(self, name, *args, **kwargs):
@@ -36,16 +32,12 @@ def list_modify_method(self, name, *args, **kwargs):
     #   but need a path from the parent!
     method = self._get_special(name, skip_modify_methods = True)
     result = method(*args, **kwargs)
-    if not len(self._forks):
-        self.validate()
 
 def dict_modify_method(self, name, *args, **kwargs):
     #TODO: special case for numpy arrays, including astype() if needed,
     #   but need a path from the parent!
     method = self._get_special(name, skip_modify_methods = True)
     result = method(*args, **kwargs)
-    if not len(self._forks):
-        self.validate()
 
 _list_grow_method_names = set(("append", "extend", "insert"))
 _list_modify_method_names = set(("clear", "pop", "remove", "reverse", "sort"))
@@ -57,7 +49,9 @@ def try_modify_methods(self, method):
         is_modifying_method: bool
         result: partial method
     """
-    if isinstance(self.data, _array_types):
+    if method in ("_data", "_get_special"):
+        return False, None
+    if isinstance(self._data, _array_types):
         if method in _list_grow_method_names:
             result = partial(list_grow_method, self, method)
             return True, result
@@ -66,7 +60,7 @@ def try_modify_methods(self, method):
             return True, result
         else:
             return False, None
-    elif isinstance(self.data, dict):
+    elif isinstance(self._data, dict):
         if method in _dict_modify_method_names:
             result = partial(dict_modify_method, self, method)
             return True, result

@@ -15,6 +15,16 @@ class FormWrapper:
     def __contains__(self, item):
         return item in self._wrapped
 
+    def __iter__(self):
+        from ..Silk import SilkIterator, RichValue
+        data = RichValue(self._wrapped).value     
+        if isinstance(data, (list, tuple)):
+            data_iter = range(len(data)).__iter__()
+            return SilkIterator(self, data_iter)
+        else:            
+            data_iter = data.__iter__()
+            return data_iter
+
     def __getattribute__(self, attribute):
         if attribute in ("_wrapped", "_form", "_storage") or attribute.startswith("__"):
             return super().__getattribute__(attribute)
@@ -44,10 +54,9 @@ class FormWrapper:
                 pass
             else:
                 substorage = subform.get("storage")
-        if subform is None and substorage is None:
-            return subitem
-        else:
-            return FormWrapper(subitem, subform, substorage)
+        if substorage is None:
+            substorage = self._storage
+        return FormWrapper(subitem, subform, substorage)
 
     def __str__(self):
         return str(self._wrapped)

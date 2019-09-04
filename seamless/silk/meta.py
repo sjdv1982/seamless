@@ -1,4 +1,3 @@
-from .schemawrapper import SchemaWrapper
 from .Silk import Silk
 import json
 
@@ -6,30 +5,29 @@ def meta(name, bases, d):
     # For now, ignore __module__ and __qualname__
     d.pop("__module__")
     d.pop("__qualname__")
-    schema = d.pop("schema").dict
+    schema = d.pop("schema")
     s = Silk()
-    s.schema.dict.update(schema)
+    s.schema.update(schema)
     prototype = {}
-    with s.fork():
-        for key, value in d.items():
-            if isinstance(value, Validator):
-                s._add_validator(value.func, attr=None, from_meta=True, name=None)
-            elif callable(value) or isinstance(value, property):
-                setattr(s, key, value)
-            else:
-                try:
-                    json.dumps(value)
-                except Exception:
-                    raise ValueError("'%s' is not JSON-serializable" % key)
-                prototype[key] = value
-        if len(prototype):            
-            s.schema["__prototype__"] = prototype
+    for key, value in d.items():
+        if isinstance(value, Validator):
+            s.add_validator(value.func, attr=None, name=None)
+        elif callable(value) or isinstance(value, property):
+            setattr(s, key, value)
+        else:
+            try:
+                json.dumps(value)
+            except Exception:
+                raise ValueError("'%s' is not JSON-serializable" % key)
+            prototype[key] = value
+    if len(prototype):            
+        s.schema["__prototype__"] = prototype
 
-    return Silk(schema=s.schema.dict)
+    return Silk(schema=s.schema)
 
 def prep(name, bases):
     return {
-        "schema": SchemaWrapper(None, {}, None),
+        "schema": {},
     }
 
 meta.__prepare__ = prep
