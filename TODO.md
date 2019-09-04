@@ -9,8 +9,8 @@ Intermezzo:
 - Script to remove a transformation from the result cache in Redis DONE
 
 B. Silk / Structured cells
-  Silk overhaul:
-    Rip buffer, fork; no automatic invocation of validate()
+  Silk overhaul: DONE
+    Rip buffer, fork; no automatic invocation of validate() 
   Monitor: dummy stores paths in dict/list, then invokes validate()
   Structured cell overhaul:
   => Structured cell becomes a monitor
