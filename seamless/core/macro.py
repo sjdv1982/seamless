@@ -355,6 +355,10 @@ class Path:
         assert oldcell is None
         if cell is None:
             return
+        if cell._structured_cell:
+            raise Exception("Macro paths for structured cells are currently not supported")
+        if cell._hash_pattern:
+            raise Exception("Macro paths for deep cells are currently not supported")
         cell_authority = livegraph.has_authority(cell)
         if not cell_authority and not self_authority:
             msg = "Cannot bind %s to %s: both have no authority"

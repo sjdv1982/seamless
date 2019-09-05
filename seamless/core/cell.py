@@ -43,6 +43,7 @@ Use ``Cell.status()`` to get its status.
     _mount_kwargs = None
     _lib_path = None # Set by library.libcell
     _paths = None #WeakSet of Path object weakrefs
+    _hash_pattern = None #must be None, except for MixedCell
     """
       Sovereignty
       A low level cell may be sovereign if it has a 1:1 correspondence to a mid-level element.
@@ -402,7 +403,14 @@ class BinaryCell(Cell):
 
 class MixedCell(Cell):
     _mount_kwargs = {"binary": True}
-    _celltype = "mixed"
+    _celltype = "mixed"    
+
+    def __init__(self, hash_pattern=None):
+        super().__init__(self)
+        if hash_pattern is not None:
+            if hash_pattern not in ( {"*": "#"}, {"!": "#"} ):
+                raise NotImplementedError  # for now, hash pattern must be {"*": "#"} or {"!": "#"}
+            self._hash_pattern = hash_pattern
 
     @property
     def storage(self):

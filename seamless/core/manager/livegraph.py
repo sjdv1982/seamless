@@ -158,7 +158,8 @@ class LiveGraph:
         if celltype is None:
             celltype = target._celltype
         read_accessor = ReadAccessor(
-            manager, None, celltype
+            manager, None, celltype,
+            hash_pattern=source._hash_pattern
         )
         if isinstance(worker, Reactor):
             read_accessor.reactor_pinname = pinname
@@ -170,7 +171,8 @@ class LiveGraph:
             celltype=target._celltype, 
             subcelltype=target._subcelltype, 
             pinname=None,
-            path=None
+            path=None,
+            hash_pattern=target._hash_pattern
         )
         read_accessor.write_accessor = write_accessor
         assert self.accessor_to_upstream.get(read_accessor) is None, (self.accessor_to_upstream[read_accessor], worker)
@@ -215,7 +217,8 @@ class LiveGraph:
         assert to_upstream[pinname] is None, target # must have received no connections
 
         read_accessor = ReadAccessor(
-            manager, None, source._celltype
+            manager, None, source._celltype,
+            hash_pattern=source._hash_pattern
         )
         celltype = target.celltype
         if celltype is None:
@@ -228,7 +231,8 @@ class LiveGraph:
             celltype=celltype, 
             subcelltype=subcelltype, 
             pinname=pinname, 
-            path=None
+            path=None,
+            hash_pattern=target._hash_pattern
         )
         read_accessor.write_accessor = write_accessor
         assert self.accessor_to_upstream.get(read_accessor) is None, (self.accessor_to_upstream[read_accessor], source)
@@ -255,14 +259,16 @@ class LiveGraph:
         
         manager = self.manager()
         read_accessor = ReadAccessor(
-            manager, None, source._celltype
+            manager, None, source._celltype,
+            hash_pattern=source._hash_pattern
         )
         write_accessor = WriteAccessor(
             read_accessor, target, 
             celltype=target._celltype, 
             subcelltype=target._subcelltype, 
             pinname=None, 
-            path=None
+            path=None,
+            hash_pattern=target._hash_pattern
         )
         read_accessor.write_accessor = write_accessor
         assert self.accessor_to_upstream.get(read_accessor) is None, (self.accessor_to_upstream[read_accessor], source)
@@ -283,14 +289,16 @@ class LiveGraph:
         
         manager = self.manager()
         read_accessor = ReadAccessor(
-            manager, None, source
+            manager, None, source,
+            hash_pattern=None
         )
         write_accessor = WriteAccessor(
             read_accessor, target, 
             celltype=target._celltype, 
             subcelltype=target._subcelltype, 
             pinname=None, 
-            path=None
+            path=None,
+            hash_pattern=target._hash_pattern
         )
         read_accessor.write_accessor = write_accessor
         assert self.accessor_to_upstream.get(read_accessor) is None, (self.accessor_to_upstream[read_accessor], source)
@@ -311,14 +319,16 @@ class LiveGraph:
         
         manager = self.manager()
         read_accessor = ReadAccessor(
-            manager, None, source._celltype
+            manager, None, source._celltype,
+            hash_pattern=source._hash_pattern,
         )
         write_accessor = WriteAccessor(
             read_accessor, target, 
             celltype=target, 
             subcelltype=None, 
             pinname=None, 
-            path=None
+            path=None,
+            hash_pattern=None
         )
         read_accessor.write_accessor = write_accessor
         assert self.accessor_to_upstream.get(read_accessor) is None, (self.accessor_to_upstream[read_accessor], source)

@@ -9,7 +9,7 @@ class ReadAccessor(Accessor):
     _status_reason = None
     _new_macropath = False # if source or target is a newly bound macropath
     _prelim = False # if accessor represents a preliminary result
-    def __init__(self, manager, path, celltype):
+    def __init__(self, manager, path, celltype, *, hash_pattern):
         self.manager = weakref.ref(manager)
         self.path = path
         assert celltype in celltypes or isinstance(celltype, MacroPath)
@@ -18,6 +18,9 @@ class ReadAccessor(Accessor):
         self.write_accessor = None
         self.expression = None
         self._status_reason = StatusReasonEnum.UNDEFINED
+        if hash_pattern is not None:
+            assert celltype == "mixed"
+        self.hash_pattern = hash_pattern
     
     @property
     def preliminary(self):
@@ -45,11 +48,14 @@ class ReadAccessor(Accessor):
         target = self.write_accessor.target
         if isinstance(target, Cell):
             target_cell_path = str(cell)
+        target_hash_pattern = self.write_accessor.hash_pattern
         expression = Expression(
             checksum, self.path, celltype,
             target_celltype,
             target_subcelltype, 
-            target_cell_path=target_cell_path
+            target_cell_path=target_cell_path,
+            hash_pattern=self.hash_pattern,
+            target_hash_pattern=target_hash_pattern
         )
         if self.expression is not None:
             if expression == self.expression:
@@ -66,7 +72,10 @@ class ReadAccessor(Accessor):
         self.expression = None
 
 class WriteAccessor(Accessor):
-    def __init__(self, read_accessor, target, celltype, subcelltype, pinname, path):
+    def __init__(self, read_accessor, 
+            target, celltype, subcelltype, pinname, path, *,
+            hash_pattern
+        ):
         from ...core.cell import Cell
         from ...core.worker import Worker
         assert isinstance(read_accessor, ReadAccessor)
@@ -80,6 +89,9 @@ class WriteAccessor(Accessor):
         self.subcelltype = subcelltype
         self.pinname = pinname
         self.path = path
+        if hash_pattern is not None:
+            assert celltype == "mixed"
+        self.hash_pattern = hash_pattern
 
 from ...core.cell import Cell, celltypes, subcelltypes
 from ...core.macro import Path as MacroPath

@@ -10,9 +10,11 @@ _hash_slots = [
     "checksum",
     "path",
     "celltype",
+    "hash_pattern",
     "target_celltype",
     "target_cell_path",
     "target_subcelltype",
+    "target_hash_pattern",
 ]
 
 class Expression:
@@ -31,8 +33,15 @@ class Expression:
     def __init__(
         self, checksum, path, celltype, 
         target_celltype, target_subcelltype,
-        *, target_cell_path=None
+        *, hash_pattern, target_hash_pattern,
+        target_cell_path=None
     ):
+        if hash_pattern is not None:
+            assert celltype == "mixed"
+        self.hash_pattern = hash_pattern
+        if target_hash_pattern is not None:
+            assert target_celltype == "mixed"
+        self.target_hash_pattern = target_hash_pattern
         self.checksum = checksum
         self.path = path
         self.celltype = celltype

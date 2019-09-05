@@ -128,6 +128,7 @@ class InputPin(InputPinBase):
     pin.cell() returns or creates a cell that is connected to the inputpin
     """
     io = "input"
+    _hash_pattern = None
 
     def cell(self, celltype=None):
         """Returns or creates a cell connected to the inputpin"""
@@ -145,6 +146,7 @@ class OutputPin(OutputPinBase):
     outputpin.cell() returns or creates a cell that is connected to the outputpin
     """
     io = "output"
+    _hash_pattern = None
 
     def connect(self, target):
         """connects the pin to a target"""
