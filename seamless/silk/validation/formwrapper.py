@@ -1,3 +1,5 @@
+import numpy as np
+
 class FormWrapper:
     """Wrapper around an object and its form (and storage)
     Unlike MixedObject, it does not store the path, but
@@ -8,6 +10,7 @@ class FormWrapper:
     _storage = None
 
     def __init__(self, wrapped, form, storage):
+        assert isinstance(storage, (str, type(None)))
         self._wrapped = wrapped
         self._form = form
         self._storage = storage
@@ -18,7 +21,7 @@ class FormWrapper:
     def __iter__(self):
         from ..Silk import SilkIterator, RichValue
         data = RichValue(self._wrapped).value     
-        if isinstance(data, (list, tuple)):
+        if isinstance(data, (list, tuple, np.ndarray)):
             data_iter = range(len(data)).__iter__()
             return SilkIterator(self, data_iter)
         else:            

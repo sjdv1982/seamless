@@ -1,23 +1,49 @@
 import sys
 from pprint import pprint
 from seamless.silk import Silk, ValidationError
+from seamless.mixed import Monitor, SilkBackend, MixedObject
+
+def reset_backend(sb=None):
+    if sb is None:
+        sb = silk_backend
+    sb._data = None
+    sb._form = None
+    sb._storage = None
+    sb._silk = None
 
 def adder(self, other):
     return other + self.x
 
-s = Silk()
-s.__add__ = adder
-s.bla = adder
+silk_backend = SilkBackend()
+monitor = Monitor(silk_backend)
+mixed_object = MixedObject(monitor, ())
+
+silk_backend2 = SilkBackend()
+monitor2 = Monitor(silk_backend2)
+mixed_object2 = MixedObject(monitor2, ())
+
+silk_backend3 = SilkBackend()
+monitor3 = Monitor(silk_backend3)
+mixed_object3 = MixedObject(monitor3, ())
+
+s = Silk(data=mixed_object)
+silk_backend.set_silk(s)
+
 s.x = 80
 print(s.x.data)
+
+s.__add__ = adder
+s.bla = adder
 print(s.bla(5))
 print(s+5)
 
-s2 = Silk(schema=s.schema)
+s2 = Silk(data=mixed_object2,schema=s.schema)
+silk_backend2.set_silk(s2)
 s2.x = 10
 print(s2+5)
 
-s3 = Silk(schema=s2.schema)
+s3 = Silk(data=mixed_object3,schema=s2.schema)
+silk_backend3.set_silk(s3)
 s3.x = 10
 print(s3+25)
 
@@ -29,6 +55,7 @@ s.y = 2
 print(s.x + s.y)
 s3.xy = property(xy) # all three Silks use the same schema
 print(s.xy)
+
 
 def xx_get(self):
     return self.x * self.x
@@ -71,19 +98,27 @@ print(s.lis.data)
 s.lis += [5]
 s.validate()
 print(s.lis*2)
-for a in s.lis[1:3]:
+"""
+for a in s.lis[1:3]:  # slices not yet supported by monitor
+    print(a.data)
+"""    
+for a in s.lis:
     print(a.data)
 print(hasattr(s, "lis"), "lis" in s)
 print(hasattr(s, "lis2"), "lis2" in s)
 
 for v in s:
-    print(s[v].data)
+    #print(v.data)  # With Monitor, iteration does *not* give a Silk object
+    print(v)
 print("")
 for v in s.lis:
     print(v.data)
 print()
 
-s = Silk().set(5)
+reset_backend()
+s = Silk(data=mixed_object)
+silk_backend.set_silk(s)
+s.set(5)
 inc = lambda self: self + 1
 s.x = inc
 print(s.x())
@@ -109,30 +144,34 @@ print(type(s2.arr[2].self.data), type(arr[2]))
 
 #s2.arr.schema["type"] = "array"  #  inferred
 print(s2.arr.schema["type"])
-item = Silk().set(5.0)
+reset_backend()
+item = Silk(data=mixed_object)
+silk_backend.set_silk(item)
+item.set(5.0)
 #item.schema["type"] = "number"  #  inferred
 def func(self):
     assert self > 0
 item.add_validator(func)
 s2.arr.schema["items"] = item.schema
-s2.x.validate(full=False)
-print("ARR", s2.arr, type(s2.arr))
-for nr, ele in enumerate(s2.arr):
-    print("ELE", nr, ele, type(ele))
-    ele.validate(full=False)
-s2.x.validate(full=False)
 s2.validate()
 
+print(silk_backend._data)
+print(silk_backend2._data)
+
+print("START")
 s2.arr[0] = 5
 print(s2.arr.unsilk)
 
-s = Silk()
+reset_backend()
+s = Silk(data=mixed_object)
+silk_backend.set_silk(s)
 s.x = 1.0
 s.y = 0.0
 s.z = 0.0
 def func(self):
     assert abs(self.x**2+self.y**2+self.z**2 - 1) < 0.001
 s.add_validator(func)
+s.y = 0.0
 s.validate()
 try:
     s.y = 1.0   #  would fail
@@ -140,20 +179,36 @@ try:
 except ValidationError:
     s.y = 0
 
-s.x = 0.0
-s.y = 0.0
+# setting 3 inter-validated values at once is *really* inconvenient with SilkBackend...
+try:
+    s.x = 0.0
+except ValidationError:
+    pass
+try:
+    s.y = 0.0
+except ValidationError:
+    pass
 s.z = 1.0
-s.validate()
 
-s.x = 0.0
-s.y = 1.0
+print(s.data)
+
+try:
+    s.x = 1.0
+except ValidationError:
+    pass
+try:
+    s.y = 0.0
+except ValidationError:
+    pass
 s.z = 0.0
-s.validate()
+
 
 print(s.data)
 
 import numpy as np
-a = Silk()
+reset_backend()
+a = Silk(data=mixed_object)
+silk_backend.set_silk(a)
 a.coor = [0.0,0.0,1.0]
 pprint(a.coor.schema)
 print(a.coor.data)
@@ -166,7 +221,9 @@ def func(self):
     assert abs(np.sum(arr**2) - 1) < 0.01
 a.coor.add_validator(func)
 
-c = Silk()
+reset_backend(mixed_object2)
+c = Silk(data=mixed_object2)
+silk_backend2.set_silk(c)
 c.set( [0.0, 0.0, 0.0] )
 c.schema.clear()
 c.schema.update(a.coor.schema)
@@ -183,27 +240,39 @@ c.z = property(lambda self: self[2], set_z)
 
 def set_xyz(self, xyz):
     x,y,z = xyz
-    self.x = x
-    self.y = y
+    try:
+        self.x = x
+    except ValidationError:
+        pass
+    try:
+        self.y = y
+    except ValidationError:
+        pass
     self.z = z
-    self.validate()
+
 c.xyz = property(lambda self: tuple(self.data), set_xyz)
 
-c.x = 0.2
 try:
-    c.validate()
-except ValidationError as exc:
-    print(exc)
-c.y = -0.3
+    c.x = 0.2
+except ValidationError:
+    pass
+try:
+    c.y = -0.3
+except ValidationError:
+    pass
 c.z = 0.93
-c.validate()
 print(c.data)
 c.xyz = -1,0,0
 print(c.data, c.xyz)
+c.xyz = 0.2,-0.3,0.93
+print(c.data, c.xyz)
 pprint(c.schema)
+import sys; sys.exit()
 
-Test = Silk()
+Test = Silk(data=mixed_object)
 def __init__(self, a, b):
+    reset_backend()
+    mixed_object.set_silk(self)
     self.a = a
     self.b = b
 def __call__(self, c):

@@ -13,7 +13,9 @@ class Monitor:
         self.backend = backend
 
     def get_instance(self, subform, path):
-        assert subform is not None #must initialize subform
+        if subform is None:
+            assert not len(path)
+            return MixedObject(self, path)
         if isinstance(subform, str):
             type_ = subform
         else:
@@ -36,8 +38,6 @@ class Monitor:
     def _get_path(self, path):
         subdata = self.backend.get_path(path)
         subform = self.backend.get_subform(path)
-        if not len(path) and subform is None:
-            subform = {"type": "object"}
         return subdata, subform
 
     def get_path(self, path=()):

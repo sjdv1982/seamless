@@ -11,9 +11,9 @@ Intermezzo:
 B. Silk / Structured cells
   Silk overhaul: DONE
     Rip buffer, fork; no automatic invocation of validate() 
-  Monitor: dummy stores paths in dict/list, then invokes validate()
+  Monitor: dummy stores paths in dict/list, then invokes validate() DONE
   Structured cell overhaul:
-  => Structured cell becomes a monitor
+  => Structured cell becomes a backend
   - Authoritative portion (stored in cell)
   - Inchannel checksums (_last_inputs, like transformers)
   - Schema (stored in cell)

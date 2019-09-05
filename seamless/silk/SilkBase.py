@@ -80,11 +80,13 @@ def silk_binary_method(self, other, name):
         return NotImplemented
     if isinstance(other, SilkBase):
         other_data = other._data
+        if isinstance(other_data, Wrapper):
+            other_data = other_data._unwrap()
         if isinstance(other_data, FormWrapper):
             other_data = other_data._wrapped
         try:
             result = method(other)
-        except TypeError: 
+        except TypeError:
             return method(other_data)
         if result is NotImplemented:
             return method(other_data)
@@ -126,6 +128,8 @@ def compile_function(code_dict, name, mode="method"):
 
 @lru_cache(10000)
 def compile_function_(code, name, mode):
+    from .Silk import Silk
+    from . import ValidationError
     code = textwrap.dedent(code)
     #import astdump
     #print(astdump.indented(code))
@@ -138,9 +142,12 @@ def compile_function_(code, name, mode):
     )
     linecache.cache[name] = cache_entry
 
+    namespace = {
+        "Silk": Silk,
+        "ValidationError": ValidationError,
+    }
     if isinstance(func, ast.FunctionDef):
-        func_name = ast_tree.body[0].name
-        namespace = {}
+        func_name = ast_tree.body[0].name        
         ast_tree.body[0].decorator_list.clear()
         code = compile(ast_tree, name, "exec")
         exec(code, namespace)
@@ -150,7 +157,7 @@ def compile_function_(code, name, mode):
         fv = func.value
         assert isinstance(fv, ast.Lambda)
         code = compile(ast.Expression(fv), name, "eval")
-        return eval(code)
+        return eval(code, namespace)
     elif mode == "property-getter":
         if isinstance(func.value, ast.Call):
             fv = func.value.args[0]
@@ -160,19 +167,12 @@ def compile_function_(code, name, mode):
             raise AssertionError
         assert isinstance(fv, ast.Lambda)
         code = compile(ast.Expression(fv), name, "eval")
-        return eval(code)
+        return eval(code, namespace)
     elif mode == "property-setter":
         raise SyntaxError(code)
     else:
         raise SyntaxError(code)
 
 
-class AlphabeticDict(dict):
-    def __iter__(self):
-        return iter(sorted(super().__iter__()))
-    def __str__(self):
-        #print("TODO: AlphabeticDict.__str__")
-        #return json.dumps(self, sort_keys=True, indent=2) #doesn't work for numpy
-        return super().__str__() ###
-
 from .validation.formwrapper import FormWrapper
+from .. import Wrapper

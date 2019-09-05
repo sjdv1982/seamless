@@ -6,7 +6,7 @@ import numpy as np
 from .SilkBase import SilkBase, compile_function
 from .validation import (
   schema_validator,
-  Scalar, scalar_conv, _types, infer_type, is_numpy_structure_schema
+  Scalar, scalar_conv, _types, infer_type, is_numpy_structure_schema, ValidationError
 )
 allowed_types = tuple(_types.values())
 from .policy import default_policy as silk_default_policy
@@ -620,7 +620,7 @@ class Silk(SilkBase):
             is_modify_method, result = try_modify_methods(self, attr)
             if is_modify_method:
                 return result
-
+        
         data, schema = self._data, self._schema
         if attr == "self":
             return Silk(data = data,
@@ -667,7 +667,7 @@ class Silk(SilkBase):
         except (TypeError, KeyError, AttributeError, IndexError) as exc:
             if attr.startswith("_"):
                 raise AttributeError(attr) from None
-            if hasattr(type(self), attr):
+            if hasattr(type(self), attr):                
                 return super().__getattribute__(attr)
             if attr in ("data", "schema", "unsilk"):
                 if attr == "unsilk":
@@ -698,7 +698,7 @@ class Silk(SilkBase):
     
     def __iter__(self):
         data = RichValue(self._data).value        
-        if isinstance(data, (list, tuple)):
+        if isinstance(data, (list, tuple, np.ndarray)):
             data_iter = range(len(data)).__iter__()
             return SilkIterator(self, data_iter)
         else:            
@@ -708,7 +708,12 @@ class Silk(SilkBase):
     def _getitem(self, item):
         data, schema = self._data, self._schema
         if isinstance(item, str) and hasattr(data, item):
-            result = getattr(data, item)            
+            result = getattr(data, item)
+            data2 = data
+            if isinstance(data, Wrapper):
+                data2 = data._unwrap()
+            if isinstance(data2, FormWrapper) and item in ("form", "storage"):
+                return result
             d = result
         else:
             d = data[item]
@@ -781,13 +786,23 @@ class Silk(SilkBase):
         schema_validator(schema).validate(data)
 
     def validate(self, full=True):
-        if not full:
-            schema = self._schema
-            validators = schema.get("validators", [])
-            for v, validator_code in enumerate(validators):
-                name = "Silk validator %d" % (v+1)
-                validator_func = compile_function(validator_code, name)
-                validator_func(proxy)
+        assert full in (True, False, None), full
+        #print("Silk.validate", self, self._parent, full)
+        if full != True:
+            if full is None:
+                self._validate()
+            else:
+                schema = self._schema
+                validators = schema.get("validators", [])
+                if len(validators):
+                    for v, validator_code in enumerate(validators):
+                        name = "Silk validator %d" % (v+1)
+                        validator_func = compile_function(validator_code, name)
+                        try:
+                            validator_func(self)
+                        except Exception as exc:
+                            tb = traceback.format_exc(limit=3)
+                            raise ValidationError("\n"+tb) from None
             if self._parent is not None:
                 self._parent.validate(full=False)
         elif self._parent is not None:

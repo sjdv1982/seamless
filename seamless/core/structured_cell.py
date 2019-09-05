@@ -1,7 +1,7 @@
 from . import SeamlessBase
 from .cell import PlainCell, TextCell
 from .protocol import json_encode
-from ..mixed import MixedBase, MonitorTypeError, Monitor, CellBackend
+from ..mixed import MixedBase, MonitorTypeError, Monitor#, CellBackend
 #from ..mixed.get_form import get_form
 #from ..mixed.io.util import is_identical_debug
 

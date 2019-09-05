@@ -3,7 +3,7 @@ from copy import deepcopy
 from .get_form import get_form as calc_form
 
 # TODO: livegraph branch
-# TODO: Backend.py: BufferedBackend with .buffer and .data sub-backend attributes. With this, Monitor will operate on data+buffer instead of on each alone
+# TODO: StructuredCellBackend to do the buffering that Silk used to do
 
 def get_subform(form, path):
     if not len(path):
@@ -146,11 +146,13 @@ class DefaultBackend(Backend):
     def get_storage(self):
         if self._plain:
             return "pure-plain"
+        assert isinstance(self._storage, (str, type(None)))
         return self._storage
 
     def _set_storage(self, value):
         if self._plain:
             raise AttributeError
+        assert isinstance(value, (str, type(None)))
         self._storage = value
 
     def get_data(self):
@@ -182,9 +184,10 @@ class DefaultBackend(Backend):
         subdata = self.get_path(path[:-1])
         attr = path[-1]
         if isinstance(attr, int):
-            assert isinstance(subdata, list)
-            for n in range(len(subdata), attr + 1):
-                subdata.append(None)
+            if attr >= len(subdata):
+                assert isinstance(subdata, list), type(subdata)
+                for n in range(len(subdata), attr + 1):
+                    subdata.append(None)
         subdata[attr] = data
 
     def _insert_path(self, data, path):
@@ -247,7 +250,26 @@ class DefaultBackend(Backend):
         self._storage = storage
         self._form = form
 
+class SilkBackend(DefaultBackend):
+    _silk = None
+    def __init__(self):
+        super().__init__(plain=False)        
+    
+    def set_silk(self, silk):
+        from ..silk.Silk import Silk
+        if not isinstance(silk, Silk):
+            raise TypeError("silk")
+        self._silk = silk
+    
+    def _update(self, path):
+        super()._update(path)
+        assert self._silk is not None
+        data = self._silk
+        for item in path:
+            data = data._getitem(item)
+        data.validate(full=None)
 
+"""
 class CellBackend(Backend):
     def __init__(self, cell):
         raise NotImplementedError # livegraph branch
@@ -483,3 +505,4 @@ class CellBackend(Backend):
             )
             
         self._modified_paths.clear()
+"""        

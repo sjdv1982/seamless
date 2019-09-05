@@ -4,6 +4,7 @@
 15
 35
 3
+3
 9
 16
 4
@@ -71,6 +72,10 @@ False False
 3.0 3.0
 <class 'numpy.float64'> <class 'numpy.float64'>
 array
+ARR <Silk: [1. 2. 3.] > <class 'seamless.silk.Silk.Silk'>
+ELE 0 <Silk: 1.0 > <class 'seamless.silk.Silk.Silk'>
+ELE 1 <Silk: 2.0 > <class 'seamless.silk.Silk.Silk'>
+ELE 2 <Silk: 3.0 > <class 'seamless.silk.Silk.Silk'>
 [5. 2. 3.]
 {'x': 0.0, 'y': 1.0, 'z': 0.0}
 {'items': {'type': 'number'}, 'storage': 'plain', 'type': 'array'}
