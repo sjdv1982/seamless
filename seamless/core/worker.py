@@ -170,7 +170,7 @@ class OutputPin(OutputPinBase):
             # something like ._verify_connect...
 
         if isinstance(target, Cell):
-            assert not target._monitor
+            assert not target._structured_cell
         elif isinstance(target, PinBase):
             raise TypeError("Pin-pin connections are not allowed, create a cell")
         elif isinstance(target, Transformer):
@@ -268,7 +268,7 @@ class EditPin(EditPinBase):
             raise TypeError("Outchannels must be the source of a connection, not the target")
 
         if isinstance(target, Cell):
-            assert not target._monitor
+            assert not target._structured_cell
         elif isinstance(target, PinBase):
             raise TypeError("Pin-pin connections are not allowed, create a cell")
         elif isinstance(target, Transformer):

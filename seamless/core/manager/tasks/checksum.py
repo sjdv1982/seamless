@@ -48,7 +48,7 @@ class CellChecksumTask(Task):
         checksum = None
         lock = await taskmanager.acquire_cell_lock(cell)
         try:            
-            if cell._monitor:
+            if cell._structured_cell:
                 # - Await current set-path/set-auth-path tasks for the cell. It doesn't matter if they were cancelled.  
                 raise NotImplementedError # livegraph branch
             else:                

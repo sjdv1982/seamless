@@ -29,7 +29,7 @@ def propagate_accessor(livegraph, accessor, void):
         raise TypeError(target)
 
 def propagate_simple_cell(livegraph, cell):    
-    assert cell._monitor is None
+    assert cell._structured_cell is None
     if cell._void:
         cell._void = False
     for accessor in livegraph.cell_to_downstream[cell]:
@@ -46,7 +46,7 @@ def propagate_simple_cell(livegraph, cell):
                 propagate_accessor(livegraph, accessor, void=False)
 
 def propagate_cell(livegraph, cell):
-    if cell._monitor is not None:
+    if cell._structured_cell is not None:
         raise NotImplementedError # livegraph branch
     return propagate_simple_cell(livegraph, cell)
 

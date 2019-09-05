@@ -2,16 +2,9 @@ from collections import OrderedDict
 import traceback
 import weakref
 
-from .worker import Worker, InputPin, OutputPin
-from .injector import macro_injector as injector
-from .unbound_context import UnboundContext, UnboundManager
-from .macro_mode import macro_mode_on, curr_macro, get_macro_mode
-from .cached_compile import exec_code
-from .build_module import build_module
-from .status import StatusReasonEnum
-
 class ExecError(Exception): pass
 
+from .worker import Worker, InputPin, OutputPin
 class Macro(Worker):
     injected_modules = None
     def __init__(self, macro_params, *, lib=None):
@@ -477,3 +470,9 @@ Macro.default_namespace = {n:globals()[n] for n in names}
 from .cell import Cell
 from .link import Link
 from . import library
+from .injector import macro_injector as injector
+from .unbound_context import UnboundContext, UnboundManager
+from .macro_mode import macro_mode_on, curr_macro, get_macro_mode
+from .cached_compile import exec_code
+from .build_module import build_module
+from .status import StatusReasonEnum

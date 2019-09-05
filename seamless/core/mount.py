@@ -684,8 +684,8 @@ def scan(ctx_or_cell):
             if isinstance(child, Link):
                 child = child.get_linked()
             if isinstance(child, Cell) and child._mount is None:
-                if child._monitor:
-                    raise NotImplementedError # livegraph branch
+                if child._structured_cell:
+                    raise Exception("Structured cells cannot be mounted")
                 else:
                     livegraph = child._get_manager().livegraph
                     if child._get_macro() is not None or livegraph.will_lose_authority(child):

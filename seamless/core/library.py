@@ -2,8 +2,6 @@ from weakref import WeakValueDictionary, WeakSet
 from contextlib import contextmanager
 from copy import deepcopy
 
-from . import macro_mode
-
 from .cell import Cell, PythonCell, PyMacroCell, celltypes, cell as make_cell
 
 class Library(dict):
@@ -222,6 +220,7 @@ def unregister_libcell(cell):
 def libcell(path, celltype=None):
     return _libcell(path, celltype)
 
+from . import macro_mode
 from .macro_mode import curr_macro
 from .context import Context
 from .manager.propagate import propagate_cell

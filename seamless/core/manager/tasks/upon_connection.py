@@ -193,4 +193,5 @@ from ...cell import Cell
 from ...worker import PinBase, EditPin
 from ...transformer import Transformer
 from ...reactor import Reactor
-from ...macro import Macro, curr_macro, Path as MacroPath
+from ...macro_mode import curr_macro
+from ...macro import Macro, Path as MacroPath

@@ -40,7 +40,7 @@ class LiveGraph:
         self._destroying = set()
 
     def register_cell(self, cell):
-        assert cell._monitor is None # StructuredCells get registered later
+        assert cell._structured_cell is None # StructuredCells get registered later
         self.cell_to_upstream[cell] = None
         self.cell_to_downstream[cell] = []
         self.cell_to_editpins[cell] = []
@@ -138,7 +138,7 @@ class LiveGraph:
     
     def connect_pin_cell(self, current_macro, source, target):
         """Connect a pin to a simple cell"""
-        assert target._monitor is None
+        assert target._structured_cell is None
         assert self.has_authority(target), target
         if isinstance(source, EditPin):
             assert target._get_macro() is None # Cannot connect edit pins to cells under macro control
@@ -190,7 +190,7 @@ class LiveGraph:
 
     def connect_cell_pin(self, current_macro, source, target):
         """Connect a simple cell to a pin"""
-        assert source._monitor is None
+        assert source._structured_cell is None
 
         manager = self.manager()
         path_cell, path_pin = manager._verify_connect(current_macro, source, target)
@@ -250,7 +250,7 @@ class LiveGraph:
 
     def connect_cell_cell(self, current_macro, source, target):
         """Connect one simple cell to another"""
-        assert source._monitor is None and target._monitor is None
+        assert source._structured_cell is None and target._structured_cell is None
         assert self.has_authority(target), target
         
         manager = self.manager()
@@ -278,7 +278,7 @@ class LiveGraph:
 
     def connect_macropath_cell(self, current_macro, source, target):
         """Connect a macropath to a simple cell"""
-        assert target._monitor is None
+        assert target._structured_cell is None
         assert self.has_authority(target), target
         
         manager = self.manager()
@@ -306,7 +306,7 @@ class LiveGraph:
 
     def connect_cell_macropath(self, current_macro, source, target):
         """Connect a simple cell to a macropath"""
-        assert source._monitor is None
+        assert source._structured_cell is None
         assert self.has_authority(target), target
         
         manager = self.manager()
@@ -378,10 +378,10 @@ class LiveGraph:
             return self.macropath_to_upstream[macropath] is None
         cell = cell_or_macropath
         if path is not None:
-            assert cell._monitor is not None
+            assert cell._structured_cell is not None
             assert cell in self.buffercells
             raise NotImplementedError # livegraph branch
-        assert cell._monitor is None
+        assert cell._structured_cell is None
         if cell._destroyed and cell in self.temp_auth:            
             return self.temp_auth[cell]
         return self.cell_to_upstream[cell] is None
@@ -513,10 +513,10 @@ class LiveGraph:
                 structured_cells.append(data_struc_cell)
         structured_cells += self.schemacells.pop(cell, [])
         for structured_cell in structured_cells:
-            assert cell._monitor is not None            
+            assert cell._structured_cell is not None            
             structured_cell.destroy() 
                 
-        if cell._monitor:
+        if cell._structured_cell:
             if buf_struc_cell:
                 raise NotImplementedError # livegraph branch
                 #up_accessors = self.paths_to_upstream.pop(cell)

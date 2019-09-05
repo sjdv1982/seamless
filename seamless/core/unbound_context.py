@@ -316,8 +316,10 @@ class UnboundContext(SeamlessBase):
                 manager.set_cell_checksum(
                     cell, checksum, initial, is_buffercell
                 )
-                monitor = cell._monitor
-                if monitor is not None:  
+                structured_cell = cell._structured_cell
+                if structured_cell is not None:  
+                    raise NotImplementedError 
+                    """
                     buffer_item = manager.get_value_from_checksum(checksum)
                     if buffer_item is not None:
                         _, _, buffer = buffer_item
@@ -325,6 +327,7 @@ class UnboundContext(SeamlessBase):
                         expression = accessor.to_expression(checksum)
                         value, _ = manager.cache_expression(expression, buffer)
                         monitor.set_path((), value)
+                    """
             else:
                 raise ValueError(com)
 

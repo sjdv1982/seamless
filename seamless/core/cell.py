@@ -55,7 +55,7 @@ Use ``Cell.status()`` to get its status.
     _observer = None
     _traitlets = None
     _share = None
-    _monitor = None # Only changed for MixedCells that are data or buffer of a structuredcell
+    _structured_cell = None
 
     _canceling = False
 
@@ -106,7 +106,7 @@ Use ``Cell.status()`` to get its status.
     def status(self):        
         """The cell's current status."""        
         from .status import format_status
-        if self._monitor is not None:
+        if self._structured_cell is not None:
             raise NotImplementedError # livegraph branch
         status = self._get_status()
         statustxt = format_status(status)
@@ -286,7 +286,7 @@ Use ``Cell.status()`` to get its status.
             raise TypeError("Outchannels must be the source of a connection, not the target")
         
         if isinstance(target, Cell):
-            assert not target._monitor
+            assert not target._structured_cell
         elif isinstance(target, Path):
             pass
         elif isinstance(target, InputPin):
