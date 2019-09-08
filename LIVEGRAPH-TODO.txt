@@ -13,7 +13,7 @@ simple static hierarchical low-level context.
 Code must be split up into the following:
 
 - Task management.
-New concept of tasks that derive from Task, are processed asynchronously by adding them to tasmkmanager. 
+New concept of tasks that derive from Task, are processed asynchronously by adding them to taskmanager. 
 Replaces workqueue and cachetask. Also, most manager methods will be replaced by Task classes. Get rid of all async/awaits.
 Each manager has its own taskmanager.
 Each taskmanager has a counter, which means that each task has a monotonically increasing number.
@@ -99,9 +99,9 @@ The following actions are possible:
     TODO: shareserver and mount should invoke the StructuredCell too; for shareserver, configure allowed paths)
   Verify that target cell is a buffercell (which must be unconnected)
   Verify that the modified path has full authority (see authoritymanager)
+    (UPDATE: don't do this. Inchannels will simply overwrite the relevant values)
   Cancel any previous buffercell-join task, collect its modified paths, add current path to it
-  Launch a set-auth-path task
-  Launch a buffercell-join task, with modified paths as an argument, and which awaits the set-buffercell-path task
+  Launch a buffercell-join task, with modified paths as an argument
 
 - Setting a non-authoritative cell path.
   (This is done through accessors that have a cell target.) 
@@ -158,7 +158,7 @@ List of tasks:
 - Cell checksum task
     Updates the checksum of the cell.
   - Await all UponConnectionTasks
-  - Await current set-path/set-auth-path tasks for the cell. It doesn't matter if they were cancelled.  
+  - Await current set-path tasks for the cell. It doesn't matter if they were cancelled.  
   - Await get buffer task
   - Await calculate checksum task
   - If the checksum is not None and cell's void attribute is True, log a warning, set it to False, and launch a cell update task
@@ -216,7 +216,7 @@ In contrast, Accessor and Worker update tasks may see out-of-date checksums. But
         - From the semantic checksums, build a argument dict (await get-buffer and deserialize tasks)
         - Synchronously invoke code_start and code_update on the live reactor, using the argument dict
     In both cases, gather the emitted outputs, and launch accessor update tasks for each.
-    If there are emitted editpins, run "set cell value" and/or "set authoritative cell path" actions
+    If there are emitted editpins, run "set cell value" actions
 
 - Expression evaluation task.
   Depends on read-accessors, using refcounting.
@@ -271,7 +271,7 @@ In contrast, Accessor and Worker update tasks may see out-of-date checksums. But
      in contrast, expression evaluation is a different task that does not use the Monitor
   - Await all UponConnectionTasks
   - Cancel delayed-buffercell-clear task for this buffercell (if any)
-  - Gather current set-path/set-auth-path tasks for the buffercell
+  - Gather current set-path tasks for the buffercell
   - Await the tasks (with shield), except if marked as re-entrant
   - Get the dependent buffercell ID. Retrieve its value from buffercell cache. If there is a cache miss:
     - Retrieve its checksum (private API)
@@ -282,35 +282,12 @@ In contrast, Accessor and Worker update tasks may see out-of-date checksums. But
   - Cancel delayed-buffercell-clear task for this buffercell (if any)
   - Register a delayed-buffercell-clear task for this buffercell
 
-- Set-auth-path task
-    NOTE: only ever invoked through the command line (sync code) on buffercells; 
-  - Cancel delayed-buffercell-clear task for this buffercell (if any)
-  - Gather current set-path/set-auth-path tasks for the buffercell
-  - If none of these tasks are re-entrant:
-      Modify the last task so that its checksum step is disabled (cancel it if checksum step is in progress)
-    Else: disable our own checksum step
-  - Await the tasks (with shield), except if marked as re-entrant
-  - Get the dependent buffercell ID. Retrieve its value from buffercell cache. If there is a cache miss:
-    - Retrieve its checksum (private API)
-    - Await deserialization task (using celltype)
-    - Add the value to the buffercell cache
-  - Mark the current task as re-entrant
-  - Modify the value using the Monitor wrapper (naively, but special mechanics for deep cells)
-      This may also spawn new get-path tasks.
-  - Unmark the current task as re-entrant
-  - Check if the checksum step has been disabled. If not:
-    - Set cell-to-value cache
-    - Await serialization task (using celltype)
-    - Await calculate checksum task
-    - Cancel delayed-buffercell-clear task for this buffercell (if any)
-    - Register a delayed-buffercell-clear task for this buffercell
-    - Pop cell-to-value cache
 
 - Set-path task (takes checksum + checksum_celltype as argument)
    (Will be invoked by write accessors on buffercell targets; NOTE: only invoked via an action!)
 UPDATE: also keep track of which inchannel paths have a checksum.
 Only trigger target update tasks (as opposed to non-void cancellations) when all relevant inchannel paths have a value.
-  - Gather current set-path/set-auth-path tasks for the buffercell
+  - Gather current set-path tasks for the buffercell
   - If none of these tasks are re-entrant:
       Modify the last task so that its checksum step is disabled (cancel it if checksum step is in progress)
     Else: disable our own checksum step
@@ -386,7 +363,7 @@ Cancellations
 Cancellations are sync, like actions.
 - Cell cancellation (with possible void option).  
   The entire cell has changed value. 
-  - Cancel all set-path / set-auth-path tasks.
+  - Cancel all set-path tasks.
   - If void option, set checksum to None, and void to True
   - Select all downstream accessors and do cancellation on them (propagating void).
 - Accessor cancellation (with possible void option).

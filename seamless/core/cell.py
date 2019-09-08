@@ -406,10 +406,10 @@ class MixedCell(Cell):
     _celltype = "mixed"    
 
     def __init__(self, hash_pattern=None):
-        super().__init__(self)
+        from .protocol.deep_structure import validate_hash_pattern
+        super().__init__()
         if hash_pattern is not None:
-            if hash_pattern not in ( {"*": "#"}, {"!": "#"} ):
-                raise NotImplementedError  # for now, hash pattern must be {"*": "#"} or {"!": "#"}
+            validate_hash_pattern(hash_pattern)
             self._hash_pattern = hash_pattern
 
     @property

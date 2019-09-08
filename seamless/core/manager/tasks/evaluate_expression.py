@@ -37,7 +37,11 @@ class EvaluateExpressionTask(Task):
                 )
             else:
                 buffer = await GetBufferTask(manager, expression.checksum).run()
-                if expression.path is None:
+                if (
+                    expression.path is None \
+                    and expression.hash_pattern is None \
+                    and expression.target_hash_pattern is None
+                ):
                     expression_result_checksum = await evaluate_from_buffer(
                         expression.checksum, buffer, 
                         expression.celltype, expression.target_celltype,
@@ -47,24 +51,27 @@ class EvaluateExpressionTask(Task):
                     if (expression.celltype, expression.target_celltype) \
                         in conversion_forbidden:
                             raise TypeError
-                    value = await DeserializeBufferTask(
-                        manager, expression.checksum, buffer,
-                        expression.celltype, copy=False
-                    ).run()
-                    # Special cases for cson / yaml
-                    raise NotImplementedError #livegraph branch
-                    # ...                  
-                    # Apply path
-                    # ...
-                    raise NotImplementedError #livegraph branch
-                    #result_value...
-                    result_buffer = await SerializeToBufferTask(
-                        manager, result_value, 
-                        expression.target_celltype
-                    ).run()
-                    expression_result_checksum = await CalculateChecksumTask(
-                        manager, buffer
-                    ).run()
+                    if expression.target_hash_pattern is not None:
+                        raise NotImplementedError  # livegraph branch
+                    else:
+                        value = await DeserializeBufferTask(
+                            manager, expression.checksum, buffer,
+                            expression.celltype, copy=False
+                        ).run()
+                        # Special cases for cson / yaml
+                        raise NotImplementedError #livegraph branch
+                        # ...                  
+                        # Apply path
+                        # ...
+                        raise NotImplementedError #livegraph branch
+                        #result_value...
+                        result_buffer = await SerializeToBufferTask(
+                            manager, result_value, 
+                            expression.target_celltype
+                        ).run()
+                        expression_result_checksum = await CalculateChecksumTask(
+                            manager, buffer
+                        ).run()
                 await validate_subcelltype(
                     expression_result_checksum, 
                     expression.target_celltype, 

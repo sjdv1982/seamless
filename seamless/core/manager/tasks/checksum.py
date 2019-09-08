@@ -48,25 +48,21 @@ class CellChecksumTask(Task):
         checksum = None
         lock = await taskmanager.acquire_cell_lock(cell)
         try:            
-            if cell._structured_cell:
-                # - Await current set-path/set-auth-path tasks for the cell. It doesn't matter if they were cancelled.  
-                raise NotImplementedError # livegraph branch
-            else:                
-                if cell in taskmanager.cell_to_value:
-                    celltype = cell._celltype
-                    value = taskmanager.cell_to_value[cell]
-                    if value is None:
-                        checksum = None
-                    else:
-                        try:
-                            buffer = await SerializeToBufferTask(manager, value, celltype).run()
-                            checksum = await CalculateChecksumTask(manager, buffer).run()
-                        except Exception:
-                            invalid = True
-                else:                    
-                    checksum = cell._checksum   
-                    if checksum is None:
-                        return         
+            if cell in taskmanager.cell_to_value:
+                celltype = cell._celltype
+                value = taskmanager.cell_to_value[cell]
+                if value is None:
+                    checksum = None
+                else:
+                    try:
+                        buffer = await SerializeToBufferTask(manager, value, celltype).run()
+                        checksum = await CalculateChecksumTask(manager, buffer).run()
+                    except Exception:
+                        invalid = True
+            else:                    
+                checksum = cell._checksum   
+                if checksum is None:
+                    return         
         finally:
             taskmanager.release_cell_lock(cell, lock)
         old_void = cell._void

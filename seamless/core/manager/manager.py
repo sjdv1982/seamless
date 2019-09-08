@@ -67,6 +67,7 @@ class Manager:
 
     @mainthread
     def register_structured_cell(self, structured_cell):
+        self.taskmanager.register_structured_cell(structured_cell)
         self.livegraph.register_structured_cell(structured_cell)
 
     @mainthread
@@ -214,6 +215,20 @@ class Manager:
         task.launch()
 
     @run_in_mainthread
+    def set_auth_path(self, structured_cell, path, value):
+        reason = None
+        if value is None:
+            reason = StatusReasonEnum.UNDEFINED
+        self.cancel_cell_path(
+            structured_cell.data, path, value is None, reason
+        )
+        self.taskmanager.cancel_structured_cell(structured_cell)
+    
+    def structured_cell_join(self, structured_cell):
+        task = StructuredCellJoinTask(structured_cell)
+        task.launch()
+
+    @run_in_mainthread
     def set_cell_buffer(self, cell, buffer, checksum):
         assert self.livegraph.has_authority(cell), cell
         reason = None
@@ -275,7 +290,7 @@ class Manager:
         buffer = self._get_buffer(checksum)        
         task = DeserializeBufferTask(
             self, buffer, checksum, celltype, 
-            copy=copy
+            copy=copy, hash_pattern=cell._hash_pattern
         )
         value = task.launch_and_await()
         return value
@@ -469,6 +484,10 @@ If origin_task is provided, that task is not cancelled."""
         self.livegraph.destroy_cell(self, cell)
         self.taskmanager.destroy_cell(cell, full=True)
 
+    def _destroy_structured_cell(self, structured_cell):
+        self.taskmanager.destroy_structured_cell(structured_cell)
+        # no need to inform livegraph...
+
     def _destroy_transformer(self, transformer):
         self.cachemanager.destroy_transformer(transformer)
         self.livegraph.destroy_transformer(self, transformer)
@@ -526,3 +545,4 @@ from ..macro import Macro, _global_paths
 from ..reactor import Reactor
 from .accessor import ReadAccessor
 from ..status import StatusReasonEnum
+from .tasks.structured_cell import StructuredCellJoinTask

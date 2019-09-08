@@ -2,9 +2,6 @@ from copy import deepcopy
 
 from .get_form import get_form as calc_form
 
-# TODO: livegraph branch
-# TODO: StructuredCellBackend to do the buffering that Silk used to do
-
 def get_subform(form, path):
     if not len(path):
         return form
@@ -243,8 +240,6 @@ class DefaultBackend(Backend):
             subform["properties"][attr] = form
 
     def _update(self, path):
-        # TODO: proper form re-calculation
-        # for now, it doesn't work (since a storage change may propagate upstream)
         data = self.get_data()
         storage, form = calc_form(data)
         self._storage = storage
@@ -269,111 +264,61 @@ class SilkBackend(DefaultBackend):
             data = data._getitem(item)
         data.validate(full=None)
 
-"""
-class CellBackend(Backend):
-    def __init__(self, cell):
-        raise NotImplementedError # livegraph branch
-        from ..core.cell import MixedCell, PlainCell
-        assert isinstance(cell, (MixedCell, PlainCell))
-        plain = (isinstance(cell, PlainCell))
-        super().__init__(plain)
-        self._cell = cell
-        self._tempdata = None
-        self._tempform = None
-        self._tempstorage = None
+class StructuredCellBackend(Backend):
+    def __init__(self, structured_cell):
+        self._structured_cell = structured_cell
+        super().__init__(False)
+        data = self.get_data()
+        storage, form = calc_form(data)
+        self._storage = storage
+        self._form = form
 
     def get_storage(self):
         if self._plain:
             return "pure-plain"
-        return self._cell.storage
+        assert isinstance(self._storage, (str, type(None)))
+        return self._storage
 
     def _set_storage(self, value):
         if self._plain:
             raise AttributeError
-        self._tempstorage = value
+        assert isinstance(value, (str, type(None)))
+        self._storage = value
 
     def get_data(self):
-        return self._cell.data
+        return self._structured_cell._get_auth_path(())
 
     def get_form(self):
-        return self._cell.form
+        return self._form
 
     def get_path(self, path):
-        data = self.get_data()
-        return self._get_path(path, data)
-
-    def _get_path(self, path, data):
-        for pp in path:
-            assert isinstance(pp, (int, str))
-        if not len(path):
-            return data
-        result = data
-        for p in path:
-            if result is None:
-                return None
-            if isinstance(p, int):
-                if p >= len(result):
-                    return None
-            try:
-                result = result[p]
-            except (KeyError, TypeError, IndexError, AttributeError):
-                return None
-        return result
+        return self._structured_cell._get_auth_path(path)
 
     def _set_path(self, path, data):
         if not len(path):
-            self._tempdata = deepcopy(data)
+            self._data = deepcopy(data)
             return
-        elif self._tempdata is None:
-            self._tempdata = deepcopy(self._cell.data)
-        subdata = self._get_path(path[:-1], self._tempdata)
+        subdata = self.get_path(path[:-1])
         attr = path[-1]
-
-        if subdata is None and len(path) == 1:
-            if isinstance(attr, int):
-                self.set_path((), [])
-            else:
-                self.set_path((), {})
-            return self._set_path(path, data)
-
+        sc = self._structured_cell
+        subpath = path[:-1]
         if isinstance(attr, int):
-            assert isinstance(subdata, list)
-            for n in range(len(subdata), attr + 1):
-                subdata.append(None)            
-        subdata[attr] = data
+            if attr >= len(subdata):
+                assert isinstance(subdata, list), type(subdata)
+                for n in range(len(subdata), attr):
+                    sc._set_auth_path(subpath + (n,), None)
+        sc._set_auth_path(path, data)
 
     def _insert_path(self, data, path):
-        if self._tempdata is None:
-            self._tempdata = deepcopy(self._cell.data)
-        prepath = tuple(path[:-1])
-        subdata = self._get_path(prepath, self._tempdata)
-        attr = path[-1]
-        assert isinstance(attr, int)
-        assert isinstance(subdata, list)
-        if len(subdata) >= attr:
-            for n in range(len(subdata), attr+1):
-                path2 = prepath + (n,)
-                subdata.append(None)            
-            subdata[attr] = data
-        else:
-            subdata.insert(attr, data)
+        raise NotImplementedError # StructuredCell Silk wrapper does not support insertion
         
     def _del_path(self, path):
-        if not len(path):
-            self._tempdata = None
-            return
-        elif self._tempdata is None:
-            self._tempdata = deepcopy(self._cell.data)
-        subdata = self._get_path(path[:-1], self._tempdata)
-        attr = path[-1]
-        subdata.pop(attr, None)
-
+        sc = self._structured_cell
+        sc._set_auth_path(path, None)
 
     def _get_form(self, path):
-        if self._tempform is None:
-            self._tempform = deepcopy(self._cell.form)
         if not len(path):
-            return self._tempform, self._tempstorage
+            return self.get_form(), self.get_storage()
         subform, substorage = self._get_form(path[:-1])
         attr = path[-1]
         if isinstance(attr, int):
@@ -389,7 +334,7 @@ class CellBackend(Backend):
 
     def _set_form(self, form, path):
         if not len(path):
-            self._tempform = deepcopy(form)
+            self._form = deepcopy(form)
             return
         subform, _ = self._get_form(path[:-1])
         attr = path[-1]
@@ -404,105 +349,9 @@ class CellBackend(Backend):
             subform["properties"][attr] = form
 
     def _update(self, path):
-        # TODO: proper form re-calculation
-        # for now, it doesn't work (since a storage change may propagate upstream)
-        data = self._tempdata
-        DEBUG = False
-        self._tempdata = None
-        self._tempform = None
-        self._tempstorage = None
-        raise NotImplementedError # livegraph branch
-        # TODO: Delegate the code below to the manager set-buffercell-path task
-        
-        ###self._cell.set(data) # will also compute storage and form        
-        ### Above code is stupid. Buffer join is much better!
-
-        manager = self._cell._get_manager()
-        manager.verify_modified_paths(self._cell, self._modified_paths.keys())
-
-        ccache = manager.cell_cache
-        cell = self._cell
-        auths = ccache.cell_to_authority[cell]        
-        authkeys = [p for p in auths if p is not None]
-        updated_paths = set()
-        
-        path_is_none = set()
-        for path, deleted in self._modified_paths.items():
-            if deleted:
-               for n in range(len(path)):
-                   path_is_none.add(path[:n])
-            else:
-                updated_paths.add(path)
-        cache = {}
-        updated_auths = set()
-        updated_parent_paths = set()
-        for path in updated_paths:
-            for n in range(len(path)):
-                updated_parent_paths.add(path[:n])
-        if DEBUG:
-            print("BACKEND DEBUG")
-            print("DATA", str(data)[:80])
-        for path in sorted(authkeys, key=lambda p:len(p)):
-            done = False
-            if path in updated_parent_paths:
-                updated_auths.add(path)
-                continue
-            for n in range(len(path)+1):
-                if DEBUG > 1:
-                    print("NONE?", path, n, path[:n], path_is_none)
-                if path[:n] in path_is_none:
-                    path_is_none.add(path)
-                    done = True
-                    break
-            if DEBUG > 1:
-                print("DONE?", path, done)
-            if done:
-                continue
-            for n in range(len(path)+1):
-                if DEBUG > 1:
-                    print("UP?", path, n, path[:n], updated_paths)
-                if path[:n] in updated_paths:
-                    done = True
-                    break
-            if done:                
-                for n in range(len(path)+1):
-                    subpath = path[:n]
-                    v = cache.get(subpath)
-                    if DEBUG > 1:
-                        print(path, n, subpath, str(v)[:50])
-                    if v is None:
-                        v = self.get_path(subpath)
-                        if v is None:
-                            path_is_none.add(subpath)
-                            break
-                        else:
-                            cache[subpath] = v
-                else:
-                    if path not in path_is_none:
-                        updated_auths.add(path)
-                continue            
-
-        if DEBUG:
-            print("UPDATED PATHS", updated_paths)
-            print("UPDATED AUTHS", updated_auths)
-            print("PATH_IS_NONE", path_is_none)               
-            print("/BACKEND DEBUG") 
-        for path in auths:
-            authstatus = None
-            if path in updated_auths:
-                authstatus = True
-            elif path in path_is_none:
-                authstatus = False
-            if authstatus is None:
-                continue
-            auth = auths[path]
-            has_auth = (auth != False)
-            raise NotImplementedError # livegraph branch           
-            manager._update_status(
-                self._cell, authstatus, 
-                has_auth=has_auth, origin=None,
-                cell_subpath=path, delay=True
-            )
-            
-        self._modified_paths.clear()
-"""        
+        data = self.get_data()
+        storage, form = calc_form(data)
+        self._storage = storage
+        self._form = form
+        sc = self._structured_cell
+        sc._join()

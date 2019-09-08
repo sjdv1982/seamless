@@ -28,6 +28,7 @@ class TaskManager:
         self.reactor_to_task = {}
         self.macro_to_task = {}
         self.macropath_to_task = {}
+        self.structured_cell_to_task = {}
         self.reftasks = {} # tasks that hold a reference to (are a link to) another task 
         self.rev_reftasks = {} # mapping of a task to their refholder tasks
         self.cell_to_value = {} # very short term cache:
@@ -53,6 +54,9 @@ class TaskManager:
         assert cell not in self.cell_to_task
         self.cell_locks[cell] = []
         self.cell_to_task[cell] = []
+
+    def register_structured_cell(self, structured_cell):
+        self.structured_cell_to_task[structured_cell] = []
 
     def register_accessor(self, accessor):
         assert accessor not in self.accessor_to_task
@@ -131,6 +135,8 @@ class TaskManager:
     def _add_dep(self, dep, task):
         if isinstance(dep, Cell):
             d = self.cell_to_task
+        elif isinstance(dep, StructuredCell):
+            d = self.structured_cell_to_task
         elif isinstance(dep, ReadAccessor):
             d = self.accessor_to_task
         elif isinstance(dep, Expression):
@@ -159,33 +165,39 @@ class TaskManager:
         for task in self._get_upon_connection_tasks():
             if task.taskid >= taskid or task.future is None:
                 continue
+            tasks.append(task)
+        if len(tasks):
+            await self.await_tasks(tasks)
+
+    @staticmethod
+    async def await_tasks(tasks):
+        futures = []
+        for task in tasks:
             futures.append(
                 asyncio.shield(task.future)
-            )
-            tasks.append(task)
-        if len(futures):
-            await asyncio.wait(futures)
-            ok = True
-            for task, fut in zip(tasks, futures):
-                try:
-                    fut.result() # to get rid of "Future exception was never retrieved"
-                                 # since the shield has its own exception
-                except Exception as exc:
-                    pass
-                    
-                try:
-                    task.future.result() # This is the real future
-                except Exception as exc:
-                    if not isinstance(exc, CancelledError):
-                        if task._awaiting:
-                            continue
-                        import traceback
-                        traceback.print_exc()                
-                    task._awaiting = True
-                    # If anything goes wrong in another task, consider this a cancel
-                    ok = False
-            if not ok:
-                raise CancelledError
+            )            
+        await asyncio.wait(futures)
+        ok = True
+        for task, fut in zip(tasks, futures):
+            try:
+                fut.result() # to get rid of "Future exception was never retrieved"
+                                # since the shield has its own exception
+            except Exception as exc:
+                pass
+                
+            try:
+                task.future.result() # This is the real future
+            except Exception as exc:
+                if not isinstance(exc, CancelledError):
+                    if task._awaiting:
+                        continue
+                    import traceback
+                    traceback.print_exc()                
+                task._awaiting = True
+                # If anything goes wrong in another task, consider this a cancel
+                ok = False
+        if not ok:
+            raise CancelledError
 
     async def acquire_cell_lock(self, cell):
         if cell._destroyed:
@@ -209,6 +221,8 @@ class TaskManager:
     def _clean_dep(self, dep, task):
         if isinstance(dep, Cell):
             d = self.cell_to_task
+        elif isinstance(dep, StructuredCell):
+            d = self.structured_cell_to_task
         elif isinstance(dep, ReadAccessor):
             d = self.accessor_to_task
         elif isinstance(dep, Expression):
@@ -387,12 +401,22 @@ If origin_task is provided, that task is not cancelled."""
                 continue
             task.cancel()
 
+    def cancel_structured_cell(self, structured_cell): 
+        tasks = self.structured_cell_to_task.pop(structured_cell)
+        for task in tasks:
+            task.cancel()
+
     @destroyer
     def destroy_cell(self, cell, full=False):
         self.cancel_cell(cell, full=full)
         self.cell_to_task.pop(cell)
         self.cell_to_value.pop(cell, None)
         self.cell_locks.pop(cell)
+
+    @destroyer
+    def destroy_structured_cell(self, structured_cell):
+        self.cancel_structured_cell(structured_cell)
+        self.structured_cell_to_task.pop(structured_cell)
 
     @destroyer
     def destroy_accessor(self, accessor):
@@ -451,6 +475,7 @@ If origin_task is provided, that task is not cancelled."""
         self._destroyed = True
 
 from ..cell import Cell
+from ..structured_cell import StructuredCell
 from ..transformer import Transformer
 from ..macro import Macro, Path as MacroPath
 from ..reactor import Reactor

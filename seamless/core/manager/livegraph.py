@@ -89,9 +89,10 @@ class LiveGraph:
 
         datacell = structured_cell.data
         assert buffercell is not datacell
-        assert datacell in self.cell_to_upstream
-        assert self.cell_to_upstream[datacell] is None
-        assert not len(self.cell_to_downstream[datacell])
+        if datacell is not None:
+            assert datacell in self.cell_to_upstream
+            assert self.cell_to_upstream[datacell] is None
+            assert not len(self.cell_to_downstream[datacell])
 
         self.buffercells[buffercell] = structured_cell
         self.datacells[datacell] = structured_cell
@@ -104,11 +105,13 @@ class LiveGraph:
         inchannels = list(structured_cell.inchannels.keys())
         outchannels = list(structured_cell.outchannels.keys())
 
+        """
         inpathdict = {path: None for path in inchannels}
         self.paths_upstream[buffercell] = inpathdict
 
         outpathdict = {path: None for path in outchannels}
         self.paths_downstream[datacell] = outpathdict
+        """
 
     def register_macropath(self, macropath):
         self.macropath_to_upstream[macropath] = None
