@@ -380,7 +380,9 @@ class Silk(SilkBase):
     def _set_value_simple(self, value):
         assert self._parent is None or self._parent_attr is not None
         if self._parent is not None:
-            self._parent._setitem(self._parent_attr, value)
+            rich_value = RichValue(value)
+            value, value_schema = rich_value.value, rich_value.schema
+            self._parent._setitem(self._parent_attr, value, value_schema)
         elif isinstance(self._data, Wrapper):
             self._data.set(value)
         else:
@@ -389,7 +391,9 @@ class Silk(SilkBase):
     def _set_value_dict(self, value):
         assert self._parent is None or self._parent_attr is not None
         if self._parent is not None:
-            self._parent._setitem(self._parent_attr, value)
+            rich_value = RichValue(value)
+            value, value_schema = rich_value.value, rich_value.schema
+            self._parent._setitem(self._parent_attr, value, value_schema)
             return self._data
         data = self._data
         raw_data = self._raw_data()
@@ -447,7 +451,10 @@ class Silk(SilkBase):
             if is_none:
                 is_empty = True
             else:
-                is_empty = (len(raw_data) == 0)
+                try:
+                    is_empty = (len(raw_data) == 0)
+                except:
+                    is_empty = True
             self._set_value_dict(value)
             schema = _get_schema()
             policy = self._get_policy(schema)

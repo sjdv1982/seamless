@@ -37,6 +37,7 @@ def set_auth_subpath(curr_value, path, value):
     head = path[0]
     if len(path) == 1:
         curr_value[head] = value
+        return
     head2 = path[1]
     if isinstance(head2, int):
         curr_value[head] = []
@@ -61,7 +62,9 @@ class StructuredCell(SeamlessBase):
         outchannels=[],
         editchannels=[],
         buffer=None
-    ):                        
+    ):      
+        #from .macro_mode import get_macro_mode
+        #assert get_macro_mode()
         if schema is not None: 
             raise NotImplementedError # livegraph branch
         if len(inchannels):
@@ -148,6 +151,7 @@ class StructuredCell(SeamlessBase):
                     raise Exception(err % (path1, path2))
 
     def _set_auth_path(self, path, value):
+        #print("_set_auth_path", path, value)
         assert not self.no_auth
         if self.auth._destroyed:
             return
@@ -156,7 +160,7 @@ class StructuredCell(SeamlessBase):
             return
         self.modified_auth_paths.add(path)
         manager.set_auth_path(self, path, value)
-        if not len(self.path):
+        if not len(path):
             self._auth_value = value
         else:
             if self._auth_value is None:
@@ -229,9 +233,14 @@ class StructuredCell(SeamlessBase):
             manager.register_structured_cell(self)
 
     def destroy(self, *, from_del=False): 
-        super().destroy(from_del=from_del)
+        if self._destroyed:
+            return
+        super().destroy(from_del=from_del)        
         self._get_manager()._destroy_structured_cell(self)
 
+    def __str__(self):
+        ret = "Seamless StructuredCell: " + self._format_path()
+        return ret
 
 class PathDict(dict):
     def __getitem__(self, item):

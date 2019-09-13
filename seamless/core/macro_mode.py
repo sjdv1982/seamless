@@ -32,7 +32,8 @@ def unregister_toplevel(ctx):
 def _destroy_toplevels():    
     for manager in list(_toplevel_managers):
         manager.destroy(from_del=True)
-        manager.temprefmanager.purge_all()
+        if not isinstance(manager, UnboundManager):
+            manager.temprefmanager.purge_all()
     for ctx in list(_toplevel_registered):
         unregister_all(ctx)
         manager = ctx._get_manager()
@@ -64,8 +65,7 @@ def curr_macro():
 def macro_mode_on(macro=None):
     from . import mount    
     from .context import Context
-    from .cell import Cell
-    from .unbound_context import UnboundContext                
+    from .cell import Cell    
     from .macro import _global_paths
     global _macro_mode, _curr_macro
     if _macro_mode:
@@ -148,3 +148,4 @@ def macro_mode_on(macro=None):
 from .cache.transformation_cache import transformation_cache
 from .library import unregister_all
 from .mount import mountmanager
+from .unbound_context import UnboundContext, UnboundManager

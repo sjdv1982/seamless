@@ -160,6 +160,7 @@ def _build(ctx, result, prepath):
         if isinstance(child, Context):
             _build(child, result, path)
         elif isinstance(child, Cell):
+            if child._structured_cell: raise NotImplementedError  # livegraph branch
             is_buffercell = child in livegraph.buffercells
             celltype, checksum = child._celltype, child._checksum
             #print("INCREF", checksum.hex())
@@ -189,11 +190,11 @@ def _libcell(path, mandated_celltype, *args, **kwargs):
     assert libname in _lib, libname #library name must have been registered
     lib, _ = _lib[libname]
     assert key in lib, (key, list(lib.keys())) #library key must be in library
-    celltype, checksum, is_buffercell = lib[key]
+    celltype, checksum, from_structured_cell = lib[key]
     assert mandated_celltype is None or mandated_celltype == celltype, (mandated_celltype, celltype)
     c = make_cell(celltype, *args, **kwargs)
     if checksum is not None:
-        c._initial_checksum = checksum, True, is_buffercell
+        c._initial_checksum = checksum, True, from_structured_cell
     if (libname, key) not in _cells:
         _cells[libname, key] = {}
     _cells[libname, key][c] = curr_macro()

@@ -98,14 +98,12 @@ class Manager:
     ##########################################################################
 
     @run_in_mainthread
-    def set_cell_checksum(self, cell, checksum, initial, is_buffercell):
+    def set_cell_checksum(self, cell, checksum, initial, from_structured_cell):
         """Setting a cell checksum.
   (This is done from the command line, usually at graph loading)
-  initial=True in case of graph loading; is_buffercell=True when triggered from StructuredCell)
+  initial=True in case of graph loading; from_structured_cell=True when triggered from StructuredCell)
   If "initial" is True, it is assumed that the context is being initialized (e.g. when created from a graph).
   Else, cell cannot be the .data or .buffer attribute of a StructuredCell, and cannot have any incoming connection.
-  
-  However, if "is_buffercell" is True, then the cell can be a .buffer attribute of a StructuredCell
 
   If the new checksum is None, do a cell void cancellation.  
   Else: 
@@ -115,12 +113,11 @@ class Manager:
         """
         sc_data = self.livegraph.datacells.get(cell) 
         sc_buf = self.livegraph.buffercells.get(cell)
-        if not initial:
-            assert sc_data is None
-            if is_buffercell:
-                if sc_buf is None:
-                    raise Exception("Cell was declared to be buffercell, but it is not known as such")                
+        if not initial:            
+            if from_structured_cell:
+                assert sc_data is not None or sc_buf is not None
             else:
+                assert sc_data is None and sc_buf is None
                 assert self.livegraph.has_authority(cell)
                 assert sc_buf is None
         if checksum is None:
@@ -136,7 +133,7 @@ class Manager:
             cell, checksum, 
             (checksum is None), status_reason=reason
         )
-        if not initial:
+        if not initial and not from_structured_cell:
             CellUpdateTask(self, cell).launch()
 
     def _set_cell_checksum(self, cell, checksum, void, status_reason=None, prelim=False):
@@ -148,7 +145,10 @@ class Manager:
         if void:
             assert status_reason is not None
             assert checksum is None
-        authority = self.livegraph.has_authority(cell)
+        if cell._structured_cell:
+            authority = True
+        else:
+            authority = self.livegraph.has_authority(cell)
         cachemanager = self.cachemanager
         old_checksum = cell._checksum
         if old_checksum is not None and old_checksum != checksum:
@@ -216,16 +216,13 @@ class Manager:
 
     @run_in_mainthread
     def set_auth_path(self, structured_cell, path, value):
-        reason = None
-        if value is None:
-            reason = StatusReasonEnum.UNDEFINED
         self.cancel_cell_path(
-            structured_cell.data, path, value is None, reason
+            structured_cell._data, path, value is None
         )
         self.taskmanager.cancel_structured_cell(structured_cell)
     
     def structured_cell_join(self, structured_cell):
-        task = StructuredCellJoinTask(structured_cell)
+        task = StructuredCellJoinTask(self, structured_cell)
         task.launch()
 
     @run_in_mainthread
@@ -339,6 +336,21 @@ If origin_task is provided, that task is not cancelled."""
             cell._canceling = False
 
     @mainthread
+    def cancel_cell_path(self, cell, path, void):
+        assert isinstance(cell, Cell)
+        assert cell._structured_cell is not None
+        if cell._destroyed:
+            return
+        livegraph = self.livegraph
+        all_accessors = livegraph.paths_to_downstream[cell]
+        for pnr in range(len(path)):
+            subpath = path[:pnr]
+            if subpath not in all_accessors:
+                continue
+            for accessor in all_accessors[subpath]:
+                self.cancel_accessor(accessor, void)        
+
+    @mainthread
     def cancel_accessor(self, accessor, void, origin_task=None):
         assert isinstance(accessor, ReadAccessor)
         self.taskmanager.cancel_accessor(accessor, origin_task=origin_task)
@@ -421,7 +433,7 @@ If origin_task is provided, that task is not cancelled."""
             macro._gen_context = None
         if void:
             if macro._void:
-                curr_reason = reactor._status_reason
+                curr_reason = macro._status_reason
                 if curr_reason.value < reason.value:
                     return
             macro._void = True
@@ -485,8 +497,8 @@ If origin_task is provided, that task is not cancelled."""
         self.taskmanager.destroy_cell(cell, full=True)
 
     def _destroy_structured_cell(self, structured_cell):
-        self.taskmanager.destroy_structured_cell(structured_cell)
-        # no need to inform livegraph...
+        # no need to notify livegraph; cell destruction does the job already
+        self.taskmanager.destroy_structured_cell(structured_cell)        
 
     def _destroy_transformer(self, transformer):
         self.cachemanager.destroy_transformer(transformer)

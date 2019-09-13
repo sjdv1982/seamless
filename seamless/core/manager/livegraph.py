@@ -40,7 +40,6 @@ class LiveGraph:
         self._destroying = set()
 
     def register_cell(self, cell):
-        assert cell._structured_cell is None # StructuredCells get registered later
         self.cell_to_upstream[cell] = None
         self.cell_to_downstream[cell] = []
         self.cell_to_editpins[cell] = []
@@ -83,19 +82,17 @@ class LiveGraph:
 
     def register_structured_cell(self, structured_cell):
         buffercell = structured_cell.buffer
+        datacell = structured_cell._data
+
         assert buffercell in self.cell_to_upstream
         assert self.cell_to_upstream[buffercell] is None
         assert not len(self.cell_to_downstream[buffercell])
-
-        datacell = structured_cell.data
-        assert buffercell is not datacell
-        if datacell is not None:
-            assert datacell in self.cell_to_upstream
-            assert self.cell_to_upstream[datacell] is None
-            assert not len(self.cell_to_downstream[datacell])
-
         self.buffercells[buffercell] = structured_cell
-        self.datacells[datacell] = structured_cell
+        
+        assert datacell in self.cell_to_upstream
+        assert self.cell_to_upstream[datacell] is None
+        assert not len(self.cell_to_downstream[datacell])
+        self.datacells[datacell] = structured_cell                
 
         schemacell = structured_cell.schema
         if schemacell is not None:
@@ -104,14 +101,12 @@ class LiveGraph:
 
         inchannels = list(structured_cell.inchannels.keys())
         outchannels = list(structured_cell.outchannels.keys())
-
-        """
+        
         inpathdict = {path: None for path in inchannels}
-        self.paths_upstream[buffercell] = inpathdict
+        self.paths_to_upstream[buffercell] = inpathdict
 
         outpathdict = {path: None for path in outchannels}
-        self.paths_downstream[datacell] = outpathdict
-        """
+        self.paths_to_downstream[datacell] = outpathdict
 
     def register_macropath(self, macropath):
         self.macropath_to_upstream[macropath] = None
@@ -517,40 +512,47 @@ class LiveGraph:
     @destroyer
     def destroy_cell(self, manager, cell):
         structured_cells = []
+        structured_cell = cell._structured_cell
         buf_struc_cell = self.buffercells.pop(cell, None)
         if buf_struc_cell:
             structured_cells.append(buf_struc_cell)
-        else:
-            data_struc_cell = self.datacells.pop(cell, None)
-            if data_struc_cell:
-                structured_cells.append(data_struc_cell)
+            assert buf_struc_cell is not None
+        data_struc_cell = self.datacells.pop(cell, None)
+        if data_struc_cell:
+            assert buf_struc_cell is not None
+            structured_cells.append(data_struc_cell)
+
         structured_cells += self.schemacells.pop(cell, [])
         for structured_cell in structured_cells:
             assert cell._structured_cell is not None            
             structured_cell.destroy() 
                 
+        up_accessors = []
+        down_accessors = []
         if cell._structured_cell:
+            assert not self.cell_to_upstream[cell], cell
+            assert not self.cell_to_downstream[cell], cell
             if buf_struc_cell:
-                raise NotImplementedError # livegraph branch
-                #up_accessors = self.paths_to_upstream.pop(cell)
-            elif data_struc_cell:
-                raise NotImplementedError # livegraph branch
-                #down_accessors = self.paths_to_downstream.pop(cell)
+                up_accessors = self.paths_to_upstream[cell]
+            if data_struc_cell:
+                down_accessors = self.paths_to_downstream[cell]
+
+            while len(up_accessors):
+                accessor = up_accessors[0]
+                self.destroy_accessor(manager, accessor)
+                if len(up_accessors) and up_accessors[0] is accessor:
+                    if cell._structured_cell:
+                        print("WARNING: destruction of cell upstream %s failed" % accessor)
+                    up_accessors = up_accessors[1:]        
+
         else:
             assert not len(structured_cells)
             self.temp_auth[cell] = self.has_authority(cell)
-            up_accessor = self.cell_to_upstream.pop(cell)
+            up_accessor = self.cell_to_upstream[cell]
             if up_accessor is not None:
                 self.destroy_accessor(manager, up_accessor)
             down_accessors = self.cell_to_downstream[cell]
-            while len(down_accessors):
-                accessor = down_accessors[0]
-                assert self.accessor_to_upstream[accessor] is cell
-                self.destroy_accessor(manager, accessor, from_upstream=True)
-                if len(down_accessors) and down_accessors[0] is accessor:
-                    print("WARNING: destruction of cell downstream %s failed" % accessor)
-                    down_accessors = down_accessors[1:]
-            self.cell_to_downstream.pop(cell)
+
             editpins = self.cell_to_editpins.pop(cell)
             if editpins is not None:
                 for editpin in editpins:
@@ -558,6 +560,20 @@ class LiveGraph:
                     if reactor._destroyed or reactor in self._destroying:
                         continue
                     self.editpin_to_cell[reactor][editpin.name] = None
+
+        while len(down_accessors):
+            accessor = down_accessors[0]
+            assert self.accessor_to_upstream[accessor] is cell
+            self.destroy_accessor(manager, accessor, from_upstream=True)
+            if len(down_accessors) and down_accessors[0] is accessor:
+                print("WARNING: destruction of cell downstream %s failed" % accessor)
+                down_accessors = down_accessors[1:]
+
+        if cell._structured_cell:
+            self.paths_to_upstream.pop(cell)
+            self.paths_to_downstream.pop(cell)
+        self.cell_to_upstream.pop(cell)
+        self.cell_to_downstream.pop(cell)
         self._will_lose_authority.discard(cell)
 
     @destroyer

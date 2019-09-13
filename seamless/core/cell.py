@@ -84,8 +84,8 @@ Use ``Cell.status()`` to get its status.
                 self.set(value)
             self._initial_val = None
         elif self._initial_checksum is not None:
-            checksum, initial, is_buffercell = self._initial_checksum
-            self._set_checksum(checksum.hex(), initial, is_buffercell)
+            checksum, initial, from_structured_cell = self._initial_checksum
+            self._set_checksum(checksum.hex(), initial, from_structured_cell)
             self._initial_checksum = None
 
     def __hash__(self):
@@ -221,25 +221,25 @@ Use ``Cell.status()`` to get its status.
             )
         return self
 
-    def _set_checksum(self, checksum, initial=False, is_buffercell=False):
+    def _set_checksum(self, checksum, initial=False, from_structured_cell=False):
         """Specifies the checksum of the data (hex format)        
         
         If "initial" is True, it is assumed that the context is being initialized (e.g. when created from a graph).
         Else, cell cannot be the .data or .buffer attribute of a StructuredCell, and cannot have any incoming connection.
         
-        However, if "is_buffercell" is True, then the cell can be a .buffer attribute of a StructuredCell
+        However, if "from_structured_cell" is True, then the cell is updated by its encapsulating structured cell
         """        
         if self._context is None:
             self._initial_val = None
             if checksum is not None:
                 checksum = bytes.fromhex(checksum)
-                self._initial_checksum = checksum, initial, is_buffercell
+                self._initial_checksum = checksum, initial, from_structured_cell
         else:
             manager = self._get_manager()
             if checksum is not None:
                 checksum = bytes.fromhex(checksum)
             manager.set_cell_checksum(
-              self, checksum, initial, is_buffercell
+              self, checksum, initial, from_structured_cell
             )
         return self
 

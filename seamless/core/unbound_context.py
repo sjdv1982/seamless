@@ -61,11 +61,11 @@ class UnboundManager:
         assert pin.worker_ref() in self._registered
         self.commands.append(("connect pin", (pin, cell)))
 
-    def set_cell_checksum(self, cell, checksum, initial, is_buffercell):
+    def set_cell_checksum(self, cell, checksum, initial, from_structured_cell):
         assert cell._get_manager() is self
         assert cell in self._registered
         self.commands.append(
-            ("set cell checksum", (cell, checksum, initial, is_buffercell))
+            ("set cell checksum", (cell, checksum, initial, from_structured_cell))
         )
 
     def cell_from_pin(self, pin):
@@ -311,10 +311,10 @@ class UnboundContext(SeamlessBase):
                 pin, cell = args
                 manager.connect(pin, None, cell, None)
             elif com == "set cell checksum":
-                cell, checksum, initial, is_buffercell = args
+                cell, checksum, initial, from_structured_cell = args
                 cell._initial_checksum = None
                 manager.set_cell_checksum(
-                    cell, checksum, initial, is_buffercell
+                    cell, checksum, initial, from_structured_cell
                 )
                 structured_cell = cell._structured_cell
                 if structured_cell is not None:  

@@ -7,4 +7,16 @@ ctx.sc = StructuredCell(
 )
 
 data = ctx.sc.handle
-print(type(data))
+data.set(20)
+print(data)
+ctx.equilibrate()
+print(data.data, ctx.data.value)
+data.set({})
+data.a = "test"
+data.b = 12
+data.b.set(5)
+data.c = {"d": {}}
+data.c.d.e = 12.0
+print(data)
+ctx.equilibrate()
+print(data.data, ctx.data.value)

@@ -295,12 +295,12 @@ class StructuredCellBackend(Backend):
         return self._structured_cell._get_auth_path(path)
 
     def _set_path(self, path, data):
+        sc = self._structured_cell
         if not len(path):
-            self._data = deepcopy(data)
+            sc._set_auth_path((), data)
             return
         subdata = self.get_path(path[:-1])
-        attr = path[-1]
-        sc = self._structured_cell
+        attr = path[-1]        
         subpath = path[:-1]
         if isinstance(attr, int):
             if attr >= len(subdata):

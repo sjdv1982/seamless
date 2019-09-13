@@ -170,7 +170,8 @@ class TaskManager:
             await self.await_tasks(tasks)
 
     @staticmethod
-    async def await_tasks(tasks):
+    async def await_tasks(tasks, shield=False):
+        """Wait for taskmanager Tasks. Any cancel will raise CancelError, unless shield is True"""
         futures = []
         for task in tasks:
             futures.append(
@@ -196,7 +197,7 @@ class TaskManager:
                 task._awaiting = True
                 # If anything goes wrong in another task, consider this a cancel
                 ok = False
-        if not ok:
+        if not ok and not shield:
             raise CancelledError
 
     async def acquire_cell_lock(self, cell):
@@ -402,7 +403,7 @@ If origin_task is provided, that task is not cancelled."""
             task.cancel()
 
     def cancel_structured_cell(self, structured_cell): 
-        tasks = self.structured_cell_to_task.pop(structured_cell)
+        tasks = self.structured_cell_to_task.get(structured_cell, [])
         for task in tasks:
             task.cancel()
 
