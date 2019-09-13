@@ -1,4 +1,6 @@
 from . import Task
+import traceback
+import copy
 
 print("TODO: tasks/structured_cell.py: task to deserialize editchannel, then structured_cell.set_auth_path")
 
@@ -41,17 +43,28 @@ class StructuredCellJoinTask(Task):
             # checksum = ...
         else:
             value = sc._auth_value            
-        buf = await SerializeToBufferTask(manager, value, "mixed").run()
+        buf = await SerializeToBufferTask(
+            manager, value, "mixed", use_cache=False # the value object changes all the time...
+        ).run()
         checksum = await CalculateChecksumTask(manager, buf).run()
         if checksum is not None:
-            checksum = checksum.hex()
+            checksum = checksum.hex()        
         if not len(sc.inchannels):
             sc.auth._set_checksum(checksum, from_structured_cell=True)
         if sc.buffer is not sc.auth:            
             sc.buffer._set_checksum(checksum, from_structured_cell=True)
         if sc.schema is not None:
-            raise NotImplementedError # livegraph branch
-        if sc._data is not sc.buffer:            
+            if len(sc.inchannels):
+                raise NotImplementedError # livegraph branch  # see above
+            schema = sc.schema.value
+            if schema is not None:
+                s = Silk(data=copy.deepcopy(value), schema=schema)
+                try:
+                    s.validate()
+                except ValidationError:
+                    traceback.print_exc()
+        
+        if sc._data is not sc.buffer:
             sc._data._set_checksum(checksum, from_structured_cell=True)
         if sc.outchannels:
             raise NotImplementedError # livegraph branch
@@ -59,3 +72,4 @@ class StructuredCellJoinTask(Task):
 
 from .serialize_buffer import SerializeToBufferTask
 from .checksum import CalculateChecksumTask
+from ....silk.Silk import Silk, ValidationError

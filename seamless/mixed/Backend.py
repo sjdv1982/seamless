@@ -1,4 +1,5 @@
 from copy import deepcopy
+from collections import defaultdict
 
 from .get_form import get_form as calc_form
 
@@ -355,3 +356,57 @@ class StructuredCellBackend(Backend):
         self._form = form
         sc = self._structured_cell
         sc._join()
+
+class StructuredCellSchemaBackend(StructuredCellBackend):
+    def __init__(self, structured_cell):
+        self._structured_cell = structured_cell
+        Backend.__init__(self, True)
+        self._storage = "pure-plain"
+        data = self.get_data()
+        if data is None:
+            self.set_path((), {})
+            data = {}
+        storage, form = calc_form(data)
+        assert storage == "pure-plain"
+        self._form = form
+
+    def get_storage(self):
+        return "pure-plain"
+
+    def _set_storage(self, value):
+        raise AttributeError
+
+    def get_data(self):
+        return self._structured_cell._get_schema_path(())
+
+    def get_path(self, path):
+        return self._structured_cell._get_schema_path(path)
+
+    def _set_path(self, path, data):
+        sc = self._structured_cell
+        if not len(path):
+            sc._set_schema_path((), data)
+            return
+        subdata = self.get_path(path[:-1])
+        attr = path[-1]        
+        subpath = path[:-1]
+        if isinstance(attr, int):
+            if attr >= len(subdata):
+                assert isinstance(subdata, list), type(subdata)
+                for n in range(len(subdata), attr):
+                    sc._set_schema_path(subpath + (n,), None)
+        sc._set_schema_path(path, data)
+
+    def _insert_path(self, data, path):
+        raise NotImplementedError # StructuredCell Silk wrapper does not support insertion
+        
+    def _del_path(self, path):
+        sc = self._structured_cell
+        sc._set_schema_path(path, None)
+
+    def _update(self, path):
+        sc = self._structured_cell
+        data = self.get_data()
+        _, form = calc_form(data)
+        self._form = form
+        sc._join_schema()

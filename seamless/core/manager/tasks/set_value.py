@@ -17,7 +17,10 @@ class SetCellValueTask(Task):
         lock = await taskmanager.acquire_cell_lock(cell)
         try:
             taskmanager.cell_to_value[cell] = self.value
-            buffer = await SerializeToBufferTask(manager, self.value, cell._celltype).run()
+            buffer = await SerializeToBufferTask(
+                manager, self.value, cell._celltype,
+                use_cache=False
+            ).run()
             assert buffer is None or isinstance(buffer, bytes)
             checksum = await CalculateChecksumTask(manager, buffer).run()
             if checksum is not None:

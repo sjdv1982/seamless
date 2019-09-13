@@ -536,7 +536,7 @@ class Silk(SilkBase):
         # TODO: deleter
 
         schema = self._schema
-        methods = schema.get("methods", None)
+        methods = schema.get("methods", None)        
         if methods is None:
             methods = {}
             schema["methods"] = methods
@@ -652,6 +652,7 @@ class Silk(SilkBase):
                     return fget(self)
             else:
                 name = "Silk .%s" % attr
+                m = RichValue(m).value
                 method = compile_function(m, name)
                 return MethodType(method, self)
         data = RichValue(self._data).value

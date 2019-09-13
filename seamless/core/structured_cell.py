@@ -33,25 +33,28 @@ i.e.:
    validation rules can be put in the schema.
 """
 
-def set_auth_subpath(curr_value, path, value):
+def set_subpath(curr_value, path, value):
     head = path[0]
     if len(path) == 1:
         curr_value[head] = value
         return
-    head2 = path[1]
-    if isinstance(head2, int):
-        curr_value[head] = []
-    elif isinstance(head2, str):
-        curr_value[head] = {}
+    if head not in curr_value:
+        head2 = path[1]
+        if isinstance(head2, int):
+            curr_value[head] = []
+        elif isinstance(head2, str):
+            curr_value[head] = {}
     sub_curr_value = curr_value[head]
-    set_auth_subpath(sub_curr_value, path[1:], value)
+    set_subpath(sub_curr_value, path[1:], value)
 
-def get_auth_subpath(curr_value, path):
+def get_subpath(curr_value, path):
+    if curr_value is None:
+        return None
     if not len(path):
         return curr_value
     head = path[0]
     sub_curr_value = curr_value[head]
-    return get_auth_subpath(sub_curr_value, path[1:])
+    return get_subpath(sub_curr_value, path[1:])
 
 class StructuredCell(SeamlessBase):
     _celltype = "structured"    
@@ -63,23 +66,20 @@ class StructuredCell(SeamlessBase):
         editchannels=[],
         buffer=None
     ):      
-        #from .macro_mode import get_macro_mode
-        #assert get_macro_mode()
-        if schema is not None: 
-            raise NotImplementedError # livegraph branch
         if len(inchannels):
             raise NotImplementedError # livegraph branch
         if len(editchannels):
             raise NotImplementedError # livegraph branch
         if len(outchannels):
             raise NotImplementedError # livegraph branch
-        if buffer is not None:
-            raise NotImplementedError # livegraph branch
 
         self.no_auth = False
         if auth is None:
             if not len(inchannels):
-                auth = data
+                if buffer is None:
+                    auth = data            
+                else:
+                    auth = buffer
             else:
                 self.no_auth = True
 
@@ -87,7 +87,7 @@ class StructuredCell(SeamlessBase):
             buffer = auth
 
         if schema is not None:
-            assert buffer is not None
+            assert buffer is not None and buffer is not data
         elif buffer is None:
             buffer = data
 
@@ -113,8 +113,6 @@ class StructuredCell(SeamlessBase):
         assert schema is None or isinstance(schema, Cell)
         if schema is not None:
             assert schema._celltype == "plain"
-            assert schema._structured_cell is None
-            schema._structured_cell = self
         self.schema = schema
 
         if auth is not None:
@@ -123,8 +121,10 @@ class StructuredCell(SeamlessBase):
 
         self._validate_channels(inchannels, outchannels, editchannels)
         self.modified_auth_paths = set()
+        self.modified_schema = False
 
         self._auth_value = None
+        self._schema_value = None
 
 
     def _validate_channels(self, inchannels, outchannels, editchannels):
@@ -150,6 +150,15 @@ class StructuredCell(SeamlessBase):
                     err = "%s and %s overlap"
                     raise Exception(err % (path1, path2))
 
+    def _get_auth_path(self, path):
+        assert not self.no_auth
+        if self.auth._destroyed:
+            return
+        manager = self._get_manager()
+        if manager._destroyed:
+            return
+        return get_subpath(self._auth_value, path)
+
     def _set_auth_path(self, path, value):
         #print("_set_auth_path", path, value)
         assert not self.no_auth
@@ -168,7 +177,7 @@ class StructuredCell(SeamlessBase):
                     self._auth_value = {}
                 elif isinstance(path[0], list):
                     self._auth_value = []
-            set_auth_subpath(self._auth_value, path, value)
+            set_subpath(self._auth_value, path, value)
 
     def _join(self):
         if self.buffer._destroyed:
@@ -178,14 +187,37 @@ class StructuredCell(SeamlessBase):
             return
         manager.structured_cell_join(self)
 
-    def _get_auth_path(self, path):
-        assert not self.no_auth
-        if self.auth._destroyed:
+    def _get_schema_path(self, path):
+        if self.schema._destroyed:
             return
         manager = self._get_manager()
         if manager._destroyed:
             return
-        return get_auth_subpath(self._auth_value, path)
+        return get_subpath(self._schema_value, path)
+
+    def _set_schema_path(self, path, value):
+        if self.schema._destroyed:
+            return
+        manager = self._get_manager()
+        if manager._destroyed:
+            return
+        self.modified_schema = True
+        if not len(path):
+            self._schema_value = value
+        else:
+            assert isinstance(path[0], str), path
+            if self._schema_value is None:
+                self._schema_value = {}
+            set_subpath(self._schema_value, path, value)
+
+    def _join_schema(self):
+        if self.schema._destroyed:
+            return
+        buf = serialize(self._schema_value, "plain")
+        checksum = calculate_checksum(buf)
+        if checksum is not None:
+            checksum = checksum.hex()
+        self.schema._set_checksum(checksum, from_structured_cell=True)
 
     @property
     def handle(self):
@@ -197,7 +229,9 @@ class StructuredCell(SeamlessBase):
         mixed_object = MixedObject(monitor, ())
         schema = self.schema
         if schema is not None:
-            schema = schema.value
+            schema_backend = StructuredCellSchemaBackend(self)
+            schema_monitor = Monitor(schema_backend)
+            schema = MixedDict(schema_monitor, ())
         silk = Silk(data=mixed_object,schema=schema)
         return silk
 
@@ -249,7 +283,9 @@ class PathDict(dict):
         return super().__getitem__(item)
 
 from .cell import Cell
+from seamless.core.protocol.serialize import _serialize as serialize
+from seamless.core.protocol.calculate_checksum import calculate_checksum_sync as calculate_checksum
 from ..mixed.Monitor import Monitor
-from ..mixed.Backend import StructuredCellBackend
-from ..mixed.MixedObject import MixedObject
+from ..mixed.Backend import StructuredCellBackend, StructuredCellSchemaBackend
+from ..mixed import MixedObject, MixedDict
 from ..silk.Silk import Silk

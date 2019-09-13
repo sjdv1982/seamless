@@ -113,9 +113,10 @@ class Manager:
         """
         sc_data = self.livegraph.datacells.get(cell) 
         sc_buf = self.livegraph.buffercells.get(cell)
+        sc_schema = self.livegraph.schemacells.get(cell, [])
         if not initial:            
             if from_structured_cell:
-                assert sc_data is not None or sc_buf is not None
+                assert sc_data is not None or sc_buf is not None or len(sc_schema)
             else:
                 assert sc_data is None and sc_buf is None
                 assert self.livegraph.has_authority(cell)

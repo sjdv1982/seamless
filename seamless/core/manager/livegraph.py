@@ -516,15 +516,14 @@ class LiveGraph:
         buf_struc_cell = self.buffercells.pop(cell, None)
         if buf_struc_cell:
             structured_cells.append(buf_struc_cell)
-            assert buf_struc_cell is not None
         data_struc_cell = self.datacells.pop(cell, None)
         if data_struc_cell:
-            assert buf_struc_cell is not None
             structured_cells.append(data_struc_cell)
 
-        structured_cells += self.schemacells.pop(cell, [])
         for structured_cell in structured_cells:
             assert cell._structured_cell is not None            
+        structured_cells += self.schemacells.pop(cell, [])
+        for structured_cell in structured_cells:
             structured_cell.destroy() 
                 
         up_accessors = []
@@ -546,7 +545,6 @@ class LiveGraph:
                     up_accessors = up_accessors[1:]        
 
         else:
-            assert not len(structured_cells)
             self.temp_auth[cell] = self.has_authority(cell)
             up_accessor = self.cell_to_upstream[cell]
             if up_accessor is not None:
@@ -570,8 +568,10 @@ class LiveGraph:
                 down_accessors = down_accessors[1:]
 
         if cell._structured_cell:
-            self.paths_to_upstream.pop(cell)
-            self.paths_to_downstream.pop(cell)
+            if buf_struc_cell:
+                self.paths_to_upstream.pop(cell)
+            if data_struc_cell:
+                self.paths_to_downstream.pop(cell)
         self.cell_to_upstream.pop(cell)
         self.cell_to_downstream.pop(cell)
         self._will_lose_authority.discard(cell)

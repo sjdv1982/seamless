@@ -46,11 +46,12 @@ def _serialize(value, celltype):
         raise TypeError(celltype)
     return buffer
 
-async def serialize(value, celltype):
-    id_value = id(value) 
-    buffer, _ = serialize_cache.get((id_value, celltype), (None, None))
-    if buffer is not None:
-        return buffer
+async def serialize(value, celltype, use_cache=True):
+    if use_cache:
+        id_value = id(value) 
+        buffer, _ = serialize_cache.get((id_value, celltype), (None, None))
+        if buffer is not None:
+            return buffer
     
     """
     # what can we do to make this async??
@@ -68,7 +69,8 @@ async def serialize(value, celltype):
     """
 
     buffer = _serialize(value, celltype)  ### for now...
-    serialize_cache[id_value, celltype] = buffer, value
+    if use_cache:
+        serialize_cache[id_value, celltype] = buffer, value
     return buffer
 
 from ..cell import text_types
