@@ -4,6 +4,7 @@ import threading
 import asyncio
 import traceback
 import sys
+import copy
 
 def mainthread(func):
     def func2(*args, **kwargs):
@@ -222,7 +223,19 @@ class Manager:
         )
         self.taskmanager.cancel_structured_cell(structured_cell)
     
+
+    def update_schemacell(self, schemacell, value, structured_cell):
+        livegraph = self.livegraph
+        structured_cells = livegraph.schemacells[schemacell]
+        for sc in structured_cells:
+            if sc is structured_cell:
+                continue
+            sc._schema_value = copy.deepcopy(value)
+            self.structured_cell_join(sc)
+
     def structured_cell_join(self, structured_cell):
+        # First cancel all ongoing joins
+        self.taskmanager.cancel_structured_cell(structured_cell)
         task = StructuredCellJoinTask(self, structured_cell)
         task.launch()
 

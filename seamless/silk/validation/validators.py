@@ -123,6 +123,7 @@ def validator_form(validator, form, instance, schema, _from_items=False):
             return schema_value == instance_value
 
     form_str = indent(pprint.pformat(instance._form, width=72))
+    storage = None
     if instance._form is not None and "storage" in instance._form:
         storage_form = instance._form["storage"]
         for error in _validator_storage(storage_form, instance._storage, form_str):

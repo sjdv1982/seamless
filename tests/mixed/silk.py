@@ -267,19 +267,24 @@ print(c.data, c.xyz)
 c.xyz = 0.2,-0.3,0.93
 print(c.data, c.xyz)
 pprint(c.schema)
-import sys; sys.exit()
 
-Test = Silk(data=mixed_object)
+reset_backend()
+Test = Silk(data=mixed_object) # singleton
+silk_backend.set_silk(Test)
+
+""" 
+# will never work for a singleton backed up by a mixed object
 def __init__(self, a, b):
-    reset_backend()
-    mixed_object.set_silk(self)
     self.a = a
     self.b = b
+"""    
 def __call__(self, c):
     return self.a + self.b + c
-Test.__init__ = __init__
+#Test.__init__ = __init__
 Test.__call__ = __call__
-test = Test(7,8)
+#test = Test(7,8)
+test = Test
+test.a, test.b = 7, 8
 test.validate()
 print(test.data)
 print(test(5))

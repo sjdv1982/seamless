@@ -21,6 +21,11 @@ class SilkBase:
         data = self._data
         return "<Silk: " + str(data) + " >"
 
+    def __repr__(self):
+        # TODO: proper string representation
+        data = self._data
+        return "<Silk: " + str(data) + " >"
+
     def __dir__(self):
         result = super().__dir__()
         result += ["data", "schema", "unsilk"]

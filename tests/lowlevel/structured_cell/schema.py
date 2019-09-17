@@ -1,30 +1,57 @@
+# adapted from tests/mixed/silk.py and tests/silk/test-complex.py
+# (and should give almost the same output)
 import sys
 from pprint import pprint
-from seamless.silk import ValidationError
+from seamless.silk import Silk, ValidationError
 from seamless.core import context, cell, StructuredCell
 
-ctx = context(toplevel=True)
-ctx.data = cell("mixed")
-ctx.buffer = cell("mixed")
-ctx.data2 = cell("mixed")
-ctx.buffer2 = cell("mixed")
-ctx.schema = cell("plain")
-ctx.sc = StructuredCell(
-    buffer=ctx.buffer,
-    data=ctx.data,
-    schema=ctx.schema
-)
-ctx.sc2 = StructuredCell(
-    buffer=ctx.buffer2,
-    data=ctx.data2,
-    schema=ctx.schema
-)
+ctx = None
+def reset_backend(share_schemas=True):
+    global ctx, s, s2, s3
+    if ctx is not None:
+        ctx.equilibrate() # makes no difference, but could be easier debugging
+    ctx = context(toplevel=True)
+    ctx.data = cell("mixed")
+    ctx.buffer = cell("mixed")
+    ctx.schema = cell("plain")
+    ctx.sc = StructuredCell(
+        buffer=ctx.buffer,
+        data=ctx.data,
+        schema=ctx.schema
+    )
+    s = ctx.sc.handle
+    ctx.data2 = cell("mixed")
+    ctx.buffer2 = cell("mixed")
+    if share_schemas:
+        schema2 = ctx.schema
+    else:
+        ctx.schema2 = cell("plain")
+        schema2 = ctx.schema2
+    ctx.sc2 = StructuredCell(
+        buffer=ctx.buffer2,
+        data=ctx.data2,
+        schema=schema2
+    )
+    s2 = ctx.sc2.handle
+    ctx.data3 = cell("mixed")
+    ctx.buffer3 = cell("mixed")
+    if share_schemas:
+        schema3 = ctx.schema
+    else:
+        ctx.schema3 = cell("plain")
+        schema3 = ctx.schema3
+    ctx.sc3 = StructuredCell(
+        buffer=ctx.buffer3,
+        data=ctx.data3,
+        schema=schema3
+    )
+    s3 = ctx.sc3.handle
+
+reset_backend()
 
 def adder(self, other):
     return other + self.x
 
-
-s = ctx.sc.handle
 
 s.x = 80
 print(s.x.data)
@@ -37,7 +64,7 @@ s.__add__ = adder
 s.bla = adder
 
 pprint(s.data)
-pprint(s.schema)
+pprint(s.schema.value)
 
 print(s.bla(5))
 print(s+5)
@@ -48,14 +75,11 @@ pprint(ctx.buffer.value)
 pprint(ctx.data.value)
 pprint(ctx.schema.value)
 
-s2 = ctx.sc.handle
 s2.x = 10
 print(s2+5, s2.bla(5))
+ctx.equilibrate()
+print(ctx.data2.value)
 
-import sys; sys.exit()
-
-s3 = Silk(data=mixed_object3,schema=s2.schema)
-silk_backend3.set_silk(s3)
 s3.x = 10
 print(s3+25)
 
@@ -66,8 +90,8 @@ s.x = 1
 s.y = 2
 print(s.x + s.y)
 s3.xy = property(xy) # all three Silks use the same schema
+#pprint(s.schema.value)
 print(s.xy)
-
 
 def xx_get(self):
     return self.x * self.x
@@ -91,25 +115,30 @@ s.z.r = 25
 print(sz.q.data, sz.r.data)
 s.z.qr = property(lambda self: self.q * self.r)
 print(s.z.qr)
+ctx.equilibrate()
 
 def validate_z(self):
     print("VALIDATE", self.q.data, self.r.data)
     assert self.q < self.r
+
 try:
     s.z.add_validator(validate_z)
 except Exception:
-    pprint(s.schema)
+    pprint(s.schema.value)
 
 s.z.validate()
-pprint(s.schema)
+pprint(s.schema.value)
 
 s.lis = [1,2,3]
 s.lis.append(10)
-s.validate()
+
+ctx.equilibrate()
+
 print(s.lis.data)
 s.lis += [5]
-s.validate()
+ctx.equilibrate()
 print(s.lis*2)
+
 """
 for a in s.lis[1:3]:  # slices not yet supported by monitor
     print(a.data)
@@ -127,9 +156,8 @@ for v in s.lis:
     print(v.data)
 print()
 
-reset_backend()
-s = Silk(data=mixed_object)
-silk_backend.set_silk(s)
+reset_backend(share_schemas=False)
+s2.x = 10
 s.set(5)
 inc = lambda self: self + 1
 s.x = inc
@@ -143,6 +171,7 @@ print(s.z)
 s.z = 10
 print(s.data)
 print(s.z)
+ctx.equilibrate()
 
 import numpy as np
 arr = np.array([1.0,2.0,3.0])
@@ -153,12 +182,11 @@ print(s2.arr.unsilk, arr)
 print(type(s2.arr.self.data), type(arr))
 print(s2.arr[2].self.data, arr[2])
 print(type(s2.arr[2].self.data), type(arr[2]))
+ctx.equilibrate()
 
 #s2.arr.schema["type"] = "array"  #  inferred
 print(s2.arr.schema["type"])
-reset_backend()
-item = Silk(data=mixed_object)
-silk_backend.set_silk(item)
+item = s3
 item.set(5.0)
 #item.schema["type"] = "number"  #  inferred
 def func(self):
@@ -167,16 +195,15 @@ item.add_validator(func)
 s2.arr.schema["items"] = item.schema
 s2.validate()
 
-print(silk_backend._data)
-print(silk_backend2._data)
+print(s3.data)
+print(s2.data)
 
+ctx.equilibrate()
 print("START")
 s2.arr[0] = 5
 print(s2.arr.unsilk)
 
 reset_backend()
-s = Silk(data=mixed_object)
-silk_backend.set_silk(s)
 s.x = 1.0
 s.y = 0.0
 s.z = 0.0
@@ -185,44 +212,33 @@ def func(self):
 s.add_validator(func)
 s.y = 0.0
 s.validate()
+ctx.equilibrate()
 try:
     s.y = 1.0   #  would fail
     s.validate()
 except ValidationError:
     s.y = 0
+#pprint(s.schema.value)
+ctx.equilibrate()    
 
-# setting 3 inter-validated values at once is *really* inconvenient with SilkBackend...
-try:
-    s.x = 0.0
-except ValidationError:
-    pass
-try:
-    s.y = 0.0
-except ValidationError:
-    pass
+#print("set")
+s.x = 0.0
+s.y = 0.0
 s.z = 1.0
-
+ctx.equilibrate()    
 print(s.data)
 
-try:
-    s.x = 1.0
-except ValidationError:
-    pass
-try:
-    s.y = 0.0
-except ValidationError:
-    pass
+s.x = 1.0
+s.y = 0.0
 s.z = 0.0
-
-
+ctx.equilibrate()    
 print(s.data)
 
 import numpy as np
-reset_backend()
-a = Silk(data=mixed_object)
-silk_backend.set_silk(a)
+reset_backend(share_schemas=False)
+a = s
 a.coor = [0.0,0.0,1.0]
-pprint(a.coor.schema)
+pprint(a.coor.schema.value)
 print(a.coor.data)
 print("START")
 np.array(a.coor.data)
@@ -232,13 +248,13 @@ def func(self):
     arr = np.array(self.data)
     assert abs(np.sum(arr**2) - 1) < 0.01
 a.coor.add_validator(func)
+coor_schema = a.coor.schema
 
-reset_backend(mixed_object2)
-c = Silk(data=mixed_object2)
-silk_backend2.set_silk(c)
+reset_backend(share_schemas=False)
+c = s2
 c.set( [0.0, 0.0, 0.0] )
 c.schema.clear()
-c.schema.update(a.coor.schema)
+c.schema.update(coor_schema)
 
 def set_x(self, value):
     self[0] = value
@@ -278,24 +294,38 @@ c.xyz = -1,0,0
 print(c.data, c.xyz)
 c.xyz = 0.2,-0.3,0.93
 print(c.data, c.xyz)
-pprint(c.schema)
-import sys; sys.exit()
+pprint(c.schema.value)
+ctx.equilibrate()
 
-Test = Silk(data=mixed_object)
+ctx = context(toplevel=True)
+ctx.data = cell("mixed")
+ctx.buffer = cell("mixed")
+ctx.schema = cell("plain")
+ctx.sc = StructuredCell(
+    buffer=ctx.buffer,
+    data=ctx.data,
+    schema=ctx.schema
+)
+
+Test = ctx.sc.handle # singleton
+""" 
+# will never work for a singleton backed up by a structured cell
 def __init__(self, a, b):
-    reset_backend()
-    mixed_object.set_silk(self)
     self.a = a
     self.b = b
+"""    
 def __call__(self, c):
     return self.a + self.b + c
-Test.__init__ = __init__
+#Test.__init__ = __init__
 Test.__call__ = __call__
-test = Test(7,8)
+#test = Test(7,8)
+test = Test
+test.a, test.b = 7, 8
 test.validate()
 print(test.data)
 print(test(5))
-pprint(test.schema)
+pprint(test.schema.value)
+ctx.equilibrate()
 
 print("START")
 test.l = []
@@ -308,4 +338,6 @@ try:
 except ValidationError as exc:
     print(exc)
     l.pop(-1)
-print(test.l.data)
+ctx.equilibrate()
+print(ctx.data.value["l"])
+#print(test.l.data)

@@ -29,6 +29,7 @@ class StructuredCellJoinTask(Task):
         manager = self.manager()
         sc = self.structured_cell
         await self.await_sc_tasks()
+        manager.cancel_cell(sc._data, False)
         if len(sc.inchannels):
             raise NotImplementedError # livegraph branch
             # ...
@@ -41,8 +42,8 @@ class StructuredCellJoinTask(Task):
             Also, Backend can be read-only!
             """
             # checksum = ...
-        else:
-            value = sc._auth_value            
+        else:            
+            value = sc._auth_value
         buf = await SerializeToBufferTask(
             manager, value, "mixed", use_cache=False # the value object changes all the time...
         ).run()
@@ -53,22 +54,25 @@ class StructuredCellJoinTask(Task):
             sc.auth._set_checksum(checksum, from_structured_cell=True)
         if sc.buffer is not sc.auth:            
             sc.buffer._set_checksum(checksum, from_structured_cell=True)
-        if sc.schema is not None:
+        ok = True
+        if value is not None and sc.schema is not None:
             if len(sc.inchannels):
                 raise NotImplementedError # livegraph branch  # see above
-            schema = sc.schema.value
+            #schema = sc.schema.value  # incorrect, because potentially out-of-sync...
+            schema = sc._schema_value
             if schema is not None:
-                s = Silk(data=copy.deepcopy(value), schema=schema)
+                s = Silk(data=copy.deepcopy(value), schema=schema)                
                 try:
                     s.validate()
                 except ValidationError:
                     traceback.print_exc()
-        
-        if sc._data is not sc.buffer:
-            sc._data._set_checksum(checksum, from_structured_cell=True)
-        if sc.outchannels:
-            raise NotImplementedError # livegraph branch
-        sc.modified_auth_paths.clear()
+                    ok = False
+        if ok:
+            if sc._data is not sc.buffer:
+                sc._data._set_checksum(checksum, from_structured_cell=True)
+            if sc.outchannels:
+                raise NotImplementedError # livegraph branch
+            sc.modified_auth_paths.clear()
 
 from .serialize_buffer import SerializeToBufferTask
 from .checksum import CalculateChecksumTask

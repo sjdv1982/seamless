@@ -94,12 +94,17 @@ class Silk(SilkBase):
         data = self._data
         schema = self._schema
         methods = schema.get("methods", {})
+        methods = RichValue(methods).value
         if data is None:
             constructor_code = methods.get("__init__", None)
             if constructor_code is None:
-                raise AttributeError("__init__")
+                raise AttributeError("__init__")            
             name = "Silk __init__"
-            constructor = compile_function(constructor_code, name)
+            try:
+                constructor = compile_function(constructor_code, name)
+            except Exception as exc:
+                traceback.print_exc()
+                raise exc from None
             instance = Silk(data=None,schema=self._schema)
             result = constructor(instance, *args, **kwargs)
             assert result is None # __init__ must return None
@@ -109,7 +114,11 @@ class Silk(SilkBase):
             if call_code is None:
                 raise AttributeError("__call__")
             name = "Silk __call__"
-            call = compile_function(call_code, name)
+            try:
+                call = compile_function(call_code, name)
+            except Exception as exc:
+                traceback.print_exc()
+                raise exc from None
             return call(self, *args, **kwargs)
 
     def _get_policy(self, schema, default_policy=None):
@@ -497,14 +506,20 @@ class Silk(SilkBase):
         rich_value = RichValue(value)
         value, value_schema = rich_value.value, rich_value.schema
         schema = self._schema
-        m = schema.get("methods", {}).get(attr, None)
+        methods = schema.get("methods", {})
+        methods = RichValue(methods).value
+        m = methods.get(attr, None)
         if m is not None:
             if m.get("property", False):
                 setter = m.get("setter", None)
                 if setter is not None:
                     mm = {"code": setter, "language": m["language"]}
                     name = "Silk .%s setter" % attr
-                    fset = compile_function(mm, name)
+                    try:
+                        fset = compile_function(mm, name)
+                    except Exception as exc:
+                        traceback.print_exc()
+                        raise exc from None
                     fset(self, value)
                 else:
                     raise TypeError(attr) #read-only property cannot be assigned to
@@ -526,13 +541,21 @@ class Silk(SilkBase):
         m["getter"] = getter_code
         mm = {"code": getter_code, "language": "python"}
         name = "Silk .%s getter" % attribute
-        compile_function(mm, name, mode="property-getter")
+        try:
+            compile_function(mm, name, mode="property-getter")
+        except Exception as exc:
+            traceback.print_exc()
+            raise exc from None
         if prop.fset is not None:
             setter_code = inspect.getsource(prop.fset)
             m["setter"] = setter_code
             mm = {"code": setter_code, "language": "python"}
             name = "Silk .%s setter" % attribute
-            compile_function(mm, name)
+            try:
+                compile_function(mm, name)
+            except Exception as exc:
+                traceback.print_exc()
+                raise exc from None
         # TODO: deleter
 
         schema = self._schema
@@ -561,8 +584,11 @@ class Silk(SilkBase):
         code = inspect.getsource(func)
         m = {"code": code, "language": "python"}
         name = "Silk .%s" % attribute
-        compile_function(m, name)
-
+        try:
+            compile_function(m, name)
+        except Exception as exc:
+            traceback.print_exc()
+            raise exc from None
         schema = self._schema
         methods = schema.get("methods", None)
         if methods is None:
@@ -586,7 +612,11 @@ class Silk(SilkBase):
         if name is not None:
             v["name"] = name
             func_name = name
-        compile_function(v, func_name)
+        try:
+            compile_function(v, func_name)
+        except Exception as exc:
+            traceback.print_exc()
+            raise exc from None
 
         if isinstance(attr, int):
             items_schema = schema.get("items", None)
@@ -641,19 +671,29 @@ class Silk(SilkBase):
         if self._self_mode:
             raise AttributeError
 
-        m = schema.get("methods", {}).get(attr, None)
+        methods = schema.get("methods", {})
+        methods = RichValue(methods).value
+        m = methods.get(attr, None)
         if m is not None:
             if m.get("property", False):
                 getter = m.get("getter", None)
                 if getter is not None:
                     mm = {"code": getter, "language": m["language"]}
-                    name = "Silk .%s getter" % attr
-                    fget = compile_function(mm, name, "property-getter")
-                    return fget(self)
+                    name = "Silk .%s getter" % attr                    
+                    try:
+                        fget = compile_function(mm, name, "property-getter")
+                        result = fget(self)
+                    except Exception as exc:
+                        traceback.print_exc()
+                        raise exc from None
+                    return result
             else:
                 name = "Silk .%s" % attr
-                m = RichValue(m).value
-                method = compile_function(m, name)
+                try:
+                    method = compile_function(m, name)
+                except Exception as exc:
+                    traceback.print_exc()
+                    raise exc from None
                 return MethodType(method, self)
         data = RichValue(self._data).value
         if hasattr(type(data), attr):
@@ -790,7 +830,7 @@ class Silk(SilkBase):
             rich_value.form,
             rich_value.storage 
         )
-        schema = self._schema
+        schema = RichValue(self._schema).value
         schema_validator(schema).validate(data)
 
     def validate(self, full=True):
@@ -802,10 +842,15 @@ class Silk(SilkBase):
             else:
                 schema = self._schema
                 validators = schema.get("validators", [])
+                validators = RichValue(validators).value
                 if len(validators):
                     for v, validator_code in enumerate(validators):
                         name = "Silk validator %d" % (v+1)
-                        validator_func = compile_function(validator_code, name)
+                        try:
+                            validator_func = compile_function(validator_code, name)
+                        except Exception as exc:
+                            traceback.print_exc()
+                            raise exc from None
                         try:
                             validator_func(self)
                         except Exception as exc:

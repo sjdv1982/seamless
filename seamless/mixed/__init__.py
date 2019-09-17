@@ -66,7 +66,7 @@ class MixedBase(Wrapper):
     def __str__(self):
         return str(self.value)
     def __repr__(self):
-        return str(self.value)
+        return repr(self.value)
 
 def mixed_scalar_binary_method(self, other, name):
     if isinstance(other, MixedBase):

@@ -112,7 +112,7 @@ class StructuredCell(SeamlessBase):
         self.buffer = buffer
         assert schema is None or isinstance(schema, Cell)
         if schema is not None:
-            assert schema._celltype == "plain"
+            assert schema._celltype == "plain"            
         self.schema = schema
 
         if auth is not None:
@@ -125,7 +125,8 @@ class StructuredCell(SeamlessBase):
 
         self._auth_value = None
         self._schema_value = None
-
+        if self.schema is not None and self.schema.checksum is not None:
+            self._schema_value = self.schema.value
 
     def _validate_channels(self, inchannels, outchannels, editchannels):
         self.inchannels = PathDict()
@@ -218,6 +219,13 @@ class StructuredCell(SeamlessBase):
         if checksum is not None:
             checksum = checksum.hex()
         self.schema._set_checksum(checksum, from_structured_cell=True)
+        manager = self._get_manager()
+        manager.update_schemacell(
+            self.schema, 
+            self._schema_value, 
+            self
+        )
+        manager.structured_cell_join(self)
 
     @property
     def handle(self):
