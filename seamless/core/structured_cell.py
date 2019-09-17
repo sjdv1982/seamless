@@ -20,42 +20,6 @@ class Editchannel:
         self.structured_cell = weakref.ref(structured_cell)
         self.name = name
 
-"""
-NOTE: the auth part of a StructuredCell is supposed to be small.
-i.e.:
-- It fits easily in memory (StructuredCell always keeps it in cache)
-- Computing form and storage is quick (because it will be done often)
-- Computing checksums is also fairly quick (which will be done after modification)
-- No hash patterns! If you have an authoritative source for data that you want
-  to encode with a deep structure, put it in a simple cell. Then, connect the simple
-  cell as one of the inchannels (or the only inchannel). 
-  Buffer and data cell can have the same hash pattern as the simple cell, and
-   validation rules can be put in the schema.
-"""
-
-def set_subpath(curr_value, path, value):
-    head = path[0]
-    if len(path) == 1:
-        curr_value[head] = value
-        return
-    if head not in curr_value:
-        head2 = path[1]
-        if isinstance(head2, int):
-            curr_value[head] = []
-        elif isinstance(head2, str):
-            curr_value[head] = {}
-    sub_curr_value = curr_value[head]
-    set_subpath(sub_curr_value, path[1:], value)
-
-def get_subpath(curr_value, path):
-    if curr_value is None:
-        return None
-    if not len(path):
-        return curr_value
-    head = path[0]
-    sub_curr_value = curr_value[head]
-    return get_subpath(sub_curr_value, path[1:])
-
 class StructuredCell(SeamlessBase):
     _celltype = "structured"    
     def __init__(self, data, *,
@@ -64,8 +28,11 @@ class StructuredCell(SeamlessBase):
         inchannels=[],
         outchannels=[],
         editchannels=[],
-        buffer=None
+        buffer=None,
+        hash_pattern=None
     ):      
+        if hash_pattern is not None:
+            raise NotImplementedError # livegraph branch
         if len(inchannels):
             raise NotImplementedError # livegraph branch
         if len(editchannels):
@@ -127,6 +94,9 @@ class StructuredCell(SeamlessBase):
         self._schema_value = None
         if self.schema is not None and self.schema.checksum is not None:
             self._schema_value = self.schema.value
+        if hash_pattern is not None:
+            validate_hash_pattern(hash_pattern)
+        self.hash_pattern = hash_pattern
 
     def _validate_channels(self, inchannels, outchannels, editchannels):
         self.inchannels = PathDict()
@@ -158,7 +128,7 @@ class StructuredCell(SeamlessBase):
         manager = self._get_manager()
         if manager._destroyed:
             return
-        return get_subpath(self._auth_value, path)
+        return get_subpath(self._auth_value, self.hash_pattern, path)
 
     def _set_auth_path(self, path, value):
         #print("_set_auth_path", path, value)
@@ -178,7 +148,7 @@ class StructuredCell(SeamlessBase):
                     self._auth_value = {}
                 elif isinstance(path[0], list):
                     self._auth_value = []
-            set_subpath(self._auth_value, path, value)
+            set_subpath(self._auth_value, self.hash_pattern, path, value)
 
     def _join(self):
         if self.buffer._destroyed:
@@ -194,7 +164,7 @@ class StructuredCell(SeamlessBase):
         manager = self._get_manager()
         if manager._destroyed:
             return
-        return get_subpath(self._schema_value, path)
+        return get_subpath(self._schema_value, None, path)
 
     def _set_schema_path(self, path, value):
         if self.schema._destroyed:
@@ -209,7 +179,7 @@ class StructuredCell(SeamlessBase):
             assert isinstance(path[0], str), path
             if self._schema_value is None:
                 self._schema_value = {}
-            set_subpath(self._schema_value, path, value)
+            set_subpath(self._schema_value, None, path, value)
 
     def _join_schema(self):
         if self.schema._destroyed:
@@ -291,8 +261,10 @@ class PathDict(dict):
         return super().__getitem__(item)
 
 from .cell import Cell
-from seamless.core.protocol.serialize import _serialize as serialize
-from seamless.core.protocol.calculate_checksum import calculate_checksum_sync as calculate_checksum
+from .protocol.serialize import _serialize as serialize
+from .protocol.calculate_checksum import calculate_checksum_sync as calculate_checksum
+from .protocol.deep_structure import validate_hash_pattern
+from .protocol.expression import get_subpath_sync as get_subpath, set_subpath_sync as set_subpath
 from ..mixed.Monitor import Monitor
 from ..mixed.Backend import StructuredCellBackend, StructuredCellSchemaBackend
 from ..mixed import MixedObject, MixedDict
