@@ -75,7 +75,7 @@ async def syntactic_to_semantic(
     if celltype not in ("cson", "yaml", "python"):
         return checksum
 
-    buffer = await get_buffer_async(checksum, buffer_cache)    
+    buffer = await get_buffer(checksum, buffer_cache)    
     if celltype in ("cson", "yaml"):
         semantic_checksum = await convert(
             checksum, buffer, celltype, "plain"
@@ -503,7 +503,7 @@ class TransformationCache:
     async def serve_get_transformation(self, tf_checksum):
         transformation = self.transformations.get(tf_checksum)
         if transformation is None:
-            transformation_buffer = await get_buffer_async(
+            transformation_buffer = await get_buffer(
                 tf_checksum, buffer_cache
             )
             if transformation_buffer is not None:
@@ -676,7 +676,7 @@ transformation_cache = TransformationCache()
 
 from .tempref import temprefmanager
 from .buffer_cache import buffer_cache
-from ..protocol.get_buffer import get_buffer_async
+from ..protocol.get_buffer import get_buffer
 from ..protocol.conversion import convert
 from ..protocol.deserialize import deserialize
 from ..protocol.calculate_checksum import calculate_checksum, calculate_checksum_sync

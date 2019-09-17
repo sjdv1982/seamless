@@ -21,7 +21,7 @@ async def validate_subcelltype(checksum, celltype, subcelltype, codename, buffer
     key = (checksum, celltype, subcelltype)
     if key in validation_cache:
         return
-    buffer = await get_buffer_async(checksum, buffer_cache)
+    buffer = await get_buffer(checksum, buffer_cache)
     value = buffer.decode()
     
     if celltype == "plain" and subcelltype == "module":
@@ -37,6 +37,6 @@ async def validate_subcelltype(checksum, celltype, subcelltype, codename, buffer
 
     validation_cache.add(key)
     
-from .get_buffer import get_buffer_async
+from .get_buffer import get_buffer
 from ..cached_compile import analyze_code
 from ..build_module import build_module

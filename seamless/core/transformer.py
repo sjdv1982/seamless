@@ -157,11 +157,11 @@ class Transformer(Worker):
         return self._void
 
     async def _get_buffer(self):
-        from .protocol.get_buffer import get_buffer_async
+        from .protocol.get_buffer import get_buffer
         if self._checksum is None:
             return None
         buffer_cache = self._get_manager().cachemanager.buffer_cache
-        buffer = await get_buffer_async(self._checksum, buffer_cache)
+        buffer = await get_buffer(self._checksum, buffer_cache)
         return buffer
 
     async def _get_value(self):

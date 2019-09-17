@@ -242,7 +242,7 @@ class ShareNamespace:
             checksum2 = None
         if field == "checksum":
             return checksum2
-        buffer = await get_buffer_async(checksum, buffer_cache)
+        buffer = await get_buffer(checksum, buffer_cache)
         if field == "buffer":
             return buffer.decode()
         return {
@@ -669,4 +669,4 @@ shareserver = ShareServer()
 
 from .core.cache.buffer_cache import buffer_cache
 from .core.protocol.calculate_checksum import calculate_checksum
-from .core.protocol.get_buffer import get_buffer_async, CacheMissError
+from .core.protocol.get_buffer import get_buffer, CacheMissError

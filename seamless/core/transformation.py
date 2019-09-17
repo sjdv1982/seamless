@@ -324,7 +324,7 @@ class TransformationJob:
             if checksum is None:
                 values[pinname] = None
                 continue
-            buffer = await get_buffer_async(checksum, buffer_cache)            
+            buffer = await get_buffer(checksum, buffer_cache)            
             assert buffer is not None
             value = await deserialize(buffer, checksum, celltype, False)
             if value is None:
@@ -429,7 +429,7 @@ class TransformationJob:
                 
 
 
-from .protocol.get_buffer import get_buffer_async
+from .protocol.get_buffer import get_buffer
 from .protocol.deserialize import deserialize
 from .protocol.serialize import serialize
 from .protocol.calculate_checksum import calculate_checksum

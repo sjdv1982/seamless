@@ -4,7 +4,7 @@ import traceback
 DEBUG = True
 REMOTE_TIMEOUT = 5.0 
 
-async def get_buffer_async(checksum, buffer_cache, remote_peer_id=None):
+async def get_buffer(checksum, buffer_cache, remote_peer_id=None):
         """  Gets the buffer from its checksum
 - Check for a local checksum-to-buffer cache hit (synchronous)
 - Else, check Redis cache (currently synchronous; make it async in a future version)
@@ -77,6 +77,15 @@ async def get_buffer_async(checksum, buffer_cache, remote_peer_id=None):
                 return buffer
         # TODO: provenance # livegraph branch
         raise CacheMissError(checksum.hex())
+
+def get_buffer_sync(checksum, buffer_cache):
+    coro = get_buffer(
+        checksum, buffer_cache, remote_peer_id=None
+    )
+    fut = asyncio.ensure_future(coro)
+    asyncio.get_event_loop().run_until_complete(fut)
+    return fut.result()
+
 
 from .calculate_checksum import checksum_cache
 from ..cache import CacheMissError

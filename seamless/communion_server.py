@@ -409,7 +409,7 @@ class CommunionServer:
                 assert self.config_servant[type]
                 checksum = content
                 peer_id = self.peers[peer]["id"]
-                result = await get_buffer_async(
+                result = await get_buffer(
                     checksum, buffer_cache, 
                     remote_peer_id=peer_id
                 )
@@ -556,4 +556,4 @@ class CommunionServer:
 communion_server = CommunionServer()
 from .core.cache.transformation_cache import transformation_cache, RemoteTransformer
 from .core.cache.buffer_cache import buffer_cache
-from .core.protocol.get_buffer import get_buffer_async
+from .core.protocol.get_buffer import get_buffer

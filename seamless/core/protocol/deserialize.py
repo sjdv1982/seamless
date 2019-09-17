@@ -76,9 +76,7 @@ async def deserialize(buffer, checksum, celltype, copy):
             return newvalue
         else:
             return value
-    
-    
-    
+            
     # ProcessPool is too slow, but ThreadPool works
     if len(buffer) > 1000000:
         loop = asyncio.get_event_loop()
@@ -88,15 +86,41 @@ async def deserialize(buffer, checksum, celltype, copy):
                 _deserialize,
                 buffer, checksum, celltype
             )
-        return value
     else:
-        return _deserialize(buffer, checksum, celltype)
+        value = _deserialize(buffer, checksum, celltype)
     if celltype not in text_types2:
         deserialize_cache[checksum, celltype] = value
     evaluation_cache_1.add((checksum, celltype))
     id_value = id(value)
     serialize_cache[id_value, celltype] = buffer, value
     return value
+
+def deserialize_sync(buffer, checksum, celltype, copy):
+    """Deserializes a buffer into a value
+    First, it is attempted to retrieve the value from cache.
+    In case of a cache hit, a copy is returned only if copy=True
+    In case of a cache miss, deserialization is performed 
+    (and copy is irrelevant)."""
+    if buffer is None:
+        return None
+    value = deserialize_cache.get((checksum, celltype))
+    if value is not None:
+        if copy:
+            newvalue = deepcopy(value)
+            id_newvalue = id(newvalue)
+            serialize_cache[id_newvalue, celltype] = buffer, newvalue
+            return newvalue
+        else:
+            return value
+
+    value = _deserialize(buffer, checksum, celltype)
+    if celltype not in text_types2:
+        deserialize_cache[checksum, celltype] = value
+    evaluation_cache_1.add((checksum, celltype))
+    id_value = id(value)
+    serialize_cache[id_value, celltype] = buffer, value
+    return value
+
 
 from .serialize import serialize_cache
 from .evaluate import evaluation_cache_1

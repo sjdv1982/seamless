@@ -75,7 +75,8 @@ def access_deep_structure(deep_structure, hash_pattern, path):
 
     If path and deep structure are equally deep, the result is a checksum,
      and the remaining path is None
-    If the structure is deeper than path, the result is a deep sub-structure,
+    If the structure is deeper than path, the result is a tuple of 
+    deep sub-structure and sub-hashpattern,
      and the remaining path is None
     If the path is deeper than the structure, the result is a checksum,
      and the remaining path is what could not be accessed
@@ -90,7 +91,7 @@ def access_deep_structure(deep_structure, hash_pattern, path):
     if hash_pattern == "#":
         result = bytes.fromhex(deep_structure)        
     elif path is None:
-        result = deep_structure
+        result = deep_structure, hash_pattern
     else:
         attribute = path[0]
         single_key = len(hash_pattern)
@@ -198,25 +199,58 @@ async def deep_structure_to_value(deep_structure, hash_pattern, buffer_dict, cop
     value_dict = {checksum:futures[checksum].result() for checksum in checksums}
     return _deep_structure_to_value(deep_structure, hash_pattern, value_dict, copy)
     
-def _value_to_deep_structure(hash_pattern, d, c):
+
+def deep_structure_to_value_sync(deep_structure, hash_pattern, buffer_dict, copy):
+    coro = deep_structure_to_value(
+        deep_structure, hash_pattern, buffer_dict, copy
+    )
+    fut = asyncio.ensure_future(coro)
+    asyncio.get_event_loop().run_until_complete(fut)
+    return fut.result()
+
+def _build_deep_structure(hash_pattern, d, c):
     raise NotImplementedError # livegraph branch
     """
-    TODO: build deep structure from value, using:
+    TODO: build deep structure, using:
     d: a deep structure using object ids instead of checksums
     c: an object id to checksum mapping
     """
 
-def value_to_deep_structure(value, hash_pattern):
-    raise NotImplementedError # livegraph branch
-    """
-    TODO: build deep structure from value:
-    - adapt deep_structure_to_checksums to operate on value instead of deep structure, 
+async def value_to_deep_structure(value, hash_pattern):
+    """build deep structure from value"""
+    #deep_structure0, obj_ids = ...    
+    """ 
+    TODO:adapt deep_structure_to_checksums to operate on value instead of deep structure, 
       and give object ids instead of checksums 
-      => d, set-of-object-ids
-    - from set-of-object-ids: invoke deserialize on each (see deep_structure_to_value)
-      => c
-    - invoke _value_to_deep_structure(hash_pattern, d, c)
     """
+    raise NotImplementedError # livegraph branch
+    obj_id_to_checksum = {}
+    new_checksums = set()
+    async def conv_obj_id_to_checksum(obj_id):
+        obj = obj_ids
+        obj_buffer = await serialize(obj, "mixed")
+        obj_checksum = await calculate_checksum(obj_buffer)
+        new_checksums.add(obj_checksum)
+        buffer_cache.cache_buffer(obj_checksum, obj_buffer)
+        obj_id_to_checksum[obj_id] = obj_checksum
+
+    coros = []
+    for obj_id in obj_ids.items():
+        coro = conv_obj_id_to_checksum(obj_id)
+        coro.append(coros)
+    await asyncio.gather(*coros)
+    deep_structure = _build_deep_structure(
+        hash_pattern, deep_structure0, obj_id_to_checksum
+    )
+    return deep_structure, new_checksums
+
+def value_to_deep_structure_sync(value, hash_pattern):
+    coro = value_to_deep_structure(
+        value, hash_pattern
+    )
+    fut = asyncio.ensure_future(coro)
+    asyncio.get_event_loop().run_until_complete(fut)
+    return fut.result()
 
 
 def set_deep_structure(substructure, deep_structure, hash_pattern, path):
@@ -250,5 +284,6 @@ def write_deep_structure(checksum, deep_structure, hash_pattern, path):
     raise NotImplementedError # livegraph branch
 
 
+from .calculate_checksum import calculate_checksum
 from .serialize import serialize
 from .deserialize import deserialize    

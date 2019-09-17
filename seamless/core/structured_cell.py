@@ -31,8 +31,6 @@ class StructuredCell(SeamlessBase):
         buffer=None,
         hash_pattern=None
     ):      
-        if hash_pattern is not None:
-            raise NotImplementedError # livegraph branch
         if len(inchannels):
             raise NotImplementedError # livegraph branch
         if len(editchannels):

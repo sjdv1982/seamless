@@ -14,8 +14,8 @@ class GetBufferTask(Task):
         if checksum is None:
             return None
         buffer_cache = self.manager().cachemanager.buffer_cache
-        result = await get_buffer_async(checksum, buffer_cache)
+        result = await get_buffer(checksum, buffer_cache)
         assert result is None or isinstance(result, bytes)
         return result
 
-from ...protocol.get_buffer import get_buffer_async
+from ...protocol.get_buffer import get_buffer

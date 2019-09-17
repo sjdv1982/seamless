@@ -65,7 +65,7 @@ class MacroUpdateTask(Task):
             ).run()
             celltype = accessor.write_accessor.celltype
             subcelltype = accessor.write_accessor.subcelltype
-            buffer = await get_buffer_async(expression_checksum, buffer_cache)
+            buffer = await get_buffer(expression_checksum, buffer_cache)
             assert buffer is not None
             value = await deserialize(buffer, expression_checksum, celltype, False)
             if value is None:
@@ -82,7 +82,7 @@ class MacroUpdateTask(Task):
 
 from .accessor_update import AccessorUpdateTask
 from .evaluate_expression import EvaluateExpressionTask
-from ...protocol.get_buffer import get_buffer_async
+from ...protocol.get_buffer import get_buffer
 from ...protocol.deserialize import deserialize
 from . import is_equal
 from ...status import StatusReasonEnum
