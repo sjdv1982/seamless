@@ -51,6 +51,7 @@ class BufferCache:
                 redis_sinks.set_buffer_length(checksum, l)
 
     def incref(self, checksum):
+        #print("INCREF", checksum.hex())
         if checksum in self.buffer_refcount:
             self.buffer_refcount[checksum] += 1
             if checksum not in self.missing_buffers:
@@ -65,6 +66,8 @@ class BufferCache:
                 self.missing_buffers.add(checksum)
 
     def decref(self, checksum, from_temp=False):
+        #if not from_temp:
+        #    print("DECREF", checksum.hex())
         if not from_temp and self.buffer_refcount[checksum] == 1:
             tempref = functools.partial(self.decref, checksum, from_temp=True)
             temprefmanager.add_ref(tempref, TEMP_KEEP_ALIVE)

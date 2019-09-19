@@ -372,7 +372,7 @@ Use ``Cell.status()`` to get its status.
         if self._share is not None:
             sharemanager.unshare(self)
 
-    def destroy(self, *, from_del=False): 
+    def destroy(self, *, from_del=False):
         if self._destroyed:            
             return
         self.unshare()

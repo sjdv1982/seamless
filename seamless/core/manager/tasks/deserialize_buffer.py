@@ -20,8 +20,6 @@ class DeserializeBufferTask(Task):
         super().__init__(manager)      
 
     async def _run(self): 
-        if self.hash_pattern is not None:
-            raise NotImplementedError  # livegraph branch
         result = await deserialize(self.buffer, self.checksum, self.celltype, self.copy)
         return result 
 

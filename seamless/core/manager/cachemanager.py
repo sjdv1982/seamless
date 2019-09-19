@@ -3,6 +3,8 @@ from ..cache.buffer_cache import buffer_cache
 from .. import destroyer
 
 import sys
+import json
+
 def log(*args, **kwargs):
     print(*args, **kwargs, file=sys.stderr)
 
@@ -99,9 +101,9 @@ class CacheManager:
             pass
         else:
             raise TypeError(type(refholder))
-        #print(self, "DECREF", checksum.hex())
+        #print("cachemanager DECREF", checksum.hex())
         self.checksum_refs[checksum].remove((refholder, authority))        
-        if len(self.checksum_refs) == 0:
+        if len(self.checksum_refs[checksum]) == 0:            
             self.buffer_cache.decref(checksum)
             self.checksum_refs.pop(checksum)        
 
@@ -110,6 +112,13 @@ class CacheManager:
         ref = self.cell_to_ref[cell]
         if ref is not None:
             checksum, authority = ref
+            if checksum is not None and cell._hash_pattern is not None:
+                buffer = self.buffer_cache.get_buffer(checksum)
+                if buffer is not None:
+                    deep_structure = json.loads(buffer) # non-standard, but we could be in precarious territory
+                    sub_checksums = deep_structure_to_checksums(deep_structure, cell._hash_pattern)
+                    for sub_checksum in sub_checksums:
+                        self.buffer_cache.decref(bytes.fromhex(sub_checksum))
             self.decref_checksum(checksum, cell, authority)
         self.cell_to_ref.pop(cell)
 
@@ -157,3 +166,4 @@ from ..transformer import Transformer
 from ..reactor import Reactor
 from ..library import Library
 from .expression import Expression
+from ..protocol.deep_structure import deep_structure_to_checksums

@@ -405,8 +405,11 @@ class Silk(SilkBase):
             self._parent._setitem(self._parent_attr, value, value_schema)
             return self._data
         data = self._data
-        raw_data = self._raw_data()
-        is_none = (raw_data is None)
+        try:
+            raw_data = self._raw_data()
+            is_none = (raw_data is None)
+        except ValueError:
+            is_none = True              
         if is_none or not isinstance(raw_data, dict) or not isinstance(value, dict):
             self._set_value_simple(value)
         else:
@@ -434,8 +437,11 @@ class Silk(SilkBase):
             policy = self._get_policy(schema)
             self._infer_type(schema, policy, value)
 
-        raw_data = self._raw_data()        
-        is_none = (raw_data is None)
+        try:
+            raw_data = self._raw_data()
+            is_none = (raw_data is None)
+        except ValueError:
+            is_none = True              
         if isinstance(value, Scalar):
             self._set_value_simple(value)
             if not lowlevel:
@@ -480,7 +486,10 @@ class Silk(SilkBase):
         data = self._data
         schema = self._schema
         policy = self._get_policy(schema)
-        raw_data = self._raw_data()
+        try:
+            raw_data = self._raw_data()
+        except ValueError:
+            raw_data = None
         if raw_data is None:
             self._set_value_simple({})
             self._infer_type(schema, policy, {})
@@ -695,9 +704,10 @@ class Silk(SilkBase):
                     traceback.print_exc()
                     raise exc from None
                 return MethodType(method, self)
-        data = RichValue(self._data).value
-        if hasattr(type(data), attr):
-            return getattr(data, attr)
+        if attr != "set":
+            data = RichValue(self._data).value
+            if hasattr(type(data), attr):
+                return getattr(data, attr)
         if attr.startswith("__"):
             if attr in _underscore_attribute_names:
                 raise NotImplementedError

@@ -1,14 +1,40 @@
 from seamless.core import context, cell, StructuredCell
+from seamless.core.protocol.deep_structure import DeepStructureError
+import traceback
 
 ctx = context(toplevel=True)
 ctx.data = cell("mixed")
+hash_pattern = {"*":"#"}
+ctx.data._hash_pattern = hash_pattern
 ctx.sc = StructuredCell(
     data=ctx.data,
-    hash_pattern= {"*":"#"}
+    hash_pattern=hash_pattern
 )
 
 data = ctx.sc.handle
-data.set(20)
+try:
+    data.set(20)
+except DeepStructureError:
+    traceback.print_exc()
+data.set({})
 
-data.x.set("test")
+ctx.equilibrate()
+print(ctx.data.value)
 print(data)
+print(ctx.sc.value)
+
+print("START")    
+data.x = "test"
+data.y = "test2"
+data.z = "test3"
+
+ctx.equilibrate()
+print(ctx.data.value)
+print(data)
+print(ctx.sc.value)
+
+print(data["x"], data["y"], data["z"])
+print(data.x, data.y, data.z)
+
+print("STOP")
+import sys; sys.exit()

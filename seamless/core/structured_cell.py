@@ -80,9 +80,9 @@ class StructuredCell(SeamlessBase):
             assert schema._celltype == "plain"            
         self.schema = schema
 
-        if auth is not None:
-            assert auth._hash_pattern is None
+        assert data._hash_pattern == hash_pattern
         assert buffer._hash_pattern == data._hash_pattern
+        assert auth._hash_pattern == data._hash_pattern
 
         self._validate_channels(inchannels, outchannels, editchannels)
         self.modified_auth_paths = set()
@@ -219,8 +219,10 @@ class StructuredCell(SeamlessBase):
         # i.e. any external modification to self._data will make it out-of-date
         # i.e. does NOT use the StructuredCellBackend, but DefaultBackend
         value = self._data.value
-        schema = self._schema.value
-        return Silk(data=data, schema=schema)
+        schema = None
+        if self.schema is not None:
+            schema = self.schema.value
+        return Silk(data=value, schema=schema)
 
     @property
     def data(self):
