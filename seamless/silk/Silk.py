@@ -405,16 +405,19 @@ class Silk(SilkBase):
             self._parent._setitem(self._parent_attr, value, value_schema)
             return self._data
         data = self._data
+        """
         try:
             raw_data = self._raw_data()
             is_none = (raw_data is None)
         except ValueError:
-            is_none = True              
+            is_none = True                      
         if is_none or not isinstance(raw_data, dict) or not isinstance(value, dict):
             self._set_value_simple(value)
         else:
             data.clear()
             data.update(value)
+        """
+        self._set_value_simple(value)
         return self._data
 
     def _set(self, value, lowlevel):

@@ -31,8 +31,8 @@ def get_subpath_sync(value, hash_pattern, path):
     if post_path is None:
         if result is None:
             return None
-        elif isinstance(result, bytes):            
-            checksum = result
+        elif isinstance(result, str):            
+            checksum = bytes.fromhex(result)
             buffer = get_buffer_sync(checksum, buffer_cache)
             value = deserialize_sync(buffer, checksum, "mixed", copy=True)
             return value
@@ -54,8 +54,10 @@ def get_subpath_sync(value, hash_pattern, path):
             )
             return value
     else:
-        raise NotImplementedError
-    
+        checksum = bytes.fromhex(result)
+        buffer = get_buffer_sync(checksum, buffer_cache)
+        value = deserialize_sync(buffer, checksum, "mixed", copy=True)
+        return _get_subpath(value, post_path)
 
 def set_subpath_sync(value, hash_pattern, path, subvalue):
     if hash_pattern is None:
@@ -78,22 +80,34 @@ def set_subpath_sync(value, hash_pattern, path, subvalue):
             buffer_cache.cache_buffer(checksum, buffer)
             buffer_cache.incref(checksum)
         if old_checksum is not None:
-            buffer_cache.decref(old_checksum)
+            buffer_cache.decref(bytes.fromhex(old_checksum))
     elif mode == 1:
         _, sub_hash_pattern = result
         sub_structure, new_checksums = value_to_deep_structure_sync(
-            value, sub_hash_pattern
+            subvalue, sub_hash_pattern
         )
-        old_sub_structure = set_deep_structure(
-            sub_structure, deep_structure, sub_hash_pattern, path
-        )
-        old_checksums = deep_structure_to_checksums(
-            old_sub_structure, sub_hash_pattern
-        )
+        if not len(path):
+            old_checksums = deep_structure_to_checksums(
+                deep_structure, hash_pattern
+            )
+            if isinstance(deep_structure, list):
+                deep_structure[:] = sub_structure
+            elif isinstance(deep_structure, dict):
+                deep_structure.clear()
+                deep_structure.update(sub_structure)
+        else:            
+            old_sub_structure = set_deep_structure(
+                sub_structure, deep_structure, sub_hash_pattern, path
+            )
+            old_checksums = deep_structure_to_checksums(
+                old_sub_structure, sub_hash_pattern
+            )
 
         for new_checksum in new_checksums:
+            new_checksum = bytes.fromhex(new_checksum)
             buffer_cache.incref(new_checksum)
         for old_checksum in old_checksums:
+            old_checksum = bytes.fromhex(old_checksum)
             buffer_cache.decref(old_checksum)
     elif mode == 2:
         _, pre_path, curr_sub_checksum, post_path = result
@@ -118,7 +132,6 @@ def set_subpath_sync(value, hash_pattern, path, subvalue):
             buffer_cache.cache_buffer(new_sub_checksum, new_sub_buffer)
             new_sub_cs = new_sub_checksum.hex()
 
-        print("OK", new_sub_value, new_subsub_value, post_path)
         result = write_deep_structure(
             new_sub_cs, deep_structure, hash_pattern, pre_path,
             create=True

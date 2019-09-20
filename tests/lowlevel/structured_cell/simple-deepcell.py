@@ -34,7 +34,19 @@ print(data)
 print(ctx.sc.value)
 
 print(data["x"], data["y"], data["z"])
-print(data.x, data.y, data.z)
+print(data.x.unsilk, data.y.unsilk, data.z.unsilk)
+
+data.set({
+    "p": 10,
+    "q": 20,
+    "r": 30
+})
+ctx.equilibrate()
+print(ctx.data.value)
+print(data)
+print(ctx.sc.value)
+
+print(data.p.data, data.q.data, data.r.data)
 
 print("STOP")
 import sys; sys.exit()

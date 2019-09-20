@@ -1,5 +1,5 @@
 import weakref
-
+from copy import deepcopy
 from . import SeamlessBase
 
 class Inchannel:
@@ -138,14 +138,27 @@ class StructuredCell(SeamlessBase):
             return
         self.modified_auth_paths.add(path)
         manager.set_auth_path(self, path, value)
-        if not len(path):
-            self._auth_value = value
-        else:
-            if self._auth_value is None:
+        if self.hash_pattern is None:
+            if not len(path):
+                self._auth_value = value
+            elif self._auth_value is None:
                 if isinstance(path[0], str):
                     self._auth_value = {}
                 elif isinstance(path[0], list):
                     self._auth_value = []
+            set_subpath(self._auth_value, None, path, value)
+        else:
+            if not isinstance(self._auth_value, (list, dict)):
+                if not len(path):
+                    if list(self.hash_pattern.keys())[0][0] == "!":
+                        self._auth_value = []
+                    else:
+                        self._auth_value = {}
+                else:
+                    if isinstance(path[0], str):
+                        self._auth_value = {}
+                    elif isinstance(path[0], list):
+                        self._auth_value = []
             set_subpath(self._auth_value, self.hash_pattern, path, value)
 
     def _join(self):

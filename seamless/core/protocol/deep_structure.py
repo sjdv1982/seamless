@@ -57,6 +57,7 @@ def validate_deep_structure(deep_structure, hash_pattern):
                     assert has_star
                     validate_deep_structure(deep_structure[key], hash_pattern["*"])
         else:
+            key = list(hash_pattern.keys())[0]
             if has_star:
                 assert isinstance(deep_structure, dict)
                 for key in deep_structure:
@@ -100,7 +101,7 @@ def access_deep_structure(deep_structure, hash_pattern, path):
     if not len(path):
         path = None
     if hash_pattern == "#":
-        result = bytes.fromhex(deep_structure)        
+        result = deep_structure
     elif path is None:
         result = deep_structure, hash_pattern
     else:
@@ -115,8 +116,9 @@ def access_deep_structure(deep_structure, hash_pattern, path):
             else:
                 assert has_star, (path, list(deep_structure.keys()))
                 sub_hash_pattern = hash_pattern["*"]
-                return access_deep_structure(sub_deep_structure, sub_hash_pattern, path[1:])
+            return access_deep_structure(sub_deep_structure, sub_hash_pattern, path[1:])
         else:
+            key = list(hash_pattern.keys())[0]
             if has_star:
                 assert isinstance(attribute, str)
                 sub_deep_structure = deep_structure.get(attribute)
@@ -137,7 +139,6 @@ def access_deep_structure(deep_structure, hash_pattern, path):
                 result = deep_structure[chunk]
                 path = None
                 if result is not None:
-                    result = bytes.fromhex(result)
                     path = remainder
             elif key.isalpha():
                 sub_deep_structure = deep_structure[attribute]
@@ -171,7 +172,7 @@ def _deep_structure_to_checksums(deep_structure, hash_pattern, checksums):
             sub_hash_pattern = hash_pattern[key]
             for sub_deep_structure in deep_structure:
                 _deep_structure_to_checksums(
-                    deep_structure[key], sub_hash_pattern, checksums
+                    sub_deep_structure, sub_hash_pattern, checksums
                 )
         elif key.isalpha():
             assert list(deep_structure.keys()) == [key]
@@ -220,7 +221,7 @@ def _deep_structure_to_value(deep_structure, hash_pattern, value_dict, copy):
             sub_hash_pattern = hash_pattern[key]
             for sub_deep_structure in deep_structure:
                 sub_result = _deep_structure_to_value(
-                    deep_structure[key], sub_hash_pattern,
+                    sub_deep_structure, sub_hash_pattern,
                     value_dict, copy=copy 
                 )   
                 result.append(sub_result)
@@ -260,35 +261,108 @@ def deep_structure_to_value_sync(deep_structure, hash_pattern, buffer_dict, copy
     return fut.result()
 
 def _build_deep_structure(hash_pattern, d, c):
-    raise NotImplementedError # livegraph branch
-    """
-    TODO: build deep structure, using:
-    d: a deep structure using object ids instead of checksums
-    c: an object id to checksum mapping
-    """
+    if hash_pattern == "#":        
+        obj_id = d
+        checksum = c[obj_id]
+        return checksum
+    single_key = len(hash_pattern)
+    has_star = "*" in hash_pattern
+    if has_star or not single_key:
+        result = {}
+        for key in d:
+            if key in hash_pattern:
+                sub_hash_pattern = hash_pattern[key]
+            else:
+                sub_hash_pattern = hash_pattern["*"]                
+            sub_result = _build_deep_structure(
+                sub_hash_pattern, d[key],
+                c
+            )
+            result[key] = sub_result
+    else:
+        if key.startswith("!"):
+            result = []
+            sub_hash_pattern = hash_pattern[key]
+            for sub_d in d:
+                sub_result = _build_deep_structure(
+                    sub_hash_pattern, sub_d,
+                    c
+                )   
+                result.append(sub_result)
+        elif key.isalpha():
+            assert list(d.keys()) == [key]
+            sub_result = _deep_structure_to_value(
+                d[key], sub_hash_pattern,
+                c
+            )
+            result = {key: sub_result}   
+        else:
+            raise AssertionError(key)
+    return result
+
+def _value_to_objects(value, hash_pattern, objects):
+    if value is None:
+        return
+    if hash_pattern == "#":        
+        obj_id = id(value)
+        objects[obj_id] = value
+        return obj_id
+    single_key = len(hash_pattern)
+    has_star = "*" in hash_pattern
+    if has_star or not single_key:
+        result = {}
+        for key in value:
+            if key in hash_pattern:
+                sub_hash_pattern = hash_pattern[key]
+            else:
+                sub_hash_pattern = hash_pattern["*"]
+            result[key] = _value_to_objects(
+                value[key], sub_hash_pattern, objects
+            )
+        return result
+    else:
+        if key.startswith("!"):
+            result = []
+            sub_hash_pattern = hash_pattern[key]
+            for sub_value in value:
+                sub_result = _value_to_objects(
+                    sub_value, sub_hash_pattern, objects
+                )
+                result.append(sub_result)
+            return result
+        elif key.isalpha():
+            assert list(value.keys()) == [key]
+            sub_result = _value_to_objects(
+                value[key], hash_pattern[key], objects
+            )
+            return {key: sub_result}
+        else:
+            raise AssertionError(key)
+
 
 async def value_to_deep_structure(value, hash_pattern):
     """build deep structure from value"""
-    #deep_structure0, obj_ids = ...    
-    """ 
-    TODO:adapt deep_structure_to_checksums to operate on value instead of deep structure, 
-      and give object ids instead of checksums 
-    """
-    raise NotImplementedError # livegraph branch
+    try:
+        objects = {}    
+        deep_structure0 = _value_to_objects(
+            value, hash_pattern, objects
+        )
+    except (TypeError, ValueError):
+        raise DeepStructureError(hash_pattern, value)
     obj_id_to_checksum = {}
     new_checksums = set()
     async def conv_obj_id_to_checksum(obj_id):
-        obj = obj_ids
+        obj = objects[obj_id]
         obj_buffer = await serialize(obj, "mixed")
         obj_checksum = await calculate_checksum(obj_buffer)
-        new_checksums.add(obj_checksum)
+        new_checksums.add(obj_checksum.hex())
         buffer_cache.cache_buffer(obj_checksum, obj_buffer)
-        obj_id_to_checksum[obj_id] = obj_checksum
+        obj_id_to_checksum[obj_id] = obj_checksum.hex()
 
     coros = []
-    for obj_id in obj_ids.items():
+    for obj_id in objects:
         coro = conv_obj_id_to_checksum(obj_id)
-        coro.append(coros)
+        coros.append(coro)
     await asyncio.gather(*coros)
     deep_structure = _build_deep_structure(
         hash_pattern, deep_structure0, obj_id_to_checksum
@@ -309,7 +383,54 @@ def set_deep_structure(substructure, deep_structure, hash_pattern, path):
     
     Returns the old substructure: the caller is supposed to decref 
     all checksums in it"""
-    raise NotImplementedError # livegraph branch
+    assert len(path)
+    attribute = path[0]
+
+    single_key = len(hash_pattern)
+    has_star = "*" in hash_pattern
+    if not single_key:
+        assert isinstance(attribute, str)
+        sub_deep_structure = deep_structure.get(attribute)
+        if attribute in hash_pattern:
+            sub_hash_pattern = hash_pattern[attribute]
+        else:
+            assert has_star, (path, list(deep_structure.keys()))
+            sub_hash_pattern = hash_pattern["*"]
+    else:
+        key = list(hash_pattern.keys())[0]
+        if has_star:
+            assert isinstance(attribute, str)
+            sub_deep_structure = deep_structure.get(attribute)
+            sub_hash_pattern = hash_pattern["*"]
+        elif key == "!":
+            assert isinstance(attribute, int)
+            assert not attribute >= len(deep_structure)
+            sub_deep_structure = deep_structure.get(attribute)
+            sub_hash_pattern = hash_pattern[key]
+        elif key.startswith("!"):
+            assert isinstance(attribute, int)
+            step = int(key[1:])
+            chunk = int(attribute / step)
+            sub_hash_pattern = hash_pattern[key]
+        elif key.isalpha():
+            sub_deep_structure = deep_structure[attribute]
+            sub_hash_pattern = hash_pattern[attribute]
+        else:
+            raise AssertionError(key)
+
+    if len(path) == 1:
+        assert sub_hash_pattern == "#"
+        if not single_key and not has_star and key.startswith("!"):
+            old_substructure = deep_structure[chunk]
+            deep_structure[chunk] = substructure
+        else:
+            old_substructure = deep_structure[attribute]
+            deep_structure[attribute] = substructure
+        return old_substructure
+    
+    return set_deep_structure(
+        substructure, sub_deep_structure, sub_hash_pattern, path[1:]
+    )
 
 def write_deep_structure(checksum, deep_structure, hash_pattern, path,
     *, create=False):
@@ -420,4 +541,5 @@ def write_deep_structure(checksum, deep_structure, hash_pattern, path,
 from .calculate_checksum import calculate_checksum
 from .serialize import serialize
 from .deserialize import deserialize
+from ..cache.buffer_cache import buffer_cache
 from ..protocol.expression import set_subpath_sync as set_subpath
