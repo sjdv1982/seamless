@@ -29,25 +29,34 @@ class StructuredCellJoinTask(Task):
         manager = self.manager()
         sc = self.structured_cell
         await self.await_sc_tasks()
-        manager.cancel_cell(sc._data, False)
+        modified_paths = set(sc.modified_auth_paths)
+        modified_paths.update(set([ic.subpath for ic in sc.modified_inchannels]))
+        for out_path in sc.outchannels:
+            for mod_path in modified_paths:
+                if out_path[:len(mod_path)] == mod_path:
+                    manager.cancel_cell_path(sc._data, out_path, False)
+                    break
+        value, checksum = None, None
         if len(sc.inchannels):
-            raise NotImplementedError # livegraph branch
-            # ...
-            """
-            Most challenging part is to put this in a Backend that:
-            - Supports hash patterns
-            - Computes values on demand, coming from validator code)        
-            - Computes form and storage on demand, coming from form validation rules
-            Fortunately, ***mixed buffers store form and storage!!!***
-            Also, Backend can be read-only!
-            """
-            # checksum = ...
+            paths = sorted(list(sc.inchannels))
+            if paths == [()]:
+                checksum = sc.inchannels[()]._checksum
+                assert checksum is None or isinstance(checksum, bytes), checksum
+            else:
+                if sc.no_auth:
+                    value = sc._auth_value
+                elif isinstance(paths[0], int):
+                    value = []
+                else:
+                    value = {}
+                raise NotImplementedError # livegraph branch
         else:            
             value = sc._auth_value
-        buf = await SerializeToBufferTask(
-            manager, value, "mixed", use_cache=False # the value object changes all the time...
-        ).run()
-        checksum = await CalculateChecksumTask(manager, buf).run()
+        if checksum is None and value is not None:
+            buf = await SerializeToBufferTask(
+                manager, value, "mixed", use_cache=False # the value object changes all the time...
+            ).run()
+            checksum = await CalculateChecksumTask(manager, buf).run()
         if checksum is not None:
             checksum = checksum.hex()        
         if not len(sc.inchannels):
@@ -67,13 +76,34 @@ class StructuredCellJoinTask(Task):
                 except ValidationError:
                     traceback.print_exc()
                     ok = False
+                    for out_path in sc.outchannels:
+                        manager.cancel_cell_path(sc._data, out_path, True)
         if ok:
             if sc._data is not sc.buffer:
                 sc._data._set_checksum(checksum, from_structured_cell=True)
-            if sc.outchannels:
-                raise NotImplementedError # livegraph branch
+
+            if len(sc.outchannels):
+                livegraph = manager.livegraph
+                downstreams = livegraph.paths_to_downstream[sc._data]
+                if checksum is not None and value is None:
+                    cs = bytes.fromhex(checksum)
+                    buf = await GetBufferTask(manager, cs).run()
+                    value = await DeserializeBufferTask(manager, buf, cs, "mixed", copy=False).run()
+                for out_path in sc.outchannels:
+                    for mod_path in modified_paths:
+                        if out_path[:len(mod_path)] == mod_path:
+                            print("UPDATE!", out_path)
+                            for accessor in downstreams[out_path]:
+                                changed = accessor.build_expression(livegraph, cs)
+                                print("TODO: prelim propagation from inchannel (prelim=False if from auth)")
+                                AccessorUpdateTask(manager, accessor).launch()
             sc.modified_auth_paths.clear()
+            sc.modified_inchannels.clear()
 
 from .serialize_buffer import SerializeToBufferTask
+from .deserialize_buffer import DeserializeBufferTask
+from .get_buffer import GetBufferTask
 from .checksum import CalculateChecksumTask
+from .accessor_update import AccessorUpdateTask
 from ....silk.Silk import Silk, ValidationError
+from ...protocol.expression import get_subpath

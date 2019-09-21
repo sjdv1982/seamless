@@ -1,24 +1,38 @@
 import weakref
 from copy import deepcopy
 from . import SeamlessBase
+from .status import StatusReasonEnum
 
 class Inchannel:
-    def __init__(self, structured_cell, name):
-        assert isinstance(name, tuple)
+    _void = True
+    _checksum = None
+    _prelim = False
+    _status_reason = StatusReasonEnum.UNDEFINED
+    def __init__(self, structured_cell, subpath):
+        assert isinstance(subpath, tuple)
         self.structured_cell = weakref.ref(structured_cell)
-        self.name = name
+        self.subpath = subpath
 
 class Outchannel:
-    def __init__(self, structured_cell, name):
-        assert isinstance(name, tuple)
+    def __init__(self, structured_cell, subpath):
+        assert isinstance(subpath, tuple)
         self.structured_cell = weakref.ref(structured_cell)
-        self.name = name
+        self.subpath = subpath
+    def connect(self, target):
+        sc = self.structured_cell()
+        manager = sc._get_manager()        
+        if isinstance(target, Inchannel):
+            target_subpath = target.subpath
+            target = target.structured_cell().buffer
+        else:
+            target_subpath = None
+        manager.connect(sc._data, self.subpath, target, target_subpath)
 
 class Editchannel:
-    def __init__(self, structured_cell, name):
-        assert isinstance(name, tuple)
+    def __init__(self, structured_cell, subpath):
+        assert isinstance(subpath, tuple)
         self.structured_cell = weakref.ref(structured_cell)
-        self.name = name
+        self.subpath = subpath
 
 class StructuredCell(SeamlessBase):
     _celltype = "structured"    
@@ -31,11 +45,7 @@ class StructuredCell(SeamlessBase):
         buffer=None,
         hash_pattern=None
     ):      
-        if len(inchannels):
-            raise NotImplementedError # livegraph branch
         if len(editchannels):
-            raise NotImplementedError # livegraph branch
-        if len(outchannels):
             raise NotImplementedError # livegraph branch
 
         self.no_auth = False
@@ -47,6 +57,9 @@ class StructuredCell(SeamlessBase):
                     auth = buffer
             else:
                 self.no_auth = True
+        elif inchannels == [()]:
+            auth = None
+            self.no_auth = True
 
         if buffer is None and not len(inchannels):
             buffer = auth
@@ -82,10 +95,12 @@ class StructuredCell(SeamlessBase):
 
         assert data._hash_pattern == hash_pattern
         assert buffer._hash_pattern == data._hash_pattern
-        assert auth._hash_pattern == data._hash_pattern
+        if not self.no_auth:
+            assert auth._hash_pattern == data._hash_pattern
 
         self._validate_channels(inchannels, outchannels, editchannels)
         self.modified_auth_paths = set()
+        self.modified_inchannels = set()
         self.modified_schema = False
 
         self._auth_value = None

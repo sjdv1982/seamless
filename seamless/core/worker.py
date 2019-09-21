@@ -162,7 +162,7 @@ class OutputPin(OutputPinBase):
 
         target_subpath = None
         if isinstance(target, Inchannel):
-            target_subpath = target.path
+            target_subpath = target.subpath
             target = target.structured_cell().buffer
         elif isinstance(target, Outchannel):
             raise TypeError("Outchannels must be the source of a connection, not the target")

@@ -18,7 +18,9 @@ def _get_subpath(value, path):
     if not len(path):
         return value
     head = path[0]
-    sub_curr_value = value[head]
+    sub_curr_value = value.get(head)
+    if sub_curr_value is None:
+        return None
     return _get_subpath(sub_curr_value, path[1:])
 
 def get_subpath_sync(value, hash_pattern, path):
@@ -58,6 +60,12 @@ def get_subpath_sync(value, hash_pattern, path):
         buffer = get_buffer_sync(checksum, buffer_cache)
         value = deserialize_sync(buffer, checksum, "mixed", copy=True)
         return _get_subpath(value, post_path)
+
+async def get_subpath(value, hash_pattern, path):
+    if hash_pattern is None:
+        return ("value", _get_subpath(value, path))
+    else:
+        raise NotImplementedError # livegraph branch
 
 def set_subpath_sync(value, hash_pattern, path, subvalue):
     if hash_pattern is None:
@@ -155,4 +163,4 @@ from ..cache.buffer_cache import buffer_cache
 from .calculate_checksum import calculate_checksum_sync
 from .deserialize import deserialize_sync
 from .serialize import serialize_sync
-from .get_buffer import get_buffer_sync
+from .get_buffer import get_buffer, get_buffer_sync

@@ -40,7 +40,6 @@ class EvaluateExpressionTask(Task):
                 if (
                     expression.path is None \
                     and expression.hash_pattern is None \
-                    and expression.target_hash_pattern is None
                 ):
                     expression_result_checksum = await evaluate_from_buffer(
                         expression.checksum, buffer, 
@@ -48,36 +47,33 @@ class EvaluateExpressionTask(Task):
                         buffer_cache
                     )
                 else:
-                    if (expression.celltype, expression.target_celltype) \
-                        in conversion_forbidden:
-                            raise TypeError
-                    if expression.target_hash_pattern is not None:
-                        raise NotImplementedError  # livegraph branch
-                    else:
-                        value = await DeserializeBufferTask(
-                            manager, expression.checksum, buffer,
-                            expression.celltype, copy=False
-                        ).run()
-                        # Special cases for cson / yaml
-                        raise NotImplementedError #livegraph branch
-                        # ...                  
-                        # Apply path
-                        # ...
-                        raise NotImplementedError #livegraph branch
-                        #result_value...
+                    assert expression.celltype == "mixed" # paths may apply only to mixed cells
+                    value = await DeserializeBufferTask(
+                        manager, buffer, expression.checksum,
+                        expression.celltype, copy=False
+                    ).run()
+                    mode, result = await get_subpath(value, expression.hash_pattern, expression.path)
+                    if mode == "value":
+                        result_value = result
                         result_buffer = await SerializeToBufferTask(
                             manager, result_value, 
-                            expression.target_celltype
+                            expression.target_celltype,
+                            use_cache=True
                         ).run()
                         expression_result_checksum = await CalculateChecksumTask(
-                            manager, buffer
+                            manager, result_buffer
                         ).run()
+                    elif mode == "checksum":
+                        expression_result_checksum = result
+                    else:
+                        raise ValueError(mode)
+
                 await validate_subcelltype(
                     expression_result_checksum, 
                     expression.target_celltype, 
                     expression.target_subcelltype, 
-                    expression.target_cell_path,
-                    buffer_cache
+                    codename="expression",
+                    buffer_cache=buffer_cache
                 )                    
         else:
             cachemanager.expression_to_checksum[expression] = \
@@ -92,4 +88,5 @@ from ..expression import Expression
 from ...protocol.evaluate import needs_buffer_evaluation, evaluate_from_checksum, evaluate_from_buffer
 from ...protocol.conversion import conversion_forbidden
 from ...protocol.validate_subcelltype import validate_subcelltype
+from ...protocol.expression import get_subpath
 from .checksum import CalculateChecksumTask

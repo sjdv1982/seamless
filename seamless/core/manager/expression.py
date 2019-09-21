@@ -12,11 +12,8 @@ _hash_slots = [
     "celltype",
     "hash_pattern",
     "target_celltype",
-    "target_cell_path",
-    "target_subcelltype",
-    "target_hash_pattern",
+    "target_subcelltype",    
 ]
-
 class Expression:
     __slots__ = [ "__weakref__"] + _hash_slots
     def __new__(cls, *args, **kwargs):
@@ -33,23 +30,18 @@ class Expression:
     def __init__(
         self, checksum, path, celltype, 
         target_celltype, target_subcelltype,
-        *, hash_pattern, target_hash_pattern,
-        target_cell_path=None
+        *, hash_pattern
     ):
         if hash_pattern is not None:
             assert celltype == "mixed"
         self.hash_pattern = hash_pattern
-        if target_hash_pattern is not None:
-            assert target_celltype == "mixed"
-        self.target_hash_pattern = target_hash_pattern
         self.checksum = checksum
         self.path = path
         self.celltype = celltype
         self.target_celltype = target_celltype
         self.target_subcelltype = target_subcelltype
-        self.target_cell_path = target_cell_path   
 
-    def __str__(self):
+    def _hash_dict(self):
         d = {}
         for slot in _hash_slots:
             v = getattr(self, slot)
@@ -57,6 +49,10 @@ class Expression:
                 if v is not None:
                     v = v.hex()
             d[slot] = v
+        return d
+
+    def __str__(self):
+        d = self._hash_dict()
         return json.dumps(d, indent=2, sort_keys=True)
 
     def _get_hash(self):

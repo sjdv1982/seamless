@@ -68,6 +68,7 @@ class Manager:
 
     @mainthread
     def register_structured_cell(self, structured_cell):
+        self.cachemanager.register_structured_cell(structured_cell)
         self.taskmanager.register_structured_cell(structured_cell)
         self.livegraph.register_structured_cell(structured_cell)
 
@@ -129,7 +130,8 @@ class Manager:
             reason = None
             old_checksum = self.get_cell_checksum(cell)
             if old_checksum is not None:
-                self.cancel_cell(cell, void=False)
+                if not from_structured_cell:
+                    self.cancel_cell(cell, void=False)
         #and cell._context()._macro is None: # TODO: sovereignty...
         self._set_cell_checksum(
             cell, checksum, 
@@ -166,6 +168,24 @@ class Manager:
                 self.mountmanager.add_cell_update(cell, checksum, buffer)
             if cell._share is not None:
                 self.sharemanager.add_cell_update(cell, checksum)
+
+    def _set_inchannel_checksum(self, inchannel, checksum, void, status_reason=None, prelim=False):
+        assert checksum is None or isinstance(checksum, bytes), checksum
+        assert isinstance(void, bool), void
+        if void:
+            assert status_reason is not None
+            assert checksum is None
+        cachemanager = self.cachemanager
+        old_checksum = inchannel._checksum
+        if old_checksum is not None and old_checksum != checksum:
+            cachemanager.decref_checksum(old_checksum, inchannel, False)
+        inchannel._checksum = checksum
+        inchannel._void = void
+        inchannel._status_reason = status_reason
+        inchannel._prelim = prelim
+        if checksum != old_checksum:
+            cachemanager.incref_checksum(checksum, inchannel, False)
+            inchannel.structured_cell().modified_inchannels.add(inchannel)
 
     def _set_transformer_checksum(self,
         transformer, checksum, void, *,
@@ -301,7 +321,7 @@ class Manager:
         buffer = self._get_buffer(checksum)        
         task = DeserializeBufferTask(
             self, buffer, checksum, celltype, 
-            copy=copy, hash_pattern=cell._hash_pattern
+            copy=copy
         )
         value = task.launch_and_await()
         return value
@@ -330,6 +350,8 @@ class Manager:
 If void=True, all dependencies are set to void as well.
 If origin_task is provided, that task is not cancelled."""
         assert isinstance(cell, Cell)
+        if cell._structured_cell is not None:
+            assert cell._structured_cell.schema is cell, cell # cancel_cell only on schema cells, else use cancel_cell_path
         if cell._destroyed:
             return
         if cell._canceling:
@@ -375,7 +397,13 @@ If origin_task is provided, that task is not cancelled."""
         target = accessor.write_accessor.target()
         reason = StatusReasonEnum.UPSTREAM
         if isinstance(target, Cell):
-            return self.cancel_cell(target, void=void)
+            if accessor.write_accessor.path is None:
+                if target._structured_cell is not None:
+                    assert target._structured_cell.schema is target, target # cancel_cell only on schema cells, else use cancel_cell_path
+                return self.cancel_cell(target, void=void)
+            else:
+                assert target._structured_cell is not None
+                self.cancel_cell_path(target, accessor.write_accessor.path,void=void)
         elif isinstance(target, Worker):
             if isinstance(target, Transformer):
                 return self.cancel_transformer(target, void=void, reason=reason)
@@ -512,6 +540,7 @@ If origin_task is provided, that task is not cancelled."""
 
     def _destroy_structured_cell(self, structured_cell):
         # no need to notify livegraph; cell destruction does the job already
+        self.cachemanager.destroy_structured_cell(structured_cell)
         self.taskmanager.destroy_structured_cell(structured_cell)        
 
     def _destroy_transformer(self, transformer):

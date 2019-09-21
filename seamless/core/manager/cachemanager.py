@@ -16,7 +16,8 @@ class CacheManager:
         self.cell_to_ref = {}
         self.expression_to_ref = {}
         self.transformer_to_ref = {}
-        self.reactor_to_refs = {}  
+        self.reactor_to_refs = {}
+        self.inchannel_to_ref = {}
         self.macro_exceptions = {}
         self.reactor_exceptions = {}
 
@@ -35,6 +36,10 @@ class CacheManager:
     def register_cell(self, cell):
         assert cell not in self.cell_to_ref
         self.cell_to_ref[cell] = None
+
+    def register_structured_cell(self, sc):
+        for inchannel in sc.inchannels.values():
+            self.inchannel_to_ref[inchannel] = None
 
     def register_expression(self, expression):
         expression = expression
@@ -74,6 +79,10 @@ class CacheManager:
             assert not authority
             assert self.transformer_to_ref[refholder] is None
             self.transformer_to_ref[refholder] = checksum
+        elif isinstance(refholder, Inchannel):
+            assert not authority
+            assert self.inchannel_to_ref[refholder] is None
+            self.inchannel_to_ref[refholder] = checksum
         elif isinstance(refholder, Library):
             pass
         else:
@@ -97,6 +106,9 @@ class CacheManager:
         elif isinstance(refholder, Transformer):
             assert self.transformer_to_ref[refholder] is not None
             self.transformer_to_ref[refholder] = None
+        elif isinstance(refholder, Inchannel):
+            assert self.inchannel_to_ref[refholder] is not None
+            self.inchannel_to_ref[refholder] = None
         elif isinstance(refholder, Library):
             pass
         else:
@@ -121,6 +133,15 @@ class CacheManager:
                         self.buffer_cache.decref(bytes.fromhex(sub_checksum))
             self.decref_checksum(checksum, cell, authority)
         self.cell_to_ref.pop(cell)
+
+    @destroyer
+    def destroy_structured_cell(self, sc):
+        for inchannel in sc.inchannels.values():
+            ref = self.inchannel_to_ref[inchannel]
+            if ref is not None:
+                checksum = ref
+                self.decref_checksum(checksum, inchannel, False)
+            self.inchannel_to_ref.pop(inchannel)
 
     @destroyer
     def destroy_transformer(self, transformer):
@@ -163,6 +184,7 @@ class CacheManager:
 
 from ..cell import Cell
 from ..transformer import Transformer
+from ..structured_cell import Inchannel
 from ..reactor import Reactor
 from ..library import Library
 from .expression import Expression

@@ -10,6 +10,7 @@ class UponConnectionTask(Task):
         self.target = target
         self.target_subpath = target_subpath
         self.current_macro = curr_macro()
+        print("SOURCE", source, "TARGET", target)
         super().__init__(manager)
         if isinstance(source, (OutputPin, EditPin) ):
             self.dependencies.append(source.worker_ref())
@@ -27,8 +28,27 @@ class UponConnectionTask(Task):
         livegraph = self.manager().livegraph
         if source_subpath is None and target_subpath is None:
             # simple cell-cell
-            return livegraph.connect_cell_cell(self.current_macro, source, target)
-        raise NotImplementedError # livegraph branch
+            return livegraph.connect_cell_cell(
+                self.current_macro, source, target
+            )
+        elif source_subpath is not None and target_subpath is None:
+            # outchannel-to-simple-cell
+            return livegraph.connect_scell_cell(
+                self.current_macro, source, source_subpath, target
+            )
+        elif source_subpath is None and target_subpath is not None:
+            # simple-cell-to-inchannel
+            return livegraph.connect_cell_scell(
+                self.current_macro, source, target, target_subpath
+            )
+        else:
+            # outchannel-to-inchannel
+            return livegraph.connect_scell_scell(
+                self.current_macro, 
+                source, source_subpath, 
+                target, target_subpath
+            )
+            
 
     def _connect_pin_cell(self):
         source, target, source_subpath, target_subpath = (

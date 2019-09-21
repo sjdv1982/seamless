@@ -105,7 +105,7 @@ class LiveGraph:
         inpathdict = {path: None for path in inchannels}
         self.paths_to_upstream[buffercell] = inpathdict
 
-        outpathdict = {path: None for path in outchannels}
+        outpathdict = {path: [] for path in outchannels}
         self.paths_to_downstream[datacell] = outpathdict
 
     def register_macropath(self, macropath):
@@ -280,6 +280,77 @@ class LiveGraph:
 
         return read_accessor
 
+    def connect_scell_cell(self, current_macro, source, source_path, target):
+        """Connect a structured cell (outchannel) to a simple cell"""
+        assert source._structured_cell is not None and target._structured_cell is None
+        assert source in self.paths_to_downstream, source
+        assert source_path in self.paths_to_downstream[source], (source, self.paths_to_downstream[source].keys(), source_path)
+        assert self.has_authority(target), target
+        
+        manager = self.manager()
+        read_accessor = ReadAccessor(
+            manager, source_path, source._celltype,
+            hash_pattern=source._hash_pattern
+        )
+        write_accessor = WriteAccessor(
+            read_accessor, target, 
+            celltype=target._celltype, 
+            subcelltype=target._subcelltype, 
+            pinname=None, 
+            path=None,
+            hash_pattern=target._hash_pattern
+        )
+        read_accessor.write_accessor = write_accessor
+        assert self.accessor_to_upstream.get(read_accessor) is None, (self.accessor_to_upstream[read_accessor], source, source_path)
+        self.accessor_to_upstream[read_accessor] = source
+        self.paths_to_downstream[source][source_path].append(read_accessor)
+        self.cell_to_upstream[target] = read_accessor
+        
+        manager.cancel_cell(target, void=False)
+        manager.taskmanager.register_accessor(read_accessor) 
+        target._status_reason = StatusReasonEnum.UPSTREAM       
+
+        return read_accessor
+
+    def connect_cell_scell(self, current_macro, source, target, target_path):
+        """Connect a simple cell to a structured cell (inchannel)"""
+        assert source._structured_cell is None and target._structured_cell is not None
+        assert target in self.paths_to_upstream, target
+        assert target_path in self.paths_to_upstream[target], (target, self.paths_to_upstream[target].keys(), target_path)
+        assert self.paths_to_upstream[target][target_path] is None, (target, target_path, self.paths_to_upstream[target][target_path])
+        
+        manager = self.manager()
+        read_accessor = ReadAccessor(
+            manager, None, source._celltype,
+            hash_pattern=source._hash_pattern
+        )
+        write_accessor = WriteAccessor(
+            read_accessor, target, 
+            celltype=target._celltype, 
+            subcelltype=target._subcelltype, 
+            pinname=None, 
+            path=target_path,
+            hash_pattern=target._hash_pattern
+        )
+        read_accessor.write_accessor = write_accessor
+        assert self.accessor_to_upstream.get(read_accessor) is None, (self.accessor_to_upstream[read_accessor], source)
+        self.accessor_to_upstream[read_accessor] = source
+        self.cell_to_downstream[source].append(read_accessor)
+        self.paths_to_upstream[target][target_path] = read_accessor
+        
+        manager.cancel_cell_path(target, target_path, void=False)
+        manager.taskmanager.register_accessor(read_accessor) 
+        sc = target._structured_cell
+        sc.inchannels[target_path]._status_reason = StatusReasonEnum.UPSTREAM       
+
+        return read_accessor
+
+    def connect_scell_scell(self, 
+            current_macro, source, source_path, target, target_path
+        ):
+        """Connect one structured cell (outchannel) to another one (inchannel)"""
+        raise NotImplementedError # livegraph branch
+
     def connect_macropath_cell(self, current_macro, source, target):
         """Connect a macropath to a simple cell"""
         assert target._structured_cell is None
@@ -411,7 +482,7 @@ class LiveGraph:
         if isinstance(upstream, Cell):
             path = accessor.path
             if path is not None:
-                raise NotImplementedError # livegraph branch
+                self.paths_to_downstream[upstream][path].remove(accessor)
             else:
                 self.cell_to_downstream[upstream].remove(accessor)
         elif isinstance(upstream, Transformer):
@@ -431,7 +502,9 @@ class LiveGraph:
         if isinstance(target, Cell):
             path = accessor.write_accessor.path
             if path is not None:
-                raise NotImplementedError # livegraph branch
+                manager.cancel_cell_path(target, path, True)
+                if target in self.paths_to_upstream:
+                    self.paths_to_upstream[target][path] = None
             else:
                 manager.cancel_cell(target, True)
                 if target in self.cell_to_upstream:
@@ -532,13 +605,25 @@ class LiveGraph:
             assert not self.cell_to_upstream[cell], cell
             assert not self.cell_to_downstream[cell], cell
             if buf_struc_cell:
-                up_accessors = self.paths_to_upstream[cell]
+                up_accessors = []
+                for path, acc in self.paths_to_upstream[cell].items():
+                    if acc is None:
+                        continue
+                    up_accessors.append(acc)
             if data_struc_cell:
-                down_accessors = self.paths_to_downstream[cell]
+                down_accessors = []
+                for path, accs in self.paths_to_downstream[cell].items():
+                    down_accessors += accs
 
             while len(up_accessors):
                 accessor = up_accessors[0]
                 self.destroy_accessor(manager, accessor)
+                if buf_struc_cell:
+                    up_accessors = []
+                    for path, acc in self.paths_to_upstream[cell].items():
+                        if acc is None:
+                            continue
+                        up_accessors.append(acc)
                 if len(up_accessors) and up_accessors[0] is accessor:
                     if cell._structured_cell:
                         print("WARNING: destruction of cell upstream %s failed" % accessor)
@@ -563,6 +648,10 @@ class LiveGraph:
             accessor = down_accessors[0]
             assert self.accessor_to_upstream[accessor] is cell
             self.destroy_accessor(manager, accessor, from_upstream=True)
+            if data_struc_cell:
+                down_accessors = []
+                for path, accs in self.paths_to_downstream[cell].items():
+                    down_accessors += accs
             if len(down_accessors) and down_accessors[0] is accessor:
                 print("WARNING: destruction of cell downstream %s failed" % accessor)
                 down_accessors = down_accessors[1:]

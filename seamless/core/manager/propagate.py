@@ -1,13 +1,18 @@
 
 def _propagate_cell_accessor(livegraph, accessor, target, void):
-    if accessor.write_accessor.path is None:
+    path = accessor.write_accessor.path
+    if path is None:
         if void:
             manager = target._get_manager()
             manager.cancel_cell(target, None, True)
         else:
             propagate_simple_cell(livegraph, target)
     else:
-        raise NotImplementedError # livegraph branch
+        if void:
+            manager = target._get_manager()
+            manager.cancel_cell_path(target, path, True)
+        else:
+            propagate_cell_path(livegraph, target, path)
 
 def propagate_accessor(livegraph, accessor, void):    
     accessor._void = void
@@ -44,6 +49,19 @@ def propagate_simple_cell(livegraph, cell):
             #assert fullpath == cell.path, (fullpath, cell.path)  # no, because of links...
             for accessor in livegraph.macropath_to_downstream[macropath]:
                 propagate_accessor(livegraph, accessor, void=False)
+
+def propagate_cell_path(livegraph, cell, path):    
+    assert cell._structured_cell is not None
+    sc = cell._structured_cell
+    inchannel = sc.inchannels[path]
+    if inchannel._void:
+        inchannel._void = False
+    downstreams = livegraph.paths_to_downstream[cell]
+    for outpath in sc.outchannels:
+        if outpath[:len(path)] != path:
+            continue
+        for accessor in downstreams[outpath]:
+            propagate_accessor(livegraph, accessor, void=False)
 
 def propagate_cell(livegraph, cell):
     if cell._structured_cell is not None:

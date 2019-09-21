@@ -272,6 +272,7 @@ Use ``Cell.status()`` to get its status.
         """connects the cell to a target"""
         from .worker import InputPin, EditPin, OutputPin
         from .transformer import Transformer
+        from .reactor import Reactor
         from .macro import Macro, Path
         from .link import Link
         manager = self._get_manager()
@@ -281,13 +282,14 @@ Use ``Cell.status()`` to get its status.
             target = target.get_linked()
 
         if isinstance(target, Inchannel):
-            target_subpath = target.path
+            target_subpath = target.subpath
             target = target.structured_cell().buffer
         elif isinstance(target, Outchannel):
             raise TypeError("Outchannels must be the source of a connection, not the target")
         
         if isinstance(target, Cell):
-            assert not target._structured_cell
+            if target_subpath is None:
+                assert not target._structured_cell
         elif isinstance(target, Path):
             pass
         elif isinstance(target, InputPin):

@@ -44,18 +44,12 @@ class ReadAccessor(Accessor):
                 return False
             target_celltype = macropath._cell._celltype
             target_subcelltype = macropath._cell._subcelltype
-        target_cell_path = None
         target = self.write_accessor.target
-        if isinstance(target, Cell):
-            target_cell_path = str(cell)
-        target_hash_pattern = self.write_accessor.hash_pattern
         expression = Expression(
             checksum, self.path, celltype,
             target_celltype,
             target_subcelltype, 
-            target_cell_path=target_cell_path,
             hash_pattern=self.hash_pattern,
-            target_hash_pattern=target_hash_pattern
         )
         if self.expression is not None:
             if expression == self.expression:

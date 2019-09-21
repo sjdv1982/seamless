@@ -52,17 +52,24 @@ class AccessorUpdateTask(Task):
             else:
                 raise TypeError(type(worker))
         elif isinstance(target, Cell): # If a cell:
-            if accessor.write_accessor.path is None:
+            path = accessor.write_accessor.path
+            if path is None:
                 await manager.taskmanager.await_upon_connection_tasks(self.taskid)
                 manager._set_cell_checksum(
                     target, expression_result_checksum, 
                     False, None, prelim=accessor._prelim
                 )
+                CellUpdateTask(manager, target).launch()
             else:
-                # Run a set-non-authorative-path *action*, which will launch a set-path task.
-                raise NotImplementedError #livegraph branch
-            # Launch a cell update task (it will automatically await the set-path task, if any)
-            CellUpdateTask(manager, target).launch()
+                if not target._destroyed:
+                    sc = target._structured_cell
+                    assert sc is not None
+                    inchannel = sc.inchannels[path]
+                    manager._set_inchannel_checksum(
+                        inchannel, expression_result_checksum, 
+                        False, None, prelim=accessor._prelim
+                    )
+                    StructuredCellJoinTask(manager, sc).launch()                
         else:
             raise TypeError(target)
             
@@ -72,6 +79,7 @@ from .transformer_update import TransformerUpdateTask
 from .reactor_update import ReactorUpdateTask
 from .macro_update import MacroUpdateTask
 from .cell_update import CellUpdateTask
+from .structured_cell import StructuredCellJoinTask
 from ...worker import Worker
 from ...transformer import Transformer
 from ...reactor import Reactor
