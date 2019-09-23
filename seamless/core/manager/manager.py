@@ -261,6 +261,7 @@ class Manager:
 
     @run_in_mainthread
     def set_cell_buffer(self, cell, buffer, checksum):
+        assert cell._hash_pattern is None
         assert self.livegraph.has_authority(cell), cell
         reason = None
         if buffer is None:

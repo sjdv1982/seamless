@@ -47,7 +47,7 @@ class UnboundManager:
         if isinstance(source, (OutputPinBase, EditPinBase)) and source_subpath is None:
             return self.connect_pin(source, target)
         else:
-            raise NotImplementedError # livegraph branch
+            raise TypeError(source)
 
     def connect_cell(self, cell, other, cell_subpath):
         from .macro import Path
@@ -317,8 +317,8 @@ class UnboundContext(SeamlessBase):
                     cell, checksum, initial, from_structured_cell
                 )
                 structured_cell = cell._structured_cell
-                if structured_cell is not None:  
-                    raise NotImplementedError 
+                if structured_cell is not None and structured_cell.auth is cell:  
+                    raise NotImplementedError # livegraph branch
                     """
                     buffer_item = manager.get_value_from_checksum(checksum)
                     if buffer_item is not None:

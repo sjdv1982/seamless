@@ -126,7 +126,7 @@ class Transformer(Worker):
         tcache.hard_cancel(self)
 
     def shell(self):
-        raise NotImplementedError #livegraph branch
+        raise NotImplementedError
 
     def _get_status(self):
         from .status import status_transformer

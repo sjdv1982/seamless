@@ -107,8 +107,6 @@ Use ``Cell.status()`` to get its status.
     def status(self):        
         """The cell's current status."""        
         from .status import format_status
-        if self._structured_cell is not None:
-            raise NotImplementedError # livegraph branch
         status = self._get_status()
         statustxt = format_status(status)
         return "Status: " + statustxt 
@@ -152,6 +150,7 @@ Use ``Cell.status()`` to get its status.
         manager = self._get_manager()
         if isinstance(manager, UnboundManager):
             raise Exception("Cannot ask the cell value of a context that is being constructed by a macro")
+        # Sovereign
         raise NotImplementedError # livegraph branch
 
     @property

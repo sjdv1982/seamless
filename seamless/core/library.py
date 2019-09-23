@@ -204,7 +204,6 @@ def _libcell(path, mandated_celltype, *args, **kwargs):
     return c
 
 def lib_has_path(libname, path):
-    raise NotImplementedError ### livegraph branch
     assert libname in _lib
     #print("lib_has_path", libname, path, path in _lib[libname], _lib[libname])
     return path in _lib[libname]

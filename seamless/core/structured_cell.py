@@ -161,7 +161,8 @@ class StructuredCell(SeamlessBase):
                     self._auth_value = {}
                 elif isinstance(path[0], list):
                     self._auth_value = []
-            set_subpath(self._auth_value, None, path, value)
+            if len(path):
+                set_subpath(self._auth_value, None, path, value)
         else:
             if not isinstance(self._auth_value, (list, dict)):
                 if not len(path):

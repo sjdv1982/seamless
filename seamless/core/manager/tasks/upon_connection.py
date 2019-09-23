@@ -61,7 +61,11 @@ class UponConnectionTask(Task):
         if target_subpath is None:
             # simple pin-cell
             return livegraph.connect_pin_cell(self.current_macro, source, target)
-        raise NotImplementedError # livegraph branch
+        else:
+            msg = """Pins cannot be connected directly to structured cells
+Use a simple cell as an intermediate
+Source %s; target %s, %s""" % (source, target, target_subpath)
+            raise TypeError(msg)
 
     def _connect_cell_pin(self):
         source, target, source_subpath, target_subpath = (
@@ -76,12 +80,22 @@ class UponConnectionTask(Task):
                 return
             # simple cell-pin
             return livegraph.connect_cell_pin(self.current_macro, source, target)
-        raise NotImplementedError # livegraph branch
+        else:
+            msg = """Pins cannot be connected directly from structured cells
+Use a simple cell as an intermediate
+Source %s, %s; target %s""" % (source, source_subpath, target)
+            raise TypeError(msg)
 
     def _connect_cell_macropath(self):        
-        assert self.target_subpath is None
-        if self.source_subpath is not None:
-            raise NotImplementedError # livegraph branch ; will we ever support this?
+        source, target, source_subpath, target_subpath = (
+          self.source, self.target, self.source_subpath, self.target_subpath
+        )
+        assert target_subpath is None
+        if source_subpath is not None:
+            msg = """Macro paths cannot be connected directly from structured cells
+Use a simple cell as an intermediate
+Source %s, %s; target %s""" % (source, source_subpath, target)
+            raise TypeError(msg)
         livegraph = self.manager().livegraph
         return livegraph.connect_cell_macropath(self.current_macro, self.source, self.target)
 
@@ -93,13 +107,19 @@ class UponConnectionTask(Task):
         elif isinstance(self.target, MacroPath):
             return self._connect_cell_macropath()
         else:
-            raise NotImplementedError # livegraph branch
+            msg = "Cannot connect cell to %s(%s)"
+            raise TypeError(msg % (self.target, type(self.target)))
 
-    def _connect_macropath(self):        
-        assert isinstance(self.target, Cell) # if not, should have been caught earlier
-        assert self.source_subpath is None
-        if self.target_subpath is not None:
-            raise NotImplementedError # livegraph branch ; will we ever support this?
+    def _connect_macropath(self):
+        source, target, source_subpath, target_subpath = (
+          self.source, self.target, self.source_subpath, self.target_subpath
+        )
+        assert isinstance(target, Cell) # if not, should have been caught earlier
+        assert source_subpath is None
+        if target_subpath is not None:
+            msg = """Macro paths cannot be connected directly to a structured cells
+Use a simple cell as an intermediate
+Source %s; target %s, %s""" % (source, target, target_subpath)
         livegraph = self.manager().livegraph
         return livegraph.connect_macropath_cell(self.current_macro, self.source, self.target)
 

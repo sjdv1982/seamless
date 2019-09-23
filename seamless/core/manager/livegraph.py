@@ -349,7 +349,7 @@ class LiveGraph:
             current_macro, source, source_path, target, target_path
         ):
         """Connect one structured cell (outchannel) to another one (inchannel)"""
-        raise NotImplementedError # livegraph branch
+        raise TypeError("Structured cells cannot be connected to each other; use a simple cell as intermediate")
 
     def connect_macropath_cell(self, current_macro, source, target):
         """Connect a macropath to a simple cell"""
@@ -458,8 +458,7 @@ class LiveGraph:
         cell = cell_or_macropath
         if path is not None:
             assert cell._structured_cell is not None
-            assert cell in self.buffercells
-            raise NotImplementedError # livegraph branch
+            return not cell._structured_cell.no_auth
         assert cell._structured_cell is None
         if cell._destroyed and cell in self.temp_auth:            
             return self.temp_auth[cell]

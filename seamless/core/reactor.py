@@ -107,7 +107,7 @@ class Reactor(Worker):
         return "Pin name: %s\n"  % pinname + exc
 
     def shell(self):
-        raise NotImplementedError #livegraph branch
+        raise NotImplementedError
 
     def destroy(self, *, from_del):
         if not from_del:

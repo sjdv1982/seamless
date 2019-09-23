@@ -46,28 +46,6 @@ class Worker(SeamlessBase):
         else:
             return self._pins[attr]
 
-    def touch(self):
-        raise NotImplementedError ###cache branch, also see BAK/[transformer/macro/reactor].py _touch
-        """
-        manager = self._get_manager()
-        manager.touch_worker(self)
-        """
-
-    @property
-    def debug(self):
-        raise NotImplementedError ###cache branch
-
-    @debug.setter
-    def debug(self, value):        
-        assert isinstance(value, bool), value
-        raise NotImplementedError ###cache branch
-        """
-        old_value = self.transformer.debug
-        if value != old_value:            
-            self.transformer.debug = value
-            manager = self._get_manager()
-            manager.touch_worker(self)
-        """
     
     def __dir__(self):
         return object.__dir__(self) + list(self._pins.keys())
@@ -168,8 +146,7 @@ class OutputPin(OutputPinBase):
             raise TypeError("Outchannels must be the source of a connection, not the target")
 
         if isinstance(target, Path):
-            raise NotImplementedError # livegraph branch
-            # something like ._verify_connect...
+            raise TypeError("Workers may not connect to paths")
 
         if isinstance(target, Cell):
             assert not target._structured_cell
@@ -296,7 +273,7 @@ class EditPin(EditPinBase):
             upstreams = livegraph.transformer_to_upstream[worker]
             accessor = upstreams[self.name]        
         else:
-            raise NotImplementedError ###cache branch
+            raise NotImplementedError # reactor, macro accessor status
         stat = status_accessor(accessor)
         return format_status(stat)
 

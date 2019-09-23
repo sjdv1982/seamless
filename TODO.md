@@ -1,3 +1,10 @@
+UPDATE: A. - D., left TODO:
+- Preliminary (WIP)
+- Non-() inchannels (WIP)
+- Channels + deep cells (async expression evaluation)
+- Schema + deep cells (to test)
+- Editchannels
+
 A. Do the final implementation of the low-level for the LiveGraph branch
 DONE
 
@@ -10,9 +17,9 @@ Intermezzo:
 
 B. Silk / Structured cells
   Silk overhaul: DONE
-    Rip buffer, fork; no automatic invocation of validate() 
+    Rip buffer, fork; no automatic invocation of validate() DONE
   Monitor: dummy stores paths in dict/list, then invokes validate() DONE
-  Structured cell overhaul:
+  Structured cell overhaul: # DONE
   => Structured cell becomes a backend
   - Authoritative portion (stored in cell)
   - Inchannel checksums (_last_inputs, like transformers)
@@ -61,7 +68,7 @@ B. Silk / Structured cells
 TODO:
   disallow modification of cells under macro control, unless sovereign.
 
-C. Deep cells
+C. Deep cells DONE
 (In parallel, implement/extend the expression evaluation engine)
 As long as they are of cell type "mixed", a cell can be annotated with a *hash pattern*.
 A hash pattern describes how the value of the cell is stored as checksums.
@@ -106,72 +113,9 @@ Internally, the deep structure is stored as follows.
   contains the length of the original value list, and item 2 is a list with one hex checksum
   (or deep sub-structure) for each chunk.
 
-D. Checksum cells. Contain a checksum in hex value.
-Can be trivially converted to text, str. Can be re-interpreted from text, str.
-All other conversions are based on re-interpretation (see below)
-If connected from a non-deep cell, the value is equal to that cell's checksum attribute.
-If connected from a deep cell, the value is equal to that cell's deep structure (as dict/list).
-Likewise, when connecting from a checksum cell:
-- A non-deep cell checks that the checksum is a single checksum, and accepts that as its own checksum
-- A deep cell checks that the deep structure is correct, and accepts that deep structure as its own.
-Since checksum cells can be bound to macro paths, and deep cells cannot, this is currently the only way
- to connect deep cells inside a macro to the outside.
 
-E. Deep transformers.
 
-Deep transformers are the only way to achieve parallelism within a transformer.
-(earlier designs concerning streams and blocks are now OBSOLETED)
-To make a transformer deep, it must have received a hash pattern parameter during construction.
-The hash pattern is a dict consisting of the following entries:
-- an __order__ entry, consisting of a list of input pins. The hash pattern must contain entries for
-all of those input pins (and no others)
-- One entry for each input pin, containing a hash pattern for that input pin. String keys are forbidden,
-only *, ?, and ?N are allowed.
-- One entry for the output pin, containing its hash pattern.
-Seamless will auto-compute the correct hash pattern for the output pin, and check that the supplied hash pattern is the same. The hash pattern is a nested dict formed by the Cartesian combination of input pin hash patterns.
-In case of chunks, the transformer operates on each chunk and returns one value, so the output pin hash pattern
- will be a list.
-Simple example:
-{
-  "__order__": ["inp1"],
-  "inp1": {"*": "#"},
-  "outp": {"*": "#"},
-}
-Medium example:
-{
-  "__order__": ["inp1", "inp2"],
-  "inp1": {"*": "#"}, #dict
-  "inp2": {"?": "#"}, #list
-  "outp": {"*": {"?": "#"} }, #dict of lists
-}
-Complex example:
-{
-  "__order__": ["inp1", "inp2", "inp3"],
-  "inp1": {"*": "#"}, #dict
-  "inp2": {"?": "#"}, #list
-  "inp3": {"?5": "#"}, #list, to be chunked
-  "outp": {"*": {"?":  {"?": "#"}} }, #dict of lists of lists
-}
-Implementation: 
-The hash pattern is part of the transformation-as-a-whole (__hash_pattern__ field).
-The transformation-as-a-whole is checked for cache hits and remote
- status/submission, as usual. (Communion servers will
- refuse to execute transformation jobs with hash patterns.
- Since expression evaluation is task-based, and progress is more than one number,
- it would be very hard to implement!)
-If the transformation-as-a-whole must be executed locally,
- it is easily divided into transformations (which *can* be run remotely!)
- based on the input pin deep structures
-All transformations are immediately spawned in parallel.
-set_transformer_result and incref_transformation will be adapted
-such as to accept a subpath argument. As they only involve checksums, no tasks need
-to be launched: the transformer simply keeps a deepcell structure and list of
-outstanding transformations (including their progress/prelim values).
-Whenever a new transformation checksum is received, the deepcell structure is
-quickly updated and its new checksum quickly computed. This checksum is then
-send as the transformer's result: prelim if any transformation is still missing
-(or is prelim), non-prelim otherwise. The transformation's overall progress is
-also computed based on the progresses of the outstanding transformations.
+
 
 E. The mid/high level
 1. Change the call graph
@@ -179,6 +123,9 @@ E. The mid/high level
  When translating a graph, only set authoritative parts
  Everything else goes to expression cache, transformer cache!
 2. Change the translation macros (esp. for StructuredCell)
+Loading structured cell auth from graph checksum can be tricky,
+ maybe specialized routine (see unbound_context line 321)
+What about structured cells + library? Think and study how it was before livegraph
 3. Bring back sovereignty
 4. Run tests
 5. Test in Jupyter
@@ -507,6 +454,7 @@ Seamless is now in beta. Shift attention to API stability, unit tests, etc. Lear
  and ask for help.
 
 Medium-term:
+- Re-enable remote module compilation jobs
 - (UPDATE: DONE. Just get my patch into pandas...)
   Add Pandas as a query engine. Querying in Pandas is fantastic (much better than numexpr).
   Usage is as simple as `from pandas.core.computation.eval import eval as pd_eval`, and then:
@@ -548,9 +496,21 @@ Long-term:
 - Reactor start and stop side effects (see below), and other policies involving
   the New Way.
 - Set up user library directory and robogit. User contributions to the stdlib should be made easy.
+- Checksum cells (YAGNI?)
+Contain a checksum in hex value.
+Can be trivially converted to text, str. Can be re-interpreted from text, str.
+All other conversions are based on re-interpretation (see below)
+If connected from a non-deep cell, the value is equal to that cell's checksum attribute.
+If connected from a deep cell, the value is equal to that cell's deep structure (as dict/list).
+Likewise, when connecting from a checksum cell:
+- A non-deep cell checks that the checksum is a single checksum, and accepts that as its own checksum
+- A deep cell checks that the deep structure is correct, and accepts that deep structure as its own.
+Since checksum cells can be bound to macro paths, and deep cells cannot, this is currently the only way
+ to connect deep cells inside a macro to the outside.
+
 
 Very long-term:
-- Python debugging / code editor (WIP) (see seamless-towards-02.md)
+- Python debugging (see seamless-towards-02.md)
   UPDATE: native widgets are probably outdated, but some network channel (Jupyter protocol?)
   would probably be good. Keep an eye on analogous developments in VS Code and JupyterLab.
 - Full feature implementation of Silk, e.g. constructs (see silk.md)

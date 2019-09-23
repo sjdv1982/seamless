@@ -64,8 +64,7 @@ def propagate_cell_path(livegraph, cell, path):
             propagate_accessor(livegraph, accessor, void=False)
 
 def propagate_cell(livegraph, cell):
-    if cell._structured_cell is not None:
-        raise NotImplementedError # livegraph branch
+    assert cell._structured_cell is None
     return propagate_simple_cell(livegraph, cell)
 
 def propagate_transformer(livegraph, transformer):

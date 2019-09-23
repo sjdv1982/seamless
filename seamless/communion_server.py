@@ -415,7 +415,7 @@ class CommunionServer:
                 )
             elif type == "buffer_length":
                 assert self.config_servant[type]
-                raise NotImplementedError ## livegraph branch 
+                raise NotImplementedError
             
             elif type == "semantic_to_syntactic":
                 assert self.config_servant["semantic_to_syntactic"]
@@ -473,7 +473,7 @@ class CommunionServer:
 
             elif type == "build_module_job":
                 assert self.config_servant[type]
-                raise NotImplementedError ## livegraph branch 
+                raise NotImplementedError
                 d_content = json.loads(content)
                 full_module_name = d_content["full_module_name"]
                 checksum = bytes.fromhex(d_content["checksum"])
@@ -482,7 +482,7 @@ class CommunionServer:
             
             elif type == "build_module_status":
                 assert self.config_servant[type]
-                raise NotImplementedError ## livegraph branch 
+                raise NotImplementedError
             else:
                 raise ValueError(type)
         except Exception as exc:

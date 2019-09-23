@@ -9,8 +9,6 @@ class SetCellBufferTask(Task):
         self.buffer = buffer      
         self.checksum = checksum
         self.dependencies.append(cell)
-        if cell._hash_pattern is not None:
-            raise NotImplementedError  # livegraph branch
 
     async def _run(self):
         from . import DeserializeBufferTask, CalculateChecksumTask, CellUpdateTask
