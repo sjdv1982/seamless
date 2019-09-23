@@ -44,8 +44,20 @@ class CellUpdateTask(Task):
                 AccessorUpdateTask(manager, accessor).launch()
         for editpin in livegraph.cell_to_editpins[cell]:
             reactor = editpin.worker_ref()
-            ReactorUpdateTask(manager, reactor).launch()
+            ReactorUpdateTask(manager, reactor).launch()        
+        sc = cell._structured_cell
+        if sc is not None:
+            if sc.schema is not cell:
+                print("WARNING: cell %s has a structured cell but is not its schema, shouldn't happen during cell update" % cell)
+            buffer = await GetBufferTask(manager, checksum).run()
+            value = await DeserializeBufferTask(
+                manager, buffer, checksum, cell.celltype, copy=True
+            )
+            manager.update_schema_cell(cell, value, None)
+
         return None
 
 from .accessor_update import AccessorUpdateTask
 from .reactor_update import ReactorUpdateTask
+from .get_buffer import GetBufferTask
+from .deserialize_buffer import DeserializeBufferTask

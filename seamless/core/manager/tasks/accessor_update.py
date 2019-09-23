@@ -12,13 +12,13 @@ class AccessorUpdateTask(Task):
         # Get the expression. If it is None, do an accessor void cancellation
         expression = accessor.expression        
         manager = self.manager()
-        
+                
         if expression is None:
             accessor._status_reason = StatusReasonEnum.UNDEFINED
             manager.cancel_accessor(accessor, void=True, origin_task=self)
             return        
 
-        expression_result_checksum = await EvaluateExpressionTask(manager, expression).run()
+        expression_result_checksum = await EvaluateExpressionTask(manager, expression).run()        
 
         # If the expression result is None, do an accessor void cancellation
         if expression_result_checksum is None:

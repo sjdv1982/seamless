@@ -9,6 +9,7 @@ class DummyTaskManager:
         pass
 
 class UnboundManager:
+    _destroyed = False  # remains False
     taskmanager = DummyTaskManager
     def __init__(self, ctx):
         self._ctx = weakref.ref(ctx)
@@ -21,7 +22,7 @@ class UnboundManager:
         self.cells[cell.path] = cell
 
     def register_structured_cell(self, structured_cell):
-        pass # no-op
+        self._registered.add(structured_cell)
 
     def register_transformer(self, transformer):
         self._registered.add(transformer)
@@ -35,6 +36,9 @@ class UnboundManager:
     def register_macropath(self, macropath):
         self._registered.add(macropath)
 
+    def set_auth_path(self, *args, **kwargs):
+        raise Exception("Cannot set structured cell handle in macro mode")
+
     def set_cell(self, cell, value):
         assert cell._get_manager() is self
         assert cell in self._registered
@@ -42,19 +46,20 @@ class UnboundManager:
 
     def connect(self, source, source_subpath, target, target_subpath):
         from .macro import Path
-        if isinstance(source, (Cell, Path)) and source_subpath is None:
-            return self.connect_cell(source, target, None)
-        if isinstance(source, (OutputPinBase, EditPinBase)) and source_subpath is None:
+        if isinstance(source, (Cell, Path)):
+            return self.connect_cell(source, source_subpath, target, target_subpath)
+        if isinstance(source, (OutputPinBase, EditPinBase)):
+            assert source_subpath is None and target_subpath is None
             return self.connect_pin(source, target)
         else:
             raise TypeError(source)
 
-    def connect_cell(self, cell, other, cell_subpath):
+    def connect_cell(self, cell, cell_subpath, other,  other_subpath):
         from .macro import Path
         if not isinstance(cell, Path):
             assert cell._get_manager() is self
             assert cell in self._registered
-        self.commands.append(("connect cell", (cell, other, cell_subpath)))
+        self.commands.append(("connect cell", (cell, cell_subpath, other, other_subpath)))
 
     def connect_pin(self, pin, cell):
         assert pin._get_manager() is self
@@ -78,8 +83,9 @@ class UnboundManager:
             for com, args in self.commands:
                 if com != "connect cell":
                     continue
-                cell, other, cell_subpath = args
+                cell, cell_subpath, other, other_subpath = args
                 if other is pin:
+                    assert other_subpath is None
                     cells.append((cell, cell_subpath))
         elif isinstance(pin, OutputPin):
             for com, args in self.commands:
@@ -108,6 +114,7 @@ class UnboundContext(SeamlessBase):
     _naming_pattern = "ctx"    
     _bound = None
     _context = None
+    _realmanager = None
 
     def __init__(
         self, *, 
@@ -171,9 +178,12 @@ class UnboundContext(SeamlessBase):
             child._context = weakref.ref(self)
             child._root_ = self._root_
             self._children[childname] = child
+            for subchildname, subchild in child._children.items():
+                subchild._set_context(child, subchildname)
         else:
             self._children[childname] = child
-            child._set_context(self, childname)
+            if self._realmanager is not None:
+                child._set_context(self, childname)
 
     def _add_new_cell(self, cell):
         assert isinstance(cell, Cell)
@@ -238,13 +248,14 @@ class UnboundContext(SeamlessBase):
         return self._root_
 
     def _bind_stage1(self, ctx):
-        from .context import Context
         ctx._mount = copy.deepcopy(self._mount)
         ctxmap = {}
         manager = ctx._get_manager()
 
         def register(child):
-            if not isinstance(child, (Cell, Reactor, Transformer, Macro)):
+            if not isinstance(child, 
+                (Cell, Reactor, Transformer, Macro)
+            ):
                 return
             assert child in self._realmanager._registered, child
             if isinstance(child, Cell):
@@ -259,15 +270,17 @@ class UnboundContext(SeamlessBase):
         for childname, child in self._children.items():
             if isinstance(child, UnboundContext):
                 bound_ctx = Context()
-                bound_ctx._macro = curr_macro()                
+                bound_ctx._macro = curr_macro()
+                child._bound = bound_ctx                
                 setattr(ctx, childname, bound_ctx)
                 ctxmap[childname] = bound_ctx
         for childname, child in self._children.items():
             if isinstance(child, UnboundContext):
                 continue
-            else:                
+            else:
                 ctx._add_child(childname, child)
-                register(child)
+                if not isinstance(child, StructuredCell):
+                    register(child)
         for childname, child in self._children.items():
             if isinstance(child, UnboundContext):
                 bound_ctx = ctxmap[childname]
@@ -275,8 +288,6 @@ class UnboundContext(SeamlessBase):
                     self._realmanager.commands += child._realmanager.commands
                     child._realmanager.commands.clear()
                 child._bind_stage1(bound_ctx)                
-            else:
-                continue
         ctx._auto = self._auto
         self._bound = ctx        
 
@@ -305,8 +316,8 @@ class UnboundContext(SeamlessBase):
                     continue
                 manager.set_cell(cell, value)
             elif com == "connect cell":                
-                cell, other, cell_subpath = args
-                manager.connect(cell, None, other, cell_subpath)
+                cell, cell_subpath, other, other_subpath = args
+                manager.connect(cell, cell_subpath, other, other_subpath)
             elif com == "connect pin":
                 pin, cell = args
                 manager.connect(pin, None, cell, None)
@@ -336,11 +347,13 @@ class UnboundContext(SeamlessBase):
         from .macro import Path
         if ctx._toplevel:       
             assert self._toplevel        
-        self._bind_stage1(ctx)
+        self._bind_stage1(ctx)        
         manager = ctx._get_manager()
         for reg in self._realmanager._registered:
             if isinstance(reg, Path):
                 manager.register_macropath(reg)
+            elif isinstance(reg, StructuredCell):
+                manager.register_structured_cell(reg)
         ctx._root()._cache_paths()
         self._bind_stage2(ctx._get_manager())
     

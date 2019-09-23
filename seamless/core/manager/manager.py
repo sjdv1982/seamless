@@ -238,8 +238,8 @@ class Manager:
 
     @run_in_mainthread
     def set_auth_path(self, structured_cell, path, value):
-        self.cancel_cell_path(
-            structured_cell._data, path, value is None
+        self.cancel_scell_inpath(
+            structured_cell, path, value is None
         )
         self.taskmanager.cancel_structured_cell(structured_cell)
     
@@ -352,7 +352,7 @@ If void=True, all dependencies are set to void as well.
 If origin_task is provided, that task is not cancelled."""
         assert isinstance(cell, Cell)
         if cell._structured_cell is not None:
-            assert cell._structured_cell.schema is cell, cell # cancel_cell only on schema cells, else use cancel_cell_path
+            assert cell._structured_cell.schema is cell, cell # cancel_cell only on schema cells, else use cancel_scell_inpath
         if cell._destroyed:
             return
         if cell._canceling:
@@ -373,9 +373,18 @@ If origin_task is provided, that task is not cancelled."""
             cell._canceling = False
 
     @mainthread
+    def cancel_scell_inpath(self, sc, path, void):        
+        assert isinstance(sc, StructuredCell)
+        cell = sc._data
+        for outchannel in sc.outchannels:
+            if outchannel[:len(path)] == path:
+                self.cancel_cell_path(cell, outchannel, void)
+
+    @mainthread
     def cancel_cell_path(self, cell, path, void):
         assert isinstance(cell, Cell)
         assert cell._structured_cell is not None
+        assert cell._structured_cell._data is cell, (cell, cell._structured_cell._data)
         if cell._destroyed:
             return
         livegraph = self.livegraph
@@ -400,11 +409,15 @@ If origin_task is provided, that task is not cancelled."""
         if isinstance(target, Cell):
             if accessor.write_accessor.path is None:
                 if target._structured_cell is not None:
-                    assert target._structured_cell.schema is target, target # cancel_cell only on schema cells, else use cancel_cell_path
+                    assert target._structured_cell.schema is target, target # cancel_cell only on schema cells, else use cancel_scell_inpath
                 return self.cancel_cell(target, void=void)
             else:
                 assert target._structured_cell is not None
-                self.cancel_cell_path(target, accessor.write_accessor.path,void=void)
+                self.cancel_scell_inpath(
+                    target._structured_cell, 
+                    accessor.write_accessor.path,
+                    void=void
+                )
         elif isinstance(target, Worker):
             if isinstance(target, Transformer):
                 return self.cancel_transformer(target, void=void, reason=reason)
@@ -601,4 +614,5 @@ from ..macro import Macro, _global_paths
 from ..reactor import Reactor
 from .accessor import ReadAccessor
 from ..status import StatusReasonEnum
+from ..structured_cell import StructuredCell
 from .tasks.structured_cell import StructuredCellJoinTask

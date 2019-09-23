@@ -45,11 +45,19 @@ class StructuredCellJoinTask(Task):
             else:
                 if sc.no_auth:
                     value = sc._auth_value
-                elif isinstance(paths[0], int):
-                    value = []
-                else:
-                    value = {}
-                raise NotImplementedError # livegraph branch
+                if value is None:
+                    if isinstance(paths[0], int):
+                        value = []
+                    else:
+                        value = {}
+                for path in paths:
+                    checksum = sc.inchannels[path]._checksum
+                    if checksum is not None:
+                        buffer = await GetBufferTask(manager, checksum).run()
+                        subvalue = await DeserializeBufferTask(
+                            manager, buffer, checksum, "mixed", False
+                        ).run()
+                        await set_subpath(value, sc.hash_pattern, path, subvalue)
         else:            
             value = sc._auth_value
         if checksum is None and value is not None:
@@ -65,8 +73,6 @@ class StructuredCellJoinTask(Task):
             sc.buffer._set_checksum(checksum, from_structured_cell=True)
         ok = True
         if value is not None and sc.schema is not None:
-            if len(sc.inchannels):
-                raise NotImplementedError # livegraph branch  # see above
             #schema = sc.schema.value  # incorrect, because potentially out-of-sync...
             schema = sc._schema_value
             if schema is not None:
@@ -85,18 +91,23 @@ class StructuredCellJoinTask(Task):
             if len(sc.outchannels):
                 livegraph = manager.livegraph
                 downstreams = livegraph.paths_to_downstream[sc._data]
-                if checksum is not None and value is None:
+                if checksum is not None:
                     cs = bytes.fromhex(checksum)
-                    buf = await GetBufferTask(manager, cs).run()
-                    value = await DeserializeBufferTask(manager, buf, cs, "mixed", copy=False).run()
+                    """
+                    if value is None:
+                        buf = await GetBufferTask(manager, cs).run()
+                        value = await DeserializeBufferTask(manager, buf, cs, "mixed", copy=False).run()
+                    """
+                else:
+                    cs = None
                 for out_path in sc.outchannels:
                     for mod_path in modified_paths:
-                        if out_path[:len(mod_path)] == mod_path:
-                            print("UPDATE!", out_path)
+                        if out_path[:len(mod_path)] == mod_path:                            
                             for accessor in downstreams[out_path]:
-                                changed = accessor.build_expression(livegraph, cs)
+                                changed = accessor.build_expression(livegraph, cs)                                
                                 print("TODO: prelim propagation from inchannel (prelim=False if from auth)")
-                                AccessorUpdateTask(manager, accessor).launch()
+                                if changed:
+                                    AccessorUpdateTask(manager, accessor).launch()
             sc.modified_auth_paths.clear()
             sc.modified_inchannels.clear()
 
@@ -106,4 +117,4 @@ from .get_buffer import GetBufferTask
 from .checksum import CalculateChecksumTask
 from .accessor_update import AccessorUpdateTask
 from ....silk.Silk import Silk, ValidationError
-from ...protocol.expression import get_subpath
+from ...protocol.expression import get_subpath, set_subpath

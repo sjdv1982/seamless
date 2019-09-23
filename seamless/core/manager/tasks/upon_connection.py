@@ -10,16 +10,19 @@ class UponConnectionTask(Task):
         self.target = target
         self.target_subpath = target_subpath
         self.current_macro = curr_macro()
-        print("SOURCE", source, "TARGET", target)
         super().__init__(manager)
         if isinstance(source, (OutputPin, EditPin) ):
-            self.dependencies.append(source.worker_ref())
-        else:    
+            self.dependencies.append(source.worker_ref())                    
+        elif isinstance(source, Cell):
             self.dependencies.append(source)
-        if isinstance(target, (InputPin, EditPin) ):
-            self.dependencies.append(target.worker_ref())
         else:
+            raise TypeError(source)
+        if isinstance(target, (InputPin, EditPin) ):
+            self.dependencies.append(target.worker_ref())        
+        elif isinstance(target, Cell):
             self.dependencies.append(target)
+        else:
+            raise TypeError(target)
 
     def _connect_cell_cell(self):
         source, target, source_subpath, target_subpath = (

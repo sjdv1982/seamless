@@ -45,6 +45,7 @@ class StructuredCell(SeamlessBase):
         buffer=None,
         hash_pattern=None
     ):      
+        from .unbound_context import UnboundManager
         if len(editchannels):
             raise NotImplementedError # livegraph branch
 
@@ -105,8 +106,11 @@ class StructuredCell(SeamlessBase):
 
         self._auth_value = None
         self._schema_value = None
-        if self.schema is not None and self.schema.checksum is not None:
-            self._schema_value = self.schema.value
+
+        if schema is not None:
+            if not isinstance(schema._get_manager(), UnboundManager):
+                if schema.checksum is not None:
+                    self._schema_value = schema.value
         if hash_pattern is not None:
             validate_hash_pattern(hash_pattern)
         self.hash_pattern = hash_pattern
@@ -265,11 +269,16 @@ class StructuredCell(SeamlessBase):
         self._data._add_traitlet(traitlet)
 
     def _set_context(self, context, name):
+        from .unbound_context import UnboundManager
         has_ctx = self._context is not None
         super()._set_context(context, name)
         assert self._context() is context
         manager = self._get_manager()
-        assert manager is self._data._get_manager()
+        data_manager = self._data._get_manager()
+        if not isinstance(manager, UnboundManager):
+            if isinstance(data_manager, UnboundManager):
+                data_manager = data_manager._ctx()._bound
+        assert manager is data_manager, (manager, self._data._get_manager())
         if not has_ctx:
             manager.register_structured_cell(self)
 

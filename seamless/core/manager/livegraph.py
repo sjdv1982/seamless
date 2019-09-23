@@ -338,7 +338,7 @@ class LiveGraph:
         self.cell_to_downstream[source].append(read_accessor)
         self.paths_to_upstream[target][target_path] = read_accessor
         
-        manager.cancel_cell_path(target, target_path, void=False)
+        manager.cancel_scell_inpath(target._structured_cell, target_path, void=False)
         manager.taskmanager.register_accessor(read_accessor) 
         sc = target._structured_cell
         sc.inchannels[target_path]._status_reason = StatusReasonEnum.UPSTREAM       
@@ -501,7 +501,8 @@ class LiveGraph:
         if isinstance(target, Cell):
             path = accessor.write_accessor.path
             if path is not None:
-                manager.cancel_cell_path(target, path, True)
+                sc = target._structured_cell                
+                manager.cancel_scell_inpath(sc, path, True)
                 if target in self.paths_to_upstream:
                     self.paths_to_upstream[target][path] = None
             else:

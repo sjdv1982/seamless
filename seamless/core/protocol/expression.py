@@ -64,6 +64,46 @@ def get_subpath_sync(value, hash_pattern, path):
 async def get_subpath(value, hash_pattern, path):
     if hash_pattern is None:
         return ("value", _get_subpath(value, path))
+    deep_structure = value
+    result, post_path = access_deep_structure(
+        deep_structure, hash_pattern, path
+    )
+    if post_path is None:
+        if result is None:
+            return None
+        elif isinstance(result, str):            
+            checksum = bytes.fromhex(result)
+            return ("checksum", checksum)
+            #buffer = await get_buffer(checksum, buffer_cache)
+            #value = await deserialize(buffer, checksum, "mixed", copy=True)
+            #return value
+        else:
+            sub_structure, sub_hash_pattern = result
+            checksums = deep_structure_to_checksums(
+               sub_structure, sub_hash_pattern
+            )
+            buffer_dict = {}
+            for checksum in checksums: # TODO: optimize by running in parallel
+                cs = checksum
+                if checksum is not None:
+                    cs = bytes.fromhex(checksum)
+                buffer = await get_buffer(cs, buffer_cache)  
+                buffer_dict[checksum] = buffer
+            value = await deep_structure_to_value(
+                sub_structure, sub_hash_pattern,
+                buffer_dict, copy=True
+            )
+            return ("value", value)
+    else:
+        checksum = bytes.fromhex(result)
+        return ("checksum", checksum)
+        #buffer = await get_buffer(checksum, buffer_cache)
+        #value = await deserialize(buffer, checksum, "mixed", copy=True)
+        #return _get_subpath(value, post_path)
+
+async def get_subpath(value, hash_pattern, path):
+    if hash_pattern is None:
+        return ("value", _get_subpath(value, path))
     else:
         raise NotImplementedError # livegraph branch
 
@@ -152,7 +192,92 @@ def set_subpath_sync(value, hash_pattern, path, subvalue):
     else:
         raise ValueError(result)
             
-            
+
+async def set_subpath(value, hash_pattern, path, subvalue):
+    if hash_pattern is None:
+        _set_subpath(value, path, subvalue)
+        return
+    deep_structure = value
+    if value is None:
+        cs = None
+    else:
+        buffer = await serialize(subvalue, "mixed")
+        checksum = await calculate_checksum(buffer)
+        cs = checksum.hex()
+    result = write_deep_structure(
+        cs, deep_structure, hash_pattern, path
+    )
+    mode = result[0]
+    if mode == 0:
+        _, old_checksum = result
+        if checksum is not None:
+            buffer_cache.cache_buffer(checksum, buffer)
+            buffer_cache.incref(checksum)
+        if old_checksum is not None:
+            buffer_cache.decref(bytes.fromhex(old_checksum))
+    elif mode == 1:
+        _, sub_hash_pattern = result
+        sub_structure, new_checksums = await value_to_deep_structure(
+            subvalue, sub_hash_pattern
+        )
+        if not len(path):
+            old_checksums = deep_structure_to_checksums(
+                deep_structure, hash_pattern
+            )
+            if isinstance(deep_structure, list):
+                deep_structure[:] = sub_structure
+            elif isinstance(deep_structure, dict):
+                deep_structure.clear()
+                deep_structure.update(sub_structure)
+        else:            
+            old_sub_structure = set_deep_structure(
+                sub_structure, deep_structure, sub_hash_pattern, path
+            )
+            old_checksums = deep_structure_to_checksums(
+                old_sub_structure, sub_hash_pattern
+            )
+
+        for new_checksum in new_checksums:
+            new_checksum = bytes.fromhex(new_checksum)
+            buffer_cache.incref(new_checksum)
+        for old_checksum in old_checksums:
+            old_checksum = bytes.fromhex(old_checksum)
+            buffer_cache.decref(old_checksum)
+    elif mode == 2:
+        _, pre_path, curr_sub_checksum, post_path = result
+        
+        new_subsub_value = _get_subpath(subvalue, post_path)
+        curr_sub_value = None
+        if len(post_path):
+            if curr_sub_checksum is not None:
+                curr_sub_buffer = await get_buffer(curr_sub_checksum, buffer_cache)
+                curr_sub_value = await deserialize(
+                    curr_sub_buffer, curr_sub_checksum, "mixed", copy=True
+                )
+            _set_subpath(curr_sub_value, post_path, new_subsub_value)
+            new_sub_value = curr_sub_value
+        else:
+            new_sub_value = new_subsub_value
+
+        new_sub_cs = None
+        if new_sub_value is not None:
+            new_sub_buffer = await serialize(new_sub_value, "mixed")
+            new_sub_checksum = await calculate_checksum(new_sub_buffer)
+            buffer_cache.cache_buffer(new_sub_checksum, new_sub_buffer)
+            new_sub_cs = new_sub_checksum.hex()
+
+        result = write_deep_structure(
+            new_sub_cs, deep_structure, hash_pattern, pre_path,
+            create=True
+        )
+        assert result[0] == 0, result
+        if new_sub_checksum is not None:
+            buffer_cache.incref(new_sub_checksum)
+        if curr_sub_checksum is not None:
+            buffer_cache.decref(curr_sub_checksum)
+    else:
+        raise ValueError(result)
+
 
 from .deep_structure import (
     write_deep_structure, set_deep_structure, value_to_deep_structure_sync,

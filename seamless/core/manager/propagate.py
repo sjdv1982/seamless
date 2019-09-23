@@ -10,9 +10,11 @@ def _propagate_cell_accessor(livegraph, accessor, target, void):
     else:
         if void:
             manager = target._get_manager()
-            manager.cancel_cell_path(target, path, True)
+            manager.cancel_scell_inpath(target._structured_cell, path, True)
         else:
-            propagate_cell_path(livegraph, target, path)
+            sc = target._structured_cell
+            target2 = sc._data
+            propagate_cell_path(livegraph, target2, path)
 
 def propagate_accessor(livegraph, accessor, void):    
     accessor._void = void
