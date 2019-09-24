@@ -31,11 +31,18 @@ class StructuredCellJoinTask(Task):
         await self.await_sc_tasks()
         modified_paths = set(sc.modified_auth_paths)
         modified_paths.update(set([ic.subpath for ic in sc.modified_inchannels]))
+        prelim = {}
         for out_path in sc.outchannels:
             for mod_path in modified_paths:
                 if out_path[:len(mod_path)] == mod_path:
                     manager.cancel_cell_path(sc._data, out_path, False)
                     break
+            curr_prelim = False
+            for in_path in sc.inchannels:
+                if out_path[:len(in_path)] == in_path:
+                    curr_prelim = sc.inchannels[in_path]._prelim
+                    break
+            prelim[out_path] = curr_prelim
         value, checksum = None, None
         if len(sc.inchannels):
             paths = sorted(list(sc.inchannels))
@@ -43,8 +50,8 @@ class StructuredCellJoinTask(Task):
                 checksum = sc.inchannels[()]._checksum
                 assert checksum is None or isinstance(checksum, bytes), checksum
             else:
-                if sc.no_auth:
-                    value = sc._auth_value
+                if not sc.no_auth:
+                    value = copy.deepcopy(sc._auth_value)
                 if value is None:
                     if isinstance(paths[0], int):
                         value = []
@@ -58,6 +65,11 @@ class StructuredCellJoinTask(Task):
                             manager, buffer, checksum, "mixed", False
                         ).run()
                         await set_subpath(value, sc.hash_pattern, path, subvalue)
+                        if not sc.no_auth:
+                            for mod_path in modified_paths:
+                                if path[:len(mod_path)] == mod_path:                                
+                                    await set_subpath(sc._auth_value, sc.hash_pattern, None)        
+                                    break                            
         else:            
             value = sc._auth_value
         if checksum is None and value is not None:
@@ -105,7 +117,9 @@ class StructuredCellJoinTask(Task):
                         if out_path[:len(mod_path)] == mod_path:                            
                             for accessor in downstreams[out_path]:
                                 changed = accessor.build_expression(livegraph, cs)                                
-                                print("TODO: prelim propagation from inchannel (prelim=False if from auth)")
+                                if prelim[out_path] != accessor._prelim:
+                                    accessor._prelim = prelim[out_path]
+                                    changed = True
                                 if changed:
                                     AccessorUpdateTask(manager, accessor).launch()
             sc.modified_auth_paths.clear()

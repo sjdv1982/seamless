@@ -225,8 +225,8 @@ class StructuredCell(SeamlessBase):
             self.schema, 
             self._schema_value, 
             self
-        )
-        manager.structured_cell_join(self)
+        )    
+        manager.structured_cell_join(self)        
 
     @property
     def handle(self):

@@ -1,14 +1,21 @@
 def _set_subpath(value, path, subvalue):
     head = path[0]
     if len(path) == 1:
-        value[head] = subvalue
+        if isinstance(value, list):
+            value.insert(head, subvalue)
+        else:
+            value[head] = subvalue
         return
     if head not in value:
         head2 = path[1]
         if isinstance(head2, int):
-            value[head] = []
+            item = []
         elif isinstance(head2, str):
-            value[head] = {}
+            item = {}
+        if isinstance(value, list):
+            value.insert(head, item)
+        else:
+            value[head] = item
     sub_curr_value = value[head]
     _set_subpath(sub_curr_value, path[1:], subvalue)
 

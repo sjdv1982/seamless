@@ -18,6 +18,13 @@ _underscore_attribute_names2 =  set(["__deepcopy__"])
 # A set of magic names where it is expected that they raise AttributeError if
 # not implemented, rather than returning NotImplemented
 
+def hasattr2(obj, attr):
+    try:
+        getattr(obj, attr)
+        return True
+    except (AttributeError, KeyError):
+        return False
+
 def init_object_schema(silk, schema):
     if "type" in schema:
         assert schema["type"] == "object"
@@ -123,6 +130,7 @@ class Silk(SilkBase):
 
     def _get_policy(self, schema, default_policy=None):
         policy = schema.get("policy")
+        policy = RichValue(policy).value
         if policy is None or not len(policy):
             #TODO: implement lookup hierarchy wrapper that also looks at parent
             if default_policy is None:
@@ -571,10 +579,11 @@ class Silk(SilkBase):
         # TODO: deleter
 
         schema = self._schema
-        methods = schema.get("methods", None)        
+        methods = schema.get("methods", None)
         if methods is None:
             methods = {}
             schema["methods"] = methods
+            methods = schema["methods"] # to get back-end working properly
         methods[attribute] = m
 
     """
@@ -606,6 +615,7 @@ class Silk(SilkBase):
         if methods is None:
             methods = {}
             schema["methods"] = methods
+            methods = schema["methods"] # to get back-end working properly
         methods[attribute] = m
 
     def add_validator(self, func, attr=None, *, name=None):
@@ -649,6 +659,7 @@ class Silk(SilkBase):
         if validators is None:
             validators = []
             schema["validators"] = validators
+            validators = schema["validators"]  # to get back-end working properly
         if name is not None:
             validators[:] = [v for v in validators if v.get("name") != name]
         validators.append(v)
@@ -768,8 +779,11 @@ class Silk(SilkBase):
 
     def _getitem(self, item):
         data, schema = self._data, self._schema
-        if isinstance(item, str) and hasattr(data, item):
-            result = getattr(data, item)
+        if isinstance(item, str) and hasattr2(data, item):
+            try:
+                result = getattr(data, item)
+            except AttributeError:
+                raise KeyError(item) from None
             data2 = data
             if isinstance(data, Wrapper):
                 data2 = data._unwrap()

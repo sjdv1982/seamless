@@ -2,6 +2,7 @@ from seamless.core import (
     context, cell, transformer, macro_mode_on
 )    
 from seamless.core.structured_cell import StructuredCell
+from seamless.silk import Silk
 from pprint import pprint
 import time
 
@@ -56,12 +57,25 @@ def structured_transformer(c):
 
 with macro_mode_on():
     ctx = context(toplevel=True)
+    tf_names = [("tf1",),("tf2",),("tf3",),("tf4",)] 
+    channel_names = tf_names # TODO: try numeric path
 
     ctx.params_struc = context()
     ctx.params_struc.data = cell("mixed")
+    ctx.params_struc.buffer = cell("mixed")
+    ctx.params_struc.schema = cell("plain")
+    ctx.params_struc.example_buffer = cell("mixed")
+    ctx.params_struc.example_data = cell("mixed")    
     ctx.params = StructuredCell(
         ctx.params_struc.data,
-        outchannels = [("tf1",),("tf2",),("tf3",),("tf4",)] # TODO: try numeric path
+        buffer=ctx.params_struc.buffer,
+        schema=ctx.params_struc.schema,
+        outchannels=channel_names
+    )    
+    ctx.params_example = StructuredCell(
+        ctx.params_struc.example_data,
+        buffer=ctx.params_struc.example_buffer,
+        schema=ctx.params_struc.schema,
     )    
     
     ctx.stf1 = context(toplevel=False)
@@ -77,12 +91,20 @@ with macro_mode_on():
     ctx.result_struc.data = cell("mixed")
     ctx.result_struc.buffer = cell("mixed")
     ctx.result_struc.schema = cell("plain")
+    outchannels = []
+
     ctx.result = StructuredCell(
         ctx.result_struc.data,
         buffer = ctx.result_struc.buffer,
         schema = ctx.result_struc.schema,
-        inchannels = [("tf1",),("tf2",),("tf3",),("tf4",)] # TODO: try numeric path
+        inchannels = channel_names,
+        outchannels = channel_names
     )
+    for outchannel, tf_name in zip(channel_names, tf_names):
+        channel_cell = cell("mixed")
+        setattr(ctx, "result_" + outchannel[0], channel_cell)
+        ctx.result.outchannels[outchannel].connect(channel_cell)
+
     
     ctx.params_struc.outchannel_tf1 = cell("mixed")
     ctx.params.outchannels[("tf1",)].connect(ctx.params_struc.outchannel_tf1)
@@ -99,6 +121,26 @@ with macro_mode_on():
     """
     # TODO: "add" in the result.schema
 
+def report(self):
+    print("*" * 80)
+    print("*  PARAMETERS")
+    print("*" * 80)
+    for key in self.keys():                
+        sub = self[key]
+        if not len(sub):
+            continue
+        print("KEY", key)
+        sub.subreport()
+    print("*" * 80)
+    print("")
+
+def subreport(self):
+    print("Limit:", self.limit.unsilk)
+    print("Factor:", self.factor.unsilk)
+    print("Delay:", self.delay.unsilk)
+    print("Offset:", self.offset.unsilk)
+    print("")
+
 ctx.params.handle.set({
     "tf1": {},
     "tf2": {},
@@ -106,18 +148,45 @@ ctx.params.handle.set({
     "tf4": {},
 })
 
+first = channel_names[0][0]
+h = ctx.params_example.handle
+h.report = report
+h[first] = {}
+hh = h[first]
+hh.subreport = subreport
+hh.limit = 0
+hh.factor = 0.0
+hh.delay = 0.1
+hh.offset = 0.0
+def validate_param(self):
+    assert self.delay > 0
+    assert self.limit < 100
+hh.add_validator(validate_param)
+
+for tf in channel_names[1:]:
+    h[tf[0]] = h[first]
+    hh = h[tf[0]]
+    hh.schema.set(h[channel_names[0][0]].schema)
+
+
 h = ctx.params.handle.tf1
 h.limit = 9
 h.factor = 1000
 h.delay = 1.5
 h.offset = 0
 
+
+h = ctx.params.handle.tf2
+h.limit = 15
+h.factor = 10
+h.delay = 0.7
+h.offset = 0
+
+ctx.equilibrate(0.1)
+#hh.validate()
+import sys; sys.exit()
+
 """    
-ctx.tf2.limit.cell().set(15)
-ctx.tf2.factor.cell().set(10)
-ctx.tf2.delay.cell().set(0.7)
-ctx.tf2.offset.cell().set(0)
-ctx.tf2_result = ctx.tf2.result.cell()
 
 ctx.tf3.limit.cell().set(9)
 ctx.tf3.factor.cell().set(1)
@@ -130,6 +199,13 @@ ctx.tf4.delay.cell().set(0.1)
 ctx.tf4_result = ctx.tf4.result.cell()
 """
 
+
+#ctx.params_example.handle.report()
+
+ctx.params.handle.report()
+ctx.params.handle.tf1.validate()
+import sys; sys.exit()
+
 state = {}
 oldstate = {}
 start = time.time()
@@ -138,10 +214,10 @@ while 1:
     state["status"] = {
         "tf1": ctx.stf1.tf.status
     }
-    state["status"]["tf1-result"] = ctx.stf1.result.status
+    state["status"]["tf1-result"] = ctx.result_tf1.status
 
     state["tf1"] = ctx.stf1.tf.value
-    state["tf1-result"] = ctx.stf1.result.value
+    state["tf1-result"] = ctx.result_tf1.value
     if state != oldstate:
         print("Time elapsed: %.3f" % (time.time() - start))
         pprint(state)
@@ -150,6 +226,4 @@ while 1:
     if not len(waitfor) and not background:        
         break
     
-print(ctx.params.value)
-print(ctx.params_struc.outchannel_tf1.value)
-#print(ctx.stf1.input.value)
+print(ctx.params.report())

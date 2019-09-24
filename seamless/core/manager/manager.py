@@ -125,7 +125,8 @@ class Manager:
                 assert sc_buf is None
         if checksum is None:
             reason = StatusReasonEnum.UNDEFINED
-            self.cancel_cell(cell, void=True, reason=reason)
+            if not from_structured_cell:
+                self.cancel_cell(cell, void=True, reason=reason)
         else:
             reason = None
             old_checksum = self.get_cell_checksum(cell)
@@ -139,6 +140,9 @@ class Manager:
         )
         if not initial and not from_structured_cell:
             CellUpdateTask(self, cell).launch()
+        if sc_schema:
+            value = cell.data
+            self.update_schemacell(cell, value, None)
 
     def _set_cell_checksum(self, cell, checksum, void, status_reason=None, prelim=False):
         # NOTE: Any cell task depending on the old checksum must have been canceled already
@@ -247,9 +251,10 @@ class Manager:
     def update_schemacell(self, schemacell, value, structured_cell):
         livegraph = self.livegraph
         structured_cells = livegraph.schemacells[schemacell]
-        for sc in structured_cells:
+        for sc in structured_cells:            
             if sc is structured_cell:
-                continue
+                continue           
+            self.taskmanager.cancel_structured_cell(sc)
             sc._schema_value = copy.deepcopy(value)
             self.structured_cell_join(sc)
 

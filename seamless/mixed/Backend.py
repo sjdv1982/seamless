@@ -111,7 +111,7 @@ class Backend:
             self._del_path(path)
         self._update(path)
 
-    def insert_path(self, data, path):
+    def insert_path(self, path, data):
         for pp in path:
             assert isinstance(pp, (int, str))        
         attr = path[-1]
@@ -120,13 +120,13 @@ class Backend:
         subdata = self.get_path(path[:-1])
         if subdata is None:
             self.set_path(path[:-1], [])
-        subform = self._get_form(path[:-1])
+        subform, storage = self._get_form(path[:-1])
         if isinstance(subform, str):
             subformtype = subform
             substorage = "pure-plain"
         else:
             subformtype = subform["type"]
-            substorage = subform["storage"]
+            substorage = subform.get("storage", storage)
         if subformtype != "array":
             raise TypeError(subform) #must be "array" 
         if substorage.endswith("binary"):

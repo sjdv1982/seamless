@@ -16,7 +16,8 @@ class MixedList(MixedBase, MutableSequence):
     def append(self, value):
         item = len(self)
         path = self._path + (item,)
-        self._monitor.insert_path(path, value)
+        ###self._monitor.insert_path(path, value)
+        self._monitor.set_path(path, value)
     def __delitem__(self, item):
         path = self._path + (item,)
         self._monitor.del_path(path)

@@ -54,15 +54,18 @@ class EvaluateExpressionTask(Task):
                     ).run()
                     mode, result = await get_subpath(value, expression.hash_pattern, expression.path)
                     if mode == "value":
-                        result_value = result
-                        result_buffer = await SerializeToBufferTask(
-                            manager, result_value, 
-                            expression.target_celltype,
-                            use_cache=True
-                        ).run()
-                        expression_result_checksum = await CalculateChecksumTask(
-                            manager, result_buffer
-                        ).run()
+                        if result is None:
+                            return None
+                        else:
+                            result_value = result                        
+                            result_buffer = await SerializeToBufferTask(
+                                manager, result_value, 
+                                expression.target_celltype,
+                                use_cache=True
+                            ).run()
+                            expression_result_checksum = await CalculateChecksumTask(
+                                manager, result_buffer
+                            ).run()
                     elif mode == "checksum":
                         expression_result_checksum = result
                     else:

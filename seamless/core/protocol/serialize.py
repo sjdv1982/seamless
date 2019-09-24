@@ -47,6 +47,7 @@ def _serialize(value, celltype):
     return buffer
 
 async def serialize(value, celltype, use_cache=True):
+    assert value is not None
     if use_cache:
         id_value = id(value) 
         buffer, _ = serialize_cache.get((id_value, celltype), (None, None))
@@ -67,7 +68,7 @@ async def serialize(value, celltype, use_cache=True):
         )
     return buffer
     """
-
+    
     buffer = _serialize(value, celltype)  ### for now...
     if use_cache:
         serialize_cache[id_value, celltype] = buffer, value
