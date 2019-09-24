@@ -25,6 +25,8 @@ def _cell_from_pin(self, celltype):
                 my_cell = None
             else:
                 my_cell = my_cell[0]
+        else:
+            my_cell = my_cell[0]
     if isinstance(my_cell, Path):
         my_cell = my_cell._cell
     if my_cell is None:

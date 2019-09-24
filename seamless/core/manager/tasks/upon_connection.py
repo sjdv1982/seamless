@@ -5,6 +5,7 @@ from . import Task
 class UponConnectionTask(Task):
     def __init__(self, manager, source, source_subpath, target, target_subpath):
         from ...worker import InputPin, OutputPin, EditPin
+        from ...macro import Path
         self.source = source
         self.source_subpath = source_subpath
         self.target = target
@@ -15,12 +16,16 @@ class UponConnectionTask(Task):
             self.dependencies.append(source.worker_ref())                    
         elif isinstance(source, Cell):
             self.dependencies.append(source)
+        elif isinstance(source, Path):
+            self.dependencies.append(source)
         else:
             raise TypeError(source)
         if isinstance(target, (InputPin, EditPin) ):
             self.dependencies.append(target.worker_ref())        
         elif isinstance(target, Cell):
             self.dependencies.append(target)
+        elif isinstance(target, Path):
+            self.dependencies.append(source)
         else:
             raise TypeError(target)
 

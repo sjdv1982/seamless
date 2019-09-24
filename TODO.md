@@ -1,6 +1,4 @@
 UPDATE: A. - D., left TODO:
-- Preliminary (WIP)
-- Non-() inchannels (WIP)
 - Channels + deep cells (async expression evaluation)
 - Schema + deep cells (to test)
 - Editchannels

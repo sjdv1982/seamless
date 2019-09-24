@@ -426,7 +426,7 @@ class LiveGraph:
             accessor = upstream[pin.name]
             if accessor is None:
                 return None
-            return self.accessor_to_upstream[accessor], accessor.subpath
+            return self.accessor_to_upstream[accessor], accessor.path
         elif isinstance(pin, OutputPin):
             if isinstance(worker, Transformer):
                 downstreams = self.transformer_to_downstream[worker]

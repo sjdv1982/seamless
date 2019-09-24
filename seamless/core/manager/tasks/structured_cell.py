@@ -4,6 +4,14 @@ import copy
 
 print("TODO: tasks/structured_cell.py: task to deserialize editchannel, then structured_cell.set_auth_path")
 
+def overlap_path(p1, p2):
+    if p1[:len(p2)] == p2:
+        return True    
+    elif p2[:len(p1)] == p1:
+        return True
+    else:
+        return False
+
 class StructuredCellJoinTask(Task):    
     def __init__(self, manager, structured_cell):
         super().__init__(manager)
@@ -34,12 +42,12 @@ class StructuredCellJoinTask(Task):
         prelim = {}
         for out_path in sc.outchannels:
             for mod_path in modified_paths:
-                if out_path[:len(mod_path)] == mod_path:
+                if overlap_path(out_path, mod_path):                
                     manager.cancel_cell_path(sc._data, out_path, False)
                     break
             curr_prelim = False
             for in_path in sc.inchannels:
-                if out_path[:len(in_path)] == in_path:
+                if overlap_path(in_path, out_path):
                     curr_prelim = sc.inchannels[in_path]._prelim
                     break
             prelim[out_path] = curr_prelim
@@ -58,20 +66,22 @@ class StructuredCellJoinTask(Task):
                     else:
                         value = {}
                 for path in paths:
-                    checksum = sc.inchannels[path]._checksum
-                    if checksum is not None:
-                        buffer = await GetBufferTask(manager, checksum).run()
+                    subchecksum = sc.inchannels[path]._checksum
+                    if subchecksum is not None:
+                        buffer = await GetBufferTask(manager, subchecksum).run()
                         subvalue = await DeserializeBufferTask(
-                            manager, buffer, checksum, "mixed", False
+                            manager, buffer, subchecksum, "mixed", False
                         ).run()
                         await set_subpath(value, sc.hash_pattern, path, subvalue)
                         if not sc.no_auth:
                             for mod_path in modified_paths:
-                                if path[:len(mod_path)] == mod_path:                                
-                                    await set_subpath(sc._auth_value, sc.hash_pattern, None)        
+                                if overlap_path(path, mod_path): 
+                                    await set_subpath(sc._auth_value, sc.hash_pattern, path, None)        
                                     break                            
+                    else:
+                        await set_subpath(value, sc.hash_pattern, path, None)
         else:            
-            value = sc._auth_value
+            value = sc._auth_value        
         if checksum is None and value is not None:
             buf = await SerializeToBufferTask(
                 manager, value, "mixed", use_cache=False # the value object changes all the time...
@@ -83,12 +93,16 @@ class StructuredCellJoinTask(Task):
             sc.auth._set_checksum(checksum, from_structured_cell=True)
         if sc.buffer is not sc.auth:            
             sc.buffer._set_checksum(checksum, from_structured_cell=True)
+        if sc.schema is not None and value is None and checksum is not None:
+            cs = bytes.fromhex(checksum)
+            buf = await GetBufferTask(manager, cs).run()
+            value = await DeserializeBufferTask(manager, buf, cs, "mixed", copy=False).run()
         ok = True
         if value is not None and sc.schema is not None:
             #schema = sc.schema.value  # incorrect, because potentially out-of-sync...
             schema = sc._schema_value
             if schema is not None:
-                s = Silk(data=copy.deepcopy(value), schema=schema)                
+                s = Silk(data=copy.deepcopy(value), schema=schema)            
                 try:
                     s.validate()
                 except ValidationError:
@@ -114,7 +128,7 @@ class StructuredCellJoinTask(Task):
                     cs = None
                 for out_path in sc.outchannels:
                     for mod_path in modified_paths:
-                        if out_path[:len(mod_path)] == mod_path:                            
+                        if overlap_path(out_path, mod_path): 
                             for accessor in downstreams[out_path]:
                                 changed = accessor.build_expression(livegraph, cs)                                
                                 if prelim[out_path] != accessor._prelim:
