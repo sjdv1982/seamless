@@ -132,16 +132,28 @@ class StructuredCellJoinTask(Task):
                     """
                 else:
                     cs = None
+                expression_to_checksum = manager.cachemanager.expression_to_checksum
                 for out_path in sc.outchannels:
                     for mod_path in modified_paths:
                         if overlap_path(out_path, mod_path): 
                             for accessor in downstreams[out_path]:
-                                changed = accessor.build_expression(livegraph, cs)                                
+                                changed = accessor.build_expression(livegraph, cs)
                                 if prelim[out_path] != accessor._prelim:
                                     accessor._prelim = prelim[out_path]
                                     changed = True
                                 if changed:
                                     AccessorUpdateTask(manager, accessor).launch()
+                        elif cs is not None: # morph
+                            for accessor in downstreams[out_path]:                                
+                                old_expression = accessor.expression
+                                expression_result_checksum = \
+                                  expression_to_checksum.get(old_expression)
+                                if expression_result_checksum is not None:
+                                    accessor.build_expression(livegraph, cs)
+                                    new_expression = accessor.expression
+                                    expression_to_checksum[new_expression] = \
+                                      expression_result_checksum
+                            
             sc.modified_auth_paths.clear()
             sc.modified_inchannels.clear()
 
