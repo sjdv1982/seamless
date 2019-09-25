@@ -1,7 +1,8 @@
+from ...mixed import _array_types
 def _set_subpath(value, path, subvalue):
     head = path[0]
     if len(path) == 1:
-        if isinstance(value, list):
+        if isinstance(value, list) and head >= len(value):
             value.insert(head, subvalue)
         else:
             value[head] = subvalue
@@ -25,7 +26,13 @@ def _get_subpath(value, path):
     if not len(path):
         return value
     head = path[0]
-    sub_curr_value = value.get(head)
+    if isinstance(value, _array_types):
+        if head >= len(value):
+            sub_curr_value = None
+        else:
+            sub_curr_value = value[head]
+    else:
+        sub_curr_value = value.get(head)
     if sub_curr_value is None:
         return None
     return _get_subpath(sub_curr_value, path[1:])
