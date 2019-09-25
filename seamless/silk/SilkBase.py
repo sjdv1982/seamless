@@ -80,7 +80,7 @@ for name in unary_special_method_names_optional:
 
 
 def silk_binary_method(self, other, name):
-    method = self._get_special(name)
+    method = self._get_special(name)    
     if method is NotImplemented:
         return NotImplemented
     if isinstance(other, SilkBase):

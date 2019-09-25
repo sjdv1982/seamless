@@ -1,5 +1,4 @@
 UPDATE: A. - D., left TODO:
-- Schema + deep cells (to test)
 - Editchannels
 
 A. Do the final implementation of the low-level for the LiveGraph branch

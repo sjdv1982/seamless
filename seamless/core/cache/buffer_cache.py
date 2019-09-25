@@ -3,6 +3,7 @@
 
 import time
 import weakref
+import traceback
 from weakref import WeakValueDictionary
 import functools
 from collections import namedtuple
@@ -66,14 +67,19 @@ class BufferCache:
                 self.missing_buffers.add(checksum)
 
     def decref(self, checksum, from_temp=False):
-        #if not from_temp:
-        #    print("DECREF", checksum.hex())
+        """
+        if not from_temp:
+            print("DECREF", checksum.hex())
+        """
+        if checksum not in self.buffer_refcount:
+            print("WARNING: double decref, %s" % checksum.hex())            
+            return
         if not from_temp and self.buffer_refcount[checksum] == 1:
             tempref = functools.partial(self.decref, checksum, from_temp=True)
             temprefmanager.add_ref(tempref, TEMP_KEEP_ALIVE)
             return
         self.buffer_refcount[checksum] -= 1
-        if self.buffer_refcount[checksum] == 0:
+        if self.buffer_refcount[checksum] == 0:            
             if checksum in self.missing_buffers:
                 self.missing_buffers.pop(checksum)
             else:

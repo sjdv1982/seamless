@@ -14,12 +14,18 @@ def get_subform(form, path):
     type_ = form["type"]
     if type_ == "object":
         assert isinstance(attr, str), attr
+        if "properties" not in form:
+            return None
+            #raise ValueError(form)
+            #pass
         if attr not in form["properties"]:
             return None
         subform = form["properties"][attr]
     elif type_ in ("array", "tuple"):
         assert isinstance(attr, int), attr
-        assert attr >= 0
+        if attr < 0:
+            items = form["items"]
+            attr = len(items) + attr
         if form["identical"]:
             subform = form["items"]
         else:

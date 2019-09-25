@@ -105,6 +105,7 @@ def access_deep_structure(deep_structure, hash_pattern, path):
     elif path is None:
         result = deep_structure, hash_pattern
     else:
+        assert isinstance(path, tuple)
         attribute = path[0]
         single_key = len(hash_pattern)
         has_star = "*" in hash_pattern
@@ -311,6 +312,8 @@ def _value_to_objects(value, hash_pattern, objects):
     has_star = "*" in hash_pattern
     if has_star or not single_key:
         result = {}
+        if not isinstance(value, dict):
+            raise TypeError(value)
         for key in value:
             if key in hash_pattern:
                 sub_hash_pattern = hash_pattern[key]
@@ -324,6 +327,7 @@ def _value_to_objects(value, hash_pattern, objects):
         if key.startswith("!"):
             result = []
             sub_hash_pattern = hash_pattern[key]
+            assert isinstance(value, list), value
             for sub_value in value:
                 sub_result = _value_to_objects(
                     sub_value, sub_hash_pattern, objects
@@ -461,14 +465,17 @@ def write_deep_structure(checksum, deep_structure, hash_pattern, path,
     assert hash_pattern is not None
     if checksum is not None:
         assert isinstance(checksum, str)
-        bytes.fromhex(checksum)
-    validate_deep_structure(deep_structure, hash_pattern)
-    assert isinstance(deep_structure, (list, dict)), deep_structure
+        bytes.fromhex(checksum)    
           
     if hash_pattern == "#":
         assert len(path)
         old_checksum = deep_structure
+        assert isinstance(old_checksum, str)
+        bytes.fromhex(old_checksum)    
         return 2, (), old_checksum, path
+    
+    validate_deep_structure(deep_structure, hash_pattern)
+    assert isinstance(deep_structure, (list, dict)), deep_structure
     
     if not len(path):
         return 1, hash_pattern
@@ -530,7 +537,7 @@ def write_deep_structure(checksum, deep_structure, hash_pattern, path,
     )
     if result[0] == 2:
         _, pre_path, old_checksum, post_path = result
-        pre_path = tuple(pre_path) + tuple(path[0])
+        pre_path = pre_path + (path[0],)
         return 2, pre_path, old_checksum, post_path
     else:
         return result

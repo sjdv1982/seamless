@@ -36,6 +36,7 @@ class Editchannel:
 
 class StructuredCell(SeamlessBase):
     _celltype = "structured"    
+    _exception = None
     def __init__(self, data, *,
         auth=None,
         schema=None,
@@ -115,6 +116,10 @@ class StructuredCell(SeamlessBase):
             validate_hash_pattern(hash_pattern)
         self.hash_pattern = hash_pattern
 
+    @property
+    def exception(self):
+        return self._exception
+
     def _validate_channels(self, inchannels, outchannels, editchannels):
         self.inchannels = PathDict()
         for inchannel in inchannels:
@@ -148,15 +153,23 @@ class StructuredCell(SeamlessBase):
             return
         return get_subpath(self._auth_value, self.hash_pattern, path)
 
-    def _set_auth_path(self, path, value):
-        #print("_set_auth_path", path, value)
+    def _set_auth_path(self, path, value, from_pop=False):
         assert not self.no_auth
         if self.auth._destroyed:
             return
         manager = self._get_manager()
         if manager._destroyed:
             return
-        self.modified_auth_paths.add(path)
+        if not from_pop and value is None and len(path) and isinstance(path[-1], int):
+            l = len(self._get_auth_path(path[:-1]))
+            tail = path[-1]
+            new_value = None
+            for n in range(l-1, path[-1]+1, -1):
+                path2 = path[:-1] + (n,)
+                old_value = self._get_auth_path(path2)
+                self._set_auth_path(path2, new_value, from_pop=True)
+                new_value = old_value
+            return
         manager.set_auth_path(self, path, value)
         if self.hash_pattern is None:
             if not len(path):

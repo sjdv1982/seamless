@@ -6,22 +6,26 @@ from seamless.silk import Silk, ValidationError
 from seamless.core import context, cell, StructuredCell
 
 ctx = None
-def reset_backend(share_schemas=True):
+hash_pattern = {"*": "#"}
+#hash_pattern = None
+def reset_backend(share_schemas=True, with_hash_pattern=True):
+    hp = hash_pattern if with_hash_pattern else None
     global ctx, s, s2, s3
     if ctx is not None:
         ctx.equilibrate() # makes no difference, but could be easier debugging
     ctx = context(toplevel=True)
-    ctx.data = cell("mixed")
-    ctx.buffer = cell("mixed")
+    ctx.data = cell("mixed", hash_pattern=hp)
+    ctx.buffer = cell("mixed", hash_pattern=hp)
     ctx.schema = cell("plain")
     ctx.sc = StructuredCell(
         buffer=ctx.buffer,
         data=ctx.data,
-        schema=ctx.schema
+        schema=ctx.schema,
+        hash_pattern=hp
     )
     s = ctx.sc.handle
-    ctx.data2 = cell("mixed")
-    ctx.buffer2 = cell("mixed")
+    ctx.data2 = cell("mixed", hash_pattern=hp)
+    ctx.buffer2 = cell("mixed", hash_pattern=hp)
     if share_schemas:
         schema2 = ctx.schema
     else:
@@ -30,11 +34,13 @@ def reset_backend(share_schemas=True):
     ctx.sc2 = StructuredCell(
         buffer=ctx.buffer2,
         data=ctx.data2,
-        schema=schema2
+        schema=schema2,
+        hash_pattern=hp
     )
     s2 = ctx.sc2.handle
-    ctx.data3 = cell("mixed")
-    ctx.buffer3 = cell("mixed")
+    hp3 = None # never use hash pattern for this one
+    ctx.data3 = cell("mixed", hash_pattern=hp3)
+    ctx.buffer3 = cell("mixed", hash_pattern=hp3)
     if share_schemas:
         schema3 = ctx.schema
     else:
@@ -43,9 +49,11 @@ def reset_backend(share_schemas=True):
     ctx.sc3 = StructuredCell(
         buffer=ctx.buffer3,
         data=ctx.data3,
-        schema=schema3
+        schema=schema3,
+        hash_pattern=hp3 
     )
     s3 = ctx.sc3.handle
+
 
 reset_backend()
 
@@ -148,15 +156,16 @@ for a in s.lis:
 print(hasattr(s, "lis"), "lis" in s)
 print(hasattr(s, "lis2"), "lis2" in s)
 
-for v in s:
+for v in sorted(s):
     #print(v.data)  # With Monitor, iteration does *not* give a Silk object
     print(v)
+
 print("")
 for v in s.lis:
     print(v.data)
 print()
 
-reset_backend(share_schemas=False)
+reset_backend(share_schemas=False, with_hash_pattern=False)
 s2.x = 10
 s.set(5)
 inc = lambda self: self + 1
@@ -173,6 +182,8 @@ print(s.data)
 print(s.z)
 ctx.equilibrate()
 
+reset_backend(share_schemas=False)
+s2.x = 10
 import numpy as np
 arr = np.array([1.0,2.0,3.0])
 s2.arr = arr
@@ -215,8 +226,11 @@ s.validate()
 ctx.equilibrate()
 try:
     s.y = 1.0   #  would fail
-    s.validate()
+    ctx.equilibrate() # to ensure that ctx.sc.exception is set
+    s.validate()    
 except ValidationError:
+    print("FAIL")
+    print(ctx.sc.exception)
     s.y = 0
 #pprint(s.schema.value)
 ctx.equilibrate()    
@@ -250,7 +264,7 @@ def func(self):
 a.coor.add_validator(func)
 coor_schema = a.coor.schema
 
-reset_backend(share_schemas=False)
+reset_backend(share_schemas=False, with_hash_pattern=False)
 c = s2
 c.set( [0.0, 0.0, 0.0] )
 c.schema.clear()
@@ -339,5 +353,4 @@ except ValidationError as exc:
     print(exc)
     l.pop(-1)
 ctx.equilibrate()
-print(ctx.data.value["l"])
-#print(test.l.data)
+print(test.l.data)

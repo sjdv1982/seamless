@@ -102,11 +102,17 @@ class StructuredCellJoinTask(Task):
             #schema = sc.schema.value  # incorrect, because potentially out-of-sync...
             schema = sc._schema_value
             if schema is not None:
-                s = Silk(data=copy.deepcopy(value), schema=schema)            
+                if sc.hash_pattern is None:
+                    value2 = copy.deepcopy(value)
+                else:
+                    mode, value2 = await get_subpath(value, sc.hash_pattern, ())
+                    assert mode == "value"
+                s = Silk(data=value2, schema=schema)            
                 try:
                     s.validate()
+                    sc._exception = None
                 except ValidationError:
-                    traceback.print_exc()
+                    sc._exception = traceback.format_exc(limit=0)
                     ok = False
                     for out_path in sc.outchannels:
                         manager.cancel_cell_path(sc._data, out_path, True)

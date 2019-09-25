@@ -677,10 +677,11 @@ class Silk(SilkBase):
             return super().__getattribute__(attr)
 
         if not skip_modify_methods:
-            is_modify_method, result = try_modify_methods(self, attr)
+            data2 = RichValue(self._data).value
+            is_modify_method, result = try_modify_methods(self, data2, attr)
             if is_modify_method:
                 return result
-        
+
         data, schema = self._data, self._schema
         if attr == "self":
             return Silk(data = data,
@@ -719,9 +720,12 @@ class Silk(SilkBase):
                     raise exc from None
                 return MethodType(method, self)
         if attr != "set":
-            data = RichValue(self._data).value
-            if hasattr(type(data), attr):
-                return getattr(data, attr)
+            if skip_modify_methods:
+                if hasattr(type(data), attr):
+                    return getattr(data, attr)
+            data2 = RichValue(data).value
+            if hasattr(type(data2), attr):
+                return getattr(data2, attr)
         if attr.startswith("__"):
             if attr in _underscore_attribute_names:
                 raise NotImplementedError

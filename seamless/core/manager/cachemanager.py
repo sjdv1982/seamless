@@ -63,15 +63,26 @@ class CacheManager:
         self.reactor_to_refs[reactor] = refs
         self.reactor_exceptions[reactor] = None
 
-    def incref_checksum(self, checksum, refholder, authority):
+    def incref_checksum(self, checksum, refholder, authority):        
         if checksum is None:
             return
+        #print("INCREF CHECKSUM", checksum, refholder)
         if checksum not in self.checksum_refs:
             self.buffer_cache.incref(checksum)
             self.checksum_refs[checksum] = []
         if isinstance(refholder, Cell):
             assert self.cell_to_ref[refholder] is None
             self.cell_to_ref[refholder] = (checksum, authority) 
+            cell = refholder
+            if cell._hash_pattern is not None:
+                deep_buffer = self.buffer_cache.get_buffer(checksum)
+                deep_structure = deserialize(deep_buffer, checksum, "mixed", False)
+                sub_checksums = deep_structure_to_checksums(
+                    deep_structure, cell._hash_pattern
+                )
+                for sub_checksum in sub_checksums:
+                    #print("INCREF SUB-CHECKSUM", sub_checksum, cell)
+                    self.buffer_cache.incref(bytes.fromhex(sub_checksum))
         elif isinstance(refholder, Expression):
             assert self.expression_to_ref[refholder] is None
             self.expression_to_ref[refholder] = (checksum, authority) 
@@ -90,7 +101,7 @@ class CacheManager:
         self.checksum_refs[checksum].append((refholder, authority))
         #print(self, "INCREF", checksum.hex(), self.checksum_refs[checksum])
 
-    def decref_checksum(self, checksum, refholder, authority):
+    def decref_checksum(self, checksum, refholder, authority, *, destroying=False):
         if checksum is None:
             if isinstance(refholder, Expression):
                 if refholder in self.expression_to_ref:
@@ -100,6 +111,16 @@ class CacheManager:
         if isinstance(refholder, Cell):
             assert self.cell_to_ref[refholder] is not None
             self.cell_to_ref[refholder] = None
+            cell = refholder
+            if not destroying and cell._hash_pattern is not None:
+                deep_buffer = self.buffer_cache.get_buffer(checksum)
+                deep_structure = deserialize(deep_buffer, checksum, "mixed", False)
+                sub_checksums = deep_structure_to_checksums(
+                    deep_structure, cell._hash_pattern
+                )
+                for sub_checksum in sub_checksums:
+                    self.buffer_cache.decref(bytes.fromhex(sub_checksum))
+
         elif isinstance(refholder, Expression):
             assert self.expression_to_ref[refholder] is not None
             self.expression_to_ref.pop(refholder)
@@ -131,7 +152,7 @@ class CacheManager:
                     sub_checksums = deep_structure_to_checksums(deep_structure, cell._hash_pattern)
                     for sub_checksum in sub_checksums:
                         self.buffer_cache.decref(bytes.fromhex(sub_checksum))
-            self.decref_checksum(checksum, cell, authority)
+            self.decref_checksum(checksum, cell, authority, destroying=True)
         self.cell_to_ref.pop(cell)
 
     @destroyer
@@ -189,3 +210,4 @@ from ..reactor import Reactor
 from ..library import Library
 from .expression import Expression
 from ..protocol.deep_structure import deep_structure_to_checksums
+from ..protocol.deserialize import deserialize_sync as deserialize

@@ -25,18 +25,9 @@ class SetCellValueTask(Task):
                 old_deep_value = await GetBufferTask(
                     manager, old_deep_checksum
                 ).run()
-                old_checksums = deep_structure_to_checksums(
-                    old_deep_value, hash_pattern
-                )
-                new_deep_value, new_checksums = await value_to_deep_structure(
+                new_deep_value, _ = await value_to_deep_structure(
                     value, hash_pattern
                 )                
-                for new_checksum in new_checksums:
-                    new_checksum = bytes.fromhex(new_checksum)
-                    buffer_cache.incref(new_checksum)
-                for old_checksum in old_checksums:
-                    old_checksum = bytes.fromhex(old_checksum)
-                    buffer_cache.decref(old_checksum)
                 value = new_deep_value
 
             buffer = await SerializeToBufferTask(
@@ -65,6 +56,6 @@ from ...protocol.validate_subcelltype import validate_subcelltype
 from ...protocol.calculate_checksum import checksum_cache
 from ..propagate import propagate_simple_cell
 from ...status import StatusReasonEnum
-from ...protocol.deep_structure import value_to_deep_structure, deep_structure_to_checksums
+from ...protocol.deep_structure import value_to_deep_structure
 from .checksum import CellChecksumTask
 from .get_buffer import GetBufferTask
