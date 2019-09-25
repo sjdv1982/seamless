@@ -157,6 +157,7 @@ class StructuredCell(SeamlessBase):
         assert not self.no_auth
         if self.auth._destroyed:
             return
+        self.modified_auth_paths.add(path)
         manager = self._get_manager()
         if manager._destroyed:
             return

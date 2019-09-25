@@ -224,7 +224,9 @@ for c in (ctx.stf1, ctx.stf2, ctx.stf3, ctx.stf4):
             offset = self.offset
         except AttributeError:
             return
-        assert offset == 0 or offset > 2000
+        if offset.unsilk is None:
+            return
+        assert offset == 0 or offset > 2000 or self.factor == 9
     h.add_validator(v)
 
 ctx.equilibrate(0.1)
@@ -256,6 +258,9 @@ while 1:
     if state != oldstate:
         print("Time elapsed: %.3f" % (time.time() - start))
         pprint(state)
+        exc = ctx.stf3.input.exception
+        if exc is not None:
+            print(exc)
         print()
         #ctx.params.value.report()
         oldstate = state.copy()

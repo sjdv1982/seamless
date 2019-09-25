@@ -72,6 +72,15 @@ def _unwrap_all(value):
     if isinstance(value, Wrapper):
         value = value._unwrap()
 
+class AlmostDict(dict):
+    """Dict subclass that returns a fixed items() instead of an iterator
+
+    This is because a schema may change during validation by jsonschema
+     and a normal dict will give a RuntimeError because of this
+    """
+    def items(self):
+        return list(dict.items(self))
+
 class Silk(SilkBase):
     __slots__ = [
             "_data", "_schema", "_parent",
@@ -656,13 +665,15 @@ class Silk(SilkBase):
                 attr_schema = {}
                 prop_schema[attr] = attr_schema
             schema = attr_schema
-        if validators is None:
-            validators = []
-            schema["validators"] = validators
-            validators = schema["validators"]  # to get back-end working properly
-        if name is not None:
-            validators[:] = [v for v in validators if v.get("name") != name]
-        validators.append(v)
+        new_validators = []
+        if validators is not None:
+            for validator in validators:
+                if name is None or validator.get("name") != name:
+                    new_validators.append(validator)
+        
+        new_validators.append(v)
+        schema["validators"] = new_validators
+        
 
     #***************************************************
     #*  methods for getting
@@ -750,7 +761,7 @@ class Silk(SilkBase):
                     result = getattr(self, "_data")
                 else:
                     result = getattr(self, "_" + attr)
-                if attr == "data":
+                if attr in ("data", "unsilk"):
                     result = RichValue(result).value
                 return result
             if self._self_mode:
@@ -862,6 +873,7 @@ class Silk(SilkBase):
             rich_value.storage 
         )
         schema = RichValue(self._schema).value
+        schema = AlmostDict(schema)
         schema_validator(schema).validate(data)
 
     def validate(self, full=True):
