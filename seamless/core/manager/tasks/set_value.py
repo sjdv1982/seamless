@@ -12,25 +12,45 @@ class SetCellValueTask(Task):
         from . import SerializeToBufferTask, CalculateChecksumTask, CellUpdateTask
         manager = self.manager()
         taskmanager = manager.taskmanager
+        buffer_cache = manager.cachemanager.buffer_cache
         await taskmanager.await_upon_connection_tasks(self.taskid)
         cell = self.cell
         lock = await taskmanager.acquire_cell_lock(cell)
         try:
             taskmanager.cell_to_value[cell] = self.value
+            value = self.value
+            hash_pattern = cell._hash_pattern
+            if hash_pattern is not None:
+                old_deep_checksum = cell._checksum
+                old_deep_value = await GetBufferTask(
+                    manager, old_deep_checksum
+                ).run()
+                old_checksums = deep_structure_to_checksums(
+                    old_deep_value, hash_pattern
+                )
+                new_deep_value, new_checksums = await value_to_deep_structure(
+                    value, hash_pattern
+                )                
+                for new_checksum in new_checksums:
+                    new_checksum = bytes.fromhex(new_checksum)
+                    buffer_cache.incref(new_checksum)
+                for old_checksum in old_checksums:
+                    old_checksum = bytes.fromhex(old_checksum)
+                    buffer_cache.decref(old_checksum)
+                value = new_deep_value
+
             buffer = await SerializeToBufferTask(
-                manager, self.value, cell._celltype,
+                manager, value, cell._celltype,
                 use_cache=False
             ).run()
             assert buffer is None or isinstance(buffer, bytes)
             checksum = await CalculateChecksumTask(manager, buffer).run()
             if checksum is not None:
-                buffer_cache = manager.cachemanager.buffer_cache
                 await validate_subcelltype(
                     checksum, cell._celltype, cell._subcelltype, 
                     str(cell), buffer_cache
                 )
                 checksum_cache[checksum] = buffer
-                buffer_cache.incref(checksum)
                 propagate_simple_cell(manager.livegraph, self.cell)                
                 manager._set_cell_checksum(self.cell, checksum, False)
                 CellUpdateTask(manager, self.cell).launch()
@@ -45,3 +65,6 @@ from ...protocol.validate_subcelltype import validate_subcelltype
 from ...protocol.calculate_checksum import checksum_cache
 from ..propagate import propagate_simple_cell
 from ...status import StatusReasonEnum
+from ...protocol.deep_structure import value_to_deep_structure, deep_structure_to_checksums
+from .checksum import CellChecksumTask
+from .get_buffer import GetBufferTask

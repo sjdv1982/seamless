@@ -54,7 +54,7 @@ class StructuredCellJoinTask(Task):
         value, checksum = None, None
         if len(sc.inchannels):
             paths = sorted(list(sc.inchannels))
-            if paths == [()]:
+            if paths == [()] and not sc.hash_pattern:
                 checksum = sc.inchannels[()]._checksum
                 assert checksum is None or isinstance(checksum, bytes), checksum
             else:

@@ -7,6 +7,7 @@ ctx.sc = StructuredCell(
     inchannels=[()],
     outchannels=[("a",), ("b",), ("c",)]
 )
+
 ctx.a = cell("int")
 ctx.sc.outchannels[("a",)].connect(ctx.a)
 ctx.b = cell("mixed")

@@ -77,7 +77,7 @@ async def get_subpath(value, hash_pattern, path):
     )
     if post_path is None:
         if result is None:
-            return None
+            return "value", None
         elif isinstance(result, str):            
             checksum = bytes.fromhex(result)
             return ("checksum", checksum)
@@ -103,16 +103,10 @@ async def get_subpath(value, hash_pattern, path):
             return ("value", value)
     else:
         checksum = bytes.fromhex(result)
-        return ("checksum", checksum)
-        #buffer = await get_buffer(checksum, buffer_cache)
-        #value = await deserialize(buffer, checksum, "mixed", copy=True)
-        #return _get_subpath(value, post_path)
-
-async def get_subpath(value, hash_pattern, path):
-    if hash_pattern is None:
-        return ("value", _get_subpath(value, path))
-    else:
-        raise NotImplementedError # livegraph branch
+        buffer = await get_buffer(checksum, buffer_cache)
+        value = await deserialize(buffer, checksum, "mixed", copy=True)
+        value = _get_subpath(value, post_path)
+        return ("value", value) 
 
 def set_subpath_sync(value, hash_pattern, path, subvalue):
     if hash_pattern is None:
@@ -287,12 +281,13 @@ async def set_subpath(value, hash_pattern, path, subvalue):
 
 
 from .deep_structure import (
-    write_deep_structure, set_deep_structure, value_to_deep_structure_sync,
-    deep_structure_to_value_sync,
+    write_deep_structure, set_deep_structure, 
+    value_to_deep_structure, value_to_deep_structure_sync,
+    deep_structure_to_value, deep_structure_to_value_sync,
     deep_structure_to_checksums, access_deep_structure
 )    
 from ..cache.buffer_cache import buffer_cache
-from .calculate_checksum import calculate_checksum_sync
+from .calculate_checksum import calculate_checksum, calculate_checksum_sync
 from .deserialize import deserialize_sync
-from .serialize import serialize_sync
+from .serialize import serialize, serialize_sync
 from .get_buffer import get_buffer, get_buffer_sync

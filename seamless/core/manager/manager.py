@@ -104,8 +104,11 @@ class Manager:
         """Setting a cell checksum.
   (This is done from the command line, usually at graph loading)
   initial=True in case of graph loading; from_structured_cell=True when triggered from StructuredCell)
-  If "initial" is True, it is assumed that the context is being initialized (e.g. when created from a graph).
-  Else, cell cannot be the .data or .buffer attribute of a StructuredCell, and cannot have any incoming connection.
+  If "initial" is True, it is assumed that the context is being initialized (e.g. when created from a graph)
+  If neither "initial" nor "from_structured_cell" is true, the cell:
+  - cannot be the .data or .buffer attribute of a StructuredCell
+  - cannot have any incoming connection.
+  - cannot be a deep cell (having a hash pattern)
 
   If the new checksum is None, do a cell void cancellation.  
   Else: 
@@ -120,6 +123,7 @@ class Manager:
             if from_structured_cell:
                 assert sc_data is not None or sc_buf is not None or len(sc_schema)
             else:
+                assert cell._hash_pattern is None
                 assert sc_data is None and sc_buf is None
                 assert self.livegraph.has_authority(cell)
                 assert sc_buf is None

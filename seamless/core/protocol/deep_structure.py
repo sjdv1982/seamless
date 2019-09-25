@@ -40,7 +40,7 @@ def validate_deep_structure(deep_structure, hash_pattern):
             try:
                 bytes.fromhex(deep_structure)
             except:
-                raise AssertionError
+                raise AssertionError from None
             return
         assert isinstance(hash_pattern, dict)    
         single_key = len(hash_pattern)
@@ -98,7 +98,7 @@ def access_deep_structure(deep_structure, hash_pattern, path):
     if deep_structure is None:
         return None, None
     
-    if not len(path):
+    if path is not None and not len(path):
         path = None
     if hash_pattern == "#":
         result = deep_structure

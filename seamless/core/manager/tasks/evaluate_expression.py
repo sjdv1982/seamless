@@ -26,7 +26,9 @@ class EvaluateExpressionTask(Task):
           cachemanager.expression_to_checksum.get(expression)
         if expression_result_checksum is None:
             # If the expression is trivial, obtain its result checksum directly
-            if expression.path is None and not needs_buffer_evaluation(
+            if expression.path is None and \
+              expression.hash_pattern is None and \
+            not needs_buffer_evaluation(
                 expression.checksum,
                 expression.celltype, 
                 expression.target_celltype, 
@@ -53,7 +55,7 @@ class EvaluateExpressionTask(Task):
                         expression.celltype, copy=False
                     ).run()
                     mode, result = await get_subpath(value, expression.hash_pattern, expression.path)
-                    if mode == "value":
+                    if mode == "value":                        
                         if result is None:
                             return None
                         else:
