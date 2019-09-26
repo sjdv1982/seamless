@@ -2,8 +2,6 @@ from . import Task
 import traceback
 import copy
 
-print("TODO: tasks/structured_cell.py: task to deserialize editchannel, then structured_cell.set_auth_path")
-
 def overlap_path(p1, p2):
     if p1[:len(p2)] == p2:
         return True    

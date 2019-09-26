@@ -28,12 +28,6 @@ class Outchannel:
             target_subpath = None
         manager.connect(sc._data, self.subpath, target, target_subpath)
 
-class Editchannel:
-    def __init__(self, structured_cell, subpath):
-        assert isinstance(subpath, tuple)
-        self.structured_cell = weakref.ref(structured_cell)
-        self.subpath = subpath
-
 class StructuredCell(SeamlessBase):
     _celltype = "structured"    
     _exception = None
@@ -42,14 +36,10 @@ class StructuredCell(SeamlessBase):
         schema=None,
         inchannels=[],
         outchannels=[],
-        editchannels=[],
         buffer=None,
         hash_pattern=None
     ):      
         from .unbound_context import UnboundManager
-        if len(editchannels):
-            raise NotImplementedError # livegraph branch
-
         self.no_auth = False
         if auth is None:
             if not len(inchannels):
@@ -100,7 +90,7 @@ class StructuredCell(SeamlessBase):
         if not self.no_auth:
             assert auth._hash_pattern == data._hash_pattern
 
-        self._validate_channels(inchannels, outchannels, editchannels)
+        self._validate_channels(inchannels, outchannels)
         self.modified_auth_paths = set()
         self.modified_inchannels = set()
         self.modified_schema = False
@@ -120,18 +110,15 @@ class StructuredCell(SeamlessBase):
     def exception(self):
         return self._exception
 
-    def _validate_channels(self, inchannels, outchannels, editchannels):
+    def _validate_channels(self, inchannels, outchannels):
         self.inchannels = PathDict()
         for inchannel in inchannels:
             self.inchannels[inchannel] = Inchannel(self, inchannel)
         self.outchannels = PathDict()
         for outchannel in outchannels:
             self.outchannels[outchannel] = Outchannel(self, outchannel)
-        self.editchannels = PathDict()
-        for editchannel in editchannels:
-            self.editchannels[editchannel] = Editchannel(self, editchannel)
 
-        inchannels = list(self.inchannels.keys()) + list(self.editchannels.keys())
+        inchannels = list(self.inchannels.keys())
         
         for path1 in inchannels:
             lpath1 = len(path1)

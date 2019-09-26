@@ -34,8 +34,7 @@ def translate_py_reactor(node, root, namespace, inchannels, outchannels, lib_pat
 
     buffered = node["buffered"]
     interchannels_in = [as_tuple(p) for p, pin in node["pins"].items() if pin["io"] == "output"]
-    interchannels_out = [as_tuple(p) for p, pin in node["pins"].items() if pin["io"] == "input"]
-    interchannels_edit = [as_tuple(p) for p, pin in node["pins"].items() if pin["io"] == "edit"]
+    interchannels_out = [as_tuple(p) for p, pin in node["pins"].items() if pin["io"] == "input"]    
 
     all_inchannels = interchannels_in + inchannels  #highlevel must check that there are no duplicates
     all_outchannels = interchannels_out + [p for p in outchannels if p not in interchannels_out]
@@ -83,8 +82,6 @@ def translate_py_reactor(node, root, namespace, inchannels, outchannels, lib_pat
         iomode = pin["io"]
         if iomode == "input":
             io.connect_outchannel( (pinname,) ,  target)
-        elif iomode == "edit":
-            io.connect_editchannel( (pinname,) ,  target)
         elif iomode == "output":
             io.connect_inchannel(target, (pinname,))
 
@@ -220,27 +217,29 @@ def translate_link(node, namespace, ctx):
     first2, second2 = first, second
     if isinstance(first, StructuredCell):
         assert not first_simple
-        first2 = first.editchannels[subpath_first]
+        ###first2 = first.editchannels[subpath_first]
     else:
         ###assert first_simple #could come from a CodeProxy!
         pass
 
     if isinstance(second, StructuredCell):
         assert not second_simple
-        second2 = second.editchannels[(subpath_second)]
+        ###second2 = second.editchannels[(subpath_second)]
     else:
         ###assert second_simple #could come from a CodeProxy!
         pass
 
     #print("LINK!", first_simple, second_simple, first, type(first).__name__, second, type(second).__name__)
     if (not first_simple) and isinstance(first, StructuredCell):
-        first.connect_editchannel(subpath_first, second2)
+        ###first.connect_editchannel(subpath_first, second2)
+        pass
     else:
         raise NotImplementedError #subpath!
         first._get_manager().connect_cell(first, second2, duplex=True)
 
     if (not second_simple) and isinstance(second, StructuredCell):
-        second.connect_editchannel(subpath_second, first2)
+        ###second.connect_editchannel(subpath_second, first2)
+        pass
     else:
         raise NotImplementedError #subpath!
         second._get_manager().connect_cell(second, first2, duplex=True)

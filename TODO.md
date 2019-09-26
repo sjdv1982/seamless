@@ -1,11 +1,3 @@
-UPDATE: A. - D., left TODO:
-- Editchannels
-
-
-
-
-
-
 E. The mid/high level
 1. Change the call graph
  Change "initial" in set checksum: only for auth portion of structuredcell
