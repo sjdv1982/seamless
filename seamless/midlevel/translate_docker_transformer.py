@@ -77,7 +77,6 @@ def translate_docker_transformer(node, root, namespace, inchannels, outchannels,
         ctx.code = core_cell("text")
         if "code" in mount:
             ctx.code.mount(**mount["code"])
-        ctx.code._sovereign = True
 
     ctx.pins.connect(ctx.tf.pins)
     ctx.code.connect(ctx.tf.docker_command)

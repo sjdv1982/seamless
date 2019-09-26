@@ -101,7 +101,7 @@ class MountItem:
         if cell._destroyed:
             return
         if "r" in self.mode:
-            assert cell.has_authority(), cell # mount read mode only for authoritative cells; TODO sovereignty
+            assert cell.has_authority(), cell # mount read mode only for authoritative cells
         exists = self._exists()
         cell_buffer, cell_checksum = cell.buffer_and_checksum
         cell_empty = (cell_checksum is None)

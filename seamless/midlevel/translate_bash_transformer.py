@@ -74,7 +74,6 @@ def translate_bash_transformer(node, root, namespace, inchannels, outchannels, l
         ctx.code = core_cell("text")
         if "code" in mount:
             ctx.code.mount(**mount["code"])
-        ctx.code._sovereign = True
 
     ctx.pins.connect(ctx.tf.pins)
     ctx.code.connect(ctx.tf.bashcode)

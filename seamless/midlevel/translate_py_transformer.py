@@ -62,7 +62,6 @@ def translate_py_transformer(node, root, namespace, inchannels, outchannels, lib
             ctx.code = core_cell("transformer")
         if "code" in mount:
             ctx.code.mount(**mount["code"])
-        ctx.code._sovereign = True
 
     ctx.code.connect(ctx.tf.code)
     checksum = node.get("checksum", {})

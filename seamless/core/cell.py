@@ -44,15 +44,6 @@ Use ``Cell.status()`` to get its status.
     _lib_path = None # Set by library.libcell
     _paths = None #WeakSet of Path object weakrefs
     _hash_pattern = None #must be None, except for MixedCell
-    """
-      Sovereignty
-      A low level cell may be sovereign if it has a 1:1 correspondence to a mid-level element.
-      Sovereign cells are authoritative, they may be changed, and changes to sovereign cells do not cause
-      the translation macro to re-trigger.
-      When a translation macro is re-triggered for another reason (or when the mid-level is serialized),
-      the mid-level element is dynamically read from the sovereign cell (no double representation)
-    """
-    _sovereign = False
     _observer = None
     _traitlets = None
     _share = None
@@ -144,14 +135,6 @@ Use ``Cell.status()`` to get its status.
             str(self)
         )
         return sem_checksum.hex()
-
-    @property
-    def authoritative(self):
-        manager = self._get_manager()
-        if isinstance(manager, UnboundManager):
-            raise Exception("Cannot ask the cell value of a context that is being constructed by a macro")
-        # Sovereign
-        raise NotImplementedError # livegraph branch
 
     @property
     def buffer(self):

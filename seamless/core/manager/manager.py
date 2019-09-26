@@ -162,7 +162,7 @@ class Manager:
             if old_checksum is not None:
                 if not from_structured_cell:
                     self.cancel_cell(cell, void=False)
-        #and cell._context()._macro is None: # TODO: sovereignty...
+        #and cell._context()._macro is None: # TODO: forbid
         self._set_cell_checksum(
             cell, checksum, 
             (checksum is None), status_reason=reason

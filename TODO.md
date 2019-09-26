@@ -7,11 +7,10 @@ E. The mid/high level
 Loading structured cell auth from graph checksum can be tricky,
  maybe specialized routine (see unbound_context line 321)
 What about structured cells + library? Think and study how it was before livegraph
-3. Bring back sovereignty
-4. Run tests
-5. Test in Jupyter
-6. Test Observable Notebook (client JS has changed)
-7. Re-run examples
+3. Run tests
+4. Test in Jupyter
+5. Test Observable Notebook (client JS has changed)
+6. Re-run examples
 
 =======================================================  
 SOMEWHAT OUTDATED: until: see below
@@ -350,7 +349,7 @@ Medium-term:
 
 
 Long-term:
--  disallow low-level modification of cells under macro control, unless sovereign.
+-  disallow low-level modification of cells under macro control.
 - Meta-schema for schema editing (jsonschema has it)
 - More love to the GUI around report channels (to visualize) and around high-level context (to edit)
   At this point, some proof-of-principle should exist already.
@@ -456,7 +455,7 @@ enforced.
   If you want to generate them dynamically, use a high-level macro.
 
 What stays is that after translation, the *low-level holds the authoritative
-state of the call graph* (this is PySeamless's sovereignty idea).
+state of the call graph*.
 This means that authoritative low-level updates (from mounts or reactors;
 libraries are already linked to the high level) do not need to update the call
  graph. Right before re-translation or serialization, the call graph is filled

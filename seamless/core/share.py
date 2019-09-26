@@ -41,7 +41,7 @@ class ShareItem:
         if cell._destroyed:
             return        
         if not self.readonly:
-            assert cell.has_authority(), cell # mount read mode only for authoritative cells; TODO sovereignty
+            assert cell.has_authority(), cell # mount read mode only for authoritative cells
         self._initializing = True
         try:
             _, cell_checksum = cell.buffer_and_checksum
@@ -51,7 +51,7 @@ class ShareItem:
             if cached_share is not None:
                 if cell_empty and not self.readonly:
                     cell_checksum = cached_share._checksum
-                    from_cache = True #TODO: only if not sovereign
+                    from_cache = True
             if cached_share is not None:
                 namespace = cached_share.namespace()
                 root = namespace._ctx_root()            

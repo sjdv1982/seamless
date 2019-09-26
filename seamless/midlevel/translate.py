@@ -57,7 +57,6 @@ def translate_py_reactor(node, root, namespace, inchannels, outchannels, lib_pat
             setattr(ctx, attr, c)
         else:
             c = core_cell(node["language"])
-            c._sovereign = True
             setattr(ctx, attr, c)
             if "mount" in node and attr in node["mount"]:
                 c.mount(**node["mount"][attr])
