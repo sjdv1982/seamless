@@ -24,8 +24,6 @@ def get_new_cell(path):
         "type": "cell",
         "celltype": "structured",
         "datatype": "mixed",
-        "silk": True,
-        "buffered": True,
         "UNTRANSLATED": True,
     }
 

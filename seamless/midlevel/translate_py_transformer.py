@@ -20,13 +20,10 @@ def translate_py_transformer(node, root, namespace, inchannels, outchannels, lib
         assert (not len(c)) or c[0] != result_name #should have been checked by highlevel
 
     with_result = node["with_result"]
-    buffered = node["buffered"]
     interchannels = [as_tuple(pin) for pin in node["pins"]]
-    plain = node["plain"]
-    mount = node.get("mount", {})
-    silk = (buffered or not plain)
+    mount = node.get("mount", {})    
     inp, inp_ctx = build_structured_cell(
-      ctx, input_name, silk, plain, buffered, inchannels, interchannels,
+      ctx, input_name, inchannels, interchannels,
       lib_path0,
       return_context=True
     )
@@ -83,9 +80,8 @@ def translate_py_transformer(node, root, namespace, inchannels, outchannels, lib
         inp.outchannels[(pin,)].connect(target)
 
     if with_result:
-        plain_result = node["plain_result"]
         result, result_ctx = build_structured_cell(
-            ctx, result_name, True, plain_result, False, [()],
+            ctx, result_name, [()],
             outchannels, lib_path0,
             return_context=True
         )

@@ -1,3 +1,5 @@
+raise NotImplementedError
+
 import seamless
 from seamless.core import macro_mode_on, context, cell
 from seamless.midlevel.translate import translate
@@ -27,8 +29,6 @@ graph = {
         "with_schema": False,
         "with_result": False,
         "buffered": False,
-        "plain": True,
-        "plain_result": True,
         "compiled": False,  
         "debug": False,      
     },

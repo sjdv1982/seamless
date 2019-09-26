@@ -459,10 +459,12 @@ class LiveGraph:
         if path is not None:
             assert cell._structured_cell is not None
             return not cell._structured_cell.no_auth
-        assert cell._structured_cell is None
         if cell._destroyed and cell in self.temp_auth:            
             return self.temp_auth[cell]
-        return self.cell_to_upstream[cell] is None
+        if cell._structured_cell is not None:
+            return cell._structured_cell.auth is cell
+        else:
+            return self.cell_to_upstream[cell] is None
 
     def will_lose_authority(self, cell):
         return cell in self._will_lose_authority

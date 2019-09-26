@@ -140,6 +140,9 @@ class StructuredCell(SeamlessBase):
             return
         return get_subpath(self._auth_value, self.hash_pattern, path)
 
+    def set(self, value):
+        self.handle.set(value)
+
     def _set_auth_path(self, path, value, from_pop=False):
         assert not self.no_auth
         if self.auth._destroyed:
@@ -183,7 +186,7 @@ class StructuredCell(SeamlessBase):
                         self._auth_value = []
             set_subpath(self._auth_value, self.hash_pattern, path, value)
 
-    def _join(self):
+    def _join(self):        
         if self.buffer._destroyed:
             return
         manager = self._get_manager()

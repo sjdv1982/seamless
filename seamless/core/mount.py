@@ -685,7 +685,8 @@ def scan(ctx_or_cell):
                 child = child.get_linked()
             if isinstance(child, Cell) and child._mount is None:
                 if child._structured_cell:
-                    raise Exception("Structured cells cannot be mounted")
+                    #raise Exception("Structured cells cannot be mounted")
+                    return
                 else:
                     livegraph = child._get_manager().livegraph
                     if child._get_macro() is not None or livegraph.will_lose_authority(child):
@@ -784,7 +785,7 @@ def scan(ctx_or_cell):
             object.__setattr__(link, "_mount", mount) #not in macro mode
             mount_links.append(link)
 
-    ctx_to_mount = sorted(contexts_to_mount, key=lambda l:len(l.path))
+    ctx_to_mount = sorted(contexts_to_mount, key=lambda l:len(l.path))    
     for ctx in ctx_to_mount:
         as_parent = contexts_to_mount[ctx]
         mountmanager._check_context(ctx, as_parent)

@@ -3,7 +3,7 @@ Sets up bidirectional links
 For now, will be implemented as a reactor with two edit pins
 """
 
-raise NotImplementedError
+print("TODO: high-level link")
 
 from .Base import Base
 

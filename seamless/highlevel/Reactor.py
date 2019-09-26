@@ -28,8 +28,6 @@ class Reactor(Base):
             #"code_stop": None,
             "pins": {},
             "IO": "io",
-            "buffered": True,
-            "plain": False,
             "UNTRANSLATED": True
         }
         parent._graph.nodes[path] = hrc
@@ -251,8 +249,6 @@ class Reactor(Base):
                 "type": "cell",
                 "celltype": "structured",
                 "datatype": "mixed",
-                "silk": True,
-                "buffered": True,
             }
         #TODO: check existing inchannel connections and links (cannot be the same or higher)
         child = Cell(parent, path) #inserts itself as child

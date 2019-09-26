@@ -26,8 +26,6 @@ graph = [
         "INPUT": "inp",
         "with_schema": False,
         "buffered": True,
-        "plain": True,
-        "plain_result": True,
     },
     {
         "path": ("twopi",),

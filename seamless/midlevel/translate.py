@@ -32,19 +32,16 @@ def translate_py_reactor(node, root, namespace, inchannels, outchannels, lib_pat
     if len(inchannels):
         lib_path0 = None #partial authority or no authority; no library update in either case
 
-    buffered = node["buffered"]
     interchannels_in = [as_tuple(p) for p, pin in node["pins"].items() if pin["io"] == "output"]
     interchannels_out = [as_tuple(p) for p, pin in node["pins"].items() if pin["io"] == "input"]    
 
     all_inchannels = interchannels_in + inchannels  #highlevel must check that there are no duplicates
     all_outchannels = interchannels_out + [p for p in outchannels if p not in interchannels_out]
 
-    plain = node["plain"]
-    io = build_structured_cell(
-      ctx, io_name, True, plain, buffered,
+    build_structured_cell(
+      ctx, io_name,
       all_inchannels, all_outchannels, lib_path0,
     )
-    setattr(ctx, io_name, io)
     for inchannel in inchannels:
         path = node["path"] + inchannel
         namespace[path, True] = io.inchannels[inchannel], node
@@ -97,17 +94,11 @@ def translate_cell(node, root, namespace, inchannels, outchannels, lib_path0, is
         lib_path0 = None #partial authority or no authority; no library update in either case
     if ct == "structured":
         assert not link_target
-        buffered = node["buffered"]
         datatype = node["datatype"]
         ### TODO: harmonize datatype with schema type
-        if datatype in ("mixed", "array"):
-            plain = False
-        else: #unknown datatype must be text
-            plain = True
-        silk = node["silk"]
         mount = node.get("mount")
-        child = build_structured_cell(
-          parent, name, silk, plain, buffered,
+        child, _ = build_structured_cell(
+          parent, name,
           inchannels, outchannels,
           lib_path0, mount=mount
         )
@@ -145,7 +136,6 @@ def translate_cell(node, root, namespace, inchannels, outchannels, lib_path0, is
                 child = core_cell(ct)
             else:
                 raise ValueError(ct) #unknown celltype; should have been caught by high level
-            child._sovereign = True
     setattr(parent, name, child)
     pathstr = "." + ".".join(path)
     checksum = node.get("checksum")
@@ -153,10 +143,22 @@ def translate_cell(node, root, namespace, inchannels, outchannels, lib_path0, is
         if link_target is not None:
             warn("Cell %s has a link target, cannot set construction constant" % pathstr)
         else:
-            if "schema" in checksum and ct == "structured":
-                child._set_checksum(checksum["schema"], schema=True, initial=True)
-            if "value" in checksum:
-                child._set_checksum(checksum["value"], initial=True)
+            if ct == "structured":
+                if "temp" in checksum:
+                    assert len(checksum) == 1, checksum.keys()
+                    child.auth._set_checksum(checksum["temp"], initial=True)
+                else:
+                    if "value" in checksum:
+                        child.data._set_checksum(checksum["value"], initial=True)
+                    if "auth" in checksum:
+                        child.auth._set_checksum(checksum["auth"], initial=True)
+                    if "buffer" in checksum:
+                        child.buffer._set_checksum(checksum["buffer"], initial=True)
+                    if "schema" in checksum:
+                        child.schema._set_checksum(checksum["schema"], initial=True)
+            else:
+                if "value" in checksum:
+                    child._set_checksum(checksum["value"], initial=True)
     if ct != "structured":
         if link_target is not None:
             if "mount" in node:
@@ -166,7 +168,6 @@ def translate_cell(node, root, namespace, inchannels, outchannels, lib_path0, is
                 child.set_file_extension(node["file_extension"])
             if "mount" in node:
                 child.mount(**node["mount"])
-
 
     return child
 

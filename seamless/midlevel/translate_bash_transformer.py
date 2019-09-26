@@ -26,7 +26,6 @@ def translate_bash_transformer(node, root, namespace, inchannels, outchannels, l
         assert (not len(c)) or c[0] != result_name #should have been checked by highlevel
 
     with_result = node["with_result"]
-    buffered = node["buffered"]
     pins = node["pins"].copy()
     for extrapin in ("bashcode", "pins"):
         assert extrapin not in node["pins"], extrapin
@@ -38,10 +37,9 @@ def translate_bash_transformer(node, root, namespace, inchannels, outchannels, l
     ctx.pins = core_cell("plain").set(list(pins.keys()))
 
     interchannels = [as_tuple(pin) for pin in pins]
-    plain = node["plain"]
     mount = node.get("mount", {})
     inp, inp_ctx = build_structured_cell(
-      ctx, input_name, True, plain, buffered, inchannels, interchannels,
+      ctx, input_name, inchannels, interchannels,
       lib_path0,
       return_context=True
     )
@@ -100,9 +98,8 @@ def translate_bash_transformer(node, root, namespace, inchannels, outchannels, l
         inp.outchannels[(pin,)].connect(target)
 
     if with_result:
-        plain_result = node["plain_result"]
         result, result_ctx = build_structured_cell(
-            ctx, result_name, True, plain_result, False, [()],
+            ctx, result_name, [()],
             outchannels, lib_path0,
             return_context=True
         )
@@ -120,7 +117,7 @@ def translate_bash_transformer(node, root, namespace, inchannels, outchannels, l
         if "result" in checksum:
             result._set_checksum(checksum["result"], initial=True)
         if "result_schema" in checksum:
-            result._set_checksum(checksum["result_schema"], schema=True, initial=True))
+            result._set_checksum(checksum["result_schema"], schema=True, initial=True)
     else:
         for c in outchannels:
             assert len(c) == 0 #should have been checked by highlevel

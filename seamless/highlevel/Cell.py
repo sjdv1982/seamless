@@ -11,7 +11,6 @@ from .mime import get_mime, language_to_mime, ext_to_mime
 
 class Cell(Base):
     _virtual_path = None
-    _example_cache = None
 
     def __init__(self, parent=None, path=None):
         assert (parent is None) == (path is None)
@@ -34,11 +33,13 @@ class Cell(Base):
         return [] #stub
 
     def __str__(self):
+        return str(self._get_cell())
+        """
         try:
             return str(self._get_cell())
         except AttributeError:
-            raise
             return("Cell %s in dummy mode" % ("." + ".".join(self._path)))
+        """
 
     def _get_cell_subpath(self, cell, subpath):
         p = cell
@@ -53,9 +54,10 @@ class Cell(Base):
         if not parent._translating:
             if threading.current_thread() == threading.main_thread():
                 parent._do_translate()
-        p = parent._gen_context
+        p = parent._gen_context        
         if len(self._path):
-            p = getattr(p, self._path[0])
+            pp = self._path[0]
+            p = getattr(p, pp)
         return self._get_cell_subpath(p, self._path[1:])
 
     def _get_hcell(self):
@@ -67,6 +69,18 @@ class Cell(Base):
         if hcell.get("checksum") is None:
             hcell["checksum"] = {}
         hcell["checksum"]["value"] = checksum
+
+    def _observe_auth(self, checksum):
+        hcell = self._get_hcell()
+        if hcell.get("checksum") is None:
+            hcell["checksum"] = {}
+        hcell["checksum"]["auth"] = checksum
+
+    def _observe_buffer(self, checksum):
+        hcell = self._get_hcell()
+        if hcell.get("checksum") is None:
+            hcell["checksum"] = {}
+        hcell["checksum"]["buffer"] = checksum
 
     def _observe_schema(self, checksum):
         hcell = self._get_hcell()
@@ -91,7 +105,7 @@ class Cell(Base):
             raise TypeError(item)
 
     def __getattr__(self, attr):
-        if attr == "value":
+        if attr in ("value", "example"):
             raise AttributeError(attr) #property has failed
         if attr == "schema":
             hcell = self._get_hcell()
@@ -179,22 +193,19 @@ class Cell(Base):
             return value
 
     @property
-    def example(self):
+    def example(self):        
         if self.celltype != "structured":
             raise AttributeError
         cell = self._get_cell()
-        if self._example_cache is not None:
-            cached_cell, cached_example = self._example_cache
-            cached_cell = cached_cell()
-            if cached_cell is not None and cached_cell is cell:
-                return cached_example
-        schema = cell.handle.schema        
-        example = Silk(
-         schema=schema,
-         schema_dummy=True
-        )
-        self._example_cache = weakref.ref(cell), example
-        return example
+        struc_ctx = cell._data._context()
+        return struc_ctx.example.handle
+
+    @property
+    def exception(self):        
+        if self.celltype != "structured":
+            raise AttributeError
+        cell = self._get_cell()
+        return cell.exception
 
     @property
     def checksum(self):
@@ -362,10 +373,13 @@ class Cell(Base):
             raise Exception(cell)
         cell._set_observer(self._observe_cell)
         if self.celltype == "structured":
-            cell.schema._set_observer(self._observe_schema)        
+            cell.auth._set_observer(self._observe_auth)
+            cell.buffer._set_observer(self._observe_buffer)
+            cell.schema._set_observer(self._observe_schema)            
         
 
 
 from .Library import test_lib_lowlevel
 from .SubCell import SubCell
 from .proxy import Proxy
+from ..midlevel.util import STRUC_ID

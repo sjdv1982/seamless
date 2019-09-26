@@ -6,7 +6,7 @@ from functools import partial
 
 from .Base import Base
 from ..core import macro_mode
-from ..core.macro_mode import macro_mode_on, macro_mode_off, get_macro_mode
+from ..core.macro_mode import macro_mode_on, get_macro_mode
 from ..core.context import context, Context as CoreContext
 from ..core.cell import cell
 from ..core.mount import mountmanager #for now, just a single global mountmanager
@@ -26,7 +26,6 @@ shareserver = None
 class Context:
     path = ()
     _mount = None
-    _gen_context = None
     _graph_ctx = None
     _depsgraph = None
     _translating = False
@@ -34,17 +33,11 @@ class Context:
     _auto_register_library = False
     _shares = None
     _translate_count = 0  
+    _gen_context = None
 
     @classmethod
     def from_graph(cls, graph, manager):
-        self = cls()
-        if manager is not None:
-            from seamless.core.manager import Manager
-            from seamless.core.context import Context
-            assert isinstance(self._ctx0, Context), type(self._ctx0)
-            assert isinstance(manager, Manager), type(manager)
-            manager._change_context(self._ctx0) # to implement? # livegraph branch
-            self._ctx0._manager = weakref.ref(manager)
+        self = cls(manager=manager)
         graph = deepcopy(graph)
         nodes = {}        
         for node in graph["nodes"]:
@@ -61,15 +54,14 @@ class Context:
         self._graph = Graph(nodes, connections, graph["params"])
         return self
 
-    def __init__(self, dummy=False):
+    def __init__(self, dummy=False, manager=None):
+        from seamless.core.manager import Manager
         self._dummy = dummy
-        if not dummy:            
-            with macro_mode_on(self):
-                self._ctx0 = context(toplevel=True)
-                ctx = self._ctx0._root_
-                self._gen_context = ctx
-                self._ctx0._bind(ctx)
-            macro_mode._toplevel_registered.add(ctx)
+        if manager is not None:            
+            assert isinstance(manager, Manager), type(manager)
+            self._manager = manager
+        else:
+            self._manager = Manager()
         self._graph = Graph({},[],{"from_lib": None})
         self._children = {}
         self._needs_translation = True
@@ -169,11 +161,6 @@ class Context:
             "authority": authority,
             "persistent": persistent
         }
-        with macro_mode_on():
-            ctx = self._ctx0
-            ctx.mount(**self._mount)
-            mountmanager.add_context(ctx,(), False)
-            mountmanager.paths[ctx._root()].add(path) #kludge
         self._translate()
 
     def mount_graph(self, mountdir, persistent=None):
@@ -201,7 +188,7 @@ class Context:
         if self._dummy:
             return
         self.translate()
-        return self._ctx0.equilibrate(timeout)
+        return self._gen_context.equilibrate(timeout)
 
     def self(self):
         raise NotImplementedError
@@ -215,7 +202,7 @@ class Context:
     def get_graph(self, copy=True):        
         try:
             self._translating = True
-            manager = self._ctx0._bound._get_manager()            
+            manager = self._manager
             copying.fill_checksums(manager, self._graph.nodes)            
         finally:
             self._translating = False
@@ -238,41 +225,28 @@ class Context:
             return
         if self._translating:
             raise Exception("Nested invocation of ctx.translate")
-        ### TODO: check that current_macro is not part of self._ctx0
-        ###from ..core.macro_mode import get_macro_mode
-        ###assert not get_macro_mode()
         self._translate_count += 1
-        graph = self.get_graph(copy=False)
+        graph = self.get_graph(copy=False)        
         try:            
             self._translating = True
             ctx = None
             ok = False
-            manager = self._ctx0._get_manager()               
-            with macro_mode_off():
-                ctx = CoreContext(toplevel=True)
-            macro_mode._toplevel_registered.add(ctx)
-            raise NotImplementedError # livegraph branch; TODO: "manager" part below looks fishy...
-            manager._change_context(ctx) # to implement?
-            ctx._manager = weakref.ref(manager)
-            ctx._macro = self
-            assert not len(ctx.path)
-            old_gen_context = self._gen_context
-            if old_gen_context is not None:
-                old_gen_context.destroy()
-                self._gen_context = None
-            with macro_mode_on(self):
-                ub_ctx = context(toplevel=True, manager=manager) 
+            if self._gen_context is not None:
+                self._gen_context.destroy()
+            with macro_mode_on():
+                ub_ctx = context(
+                    toplevel=True,
+                    manager=self._manager
+                )
+                if self._mount is not None:
+                    ub_ctx._mount = self._mount.copy()
                 self._unbound_context = ub_ctx                
                 lib_paths = get_lib_paths(self)
                 translate(graph, ub_ctx, lib_paths, is_lib)
-                ok = True
-                ub_ctx._bind(ctx)                
-                assert not len(ctx.path)
-                self._gen_context = ctx
-                ub_ctx._root_.destroy()               
                 for traitlet in self._traitlets.values():
                     traitlet._connect()
                 self._connect_share()
+            self._gen_context = ub_ctx._bound
         finally:
             self._translating = False
             self._unbound_context = None
@@ -409,14 +383,6 @@ class Context:
             return result
         else:
             return "OK"
-
-    def _root(self):
-        # Needed so that Context can pretend to be a low-level macro
-        return self._ctx0._bound
-
-    def _context(self):
-        # Needed so that Context can pretend to be a low-level macro
-        return self._ctx0._bound
         
     def _remove_connections(self, path):
         # Removes all connections starting with path

@@ -271,7 +271,7 @@ class Path:
                 root = self._realmanager._ctx()._root()
                 return root
             else:
-                root = self._realmanager.ctx()
+                root = self._realmanager.last_ctx()
                 return root
         else:
             raise AttributeError

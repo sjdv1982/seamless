@@ -67,10 +67,13 @@ def find_channels(path, connection_paths):
     return inchannels, outchannels
 
 def build_structured_cell(
-  ctx, name, silk, plain, buffered,
+  ctx, name,
   inchannels, outchannels, lib_path0,
-  *, mount=None, return_context=False
+  *, mount=None, return_context=False,
+  hash_pattern=None
 ):
+    if hash_pattern is not None:
+        raise NotImplementedError
     #print("build_structured_cell", name, lib_path)
     name2 = name + STRUC_ID
     c = context(toplevel=False)
@@ -78,64 +81,43 @@ def build_structured_cell(
     if mount is not None:
         c.mount(**mount)
     lib_path = lib_path0 + "." + name2 if lib_path0 is not None else None
-    sovereign = True
-    if plain:
-        if lib_path:
-            path = lib_path + ".data"
-            cc = libcell(path)
-        else:
-            cc = core_cell("mixed")
-            cc._sovereign = sovereign
-        c.data = cc
-        storage = None
+    if lib_path:
+        path = lib_path + ".data"
+        c.data = libcell(path, "mixed")
     else:
-        if lib_path:
-            path = lib_path + ".data"
-            c.data = libcell(path, "mixed")
-        else:
-            c.data = core_cell("mixed")
-            c.data._sovereign = sovereign
-    if silk:
-        if lib_path:
-            path = lib_path + ".schema"
-            schema = libcell(path)
-        else:
-            schema = core_cell("plain")
-        c.schema = schema
+        c.data = core_cell("mixed")
+
+    if lib_path:
+        path = lib_path + ".auth"
+        c.auth = libcell(path, "mixed")
     else:
-        schema = None
+        c.auth = core_cell("mixed")
+
+    if lib_path:
+        path = lib_path + ".schema"
+        c.schema = libcell(path)
+    else:
+        c.schema = core_cell("plain")
         
-    if buffered:
-        if plain:
-            if lib_path:
-                path = lib_path + ".buffer"
-                cc = libcell(path)
-            else:
-                cc = core_cell("mixed")
-                cc._sovereign = sovereign
-            c.buffer = cc
-            storage = None
-        else:
-            if lib_path:
-                path = lib_path + ".buffer"
-                c.buffer = libcell(path, "mixed")
-            else:
-                c.buffer = core_cell("mixed")
-                c.buffer._sovereign = sovereign
-        buffer = c.buffer
+    if lib_path:
+        path = lib_path + ".buffer"
+        c.buffer = libcell(path, "mixed")
     else:
-        buffer = None
-        
+        c.buffer = core_cell("mixed")
+
     sc = StructuredCell(
-        name,
-        c.data,
-        schema=schema,
-        buffer=buffer,
-        plain=plain,
+        data=c.data,
+        auth=c.auth,
+        schema=c.schema,
+        buffer=c.buffer,
         inchannels=inchannels,
         outchannels=outchannels
     )
-    if return_context:
-        return sc, c
-    else:
-        return sc
+    c.example_data = core_cell("mixed")
+    c.example_buffer = core_cell("mixed")
+    c.example = StructuredCell(
+        c.example_data,
+        buffer=c.example_buffer,
+        schema=c.schema
+    )
+    return sc, c

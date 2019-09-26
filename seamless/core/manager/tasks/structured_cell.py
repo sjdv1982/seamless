@@ -31,7 +31,7 @@ class StructuredCellJoinTask(Task):
             await taskmanager.await_tasks(tasks, shield=True)
 
 
-    async def _run(self):
+    async def _run(self):        
         manager = self.manager()
         sc = self.structured_cell
         await self.await_sc_tasks()
@@ -79,7 +79,7 @@ class StructuredCellJoinTask(Task):
                     else:
                         await set_subpath(value, sc.hash_pattern, path, None)
         else:            
-            value = sc._auth_value        
+            value = sc._auth_value               
         if checksum is None and value is not None:
             buf = await SerializeToBufferTask(
                 manager, value, "mixed", use_cache=False # the value object changes all the time...
@@ -87,14 +87,14 @@ class StructuredCellJoinTask(Task):
             checksum = await CalculateChecksumTask(manager, buf).run()
         if checksum is not None:
             checksum = checksum.hex()        
-        if not len(sc.inchannels):
-            sc.auth._set_checksum(checksum, from_structured_cell=True)
-        if sc.buffer is not sc.auth:            
-            sc.buffer._set_checksum(checksum, from_structured_cell=True)
-        if sc.schema is not None and value is None and checksum is not None:
-            cs = bytes.fromhex(checksum)
-            buf = await GetBufferTask(manager, cs).run()
-            value = await DeserializeBufferTask(manager, buf, cs, "mixed", copy=False).run()
+            if not len(sc.inchannels):            
+                sc.auth._set_checksum(checksum, from_structured_cell=True)
+            if sc.buffer is not sc.auth:            
+                sc.buffer._set_checksum(checksum, from_structured_cell=True)
+            if sc.schema is not None and value is None:
+                cs = bytes.fromhex(checksum)
+                buf = await GetBufferTask(manager, cs).run()
+                value = await DeserializeBufferTask(manager, buf, cs, "mixed", copy=False).run()
         ok = True
         if value is not None and sc.schema is not None:
             #schema = sc.schema.value  # incorrect, because potentially out-of-sync...
@@ -115,7 +115,7 @@ class StructuredCellJoinTask(Task):
                     for out_path in sc.outchannels:
                         manager.cancel_cell_path(sc._data, out_path, True)
         if ok:
-            if sc._data is not sc.buffer:
+            if checksum is not None and sc._data is not sc.buffer:
                 sc._data._set_checksum(checksum, from_structured_cell=True)
 
             if len(sc.outchannels):

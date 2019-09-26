@@ -1,9 +1,7 @@
 from ..mixed import MixedBase
 from copy import deepcopy
-from ..core.link import Link as core_link
-from ..core.protocol import deserialize
-from ..core import context as core_context, cell as core_cell
-from ..core.macro_mode import macro_mode_off
+from ..core.protocol.serialize import serialize_sync as serialize
+from ..core.protocol.calculate_checksum import calculate_checksum_sync as calculate_checksum
 
 def copy_context(nodes, connections, path):
     new_nodes = {}
@@ -44,14 +42,10 @@ def fill_checksum(manager, node, temp_path):
             celltype = "structured"
     else:
         raise NotImplementedError ### cache branch
-    silk, buffered = False, False
     if celltype == "structured":
-        buffered = node["buffered"]
         if node["type"] in ("reactor", "transformer"):
-            silk = not node["plain"]
-            datatype = "mixed" if not node["plain"] else "plain"
+            datatype = "mixed"
         else:
-            silk = node["silk"]
             datatype = node["datatype"]
     else:
         datatype = celltype
@@ -61,7 +55,7 @@ def fill_checksum(manager, node, temp_path):
             else:
                 datatype = "text"
     temp_value = node.get("TEMP")
-    if temp_path:
+    if temp_path != "temp":
         if isinstance(temp_value, dict):
             temp_value = temp_value.get(temp_path)
         elif temp_value is None:
@@ -70,20 +64,13 @@ def fill_checksum(manager, node, temp_path):
             raise TypeError(temp_value)
     if temp_value is None:
         return
-    
-    with macro_mode_off():
-        ctx = core_context(toplevel=True)
-        raise NotImplementedError # livegraph branch        
-        manager._change_context(ctx) # to implement? is this a good idea to use it HERE???        
-        # Code below is also fishy...
-        ctx._manager = manager
-        ctx.cell = core_cell(datatype)
-        ctx.cell.set(temp_value)
-        checksum = ctx.cell.checksum 
-    ctx.destroy()  
+        
+    buf = serialize(temp_value, datatype, use_cache=False)
+    checksum = calculate_checksum(buf)
 
     if checksum is None:
         return
+    checksum = checksum.hex()
     if temp_path is None:
         temp_path = "value"
     if "checksum" not in node:
@@ -119,7 +106,7 @@ def fill_checksums(mgr, nodes, *, path=None):
                 fill_checksum(mgr, node, "code_update")
                 fill_checksum(mgr, node, "code_stop")
             elif node["type"] == "cell":
-                fill_checksum(mgr, node, None)
+                fill_checksum(mgr, node, "temp")
             else:
                 raise TypeError(p, node["type"])
             node.pop("TEMP", None)

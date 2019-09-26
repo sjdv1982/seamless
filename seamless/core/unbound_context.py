@@ -327,18 +327,6 @@ class UnboundContext(SeamlessBase):
                 manager.set_cell_checksum(
                     cell, checksum, initial, from_structured_cell
                 )
-                structured_cell = cell._structured_cell
-                if structured_cell is not None and structured_cell.auth is cell:  
-                    raise NotImplementedError # livegraph branch
-                    """
-                    buffer_item = manager.get_value_from_checksum(checksum)
-                    if buffer_item is not None:
-                        _, _, buffer = buffer_item
-                        accessor = manager.get_default_accessor(cell)
-                        expression = accessor.to_expression(checksum)
-                        value, _ = manager.cache_expression(expression, buffer)
-                        monitor.set_path((), value)
-                    """
             else:
                 raise ValueError(com)
 

@@ -23,9 +23,6 @@ def register_toplevel(ctx):
         _toplevel_registrable.add(ctx)
 
 def unregister_toplevel(ctx):
-    manager = ctx._get_manager()
-    if manager is not None:
-        _toplevel_managers.discard(manager)
     _toplevel_registrable.discard(ctx)
     _toplevel_registered.discard(ctx)
 
@@ -134,12 +131,7 @@ def macro_mode_on(macro=None):
 
         mount_changed = False
         for scan_ctx in _mount_scans:
-            curr_mount_changed = mount.scan(scan_ctx)
-            if curr_mount_changed is not None and curr_mount_changed != ({}, set(), {}):
-                mount_changed = True
-
-        if mount_changed:
-            mount.mountmanager.tick()
+            mount.scan(scan_ctx)
 
     finally:
         _toplevel_registrable.clear()

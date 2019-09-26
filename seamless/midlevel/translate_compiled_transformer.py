@@ -79,12 +79,10 @@ def translate_compiled_transformer(node, root, namespace, inchannels, outchannel
 
     with_result = node["with_result"]
     assert with_result #compiled transformers must have with_result
-    buffered = node["buffered"]
 
     mount = node.get("mount", {})
-    plain = node["plain"]
     inp, inp_ctx = build_structured_cell(
-      ctx, input_name, True, plain, buffered, inchannels, [()],
+      ctx, input_name, inchannels, [()],
       lib_path0,
       return_context=True
     )
@@ -117,8 +115,8 @@ def translate_compiled_transformer(node, root, namespace, inchannels, outchannel
     # Compiler
     ctx.language = cell("text").set(node["language"])
 
-    ctx.main_module = build_structured_cell(
-      ctx, "main_module", False, True, False,
+    build_structured_cell(
+      ctx, "main_module", 
       main_module_inchannels, [()],
       lib_path00
     )
@@ -153,9 +151,8 @@ def translate_compiled_transformer(node, root, namespace, inchannels, outchannel
     namespace[node["path"] + ("code",), True] = ctx.code, node
     namespace[node["path"] + ("code",), False] = ctx.code, node
 
-    plain_result = node["plain_result"]
     result, result_ctx = build_structured_cell(
-        ctx, result_name, True, plain_result, False, [()],
+        ctx, result_name, [()],
         outchannels, lib_path0,
         return_context=True
     )

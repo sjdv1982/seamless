@@ -26,7 +26,6 @@ def translate_docker_transformer(node, root, namespace, inchannels, outchannels,
         assert (not len(c)) or c[0] != result_name #should have been checked by highlevel
 
     with_result = node["with_result"]
-    buffered = node["buffered"]
     pins = node["pins"].copy()
     for extrapin in ("docker_command", "pins"):
         assert extrapin not in node["pins"], extrapin
@@ -41,10 +40,9 @@ def translate_docker_transformer(node, root, namespace, inchannels, outchannels,
     ctx.pins = core_cell("plain").set(list(pins0.keys()))
 
     interchannels = [as_tuple(pin) for pin in pins]
-    plain = node["plain"]
     mount = node.get("mount", {})
     inp, inp_ctx = build_structured_cell(
-      ctx, input_name, True, plain, buffered, inchannels, interchannels,
+      ctx, input_name, inchannels, interchannels,
       lib_path0,
       return_context=True
     )
@@ -103,9 +101,8 @@ def translate_docker_transformer(node, root, namespace, inchannels, outchannels,
         inp.outchannels[(pin,)].connect(target)
 
     if with_result:
-        plain_result = node["plain_result"]
         result, result_ctx = build_structured_cell(
-            ctx, result_name, True, plain_result, False, [()],
+            ctx, result_name, [()],
             outchannels, lib_path0,
             return_context=True
         )

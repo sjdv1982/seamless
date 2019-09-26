@@ -35,9 +35,6 @@ def new_transformer(ctx, path, code, parameters):
         "INPUT": "inp",
         "with_result": True,
         "SCHEMA": None, #the result schema can be exposed as an input pin to the transformer under this name. Implies with_result
-        "buffered": True,
-        "plain": False,
-        "plain_result": False,
         "debug": False,
         "UNTRANSLATED": True
     }
@@ -546,8 +543,6 @@ class Transformer(Base):
                 "type": "cell",
                 "celltype": "structured",
                 "datatype": "mixed",
-                "silk": True,
-                "buffered": True,
             }
         #TODO: check existing inchannel connections and links (cannot be the same or higher)
         child = Cell(parent, path) #inserts itself as child

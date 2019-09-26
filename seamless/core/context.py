@@ -38,7 +38,8 @@ class Context(SeamlessBase):
     def __init__(
         self, *,
         toplevel=False,
-        mount=None,
+        mount=None,        
+        manager=None
     ):
         """Construct a new context.
 
@@ -67,9 +68,13 @@ name: str
         if shareserver is None:
             from .share import shareserver
         super().__init__()
+        if manager is not None:
+            assert toplevel
         if toplevel:
             self._toplevel = True
-            manager = Manager(self)
+            if manager is None:
+                manager = Manager()
+            manager.add_context(self)
             self._manager = weakref.ref(manager)
         if mount is not None:
             mount_params = {
@@ -277,8 +282,8 @@ name: str
             lib_unregister_all(self)
             unregister_toplevel(self)
             shareserver.destroy_root(self)
-        else:
-            self._unmount(from_del=from_del)
+            manager.remove_context(self)
+        self._unmount(from_del=from_del)
 
     def _unmount(self, from_del=False, manager=None):
         from .macro import Macro
@@ -288,8 +293,12 @@ name: str
         if manager is None:
             manager = self._root()._get_manager()
         mountmanager = manager.mountmanager
-        if not is_dummy_mount(self._mount) or self._root() is self:
-            mountmanager.unmount_context(self, from_del=from_del)
+        if not is_dummy_mount(self._mount):
+            mountmanager.unmount_context(
+                self, 
+                from_del=from_del,
+                toplevel=self._toplevel
+            )
 
     def __del__(self):
         if self._destroyed:

@@ -36,11 +36,6 @@ class SilkBase:
         result = list(set(result))
         return result
 
-    def __repr__(self):
-        # TODO: proper string representation
-        data = self._data
-        return repr(data)
-
 def silk_unary_method(self, name):
     #print("METHOD", name)
     method = self._get_special(name)

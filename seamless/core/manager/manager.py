@@ -8,6 +8,8 @@ import copy
 
 def mainthread(func):
     def func2(*args, **kwargs):
+        if threading.current_thread is None: # destruction at exit
+            return
         assert threading.current_thread() == threading.main_thread()
         return func(*args, **kwargs)
     functools.update_wrapper(func2, func)
@@ -26,12 +28,12 @@ def run_in_mainthread(func):
 class Manager:
     _destroyed = False
     _active = True
-    def __init__(self, ctx):
+    def __init__(self):
         from .livegraph import LiveGraph
         from .cachemanager import CacheManager
-        from .taskmanager import TaskManager
-        assert ctx._toplevel
-        self.ctx = weakref.ref(ctx)
+        from .taskmanager import TaskManager        
+        self.contexts = weakref.WeakSet()
+        self.last_ctx = lambda: None
         from ... import communion_server
         self.livegraph = LiveGraph(self)
         self.cachemanager = CacheManager(self)
@@ -55,6 +57,15 @@ class Manager:
 
         from ...communion_server import communion_server
         communion_server.start()
+
+    def add_context(self, ctx):
+        assert ctx._toplevel
+        self.contexts.add(ctx)
+        self.last_ctx = weakref.ref(ctx)
+
+    def remove_context(self, ctx):
+        assert ctx._toplevel
+        self.contexts.discard(ctx)
 
     ##########################################################################
     # API section I: Registration (divide among subsystems)
@@ -121,12 +132,26 @@ class Manager:
         sc_schema = self.livegraph.schemacells.get(cell, [])
         if not initial:            
             if from_structured_cell:
-                assert sc_data is not None or sc_buf is not None or len(sc_schema)
+                if sc_data is None and sc_buf is None and not len(sc_schema):
+                    assert cell._structured_cell is not None
+                    assert cell._structured_cell.auth is cell, cell
             else:
+                assert cell._structured_cell is None
                 assert cell._hash_pattern is None
                 assert sc_data is None and sc_buf is None
                 assert self.livegraph.has_authority(cell)
                 assert sc_buf is None
+        else:
+            if not from_structured_cell and cell._structured_cell is not None:
+                assert cell._structured_cell.auth is cell, cell
+                if checksum is None:
+                    value = None
+                else:
+                    buffer = GetBufferTask(self, checksum).launch_and_await()
+                    value = DeserializeBufferTask(
+                        self, buffer, checksum, "mixed", False
+                    ).launch_and_await()
+                return cell._structured_cell.set(value)
         if checksum is None:
             reason = StatusReasonEnum.UNDEFINED
             if not from_structured_cell:
@@ -593,11 +618,11 @@ If origin_task is provided, that task is not cancelled."""
         if self._destroyed:
             return
         self._destroyed = True
-        ctx = self.ctx()
-        if ctx is None:
-            return
-        ctx.destroy()
-        self.mountmanager.unmount_context(ctx, from_del=from_del, toplevel=True)
+        contexts = list(self.contexts)        
+        self.contexts.clear()
+        for ctx in contexts:
+            ctx.destroy(from_del=from_del)
+        self.last_ctx = None        
         for path in list(self.livegraph.macropath_to_upstream.keys()):
             path.destroy()
         self.cachemanager.check_destroyed()
