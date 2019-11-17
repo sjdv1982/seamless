@@ -57,7 +57,6 @@ from .cell import celltypes as celltypes0
 celltypes = list(celltypes0) + ["module"]
 
 class PinBase(SeamlessBase):
-    access_mode = None
     def __init__(self, worker, name, celltype, subcelltype=None):
         self.worker_ref = weakref.ref(worker)
         super().__init__()

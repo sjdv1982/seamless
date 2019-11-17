@@ -199,7 +199,25 @@ class Context:
     def translate(self, force=False):
         return self._do_translate(force=force, explicit=True)
 
-    def get_graph(self, copy=True):        
+    def get_graph(self, copy=True):     
+        from ..core.manager.tasks.structured_cell import StructuredCellJoinTask
+        from ..core.manager.tasks import SetCellValueTask, SetCellBufferTask
+        join_task_types = (
+            SetCellValueTask, SetCellBufferTask, StructuredCellJoinTask
+        )
+        if self._gen_context is not None:
+            taskmanager = self._gen_context._get_manager().taskmanager
+            def get_join_tasks(taskmanager):
+                tasks = []
+                for task in taskmanager.tasks:
+                    if isinstance(task, join_task_types):
+                        tasks.append(task)
+                return tasks
+            remaining, _ = taskmanager.equilibrate(
+                timeout=10, report=2, 
+                get_tasks_func=get_join_tasks
+            )
+            assert not len(remaining), remaining
         try:
             self._translating = True
             manager = self._manager
@@ -221,16 +239,16 @@ class Context:
             return
         assert self._as_lib is None or self._from_lib is None
         is_lib = (self._as_lib is not None)
+        graph = self.get_graph(copy=False)
+        #from pprint import pprint; pprint(graph)
         if not force and not self._needs_translation:
             return
         if self._translating:
             raise Exception("Nested invocation of ctx.translate")
         self._translate_count += 1
-        graph = self.get_graph(copy=False)        
         try:            
             self._translating = True
             ctx = None
-            ok = False
             if self._gen_context is not None:
                 self._gen_context.destroy()
             with macro_mode_on():
@@ -259,14 +277,13 @@ class Context:
         
         self._needs_translation = False
 
-        if ok:
-            for path, child in self._children.items():
-                if isinstance(child, (Cell, Transformer)):
-                    child._set_observers()
-                elif isinstance(child, (InputPin, OutputPin)):
-                    continue
-                else:
-                    raise NotImplementedError(type(child)) ### cache branch
+        for path, child in self._children.items():
+            if isinstance(child, (Cell, Transformer)):
+                child._set_observers()
+            elif isinstance(child, (InputPin, OutputPin)):
+                continue
+            else:
+                raise NotImplementedError(type(child)) ### cache branch
 
         if explicit and self._auto_register_library:
             #the timeout is just a precaution

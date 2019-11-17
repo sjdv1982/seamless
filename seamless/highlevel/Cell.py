@@ -68,25 +68,36 @@ class Cell(Base):
         hcell = self._get_hcell()
         if hcell.get("checksum") is None:
             hcell["checksum"] = {}
-        hcell["checksum"]["value"] = checksum
+        hcell["checksum"].pop("temp", None)
+        hcell["checksum"].pop("value", None)
+        if checksum is not None:
+            hcell["checksum"]["value"] = checksum
 
     def _observe_auth(self, checksum):
         hcell = self._get_hcell()
         if hcell.get("checksum") is None:
             hcell["checksum"] = {}
-        hcell["checksum"]["auth"] = checksum
+        hcell["checksum"].pop("temp", None)
+        hcell["checksum"].pop("auth", None)
+        if checksum is not None:
+            hcell["checksum"]["auth"] = checksum
 
     def _observe_buffer(self, checksum):
         hcell = self._get_hcell()
         if hcell.get("checksum") is None:
             hcell["checksum"] = {}
-        hcell["checksum"]["buffer"] = checksum
+        hcell["checksum"].pop("temp", None)            
+        hcell["checksum"].pop("buffer", None)
+        if checksum is not None:
+            hcell["checksum"]["buffer"] = checksum
 
     def _observe_schema(self, checksum):
         hcell = self._get_hcell()
         if hcell.get("checksum") is None:
             hcell["checksum"] = {}
-        hcell["checksum"]["schema"] = checksum
+        hcell["checksum"].pop("schema", None)
+        if checksum is not None:
+            hcell["checksum"]["schema"] = checksum
 
     def self(self):
         raise NotImplementedError
@@ -138,6 +149,8 @@ class Cell(Base):
         self._parent()._translate()
 
     def __setattr__(self, attr, value):
+        if attr == "example":
+            return getattr(self, "example").set(value)
         if attr.startswith("_") or hasattr(type(self), attr):
             return object.__setattr__(self, attr, value)
         from .assign import assign_to_subcell
@@ -145,9 +158,10 @@ class Cell(Base):
         assert not parent._dummy
         assert not test_lib_lowlevel(parent, self._get_cell())
         subcell = getattr(self, attr)
-        # TODO: break links and connections from subcell
+        # TODO: break links and connections from subcell        
         # It is very important that this check is made well, else you get problems with authority
         # If any connection is broken, the graph must be rebuilt immediately (and parent._translate becomes unnecessary)
+        # => see how Transformer does it in _setattr!
         raise NotImplementedError # livegraph branch
         assign_to_subcell(self, (attr,), value)
         ctx = parent._gen_context
@@ -181,16 +195,16 @@ class Cell(Base):
         hcell = self._get_hcell()
         if parent._dummy:
             raise NotImplementedError
-        elif hcell.get("UNTRANSLATED") and "TEMP" in hcell:
-            return hcell["TEMP"]
-        else:
-            try:
-                cell = self._get_cell()
-            except Exception:
-                import traceback; traceback.print_exc()
-                raise
-            value = cell.value
-            return value
+        if hcell.get("UNTRANSLATED") and "TEMP" in hcell:
+            #return hcell["TEMP"]
+            raise Exception # value untranslated; translation is async!
+        try:
+            cell = self._get_cell()
+        except Exception:
+            import traceback; traceback.print_exc()
+            raise
+        value = cell.value
+        return value
 
     @property
     def example(self):        
@@ -199,6 +213,9 @@ class Cell(Base):
         cell = self._get_cell()
         struc_ctx = cell._data._context()
         return struc_ctx.example.handle
+
+    def add_validator(self, validator):
+        return self.handle.add_validator(validator)
 
     @property
     def exception(self):        
@@ -239,7 +256,7 @@ class Cell(Base):
     @property
     def handle(self):
         cell = self._get_cell()
-        return cell.handle
+        return cell.handle_no_inference
 
     @property
     def data(self):
@@ -247,13 +264,16 @@ class Cell(Base):
         return cell.data
 
     def _set(self, value):
-        from ..silk import Silk
+        from ..core.structured_cell import StructuredCell
         hcell = self._get_hcell()
         if hcell.get("UNTRANSLATED"):
             hcell["TEMP"] = value
             return
         cell = self._get_cell()
-        cell.set(value)
+        if isinstance(cell, StructuredCell):
+            cell.set_no_inference(value)
+        else:
+            cell.set(value)
 
     @property
     def status(self):
@@ -370,13 +390,16 @@ class Cell(Base):
         from ..core.structured_cell import StructuredCell
         cell = self._get_cell()
         if not isinstance(cell, (CoreCell, StructuredCell)):
-            raise Exception(cell)
-        cell._set_observer(self._observe_cell)
+            raise Exception(cell)        
         if self.celltype == "structured":
-            cell.auth._set_observer(self._observe_auth)
+            if cell.auth is not None:
+                cell.auth._set_observer(self._observe_auth)
+            cell._data._set_observer(self._observe_cell)
             cell.buffer._set_observer(self._observe_buffer)
-            cell.schema._set_observer(self._observe_schema)            
-        
+            if cell.schema is not None:
+                cell.schema._set_observer(self._observe_schema)            
+        else:
+            cell._set_observer(self._observe_cell)        
 
 
 from .Library import test_lib_lowlevel

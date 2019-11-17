@@ -31,6 +31,7 @@ class Outchannel:
 class StructuredCell(SeamlessBase):
     _celltype = "structured"    
     _exception = None
+    _new_connections = False
     def __init__(self, data, *,
         auth=None,
         schema=None,
@@ -98,10 +99,6 @@ class StructuredCell(SeamlessBase):
         self._auth_value = None
         self._schema_value = None
 
-        if schema is not None:
-            if not isinstance(schema._get_manager(), UnboundManager):
-                if schema.checksum is not None:
-                    self._schema_value = schema.value
         if hash_pattern is not None:
             validate_hash_pattern(hash_pattern)
         self.hash_pattern = hash_pattern
@@ -142,6 +139,9 @@ class StructuredCell(SeamlessBase):
 
     def set(self, value):
         self.handle.set(value)
+
+    def set_no_inference(self, value):
+        self.handle_no_inference.set(value)
 
     def _set_auth_path(self, path, value, from_pop=False):
         assert not self.no_auth
@@ -233,8 +233,7 @@ class StructuredCell(SeamlessBase):
         )    
         manager.structured_cell_join(self)        
 
-    @property
-    def handle(self):
+    def _get_handle(self, inference):
         # Silk structure using self.auth
         # (_set_auth_path, _get_auth_path, wrapped in a Backend)
         # This is to control the authoritative part
@@ -246,8 +245,24 @@ class StructuredCell(SeamlessBase):
             schema_backend = StructuredCellSchemaBackend(self)
             schema_monitor = Monitor(schema_backend)
             schema = MixedDict(schema_monitor, ())
-        silk = Silk(data=mixed_object,schema=schema)
+        if inference:
+            default_policy = silk_default_policy
+        else:
+            default_policy = silk_no_infer_policy
+        silk = Silk(
+            data=mixed_object,
+            schema=schema,
+            default_policy=default_policy
+        )
         return silk
+
+    @property
+    def handle(self):
+        return self._get_handle(inference=True)
+
+    @property
+    def handle_no_inference(self):
+        return self._get_handle(inference=False)
 
     @property
     def value(self):
@@ -266,9 +281,6 @@ class StructuredCell(SeamlessBase):
     def data(self):
         """Raw mixed value (no Silk)"""
         return self._data.data
-
-    def _set_observer(self, observer, trigger=True):
-        self._data._set_observer(observer, trigger)
 
     def _add_traitlet(self, traitlet, trigger=True):
         self._data._add_traitlet(traitlet)
@@ -312,3 +324,7 @@ from ..mixed.Monitor import Monitor
 from ..mixed.Backend import StructuredCellBackend, StructuredCellSchemaBackend
 from ..mixed import MixedObject, MixedDict
 from ..silk.Silk import Silk
+from ..silk.policy import (
+    default_policy as silk_default_policy, 
+    no_infer_policy as silk_no_infer_policy
+)

@@ -14,9 +14,7 @@ from ..silk import Silk
 from .compiled import CompiledObjectDict
 
 default_pin = {
-  "transfer_mode": "copy",
-  "access_mode": "default",
-  "content_type": None,
+  "celltype": "mixed",
 }
 
 def new_transformer(ctx, path, code, parameters):
@@ -51,7 +49,6 @@ class TransformerWrapper:
         self.parent = parent
 
 class Transformer(Base):
-    _example_cache = None
     def __init__(self, parent=None, path=None, code=None, parameters=None):
         assert (parent is None) == (path is None)
         if parent is not None:
@@ -183,26 +180,23 @@ class Transformer(Base):
         return getattr(self, inp).schema
 
     @property
-    def example(self):
+    def example(self):        
         tf = self._get_tf()
-        if self._example_cache is not None:
-            cached_tf, cached_example = self._example_cache
-            cached_tf = cached_tf()
-            if cached_tf is not None and cached_tf is tf:
-                return cached_example
         htf = self._get_htf()
         inputcell = getattr(tf, htf["INPUT"])
-        schema = inputcell.handle.schema
-        example = Silk(
-         schema=schema,
-         schema_dummy=True
-        )
-        self._example_cache = weakref.ref(tf), example
+        inp_ctx = inputcell._data._context()
+        example = inp_ctx.example.handle
         return example
 
     @example.setter
     def example(self, value):
         return self.example.set(value)
+
+    def add_validator(self, validator):
+        htf = self._get_htf()
+        inp = htf["INPUT"]
+        #TODO: self.self
+        return getattr(self, inp).add_validator(validator)
 
     def _assign_to(self, hctx, path):
         from .assign import assign_connection
@@ -236,15 +230,15 @@ class Transformer(Base):
                 value = value.data
             if "TEMP" not in htf or htf["TEMP"] is None:
                 htf["TEMP"] = {}
-            if "input" not in htf["TEMP"]:
-                htf["TEMP"]["input"] = {}
+            if "input_auth" not in htf["TEMP"]:
+                htf["TEMP"]["input_auth"] = {}
             if attr == "code":
                 code = value
                 if callable(value):
                     code, _, _ = parse_function_code(value)
                 htf["TEMP"]["code"] = code
             else:
-                htf["TEMP"]["input"][attr] = value
+                htf["TEMP"]["input_auth"][attr] = value
             self._parent()._translate()
             return
         
@@ -280,8 +274,8 @@ class Transformer(Base):
             result = getattr(tf, htf["RESULT"])
             # Example-based programming to set the schema
             # TODO: suppress inchannel warning
-            result.handle.set(value)
-        else:                        
+            result.handle_no_inference.set(value)
+        else:
             if attr not in htf["pins"]:
                 htf["pins"][attr] = default_pin.copy()
                 translate = True
@@ -299,9 +293,7 @@ class Transformer(Base):
                 inp = getattr(tf, htf["INPUT"])
                 assert not test_lib_lowlevel(parent, inp)
                 parent._remove_connections(self._path + (attr,))
-                if inp.value.value is None:
-                    inp.handle.set({})
-                setattr(inp.handle, attr, value)
+                setattr(inp.handle_no_inference, attr, value)
         if parent._as_lib is not None:
             parent._as_lib.needs_update = True
         if translate:
@@ -361,16 +353,11 @@ class Transformer(Base):
             p = inp.value[attr]
             return p
 
-    def touch(self):
-        tf = self._get_tf()
-        htf = self._get_htf()
-        if htf["compiled"]:
-            tf.tf.gen_header.touch()
-            tf.tf.compiler.touch()
-            tf.tf.translator.touch()
-            tf.binary_module.touch()
-        else:
-            tf.tf.touch()
+
+    @property
+    def exception(self):
+        tf = self._get_tf().tf
+        return tf.exception
 
     @property
     def status(self):
@@ -396,12 +383,13 @@ class Transformer(Base):
             proxycls = CodeProxy
         elif attr == htf["INPUT"]:
             getter = self._inputgetter
-            dirs = ["value", "schema", "example"] + list(htf["pins"].keys())
+            dirs = ["value", "schema", "example", "status", "exception"] + \
+              list(htf["pins"].keys())
             pull_source = None
             proxycls = Proxy
         elif attr == htf["RESULT"] and htf["with_result"]:
             getter = self._resultgetter
-            dirs = ["value", "schema", "example"]
+            dirs = ["value", "schema", "example", "exception"]
             pull_source = None
             proxycls = Proxy
         elif attr == "main_module":
@@ -475,10 +463,15 @@ class Transformer(Base):
         elif attr == "checksum":
             return inputcell.checksum
         elif attr == "schema":
+            schema = inputcell.handle.schema
             schema_mounter = functools.partial(self._sub_mount, "input_schema")
-            return SchemaWrapper(self, inputcell.handle.schema, schema_mounter, "SCHEMA")
+            return SchemaWrapper(self, schema, schema_mounter, "SCHEMA")
         elif attr == "example":
             return self.example
+        elif attr == "status":
+            return inputcell._data.status # TODO; take into account validation, inchannel status
+        elif attr == "exception":
+            return inputcell.exception
         raise AttributeError(attr)
 
     def _resultgetter(self, attr):
@@ -497,6 +490,8 @@ class Transformer(Base):
              schema=schema,
              schema_dummy=True,
             )
+        elif attr == "exception":
+            return resultcell.exception
         return getattr(resultcell, attr)
 
     def _valuegetter(self, attr, attr2):
@@ -561,13 +556,36 @@ class Transformer(Base):
         htf = self._get_htf()
         if htf.get("checksum") is None:
             htf["checksum"] = {}
-        htf["checksum"]["input"] = checksum
+        htf["checksum"].pop("input_temp", None)
+        htf["checksum"].pop("input", None)
+        if checksum is not None:
+            htf["checksum"]["input"] = checksum
+
+    def _observe_input_auth(self, checksum):
+        htf = self._get_htf()
+        if htf.get("checksum") is None:
+            htf["checksum"] = {}
+        htf["checksum"].pop("input_temp", None)
+        htf["checksum"].pop("input_auth", None)
+        if checksum is not None:
+            htf["checksum"]["input_auth"] = checksum
+
+    def _observe_input_buffer(self, checksum):
+        htf = self._get_htf()
+        if htf.get("checksum") is None:
+            htf["checksum"] = {}
+        htf["checksum"].pop("input_temp", None)
+        htf["checksum"].pop("input_buffer", None)
+        if checksum is not None:
+            htf["checksum"]["input_buffer"] = checksum
 
     def _observe_code(self, checksum):
         htf = self._get_htf()
         if htf.get("checksum") is None:
             htf["checksum"] = {}
-        htf["checksum"]["code"] = checksum
+        htf["checksum"].pop("code", None)
+        if checksum is not None:
+            htf["checksum"]["code"] = checksum
 
     def _observe_result(self, checksum):
         htf = self._get_htf()
@@ -605,13 +623,15 @@ class Transformer(Base):
         tf.code._set_observer(self._observe_code)
         inp = htf["INPUT"]
         inpcell = getattr(tf, inp)
-        inpcell._set_observer(self._observe_input)
+        inpcell.auth._set_observer(self._observe_input_auth)
+        inpcell.buffer._set_observer(self._observe_input_buffer)
+        inpcell._data._set_observer(self._observe_input)
         schemacell = inpcell.schema
         schemacell._set_observer(self._observe_schema)
         if htf["with_result"]:
             result = htf["RESULT"]
             resultcell = getattr(tf, result)
-            resultcell._set_observer(self._observe_result)
+            resultcell._data._set_observer(self._observe_result)
             schemacell = resultcell.schema
             schemacell._set_observer(self._observe_result_schema)
         if htf["compiled"]:
@@ -625,7 +645,7 @@ class Transformer(Base):
     def __dir__(self):
         htf = self._get_htf()
         d = super().__dir__()
-        std = ["code", "pins", htf["RESULT"] , htf["INPUT"]]
+        std = ["code", "pins", htf["RESULT"] , htf["INPUT"], "exception", "status"]
         if htf["compiled"]:
             std.append("main_module")
         pins = list(htf["pins"].keys())

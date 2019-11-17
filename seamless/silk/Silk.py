@@ -85,13 +85,14 @@ class Silk(SilkBase):
     __slots__ = [
             "_data", "_schema", "_parent",
             "_parent_attr",
-            "_self_mode"
+            "_self_mode", "_default_policy"
     ]
 
     def __init__(self, *,
         data=None, schema=None, 
         parent=None, _parent_attr=None,
-        _self_mode=False
+        default_policy=None,
+        _self_mode=False, 
     ):
         assert parent is None or isinstance(parent, Silk)
         self._parent = parent
@@ -104,7 +105,8 @@ class Silk(SilkBase):
         assert isinstance(schema, allowed_types) \
           or isinstance(schema, Wrapper)
         self._schema = schema
-        self._self_mode = _self_mode
+        self._default_policy = default_policy
+        self._self_mode = _self_mode        
 
     def __call__(self, *args, **kwargs):
         data = self._data
@@ -121,7 +123,11 @@ class Silk(SilkBase):
             except Exception as exc:
                 traceback.print_exc()
                 raise exc from None
-            instance = Silk(data=None,schema=self._schema)
+            instance = Silk(
+                data=None,
+                schema=self._schema,
+                default_policy=self._default_policy
+            )
             result = constructor(instance, *args, **kwargs)
             assert result is None # __init__ must return None
             return instance
@@ -142,8 +148,11 @@ class Silk(SilkBase):
         policy = RichValue(policy).value
         if policy is None or not len(policy):
             #TODO: implement lookup hierarchy wrapper that also looks at parent
-            if default_policy is None:
-                default_policy = silk_default_policy
+            if default_policy is None:                
+                if self._default_policy is not None:
+                    default_policy = self._default_policy                    
+                else:
+                    default_policy = silk_default_policy
             policy = default_policy
         elif len(policy.keys()) < len(silk_default_policy.keys()):
             policy0 = policy
@@ -699,6 +708,7 @@ class Silk(SilkBase):
                         schema = schema,
                         _self_mode=True,
                         parent = self._parent,
+                        default_policy=self._default_policy,
                         _parent_attr=self._parent_attr
                     
                    )
@@ -776,11 +786,17 @@ class Silk(SilkBase):
                 return super().__getattribute__("_getitem")(attr)
             except (TypeError, KeyError, AttributeError, IndexError):
                 if proto_ok:
-                    return Silk(data=from_proto)
+                    return Silk(
+                        data=from_proto, 
+                        default_policy=self._default_policy
+                    )
                 raise AttributeError(attr) from None
             except Exception:
                 if proto_ok:
-                    return Silk(data=from_proto)
+                    return Silk(
+                        data=from_proto, 
+                        default_policy=self._default_policy
+                    )
                 raise exc from None
     
     def __iter__(self):
@@ -817,7 +833,8 @@ class Silk(SilkBase):
                 parent=self,
                 data=d,
                 schema=schema,
-                _parent_attr=item,
+                default_policy=self._default_policy,
+                _parent_attr=item,                
             )
 
         if isinstance(item, int):
@@ -840,6 +857,7 @@ class Silk(SilkBase):
           parent=self,
           data=d,
           schema=child_schema,
+          default_policy=self._default_policy,
           _parent_attr=item,
         )
         return result

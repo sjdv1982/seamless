@@ -37,7 +37,6 @@ ctx.z = 100
 def func(q,z):
     return q.c * q.f - q.g + q.d + 2 * z
 ctx.tf2 = func
-###ctx.tf2._get_htf()["pins"]["q"]["access_mode"] = "silk"
 ctx.tf2.q = ctx.q
 ctx.tf2.z = ctx.z
 ctx.qq = ctx.tf2

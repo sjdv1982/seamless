@@ -135,7 +135,11 @@ class CacheManager:
         else:
             raise TypeError(type(refholder))
         #print("cachemanager DECREF", checksum.hex())
-        self.checksum_refs[checksum].remove((refholder, authority))        
+        try:
+            self.checksum_refs[checksum].remove((refholder, authority))        
+        except ValueError:
+            self.checksum_refs[checksum][:] = \
+              [l for l in self.checksum_refs[checksum] if l[0] is not refholder]
         if len(self.checksum_refs[checksum]) == 0:            
             self.buffer_cache.decref(checksum)
             self.checksum_refs.pop(checksum)        

@@ -351,7 +351,6 @@ class TransformationJob:
                 assert schema_celltype == "plain", schema_pinname
                 schema = namespace[schema_pinname]
             if schema is None and isinstance(namespace[pinname], Scalar):
-                print("*** TODO: fix transformation.py Silk kludge ***")
                 continue
             if schema is None:
                 schema = {}

@@ -31,7 +31,7 @@ class StructuredCellJoinTask(Task):
             await taskmanager.await_tasks(tasks, shield=True)
 
 
-    async def _run(self):        
+    async def _run(self):
         manager = self.manager()
         sc = self.structured_cell
         await self.await_sc_tasks()
@@ -51,13 +51,23 @@ class StructuredCellJoinTask(Task):
             prelim[out_path] = curr_prelim
         value, checksum = None, None
         if len(sc.inchannels):
-            paths = sorted(list(sc.inchannels))
+            paths = sorted(list(sc.inchannels))            
             if paths == [()] and not sc.hash_pattern:
                 checksum = sc.inchannels[()]._checksum
                 assert checksum is None or isinstance(checksum, bytes), checksum
             else:
                 if not sc.no_auth:
                     value = copy.deepcopy(sc._auth_value)
+                    if value is None:
+                        if sc.auth._checksum is not None:
+                            value = copy.deepcopy(sc.auth.value)
+                    else:
+                        auth_buf = await SerializeToBufferTask(
+                            manager, value, "mixed", use_cache=False # the value object changes all the time...
+                        ).run()
+                        auth_checksum = await CalculateChecksumTask(manager, auth_buf).run()
+                        auth_checksum = auth_checksum.hex()        
+                        sc.auth._set_checksum(auth_checksum, from_structured_cell=True)                        
                 if value is None:
                     if isinstance(paths[0], int):
                         value = []
@@ -71,15 +81,28 @@ class StructuredCellJoinTask(Task):
                             manager, buffer, subchecksum, "mixed", False
                         ).run()
                         await set_subpath(value, sc.hash_pattern, path, subvalue)
+                        """
+                        # Do we need this? 
+                        # It messes up "value is None" checks in subsequent joins,
+                        #  preventing the reading from value from .auth when it should
                         if not sc.no_auth:
                             for mod_path in modified_paths:
                                 if overlap_path(path, mod_path): 
+                                    if len(path) and sc._auth_value is None:  # duck tape...
+                                        if isinstance(path[0], int):
+                                            sc._auth_value = []
+                                        else:
+                                            sc._auth_value = {}
                                     await set_subpath(sc._auth_value, sc.hash_pattern, path, None)        
                                     break                            
+                        """
                     else:
                         await set_subpath(value, sc.hash_pattern, path, None)
         else:            
-            value = sc._auth_value               
+            value = copy.deepcopy(sc._auth_value)
+            if value is None:
+                if sc.auth._checksum is not None:
+                    value = copy.deepcopy(sc.auth.value)
         if checksum is None and value is not None:
             buf = await SerializeToBufferTask(
                 manager, value, "mixed", use_cache=False # the value object changes all the time...
@@ -97,8 +120,10 @@ class StructuredCellJoinTask(Task):
                 value = await DeserializeBufferTask(manager, buf, cs, "mixed", copy=False).run()
         ok = True
         if value is not None and sc.schema is not None:
-            #schema = sc.schema.value  # incorrect, because potentially out-of-sync...
             schema = sc._schema_value
+            if schema is None:
+                if sc.schema._checksum is not None:
+                    schema = sc.schema.value
             if schema is not None:
                 if sc.hash_pattern is None:
                     value2 = copy.deepcopy(value)
@@ -112,12 +137,13 @@ class StructuredCellJoinTask(Task):
                 except ValidationError:
                     sc._exception = traceback.format_exc(limit=0)
                     ok = False
+                    sc._data._set_checksum(None, from_structured_cell=True)                    
                     for out_path in sc.outchannels:
                         manager.cancel_cell_path(sc._data, out_path, True)
         if ok:
             if checksum is not None and sc._data is not sc.buffer:
                 sc._data._set_checksum(checksum, from_structured_cell=True)
-
+            
             if len(sc.outchannels):
                 livegraph = manager.livegraph
                 downstreams = livegraph.paths_to_downstream[sc._data]
@@ -131,29 +157,36 @@ class StructuredCellJoinTask(Task):
                 else:
                     cs = None
                 expression_to_checksum = manager.cachemanager.expression_to_checksum
-                for out_path in sc.outchannels:
-                    for mod_path in modified_paths:
-                        if overlap_path(out_path, mod_path): 
-                            for accessor in downstreams[out_path]:
-                                changed = accessor.build_expression(livegraph, cs)
-                                if prelim[out_path] != accessor._prelim:
-                                    accessor._prelim = prelim[out_path]
-                                    changed = True
-                                if changed:
-                                    AccessorUpdateTask(manager, accessor).launch()
-                        elif cs is not None: # morph
-                            for accessor in downstreams[out_path]:                                
-                                old_expression = accessor.expression
-                                expression_result_checksum = \
-                                  expression_to_checksum.get(old_expression)
-                                if expression_result_checksum is not None:
-                                    accessor.build_expression(livegraph, cs)
-                                    new_expression = accessor.expression
-                                    expression_to_checksum[new_expression] = \
-                                      expression_result_checksum
-                            
+                for out_path in sc.outchannels:                    
+                    if sc._new_connections:
+                        changed = True
+                    else:
+                        changed = False
+                        for mod_path in modified_paths:
+                            if overlap_path(out_path, mod_path): 
+                                changed = True
+                                break
+                    if changed:
+                        for accessor in downstreams[out_path]:
+                            changed2 = accessor.build_expression(livegraph, cs)
+                            if prelim[out_path] != accessor._prelim:
+                                accessor._prelim = prelim[out_path]
+                                changed2 = True
+                            if changed2:
+                                AccessorUpdateTask(manager, accessor).launch()
+                    elif cs is not None: # morph
+                        for accessor in downstreams[out_path]:                                
+                            old_expression = accessor.expression
+                            expression_result_checksum = \
+                                expression_to_checksum.get(old_expression)
+                            if expression_result_checksum is not None:
+                                accessor.build_expression(livegraph, cs)
+                                new_expression = accessor.expression
+                                expression_to_checksum[new_expression] = \
+                                    expression_result_checksum
             sc.modified_auth_paths.clear()
             sc.modified_inchannels.clear()
+            sc._new_connections = False
 
 from .serialize_buffer import SerializeToBufferTask
 from .deserialize_buffer import DeserializeBufferTask

@@ -37,9 +37,10 @@ class TransformerUpdateTask(Task):
             return
 
         for pinname, accessor in upstreams.items():
-            if accessor._checksum is None: #pending
+            if accessor._checksum is None: #pending or void
+                void = accessor._void
                 manager._set_transformer_checksum(
-                    transformer, None, False, prelim=False
+                    transformer, None, void, prelim=False
                 )
                 return
 

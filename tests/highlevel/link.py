@@ -155,7 +155,7 @@ print(ctx.struc.value, ctx.txt.value)
 """
 ctx.rc = Reactor()
 ctx.rc._get_hrc()["plain"] = True
-ctx.rc.set_pin("test", io="edit", access_mode="text", must_be_defined=False)
+###ctx.rc.set_pin("test", io="edit", access_mode="text", must_be_defined=False)
 ctx.rc.test = "Hello"
 ctx.txt2 = Cell()
 ctx.txt2.celltype = "text"

@@ -190,7 +190,14 @@ Source %s; target %s, %s""" % (source, target, target_subpath)
                 return self._connect_editpin(target, source)
             assert accessor is not None
             if not source._void:
-                CellUpdateTask(manager, source).launch()
+                sc = source._structured_cell
+                if sc is not None:
+                    # TODO: not the most efficient...
+                    assert sc._data is source, (sc._data, source)
+                    sc._new_connections = True
+                    manager.structured_cell_join(sc)
+                else:
+                    CellUpdateTask(manager, source).launch()
         elif isinstance(source, EditPin):
             assert isinstance(target, (Cell, MacroPath))
             return self._connect_editpin(source, target)
@@ -233,6 +240,7 @@ Source %s; target %s, %s""" % (source, target, target_subpath)
     
 
 from .cell_update import CellUpdateTask
+from .accessor_update import AccessorUpdateTask
 from .transformer_update import TransformerUpdateTask
 from .reactor_update import ReactorUpdateTask
 from .macro_update import MacroUpdateTask

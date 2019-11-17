@@ -247,7 +247,7 @@ class TaskManager:
         except ValueError:
             pass
 
-    def equilibrate(self, timeout, report):  
+    def equilibrate(self, timeout, report, get_tasks_func=None):  
         manager = self.manager()
         manager.temprefmanager.purge()
 
@@ -258,26 +258,30 @@ class TaskManager:
             last_report = time.time()
         
         def select_pending_tasks():
-            tasks, futures = [], []            
-            for task in self.tasks:
+            if get_tasks_func is None:
+                tasks = self.tasks
+            else:
+                tasks = get_tasks_func(self)
+            ptasks, futures = [], []            
+            for task in tasks:
                 future = task.future
                 if future is None:
                     continue
-                tasks.append(task)
+                ptasks.append(task)
                 futures.append(future)
-            return tasks, futures
+            return ptasks, futures
 
-        tasks, futures = select_pending_tasks()
+        ptasks, futures = select_pending_tasks()
         def print_report(verbose=True):
             running = set()
-            #print("TASKS", tasks)
-            for task in tasks:
+            #print("TASKS", ptasks)
+            for task in ptasks:
                 for dep in task.dependencies:
                     if isinstance(dep, SeamlessBase):
                         running.add(dep)
                         #print("TASK",task)
             if not len(running):
-                if not len(tasks):
+                if not len(ptasks):
                     return [], False
                 if verbose:
                     print("Waiting for background tasks")
@@ -290,7 +294,7 @@ class TaskManager:
                 print()
             return result, True
 
-        while len(tasks):
+        while len(ptasks):
             if timeout is not None:
                 if report is not None:
                     curr_timeout=min(remaining, report)
@@ -302,7 +306,7 @@ class TaskManager:
                 else:
                     curr_timeout = None
             self.loop.run_until_complete(asyncio.sleep(0.0001))
-            tasks, futures = select_pending_tasks()
+            ptasks, futures = select_pending_tasks()
             if curr_timeout is not None:
                 curr_time = time.time()
             if report is not None:

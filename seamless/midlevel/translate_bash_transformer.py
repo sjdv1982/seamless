@@ -30,9 +30,7 @@ def translate_bash_transformer(node, root, namespace, inchannels, outchannels, l
     for extrapin in ("bashcode", "pins"):
         assert extrapin not in node["pins"], extrapin
         pins[extrapin] =  {
-            "transfer_mode": "ref",
-            "access_mode": "plain",
-            "content_type": None,
+            "celltype": "plain",
         }
     ctx.pins = core_cell("plain").set(list(pins.keys()))
 
@@ -60,6 +58,7 @@ def translate_bash_transformer(node, root, namespace, inchannels, outchannels, l
     all_pins[result_name] = {"io": "output", "transfer_mode": "copy"}    
     if node["SCHEMA"]:
         assert with_result
+        raise NotImplementedError
         all_pins[node["SCHEMA"]] = {
             "io": "input", "transfer_mode": "json",
             "access_mode": "json", "content_type": "json"

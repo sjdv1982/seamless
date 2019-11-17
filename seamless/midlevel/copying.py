@@ -94,7 +94,7 @@ def fill_checksums(mgr, nodes, *, path=None):
                 continue
             old_checksum = node.pop("checksum", None)
             if node["type"] == "transformer":
-                fill_checksum(mgr, node, "input")
+                fill_checksum(mgr, node, "input_auth")
                 fill_checksum(mgr, node, "code")
                 if node["with_result"]:
                     fill_checksum(mgr, node, "result")

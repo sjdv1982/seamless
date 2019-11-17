@@ -378,7 +378,8 @@ class MountManager:
         self.paths = {}
         self.cached_checksums = {} # key: file path; value: (deletion time, checksum)
         self.garbage = {} # non-persistent mounts to delete. key = path, value = (deletion time, is_link)
-        self.garbage_dirs = {} # non-persistent directories to delete. key = path, value = deletion time
+        self.garbage_dirs = {} # non-persistent directories to delete. key = path, value = (deletion time, persistent).
+                               # persistent may be None, in which case the directory is not deleted.
 
 
     @lockmethod
@@ -442,9 +443,9 @@ class MountManager:
             paths.remove(mount["path"])
         except KeyError:
             pass
-        if mount["persistent"] == False:
+        if mount["persistent"] != True:
             dirpath = mount["path"]
-            mountmanager.garbage_dirs[dirpath] = time.time()
+            mountmanager.garbage_dirs[dirpath] = time.time(), mount["persistent"]
 
     @lockmethod
     def add_context(self, context, as_parent):
@@ -463,7 +464,7 @@ class MountManager:
     def _check_context(self, context, as_parent):        
         mount = context._mount
         assert not is_dummy_mount(mount), context
-        in_garbage = self.garbage_dirs.pop(mount["path"], None)
+        in_garbage = self.garbage_dirs.get(mount["path"], None)
         dirpath = mount["path"].replace("/", os.sep)
         persistent, authority = mount["persistent"], mount["authority"]
         if os.path.exists(dirpath):
@@ -473,6 +474,9 @@ class MountManager:
             if authority == "file-strict":
                 raise Exception("Directory path '%s' does not exist, but authority is 'file-strict'" % dirpath)
             os.mkdir(dirpath)
+        if in_garbage is None and persistent != True:
+            self.garbage_dirs[dirpath] = time.time(), mount["persistent"]
+            
 
     @lockmethod
     def add_cell_update(self, cell, checksum, buffer):
@@ -519,12 +523,15 @@ class MountManager:
             _, is_link = self.garbage.pop(filepath)
             self._destroy_garbage(filepath, is_link)
         to_destroy = []
-        for dirpath, modtime in self.garbage_dirs.items():
+        for dirpath, value in self.garbage_dirs.items():
+            mod_time, persistent = value
             if now > mod_time + self.GARBAGE_DELAY:
-                to_destroy.append(dirpath)
-        for dirpath in to_destroy:
-            self.garbage_dirs.pop(dirpath)
-            self._destroy_garbage_dir(dirpath)
+                to_destroy.append((dirpath, persistent))
+        for dirpath, persistent in to_destroy:
+            # if persistent is None, directory stays in garbage, for a cache hit            
+            if persistent == False:
+                self.garbage_dirs.pop(dirpath)
+                self._destroy_garbage_dir(dirpath)
 
         self._tick.set()
 
@@ -591,7 +598,6 @@ class MountManager:
             self.unmount(cell)
         for context in sorted(self.contexts,key=lambda l:-len(l.path)):
             self.unmount_context(context)
-        assert not len(self.paths), self.paths
 
         self.cached_checksums.clear()
         for filepath in list(self.garbage.keys()):
@@ -604,7 +610,9 @@ class MountManager:
             key=lambda k:-len(k.split(os.sep))
         )
         for dirpath in dirpaths:
-            self._destroy_garbage_dir(dirpath)
+            _, persistent = self.garbage_dirs[dirpath]
+            if persistent == False:
+                self._destroy_garbage_dir(dirpath)
         self.garbage_dirs.clear()
 
         for root in self.paths:

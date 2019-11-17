@@ -25,37 +25,16 @@ class InputPinWrapper:
             raise TypeError(parent)
         return h["pins"][self._pinname]
 
-    @property
-    def transfer_mode(self):
-        hpin = self._get_hpin()
-        return hpin["transfer_mode"]
-    @transfer_mode.setter
-    def transfer_mode(self, value):
-        #TODO: validation
-        hpin = self._get_hpin()
-        hpin["transfer_mode"] = value
-        self._parent()._parent()._translate()
 
     @property
-    def access_mode(self):
+    def celltype(self):
         hpin = self._get_hpin()
-        return hpin["access_mode"]
-    @access_mode.setter
-    def access_mode(self, value):
+        return hpin["celltype"]
+    @celltype.setter
+    def celltype(self, value):
         #TODO: validation
         hpin = self._get_hpin()
-        hpin["access_mode"] = value
-        self._parent()._parent()._translate()
-
-    @property
-    def content_type(self):
-        hpin = self._get_hpin()
-        return hpin["content_type"]
-    @content_type.setter
-    def content_type(self, value):
-        #TODO: validation
-        hpin = self._get_hpin()
-        hpin["content_type"] = value
+        hpin["celltype"] = value
         self._parent()._parent()._translate()
 
     def __getitem__(self, pinname):

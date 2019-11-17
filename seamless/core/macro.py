@@ -191,8 +191,7 @@ class Macro(Worker):
         if self._destroyed:
             return
         super().destroy(from_del=from_del)
-        if not from_del:
-            self._get_manager()._destroy_macro(self)
+        self._get_manager()._destroy_macro(self)
         if self._gen_context is not None:
             return self._gen_context.destroy(from_del=from_del)
             self._gen_context = None

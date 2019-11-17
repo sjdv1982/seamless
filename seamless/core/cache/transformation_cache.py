@@ -278,7 +278,9 @@ class TransformationCache:
         tf_buffer = tf_get_buffer(transformation)
         tf_checksum = calculate_checksum_sync(tf_buffer)
         transformers = self.transformations_to_transformers[tf_checksum]
-        if tf_checksum in self.transformation_exceptions:            
+        if tf_checksum in self.transformation_exceptions:
+            exc = self.transformation_exceptions[tf_checksum]
+            self._set_exc(transformers, exc)           
             return
         for transformer in self.transformations_to_transformers[tf_checksum]:
             transformer._status_reason = StatusReasonEnum.EXECUTING
@@ -366,6 +368,26 @@ class TransformationCache:
                 fut.cancel()
         future.cancel()
 
+    def _set_exc(self, transformers, exc):
+        # TODO: offload to provenance? unless hard-canceled
+        for transformer in list(transformers):
+            if isinstance(transformer, (RemoteTransformer, DummyTransformer)):
+                continue
+
+            manager = transformer._get_manager()
+            
+            if isinstance(exc, SeamlessInvalidValueError):
+                status_reason = StatusReasonEnum.INVALID
+            elif isinstance(exc, SeamlessUndefinedError):
+                status_reason = StatusReasonEnum.UNDEFINED
+            else:
+                status_reason = StatusReasonEnum.ERROR
+            manager.cancel_transformer(
+                transformer, 
+                void=True, 
+                reason=status_reason
+            )
+
     def job_done(self, job, _):
         if self._destroyed:
             return
@@ -408,43 +430,24 @@ class TransformationCache:
                 result_checksum = future.result()
                 if result_checksum is None:
                     exc = SeamlessUndefinedError(None)
-        if exc is not None:
+
+        if exc is not None and job.remote:
             try:
                 future.result()
             except:
                 if not isinstance(exc, HardCancelError) and not job._hard_cancelled:
                     print("!" * 80)
-                    if job.remote:
-                        print("!      Transformer exception", job.codename)
-                    else:
-                        print("!      Transformer remote exception", job.codename)
+                    print("!      Transformer remote exception", job.codename)
                     print("!" * 80)
                     import traceback
                     traceback.print_exc()
                     print("!" * 80)
-        
+
         transformers = self.transformations_to_transformers[tf_checksum]
 
         if exc is not None:
             self.transformation_exceptions[tf_checksum] = exc
-            # TODO: offload to provenance? unless hard-canceled
-            for transformer in list(transformers):
-                if isinstance(transformer, (RemoteTransformer, DummyTransformer)):
-                    continue
-
-                manager = transformer._get_manager()
-                
-                if isinstance(exc, SeamlessInvalidValueError):
-                    status_reason = StatusReasonEnum.INVALID
-                elif isinstance(exc, SeamlessUndefinedError):
-                    status_reason = StatusReasonEnum.UNDEFINED
-                else:
-                    status_reason = StatusReasonEnum.ERROR
-                manager.cancel_transformer(
-                    transformer, 
-                    void=True, 
-                    reason=status_reason
-                )
+            self._set_exc(transformers, exc)
             return
         self.set_transformation_result(tf_checksum, result_checksum, False)
 

@@ -226,6 +226,8 @@ name: str
     def _get_status(self):
         status = {}
         for childname, child in self._children.items():
+            if isinstance(child, StructuredCell):
+                continue
             if childname in self._auto:
                 continue
             status[childname] = (child, child._get_status())
@@ -293,7 +295,7 @@ name: str
         if manager is None:
             manager = self._root()._get_manager()
         mountmanager = manager.mountmanager
-        if not is_dummy_mount(self._mount):
+        if self._toplevel or not is_dummy_mount(self._mount):
             mountmanager.unmount_context(
                 self, 
                 from_del=from_del,

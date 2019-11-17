@@ -110,8 +110,7 @@ class Reactor(Worker):
         raise NotImplementedError
 
     def destroy(self, *, from_del):
-        if not from_del:
-            self._get_manager()._destroy_reactor(self)
+        self._get_manager()._destroy_reactor(self)
         super().destroy(from_del=from_del)
 
     def __str__(self):

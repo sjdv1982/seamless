@@ -12,7 +12,7 @@ class MyClass(metaclass=meta):
         else:
             raise IndexError(item)
 
-schema = MyClass.schema.dict
+schema = MyClass.schema
 
 with macro_mode_on():
     ctx = context(toplevel=True)

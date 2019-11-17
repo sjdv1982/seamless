@@ -16,6 +16,60 @@ from . import copying
 from .util import as_tuple, get_path, find_channels, build_structured_cell
 
 
+def set_structured_cell_from_checksum(cell, checksum):
+    join = False
+    if "temp" in checksum:
+        assert len(checksum) == 1, checksum.keys()
+        cell.modified_auth_paths.add(())
+        cell.auth._set_checksum(checksum["temp"], initial=True, from_structured_cell=False)
+        join = True
+    else:        
+        if "value" in checksum:
+            # not done! value calculated anew...
+            """        
+            cell._data._set_checksum(
+                checksum["value"], 
+                from_structured_cell=True,
+                initial=True
+            )
+            join = True
+            """
+            cell._data._void = False
+
+        if "buffer" in checksum:
+            # not done! value calculated anew...
+            """
+            cell.buffer._set_checksum(
+                checksum["buffer"], 
+                from_structured_cell=True,
+                initial=True
+            )
+            join = True
+            """
+            cell.buffer._void = False
+            cell._data._void = False
+
+        if "auth" in checksum:
+            cell.modified_auth_paths.add(())
+            cell.auth._set_checksum(
+                checksum["auth"],
+                from_structured_cell=True,
+                initial=True
+            )
+            join = True
+            cell.buffer._void = False
+            cell._data._void = False
+            
+        if "schema" in checksum:
+            cell.schema._set_checksum(
+                checksum["schema"], 
+                from_structured_cell=True,
+                initial=True
+            )
+            join = True
+    if join:
+        cell._join()
+
 
 def translate_py_reactor(node, root, namespace, inchannels, outchannels, lib_path00, is_lib):
     raise NotImplementedError ### cache branch
@@ -85,6 +139,8 @@ def translate_py_reactor(node, root, namespace, inchannels, outchannels, lib_pat
     namespace[node["path"], False] = io, node
 
 def translate_cell(node, root, namespace, inchannels, outchannels, lib_path0, is_lib, link_target=None):
+    from ..core.cache.buffer_cache import buffer_cache
+    from ..core.protocol.deserialize import deserialize_sync
     path = node["path"]
     parent = get_path(root, path[:-1], None, None)
     name = path[-1]
@@ -102,7 +158,7 @@ def translate_cell(node, root, namespace, inchannels, outchannels, lib_path0, is
           lib_path0, mount=mount
         )
         for inchannel in inchannels:
-            cname = child.inchannels[inchannel].name
+            cname = child.inchannels[inchannel].subpath
             if cname == "self":
                 cpath = path
             else:
@@ -143,21 +199,13 @@ def translate_cell(node, root, namespace, inchannels, outchannels, lib_path0, is
             warn("Cell %s has a link target, cannot set construction constant" % pathstr)
         else:
             if ct == "structured":
-                if "temp" in checksum:
-                    assert len(checksum) == 1, checksum.keys()
-                    child.auth._set_checksum(checksum["temp"], initial=True)
-                else:
-                    if "value" in checksum:
-                        child.data._set_checksum(checksum["value"], initial=True)
-                    if "auth" in checksum:
-                        child.auth._set_checksum(checksum["auth"], initial=True)
-                    if "buffer" in checksum:
-                        child.buffer._set_checksum(checksum["buffer"], initial=True)
-                    if "schema" in checksum:
-                        child.schema._set_checksum(checksum["schema"], initial=True)
+                set_structured_cell_from_checksum(child, checksum)
             else:
                 if "value" in checksum:
                     child._set_checksum(checksum["value"], initial=True)
+                if "temp" in checksum:
+                    assert len(checksum) == 1, checksum.keys()
+                    child._set_checksum(checksum["temp"], initial=True)
     if ct != "structured":
         if link_target is not None:
             if "mount" in node:
@@ -171,10 +219,11 @@ def translate_cell(node, root, namespace, inchannels, outchannels, lib_path0, is
     return child
 
 def translate_connection(node, namespace, ctx):
+    from ..core.cell import Cell
     from ..core.structured_cell import Inchannel, Outchannel
     from ..core.worker import Worker, PinBase
     source_path, target_path = node["source"], node["target"]
-
+    
     source, source_node = get_path(
       ctx, source_path, namespace, False,
       return_node = True
@@ -187,22 +236,28 @@ def translate_connection(node, namespace, ctx):
     )
     if isinstance(target, StructuredCell):
         target = target.inchannels[()]
-    # TODO: transfer mode
-    """
-    transfer_mode = "copy"
-    if target_node is not None and target_node["type"] == "transformer":
-        transfer_mode = "ref"
-    """
 
-    if isinstance(source, Outchannel):
-        name, parent = source.name, source.structured_cell()
-        if isinstance(name, str):
-            name = (name,)            
-        parent.outchannels[name].connect(target)
-    elif isinstance(source, (Worker, PinBase, Inchannel)):
-        source.connect(target)
-    else:
-        source.connect(target)
+    def do_connect(source, target):
+        if isinstance(source, Cell) or isinstance(target, Cell):
+            source.connect(target)
+            return
+        n = 0
+        while 1:
+            n += 1
+            con_name = "CONNECTION_" + str(n)
+            if con_name not in ctx._children:
+                break
+        intermediate = core_cell("mixed")
+        setattr(ctx, con_name, intermediate)
+        source.connect(intermediate)
+        intermediate.connect(target)
+        
+
+    if not isinstance(source, (Worker, PinBase, Outchannel, Cell)):
+        raise TypeError(source)
+    if not isinstance(target, (Worker, PinBase, Inchannel, Cell)):
+        raise TypeError(target)
+    do_connect(source, target)
 
 def translate_link(node, namespace, ctx):
     raise NotImplementedError

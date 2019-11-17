@@ -2,6 +2,7 @@ from seamless.core import cell as core_cell, link as core_link, \
  libcell, transformer, reactor, context, macro, StructuredCell
 
 def translate_py_transformer(node, root, namespace, inchannels, outchannels, lib_path00, is_lib):
+    from .translate import set_structured_cell_from_checksum
     #TODO: simple translation, without a structured cell    
 
     inchannels = [ic for ic in inchannels if ic[0] != "code"]
@@ -13,11 +14,22 @@ def translate_py_transformer(node, root, namespace, inchannels, outchannels, lib
     setattr(parent, name, ctx)
 
     result_name = node["RESULT"]
+    result_cell_name = result_name + "_CELL"
     if node["language"] == "ipython":
         assert result_name == "result"
     input_name = node["INPUT"]
     for c in inchannels:
-        assert (not len(c)) or c[0] != result_name #should have been checked by highlevel
+        assert (not len(c)) or c[0] not in (result_name, result_cell_name) #should have been checked by highlevel
+    all_inchannels = set(inchannels)
+    pin_cells = {}
+    for pin in list(node["pins"].keys()):
+        pin_cell_name = pin + "_INCHANNEL"
+        assert pin_cell_name not in all_inchannels
+        assert pin_cell_name not in node["pins"]
+        pin_cell = core_cell("mixed")
+        setattr(ctx, pin_cell_name, pin_cell)
+        pin_cells[pin] = pin_cell
+        
 
     with_result = node["with_result"]
     interchannels = [as_tuple(pin) for pin in node["pins"]]
@@ -42,12 +54,11 @@ def translate_py_transformer(node, root, namespace, inchannels, outchannels, lib
         p = {"io": "input"}
         p.update(pin)
         all_pins[pinname] = p
-    all_pins[result_name] = {"io": "output", "transfer_mode": "copy"}
+    all_pins[result_name] = {"io": "output", "celltype": "mixed"}
     if node["SCHEMA"]:
         assert with_result
         all_pins[node["SCHEMA"]] = {
-            "io": "input", "transfer_mode": "json",
-            "access_mode": "json", "content_type": "json"
+            "io": "input", "celltype": "mixed"
         }
     ctx.tf = transformer(all_pins)
     if node["debug"]:
@@ -67,16 +78,24 @@ def translate_py_transformer(node, root, namespace, inchannels, outchannels, lib
     checksum = node.get("checksum", {})
     if "code" in checksum:
         ctx.code._set_checksum(checksum["code"], initial=True)
-    if "schema" in checksum:
-        inp._set_checksum(checksum["schema"], schema=True, initial=True)
-    if "input" in checksum:
-        inp._set_checksum(checksum["input"], initial=True)
+    inp_checksum = {}
+    for k in checksum:
+        if k == "schema":
+            inp_checksum[k] = checksum[k]
+            continue
+        if not k.startswith("input"):
+            continue
+        k2 = "value" if k == "input" else k.lstrip("input_")
+        inp_checksum[k2] = checksum[k]
+    set_structured_cell_from_checksum(inp, inp_checksum)
     namespace[node["path"] + ("code",), True] = ctx.code, node
     namespace[node["path"] + ("code",), False] = ctx.code, node
 
     for pin in list(node["pins"].keys()):
         target = getattr(ctx.tf, pin)
-        inp.outchannels[(pin,)].connect(target)
+        pin_cell = pin_cells[pin]
+        inp.outchannels[(pin,)].connect(pin_cell)
+        pin_cell.connect(target)
 
     if with_result:
         result, result_ctx = build_structured_cell(
@@ -90,13 +109,19 @@ def translate_py_transformer(node, root, namespace, inchannels, outchannels, lib
 
         setattr(ctx, result_name, result)
 
-        result_pin = getattr(ctx.tf, result_name)
-        result_pin.connect(result.inchannels[()])
+        result_pin = getattr(ctx.tf, result_name)        
+        result_cell = core_cell("mixed")
+        setattr(ctx, result_cell_name, result_cell)
+        result_pin.connect(result_cell)
+        result_cell.connect(result.inchannels[()])
         if node["SCHEMA"]:
             schema_pin = getattr(ctx.tf, node["SCHEMA"])
             result.schema.connect(schema_pin)
+        """
+        # not done; transformation will do this!
         if "result" in checksum:
-            result._set_checksum(checksum["result"], initial=True)
+            result._data._set_checksum(checksum["result"], initial=True)
+        """
         if "result_schema" in checksum:
             result._set_checksum(checksum["result_schema"], schema=True, initial=True)
     else:

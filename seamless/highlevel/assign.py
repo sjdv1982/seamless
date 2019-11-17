@@ -217,14 +217,10 @@ def assign_to_subcell(cell, path, value):
         assign_connection(ctx, value._path, cell._path + path, False)
         ctx._translate()
     elif isinstance(value, ConstantTypes):
-        structured_cell = cell._get_cell()
-        if structured_cell._is_silk:
-            handle = structured_cell.handle
-            for p in path[:-1]:
-                handle = getattr(handle, p)
-            setattr(handle, path[-1], value)
-        else:
-            structured_cell.monitor.set_path(path, value)
+        handle = cell.handle
+        for p in path[:-1]:
+            handle = getattr(handle, p)
+        setattr(handle, path[-1], value)
     else:
         raise TypeError(value)
 

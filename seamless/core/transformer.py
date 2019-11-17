@@ -200,8 +200,7 @@ class Transformer(Worker):
         return future.result()
 
     def destroy(self, *, from_del=False):
-        if not from_del:
-            self._get_manager()._destroy_transformer(self)
+        self._get_manager()._destroy_transformer(self)
         super().destroy(from_del=from_del)
 
     def __str__(self):

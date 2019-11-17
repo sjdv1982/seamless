@@ -7,6 +7,7 @@ ctx.mount("/tmp/mount-test")
 
 # 1
 ctx.a = 10
+ctx.translate()
 print(ctx.a.value)
 
 # 1a
@@ -28,6 +29,7 @@ print(ctx.myresult.value)
 ctx.a = 12
 ctx.equilibrate()
 print(ctx.myresult.value)
+raise NotImplementedError # should be 24, not None!
 
 # 4
 def triple_it(a):

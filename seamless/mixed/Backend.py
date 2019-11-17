@@ -370,7 +370,7 @@ class StructuredCellSchemaBackend(StructuredCellBackend):
         self._storage = "pure-plain"
         data = self.get_data()
         if data is None:
-            self.set_path((), {})
+            ### self.set_path((), {}) # .set_path can be async! 
             data = {}
         storage, form = calc_form(data)
         assert storage == "pure-plain"
