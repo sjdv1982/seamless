@@ -437,8 +437,8 @@ If origin_task is provided, that task is not cancelled."""
                 status_reason=reason
             )
         for outchannel in sc.outchannels:
-            if overlap_path(outchannel, path):
-                self.cancel_cell_path(cell, outchannel, void)
+            ###if overlap_path(outchannel, path): # no, cancel all!
+            self.cancel_cell_path(cell, outchannel, void)
         self._set_cell_checksum(cell, None, void, StatusReasonEnum.UPSTREAM)
         self._set_cell_checksum(sc.buffer, None, void, StatusReasonEnum.UPSTREAM)
 
