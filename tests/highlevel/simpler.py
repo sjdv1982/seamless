@@ -2,13 +2,12 @@ from seamless.highlevel import Context
 from pprint import pprint
 
 ctx = Context()
-###ctx.mount("/tmp/mount-test")
+ctx.mount("/tmp/mount-test")
 
 ctx.a = 12
 ctx.translate()
 print(ctx.a.value)
 print(ctx.a.schema) # None
-#pprint(ctx.get_graph()); import sys; sys.exit()
 
 def triple_it(a):
     return 3 * a
@@ -57,7 +56,7 @@ ctx.a = 13
 ctx.equilibrate()
 print(ctx.a.value)
 print(ctx.transform.inp.value)
-print(ctx.myresult.value)
+print("RESULT", ctx.transform.result.value, ctx.myresult.value)
 
 ctx.transform.example.b = "test"  # modification of schema => .inp exception
 ctx.translate()
@@ -89,7 +88,6 @@ print("TRANSFORMER INPUT EXCEPTION", ctx.transform.inp.exception) # None
 print("TRANSFORMER STATUS", ctx.transform.status)
 print("TRANSFORMER EXCEPTION", ctx.transform.exception)
 
-"""
 print("START3")
 ctx.tfcode = triple_it
 ctx.transform._get_htf()["pins"].pop("b"); ctx._translate() ### KLUDGE
@@ -97,6 +95,5 @@ ctx.equilibrate()
 print(ctx.myresult.value)
 print("TRANSFORMER INPUT STATUS", ctx.transform.inp.status)
 print("TRANSFORMER STATUS", ctx.transform.status)
-"""
 
 print(ctx.transform.inp.schema)

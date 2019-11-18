@@ -63,7 +63,7 @@ class AccessorUpdateTask(Task):
                 if not target._destroyed:
                     sc = target._structured_cell
                     assert sc is not None
-                    inchannel = sc.inchannels[path]
+                    inchannel = sc.inchannels[path]                    
                     manager._set_inchannel_checksum(
                         inchannel, expression_result_checksum, 
                         False, None, prelim=accessor._prelim

@@ -31,7 +31,7 @@ class StructuredCellJoinTask(Task):
             await taskmanager.await_tasks(tasks, shield=True)
 
 
-    async def _run(self):
+    async def _run(self):        
         manager = self.manager()
         sc = self.structured_cell
         await self.await_sc_tasks()
@@ -39,10 +39,13 @@ class StructuredCellJoinTask(Task):
         modified_paths.update(set([ic.subpath for ic in sc.modified_inchannels]))
         prelim = {}
         for out_path in sc.outchannels:
+            """
+            # Done before...
             for mod_path in modified_paths:
-                if overlap_path(out_path, mod_path):                
+                if overlap_path(out_path, mod_path):
                     manager.cancel_cell_path(sc._data, out_path, False)
                     break
+            """
             curr_prelim = False
             for in_path in sc.inchannels:
                 if overlap_path(in_path, out_path):
@@ -138,8 +141,11 @@ class StructuredCellJoinTask(Task):
                     sc._exception = traceback.format_exc(limit=0)
                     ok = False
                     sc._data._set_checksum(None, from_structured_cell=True)                    
+                    """
+                    # Done before...
                     for out_path in sc.outchannels:
                         manager.cancel_cell_path(sc._data, out_path, True)
+                    """
         if ok:
             if checksum is not None and sc._data is not sc.buffer:
                 sc._data._set_checksum(checksum, from_structured_cell=True)
@@ -166,6 +172,7 @@ class StructuredCellJoinTask(Task):
                             if overlap_path(out_path, mod_path): 
                                 changed = True
                                 break
+                    changed = True ### duck tape...           
                     if changed:
                         for accessor in downstreams[out_path]:
                             changed2 = accessor.build_expression(livegraph, cs)

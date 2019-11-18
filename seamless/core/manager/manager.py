@@ -211,6 +211,8 @@ class Manager:
                 self.sharemanager.add_cell_update(cell, checksum)
 
     def _set_inchannel_checksum(self, inchannel, checksum, void, status_reason=None, prelim=False):
+        ###print("INCH", inchannel.subpath, checksum is not None)
+        ###import traceback; traceback.print_stack(limit=5)
         assert checksum is None or isinstance(checksum, bytes), checksum
         assert isinstance(void, bool), void
         if void:
@@ -223,10 +225,12 @@ class Manager:
         inchannel._checksum = checksum
         inchannel._void = void
         inchannel._status_reason = status_reason
-        inchannel._prelim = prelim
+        inchannel._prelim = prelim        
         if checksum != old_checksum:
             cachemanager.incref_checksum(checksum, inchannel, False)
-            inchannel.structured_cell().modified_inchannels.add(inchannel)
+            sc = inchannel.structured_cell()
+            sc.modified_inchannels.add(inchannel)
+            self.structured_cell_join(sc)
 
     def _set_transformer_checksum(self,
         transformer, checksum, void, *,
@@ -280,7 +284,8 @@ class Manager:
     @run_in_mainthread
     def set_auth_path(self, structured_cell, path, value):
         self.cancel_scell_inpath(
-            structured_cell, path, value is None
+            structured_cell, path, value is None,
+            from_auth=True
         )
         self.taskmanager.cancel_structured_cell(structured_cell)
     
@@ -417,11 +422,22 @@ If origin_task is provided, that task is not cancelled."""
             cell._canceling = False
 
     @mainthread
-    def cancel_scell_inpath(self, sc, path, void):
+    def cancel_scell_inpath(self, sc, path, void, from_auth=False):
+        from .tasks.structured_cell import overlap_path
         assert isinstance(sc, StructuredCell)
         cell = sc._data
+        if not from_auth and path in sc.inchannels:        
+            if void:
+                reason = StatusReasonEnum.UPSTREAM
+            else:
+                reason = None
+            ic = sc.inchannels[path]
+            self._set_inchannel_checksum(
+                ic, None, void,
+                status_reason=reason
+            )
         for outchannel in sc.outchannels:
-            if outchannel[:len(path)] == path:
+            if overlap_path(outchannel, path):
                 self.cancel_cell_path(cell, outchannel, void)
         self._set_cell_checksum(cell, None, void, StatusReasonEnum.UPSTREAM)
         self._set_cell_checksum(sc.buffer, None, void, StatusReasonEnum.UPSTREAM)

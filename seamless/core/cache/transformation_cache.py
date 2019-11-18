@@ -259,7 +259,10 @@ class TransformationCache:
     def destroy_transformation(self, transformation):
         tf_buffer = tf_get_buffer(transformation)
         tf_checksum = calculate_checksum_sync(tf_buffer)
-        assert tf_checksum in self.transformations
+        if tf_checksum not in self.transformations:
+            print("WARNING: cannot destroy unknown transformation %s" % tf_checksum.hex())
+            return
+        #assert tf_checksum in self.transformations
         assert tf_checksum in self.transformations_to_transformers
         if len(self.transformations_to_transformers[tf_checksum]):
             return # A new transformer was registered in the meantime

@@ -1,16 +1,33 @@
 E. The mid/high level
-1. Change the call graph
- Change "initial" in set checksum: only for auth portion of structuredcell
- When translating a graph, only set authoritative parts
- Everything else goes to expression cache, transformer cache!
-2. Change the translation macros (esp. for StructuredCell)
-Loading structured cell auth from graph checksum can be tricky,
- maybe specialized routine (see unbound_context line 321)
-What about structured cells + library? Think and study how it was before livegraph
+- Simple cells, verify that they work well
+- High-level links; maybe (re-)implement them at the low level 
+  (double edit pin is not good)
+  Must be between simple cells, that have no incoming connections
+- Graph loading works really well now, used ubiquitously:
+  - When creating a graph, expression cache is now lost; include it in the graph!
+  - Loading from library: 
+    - Rip the low-level mechanism
+    - Register libgraphs under libname instead. 
+      High-level contexts can have from_lib=libname. 
+      This imperatively adds the libgraph as a context attribute. 
+      However, libsync reloads libgraph from the register, and auto_libsync is possible
+    - libgraph is added into the parent graph right before translation (unless there is a constructor, see below).
+    - Contexts-from-lib can have a constructor. Constructor has as args: 
+      ctx (empty), libctx (full), and params (JSON, will contain *args and **kwargs,
+      can be modified after construction). 
+      ctx.set_graph(libctx.get_graph()) will just copy,
+      but ctx can be filled in manually. In the end, ctx.get_graph() is added to the parent graph right before translation.
+- Compiled and bash transformers (using library!)
+- High-level Macro construct around low-level macro; 
+  shouldn't be too hard, but connections could be tricky.
+  Wrapping everything in a single Macro with some connections into .share, .mount etc.
+   is a good way to get sth working quickly, until the high level works well.
 3. Run tests
 4. Test in Jupyter
 5. Test Observable Notebook (client JS has changed)
-6. Re-run examples
+6. Re-run examples, in particular capri and snakemake
+
+
 
 =======================================================  
 SOMEWHAT OUTDATED: until: see below
