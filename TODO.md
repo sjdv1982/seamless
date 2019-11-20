@@ -5,9 +5,9 @@ E. The mid/high level
   Must be between simple cells, that have no incoming connections
 - Graph loading works really well now, used ubiquitously:
   - When creating a graph, expression cache is now lost; include it in the graph!
-  - Loading from library: 
-    - Rip the low-level mechanism
-    - Register libgraphs under libname instead. 
+  - Loading from high-level library: 
+    - Do not use the low-level library mechanism; the low level mechanism is for syntax extensions such as compiled transformers.
+    - Register libgraphs under libname. 
       High-level contexts can have from_lib=libname. 
       This imperatively adds the libgraph as a context attribute. 
       However, libsync reloads libgraph from the register, and auto_libsync is possible
@@ -17,7 +17,7 @@ E. The mid/high level
       can be modified after construction). 
       ctx.set_graph(libctx.get_graph()) will just copy,
       but ctx can be filled in manually. In the end, ctx.get_graph() is added to the parent graph right before translation.
-- Compiled and bash transformers (using library!)
+- Compiled and bash transformers (using low level library!)
 - High-level Macro construct around low-level macro; 
   shouldn't be too hard, but connections could be tricky.
   Wrapping everything in a single Macro with some connections into .share, .mount etc.
