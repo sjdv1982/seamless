@@ -1,5 +1,6 @@
 from ..mixed import MixedBase
 from copy import deepcopy
+import inspect
 from ..core.protocol.serialize import serialize_sync as serialize
 from ..core.protocol.calculate_checksum import calculate_checksum_sync as calculate_checksum
 
@@ -26,6 +27,7 @@ def copy_context(nodes, connections, path):
 
 
 def fill_checksum(manager, node, temp_path):
+    from ..core.utils import strip_source
     checksum = None
     subcelltype = None
     if node["type"] == "cell":
@@ -65,6 +67,11 @@ def fill_checksum(manager, node, temp_path):
     if temp_value is None:
         return
         
+    if datatype == "python":
+        if inspect.isfunction(temp_value):
+            code = inspect.getsource(temp_value)
+            code = strip_source(code)
+            temp_value = code
     buf = serialize(temp_value, datatype, use_cache=False)
     checksum = calculate_checksum(buf)
 

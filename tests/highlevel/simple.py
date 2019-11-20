@@ -41,9 +41,7 @@ print("4", ctx.myresult.value)
 ctx.tfcode >> ctx.transform.code
 def triple_it2(a, b):
     return 3 * a + b
-ctx.translate()  # KLUDGE  
 ctx.tfcode = triple_it2
-ctx.equilibrate()
 print("5 (should be None)", ctx.myresult.value)
 
 # 6
