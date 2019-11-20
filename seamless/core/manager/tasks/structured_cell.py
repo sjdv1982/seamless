@@ -182,6 +182,7 @@ class StructuredCellJoinTask(Task):
                             if changed2:
                                 AccessorUpdateTask(manager, accessor).launch()
                     elif cs is not None: # morph
+                        # TODO: for now, will not be triggered
                         for accessor in downstreams[out_path]:                                
                             old_expression = accessor.expression
                             expression_result_checksum = \

@@ -77,6 +77,8 @@ B. Usability
 C. DaReUS-Loop/PepCyclizer example:
   - Banks!
   - Not command-line based, i.e. don't use SnakeMake, use BCSearch routines
+  - Need high-level Macro structure: needs deep structure, and automatic transformer
+    map/reduce has now been ripped.
   - PyPPP docker image: code is open source, but SVM model is secret
 
 D. Documentation
@@ -87,6 +89,16 @@ D. Documentation
 
 
 Cleanup
+   - Fix cancellation policy wrt structured cell (now, everything is cancelled,
+    which prevents expression morphing (i.e. data value will always be fetched)
+    and makes modified_auth_paths/modified_inchannels useless) 
+   - Adapt graph format wrt structured cells. Do we need to store
+     "buffer" *and* "value"? They are always the same!
+     Better to make some kind of "validated" attribute
+     Also, when loading the graph, if it is trusted, not only update
+     transformer cache and expression cache with elements mined from
+     the graph, but also prevent StructuredCell joins if validated=True
+     => loading and equilibrating an equilibrated graph should do nothing, no transformations and no data loading!
    - Implement old lib.gui.edit as a new library, with new editpin.
    - Terminology: context children can be private, in which case they are not in __dir__.
      By default, they are public. No more "export".

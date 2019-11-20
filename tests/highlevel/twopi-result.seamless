@@ -25,13 +25,11 @@
       "INPUT": "inp",
       "RESULT": "result",
       "SCHEMA": null,
-      "buffered": true,
       "checksum": {
         "code": "b24cb296a9e7872c592baedc5ba4166c90dc3c464e4e2ddfddb78f9c56837b89",
-        "input": "66aacfe442ff63a3dc537a3bfbfa204824fb8585ea89fab337ba99eb198c0ddc",
-        "result": "42edc3ac663285690d107f3b05f6f46f3da7fde403c39846261c938496802d60",
-        "result_schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
-        "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c"
+        "input": "de4b9d96d91ff8c9ac276da68b4c12e288277d2ff2d684707ac50aadd48ace94",
+        "input_buffer": "de4b9d96d91ff8c9ac276da68b4c12e288277d2ff2d684707ac50aadd48ace94",
+        "result": "9acc23666aadc2bb7c469e92fe770f49604bbdeecd6cc850677459be5327e9da"
       },
       "compiled": false,
       "debug": false,
@@ -41,42 +39,35 @@
       ],
       "pins": {
         "a": {
-          "access_mode": "default",
-          "content_type": null,
-          "transfer_mode": "copy"
+          "celltype": "mixed"
         }
       },
-      "plain": false,
-      "plain_result": false,
       "type": "transformer",
       "with_result": true
     },
     {
-      "buffered": true,
       "celltype": "structured",
       "checksum": {
-        "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
-        "value": "9809b7dfcfe29dd194c71c7d2da94af3aeef98f079eeff8e1d9e5099acef737c"
+        "auth": "0553638f3a0f6235e46d1cd6b7fc12e468fd91bcc901f488fef8d15bdd48a7d3",
+        "buffer": "0553638f3a0f6235e46d1cd6b7fc12e468fd91bcc901f488fef8d15bdd48a7d3",
+        "value": "0553638f3a0f6235e46d1cd6b7fc12e468fd91bcc901f488fef8d15bdd48a7d3"
       },
       "datatype": "mixed",
       "path": [
         "pi"
       ],
-      "silk": true,
       "type": "cell"
     },
     {
-      "buffered": true,
       "celltype": "structured",
       "checksum": {
-        "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
-        "value": "42edc3ac663285690d107f3b05f6f46f3da7fde403c39846261c938496802d60"
+        "buffer": "9acc23666aadc2bb7c469e92fe770f49604bbdeecd6cc850677459be5327e9da",
+        "value": "9acc23666aadc2bb7c469e92fe770f49604bbdeecd6cc850677459be5327e9da"
       },
       "datatype": "mixed",
       "path": [
         "twopi"
       ],
-      "silk": true,
       "type": "cell"
     }
   ],

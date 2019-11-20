@@ -214,10 +214,13 @@ class Manager:
         ###print("INCH", inchannel.subpath, checksum is not None)
         ###import traceback; traceback.print_stack(limit=5)
         assert checksum is None or isinstance(checksum, bytes), checksum
-        assert isinstance(void, bool), void
+        assert isinstance(void, bool), void        
         if void:
             assert status_reason is not None
             assert checksum is None
+        sc = inchannel.structured_cell()
+        if sc._destroyed:
+            return
         cachemanager = self.cachemanager
         old_checksum = inchannel._checksum
         if old_checksum is not None and old_checksum != checksum:
@@ -227,8 +230,7 @@ class Manager:
         inchannel._status_reason = status_reason
         inchannel._prelim = prelim        
         if checksum != old_checksum:
-            cachemanager.incref_checksum(checksum, inchannel, False)
-            sc = inchannel.structured_cell()
+            cachemanager.incref_checksum(checksum, inchannel, False)            
             sc.modified_inchannels.add(inchannel)
             self.structured_cell_join(sc)
 
