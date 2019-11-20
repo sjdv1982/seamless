@@ -3,10 +3,12 @@ E. The mid/high level
 - High-level links; maybe (re-)implement them at the low level 
   (double edit pin is not good)
   Must be between simple cells, that have no incoming connections
+- High-level subcells
 - Graph loading works really well now, used ubiquitously:
   - When creating a graph, expression cache is now lost; include it in the graph!
   - Loading from high-level library: 
-    - Do not use the low-level library mechanism; the low level mechanism is for syntax extensions such as compiled transformers.
+    - Do not use the low-level library mechanism; the low level mechanism is for syntax extensions such as compiled transformers. Adapt syntax extensions to use *only* the low
+    level (no longer import high-level code in seamless.lib )
     - Register libgraphs under libname. 
       High-level contexts can have from_lib=libname. 
       This imperatively adds the libgraph as a context attribute. 

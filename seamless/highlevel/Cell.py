@@ -65,6 +65,8 @@ class Cell(Base):
         return parent._graph.nodes[self._path]
 
     def _observe_cell(self, checksum):
+        if self._parent() is None:
+            return
         hcell = self._get_hcell()
         if hcell.get("checksum") is None:
             hcell["checksum"] = {}
@@ -74,6 +76,8 @@ class Cell(Base):
             hcell["checksum"]["value"] = checksum
 
     def _observe_auth(self, checksum):
+        if self._parent() is None:
+            return
         hcell = self._get_hcell()
         if hcell.get("checksum") is None:
             hcell["checksum"] = {}
@@ -83,6 +87,8 @@ class Cell(Base):
             hcell["checksum"]["auth"] = checksum
 
     def _observe_buffer(self, checksum):
+        if self._parent() is None:
+            return
         hcell = self._get_hcell()
         if hcell.get("checksum") is None:
             hcell["checksum"] = {}
@@ -92,6 +98,8 @@ class Cell(Base):
             hcell["checksum"]["buffer"] = checksum
 
     def _observe_schema(self, checksum):
+        if self._parent() is None:
+            return
         hcell = self._get_hcell()
         if hcell.get("checksum") is None:
             hcell["checksum"] = {}

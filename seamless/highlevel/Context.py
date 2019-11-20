@@ -26,7 +26,6 @@ shareserver = None
 class Context:
     path = ()
     _mount = None
-    _graph_ctx = None
     _depsgraph = None
     _translating = False
     _as_lib = None
@@ -161,27 +160,6 @@ class Context:
             "authority": authority,
             "persistent": persistent
         }
-        self._translate()
-
-    def mount_graph(self, mountdir, persistent=None):
-        assert not self._dummy
-        with macro_mode_on(self):
-            if self._graph_ctx is not None:
-                self._graph_ctx.destroy()
-            ctx = self._graph_ctx = context(toplevel=True)
-        with macro_mode_on():
-            ctx.mount(mountdir, persistent=persistent, mode="w")
-            mountmanager.add_context(ctx,(), False)
-            mountmanager.paths[ctx].add(mountdir) #kludge
-        with macro_mode_on():
-            raise NotImplementedError ### cache branch
-            """
-            ctx.topology = cell("json")
-            ctx.values = cell("json") #TODO: change to mixed
-            ctx.cached_values = cell("json") #TODO: change to mixed
-            ctx.states = cell("json") #TODO: change to mixed
-            ctx.cached_states = cell("json") #TODO: change to mixed
-            """
         self._translate()
 
     def equilibrate(self, timeout=None):

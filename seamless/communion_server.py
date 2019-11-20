@@ -215,6 +215,7 @@ def communion_decode(m):
 class CommunionServer:
     future = None
     PROTOCOL = ("seamless", "communion", "0.2")
+    _started = False
     _started_outgoing = False
     _to_start_incoming = None
     def __init__(self):
@@ -316,6 +317,8 @@ class CommunionServer:
         await self._listen_peer(websocket, peer_config)        
 
     async def _start(self):
+        if self._started:
+            return
         config = {
             "protocol": self.PROTOCOL,
             "id": self.id,
@@ -346,6 +349,7 @@ class CommunionServer:
         self._started_outgoing = True
         if len(coros):
             await asyncio.gather(*coros)
+        self._started = True
 
     async def _startup(self):
         while 1:

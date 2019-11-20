@@ -9,10 +9,10 @@ seamless.set_ncores(0)
 
 from seamless import communion_server
 communion_server.configure_master(
-    value=True,
-    transformer_job=True,
-    transformer_result=True,
-    transformer_result_level2=True
+    buffer=True,
+    buffer_status=True,
+    transformation_job=True,
+    transformation_status=True,
 )
 
 from seamless.highlevel import load_graph

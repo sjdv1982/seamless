@@ -1,6 +1,5 @@
 from seamless.highlevel import Context
 ctx = Context()
-ctx.mount_graph("/tmp/seamless", persistent=True)
 ctx.a = {}
 ctx.a.b = 12
 print(ctx.a.value, ctx.a.value.data)

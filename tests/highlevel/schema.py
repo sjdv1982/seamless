@@ -18,7 +18,6 @@ print(buf)
 from seamless.highlevel import Context
 
 ctx = Context()
-ctx.mount_graph("/tmp/seamless", persistent=True)
 ctx.a = {}
 ctx.a.x = 20
 ctx.a.y = 88

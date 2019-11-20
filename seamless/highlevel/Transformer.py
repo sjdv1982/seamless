@@ -553,6 +553,8 @@ class Transformer(Base):
         parent._translate()
 
     def _observe_input(self, checksum):
+        if self._parent() is None:
+            return
         htf = self._get_htf()
         if htf.get("checksum") is None:
             htf["checksum"] = {}
@@ -562,6 +564,8 @@ class Transformer(Base):
             htf["checksum"]["input"] = checksum
 
     def _observe_input_auth(self, checksum):
+        if self._parent() is None:
+            return
         htf = self._get_htf()
         if htf.get("checksum") is None:
             htf["checksum"] = {}
@@ -571,6 +575,8 @@ class Transformer(Base):
             htf["checksum"]["input_auth"] = checksum
 
     def _observe_input_buffer(self, checksum):
+        if self._parent() is None:
+            return
         htf = self._get_htf()
         if htf.get("checksum") is None:
             htf["checksum"] = {}
@@ -580,6 +586,8 @@ class Transformer(Base):
             htf["checksum"]["input_buffer"] = checksum
 
     def _observe_code(self, checksum):
+        if self._parent() is None:
+            return
         htf = self._get_htf()
         if htf.get("checksum") is None:
             htf["checksum"] = {}
@@ -588,24 +596,32 @@ class Transformer(Base):
             htf["checksum"]["code"] = checksum
 
     def _observe_result(self, checksum):
+        if self._parent() is None:
+            return
         htf = self._get_htf()
         if htf.get("checksum") is None:
             htf["checksum"] = {}
         htf["checksum"]["result"] = checksum
 
     def _observe_schema(self, checksum):
+        if self._parent() is None:
+            return
         htf = self._get_htf()
         if htf.get("checksum") is None:
             htf["checksum"] = {}
         htf["checksum"]["schema"] = checksum
 
     def _observe_result_schema(self, checksum):
+        if self._parent() is None:
+            return
         htf = self._get_htf()
         if htf.get("checksum") is None:
             htf["checksum"] = {}
         htf["checksum"]["result_schema"] = checksum
 
     def _observe_main_module(self, checksum):
+        if self._parent() is None:
+            return
         htf = self._get_htf()
         if htf.get("checksum") is None:
             htf["checksum"] = {}
