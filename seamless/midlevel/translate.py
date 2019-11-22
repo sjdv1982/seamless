@@ -15,6 +15,10 @@ from seamless.core import cell as core_cell, link as core_link, \
 from . import copying
 from .util import as_tuple, get_path, find_channels, build_structured_cell
 
+direct_celltypes = (
+    "text", "plain", "mixed", "binary",
+    "cson", "yaml", "str", "bytes", "int", "float", "bool"
+)    
 
 def set_structured_cell_from_checksum(cell, checksum):
     join = False
@@ -187,7 +191,9 @@ def translate_cell(node, root, namespace, inchannels, outchannels, lib_path0, is
                         child = core_cell(node["language"])
                 else:
                     child = core_cell("text")
-            elif ct in ("text", "plain", "mixed", "array"):
+                    child.set_file_extension(node["file_extension"])
+
+            elif ct in direct_celltypes:
                 child = core_cell(ct)
             else:
                 raise ValueError(ct) #unknown celltype; should have been caught by high level

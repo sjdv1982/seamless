@@ -9,6 +9,11 @@ from ..silk import Silk
 from ..mixed import MixedBase
 from .mime import get_mime, language_to_mime, ext_to_mime
 
+celltypes = (
+    "structured", "text", "code", "plain", "mixed", "binary",
+    "cson", "yaml", "str", "bytes", "int", "float", "bool"
+)    
+
 class Cell(Base):
     _virtual_path = None
 
@@ -161,6 +166,9 @@ class Cell(Base):
             return getattr(self, "example").set(value)
         if attr.startswith("_") or hasattr(type(self), attr):
             return object.__setattr__(self, attr, value)
+        return self._setattr(attr, value)
+
+    def _setattr(self, attr, value):
         from .assign import assign_to_subcell
         parent = self._parent()
         assert not parent._dummy
@@ -301,7 +309,7 @@ class Cell(Base):
 
     @celltype.setter
     def celltype(self, value):
-        assert value in ("structured", "text", "code", "plain", "mixed", "array"), value
+        assert value in celltypes, value
         hcell = self._get_hcell()
         if hcell.get("UNTRANSLATED"):
             cellvalue = hcell.get("TEMP")
@@ -367,6 +375,26 @@ class Cell(Base):
         celltype = hcell["celltype"]
         assert celltype == "structured"
         hcell["datatype"] = value
+
+    @property
+    def language(self):
+        hcell = self._get_hcell()
+        celltype = hcell["celltype"]
+        if celltype != "code":
+            raise AttributeError
+
+    @language.setter
+    def language(self, value):
+        from ..compiler import find_language
+        hcell = self._get_hcell()
+        celltype = hcell["celltype"]
+        if celltype != "code":
+            return self._setattr("language", value)
+        lang, language, extension = find_language(value)
+        old_language = hcell.get("language")
+        hcell["language"] = lang
+        hcell["file_extension"] = extension
+        self._parent()._translate()
 
     def _update_dep(self):
         self._parent()._depsgraph.update_path(self._path)

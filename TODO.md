@@ -1,9 +1,8 @@
 E. The mid/high level
-- Simple cells, verify that they work well
+- High-level subcells
 - High-level links; maybe (re-)implement them at the low level 
   (double edit pin is not good)
-  Must be between simple cells, that have no incoming connections
-- High-level subcells
+  Must be between simple cells, that have no incoming connections; no support for transformer.code; later support it for .schema/.result_schema.
 - Graph loading works really well now, used ubiquitously:
   - When creating a graph, expression cache is now lost; include it in the graph!
   - Loading from high-level library: 
@@ -29,7 +28,21 @@ E. The mid/high level
 5. Test Observable Notebook (client JS has changed)
 6. Re-run examples, in particular capri and snakemake
 
-
+Medium term:
+- Think of mount + structured cell; files are 
+confusing; maybe disallow it completely (only support
+for simple cells)?
+(also impacts ctx.mount; maybe Context.mount should
+not result in a pass-through)
+- What happens with error messages of setting simple cell values?
+Structured cells have .exception... so do (simple) transformers and macros. 
+What about reactors? There are also the core aux systems
+(mount, share, communion). Once we capture those error messages
+(and link them to cells if possible), are we done for logging errors? (apart from translation errors of course)
+- Allow structured cell schemas to come from upstream
+(same as currently for transformer code). This requires
+the disabling of type inference.
+Alternatively, schema can be high-level linked to a simple cell (requires specific syntax)
 
 =======================================================  
 SOMEWHAT OUTDATED: until: see below

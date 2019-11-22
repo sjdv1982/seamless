@@ -102,7 +102,8 @@ if __name__ == "__main__":
 
     # 2: Set up the values for a specific example
     ctx.cppcode = set_resource("test.cpp")
-    ctx.cppcode.celltype = "text"
+    raise NotImplementedError # celltype was "text" before...
+    ctx.cppcode.celltype = "code"
 
     ctx.tf0 = lambda a,b: a + b
     ctx.tf0.example.a = 0

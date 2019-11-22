@@ -482,6 +482,9 @@ class MountManager:
     def add_cell_update(self, cell, checksum, buffer):
         if self._mounting:
             return
+        root =cell._root()
+        if root is not None and root not in mountmanager.paths:
+            return
         assert cell in self.mounts, (cell, hex(id(cell)))
         self.cell_updates.append((cell, checksum, buffer))
 
