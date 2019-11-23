@@ -2,6 +2,7 @@ import weakref
 from copy import deepcopy
 from . import SeamlessBase
 from .status import StatusReasonEnum
+from copy import deepcopy
 
 class Inchannel:
     _void = True
@@ -132,6 +133,9 @@ class StructuredCell(SeamlessBase):
         assert self.auth is not None
         if self.auth._destroyed:
             return
+        if self._auth_value is None:
+            if self.auth._checksum is not None:
+                self._auth_value = deepcopy(self.auth.value)
         manager = self._get_manager()
         if manager._destroyed:
             return

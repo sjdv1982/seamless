@@ -65,6 +65,7 @@ class StructuredCellJoinTask(Task):
                     if value is None:
                         if sc.auth._checksum is not None:
                             value = copy.deepcopy(sc.auth.value)
+                            sc._auth_value = value
                     else:
                         auth_buf = await SerializeToBufferTask(
                             manager, value, "mixed", use_cache=False # the value object changes all the time...

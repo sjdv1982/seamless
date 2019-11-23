@@ -15,7 +15,7 @@ class Monitor:
     def get_instance(self, subform, path):
         if subform is None:
             if len(path):
-                raise KeyError
+                raise KeyError(path)
             return MixedObject(self, path)
         if isinstance(subform, str):
             type_ = subform
