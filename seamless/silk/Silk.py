@@ -530,6 +530,7 @@ class Silk(SilkBase):
             self._infer_new_property(schema, attr, value, value_schema)
 
     def __setattr__(self, attr, value):
+        #print("_s", attr, value)
         if attr in type(self).__slots__:
             return super().__setattr__(attr, value)
         if hasattr(type(self), attr) and not attr.startswith("__"):

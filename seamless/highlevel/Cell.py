@@ -4,6 +4,7 @@ import traceback
 import threading
 from types import LambdaType
 from .Base import Base
+from .Resource import Resource
 from ..core.lambdacode import lambdacode
 from ..silk import Silk
 from ..mixed import MixedBase
@@ -173,18 +174,21 @@ class Cell(Base):
         parent = self._parent()
         assert not parent._dummy
         assert not test_lib_lowlevel(parent, self._get_cell())
-        subcell = getattr(self, attr)
-        # TODO: break links and connections from subcell        
-        # It is very important that this check is made well, else you get problems with authority
-        # If any connection is broken, the graph must be rebuilt immediately (and parent._translate becomes unnecessary)
-        # => see how Transformer does it in _setattr!
-        raise NotImplementedError # livegraph branch
+
+        if isinstance(value, Resource):
+            value = value.data
+        elif isinstance(value, Proxy):
+            # TODO: implement for Transformer "code", "value", "schema", "example"
+            raise NotImplementedError(value)
+
+        hcell = self._get_hcell()
+        if hcell.get("UNTRANSLATED"):
+            self._parent().translate(force=True)
+            return self._setattr(attr, value)
+
         assign_to_subcell(self, (attr,), value)
-        ctx = parent._gen_context
         if parent._as_lib is not None:
-            hcell = self._get_hcell()
             parent._as_lib.needs_update = True
-        parent._translate()
 
     def __setitem__(self, item, value):
         if item in ("value", "schema"):
@@ -298,9 +302,6 @@ class Cell(Base):
 
     def set(self, value):
         self._set(value)
-
-    def __add__(self, other):
-        self.set(self.value + other)
 
     @property
     def celltype(self):
@@ -436,6 +437,20 @@ class Cell(Base):
                 cell.schema._set_observer(self._observe_schema)            
         else:
             cell._set_observer(self._observe_cell)        
+
+def cell_binary_method(self, other, name):
+    h = self.handle 
+    method = getattr(h, name)
+    if method is NotImplemented:
+        return NotImplemented
+    return method(other)
+ 
+
+from functools import partialmethod
+from ..silk.SilkBase import binary_special_method_names
+for name in binary_special_method_names:
+    m = partialmethod(cell_binary_method, name=name)
+    setattr(Cell, name, m)
 
 
 from .Library import test_lib_lowlevel

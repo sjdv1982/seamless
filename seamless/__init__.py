@@ -8,6 +8,10 @@ import time
 import functools
 import traceback
 
+import asyncio.compat
+# disable py34 compat; changes "exception was never retrieved" error messages
+asyncio.compat.PY34 = False
+
 import nest_asyncio
 nest_asyncio.apply()
 import asyncio

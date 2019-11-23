@@ -86,6 +86,8 @@ def assign_connection(ctx, source, target, standalone_target, exempt=[]):
         ctarget = con["target"]
         if ctarget[:lt] != target:
             return True
+        if target[:len(ctarget)] != ctarget:
+            return True
         for e in exempt:
             if ctarget[:len(e)] == e:
                 return True
@@ -208,16 +210,22 @@ def assign_context(ctx, path, value):
     _assign_context(ctx, new_nodes, new_connections, path, old_ctx, from_lib)
 
 def assign_to_subcell(cell, path, value):
+    from .Library import test_lib_lowlevel
+    from ..core.structured_cell import StructuredCell
     hcell = cell._get_hcell()
     if hcell["celltype"] != "structured":
         raise TypeError("Can only assign directly to properties of structured cells")
-    if isinstance(value, Cell):
-        ctx = cell._parent()
+    ctx = cell._parent()
+    if isinstance(value, Cell):        
         assert value._parent() is ctx #no connections between different (toplevel) contexts
         assign_connection(ctx, value._path, cell._path + path, False)
         ctx._translate()
     elif isinstance(value, ConstantTypes):
-        handle = cell.handle
+        sc = cell._get_cell()
+        assert isinstance(sc, StructuredCell)
+        assert not test_lib_lowlevel(ctx, sc)
+        ctx._remove_connections(cell._path + path)
+        handle = sc.handle_no_inference
         for p in path[:-1]:
             handle = getattr(handle, p)
         setattr(handle, path[-1], value)

@@ -221,8 +221,15 @@ def get_lib_paths(ctx):
 def test_lib_lowlevel(ctx, obj):
     """Test if a low-level object points to an authoritative cell imported from a library"""
     from ..core import SeamlessBase
+    from ..core import StructuredCell
     from ..core.library import lib_has_path
-    assert isinstance(obj, SeamlessBase)
+    if isinstance(obj, StructuredCell):
+        for attr in ("auth", "schema"):
+            obj2 = getattr(obj, attr)
+            if test_lib_lowlevel(ctx, obj2):
+                return True
+        return False
+    assert isinstance(obj, SeamlessBase), obj
     lib_paths = get_lib_paths(ctx)
     objpath = obj.path
     for lib_path in lib_paths:

@@ -245,8 +245,7 @@ class Transformer(Base):
         if attr == "code":
             if isinstance(value, Cell):
                 target_path = self._path + (attr,)
-                assert value._parent() == parent
-                #TODO: check existing inchannel connections and links (cannot be the same or higher)
+                assert value._parent() is parent
                 assign_connection(parent, value._path, target_path, False)
                 translate = True
             elif isinstance(value, Resource):
@@ -264,11 +263,20 @@ class Transformer(Base):
                 tf.code.set(value)                
         elif attr == htf["INPUT"]:
             target_path = self._path
-            assert value._parent() == parent
-            #TODO: check existing inchannel connections and links (cannot be the same or higher)
-            exempt = self._exempt()
-            assign_connection(parent, value._path, target_path, False, exempt=exempt)
-            translate = True
+            if isinstance(value, Cell):
+                assert value._parent() is parent
+                exempt = self._exempt()
+                assign_connection(parent, value._path, target_path, False, exempt=exempt)
+                translate = True
+            else:
+                if parent._needs_translation:
+                    translate = False #_get_tf() will translate
+                tf = self._get_tf()
+                assert not test_lib_lowlevel(parent, tf.code)
+                inp = getattr(tf, htf["INPUT"])
+                assert not test_lib_lowlevel(parent, inp)
+                parent._remove_connections(self._path + (attr,))
+                setattr(inp.handle_no_inference, value)
         elif attr == htf["RESULT"]:
             assert htf["with_result"]
             result = getattr(tf, htf["RESULT"])
@@ -281,8 +289,7 @@ class Transformer(Base):
                 translate = True
             if isinstance(value, Cell):
                 target_path = self._path + (attr,)
-                assert value._parent() == parent
-                #TODO: check existing inchannel connections and links (cannot be the same or higher)
+                assert value._parent() is parent
                 assign_connection(parent, value._path, target_path, False)
                 translate = True
             else:
@@ -539,7 +546,6 @@ class Transformer(Base):
                 "celltype": "structured",
                 "datatype": "mixed",
             }
-        #TODO: check existing inchannel connections and links (cannot be the same or higher)
         child = Cell(parent, path) #inserts itself as child
         parent._graph[0][path] = cell
         if "file_extension" in htf:

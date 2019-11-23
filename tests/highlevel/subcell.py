@@ -5,7 +5,9 @@ ctx.a.b = 12
 print(ctx.a.value, ctx.a.value.data)
 print(type(ctx.a.value), type(ctx.a.value.data))
 
-####ctx.a.b = "test" ###should give error
+ctx.a.example.b = 1.1
+print(ctx.a.value, ctx.a.value.data, ctx.a.schema)
+
 ctx.tf = lambda x,y: x + y
 ctx.tf.x = ctx.a.b
 ctx.c = 20
@@ -24,12 +26,12 @@ ctx.q.d = ctx.d
 ctx.q.f = ctx.f0
 ctx.q.g = 50
 ctx.equilibrate()
-print(ctx.q.value) #{'g': 50, 'c': 20, 'f': 20, 'd': 32}
+print(ctx.q.value) #{'c': 20, 'd': 32, 'f': 20, 'g': 50}
 
 print("Stage 3")
 ctx.c = 7
 ctx.equilibrate()
-print(ctx.q.value) #{'g': 50, 'c': 7, 'f': 20, 'd': 19}
+print(ctx.q.value) #{'c': 7, 'd': 19, 'f': 20, 'g': 50}
 
 print("Stage 4")
 ctx.z = 100
@@ -48,8 +50,8 @@ ctx.c = 8
 ctx.a.irrelevant = "irrelevant"
 ctx.a.b = -12
 ctx.equilibrate()
-print(ctx.q.value) #{'g': 50, 'c': 8, 'f': 20, 'd': -4}
-print(ctx.qq.value) #326
+print(ctx.q.value) #{'c': 8, 'd': -4, 'f': 20, 'g': 50}
+print(ctx.qq.value) #326 
 
 print("Stage 6")
 def validator(self):
@@ -57,24 +59,24 @@ def validator(self):
     assert self.g > self.c + self.f
     assert self.f > self.d
 ctx.q.handle.add_validator(validator)
+ctx.equilibrate()
 
 print("Stage 7")
 ctx.a.b = 100
 ctx.equilibrate()
-print(ctx.q.value) #{'g': 50, 'c': 8, 'f': 20, 'd': -4}
-print(ctx.q.handle) #{'g': 50, 'c': 8, 'f': 20, 'd': 108}
-print(ctx.qq.value) #326
+print(ctx.q.value) # None
+print(ctx.qq.value) # None
+print(ctx.q.exception)
 
 print("Stage 8")
 ctx.a.b = 80
 ctx.equilibrate()
-print(ctx.q.value) #{'g': 50, 'c': 8, 'f': 20, 'd': -4}
-print(ctx.q.handle) #{'g': 50, 'c': 8, 'f': 20, 'd': 88}
-print(ctx.qq.value) #326
+print(ctx.q.value) # None
+print(ctx.qq.value) # None
+print(ctx.q.exception)
 
 print("Stage 9")
 ctx.a.b = 4
 ctx.equilibrate()
-print(ctx.q.value)  #{'g': 50, 'c': 8, 'f': 20, 'd': 12}
-print(ctx.q.handle) #{'g': 50, 'c': 8, 'f': 20, 'd': 12}
+print(ctx.q.value)  #{'c': 8, 'd': 12, 'f': 20, 'g': 50}
 print(ctx.qq.value) #342

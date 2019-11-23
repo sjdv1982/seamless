@@ -53,6 +53,7 @@ class StructuredCellJoinTask(Task):
                     break
             prelim[out_path] = curr_prelim
         value, checksum = None, None
+        ok = True
         if len(sc.inchannels):
             paths = sorted(list(sc.inchannels))            
             if paths == [()] and not sc.hash_pattern:
@@ -100,12 +101,17 @@ class StructuredCellJoinTask(Task):
                                     break                            
                         """
                     else:
-                        await set_subpath(value, sc.hash_pattern, path, None)
+                        ###await set_subpath(value, sc.hash_pattern, path, None)
+                        ok = False
         else:            
             value = copy.deepcopy(sc._auth_value)
             if value is None:
                 if sc.auth._checksum is not None:
                     value = copy.deepcopy(sc.auth.value)
+        if not ok:
+            value = None
+            checksum = None
+
         if checksum is None and value is not None:
             buf = await SerializeToBufferTask(
                 manager, value, "mixed", use_cache=False # the value object changes all the time...
@@ -121,7 +127,7 @@ class StructuredCellJoinTask(Task):
                 cs = bytes.fromhex(checksum)
                 buf = await GetBufferTask(manager, cs).run()
                 value = await DeserializeBufferTask(manager, buf, cs, "mixed", copy=False).run()
-        ok = True
+        
         if value is not None and sc.schema is not None:
             schema = sc._schema_value
             if schema is None:

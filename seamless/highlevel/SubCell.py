@@ -23,11 +23,6 @@ class SubCell(Cell):
         from .assign import assign_to_subcell
         parent = self._parent()
         assert not test_lib_lowlevel(parent,self._cell()._get_cell())
-        subcell = getattr(self, attr)
-        # TODO: break links and connections from subcell
-        # It is very important that this check is made well, else you get problems with authority
-        # If any connection is broken, the graph must be rebuilt immediately (and parent._translate becomes unnecessary)
-        raise NotImplementedError # livegraph branch
         path = self._subpath + (attr,)
         assign_to_subcell(self, path, value)
         ctx = parent._gen_context

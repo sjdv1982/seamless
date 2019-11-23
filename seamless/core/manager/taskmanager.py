@@ -181,7 +181,7 @@ class TaskManager:
         ok = True
         for task, fut in zip(tasks, futures):
             try:
-                fut.result() # to get rid of "Future exception was never retrieved"
+                fut.result() # to get rid of "Future exception was never retrieved (does not always work!)"
                                 # since the shield has its own exception
             except Exception as exc:
                 pass
@@ -192,8 +192,8 @@ class TaskManager:
                 if not isinstance(exc, CancelledError):
                     if task._awaiting:
                         continue
-                    import traceback
-                    traceback.print_exc()                
+                    ###import traceback
+                    ###traceback.print_exc()                
                 task._awaiting = True
                 # If anything goes wrong in another task, consider this a cancel
                 ok = False
@@ -340,9 +340,10 @@ class TaskManager:
                     pass
             else:
                 try:
-                    task.future.result() # to raise Exception; TODO: log it instead                
+                    ###task.future.result() # to raise Exception; TODO: log it instead                
+                    task.future.exception()
                 except CancelledError:
-                    pass
+                    pass            
                 finally:
                     task._awaiting = True
         for refholder in task.refholders:

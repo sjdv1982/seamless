@@ -77,7 +77,15 @@ for name in unary_special_method_names_optional:
 def silk_binary_method(self, other, name):
     method = self._get_special(name)    
     if method is NotImplemented:
-        return NotImplemented
+        if name.startswith("__i"):
+            name2 = "__" + name[3:]
+            result = silk_binary_method(self, other, name2)
+            if result is NotImplemented:
+                return NotImplemented
+            self.set(result)
+            return self
+        else:
+            return NotImplemented
     if isinstance(other, SilkBase):
         other_data = other._data
         if isinstance(other_data, Wrapper):
