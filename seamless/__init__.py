@@ -8,9 +8,26 @@ import time
 import functools
 import traceback
 
+
+# monkey patch to get rid of  "exception was never retrieved" error messages
+
 import asyncio.compat
-# disable py34 compat; changes "exception was never retrieved" error messages
 asyncio.compat.PY34 = False
+from asyncio import CancelledError
+from asyncio.futures import _TracebackLogger
+
+def activate(self):
+    exc = self.exc
+    if exc is not None:
+        self.exc = None
+        if isinstance(exc, CancelledError):
+            return
+        self.tb = traceback.format_exception(exc.__class__, exc,
+                                                exc.__traceback__)
+_TracebackLogger.activate = activate
+
+# /monkey patch
+
 
 import nest_asyncio
 nest_asyncio.apply()
