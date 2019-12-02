@@ -333,7 +333,8 @@ def import_before_translate(graph):
             elif node["language"] == "docker":
                 from .translate_docker_transformer import translate_docker_transformer
 
-def translate(graph, ctx, from_lib_paths, is_lib):
+def translate(graph, ctx, from_lib_paths):
+    is_lib = False ###
     ###import traceback; stack = traceback.extract_stack(); print("TRANSLATE:"); print("".join(traceback.format_list(stack[:3])))
     nodes, connections = graph["nodes"], graph["connections"]
     contexts = {con["path"]: con for con in nodes if con["type"] == "context"}
@@ -385,7 +386,8 @@ def translate(graph, ctx, from_lib_paths, is_lib):
         if t in ("context", "link"):
             continue
         path = node["path"]
-        lib_path = get_lib_path(path[:-1], from_lib_paths)
+        ###lib_path = get_lib_path(path[:-1], from_lib_paths)
+        lib_path = None ### TODO
         if t == "cell" and path in link_target_paths:
             assert node["celltype"] != "structured" #low-level links are between simple cells!
             inchannels, outchannels = find_channels(path, connection_paths)
@@ -400,7 +402,8 @@ def translate(graph, ctx, from_lib_paths, is_lib):
         if t in ("context", "link"):
             continue
         path = node["path"]
-        lib_path = get_lib_path(path[:-1], from_lib_paths)
+        ###lib_path = get_lib_path(path[:-1], from_lib_paths)
+        lib_path = None
         if t == "transformer":
             inchannels, outchannels = find_channels(node["path"], connection_paths)
             if node["compiled"]:

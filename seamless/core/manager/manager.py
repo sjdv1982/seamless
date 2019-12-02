@@ -367,9 +367,10 @@ class Manager:
             return None
         celltype = cell._celltype
         subcelltype = cell._subcelltype
-        cached_value = deserialize_cache.get((checksum, celltype))
-        if cached_value is not None:
-            return cached_value
+        if not copy:
+            cached_value = deserialize_cache.get((checksum, celltype))
+            if cached_value is not None:
+                return cached_value
         buffer = self._get_buffer(checksum)        
         task = DeserializeBufferTask(
             self, buffer, checksum, celltype, 

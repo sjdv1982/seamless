@@ -162,9 +162,9 @@ class Reactor(Base):
                     translate = False #_get_rc() will translate
                 rc = self._get_rc()
                 io = getattr(rc, hrc["IO"])
-                setattr(io.handle, attr, value)
-        if parent._as_lib is not None:
-            parent._as_lib.needs_update = True
+                setattr(io.handle, attr, value)        
+        ###if parent._as_lib is not None:
+        ###    parent._as_lib.needs_update = True
         if translate:
             parent._translate()
 

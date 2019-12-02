@@ -58,8 +58,9 @@ from .Transformer import Transformer
 from .Cell import Cell
 from .SubCell import SubCell
 from .Link import Link
+from .StaticContext import StaticContext
 
-def load_graph(graph, *, cache_ctx=None):
+def load_graph(graph, *, cache_ctx=None, static=False):
     """TODO: document"""
     from ..core.context import Context as CoreContext
     from ..core.manager import Manager
@@ -77,6 +78,12 @@ def load_graph(graph, *, cache_ctx=None):
     if isinstance(manager, UnboundManager):
         manager = manager._ctx._bound._get_manager()
         assert isinstance(manager, Manager)
-    return Context.from_graph(graph, manager)
+    if static:
+        return StaticContext.from_graph(graph, manager=manager)
+    else:
+        return Context.from_graph(graph, manager=manager)
 
-__all__ = ["Context", "stdlib", "mylib", "Reactor", "Transformer", "Link", "load_graph"]
+__all__ = [
+    "Context", "stdlib", "mylib", "Reactor", "Transformer", 
+    "Link", "Graph", "load_graph"
+]

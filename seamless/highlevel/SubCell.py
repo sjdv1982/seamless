@@ -25,8 +25,8 @@ class SubCell(Cell):
         path = self._subpath + (attr,)
         assign_to_subcell(self, path, value)
         ctx = parent._gen_context
-        if parent._as_lib is not None:
-            parent._as_lib.needs_update = True
+        ###if parent._as_lib is not None:
+        ###    parent._as_lib.needs_update = True
         parent._translate()
 
     def __getattr__(self, attr):

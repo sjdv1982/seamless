@@ -303,8 +303,8 @@ class Transformer(Base):
                 inp = getattr(tf, htf["INPUT"])
                 parent._remove_connections(self._path + (attr,))
                 setattr(inp.handle_no_inference, attr, value)
-        if parent._as_lib is not None:
-            parent._as_lib.needs_update = True
+        ###if parent._as_lib is not None:
+        ###    parent._as_lib.needs_update = True
         if translate:
             parent._translate()
 

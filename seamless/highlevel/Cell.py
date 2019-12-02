@@ -145,7 +145,6 @@ class Cell(Base):
             cell = self._get_cell()
             return getattr(cell, attr)
         parent = self._parent()
-        readonly = not test_lib_lowlevel(parent, self._get_cell())
         ###readonly = not test_lib_lowlevel(parent, self._get_cell())
         readonly = False ###
         return SubCell(self._parent(), self, (attr,), readonly=readonly)
@@ -189,8 +188,8 @@ class Cell(Base):
             return self._setattr(attr, value)
 
         assign_to_subcell(self, (attr,), value)
-        if parent._as_lib is not None:
-            parent._as_lib.needs_update = True
+        ###if parent._as_lib is not None:
+        ###    parent._as_lib.needs_update = True
 
     def __setitem__(self, item, value):
         if item in ("value", "schema"):

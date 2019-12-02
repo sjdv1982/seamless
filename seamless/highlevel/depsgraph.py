@@ -94,3 +94,89 @@ class DepsGraph:
             return
         for path in self.inputs_bwd[id(dep)]: #other paths => dep
             self.inputs_fwd[path].remove()
+
+class ConstructorItem:
+    constructor = None
+    post_constructor = None
+    args = None
+    def __init__(self,
+          identifier,  #the identifier given to the code, for debugging
+          constructor, #constructor (code or function object)
+          post_constructor, #post-constructor, for after the context has been attached
+          args, #for each arg, define "name" and the flags "as_cell" and "auth"
+          direct_library_access, #True if the (post-)constructor does not create, rename or modify cell values.
+                                 #Adding/deleting connections and deleting cells is OK.
+        ):
+        from . import parse_function_code
+        # TODO: use Silk schema
+        if constructor is not None:
+            identifier2 = identifier + ".constructor"
+            self.constructor_code, func_name, code_object = parse_function_code(constructor, identifier2)
+            if func_name == "<lambda>":
+                constructor_func = eval(code_object)
+            else:
+                ns = {}
+                exec(code_object, ns)
+                constructor_func = ns[func_name]
+            assert callable(constructor_func)
+            self.constructor = constructor_func
+        elif post_constructor is not None:
+            identifier2 = identifier + ".post_constructor"
+            self.post_constructor_code, func_name, code_object = parse_function_code(post_constructor, identifier2)
+            if func_name == "<lambda>":
+                post_constructor_func = eval(code_object)
+            else:
+                ns = {}
+                exec(code_object, ns)
+                post_constructor_func = ns[func_name]
+            assert callable(post_constructor_func)
+            self.post_constructor = post_constructor_func
+        else:
+            raise ValueError("constructor or post_constructor must be defined")
+
+        assert isinstance(args, (list, tuple))
+        a = []
+        names = set()
+        for arg in args:
+            assert isinstance(arg, dict)
+            assert "name" in arg, arg
+            assert arg["name"] not in names, arg["name"] #duplicate argument name
+            assert "as_cell" in arg and arg["as_cell"] in (True, False), arg
+            assert "auth" in arg and arg["auth"] in (True, False), arg
+            assert arg["auth"] or arg["as_cell"], arg
+            a.append(arg)
+        self.args = tuple(a)
+        self.direct_library_access = direct_library_access
+
+    def parse_args(self, args, kwargs):
+        from .Cell import Cell
+        from ..mixed.get_form import get_form
+        result = {}
+        args_by_name = {a["name"]: a for a in self.args}
+        #TODO: use Python function arg matching machinery
+        all_args = [(self.args[anr], a) for anr, a in enumerate(args)] #IndexError means too many args
+        all_args += [(args_by_name[aname], a) for aname, a in kwargs.items()] #KeyError means unknown keyword arg
+        for tmpl, a in all_args:
+            parsed_arg = {}
+            name = tmpl["name"]
+            assert name not in parsed_arg, name #duplicate arg
+            if isinstance(a, Cell):
+                is_path = True
+                a = a._path
+                auth = tmpl["auth"]
+            else:
+                try:
+                    get_form(a)
+                except Exception:
+                    raise ValueError("argument %s is not JSON or mixed" % name)
+                assert not tmpl["as_cell"], name #value passed for cell argument
+                is_path = False
+                auth = True
+            parsed_arg["value"] = a
+            parsed_arg["is_path"] = is_path
+            parsed_arg["as_cell"] = tmpl["as_cell"]
+            parsed_arg["auth"] = auth
+            result[name] = parsed_arg
+        return result
+
+

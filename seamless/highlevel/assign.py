@@ -208,7 +208,8 @@ def assign_context(ctx, path, value):
     old_ctx = value
     graph = old_ctx.get_graph()
     new_nodes, new_connections = graph["nodes"], graph["connections"]
-    from_lib = old_ctx._as_lib
+    ###from_lib = old_ctx._as_lib
+    from_lib = None ### TODO
     _assign_context(ctx, new_nodes, new_connections, path, old_ctx, from_lib)
 
 def assign_to_subcell(cell, path, value):

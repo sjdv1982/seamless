@@ -13,8 +13,7 @@ from ..core.mount import mountmanager #for now, just a single global mountmanage
 from .assign import assign
 from .proxy import Proxy
 from ..midlevel import copying
-from ..midlevel.library import register_library
-from .Library import get_lib_paths, get_libitem
+from .Library import register_library
 from .depsgraph import DepsGraph
 
 Graph = namedtuple("Graph", ("nodes", "connections", "params"))
@@ -27,7 +26,7 @@ class Context:
     _mount = None
     _depsgraph = None
     _translating = False
-    _as_lib = None
+    _libname = None
     _auto_register_library = False
     _shares = None
     _translate_count = 0  
@@ -69,9 +68,8 @@ class Context:
         self._traitlets = {}
 
     def __call__(self, *args, **kwargs):
-        assert self._as_lib is not None #only libraries have constructors
-        libname = self._as_lib.name
-        return LibraryContextInstance(libname, *args, **kwargs)
+        assert self._libname is not None #only libraries have constructors
+        return LibraryContextInstance(self._libname, *args, **kwargs)
 
     def _get_path(self, path):
         child = self._children.get(path)
@@ -140,7 +138,7 @@ class Context:
 
     def auto_register(self, auto_register=True):
         """See the doc of Library.py"""
-        if not self._as_lib:
+        if not self._libname:
             raise TypeError("Context must be a library")
         self._auto_register_library = True
         self._do_translate(force=True)
@@ -215,8 +213,7 @@ class Context:
         from ..midlevel.translate import translate, import_before_translate
         if self._dummy:
             return
-        assert self._as_lib is None or self._from_lib is None
-        is_lib = (self._as_lib is not None)
+        assert self._libname is None
         graph = self.get_graph(copy=False)
         #from pprint import pprint; pprint(graph)
         if not force and not self._needs_translation:
@@ -238,8 +235,9 @@ class Context:
                 if self._mount is not None:
                     ub_ctx._mount = self._mount.copy()
                 self._unbound_context = ub_ctx                
-                lib_paths = get_lib_paths(self)
-                translate(graph, ub_ctx, lib_paths, is_lib)
+                ###lib_paths = get_lib_paths(self)
+                lib_paths = None ###
+                translate(graph, ub_ctx, lib_paths)
                 for traitlet in self._traitlets.values():
                     traitlet._connect()
                 self._connect_share()
@@ -299,14 +297,10 @@ class Context:
 
     def register_library(self, timeout=None):
         assert not self._dummy
-        assert self._as_lib is not None #must be a library
-        libitem = self._as_lib
+        assert self._libname is not None #must be a library
         result = self.equilibrate(timeout)
-        ctx = self._gen_context
-        libname = self._as_lib.name
-        register_library(ctx, self, libname)
-        libitem.needs_update = True
-        libitem.update()
+        graph = self.get_graph()
+        register_library(graph, self._libname)
 
     def _library_update_hook(self, cell, value):
         if self._translating:
@@ -319,9 +313,11 @@ class Context:
     def set_constructor(self, *, constructor, post_constructor, args, direct_library_access):
         from .Library import set_constructor
         assert not self._dummy
-        assert self._as_lib is not None #must be a library
-        libname = self._as_lib.name
-        set_constructor(libname, constructor, post_constructor, args, direct_library_access)
+        assert self._libname is not None        
+        set_constructor(
+            self._libname, constructor, post_constructor, 
+            args, direct_library_access
+        )
 
     def _destroy_path(self, path):
         nodes = self._graph.nodes
@@ -332,9 +328,12 @@ class Context:
                 if node["type"] == "context":
                     assert child is None
                     libname = node.get("from_lib")
+                    ### TODO
+                    """
                     if libname is not None:
                         libitem = get_libitem(libname)
                         libitem.copy_deps.remove((weakref.ref(self), path))
+                    """
                 nodes.pop(p)
                 self._children.pop(p, None)
                 if self._shares is not None:
@@ -462,14 +461,6 @@ class SubContext(Base):
     def from_lib(self):
         sub = self._parent()._graph.nodes[self._path]
         return sub.get("from_lib")
-
-    def touch(self):
-        """Re-evaluates all constructor dependencies
-        This is meant for a library contexts where direct library update has been
-        disabled by the constructor, or otherwise some bug has happened"""
-        if self._as_lib is None:
-            return
-        self._as_lib.library.touch(self)
 
     def _translate(self):
         self._parent()._translate()

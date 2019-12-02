@@ -1,6 +1,7 @@
-libcell => rework!!
-re-think depsgraph and stuffs
-update documentation of Library.py
+libcell, libpath => Library rework!!
+(also update documentation of Library.py)
+re-think depsgraph and stuffs => tests/highlevel/constructor/*.py
+To clean up: look for "libname" and "libpath" everywhere in highlevel/
 
 E. The mid/high level
 - High-level links; maybe (re-)implement them at the low level 
