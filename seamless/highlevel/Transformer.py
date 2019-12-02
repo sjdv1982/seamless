@@ -5,7 +5,6 @@ from .Resource import Resource
 from .proxy import Proxy, CodeProxy
 from .pin import InputPin, OutputPin, PinsWrapper
 from .Base import Base
-from .Library import test_lib_lowlevel
 from .mime import language_to_mime
 from ..core.context import Context as CoreContext
 from . import parse_function_code
@@ -259,14 +258,12 @@ class Transformer(Base):
                 translate = True
             elif isinstance(value, Resource):
                 tf = self._get_tf()
-                assert not test_lib_lowlevel(parent, tf.code)
                 tf.code.set(value.data)                
                 translate = True
             elif isinstance(value, Proxy):
                 raise AttributeError("".join(value._path))
             else:
                 tf = self._get_tf()
-                assert not test_lib_lowlevel(parent, tf.code)
                 if callable(value):
                     value, _, _ = parse_function_code(value)
                 tf.code.set(value)                
@@ -281,9 +278,7 @@ class Transformer(Base):
                 if parent._needs_translation:
                     translate = False #_get_tf() will translate
                 tf = self._get_tf()
-                assert not test_lib_lowlevel(parent, tf.code)
                 inp = getattr(tf, htf["INPUT"])
-                assert not test_lib_lowlevel(parent, inp)
                 parent._remove_connections(self._path + (attr,))
                 setattr(inp.handle_no_inference, value)
         elif attr == htf["RESULT"]:
@@ -305,9 +300,7 @@ class Transformer(Base):
                 if parent._needs_translation:
                     translate = False #_get_tf() will translate
                 tf = self._get_tf()
-                assert not test_lib_lowlevel(parent, tf.code)
                 inp = getattr(tf, htf["INPUT"])
-                assert not test_lib_lowlevel(parent, inp)
                 parent._remove_connections(self._path + (attr,))
                 setattr(inp.handle_no_inference, attr, value)
         if parent._as_lib is not None:

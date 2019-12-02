@@ -212,7 +212,6 @@ def assign_context(ctx, path, value):
     _assign_context(ctx, new_nodes, new_connections, path, old_ctx, from_lib)
 
 def assign_to_subcell(cell, path, value):
-    from .Library import test_lib_lowlevel
     from ..core.structured_cell import StructuredCell
     hcell = cell._get_hcell()
     if hcell["celltype"] != "structured":
@@ -225,7 +224,6 @@ def assign_to_subcell(cell, path, value):
     elif isinstance(value, ConstantTypes):
         sc = cell._get_cell()
         assert isinstance(sc, StructuredCell)
-        assert not test_lib_lowlevel(ctx, sc)
         ctx._remove_connections(cell._path + path)
         handle = sc.handle_no_inference
         for p in path[:-1]:
@@ -236,11 +234,13 @@ def assign_to_subcell(cell, path, value):
 
 
 def assign_library_context_instance(ctx, path, lci):
+    raise NotImplementedError
+    """
     libname = lci.libname
     depsgraph = ctx._depsgraph
     dep = depsgraph.construct_library(libname, path, lci.args, lci.kwargs)
     depsgraph.evaluate_dep(dep)
-
+    """
 
 def assign(ctx, path, value):
     from .Context import Context, SubContext, LibraryContextInstance

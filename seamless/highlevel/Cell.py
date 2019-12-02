@@ -122,7 +122,8 @@ class Cell(Base):
             if not hcell["celltype"] == "structured":
                 raise AttributeError(item)
             parent = self._parent()
-            readonly = not test_lib_lowlevel(parent, self._get_cell())
+            ###readonly = not test_lib_lowlevel(parent, self._get_cell())
+            readonly = False ###
             return SubCell(self._parent(), self, (item,), readonly=readonly)
         elif isinstance(item, slice):
             raise NotImplementedError  # TODO: x[min:max] outchannels
@@ -145,6 +146,8 @@ class Cell(Base):
             return getattr(cell, attr)
         parent = self._parent()
         readonly = not test_lib_lowlevel(parent, self._get_cell())
+        ###readonly = not test_lib_lowlevel(parent, self._get_cell())
+        readonly = False ###
         return SubCell(self._parent(), self, (attr,), readonly=readonly)
 
     def mount(self, path=None, mode="rw", authority="cell", persistent=True):
@@ -173,7 +176,6 @@ class Cell(Base):
         from .assign import assign_to_subcell
         parent = self._parent()
         assert not parent._dummy
-        assert not test_lib_lowlevel(parent, self._get_cell())
 
         if isinstance(value, Resource):
             value = value.data
@@ -452,8 +454,6 @@ for name in binary_special_method_names:
     m = partialmethod(cell_binary_method, name=name)
     setattr(Cell, name, m)
 
-
-from .Library import test_lib_lowlevel
 from .SubCell import SubCell
 from .proxy import Proxy
 from ..midlevel.util import STRUC_ID

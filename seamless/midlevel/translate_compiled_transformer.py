@@ -1,13 +1,12 @@
 from seamless.core import cell, link, \
- libcell, transformer, context, StructuredCell
-
-from seamless.core import library
+ transformer, context, StructuredCell
 
 # Just to register the "compiled_transformer" lib
 from seamless.lib.compiled_transformer import compiled_transformer as _
 
 def _init_from_library(ctf, debug):
 
+    raise NotImplementedError # low-level library has been ripped
     with library.bind("compiled_transformer"):
         ctf.gen_header_code = libcell(".gen_header.code")
         ctf.gen_header_params = libcell(".gen_header_params")
@@ -160,7 +159,8 @@ def translate_compiled_transformer(node, root, namespace, inchannels, outchannel
 
     if lib_path00 is not None:
         lib_path = lib_path00 + "." + name + ".code"
-        ctx.code = libcell(lib_path)
+        raise NotImplementedError
+        ###ctx.code = libcell(lib_path)
     else:
         ctx.code = cell("text")
         ctx.code.set_file_extension(node["file_extension"])

@@ -88,25 +88,16 @@ class Macro(Worker):
                 self.namespace["ctx"] = unbound_ctx
                 self.namespace.update(values)
                 inputs = ["ctx"] +  list(values.keys())
-                macro = self
-                while 1:
-                    lib = macro.lib
-                    if lib is not None:
-                        break
-                    macro = macro._context()._macro
-                    if macro is None:
-                        break
                 str_self = str(self)
                 if len(str_self) > 80:
                     str_self = str_self[:35] + "..%d.." % (len(str_self)-70) + str_self[-35:]
                 print("Execute", str_self)
-                with library.bind(lib):
-                    identifier = str(self)
-                    if len(module_workspace):
-                        with injector.active_workspace(module_workspace, self.namespace):
-                            exec_code(code, identifier, self.namespace, inputs, None)
-                    else:
+                identifier = str(self)
+                if len(module_workspace):
+                    with injector.active_workspace(module_workspace, self.namespace):
                         exec_code(code, identifier, self.namespace, inputs, None)
+                else:
+                    exec_code(code, identifier, self.namespace, inputs, None)
                 if self.namespace["ctx"] is not unbound_ctx:
                     raise Exception("Macro must return ctx")
                 
@@ -460,19 +451,17 @@ def macro(params, *, lib=None):
 from .transformer import transformer
 from .reactor import reactor
 from .cell import cell
-from .library import libcell
 from .structured_cell import StructuredCell
 from .context import context
 from .link import link
 names = ("cell", "transformer", "context", "link", 
- "reactor", "libcell")
+ "reactor")
 names += ("StructuredCell",)
 names = names + ("macro", "path")
 Macro.default_namespace = {n:globals()[n] for n in names}
 
 from .cell import Cell
 from .link import Link
-from . import library
 from .injector import macro_injector as injector
 from .unbound_context import UnboundContext, UnboundManager
 from .macro_mode import macro_mode_on, curr_macro, get_macro_mode

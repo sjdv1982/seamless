@@ -138,6 +138,5 @@ def macro_mode_on(macro=None):
         _macro_mode = False
 
 from .cache.transformation_cache import transformation_cache
-from .library import unregister_all
 from .mount import mountmanager
 from .unbound_context import UnboundContext, UnboundManager

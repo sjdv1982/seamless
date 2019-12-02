@@ -22,7 +22,6 @@ class SubCell(Cell):
             return object.__setattr__(self, attr, value)
         from .assign import assign_to_subcell
         parent = self._parent()
-        assert not test_lib_lowlevel(parent,self._cell()._get_cell())
         path = self._subpath + (attr,)
         assign_to_subcell(self, path, value)
         ctx = parent._gen_context
@@ -81,4 +80,3 @@ class SubCell(Cell):
     def _set_observers(self):
         pass
 
-from .Library import test_lib_lowlevel

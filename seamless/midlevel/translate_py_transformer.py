@@ -1,5 +1,5 @@
 from seamless.core import cell, link, \
- libcell, transformer, context, StructuredCell
+ transformer, context, StructuredCell
 
 def translate_py_transformer(node, root, namespace, inchannels, outchannels, lib_path00, is_lib):
     from .translate import set_structured_cell_from_checksum
@@ -65,7 +65,8 @@ def translate_py_transformer(node, root, namespace, inchannels, outchannels, lib
         ctx.tf.debug = True
     if lib_path00 is not None:
         lib_path = lib_path00 + "." + name + ".code"
-        ctx.code = libcell(lib_path)
+        raise NotImplementedError
+        ###ctx.code = libcell(lib_path)
     else:
         if node["language"] == "ipython":
             ctx.code = cell("ipython")

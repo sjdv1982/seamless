@@ -1,9 +1,9 @@
 from seamless.core import cell as core_cell, link as core_link, \
- libcell, transformer, reactor, context, macro, StructuredCell
+ transformer, reactor, context, macro, StructuredCell
 
-from seamless.core import library
 
 def translate_docker_transformer(node, root, namespace, inchannels, outchannels, lib_path00, is_lib):
+    raise NotImplementedError # low-level library has been ripped
     #TODO: simple translation, without a structured cell
     #TODO: there is a lot of common code with py transformer
     assert not "code" in node ### node["code"] is an outdated attribute

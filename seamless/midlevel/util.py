@@ -1,5 +1,5 @@
 from seamless.core import cell as core_cell, link as core_link, \
- libcell, transformer, reactor, context, macro, StructuredCell
+ transformer, reactor, context, macro, StructuredCell
 import traceback
 STRUC_ID = "_STRUC"
 
@@ -83,25 +83,31 @@ def build_structured_cell(
     lib_path = lib_path0 + "." + name2 if lib_path0 is not None else None
     if lib_path:
         path = lib_path + ".data"
-        c.data = libcell(path, "mixed")
+        raise NotImplementedError ###
+        # (should not be allowed for .data ...)
+        ###c.data = libcell(path, "mixed")
     else:
         c.data = core_cell("mixed")
 
     if lib_path:
         path = lib_path + ".auth"
-        c.auth = libcell(path, "mixed")
+        raise NotImplementedError ###
+        ###c.auth = libcell(path, "mixed")
     else:
         c.auth = core_cell("mixed")
 
     if lib_path:
         path = lib_path + ".schema"
-        c.schema = libcell(path)
+        raise NotImplementedError ###
+        ###c.schema = libcell(path)
     else:
         c.schema = core_cell("plain")
         
     if lib_path:
         path = lib_path + ".buffer"
-        c.buffer = libcell(path, "mixed")
+        raise NotImplementedError ###
+        # should not be allowed for buffer...
+        ###c.buffer = libcell(path, "mixed")
     else:
         c.buffer = core_cell("mixed")
 

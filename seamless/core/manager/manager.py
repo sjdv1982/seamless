@@ -536,14 +536,6 @@ If origin_task is provided, that task is not cancelled."""
     @mainthread
     def cancel_macro(self, macro, void, reason=None):
         assert isinstance(macro, Macro)
-        macro._last_inputs = None 
-        """
-        Macros are NOT fully deterministic on their inputs!
-        This is because of libcell, and libraries may change
-        Therefore, when a library is re-registered, it invokes
-         cancel_macro + macro update, and resetting _last_inputs
-         makes sure it gets re-executed
-        """
         gen_context = macro._gen_context
         if gen_context is not None:
             gen_context.destroy()

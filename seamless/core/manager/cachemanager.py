@@ -211,7 +211,6 @@ from ..cell import Cell
 from ..transformer import Transformer
 from ..structured_cell import Inchannel
 from ..reactor import Reactor
-from ..library import Library
 from .expression import Expression
 from ..protocol.deep_structure import deep_structure_to_checksums
 from ..protocol.deserialize import deserialize_sync as deserialize

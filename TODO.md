@@ -1,13 +1,14 @@
+libcell => rework!!
+re-think depsgraph and stuffs
+update documentation of Library.py
+
 E. The mid/high level
-- High-level subcells
 - High-level links; maybe (re-)implement them at the low level 
   (double edit pin is not good)
   Must be between simple cells, that have no incoming connections; no support for transformer.code; later support it for .schema/.result_schema.
 - Graph loading works really well now, used ubiquitously:
   - When creating a graph, expression cache is now lost; include it in the graph!
   - Loading from high-level library: 
-    - Do not use the low-level library mechanism; the low level mechanism is for syntax extensions such as compiled transformers. Adapt syntax extensions to use *only* the low
-    level (no longer import high-level code in seamless.lib )
     - Register libgraphs under libname. 
       High-level contexts can have from_lib=libname. 
       This imperatively adds the libgraph as a context attribute. 

@@ -281,7 +281,6 @@ name: str
             paths = _global_paths.get(self, {})
             for path in paths.values():
                 manager._destroy_macropath(path)
-            lib_unregister_all(self)
             unregister_toplevel(self)
             shareserver.destroy_root(self)
             manager.remove_context(self)
@@ -360,7 +359,6 @@ from .link import Link
 from .cell import Cell
 from .worker import Worker, InputPinBase, OutputPinBase, EditPinBase
 from .structured_cell import StructuredCell
-from .library import unregister_all as lib_unregister_all
 
 from .manager import Manager
 Macro = None # import later

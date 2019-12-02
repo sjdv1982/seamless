@@ -6,7 +6,6 @@ from .Resource import Resource
 from .proxy import Proxy, CodeProxy
 from .pin import InputPin, OutputPin
 from .Base import Base
-from .Library import test_lib_lowlevel
 from .mime import language_to_mime
 from ..core.context import Context as CoreContext
 
@@ -158,8 +157,7 @@ class Reactor(Base):
                 translate = True
             else:
                 rc = self._get_rc()
-                io = getattr(rc, hrc["IO"])
-                assert not test_lib_lowlevel(parent, io) #TODO: test this at hrc level, not rc
+                io = getattr(rc, hrc["IO"])                
                 if parent._needs_translation:
                     translate = False #_get_rc() will translate
                 rc = self._get_rc()

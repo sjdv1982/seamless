@@ -41,7 +41,6 @@ Use ``Cell.status()`` to get its status.
 
     _mount = None
     _mount_kwargs = None
-    _lib_path = None # Set by library.libcell
     _paths = None #WeakSet of Path object weakrefs
     _hash_pattern = None #must be None, except for MixedCell
     _observer = None
@@ -158,11 +157,7 @@ Use ``Cell.status()`` to get its status.
     def _get_value(self, copy):
         manager = self._get_manager()
         if isinstance(manager, UnboundManager):
-            if self._lib_path is not None:
-                from .library import lib_get_value
-                return lib_get_value(self._initial_checksum, self)                
-            else:
-                raise Exception("Cannot ask the cell value of a context that is being constructed by a macro")
+            raise Exception("Cannot ask the cell value of a context that is being constructed by a macro")
         return manager.get_cell_value(self, copy=copy)
 
     @property
@@ -360,8 +355,6 @@ Use ``Cell.status()`` to get its status.
         if self._destroyed:            
             return
         self.unshare()
-        if not from_del and self._lib_path is not None:
-            unregister_libcell(self)
         super().destroy(from_del=from_del)
         self._get_manager()._destroy_cell(self)
         for path in list(self._paths):
@@ -573,7 +566,6 @@ from ..mixed.get_form import get_form
 from .structured_cell import Inchannel, Outchannel
 from .macro_mode import get_macro_mode
 from .utils import strip_source
-from .library import unregister_libcell
 from .share import sharemanager
 """
 TODO Documentation: only-text changes

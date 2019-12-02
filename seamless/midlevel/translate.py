@@ -10,7 +10,7 @@ from collections import OrderedDict
 from functools import partial
 
 from seamless.core import cell as core_cell, link as core_link, \
- libcell, transformer, reactor, context, macro, StructuredCell
+ transformer, reactor, context, macro, StructuredCell
 
 from . import copying
 from .util import as_tuple, get_path, find_channels, build_structured_cell
@@ -111,7 +111,8 @@ def translate_py_reactor(node, root, namespace, inchannels, outchannels, lib_pat
     for attr in ("code_start", "code_stop", "code_update"):
         if lib_path00 is not None:
             lib_path = lib_path00 + "." + name + "." + attr
-            c = libcell(lib_path)
+            raise NotImplementedError ###
+            ###c = libcell(lib_path)
             setattr(ctx, attr, c)
         else:
             c = core_cell(node["language"])
@@ -180,7 +181,8 @@ def translate_cell(node, root, namespace, inchannels, outchannels, lib_path0, is
             child = core_link(link_target)
         elif lib_path0:
             lib_path + lib_path0 + "." + name
-            child = libcell(lib_path)
+            raise NotImplementedError ###
+            ###child = libcell(lib_path)
             #TODO: allow fork to be set
         else:
             if ct == "code":                
@@ -439,7 +441,6 @@ def translate(graph, ctx, from_lib_paths, is_lib):
     for connection in connections:
         translate_connection(connection, namespace2, ctx)
 
-from .library import get_lib_path
 from .translate_py_transformer import translate_py_transformer
 '''
 # imported only at need...

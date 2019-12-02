@@ -1,9 +1,8 @@
 from seamless.core import cell as core_cell, link as core_link, \
- libcell, transformer, reactor, context, macro, StructuredCell
-
-from seamless.core import library
+ transformer, reactor, context, macro, StructuredCell
 
 def translate_bash_transformer(node, root, namespace, inchannels, outchannels, lib_path00, is_lib):
+    raise NotImplementedError # low-level library has been ripped
     #TODO: simple translation, without a structured cell
     #TODO: there is a lot of common code with py transformer
     assert not "code" in node ### node["code"] is an outdated attribute
@@ -68,7 +67,8 @@ def translate_bash_transformer(node, root, namespace, inchannels, outchannels, l
         ctx.tf.debug = True
     if lib_path00 is not None:
         lib_path = lib_path00 + "." + name + ".code"
-        ctx.code = libcell(lib_path)
+        ###ctx.code = libcell(lib_path)
+        raise NotImplementedError
     else:
         ctx.code = core_cell("text")
         if "code" in mount:
@@ -84,8 +84,11 @@ def translate_bash_transformer(node, root, namespace, inchannels, outchannels, l
     if "input" in checksum:
         inp._set_checksum(checksum["input"], initial=True)
 
+    """
     with library.bind("bash_transformer"):
         ctx.executor_code = libcell(".executor_code")    
+    """
+    raise NotImplementedError
     ctx.executor_code.connect(ctx.tf.code)
 
     namespace[node["path"] + ("code",), True] = ctx.code, node
