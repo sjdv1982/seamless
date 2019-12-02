@@ -3,6 +3,7 @@ from contextlib import contextmanager
 from copy import deepcopy
 
 from .cell import Cell, PythonCell, PyMacroCell, celltypes, cell as make_cell
+from .structured_cell import StructuredCell
 
 class Library(dict):
     pass
@@ -119,7 +120,7 @@ def unregister(name, pop_keys=True):
     lib, root = _lib[name]
     cachemanager = root._get_manager().cachemanager
     for key, entry in lib.items():
-        _, checksum, _ = entry
+        _, checksum = entry
         if checksum is None:
             continue
         cachemanager.decref_checksum(checksum, lib, True)
@@ -159,14 +160,16 @@ def _build(ctx, result, prepath):
             path = prepath + "." + childname
         if isinstance(child, Context):
             _build(child, result, path)
+        elif isinstance(child, StructuredCell):
+            result[path] = "structured", None
         elif isinstance(child, Cell):
-            if child._structured_cell: raise NotImplementedError  # livegraph branch
-            is_buffercell = child in livegraph.buffercells
+            if child._structured_cell:
+                result[path] = "from_structured", None
+                continue
             celltype, checksum = child._celltype, child._checksum
             #print("INCREF", checksum.hex())
             cachemanager.incref_checksum(checksum, result, True)            
-            result[path] = celltype, checksum, is_buffercell
-
+            result[path] = celltype, checksum
 
 def build(ctx):
     from .context import Context
@@ -190,11 +193,15 @@ def _libcell(path, mandated_celltype, *args, **kwargs):
     assert libname in _lib, libname #library name must have been registered
     lib, _ = _lib[libname]
     assert key in lib, (key, list(lib.keys())) #library key must be in library
-    celltype, checksum, from_structured_cell = lib[key]
+    celltype, checksum = lib[key]
+    if celltype == "structured":
+        raise Exception("Structured cells cannot be loaded from a library: '%s'" % path)
+    elif celltype == "from_structured":
+        raise Exception("Cells controlled by structured cells cannot be loaded from a library: '%s'" % path)
     assert mandated_celltype is None or mandated_celltype == celltype, (mandated_celltype, celltype)
     c = make_cell(celltype, *args, **kwargs)
     if checksum is not None:
-        c._initial_checksum = checksum, True, from_structured_cell
+        c._initial_checksum = checksum, True, False
     if (libname, key) not in _cells:
         _cells[libname, key] = {}
     _cells[libname, key][c] = curr_macro()

@@ -129,6 +129,8 @@ def unpack_result_struct(result_struct, schema):
             result_dict[propname] = getattr(result_struct, propname)
     return result_dict
 
+### Start
+
 input_pins = []
 for k,v in pins.items():
     vv = v if isinstance(v, str) else v["io"]

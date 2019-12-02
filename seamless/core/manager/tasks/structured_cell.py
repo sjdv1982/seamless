@@ -130,10 +130,7 @@ class StructuredCellJoinTask(Task):
                 value = await DeserializeBufferTask(manager, buf, cs, "mixed", copy=False).run()
         
         if value is not None and sc.schema is not None:
-            schema = sc._schema_value
-            if schema is None:
-                if sc.schema._checksum is not None:
-                    schema = sc.schema.value
+            schema = sc.get_schema()
             if schema is not None:
                 if sc.hash_pattern is None:
                     value2 = copy.deepcopy(value)

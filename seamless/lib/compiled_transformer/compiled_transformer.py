@@ -12,20 +12,20 @@ def gen_header(input_schema, result_schema, input_name, result_name, inputpins):
     return None
 ctx.gen_header = gen_header
 pins = ctx.gen_header.pins
-pins["input_schema"]["access_mode"] = "plain"
-pins["result_schema"]["access_mode"] = "plain"
-pins["input_name"]["access_mode"] = "text"
-pins["result_name"]["access_mode"] = "text"
+pins["input_schema"]["celltype"] = "plain"
+pins["result_schema"]["celltype"] = "plain"
+pins["input_name"]["celltype"] = "str"
+pins["result_name"]["celltype"] = "str"
 ctx.gen_header.code = set_resource(gen_header_file)
 
 ctx.integrator = lambda lang, header, compiled_code, main_module, debug_: None
 ctx.integrator.code = set_resource(integrator_file)
 pins = ctx.integrator.pins
-pins["debug_"]["access_mode"] = "plain"
-pins["lang"]["access_mode"] = "text"
-pins["compiled_code"]["access_mode"] = "text"
-pins["header"]["access_mode"] = "text"
-pins["main_module"]["access_mode"] = "plain"
+pins["debug_"]["celltype"] = "bool"
+pins["lang"]["celltype"] = "str"
+pins["compiled_code"]["celltype"] = "text"
+pins["header"]["celltype"] = "text"
+pins["main_module"]["celltype"] = "plain"
 
 def func(module, pins, input_schema, result_schema, input_name, result_name, kwargs):
     None
@@ -34,11 +34,12 @@ ctx.translator = func
 ctx.translator.code = set_resource(translator_file)
 ctx.translator.RESULT = "translator_result_"
 pins = ctx.translator._get_htf()["pins"] ### need to access like this; TODO: implement .self.pins
-pins["module"]["access_mode"] = "module"
-pins["input_schema"]["access_mode"] = "plain"
-pins["result_schema"]["access_mode"] = "plain"
-pins["input_name"]["access_mode"] = "text"
-pins["result_name"]["access_mode"] = "text"
+pins["module"]["celltype"] =  "plain"
+pins["module"]["subcelltype"] =  "module"
+pins["input_schema"]["celltype"] = "plain"
+pins["result_schema"]["celltype"] = "plain"
+pins["input_name"]["celltype"] = "text"
+pins["result_name"]["celltype"] = "text"
 
 gen_header_params = ctx.gen_header._get_tf().tf._transformer_params
 ctx.gen_header_params = gen_header_params
@@ -102,14 +103,14 @@ if __name__ == "__main__":
 
     # 2: Set up the values for a specific example
     ctx.cppcode = set_resource("test.cpp")
-    raise NotImplementedError # celltype was "text" before...
     ctx.cppcode.celltype = "code"
+    ctx.cppcode.language = "cpp"
 
     ctx.tf0 = lambda a,b: a + b
     ctx.tf0.example.a = 0
     ctx.tf0.example.b = 0
     ctx.tf0.result.example = 0.0
-
+    
     ctf = ctx.integrator
     ctf.debug_ = False
     ctf.compiled_code = ctx.cppcode
@@ -117,6 +118,7 @@ if __name__ == "__main__":
     ctf.main_module = {
         "link_options" : ["-lm"],
     }
+
     ctx.input_schema = ctx.tf0.schema
     ctx.result_schema = ctx.tf0.result.schema
     ctx.input_name = ctx.tf0._get_htf()["INPUT"]
@@ -129,7 +131,6 @@ if __name__ == "__main__":
       (isinstance(v,dict) and v["io"] == "input") ]
     ctx.inputpins.set(inputpins)
 
-
     ctx.kwargs = {"a": 2, "b": 3}
     ctx.translator.kwargs = ctx.kwargs
     ctx.translator.module = ctx.module
@@ -137,3 +138,4 @@ if __name__ == "__main__":
     ctx.equilibrate()
 else:
     stdlib.compiled_transformer = ctx
+    

@@ -206,6 +206,8 @@ elif input_jtype == "object":
 else:
     input_props = {input_name: input_schema}
 
+inputpins = [v.unsilk for v in inputpins]
+
 for pin in inputpins:
     if pin not in input_props:
         raise TypeError("Input pin '%s' is not in input schema" % pin)

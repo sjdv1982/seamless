@@ -93,8 +93,11 @@ def compile(binary_objects, build_dir, compiler_verbose=False):
     return result, source_files
 
 def complete(module_definition):
+    from seamless.silk import Silk
     assert module_definition["type"] == "compiled"
     assert "public_header" in module_definition
+    if isinstance(module_definition, Silk):
+        module_definition = module_definition.unsilk
     m = deepcopy(module_definition)
     overall_target = module_definition.get("target", "profile")
     m["target"] = overall_target

@@ -192,6 +192,15 @@ class Transformer(Base):
     def example(self, value):
         return self.example.set(value)
 
+    def _result_example(self):
+        htf = self._get_htf()
+        assert htf["with_result"]
+        tf = self._get_tf()
+        resultcell = getattr(tf, htf["RESULT"])
+        result_ctx = resultcell._data._context()
+        example = result_ctx.example.handle
+        return example
+
     def add_validator(self, validator):
         htf = self._get_htf()
         inp = htf["INPUT"]
@@ -470,8 +479,9 @@ class Transformer(Base):
         elif attr == "checksum":
             return inputcell.checksum
         elif attr == "schema":
-            schema = inputcell.handle.schema
-            schema_mounter = functools.partial(self._sub_mount, "input_schema")
+            schema = inputcell.get_schema()
+            ###schema_mounter = functools.partial(self._sub_mount, "input_schema")
+            schema_mounter = None ###
             return SchemaWrapper(self, schema, schema_mounter, "SCHEMA")
         elif attr == "example":
             return self.example
@@ -489,14 +499,12 @@ class Transformer(Base):
         if attr == "value":
             return resultcell.value
         elif attr == "schema":
-            schema_mounter = functools.partial(self._sub_mount, "result_schema")
-            return SchemaWrapper(self, resultcell.handle.schema, schema_mounter, "RESULTSCHEMA")
+            schema = resultcell.get_schema()
+            #schema_mounter = functools.partial(self._sub_mount, "result_schema")
+            schema_mounter = None ###
+            return SchemaWrapper(self, schema, schema_mounter, "RESULTSCHEMA")
         elif attr == "example":
-            schema = resultcell.handle.schema
-            return Silk(
-             schema=schema,
-             schema_dummy=True,
-            )
+            return self._result_example()
         elif attr == "exception":
             return resultcell.exception
         return getattr(resultcell, attr)
@@ -626,6 +634,7 @@ class Transformer(Base):
         htf["checksum"]["result_schema"] = checksum
 
     def _observe_main_module(self, checksum):
+        print("OBSERVE MAIN MODULE!")
         if self._parent() is None:
             return
         htf = self._get_htf()

@@ -42,7 +42,8 @@ class CellUpdateTask(Task):
                 changed = True
             #- launch an accessor update task
             if changed or accessor._new_macropath:
-                AccessorUpdateTask(manager, accessor).launch()
+                task = AccessorUpdateTask(manager, accessor)
+                task.launch()
         for editpin in livegraph.cell_to_editpins[cell]:
             reactor = editpin.worker_ref()
             ReactorUpdateTask(manager, reactor).launch()        

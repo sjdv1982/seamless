@@ -129,7 +129,7 @@ class StructuredCell(SeamlessBase):
                     raise Exception(err % (path1, path2))
 
     def _get_auth_path(self, path):
-        assert not self.no_auth
+        assert not self.no_auth, self
         assert self.auth is not None
         if self.auth._destroyed:
             return
@@ -280,6 +280,13 @@ class StructuredCell(SeamlessBase):
         if self.schema is not None:
             schema = self.schema.value
         return Silk(data=value, schema=schema)
+
+    def get_schema(self):
+        schema = self._schema_value
+        if schema is None:
+            if self.schema._checksum is not None:
+                schema = self.schema.value
+        return schema
 
     @property
     def data(self):

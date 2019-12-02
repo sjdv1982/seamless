@@ -10,7 +10,7 @@ def triple_it(a, **kwargs):
 ctx.transform = triple_it
 ctx.transform.a = ctx.a
 ctx.myresult = ctx.transform
-###ctx.equilibrate()
+ctx.equilibrate()
 print(ctx.myresult.value)
 
 ctx.transform.b = 777

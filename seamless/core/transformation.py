@@ -333,6 +333,7 @@ class TransformationJob:
                 code = value
             elif (celltype, subcelltype) == ("plain", "module"):
                 mod = await build_module_async(value)
+                assert mod is not None # build_module_async failed
                 module_workspace[pinname] = mod[1]
             else:
                 namespace[pinname] = value

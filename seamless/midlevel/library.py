@@ -1,9 +1,7 @@
 from ..core.library import build, register
 from . import copying
-from .translate import find_channels
 
 def register_library(ctx, hctx, libname):
-    from ..core import library
     from ..core.unbound_context import UnboundContext
     if isinstance(ctx, UnboundContext):
         ctx = ctx._bound
@@ -12,16 +10,15 @@ def register_library(ctx, hctx, libname):
     try:
         hctx._translating = True
         copying.fill_checksums(ctx._get_manager(), nodes)
-        lib = build(ctx)
-        library.register(libname, lib)
+        lib, root = build(ctx)
+        register(libname, lib, root)
     finally:
         hctx._translating = False
 
 def get_lib_path(nodepath, from_lib_paths):
+    """Gets the path of nodepath within the library that the node comes from (if any)"""
     if not len(from_lib_paths):
         return None
-    raise NotImplementedError ### livegraph branch
-    """Gets the path of nodepath within the library that the node comes from (if any)"""
     for p in range(len(nodepath), 0, -1):
         if nodepath[:p] in from_lib_paths:
             head = from_lib_paths[nodepath[:p]]

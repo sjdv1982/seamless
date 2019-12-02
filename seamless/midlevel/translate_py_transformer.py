@@ -1,5 +1,5 @@
-from seamless.core import cell as core_cell, link as core_link, \
- libcell, transformer, reactor, context, macro, StructuredCell
+from seamless.core import cell, link, \
+ libcell, transformer, context, StructuredCell
 
 def translate_py_transformer(node, root, namespace, inchannels, outchannels, lib_path00, is_lib):
     from .translate import set_structured_cell_from_checksum
@@ -26,7 +26,7 @@ def translate_py_transformer(node, root, namespace, inchannels, outchannels, lib
         pin_cell_name = pin + "_INCHANNEL"
         assert pin_cell_name not in all_inchannels
         assert pin_cell_name not in node["pins"]
-        pin_cell = core_cell("mixed")
+        pin_cell = cell("mixed")
         setattr(ctx, pin_cell_name, pin_cell)
         pin_cells[pin] = pin_cell
         
@@ -68,9 +68,9 @@ def translate_py_transformer(node, root, namespace, inchannels, outchannels, lib
         ctx.code = libcell(lib_path)
     else:
         if node["language"] == "ipython":
-            ctx.code = core_cell("ipython")
+            ctx.code = cell("ipython")
         else:
-            ctx.code = core_cell("transformer")
+            ctx.code = cell("transformer")
         if "code" in mount:
             ctx.code.mount(**mount["code"])
 
@@ -85,7 +85,7 @@ def translate_py_transformer(node, root, namespace, inchannels, outchannels, lib
             continue
         if not k.startswith("input"):
             continue
-        k2 = "value" if k == "input" else k.lstrip("input_")
+        k2 = "value" if k == "input" else k[len("input_"):]
         inp_checksum[k2] = checksum[k]
     set_structured_cell_from_checksum(inp, inp_checksum)
     namespace[node["path"] + ("code",), True] = ctx.code, node
@@ -110,20 +110,20 @@ def translate_py_transformer(node, root, namespace, inchannels, outchannels, lib
         setattr(ctx, result_name, result)
 
         result_pin = getattr(ctx.tf, result_name)        
-        result_cell = core_cell("mixed")
+        result_cell = cell("mixed")
         setattr(ctx, result_cell_name, result_cell)
         result_pin.connect(result_cell)
         result_cell.connect(result.inchannels[()])
         if node["SCHEMA"]:
             schema_pin = getattr(ctx.tf, node["SCHEMA"])
             result.schema.connect(schema_pin)
-        """
-        # not done; transformation will do this!
-        if "result" in checksum:
-            result._data._set_checksum(checksum["result"], initial=True)
-        """
-        if "result_schema" in checksum:
-            result._set_checksum(checksum["result_schema"], schema=True, initial=True)
+        result_checksum = {}        
+        for k in checksum:
+            if not k.startswith("result"):
+                continue
+            k2 = "value" if k == "result" else k[len("result_"):]
+            result_checksum[k2] = checksum[k]
+        set_structured_cell_from_checksum(result, result_checksum)
     else:
         for c in outchannels:
             assert len(c) == 0 #should have been checked by highlevel

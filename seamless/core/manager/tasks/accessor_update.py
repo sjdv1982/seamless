@@ -61,9 +61,10 @@ class AccessorUpdateTask(Task):
                 CellUpdateTask(manager, target).launch()
             else:
                 if not target._destroyed:
+                    assert expression.target_celltype == "mixed", expression.target_celltype
                     sc = target._structured_cell
                     assert sc is not None
-                    inchannel = sc.inchannels[path]                    
+                    inchannel = sc.inchannels[path]
                     manager._set_inchannel_checksum(
                         inchannel, expression_result_checksum, 
                         False, None, prelim=accessor._prelim

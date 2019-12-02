@@ -6,6 +6,7 @@ Meaningful values of (celltype, subcelltype):
 ("python", "transformer"/"reactor"/"macro").
 """
 import ast
+import json
 
 validation_cache = set()
 
@@ -25,7 +26,8 @@ async def validate_subcelltype(checksum, celltype, subcelltype, codename, buffer
     value = buffer.decode()
     
     if celltype == "plain" and subcelltype == "module":
-        await build_module_async(value)
+        v = json.loads(value)
+        await build_module_async(v)
     else:    
         tree = ast.parse(value, filename=codename)
 
@@ -39,4 +41,4 @@ async def validate_subcelltype(checksum, celltype, subcelltype, codename, buffer
     
 from .get_buffer import get_buffer
 from ..cached_compile import analyze_code
-from ..build_module import build_module
+from ..build_module import build_module, build_module_async

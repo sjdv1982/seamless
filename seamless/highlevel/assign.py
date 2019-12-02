@@ -153,8 +153,10 @@ def _assign_context2(ctx, new_nodes, new_connections, path, old_ctx):
     from .Cell import Cell
     from .Transformer import Transformer
     assert isinstance(ctx, Context)
-    old_core_ctx = old_ctx._ctx0
-    new_core_ctx = ctx._ctx0
+    '''
+    old_core_ctx = old_ctx._gen_context
+    new_core_ctx = ctx._gen_context
+    '''
     nodes, connections, _ = ctx._graph
     for p in list(nodes.keys()):
         if p[:len(path)] == path:
@@ -186,7 +188,7 @@ def _assign_context2(ctx, new_nodes, new_connections, path, old_ctx):
         else:
             raise TypeError(nodetype)
         nodes[pp] = node
-        copy_checksums(node, old_core_ctx, new_core_ctx)
+        ###copy_checksums(node, old_core_ctx, new_core_ctx) # not needed anymore?
     for con in new_connections:
         con["source"] = path + con["source"]
         con["target"] = path + con["target"]

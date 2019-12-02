@@ -305,6 +305,32 @@ def translate_link(node, namespace, ctx):
         raise NotImplementedError #subpath!
         second._get_manager().connect_cell(second, first2, duplex=True)
 
+translate_compiled_transformer = None
+translate_bash_transformer = None
+translate_docker_transformer = None
+
+def import_before_translate(graph):
+    global translate_compiled_transformer
+    global translate_bash_transformer
+    global translate_docker_transformer
+    impvars = (
+        "translate_compiled_transformer", 
+        "translate_bash_transformer",
+        "translate_docker_transformer"
+    )
+    if all([globals()[var] is not None for var in impvars]):
+        return
+    nodes = graph["nodes"]
+    for node in nodes:
+        t = node["type"]
+        if t == "transformer":
+            if node["compiled"]:
+                from .translate_compiled_transformer import translate_compiled_transformer
+            elif node["language"] == "bash":
+                from .translate_bash_transformer import translate_bash_transformer
+            elif node["language"] == "docker":
+                from .translate_docker_transformer import translate_docker_transformer
+
 def translate(graph, ctx, from_lib_paths, is_lib):
     ###import traceback; stack = traceback.extract_stack(); print("TRANSLATE:"); print("".join(traceback.format_list(stack[:3])))
     nodes, connections = graph["nodes"], graph["connections"]
@@ -415,5 +441,9 @@ def translate(graph, ctx, from_lib_paths, is_lib):
 
 from .library import get_lib_path
 from .translate_py_transformer import translate_py_transformer
+'''
+# imported only at need...
 from .translate_bash_transformer import translate_bash_transformer
 from .translate_docker_transformer import translate_docker_transformer
+from .translate_compiled_transformer import translate_compiled_transformer
+'''

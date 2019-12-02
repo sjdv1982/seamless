@@ -340,8 +340,7 @@ class TaskManager:
                     pass
             else:
                 try:
-                    ###task.future.result() # to raise Exception; TODO: log it instead                
-                    task.future.exception()
+                    task.future.result() # to raise Exception; TODO: log it instead
                 except CancelledError:
                     pass            
                 finally:

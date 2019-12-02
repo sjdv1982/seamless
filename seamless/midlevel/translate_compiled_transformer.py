@@ -1,12 +1,12 @@
-from seamless.core import cell, libcell, transformer, context, StructuredCell
+from seamless.core import cell, link, \
+ libcell, transformer, context, StructuredCell
 
-from seamless.core import StructuredCell
 from seamless.core import library
 
+# Just to register the "compiled_transformer" lib
+from seamless.lib.compiled_transformer import compiled_transformer as _
 
 def _init_from_library(ctf, debug):
-    # Just to register the "compiled_transformer" lib
-    from seamless.lib.compiled_transformer import compiled_transformer as _
 
     with library.bind("compiled_transformer"):
         ctf.gen_header_code = libcell(".gen_header.code")
@@ -27,13 +27,35 @@ def _init_from_library(ctf, debug):
             ctf.translator.debug = True
         ctf.translator_code.connect(ctf.translator.code)
 
-def _finalize(ctx, ctf, inp, c_inp, result, c_result, input_name, result_name):
+def _finalize(ctx, ctf, inp, c_inp, result, c_result, input_name, result_name, inchannels):
+    result_cell_name1 = result_name + "_CELL1"
+    result_cell_name2 = result_name + "_CELL2"
+    input_cell_name = input_name + "_CELL"
+    forbidden = (
+        result_name, result_cell_name1, 
+        result_cell_name2, input_cell_name,
+        main_module_name
+    )
+    for c in inchannels:
+        assert (not len(c)) or c[0] not in forbidden #should have been checked by highlevel    
+    
+    result_cell1 = cell("mixed")
+    setattr(ctx, result_cell_name1, result_cell1)
+    result_cell2 = cell("mixed")
+    setattr(ctx, result_cell_name2, result_cell2)
+    input_cell = cell("mixed")
+    setattr(ctx, input_cell_name, input_cell)
+    main_module_cell = cell("plain")
+    setattr(ctx, main_module_name, main_module_cell)
+
     #1: between transformer and library
 
     ctx.inputpins.connect(ctf.gen_header.inputpins)
     ctx.pins.connect(ctf.translator.pins)
-    ctf.translator.translator_result_.connect(ctx.result.inchannels[()])
-    ctx.inp.outchannels[()].connect(ctf.translator.kwargs)
+    ctf.translator.translator_result_.connect(result_cell1)
+    result_cell1.connect(result.inchannels[()])
+    inp.outchannels[()].connect(input_cell)
+    input_cell.connect(ctf.translator.kwargs)
     c_inp.schema.connect(ctf.gen_header.input_schema)
     c_result.schema.connect(ctf.gen_header.result_schema)
     c_inp.schema.connect(ctf.translator.input_schema)
@@ -51,7 +73,8 @@ def _finalize(ctx, ctf, inp, c_inp, result, c_result, input_name, result_name):
 
     ctx.language.connect(ctf.integrator.lang)
     ctx.code.connect(ctf.integrator.compiled_code)
-    ctx.main_module.outchannels[()].connect(ctf.integrator.main_module)
+    ctx.main_module.outchannels[()].connect(main_module_cell)
+    main_module_cell.connect(ctf.integrator.main_module)
 
     ctx.module = cell("mixed")
     ctf.integrator.result.connect(ctx.module)
@@ -69,23 +92,32 @@ def translate_compiled_transformer(node, root, namespace, inchannels, outchannel
     parent = get_path(root, node["path"][:-1], None, None)
     name = node["path"][-1]
     lib_path0 = lib_path00 + "." + name if lib_path00 is not None else None
-    ctx = context()
+    ctx = context(toplevel=False)
     setattr(parent, name, ctx)
 
-    input_name = node["INPUT"]
     result_name = node["RESULT"]
-    for c in inchannels:
-        assert (not len(c)) or c[0] != result_name #should have been checked by highlevel
+    input_name = node["INPUT"]
+
+    all_inchannels = set(inchannels)
+    pin_cells = {}
+    for pin in list(node["pins"].keys()):
+        pin_cell_name = pin + "_INCHANNEL"
+        assert pin_cell_name not in all_inchannels
+        assert pin_cell_name not in node["pins"]
+        pin_cell = cell("mixed")
+        setattr(ctx, pin_cell_name, pin_cell)
+        pin_cells[pin] = pin_cell
 
     with_result = node["with_result"]
     assert with_result #compiled transformers must have with_result
-
+    interchannels = [as_tuple(pin) for pin in node["pins"]]
     mount = node.get("mount", {})
     inp, inp_ctx = build_structured_cell(
-      ctx, input_name, inchannels, [()],
+      ctx, input_name, inchannels, interchannels,
       lib_path0,
       return_context=True
     )
+
     setattr(ctx, input_name, inp)
     namespace[node["path"] + ("SCHEMA",), False] = inp.schema, node
     if "input_schema" in mount:
@@ -97,23 +129,19 @@ def translate_compiled_transformer(node, root, namespace, inchannels, outchannel
     assert result_name not in node["pins"] #should have been checked by highlevel
     assert "translator_result_" not in node["pins"] #should have been checked by highlevel
     all_pins = {}
-    inputpins = []
     for pinname, pin in node["pins"].items():
         p = {"io": "input"}
         p.update(pin)
-        if p["io"] == "input":
-            inputpins.append(pinname)
         all_pins[pinname] = p
     all_pins[result_name] = {"io": "output", "transfer_mode": "copy"}
     if node["SCHEMA"]:
         assert with_result
         all_pins[node["SCHEMA"]] = {
-            "io": "input", "transfer_mode": "json",
-            "access_mode": "json", "content_type": "json"
+            "io": "input", "celltype": "mixed"
         }
     
     # Compiler
-    ctx.language = cell("text").set(node["language"])
+    ctx.language = cell("str").set(node["language"])
 
     build_structured_cell(
       ctx, "main_module", 
@@ -144,26 +172,44 @@ def translate_compiled_transformer(node, root, namespace, inchannels, outchannel
         ctx.code._set_checksum(checksum["code"], initial=True)
     if "main_module" in checksum:
         ctx.main_module._set_checksum(checksum["main_module"], initial=True)
-    if "schema" in checksum:
-        inp._set_checksum(checksum["schema"], schema=True, initial=True)
-    if "input" in checksum:
-        inp._set_checksum(checksum["input"], initial=True)
+    inp_checksum = {}
+    for k in checksum:
+        if k == "schema":
+            inp_checksum[k] = checksum[k]
+            continue
+        if not k.startswith("input"):
+            continue
+        k2 = "value" if k == "input" else k[len("input_"):]
+        inp_checksum[k2] = checksum[k]
+    set_structured_cell_from_checksum(inp, inp_checksum)
     namespace[node["path"] + ("code",), True] = ctx.code, node
     namespace[node["path"] + ("code",), False] = ctx.code, node
+
+    for pin in list(node["pins"].keys()):
+        target = getattr(ctx.tf, pin)
+        pin_cell = pin_cells[pin]
+        inp.outchannels[(pin,)].connect(pin_cell)
+        pin_cell.connect(target)
 
     result, result_ctx = build_structured_cell(
         ctx, result_name, [()],
         outchannels, lib_path0,
         return_context=True
     )
-    if "result_schema" in checksum:
-        result._set_checksum(checksum["result_schema"], schema=True, initial=True))
     namespace[node["path"] + ("RESULTSCHEMA",), False] = result.schema, node
     if "result_schema" in mount:
         result_ctx.schema.mount(**mount["result_schema"])
 
     setattr(ctx, result_name, result)
     assert not node["SCHEMA"]
+
+    result_checksum = {}        
+    for k in checksum:
+        if not k.startswith("result"):
+            continue
+        k2 = "value" if k == "result" else k[len("result_"):]
+        result_checksum[k2] = checksum[k]
+    set_structured_cell_from_checksum(result, result_checksum)
 
     ctx.pins = cell("plain").set(all_pins)
     ctx.inputpins = cell("plain").set(inputpins)

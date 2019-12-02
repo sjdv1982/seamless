@@ -10,7 +10,6 @@ from ..core.macro_mode import macro_mode_on, get_macro_mode
 from ..core.context import context, Context as CoreContext
 from ..core.cell import cell
 from ..core.mount import mountmanager #for now, just a single global mountmanager
-from ..midlevel.translate import translate
 from .assign import assign
 from .proxy import Proxy
 from ..midlevel import copying
@@ -213,6 +212,7 @@ class Context:
         return graph
 
     def _do_translate(self, force=False, explicit=False):        
+        from ..midlevel.translate import translate, import_before_translate
         if self._dummy:
             return
         assert self._as_lib is None or self._from_lib is None
@@ -229,6 +229,7 @@ class Context:
             ctx = None
             if self._gen_context is not None:
                 self._gen_context.destroy()
+            import_before_translate(graph)
             with macro_mode_on():
                 ub_ctx = context(
                     toplevel=True,

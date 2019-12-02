@@ -7,6 +7,7 @@ In practice, the input arguments, even if read from checksum-to-value cache,
 """
 from collections import OrderedDict
 import asyncio
+import traceback
 
 from .worker import Worker, InputPin, OutputPin
 from .status import StatusReasonEnum
@@ -150,7 +151,15 @@ class Transformer(Worker):
         manager = self._get_manager()
         transformation_cache = manager.cachemanager.transformation_cache
         transformation = transformation_cache.transformer_to_transformations[self]
-        return transformation_cache.transformation_exceptions.get(transformation)
+        exc = transformation_cache.transformation_exceptions.get(transformation)
+        if exc is None:
+            return None
+        s = traceback.format_exception(
+            value=exc, 
+            etype=type(exc),
+            tb=exc.__traceback__
+        )
+        return "".join(s)
 
     @property
     def void(self):
