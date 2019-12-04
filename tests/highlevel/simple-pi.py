@@ -34,3 +34,6 @@ print(ctx.twopi.value)
 
 graph = ctx.get_graph()
 json.dump(graph, open("twopi-result.seamless", "w"), indent=2, sort_keys=True)
+archive = ctx.get_zip()
+with open("twopi-result.zip", "wb") as f:
+    f.write(archive) 

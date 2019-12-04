@@ -14,7 +14,11 @@ serialize_cache = lrucache(100)
 
 
 def _serialize(value, celltype):
-    if celltype in text_types:
+    if celltype == "str":
+        value = str(value)
+        txt = json.dumps(value)
+        buffer = (txt + "\n").encode()        
+    elif celltype in text_types:
         if isinstance(value, bytes):
             value = value.decode()
         if celltype == "int":
@@ -22,7 +26,7 @@ def _serialize(value, celltype):
         elif celltype == "float":
             value = float(value)
         elif celltype == "bool":
-            value = bool(value)
+            value = bool(value)            
         buffer = (str(value).rstrip("\n")+"\n").encode()
     elif celltype == "plain":
         txt = json.dumps(value, sort_keys=True, indent=2)

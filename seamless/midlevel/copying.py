@@ -1,30 +1,60 @@
 from ..mixed import MixedBase
 from copy import deepcopy
-import inspect
+import inspect, asyncio
 from ..core.protocol.serialize import serialize_sync as serialize
 from ..core.protocol.calculate_checksum import calculate_checksum_sync as calculate_checksum
 
-def copy_context(nodes, connections, path):
-    new_nodes = {}
-    new_connections = []
-    for p in nodes:
-        if p[:len(path)] != path:
+def get_checksums(nodes):
+    checksums = set()
+    for p, node in nodes.items():
+        if node["type"] in ("link", "context"):
             continue
-        pp = p[len(path):]
-        node = deepcopy(nodes[p])
-        node["path"] = pp
-        new_nodes[pp] = node
-    for con in connections:
-        source, target = con["source"], con["target"]
-        if source[:len(path)] != path:
+        untranslated = node.get("UNTRANSLATED")
+        assert not untranslated, p
+        checksum = node.get("checksum")
+        if checksum is None:
             continue
-        if target[:len(path)] != path:
-            continue
-        new_con = deepcopy(con)
-        new_con["source"] = source[len(path):]
-        new_con["target"] = target[len(path):]
-        new_connections.append(new_con)
+        elif isinstance(checksum, str):
+            checksums.add(checksum)
+        else:
+            for k,v in checksum.items():
+                checksums.add(v)
+    return checksums
 
+async def get_buffer_dict(manager, checksums):
+    from ..core.protocol.get_buffer import get_buffer
+    result = {}
+    buffer_cache = manager.cachemanager.buffer_cache
+    coros = []
+    checksums = list(checksums)
+    for checksum in checksums:
+        coro = get_buffer(bytes.fromhex(checksum), buffer_cache)
+        coros.append(coro)
+    buffers = await asyncio.gather(*coros, return_exceptions=True)
+    for checksum, buffer in zip(checksums, buffers):
+        if not isinstance(buffer, Exception):
+            result[checksum] = buffer
+    return result
+
+def get_buffer_dict_sync(manager, checksums):
+    coro = get_buffer_dict(
+        manager, checksums
+    )
+    fut = asyncio.ensure_future(coro)
+    asyncio.get_event_loop().run_until_complete(fut)
+    return fut.result()
+
+def add_zip(manager, zipfile):
+    """
+    Caches all checksum-to-buffer entries in zipfile
+    All "file names" in the zipfile must be checksum hexes
+    Note that caching without Redis only lasts 20 seconds 
+    """
+    buffer_cache = manager.cachemanager.buffer_cache
+    for checksum in zipfile.namelist():
+        checksum2 = bytes.fromhex(checksum)
+        buffer = zipfile.read(checksum)
+        buffer_cache.cache_buffer(checksum2, buffer)
 
 def fill_checksum(manager, node, temp_path):
     from ..core.utils import strip_source

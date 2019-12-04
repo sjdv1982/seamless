@@ -58,7 +58,7 @@ from .Transformer import Transformer
 from .Cell import Cell
 from .SubCell import SubCell
 from .Link import Link
-from .StaticContext import StaticContext
+from ..midlevel.StaticContext import StaticContext
 
 def load_graph(graph, *, cache_ctx=None, static=False):
     """TODO: document"""

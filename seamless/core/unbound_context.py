@@ -311,7 +311,7 @@ class UnboundContext(SeamlessBase):
                     if com2 == "set cell":         
                         cell2, _ = args2
                     elif com2 == "set cell checksum":
-                        cell2, _ = args2
+                        cell2, _, _, _ = args2
                     else:
                         continue
                     if cell2 == cell:

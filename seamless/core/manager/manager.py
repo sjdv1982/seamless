@@ -29,6 +29,7 @@ class Manager:
     _destroyed = False
     _active = True
     def __init__(self):
+        global is_dummy_mount
         from .livegraph import LiveGraph
         from .cachemanager import CacheManager
         from .taskmanager import TaskManager        
@@ -46,7 +47,7 @@ class Manager:
         self.temprefmanager = temprefmanager
 
         # for now, just a single global mountmanager
-        from ..mount import mountmanager
+        from ..mount import mountmanager, is_dummy_mount        
         self.mountmanager = mountmanager
         mountmanager.start()
 
@@ -177,7 +178,7 @@ class Manager:
             value = cell.data
             self.update_schemacell(cell, value, None)
 
-    def _set_cell_checksum(self, cell, checksum, void, status_reason=None, prelim=False):
+    def _set_cell_checksum(self, cell, checksum, void, status_reason=None, prelim=False):        
         # NOTE: Any cell task depending on the old checksum must have been canceled already
         if cell._destroyed:
             return
@@ -204,7 +205,7 @@ class Manager:
                 cs = checksum.hex() if checksum is not None else None
                 observer(cs)
             cachemanager.incref_checksum(checksum, cell, authority)            
-            if cell._mount is not None:
+            if not is_dummy_mount(cell._mount):
                 buffer = self.cachemanager.buffer_cache.get_buffer(checksum)
                 self.mountmanager.add_cell_update(cell, checksum, buffer)
             if cell._share is not None:

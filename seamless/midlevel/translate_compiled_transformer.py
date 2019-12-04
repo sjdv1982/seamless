@@ -1,39 +1,50 @@
+import os, json
 from seamless.core import cell, link, \
  transformer, context, StructuredCell
+from ..midlevel.StaticContext import StaticContext
 
-# Just to register the "compiled_transformer" lib
-from seamless.lib.compiled_transformer import compiled_transformer as _
+import seamless
+seamless_dir = os.path.dirname(seamless.__file__)
+graphfile = os.path.join(seamless_dir, 
+    "graphs", "compiled_transformer.seamless"
+)
+zipfile = os.path.join(seamless_dir, 
+    "graphs", "compiled_transformer.zip"
+)
+graph = json.load(open(graphfile))
+sctx = StaticContext.from_graph(graph)
+sctx.add_zip(zipfile)
 
-def _init_from_library(ctf, debug):
+def _init_from_graph(ctf, debug):
+    ctf.gen_header_code = sctx.gen_header.code.cell()
+    ctf.gen_header_params = sctx.gen_header_params.cell()
+    ctf.gen_header = transformer(sctx.gen_header_params.value)
+    ctf.gen_header_code.connect(ctf.gen_header.code)
 
-    raise NotImplementedError # low-level library has been ripped
-    with library.bind("compiled_transformer"):
-        ctf.gen_header_code = libcell(".gen_header.code")
-        ctf.gen_header_params = libcell(".gen_header_params")
-        ctf.gen_header = transformer(ctf.gen_header_params.value)
-        ctf.gen_header_code.connect(ctf.gen_header.code)
+    ctf.integrator_code = sctx.integrator.code.cell()
+    ctf.integrator_params = sctx.integrator_params.cell()
+    ctf.integrator = transformer(sctx.integrator_params.value)
+    ctf.integrator.debug_.cell().set(debug)
+    ctf.integrator_code.connect(ctf.integrator.code)
 
-        ctf.integrator_code = libcell(".integrator.code")
-        ctf.integrator_params = libcell(".integrator_params")
-        ctf.integrator = transformer(ctf.integrator_params.value)
-        ctf.integrator.debug_.cell().set(debug)
-        ctf.integrator_code.connect(ctf.integrator.code)
+    ctf.translator_code = sctx.translator.code.cell()
+    ctf.translator_params = sctx.translator_params.cell()
+    ctf.translator = transformer(sctx.translator_params.value)
+    if debug:
+        ctf.translator.debug = True
+    ctf.translator_code.connect(ctf.translator.code)
 
-        ctf.translator_code = libcell(".translator.code")
-        ctf.translator_params = libcell(".translator_params")
-        ctf.translator = transformer(ctf.translator_params.value)
-        if debug:
-            ctf.translator.debug = True
-        ctf.translator_code.connect(ctf.translator.code)
-
-def _finalize(ctx, ctf, inp, c_inp, result, c_result, input_name, result_name, inchannels):
+def _finalize(
+        ctx, ctf, inp, c_inp, result, c_result, 
+        input_name, result_name, inchannels):
     result_cell_name1 = result_name + "_CELL1"
     result_cell_name2 = result_name + "_CELL2"
     input_cell_name = input_name + "_CELL"
+    main_module_cell_name = input_name + "_MAIN_MODULE_CELL"
     forbidden = (
         result_name, result_cell_name1, 
         result_cell_name2, input_cell_name,
-        main_module_name
+        main_module_cell_name
     )
     for c in inchannels:
         assert (not len(c)) or c[0] not in forbidden #should have been checked by highlevel    
@@ -45,7 +56,7 @@ def _finalize(ctx, ctf, inp, c_inp, result, c_result, input_name, result_name, i
     input_cell = cell("mixed")
     setattr(ctx, input_cell_name, input_cell)
     main_module_cell = cell("plain")
-    setattr(ctx, main_module_name, main_module_cell)
+    setattr(ctx, main_module_cell_name, main_module_cell)
 
     #1: between transformer and library
 
@@ -81,8 +92,8 @@ def _finalize(ctx, ctf, inp, c_inp, result, c_result, input_name, result_name, i
     ctx.module.connect(ctf.translator.module)
 
 def translate_compiled_transformer(node, root, namespace, inchannels, outchannels, lib_path00, is_lib):
+    from .translate import set_structured_cell_from_checksum
     #TODO: still a lot of common code with translate_py_transformer, put in functions
-    from seamless.lib.compiled_transformer import compiled_transformer as _
     inchannels = [ic for ic in inchannels if ic[0] != "code"]
 
     main_module_inchannels = [("objects",) + ic[1:] for ic in inchannels if ic[0] == "_main_module"]
@@ -97,6 +108,7 @@ def translate_compiled_transformer(node, root, namespace, inchannels, outchannel
     result_name = node["RESULT"]
     input_name = node["INPUT"]
 
+    inputpins = []
     all_inchannels = set(inchannels)
     pin_cells = {}
     for pin in list(node["pins"].keys()):
@@ -109,10 +121,9 @@ def translate_compiled_transformer(node, root, namespace, inchannels, outchannel
 
     with_result = node["with_result"]
     assert with_result #compiled transformers must have with_result
-    interchannels = [as_tuple(pin) for pin in node["pins"]]
     mount = node.get("mount", {})
     inp, inp_ctx = build_structured_cell(
-      ctx, input_name, inchannels, interchannels,
+      ctx, input_name, inchannels, [()],
       lib_path0,
       return_context=True
     )
@@ -128,10 +139,12 @@ def translate_compiled_transformer(node, root, namespace, inchannels, outchannel
     assert result_name not in node["pins"] #should have been checked by highlevel
     assert "translator_result_" not in node["pins"] #should have been checked by highlevel
     all_pins = {}
+    inputpins = []
     for pinname, pin in node["pins"].items():
         p = {"io": "input"}
         p.update(pin)
         all_pins[pinname] = p
+        inputpins.append(pinname)
     all_pins[result_name] = {"io": "output", "transfer_mode": "copy"}
     if node["SCHEMA"]:
         assert with_result
@@ -142,11 +155,11 @@ def translate_compiled_transformer(node, root, namespace, inchannels, outchannel
     # Compiler
     ctx.language = cell("str").set(node["language"])
 
-    build_structured_cell(
+    ctx.main_module = build_structured_cell(
       ctx, "main_module", 
       main_module_inchannels, [()],
       lib_path00
-    )
+    )    
 
     for ic in main_module_inchannels:
         icpath = node["path"] + ("_main_module",) + ic[1:]
@@ -155,7 +168,7 @@ def translate_compiled_transformer(node, root, namespace, inchannels, outchannel
     # Transformer itself
     ctf = ctx.tf = context()
     debug = node["debug"]
-    _init_from_library(ctf, debug)
+    _init_from_graph(ctf, debug)
 
     if lib_path00 is not None:
         lib_path = lib_path00 + "." + name + ".code"
@@ -171,7 +184,7 @@ def translate_compiled_transformer(node, root, namespace, inchannels, outchannel
     if "code" in checksum:
         ctx.code._set_checksum(checksum["code"], initial=True)
     if "main_module" in checksum:
-        ctx.main_module._set_checksum(checksum["main_module"], initial=True)
+        ctx.main_module.auth._set_checksum(checksum["main_module"], initial=True)
     inp_checksum = {}
     for k in checksum:
         if k == "schema":
@@ -184,12 +197,6 @@ def translate_compiled_transformer(node, root, namespace, inchannels, outchannel
     set_structured_cell_from_checksum(inp, inp_checksum)
     namespace[node["path"] + ("code",), True] = ctx.code, node
     namespace[node["path"] + ("code",), False] = ctx.code, node
-
-    for pin in list(node["pins"].keys()):
-        target = getattr(ctx.tf, pin)
-        pin_cell = pin_cells[pin]
-        inp.outchannels[(pin,)].connect(pin_cell)
-        pin_cell.connect(target)
 
     result, result_ctx = build_structured_cell(
         ctx, result_name, [()],
@@ -215,7 +222,11 @@ def translate_compiled_transformer(node, root, namespace, inchannels, outchannel
     ctx.inputpins = cell("plain").set(inputpins)
     c_inp = getattr(ctx, input_name + STRUC_ID)
     c_result = getattr(ctx, result_name + STRUC_ID)
-    _finalize(ctx, ctf, inp, c_inp, result, c_result, input_name, result_name)
+    _finalize(
+        ctx, ctf, inp, c_inp, result, c_result, 
+        input_name, result_name,
+        inchannels
+    )
 
     if "header" in mount:
         ctx.header.mount(**mount["header"])

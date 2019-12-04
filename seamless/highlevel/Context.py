@@ -3,6 +3,8 @@ from copy import deepcopy
 from collections import namedtuple
 import weakref
 from functools import partial
+from zipfile import ZipFile
+from io import BytesIO
 
 from .Base import Base
 from ..core import macro_mode
@@ -35,7 +37,12 @@ class Context:
     @classmethod
     def from_graph(cls, graph, manager):
         self = cls(manager=manager)
+        self.set_graph(graph)
         graph = deepcopy(graph)
+        return self
+
+    def set_graph(self, graph):
+        graph = deepcopy(graph)        
         nodes = {}        
         for node in graph["nodes"]:
             p = tuple(node["path"])
@@ -49,6 +56,7 @@ class Context:
             con["source"] = tuple(con["source"])
             con["target"] = tuple(con["target"])
         self._graph = Graph(nodes, connections, graph["params"])
+        self._translate()
         return self
 
     def __init__(self, dummy=False, manager=None):
@@ -174,7 +182,7 @@ class Context:
     def translate(self, force=False):
         return self._do_translate(force=force, explicit=True)
 
-    def get_graph(self, copy=True):     
+    def _get_graph(self, copy):    
         from ..core.manager.tasks.structured_cell import StructuredCellJoinTask
         from ..core.manager.tasks import SetCellValueTask, SetCellBufferTask
         join_task_types = (
@@ -202,6 +210,7 @@ class Context:
         # put nodes in alphabetical order; shouldn't matter much except for reproducibility of Seamless bugs
         nodes, connections, params = self._graph
         nodes = [v for k,v in sorted(nodes.items(), key=lambda kv: kv[0])]
+        
         if copy:
             connections = deepcopy(connections)
             nodes = deepcopy(nodes)
@@ -209,12 +218,47 @@ class Context:
         graph = {"nodes": nodes, "connections": connections, "params": params}
         return graph
 
+    def get_graph(self):
+        return self._get_graph(copy=True)
+
+    def get_zip(self):        
+        force = (self._gen_context is None)
+        self._do_translate(force=force)
+        graph = self.get_graph()
+        nodes0 = graph["nodes"]
+        nodes = {tuple(node["path"]):node for node in nodes0}
+        checksums = copying.get_checksums(nodes)
+        manager = self._gen_context._get_manager()        
+        buffer_dict = copying.get_buffer_dict_sync(manager, checksums)
+        archive = BytesIO()
+        with ZipFile(archive, mode="w") as zipfile:
+            for checksum, buffer in buffer_dict.items():
+                zipfile.writestr(checksum, buffer)
+        result = archive.getvalue()
+        archive.close()
+        return result
+
+    def add_zip(self, zip):
+        if self._gen_context is None:
+            self._do_translate(force=True)
+        manager = self._gen_context._get_manager()
+        if isinstance(zip, bytes):
+            archive = BytesIO(zip)
+            zipfile = ZipFile(archive, "r")
+        elif isinstance(zip, str):
+            zipfile = ZipFile(zip, "r")
+        elif isinstance(zip, ZipFile):
+            zipfile = zip
+        else:
+            raise TypeError(type(zip))        
+        return copying.add_zip(manager, zipfile)
+
     def _do_translate(self, force=False, explicit=False):        
         from ..midlevel.translate import translate, import_before_translate
         if self._dummy:
             return
         assert self._libname is None
-        graph = self.get_graph(copy=False)
+        graph = self._get_graph(copy=False)
         #from pprint import pprint; pprint(graph)
         if not force and not self._needs_translation:
             return
@@ -451,16 +495,7 @@ class SubContext(Base):
     def _get_graph(self):
         parent = self._parent()
         nodes, connections = parent._graph
-        path = self._path
-        nodes, connections = copying.copy_context(nodes, connections, path)
-        #TODO:
-        copying.fill_cell_values(parent, nodes, path)
-        return nodes, connections
-
-    @property
-    def from_lib(self):
-        sub = self._parent()._graph.nodes[self._path]
-        return sub.get("from_lib")
+        raise NotImplementedError
 
     def _translate(self):
         self._parent()._translate()

@@ -126,4 +126,7 @@ def build_structured_cell(
         buffer=c.example_buffer,
         schema=c.schema
     )
-    return sc, c
+    if return_context:
+        return sc, c
+    else:
+        return sc

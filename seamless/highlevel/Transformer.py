@@ -365,13 +365,30 @@ class Transformer(Base):
 
     @property
     def exception(self):
+        htf = self._get_htf()
         tf = self._get_tf().tf
-        return tf.exception
+        if htf["compiled"]:
+            exc = ""
+            for k in ("gen_header", "integrator", "translator"):
+                curr_exc = getattr(tf, k).exception
+                if curr_exc is not None:
+                    exc += "*** " + k + " ***\n"
+                    exc += str(curr_exc)
+                    exc += "*** /" + k + " ***\n"
+            if not len(exc):
+                return None
+            return exc
+        else:
+            return tf.exception
 
     @property
     def status(self):
+        htf = self._get_htf()
         tf = self._get_tf().tf
-        return tf.status
+        if htf["compiled"]:
+            return tf.status
+        else:
+            return tf.status
 
     def __getattr__(self, attr):
         if attr.startswith("_"):
@@ -627,7 +644,6 @@ class Transformer(Base):
         htf["checksum"]["result_schema"] = checksum
 
     def _observe_main_module(self, checksum):
-        print("OBSERVE MAIN MODULE!")
         if self._parent() is None:
             return
         htf = self._get_htf()
@@ -659,7 +675,7 @@ class Transformer(Base):
             schemacell = resultcell.schema
             schemacell._set_observer(self._observe_result_schema)
         if htf["compiled"]:
-            tf.main_module._set_observer(self._observe_main_module)
+            tf.main_module._data._set_observer(self._observe_main_module)
 
 
     def __delattr__(self, attr):

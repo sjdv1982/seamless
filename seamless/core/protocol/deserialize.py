@@ -1,6 +1,7 @@
 import asyncio
 from copy import deepcopy
 import json
+from ast import literal_eval
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 from ...mixed.io import deserialize as mixed_deserialize
 
@@ -28,31 +29,34 @@ def _deserialize(buffer, checksum, celltype):
     elif celltype == "str":
         s = buffer.decode()
         assert s.endswith("\n")
-        value = json.loads(s)
+        try:
+            value = json.loads(s)
+        except json.JSONDecodeError:            
+            raise ValueError(s) from None
         if not isinstance(value, str):
-            raise ValueError
+            raise ValueError(value)
     elif celltype == "int":
         s = buffer.decode()
         assert s.endswith("\n")
-        value = json.loads(s)
+        value = literal_eval(s)
         if isinstance(value, (float, bool)):
             value = int(value)
         if not isinstance(value, int):
-            raise ValueError
+            raise ValueError(value)
     elif celltype == "float":
         s = buffer.decode()
         assert s.endswith("\n")
-        value = json.loads(s)
+        value = literal_eval(s)
         if isinstance(value, (int, bool)):
             value = float(value)        
         if not isinstance(value, float):
-            raise ValueError
+            raise ValueError(value)
     elif celltype == "bool":
         s = buffer.decode()
         assert s.endswith("\n")
-        value = json.loads(s)
+        value = literal_eval(s)        
         if not isinstance(value, bool):
-            raise ValueError
+            raise ValueError(value)
     else:
         raise TypeError(celltype)
     

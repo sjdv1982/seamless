@@ -157,7 +157,7 @@ def translate_cell(node, root, namespace, inchannels, outchannels, lib_path0, is
         datatype = node["datatype"]
         ### TODO: harmonize datatype with schema type
         mount = node.get("mount")
-        child, _ = build_structured_cell(
+        child = build_structured_cell(
           parent, name,
           inchannels, outchannels,
           lib_path0, mount=mount
