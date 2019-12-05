@@ -23,8 +23,7 @@ Graph = namedtuple("Graph", ("nodes", "connections", "params"))
 shareserver = None
 
 
-class Context:
-    path = ()
+class Context(Base):
     _mount = None
     _depsgraph = None
     _translating = False
@@ -60,6 +59,7 @@ class Context:
         return self
 
     def __init__(self, dummy=False, manager=None):
+        super().__init__(None, ())
         from seamless.core.manager import Manager
         self._dummy = dummy
         if manager is not None:            

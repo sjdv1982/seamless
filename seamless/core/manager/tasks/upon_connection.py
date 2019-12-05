@@ -91,7 +91,7 @@ Source %s; target %s, %s""" % (source, target, target_subpath)
         else:
             msg = """Pins cannot be connected directly from structured cells
 Use a simple cell as an intermediate
-Source %s, %s; target %s""" % (source, source_subpath, target)
+Source %s, %s; target %s""" % (source._structured_cell, source_subpath, target)
             raise TypeError(msg)
 
     def _connect_cell_macropath(self):        

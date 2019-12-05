@@ -54,7 +54,10 @@ def _deserialize(buffer, checksum, celltype):
     elif celltype == "bool":
         s = buffer.decode()
         assert s.endswith("\n")
-        value = literal_eval(s)        
+        try:
+            value = literal_eval(s.replace("true", "True").replace("false", "False"))        
+        except ValueError:
+            raise ValueError(s) from None
         if not isinstance(value, bool):
             raise ValueError(value)
     else:

@@ -1,6 +1,7 @@
-import numpy as np
-from seamless.highlevel import Context, Cell, stdlib
+import sys
+from seamless.highlevel import Context, Cell
 from seamless.highlevel import set_resource
+
 
 gen_header_file = "gen_header.py"
 integrator_file = "integrator.py"
@@ -78,9 +79,6 @@ ctx.gen_header.result_schema = ctx.result_schema
 ctx.gen_header.input_name = ctx.input_name
 ctx.gen_header.result_name = ctx.result_name
 
-ctx.print_header = lambda header: print("HEADER", header)
-ctx.print_header.header = ctx.header
-
 ctf = ctx.integrator
 ctf.header = ctx.header
 ctx.module = ctx.integrator
@@ -94,11 +92,21 @@ ctx.result = ctx.translator
 
 ctx.kwargs = Cell()
 ctf.kwargs = ctx.kwargs
+ctx.translate()
+
+# 2: obtain graph and zip
+
+graph = ctx.get_graph()
+zip = ctx.get_zip()
+
+# 3: Test with values for a specific example
+
+ctx.print_header = lambda header: print("HEADER", header)
+ctx.print_header.header = ctx.header
 
 ctx.print_result = lambda result_: print("RESULT", result_)
 ctx.print_result.result_ = ctx.result
 
-# 2: Set up the values for a specific example
 ctx.cppcode = set_resource("test.cpp")
 ctx.cppcode.celltype = "code"
 ctx.cppcode.language = "cpp"
@@ -133,9 +141,11 @@ ctx.translator.kwargs = ctx.kwargs
 ctx.translator.module = ctx.module
 
 ctx.equilibrate()
+if ctx.result.value is None:
+    sys.exit()
 
-graph = ctx.get_graph()
-zip = ctx.get_zip()
+# 4: Save graph and zip
+
 import os, json
 currdir=os.path.dirname(os.path.abspath(__file__))
 graph_filename=os.path.join(currdir,"../compiled_transformer.seamless")

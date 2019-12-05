@@ -52,17 +52,15 @@ class CompiledObjectWrapper:
             else:
                 tf = worker._get_tf()
                 main_module = getattr(tf, "main_module")
-                main_module_handle = main_module.handle
-                main_module_data = main_module.data.value
+                main_module_data = main_module.value.unsilk
                 if main_module_data is None:
-                    main_module_handle.set({"objects":{}})
-                    main_module_data = main_module.data.value
+                    main_module_data = {"objects":{}}
                 if "objects" not in main_module_data:
-                    main_module_handle["objects"] = {}
-                    main_module_data = main_module.data.value
+                    main_module_data["objects"] = {}
                 if objname not in main_module_data["objects"]:
-                    main_module_handle["objects"][objname] = {"code": ""}
-                main_module_handle["objects"][objname][attr] = value
+                    main_module_data["objects"][objname] = {"code": ""}
+                main_module_data["objects"][objname][attr] = value
+                main_module.set(main_module_data)
                 parent.translate()
 
     def __getattr__(self, attr):
@@ -115,16 +113,18 @@ class CompiledObjectWrapper:
         else:
             tf = worker._get_tf(may_translate=False)
             main_module = getattr(tf, "main_module")
-            main_module_data = main_module.data.value
+            main_module_data = main_module.value.unsilk
             if "objects" not in main_module_data:
                 return None
             if self._obj not in main_module_data["objects"]:
                 return None
-            return main_module.handle["objects"][self._obj][attr].value
+            obj = main_module_data["objects"][self._obj]
+            return obj.get(attr)
 
     def _pull_source(self, other):
         from ..assign import assign_connection
         from ..Transformer import Transformer
+        from ...compiler import find_language
         worker = self._worker()
         parent = worker._parent()
         assert other._parent() is parent
@@ -144,20 +144,22 @@ class CompiledObjectWrapper:
         if isinstance(worker, Transformer):
             m = getattr(worker.main_module,self._obj)
             if m is not None:
-                language = m.language
-                if language is not None:
-                    language = language.value
+                language = m.language.value
         if language is None:
             language = self._get_value("language")
         if language is None:
             print("%s: cannot detect language, default to c." % str(target_path))
             language = "c"
+        file_extension = self._get_value("extension")
+        if file_extension is None:
+            _, _, file_extension = find_language(language)
         value = self._get_value("code")
         cell = {
             "path": other._path,
             "type": "cell",
             "celltype": "code",
             "language": language,
+            "file_extension": file_extension,
             "transformer": True,
         }
         if value is not None:
@@ -187,7 +189,7 @@ class CompiledObjectWrapper:
             tf = worker._get_tf()
             main_module = getattr(tf, "main_module")
             main_module_handle = main_module.handle
-            main_module_data = main_module.data.value
+            main_module_data = main_module.data
             if main_module_data is not None:
                 objname = self._obj
                 if objname in main_module_data:
@@ -207,7 +209,7 @@ class CompiledObjectWrapper:
         else:
             tf = worker._get_tf(may_translate=False)
             main_module = getattr(tf, "main_module")
-            main_module_data = main_module.data.value
+            main_module_data = main_module.data
             if "objects" not in main_module_data:
                 return []
             if self._obj not in main_module_data["objects"]:

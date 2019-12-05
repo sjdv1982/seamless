@@ -8,7 +8,7 @@ class TransformerUpdateTask(Task):
         self.dependencies.append(transformer)
 
     async def _run(self):
-        transformer = self.transformer
+        transformer = self.transformer        
         manager = self.manager()
         livegraph = manager.livegraph
         taskmanager = manager.taskmanager
@@ -47,9 +47,14 @@ class TransformerUpdateTask(Task):
         for pinname, accessor in upstreams.items():
             inputpins[pinname] = accessor._checksum
         set_tf = True
+        """ 
+        # This currently misbehaves... transformers get cancelled, which sets their checksum to none...
+        #  and then they get never updated...
+
         if is_equal(inputpins, transformer._last_inputs):
             if not transformer._void:
                 set_tf = False
+        """
         if set_tf:
             manager._set_transformer_checksum(
                 transformer, None, False, prelim=False

@@ -214,8 +214,9 @@ class TransformationCache:
             if old_tf_checksum is not None:
                 old_transformation = self.transformations[old_tf_checksum]
                 self.decref_transformation(old_transformation, transformer)
-        result_checksum, prelim = self._get_transformation_result(tf_checksum)
+        result_checksum, prelim = self._get_transformation_result(tf_checksum)        
         if result_checksum is not None and isinstance(transformer, Transformer):
+            #print("CACHE HIT", transformer, result_checksum.hex())
             manager = transformer._get_manager()
             manager._set_transformer_checksum(
                 transformer, 

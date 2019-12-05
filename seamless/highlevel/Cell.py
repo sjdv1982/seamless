@@ -38,6 +38,14 @@ class Cell(Base):
         #TODO: return the other partner of all Link objects with self in it
         return [] #stub
 
+    def __rshift__(self, other):
+        from .proxy import Proxy
+        proxy = Proxy(self._parent(), "w")        
+        assert isinstance(other, Proxy)
+        assert "r" in other._mode
+        assert other._pull_source is not None
+        other._pull_source(proxy)
+
     def __str__(self):
         return str(self._get_cell())
         """
@@ -439,6 +447,9 @@ class Cell(Base):
         else:
             cell._set_observer(self._observe_cell)        
 
+    def __str__(self):
+        return "Seamless Cell: %s" % self._path
+
 def cell_binary_method(self, other, name):
     h = self.handle 
     method = getattr(h, name)
@@ -450,6 +461,8 @@ def cell_binary_method(self, other, name):
 from functools import partialmethod
 from ..silk.SilkBase import binary_special_method_names
 for name in binary_special_method_names:
+    if name in Cell.__dict__:
+        continue
     m = partialmethod(cell_binary_method, name=name)
     setattr(Cell, name, m)
 

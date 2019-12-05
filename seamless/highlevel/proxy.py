@@ -34,13 +34,9 @@ class Proxy:
         other._pull_source(self)
 
     def __str__(self):
-        value = self.value
-        if value is None:
-            return "<does not exist>"
-        else:
-            #return str(value)
-            path = self._parent()._path + self._path
-            return "Proxy for %s" % ("." + ".".join(path))
+        path = self._parent()._path + self._path
+        return "%s for %s" % (type(self).__name__, "." + ".".join(path))
+            
 
     def __setattr__(self, attr, value):
         if attr.startswith("_"):

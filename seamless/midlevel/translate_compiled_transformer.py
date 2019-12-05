@@ -1,6 +1,5 @@
 import os, json
-from seamless.core import cell, link, \
- transformer, context, StructuredCell
+from seamless.core import cell, transformer, context
 from ..midlevel.StaticContext import StaticContext
 
 import seamless

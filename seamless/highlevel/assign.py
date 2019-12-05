@@ -249,12 +249,12 @@ def assign(ctx, path, value):
     if isinstance(value, Transformer):
         value._assign_to(ctx, path)
     elif isinstance(value, Cell):
-        if value._parent is None:
+        if value._parent() is None:
             value._init(ctx, path)
             cell = get_new_cell(path)
             ctx._graph.nodes[path] = cell
         else:
-            assert value._parent() is ctx
+            assert value._parent() is ctx, value
             assign_connection(ctx, value._path, path, True)
         ctx._translate()
     elif isinstance(value, (Resource, ConstantTypes)):

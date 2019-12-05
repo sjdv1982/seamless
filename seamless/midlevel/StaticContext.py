@@ -119,21 +119,30 @@ class SimpleCellWrapper(WrapperBase):
         if celltype == "mixed":
             hash_pattern = self._node.get("hash_pattern")
             result = cell("mixed", hash_pattern=hash_pattern)
+        elif celltype == "code":
+            language = self._node["language"]
+            if language in ("python", "ipython"):
+                result = cell(celltype=language)
+            else:
+                result = cell(celltype="text")
         else:
-            result = cell(celltype=self._celltype)        
+            result = cell(celltype=celltype)        
         result.set_checksum(self._checksum)
         return result
 
     def _get_value(self, copy):
         celltype = self._celltype
         checksum = self._checksum
-        if checksum is not None:
-            checksum = bytes.fromhex(checksum)
+        if checksum is None:
+            return None
+        checksum = bytes.fromhex(checksum)
         if not copy:
             cached_value = deserialize_cache.get((checksum, celltype))
             if cached_value is not None:
                 return cached_value
         buffer = self.buffer
+        if buffer is None:
+            return None
         task = DeserializeBufferTask(
             self._manager, buffer, checksum, celltype, 
             copy=copy

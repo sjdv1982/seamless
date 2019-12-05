@@ -1,0 +1,27 @@
+{
+  "connections": [],
+  "nodes": [
+    {
+      "celltype": "code",
+      "checksum": {
+        "value": "85b5fd1dcec9592a83be86ebf2d5a9c939f0abb0521432a540096ccacf764ed3"
+      },
+      "datatype": "mixed",
+      "language": "python",
+      "mount": {
+        "authority": "file",
+        "mode": "r",
+        "path": "executor.py",
+        "persistent": true
+      },
+      "path": [
+        "executor_code"
+      ],
+      "transformer": true,
+      "type": "cell"
+    }
+  ],
+  "params": {
+    "from_lib": null
+  }
+}

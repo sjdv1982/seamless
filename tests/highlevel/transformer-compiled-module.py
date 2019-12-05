@@ -4,17 +4,17 @@ from seamless.highlevel import Context, Cell
 ctx = Context()
 
 ctx.a = 10
-ctx.a.celltype = "json"
+ctx.a.celltype = "plain"
 
 ctx.b = 30
-ctx.b.celltype = "json"
+ctx.b.celltype = "plain"
 
 def build_transformer():
     ctx.transform = lambda a,b: a + b
     ctx.transform.example.a = 0
     ctx.transform.example.b = 0
     ctx.result = ctx.transform
-    ctx.result.celltype = "json"
+    ctx.result.celltype = "plain"
 
     ctx.transform.a = ctx.a
     ctx.transform.b = ctx.b
@@ -34,6 +34,7 @@ def build_transformer():
     double add(int a, int b) {return a+b;};
     """
     ctx.add_code >> ctx.transform.main_module.add.code
+    node = ctx.add_code._get_hcell()
     ctx.add_code.set(code)
 
 build_transformer()
@@ -42,6 +43,13 @@ print(ctx.result.value)
 
 ########################
 
+print("START")
+build_transformer()
+ctx.equilibrate()
+print(ctx.result.value)
+
+print("START2")
+ctx.a = 100
 build_transformer()
 ctx.equilibrate()
 print(ctx.result.value)

@@ -29,7 +29,7 @@ old_cwd = os.getcwd()
 try:
     tempdir = tempfile.mkdtemp(prefix="seamless-bash-transformer")
     os.chdir(tempdir)
-    for pin in pins:
+    for pin in pins_:
         v = globals()[pin]
         if isinstance(v, Silk):
             v = v.data
