@@ -62,7 +62,7 @@ def translate_bash_transformer(node, root, namespace, inchannels, outchannels, l
         p = {"io": "input"}
         p.update(pin)
         all_pins[pinname] = p
-    all_pins[result_name] = {"io": "output", "transfer_mode": "copy"}    
+    all_pins[result_name] = {"io": "output"}    
     if node["SCHEMA"]:
         assert with_result
         raise NotImplementedError

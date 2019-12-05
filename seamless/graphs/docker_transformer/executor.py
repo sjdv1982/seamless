@@ -30,7 +30,7 @@ try:
     else:
         env = {}
     options["environment"] = env
-    for pin in pins:
+    for pin in pins_:
         v = globals()[pin]
         if isinstance(v, Silk):
             v = v.data

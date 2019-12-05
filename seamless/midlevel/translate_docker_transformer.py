@@ -1,17 +1,21 @@
-from seamless.core import cell as core_cell, link as core_link, \
- transformer, reactor, context, macro, StructuredCell
+import os, json
+from seamless.core import cell, transformer, context
+from ..midlevel.StaticContext import StaticContext
 
+import seamless
+seamless_dir = os.path.dirname(seamless.__file__)
+graphfile = os.path.join(seamless_dir, 
+    "graphs", "docker_transformer.seamless"
+)
+zipfile = os.path.join(seamless_dir, 
+    "graphs", "docker_transformer.zip"
+)
+graph = json.load(open(graphfile))
+sctx = StaticContext.from_graph(graph)
+sctx.add_zip(zipfile)
 
 def translate_docker_transformer(node, root, namespace, inchannels, outchannels, lib_path00, is_lib):
-    raise NotImplementedError # low-level library has been ripped
-    #TODO: simple translation, without a structured cell
-    #TODO: there is a lot of common code with py transformer
-    assert not "code" in node ### node["code"] is an outdated attribute
-
-    # Just to register the "docker_transformer" lib
-    from seamless.core.macro_mode import get_macro_mode, curr_macro    
-    from seamless.lib.docker_transformer import docker_transformer as _
-
+    from .translate import set_structured_cell_from_checksum
     inchannels = [ic for ic in inchannels if ic[0] != "code"]
 
     parent = get_path(root, node["path"][:-1], None, None)
@@ -22,22 +26,25 @@ def translate_docker_transformer(node, root, namespace, inchannels, outchannels,
 
     result_name = node["RESULT"]
     input_name = node["INPUT"]
+    result_cell_name = result_name + "_CELL"
+    forbidden = [result_name, result_cell_name, "docker_command", "docker_image", "docker_options", "pins_"]
+    pin_intermediate = {}
+    for pin in node["pins"].keys():
+        pin_intermediate[pin] = input_name + "_PIN_" + pin
+        forbidden.append(pin_intermediate[pin])
     for c in inchannels:
-        assert (not len(c)) or c[0] != result_name #should have been checked by highlevel
+        assert (not len(c)) or c[0] not in forbidden #should have been checked by highlevel
 
     with_result = node["with_result"]
     pins = node["pins"].copy()
-    for extrapin in ("docker_command", "pins"):
-        assert extrapin not in node["pins"], extrapin
-        pins[extrapin] =  {
-            "transfer_mode": "ref",
-            "access_mode": "plain",
-            "content_type": None,
-        }
-    pins0 = pins.copy()
-    pins0.pop("docker_image")
-    pins0.pop("docker_options")
-    ctx.pins = core_cell("plain").set(list(pins0.keys()))
+    pins["docker_command"] = {"celltype": "str"}
+    pins["docker_image"] = {"celltype": "str"}
+    pins["docker_options"] = {"celltype": "plain"}
+    pins["pins_"] = {"celltype": "plain"}
+    pins0 = list(pins.keys())
+    pins0.remove("docker_image")
+    pins0.remove("docker_options")
+    ctx.pins = cell("plain").set(pins0)
 
     interchannels = [as_tuple(pin) for pin in pins]
     mount = node.get("mount", {})
@@ -60,9 +67,10 @@ def translate_docker_transformer(node, root, namespace, inchannels, outchannels,
         p = {"io": "input"}
         p.update(pin)
         all_pins[pinname] = p
-    all_pins[result_name] = {"io": "output", "transfer_mode": "copy"}    
+    all_pins[result_name] = {"io": "output"}    
     if node["SCHEMA"]:
         assert with_result
+        raise NotImplementedError
         all_pins[node["SCHEMA"]] = {
             "io": "input", "transfer_mode": "json",
             "access_mode": "json", "content_type": "json"
@@ -72,32 +80,44 @@ def translate_docker_transformer(node, root, namespace, inchannels, outchannels,
         ctx.tf.debug = True
     if lib_path00 is not None:
         lib_path = lib_path00 + "." + name + ".code"
-        ctx.code = libcell(lib_path)
+        ###ctx.code = libcell(lib_path)
+        raise NotImplementedError
     else:
-        ctx.code = core_cell("text")
+        ctx.code = cell("text")
         if "code" in mount:
             ctx.code.mount(**mount["code"])
 
-    ctx.pins.connect(ctx.tf.pins)
+    ctx.pins.connect(ctx.tf.pins_)
     ctx.code.connect(ctx.tf.docker_command)
     checksum = node.get("checksum", {})
     if "code" in checksum:
         ctx.code._set_checksum(checksum["code"], initial=True)
-    if "schema" in checksum:
-        inp._set_checksum(checksum["schema"], schema=True, initial=True)
-    if "input" in checksum:
-        inp._set_checksum(checksum["input"], initial=True)
+    inp_checksum = {}
+    for k in checksum:
+        if k == "schema":
+            inp_checksum[k] = checksum[k]
+            continue
+        if not k.startswith("input"):
+            continue
+        k2 = "value" if k == "input" else k[len("input_"):]
+        inp_checksum[k2] = checksum[k]
+    set_structured_cell_from_checksum(inp, inp_checksum)
 
-    with library.bind("docker_transformer"):
-        ctx.executor_code = libcell(".executor_code")    
+    ctx.executor_code = sctx.executor_code.cell()
     ctx.executor_code.connect(ctx.tf.code)
 
     namespace[node["path"] + ("code",), True] = ctx.code, node
     namespace[node["path"] + ("code",), False] = ctx.code, node
 
-    for pin in list(node["pins"].keys()):
-        target = getattr(ctx.tf, pin)
-        inp.outchannels[(pin,)].connect(target)
+    for pinname, pin in node["pins"].items():
+        target = getattr(ctx.tf, pinname)
+        celltype = pin.get("celltype", "mixed")
+        if celltype == "code":
+            celltype = "text"        
+        intermediate_cell = cell(celltype)
+        setattr(ctx, pin_intermediate[pinname], intermediate_cell)
+        inp.outchannels[(pinname,)].connect(intermediate_cell)
+        intermediate_cell.connect(target)
 
     if with_result:
         result, result_ctx = build_structured_cell(
@@ -111,15 +131,21 @@ def translate_docker_transformer(node, root, namespace, inchannels, outchannels,
 
         setattr(ctx, result_name, result)
 
-        result_pin = getattr(ctx.tf, result_name)
-        result_pin.connect(result.inchannels[()])
+        result_pin = getattr(ctx.tf, result_name)        
+        result_cell = cell("mixed")
+        setattr(ctx, result_cell_name, result_cell)
+        result_pin.connect(result_cell)
+        result_cell.connect(result.inchannels[()])
         if node["SCHEMA"]:
             schema_pin = getattr(ctx.tf, node["SCHEMA"])
             result.schema.connect(schema_pin)
-        if "result" in checksum:
-            result._set_checksum(checksum["result"], initial=True)
-        if "result_schema" in checksum:
-            result._set_checksum(checksum["result_schema"], schema=True, initial=True)
+        result_checksum = {}        
+        for k in checksum:
+            if not k.startswith("result"):
+                continue
+            k2 = "value" if k == "result" else k[len("result_"):]
+            result_checksum[k2] = checksum[k]
+        set_structured_cell_from_checksum(result, result_checksum)
     else:
         for c in outchannels:
             assert len(c) == 0 #should have been checked by highlevel

@@ -12,7 +12,8 @@ ctx.tf.testdata = "a \nb \nc \nd \ne \nf \n"
 ctx.tf.lines = 3
 ctx.tf.code = ctx.code
 ctx.result = ctx.tf
-ctx.result.mount("/tmp/result")
+ctx.result.celltype = "text"
+ctx.result.mount("/tmp/result", "w")
 ctx.translate(force=True)
 ctx.equilibrate()
 print(ctx.result.value)
