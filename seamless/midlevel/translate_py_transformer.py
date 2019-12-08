@@ -1,7 +1,7 @@
 from seamless.core import cell, link, \
  transformer, context, StructuredCell
 
-def translate_py_transformer(node, root, namespace, inchannels, outchannels, lib_path00, is_lib):
+def translate_py_transformer(node, root, namespace, inchannels, outchannels):
     from .translate import set_structured_cell_from_checksum
     #TODO: simple translation, without a structured cell    
 
@@ -9,7 +9,6 @@ def translate_py_transformer(node, root, namespace, inchannels, outchannels, lib
 
     parent = get_path(root, node["path"][:-1], None, None)
     name = node["path"][-1]
-    lib_path0 = lib_path00 + "." + name if lib_path00 is not None else None
     ctx = context(toplevel=False)
     setattr(parent, name, ctx)
 
@@ -36,7 +35,6 @@ def translate_py_transformer(node, root, namespace, inchannels, outchannels, lib
     mount = node.get("mount", {})    
     inp, inp_ctx = build_structured_cell(
       ctx, input_name, inchannels, interchannels,
-      lib_path0,
       return_context=True
     )
 
@@ -63,17 +61,12 @@ def translate_py_transformer(node, root, namespace, inchannels, outchannels, lib
     ctx.tf = transformer(all_pins)
     if node["debug"]:
         ctx.tf.debug = True
-    if lib_path00 is not None:
-        lib_path = lib_path00 + "." + name + ".code"
-        raise NotImplementedError
-        ###ctx.code = libcell(lib_path)
+    if node["language"] == "ipython":
+        ctx.code = cell("ipython")
     else:
-        if node["language"] == "ipython":
-            ctx.code = cell("ipython")
-        else:
-            ctx.code = cell("transformer")
-        if "code" in mount:
-            ctx.code.mount(**mount["code"])
+        ctx.code = cell("transformer")
+    if "code" in mount:
+        ctx.code.mount(**mount["code"])
 
     ctx.code.connect(ctx.tf.code)
     checksum = node.get("checksum", {})
@@ -101,7 +94,7 @@ def translate_py_transformer(node, root, namespace, inchannels, outchannels, lib
     if with_result:
         result, result_ctx = build_structured_cell(
             ctx, result_name, [()],
-            outchannels, lib_path0,
+            outchannels,
             return_context=True
         )
         namespace[node["path"] + ("RESULTSCHEMA",), False] = result.schema, node

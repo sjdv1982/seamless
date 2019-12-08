@@ -1,12 +1,8 @@
-libcell, libpath => Library rework!!
-(also update documentation of Library.py)
-re-think depsgraph and stuffs => tests/highlevel/constructor/*.py
-To clean up: look for "libname" and "libpath" everywhere in highlevel/
-
 E. The mid/high level
 - High-level links; maybe (re-)implement them at the low level 
   (double edit pin is not good)
   Must be between simple cells, that have no incoming connections; no support for transformer.code; later support it for .schema/.result_schema.
+- Hash patterns for high-level cells (mixed and structured cells)
 - Graph loading works really well now, used ubiquitously:
   - When creating a graph, expression cache is now lost; include it in the graph!
   - Loading from high-level library: 
@@ -20,12 +16,12 @@ E. The mid/high level
       can be modified after construction). 
       ctx.set_graph(libctx.get_graph()) will just copy,
       but ctx can be filled in manually. In the end, ctx.get_graph() is added to the parent graph right before translation.
-- Compiled and bash transformers (using low level library!)
 - High-level Macro construct around low-level macro; 
   shouldn't be too hard, but connections could be tricky.
   Wrapping everything in a single Macro with some connections into .share, .mount etc.
    is a good way to get sth working quickly, until the high level works well.
 3. Run tests
+3a. Test in Docker container
 4. Test in Jupyter
 5. Test Observable Notebook (client JS has changed)
 6. Re-run examples, in particular capri and snakemake
@@ -60,6 +56,7 @@ Seamless is now usable by me, to port RPBS services/Snakemake workflows to inter
 1: Towards a first real example
 - high level: reassigning transformers does weird stuff, and equilibrate seems necessary everywhere
 - Get reactors working again at the high level
+- Traitlets (move to low level?)
 - Constructors, finish testing
   Test library-containing-another-library    
   Make sure constructors work correctly when copying parent contexts

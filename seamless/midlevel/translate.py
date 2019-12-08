@@ -75,21 +75,17 @@ def set_structured_cell_from_checksum(cell, checksum):
         cell._join()
 
 
-def translate_py_reactor(node, root, namespace, inchannels, outchannels, lib_path00, is_lib):
+def translate_py_reactor(node, root, namespace, inchannels, outchannels):
     raise NotImplementedError ### cache branch
     #TODO: simple-mode translation, without a structured cell
     skip_channels = ("code_start", "code_update", "code_stop")
     inchannels = [ic for ic in inchannels if ic[0] not in skip_channels]
     parent = get_path(root, node["path"][:-1], None, None)
     name = node["path"][-1]
-    lib_path0 = lib_path00 + "." + name if lib_path00 is not None else None
     ctx = context(context=parent, name=name)
     setattr(parent, name, ctx)
 
     io_name = node["IO"]
-    if len(inchannels):
-        lib_path0 = None #partial authority or no authority; no library update in either case
-
     interchannels_in = [as_tuple(p) for p, pin in node["pins"].items() if pin["io"] == "output"]
     interchannels_out = [as_tuple(p) for p, pin in node["pins"].items() if pin["io"] == "input"]    
 
@@ -98,7 +94,7 @@ def translate_py_reactor(node, root, namespace, inchannels, outchannels, lib_pat
 
     build_structured_cell(
       ctx, io_name,
-      all_inchannels, all_outchannels, lib_path0,
+      all_inchannels, all_outchannels,
     )
     for inchannel in inchannels:
         path = node["path"] + inchannel
@@ -109,16 +105,10 @@ def translate_py_reactor(node, root, namespace, inchannels, outchannels, lib_pat
 
     ctx.rc = reactor(node["pins"])
     for attr in ("code_start", "code_stop", "code_update"):
-        if lib_path00 is not None:
-            lib_path = lib_path00 + "." + name + "." + attr
-            raise NotImplementedError ###
-            ###c = libcell(lib_path)
-            setattr(ctx, attr, c)
-        else:
-            c = core_cell(node["language"])
-            setattr(ctx, attr, c)
-            if "mount" in node and attr in node["mount"]:
-                c.mount(**node["mount"][attr])
+        c = core_cell(node["language"])
+        setattr(ctx, attr, c)
+        if "mount" in node and attr in node["mount"]:
+            c.mount(**node["mount"][attr])
         c.connect(getattr(ctx.rc, attr))
         code = node.get(attr)
         if code is None:
@@ -143,15 +133,13 @@ def translate_py_reactor(node, root, namespace, inchannels, outchannels, lib_pat
     namespace[node["path"], True] = io, node
     namespace[node["path"], False] = io, node
 
-def translate_cell(node, root, namespace, inchannels, outchannels, lib_path0, is_lib, link_target=None):
+def translate_cell(node, root, namespace, inchannels, outchannels, link_target=None):
     from ..core.cache.buffer_cache import buffer_cache
     from ..core.protocol.deserialize import deserialize_sync
     path = node["path"]
     parent = get_path(root, path[:-1], None, None)
     name = path[-1]
     ct = node["celltype"]
-    if len(inchannels):
-        lib_path0 = None #partial authority or no authority; no library update in either case
     if ct == "structured":
         assert not link_target
         datatype = node["datatype"]
@@ -160,7 +148,7 @@ def translate_cell(node, root, namespace, inchannels, outchannels, lib_path0, is
         child = build_structured_cell(
           parent, name,
           inchannels, outchannels,
-          lib_path0, mount=mount
+          mount=mount
         )
         for inchannel in inchannels:
             cname = child.inchannels[inchannel].subpath
@@ -179,11 +167,6 @@ def translate_cell(node, root, namespace, inchannels, outchannels, lib_path0, is
             assert not len(c) #should have been checked by highlevel
         if link_target:
             child = core_link(link_target)
-        elif lib_path0:
-            lib_path + lib_path0 + "." + name
-            raise NotImplementedError ###
-            ###child = libcell(lib_path)
-            #TODO: allow fork to be set
         else:
             if ct == "code":                
                 if node["language"] in ("python", "ipython"):
@@ -333,8 +316,7 @@ def import_before_translate(graph):
             elif node["language"] == "docker":
                 from .translate_docker_transformer import translate_docker_transformer
 
-def translate(graph, ctx, from_lib_paths):
-    is_lib = False ###
+def translate(graph, ctx):
     ###import traceback; stack = traceback.extract_stack(); print("TRANSLATE:"); print("".join(traceback.format_list(stack[:3])))
     nodes, connections = graph["nodes"], graph["connections"]
     contexts = {con["path"]: con for con in nodes if con["type"] == "context"}
@@ -386,12 +368,10 @@ def translate(graph, ctx, from_lib_paths):
         if t in ("context", "link"):
             continue
         path = node["path"]
-        ###lib_path = get_lib_path(path[:-1], from_lib_paths)
-        lib_path = None ### TODO
         if t == "cell" and path in link_target_paths:
             assert node["celltype"] != "structured" #low-level links are between simple cells!
             inchannels, outchannels = find_channels(path, connection_paths)
-            translated_cell = translate_cell(node, ctx, namespace, inchannels, outchannels,  lib_path, is_lib)
+            translated_cell = translate_cell(node, ctx, namespace, inchannels, outchannels)
             link_targets[path] = translated_cell
 
     #print("LOW-LEVEL LINKS", lowlevel_links)
@@ -402,26 +382,24 @@ def translate(graph, ctx, from_lib_paths):
         if t in ("context", "link"):
             continue
         path = node["path"]
-        ###lib_path = get_lib_path(path[:-1], from_lib_paths)
-        lib_path = None
         if t == "transformer":
             inchannels, outchannels = find_channels(node["path"], connection_paths)
             if node["compiled"]:
                 from .translate_compiled_transformer import translate_compiled_transformer
-                translate_compiled_transformer(node, ctx, namespace, inchannels, outchannels, lib_path, is_lib)
+                translate_compiled_transformer(node, ctx, namespace, inchannels, outchannels)
             elif node["language"] in ("python", "ipython"):
-                translate_py_transformer(node, ctx, namespace, inchannels, outchannels, lib_path, is_lib)
+                translate_py_transformer(node, ctx, namespace, inchannels, outchannels)
             elif node["language"] == "bash":
-                translate_bash_transformer(node, ctx, namespace, inchannels, outchannels, lib_path, is_lib)
+                translate_bash_transformer(node, ctx, namespace, inchannels, outchannels)
             elif node["language"] == "docker":
-                translate_docker_transformer(node, ctx, namespace, inchannels, outchannels, lib_path, is_lib)
+                translate_docker_transformer(node, ctx, namespace, inchannels, outchannels)
             else:
                 raise NotImplementedError(node["language"])
         elif t == "reactor":
             if node["language"] not in ("python", "ipython"):
                 raise NotImplementedError(node["language"])
             inchannels, outchannels = find_channels(node["path"], connection_paths)
-            translate_py_reactor(node, ctx, namespace, inchannels, outchannels, lib_path, is_lib)
+            translate_py_reactor(node, ctx, namespace, inchannels, outchannels)
         elif t == "cell":
             if path in link_target_paths:
                 continue #done already before
@@ -429,7 +407,7 @@ def translate(graph, ctx, from_lib_paths):
             link_target = None
             if path in lowlevel_links:
                 link_target = link_targets[lowlevel_links[path]]
-            translate_cell(node, ctx, namespace, inchannels, outchannels, lib_path, is_lib, link_target=link_target)
+            translate_cell(node, ctx, namespace, inchannels, outchannels, link_target=link_target)
         else:
             raise TypeError(t)
         node.pop("UNTRANSLATED", None)

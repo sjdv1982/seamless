@@ -194,23 +194,18 @@ def _assign_context2(ctx, new_nodes, new_connections, path, old_ctx):
         con["target"] = path + con["target"]
         connections.append(con)
 
-def _assign_context(ctx, new_nodes, new_connections, path, old_ctx, from_lib):
+def _assign_context(ctx, new_nodes, new_connections, path, old_ctx):
     ctx._destroy_path(path)
     _assign_context2(ctx, new_nodes, new_connections, path, old_ctx)
     subctx = ctx._graph.nodes[path]
     assert subctx["type"] == "context", path
-    if from_lib is not None:
-        subctx["from_lib"] = from_lib.name
-        from_lib.copy_deps.add((weakref.ref(ctx), path))
     ctx._translate()
 
 def assign_context(ctx, path, value):
     old_ctx = value
     graph = old_ctx.get_graph()
     new_nodes, new_connections = graph["nodes"], graph["connections"]
-    ###from_lib = old_ctx._as_lib
-    from_lib = None ### TODO
-    _assign_context(ctx, new_nodes, new_connections, path, old_ctx, from_lib)
+    _assign_context(ctx, new_nodes, new_connections, path, old_ctx)
 
 def assign_to_subcell(cell, path, value):
     from ..core.structured_cell import StructuredCell
@@ -234,17 +229,8 @@ def assign_to_subcell(cell, path, value):
         raise TypeError(value)
 
 
-def assign_library_context_instance(ctx, path, lci):
-    raise NotImplementedError
-    """
-    libname = lci.libname
-    depsgraph = ctx._depsgraph
-    dep = depsgraph.construct_library(libname, path, lci.args, lci.kwargs)
-    depsgraph.evaluate_dep(dep)
-    """
-
 def assign(ctx, path, value):
-    from .Context import Context, SubContext, LibraryContextInstance
+    from .Context import Context, SubContext
     from .proxy import Proxy
     if isinstance(value, Transformer):
         value._assign_to(ctx, path)
@@ -303,9 +289,6 @@ def assign(ctx, path, value):
         ctx._translate()
     elif isinstance(value, Link):
         value._init(ctx, path)
-        ctx._translate()
-    elif isinstance(value, LibraryContextInstance):
-        assign_library_context_instance(ctx, path, value)
         ctx._translate()
     elif isinstance(value, CompiledObjectDict):
         raise TypeError("Cannot assign directly to all module objects; assign to individual elements")

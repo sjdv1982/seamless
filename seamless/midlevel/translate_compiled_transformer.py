@@ -90,7 +90,7 @@ def _finalize(
 
     ctx.module.connect(ctf.translator.module)
 
-def translate_compiled_transformer(node, root, namespace, inchannels, outchannels, lib_path00, is_lib):
+def translate_compiled_transformer(node, root, namespace, inchannels, outchannels):
     from .translate import set_structured_cell_from_checksum
     #TODO: still a lot of common code with translate_py_transformer, put in functions
     inchannels = [ic for ic in inchannels if ic[0] != "code"]
@@ -100,7 +100,6 @@ def translate_compiled_transformer(node, root, namespace, inchannels, outchannel
 
     parent = get_path(root, node["path"][:-1], None, None)
     name = node["path"][-1]
-    lib_path0 = lib_path00 + "." + name if lib_path00 is not None else None
     ctx = context(toplevel=False)
     setattr(parent, name, ctx)
 
@@ -123,7 +122,6 @@ def translate_compiled_transformer(node, root, namespace, inchannels, outchannel
     mount = node.get("mount", {})
     inp, inp_ctx = build_structured_cell(
       ctx, input_name, inchannels, [()],
-      lib_path0,
       return_context=True
     )
 
@@ -157,7 +155,6 @@ def translate_compiled_transformer(node, root, namespace, inchannels, outchannel
     ctx.main_module = build_structured_cell(
       ctx, "main_module", 
       main_module_inchannels, [()],
-      lib_path00
     )    
 
     for ic in main_module_inchannels:
@@ -169,15 +166,10 @@ def translate_compiled_transformer(node, root, namespace, inchannels, outchannel
     debug = node["debug"]
     _init_from_graph(ctf, debug)
 
-    if lib_path00 is not None:
-        lib_path = lib_path00 + "." + name + ".code"
-        raise NotImplementedError
-        ###ctx.code = libcell(lib_path)
-    else:
-        ctx.code = cell("text")
-        ctx.code.set_file_extension(node["file_extension"])
-        if "code" in mount:
-            ctx.code.mount(**mount["code"])
+    ctx.code = cell("text")
+    ctx.code.set_file_extension(node["file_extension"])
+    if "code" in mount:
+        ctx.code.mount(**mount["code"])
 
     checksum = node.get("checksum", {})
     if "code" in checksum:
@@ -199,7 +191,7 @@ def translate_compiled_transformer(node, root, namespace, inchannels, outchannel
 
     result, result_ctx = build_structured_cell(
         ctx, result_name, [()],
-        outchannels, lib_path0,
+        outchannels,
         return_context=True
     )
     namespace[node["path"] + ("RESULTSCHEMA",), False] = result.schema, node

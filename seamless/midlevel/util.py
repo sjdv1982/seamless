@@ -68,48 +68,22 @@ def find_channels(path, connection_paths):
 
 def build_structured_cell(
   ctx, name,
-  inchannels, outchannels, lib_path0,
+  inchannels, outchannels,
   *, mount=None, return_context=False,
   hash_pattern=None
 ):
     if hash_pattern is not None:
         raise NotImplementedError
-    #print("build_structured_cell", name, lib_path)
+    #print("build_structured_cell", name)
     name2 = name + STRUC_ID
     c = context(toplevel=False)
     setattr(ctx, name2, c)
     if mount is not None:
         c.mount(**mount)
-    lib_path = lib_path0 + "." + name2 if lib_path0 is not None else None
-    if lib_path:
-        path = lib_path + ".data"
-        raise NotImplementedError ###
-        # (should not be allowed for .data ...)
-        ###c.data = libcell(path, "mixed")
-    else:
-        c.data = core_cell("mixed")
-
-    if lib_path:
-        path = lib_path + ".auth"
-        raise NotImplementedError ###
-        ###c.auth = libcell(path, "mixed")
-    else:
-        c.auth = core_cell("mixed")
-
-    if lib_path:
-        path = lib_path + ".schema"
-        raise NotImplementedError ###
-        ###c.schema = libcell(path)
-    else:
-        c.schema = core_cell("plain")
-        
-    if lib_path:
-        path = lib_path + ".buffer"
-        raise NotImplementedError ###
-        # should not be allowed for buffer...
-        ###c.buffer = libcell(path, "mixed")
-    else:
-        c.buffer = core_cell("mixed")
+    c.data = core_cell("mixed")
+    c.auth = core_cell("mixed")
+    c.schema = core_cell("plain")        
+    c.buffer = core_cell("mixed")
 
     sc = StructuredCell(
         data=c.data,

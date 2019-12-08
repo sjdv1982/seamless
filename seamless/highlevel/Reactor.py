@@ -137,7 +137,6 @@ class Reactor(Base):
         if attr in ("code_start", "code_update", "code_stop"):
             rc = self._get_rc()
             cell = getattr(rc, attr)
-            assert not test_lib_lowlevel(parent, cell)
             if isinstance(value, Resource):
                 hrc[attr] = value.data
             else:
@@ -148,8 +147,6 @@ class Reactor(Base):
                 hrc["pins"][attr] = {"io": "input", "transfer_mode": "copy", "access_mode": "silk"}
                 translate = True
             if isinstance(value, Cell):
-                ###io = getattr(rc, hrc["IO"])
-                ###assert not test_lib_lowlevel(parent, io) #TODO: test this at hrc level, not rc
                 target_path = self._path + (attr,)
                 assert value._parent() == parent
                 #TODO: check existing inchannel connections and links (cannot be the same or higher)
@@ -163,8 +160,6 @@ class Reactor(Base):
                 rc = self._get_rc()
                 io = getattr(rc, hrc["IO"])
                 setattr(io.handle, attr, value)        
-        ###if parent._as_lib is not None:
-        ###    parent._as_lib.needs_update = True
         if translate:
             parent._translate()
 

@@ -15,8 +15,6 @@ from ..core.mount import mountmanager #for now, just a single global mountmanage
 from .assign import assign
 from .proxy import Proxy
 from ..midlevel import copying
-from .Library import register_library
-from .depsgraph import DepsGraph
 
 Graph = namedtuple("Graph", ("nodes", "connections", "params"))
 
@@ -25,10 +23,7 @@ shareserver = None
 
 class Context(Base):
     _mount = None
-    _depsgraph = None
     _translating = False
-    _libname = None
-    _auto_register_library = False
     _shares = None
     _translate_count = 0  
     _gen_context = None
@@ -67,17 +62,11 @@ class Context(Base):
             self._manager = manager
         else:
             self._manager = Manager()
-        self._graph = Graph({},[],{"from_lib": None})
+        self._graph = Graph({},[],{})
         self._children = {}
         self._needs_translation = True
         self._parent = weakref.ref(self)
-        if not self._dummy:
-            self._depsgraph = DepsGraph(self)
         self._traitlets = {}
-
-    def __call__(self, *args, **kwargs):
-        assert self._libname is not None #only libraries have constructors
-        return LibraryContextInstance(self._libname, *args, **kwargs)
 
     def _get_path(self, path):
         child = self._children.get(path)
@@ -91,14 +80,6 @@ class Context(Base):
 
     def _get_subcontext(self, path):
         child = self._children[path]
-
-    @property
-    def from_lib(self):
-        return self._graph.params.get("from_lib")
-
-    @from_lib.setter
-    def from_lib(self, value):
-        self._graph.params["from_lib"] = value
 
     def __getattr__(self, attr):
         if attr.startswith("_"):
@@ -143,13 +124,6 @@ class Context(Base):
         traitlet._connect()
         self._traitlets[(path, subpath)] = traitlet
         return traitlet
-
-    def auto_register(self, auto_register=True):
-        """See the doc of Library.py"""
-        if not self._libname:
-            raise TypeError("Context must be a library")
-        self._auto_register_library = True
-        self._do_translate(force=True)
 
     def mount(self, path=None, mode="rw", authority="cell", persistent=None):
         assert not self._dummy
@@ -257,7 +231,6 @@ class Context(Base):
         from ..midlevel.translate import translate, import_before_translate
         if self._dummy:
             return
-        assert self._libname is None
         graph = self._get_graph(copy=False)
         #from pprint import pprint; pprint(graph)
         if not force and not self._needs_translation:
@@ -279,9 +252,7 @@ class Context(Base):
                 if self._mount is not None:
                     ub_ctx._mount = self._mount.copy()
                 self._unbound_context = ub_ctx                
-                ###lib_paths = get_lib_paths(self)
-                lib_paths = None ###
-                translate(graph, ub_ctx, lib_paths)
+                translate(graph, ub_ctx)
                 for traitlet in self._traitlets.values():
                     traitlet._connect()
                 self._connect_share()
@@ -289,12 +260,6 @@ class Context(Base):
         finally:
             self._translating = False
             self._unbound_context = None
-
-        """
-        # TODO: cell update hooks, for library
-        if self._auto_register_library:
-            ctx._get_manager().cell_update_hook(self._library_update_hook)
-        """
         
         self._needs_translation = False
 
@@ -305,10 +270,6 @@ class Context(Base):
                 continue
             else:
                 raise NotImplementedError(type(child)) ### cache branch
-
-        if explicit and self._auto_register_library:
-            #the timeout is just a precaution
-            self.register_library(timeout=5)
 
     def _connect_share(self):
         if self._shares is None:
@@ -337,47 +298,12 @@ class Context(Base):
             cell._set_share_callback(sharefunc)
             sharefunc()
 
-
-
-    def register_library(self, timeout=None):
-        assert not self._dummy
-        assert self._libname is not None #must be a library
-        result = self.equilibrate(timeout)
-        graph = self.get_graph()
-        register_library(graph, self._libname)
-
-    def _library_update_hook(self, cell, value):
-        if self._translating:
-            return
-        #the timeout is just a precaution;
-        # since the _flushing hack on core/mainloop.py,
-        # this is not longer blocking
-        self.register_library(timeout=5) #TODO: fix after New Way
-
-    def set_constructor(self, *, constructor, post_constructor, args, direct_library_access):
-        from .Library import set_constructor
-        assert not self._dummy
-        assert self._libname is not None        
-        set_constructor(
-            self._libname, constructor, post_constructor, 
-            args, direct_library_access
-        )
-
     def _destroy_path(self, path):
         nodes = self._graph.nodes
         for p in list(nodes.keys()):
             if p[:len(path)] == path:
                 node = nodes[p]
                 child = self._children.get(p)
-                if node["type"] == "context":
-                    assert child is None
-                    libname = node.get("from_lib")
-                    ### TODO
-                    """
-                    if libname is not None:
-                        libitem = get_libitem(libname)
-                        libitem.copy_deps.remove((weakref.ref(self), path))
-                    """
                 nodes.pop(p)
                 self._children.pop(p, None)
                 if self._shares is not None:
@@ -505,12 +431,6 @@ class SubContext(Base):
         l = len(self._path)
         subs = [p[l] for p in self._parent()._children if len(p) > l and p[:l] == self._path]
         return sorted(d + list(set(subs)))
-
-class LibraryContextInstance:
-    def __init__(self, libname, *args, **kwargs):
-        self.libname = libname
-        self.args = args
-        self.kwargs = kwargs
 
 from .Reactor import Reactor
 from .Transformer import Transformer
