@@ -7,6 +7,7 @@ ctx.mount("/tmp/mount-test")
 
 # 1
 ctx.a = 10
+ctx.a.celltype = "int"
 ctx.translate()
 print("1", ctx.a.value)
 
@@ -22,6 +23,7 @@ def double_it(a):
 ctx.transform = double_it
 ctx.transform.a = ctx.a
 ctx.myresult = ctx.transform
+ctx.myresult.celltype = "int"
 ctx.equilibrate()
 print("2", ctx.myresult.value)
 

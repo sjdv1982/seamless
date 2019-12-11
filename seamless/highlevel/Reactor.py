@@ -282,7 +282,7 @@ class Reactor(Base):
 
     def _get_hrc(self):
         parent = self._parent()
-        return parent._graph[0][self._path]
+        return parent._get_node(self._path)
 
     def __delattr__(self, attr):
         hrc = self._get_hrc()

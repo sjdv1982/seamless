@@ -41,14 +41,20 @@ def get_path(root, path, namespace, is_target,
         for pnr, p in enumerate(path):
             if isinstance(c, StructuredCell):
                 return c, path[pnr:]
-            c = getattr(c, p)
+            try:
+                c = getattr(c, p)
+            except AttributeError:
+                raise AttributeError(path, p) from None
         if return_node:
             return c, None, ()
         else:
             return c, ()
     else:
         for p in path:
-            c = getattr(c, p)
+            try:
+                c = getattr(c, p)
+            except AttributeError:
+                raise AttributeError(path, p) from None
         if return_node:
             return c, None
         else:

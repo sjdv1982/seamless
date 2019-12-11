@@ -16,7 +16,9 @@ class StatusReport(dict):
     def __str__(self):
         result = {}
         for k,v in self.items():
-            result[k] = str(v)
+            if not isinstance(v, StatusReport):
+                v = str(v)
+            result[k] = v
         return "Status: " + str(result)
     def _repr_pretty_(self, p, cycle):
         return p.text(str(self))

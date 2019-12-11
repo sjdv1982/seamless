@@ -3,19 +3,7 @@ E. The mid/high level
   (double edit pin is not good)
   Must be between simple cells, that have no incoming connections; no support for transformer.code; later support it for .schema/.result_schema.
 - Hash patterns for high-level cells (mixed and structured cells)
-- Graph loading works really well now, used ubiquitously:
-  - When creating a graph, expression cache is now lost; include it in the graph!
-  - Loading from high-level library: 
-    - Register libgraphs under libname. 
-      High-level contexts can have from_lib=libname. 
-      This imperatively adds the libgraph as a context attribute. 
-      However, libsync reloads libgraph from the register, and auto_libsync is possible
-    - libgraph is added into the parent graph right before translation (unless there is a constructor, see below).
-    - Contexts-from-lib can have a constructor. Constructor has as args: 
-      ctx (empty), libctx (full), and params (JSON, will contain *args and **kwargs,
-      can be modified after construction). 
-      ctx.set_graph(libctx.get_graph()) will just copy,
-      but ctx can be filled in manually. In the end, ctx.get_graph() is added to the parent graph right before translation.
+- Reactors
 - High-level Macro construct around low-level macro; 
   shouldn't be too hard, but connections could be tricky.
   Wrapping everything in a single Macro with some connections into .share, .mount etc.
@@ -27,11 +15,6 @@ E. The mid/high level
 6. Re-run examples, in particular capri and snakemake
 
 Medium term:
-- Think of mount + structured cell; files are 
-confusing; maybe disallow it completely (only support
-for simple cells)?
-(also impacts ctx.mount; maybe Context.mount should
-not result in a pass-through)
 - What happens with error messages of setting simple cell values?
 Structured cells have .exception... so do (simple) transformers and macros. 
 What about reactors? There are also the core aux systems
@@ -40,7 +23,7 @@ What about reactors? There are also the core aux systems
 - Allow structured cell schemas to come from upstream
 (same as currently for transformer code). This requires
 the disabling of type inference.
-Alternatively, schema can be high-level linked to a simple cell (requires specific syntax)
+UPDATE: instead, schema can be high-level linked to a simple cell!
 
 =======================================================  
 SOMEWHAT OUTDATED: until: see below

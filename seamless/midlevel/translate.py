@@ -55,14 +55,18 @@ def set_structured_cell_from_checksum(cell, checksum):
 
         if "auth" in checksum:
             cell.modified_auth_paths.add(())
-            cell.auth._set_checksum(
-                checksum["auth"],
-                from_structured_cell=True,
-                initial=True
-            )
-            join = True
-            cell.buffer._void = False
-            cell._data._void = False
+            if cell.auth is None:
+                msg = "Warning: %s has no authority, but an auth checksum is present"
+                print(msg % cell)
+            else:
+                cell.auth._set_checksum(
+                    checksum["auth"],
+                    from_structured_cell=True,
+                    initial=True
+                )
+                join = True
+                cell.buffer._void = False
+                cell._data._void = False
             
         if "schema" in checksum:
             cell.schema._set_checksum(
@@ -408,6 +412,9 @@ def translate(graph, ctx):
             if path in lowlevel_links:
                 link_target = link_targets[lowlevel_links[path]]
             translate_cell(node, ctx, namespace, inchannels, outchannels, link_target=link_target)
+        elif t == "libmacro":
+            msg = "Libmacro '%s' was not removed during pre-translation, or is a nested libmacro"
+            raise TypeError(msg % path)
         else:
             raise TypeError(t)
         node.pop("UNTRANSLATED", None)

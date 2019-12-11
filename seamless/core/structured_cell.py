@@ -108,6 +108,11 @@ class StructuredCell(SeamlessBase):
     def exception(self):
         return self._exception
 
+    @property
+    def status(self):
+        ### TODO
+        return self._data.status
+
     def _validate_channels(self, inchannels, outchannels):
         self.inchannels = PathDict()
         for inchannel in inchannels:

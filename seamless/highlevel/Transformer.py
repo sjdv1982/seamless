@@ -55,7 +55,6 @@ class Transformer(Base):
 
     def _init(self, parent, path, code=None, parameters=None):
         super().__init__(parent, path)
-
         htf = new_transformer(parent, path, code, parameters)
         result_path = self._path + (htf["RESULT"],)
         result = OutputPin(parent, self, result_path)
@@ -344,7 +343,7 @@ class Transformer(Base):
 
     def _get_htf(self):
         parent = self._parent()
-        return parent._graph[0][self._path]
+        return parent._get_node(self._path)
 
     def _get_value(self, attr):
         tf = self._get_tf()
@@ -383,10 +382,7 @@ class Transformer(Base):
     def status(self):
         htf = self._get_htf()
         tf = self._get_tf().tf
-        if htf["compiled"]:
-            return tf.status
-        else:
-            return tf.status
+        return tf.status
 
     def __getattr__(self, attr):
         if attr.startswith("_"):

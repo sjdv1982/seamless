@@ -31,12 +31,12 @@ class Cell(Base):
     def authoritative(self):
         #TODO: determine if the cell didn't get any inbound connections
         # If it did, you can't get another inbound connection, nor a link
-        return True #stub
+        return True ### TODO #stub
 
     @property
     def links(self):
         #TODO: return the other partner of all Link objects with self in it
-        return [] #stub
+        return [] ### TODO #stub
 
     def __rshift__(self, other):
         from .proxy import Proxy
@@ -76,7 +76,7 @@ class Cell(Base):
 
     def _get_hcell(self):
         parent = self._parent()
-        return parent._graph.nodes[self._path]
+        return parent._get_node(self._path)
 
     def _observe_cell(self, checksum):
         if self._parent() is None:
@@ -130,7 +130,7 @@ class Cell(Base):
             if not hcell["celltype"] == "structured":
                 raise AttributeError(item)
             parent = self._parent()
-            readonly = False ###
+            readonly = False ### TODO
             return SubCell(self._parent(), self, (item,), readonly=readonly)
         elif isinstance(item, slice):
             raise NotImplementedError  # TODO: x[min:max] outchannels
@@ -138,7 +138,7 @@ class Cell(Base):
             raise TypeError(item)
 
     def __getattr__(self, attr):
-        if attr in ("value", "example"):
+        if attr in ("value", "example", "status"):
             raise AttributeError(attr) #property has failed
         if attr == "schema":
             hcell = self._get_hcell()
@@ -152,7 +152,7 @@ class Cell(Base):
             cell = self._get_cell()
             return getattr(cell, attr)
         parent = self._parent()
-        readonly = False ###
+        readonly = False ### TODO
         return SubCell(self._parent(), self, (attr,), readonly=readonly)
 
     def mount(self, path=None, mode="rw", authority="cell", persistent=True):
@@ -440,7 +440,7 @@ class Cell(Base):
             cell._set_observer(self._observe_cell)        
 
     def __str__(self):
-        return "Seamless Cell: %s" % self._path
+        return "Seamless Cell: %s" % ".".join(self._path)
 
 def cell_binary_method(self, other, name):
     h = self.handle 
@@ -449,6 +449,10 @@ def cell_binary_method(self, other, name):
         return NotImplemented
     return method(other)
  
+
+def Constant(*args, **kwargs):
+    cell = Cell(*args, **kwargs)
+    cell._get_hcell()["constant"] = True 
 
 from functools import partialmethod
 from ..silk.SilkBase import binary_special_method_names

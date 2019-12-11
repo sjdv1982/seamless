@@ -141,11 +141,13 @@ class Backend:
         self._update(path)
 
 class DefaultBackend(Backend):
-    def __init__(self, plain):
+    def __init__(self, plain, *, data_getter=None, data_setter=None):
         super().__init__(plain)
         self._data = None
         self._form = None
         self._storage = None
+        self._data_getter = data_getter
+        self._data_setter = data_setter
 
     def get_storage(self):
         if self._plain:
@@ -160,7 +162,10 @@ class DefaultBackend(Backend):
         self._storage = value
 
     def get_data(self):
-        return self._data
+        if self._data_getter is not None:
+            return self._data_getter()
+        else:
+            return self._data
 
     def get_form(self):
         return self._form
@@ -183,7 +188,10 @@ class DefaultBackend(Backend):
 
     def _set_path(self, path, data):
         if not len(path):
-            self._data = deepcopy(data)
+            if self._data_setter is not None:
+                self._data_setter(data)
+            else:
+                self._data = deepcopy(data)
             return
         subdata = self.get_path(path[:-1])
         attr = path[-1]
@@ -208,7 +216,10 @@ class DefaultBackend(Backend):
         
     def _del_path(self, path):
         if not len(path):
-            self._data = None
+            if self._data_setter is not None:
+                self._data_setter(None)
+            else:
+                self._data = None
             return
         subdata = self.get_path(path[:-1])
         attr = path[-1]
@@ -249,8 +260,11 @@ class DefaultBackend(Backend):
     def _update(self, path):
         data = self.get_data()
         storage, form = calc_form(data)
-        self._storage = storage
-        self._form = form
+        if self.plain:
+            assert storage == "pure-plain", storage
+        else:
+            self._set_storage(storage)
+            self._form = form
 
 class SilkBackend(DefaultBackend):
     _silk = None

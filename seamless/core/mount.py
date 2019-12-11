@@ -32,6 +32,21 @@ import sys
 def log(*args, **kwargs):
     print(*args, **kwargs, file=sys.stderr)
 
+def multicaps(s):
+    if s is None:
+        return False
+    if isinstance(s, tuple):
+        for ss in s:
+            if multicaps(ss):
+                return True
+        return False
+    if not isinstance(s, str):
+        raise TypeError(type(s))
+    for n in range(len(s)-1):
+        if s[n].isupper() and s[n+1].isupper():
+            return True
+    return False
+
 empty_checksums = {get_hash(json.dumps(v)+"\n",hex=True) for v in ("", {}, [])}
 
 def adjust_buffer(file_buffer, celltype):
@@ -651,6 +666,8 @@ def scan(ctx_or_cell):
     def find_mount(c, as_parent=False, child=None):
         if as_parent:
             assert child is not None
+        elif multicaps(c.path):
+            return
         if c in mounts:
             result = mounts[c]
         elif not is_dummy_mount(c._mount):
@@ -694,10 +711,9 @@ def scan(ctx_or_cell):
                 result["path"] += "/" + child.name
             if isinstance(child, Link):
                 child = child.get_linked()
-            if isinstance(child, Cell) and child._mount is None:
+            if isinstance(child, Cell) and is_dummy_mount(child._mount):
                 if child._structured_cell:
-                    #raise Exception("Structured cells cannot be mounted")
-                    return
+                    raise Exception("Structured cells cannot be mounted: %s" % child)
                 else:
                     livegraph = child._get_manager().livegraph
                     if child._get_macro() is not None or livegraph.will_lose_authority(child):
@@ -761,7 +777,7 @@ def scan(ctx_or_cell):
             return
         if persistent:
             m["persistent"] = True
-        elif m["persistent"] == True and m["autopath"]:
+        elif m["persistent"] == True and m.get("autopath"):
             persistent = True
         if isinstance(c, Context):
             if c._toplevel:
