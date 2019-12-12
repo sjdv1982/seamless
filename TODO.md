@@ -1,10 +1,10 @@
 E. The mid/high level
-E1. High-level links; maybe (re-)implement them at the low level 
-  (double edit pin is not good)
+E1. High-level links; maybe (re-)implement them at the low level ("highlinks")  
   Must be between simple cells, that have no incoming connections; no support for transformer.code; support it for .schema/.result_schema.
 E2. Reactors
 E3. High-level Macro construct around low-level macro; 
   shouldn't be too hard, but connections could be tricky.
+  => Macro.path(...).connect(...) , Macro.path(...).connect_from(...)
   Wrapping everything in a single Macro with some connections into .share, .mount etc.
    is a good way to get sth working quickly, until the high level works well.
 E4. Traitlets: move code to low level??

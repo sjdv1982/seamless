@@ -31,12 +31,12 @@ class Cell(Base):
     def authoritative(self):
         #TODO: determine if the cell didn't get any inbound connections
         # If it did, you can't get another inbound connection, nor a link
-        return True ### TODO #stub
+        return True ### livegraph branch, feature E1
 
     @property
     def links(self):
         #TODO: return the other partner of all Link objects with self in it
-        return [] ### TODO #stub
+        return [] ### livegraph branch, feature E1
 
     def __rshift__(self, other):
         from .proxy import Proxy

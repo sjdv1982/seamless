@@ -9,8 +9,8 @@ from warnings import warn
 from collections import OrderedDict
 from functools import partial
 
-from seamless.core import cell as core_cell, link as core_link, \
- transformer, reactor, context, macro, StructuredCell
+from seamless.core import (cell as core_cell,
+ transformer, reactor, context, macro, StructuredCell)
 
 from . import copying
 from .util import as_tuple, get_path, find_channels, build_structured_cell
@@ -145,13 +145,12 @@ def translate_py_reactor(node, root, namespace, inchannels, outchannels):
     namespace[node["path"], True] = io, node
     namespace[node["path"], False] = io, node
 
-def translate_cell(node, root, namespace, inchannels, outchannels, link_target=None):
+def translate_cell(node, root, namespace, inchannels, outchannels):
     path = node["path"]
     parent = get_path(root, path[:-1], None, None)
     name = path[-1]
     ct = node["celltype"]
     if ct == "structured":
-        assert not link_target
         datatype = node["datatype"]        
         ### TODO: harmonize datatype with schema type
         hash_pattern = node["hash_pattern"]
@@ -177,51 +176,41 @@ def translate_cell(node, root, namespace, inchannels, outchannels, link_target=N
     else: #not structured
         for c in inchannels + outchannels:
             assert not len(c) #should have been checked by highlevel
-        if link_target:
-            child = core_link(link_target)
-        else:
-            if ct == "code":                
-                if node["language"] in ("python", "ipython"):
-                    if node.get("transformer"):
-                        child = core_cell("transformer")
-                    else:
-                        child = core_cell(node["language"])
+        if ct == "code":                
+            if node["language"] in ("python", "ipython"):
+                if node.get("transformer"):
+                    child = core_cell("transformer")
                 else:
-                    child = core_cell("text")
-                    child.set_file_extension(node["file_extension"])
-
-            elif ct in direct_celltypes:
-                child = core_cell(ct)
-                if ct == "mixed":
-                    ct._hash_pattern = node.get("hash_pattern")
+                    child = core_cell(node["language"])
             else:
-                raise ValueError(ct) #unknown celltype; should have been caught by high level
+                child = core_cell("text")
+                child.set_file_extension(node["file_extension"])
+
+        elif ct in direct_celltypes:
+            child = core_cell(ct)
+            if ct == "mixed":
+                ct._hash_pattern = node.get("hash_pattern")
+        else:
+            raise ValueError(ct) #unknown celltype; should have been caught by high level
     setattr(parent, name, child)
     pathstr = "." + ".".join(path)
     checksum = node.get("checksum")
     if checksum is not None:
-        if link_target is not None:
-            warn("Cell %s has a link target, cannot set construction constant" % pathstr)
+        if ct == "structured":
+            set_structured_cell_from_checksum(child, checksum)
         else:
-            if ct == "structured":
-                set_structured_cell_from_checksum(child, checksum)
-            else:
-                if "value" in checksum:
-                    child._set_checksum(checksum["value"], initial=True)
-                """
-                if "temp" in checksum:
-                    assert len(checksum) == 1, checksum.keys()
-                    child._set_checksum(checksum["temp"], initial=True)
-                """
+            if "value" in checksum:
+                child._set_checksum(checksum["value"], initial=True)
+            """
+            if "temp" in checksum:
+                assert len(checksum) == 1, checksum.keys()
+                child._set_checksum(checksum["temp"], initial=True)
+            """
     if ct != "structured":
-        if link_target is not None:
-            if "mount" in node:
-                warn("Cell %s has a link target, cannot mount" % pathstr)
-        else:
-            if "file_extension" in node:
-                child.set_file_extension(node["file_extension"])
-            if "mount" in node:
-                child.mount(**node["mount"])
+        if "file_extension" in node:
+            child.set_file_extension(node["file_extension"])
+        if "mount" in node:
+            child.mount(**node["mount"])
 
     return child
 
@@ -267,44 +256,7 @@ def translate_connection(node, namespace, ctx):
     do_connect(source, target)
 
 def translate_link(node, namespace, ctx):
-    raise NotImplementedError
-    from ..core.structured_cell import Inchannel, Outchannel, StructuredCell
-    first, second = node["first"], node["second"]
-    first_simple, second_simple = first["simple"], second["simple"]
-    if first["simple"] and second["simple"]:
-        return #links between simple cells have been dealt with already, as core.link
-    first, subpath_first = get_path(ctx, first["path"], namespace, False, until_structured_cell=True)
-    second, subpath_second = get_path(ctx, second["path"], namespace, True, until_structured_cell=True)
-
-    first2, second2 = first, second
-    if isinstance(first, StructuredCell):
-        assert not first_simple
-        ###first2 = first.editchannels[subpath_first]
-    else:
-        ###assert first_simple #could come from a CodeProxy!
-        pass
-
-    if isinstance(second, StructuredCell):
-        assert not second_simple
-        ###second2 = second.editchannels[(subpath_second)]
-    else:
-        ###assert second_simple #could come from a CodeProxy!
-        pass
-
-    #print("LINK!", first_simple, second_simple, first, type(first).__name__, second, type(second).__name__)
-    if (not first_simple) and isinstance(first, StructuredCell):
-        ###first.connect_editchannel(subpath_first, second2)
-        pass
-    else:
-        raise NotImplementedError #subpath!
-        first._get_manager().connect_cell(first, second2, duplex=True)
-
-    if (not second_simple) and isinstance(second, StructuredCell):
-        ###second.connect_editchannel(subpath_second, first2)
-        pass
-    else:
-        raise NotImplementedError #subpath!
-        second._get_manager().connect_cell(second, first2, duplex=True)
+    raise NotImplementedError  ### livegraph branch, feature E1
 
 translate_compiled_transformer = None
 translate_bash_transformer = None
@@ -344,39 +296,6 @@ def translate(graph, ctx):
         # No need to add it to namespace, as long as the low-level graph structure is imitated
 
     connection_paths = [(con["source"], con["target"]) for con in connections]
-    links = [con for con in nodes if con["type"] == "link"]
-    link_paths = [(node["first"]["path"], node["second"]["path"]) for node in links]
-
-    lowlevel_links = {}
-    #multiple links (A,B), (A,C) are allowed; A becomes the real one
-    #multiple links (B,A), (C,A) are not allowed
-    #multiple links (A,B), (A,C), (D,A), (E,D) leads to A,B,C,D => E, E as the real one
-    simple_links = []
-    for node in links:
-        first, second = node["first"], node["second"]
-        if not first["simple"]:
-            continue
-        if not second["simple"]:
-            continue
-        first, second = first["path"], second["path"]
-        simple_links.append((first, second))
-        assert second not in lowlevel_links
-        lowlevel_links[second] = first
-
-    change = True
-    while change:
-        change = False
-        simple_links0 = simple_links
-        simple_links = []
-        for first, second in simple_links0:
-            while first in lowlevel_links:
-                first = lowlevel_links[first]
-                change = True
-            lowlevel_links[second] = first
-            simple_links.append((first, second))
-
-    link_target_paths = set(lowlevel_links.values())
-    link_targets = {} #maps "first" paths of a link (aka link target paths, aka "real cells") to their translated cells
 
     namespace = {}
     for node in nodes:
@@ -384,14 +303,6 @@ def translate(graph, ctx):
         if t in ("context", "link"):
             continue
         path = node["path"]
-        if t == "cell" and path in link_target_paths:
-            assert node["celltype"] != "structured" #low-level links are between simple cells!
-            inchannels, outchannels = find_channels(path, connection_paths)
-            translated_cell = translate_cell(node, ctx, namespace, inchannels, outchannels)
-            link_targets[path] = translated_cell
-
-    #print("LOW-LEVEL LINKS", lowlevel_links)
-    #print("LOW-LEVEL LINK TARGETS", link_targets)
 
     for node in nodes:
         t = node["type"]
@@ -417,13 +328,8 @@ def translate(graph, ctx):
             inchannels, outchannels = find_channels(node["path"], connection_paths)
             translate_py_reactor(node, ctx, namespace, inchannels, outchannels)
         elif t == "cell":
-            if path in link_target_paths:
-                continue #done already before
             inchannels, outchannels = find_channels(path, connection_paths)
-            link_target = None
-            if path in lowlevel_links:
-                link_target = link_targets[lowlevel_links[path]]
-            translate_cell(node, ctx, namespace, inchannels, outchannels, link_target=link_target)
+            translate_cell(node, ctx, namespace, inchannels, outchannels)
         elif t == "libmacro":
             msg = "Libmacro '%s' was not removed during pre-translation, or is a nested libmacro"
             raise TypeError(msg % path)
@@ -435,11 +341,14 @@ def translate(graph, ctx):
     for k in sorted(namespace.keys(), key=lambda k:-len(k)):
         namespace2[k] = namespace[k]
 
-    for node in links:
-        translate_link(node, namespace2, ctx)
-
     for connection in connections:
         translate_connection(connection, namespace2, ctx)
+
+    for node in nodes:
+        t = node["type"]
+        if t != "link":
+            continue
+        path = node["path"]
 
 from .translate_py_transformer import translate_py_transformer
 '''
