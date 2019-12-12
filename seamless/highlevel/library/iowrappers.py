@@ -18,7 +18,8 @@ class ConnectionWrapper:
         else:
             if not isinstance(target, Cell):
                 raise TypeError(type(target))
-            target._get_hcell().pop("checksum", None)
+            if target_subpath is None:
+                target._get_hcell().pop("checksum", None)
             target_full_path = self.basepath + target._path
             if target_subpath is not None:
                 target_full_path += tuple(target_subpath)            
@@ -70,6 +71,12 @@ class CellWrapper:
         if celltype != "code":
             raise AttributeError
 
+    @property
+    def hash_pattern(self):
+        hcell = self._node
+        celltype = hcell["celltype"]
+        assert celltype in ("structured", "mixed")
+        return hcell["hash_pattern"]
 
 class InputCellWrapper(CellWrapper):
     def __init__(self, connection_wrapper, cell):
@@ -114,6 +121,12 @@ class OutputCellWrapper(CellWrapper):
         hcell = self._node
         self.clear()
         hcell["celltype"] = value
+        if value in ("structured", "mixed"):
+            if "hash_pattern" not in hcell:
+                hcell["hash_pattern"] = None
+        else:
+            hcell.pop("hash_pattern", None)
+
 
 
     @CellWrapper.mimetype.setter
@@ -135,6 +148,16 @@ class OutputCellWrapper(CellWrapper):
         celltype = hcell["celltype"]
         assert celltype == "structured"
         hcell["datatype"] = value
+
+    @CellWrapper.hash_pattern.setter
+    def hash_pattern(self, value):
+        from ...core.protocol.deep_structure import validate_hash_pattern
+        validate_hash_pattern(value)
+        hcell = self._node
+        celltype = hcell["celltype"]
+        assert celltype in ("structured", "mixed")
+        hcell["hash_pattern"] = value
+        hcell.pop("checksum", None)
 
     @CellWrapper.language.setter
     def language(self, value):

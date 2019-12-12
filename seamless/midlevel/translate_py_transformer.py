@@ -35,6 +35,7 @@ def translate_py_transformer(node, root, namespace, inchannels, outchannels):
     mount = node.get("mount", {})    
     inp, inp_ctx = build_structured_cell(
       ctx, input_name, inchannels, interchannels,
+      hash_pattern= node.get("hash_pattern"),
       return_context=True
     )
 
@@ -81,6 +82,11 @@ def translate_py_transformer(node, root, namespace, inchannels, outchannels):
             continue
         k2 = "value" if k == "input" else k[len("input_"):]
         inp_checksum[k2] = checksum[k]
+    """
+    print("INP CHECKSUM", inp_checksum)
+    from ..core.context import Context
+    print("INP VALUE", Context(toplevel=True)._get_manager().resolve(inp_checksum["auth"]))
+    """
     set_structured_cell_from_checksum(inp, inp_checksum)
     namespace[node["path"] + ("code",), True] = ctx.code, node
     namespace[node["path"] + ("code",), False] = ctx.code, node

@@ -20,6 +20,7 @@
       "type": "connection"
     }
   ],
+  "lib": {},
   "nodes": [
     {
       "INPUT": "inp",
@@ -52,6 +53,7 @@
         "value": "0553638f3a0f6235e46d1cd6b7fc12e468fd91bcc901f488fef8d15bdd48a7d3"
       },
       "datatype": "mixed",
+      "hash_pattern": null,
       "path": [
         "pi"
       ],
@@ -60,13 +62,12 @@
     {
       "celltype": "structured",
       "datatype": "mixed",
+      "hash_pattern": null,
       "path": [
         "twopi"
       ],
       "type": "cell"
     }
   ],
-  "params": {
-    "from_lib": null
-  }
+  "params": {}
 }

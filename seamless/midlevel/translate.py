@@ -22,59 +22,68 @@ direct_celltypes = (
 
 def set_structured_cell_from_checksum(cell, checksum):
     join = False
+    """
     if "temp" in checksum:
         assert len(checksum) == 1, checksum.keys()
         cell.modified_auth_paths.add(())
-        cell.auth._set_checksum(checksum["temp"], initial=True, from_structured_cell=False)
+        temp_checksum = checksum["temp"]
+        if cell.hash_pattern is not None:
+            temp_cs = bytes.fromhex(temp_checksum)
+            temp_cs2 = apply_hash_pattern_sync(
+                temp_cs, cell.hash_pattern
+            )
+            temp_checksum = temp_cs2.hex()       
+        cell.auth._set_checksum(temp_checksum, initial=True, from_structured_cell=False)
         join = True
     else:        
-        if "value" in checksum:
-            # not done! value calculated anew...
-            """        
-            cell._data._set_checksum(
-                checksum["value"], 
-                from_structured_cell=True,
-                initial=True
-            )
-            join = True
-            """
-            cell._data._void = False
+    """
+    if "value" in checksum:
+        # not done! value calculated anew...
+        """        
+        cell._data._set_checksum(
+            checksum["value"], 
+            from_structured_cell=True,
+            initial=True
+        )
+        join = True
+        """
+        cell._data._void = False
 
-        if "buffer" in checksum:
-            # not done! value calculated anew...
-            """
-            cell.buffer._set_checksum(
-                checksum["buffer"], 
+    if "buffer" in checksum:
+        # not done! value calculated anew...
+        """
+        cell.buffer._set_checksum(
+            checksum["buffer"], 
+            from_structured_cell=True,
+            initial=True
+        )
+        join = True
+        """
+        cell.buffer._void = False
+        cell._data._void = False
+
+    if "auth" in checksum:
+        cell.modified_auth_paths.add(())
+        if cell.auth is None:
+            msg = "Warning: %s has no authority, but an auth checksum is present"
+            print(msg % cell)
+        else:
+            cell.auth._set_checksum(
+                checksum["auth"],
                 from_structured_cell=True,
                 initial=True
             )
             join = True
-            """
             cell.buffer._void = False
             cell._data._void = False
-
-        if "auth" in checksum:
-            cell.modified_auth_paths.add(())
-            if cell.auth is None:
-                msg = "Warning: %s has no authority, but an auth checksum is present"
-                print(msg % cell)
-            else:
-                cell.auth._set_checksum(
-                    checksum["auth"],
-                    from_structured_cell=True,
-                    initial=True
-                )
-                join = True
-                cell.buffer._void = False
-                cell._data._void = False
-            
-        if "schema" in checksum:
-            cell.schema._set_checksum(
-                checksum["schema"], 
-                from_structured_cell=True,
-                initial=True
-            )
-            join = True
+        
+    if "schema" in checksum:
+        cell.schema._set_checksum(
+            checksum["schema"], 
+            from_structured_cell=True,
+            initial=True
+        )
+        join = True
     if join:
         cell._join()
 
@@ -138,20 +147,20 @@ def translate_py_reactor(node, root, namespace, inchannels, outchannels):
     namespace[node["path"], False] = io, node
 
 def translate_cell(node, root, namespace, inchannels, outchannels, link_target=None):
-    from ..core.cache.buffer_cache import buffer_cache
-    from ..core.protocol.deserialize import deserialize_sync
     path = node["path"]
     parent = get_path(root, path[:-1], None, None)
     name = path[-1]
     ct = node["celltype"]
     if ct == "structured":
         assert not link_target
-        datatype = node["datatype"]
+        datatype = node["datatype"]        
         ### TODO: harmonize datatype with schema type
+        hash_pattern = node["hash_pattern"]
         mount = node.get("mount")
         child = build_structured_cell(
           parent, name,
           inchannels, outchannels,
+          hash_pattern=hash_pattern,
           mount=mount
         )
         for inchannel in inchannels:
@@ -184,6 +193,8 @@ def translate_cell(node, root, namespace, inchannels, outchannels, link_target=N
 
             elif ct in direct_celltypes:
                 child = core_cell(ct)
+                if ct == "mixed":
+                    ct._hash_pattern = node.get("hash_pattern")
             else:
                 raise ValueError(ct) #unknown celltype; should have been caught by high level
     setattr(parent, name, child)
@@ -198,9 +209,11 @@ def translate_cell(node, root, namespace, inchannels, outchannels, link_target=N
             else:
                 if "value" in checksum:
                     child._set_checksum(checksum["value"], initial=True)
+                """
                 if "temp" in checksum:
                     assert len(checksum) == 1, checksum.keys()
                     child._set_checksum(checksum["temp"], initial=True)
+                """
     if ct != "structured":
         if link_target is not None:
             if "mount" in node:
@@ -436,3 +449,4 @@ from .translate_bash_transformer import translate_bash_transformer
 from .translate_docker_transformer import translate_docker_transformer
 from .translate_compiled_transformer import translate_compiled_transformer
 '''
+from ..core.protocol.deep_structure import apply_hash_pattern_sync

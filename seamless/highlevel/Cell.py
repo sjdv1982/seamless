@@ -84,7 +84,6 @@ class Cell(Base):
         hcell = self._get_hcell()
         if hcell.get("checksum") is None:
             hcell["checksum"] = {}
-        hcell["checksum"].pop("temp", None)
         hcell["checksum"].pop("value", None)
         if checksum is not None:
             hcell["checksum"]["value"] = checksum
@@ -95,7 +94,6 @@ class Cell(Base):
         hcell = self._get_hcell()
         if hcell.get("checksum") is None:
             hcell["checksum"] = {}
-        hcell["checksum"].pop("temp", None)
         hcell["checksum"].pop("auth", None)
         if checksum is not None:
             hcell["checksum"]["auth"] = checksum
@@ -106,7 +104,6 @@ class Cell(Base):
         hcell = self._get_hcell()
         if hcell.get("checksum") is None:
             hcell["checksum"] = {}
-        hcell["checksum"].pop("temp", None)            
         hcell["checksum"].pop("buffer", None)
         if checksum is not None:
             hcell["checksum"]["buffer"] = checksum
@@ -326,8 +323,14 @@ class Cell(Base):
         if isinstance(cellvalue, MixedBase):
             cellvalue = cellvalue.value
         hcell["celltype"] = value
+        if value in ("structured", "mixed"):
+            if "hash_pattern" not in hcell:
+                hcell["hash_pattern"] = None
+        else:
+            hcell.pop("hash_pattern", None)
         if value == "code" and "language" not in hcell:
             hcell["language"] = "python"
+        hcell.pop("checksum", None)
         if cellvalue is not None and not hcell.get("UNTRANSLATED"):
             self._parent()._do_translate(force=True) # This needs to be kept!
             self.set(cellvalue)
@@ -380,6 +383,24 @@ class Cell(Base):
         celltype = hcell["celltype"]
         assert celltype == "structured"
         hcell["datatype"] = value
+
+    @property
+    def hash_pattern(self):
+        hcell = self._get_hcell()
+        celltype = hcell["celltype"]
+        assert celltype in ("structured", "mixed")
+        return hcell["hash_pattern"]
+
+    @hash_pattern.setter
+    def hash_pattern(self, value):
+        from ..core.protocol.deep_structure import validate_hash_pattern
+        validate_hash_pattern(value)
+        hcell = self._get_hcell()
+        celltype = hcell["celltype"]
+        assert celltype in ("structured", "mixed")
+        hcell["hash_pattern"] = value
+        hcell.pop("checksum", None)
+        self._parent()._translate()
 
     @property
     def language(self):

@@ -380,6 +380,20 @@ class Manager:
         value = task.launch_and_await()
         return value
 
+    def resolve(self, checksum, celltype="mixed", copy=False):
+        # Returns value corresponding to checksum (str or hex)
+        if checksum is None:
+            return None
+        if isinstance(checksum, str):
+            checksum = bytes.fromhex(checksum)
+        buffer = self._get_buffer(checksum)        
+        task = DeserializeBufferTask(
+            self, buffer, checksum, celltype, 
+            copy=copy
+        )
+        value = task.launch_and_await()
+        return value
+
     ##########################################################################
     # API section ???: Cancellation
     ##########################################################################

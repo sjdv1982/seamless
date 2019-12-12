@@ -33,7 +33,7 @@ def new_transformer(ctx, path, code, parameters):
         "with_result": True,
         "SCHEMA": None, #the result schema can be exposed as an input pin to the transformer under this name. Implies with_result
         "debug": False,
-        "UNTRANSLATED": True
+        "UNTRANSLATED": True,
     }
     if code is not None:
         transformer["TEMP"] = {"code": code}
@@ -100,6 +100,20 @@ class Transformer(Base):
         from ..core.transformer import Transformer as CoreTransformer
         htf = self._get_htf()
         htf["debug"] = value
+        self._parent()._translate()
+
+    @property
+    def hash_pattern(self):
+        htf = self._get_htf()
+        return htf.get("hash_pattern")
+
+    @hash_pattern.setter
+    def hash_pattern(self, value):
+        from ..core.protocol.deep_structure import validate_hash_pattern
+        validate_hash_pattern(value)
+        htf = self._get_htf()
+        htf["hash_pattern"] = value
+        htf.pop("checksum", None)
         self._parent()._translate()
 
     @property
@@ -403,13 +417,18 @@ class Transformer(Base):
             proxycls = CodeProxy
         elif attr == htf["INPUT"]:
             getter = self._inputgetter
-            dirs = ["value", "schema", "example", "status", "exception"] + \
-              list(htf["pins"].keys())
+            dirs = [
+              "value", "buffer", "data", "checksum",
+              "schema", "example", "status", "exception"
+            ] + list(htf["pins"].keys())
             pull_source = None
             proxycls = Proxy
         elif attr == htf["RESULT"] and htf["with_result"]:
             getter = self._resultgetter
-            dirs = ["value", "schema", "example", "exception"]
+            dirs = [
+              "value", "buffer", "data", "checksum",
+              "schema", "example", "exception"
+            ]
             pull_source = None
             proxycls = Proxy
         elif attr == "main_module":
@@ -480,6 +499,10 @@ class Transformer(Base):
         inputcell = getattr(tf, htf["INPUT"])
         if attr == "value":
             return inputcell.value
+        elif attr == "data":
+            return inputcell.data
+        elif attr == "buffer":
+            return inputcell.buffer
         elif attr == "checksum":
             return inputcell.checksum
         elif attr == "schema":
@@ -502,6 +525,12 @@ class Transformer(Base):
         resultcell = getattr(tf, htf["RESULT"])
         if attr == "value":
             return resultcell.value
+        elif attr == "data":
+            return resultcell.data
+        elif attr == "buffer":
+            return resultcell.buffer
+        elif attr == "checksum":
+            return resultcell.checksum
         elif attr == "schema":
             schema = resultcell.get_schema()
             #schema_mounter = functools.partial(self._sub_mount, "result_schema")

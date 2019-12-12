@@ -44,6 +44,7 @@ def translate_bash_transformer(node, root, namespace, inchannels, outchannels):
     mount = node.get("mount", {})
     inp, inp_ctx = build_structured_cell(
       ctx, input_name, inchannels, interchannels,
+      hash_pattern= node.get("hash_pattern"),
       return_context=True
     )
     setattr(ctx, input_name, inp)

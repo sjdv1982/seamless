@@ -32,7 +32,7 @@ def _destroy_toplevels():
         if not isinstance(manager, UnboundManager):
             manager.temprefmanager.purge_all()
     for ctx in list(_toplevel_registered):
-        unregister_all(ctx)
+        ###unregister_all(ctx)
         manager = ctx._get_manager()
         if manager is not None:
             manager.destroy(from_del=True)

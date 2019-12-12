@@ -32,6 +32,7 @@ ctx.equilibrate()
 print(ctx.data.value)
 print(data)
 print(ctx.sc.value)
+print(ctx.sc.data)
 
 print(data["x"], data["y"], data["z"])
 print(data.x.unsilk, data.y.unsilk, data.z.unsilk)

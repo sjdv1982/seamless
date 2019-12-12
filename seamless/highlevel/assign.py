@@ -24,6 +24,7 @@ def get_new_cell(path):
         "type": "cell",
         "celltype": "structured",
         "datatype": "mixed",
+        "hash_pattern": None,
         "UNTRANSLATED": True,
     }
 
@@ -226,7 +227,7 @@ def _assign_context2(ctx, new_nodes, new_connections, path, old_ctx):
         remove_checksum = []
         if nodetype == "cell":
             Cell(ctx, pp)
-            remove_checksum.append("temp")
+            ###remove_checksum.append("temp")
             if node["celltype"] == "structured":
                 remove_checksum.append("value")
                 remove_checksum.append("buffer")

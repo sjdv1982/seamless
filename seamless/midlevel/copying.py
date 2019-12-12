@@ -3,8 +3,10 @@ from copy import deepcopy
 import inspect, asyncio
 from ..core.protocol.serialize import serialize_sync as serialize
 from ..core.protocol.calculate_checksum import calculate_checksum_sync as calculate_checksum
+from ..core.protocol.deep_structure import apply_hash_pattern_sync
 
 def get_checksums(nodes):
+    # TODO: deep cells
     checksums = set()
     for p, node in nodes.items():
         if node["type"] in ("link", "context"):
@@ -56,7 +58,7 @@ def add_zip(manager, zipfile):
         buffer = zipfile.read(checksum)
         buffer_cache.cache_buffer(checksum2, buffer)
 
-def fill_checksum(manager, node, temp_path):
+def fill_checksum(manager, node, temp_path, composite=True):
     from ..core.utils import strip_source
     checksum = None
     subcelltype = None
@@ -87,7 +89,7 @@ def fill_checksum(manager, node, temp_path):
             else:
                 datatype = "text"
     temp_value = node.get("TEMP")
-    if temp_path != "temp":
+    if composite:
         if isinstance(temp_value, dict):
             temp_value = temp_value.get(temp_path)
         elif temp_value is None:
@@ -103,15 +105,20 @@ def fill_checksum(manager, node, temp_path):
             code = strip_source(code)
             temp_value = code
     buf = serialize(temp_value, datatype, use_cache=False)
-    checksum = calculate_checksum(buf)
+    checksum = calculate_checksum(buf)    
 
     if checksum is None:
         return
+    if node.get("hash_pattern") is not None:
+        hash_pattern = node["hash_pattern"]
+        checksum = apply_hash_pattern_sync(
+            checksum, hash_pattern
+        )
     checksum = checksum.hex()
     if temp_path is None:
         temp_path = "value"
     if "checksum" not in node:
-        node["checksum"] = {}
+        node["checksum"] = {}    
     node["checksum"][temp_path] = checksum       
         
 def fill_checksums(mgr, nodes, *, path=None):
@@ -131,19 +138,26 @@ def fill_checksums(mgr, nodes, *, path=None):
                 continue
             old_checksum = node.pop("checksum", None)
             if node["type"] == "transformer":
+                node2 = node.copy()
+                node2.pop("hash_pattern", None)
                 fill_checksum(mgr, node, "input_auth")
-                fill_checksum(mgr, node, "code")
+                fill_checksum(mgr, node2, "code")
+                node["checksum"] = node2["checksum"]
                 if node["with_result"]:
-                    fill_checksum(mgr, node, "result")
+                    fill_checksum(mgr, node2, "result")
                 if node["compiled"]:
-                    fill_checksum(mgr, node, "main_module")
+                    fill_checksum(mgr, node2, "main_module")
             elif node["type"] == "reactor":
                 fill_checksum(mgr, node, "io")
                 fill_checksum(mgr, node, "code_start")
                 fill_checksum(mgr, node, "code_update")
                 fill_checksum(mgr, node, "code_stop")
             elif node["type"] == "cell":
-                fill_checksum(mgr, node, "temp")
+                if node["celltype"] == "structured":
+                    temp_path = "auth"
+                else:
+                    temp_path = "value"
+                fill_checksum(mgr, node, temp_path, composite=False)
             else:
                 raise TypeError(p, node["type"])
             node.pop("TEMP", None)

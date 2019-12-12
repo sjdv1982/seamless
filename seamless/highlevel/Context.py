@@ -243,7 +243,8 @@ class Context(Base):
     def get_graph(self):
         return self._get_graph(copy=True)
 
-    def get_zip(self):        
+    def get_zip(self):
+        # TODO: option to follow deep cell checksums
         force = (self._gen_context is None)
         self._do_translate(force=force)
         graph = self.get_graph()

@@ -424,6 +424,7 @@ class MountManager:
 
     @lockmethod
     def unmount(self, cell_or_link, from_del=False):
+        assert hasattr(cell_or_link, "_mount"), cell_or_link
         assert not is_dummy_mount(cell_or_link._mount), cell_or_link
         root = cell_or_link._root()
         if from_del and (cell_or_link not in self.mounts or root not in self.paths):
@@ -612,7 +613,8 @@ class MountManager:
 
 
     def clear(self):
-        for cell in list(self.mounts.values()):
+        for cell in list(self.mounts.keys()):
+            assert isinstance(cell, Cell), cell
             self.unmount(cell)
         for context in sorted(self.contexts,key=lambda l:-len(l.path)):
             self.unmount_context(context)
@@ -842,6 +844,7 @@ def get_extension(c):
     return ""
 
 from .link import Link
+from .cell import Cell
 from .protocol.cson import cson2json
 from .protocol.calculate_checksum import calculate_checksum_sync as calculate_checksum
 from .cell import text_types

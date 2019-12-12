@@ -4,6 +4,7 @@ import json
 ctx = Context()
 ctx.pi = math.pi
 ctx.doubleit = lambda a: 2 * a
+###ctx.doubleit.hash_pattern = {"*": "#"}
 ctx.doubleit.a = ctx.pi
 ctx.twopi = ctx.doubleit
 ctx.translate()

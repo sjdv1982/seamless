@@ -1,6 +1,3 @@
-# TODO: livegraph branch
-# TODO: A single global value cache (see cachemanager)
-
 import time
 import weakref
 import traceback
@@ -72,7 +69,8 @@ class BufferCache:
             print("DECREF", checksum.hex())
         """
         if checksum not in self.buffer_refcount:
-            print("WARNING: double decref, %s" % checksum.hex())            
+            ### TODO: re-enable warning
+            ###print("WARNING: double decref, %s" % checksum.hex())            
             return
         if not from_temp and self.buffer_refcount[checksum] == 1:
             tempref = functools.partial(self.decref, checksum, from_temp=True)

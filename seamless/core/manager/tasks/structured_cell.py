@@ -38,6 +38,7 @@ class StructuredCellJoinTask(Task):
         modified_paths = set(sc.modified_auth_paths)
         modified_paths.update(set([ic.subpath for ic in sc.modified_inchannels]))
         prelim = {}
+        #print("RUN", sc._auth_value, "/RUN")
         for out_path in sc.outchannels:
             """
             # Done before...
@@ -60,25 +61,28 @@ class StructuredCellJoinTask(Task):
                 checksum = sc.inchannels[()]._checksum
                 assert checksum is None or isinstance(checksum, bytes), checksum
             else:
-                if not sc.no_auth:
+                if not sc.no_auth:                    
                     value = copy.deepcopy(sc._auth_value)
                     if value is None:
                         if sc.auth._checksum is not None:
-                            value = copy.deepcopy(sc.auth.value)
+                            checksum = sc.auth._checksum
+                            value = copy.deepcopy(sc.auth.data)
                             sc._auth_value = value
                     else:
                         auth_buf = await SerializeToBufferTask(
                             manager, value, "mixed", use_cache=False # the value object changes all the time...
                         ).run()
-                        auth_checksum = await CalculateChecksumTask(manager, auth_buf).run()
-                        auth_checksum = auth_checksum.hex()        
+                        auth_checksum = await CalculateChecksumTask(manager, auth_buf).run()                        
+                        auth_checksum = auth_checksum.hex()
                         sc.auth._set_checksum(auth_checksum, from_structured_cell=True)                        
+                        if not len(paths):
+                            checksum = auth_checksum
                 if value is None:
                     if isinstance(paths[0], int):
                         value = []
                     else:
                         value = {}
-                for path in paths:
+                for path in paths:                    
                     subchecksum = sc.inchannels[path]._checksum
                     if subchecksum is not None:
                         buffer = await GetBufferTask(manager, subchecksum).run()
@@ -108,7 +112,9 @@ class StructuredCellJoinTask(Task):
             value = copy.deepcopy(sc._auth_value)
             if value is None:
                 if sc.auth._checksum is not None:
-                    value = copy.deepcopy(sc.auth.value)
+                    checksum = sc.auth._checksum                     
+                    value = copy.deepcopy(sc.auth.data)
+                    sc._auth_value = value
         if not ok:
             value = None
             checksum = None
@@ -119,7 +125,8 @@ class StructuredCellJoinTask(Task):
             ).run()
             checksum = await CalculateChecksumTask(manager, buf).run()
         if checksum is not None:
-            checksum = checksum.hex()        
+            if isinstance(checksum, bytes):
+                checksum = checksum.hex()        
             if not len(sc.inchannels):            
                 sc.auth._set_checksum(checksum, from_structured_cell=True)
             if sc.buffer is not sc.auth:            

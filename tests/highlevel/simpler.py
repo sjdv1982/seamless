@@ -5,7 +5,7 @@ ctx = Context()
 ctx.mount("/tmp/mount-test")
 
 ctx.a = 12
-ctx.translate()
+ctx.equilibrate()
 print(ctx.a.value)
 print(ctx.a.schema) # None
 
@@ -17,6 +17,11 @@ def triple_it_b(a, b):
     return 3 * a + b
 
 ctx.transform = triple_it
+#ctx.transform.hash_pattern = {"*": "#"}
+ctx.transform.a = 1
+print("START")
+ctx.translate()
+print(ctx.transform.inp.value, ctx.transform.result.value)
 ctx.transform.a = ctx.a
 ctx.transform.example.a = 99
 ctx.equilibrate()
@@ -97,3 +102,4 @@ print("TRANSFORMER INPUT STATUS", ctx.transform.inp.status)
 print("TRANSFORMER STATUS", ctx.transform.status)
 
 print(ctx.transform.inp.schema)
+print(ctx.transform.inp.data)

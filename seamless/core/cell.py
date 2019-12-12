@@ -163,17 +163,17 @@ Use ``Cell.status()`` to get its status.
     @property
     def value(self):
         """Returns a copy of the cell's value
-        cell.set(cell.value) is guaranteed to be a no-op"""
+        cell.set(cell.value) is guaranteed to have no effect"""
         return self._get_value(copy=True)
 
     @property
     def data(self):
         """Returns the cell's value, without making a copy
-        cell.set(cell.data) is guaranteed to be a no-op"""
+        cell.set(cell.data) is NOT guaranteed to have no effect"""
         return self._get_value(copy=False)
 
     def set(self, value):
-        """Update cell data from the terminal."""
+        """Update cell data from authority"""
         if self._context is None:
             self._initial_checksum = None
             self._initial_val = value, False
@@ -185,7 +185,7 @@ Use ``Cell.status()`` to get its status.
         return self
 
     def set_buffer(self, buffer, checksum=None):
-        """Update cell buffer from the terminal.
+        """Update cell buffer from authority.
         If the checksum is known, it can be provided as well."""
         assert buffer is None or isinstance(buffer, bytes)
         if self._context is None:
@@ -221,7 +221,7 @@ Use ``Cell.status()`` to get its status.
         return self
 
     def set_checksum(self, checksum):
-        """Specifies the checksum of the data (hex format)"""
+        """Specifies the checksum of the data (hex format), from authority"""
         self._set_checksum(checksum)
         return self
 
@@ -405,6 +405,18 @@ class MixedCell(Cell):
             return None
         return get_form(v)[1]  
 
+    @property
+    def value(self):
+        """Returns a copy of the cell's value
+        Deep structures are unfolded
+        cell.set(cell.value) is guaranteed to have no effect"""
+        from .protocol.expression import get_subpath_sync
+        value = self._get_value(copy=True)
+        if self._hash_pattern is None:
+            return value
+        # TODO: verify that the unfolded deep structure is not humonguous...
+        return get_subpath_sync(value, self._hash_pattern, None)
+        
 
 
 class TextCell(Cell):

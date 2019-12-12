@@ -2,7 +2,6 @@ E. The mid/high level
 - High-level links; maybe (re-)implement them at the low level 
   (double edit pin is not good)
   Must be between simple cells, that have no incoming connections; no support for transformer.code; later support it for .schema/.result_schema.
-- Hash patterns for high-level cells (mixed and structured cells)
 - Reactors
 - High-level Macro construct around low-level macro; 
   shouldn't be too hard, but connections could be tricky.
@@ -24,6 +23,13 @@ What about reactors? There are also the core aux systems
 (same as currently for transformer code). This requires
 the disabling of type inference.
 UPDATE: instead, schema can be high-level linked to a simple cell!
+
+Long-term: buffer cache references are not reliable, especially with
+hash patterns (without, they *seem* to be fine, but some fishy things
+happen at the midlevel...)
+The double decref warning has been disabled for now...
+For production, don't rely on buffer cache, but have Redis as a backup!!
+
 
 =======================================================  
 SOMEWHAT OUTDATED: until: see below

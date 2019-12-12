@@ -78,8 +78,6 @@ def build_structured_cell(
   *, mount=None, return_context=False,
   hash_pattern=None
 ):
-    if hash_pattern is not None:
-        raise NotImplementedError
     #print("build_structured_cell", name)
     name2 = name + STRUC_ID
     c = context(toplevel=False)
@@ -87,9 +85,12 @@ def build_structured_cell(
     if mount is not None:
         c.mount(**mount)
     c.data = core_cell("mixed")
+    c.data._hash_pattern = hash_pattern
     c.auth = core_cell("mixed")
+    c.auth._hash_pattern = hash_pattern
     c.schema = core_cell("plain")        
     c.buffer = core_cell("mixed")
+    c.buffer._hash_pattern = hash_pattern
 
     sc = StructuredCell(
         data=c.data,
@@ -97,7 +98,8 @@ def build_structured_cell(
         schema=c.schema,
         buffer=c.buffer,
         inchannels=inchannels,
-        outchannels=outchannels
+        outchannels=outchannels,
+        hash_pattern=hash_pattern
     )
     c.example_data = core_cell("mixed")
     c.example_buffer = core_cell("mixed")
