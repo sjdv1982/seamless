@@ -20,6 +20,7 @@ class SetCellBufferTask(Task):
         checksum = self.checksum
         lock = await taskmanager.acquire_cell_lock(cell)
         try:
+            """
             if (checksum is None and buffer is not None) or \
                 (checksum, cell._celltype) not in evaluation_cache_1:
                     if cell._celltype in text_types:
@@ -28,6 +29,7 @@ class SetCellBufferTask(Task):
                         manager, buffer,
                         self.checksum, cell._celltype, copy=False
                     ).run()
+            """
             if checksum is None and buffer is not None:
                 checksum = await CalculateChecksumTask(manager, buffer).run()
             if checksum is not None:

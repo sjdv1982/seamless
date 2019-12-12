@@ -74,8 +74,12 @@ def fill_checksum(manager, node, temp_path, composite=True):
                 celltype = "text"
         else:
             celltype = "structured"
+    elif node["type"] == "reactor":
+        raise NotImplementedError ### livegraph branch, feature E2
+    elif node["type"] == "macro":
+        raise NotImplementedError ### livegraph branch, feature E3
     else:
-        raise NotImplementedError ### cache branch
+        raise TypeError(node["type"])
     if celltype == "structured":
         if node["type"] in ("reactor", "transformer"):
             datatype = "mixed"

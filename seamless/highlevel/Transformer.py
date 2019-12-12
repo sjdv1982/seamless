@@ -680,8 +680,7 @@ class Transformer(Base):
             if htf["compiled"]:
                 pass
             else:
-                raise NotImplementedError ### cache branch
-                # NOTE: observers depend on the implementation of translate_XXX_transformer (midlevel)
+                raise NotImplementedError # NOTE: observers depend on the implementation of translate_XXX_transformer (midlevel)
         tf = self._get_tf()
         tf.code._set_observer(self._observe_code)
         inp = htf["INPUT"]

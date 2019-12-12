@@ -75,7 +75,7 @@ async def get_buffer(checksum, buffer_cache, remote_peer_id=None):
                     buffer_cache.missing_buffers.discard(checksum)
                     buffer_cache.cache_buffer(checksum, buffer)
                 return buffer
-        # TODO: provenance # livegraph branch
+        # TODO: provenance
         raise CacheMissError(checksum.hex())
 
 def get_buffer_sync(checksum, buffer_cache):

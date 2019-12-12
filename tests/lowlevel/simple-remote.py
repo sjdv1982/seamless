@@ -10,7 +10,8 @@ from seamless import communion_server
 
 communion_server.configure_master(
     buffer=True,
-    transformer_job=True,
+    transformation_job=True,
+    transformation_status=True,
 )
 communion_server.configure_servant(
     buffer=True,

@@ -333,12 +333,12 @@ class Context(Base):
         self._needs_translation = False
 
         for path, child in self._children.items():
-            if isinstance(child, (Cell, Transformer)):
+            if isinstance(child, (Cell, Transformer, Reactor, Macro)):
                 child._set_observers()
-            elif isinstance(child, (InputPin, OutputPin)):
+            elif isinstance(child, (InputPin, OutputPin, Link)):
                 continue
             else:
-                raise NotImplementedError(type(child)) ### cache branch
+                raise TypeError(type(child))
 
     def _connect_share(self):
         if self._shares is None:
@@ -545,6 +545,8 @@ class SubContext(Base):
 from .Reactor import Reactor
 from .Transformer import Transformer
 from .Cell import Cell
+from .Link import Link
+from .Macro import Macro
 from .pin import InputPin, OutputPin
 from .library.libmacro import LibMacro
 

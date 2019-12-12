@@ -1,6 +1,5 @@
 """Code for local job execution
-Works well under Linux, should work well under OSX
-Contains some support code for Windows, but completely untested"""
+Works well under Linux, should work well under OSX"""
 
 import traceback
 import multiprocessing
@@ -16,9 +15,6 @@ import inspect
 import ctypes
 
 # TODO: decide when to kill an execution job!
-
-if platform.system() == "Windows":
-    from ctypes import windll
 
 from .cached_compile import exec_code
 from .protocol.serialize import _serialize as serialize
@@ -131,26 +127,20 @@ def execute_debug(name, code,
         old_stdio = sys.stdout, sys.stderr
         sys.stdout, sys.stderr = sys.__stdout__, sys.__stderr__
 
-        if platform.system() == "Windows":
-            while True:
-                if windll.kernel32.IsDebuggerPresent() != 0:
-                    break
-                time.sleep(0.1)
-        else:
-            print("*" * 80)
-            print("Executing transformer %s in debug mode" % name)
-            print("Process ID: %s" % os.getpid())
-            print("Transformer execution will pause until SIGUSR1 has been received")
-            print("*" * 80)
-            class DebuggerAttached(Exception):
-                pass
-            def handler(*args, **kwargs):
-                raise DebuggerAttached
-            signal.signal(signal.SIGUSR1, handler)
-            try:
-                time.sleep(3600)
-            except DebuggerAttached:
-                pass
+        print("*" * 80)
+        print("Executing transformer %s in debug mode" % name)
+        print("Process ID: %s" % os.getpid())
+        print("Transformer execution will pause until SIGUSR1 has been received")
+        print("*" * 80)
+        class DebuggerAttached(Exception):
+            pass
+        def handler(*args, **kwargs):
+            raise DebuggerAttached
+        signal.signal(signal.SIGUSR1, handler)
+        try:
+            time.sleep(3600)
+        except DebuggerAttached:
+            pass
         _execute(name, code, 
             injector, module_workspace,
             identifier, namespace,

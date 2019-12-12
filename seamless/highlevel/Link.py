@@ -1,10 +1,3 @@
-"""
-Sets up bidirectional links
-For now, will be implemented as a reactor with two edit pins
-"""
-
-print("TODO: high-level link")
-
 from .Base import Base
 
 def is_simple(arg):
@@ -26,6 +19,7 @@ def is_simple(arg):
 class Link(Base):
     _mynode = None
     def __init__(self, first, second):
+        raise NotImplementedError ### livegraph branch, feature E1
         is_simple_first = is_simple(first)
         assert first.authoritative
 

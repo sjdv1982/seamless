@@ -89,8 +89,7 @@ def set_structured_cell_from_checksum(cell, checksum):
 
 
 def translate_py_reactor(node, root, namespace, inchannels, outchannels):
-    raise NotImplementedError ### cache branch
-    #TODO: simple-mode translation, without a structured cell
+    raise NotImplementedError ### livegraph branch, feature E2
     skip_channels = ("code_start", "code_update", "code_stop")
     inchannels = [ic for ic in inchannels if ic[0] not in skip_channels]
     parent = get_path(root, node["path"][:-1], None, None)

@@ -19,7 +19,7 @@ async def qtloop():
     if qtimport:
         if multiprocessing.get_start_method() != "fork":
             print("""Cannot test if Qt can be started
-    This is because forking is not possible, you are probably running under Windows
+    This is because forking has been disabled.
     Starting Qt blindly is not supported, as it may result in segfaults
     """,
             file=sys.stderr)

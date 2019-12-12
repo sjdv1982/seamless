@@ -1,16 +1,23 @@
 E. The mid/high level
-- High-level links; maybe (re-)implement them at the low level 
+E1. High-level links; maybe (re-)implement them at the low level 
   (double edit pin is not good)
-  Must be between simple cells, that have no incoming connections; no support for transformer.code; later support it for .schema/.result_schema.
-- Reactors
-- High-level Macro construct around low-level macro; 
+  Must be between simple cells, that have no incoming connections; no support for transformer.code; support it for .schema/.result_schema.
+E2. Reactors
+E3. High-level Macro construct around low-level macro; 
   shouldn't be too hard, but connections could be tricky.
   Wrapping everything in a single Macro with some connections into .share, .mount etc.
    is a good way to get sth working quickly, until the high level works well.
+E4. Traitlets: move code to low level??
+
+F.
 3. Run tests
-3a. Test in Docker container
-4. Test in Jupyter
-5. Test Observable Notebook (client JS has changed)
+   - Re-run low level tests
+   - Run and adapt high-level test
+   - Test in Docker container
+   - Test in Jupyter
+   - Port lib-OLD examples (browse and merge) to graphs; set up stdlib
+4. Test Observable Notebook (client JS has changed)
+5. Re-run initial examples, in particular BCsearch
 6. Re-run examples, in particular capri and snakemake
 
 Medium term:
@@ -334,7 +341,6 @@ Seamless is now in alpha; all missing features and the most annoying bugs should
 Start to solicit for help.
 
 Part 7:
-- High-level mounting is not quite satisfactory (redundant "translated" context)
 - The high level should store all permanent state in the graph nodes,
     nothing in the class instances. This way, the user can add their own syntax
     to manipulate the graph. (highlevel.ctx.\_children should go as well).
@@ -385,7 +391,6 @@ Long-term:
 - Meta-schema for schema editing (jsonschema has it)
 - More love to the GUI around report channels (to visualize) and around high-level context (to edit)
   At this point, some proof-of-principle should exist already.
-- Windows support? Or never? Or just with local jobs disabled?
 - An extra "table" celltype, for text (like awk or org-mode) or binary (like Pandas)
 - Support more foreign languages: Julia, R, JavaScript. IPython magics, also have a look at python-bond
 - API to construct transformations without low-level contexts, launch them, and to check for cache hits.
@@ -393,16 +398,12 @@ Long-term:
   Examples are: reduce or sort on deep cells that arrive piece-meal, or where the data may be near or far.
   Application 2: cyclic dependencies.
 - Simplified implementations, with various levels of reduced interactivity
-  1. Frozen libraries. Libcell becomes a kind of symlink.
-  No direct low-level library update, but also no high-level depsgraph.
-  This is the only simplification that affects the high level.
-  Can be done with the current code base, using a "simple" flag.
-  2. Frozen low-level macros. All cells on which low-level macros depend are frozen.
-  3. Frozen code cells. The code cells of all transformers and reactors are frozen.
+  1. Frozen low-level macros. All cells on which low-level macros depend are frozen.
+  2. Frozen code cells. The code cells of all transformers and reactors are frozen.
   Code cells are considered both at the high-level and at the low-level implementation,
   i.e. a C++ transformer has its C++ code frozen, as well as the Python code that
   implements the cffi interface.
-  4. Everything frozen. The graph is considered as a single computation that should yield
+  3. Everything frozen. The graph is considered as a single computation that should yield
   the designated result cells. No interactivity, authority never changes
   => editpins are also forbidden.
 - Specialized client implementations for special constructs
@@ -811,14 +812,15 @@ This should be enabled/disabled on a by-cell basis (if any cell upstream has it
 Cyclic graphs
 =============
 Strategies to model them:
-1. Don't model cycles with seamless (keep cycles inside a single worker)
-2. Explicit cells for every assignment (if number of iterations is known).
+0. Don't model cycles with seamless (keep cycles inside a single worker)
+1. Explicit high-level cells for every assignment (if number of iterations is known).
    First assignment to cell x becomes cell x1, second assignment to cell becomes x2, etc.
    Has become feasable now that cells are very low-footprint, but
    caches must be cleared or memory consumption is too high.
-3. Nested macros (for recursion)
+   Works well now using libmacros
+2. Nested macros (for recursion)
    Example: collatz.py in low-level tests. Works well now
-4. Explicit transformation/cache API within a single worker.
+3. Explicit transformation/cache API within a single worker.
 Solutions can be combined, of course.
 
 Registering commands with domain-specific languages
