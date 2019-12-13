@@ -123,7 +123,7 @@ def fill_checksum(manager, node, temp_path, composite=True):
         temp_path = "value"
     if "checksum" not in node:
         node["checksum"] = {}    
-    node["checksum"][temp_path] = checksum       
+    node["checksum"][temp_path] = checksum
         
 def fill_checksums(mgr, nodes, *, path=None):
     """Fills checksums in the nodes from TEMP, if untranslated 
@@ -142,9 +142,9 @@ def fill_checksums(mgr, nodes, *, path=None):
                 continue
             old_checksum = node.pop("checksum", None)
             if node["type"] == "transformer":
+                fill_checksum(mgr, node, "input_auth")
                 node2 = node.copy()
                 node2.pop("hash_pattern", None)
-                fill_checksum(mgr, node, "input_auth")
                 fill_checksum(mgr, node2, "code")
                 node["checksum"] = node2["checksum"]
                 if node["with_result"]:
