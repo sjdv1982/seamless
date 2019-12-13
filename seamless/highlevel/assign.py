@@ -307,7 +307,10 @@ def assign(ctx, path, value):
     if isinstance(value, (IncludedLibrary, IncludedLibraryContainer)):
         raise TypeError("Library must be instantiated first")
     if isinstance(value, Transformer):
-        value._assign_to(ctx, path)
+        if value._path is None:
+            value._init(ctx, path)
+        else:
+            value._assign_to(ctx, path)
     elif isinstance(value, Cell):
         if value._parent() is None:
             value._init(ctx, path)
