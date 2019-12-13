@@ -216,7 +216,10 @@ Use ``Cell.status()`` to get its status.
             if checksum is not None:
                 checksum = bytes.fromhex(checksum)
             manager.set_cell_checksum(
-              self, checksum, initial, from_structured_cell
+              self, checksum, 
+              initial=initial, 
+              from_structured_cell=from_structured_cell, 
+              trigger_highlinks=(not initial)
             )
         return self
 
@@ -285,6 +288,15 @@ Use ``Cell.status()`` to get its status.
             raise TypeError(type(target))
         manager.connect(self, None, target, target_subpath)
         return self
+
+    def highlink(self, target):
+        from .link import Link
+        if isinstance(target, Link):
+            target = target.get_linked()
+        if not isinstance(target, Cell):
+            raise TypeError(type(target))
+        manager = self._get_manager()
+        manager.highlink(self, target)
 
     def has_authority(self, path=None):
         manager = self._get_manager()

@@ -20,11 +20,16 @@ teparams = {
 from seamless.core import macro_mode_on
 from seamless.core import context, transformer, reactor, cell
 
-ctx = context(toplevel=True)
+with macro_mode_on():
+  ctx = context(toplevel=True)
+  ctx.formula = cell("text").mount("/tmp/formula.txt")  
+  ctx.formula2 = cell("text").mount("/tmp/formula2.txt")
 tf = ctx.tf = transformer(tparams)
 c_data = tf.val.cell()
 c_data.set(4)
-c_code = tf.code.cell()
+#c_code = tf.code.cell()
+ctx.formula.connect(tf.code)
+c_code = ctx.formula
 c_output = tf.outp.cell()
 c_code.set("outp = val*2")
 
@@ -104,4 +109,5 @@ ctx.equilibrate()
 c = ted1.code_start.cell()
 c.connect(meta_ted.val)
 
+ctx.formula.highlink(ctx.formula2)
 ctx.equilibrate()

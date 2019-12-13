@@ -25,7 +25,7 @@ class UponConnectionTask(Task):
         elif isinstance(target, Cell):
             self.dependencies.append(target)
         elif isinstance(target, Path):
-            self.dependencies.append(source)
+            self.dependencies.append(target)
         else:
             raise TypeError(target)
 
@@ -237,9 +237,45 @@ Source %s; target %s, %s""" % (source, target, target_subpath)
                     CellUpdateTask(manager, source2).launch()
         else:
             raise TypeError(type(source))
-    
+
+class UponHighLinkTask(UponConnectionTask):
+    def __init__(self, manager, source, target):
+        self.source = source
+        self.target = target
+        self.current_macro = curr_macro()
+        Task.__init__(self, manager)
+        if not isinstance(source, Cell):
+            raise TypeError(type(source))
+        if not isinstance(target, Cell):
+            raise TypeError(type(target))
+        self.dependencies.append(source)
+        self.dependencies.append(target)
+         
+    async def _run(self):
+        manager = self.manager()
+        taskmanager = manager.taskmanager
+
+        source = self.source
+        target = self.target
+
+        cancel_tasks = []
+        for task in taskmanager.cell_to_task[target]:
+            if isinstance(task, SetCellValueTask):
+                cancel_tasks.append(task)
+        for task in cancel_tasks:
+            task.cancel()
+
+        await taskmanager.await_upon_connection_tasks(self.taskid)
+
+        livegraph = self.manager().livegraph
+        livegraph.highlink(
+            self.current_macro, source, target
+        )
+   
+
 
 from .cell_update import CellUpdateTask
+from .checksum import CellChecksumTask
 from .accessor_update import AccessorUpdateTask
 from .transformer_update import TransformerUpdateTask
 from .reactor_update import ReactorUpdateTask

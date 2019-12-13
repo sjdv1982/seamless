@@ -17,6 +17,7 @@ class LiveGraph:
         self.cell_to_upstream = {} # Mapping of simple cells to the read accessor that defines it.
         self.cell_to_downstream = {} # Mapping of simple cells to the read accessors that depend on it.
         self.cell_to_editpins = {}
+        self.cell_to_cell_highlink = {}
         self.paths_to_upstream = {} # Mapping of buffercells-to-dictionary-of-path:upstream-write-accessor.
         self.paths_to_downstream = {} # Mapping of datacells-to-dictionary-of-path:list-of-downstream-read-accessors
         self.transformer_to_upstream = {} # input pin to read accessor
@@ -43,6 +44,7 @@ class LiveGraph:
         self.cell_to_upstream[cell] = None
         self.cell_to_downstream[cell] = []
         self.cell_to_editpins[cell] = []
+        self.cell_to_cell_highlink[cell] = []
         self.schemacells[cell] = []
 
     def register_transformer(self, transformer):
@@ -134,6 +136,53 @@ class LiveGraph:
             manager.cachemanager.decref_checksum(expression.checksum, expression, False)            
             manager.taskmanager.destroy_expression(expression)
     
+    def _get_highlink_targets(self, source, targets):
+        if source in targets:
+            return
+        targets.add(source)
+        for target in self.cell_to_cell_highlink[source]:
+            self._get_highlink_targets(target, targets)
+
+    def activate_highlink(self, cell, checksum):
+        manager = self.manager()
+        targets = set()
+        self._get_highlink_targets(cell, targets)
+        targets.remove(cell)
+        for target in targets:
+            manager.set_cell_checksum(
+                target, checksum, 
+                initial=False,
+                from_structured_cell=False,
+                trigger_highlinks=False
+            )
+        return True
+
+    def highlink(self, current_macro, source, target):
+        def verify_auth(cell):
+            if cell._structured_cell is None:
+                if self.has_authority(cell):
+                    return
+                msg = "Highlinked cell %s must have authority"
+                raise Exception(msg % cell)
+            else:
+                if cell._structured_cell._schema is cell:
+                    return
+                msg = "Highlinked cell %s cannot be part of structured cell, unless it is its schema"
+                raise Exception(msg % cell)
+
+        verify_auth(source)
+        verify_auth(target)
+        self.cell_to_cell_highlink[source].append(target)
+        self.cell_to_cell_highlink[target].append(source)
+        manager = self.manager()
+        checksum = source._checksum
+        if checksum is not None:
+            self.activate_highlink(source, checksum)
+        else:
+            checksum = target._checksum
+            if checksum is not None:
+                self.activate_highlink(target, checksum)
+
     def connect_pin_cell(self, current_macro, source, target):
         """Connect a pin to a simple cell"""
         assert target._structured_cell is None
@@ -441,7 +490,12 @@ class LiveGraph:
                 if isinstance(target, (Cell, Path)):                
                     result.append((target, subpath))
         elif isinstance(pin, EditPin):
-            raise TypeError(EditPin)
+            reactor = pin.worker_ref()
+            editpins_cell = self.editpin_to_cell[reactor]
+            cell = editpins_cell.get(pin.name)
+            if cell is None:
+                raise KeyError("Editpin %s is not connected" % pin)
+            return (cell, None)
         else:
             raise TypeError(type(pin))
         if not len(result):
@@ -665,6 +719,7 @@ class LiveGraph:
                 self.paths_to_downstream.pop(cell)
         self.cell_to_upstream.pop(cell)
         self.cell_to_downstream.pop(cell)
+        self.cell_to_cell_highlink.pop(cell)
         self._will_lose_authority.discard(cell)
 
     @destroyer
@@ -689,13 +744,21 @@ class LiveGraph:
             "expression_to_accessors",
             "cell_to_upstream",
             "cell_to_downstream",
+            "cell_to_cell_highlink",
             "paths_to_upstream",
             "paths_to_downstream",
             "transformer_to_upstream",
             "transformer_to_downstream",
+            "reactor_to_upstream",
+            "reactor_to_downstream",
+            "editpin_to_cell",
+            "macro_to_upstream",
+            "macropath_to_upstream",
+            "macropath_to_downstream",
             "datacells",
             "buffercells",
             "schemacells",
+            "rtreactors"
         )
         name = self.__class__.__name__
         for attrib in attribs:

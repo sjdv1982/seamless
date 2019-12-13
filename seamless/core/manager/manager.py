@@ -112,7 +112,10 @@ class Manager:
     ##########################################################################
 
     @run_in_mainthread
-    def set_cell_checksum(self, cell, checksum, initial, from_structured_cell):
+    def set_cell_checksum(self, 
+        cell, checksum, *,
+        initial, from_structured_cell, trigger_highlinks
+    ):
         """Setting a cell checksum.
   (This is done from the command line, usually at graph loading)
   initial=True in case of graph loading; from_structured_cell=True when triggered from StructuredCell)
@@ -147,6 +150,7 @@ class Manager:
                 assert self.livegraph.has_authority(cell)
                 assert sc_buf is None
         else:  # initial
+            assert not trigger_highlinks
             if not from_structured_cell and cell._structured_cell is not None:
                 assert cell._structured_cell.auth is cell, cell
                 if checksum is None:
@@ -161,16 +165,20 @@ class Manager:
             reason = StatusReasonEnum.UNDEFINED
             if not from_structured_cell:
                 self.cancel_cell(cell, void=True, reason=reason)
-        else:
+        else:            
             reason = None
-            old_checksum = self.get_cell_checksum(cell)
+            if not trigger_highlinks:
+                old_checksum = cell._checksum # avoid infinite task loop...
+            else:
+                old_checksum = self.get_cell_checksum(cell)
             if old_checksum is not None:
                 if not from_structured_cell:
                     self.cancel_cell(cell, void=False)
         #and cell._context()._macro is None: # TODO: forbid
         self._set_cell_checksum(
             cell, checksum, 
-            (checksum is None), status_reason=reason
+            (checksum is None), status_reason=reason,
+            trigger_highlinks=trigger_highlinks
         )
         if not from_structured_cell: # also for initial...
             CellUpdateTask(self, cell).launch()
@@ -178,7 +186,9 @@ class Manager:
             value = cell.data
             self.update_schemacell(cell, value, None)
 
-    def _set_cell_checksum(self, cell, checksum, void, status_reason=None, prelim=False):        
+    def _set_cell_checksum(self, 
+        cell, checksum, void, status_reason=None, prelim=False, trigger_highlinks=True
+    ):        
         # NOTE: Any cell task depending on the old checksum must have been canceled already
         if cell._destroyed:
             return
@@ -210,6 +220,9 @@ class Manager:
                 self.mountmanager.add_cell_update(cell, checksum, buffer)
             if cell._share is not None:
                 self.sharemanager.add_cell_update(cell, checksum)
+            if checksum is not None and trigger_highlinks:
+                self.livegraph.activate_highlink(cell, checksum)
+
 
     def _set_inchannel_checksum(self, inchannel, checksum, void, status_reason=None, prelim=False):
         ###print("INCH", inchannel.subpath, checksum is not None)
@@ -582,6 +595,17 @@ If origin_task is provided, that task is not cancelled."""
         )
         task.launch()
 
+    @mainthread
+    def highlink(self, source, target):
+        from ..link import Link
+        if isinstance(source, Link):
+            source = source.get_linked()
+        if isinstance(target, Link):
+            target = target.get_linked()            
+        task = UponHighLinkTask(
+            self, source, target
+        )
+        task.launch()
 
     def cell_from_pin(self, pin):
         return self.livegraph.cell_from_pin(pin)
@@ -671,7 +695,8 @@ If origin_task is provided, that task is not cancelled."""
 from .tasks import (
     SetCellValueTask, SetCellBufferTask,
     CellChecksumTask, GetBufferTask,
-    DeserializeBufferTask, UponConnectionTask, CellUpdateTask
+    DeserializeBufferTask, UponConnectionTask, UponHighLinkTask,
+    CellUpdateTask
 )
 
 from ..protocol.calculate_checksum import checksum_cache

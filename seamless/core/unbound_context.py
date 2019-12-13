@@ -71,11 +71,16 @@ class UnboundManager:
         assert pin.worker_ref() in self._registered
         self.commands.append(("connect pin", (pin, cell)))
 
-    def set_cell_checksum(self, cell, checksum, initial, from_structured_cell):
+    def set_cell_checksum(self, 
+        cell, checksum, initial, from_structured_cell, trigger_highlinks
+    ):
         assert cell._get_manager() is self
         assert cell in self._registered
         self.commands.append(
-            ("set cell checksum", (cell, checksum, initial, from_structured_cell))
+            ("set cell checksum", 
+                (cell, checksum, initial, 
+                from_structured_cell, trigger_highlinks)
+            )
         )
 
     def cell_from_pin(self, pin):
@@ -311,7 +316,7 @@ class UnboundContext(SeamlessBase):
                     if com2 == "set cell":         
                         cell2, _ = args2
                     elif com2 == "set cell checksum":
-                        cell2, _, _, _ = args2
+                        cell2, _, _, _, _ = args2
                     else:
                         continue
                     if cell2 == cell:
@@ -327,10 +332,13 @@ class UnboundContext(SeamlessBase):
                 pin, cell = args
                 manager.connect(pin, None, cell, None)
             elif com == "set cell checksum":
-                cell, checksum, initial, from_structured_cell = args
+                cell, checksum, initial, from_structured_cell, trigger_highlinks = args
                 cell._initial_checksum = None
                 manager.set_cell_checksum(
-                    cell, checksum, initial, from_structured_cell
+                    cell, checksum, 
+                    initial=initial, 
+                    from_structured_cell=from_structured_cell,
+                    trigger_highlinks=trigger_highlinks
                 )
             else:
                 raise ValueError(com)
