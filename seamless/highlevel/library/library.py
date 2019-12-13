@@ -147,6 +147,8 @@ class Library:
             "graph": self._graph,
             "constructor":self._constructor, 
             "params": self._params,
+            "language": "python",
+            "api": "pyseamless"
         }
         path = self._path if full_path else self._path[-1:]
         IncludedLibrary(ctx, path, **lib)   # to validate the arguments
