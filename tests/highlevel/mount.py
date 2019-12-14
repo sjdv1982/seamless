@@ -1,4 +1,4 @@
-from seamless.highlevel import Context
+from seamless.highlevel import Context, Cell
 ctx = Context()
 ctx.txt = "not OK"
 ctx.txt.celltype = "text"
@@ -21,5 +21,9 @@ int main()
 """
 ctx.cpp_cell.celltype = "code"
 ctx.cpp_cell.language = "cpp"
+
+ctx.txt2 = Cell()
+ctx.txt2.celltype = "text"
+ctx.link(ctx.txt2, ctx.txt)
 
 ctx.equilibrate()

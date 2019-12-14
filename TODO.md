@@ -1,6 +1,8 @@
 E. The mid/high level
 E1. High-level links; maybe (re-)implement them at the low level ("highlinks")  
   Must be between simple cells, that have no incoming connections; no support for transformer.code; support it for .schema/.result_schema.
+  STATUS: low level works. High level works, except for filtering connections
+  Schema is still to be tested (for Cell and Transformer inp/result)
 E2. Reactors
 E3. High-level Macro construct around low-level macro; 
   shouldn't be too hard, but connections could be tricky.

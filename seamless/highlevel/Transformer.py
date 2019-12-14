@@ -292,7 +292,9 @@ class Transformer(Base):
                     translate = False #_get_tf() will translate
                 tf = self._get_tf()
                 inp = getattr(tf, htf["INPUT"])
-                parent._remove_connections(self._path + (attr,))
+                removed = parent._remove_connections(self._path + (attr,))
+                if removed:
+                    translate = True
                 setattr(inp.handle_no_inference, value)
         elif attr == htf["RESULT"]:
             assert htf["with_result"]
@@ -314,7 +316,9 @@ class Transformer(Base):
                     translate = False #_get_tf() will translate
                 tf = self._get_tf()
                 inp = getattr(tf, htf["INPUT"])
-                parent._remove_connections(self._path + (attr,))
+                removed = parent._remove_connections(self._path + (attr,))
+                if removed:
+                    translate = True
                 setattr(inp.handle_no_inference, attr, value)
         if translate:
             parent._translate()
@@ -402,7 +406,6 @@ class Transformer(Base):
         if attr.startswith("_"):
             raise AttributeError(attr)
         htf = self._get_htf()
-        schema_mounter = None
         dirs = None
         pull_source = functools.partial(self._pull_source, attr)
         if attr in htf["pins"]:
@@ -507,9 +510,7 @@ class Transformer(Base):
             return inputcell.checksum
         elif attr == "schema":
             schema = inputcell.get_schema()
-            ###schema_mounter = functools.partial(self._sub_mount, "input_schema")
-            schema_mounter = None ###
-            return SchemaWrapper(self, schema, schema_mounter, "SCHEMA")
+            return SchemaWrapper(self, schema, "SCHEMA")
         elif attr == "example":
             return self.example
         elif attr == "status":
@@ -533,9 +534,7 @@ class Transformer(Base):
             return resultcell.checksum
         elif attr == "schema":
             schema = resultcell.get_schema()
-            #schema_mounter = functools.partial(self._sub_mount, "result_schema")
-            schema_mounter = None ###
-            return SchemaWrapper(self, schema, schema_mounter, "RESULTSCHEMA")
+            return SchemaWrapper(self, schema, "RESULTSCHEMA")
         elif attr == "example":
             return self._result_example()
         elif attr == "exception":

@@ -59,7 +59,7 @@ class UnboundManager:
         else:
             raise TypeError(source)
 
-    def connect_cell(self, cell, cell_subpath, other,  other_subpath):
+    def connect_cell(self, cell, cell_subpath, other, other_subpath):
         from .macro import Path
         if not isinstance(cell, Path):
             assert cell._get_manager() is self
@@ -70,6 +70,13 @@ class UnboundManager:
         assert pin._get_manager() is self
         assert pin.worker_ref() in self._registered
         self.commands.append(("connect pin", (pin, cell)))
+
+    def highlink(self, cell, other):
+        from .macro import Path
+        if not isinstance(cell, Path):
+            assert cell._get_manager() is self
+            assert cell in self._registered
+        self.commands.append(("highlink", (cell, other)))
 
     def set_cell_checksum(self, 
         cell, checksum, initial, from_structured_cell, trigger_highlinks
@@ -331,6 +338,9 @@ class UnboundContext(SeamlessBase):
             elif com == "connect pin":
                 pin, cell = args
                 manager.connect(pin, None, cell, None)
+            elif com == "highlink":
+                cell, other = args
+                cell.highlink(other)
             elif com == "set cell checksum":
                 cell, checksum, initial, from_structured_cell, trigger_highlinks = args
                 cell._initial_checksum = None

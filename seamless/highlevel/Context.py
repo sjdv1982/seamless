@@ -79,8 +79,12 @@ class Context(Base):
             child = nodecls(parent=self,path=p)
         connections = graph["connections"]
         for con in connections:
-            con["source"] = tuple(con["source"])
-            con["target"] = tuple(con["target"])
+            if con["type"] == "connection":
+                con["source"] = tuple(con["source"])
+                con["target"] = tuple(con["target"])
+            elif con["type"] == "link":
+                con["first"] = tuple(con["first"])
+                con["second"] = tuple(con["second"])
         self._graph = Graph(nodes, connections, graph["params"], graph.get("lib", {}))
         self._translate()
         return self
@@ -389,13 +393,9 @@ class Context(Base):
             self._translate()
 
         connections = self._graph.connections
-        l = len(connections)
-        connections[:] = [con for con in connections \
-                           if con["source"][:len(path)] != path \
-                           and con["target"][:len(path)] != path ]
-        if len(connections) < l:
+        removed = self._remove_connections(path)
+        if removed:
             self._translate()
-
 
     @property
     def status(self):
@@ -427,9 +427,22 @@ class Context(Base):
         # Removes all connections starting with path
         lp = len(path)
         def keep_con(con):
-            ctarget = con["target"]
-            return ctarget[:lp] != path
-        self._graph[1][:] = filter(keep_con, self._graph[1])
+            if con["type"] == "link":
+                first = con["first"]
+                if first[:lp] == path:
+                    return False
+                second = con["second"]
+                if second[:lp] == path:
+                    return False
+                return True
+            else:
+                ctarget = con["target"]
+                return ctarget[:lp] != path
+        connections = self._graph[1]
+        new_connections = list(filter(keep_con, connections))
+        any_removed = (len(new_connections) < len(connections))            
+        connections[:] = new_connections
+        return any_removed
 
     def _share(self, cell):
         key = ".".join(cell._path)
@@ -442,6 +455,18 @@ class Context(Base):
         self._shares.add(cell._path)
         self._translate()
 
+    def link(self, first, second):
+        link = Link(self, first=first, second=second)
+        connections = self._graph.connections
+        connections.append(link._node)
+
+    def get_links(self):
+        connections = self._graph.connections
+        result = []
+        for node in connections:
+            if node["type"] == "link":
+                result.append(Link(self, node=node))
+        return result
 
     def __dir__(self):
         d = [p for p in type(self).__dict__ if not p.startswith("_")]
@@ -505,19 +530,27 @@ class SubContext(Base):
                 newnode = deepcopy(node)
                 newnode["path"] = nodepath[lp:]
                 newnodes.append(newnode)
-        newconnections = []
+        new_connections = []
         for connection in connections:
-            source, target = connection["source"], connection["target"]
-            if source[:lp] == path and target[:lp] == path:
-                con = deepcopy(connection)
-                con["source"] = source[lp:]
-                con["target"] = target[lp:]
-                newconnections.append(con)
+            if connection["type"] == "connection":
+                source, target = connection["source"], connection["target"]
+                if source[:lp] == path and target[:lp] == path:
+                    con = deepcopy(connection)
+                    con["source"] = source[lp:]
+                    con["target"] = target[lp:]
+                    new_connections.append(con)
+            elif connection["type"] == "link":
+                first, second = connection["first"], connection["second"]
+                if first[:lp] == path and second[:lp] == path:
+                    con = deepcopy(connection)
+                    con["first"] = first[lp:]
+                    con["second"] = second[lp:]
+                    new_connections.append(con)
         if copy:
             params = deepcopy(params)
         graph = {
             "nodes": newnodes, 
-            "connections": newconnections, 
+            "connections": new_connections, 
             "params": params
         }
         return graph
@@ -555,4 +588,5 @@ nodeclasses = {
     "transformer": Transformer,
     "reactor": Reactor,
     "context": SubContext,
+    "macro": Macro,
 }

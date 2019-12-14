@@ -256,7 +256,13 @@ def translate_connection(node, namespace, ctx):
     do_connect(source, target)
 
 def translate_link(node, namespace, ctx):
-    raise NotImplementedError  ### livegraph branch, feature E1
+    first = get_path(
+      ctx, node["first"], namespace, False
+    )
+    second = get_path(
+      ctx, node["second"], namespace, True
+    )
+    first.highlink(second)
 
 translate_compiled_transformer = None
 translate_bash_transformer = None
@@ -295,7 +301,7 @@ def translate(graph, ctx):
         setattr(parent, name, c)
         # No need to add it to namespace, as long as the low-level graph structure is imitated
 
-    connection_paths = [(con["source"], con["target"]) for con in connections]
+    connection_paths = [(con["source"], con["target"]) for con in connections if con["type"] == "connection"]
 
     namespace = {}
     for node in nodes:
@@ -342,7 +348,10 @@ def translate(graph, ctx):
         namespace2[k] = namespace[k]
 
     for connection in connections:
-        translate_connection(connection, namespace2, ctx)
+        if node["type"] == "connection":
+            translate_connection(connection, namespace2, ctx)
+        else:
+            translate_link(connection, namespace2, ctx)
 
     for node in nodes:
         t = node["type"]

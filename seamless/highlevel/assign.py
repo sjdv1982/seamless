@@ -62,7 +62,9 @@ def assign_constant(ctx, path, value):
         old = ctx._children[path]
         if isinstance(old, Cell):
             old._set(value)
-            ctx._remove_connections(path)
+            removed = ctx._remove_connections(path)
+            if removed:
+                ctx._translate()
             return False
         raise AttributeError(path) #already exists, but not a Cell
     child = Cell(ctx, path) #inserts itself as child
@@ -203,12 +205,13 @@ def _assign_context2(ctx, new_nodes, new_connections, path, old_ctx):
         if p[:len(path)] == path:
             nodes.pop(p)
     for con in list(connections):
-        source, target = con["source"], con["target"]
-        if source[:len(path)] != path:
-            continue
-        if target[:len(path)] != path:
-            continue
-        connections.remove(con)
+        if con["type"] == "connection":
+            source, target = con["source"], con["target"]
+            if source[:len(path)] != path:
+                continue
+            if target[:len(path)] != path:
+                continue
+            connections.remove(con)
     ctx._graph[0][path] = {
         "path": path,
         "type": "context"
@@ -283,7 +286,9 @@ def assign_to_subcell(cell, path, value):
     elif isinstance(value, ConstantTypes):
         sc = cell._get_cell()
         assert isinstance(sc, StructuredCell)
-        ctx._remove_connections(cell._path + path)
+        removed = ctx._remove_connections(cell._path + path)
+        if removed:
+            ctx._translate()
         handle = sc.handle_no_inference
         for p in path[:-1]:
             handle = getattr(handle, p)

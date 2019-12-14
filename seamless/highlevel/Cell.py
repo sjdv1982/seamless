@@ -29,14 +29,26 @@ class Cell(Base):
 
     @property
     def authoritative(self):
-        #TODO: determine if the cell didn't get any inbound connections
-        # If it did, you can't get another inbound connection, nor a link
-        return True ### livegraph branch, feature E1
+        parent = self._parent()
+        connections = parent._graph.connections
+        path = self._path
+        lp = len(path)
+        for con in connections:
+            if con["type"] == "connection":
+                if con["target"][:lp] == path:
+                    return False
+        return True
 
-    @property
-    def links(self):
-        #TODO: return the other partner of all Link objects with self in it
-        return [] ### livegraph branch, feature E1
+    def get_links(self):        
+        result = []
+        path = self._path()
+        lp = len(path)
+        for link in self._parent().get_links():
+            if link._node["first"][:lp] == path:
+                result.append(link)
+            elif link._node["second"][:lp] == path:
+                result.append(link)
+        return result
 
     def __rshift__(self, other):
         from .proxy import Proxy
@@ -135,13 +147,19 @@ class Cell(Base):
             raise TypeError(item)
 
     def __getattr__(self, attr):
-        if attr in ("value", "example", "status"):
+        if attr in (
+            "value", "example", "status", 
+            "authoritative", "checksum", "handle", "data", 
+            "celltype", "mimetype", "datatype",
+            "hash_pattern", "language"
+        ):
             raise AttributeError(attr) #property has failed
         if attr == "schema":
             hcell = self._get_hcell()
             if hcell["celltype"] == "structured":
                 cell = self._get_cell()
-                return cell.handle.schema
+                schema = cell.get_schema()
+                return SchemaWrapper(self, schema, "SCHEMA")
             else:
                 raise AttributeError
         hcell = self._get_hcell()
@@ -484,5 +502,6 @@ for name in binary_special_method_names:
     setattr(Cell, name, m)
 
 from .SubCell import SubCell
+from .SchemaWrapper import SchemaWrapper
 from .proxy import Proxy
 from ..midlevel.util import STRUC_ID

@@ -1,58 +1,43 @@
-from .Base import Base
-
 def is_simple(arg):
-    ###if isinstance(arg, CodeProxy): #too difficult to implement; out-of-order translation of transformers => is_simple = False
-    ###    return True
-    if isinstance(arg, Proxy):
-        return False
-    elif isinstance(arg, SubCell):
-        return False
-    elif isinstance(arg, Cell):
+    if isinstance(arg, Cell):
         node = arg._get_hcell()
         if node["celltype"] == "structured":
             return False
         else:
             return True
+    elif isinstance(arg, SubCell):
+        return False
+    elif isinstance(arg, Proxy): # too difficult, at least for now
+        return False
     else:
         return TypeError(type(arg))
 
-class Link(Base):
-    _mynode = None
-    def __init__(self, first, second):
-        raise NotImplementedError ### livegraph branch, feature E1
-        is_simple_first = is_simple(first)
-        assert first.authoritative
+class Link:
+    def __init__(self, parent, *, node=None, first=None, second=None):
+        self.parent = parent
+        if node is None:
+            assert first is not None and second is not None
+            is_simple_first = is_simple(first)
+            assert first.authoritative
 
-        is_simple_second = is_simple(second)
-        assert second.authoritative
-        first_path = first._virtual_path if isinstance(first, Proxy) else first._path
-        second_path = second._virtual_path if isinstance(second, Proxy) else second._path
-        self._mynode = {
-            "type": "link",
-            "first": {
-                "path": first_path,
-                "simple": is_simple_first,
-            },
-            "second": {
-                "path": second_path,
-                "simple": is_simple_second,
-            },
-        }
-
-    @property
-    def _node(self):
-        parent = self._parent()
-        if parent is None:
-            return self._mynode
+            is_simple_second = is_simple(second)
+            assert second.authoritative
+            vclasses = (Proxy, SchemaWrapper)
+            first_path = first._virtual_path if isinstance(first, vclasses) else first._path
+            second_path = second._virtual_path if isinstance(second, vclasses) else second._path
+            self._node = {
+                "type": "link",
+                "first": first_path,
+                "second": second_path
+            }
         else:
-            return parent._graph.nodes[self._path]
-
-    def _init(self, parent, path):
-        super().__init__(parent, path)
-        parent._children[path] = self
-        parent._graph.nodes[path] = self._mynode
-        del self._mynode
+            self._node = node
+    def remove(self):
+        if self._node is None:
+            return
+        parent._graph.connections.remove(self._node)
 
 from .proxy import Proxy, CodeProxy
 from .Cell import Cell
 from .SubCell import SubCell
+from .SchemaWrapper import SchemaWrapper
