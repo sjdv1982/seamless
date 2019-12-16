@@ -42,6 +42,7 @@ pins["result_schema"]["celltype"] = "plain"
 pins["input_name"]["celltype"] = "text"
 pins["result_name"]["celltype"] = "text"
 
+ctx.translate()
 gen_header_params = ctx.gen_header._get_tf().tf._transformer_params
 ctx.gen_header_params = gen_header_params
 ctx.gen_header_params.celltype = "plain"
@@ -112,6 +113,7 @@ ctx.cppcode.celltype = "code"
 ctx.cppcode.language = "cpp"
 
 ctx.tf0 = lambda a,b: a + b
+ctx.translate()
 ctx.tf0.example.a = 0
 ctx.tf0.example.b = 0
 ctx.tf0.result.example = 0.0

@@ -1,5 +1,6 @@
 {
   "connections": [],
+  "lib": {},
   "nodes": [
     {
       "celltype": "code",
@@ -11,7 +12,7 @@
       "mount": {
         "authority": "file",
         "mode": "r",
-        "path": "executor.py",
+        "path": "../../seamless/graphs/docker_transformer/executor.py",
         "persistent": true
       },
       "path": [
@@ -21,7 +22,5 @@
       "type": "cell"
     }
   ],
-  "params": {
-    "from_lib": null
-  }
+  "params": {}
 }

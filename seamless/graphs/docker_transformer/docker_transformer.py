@@ -1,4 +1,4 @@
-from seamless.highlevel import Context, Cell, stdlib
+from seamless.highlevel import Context, Cell
 from seamless.highlevel import set_resource
 
 executor_file = "executor.py"
