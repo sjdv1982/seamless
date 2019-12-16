@@ -132,7 +132,6 @@ def run_transformation(checksum):
 
 
 from .silk import Silk
-from .debugger import pdb
 from .shareserver import shareserver
 from .communion_server import communion_server
 from .core.transformation import set_ncores
