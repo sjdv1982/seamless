@@ -118,7 +118,8 @@ class MountItem:
         if "r" in self.mode:
             assert cell.has_authority(), cell # mount read mode only for authoritative cells
         exists = self._exists()
-        cell_buffer, cell_checksum = cell.buffer_and_checksum
+        ###cell_buffer, cell_checksum = cell.buffer_and_checksum
+        cell_checksum = cell._checksum
         cell_empty = (cell_checksum is None)
         if not cell_empty:
             if cell_checksum in empty_checksums:
@@ -137,6 +138,12 @@ class MountItem:
             if not cell_empty:
                 if cell_checksum in empty_checksums:
                     cell_empty = True
+        else:
+            if from_cache:
+                cell_buffer = cache_cell_buffer
+            else:
+                ###cell_buffer = cell.buffer
+                cell_buffer = buffer_cache.get_buffer(cell_checksum)
         self.cell_buffer = cell_buffer
         self.cell_checksum = cell_checksum
         if self.authority in ("file", "file-strict"):
@@ -173,6 +180,18 @@ class MountItem:
                             self._after_write(cell_checksum)
                 else:
                     self.last_checksum = cell_checksum
+            elif exists:
+                with self.lock:
+                    if self._destroyed:
+                        return
+                    file_buffer0 = self._read()
+                    file_buffer = adjust_buffer(file_buffer0, cell._celltype)
+                    update_file = True
+                    file_checksum = None
+                    self._after_read(file_checksum)
+                if update_file:
+                    self.set(file_buffer, checksum=file_checksum)
+
         self._initialized = True
  
     def set(self, file_buffer, checksum):        
