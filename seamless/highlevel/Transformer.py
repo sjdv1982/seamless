@@ -132,10 +132,11 @@ class Transformer(Base):
         has_translated = False
         if compiled:
             htf["with_result"] = True
-            self._parent()._translate()
+            self._parent()._do_translate(force=True)
             has_translated = True
             tf = self._get_tf()
-            tf.main_module.set({"compiler_verbose": True})
+            if tf is not None:
+                tf.main_module.set({"compiler_verbose": True})
         elif lang == "docker":
             if old_language != "docker":
                 im = False
@@ -335,6 +336,9 @@ class Transformer(Base):
         return exempt
 
     def _has_tf(self):
+        htf = self._get_htf()
+        if htf.get("UNTRANSLATED"):
+            return False
         parent = self._parent()
         try:
             p = parent._gen_context
@@ -346,13 +350,10 @@ class Transformer(Base):
         except AttributeError:
             return False
 
-    def _get_tf(self, may_translate=True):
+    def _get_tf(self):
         parent = self._parent()
-        if may_translate and not parent._translating:
-            parent._do_translate()
-        else:
-            if not self._has_tf():
-                return None
+        if not self._has_tf():
+            return None
         p = parent._gen_context
         for subpath in self._path:
             p = getattr(p, subpath)
@@ -421,15 +422,16 @@ class Transformer(Base):
         elif attr == htf["INPUT"]:
             getter = self._inputgetter
             dirs = [
-              "value", "buffer", "data", "checksum",
-              "schema", "example", "status", "exception"
+              "value", "buffered", "data", "checksum",
+              "schema", "example", "status", "exception",
+              "handle"
             ] + list(htf["pins"].keys())
             pull_source = None
             proxycls = Proxy
         elif attr == htf["RESULT"] and htf["with_result"]:
             getter = self._resultgetter
             dirs = [
-              "value", "buffer", "data", "checksum",
+              "value", "buffered", "data", "checksum",
               "schema", "example", "exception"
             ]
             pull_source = None
@@ -504,12 +506,16 @@ class Transformer(Base):
             return inputcell.value
         elif attr == "data":
             return inputcell.data
-        elif attr == "buffer":
-            return inputcell.buffer
+        elif attr == "buffered":
+            return inputcell.buffer.value
         elif attr == "checksum":
             return inputcell.checksum
+        elif attr == "handle":
+            return inputcell.handle_no_inference
         elif attr == "schema":
-            schema = inputcell.get_schema()
+            #schema = inputcell.get_schema() # WRONG
+            inp_ctx = inputcell._data._context()
+            schema = inp_ctx.example.handle.schema
             return SchemaWrapper(self, schema, "SCHEMA")
         elif attr == "example":
             return self.example
@@ -528,12 +534,14 @@ class Transformer(Base):
             return resultcell.value
         elif attr == "data":
             return resultcell.data
-        elif attr == "buffer":
-            return resultcell.buffer
+        elif attr == "buffered":
+            return resultcell.buffer.value
         elif attr == "checksum":
             return resultcell.checksum
         elif attr == "schema":
-            schema = resultcell.get_schema()
+            ###schema = resultcell.get_schema() #wrong!
+            result_ctx = resultcell._data._context()
+            schema = result_ctx.example.handle.schema
             return SchemaWrapper(self, schema, "RESULTSCHEMA")
         elif attr == "example":
             return self._result_example()
@@ -560,9 +568,11 @@ class Transformer(Base):
         assert other._parent() is parent
         path = other._path
         language = htf["language"]
+        value = None
         if attr == "code":
-            p = tf.code
-            value = p.data
+            if tf is not None:
+                p = tf.code
+                value = p.data
             cell = {
                 "path": path,
                 "type": "cell",
@@ -577,8 +587,9 @@ class Transformer(Base):
             if "checksum" in htf:
                 htf["checksum"].pop("code", None)
         else:
-            inp = getattr(tf, htf["INPUT"])
-            p = getattr(inp.value, attr)
+            if tf is not None:
+                inp = getattr(tf, htf["INPUT"])
+                p = getattr(inp.value, attr)
             value = p.value
             cell = {
                 "path": path,

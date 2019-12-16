@@ -38,10 +38,3 @@ class SchemaWrapper:
     def __repr__(self):
         return repr(self._wrapped)
 
-    def mount(self, path=None, mode="rw", authority="cell", persistent=True):
-        return self._schema_mounter(
-            path=path,
-            mode=mode,
-            authority=authority,
-            persistent=persistent
-        )

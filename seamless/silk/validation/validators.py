@@ -34,7 +34,7 @@ def validator_items(validator, items, instance, schema):
        and .form.ndim present.
     - The data is in mixed-binary form
     """
-    assert isinstance(instance, FormWrapper), type(instance)
+    assert isinstance(instance, FormWrapper), type(instance)    
     data = instance._wrapped
     if isinstance(data, np.ndarray):
         numpy_schema = is_numpy_structure_schema(schema)
@@ -132,6 +132,8 @@ def validator_form(validator, form, instance, schema, _from_items=False):
             storage = storage_form.get("form")
         else:
             storage = instance._storage
+    else:
+        storage = instance._storage
     if storage is None:
         return
 

@@ -41,7 +41,7 @@ class Cell(Base):
 
     def get_links(self):        
         result = []
-        path = self._path()
+        path = self._path
         lp = len(path)
         for link in self._parent().get_links():
             if link._node["first"][:lp] == path:
@@ -77,9 +77,6 @@ class Cell(Base):
         parent = self._parent()
         if parent._dummy:
             raise AttributeError
-        if not parent._translating:
-            if threading.current_thread() == threading.main_thread():
-                parent._do_translate()
         p = parent._gen_context        
         if len(self._path):
             pp = self._path[0]
@@ -158,7 +155,9 @@ class Cell(Base):
             hcell = self._get_hcell()
             if hcell["celltype"] == "structured":
                 cell = self._get_cell()
-                schema = cell.get_schema()
+                ###schema = cell.get_schema() # wrong!
+                struc_ctx = cell._data._context()
+                schema = struc_ctx.example.handle.schema
                 return SchemaWrapper(self, schema, "SCHEMA")
             else:
                 raise AttributeError
@@ -244,6 +243,24 @@ class Cell(Base):
             import traceback; traceback.print_exc()
             raise
         value = cell.value
+        return value
+
+    @property
+    def buffered(self):
+        parent = self._parent()
+        hcell = self._get_hcell()
+        if parent._dummy:
+            raise NotImplementedError
+        if hcell.get("UNTRANSLATED") and "TEMP" in hcell:
+            #return hcell["TEMP"]
+            raise Exception # value untranslated; translation is async!
+        assert hcell["celltype"] == "structured"
+        try:
+            cell = self._get_cell()
+        except Exception:
+            import traceback; traceback.print_exc()
+            raise
+        value = cell.buffer.value
         return value
 
     @property
