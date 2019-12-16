@@ -332,8 +332,13 @@ class TaskManager:
         for dep in task.dependencies:
             self._clean_dep(dep, task)
         if task.future is not None and task.future.done():
+            try:
+                task.future._tb_logger.clear()
+            except:
+                pass
             if task._awaiting:
                 try:
+                    
                     task.future.result() # to get rid of "Future exception was never retrieved"
                                          # seems not to trigger currently, but you never know...
                 except Exception:

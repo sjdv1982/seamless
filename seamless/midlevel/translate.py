@@ -13,7 +13,7 @@ from seamless.core import (cell as core_cell,
  transformer, reactor, context, macro, StructuredCell)
 
 from . import copying
-from .util import as_tuple, get_path, find_channels, build_structured_cell
+from .util import as_tuple, get_path, get_path_link, find_channels, build_structured_cell
 
 direct_celltypes = (
     "text", "plain", "mixed", "binary",
@@ -256,10 +256,10 @@ def translate_connection(node, namespace, ctx):
     do_connect(source, target)
 
 def translate_link(node, namespace, ctx):
-    first = get_path(
+    first = get_path_link(
       ctx, node["first"], namespace, False
-    )
-    second = get_path(
+    )    
+    second = get_path_link(
       ctx, node["second"], namespace, True
     )
     first.highlink(second)
@@ -348,7 +348,7 @@ def translate(graph, ctx):
         namespace2[k] = namespace[k]
 
     for connection in connections:
-        if node["type"] == "connection":
+        if connection["type"] == "connection":
             translate_connection(connection, namespace2, ctx)
         else:
             translate_link(connection, namespace2, ctx)

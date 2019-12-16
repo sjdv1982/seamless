@@ -233,7 +233,7 @@ class StructuredCell(SeamlessBase):
         checksum = calculate_checksum(buf)
         if checksum is not None:
             checksum = checksum.hex()
-        self.schema._set_checksum(checksum, from_structured_cell=True)
+        self.schema._set_checksum(checksum)#, from_structured_cell=True)
         manager = self._get_manager()
         manager.update_schemacell(
             self.schema, 

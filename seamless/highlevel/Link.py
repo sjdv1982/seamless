@@ -17,11 +17,13 @@ class Link:
         self.parent = parent
         if node is None:
             assert first is not None and second is not None
-            is_simple_first = is_simple(first)
-            assert first.authoritative
+            assert is_simple(first)
+            if not isinstance(first, SchemaWrapper):
+                assert first.authoritative
 
-            is_simple_second = is_simple(second)
-            assert second.authoritative
+            assert is_simple(second)
+            if not isinstance(second, SchemaWrapper):
+                assert second.authoritative
             vclasses = (Proxy, SchemaWrapper)
             first_path = first._virtual_path if isinstance(first, vclasses) else first._path
             second_path = second._virtual_path if isinstance(second, vclasses) else second._path

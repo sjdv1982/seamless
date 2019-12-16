@@ -400,7 +400,19 @@ class Transformer(Base):
     @property
     def status(self):
         htf = self._get_htf()
-        tf = self._get_tf().tf
+        if htf["compiled"]:
+            stat = self._get_tf().tf.gen_header.status
+            if not stat.endswith("OK"):
+                return "gen_header: " + stat
+            stat = self._get_tf().tf.integrator.status
+            if not stat.endswith("OK"):
+                return "integrator: " + stat
+            stat = self._get_tf().tf.translator.status
+            if not stat.endswith("OK"):
+                return "translator: " + stat
+            return stat    
+        else:
+            tf = self._get_tf().tf
         return tf.status
 
     def __getattr__(self, attr):

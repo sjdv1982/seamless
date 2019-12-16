@@ -412,6 +412,9 @@ class Context(Base):
         from .library.include import IncludedLibraryContainer
         return IncludedLibraryContainer(self, ())
 
+    def resolve(self, checksum):
+        return self._manager.resolve(checksum)
+
     def _get_libs(self, path):
         lib = self._graph.lib
         lp = len(path)
@@ -423,11 +426,13 @@ class Context(Base):
     def _get_lib(self, path):
         return self._graph.lib[tuple(path)]
 
-    def _remove_connections(self, path):
+    def _remove_connections(self, path, keep_links=False):
         # Removes all connections starting with path
         lp = len(path)
         def keep_con(con):
             if con["type"] == "link":
+                if keep_links:
+                    return True
                 first = con["first"]
                 if first[:lp] == path:
                     return False
@@ -459,6 +464,7 @@ class Context(Base):
         link = Link(self, first=first, second=second)
         connections = self._graph.connections
         connections.append(link._node)
+        self._translate()
 
     def get_links(self):
         connections = self._graph.connections

@@ -9,6 +9,16 @@ def as_tuple(v):
     else:
         return tuple(v)
 
+def get_path_link(root, path, namespace, is_target):
+    if path[-1] in ("SCHEMA", "RESULTSCHEMA"):
+        sc = get_path(root, path[:-1], namespace, is_target)
+        if path[-1] == "SCHEMA":
+            return sc.schema
+        else:
+            return sc._context().result.schema
+    else:
+        return get_path(root, path, namespace, is_target)
+
 def get_path(root, path, namespace, is_target,
   *, until_structured_cell=False,
   return_node=False

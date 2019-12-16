@@ -62,7 +62,7 @@ def assign_constant(ctx, path, value):
         old = ctx._children[path]
         if isinstance(old, Cell):
             old._set(value)
-            removed = ctx._remove_connections(path)
+            removed = ctx._remove_connections(path, keep_links=True)
             if removed:
                 ctx._translate()
             return False
@@ -95,7 +95,8 @@ def assign_transformer(ctx, path, func):
         #TODO: look at default parameters, make them optional
         if p.kind not in (p.VAR_KEYWORD, p.VAR_POSITIONAL):
             parameters.append(pname)
-    Transformer(ctx, path, code, parameters) #inserts itself as child
+    tf = Transformer(ctx, path, code, parameters) #inserts itself as child
+    assert ctx._children[path] is tf
 
 def assign_libmacro(ctx, path, libmacro):
     libmacro._bind(ctx, path)
@@ -122,6 +123,14 @@ def assign_connection(ctx, source, target, standalone_target, exempt=[]):
             hcell["checksum"].pop("auth", None)
     lt = len(target)
     def keep_con(con):
+        if con["type"] == "link":
+            first = con["first"]
+            if first[:lt] == target:
+                return False
+            second = con["second"]
+            if second[:lt] == target:
+                return False
+            return True            
         ctarget = con["target"]
         if ctarget[:lt] != target:
             return True
@@ -134,7 +143,7 @@ def assign_connection(ctx, source, target, standalone_target, exempt=[]):
     ctx._graph[1][:] = filter(keep_con, ctx._graph[1])
     if standalone_target:
         t = ctx._children[target]
-        assert not t.links
+        assert not t.get_links()
     assert source in ctx._children or source[:-1] in ctx._children, source
     s = None
     if source in ctx._children:
@@ -332,13 +341,6 @@ def assign(ctx, path, value):
         new_cell = assign_constant(ctx, path, v)
         if new_cell:
             ctx._translate()
-        else:
-            old_len = len(ctx._graph[1])
-            lp = len(path)
-            ctx._graph[1][:] = [con for con in ctx._graph[1] if con["target"][:lp] != path]
-            new_len = len(ctx._graph[1])
-            if new_len < old_len:
-                ctx._translate()
         if isinstance(value, Resource):
             node = ctx._graph.nodes[path]
             node["mount"] = {

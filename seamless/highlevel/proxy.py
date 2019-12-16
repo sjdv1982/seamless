@@ -15,17 +15,6 @@ class Proxy:
     def _virtual_path(self):
         return self._parent()._path + self._path
 
-    @property
-    def authoritative(self):
-        #TODO: determine if the proxy didn't get any inbound connections
-        # If it did, you can't get another inbound connection, nor a link
-        return True #for now, until implemented
-
-    @property
-    def links(self):
-        #TODO: return the other partner of all Link objects with self in it
-        return [] #stub
-
     def __rshift__(self, other):
         assert "w" in self._mode
         assert isinstance(other, Proxy)

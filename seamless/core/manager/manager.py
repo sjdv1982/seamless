@@ -183,7 +183,10 @@ class Manager:
         if not from_structured_cell: # also for initial...
             CellUpdateTask(self, cell).launch()
         if sc_schema:
-            value = cell.data
+            buffer = GetBufferTask(self, checksum).launch_and_await()
+            value = DeserializeBufferTask(
+                self, buffer, checksum, "plain", False
+            ).launch_and_await()            
             self.update_schemacell(cell, value, None)
 
     def _set_cell_checksum(self, 
@@ -289,7 +292,8 @@ class Manager:
 
     @run_in_mainthread
     def set_cell(self, cell, value):
-        assert self.livegraph.has_authority(cell)
+        assert self.livegraph.has_authority(cell), cell
+        assert cell._structured_cell is None, cell
         reason = None
         if value is None:
             reason = StatusReasonEnum.UNDEFINED
@@ -328,6 +332,7 @@ class Manager:
     def set_cell_buffer(self, cell, buffer, checksum):
         assert cell._hash_pattern is None
         assert self.livegraph.has_authority(cell), cell
+        assert cell._structured_cell is None, cell
         reason = None
         if buffer is None:
             reason = StatusReasonEnum.UNDEFINED
@@ -489,10 +494,11 @@ If origin_task is provided, that task is not cancelled."""
     def cancel_accessor(self, accessor, void, origin_task=None):
         assert isinstance(accessor, ReadAccessor)
         self.taskmanager.cancel_accessor(accessor, origin_task=origin_task)
-        if accessor.expression is not None:           
-            self.livegraph.decref_expression(accessor.expression, accessor)
-            accessor.expression = None
-            accessor._checksum = None
+        if origin_task is None or origin_task.accessor is not accessor:
+            if accessor.expression is not None:           
+                self.livegraph.decref_expression(accessor.expression, accessor)
+                accessor.expression = None
+                accessor._checksum = None
         accessor._void = void
         target = accessor.write_accessor.target()
         reason = StatusReasonEnum.UPSTREAM

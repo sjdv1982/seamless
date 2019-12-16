@@ -1,5 +1,7 @@
+*** 
+Check to avoid infinite await loops because of nested asyncio that launches another nested asyncio...
+***
 E. The mid/high level
-E1. Highlinks: Finish more schema/resultschema test, especially with compiled transformers (highlink-cpp.py)
 E2. Reactors
 E3. High-level Macro construct around low-level macro; 
   shouldn't be too hard, but connections could be tricky.
@@ -22,13 +24,9 @@ F.
 Known bugs:
 Conversion from structured cell to binary cell goes wrong
 
-Medium term:
-- Finalize exception logging. There are still the core aux systems
-(mount, share, communion), link them to cells if possible. For the rest,
- there are still translation/highlevel API exceptions, but they should be printed.
- Did we forget anything?
+Long-term: 
 
-Long-term: buffer cache references are not reliable, especially with
+buffer cache references are not reliable, especially with
 hash patterns (without, they *seem* to be fine, but some fishy things
 happen at the midlevel...)
 The double decref warning has been disabled for now...
@@ -36,6 +34,11 @@ For production, don't rely on buffer cache, but have Redis as a backup!!
 UPDATE: memory freeing can now be disabled completely,
  this should be enabled by default in Jupyter notebooks.
  In the future, drop refcounting scheme, use garbage collection that periodically checks if a checksum is reachable.
+
+- Finalize exception logging. There are still the core aux systems
+(mount, share, communion), link them to cells if possible. For the rest,
+ there are still translation/highlevel API exceptions, but they should be printed.
+ Did we forget anything?
 
 =======================================================  
 SOMEWHAT OUTDATED: until: see below
@@ -1008,3 +1011,6 @@ This can be applied to a simple array cell ctx.table, with a 2D Numpy array. But
  interpret "result = sorted(table)" as a Spark query. ctx.table can be converted to a Spark RDD on the fly, or it may already be a persistent
  RDD, identified by a checksum-to-RDD cache server. The result will then be converted back from an RDD to another deep cell (using caching), or to a normal array cell (using a Spark action). Seamless does not care, since in terms of checksum calculus, the result is the same
  (except of course that deep cells do not have a single checksum describing the whole data, but a framework like Spark could compute one).
+
+Seamless provides provenance by reverse referential transparency: instead of replacing a computation by its value,
+a value is replaced by its computation. Obviously, this only works for unique values.

@@ -85,26 +85,31 @@ class StructuredCellJoinTask(Task):
                 for path in paths:                    
                     subchecksum = sc.inchannels[path]._checksum
                     if subchecksum is not None:
-                        buffer = await GetBufferTask(manager, subchecksum).run()
-                        subvalue = await DeserializeBufferTask(
-                            manager, buffer, subchecksum, "mixed", False
-                        ).run()
-                        await set_subpath(value, sc.hash_pattern, path, subvalue)
-                        """
-                        # Do we need this? 
-                        # It messes up "value is None" checks in subsequent joins,
-                        #  preventing the reading from value from .auth when it should
-                        if not sc.no_auth:
-                            for mod_path in modified_paths:
-                                if overlap_path(path, mod_path): 
-                                    if len(path) and sc._auth_value is None:  # duck tape...
-                                        if isinstance(path[0], int):
-                                            sc._auth_value = []
-                                        else:
-                                            sc._auth_value = {}
-                                    await set_subpath(sc._auth_value, sc.hash_pattern, path, None)        
-                                    break                            
-                        """
+                        try:
+                            buffer = await GetBufferTask(manager, subchecksum).run()
+                            subvalue = await DeserializeBufferTask(
+                                manager, buffer, subchecksum, "mixed", False
+                            ).run()
+                            await set_subpath(value, sc.hash_pattern, path, subvalue)
+                            """
+                            # Do we need this? 
+                            # It messes up "value is None" checks in subsequent joins,
+                            #  preventing the reading from value from .auth when it should
+                            if not sc.no_auth:
+                                for mod_path in modified_paths:
+                                    if overlap_path(path, mod_path): 
+                                        if len(path) and sc._auth_value is None:  # duck tape...
+                                            if isinstance(path[0], int):
+                                                sc._auth_value = []
+                                            else:
+                                                sc._auth_value = {}
+                                        await set_subpath(sc._auth_value, sc.hash_pattern, path, None)        
+                                        break                            
+                            """
+                        except Exception:
+                            sc._exception = traceback.format_exc(limit=0)   
+                            ok = False
+                            break         
                     else:
                         ###await set_subpath(value, sc.hash_pattern, path, None)
                         ok = False
@@ -120,10 +125,14 @@ class StructuredCellJoinTask(Task):
             checksum = None
 
         if checksum is None and value is not None:
-            buf = await SerializeToBufferTask(
-                manager, value, "mixed", use_cache=False # the value object changes all the time...
-            ).run()
-            checksum = await CalculateChecksumTask(manager, buf).run()
+            try:
+                buf = await SerializeToBufferTask(
+                    manager, value, "mixed", use_cache=False # the value object changes all the time...
+                ).run()
+                checksum = await CalculateChecksumTask(manager, buf).run()
+            except Exception:
+                sc._exception = traceback.format_exc(limit=0)   
+                ok = False         
         if checksum is not None:
             if isinstance(checksum, bytes):
                 checksum = checksum.hex()        
@@ -136,7 +145,7 @@ class StructuredCellJoinTask(Task):
                 buf = await GetBufferTask(manager, cs).run()
                 value = await DeserializeBufferTask(manager, buf, cs, "mixed", copy=False).run()
         
-        if value is not None and sc.schema is not None:
+        if ok and value is not None and sc.schema is not None:
             schema = sc.get_schema()
             if schema is not None:
                 if sc.hash_pattern is None:
