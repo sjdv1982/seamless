@@ -146,7 +146,8 @@ def fill_checksums(mgr, nodes, *, path=None):
                 node2 = node.copy()
                 node2.pop("hash_pattern", None)
                 fill_checksum(mgr, node2, "code")
-                node["checksum"] = node2["checksum"]
+                if "checksum" in node2:
+                    node["checksum"] = node2["checksum"]
                 if node["with_result"]:
                     fill_checksum(mgr, node2, "result")
                 if node["compiled"]:
