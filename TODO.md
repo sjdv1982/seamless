@@ -1,6 +1,3 @@
-*** 
-Check to avoid infinite await loops because of nested asyncio that launches another nested asyncio...
-***
 E. The mid/high level
 E2. Reactors
 E3. High-level Macro construct around low-level macro; 
@@ -8,7 +5,9 @@ E3. High-level Macro construct around low-level macro;
   => Macro.path(...).connect(...) , Macro.path(...).connect_from(...)
   Wrapping everything in a single Macro with some connections into .share, .mount etc.
    is a good way to get sth working quickly, until the high level works well.
-E4. Traitlets: move code to low level??
+E4. Traitlets: mostly DONE
+  move code to low level??
+    No. Traitlets must be reconnected to the reborn low-level cell every time the graph re-translates.
 
 F.
 3. Run tests

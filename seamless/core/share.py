@@ -44,7 +44,7 @@ class ShareItem:
             assert cell.has_authority(), cell # mount read mode only for authoritative cells
         self._initializing = True
         try:
-            _, cell_checksum = cell.buffer_and_checksum
+            cell_checksum = cell._checksum
             cell_empty = (cell_checksum is None)
             _, cached_share = sharemanager.cached_shares.get(self.path, (None, None))
             from_cache = False

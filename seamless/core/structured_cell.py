@@ -298,9 +298,6 @@ class StructuredCell(SeamlessBase):
         """Raw mixed value (no Silk)"""
         return self._data.data
 
-    def _add_traitlet(self, traitlet, trigger=True):
-        self._data._add_traitlet(traitlet)
-
     def _set_context(self, context, name):
         from .unbound_context import UnboundManager
         has_ctx = self._context is not None

@@ -163,15 +163,14 @@ class Context(Base):
     def __delattr__(self, attr):
         self._destroy_path((attr,))
 
-    def _add_traitlet(self, path, subpath, fresh):
+    def _add_traitlet(self, path, fresh):
         from .SeamlessTraitlet import SeamlessTraitlet
-        traitlet = self._traitlets.get((path, subpath))
+        traitlet = self._traitlets.get(path)
         traitlet = SeamlessTraitlet(value=None)
         traitlet.parent = weakref.ref(self)
         traitlet.path = path
-        traitlet.subpath = subpath
         traitlet._connect()
-        self._traitlets[(path, subpath)] = traitlet
+        self._traitlets[path] = traitlet
         return traitlet
 
     def mount(self, path=None, mode="rw", authority="cell", persistent=None):

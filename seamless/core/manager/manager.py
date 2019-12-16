@@ -217,6 +217,9 @@ class Manager:
             if observer is not None:
                 cs = checksum.hex() if checksum is not None else None
                 observer(cs)
+            if checksum is not None:
+                for traitlet in cell._traitlets:
+                    traitlet.receive_update(checksum)
             cachemanager.incref_checksum(checksum, cell, authority)            
             if not is_dummy_mount(cell._mount):
                 buffer = self.cachemanager.buffer_cache.get_buffer(checksum)

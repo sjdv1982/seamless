@@ -226,7 +226,7 @@ class Cell(Base):
 
 
     def traitlet(self, fresh=False):
-        return self._parent()._add_traitlet(self._path, None, fresh)
+        return self._parent()._add_traitlet(self._path, fresh)
 
     @property
     def value(self):
