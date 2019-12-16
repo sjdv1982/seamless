@@ -172,6 +172,20 @@ Use ``Cell.status()`` to get its status.
         cell.set(cell.data) is NOT guaranteed to have no effect"""
         return self._get_value(copy=False)
 
+    @property
+    def exception(self):
+        manager = self._get_manager()
+        livegraph = manager.livegraph
+        exc = livegraph.cell_parsing_exceptions.get(self)
+        if exc is not None:
+            return exc
+        accessor = livegraph.cell_to_upstream[self]        
+        if accessor is None:
+            return None
+        expression = accessor.expression
+        if expression is None:
+            return None
+        return expression.exception
     def set(self, value):
         """Update cell data from authority"""
         if self._context is None:
@@ -341,14 +355,14 @@ Use ``Cell.status()`` to get its status.
         from ..highlevel.SeamlessTraitlet import SeamlessTraitlet
         assert isinstance(traitlet, SeamlessTraitlet)
         self._traitlets.append(traitlet)
-        if trigger and self.checksum is not None:
-            traitlet.receive_update(self.checksum)
+        if trigger and self._checksum is not None:
+            traitlet.receive_update(self._checksum)
 
 
     def _set_observer(self, observer, trigger=True):
         self._observer = observer
-        if trigger and self.checksum is not None:
-            observer(self.checksum)
+        if trigger and self._checksum is not None:
+            observer(self._checksum.hex())
 
     def share(self, path=None, readonly=False):
         oldshare = self._share

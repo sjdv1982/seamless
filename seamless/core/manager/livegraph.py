@@ -38,6 +38,8 @@ class LiveGraph:
         self.temp_auth = weakref.WeakKeyDictionary()
         self._will_lose_authority = set()
 
+        self.cell_parsing_exceptions = {}
+
         self._destroying = set()
 
     def register_cell(self, cell):
@@ -720,6 +722,7 @@ class LiveGraph:
         self.cell_to_upstream.pop(cell)
         self.cell_to_downstream.pop(cell)
         self.cell_to_cell_highlink.pop(cell)
+        self.cell_parsing_exceptions.pop(cell, None)
         self._will_lose_authority.discard(cell)
 
     @destroyer

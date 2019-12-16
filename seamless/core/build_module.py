@@ -11,6 +11,9 @@ from ..compiler.build_extension import build_extension_cffi
 
 from concurrent.futures import ProcessPoolExecutor
 
+class BuildModuleError(Exception):
+    pass
+
 remote_build_model_servers = []
 
 SEAMLESS_EXTENSION_DIR = os.path.join(tempfile.gettempdir(), "seamless-extensions")
@@ -101,9 +104,11 @@ def build_compiled_module(full_module_name, checksum, module_definition):
             object_checksums[objectname] = object_checksum
         if len(remaining_objects):
             build_dir = os.path.join(SEAMLESS_EXTENSION_DIR, full_module_name)
-            new_binary_objects, source_files = compile(
+            success, new_binary_objects, source_files, stderr = compile(
               remaining_objects, build_dir, compiler_verbose=COMPILE_VERBOSE
             )
+            if not success:
+                raise BuildModuleError(stderr)
             for objectname, binary_code in new_binary_objects.items():                
                 binary_objects[objectname] = binary_code
                 object_checksum = object_checksums[objectname]

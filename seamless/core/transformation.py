@@ -413,6 +413,8 @@ class TransformationJob:
                         progress = msg                        
                         progress_callback(self, progress)
                 if not self.executor.is_alive():
+                    if self.executor.exitcode != 0:
+                        raise Exception("Transformation exited with code %s" % self.executor.exitcode)
                     done = True
                 if done:
                     break

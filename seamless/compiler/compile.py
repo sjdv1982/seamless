@@ -21,6 +21,8 @@ def compile(binary_objects, build_dir, compiler_verbose=False):
     """
     all_done = True
     result = {}
+    stderr = "\n"
+    success = True
     
     curr_dir = os.path.abspath(os.getcwd())
     build_dir = os.path.abspath(build_dir)
@@ -74,14 +76,20 @@ def compile(binary_objects, build_dir, compiler_verbose=False):
             source_files[code_file] = object_["code"]
             cmd2 = " ".join(cmd)
             if compiler_verbose:
-                print(cmd2)
+                stderr += cmd2 +"\n"
             process = subprocess.run(cmd2,shell=True, capture_output=True)
             #TODO: compilation in parallel
-            print(process.stderr.decode())
-            assert process.returncode == 0
-            with open(obj_file, "rb") as f:
-                obj = f.read()
-            result[objectname] = obj
+            curr_stderr = process.stderr.decode()
+            if process.returncode != 0:
+                stderr += "*" * 20 + " ERROR " + "*" * 20 + "\n"
+                stderr += curr_stderr + "\n"
+                stderr += "*" * 20 + " /ERROR " + "*" * 20 + "\n"
+                success = False
+            else:
+                stderr += curr_stderr + "\n"
+                with open(obj_file, "rb") as f:
+                    obj = f.read()
+                result[objectname] = obj
     finally:
         os.chdir(curr_dir)
         try:
@@ -90,7 +98,7 @@ def compile(binary_objects, build_dir, compiler_verbose=False):
             pass
         locks.pop(build_dir)
         lock.release()
-    return result, source_files
+    return success, result, source_files, stderr
 
 def complete(module_definition):
     from seamless.silk import Silk

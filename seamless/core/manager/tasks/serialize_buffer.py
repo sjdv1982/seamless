@@ -1,4 +1,5 @@
 from collections import namedtuple
+import asyncio
 
 from . import Task
 from ...protocol.serialize import serialize
@@ -21,7 +22,12 @@ class SerializeToBufferTask(Task):
     async def _run(self): 
         taskmanager = self.manager().taskmanager
         loop = taskmanager.loop
-        result = await serialize(self.value, self.celltype, use_cache=self.use_cache)
+        try:
+            result = await serialize(self.value, self.celltype, use_cache=self.use_cache)
+        except asyncio.CancelledError as exc:
+            raise exc from None
+        except Exception as exc:
+            raise type(exc)(exc) from None
         return result 
 
 

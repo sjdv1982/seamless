@@ -206,7 +206,7 @@ async def convert(checksum, buffer, celltype, target_celltype):
             new_buffer = await serialize(value, target_celltype)
     except Exception:
         msg = "%s cannot be converted from %s to %s"
-        raise ValueError(msg % (checksum.hex(), celltype, target_celltype))
+        raise ValueError(msg % (checksum.hex(), celltype, target_celltype)) from None
     result = await calculate_checksum(new_buffer)
     return result
 

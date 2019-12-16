@@ -1,3 +1,5 @@
+import traceback, asyncio
+
 from . import Task
 
 class EvaluateExpressionTask(Task):
@@ -25,61 +27,67 @@ class EvaluateExpressionTask(Task):
         expression_result_checksum = \
           cachemanager.expression_to_checksum.get(expression)
         if expression_result_checksum is None:
-            # If the expression is trivial, obtain its result checksum directly
-            if expression.path is None and \
-              expression.hash_pattern is None and \
-            not needs_buffer_evaluation(
-                expression.checksum,
-                expression.celltype, 
-                expression.target_celltype, 
-            ) :    
-                expression_result_checksum = await evaluate_from_checksum(
-                    expression.checksum, expression.celltype, 
-                    expression.target_celltype
-                )
-            else:
-                buffer = await GetBufferTask(manager, expression.checksum).run()
-                if (
-                    expression.path is None \
-                    and expression.hash_pattern is None \
-                ):
-                    expression_result_checksum = await evaluate_from_buffer(
-                        expression.checksum, buffer, 
-                        expression.celltype, expression.target_celltype,
-                        buffer_cache
+            try:
+                # If the expression is trivial, obtain its result checksum directly
+                if expression.path is None and \
+                expression.hash_pattern is None and \
+                not needs_buffer_evaluation(
+                    expression.checksum,
+                    expression.celltype, 
+                    expression.target_celltype, 
+                ) :    
+                    expression_result_checksum = await evaluate_from_checksum(
+                        expression.checksum, expression.celltype, 
+                        expression.target_celltype
                     )
                 else:
-                    assert expression.celltype == "mixed" # paths may apply only to mixed cells
-                    value = await DeserializeBufferTask(
-                        manager, buffer, expression.checksum,
-                        expression.celltype, copy=False
-                    ).run()
-                    mode, result = await get_subpath(value, expression.hash_pattern, expression.path)
-                    if mode == "value":                        
-                        if result is None:
-                            return None
-                        else:
-                            result_value = result                        
-                            result_buffer = await SerializeToBufferTask(
-                                manager, result_value, 
-                                expression.target_celltype,
-                                use_cache=True
-                            ).run()
-                            expression_result_checksum = await CalculateChecksumTask(
-                                manager, result_buffer
-                            ).run()
-                    elif mode == "checksum":
-                        expression_result_checksum = result
+                    buffer = await GetBufferTask(manager, expression.checksum).run()
+                    if (
+                        expression.path is None \
+                        and expression.hash_pattern is None \
+                    ):
+                        expression_result_checksum = await evaluate_from_buffer(
+                            expression.checksum, buffer, 
+                            expression.celltype, expression.target_celltype,
+                            buffer_cache
+                        )
                     else:
-                        raise ValueError(mode)
+                        assert expression.celltype == "mixed" # paths may apply only to mixed cells
+                        value = await DeserializeBufferTask(
+                            manager, buffer, expression.checksum,
+                            expression.celltype, copy=False
+                        ).run()
+                        mode, result = await get_subpath(value, expression.hash_pattern, expression.path)
+                        if mode == "value":                        
+                            if result is None:
+                                return None
+                            else:
+                                result_value = result                        
+                                result_buffer = await SerializeToBufferTask(
+                                    manager, result_value, 
+                                    expression.target_celltype,
+                                    use_cache=True
+                                ).run()
+                                expression_result_checksum = await CalculateChecksumTask(
+                                    manager, result_buffer
+                                ).run()
+                        elif mode == "checksum":
+                            expression_result_checksum = result
+                        else:
+                            raise ValueError(mode)
 
-                await validate_subcelltype(
-                    expression_result_checksum, 
-                    expression.target_celltype, 
-                    expression.target_subcelltype, 
-                    codename="expression",
-                    buffer_cache=buffer_cache
-                )                    
+                    await validate_subcelltype(
+                        expression_result_checksum, 
+                        expression.target_celltype, 
+                        expression.target_subcelltype, 
+                        codename="expression",
+                        buffer_cache=buffer_cache
+                    )
+            except asyncio.CancelledError as exc:
+                raise exc from None
+            except Exception as exc:
+                exc = traceback.format_exc()
+                expression.exception = exc                                   
         else:
             cachemanager.expression_to_checksum[expression] = \
                 expression_result_checksum

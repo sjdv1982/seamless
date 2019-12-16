@@ -17,6 +17,7 @@ class AccessorUpdateTask(Task):
             accessor._status_reason = StatusReasonEnum.UNDEFINED
             manager.cancel_accessor(accessor, void=True, origin_task=self)
             return        
+        
         expression_result_checksum = await EvaluateExpressionTask(manager, expression).run()        
 
         # If the expression result is None, do an accessor void cancellation

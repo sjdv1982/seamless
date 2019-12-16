@@ -1,8 +1,5 @@
 E. The mid/high level
-E1. High-level links; maybe (re-)implement them at the low level ("highlinks")  
-  Must be between simple cells, that have no incoming connections; no support for transformer.code; support it for .schema/.result_schema.
-  STATUS: low level works. High level works, except for filtering connections
-  Schema is still to be tested (for Cell and Transformer inp/result)
+E1. Highlinks: Finish more schema/resultschema test, especially with compiled transformers (highlink-cpp.py)
 E2. Reactors
 E3. High-level Macro construct around low-level macro; 
   shouldn't be too hard, but connections could be tricky.
@@ -16,29 +13,29 @@ F.
    - Re-run low level tests
    - Run and adapt high-level test
    - Test in Docker container
-   - Test in Jupyter
+   - DONE: Test in Jupyter
    - Port lib-OLD examples (browse and merge) to graphs; set up stdlib
 4. Test Observable Notebook (client JS has changed)
-5. Re-run initial examples, in particular BCsearch
+5. Re-run initial examples, in particular BCsearch (DONE some testing for BCscore)
 6. Re-run examples, in particular capri and snakemake
 
+Known bugs:
+Conversion from structured cell to binary cell goes wrong
+
 Medium term:
-- What happens with error messages of setting simple cell values?
-Structured cells have .exception... so do (simple) transformers and macros. 
-What about reactors? There are also the core aux systems
-(mount, share, communion). Once we capture those error messages
-(and link them to cells if possible), are we done for logging errors? (apart from translation errors of course)
-- Allow structured cell schemas to come from upstream
-(same as currently for transformer code). This requires
-the disabling of type inference.
-UPDATE: instead, schema can be high-level linked to a simple cell!
+- Finalize exception logging. There are still the core aux systems
+(mount, share, communion), link them to cells if possible. For the rest,
+ there are still translation/highlevel API exceptions, but they should be printed.
+ Did we forget anything?
 
 Long-term: buffer cache references are not reliable, especially with
 hash patterns (without, they *seem* to be fine, but some fishy things
 happen at the midlevel...)
 The double decref warning has been disabled for now...
 For production, don't rely on buffer cache, but have Redis as a backup!!
-
+UPDATE: memory freeing can now be disabled completely,
+ this should be enabled by default in Jupyter notebooks.
+ In the future, drop refcounting scheme, use garbage collection that periodically checks if a checksum is reachable.
 
 =======================================================  
 SOMEWHAT OUTDATED: until: see below

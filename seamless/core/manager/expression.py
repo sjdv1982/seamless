@@ -15,7 +15,7 @@ _hash_slots = [
     "target_subcelltype",    
 ]
 class Expression:
-    __slots__ = [ "__weakref__"] + _hash_slots
+    __slots__ = [ "__weakref__", "exception"] + _hash_slots
     def __new__(cls, *args, **kwargs):
         expression = super().__new__(cls)
         cls.__init__(expression, *args, **kwargs)
@@ -40,6 +40,7 @@ class Expression:
         self.celltype = celltype
         self.target_celltype = target_celltype
         self.target_subcelltype = target_subcelltype
+        self.exception = None
 
     def _hash_dict(self):
         d = {}

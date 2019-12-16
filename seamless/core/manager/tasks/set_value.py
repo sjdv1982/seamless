@@ -1,3 +1,4 @@
+import traceback
 from . import Task
 
 class SetCellValueTask(Task):
@@ -13,6 +14,7 @@ class SetCellValueTask(Task):
         manager = self.manager()
         taskmanager = manager.taskmanager
         buffer_cache = manager.cachemanager.buffer_cache
+        livegraph = manager.livegraph
         await taskmanager.await_upon_connection_tasks(self.taskid)
         cell = self.cell
         lock = await taskmanager.acquire_cell_lock(cell)
@@ -29,11 +31,17 @@ class SetCellValueTask(Task):
                     value, hash_pattern
                 )                
                 value = new_deep_value
-
-            buffer = await SerializeToBufferTask(
+            
+            task = SerializeToBufferTask(
                 manager, value, cell._celltype,
                 use_cache=False
             ).run()
+            try:            
+                buffer = await task
+            except ValueError as exc:
+                raise ValueError(exc) from None
+            except Exception as exc:
+                raise exc from None
             assert buffer is None or isinstance(buffer, bytes)
             checksum = await CalculateChecksumTask(manager, buffer).run()
             if checksum is not None:
@@ -47,6 +55,9 @@ class SetCellValueTask(Task):
                 CellUpdateTask(manager, self.cell).launch()
             else:
                 manager.cancel_cell(self.cell, True, StatusReasonEnum.UNDEFINED)
+        except Exception as exc:
+            exc = traceback.format_exc()
+            livegraph.cell_parsing_exceptions[cell] = exc
         finally:
             taskmanager.release_cell_lock(cell, lock)
             taskmanager.cell_to_value.pop(cell, None)

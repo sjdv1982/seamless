@@ -146,6 +146,22 @@ class Transformer(Worker):
     def exception(self):
         if not self._void:
             return None
+        if self._status_reason == StatusReasonEnum.UPSTREAM:
+            livegraph = self._get_manager().livegraph
+            upstreams = livegraph.transformer_to_upstream[self]
+            exceptions = {}
+            for pinname, accessor in upstreams.items():
+                if accessor is None: #unconnected
+                    continue
+                expression = accessor.expression
+                if expression is None:
+                    continue
+                exc = expression.exception
+                if exc is not None:
+                    exceptions[pinname] = exc
+            if not len(exceptions):
+                return None
+            return exceptions
         if self._status_reason != StatusReasonEnum.ERROR:
             return None
         manager = self._get_manager()
