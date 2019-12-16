@@ -81,7 +81,6 @@ WAIT_TIME = 1.5 # time to wait for network connections after a new manager
 import os, sys, asyncio, time, functools, json, traceback, base64, websockets
 from weakref import WeakSet
 from .communion_client import communion_client_manager
-from .core.build_module import build_compiled_module
 
 incoming = []
 _incoming = os.environ.get("SEAMLESS_COMMUNION_INCOMING")

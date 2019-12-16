@@ -77,6 +77,9 @@ class PinsWrapper:
     def __setitem__(self, pinname, value):
         return setattr(self, pinname, value)
 
+    def __str__(self):
+        return str(self._get_hpins())
+
     def __dir__(self):
         hpins = self._get_hpins()
         return hpins.keys()

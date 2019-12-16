@@ -1,9 +1,3 @@
-from seamless.compiler import compile
-from seamless.compiler.cffi import cffi
-from seamless.compiler.build_extension import build_extension_cffi
-
-# Run with IPython/Jupyter!
-
 code = """
 #include <cmath>
 

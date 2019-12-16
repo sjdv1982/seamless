@@ -111,7 +111,7 @@ class CompiledObjectWrapper:
                 return None
             return data.get(attr)
         else:
-            tf = worker._get_tf(may_translate=False)
+            tf = worker._get_tf()
             main_module = getattr(tf, "main_module")
             main_module_data = main_module.value.unsilk
             if "objects" not in main_module_data:
@@ -207,7 +207,7 @@ class CompiledObjectWrapper:
             if self._obj not in temp["_main_module"]:
                 return []
         else:
-            tf = worker._get_tf(may_translate=False)
+            tf = worker._get_tf()
             main_module = getattr(tf, "main_module")
             main_module_data = main_module.data
             if "objects" not in main_module_data:

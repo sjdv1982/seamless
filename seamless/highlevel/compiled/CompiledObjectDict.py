@@ -15,7 +15,7 @@ class CompiledObjectDict:
                     if "value" not in main_module:
                         return main_module
             else:
-                tf = worker._get_tf(may_translate=False)
+                tf = worker._get_tf()
                 main_module = getattr(tf, "main_module")
                 main_module_data = main_module.data.value
                 if main_module_data is not None and "objects" in main_module_data:
@@ -50,7 +50,7 @@ class CompiledObjectDict:
                 return []
             return list(temp["_main_module"].keys()) + ["compiler_verbose"]
         else:
-            tf = worker._get_tf(may_translate=False)
+            tf = worker._get_tf()
             main_module = getattr(tf, "main_module")
             main_module_data = main_module.data.value
             if "objects" in main_module_data:
