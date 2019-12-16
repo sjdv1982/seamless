@@ -8,6 +8,7 @@ from collections import namedtuple
 from .redis_client import redis_sinks, redis_caches
 
 TEMP_KEEP_ALIVE = 20.0 # Keep buffer values alive for 20 secs after the last ref has expired
+DISABLE_GARBAGE_COLLECTION = False
 
 class BufferCache:
     """Checksum-to-buffer cache.
@@ -77,12 +78,13 @@ class BufferCache:
             temprefmanager.add_ref(tempref, TEMP_KEEP_ALIVE)
             return
         self.buffer_refcount[checksum] -= 1
-        if self.buffer_refcount[checksum] == 0:            
-            if checksum in self.missing_buffers:
-                self.missing_buffers.pop(checksum)
-            else:
-                self.buffer_cache.pop(checksum)
-            self.buffer_refcount.pop(checksum)
+        if not DISABLE_GARBAGE_COLLECTION:
+            if self.buffer_refcount[checksum] == 0:            
+                if checksum in self.missing_buffers:
+                    self.missing_buffers.pop(checksum)
+                else:
+                    self.buffer_cache.pop(checksum)
+                self.buffer_refcount.pop(checksum)
 
     def get_buffer(self, checksum):
         if checksum is None:
