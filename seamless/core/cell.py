@@ -316,6 +316,13 @@ Use ``Cell.status()`` to get its status.
         manager = self._get_manager()
         return manager.livegraph.has_authority(self, path)
 
+    def upstream(self):
+        manager = self._get_manager()
+        accessor = manager.livegraph.cell_to_upstream.get(self)
+        if accessor is None:
+            return None
+        return manager.livegraph.accessor_to_upstream.get(accessor)
+
     def set_file_extension(self, extension):
         if self._mount is None:
             self._mount = {}

@@ -209,7 +209,8 @@ class MountItem:
                     checksum = calculate_checksum(j1)
                     file_buffer = j1
                     if checksum != old_checksum:
-                        self._write(file_buffer)
+                        if checksum is not None and len(adjust_buffer(file_buffer)):
+                            self._write(file_buffer)
                 except (ValueError, ParseError):
                     pass
         cell.set_buffer(file_buffer, checksum)
@@ -545,7 +546,7 @@ class MountManager:
             if mount_item is None: #cell was deleted
                 continue
             try:
-                mount_item.conditional_write(checksum, buffer, with_none=True)
+                mount_item.conditional_write(checksum, buffer, with_none=False)
             except Exception:
                 exc = traceback.format_exc()
                 if exc != mount_item.last_exc:

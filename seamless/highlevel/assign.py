@@ -11,7 +11,7 @@ from .Resource import Resource
 from .pin import InputPin, OutputPin
 from .Transformer import Transformer
 from .Reactor import Reactor
-from .proxy import Proxy, CodeProxy
+from .proxy import Proxy, CodeProxy, HeaderProxy
 from ..midlevel import copying
 from . import parse_function_code
 from .Link import Link
@@ -160,7 +160,7 @@ def assign_connection(ctx, source, target, standalone_target, exempt=[]):
         if attr not in ("SCHEMA", "RESULTSCHEMA"):
             s = getattr(source_parent, attr)
             assert isinstance(s, Proxy)
-            if not isinstance(s, CodeProxy):
+            if not isinstance(s, (CodeProxy, HeaderProxy)):
                 assert isinstance(source_parent, Reactor)
                 pin = source_parent.pins[attr]
                 assert pin["io"] in ("output", "edit"), (source, pin["io"])

@@ -161,11 +161,8 @@ class StructuredCellJoinTask(Task):
                     sc._exception = traceback.format_exc(limit=0)
                     ok = False
                     sc._data._set_checksum(None, from_structured_cell=True)                    
-                    """
-                    # Done before...
                     for out_path in sc.outchannels:
                         manager.cancel_cell_path(sc._data, out_path, True)
-                    """
         if ok:
             if checksum is not None and sc._data is not sc.buffer:
                 sc._data._set_checksum(checksum, from_structured_cell=True)

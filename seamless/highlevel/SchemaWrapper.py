@@ -7,6 +7,9 @@ class SchemaWrapper:
         self._path = path
         self._parent = ref(parent)
 
+    def mount(self, *args, **kwargs):
+        raise Exception("Schema cells cannot be mounted. Use ctx.link instead")
+
     @property
     def _virtual_path(self):
         return self._parent()._path + (self._path,)

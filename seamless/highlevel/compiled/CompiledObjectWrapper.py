@@ -32,7 +32,7 @@ class CompiledObjectWrapper:
             #TODO: check existing inchannel connections and links (cannot be the same or higher)
             exempt = worker._exempt()
             assign_connection(parent, value._path, target_path, False, exempt=exempt)
-            parent.translate()
+            parent._translate()
         else:
             objname = self._obj
             if isinstance(value, Resource):
@@ -49,6 +49,7 @@ class CompiledObjectWrapper:
                 if objname not in main_module:
                     main_module[objname] = {}
                 main_module[objname][attr] = value
+                parent._translate()
             else:
                 tf = worker._get_tf()
                 main_module = getattr(tf, "main_module")
@@ -61,7 +62,7 @@ class CompiledObjectWrapper:
                     main_module_data["objects"][objname] = {"code": ""}
                 main_module_data["objects"][objname][attr] = value
                 main_module.set(main_module_data)
-                parent.translate()
+                parent._translate()
 
     def __getattr__(self, attr):
         if attr not in properties:
@@ -114,6 +115,8 @@ class CompiledObjectWrapper:
             tf = worker._get_tf()
             main_module = getattr(tf, "main_module")
             main_module_data = main_module.value.unsilk
+            if main_module_data is None:
+                return None
             if "objects" not in main_module_data:
                 return None
             if self._obj not in main_module_data["objects"]:

@@ -41,6 +41,7 @@ class CompiledObjectDict:
             main_module["compiler_verbose"] = value
         else:
             raise TypeError("Cannot assign directly an entire module object; assign individual elements")
+        worker._parent()._translate()
 
     def __dir__(self):
         worker = self._worker()

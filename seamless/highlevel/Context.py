@@ -127,7 +127,7 @@ class Context(Base):
         
         def auto_trans():
             while 1:
-                if self.auto_translate:
+                if self.auto_translate:                    
                     self.translate()
                 time.sleep(1)
         thread = threading.Thread(target=auto_trans)
@@ -255,7 +255,7 @@ class Context(Base):
         join_task_types = (
             SetCellValueTask, SetCellBufferTask, StructuredCellJoinTask
         )
-        """
+
         if self._gen_context is not None:
             taskmanager = self._gen_context._get_manager().taskmanager
             def get_join_tasks(taskmanager):
@@ -269,7 +269,6 @@ class Context(Base):
                 get_tasks_func=get_join_tasks
             )
             assert not len(remaining), remaining
-        """
         try:
             self._translating = True
             manager = self._manager
@@ -347,8 +346,12 @@ class Context(Base):
         #from pprint import pprint; pprint(graph0)
         if not force and not self._needs_translation:
             return
+        """
         if self._translating:
             raise Exception("Nested invocation of ctx.translate")
+        """
+        if self._translating:
+            return
         graph = pretranslate(self, graph0)
         if graph is not graph0:
             libmacro_nodes = {node["path"]: node for node in graph["nodes"]}

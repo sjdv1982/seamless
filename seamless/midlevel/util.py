@@ -64,7 +64,7 @@ def get_path(root, path, namespace, is_target,
             try:
                 c = getattr(c, p)
             except AttributeError:
-                raise AttributeError(path, p) from None
+                raise AttributeError(path, p, root) from None
         if return_node:
             return c, None
         else:

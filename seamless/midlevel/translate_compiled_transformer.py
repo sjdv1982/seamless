@@ -221,6 +221,7 @@ def translate_compiled_transformer(node, root, namespace, inchannels, outchannel
 
     if "header" in mount:
         ctx.header.mount(**mount["header"])
+    namespace[node["path"] + ("header",), False] = ctx.header, node
 
     namespace[node["path"], True] = inp, node
     namespace[node["path"], False] = result, node

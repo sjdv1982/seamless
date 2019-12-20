@@ -2,7 +2,7 @@ import weakref
 import functools
 from .Cell import Cell
 from .Resource import Resource
-from .proxy import Proxy, CodeProxy
+from .proxy import Proxy, CodeProxy, HeaderProxy
 from .pin import InputPin, OutputPin, PinsWrapper
 from .Base import Base
 from .mime import language_to_mime
@@ -162,7 +162,7 @@ class Transformer(Base):
         htf = self._get_htf()
         assert htf["compiled"]
         dirs = ["value", "mount", "mimetype"]
-        return Proxy(self, ("header",), "w", getter=self._header_getter, dirs=dirs)
+        return HeaderProxy(self, ("header",), "w", getter=self._header_getter, dirs=dirs)
 
     @header.setter
     def header(self, value):
@@ -542,6 +542,8 @@ class Transformer(Base):
         assert htf["with_result"]
         tf = self._get_tf()
         resultcell = getattr(tf, htf["RESULT"])
+        if attr == "mount":
+            raise Exception("Result cells cannot be mounted")
         if attr == "value":
             return resultcell.value
         elif attr == "data":
@@ -731,6 +733,6 @@ class Transformer(Base):
         d = super().__dir__()
         std = ["code", "pins", htf["RESULT"] , htf["INPUT"], "exception", "status"]
         if htf["compiled"]:
-            std.append("main_module")
+            std.append("main_module", "header")
         pins = list(htf["pins"].keys())
         return sorted(d + pins + std)

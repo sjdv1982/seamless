@@ -48,6 +48,8 @@ print("\nSTEP 1\n")
 print(ctx.tf.status)
 print(ctx.tf.header.value)
 
+ctx.header = ctx.tf.header
+
 ctx.tf_schema = Cell()
 ctx.tf_schema.celltype = "plain"
 ctx.tf_schema.mount("/tmp/schema.json")
@@ -61,11 +63,14 @@ ctx.equilibrate()
 ctx.tf.example.arr = ctx.arr.value
 
 print("\nSTEP 2\n")
+ctx.equilibrate()
 print(ctx.tf.status)
 ctx.tf.result.example.set(0)
 
 print("\nSTEP 3\n")
-print(ctx.tf.status)
 ctx.equilibrate()
+print(ctx.tf.status)
+
+print(ctx.header.value)
 
 ### Continue in interactive mode...

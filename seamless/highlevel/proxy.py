@@ -45,11 +45,14 @@ class Proxy:
             result += self._dirs
         return result
 
-    def mount(self, *args, **kwargs):
-        raise NotImplementedError
-
 class CodeProxy(Proxy):
     """A subclass of Proxy that points to a code cell
     The main difference is that a CodeProxy behaves as a simple (non-structured)
     Cell when it comes to links and connections"""
+    pass
+
+class HeaderProxy(Proxy):
+    """A subclass of Proxy that points to an auto-generated header cell of a compiled Transformer
+    It behaves as a simple (non-structured) Cell that can be the source of connections
+    """
     pass

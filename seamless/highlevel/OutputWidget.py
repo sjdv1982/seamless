@@ -6,6 +6,7 @@ mimetype_to_DOC = {
     "text/html": "HTML",
     "image/png": ("Image", {"format": lambda cell: "png"}),
     "text/plain": "Pretty",
+    'text/x-chdr': ("Code", {"language": lambda cell: "c"}),
     "application/json": "JSON",
 }
 
