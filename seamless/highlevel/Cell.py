@@ -74,10 +74,12 @@ class Cell(Base):
         return p
 
     def _get_cell(self):
+        hcell = self._get_hcell()
+        assert not hcell.get("UNTRANSLATED")
         parent = self._parent()
         if parent._dummy:
             raise AttributeError
-        p = parent._gen_context        
+        p = parent._gen_context
         if len(self._path):
             pp = self._path[0]
             p = getattr(p, pp)
@@ -226,7 +228,11 @@ class Cell(Base):
 
 
     def traitlet(self, fresh=False):
-        return self._parent()._add_traitlet(self._path, fresh)
+        hcell = self._get_hcell()
+        if hcell["celltype"] == "structured":
+            raise Exception("%s must be simple cell for traitlet" % self)
+        trigger = not hcell.get("UNTRANSLATED")
+        return self._parent()._add_traitlet(self._path, trigger)
 
     @property
     def value(self):

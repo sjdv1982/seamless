@@ -163,14 +163,16 @@ class Context(Base):
     def __delattr__(self, attr):
         self._destroy_path((attr,))
 
-    def _add_traitlet(self, path, fresh):
+    def _add_traitlet(self, path, trigger):
         from .SeamlessTraitlet import SeamlessTraitlet
         traitlet = self._traitlets.get(path)
         traitlet = SeamlessTraitlet(value=None)
         traitlet.parent = weakref.ref(self)
         traitlet.path = path
-        traitlet._connect()
+        if trigger:
+            traitlet._connect_seamless()
         self._traitlets[path] = traitlet
+        self._translate()
         return traitlet
 
     def mount(self, path=None, mode="rw", authority="cell", persistent=None):
@@ -325,14 +327,13 @@ class Context(Base):
                     ub_ctx._mount = self._mount.copy()
                 self._unbound_context = ub_ctx                
                 translate(graph, ub_ctx)
-                for traitlet in self._traitlets.values():
-                    traitlet._connect()
                 self._connect_share()
             self._gen_context = ub_ctx._bound
         finally:
             self._translating = False
             self._unbound_context = None
-        
+        for traitlet in self._traitlets.values():
+            traitlet._connect_seamless()        
         self._needs_translation = False
 
         for path, child in self._children.items():
