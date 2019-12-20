@@ -2,7 +2,7 @@ from seamless.highlevel import Context, Cell
 
 ctx = Context()
 ctx.a = 10
-ctx.a.celltype = "plain"
+#ctx.a.celltype = "plain"
 ctx.translate()
 t = ctx.a.traitlet()
 ctx.a.set(20)

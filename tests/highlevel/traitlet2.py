@@ -1,9 +1,9 @@
 from seamless.highlevel import Context
 ctx = Context()
 ctx.pdbcodes = ["1AVX", "1ACB"]
-ctx.pdbcodes.celltype = "plain"
+#ctx.pdbcodes.celltype = "plain"
 ctx.test = ["1BBB"]
-ctx.test.celltype = "plain"
+#ctx.test.celltype = "plain"
 t = ctx.pdbcodes.traitlet()
 ctx.equilibrate()
 

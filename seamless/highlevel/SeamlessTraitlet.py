@@ -81,19 +81,28 @@ class SeamlessTraitlet(traitlets.HasTraits):
     _destroyed = False
     _updating = False
     parent = None
-    cell = None
+    incell = None
+    outcell = None
     def _connect_seamless(self):
         hcell = self.parent()._children[self.path]
         if not isinstance(hcell, Cell):
             raise TypeError(type(hcell))
-        if hcell._get_hcell()["celltype"] == "structured":
-            raise Exception("%s must be simple cell for traitlet" % cell)
         cell = hcell._get_cell()
-        if not isinstance(cell, core_cell):
-            raise TypeError(type(cell))
-        self.cell = weakref.ref(cell)
-        #print("traitlet %s, observing" % self.path)        
-        cell._add_traitlet(self)
+        if hcell._get_hcell()["celltype"] == "structured":
+            incell = cell
+            outcell = cell._data
+        else:
+            incell, outcell = cell, cell
+        if incell is not None:
+            if not isinstance(incell, (core_cell, StructuredCell)):
+                raise TypeError(type(incell))
+            self.incell = weakref.ref(incell)
+        if outcell is not None:
+            if not isinstance(outcell, core_cell):
+                raise TypeError(type(outcell))
+            self.outcell = weakref.ref(outcell)
+        #print("traitlet %s, observing" % self.path)
+        outcell._add_traitlet(self)
         self.links = []
 
     def receive_update(self, checksum): 
@@ -101,7 +110,7 @@ class SeamlessTraitlet(traitlets.HasTraits):
             return
         assert checksum is not None
         value = None
-        cell = self.cell()
+        cell = self.outcell()
         if cell._destroyed:
             return
         manager = self.parent()._manager
@@ -142,9 +151,9 @@ class SeamlessTraitlet(traitlets.HasTraits):
         if self._updating:
             return
         value = change["new"]
-        if self.cell is None:
+        if self.incell is None:
             return
-        cell = self.cell()
+        cell = self.incell()
         cell.set(value)
 
     def _add_notifiers(self, handler, name, type):
@@ -184,6 +193,7 @@ class SeamlessTraitlet(traitlets.HasTraits):
 
 
 from .Cell import Cell
+from ..core.structured_cell import StructuredCell
 from ..core.cell import Cell as core_cell
 from ..core.protocol.deserialize import deserialize_sync
 from ..core.protocol.expression import get_subpath

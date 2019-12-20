@@ -229,10 +229,12 @@ class Cell(Base):
 
     def traitlet(self, fresh=False):
         hcell = self._get_hcell()
-        if hcell["celltype"] == "structured":
-            raise Exception("%s must be simple cell for traitlet" % self)
         trigger = not hcell.get("UNTRANSLATED")
         return self._parent()._add_traitlet(self._path, trigger)
+
+    def output_widget(self, layout=None):
+        from .OutputWidget import OutputWidget
+        return OutputWidget(self, layout)
 
     @property
     def value(self):
