@@ -209,7 +209,7 @@ class MountItem:
                     checksum = calculate_checksum(j1)
                     file_buffer = j1
                     if checksum != old_checksum:
-                        if checksum is not None and len(adjust_buffer(file_buffer)):
+                        if checksum is not None and len(adjust_buffer(file_buffer, "plain")):
                             self._write(file_buffer)
                 except (ValueError, ParseError):
                     pass
