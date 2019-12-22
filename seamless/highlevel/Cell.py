@@ -8,7 +8,7 @@ from .Resource import Resource
 from ..core.lambdacode import lambdacode
 from ..silk import Silk
 from ..mixed import MixedBase
-from .mime import get_mime, language_to_mime, ext_to_mime
+from ..mime import get_mime, language_to_mime, ext_to_mime
 
 celltypes = (
     "structured", "text", "code", "plain", "mixed", "binary",
@@ -283,9 +283,9 @@ class Cell(Base):
         return self.handle.add_validator(validator)
 
     @property
-    def exception(self):        
-        if self.celltype != "structured":
-            raise AttributeError
+    def exception(self):
+        if self._get_hcell().get("UNTRANSLATED"):
+            return None
         cell = self._get_cell()
         return cell.exception
 
@@ -342,6 +342,8 @@ class Cell(Base):
 
     @property
     def status(self):
+        if self._get_hcell().get("UNTRANSLATED"):
+            return None
         cell = self._get_cell()
         return cell.status
 
@@ -471,8 +473,10 @@ class Cell(Base):
         assert other._pull_source is not None
         other._pull_source(self)
 
-    def share(self):
-        self._parent()._share(self)
+    def share(self, path=None, readonly=True):
+        assert readonly or self.authoritative
+        assert readonly or self.celltype != "structured"
+        self._parent()._share(self, path, readonly)
 
     def __dir__(self):
         result = super().__dir__()

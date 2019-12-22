@@ -6,7 +6,7 @@ from .Resource import Resource
 from .proxy import Proxy, CodeProxy
 from .pin import InputPin, OutputPin
 from .Base import Base
-from .mime import language_to_mime
+from ..mime import language_to_mime
 from ..core.context import Context as CoreContext
 
 class Reactor(Base):

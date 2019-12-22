@@ -66,9 +66,6 @@ name: str
         global Macro
         if Macro is None:
             from .macro import Macro
-        global shareserver
-        if shareserver is None:
-            from .share import shareserver
         super().__init__()
         if manager is not None:
             assert toplevel
@@ -223,6 +220,7 @@ name: str
         Report the workers that are not stable every "report" seconds
         """
         manager = self._get_manager()
+        manager.sharemanager.tick()
         return manager.taskmanager.equilibrate(timeout, report)
         
     def _get_status(self):
@@ -283,8 +281,7 @@ name: str
             paths = _global_paths.get(self, {})
             for path in paths.values():
                 manager._destroy_macropath(path)
-            unregister_toplevel(self)
-            shareserver.destroy_root(self)
+            unregister_toplevel(self)            
             manager.remove_context(self)
         self._unmount(from_del=from_del)
 
@@ -364,4 +361,3 @@ from .structured_cell import StructuredCell
 
 from .manager import Manager
 Macro = None # import later
-shareserver = None # import later

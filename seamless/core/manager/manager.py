@@ -52,8 +52,9 @@ class Manager:
         mountmanager.start()
 
         # for now, just a single global sharemanager
-        from ..share import sharemanager
+        from ..share import sharemanager, shareserver
         self.sharemanager = sharemanager
+        self.shareserver = shareserver
         sharemanager.start()
 
         from ...communion_server import communion_server
@@ -697,6 +698,7 @@ If origin_task is provided, that task is not cancelled."""
         self.livegraph.check_destroyed()
         self.taskmanager.check_destroyed()
         self.taskmanager.destroy()
+        self.shareserver.destroy_manager(self)
 
     def __del__(self):
         self.destroy(from_del=True)

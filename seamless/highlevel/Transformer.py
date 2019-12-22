@@ -5,7 +5,7 @@ from .Resource import Resource
 from .proxy import Proxy, CodeProxy, HeaderProxy
 from .pin import InputPin, OutputPin, PinsWrapper
 from .Base import Base
-from .mime import language_to_mime
+from ..mime import language_to_mime
 from ..core.context import Context as CoreContext
 from . import parse_function_code
 from .SchemaWrapper import SchemaWrapper
@@ -382,6 +382,8 @@ class Transformer(Base):
     @property
     def exception(self):
         htf = self._get_htf()
+        if htf.get("UNTRANSLATED"):
+            return None
         tf = self._get_tf().tf
         if htf["compiled"]:
             exc = ""
@@ -395,11 +397,22 @@ class Transformer(Base):
                 return None
             return exc
         else:
+            code_cell = self._get_tf().code
+            curr_exc = code_cell.exception
+            if curr_exc is not None:
+                k = "code"
+                exc = ""
+                exc += "*** " + k + " ***\n"
+                exc += str(curr_exc)
+                exc += "*** /" + k + " ***\n"
+                return exc
             return tf.exception
 
     @property
     def status(self):
         htf = self._get_htf()
+        if htf.get("UNTRANSLATED"):
+            return None
         if htf["compiled"]:
             stat = self._get_tf().tf.gen_header.status
             if not stat.endswith("OK"):

@@ -1,14 +1,16 @@
 import asyncio
+import traceback
 
 class PollingObserver:
     _active = True
-    def __init__(self, ctx, path, callback, polling_interval):
+    def __init__(self, ctx, path, callback, polling_interval, observe_none=False):
         if not isinstance(ctx, Context):
             raise TypeError(type(ctx))
         self.ctx = ctx
         self.path = path
         self.polling_interval = polling_interval
         self.callback = callback
+        self.observe_none = observe_none
         self.value = None
         self.loop = asyncio.ensure_future(self._run())
     
@@ -29,19 +31,25 @@ class PollingObserver:
                 if not isinstance(value, (Base, Silk, MixedObject)):
                     if callable(value):
                         value = value()
-            if value is None:
-                return
-            if value == self.value:
-                return
-            self.value = value
+        except Exception:
+            return
+
+        if value is None and not self.observe_none:
+            return
+        if value == self.value:
+            return
+        self.value = value
+        
+        try:
             self.callback(value)
         except Exception:
-            pass
+            print("PollingObserver error:")
+            traceback.print_exc()
     
-    def stop(self):
+    def destroy(self):
         self._active = False
         ctx = self.ctx
-        ctx._observers.pop(self)
+        ctx._observers.remove(self)
 
 from .Context import Context, Base
 from ..silk.Silk import Silk

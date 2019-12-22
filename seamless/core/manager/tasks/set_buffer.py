@@ -43,6 +43,7 @@ class SetCellBufferTask(Task):
                 buffer_cache.incref(checksum)
                 propagate_simple_cell(manager.livegraph, self.cell)
                 manager._set_cell_checksum(self.cell, checksum, False)
+                livegraph.cell_parsing_exceptions.pop(cell, None)
                 CellUpdateTask(manager, self.cell).launch()
         except Exception as exc:
             exc = traceback.format_exc()

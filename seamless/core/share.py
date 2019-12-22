@@ -22,11 +22,14 @@ class ShareItem:
     _destroyed = False
     _initialized = False
     _initializing = False
-    def __init__(self, cell, path, readonly):
+    share = None
+    def __init__(self, cell, path, readonly, mimetype=None):
         self.path = path
+        self.celltype = cell._celltype
         self.cell = ref(cell)
         assert isinstance(readonly, bool)
         self.readonly = readonly
+        self.mimetype = None
 
     def init(self):
         if self._initialized:
@@ -52,24 +55,33 @@ class ShareItem:
                 if cell_empty and not self.readonly:
                     cell_checksum = cached_share._checksum
                     from_cache = True
+                for attr in ("readonly", "celltype", "mimetype"):
+                    if getattr(cached_share, attr) != getattr(self, attr):
+                        cached_share = None
+                        break
             if cached_share is not None:
                 namespace = cached_share.namespace()
-                root = namespace._ctx_root()            
-                if root is not cell._root():
-                    msg = "Cannot re-bind %s to share path %s: was bound to a different root context"
-                    raise Exception(msg % (self.cell, self.path)) 
+                manager = namespace.manager()                
+                if manager is not cell._get_manager():
+                    msg = "Cannot re-bind %s to share path %s: was bound to a different manager"
+                    raise Exception(msg % (cell, self.path))
+                sharemanager.cached_shares.pop(self.path)
                 self.share = cached_share
             else:
-                root = cell._root()
-                name = shareserver.root_to_ns.get(root)
+                manager = cell._get_manager()
+                name = shareserver.manager_to_ns.get(manager)
                 if name is None:
-                    msg = "Cannot bind %s to share path %s: root context is not shared"
-                    raise Exception(msg % (self.cell, self.path))
+                    msg = "Cannot bind %s to share path %s: manager is not shared"
+                    raise Exception(msg % (cell, self.path))
                 namespace = shareserver.namespaces[name]
-                self.share = namespace.add_share(self.path, self.readonly)
+                celltype = cell._celltype
+                self.share = namespace.add_share(
+                    self.path, self.readonly,
+                    celltype, self.mimetype
+                )
             self.share.bind(self)
             if from_cache:
-                self.update(cached_share._checksum)
+                self.update(cell_checksum)
         finally:
             self._initialized = True
             self._initializing = False
@@ -82,19 +94,22 @@ class ShareItem:
             return
         while self._initializing:
             await asyncio.sleep(0.01)
-        self.share.set_checksum(cell._checksum)
+        if self.share is not None:
+            self.share.set_checksum(cell._checksum)
 
     def update(self, checksum):        
         # called by shareserver, or from init
-        sharemanager.share_value_updates[self] = checksum
+        if not self.readonly:
+            sharemanager.share_value_updates[self] = checksum
 
     def destroy(self):
         if self._destroyed:
             return        
         self._destroyed = True
-        self.share.unbind()            
-        now = time.time()
-        sharemanager.cached_shares[self.path] = (now, self.share)
+        if self.share is not None:
+            self.share.unbind()            
+            now = time.time()
+            sharemanager.cached_shares[self.path] = (now, self.share)
 
     def __del__(self):
         if self._destroyed:
@@ -119,40 +134,23 @@ class ShareManager:
         self.paths = {}
         self.cached_shares = {} # key: file path; value: (deletion time, share.Share)
 
-    def new_namespace(self, ctx, share_equilibrate, name=None):
-        from .unbound_context import UnboundContext
-        from .context import Context
-        if isinstance(ctx, UnboundContext):
-            ctx = ctx._bound
-        assert isinstance(ctx, Context)
-        assert ctx._toplevel
-        self.paths[ctx] = set()
-        name = shareserver._new_namespace(ctx, share_equilibrate, name)
+    def new_namespace(self, manager, share_equilibrate, name=None):
+        from .manager import Manager
+        assert isinstance(manager, Manager)
+        self.paths[manager] = set()
+        name = shareserver._new_namespace(manager, share_equilibrate, name)
         return name
 
-    def _add_share(self, cell, path, readonly):
-        root = cell._root()
-        if root not in self.paths:
-            paths = set()
-            self.paths[root] = paths
-        else:
-            paths = self.paths[root]
-        assert path not in paths, path
-        #print("add mount", path, cell)
-        paths.add(path)
-        item = ShareItem(cell, path, readonly)
-        self.shares[cell] = item
-        return item
 
     def unshare(self, cell, from_del=False):
-        root = cell._root()
-        if from_del and (cell not in self.shares or root not in self.paths):
+        manager = cell._get_manager()
+        if from_del and (cell not in self.shares or manager not in self.paths):
             return
         if cell not in self.shares and cell in self.share_updates:
             return
         share_item = self.shares.pop(cell)
         if not share_item._destroyed:
-            paths = self.paths[root]
+            paths = self.paths[manager]
             path = share_item.path
             paths.discard(path)            
             share_item.destroy()
@@ -237,8 +235,6 @@ class ShareManager:
                 continue
             try:                
                 share_item = self.shares[cell]
-                if share_item.readonly:
-                    continue
                 share_item.init()
                 await share_item.write()
             except:

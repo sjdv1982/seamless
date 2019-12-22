@@ -52,6 +52,7 @@ class SetCellValueTask(Task):
                 checksum_cache[checksum] = buffer
                 propagate_simple_cell(manager.livegraph, self.cell)                
                 manager._set_cell_checksum(self.cell, checksum, False)
+                livegraph.cell_parsing_exceptions.pop(cell, None)
                 CellUpdateTask(manager, self.cell).launch()
             else:
                 manager.cancel_cell(self.cell, True, StatusReasonEnum.UNDEFINED)

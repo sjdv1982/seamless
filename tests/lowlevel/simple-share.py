@@ -36,12 +36,15 @@ def define_ctx():
     return ctx
 
 ctx = define_ctx()
-name = sharemanager.new_namespace(ctx, True, name="ctx")
+ctx.equilibrate()
+name = sharemanager.new_namespace(ctx._get_manager(), True, name="ctx")
+ctx.equilibrate()
 print("OK1", name)
 
 print(ctx.cell1.value, ctx.cell2.value)
-ctx.cell1.share()
-ctx.cell2.share()
+ctx.cell1.share(readonly=False)
+ctx.cell2.share(readonly=False)
+ctx.equilibrate()
 
 async def echo(uri):
     async with websockets.connect(uri) as websocket:
@@ -86,11 +89,12 @@ loop.run_until_complete(asyncio.sleep(0.1))
 r = thread(requests.get, 'http://localhost:5813/ctx/cell1')
 print(r.json())
 
-ctx.destroy()
+ctx._get_manager().destroy()
 
 ctx = context(toplevel=True)
-name = sharemanager.new_namespace(ctx, True, name="ctx")
+name = sharemanager.new_namespace(ctx._get_manager(), True, name="ctx")
 print("OK2", name)
+assert name == "ctx"
 
 ws = echo('ws://localhost:5138/ctx')
 asyncio.ensure_future(ws)
@@ -105,11 +109,10 @@ def define_ctx2():
     ctx.macro = macro({"param_a": "int"})
     ctx.macro.code.cell().set(macro_code)
     ctx.param_a = cell().set(42)
-    ctx.param_a.share()
+    ctx.param_a.share(readonly=False)
     ctx.param_a.connect(ctx.macro.param_a)
 
 define_ctx2()
-
 r = thread(
     requests.patch, 'http://localhost:5813/ctx/equilibrate', 
     json={"timeout": None}
@@ -129,7 +132,7 @@ r = thread(
 )
 print(r.json())
 print("OK3a")
-sharemanager.tick()
+ctx.equilibrate()
 
 print(ctx.param_a.value)
 print("OK3b")
@@ -139,6 +142,3 @@ ctx.equilibrate()
 print(ctx.param_a.value)
 print(ctx.macro.ctx.a.value)
 
-sharemanager.tick()
-
-import sys; sys.exit()

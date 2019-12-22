@@ -42,6 +42,7 @@ class CellChecksumTask(Task):
 
         manager = self.manager()
         taskmanager = manager.taskmanager
+        livegraph = manager.livegraph
         await taskmanager.await_upon_connection_tasks(self.taskid)
         cell = self.cell
         invalid = False
@@ -62,7 +63,8 @@ class CellChecksumTask(Task):
             else:                    
                 checksum = cell._checksum   
                 if checksum is None:
-                    return         
+                    return
+                livegraph.cell_parsing_exceptions.pop(cell, None)
         finally:
             taskmanager.release_cell_lock(cell, lock)
         old_void = cell._void

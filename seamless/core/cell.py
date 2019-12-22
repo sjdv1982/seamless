@@ -371,7 +371,9 @@ Use ``Cell.status()`` to get its status.
         if trigger and self._checksum is not None:
             observer(self._checksum.hex())
 
-    def share(self, path=None, readonly=False):
+    def share(self, path=None, readonly=True):
+        if not readonly:
+            assert self.has_authority()
         oldshare = self._share
         self._share = {
             "readonly": readonly,

@@ -17,20 +17,20 @@ It opens an update websocket server, and a REST server.
 Shares are of the form http://<address>:<port>/<namespace>/<path>
 By default, namespace is "ctx", address is localhost, port is 5813
 
-All GET requests have a field URL parameter (default: "buffer"), which can have
+All GET requests have a mode URL parameter (default: "buffer"), which can have
 one of the following values.
-1. field=all:
-returns a JSON with 3 fields:
+1. mode=all:
+returns a JSON with 3 modes:
 - buffer (i.e. what would be in a file), UTF-encoded, with final newline.
 - checksum, as hex
 - marker.
-2. field=buffer:
+2. mode=buffer:
 Just returns the buffer
-3. field=checksum:
+3. mode=checksum:
 Just returns the checksum
 
-PUT messages are in JSON. They must contain a field "buffer"
-(although the final newline is optional) OR a field "checksum"
+PUT messages are in JSON. They must contain a mode "buffer"
+(although the final newline is optional) OR a mode "checksum"
 They may contain a marker. If there is one, the PUT is only
  accepted if the current marker is equal (or lower).
 If there is no marker, a new marker will be created, which is
@@ -64,11 +64,13 @@ def tailsplit(tail):
 
 class Share:
     _destroyed = False
-    def __init__(self, namespace, key, readonly):
+    def __init__(self, namespace, key, readonly, celltype, mimetype):
         assert isinstance(namespace, ShareNamespace)
         self.namespace = weakref.ref(namespace)
         self.key = key
         self.readonly = readonly
+        self.celltype = celltype
+        self.mimetype = mimetype
         self._checksum = None
         self._marker = 0
         self._calc_checksum_task = None
@@ -176,12 +178,12 @@ class Share:
 
         
 class ShareNamespace:
-    def __init__(self, name, ctx_root, share_equilibrate):
-        from .core.context import Context
-        assert isinstance(ctx_root, Context), type(ctx_root)
-        assert ctx_root._toplevel
+    def __init__(self, name, manager, share_equilibrate):
+        from .core.manager import Manager
+        if not isinstance(manager, Manager): 
+            raise TypeError(manager)
         self.name = name
-        self._ctx_root = weakref.ref(ctx_root)
+        self.manager = weakref.ref(manager)
         self._share_equilibrate = share_equilibrate
 
         self.shares = dict()
@@ -189,13 +191,13 @@ class ShareNamespace:
         self._send_sharelist_task = None
         
 
-    def add_share(self, key, readonly):
+    def add_share(self, key, readonly, celltype, mimetype):
         shareserver.start()
         changed = True
         if key in self.shares:
             self.shares[key].destroy()
             changed = False
-        newshare = Share(self, key, readonly)
+        newshare = Share(self, key, readonly, celltype, mimetype)
         self.shares[key] = newshare
         if changed:
             self.refresh_sharelist()
@@ -232,30 +234,37 @@ class ShareNamespace:
         finally:
             self._send_sharelist_task = None
 
-    async def _get(self, key, field):
-        assert field in ("checksum", "buffer", "all")
+    async def _get(self, key, mode):
+        assert mode in ("checksum", "buffer", "value", "all")
         share = self.shares[key]
         checksum, marker = await share.read()
         if checksum is not None:
             checksum2 = checksum.hex()
         else:
             checksum2 = None
-        if field == "checksum":
+        if mode == "checksum":
             return checksum2
         buffer = await get_buffer(checksum, buffer_cache)
-        if field == "buffer":
+        if mode == "buffer":
+            if buffer is None:
+                return None
             return buffer.decode()
+        if mode == "value":
+            if buffer is None:
+                return None
+            return buffer
         return {
             "checksum": checksum2,
             "buffer": buffer,
             "marker": marker,
         }
 
-    async def get(self, key, field):
-        coro = self._get(key, field)
+    async def get(self, key, mode):
+        coro = self._get(key, mode)
         share = self.shares[key]
-        share.requests.append(coro)
-        return await coro
+        fut = asyncio.ensure_future(coro)
+        share.requests.append(fut)
+        return await fut
 
     async def _put(self, share, value, mode, marker):
         assert mode in ("checksum", "buffer")
@@ -272,8 +281,9 @@ class ShareNamespace:
         share = self.shares[key]
         assert not share.readonly
         coro = self._put(share, value, mode, marker)
-        share.requests.append(coro)
-        return await coro
+        fut = asyncio.ensure_future(coro)
+        share.requests.append(fut)
+        return await fut
 
     async def send_checksum(self, key, checksum, marker):
         coros = []
@@ -284,11 +294,15 @@ class ShareNamespace:
 
     def equilibrate(self, timeout):
         assert self._share_equilibrate
-        ctx = self._ctx_root()
-        if ctx is None or ctx._destroyed:
+        manager = self.manager()
+        if manager is None or manager._destroyed:
             return
-        waiting, background = ctx.equilibrate(timeout)
-        result = sorted(list(waiting))
+        result = []
+        for ctx in self.manager().contexts:
+            if ctx._destroyed:
+                continue            
+            waiting, background = ctx.equilibrate(timeout)
+            result += sorted(list(waiting))
         return result
 
 class ShareServer(object):
@@ -307,10 +321,10 @@ class ShareServer(object):
     def __init__(self):
         self.started = False
         self.namespaces = {}
-        self.root_to_ns = weakref.WeakKeyDictionary()
+        self.manager_to_ns = weakref.WeakKeyDictionary()
 
     def _new_namespace(
-        self, ctx_root, 
+        self, manager, 
         share_equilibrate, 
         name=None
     ):
@@ -325,13 +339,13 @@ class ShareServer(object):
                     break
                 count += 1
         self.namespaces[name] = ShareNamespace(
-            name, ctx_root, share_equilibrate
+            name, manager, share_equilibrate
         )
-        self.root_to_ns[ctx_root] = name
+        self.manager_to_ns[manager] = name
         return name
     
-    def destroy_root(self, root):
-        name = self.root_to_ns.get(root)
+    def destroy_manager(self, manager):
+        name = self.manager_to_ns.get(manager)
         if name is None:
             return
         namespace = self.namespaces.pop(name)
@@ -452,25 +466,35 @@ class ShareServer(object):
                 content_type='application/json'
             )
 
-        field = request.rel_url.query.get("field", "buffer")
+        mode = request.rel_url.query.get("mode", "buffer")
 
-        if field not in ("buffer", "checksum", "all"):
-            err = 'if specified, field must be "buffer", "checksum" or "all"'
+        if mode not in ("buffer", "checksum", "value", "all"):
+            err = 'if specified, mode must be "buffer", "checksum", "value", or "all"'
             if DEBUG:
-                print("shareserver _handle.get", err, ns, key, field)
+                print("shareserver _handle.get", err, ns, key, mode)
             return web.Response(
                 status=404,
                 text=err,
             )
 
         try:
-            result = await namespace.get(key, field)
-            if field != "checksum":
-                body = json.dumps(result, indent=2, sort_keys=True)
-                content_type = 'application/json'
+            result = await namespace.get(key, mode)
+            """
+            if mode == "value":
+                #body = json.dumps(result, indent=2, sort_keys=True)
+                #content_type = 'application/json'
             else:
                 body = result
                 content_type = 'text/plain'
+            """
+            body = result
+            if mode == "value":
+                if share.mimetype is not None:
+                    content_type = share.mimetype
+                else:
+                    content_type = get_mime(share.celltype)
+            else:
+                content_type = "text/plain"
             return web.Response(
                 status=200,
                 body=body,
@@ -670,3 +694,4 @@ shareserver = ShareServer()
 from .core.cache.buffer_cache import buffer_cache
 from .core.protocol.calculate_checksum import calculate_checksum
 from .core.protocol.get_buffer import get_buffer, CacheMissError
+from .mime import get_mime

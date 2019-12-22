@@ -125,7 +125,7 @@ class UnboundContext(SeamlessBase):
 
     _name = None
     _children = {}
-    _manager = None    
+    _boundmanager = None    
     _auto = None
     _toplevel = False
     _naming_pattern = "ctx"    
@@ -153,7 +153,7 @@ class UnboundContext(SeamlessBase):
         if toplevel:
             assert root is None
             assert not macro
-            root = Context(toplevel=True)
+            root = Context(toplevel=True, manager=manager)
             if manager is not None:                
                 root._realmanager = manager
         elif macro:
