@@ -42,7 +42,6 @@ celltype_to_ext = {
     "cson": "cson",
     "array": "npy",
     "mixed": "mixed",
-    #"signal": None, #should give an error if queried
     None: None,
 }
 

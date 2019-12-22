@@ -1,12 +1,16 @@
+//https://raw.githack.com/sjdv1982/seamless/master/seamless-client.js
+
+
+
 function connect_seamless(websocketserver, restserver, namespace="ctx"){  
   var ctx = {
     self: {
       oninput: function(value) {},
       onchange: function(value) {},
-      onvarlist: function(value) {},
+      onsharelist: function(value) {},
       get_value: function(){
         let result = {}
-        for (const key of varlist) {
+        for (const key of sharelist) {
           result[key] = ctx[key].value
         }
         return result
@@ -14,16 +18,17 @@ function connect_seamless(websocketserver, restserver, namespace="ctx"){
     }
   }
   let handshake = null
-  let varlist = null    
+  let sharelist = null    
   
   function get_value(key) {
-    var rq = restserver + "/" + namespace + "/" + key + "?field=all"
+    var rq = restserver + "/" + namespace + "/" + key + "?mode=all"
     //$("#request").text("GET:" + rq)
     fetch(rq)
     .then(function(response) {
       return response.json()  
     })
     .then(function(result) {
+      //$("#message").text(JSON.stringify(result))
       if (result["marker"] <= ctx[key]._marker) return
       ctx[key].value = result["buffer"]
       ctx[key]._marker = result["marker"]
@@ -66,7 +71,7 @@ function connect_seamless(websocketserver, restserver, namespace="ctx"){
       return response.text()
     })
     .then(function(result) {
-      if parseInt(result) {
+      if (parseInt(result)) {
         if (ctx[key]._marker == oldmarker) {
           ctx[key]._marker = newmarker
         }
@@ -83,15 +88,15 @@ function connect_seamless(websocketserver, restserver, namespace="ctx"){
       handshake = message
       //$("#message").text(JSON.stringify(handshake))
     }    
-    else if (message[0] == "varlist") {
-      varlist = message[1];
-      //$("#message").text(JSON.stringify(varlist))
+    else if (message[0] == "sharelist") {
+      sharelist = message[1];
+      //$("#message").text(JSON.stringify(sharelist))
       function curry_set_value(bound_key) {
         return function(value) {
           return set_value(bound_key, value)
         }
       }
-      for (const key of varlist) {
+      for (const key of sharelist) {        
         if (key == "self") continue
         ctx[key] = {
           value: null,
@@ -102,8 +107,8 @@ function connect_seamless(websocketserver, restserver, namespace="ctx"){
         }
         get_value(key)
       }
-      ctx.self.onvarlist(varlist)
-    }      
+      ctx.self.onsharelist(sharelist)
+    }
     else if (message[0] == "update") {
       let key = message[1][0]
       let marker = message[1][2]
@@ -133,4 +138,14 @@ define({
 module.exports = {
   connect_seamless: connect_seamless,
 };
+*/
+
+/*
+ctx = connect_seamless("ws://localhost:5138", "http://localhost:5813" );
+ctx.self.onsharelist = function(sharelist) {
+  ctx.cell1.onchange = function() {
+    data = ctx.cell1.value
+    $("#model").text(data)
+  }
+}
 */

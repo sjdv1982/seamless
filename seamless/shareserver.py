@@ -193,14 +193,11 @@ class ShareNamespace:
 
     def add_share(self, key, readonly, celltype, mimetype):
         shareserver.start()
-        changed = True
         if key in self.shares:
             self.shares[key].destroy()
-            changed = False
         newshare = Share(self, key, readonly, celltype, mimetype)
         self.shares[key] = newshare
-        if changed:
-            self.refresh_sharelist()
+        self.refresh_sharelist()
         return newshare
     
     def remove_share(self, key):
@@ -253,11 +250,18 @@ class ShareNamespace:
             if buffer is None:
                 return None
             return buffer
-        return {
+        if share.mimetype is not None:
+            content_type = share.mimetype
+        else:
+            content_type = get_mime(share.celltype)
+        result = {
             "checksum": checksum2,
-            "buffer": buffer,
+            "buffer": buffer.decode(),
             "marker": marker,
+            "content_type": content_type,
         }
+        result = json.dumps(result, indent=2, sort_keys=True)
+        return result
 
     async def get(self, key, mode):
         coro = self._get(key, mode)
@@ -479,14 +483,6 @@ class ShareServer(object):
 
         try:
             result = await namespace.get(key, mode)
-            """
-            if mode == "value":
-                #body = json.dumps(result, indent=2, sort_keys=True)
-                #content_type = 'application/json'
-            else:
-                body = result
-                content_type = 'text/plain'
-            """
             body = result
             if mode == "value":
                 if share.mimetype is not None:
