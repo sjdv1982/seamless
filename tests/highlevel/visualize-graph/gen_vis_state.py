@@ -11,8 +11,8 @@ color_mapping = {
     1: "red",
     2: "orange",
     3: "yellow",
-    4: "green",
-    5: "blue",
+    4: "forestgreen",
+    5: "royalblue",
 }
 
 for node in graph["nodes"]:
@@ -30,9 +30,18 @@ for node in graph["nodes"]:
         continue
 
     color = 5
+    cstate = ""
     for subpath in paths:
         subpath2 = ".".join(subpath)
         status = state[subpath2 + ".status"]
+        if status is None:
+            status = ""
+        if len(status.split()) > 2:
+            if subpath != path:
+                cstate += "*** " + subpath2 + " ***\n"
+            cstate += "*** status ***\n"
+            cstate += status
+            cstate += "\n" + "*" * 50 + "\n\n"
         if status == "Status: OK":
             continue
         elif status.startswith("Status: executing"):
@@ -43,7 +52,18 @@ for node in graph["nodes"]:
             color = min([color, 2])
         else:
             color = 1
+        exc = state.get(subpath2 + ".exception", "")
+        if exc is None:
+            exc = ""
+        if len(exc.split()) > 2:
+            if subpath != path:
+                cstate += "*** " + subpath2 + " ***\n"
+            cstate += "*** exception ***\n"
+            cstate += exc
+            cstate += "\n" + "*" * 50 + "\n\n"
     rnode["color"] = color_mapping[color]
+    if cstate:
+        rnode["state"] = cstate
     rnodes.append(rnode)
     path_to_id[path] = rnode["id"]
 

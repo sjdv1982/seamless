@@ -50,7 +50,7 @@ def observe_graph(graph):
                 subpath = path + (attr,)
                 callback = partial(state_callback, subpath)
                 state_callback(subpath, None)
-                observer = ctx.observe(subpath, callback, 1, observe_none=True)
+                observer = ctx.observe(subpath, callback, 2, observe_none=True)
                 observers[subpath] = observer
             state_callbacks[path] = observers
     for dpath in paths_to_delete:
@@ -61,7 +61,7 @@ def observe_graph(graph):
             observer.destroy()
     #print("DONE")
 
-ctx.observe(("get_graph",), observe_graph, 0.1)
+ctx.observe(("get_graph",), observe_graph, 0.5)
 
 gvs = ctx2.gen_vis_state = Transformer()
 gvs.graph = ctx2.graph

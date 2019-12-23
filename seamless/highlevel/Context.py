@@ -143,7 +143,7 @@ class Context(Base):
         except KeyError:
             try:
                 return self._libmacro_graph.nodes[path]
-            except KeyError:
+            except (KeyError, AttributeError):
                 raise KeyError(path) from None
 
     def _get_path(self, path):

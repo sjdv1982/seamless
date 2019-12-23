@@ -81,7 +81,7 @@ class BufferCache:
         if not DISABLE_GARBAGE_COLLECTION:
             if self.buffer_refcount[checksum] == 0:            
                 if checksum in self.missing_buffers:
-                    self.missing_buffers.pop(checksum)
+                    self.missing_buffers.remove(checksum)
                 else:
                     self.buffer_cache.pop(checksum)
                 self.buffer_refcount.pop(checksum)

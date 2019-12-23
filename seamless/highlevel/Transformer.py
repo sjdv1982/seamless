@@ -214,11 +214,11 @@ class Transformer(Base):
         example = result_ctx.example.handle
         return example
 
-    def add_validator(self, validator):
+    def add_validator(self, validator, name=None):
         htf = self._get_htf()
         inp = htf["INPUT"]
         #TODO: self.self
-        return getattr(self, inp).add_validator(validator)
+        return getattr(self, inp).add_validator(validator, name=name)
 
     def _assign_to(self, hctx, path):
         from .assign import assign_connection

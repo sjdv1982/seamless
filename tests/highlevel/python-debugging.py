@@ -82,5 +82,5 @@ ctx.myresult = ctx.transform
 ctx.equilibrate()
 print(ctx.myresult.value)
 
-import seamless
-seamless.mainloop()
+import asyncio
+asyncio.get_event_loop().run_forever()

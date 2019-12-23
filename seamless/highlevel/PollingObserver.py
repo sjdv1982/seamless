@@ -21,6 +21,8 @@ class PollingObserver:
 
     def _run_once(self):
         ctx = self.ctx
+        if ctx._translating:
+            return
         value = ctx
         try:
             for p in self.path:

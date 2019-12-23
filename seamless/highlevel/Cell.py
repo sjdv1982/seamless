@@ -74,8 +74,8 @@ class Cell(Base):
         return p
 
     def _get_cell(self):
-        hcell = self._get_hcell()
-        assert not hcell.get("UNTRANSLATED")
+        ###hcell = self._get_hcell() # infinite loop...
+        ###assert not hcell.get("UNTRANSLATED")
         parent = self._parent()
         if parent._dummy:
             raise AttributeError
@@ -92,6 +92,8 @@ class Cell(Base):
     def _observe_cell(self, checksum):
         if self._parent() is None:
             return
+        if self._parent()._translating:
+            return
         hcell = self._get_hcell()
         if hcell.get("checksum") is None:
             hcell["checksum"] = {}
@@ -101,6 +103,8 @@ class Cell(Base):
 
     def _observe_auth(self, checksum):
         if self._parent() is None:
+            return
+        if self._parent()._translating:
             return
         hcell = self._get_hcell()
         if hcell.get("checksum") is None:
@@ -112,6 +116,8 @@ class Cell(Base):
     def _observe_buffer(self, checksum):
         if self._parent() is None:
             return
+        if self._parent()._translating:
+            return
         hcell = self._get_hcell()
         if hcell.get("checksum") is None:
             hcell["checksum"] = {}
@@ -121,6 +127,8 @@ class Cell(Base):
 
     def _observe_schema(self, checksum):
         if self._parent() is None:
+            return
+        if self._parent()._translating:
             return
         hcell = self._get_hcell()
         if hcell.get("checksum") is None:
@@ -279,8 +287,8 @@ class Cell(Base):
         struc_ctx = cell._data._context()
         return struc_ctx.example.handle
 
-    def add_validator(self, validator):
-        return self.handle.add_validator(validator)
+    def add_validator(self, validator, name=None):
+        return self.handle.add_validator(validator, name=name)
 
     @property
     def exception(self):

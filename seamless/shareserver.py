@@ -256,7 +256,7 @@ class ShareNamespace:
             content_type = get_mime(share.celltype)
         result = {
             "checksum": checksum2,
-            "buffer": buffer.decode(),
+            "buffer": buffer.decode() if buffer is not None else None,
             "marker": marker,
             "content_type": content_type,
         }
