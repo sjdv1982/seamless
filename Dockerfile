@@ -1,4 +1,4 @@
-FROM jupyter/scipy-notebook:latest
+FROM jupyter/scipy-notebook:4b0e7c708aa5
 LABEL author="Sjoerd de Vries <sjoerd.de-vries@inserm.fr>"
 LABEL version="0.2"
 USER root
