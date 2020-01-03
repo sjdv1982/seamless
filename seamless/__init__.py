@@ -9,13 +9,12 @@ import functools
 import traceback
 
 
-""" # only for python 3.6
 # monkey patch to get rid of  "exception was never retrieved" error messages
 
-import asyncio.compat 
+import asyncio.compat
 asyncio.compat.PY34 = False
 from asyncio import CancelledError
-###from asyncio.futures import _TracebackLogger
+from asyncio.futures import _TracebackLogger
 
 def activate(self):
     exc = self.exc
@@ -28,7 +27,7 @@ def activate(self):
 _TracebackLogger.activate = activate
 
 # /monkey patch
-"""
+
 
 import nest_asyncio
 nest_asyncio.apply()
