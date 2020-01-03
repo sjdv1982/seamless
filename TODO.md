@@ -9,17 +9,19 @@ E3. High-level Macro construct around low-level macro;
 
 F.
 3. Run tests
-   - Re-run low level tests
-   - Run and adapt high-level test
+   - Re-run low level tests (no problems expected)
+   - Run and adapt high-level tests (mostly DONE)
    - Test in Docker container
    - DONE: Test in Jupyter
    - Port lib-OLD examples (browse and merge) to graphs; set up stdlib
 4. Test Observable Notebook (client JS has changed)
-5. Re-run initial examples, in particular BCsearch (DONE some testing for BCscore)
-6. Re-run examples, in particular capri and snakemake
+5. Re-run initial examples, in particular BCsearch (DONE for final state; TODO for intermediate)
+6. Re-run capri example
 
 Known bugs:
 Conversion from structured cell to binary cell goes wrong
+
+
 
 Long-term: 
 

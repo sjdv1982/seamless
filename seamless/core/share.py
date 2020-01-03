@@ -124,6 +124,7 @@ class ShareManager:
     _running = False
     _last_run = None
     _stop = False
+    _future_run = None
     def __init__(self, latency):
         self.latency = latency
         self.shares = {}
@@ -167,7 +168,7 @@ class ShareManager:
 
     async def run_once(self):
 
-        for cell in self.share_updates:
+        for cell in self.share_updates:            
             if cell._destroyed:
                 continue
             share_params = cell._share
@@ -271,7 +272,8 @@ class ShareManager:
     def start(self):
         if self._running:
             return
-        self._future_run = asyncio.ensure_future(self._run())
+        if self._future_run is None:
+            self._future_run = asyncio.ensure_future(self._run())
         return self._future_run
 
     async def _await_stop(self):

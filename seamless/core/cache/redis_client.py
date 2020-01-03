@@ -1,4 +1,3 @@
-import redis
 import asyncio
 
 _redis_connections = {}
@@ -9,6 +8,7 @@ class RedisSink:
     def __init__(self, *, host='localhost',port=6379, 
       store_compile_result=True
     ):
+        import redis
         self.host = host
         self.port = port    
         self.store_compile_result = store_compile_result
@@ -59,6 +59,7 @@ class RedisSink:
 
 class RedisCache:
     def __init__(self, *, host='localhost',port=6379):
+        import redis
         self.host = host
         self.port = port    
         key = (host, port)

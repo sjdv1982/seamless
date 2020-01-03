@@ -168,10 +168,10 @@ class Manager:
                 self.cancel_cell(cell, void=True, reason=reason)
         else:            
             reason = None
-            if not trigger_highlinks:
-                old_checksum = cell._checksum # avoid infinite task loop...
-            else:
-                old_checksum = self.get_cell_checksum(cell)
+            #if not trigger_highlinks:
+            old_checksum = cell._checksum # avoid infinite task loop...
+            #else:
+            #    old_checksum = self.get_cell_checksum(cell)
             if old_checksum is not None:
                 if not from_structured_cell:
                     self.cancel_cell(cell, void=False)

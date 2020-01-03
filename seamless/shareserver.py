@@ -321,6 +321,7 @@ class ShareServer(object):
     rest_port = DEFAULT_SHARE_REST_PORT
     _update_server_started = False
     _rest_server_started = False
+    _future_start = None
 
     def __init__(self):
         self.started = False
@@ -682,7 +683,8 @@ class ShareServer(object):
 
     def start(self):
         if not self.started:
-            self._future_start = asyncio.ensure_future(self._start())
+            if self._future_start is None:
+                self._future_start = asyncio.ensure_future(self._start())
         return self._future_start
 
 shareserver = ShareServer()
