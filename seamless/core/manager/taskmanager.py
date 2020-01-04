@@ -188,7 +188,7 @@ class TaskManager:
                 
             try:
                 task.future.result() # This is the real future
-            except Exception as exc:
+            except Exception as exc:                
                 if not isinstance(exc, CancelledError):
                     if task._awaiting:
                         continue
@@ -332,21 +332,18 @@ class TaskManager:
         for dep in task.dependencies:
             self._clean_dep(dep, task)
         if task.future is not None and task.future.done():
-            try:
-                task.future._tb_logger.clear()
-            except:
-                pass
-            if task._awaiting:
+            fut = task.future
+            fut._log_traceback = False
+            if not task._awaiting:
                 try:
-                    
-                    task.future.result() # to get rid of "Future exception was never retrieved"
-                                         # seems not to trigger currently, but you never know...
-                except Exception:
-                    pass
-            else:
-                try:
+                    assert task.future is fut
+                    assert not task.future._log_traceback
                     task.future.result() # to raise Exception; TODO: log it instead
                 except CancelledError:
+                    try:
+                        task.future._exception = None ### KLUDGE
+                    except AttributeError:
+                        pass
                     pass            
                 finally:
                     task._awaiting = True

@@ -66,8 +66,12 @@ class StructuredCellJoinTask(Task):
                     value = copy.deepcopy(sc._auth_value)
                     if value is None:
                         if sc.auth._checksum is not None:
+                            ###value = copy.deepcopy(sc.auth.data)
                             checksum = sc.auth._checksum
-                            value = copy.deepcopy(sc.auth.data)
+                            buffer = await GetBufferTask(manager, checksum).run()                            
+                            value = await DeserializeBufferTask(
+                                manager, buffer, checksum, "mixed", False
+                            ).run()
                             sc._auth_value = value
                     else:
                         auth_buf = await SerializeToBufferTask(
@@ -120,7 +124,11 @@ class StructuredCellJoinTask(Task):
             if value is None:
                 if sc.auth._checksum is not None:
                     checksum = sc.auth._checksum                     
-                    value = copy.deepcopy(sc.auth.data)
+                    ###value = copy.deepcopy(sc.auth.data)
+                    buffer = await GetBufferTask(manager, checksum).run()                            
+                    value = await DeserializeBufferTask(
+                        manager, buffer, checksum, "mixed", False
+                    ).run()
                     sc._auth_value = value
         if not ok:
             value = None

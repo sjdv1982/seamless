@@ -66,8 +66,8 @@ class Task:
         #print("LAUNCHED", self)
         #if self.__class__.__name__ != "CellChecksumTask": await asyncio.sleep(2) ###
         try:
-            ###await asyncio.shield(self.future)
-            await self.future
+            await asyncio.shield(self.future)
+            ###await self.future
         except CancelledError:                        
             self.cancel()
             raise
