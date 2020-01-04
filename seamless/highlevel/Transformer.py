@@ -296,7 +296,7 @@ class Transformer(Base):
                 removed = parent._remove_connections(self._path + (attr,))
                 if removed:
                     translate = True
-                setattr(inp.handle_no_inference, value)
+                inp.handle_no_inference.set(value)
         elif attr == htf["RESULT"]:
             assert htf["with_result"]
             result = getattr(tf, htf["RESULT"])

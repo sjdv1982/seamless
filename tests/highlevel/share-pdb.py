@@ -1,3 +1,15 @@
+#!/usr/bin/env python
+# coding: utf-8
+
+# In[1]:
+
+
+import seamless
+
+
+# In[2]:
+
+
 from seamless.highlevel import Context, Transformer
 
 try:
@@ -6,7 +18,7 @@ try:
     import asyncio
     asyncio.get_event_loop().run_until_complete(asyncio.sleep(0.5))
     redis_sink.connection.info()
-except Exception:
+except:
     print("No Redis found!")
 
 ctx = Context()
@@ -46,4 +58,22 @@ json.dump(graph, open("share-pdb.seamless", "w"), indent=2, sort_keys=True)
 
 ctx.code.mount("/tmp/code.bash")
 ctx.equilibrate()
+
+
+# In[4]:
+
+
+ctx.code.set("tail bb_pdb0")
+
+
+# In[5]:
+
+
+ctx.code.value
+
+
+# In[ ]:
+
+
+
 
