@@ -26,8 +26,8 @@ ctx.compute()
 print()
 
 
-"""
 print("File system contents:")
+"""
 print(ctx.fs.status)
 print(ctx.fs.exception)
 fs = ctx.fs.value.unsilk
