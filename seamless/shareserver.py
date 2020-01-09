@@ -250,7 +250,7 @@ class ShareNamespace:
         if mode == "buffer":
             if buffer is None:
                 return None, None
-            return buffer.decode(), content_type
+            return buffer.decode(), "text/plain"
         if mode == "value":
             if buffer is None:
                 return None, None
@@ -472,7 +472,7 @@ class ShareServer(object):
                 content_type='application/json'
             )
 
-        mode = request.rel_url.query.get("mode", "buffer")
+        mode = request.rel_url.query.get("mode", "value")
 
         if mode not in ("buffer", "checksum", "value", "all"):
             err = 'if specified, mode must be "buffer", "checksum", "value", or "all"'
@@ -565,7 +565,7 @@ class ShareServer(object):
         if share.readonly:
             return web.Response(
                 status=404,
-                text="Refused",
+                text="Refused, share is read-only",
             )
         try:
             newmarker = await namespace.put(key, value, mode, marker)

@@ -61,6 +61,7 @@
       "type": "cell"
     },
     {
+      "UNTRANSLATED": true,
       "celltype": "code",
       "file_extension": "sh",
       "language": "bash",

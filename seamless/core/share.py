@@ -23,7 +23,7 @@ class ShareItem:
     _initialized = False
     _initializing = False
     share = None
-    def __init__(self, cell, path, readonly, mimetype=None):
+    def __init__(self, cell, path, readonly, mimetype=None):        
         self.path = path
         self.celltype = cell._celltype
         self.cell = ref(cell)

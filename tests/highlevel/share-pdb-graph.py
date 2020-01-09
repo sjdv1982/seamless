@@ -1,24 +1,27 @@
 import seamless
-from seamless.highlevel import load_graph
+from seamless.highlevel import load_graph, Cell
 import sys, json
-
-try:
-    import seamless
-    redis_sink = seamless.RedisCache()
-    import asyncio
-    asyncio.get_event_loop().run_until_complete(asyncio.sleep(0.5))
-    redis_sink.connection.info()
-except Exception:
-    print("No Redis found! Exiting...")
-    import sys; sys.exit()
 
 graph = json.load(open("share-pdb.seamless"))
 
 ctx = load_graph(graph)
+ctx.add_zip("share-pdb.zip")
 ctx.compute()
 
 ctx.bb_pdb.share()
 ctx.pdb.share()
-ctx.code.share()
+ctx.code.share(readonly=False)
+ctx.translate()
+
 ctx.code.mount("/tmp/code.bash")
-ctx.translate(force=True)
+ctx.translate()
+
+import seamless
+import os
+seamless_dir = os.path.dirname(seamless.__file__)
+c = ctx.seamless_client_js = Cell()
+c.celltype = "text"
+c.mount(seamless_dir + "/js/seamless-client.js", "r", authority="file-strict")
+c.mimetype = "js"
+c.share("seamless-client.js")
+ctx.translate()

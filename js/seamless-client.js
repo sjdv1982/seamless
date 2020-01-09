@@ -130,19 +130,20 @@ function connect_seamless(websocketserver, restserver, namespace="ctx"){
 }
 
 
-/*
-//export default connect_seamless
-define({
-  connect_seamless: connect_seamless,
-});
-*/
-/*
-module.exports = {
-  connect_seamless: connect_seamless,
-};
-*/
+if (typeof define !== 'undefined') { //require.js
+  define({
+    connect_seamless: connect_seamless,
+  });
+}
+if (typeof module !== 'undefined') {  
+  module.exports = {
+    connect_seamless: connect_seamless,
+  };
+}
 
 /*
+// Example:
+
 ctx = connect_seamless("ws://localhost:5138", "http://localhost:5813" );
 ctx.self.onsharelist = function(sharelist) {
   ctx.cell1.onchange = function() {
