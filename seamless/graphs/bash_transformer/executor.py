@@ -32,7 +32,7 @@ try:
     for pin in pins_:
         v = globals()[pin]
         if isinstance(v, Silk):
-            v = v.data
+            v = v.unsilk
         storage, form = get_form(v)
         if storage.startswith("mixed"):
             raise TypeError("pin '%s' has mixed data" % pin)

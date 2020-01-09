@@ -15,12 +15,16 @@ files = [("data/genome.tgz", "b"),
         ("data/samples/A.fastq", "t"),
         ("data/samples/B.fastq", "t")
 ]
-for file, mode in files:
+
+def bind(file, mode):
     data = open(file, "r" + mode).read()
     if mode == "b":
         data = np.frombuffer(data, dtype=np.uint8)
     setattr(ctx.fs, file, data)
 
+for file, mode in files:
+    bind(file, mode)
+    
 print("Compute...")
 ctx.compute()
 print()
@@ -59,11 +63,9 @@ for fs_cellname in ctx.fs.children("cell"):
     print(fs_cellname + ":", v)
     print()
 
-
-
 import os
 if "calls/all.vcf" in finished:
     print("SUCCESS, calls/all.vcf created")
     os.system("mkdir -p calls")
     with open("calls/all.vcf", "w") as f:
-        f.write(getattr(fs, "calls/all.vcf"))
+        f.write(getattr(ctx.fs, "calls/all.vcf").value.unsilk)

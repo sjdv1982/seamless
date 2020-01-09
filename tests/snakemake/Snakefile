@@ -13,6 +13,7 @@ rule bwa_map:
     output:
         "mapped_reads/{sample}.bam"
     shell:
+        "sleep 5;"
         "tar xzf {input.genome} genome.fa genome.fa.ann genome.fa.fai genome.fa.sa genome.fa.amb genome.fa.bwt genome.fa.pac;"
         "bwa mem genome.fa {input.samples}| samtools view -Sb - > {output}"
 
@@ -23,6 +24,7 @@ rule samtools_sort:
     output:
         "sorted_reads/{sample}.bam"
     shell:
+        "sleep 5;"
         "samtools sort -T sorted_reads/{wildcards.sample} "
         "-O bam {input} > {output}"
 
@@ -33,9 +35,11 @@ rule samtools_index:
     output:
         "sorted_reads/{sample}.bam.bai"
     shell:
+        "sleep 5;"
         "samtools index {input} {output}"
 
 
+SAMPLES = ['A', 'B']
 '''
 rule bcftools_call:
     input:
@@ -61,6 +65,7 @@ rule bcftools_call:
     output:
         "calls/all.vcf"
     shell:
+        "sleep 5;"
         "tar xzf {input.genome} genome.fa genome.fa.ann genome.fa.fai genome.fa.sa genome.fa.amb genome.fa.bwt genome.fa.pac;"
         "samtools mpileup -g -f genome.fa {input.Abam} {input.Bbam} | "
         "bcftools call -mv - > {output};"

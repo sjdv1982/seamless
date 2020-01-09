@@ -2,8 +2,10 @@
 //  https://gist.github.com/rkirsling/5001347
 
 // set up SVG for D3
-let width = parseFloat($("#graph").attr("width"));
-let height = parseFloat($("#graph").attr("height"));
+//let width = parseFloat($("#graph").attr("width"));
+//let height = parseFloat($("#graph").attr("height"));
+let width = 700;
+let height = 500; 
 
 const svg = d3.select('body') 
   .select('svg')
@@ -26,7 +28,7 @@ let links = [
 
 // init D3 force layout
 const force = d3.forceSimulation()
-  .force('link', d3.forceLink().id((d) => d.id).distance(150))
+  .force('link', d3.forceLink().id((d) => d.id).distance(50))
   .force('charge', d3.forceManyBody().strength(-500))
   .force('x', d3.forceX(width / 2))
   .force('y', d3.forceY(height / 2))
@@ -52,6 +54,9 @@ const drag = d3.drag()
     d.fx = null;
     d.fy = null;
   });
+
+
+radius = 15;
 
 // define arrow markers for graph links
 svg.append('svg:defs').append('svg:marker')
@@ -86,6 +91,13 @@ let selectedLink = null;
 
 // update force layout (called automatically each iteration)
 function tick() {
+  circle.attr('cx', (d) => {
+    return d.x = Math.max(radius, Math.min(width - radius, d.x)); 
+  })
+  .attr('cy', (d) => {
+    return d.y = Math.max(radius, Math.min(height - radius, d.y)); 
+  });
+  
   // draw directed edges with proper padding from node centers
   path.attr('d', (d) => {
     const deltaX = d.target.x - d.source.x;
