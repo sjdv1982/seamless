@@ -79,7 +79,7 @@ ctx.code >> ctx.transform.code
 ctx.code.mount("triple_it.py")
 ctx.transform.a = ctx.a
 ctx.myresult = ctx.transform
-ctx.equilibrate()
+ctx.compute()
 print(ctx.myresult.value)
 
 import asyncio

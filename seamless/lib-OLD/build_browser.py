@@ -12,7 +12,7 @@ b.mimetype = "text"
 b.charset = "UTF-8" #for text/ ; otherwise, the browser must figure it out
 b.title = "Seamless browser"
 b.val = "Hello world!"
-ctx.equilibrate()
+ctx.compute()
 
 if __name__ == "__main__":
     print(b._get_rc().status())

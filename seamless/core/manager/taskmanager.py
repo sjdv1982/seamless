@@ -155,14 +155,15 @@ class TaskManager:
         
         dd.append(task)
 
-    def _get_upon_connection_tasks(self):
+    def _get_upon_connection_tasks(self, root):
         for task in self.tasks:
             if isinstance(task, UponConnectionTask):
-                yield task
+                if task._root() is root:                
+                    yield task
 
-    async def await_upon_connection_tasks(self,taskid):
+    async def await_upon_connection_tasks(self,taskid,root):
         futures, tasks = [], []
-        for task in self._get_upon_connection_tasks():
+        for task in self._get_upon_connection_tasks(root):
             if task.taskid >= taskid or task.future is None:
                 continue
             tasks.append(task)
@@ -197,7 +198,7 @@ class TaskManager:
                 task._awaiting = True
                 # If anything goes wrong in another task, consider this a cancel
                 ok = False
-        if not ok and not shield:
+        if not ok and not shield:            
             raise CancelledError
 
     async def acquire_cell_lock(self, cell):
@@ -247,7 +248,8 @@ class TaskManager:
         except ValueError:
             pass
 
-    def equilibrate(self, timeout, report, get_tasks_func=None):  
+    def compute(self, timeout, report, get_tasks_func=None):  
+        assert nest_asyncio is not None or not asyncio.get_event_loop().is_running()
         manager = self.manager()
         manager.temprefmanager.purge()
 
@@ -318,7 +320,79 @@ class TaskManager:
                 if remaining < 0:
                     break
         return print_report(verbose=False)
-    
+
+    async def computation(self, timeout, report, get_tasks_func=None):
+        manager = self.manager()
+        manager.temprefmanager.purge()
+
+        if timeout is not None:
+            timeout_time = time.time() + timeout
+            remaining = timeout
+        if report is not None:
+            last_report = time.time()
+        
+        def select_pending_tasks():
+            if get_tasks_func is None:
+                tasks = self.tasks
+            else:
+                tasks = get_tasks_func(self)
+            ptasks, futures = [], []            
+            for task in tasks:
+                future = task.future
+                if future is None:
+                    continue
+                ptasks.append(task)
+                futures.append(future)
+            return ptasks, futures
+
+        ptasks, futures = select_pending_tasks()
+        def print_report(verbose=True):
+            running = set()
+            #print("TASKS", ptasks)
+            for task in ptasks:
+                for dep in task.dependencies:
+                    if isinstance(dep, SeamlessBase):
+                        running.add(dep)
+                        #print("TASK",task)
+            if not len(running):
+                if not len(ptasks):
+                    return [], False
+                if verbose:
+                    print("Waiting for background tasks")
+                return [], True
+            result = sorted(running, key=lambda dep: dep.path)
+            if verbose:
+                print("Waiting for:",end=" ")            
+                for obj in result:
+                    print(obj,end=" ")
+                print()
+            return result, True
+
+        while len(ptasks):
+            if timeout is not None:
+                if report is not None:
+                    curr_timeout=min(remaining, report)
+                else:
+                    curr_timeout = remaining
+            else:
+                if report is not None:
+                    curr_timeout = report
+                else:
+                    curr_timeout = None
+            await asyncio.sleep(0.0001)
+            ptasks, futures = select_pending_tasks()
+            if curr_timeout is not None:
+                curr_time = time.time()
+            if report is not None:
+                if curr_time > last_report + report:
+                    print_report()
+                    last_report = curr_time
+            if timeout is not None:
+                remaining = timeout_time - time.time()
+                if remaining < 0:
+                    break
+        return print_report(verbose=False)
+
     def cancel_task(self, task):
         if task.future is None or task.future.cancelled():
             return
@@ -491,3 +565,4 @@ from .accessor import ReadAccessor
 from .expression import Expression
 from .tasks.upon_connection import UponConnectionTask
 from ...communion_server import communion_server
+from ... import nest_asyncio

@@ -24,7 +24,7 @@ class CacheManager:
         # Quick local expression cache
         # Hang onto this indefinitely
         # No expression cache at the level of communion_server or redis
-        #  (if expressions are really long to evaluate, use deepcells)
+        #  (if expressions are really long to compute, use deepcells)
         self.expression_to_checksum = {} 
         
         # for now, just a single global transformation cache

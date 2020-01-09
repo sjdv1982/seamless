@@ -388,7 +388,7 @@ class BaseExprVisitor(ast.NodeVisitor):
         # [1,2] in a + 2 * b
         # in that case a + 2 * b will be evaluated using numexpr, and the "in"
         # call will be evaluated using isin (in python space)
-        return binop.evaluate(self.env, self.engine, self.parser,
+        return binop.compute(self.env, self.engine, self.parser,
                               self.term_type, eval_in_python)
 
     def _maybe_evaluate_binop(self, op, op_class, lhs, rhs,
@@ -417,7 +417,7 @@ class BaseExprVisitor(ast.NodeVisitor):
         elif self.engine != 'pytables':
             if (getattr(lhs, 'return_type', None) == object or
                     getattr(rhs, 'return_type', None) == object):
-                # evaluate "==" and "!=" in python if either of our operands
+                # compute "==" and "!=" in python if either of our operands
                 # has an object return type
                 return self._maybe_eval(res, eval_in_python +
                                         maybe_eval_in_python)

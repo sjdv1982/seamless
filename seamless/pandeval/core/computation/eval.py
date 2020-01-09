@@ -170,7 +170,7 @@ def eval(expr, parser='pandas', engine=None, truediv=True,
     Parameters
     ----------
     expr : str or unicode
-        The expression to evaluate. This string cannot contain any Python
+        The expression to compute. This string cannot contain any Python
         `statements
         <https://docs.python.org/3/reference/simple_stmts.html#simple-statements>`__,
         only Python `expressions
@@ -184,7 +184,7 @@ def eval(expr, parser='pandas', engine=None, truediv=True,
         more details.
     engine : string or None, default 'numexpr', {'python', 'numexpr'}
 
-        The engine used to evaluate the expression. Supported engines are
+        The engine used to compute the expression. Supported engines are
 
         - None         : tries to use ``numexpr``, falls back to ``python``
         - ``'numexpr'``: This default engine evaluates pandas objects using
@@ -302,10 +302,10 @@ def eval(expr, parser='pandas', engine=None, truediv=True,
         parsed_expr = Expr(expr, engine=engine, parser=parser, env=env,
                            truediv=truediv, str_as_bytes=str_as_bytes)
 
-        # construct the engine and evaluate the parsed expression
+        # construct the engine and compute the parsed expression
         eng = _engines[engine]
         eng_inst = eng(parsed_expr)
-        ret = eng_inst.evaluate(align_result=align_result)
+        ret = eng_inst.compute(align_result=align_result)
 
         if parsed_expr.assigner is None:
             if multi_line:

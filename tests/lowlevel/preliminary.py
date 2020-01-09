@@ -69,7 +69,7 @@ state = {}
 oldstate = {}
 start = time.time()
 while 1:
-    waitfor, background = ctx.equilibrate(0.01, report=None)
+    waitfor, background = ctx.compute(0.01, report=None)
     state["status"] = {"tf1": ctx.tf1.status, "tf2": ctx.tf2.status, "tf3": ctx.tf3.status, "tf4": ctx.tf4.status}
     state["status"]["tf1-result"] = ctx.tf1_result.status
     state["status"]["tf2-result"] = ctx.tf2_result.status

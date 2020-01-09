@@ -8,7 +8,7 @@ ctx.minus = lambda x,y: x - y
 ctx.minus.x = ctx.x
 ctx.minus.y = ctx.y
 ctx.result = ctx.minus
-ctx.equilibrate()
+ctx.compute()
 print(ctx.result.value)
 
 stdlib.subtract = ctx
@@ -36,7 +36,7 @@ print(z.ctx.x)
 print(z.ctx.x.checksum)
 print(z.ctx.x.value)
 
-ctx.equilibrate()
+ctx.compute()
 print(ctx.subtract1.ctx)
 print(dir(ctx.subtract1.ctx))
 print(ctx.subtract1.ctx.x)

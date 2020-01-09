@@ -1,5 +1,6 @@
 import asyncio
 import traceback
+from copy import deepcopy
 
 class PollingObserver:
     _active = True
@@ -40,7 +41,7 @@ class PollingObserver:
             return
         if value == self.value:
             return
-        self.value = value
+        self.value = deepcopy(value)
         
         try:
             self.callback(value)

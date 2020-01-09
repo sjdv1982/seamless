@@ -371,7 +371,7 @@ Use ``Cell.status()`` to get its status.
         if trigger and self._checksum is not None:
             observer(self._checksum.hex())
 
-    def share(self, path=None, readonly=True):
+    def share(self, path=None, readonly=True, mimetype=None):
         if not readonly:
             assert self.has_authority()
         oldshare = self._share
@@ -379,6 +379,8 @@ Use ``Cell.status()`` to get its status.
             "readonly": readonly,
             "path": path
         }
+        if mimetype is not None:
+            self._share["mimetype"] = mimetype
         if oldshare != self._share:
             sharemanager.update_share(self)
 

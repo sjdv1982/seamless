@@ -8,7 +8,7 @@ import seamless
 from seamless.core import context, cell
 
 ctx = context(toplevel=True)
-ctx.equilibrate()
+ctx.compute()
 
 ctx.cell1 = cell("int").set_checksum(
     "bc4bb29ce739b5d97007946aa4fdb987012c647b506732f11653c5059631cd3d"  # 1

@@ -35,17 +35,17 @@ c = a + b
     ctx.testmodule = cell("plain").set(testmodule)
     ctx.testmodule.connect(ctx.tf.testmodule)
 
-ctx.equilibrate()
+ctx.compute()
 print(ctx.result.value)
 
 ctx.cell1.set(700)
-ctx.equilibrate()
+ctx.compute()
 print(ctx.result.value)
 ctx.code.set("c = a + b + testmodule.q + 1000")
-ctx.equilibrate()
+ctx.compute()
 print(ctx.result.value)
 testmodule["code"] = "q = 80"
 ctx.testmodule.set(testmodule)
-ctx.equilibrate()
+ctx.compute()
 print(ctx.result.value)
 print(ctx.status)

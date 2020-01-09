@@ -36,7 +36,7 @@ ctx.result_link = link(ctx.result)
 ctx.tf.c.connect(ctx.result_link)
 ctx.result_copy = cell("int")
 ctx.result.connect(ctx.result_copy)
-ctx.equilibrate()
+ctx.compute()
 print(ctx.cell1, ctx.cell1.value)  # Retrieved from Redis value cache
 print(ctx.cell2, ctx.cell2.value)  # Retrieved from Redis value cache
 print(ctx.code, ctx.code.value)    # Retrieved from Redis value cache

@@ -52,11 +52,11 @@ print("/macro2 execute")
 
 
 print("START")
-ctx.equilibrate()
+ctx.compute()
 print("stage 1")
 testmodule["code"] = "a = 20"
 ctx.testmodule.set(testmodule)
-ctx.equilibrate()
+ctx.compute()
 print("stage 2")
 ctx.macro_code.set(ctx.macro_code.value + "\npass")
-ctx.equilibrate()
+ctx.compute()

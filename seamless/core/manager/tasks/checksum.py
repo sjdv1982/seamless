@@ -42,9 +42,9 @@ class CellChecksumTask(Task):
 
         manager = self.manager()
         taskmanager = manager.taskmanager
-        livegraph = manager.livegraph
-        await taskmanager.await_upon_connection_tasks(self.taskid)
+        livegraph = manager.livegraph        
         cell = self.cell
+        await taskmanager.await_upon_connection_tasks(self.taskid, self._root())
         invalid = False
         checksum = None
         lock = await taskmanager.acquire_cell_lock(cell)

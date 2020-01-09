@@ -17,7 +17,8 @@ class SetCellBufferTask(Task):
         taskmanager = manager.taskmanager
         livegraph = manager.livegraph
         buffer_cache = manager.cachemanager.buffer_cache
-        await taskmanager.await_upon_connection_tasks(self.taskid)
+        cell = self.cell
+        await taskmanager.await_upon_connection_tasks(self.taskid, self._root())
         cell = self.cell
         buffer = self.buffer
         checksum = self.checksum

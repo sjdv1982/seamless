@@ -49,14 +49,14 @@ def report():
     print()
 
 for n in range(5):
-    ctx.equilibrate(0.5)
+    ctx.compute(0.5)
     report()
 
 ctx.cell2.set(100)
 
 for n in range(20):
-    ctx.equilibrate(0.5)
+    ctx.compute(0.5)
     report()
 
-ctx.equilibrate()
+ctx.compute()
 report()

@@ -57,7 +57,7 @@ import json
 json.dump(graph, open("share-pdb.seamless", "w"), indent=2, sort_keys=True)
 
 ctx.code.mount("/tmp/code.bash")
-ctx.equilibrate()
+ctx.compute()
 
 
 # In[4]:

@@ -15,5 +15,5 @@ ctx.result = ctx.tf
 ctx.result.celltype = "text"
 ctx.result.mount("/tmp/result", "w")
 ctx.translate(force=True)
-ctx.equilibrate()
+ctx.compute()
 print(ctx.result.value)

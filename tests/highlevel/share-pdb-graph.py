@@ -15,7 +15,7 @@ except Exception:
 graph = json.load(open("share-pdb.seamless"))
 
 ctx = load_graph(graph)
-ctx.equilibrate()
+ctx.compute()
 
 ctx.bb_pdb.share()
 ctx.pdb.share()

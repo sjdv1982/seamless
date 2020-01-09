@@ -19,18 +19,18 @@ ctx.result_link = link(ctx.result)
 ctx.tf.c.connect(ctx.result_link)
 
 print(ctx.cell1.value)
-ctx.equilibrate()
+ctx.compute()
 print(ctx.result.value, ctx.status)
 ctx.cell1.set(10)
-ctx.equilibrate()
+ctx.compute()
 print(ctx.result.value, ctx.status)
 ctx.code.set("a + b + 1000")
-ctx.equilibrate()
+ctx.compute()
 print(ctx.result.value, ctx.status)
 
 def func(a,b):
     from seamless import pdb; pdb.set_trace()
     return a + b + 2000
 ctx.code.set(func)
-ctx.equilibrate(report=None)
+ctx.compute(report=None)
 print(ctx.result.value, ctx.status)

@@ -49,7 +49,7 @@ A context can contain cells, workers (= transformers, reactors and macros),
 and other contexts.
 
 **Important methods and attributes**:
-    ``.equilibrate()``, ``.status``
+    ``.compute()``, ``.status``
 
 Parameters
 ----------
@@ -211,18 +211,35 @@ name: str
     def _get_macro(self):
         return self._macro
 
-    def equilibrate(self, timeout=None, report=2):
+    def compute(self, timeout=None, report=2):
         """
         Run workers and cell updates until all workers are stable,
          i.e. they have no more updates to process
-        If you supply a timeout, equilibrate() will return after at most
+        If you supply a timeout, compute() will return after at most
+         "timeout" seconds, returning the remaining set of unstable workers
+        Report the workers that are not stable every "report" seconds
+        """
+        from .. import running_in_jupyter
+        if running_in_jupyter:
+            raise RuntimeError("'ctx.compute()' cannot be called from within Jupyter. Use 'await ctx.computation()' instead")
+        elif asyncio.get_event_loop().is_running():
+            raise RuntimeError("'ctx.compute()' cannot be called from within a coroutine. Use 'await ctx.computation()' instead")
+        manager = self._get_manager()
+        manager.sharemanager.tick()
+        return manager.taskmanager.compute(timeout, report)
+
+    async def computation(self, timeout=None, report=2):
+        """
+        Run workers and cell updates until all workers are stable,
+         i.e. they have no more updates to process
+        If you supply a timeout, compute() will return after at most
          "timeout" seconds, returning the remaining set of unstable workers
         Report the workers that are not stable every "report" seconds
         """
         manager = self._get_manager()
-        manager.sharemanager.tick()
-        return manager.taskmanager.equilibrate(timeout, report)
-        
+        await manager.sharemanager.tick_async()
+        return await manager.taskmanager.computation(timeout, report)
+
     def _get_status(self):
         status = {}
         for childname, child in self._children.items():
@@ -360,4 +377,5 @@ from .worker import Worker, InputPinBase, OutputPinBase, EditPinBase
 from .structured_cell import StructuredCell
 
 from .manager import Manager
+from .. import nest_asyncio
 Macro = None # import later

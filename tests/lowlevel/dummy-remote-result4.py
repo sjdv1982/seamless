@@ -83,7 +83,7 @@ with macro_mode_on():
 
 for n in range(10):
     ctx.hashcell.set(0.1 * (n+1) )
-    ctx.equilibrate(0.05)
+    ctx.compute(0.05)
 
 def report():
     print(ctx.tf.status, ", exception:", ctx.tf.exception)
@@ -95,16 +95,16 @@ def report():
 for n in range(5):
     print("STEP", n+1)
     report()
-    ctx.equilibrate(0.5)
+    ctx.compute(0.5)
 
 ctx.tf.cancel()
-ctx.equilibrate(0.1)
+ctx.compute(0.1)
 report()
 ctx.tf.clear_exception()
 
 for n in range(25):
     print("STEP", n+1)
     report()
-    ctx.equilibrate(0.5)
+    ctx.compute(0.5)
 
-ctx.equilibrate()
+ctx.compute()

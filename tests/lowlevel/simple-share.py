@@ -18,7 +18,7 @@ def define_ctx():
         ctx = context(toplevel=True)
         ctx.cell1 = cell().set(1)
         ctx.cell2 = cell().set(2)
-    ctx.equilibrate()
+    ctx.compute()
     with macro_mode_on():
         ctx.result = cell()
         ctx.tf = transformer({
@@ -36,15 +36,15 @@ def define_ctx():
     return ctx
 
 ctx = define_ctx()
-ctx.equilibrate()
+ctx.compute()
 name = sharemanager.new_namespace(ctx._get_manager(), True, name="ctx")
-ctx.equilibrate()
+ctx.compute()
 print("OK1", name)
 
 print(ctx.cell1.value, ctx.cell2.value)
 ctx.cell1.share(readonly=False)
 ctx.cell2.share(readonly=False)
-ctx.equilibrate()
+ctx.compute()
 
 async def echo(uri):
     async with websockets.connect(uri) as websocket:
@@ -114,7 +114,7 @@ def define_ctx2():
 
 define_ctx2()
 r = thread(
-    requests.patch, 'http://localhost:5813/ctx/equilibrate', 
+    requests.patch, 'http://localhost:5813/ctx/compute', 
     json={"timeout": None}
 )
 print(r.text)
@@ -132,12 +132,12 @@ r = thread(
 )
 print(r.json())
 print("OK3a")
-ctx.equilibrate()
+ctx.compute()
 
 print(ctx.param_a.value)
 print("OK3b")
 
-ctx.equilibrate()
+ctx.compute()
 
 print(ctx.param_a.value)
 print(ctx.macro.ctx.a.value)

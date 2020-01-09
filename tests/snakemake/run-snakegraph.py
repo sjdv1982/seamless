@@ -8,6 +8,7 @@ cache = seamless.RedisCache()
 print("Load graph...")
 graph = json.load(open("snakegraph.seamless"))
 ctx = seamless.highlevel.load_graph(graph)
+ctx.translate()
 
 print("Bind files...")
 files = [("data/genome.tgz", "b"),
@@ -21,12 +22,14 @@ for file, mode in files:
     ctx.filesystem[file] = data
 
 print("Equilibrate...")
-ctx.equilibrate()
-import time; time.sleep(1) ## kludge
-ctx.equilibrate()
+ctx.compute()
+print()
 
 print("File system contents:")
-fs = ctx.filesystem.value.data.value
+print(ctx.filesystem.status)
+print(ctx.filesystem.exception)
+fs = ctx.filesystem.value.unsilk
+assert fs is not None
 def print_file(f):    
     v = str(fs[f])
     if len(v) > 80:

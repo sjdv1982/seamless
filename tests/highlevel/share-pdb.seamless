@@ -49,23 +49,19 @@
       "type": "connection"
     }
   ],
+  "lib": {},
   "nodes": [
     {
-      "buffered": true,
+      "UNTRANSLATED": true,
       "celltype": "text",
       "datatype": "mixed",
       "path": [
         "bb_pdb"
       ],
-      "silk": true,
       "type": "cell"
     },
     {
-      "UNTRANSLATED": true,
       "celltype": "code",
-      "checksum": {
-        "value": "abf52bf53f41aae78553a279ef6eb9ce6f461b88768b09591539d21576c665c8"
-      },
       "file_extension": "sh",
       "language": "bash",
       "mimetype": "application/x-sh",
@@ -79,12 +75,10 @@
       "INPUT": "inp",
       "RESULT": "result",
       "SCHEMA": null,
-      "buffered": true,
+      "UNTRANSLATED": true,
       "checksum": {
         "code": "bef8b24fc493087f199bea3aeb30c8a9b22b0f9c9344a0befb550fa4aa691d70",
-        "input": "28629e2af4e441558094877120f4a829ed68229ccba662cfd3e4c7fc453f13d6",
-        "result_schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
-        "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c"
+        "input_auth": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c"
       },
       "compiled": false,
       "debug": false,
@@ -95,13 +89,9 @@
       ],
       "pins": {
         "pdb0": {
-          "access_mode": "default",
-          "content_type": null,
-          "transfer_mode": "copy"
+          "celltype": "mixed"
         }
       },
-      "plain": false,
-      "plain_result": false,
       "type": "transformer",
       "with_result": true
     },
@@ -109,11 +99,10 @@
       "INPUT": "inp",
       "RESULT": "result",
       "SCHEMA": null,
-      "buffered": true,
+      "UNTRANSLATED": true,
       "checksum": {
-        "input": "840eb7aa2a9935de63366bacbe9d97e978a859e93dc792a0334de60ed52f8e99",
-        "result_schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
-        "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c"
+        "code": "abf52bf53f41aae78553a279ef6eb9ce6f461b88768b09591539d21576c665c8",
+        "input_auth": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c"
       },
       "compiled": false,
       "debug": false,
@@ -124,28 +113,23 @@
       ],
       "pins": {
         "bb_pdb0": {
-          "access_mode": "default",
-          "content_type": null,
-          "transfer_mode": "copy"
+          "celltype": "mixed"
         }
       },
-      "plain": false,
-      "plain_result": false,
       "type": "transformer",
       "with_result": true
     },
     {
-      "buffered": true,
+      "UNTRANSLATED": true,
       "celltype": "text",
       "datatype": "mixed",
       "path": [
         "pdb"
       ],
-      "silk": true,
       "type": "cell"
     },
     {
-      "buffered": true,
+      "UNTRANSLATED": true,
       "celltype": "text",
       "checksum": {
         "value": "4baa2dc76aef78b5ca108c836440845e31877a9f764edb5d5e821f7b8e6b9915"
@@ -154,11 +138,8 @@
       "path": [
         "pdb0"
       ],
-      "silk": true,
       "type": "cell"
     }
   ],
-  "params": {
-    "from_lib": null
-  }
+  "params": {}
 }

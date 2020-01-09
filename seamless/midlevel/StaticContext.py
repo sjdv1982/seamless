@@ -108,11 +108,7 @@ class SimpleCellWrapper(WrapperBase):
         if checksum is None:
             return None
         checksum = bytes.fromhex(checksum)
-        buffer = checksum_cache.get(checksum)
-        if buffer is not None:
-            assert isinstance(buffer, bytes)
-            return buffer
-        return GetBufferTask(self._manager, checksum).launch_and_await()
+        return self._manager._get_buffer(checksum)
 
     def cell(self):
         celltype = self._celltype
@@ -136,19 +132,7 @@ class SimpleCellWrapper(WrapperBase):
         if checksum is None:
             return None
         checksum = bytes.fromhex(checksum)
-        if not copy:
-            cached_value = deserialize_cache.get((checksum, celltype))
-            if cached_value is not None:
-                return cached_value
-        buffer = self.buffer
-        if buffer is None:
-            return None
-        task = DeserializeBufferTask(
-            self._manager, buffer, checksum, celltype, 
-            copy=copy
-        )
-        value = task.launch_and_await()
-        return value
+        return self._manager.resolve(checksum, copy=copy)
 
     @property
     def value(self):

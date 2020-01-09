@@ -60,11 +60,11 @@ testmodule = {
     ctx.html = cell("text")
     ctx.html.mount("cell-ipython.html", "w")
     ctx.gen_html.html.connect(ctx.html)
-ctx.equilibrate()
+ctx.compute()
 print(ctx.result.value)
 
 ctx.i.set(6000)
-ctx.equilibrate()
+ctx.compute()
 print(ctx.result.value)
 print(ctx.status)
 
@@ -76,6 +76,6 @@ with open("cell-ipython.ipy", "w") as f:
 import asyncio
 fut = asyncio.ensure_future(asyncio.sleep(0.5))
 asyncio.get_event_loop().run_until_complete(fut)
-ctx.equilibrate()
+ctx.compute()
 print(ctx.result.value)
 

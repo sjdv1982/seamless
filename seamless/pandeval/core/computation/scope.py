@@ -226,7 +226,7 @@ class Scope(StringMixin):
             A list of stack frames as returned by ``inspect.stack()``
         scopes : sequence of strings
             A sequence containing valid stack frame attribute names that
-            evaluate to a dictionary. For example, ('locals', 'globals')
+            compute to a dictionary. For example, ('locals', 'globals')
         """
         variables = itertools.product(scopes, stack)
         for scope, (frame, _, _, _, _, _) in variables:

@@ -2,6 +2,8 @@ numpy
 requests
 cffi
 traitlets
+biopython
+nglview
 cson==0.8
 ruamel.yaml==0.16
 ruamel.yaml.clib==0.2
@@ -15,9 +17,8 @@ multidict==4.7
 wurlitzer==2.0
 yarl==1.4
 redis==3.3
-nest_asyncio==1.2
 pandas==0.24
-IPython>=7.7
+IPython>=7.11
 notebook>=5.7.5
 tornado>=6.*
 ipykernel>=5.*

@@ -280,6 +280,13 @@ class StructuredCell(SeamlessBase):
         return self._get_handle(inference=False)
 
     @property
+    def checksum(self):
+        return self._data.checksum
+
+    def set_checksum(self, checksum):
+        return self._data.set_checksum(checksum)
+        
+    @property
     def value(self):
         # Silk structure using self._data.value 
         # i.e. will always be a copy

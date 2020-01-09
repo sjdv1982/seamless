@@ -39,4 +39,4 @@ async def qtloop():
         await asyncio.sleep(0.005)
 
 if os.environ.get("SEAMLESS_USE_QT", True) not in (False, "false", 0, "0"):
-    asyncio.ensure_future(qtloop())
+    qtloop_future = asyncio.ensure_future(qtloop())

@@ -10,6 +10,6 @@ ctx.tf.b = 20
 ctx.result = ctx.tf
 
 print("START")
-ctx.equilibrate()
+ctx.compute()
 print(ctx.status)
 print(ctx.tf._get_tf().inp.status) #TODO: nicer API/messages

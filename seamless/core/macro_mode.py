@@ -39,11 +39,16 @@ def _destroy_toplevels():
     transformation_cache.destroy()
     if mountmanager is not None:
         mountmanager.clear()
-    # give cancelled futures some time to do their work
-    async def dummy():
-        pass
-    dummy_future = asyncio.ensure_future(dummy())
-    asyncio.get_event_loop().run_until_complete(dummy_future)
+    try:
+        loop = asyncio.get_event_loop()
+    except RuntimeError:
+        loop = None
+    if loop is not None and not loop.is_running():
+        # give cancelled futures some time to do their work
+        async def dummy():
+            pass
+        dummy_future = asyncio.ensure_future(dummy())
+        asyncio.get_event_loop().run_until_complete(dummy_future)
 
 atexit.register(_destroy_toplevels)
 
@@ -129,7 +134,6 @@ def macro_mode_on(macro=None):
         if macro is not None:            
             _mount_scans.append(macro._gen_context)
 
-        mount_changed = False
         for scan_ctx in _mount_scans:
             mount.scan(scan_ctx)
 

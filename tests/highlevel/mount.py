@@ -3,7 +3,7 @@ ctx = Context()
 ctx.txt = "not OK"
 ctx.txt.celltype = "text"
 ctx.txt.mount("mount.txt", authority="file")
-ctx.equilibrate()
+ctx.compute()
 print(ctx.txt.value)
 
 ctx.mount("mount-test", persistent=False)
@@ -26,4 +26,4 @@ ctx.txt2 = Cell()
 ctx.txt2.celltype = "text"
 ctx.link(ctx.txt2, ctx.txt)
 
-ctx.equilibrate()
+ctx.compute()

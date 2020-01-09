@@ -58,7 +58,7 @@ class AbstractEngine(object):
         """
         return printing.pprint_thing(self.expr)
 
-    def evaluate(self, align_result=False):
+    def compute(self, align_result=False):
         """Run the engine on the expression
 
         This method performs alignment which is necessary no matter what engine
@@ -90,7 +90,7 @@ class AbstractEngine(object):
         Parameters
         ----------
         env : Scope
-            The local and global environment in which to evaluate an
+            The local and global environment in which to compute an
             expression.
 
         Notes
@@ -122,7 +122,7 @@ class NumExprEngine(AbstractEngine):
             scope = env.full_scope
             truediv = scope['truediv']
             _check_ne_builtin_clash(self.expr)
-            return ne.evaluate(s, local_dict=scope, truediv=truediv)
+            return ne.compute(s, local_dict=scope, truediv=truediv)
         except KeyError as e:
             # python 3 compat kludge
             try:
@@ -143,7 +143,7 @@ class PythonEngine(AbstractEngine):
     def __init__(self, expr):
         super(PythonEngine, self).__init__(expr)
 
-    def evaluate(self, align_result=False):
+    def compute(self, align_result=False):
         return self.expr()
 
     def _evaluate(self):

@@ -14,9 +14,9 @@ ctx.transform.language = "ipython"
 ctx.transform.code = ipycode
 ctx.transform.a = ctx.a
 ctx.myresult = ctx.transform
-ctx.equilibrate()
+ctx.compute()
 print(ctx.myresult.value)
 
 ctx.a = 13
-ctx.equilibrate()
+ctx.compute()
 print(ctx.myresult.value)

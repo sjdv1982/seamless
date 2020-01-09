@@ -40,11 +40,11 @@ ctx.executor.testdata = ctx.testdata
 ctx.executor.lines = 3
 ctx.result = ctx.executor
 ctx.result.celltype = "text"
-ctx.equilibrate()
+ctx.compute()
 print(ctx.result.value)
 print()
 ctx.executor.lines = 4
-ctx.equilibrate()
+ctx.compute()
 print(ctx.result.value)
 
 if ctx.result.value is None:

@@ -125,7 +125,7 @@ class Library:
             ctx._weak = True
             ctx.set_graph(graph)
             ctx.add_zip(self._zip)
-            ctx.equilibrate()
+            ctx.compute()
             return ctx
         elif attr == "constructor":
             return self._constructor

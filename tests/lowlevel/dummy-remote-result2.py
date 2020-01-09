@@ -90,13 +90,13 @@ with macro_mode_on():
     ctx.hashcell = cell()
     
 ctx.hashcell.set(42)
-ctx.equilibrate(0.1)
+ctx.compute(0.1)
 ctx.hashcell.set(43)
-ctx.equilibrate(0.1)
+ctx.compute(0.1)
 ctx.hashcell.set(99)
-ctx.equilibrate(0.1)
+ctx.compute(0.1)
 
-ctx.equilibrate()
+ctx.compute()
 print(ctx.status)
 print(ctx.result.value)
 print("STOP")

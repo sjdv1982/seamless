@@ -9,7 +9,7 @@ ctx.minus = lambda x,y: x - y
 ctx.minus.x = ctx.x
 ctx.minus.y = ctx.y
 ctx.result = ctx.minus
-ctx.equilibrate()
+ctx.compute()
 print(ctx.result.value)
 
 stdlib.subtract = ctx
@@ -52,7 +52,7 @@ x = ctx.subtract1
 print(x.libpath)
 print(x.arguments)
 print(x.const)
-ctx.equilibrate()
+ctx.compute()
 
 print(ctx.subtract1.ctx)
 print(dir(ctx.subtract1.ctx))
@@ -62,13 +62,13 @@ print(ctx.subtract1.ctx.minus.status)
 print(ctx.c.value)
 
 ctx.b = -120
-ctx.equilibrate()
+ctx.compute()
 print(ctx.c.value)
 ctx.bb = 999
-ctx.equilibrate()
+ctx.compute()
 print(ctx.c.value)
 ctx.subtract1.inp2 = ctx.bb
-ctx.equilibrate()
+ctx.compute()
 print(ctx.c.value)
 
 def constructor2(ctx, libctx, inp1, inp2, outp, const):
@@ -78,8 +78,8 @@ def constructor2(ctx, libctx, inp1, inp2, outp, const):
     inp2.connect(ctx.x)
     outp.connect_from(ctx.result)
 stdlib.subtract.constructor = constructor2
-ctx.equilibrate()
+ctx.compute()
 print(ctx.c.value)
 ctx.include(stdlib.subtract)
-ctx.equilibrate()
+ctx.compute()
 print(ctx.c.value)

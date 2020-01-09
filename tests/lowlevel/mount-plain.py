@@ -7,5 +7,5 @@ with macro_mode_on():
     ctx.json = cell("plain").set({"a": 1})
     ctx.json.mount("/tmp/test.json", authority="cell")
 
-ctx.equilibrate()
+ctx.compute()
 

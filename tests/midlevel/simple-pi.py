@@ -72,5 +72,5 @@ with macro_mode_on():
     ctx = context(toplevel=True, manager=ctx0._get_manager())    
     translate(graph, ctx, [], False)
 
-ctx.equilibrate()
+ctx.compute()
 print(ctx.twopi.value)

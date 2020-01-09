@@ -107,7 +107,10 @@ def deserialize_sync(buffer, checksum, celltype, copy):
     First, it is attempted to retrieve the value from cache.
     In case of a cache hit, a copy is returned only if copy=True
     In case of a cache miss, deserialization is performed 
-    (and copy is irrelevant)."""
+    (and copy is irrelevant).
+    
+    
+    This function can be executed if the asyncio event loop is already running"""
     if buffer is None:
         return None
     value = deserialize_cache.get((checksum, celltype))

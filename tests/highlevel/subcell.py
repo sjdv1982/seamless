@@ -13,7 +13,7 @@ ctx.tf.x = ctx.a.b
 ctx.c = 20
 ctx.tf.y = ctx.c
 ctx.d = ctx.tf
-ctx.equilibrate()
+ctx.compute()
 print(ctx.d.value) #32
 print(ctx.tf.inp.value)
 print()
@@ -25,12 +25,12 @@ ctx.q.c = ctx.c
 ctx.q.d = ctx.d
 ctx.q.f = ctx.f0
 ctx.q.g = 50
-ctx.equilibrate()
+ctx.compute()
 print(ctx.q.value) #{'c': 20, 'd': 32, 'f': 20, 'g': 50}
 
 print("Stage 3")
 ctx.c = 7
-ctx.equilibrate()
+ctx.compute()
 print(ctx.q.value) #{'c': 7, 'd': 19, 'f': 20, 'g': 50}
 
 print("Stage 4")
@@ -41,7 +41,7 @@ ctx.tf2 = func
 ctx.tf2.q = ctx.q
 ctx.tf2.z = ctx.z
 ctx.qq = ctx.tf2
-ctx.equilibrate()
+ctx.compute()
 print(ctx.qq.value) #309
 
 print("Stage 5")
@@ -49,7 +49,7 @@ ctx.z += 10
 ctx.c = 8
 ctx.a.irrelevant = "irrelevant"
 ctx.a.b = -12
-ctx.equilibrate()
+ctx.compute()
 print(ctx.q.value) #{'c': 8, 'd': -4, 'f': 20, 'g': 50}
 print(ctx.qq.value) #326 
 
@@ -59,24 +59,24 @@ def validator(self):
     assert self.g > self.c + self.f
     assert self.f > self.d
 ctx.q.handle.add_validator(validator)
-ctx.equilibrate()
+ctx.compute()
 
 print("Stage 7")
 ctx.a.b = 100
-ctx.equilibrate()
+ctx.compute()
 print(ctx.q.value) # None
 print(ctx.qq.value) # None
 print(ctx.q.exception)
 
 print("Stage 8")
 ctx.a.b = 80
-ctx.equilibrate()
+ctx.compute()
 print(ctx.q.value) # None
 print(ctx.qq.value) # None
 print(ctx.q.exception)
 
 print("Stage 9")
 ctx.a.b = 4
-ctx.equilibrate()
+ctx.compute()
 print(ctx.q.value)  #{'c': 8, 'd': 12, 'f': 20, 'g': 50}
 print(ctx.qq.value) #342

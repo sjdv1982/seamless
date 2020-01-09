@@ -107,6 +107,7 @@ class MountItem:
 
     def init(self):
         assert threading.current_thread() == threading.main_thread()
+        #print("INIT", self.cell(), self.cell().has_authority())
         if self._destroyed:
             return
         assert self.parent is not None
@@ -161,7 +162,7 @@ class MountItem:
                             update_file = False
                         else:
                             print("Warning: File path '%s' has a different value, overwriting cell" % self.path) #TODO: log warning
-                    self._after_read(file_checksum)
+                    self._after_read(file_checksum)                
                 if update_file:
                     self.set(file_buffer, checksum=file_checksum)
             elif self.authority == "file-strict":
@@ -189,7 +190,7 @@ class MountItem:
                     update_file = True
                     file_checksum = None
                     self._after_read(file_checksum)
-                if update_file:
+                if update_file and "r" in self.mode:
                     self.set(file_buffer, checksum=file_checksum)
 
         self._initialized = True
@@ -738,7 +739,7 @@ def scan(ctx_or_cell):
                     raise Exception("Structured cells cannot be mounted: %s" % child)
                 else:
                     livegraph = child._get_manager().livegraph
-                    if child._get_macro() is not None or livegraph.will_lose_authority(child):
+                    if child._get_macro() is not None or not child.has_authority():
                         if result["mode"] == "r":
                             return None
                         result["mode"] = "w"

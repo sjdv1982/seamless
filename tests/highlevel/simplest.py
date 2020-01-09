@@ -14,12 +14,12 @@ print(ctx.a.exception)
 
 ctx.a = 1
 ctx.a.example = 0
-ctx.equilibrate()
+ctx.compute()
 print(ctx.a.schema)
 print(ctx.a.value)
 
 ctx.a = Cell()
-ctx.equilibrate()
+ctx.compute()
 print(ctx.a.schema)
 print(ctx.a.value)
 
@@ -28,11 +28,11 @@ print(ctx.a.value)
 print(ctx.a.schema)
 ctx.a.set(12)
 
-ctx.equilibrate()
+ctx.compute()
 print(ctx.a.value)
 
 ctx.a = 1.2
-ctx.equilibrate()
+ctx.compute()
 print(ctx.a.exception)
 print(ctx.a.value)
 print(ctx.a.schema)
@@ -40,12 +40,12 @@ print(ctx.a.schema)
 del ctx.a
 ctx.a = "test"
 ctx.a.example = "test"
-ctx.equilibrate()
+ctx.compute()
 print(ctx.a.value)
 print(ctx.a.schema)
 
 ctx.translate(force=True)
-ctx.equilibrate()
+ctx.compute()
 print(ctx.a.value)
 print(ctx.a.schema)
 
@@ -57,7 +57,7 @@ def validation(self):
     assert self != "test"
 
 ctx.a.add_validator(validation)
-ctx.equilibrate()
+ctx.compute()
 print(ctx.a.schema)
 print()
 print("simplest.py EXCEPTION:")

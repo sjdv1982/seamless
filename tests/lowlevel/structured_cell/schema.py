@@ -12,7 +12,7 @@ def reset_backend(share_schemas=True, with_hash_pattern=True):
     hp = hash_pattern if with_hash_pattern else None
     global ctx, s, s2, s3
     if ctx is not None:
-        ctx.equilibrate() # makes no difference, but could be easier debugging
+        ctx.compute() # makes no difference, but could be easier debugging
     ctx = context(toplevel=True)
     ctx.data = cell("mixed", hash_pattern=hp)
     ctx.buffer = cell("mixed", hash_pattern=hp)
@@ -64,7 +64,7 @@ def adder(self, other):
 s.x = 80
 print(s.x.data)
 
-ctx.equilibrate()
+ctx.compute()
 pprint(ctx.buffer.value)
 pprint(ctx.data.value)
 
@@ -77,7 +77,7 @@ pprint(s.schema.value)
 print(s.bla(5))
 print(s+5)
 
-ctx.equilibrate()
+ctx.compute()
 print("OK")
 pprint(ctx.buffer.value)
 pprint(ctx.data.value)
@@ -85,7 +85,7 @@ pprint(ctx.schema.value)
 
 s2.x = 10
 print(s2+5, s2.bla(5))
-ctx.equilibrate()
+ctx.compute()
 print(ctx.data2.value)
 
 s3.x = 10
@@ -123,7 +123,7 @@ s.z.r = 25
 print(sz.q.data, sz.r.data)
 s.z.qr = property(lambda self: self.q * self.r)
 print(s.z.qr)
-ctx.equilibrate()
+ctx.compute()
 
 def validate_z(self):
     print("VALIDATE", self.q.data, self.r.data)
@@ -140,11 +140,11 @@ pprint(s.schema.value)
 s.lis = [1,2,3]
 s.lis.append(10)
 
-ctx.equilibrate()
+ctx.compute()
 
 print(s.lis.data)
 s.lis += [5]
-ctx.equilibrate()
+ctx.compute()
 print(s.lis*2)
 
 """
@@ -180,7 +180,7 @@ print(s.z)
 s.z = 10
 print(s.data)
 print(s.z)
-ctx.equilibrate()
+ctx.compute()
 
 reset_backend(share_schemas=False)
 s2.x = 10
@@ -193,7 +193,7 @@ print(s2.arr.unsilk, arr)
 print(type(s2.arr.self.data), type(arr))
 print(s2.arr[2].self.data, arr[2])
 print(type(s2.arr[2].self.data), type(arr[2]))
-ctx.equilibrate()
+ctx.compute()
 
 #s2.arr.schema["type"] = "array"  #  inferred
 print(s2.arr.schema["type"])
@@ -209,7 +209,7 @@ s2.validate()
 print(s3.data)
 print(s2.data)
 
-ctx.equilibrate()
+ctx.compute()
 print("START")
 s2.arr[0] = 5
 print(s2.arr.unsilk)
@@ -223,29 +223,29 @@ def func(self):
 s.add_validator(func)
 s.y = 0.0
 s.validate()
-ctx.equilibrate()
+ctx.compute()
 try:
     s.y = 1.0   #  would fail
-    ctx.equilibrate() # to ensure that ctx.sc.exception is set
+    ctx.compute() # to ensure that ctx.sc.exception is set
     s.validate()    
 except ValidationError:
     print("FAIL")
     print(ctx.sc.exception)
     s.y = 0
 #pprint(s.schema.value)
-ctx.equilibrate()    
+ctx.compute()    
 
 #print("set")
 s.x = 0.0
 s.y = 0.0
 s.z = 1.0
-ctx.equilibrate()    
+ctx.compute()    
 print(s.data)
 
 s.x = 1.0
 s.y = 0.0
 s.z = 0.0
-ctx.equilibrate()    
+ctx.compute()    
 print(s.data)
 
 import numpy as np
@@ -309,7 +309,7 @@ print(c.data, c.xyz)
 c.xyz = 0.2,-0.3,0.93
 print(c.data, c.xyz)
 pprint(c.schema.value)
-ctx.equilibrate()
+ctx.compute()
 
 ctx = context(toplevel=True)
 ctx.data = cell("mixed")
@@ -339,7 +339,7 @@ test.validate()
 print(test.data)
 print(test(5))
 pprint(test.schema.value)
-ctx.equilibrate()
+ctx.compute()
 
 print("START")
 test.l = []
@@ -352,5 +352,5 @@ try:
 except ValidationError as exc:
     print(exc)
     l.pop(-1)
-ctx.equilibrate()
+ctx.compute()
 print(test.l.data)

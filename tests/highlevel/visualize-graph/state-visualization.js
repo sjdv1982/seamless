@@ -8,9 +8,8 @@ let height = parseFloat($("#graph").attr("height"));
 const svg = d3.select('body') 
   .select('svg')
   .on('contextmenu', () => { d3.event.preventDefault(); })
-  ;
-  //.attr('width', width)
-  //.attr('height', height);
+  .attr('width', width)
+  .attr('height', height);
 
 // set up initial nodes and links
 //  - nodes are known by 'id', not by index in array.

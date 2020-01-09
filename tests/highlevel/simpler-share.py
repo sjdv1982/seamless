@@ -14,9 +14,9 @@ ctx.code.share()
 ctx.transform.a = ctx.a
 ctx.myresult = ctx.transform
 ctx.myresult.share()
-ctx.equilibrate()
+ctx.compute()
 print(ctx.myresult.value)
 
 ctx.a = 13
-ctx.equilibrate()
+ctx.compute()
 print(ctx.myresult.value)

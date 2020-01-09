@@ -12,7 +12,7 @@ class TransformerUpdateTask(Task):
         manager = self.manager()
         livegraph = manager.livegraph
         taskmanager = manager.taskmanager
-        await taskmanager.await_upon_connection_tasks(self.taskid)
+        await taskmanager.await_upon_connection_tasks(self.taskid, self._root())
         upstreams = livegraph.transformer_to_upstream[transformer]
         inputpins = {}
         downstreams = livegraph.transformer_to_downstream[transformer]
@@ -110,7 +110,7 @@ class TransformerResultUpdateTask(Task):
         checksum = transformer._checksum
         preliminary = transformer.preliminary
         for accessor in accessors:
-            #- construct (not evaluate!) their expression using the cell checksum 
+            #- construct (not compute!) their expression using the cell checksum 
             #  Constructing a downstream expression increfs the cell checksum            
             changed = accessor.build_expression(livegraph, checksum)
             if accessor._prelim != preliminary:

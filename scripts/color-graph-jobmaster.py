@@ -26,7 +26,7 @@ import asyncio
 done = asyncio.sleep(1)
 asyncio.get_event_loop().run_until_complete(done)
 
-ctx.equilibrate()
+ctx.compute()
 
 colored_graph = ctx.get_graph()
 with open(outfile, "w") as f:

@@ -254,12 +254,26 @@ async def deep_structure_to_value(deep_structure, hash_pattern, buffer_dict, cop
     
 
 def deep_structure_to_value_sync(deep_structure, hash_pattern, buffer_dict, copy):
-    coro = deep_structure_to_value(
-        deep_structure, hash_pattern, buffer_dict, copy
-    )
-    fut = asyncio.ensure_future(coro)
-    asyncio.get_event_loop().run_until_complete(fut)
-    return fut.result()
+    """Converts deep structure to a mixed value
+    Requires buffer_dict, a checksum-to-buffer cache for all checksums in the deep structure
+    Use copy=True for a value that will be modified
+    
+    This function can be executed if the asyncio event loop is already running"""
+    if not asyncio.get_event_loop().is_running():    
+        coro = deep_structure_to_value(
+            deep_structure, hash_pattern, buffer_dict, copy
+        )
+        fut = asyncio.ensure_future(coro)
+        asyncio.get_event_loop().run_until_complete(fut)
+        return fut.result()
+
+    checksums = deep_structure_to_checksums(deep_structure, hash_pattern)
+    value_dict = {}
+    for checksum in checksums:
+        assert checksum in buffer_dict
+        value = deserialize_sync(buffer_dict[checksum], checksum, "mixed", copy=copy)
+        value_dict[checksum] = value
+    return _deep_structure_to_value(deep_structure, hash_pattern, value_dict, copy)
 
 def _build_deep_structure(hash_pattern, d, c):
     if hash_pattern == "#":        
@@ -374,12 +388,39 @@ async def value_to_deep_structure(value, hash_pattern):
     return deep_structure, new_checksums
 
 def value_to_deep_structure_sync(value, hash_pattern):
-    coro = value_to_deep_structure(
-        value, hash_pattern
+    """This function can be executed if the asyncio event loop is already running"""
+
+    if not asyncio.get_event_loop().is_running():
+        coro = value_to_deep_structure(
+            value, hash_pattern
+        )
+        fut = asyncio.ensure_future(coro)
+        asyncio.get_event_loop().run_until_complete(fut)
+        return fut.result()
+
+    try:
+        objects = {}    
+        deep_structure0 = _value_to_objects(
+            value, hash_pattern, objects
+        )
+    except (TypeError, ValueError):
+        raise DeepStructureError(hash_pattern, value) from None
+    obj_id_to_checksum = {}
+    new_checksums = set()
+    def conv_obj_id_to_checksum(obj_id):
+        obj = objects[obj_id]
+        obj_buffer = serialize_sync(obj, "mixed")
+        obj_checksum = calculate_checksum_sync(obj_buffer)
+        new_checksums.add(obj_checksum.hex())
+        buffer_cache.cache_buffer(obj_checksum, obj_buffer)
+        obj_id_to_checksum[obj_id] = obj_checksum.hex()
+    
+    for obj_id in objects:
+        conv_obj_id_to_checksum(obj_id)
+    deep_structure = _build_deep_structure(
+        hash_pattern, deep_structure0, obj_id_to_checksum
     )
-    fut = asyncio.ensure_future(coro)
-    asyncio.get_event_loop().run_until_complete(fut)
-    return fut.result()
+    return deep_structure, new_checksums
 
 
 def set_deep_structure(substructure, deep_structure, hash_pattern, path):
@@ -516,7 +557,7 @@ def write_deep_structure(checksum, deep_structure, hash_pattern, path,
 
     if sub_deep_structure is None:
         if create:
-            set_subpath(deep_structure, None, path, checksum)
+            set_subpath_sync(deep_structure, None, path, checksum)
             return write_deep_structure(
                 checksum, deep_structure, hash_pattern,
                 path, create=False
@@ -554,17 +595,29 @@ async def apply_hash_pattern(checksum, hash_pattern):
     return deep_checksum
 
 def apply_hash_pattern_sync(checksum, hash_pattern):
-    """Converts a checksum to a checksum that represents a deep structure"""
-    coro = apply_hash_pattern(checksum, hash_pattern)
-    fut = asyncio.ensure_future(coro)
-    asyncio.get_event_loop().run_until_complete(fut)
-    return fut.result()
+    """Converts a checksum to a checksum that represents a deep structure
+    
+    This function can be executed if the asyncio event loop is already running"""
+
+    if not asyncio.get_event_loop().is_running():    
+        coro = apply_hash_pattern(checksum, hash_pattern)
+        fut = asyncio.ensure_future(coro)
+        asyncio.get_event_loop().run_until_complete(fut)
+        return fut.result()
+
+    buffer = get_buffer_sync(checksum, buffer_cache)
+    value = deserialize_sync(
+        buffer, checksum, "mixed", False
+    )
+    deep_structure, _ = value_to_deep_structure_sync(value, hash_pattern)
+    deep_buffer = serialize_sync(deep_structure, "plain")
+    deep_checksum = calculate_checksum_sync(deep_buffer)
+    return deep_checksum
 
 
-
-from .calculate_checksum import calculate_checksum
-from .serialize import serialize
-from .deserialize import deserialize
+from .calculate_checksum import calculate_checksum, calculate_checksum_sync
+from .serialize import serialize, serialize_sync
+from .deserialize import deserialize, deserialize_sync
 from ..cache.buffer_cache import buffer_cache
-from ..protocol.get_buffer import get_buffer
-from ..protocol.expression import set_subpath_sync as set_subpath
+from ..protocol.get_buffer import get_buffer, get_buffer_sync
+from ..protocol.expression import set_subpath_sync

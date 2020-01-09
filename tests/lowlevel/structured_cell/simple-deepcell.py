@@ -18,7 +18,7 @@ except DeepStructureError:
     traceback.print_exc()
 data.set({})
 
-ctx.equilibrate()
+ctx.compute()
 print(ctx.data.value)
 print(data)
 print(ctx.sc.value)
@@ -28,7 +28,7 @@ data.x = "test"
 data.y = "test2"
 data.z = "test3"
 
-ctx.equilibrate()
+ctx.compute()
 print(ctx.data.value)
 print(data)
 print(ctx.sc.value)
@@ -42,7 +42,7 @@ data.set({
     "q": 20,
     "r": 30
 })
-ctx.equilibrate()
+ctx.compute()
 print(ctx.data.value)
 print(data)
 print(ctx.sc.value)

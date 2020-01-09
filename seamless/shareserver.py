@@ -6,7 +6,7 @@ ctx.a.share() =>
 - http://localhost:5813/ctx/a gives the value of the cell (HTTP GET)
 - At the same address, the value of the cell can be changed with a HTTP PUT request
 - An update to ctx.a sends a notification to ws://localhost:5138/ctx
-- http://localhost:5813/ctx/equilibrate with an HTTP PATCH request does ctx.equilibrate().
+- http://localhost:5813/ctx/compute with an HTTP PATCH request does 'await ctx.computation()' .
   A timeout can be specified.
 
 Long version:
@@ -178,13 +178,13 @@ class Share:
 
         
 class ShareNamespace:
-    def __init__(self, name, manager, share_equilibrate):
+    def __init__(self, name, manager, share_evaluate):
         from .core.manager import Manager
         if not isinstance(manager, Manager): 
             raise TypeError(manager)
         self.name = name
         self.manager = weakref.ref(manager)
-        self._share_equilibrate = share_equilibrate
+        self._share_evaluate = share_evaluate
 
         self.shares = dict()
         self.update_connections = []
@@ -208,7 +208,7 @@ class ShareNamespace:
     @property
     def sharelist(self):
         sharelist = list(self.shares.keys())
-        if self._share_equilibrate:
+        if self._share_evaluate:
             sharelist.append("self")
         return sorted(sharelist)
 
@@ -240,20 +240,21 @@ class ShareNamespace:
         else:
             checksum2 = None
         if mode == "checksum":
-            return checksum2
-        buffer = await get_buffer(checksum, buffer_cache)
-        if mode == "buffer":
-            if buffer is None:
-                return None
-            return buffer.decode()
-        if mode == "value":
-            if buffer is None:
-                return None
-            return buffer
+            return checksum2, 'text/plain'
+
         if share.mimetype is not None:
             content_type = share.mimetype
         else:
             content_type = get_mime(share.celltype)
+        buffer = await get_buffer(checksum, buffer_cache)
+        if mode == "buffer":
+            if buffer is None:
+                return None, None
+            return buffer.decode(), content_type
+        if mode == "value":
+            if buffer is None:
+                return None, None
+            return buffer, content_type
         result = {
             "checksum": checksum2,
             "buffer": buffer.decode() if buffer is not None else None,
@@ -261,7 +262,7 @@ class ShareNamespace:
             "content_type": content_type,
         }
         result = json.dumps(result, indent=2, sort_keys=True)
-        return result
+        return result, 'application/json'
 
     async def get(self, key, mode):
         coro = self._get(key, mode)
@@ -296,8 +297,8 @@ class ShareNamespace:
             coros.append(coro)
         await asyncio.gather(*coros)
 
-    def equilibrate(self, timeout):
-        assert self._share_equilibrate
+    async def computation(self, timeout):
+        assert self._share_evaluate
         manager = self.manager()
         if manager is None or manager._destroyed:
             return
@@ -305,7 +306,7 @@ class ShareNamespace:
         for ctx in self.manager().contexts:
             if ctx._destroyed:
                 continue            
-            waiting, background = ctx.equilibrate(timeout)
+            waiting, background = await ctx.computation(timeout)
             result += sorted(list(waiting))
         return result
 
@@ -330,7 +331,7 @@ class ShareServer(object):
 
     def _new_namespace(
         self, manager, 
-        share_equilibrate, 
+        share_evaluate, 
         name=None
     ):
         if name is None:
@@ -344,7 +345,7 @@ class ShareServer(object):
                     break
                 count += 1
         self.namespaces[name] = ShareNamespace(
-            name, manager, share_equilibrate
+            name, manager, share_evaluate
         )
         self.manager_to_ns[manager] = name
         return name
@@ -484,14 +485,7 @@ class ShareServer(object):
 
         try:
             result = await namespace.get(key, mode)
-            body = result
-            if mode == "value":
-                if share.mimetype is not None:
-                    content_type = share.mimetype
-                else:
-                    content_type = get_mime(share.celltype)
-            else:
-                content_type = "text/plain"
+            body, content_type = result
             return web.Response(
                 status=200,
                 body=body,
@@ -597,7 +591,7 @@ class ShareServer(object):
             )
 
 
-    async def _handle_equilibrate(self, request):
+    async def _handle_evaluate(self, request):
         try:
             tail = request.match_info.get('tail')        
             ns, key = tailsplit(tail)        
@@ -614,22 +608,22 @@ class ShareServer(object):
                 text="Invalid request",
             )
             
-        if ns not in self.namespaces or key != "equilibrate":
+        if ns not in self.namespaces or key != "compute":
             return web.Response(
                 status=404,
                 body=json.dumps({'not found': 404}),
                 content_type='application/json'
             )
         namespace = self.namespaces[ns]
-        if not namespace._share_equilibrate:
+        if not namespace._share_evaluate:
             return web.Response(
                 status=404,
-                body=json.dumps({'equilibrate is not shared': 404}),
+                body=json.dumps({'compute is not shared': 404}),
                 content_type='application/json'
             )
     
         try:
-            result = namespace.equilibrate(timeout)
+            result = await namespace.computation(timeout)
             return web.Response(
                 status=200,
                 body=json.dumps(result),
@@ -651,7 +645,7 @@ class ShareServer(object):
         app.add_routes([
             web.get('/{tail:.*}', self._handle_get),
             web.put('/{tail:.*}', self._handle_put),
-            web.patch('/{tail:.*}', self._handle_equilibrate),
+            web.patch('/{tail:.*}', self._handle_evaluate),
         ])
 
         # Configure default CORS settings.

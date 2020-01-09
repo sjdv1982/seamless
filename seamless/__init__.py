@@ -1,6 +1,6 @@
 """
 Seamless: framework for data-driven and live programming
-Copyright 2016-2018, Sjoerd de Vries
+Copyright 2016-2019, Sjoerd de Vries
 """
 
 import sys
@@ -8,43 +8,16 @@ import time
 import functools
 import traceback
 
-
-""" # only for python 3.6
-# monkey patch to get rid of  "exception was never retrieved" error messages
-
-import asyncio.compat 
-asyncio.compat.PY34 = False
-from asyncio import CancelledError
-###from asyncio.futures import _TracebackLogger
-
-def activate(self):
-    exc = self.exc
-    if exc is not None:
-        self.exc = None
-        if isinstance(exc, CancelledError):
-            return
-        self.tb = traceback.format_exception(exc.__class__, exc,
-                                                exc.__traceback__)
-_TracebackLogger.activate = activate
-
-# /monkey patch
-"""
-
-import nest_asyncio
-nest_asyncio.apply()
 import asyncio
-# Extra patch...
-_loop = asyncio.get_event_loop()
-from collections import deque
-class FakeHandle:
-    _cancelled = True
-class Deque2(deque):
-    def popleft(self):
-        try:
-            return super().popleft()
-        except IndexError:
-            return FakeHandle()
-_loop._ready = Deque2(_loop._ready)
+
+nest_asyncio = None
+"""
+# Jupyter notebook; DISABLED, as it does not work properly!
+
+if asyncio.get_event_loop().is_running(): 
+    import nest_asyncio
+    nest_asyncio.apply()
+"""
 
 from abc import abstractmethod
 class Wrapper:
@@ -74,17 +47,13 @@ ipy_error = "Seamless was not imported inside IPython"
 
 def inputhook_terminal(context):
     while not context.input_is_ready():
-        try:            
-            asyncio.get_event_loop().run_until_complete(asyncio.sleep(0))
-        except IndexError: # nested event loop trouble
-            pass
+        #asyncio.get_event_loop().run_until_complete(asyncio.sleep(0))
+        pass
 
+running_in_jupyter = False
 if "get_ipython" in sys.modules["__main__"].__dict__:
     try:
         from IPython import get_ipython
-        from IPython.core.error import UsageError
-        from IPython.terminal.pt_inputhooks import register as _register_integration_terminal
-        from ipykernel.eventloops import register_integration as _register_integration_kernel
     except ImportError:
         ipy_error = "Cannot find IPython"
     else:
@@ -98,10 +67,11 @@ if "get_ipython" in sys.modules["__main__"].__dict__:
             except ImportError:
                 pass
             if isinstance(ipython_instance, TerminalInteractiveShell):
-                from .core.macro_mode import _toplevel_managers
-                _register_integration_terminal("seamless", inputhook_terminal)
-                ipython_instance.enable_gui("seamless")
-
+                ipython_instance.enable_gui("asyncio")
+            elif asyncio.get_event_loop().is_running(): # Jupyter notebook
+                running_in_jupyter = True
+                if nest_asyncio is not None: 
+                    ipython_instance.magic("autoawait False")
 
 if ipy_error is None:
     last_exception = None

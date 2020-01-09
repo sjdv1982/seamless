@@ -69,5 +69,5 @@ with macro_mode_on():
 print(ctx.pi)
 print(ctx.pi.value)
 ctx.code.set("result = a * 2")
-ctx.equilibrate()
+ctx.compute()
 print(ctx.twopi.value)

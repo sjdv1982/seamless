@@ -27,7 +27,7 @@ async def handler(request):
     text = await request.text()
     graph = json.loads(text)
     ctx = load_graph(graph)
-    ctx.equilibrate()
+    ctx.compute()
     colored_graph = ctx.get_graph()
     body = json.dumps(colored_graph, indent=2, sort_keys=True) 
     return web.Response(

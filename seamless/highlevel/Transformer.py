@@ -1,5 +1,6 @@
 import weakref
 import functools
+import pprint
 from .Cell import Cell
 from .Resource import Resource
 from .proxy import Proxy, CodeProxy, HeaderProxy
@@ -127,16 +128,17 @@ class Transformer(Base):
         htf = self._get_htf()
         old_language = htf.get("language")
         htf["language"] = lang
+        old_compiled = htf.get("compiled", False)
+        if old_compiled != compiled:
+            htf["UNTRANSLATED"] = True
+        elif (old_language in ("bash", "docker")) != (language in ("bash", "docker")):
+            htf["UNTRANSLATED"] = True
         htf["compiled"] = compiled
         htf["file_extension"] = extension
         has_translated = False
         if compiled:
             htf["with_result"] = True
-            self._parent()._do_translate(force=True)
-            has_translated = True
-            tf = self._get_tf()
-            if tf is not None:
-                tf.main_module.set({"compiler_verbose": True})
+            self.main_module.compiler_verbose = True
         elif lang == "docker":
             if old_language != "docker":
                 im = False
@@ -172,9 +174,9 @@ class Transformer(Base):
 
     def _header_getter(self, attr):
         htf = self._get_htf()
-        assert htf["compiled"]
-        tf = self._get_tf()
+        assert htf["compiled"]        
         if attr == "value":
+            tf = self._get_tf(force=True)
             return tf.header.value
         elif attr == "mount":
             return self._sub_mount_header
@@ -194,7 +196,7 @@ class Transformer(Base):
 
     @property
     def example(self):        
-        tf = self._get_tf()
+        tf = self._get_tf(force=True)
         htf = self._get_htf()
         inputcell = getattr(tf, htf["INPUT"])
         inp_ctx = inputcell._data._context()
@@ -208,7 +210,7 @@ class Transformer(Base):
     def _result_example(self):
         htf = self._get_htf()
         assert htf["with_result"]
-        tf = self._get_tf()
+        tf = self._get_tf(force=True)
         resultcell = getattr(tf, htf["RESULT"])
         result_ctx = resultcell._data._context()
         example = result_ctx.example.handle
@@ -271,13 +273,13 @@ class Transformer(Base):
                 assign_connection(parent, value._path, target_path, False)
                 translate = True
             elif isinstance(value, Resource):
-                tf = self._get_tf()
+                tf = self._get_tf(force=True)
                 tf.code.set(value.data)                
                 translate = True
             elif isinstance(value, Proxy):
                 raise AttributeError("".join(value._path))
             else:
-                tf = self._get_tf()
+                tf = self._get_tf(force=True)
                 if callable(value):
                     value, _, _ = parse_function_code(value)
                 tf.code.set(value)                
@@ -289,9 +291,7 @@ class Transformer(Base):
                 assign_connection(parent, value._path, target_path, False, exempt=exempt)
                 translate = True
             else:
-                if parent._needs_translation:
-                    translate = False #_get_tf() will translate
-                tf = self._get_tf()
+                tf = self._get_tf(force=True)
                 inp = getattr(tf, htf["INPUT"])
                 removed = parent._remove_connections(self._path + (attr,))
                 if removed:
@@ -313,9 +313,7 @@ class Transformer(Base):
                 assign_connection(parent, value._path, target_path, False)
                 translate = True
             else:
-                if parent._needs_translation:
-                    translate = False #_get_tf() will translate
-                tf = self._get_tf()
+                tf = self._get_tf(force=True)
                 inp = getattr(tf, htf["INPUT"])
                 removed = parent._remove_connections(self._path + (attr,))
                 if removed:
@@ -350,9 +348,11 @@ class Transformer(Base):
         except AttributeError:
             return False
 
-    def _get_tf(self):
+    def _get_tf(self, force=False):
         parent = self._parent()
         if not self._has_tf():
+            if force:
+                raise Exception("Transformer has not yet been translated")
             return None
         p = parent._gen_context
         for subpath in self._path:
@@ -365,7 +365,7 @@ class Transformer(Base):
         return parent._get_node(self._path)
 
     def _get_value(self, attr):
-        tf = self._get_tf()
+        tf = self._get_tf(force=True)
         htf = self._get_htf()
         if attr == "code":
             p = tf.code
@@ -384,12 +384,14 @@ class Transformer(Base):
         htf = self._get_htf()
         if htf.get("UNTRANSLATED"):
             return None
-        tf = self._get_tf().tf
+        tf = self._get_tf(force=True).tf
         if htf["compiled"]:
             exc = ""
             for k in ("gen_header", "integrator", "translator"):
                 curr_exc = getattr(tf, k).exception
                 if curr_exc is not None:
+                    if isinstance(curr_exc, dict):                        
+                        curr_exc = pprint.pformat(curr_exc, width=100)
                     exc += "*** " + k + " ***\n"
                     exc += str(curr_exc)
                     exc += "*** /" + k + " ***\n"
@@ -397,7 +399,7 @@ class Transformer(Base):
                 return None
             return exc
         else:
-            code_cell = self._get_tf().code
+            code_cell = self._get_tf(force=True).code
             curr_exc = code_cell.exception
             if curr_exc is not None:
                 k = "code"
@@ -414,18 +416,18 @@ class Transformer(Base):
         if htf.get("UNTRANSLATED"):
             return None
         if htf["compiled"]:
-            stat = self._get_tf().tf.gen_header.status
+            stat = self._get_tf(force=True).tf.gen_header.status
             if not stat.endswith("OK"):
                 return "gen_header: " + stat
-            stat = self._get_tf().tf.integrator.status
+            stat = self._get_tf(force=True).tf.integrator.status
             if not stat.endswith("OK"):
                 return "integrator: " + stat
-            stat = self._get_tf().tf.translator.status
+            stat = self._get_tf(force=True).tf.translator.status
             if not stat.endswith("OK"):
                 return "translator: " + stat
             return stat    
         else:
-            tf = self._get_tf().tf
+            tf = self._get_tf(force=True).tf
         return tf.status
 
     def __getattr__(self, attr):
@@ -463,7 +465,7 @@ class Transformer(Base):
             proxycls = Proxy
         elif attr == "main_module":
             if not htf["compiled"]:
-                self._get_tf()
+                raise AttributeError(attr)
             if htf["compiled"]:
                 return CompiledObjectDict(self)
         else:
@@ -506,7 +508,7 @@ class Transformer(Base):
 
     def _codegetter(self, attr):
         if attr == "value":
-            tf = self._get_tf()
+            tf = self._get_tf(force=True)            
             return tf.code.value
         elif attr == "mount":
             return functools.partial(self._sub_mount, "code")
@@ -516,7 +518,7 @@ class Transformer(Base):
             mimetype = language_to_mime(language)
             return mimetype
         elif attr == "checksum":
-            tf = self._get_tf()
+            tf = self._get_tf(force=True)
             return tf.code.checksum
         else:
             raise AttributeError(attr)
@@ -525,7 +527,7 @@ class Transformer(Base):
         htf = self._get_htf()
         if attr in htf["pins"]:
             return getattr(self, attr)
-        tf = self._get_tf()
+        tf = self._get_tf(force=True)
         inputcell = getattr(tf, htf["INPUT"])
         if attr == "value":
             return inputcell.value
@@ -553,7 +555,7 @@ class Transformer(Base):
     def _resultgetter(self, attr):
         htf = self._get_htf()
         assert htf["with_result"]
-        tf = self._get_tf()
+        tf = self._get_tf(force=True)
         resultcell = getattr(tf, htf["RESULT"])
         if attr == "mount":
             raise Exception("Result cells cannot be mounted")
@@ -606,11 +608,11 @@ class Transformer(Base):
                 "celltype": "code",
                 "language": language,
                 "transformer": True,
+                "UNTRANSLATED": True,
             }
             if value is not None:
                 assert isinstance(value, str), type(value)
                 cell["TEMP"] = value
-                cell["UNTRANSLATED"] = True
             if "checksum" in htf:
                 htf["checksum"].pop("code", None)
         else:
@@ -639,7 +641,10 @@ class Transformer(Base):
     def _observe_input(self, checksum):
         if self._parent() is None:
             return
-        htf = self._get_htf()
+        try:
+            htf = self._get_htf()
+        except Exception:
+            return
         if htf.get("checksum") is None:
             htf["checksum"] = {}
         htf["checksum"].pop("input_temp", None)
@@ -650,7 +655,10 @@ class Transformer(Base):
     def _observe_input_auth(self, checksum):
         if self._parent() is None:
             return
-        htf = self._get_htf()
+        try:
+            htf = self._get_htf()
+        except Exception:
+            return
         if htf.get("checksum") is None:
             htf["checksum"] = {}
         htf["checksum"].pop("input_temp", None)
@@ -661,7 +669,10 @@ class Transformer(Base):
     def _observe_input_buffer(self, checksum):
         if self._parent() is None:
             return
-        htf = self._get_htf()
+        try:
+            htf = self._get_htf()
+        except Exception:
+            return
         if htf.get("checksum") is None:
             htf["checksum"] = {}
         htf["checksum"].pop("input_temp", None)
@@ -672,7 +683,10 @@ class Transformer(Base):
     def _observe_code(self, checksum):
         if self._parent() is None:
             return
-        htf = self._get_htf()
+        try:
+            htf = self._get_htf()
+        except Exception:
+            return
         if htf.get("checksum") is None:
             htf["checksum"] = {}
         htf["checksum"].pop("code", None)
@@ -682,7 +696,10 @@ class Transformer(Base):
     def _observe_result(self, checksum):
         if self._parent() is None:
             return
-        htf = self._get_htf()
+        try:
+            htf = self._get_htf()
+        except Exception:
+            return
         if htf.get("checksum") is None:
             htf["checksum"] = {}
         htf["checksum"]["result"] = checksum
@@ -690,7 +707,10 @@ class Transformer(Base):
     def _observe_schema(self, checksum):
         if self._parent() is None:
             return
-        htf = self._get_htf()
+        try:
+            htf = self._get_htf()
+        except Exception:
+            return
         if htf.get("checksum") is None:
             htf["checksum"] = {}
         htf["checksum"]["schema"] = checksum
@@ -698,7 +718,10 @@ class Transformer(Base):
     def _observe_result_schema(self, checksum):
         if self._parent() is None:
             return
-        htf = self._get_htf()
+        try:
+            htf = self._get_htf()
+        except Exception:
+            return
         if htf.get("checksum") is None:
             htf["checksum"] = {}
         htf["checksum"]["result_schema"] = checksum
@@ -706,7 +729,10 @@ class Transformer(Base):
     def _observe_main_module(self, checksum):
         if self._parent() is None:
             return
-        htf = self._get_htf()
+        try:
+            htf = self._get_htf()
+        except Exception:
+            return
         if htf.get("checksum") is None:
             htf["checksum"] = {}
         htf["checksum"]["main_module"] = checksum
@@ -718,7 +744,7 @@ class Transformer(Base):
                 pass
             else:
                 raise NotImplementedError # NOTE: observers depend on the implementation of translate_XXX_transformer (midlevel)
-        tf = self._get_tf()
+        tf = self._get_tf(force=True)
         tf.code._set_observer(self._observe_code)
         inp = htf["INPUT"]
         inpcell = getattr(tf, inp)

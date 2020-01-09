@@ -50,12 +50,12 @@ if PINS.x.updated:
   """
 )
 
-ctx.equilibrate()
+ctx.compute()
 print("VALUE", c_data.value, "'" + c_code.value + "'", c_output.value)
 
 c_data.set(5)
 c_code.set("outp = val*3")
-ctx.equilibrate()
+ctx.compute()
 
 editor_pycell =  os.path.join(
   os.path.dirname(__file__), "editor_pycell.py"
@@ -92,7 +92,7 @@ ed2.title.cell("text").set("Editor #2")
 make_editor(ed1)
 make_editor(ed2)
 c_data.connect(ed1.val)
-ctx.equilibrate()
+ctx.compute()
 c_output2.connect(ed2.val)
 
 ted1 = ctx.ted1 = reactor(teparams)
@@ -104,10 +104,10 @@ c.connect(ted1.val)
 meta_ted = ctx.meta_ted = reactor(teparams)
 meta_ted.title.cell().set("Meta-editor")
 make_text_editor(meta_ted)
-ctx.equilibrate()
+ctx.compute()
 
 c = ted1.code_start.cell()
 c.connect(meta_ted.val)
 
 ctx.formula.highlink(ctx.formula2)
-ctx.equilibrate()
+ctx.compute()

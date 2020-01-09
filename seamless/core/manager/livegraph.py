@@ -36,7 +36,6 @@ class LiveGraph:
         self.rtreactors = {}
 
         self.temp_auth = weakref.WeakKeyDictionary()
-        self._will_lose_authority = set()
 
         self.cell_parsing_exceptions = {}
 
@@ -162,13 +161,13 @@ class LiveGraph:
     def highlink(self, current_macro, source, target):
         def verify_auth(cell):
             if cell._structured_cell is None:
+                if len(self.schemacells[cell]):
+                    return
                 if self.has_authority(cell):
                     return
                 msg = "Highlinked cell %s must have authority"
                 raise Exception(msg % cell)
             else:
-                if cell._structured_cell._schema is cell:
-                    return
                 msg = "Highlinked cell %s cannot be part of structured cell, unless it is its schema"
                 raise Exception(msg % cell)
 
@@ -185,10 +184,15 @@ class LiveGraph:
             if checksum is not None:
                 self.activate_highlink(target, checksum)
 
-    def connect_pin_cell(self, current_macro, source, target):
+    def connect_pin_cell(
+        self, current_macro, source, target, 
+        from_upon_connection_task=None
+    ):
         """Connect a pin to a simple cell"""
         assert target._structured_cell is None
-        assert self.has_authority(target), target
+        assert self._has_authority(
+            target, from_upon_connection_task=from_upon_connection_task
+        ), target
         if isinstance(source, EditPin):
             assert target._get_macro() is None # Cannot connect edit pins to cells under macro control
 
@@ -239,7 +243,10 @@ class LiveGraph:
 
         return read_accessor
 
-    def connect_cell_pin(self, current_macro, source, target):
+    def connect_cell_pin(
+        self, current_macro, source, target,
+        from_upon_connection_task=None
+    ):
         """Connect a simple cell to a pin"""
         assert source._structured_cell is None
 
@@ -301,10 +308,15 @@ class LiveGraph:
 
         return read_accessor
 
-    def connect_cell_cell(self, current_macro, source, target):
+    def connect_cell_cell(
+        self, current_macro, source, target,
+        from_upon_connection_task=None
+    ):
         """Connect one simple cell to another"""
         assert source._structured_cell is None and target._structured_cell is None
-        assert self.has_authority(target), target
+        assert self._has_authority(
+            target, from_upon_connection_task=from_upon_connection_task
+        ), target
         
         manager = self.manager()
         read_accessor = ReadAccessor(
@@ -331,12 +343,17 @@ class LiveGraph:
 
         return read_accessor
 
-    def connect_scell_cell(self, current_macro, source, source_path, target):
+    def connect_scell_cell(
+        self, current_macro, source, source_path, target,
+        from_upon_connection_task=None
+    ):
         """Connect a structured cell (outchannel) to a simple cell"""
         assert source._structured_cell is not None and target._structured_cell is None
         assert source in self.paths_to_downstream, source
         assert source_path in self.paths_to_downstream[source], (source, self.paths_to_downstream[source].keys(), source_path)
-        assert self.has_authority(target), target
+        assert self._has_authority(
+            target, from_upon_connection_task=from_upon_connection_task
+        ), target
         
         manager = self.manager()
         read_accessor = ReadAccessor(
@@ -363,7 +380,10 @@ class LiveGraph:
 
         return read_accessor
 
-    def connect_cell_scell(self, current_macro, source, target, target_path):
+    def connect_cell_scell(
+        self, current_macro, source, target, target_path,
+        from_upon_connection_task=None
+    ):
         """Connect a simple cell to a structured cell (inchannel)"""
         assert source._structured_cell is None and target._structured_cell is not None
         assert target in self.paths_to_upstream, target
@@ -397,15 +417,21 @@ class LiveGraph:
         return read_accessor
 
     def connect_scell_scell(self, 
-            current_macro, source, source_path, target, target_path
-        ):
+        current_macro, source, source_path, target, target_path,
+        from_upon_connection_task=None
+    ):
         """Connect one structured cell (outchannel) to another one (inchannel)"""
         raise TypeError("Structured cells cannot be connected to each other; use a simple cell as intermediate")
 
-    def connect_macropath_cell(self, current_macro, source, target):
+    def connect_macropath_cell(
+        self, current_macro, source, target,
+        from_upon_connection_task=None
+    ):
         """Connect a macropath to a simple cell"""
         assert target._structured_cell is None
-        assert self.has_authority(target), target
+        assert self._has_authority(
+            target, from_upon_connection_task=from_upon_connection_task
+        ), target
         
         manager = self.manager()
         read_accessor = ReadAccessor(
@@ -432,10 +458,15 @@ class LiveGraph:
 
         return read_accessor
 
-    def connect_cell_macropath(self, current_macro, source, target):
+    def connect_cell_macropath(
+        self, current_macro, source, target,
+        from_upon_connection_task=None
+    ):
         """Connect a simple cell to a macropath"""
         assert source._structured_cell is None
-        assert self.has_authority(target), target
+        assert self._has_authority(
+            target, from_upon_connection_task=from_upon_connection_task
+        ), target
         
         manager = self.manager()
         read_accessor = ReadAccessor(
@@ -504,12 +535,23 @@ class LiveGraph:
             result = None
         return result
 
-    def has_authority(self, cell_or_macropath, path=None):
+    def _has_authority(
+        self, cell_or_macropath, path=None, *, from_upon_connection_task=None
+    ):
+        try:
+            root = cell_or_macropath._root()
+        except Exception:
+            root = None
+        for task in self.manager().taskmanager._get_upon_connection_tasks(root):
+            if task is from_upon_connection_task:
+                continue
+            if task.target is cell_or_macropath:
+                return False
         if isinstance(cell_or_macropath, Path):
             macropath = cell_or_macropath            
             assert path is None
             if macropath._destroyed:
-                return True # TODO? would this ever be bad?
+                return True # TODO? would this ever be bad?            
             return self.macropath_to_upstream[macropath] is None
         cell = cell_or_macropath
         if path is not None:
@@ -520,10 +562,15 @@ class LiveGraph:
         if cell._structured_cell is not None:
             return cell._structured_cell.auth is cell
         else:
+            for macropath in cell._paths:
+                if not self.has_authority(macropath):
+                    return False
             return self.cell_to_upstream[cell] is None
 
-    def will_lose_authority(self, cell):
-        return cell in self._will_lose_authority
+    def has_authority(
+        self, cell_or_macropath, path=None
+    ):
+        return self._has_authority(cell_or_macropath, path)
 
     @destroyer
     def destroy_accessor(self, manager, accessor, from_upstream=False):
@@ -723,7 +770,6 @@ class LiveGraph:
         self.cell_to_downstream.pop(cell)
         self.cell_to_cell_highlink.pop(cell)
         self.cell_parsing_exceptions.pop(cell, None)
-        self._will_lose_authority.discard(cell)
 
     @destroyer
     def destroy_macropath(self, macropath):

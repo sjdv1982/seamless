@@ -13,7 +13,7 @@ class ReactorUpdateTask(Task):
         livegraph = manager.livegraph
         rtreactor = livegraph.rtreactors[reactor]
         taskmanager = manager.taskmanager
-        await taskmanager.await_upon_connection_tasks(self.taskid)
+        await taskmanager.await_upon_connection_tasks(self.taskid, self._root())
         editpins = rtreactor.editpins
         editpin_to_cell = livegraph.editpin_to_cell[reactor]
         upstreams = livegraph.reactor_to_upstream[reactor]
@@ -185,7 +185,7 @@ class ReactorResultTask(Task):
         reactor._last_outputs[pinname] = checksum
         downstreams = livegraph.reactor_to_downstream[reactor][pinname]
         for accessor in downstreams:
-            #- construct (not evaluate!) their expression using the cell checksum 
+            #- construct (not compute!) their expression using the cell checksum 
             #  Constructing a downstream expression increfs the cell checksum
             changed = accessor.build_expression(livegraph, checksum)
             # TODO: prelim? tricky for a reactor...

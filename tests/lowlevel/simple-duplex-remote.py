@@ -63,11 +63,11 @@ def report():
     print()
 
 for n in range(5):
-    ctx.equilibrate(0.5)
+    ctx.compute(0.5)
     report()
 
 ctx.tf.cancel()
-ctx.equilibrate(0.5)
+ctx.compute(0.5)
 report()
 print("EXCEPTION       ", ctx.tf.exception)
 print("EXCEPTION DUPLEX", ctx.tf_duplex.exception)
@@ -80,8 +80,8 @@ print("EXCEPTION DUPLEX", ctx.tf_duplex.exception)
 print()
 
 for n in range(20):
-    ctx.equilibrate(0.5)
+    ctx.compute(0.5)
     report()
 
-ctx.equilibrate()
+ctx.compute()
 report()

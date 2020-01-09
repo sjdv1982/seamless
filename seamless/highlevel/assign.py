@@ -72,7 +72,7 @@ def assign_constant(ctx, path, value):
     cell["TEMP"] = value
     ### json.dumps(cell)
     ctx._graph[0][path] = cell
-    return True
+    ctx._translate()
 
 def assign_resource(ctx, path, value):
     result = assign_constant(value.data)

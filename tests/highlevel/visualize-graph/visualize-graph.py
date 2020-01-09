@@ -1,4 +1,4 @@
-from seamless.highlevel import Context, Transformer
+from seamless.highlevel import Context, Transformer, Cell
 from functools import partial
 
 ctx = Context()
@@ -70,4 +70,32 @@ gvs.code.mount("gen_vis_state.py", authority="file")
 ctx2.vis_state = ctx2.gen_vis_state
 ctx2.vis_state.celltype = "plain"
 ctx2.vis_state.share(readonly=True)
+
+c = ctx2.html = Cell()
+c.set(open("state-visualization.html").read())
+c.celltype = "text"
+c.mimetype = "text/html"
+c.share(path="state-visualization.html")
+
+import seamless, os
+seamless_dir = os.path.dirname(seamless.__file__)
+c = ctx2.js = Cell()
+c.set(open(seamless_dir + "/js/seamless-client.js").read())
+c.celltype = "text"
+c.mimetype = "text/javascript"
+c.share(path="seamless-client.js")
+
+c = ctx2.js2 = Cell()
+c.set(open("state-visualization.js").read())
+c.celltype = "text"
+c.mimetype = "text/javascript"
+c.share(path="state-visualization.js")
+
+c = ctx2.css = Cell()
+c.set(open("state-visualization.css").read())
+c.celltype = "text"
+c.mimetype = "text/css"
+c.share(path="state-visualization.css")
+
 ctx2.translate()
+print("Open http://localhost:5813/ctx/state-visualization.html in the browser")

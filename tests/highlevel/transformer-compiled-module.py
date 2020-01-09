@@ -11,6 +11,7 @@ ctx.b.celltype = "plain"
 
 def build_transformer():
     ctx.transform = lambda a,b: a + b
+    ctx.translate()
     ctx.transform.example.a = 0
     ctx.transform.example.b = 0
     ctx.result = ctx.transform
@@ -27,29 +28,30 @@ def build_transformer():
     extern "C" double transform(int a, int b) {
         return add(a,b);
     }"""
-    ctx.transform.result.example = 0.0 #example, just to fill the schema
+    ctx.translate()
+    ctx.transform.result.example = 0.0 #example, just to fill the schema    
 
     ctx.transform.main_module.add.language = "c"
     code = """
     double add(int a, int b) {return a+b;};
     """
     ctx.add_code >> ctx.transform.main_module.add.code
-    node = ctx.add_code._get_hcell()
     ctx.add_code.set(code)
+    ctx.translate()
 
 build_transformer()
-ctx.equilibrate()
+ctx.compute()
 print(ctx.result.value)
 
 ########################
 
 print("START")
 build_transformer()
-ctx.equilibrate()
+ctx.compute()
 print(ctx.result.value)
 
 print("START2")
 ctx.a = 100
 build_transformer()
-ctx.equilibrate()
+ctx.compute()
 print(ctx.result.value)

@@ -83,8 +83,8 @@ if __name__ == "__main__":
     ctx.mode.celltype = "text"
     mount(ctx.mode, "w")
 
-    ctx.equilibrate()
+    ctx.compute()
 else:
     stdlib.merge = ctx
 
-ctx.equilibrate()
+ctx.compute()

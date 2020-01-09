@@ -46,18 +46,18 @@ print("/reactor execute")
     ctx.testmodule = cell("plain").set(testmodule)
     ctx.testmodule.connect(ctx.rc.testmodule)
 
-ctx.equilibrate()
+ctx.compute()
 print(ctx.result.value)
 '''
 ctx.cell1.set(10)
-ctx.equilibrate()
+ctx.compute()
 print(ctx.result.value)
 ctx.code_update.set("""
 a = PINS.a.get()
 b = PINS.b.get()
 PINS.c.set(a+b+1000)
 """)
-ctx.equilibrate()
+ctx.compute()
 print(ctx.result.value)
 print(ctx.status)
 '''

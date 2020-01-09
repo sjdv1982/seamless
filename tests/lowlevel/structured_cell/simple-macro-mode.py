@@ -10,7 +10,7 @@ with macro_mode_on():
 data = ctx.sc.handle
 data.set(20)
 print(data)
-ctx.equilibrate()
+ctx.compute()
 print(data.data, ctx.data.value)
 data.set({})
 data.a = "test"
@@ -19,5 +19,5 @@ data.b.set(5)
 data.c = {"d": {}}
 data.c.d.e = 12.0
 print(data)
-ctx.equilibrate()
+ctx.compute()
 print(data.data, ctx.data.value)

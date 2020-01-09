@@ -228,6 +228,7 @@ class Reactor(Base):
                 "celltype": "code",
                 "language": "python",
                 "transformer": False,
+                "UNTRANSLATED": True,
             }
             if value is not None:
                 assert isinstance(value, str)

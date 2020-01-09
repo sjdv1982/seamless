@@ -95,6 +95,8 @@ class Transformer(Worker):
         return False
 
     def get_transformation(self):
+        import asyncio
+        assert nest_asyncio is not None or not asyncio.get_event_loop().is_running()
         from .manager.tasks.transformer_update import TransformerUpdateTask
         manager = self._get_manager()
         taskmanager = manager.taskmanager
@@ -181,6 +183,14 @@ class Transformer(Worker):
     def void(self):
         return self._void
 
+    def _get_buffer_sync(self):
+        from .protocol.get_buffer import get_buffer_sync
+        if self._checksum is None:
+            return None
+        buffer_cache = self._get_manager().cachemanager.buffer_cache
+        buffer = get_buffer_sync(self._checksum, buffer_cache)
+        return buffer
+
     async def _get_buffer(self):
         from .protocol.get_buffer import get_buffer
         if self._checksum is None:
@@ -208,16 +218,39 @@ class Transformer(Worker):
         value = await deserialize(buffer, checksum, output_celltype, True)
         return value
 
+    def _get_value_sync(self):
+        from .protocol.deserialize import deserialize_sync
+        manager = self._get_manager()
+        livegraph = manager.livegraph
+        downstreams = livegraph.transformer_to_downstream[self]
+        if not len(downstreams):
+            return None
+        first_output = downstreams[0].write_accessor.target()
+        outputpin = self._pins[self._output_name]
+        output_celltype = outputpin.celltype
+        if output_celltype is None:
+            output_celltype = first_output._celltype
+        checksum = self._checksum
+        buffer = self._get_buffer_sync()
+        if buffer is None:
+            return None
+        value = deserialize_sync(buffer, checksum, output_celltype, True)
+        return value
+
     @property
     def buffer(self):
+        if asyncio.get_event_loop().is_running():
+            return self._get_buffer_sync()
         task = self._get_buffer()
         loop = asyncio.get_event_loop()
         future = asyncio.ensure_future(task)
         loop.run_until_complete(future)
         return future.result()
-
+            
     @property
     def value(self):
+        if asyncio.get_event_loop().is_running():
+            return self._get_value_sync()
         task = self._get_value()
         loop = asyncio.get_event_loop()
         future = asyncio.ensure_future(task)
@@ -235,3 +268,5 @@ class Transformer(Worker):
 def transformer(params, *, stream_params=None):
     """TODO: port documentation from 0.1"""
     return Transformer(params, stream_params=stream_params)
+
+from .. import nest_asyncio

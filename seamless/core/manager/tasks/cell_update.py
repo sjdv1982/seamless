@@ -14,7 +14,7 @@ class CellUpdateTask(Task):
         - If the checksum is None, for each output accessor:
             - do a void cancellation
           Else, for each output read accessor:
-            - construct (not evaluate!) their expression using the cell checksum 
+            - construct (not compute!) their expression using the cell checksum 
             Constructing a downstream expression increfs the cell checksum
             - launch an accessor update task
         """
@@ -34,7 +34,7 @@ class CellUpdateTask(Task):
             path_accessors = livegraph.macropath_to_downstream[path]
             accessors = accessors + path_accessors
         for accessor in accessors:
-            #- construct (not evaluate!) their expression using the cell checksum 
+            #- construct (not compute!) their expression using the cell checksum 
             #  Constructing a downstream expression increfs the cell checksum
             changed = accessor.build_expression(livegraph, checksum)
             if cell._prelim != accessor._prelim:

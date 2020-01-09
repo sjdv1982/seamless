@@ -8,15 +8,15 @@ ctx.sc = StructuredCell(
 
 data = ctx.sc.handle
 data.set(20)
-ctx.equilibrate()
+ctx.compute()
 print(data.data, ctx.data.value)
 
 data.set(data + 1)
-ctx.equilibrate()
+ctx.compute()
 print(data.data, ctx.data.value)
 
 print(type(data))
 data += 1
 print(type(data))
-ctx.equilibrate()
+ctx.compute()
 print(data.data, ctx.data.value)

@@ -31,7 +31,7 @@ with macro_mode_on():
     ctx.code.connect(ctx.tf.code)
     ctx.tf.c.connect(ctx.result)
 
-ctx.equilibrate()
+ctx.compute()
 print("Secret source code ", ctx.code.checksum)
 print("hash verification  ", get_hash("c = a + b\n").hex())
 print(ctx.result.value)

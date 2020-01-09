@@ -25,7 +25,7 @@ _where = None
 
 # the set of dtypes that we will allow pass to numexpr
 _ALLOWED_DTYPES = {
-    'evaluate': {'int64', 'int32', 'float64', 'float32', 'bool'},
+    'compute': {'int64', 'int32', 'float64', 'float32', 'bool'},
     'where': {'int64', 'float64', 'bool'}
 }
 
@@ -95,7 +95,7 @@ def _evaluate_numexpr(op, op_str, a, b, truediv=True,
                       reversed=False, **eval_kwargs):
     result = None
 
-    if _can_use_numexpr(op, op_str, a, b, 'evaluate'):
+    if _can_use_numexpr(op, op_str, a, b, 'compute'):
         try:
 
             # we were originally called by a reversed op
@@ -105,7 +105,7 @@ def _evaluate_numexpr(op, op_str, a, b, truediv=True,
 
             a_value = getattr(a, "values", a)
             b_value = getattr(b, "values", b)
-            result = ne.evaluate('a_value {op} b_value'.format(op=op_str),
+            result = ne.compute('a_value {op} b_value'.format(op=op_str),
                                  local_dict={'a_value': a_value,
                                              'b_value': b_value},
                                  casting='safe', truediv=truediv,
@@ -137,7 +137,7 @@ def _where_numexpr(cond, a, b):
             cond_value = getattr(cond, 'values', cond)
             a_value = getattr(a, 'values', a)
             b_value = getattr(b, 'values', b)
-            result = ne.evaluate('where(cond_value, a_value, b_value)',
+            result = ne.compute('where(cond_value, a_value, b_value)',
                                  local_dict={'cond_value': cond_value,
                                              'a_value': a_value,
                                              'b_value': b_value},
@@ -187,9 +187,9 @@ def _bool_arith_check(op_str, a, b, not_allowed=frozenset(('/', '//', '**')),
     return True
 
 
-def evaluate(op, op_str, a, b, use_numexpr=True,
+def compute(op, op_str, a, b, use_numexpr=True,
              **eval_kwargs):
-    """ evaluate and return the expression of the op on a and b
+    """ compute and return the expression of the op on a and b
 
         Parameters
         ----------
@@ -208,7 +208,7 @@ def evaluate(op, op_str, a, b, use_numexpr=True,
 
 
 def where(cond, a, b, use_numexpr=True):
-    """ evaluate the where condition cond on a and b
+    """ compute the where condition cond on a and b
 
         Parameters
         ----------
@@ -227,7 +227,7 @@ def where(cond, a, b, use_numexpr=True):
 def set_test_mode(v=True):
     """
     Keeps track of whether numexpr was used.  Stores an additional ``True``
-    for every successful use of evaluate with numexpr since the last
+    for every successful use of compute with numexpr since the last
     ``get_test_result``
     """
     global _TEST_MODE, _TEST_RESULT

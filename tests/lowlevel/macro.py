@@ -39,12 +39,12 @@ with macro_mode_on():
 
 
 print("START")
-ctx.equilibrate(1)
+ctx.compute(1)
 print(ctx.mymacro.ctx.a.value)
 print(ctx.mymacro.ctx.b.value)
 print(hasattr(ctx.mymacro.ctx, "d"))
 print(ctx.mymacro.ctx.result.value) #None 
-ctx.equilibrate()
+ctx.compute()
 print(ctx.mymacro.ctx.result.value) #3002
 
 def mount_check():
@@ -63,7 +63,7 @@ mount_check()
 
 print("Change 0")
 ctx.param.set(-10)
-ctx.equilibrate()
+ctx.compute()
 # Note that ctx.mymacro.ctx is now a new context, and
 #   any old references to the old context are invalid
 # But this is a concern for the high-level!
@@ -83,7 +83,7 @@ else:
 
 print("Change 1")
 ctx.param.set(2)
-ctx.equilibrate()
+ctx.compute()
 # Note that ctx.mymacro.ctx is now a new context, and
 #   any old references to the old context are invalid
 # But this is a concern for the high-level!
@@ -105,7 +105,7 @@ print("Change 2")
 ctx.macrocode.set(
     ctx.macrocode.value + "   "
 )
-ctx.equilibrate() # Macro execution, because macros are not cached. But no transformation
+ctx.compute() # Macro execution, because macros are not cached. But no transformation
 
 try:
     ctx.mymacro.ctx
@@ -120,7 +120,7 @@ print("Change 3")
 ctx.macrocode.set(
     ctx.macrocode.value.replace("#raise Exception", "raise Exception")
 )
-ctx.equilibrate()
+ctx.compute()
 
 try:
     print(ctx.mymacro.ctx)
@@ -139,7 +139,7 @@ print("Change 4")
 ctx.macrocode.set(
     ctx.macrocode.value.replace("raise Exception", "#raise Exception")
 )
-ctx.equilibrate()
+ctx.compute()
 print(ctx.mymacro.ctx.a.value)
 print(ctx.mymacro.ctx.b.value)
 print(ctx.mymacro.ctx.hasattr("d"))
@@ -149,7 +149,7 @@ print(ctx.mymacro.ctx.result.value)
 
 print("Change 5")
 ctx.param.set(0)
-ctx.equilibrate()
+ctx.compute()
 print(ctx.mymacro.ctx.a.value)
 print(ctx.mymacro.ctx.b.value)
 print(ctx.mymacro.ctx.hasattr("d"))
@@ -161,7 +161,7 @@ mount_check()
 
 print("Change 6")
 ctx.param.set(999)
-ctx.equilibrate()
+ctx.compute()
 try:
     print(ctx.mymacro.ctx)
 except AttributeError:

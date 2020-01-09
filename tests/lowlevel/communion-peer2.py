@@ -35,7 +35,7 @@ print()
 print("START RESULT CACHE")
 print()
 
-ctx.equilibrate()
+ctx.compute()
 
 print(ctx.status)
 print(ctx.result.checksum)
@@ -46,7 +46,7 @@ print("START COMPUTATION")
 print()
 
 ctx.cell1.set(4)
-ctx.equilibrate()
+ctx.compute()
 
 print(ctx.status)
 print(ctx.result.value)

@@ -114,7 +114,7 @@ class BinOp(ops.BinOp):
                     return right
 
             return k(self.op, left, right, queryables=self.queryables,
-                     encoding=self.encoding).evaluate()
+                     encoding=self.encoding).compute()
 
         left, right = self.lhs, self.rhs
 
@@ -245,7 +245,7 @@ class FilterBinOp(BinOp):
         """ return the actual filter format """
         return [self.filter]
 
-    def evaluate(self):
+    def compute(self):
 
         if not self.is_valid:
             raise ValueError("query term is not valid [{slf}]"
@@ -295,7 +295,7 @@ class JointFilterBinOp(FilterBinOp):
     def format(self):
         raise NotImplementedError("unable to collapse Joint Filters")
 
-    def evaluate(self):
+    def compute(self):
         return self
 
 
@@ -317,7 +317,7 @@ class ConditionBinOp(BinOp):
         """ return the actual ne format """
         return self.condition
 
-    def evaluate(self):
+    def compute(self):
 
         if not self.is_valid:
             raise ValueError("query term is not valid [{slf}]"
@@ -349,7 +349,7 @@ class ConditionBinOp(BinOp):
 
 class JointConditionBinOp(ConditionBinOp):
 
-    def evaluate(self):
+    def compute(self):
         self.condition = "({lhs} {op} {rhs})".format(lhs=self.lhs.condition,
                                                      op=self.op,
                                                      rhs=self.rhs.condition)
@@ -553,7 +553,7 @@ class Expr(expr.Expr):
             return pprint_thing(self.terms)
         return pprint_thing(self.expr)
 
-    def evaluate(self):
+    def compute(self):
         """ create and return the numexpr condition and filter """
 
         try:

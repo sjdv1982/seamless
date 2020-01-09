@@ -24,7 +24,7 @@ ctx.link(c, ctx.calc_arr.schema)
 
 ctx.arr = ctx.calc_arr
 ###ctx.arr.celltype = "binary" # TODO: bug! => later
-ctx.equilibrate()
+ctx.compute()
 print(ctx.calc_arr.status)
 
 """
@@ -38,11 +38,11 @@ ctx.tf.arr = ctx.arr
 ctx.tf.fac = 3
 ctx.tf.offset = 12
 ctx.tf.language = "cpp"
-ctx.equilibrate()
+ctx.compute()
 ctx.tf.example.set({})
 ctx.tf.example.fac = 3
 ctx.tf.example.offset = 12
-ctx.equilibrate()
+ctx.compute()
 
 print("\nSTEP 1\n")
 print(ctx.tf.status)
@@ -58,17 +58,17 @@ ctx.tf_result_schema = Cell()
 ctx.tf_result_schema.celltype = "plain"
 ctx.tf_result_schema.mount("/tmp/result_schema.json")
 ctx.link(ctx.tf_result_schema, ctx.tf.result.schema)
-ctx.equilibrate()
+ctx.compute()
 
 ctx.tf.example.arr = ctx.arr.value
 
 print("\nSTEP 2\n")
-ctx.equilibrate()
+ctx.compute()
 print(ctx.tf.status)
 ctx.tf.result.example.set(0)
 
 print("\nSTEP 3\n")
-ctx.equilibrate()
+ctx.compute()
 print(ctx.tf.status)
 
 print(ctx.header.value)

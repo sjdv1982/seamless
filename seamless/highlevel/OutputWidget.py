@@ -86,8 +86,8 @@ class OutputWidget:
                 doc_kwargs[name] = v
         self.DOC = DOC
         self.doc_kwargs = doc_kwargs
-        traitlet = cell.traitlet()
-        traitlet.observe(self._update)
+        self.traitlet = cell.traitlet()
+        self.traitlet.observe(self._update)
     
     def _update(self, change):
         value = change.new
@@ -97,6 +97,9 @@ class OutputWidget:
         self.output_instance.append_display_data(
             display_object
         )
+
+    def set_cell(self, cell):
+        pass
 
     def __repr__(self):
         return repr(self.output_instance)

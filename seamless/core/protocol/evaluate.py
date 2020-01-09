@@ -34,7 +34,7 @@ def needs_buffer_evaluation(checksum, celltype, target_celltype):
         return False
     if (checksum, celltype) not in evaluation_cache_1:
         # TODO: promotion
-        # e.g. a buffer that correctly evaluates as plain, will also evaluate to mixed
+        # e.g. a buffer that correctly evaluates as plain, will also compute to mixed
         return True
     if (celltype, target_celltype) in conversion_equivalent:
         celltype, target_celltype = conversion_equivalent[celltype, target_celltype]

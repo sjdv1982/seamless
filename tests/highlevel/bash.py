@@ -13,12 +13,12 @@ ctx.result = ctx.tf
 ctx.result.celltype = "text"
 ctx.result.mount("/tmp/result", "w")
 ctx.translate(force=True)
-ctx.equilibrate()
+ctx.compute()
 print(ctx.result.value)
 ctx.code = "head -3 testdata > firstdata; tar czf test.tgz testdata firstdata; cat test.tgz"
-ctx.equilibrate()
+ctx.compute()
 print(ctx.result.value)
 ctx.code = "python3 -c 'import numpy as np; np.save(\"test\",np.arange(12)*3)'; cat test.npy"
-ctx.equilibrate()
+ctx.compute()
 print(ctx.result.value)
 print(ctx.tf.status)

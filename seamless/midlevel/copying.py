@@ -39,12 +39,24 @@ async def get_buffer_dict(manager, checksums):
     return result
 
 def get_buffer_dict_sync(manager, checksums):
-    coro = get_buffer_dict(
-        manager, checksums
-    )
-    fut = asyncio.ensure_future(coro)
-    asyncio.get_event_loop().run_until_complete(fut)
-    return fut.result()
+    """This function can be executed if the asyncio event loop is already running"""
+
+    from ..core.protocol.get_buffer import get_buffer_sync
+    if not asyncio.get_event_loop().is_running():    
+        coro = get_buffer_dict(
+            manager, checksums
+        )
+        fut = asyncio.ensure_future(coro)
+        asyncio.get_event_loop().run_until_complete(fut)
+        return fut.result()
+    
+    result = {}
+    buffer_cache = manager.cachemanager.buffer_cache    
+    checksums = list(checksums)
+    for checksum in checksums:
+        buffer = get_buffer_sync(bytes.fromhex(checksum), buffer_cache)
+        result[checksum] = buffer
+    return result
 
 def add_zip(manager, zipfile):
     """
@@ -72,6 +84,8 @@ def fill_checksum(manager, node, temp_path, composite=True):
                 subcelltype = "transformer"
             else:
                 celltype = "text"
+        elif temp_path == "_main_module":
+            celltype = "plain"
         else:
             celltype = "structured"
     elif node["type"] == "reactor":
@@ -95,7 +109,7 @@ def fill_checksum(manager, node, temp_path, composite=True):
     temp_value = node.get("TEMP")
     if composite:
         if isinstance(temp_value, dict):
-            temp_value = temp_value.get(temp_path)
+            temp_value = temp_value.get(temp_path)            
         elif temp_value is None:
             pass
         else:
@@ -122,7 +136,8 @@ def fill_checksum(manager, node, temp_path, composite=True):
     if temp_path is None:
         temp_path = "value"
     if "checksum" not in node:
-        node["checksum"] = {}    
+        node["checksum"] = {}
+    temp_path = temp_path.lstrip("_")  
     node["checksum"][temp_path] = checksum
         
 def fill_checksums(mgr, nodes, *, path=None):
@@ -151,7 +166,9 @@ def fill_checksums(mgr, nodes, *, path=None):
                 if node["with_result"]:
                     fill_checksum(mgr, node2, "result")
                 if node["compiled"]:
-                    fill_checksum(mgr, node2, "main_module")
+                    fill_checksum(mgr, node2, "_main_module")
+                if "checksum" in node2 and "checksum" not in node:
+                    node["checksum"] = node2["checksum"]
             elif node["type"] == "reactor":
                 fill_checksum(mgr, node, "io")
                 fill_checksum(mgr, node, "code_start")
@@ -166,8 +183,12 @@ def fill_checksums(mgr, nodes, *, path=None):
             else:
                 raise TypeError(p, node["type"])
             node.pop("TEMP", None)
-            if "checksum" not in node and old_checksum is not None:
-                node["checksum"] = old_checksum
+            if "checksum" not in node:
+                if old_checksum is not None:
+                    node["checksum"] = old_checksum
+            else:
+                if old_checksum is not None:
+                    node["checksum"].update(old_checksum)
         except Exception:
             import traceback
             traceback.print_exc()

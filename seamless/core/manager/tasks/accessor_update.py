@@ -54,7 +54,7 @@ class AccessorUpdateTask(Task):
         elif isinstance(target, Cell): # If a cell:
             path = accessor.write_accessor.path
             if path is None:
-                await manager.taskmanager.await_upon_connection_tasks(self.taskid)
+                await manager.taskmanager.await_upon_connection_tasks(self.taskid, target._root())
                 manager._set_cell_checksum(
                     target, expression_result_checksum, 
                     False, None, prelim=accessor._prelim

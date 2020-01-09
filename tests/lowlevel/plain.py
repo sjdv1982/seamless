@@ -19,12 +19,12 @@ with macro_mode_on():
     ctx.tf.c.connect(ctx.c)
     ctx.mount("/tmp/mount-test", persistent=None)
 
-ctx.equilibrate()
+ctx.compute()
 
 with open("/tmp/mount-test/b.json", "w") as f:
     f.write("10\n")
 import asyncio
 fut = asyncio.ensure_future(asyncio.sleep(0.5))
 asyncio.get_event_loop().run_until_complete(fut)
-ctx.equilibrate()
+ctx.compute()
 print(ctx.b.value)

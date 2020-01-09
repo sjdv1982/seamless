@@ -26,23 +26,23 @@ ctx.doubleit.a = ctx.pi
 ctx.twopi = ctx.doubleit
 ctx.translate()
 
-ctx.equilibrate()
+ctx.compute()
 print(ctx.pi.value)
 print(ctx.twopi.value)
 
 ctx.doubleit.code = lambda a: 42
-ctx.equilibrate()
+ctx.compute()
 print(ctx.pi.value)
 print(ctx.twopi.value)
 
 ctx.translate(force=True)
-ctx.equilibrate()
+ctx.compute()
 print(ctx.pi.value)
 print(ctx.twopi.value)
 print()
 
 ctx.doubleit.code = lambda a: 2 * a
-ctx.equilibrate()
+ctx.compute()
 print(ctx.pi.value)
 print(ctx.twopi.value)
 

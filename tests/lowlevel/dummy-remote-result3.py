@@ -75,7 +75,7 @@ with macro_mode_on():
 
 for n in range(10):
     ctx.hashcell.set(0.1 * (n+1) )
-    ctx.equilibrate(0.05)
+    ctx.compute(0.05)
 
 for n in range(25):
     print("STEP", n+1)
@@ -84,9 +84,9 @@ for n in range(25):
     print(ctx.result.status)
     print(ctx.result.value)
     print()
-    ctx.equilibrate(0.5)
+    ctx.compute(0.5)
     
-ctx.equilibrate()
+ctx.compute()
 print(ctx.status)
 print(ctx.result.value)
 print("STOP")

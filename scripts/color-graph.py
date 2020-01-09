@@ -9,7 +9,7 @@ redis_cache = seamless.RedisCache()
 redis_sink = seamless.RedisSink()
 
 ctx = load_graph(graph)
-ctx.equilibrate()
+ctx.compute()
 colored_graph = ctx.get_graph()
 with open(outfile, "w") as f:
     json.dump(colored_graph, f, indent=2, sort_keys=True)

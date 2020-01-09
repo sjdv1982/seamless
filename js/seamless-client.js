@@ -130,10 +130,12 @@ function connect_seamless(websocketserver, restserver, namespace="ctx"){
 }
 
 
+/*
 //export default connect_seamless
 define({
   connect_seamless: connect_seamless,
 });
+*/
 /*
 module.exports = {
   connect_seamless: connect_seamless,

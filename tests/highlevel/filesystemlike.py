@@ -13,10 +13,10 @@ ctx.job.language = "bash"
 ctx.job.code = "awk 'NF > 0{print $0 \" OK!\"}' input"
 ctx.job.input = ctx.filesystem["test.txt"]
 ctx.result = ctx.job
-ctx.equilibrate()
+ctx.compute()
 print(ctx.result.value)
 print("START")
 ctx.filesystem["result.txt"] = ctx.result
-ctx.equilibrate(1)
+ctx.compute(1)
 print(ctx.result.value)
 print(ctx.filesystem.value)

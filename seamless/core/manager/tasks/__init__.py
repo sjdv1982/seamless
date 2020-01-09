@@ -50,6 +50,16 @@ class Task:
         else:
             return self._dependencies
 
+    def _root(self):
+        root = None
+        for dep in self._dependencies:
+            deproot = dep._root()
+            if root is None:
+                root = deproot
+            else:
+                assert root is deproot # tasks cannot depend on multiple toplevel contexts
+        return root
+
     def set_realtask(self, realtask):
         self._realtask = realtask
         realtask.refholders.append(self)
@@ -100,6 +110,7 @@ class Task:
         self._launch()
 
     def launch_and_await(self):
+        assert nest_asyncio is not None or not asyncio.get_event_loop().is_running()
         realtask = self._realtask
         if realtask is not None:
             return realtask.launch_and_await()
@@ -142,3 +153,4 @@ from .get_buffer import GetBufferTask
 from .upon_connection import UponConnectionTask, UponHighLinkTask
 from ..manager import Manager
 from ....communion_server import communion_server
+from .... import nest_asyncio

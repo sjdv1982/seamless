@@ -12,11 +12,11 @@ ctx.sc = StructuredCell(
 ctx.upstream = cell("python").set("print(42)")
 ctx.upstream.connect(ctx.sc.inchannels[("codefield",)])
 
-ctx.equilibrate()
+ctx.compute()
 print(ctx.data.value)
 ctx.upstream.set("""
 print(43)
 print(44)
 """)
-ctx.equilibrate()
+ctx.compute()
 print(ctx.data.value)

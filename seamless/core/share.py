@@ -29,7 +29,7 @@ class ShareItem:
         self.cell = ref(cell)
         assert isinstance(readonly, bool)
         self.readonly = readonly
-        self.mimetype = None
+        self.mimetype = mimetype
 
     def init(self):
         if self._initialized:
@@ -135,11 +135,11 @@ class ShareManager:
         self.paths = {}
         self.cached_shares = {} # key: file path; value: (deletion time, share.Share)
 
-    def new_namespace(self, manager, share_equilibrate, name=None):
+    def new_namespace(self, manager, share_evaluate, name=None):
         from .manager import Manager
         assert isinstance(manager, Manager)
         self.paths[manager] = set()
-        name = shareserver._new_namespace(manager, share_equilibrate, name)
+        name = shareserver._new_namespace(manager, share_evaluate, name)
         return name
 
 
@@ -188,7 +188,10 @@ class ShareManager:
                 self.shares.pop(cell)
                 share_item.destroy()
             if share_params is not None:
-                new_share_item = ShareItem(cell, path, readonly)
+                mimetype = share_params.get("mimetype")
+                new_share_item = ShareItem(
+                    cell, path, readonly, mimetype=mimetype
+                )
                 self.shares[cell] = new_share_item
                 checksum = cell._checksum
                 if checksum is not None:
@@ -285,14 +288,14 @@ class ShareManager:
         fut = asyncio.ensure_future(self._await_stop())
         asyncio.get_event_loop().run_until_complete(fut)
 
-    async def _await_tick(self):
+    async def tick_async(self):
         self._tick = False
         while self._running and not self._tick:
             await asyncio.sleep(0.01)
 
     def tick(self):
         """Waits until one iteration of the run() loop has finished"""
-        fut = asyncio.ensure_future(self._await_tick())
+        fut = asyncio.ensure_future(self.tick_async())
         asyncio.get_event_loop().run_until_complete(fut)
 
 sharemanager = ShareManager(0.2)

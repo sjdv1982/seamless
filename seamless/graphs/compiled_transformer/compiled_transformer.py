@@ -142,7 +142,7 @@ ctx.kwargs = {"a": 2, "b": 3}
 ctx.translator.kwargs = ctx.kwargs
 ctx.translator.module = ctx.module
 
-ctx.equilibrate()
+ctx.compute()
 if ctx.result.value is None:
     sys.exit()
 

@@ -48,7 +48,7 @@ with macro_mode_on():
     ctx.cell2 = cell().set(2)
     ctx.cell3 = cell().set(3)
 
-ctx.equilibrate()
+ctx.compute()
 
 ctx.destroy()
 

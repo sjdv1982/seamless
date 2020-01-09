@@ -37,24 +37,28 @@ class UponConnectionTask(Task):
         if source_subpath is None and target_subpath is None:
             # simple cell-cell
             return livegraph.connect_cell_cell(
-                self.current_macro, source, target
+                self.current_macro, source, target,
+                from_upon_connection_task=self
             )
         elif source_subpath is not None and target_subpath is None:
             # outchannel-to-simple-cell
             return livegraph.connect_scell_cell(
-                self.current_macro, source, source_subpath, target
+                self.current_macro, source, source_subpath, target,
+                from_upon_connection_task=self
             )
         elif source_subpath is None and target_subpath is not None:
             # simple-cell-to-inchannel
             return livegraph.connect_cell_scell(
-                self.current_macro, source, target, target_subpath
+                self.current_macro, source, target, target_subpath,
+                from_upon_connection_task=self
             )
         else:
             # outchannel-to-inchannel
             return livegraph.connect_scell_scell(
                 self.current_macro, 
                 source, source_subpath, 
-                target, target_subpath
+                target, target_subpath,
+                from_upon_connection_task=self
             )
             
 
@@ -68,7 +72,10 @@ class UponConnectionTask(Task):
         livegraph = self.manager().livegraph
         if target_subpath is None:
             # simple pin-cell
-            return livegraph.connect_pin_cell(self.current_macro, source, target)
+            return livegraph.connect_pin_cell(
+                self.current_macro, source, target,
+                from_upon_connection_task=self
+            )
         else:
             msg = """Pins cannot be connected directly to structured cells
 Use a simple cell as an intermediate
@@ -105,7 +112,10 @@ Use a simple cell as an intermediate
 Source %s, %s; target %s""" % (source, source_subpath, target)
             raise TypeError(msg)
         livegraph = self.manager().livegraph
-        return livegraph.connect_cell_macropath(self.current_macro, self.source, self.target)
+        return livegraph.connect_cell_macropath(
+            self.current_macro, self.source, self.target,
+            from_upon_connection_task=self
+        )
 
     def _connect_cell(self):        
         if isinstance(self.target, Cell):
@@ -129,7 +139,10 @@ Source %s, %s; target %s""" % (source, source_subpath, target)
 Use a simple cell as an intermediate
 Source %s; target %s, %s""" % (source, target, target_subpath)
         livegraph = self.manager().livegraph
-        return livegraph.connect_macropath_cell(self.current_macro, self.source, self.target)
+        return livegraph.connect_macropath_cell(
+            self.current_macro, self.source, self.target,
+            from_upon_connection_task=self
+        )
 
     def _connect_editpin(self, pin, cell):
         assert isinstance(pin, EditPin)
@@ -181,7 +194,7 @@ Source %s; target %s, %s""" % (source, target, target_subpath)
                 continue
             task.cancel()
 
-        await taskmanager.await_upon_connection_tasks(self.taskid)
+        await taskmanager.await_upon_connection_tasks(self.taskid, self._root())
 
         source = self.source
         if isinstance(source, Cell):
@@ -216,7 +229,7 @@ Source %s; target %s, %s""" % (source, target, target_subpath)
                 if checksum is not None:
                     downstreams = livegraph.reactor_to_downstream[reactor][pinname]
                     for accessor in downstreams:
-                        #- construct (not evaluate!) their expression using the cell checksum 
+                        #- construct (not compute!) their expression using the cell checksum 
                         #  Constructing a downstream expression increfs the cell checksum
                         changed = accessor.build_expression(livegraph, checksum)
                         # TODO: prelim? tricky for a reactor...
@@ -265,7 +278,7 @@ class UponHighLinkTask(UponConnectionTask):
         for task in cancel_tasks:
             task.cancel()
 
-        await taskmanager.await_upon_connection_tasks(self.taskid)
+        await taskmanager.await_upon_connection_tasks(self.taskid, self._root())
 
         livegraph = self.manager().livegraph
         livegraph.highlink(

@@ -103,7 +103,7 @@ def compile(binary_objects, build_dir, compiler_verbose=False):
 def complete(module_definition):
     from seamless.silk import Silk
     assert module_definition["type"] == "compiled"
-    assert "public_header" in module_definition
+    assert "public_header" in module_definition    
     if isinstance(module_definition, Silk):
         module_definition = module_definition.unsilk
     m = deepcopy(module_definition)
@@ -113,9 +113,11 @@ def complete(module_definition):
     project_headers = m.pop("headers", {})
     for objectname, object_ in module_definition["objects"].items():
         if "code" not in object_:
-            raise Exception("Binary Module %s: no code in object" % objectname)
+            raise Exception("Binary Module, object '%s': no code defined" % objectname)
 
         o = m["objects"][objectname]
+        if not "language" in object_:
+            raise Exception("Binary Module, object '%s': no language defined" % objectname)
         lang = object_["language"]
         extension = object_.get("extension")
         _, language, extension2 = find_language(lang)

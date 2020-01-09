@@ -211,7 +211,7 @@ hh.factor = 9
 hh.delay = 0.1
 #hh.offset = 0
 
-ctx.equilibrate(0.1)
+ctx.compute(0.1)
 ctx.params.handle.report()
 ctx.params.handle.tf1.validate()
 
@@ -229,13 +229,13 @@ for c in (ctx.stf1, ctx.stf2, ctx.stf3, ctx.stf4):
         assert offset == 0 or offset > 2000 or self.factor == 9
     h.add_validator(v)
 
-ctx.equilibrate(0.1)
+ctx.compute(0.1)
 
 state = {}
 oldstate = {}
 start = time.time()
 while 1:
-    waitfor, background = ctx.equilibrate(0.01, report=None)
+    waitfor, background = ctx.compute(0.01, report=None)
     state["status"] = {
         "tf1": ctx.stf1.tf.status,
         "tf2": ctx.stf2.tf.status,

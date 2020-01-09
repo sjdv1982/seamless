@@ -148,7 +148,8 @@ class Manager:
                 assert cell._structured_cell is None
                 assert cell._hash_pattern is None
                 assert sc_data is None and sc_buf is None
-                assert self.livegraph.has_authority(cell)
+                if sc_schema is None:
+                    assert self.livegraph.has_authority(cell)
                 assert sc_buf is None
         else:  # initial
             assert not trigger_highlinks
@@ -157,10 +158,7 @@ class Manager:
                 if checksum is None:
                     value = None
                 else:
-                    buffer = GetBufferTask(self, checksum).launch_and_await()
-                    value = DeserializeBufferTask(
-                        self, buffer, checksum, "mixed", False
-                    ).launch_and_await()
+                    value = self.resolve(checksum)                    
                 return cell._structured_cell.set_no_inference(value)
         if checksum is None:
             reason = StatusReasonEnum.UNDEFINED
@@ -184,10 +182,7 @@ class Manager:
         if not from_structured_cell: # also for initial...
             CellUpdateTask(self, cell).launch()
         if sc_schema:
-            buffer = GetBufferTask(self, checksum).launch_and_await()
-            value = DeserializeBufferTask(
-                self, buffer, checksum, "plain", False
-            ).launch_and_await()            
+            value = self.resolve(checksum, "plain")
             self.update_schemacell(cell, value, None)
 
     def _set_cell_checksum(self, 
@@ -202,6 +197,8 @@ class Manager:
             assert status_reason is not None
             assert checksum is None
         if cell._structured_cell:
+            authority = True
+        elif len(self.livegraph.schemacells[cell]):
             authority = True
         else:
             authority = self.livegraph.has_authority(cell)
@@ -346,6 +343,8 @@ class Manager:
 
     def _get_cell_checksum_and_void(self, cell):
         while 1:
+            if asyncio.get_event_loop().is_running():
+                break
             if self._destroyed or cell._destroyed:
                 break
             try:
@@ -367,12 +366,15 @@ class Manager:
         return void
 
     def _get_buffer(self, checksum):
+        if asyncio.get_event_loop().is_running():
+            buffer_cache = self.cachemanager.buffer_cache
+            return get_buffer_sync(checksum, buffer_cache)
         if checksum is None:
             return None
         buffer = checksum_cache.get(checksum)
         if buffer is not None:
             assert isinstance(buffer, bytes)
-            return buffer
+            return buffer                    
         return GetBufferTask(self, checksum).launch_and_await()
 
     @mainthread
@@ -394,13 +396,7 @@ class Manager:
             cached_value = deserialize_cache.get((checksum, celltype))
             if cached_value is not None:
                 return cached_value
-        buffer = self._get_buffer(checksum)        
-        task = DeserializeBufferTask(
-            self, buffer, checksum, celltype, 
-            copy=copy
-        )
-        value = task.launch_and_await()
-        return value
+        return self.resolve(checksum, celltype, copy=copy)
 
     def resolve(self, checksum, celltype="mixed", copy=False):
         # Returns value corresponding to checksum (str or hex)
@@ -408,7 +404,9 @@ class Manager:
             return None
         if isinstance(checksum, str):
             checksum = bytes.fromhex(checksum)
-        buffer = self._get_buffer(checksum)        
+        buffer = self._get_buffer(checksum)   
+        if asyncio.get_event_loop().is_running():
+            return deserialize_sync(buffer, checksum, celltype, copy=copy)
         task = DeserializeBufferTask(
             self, buffer, checksum, celltype, 
             copy=copy
@@ -576,10 +574,10 @@ If origin_task is provided, that task is not cancelled."""
     def cancel_macro(self, macro, void, reason=None):
         assert isinstance(macro, Macro)
         gen_context = macro._gen_context
-        if gen_context is not None:
-            gen_context.destroy()
-            macro._gen_context = None
         if void:
+            if gen_context is not None:
+                gen_context.destroy()
+                macro._gen_context = None
             if macro._void:
                 curr_reason = macro._status_reason
                 if curr_reason.value < reason.value:
@@ -598,8 +596,6 @@ If origin_task is provided, that task is not cancelled."""
             source = source.get_linked()
         if isinstance(target, Link):
             target = target.get_linked()            
-        if isinstance(target, Cell):
-            self.livegraph._will_lose_authority.add(target)
         task = UponConnectionTask(
             self, source, source_subpath, target, target_subpath
         )
@@ -711,7 +707,8 @@ from .tasks import (
 )
 
 from ..protocol.calculate_checksum import checksum_cache
-from ..protocol.deserialize import deserialize_cache
+from ..protocol.deserialize import deserialize_cache, deserialize_sync
+from ..protocol.get_buffer import get_buffer_sync
 from ..cell import Cell
 from ..worker import Worker
 from ..transformer import Transformer

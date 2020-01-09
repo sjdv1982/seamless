@@ -25,19 +25,19 @@ ctx.transform = double_it
 ctx.transform.a = ctx.a
 ctx.myresult = ctx.transform
 ctx.myresult.celltype = "int"
-ctx.equilibrate()
+ctx.compute()
 print("2", ctx.myresult.value)
 
 # 3
 ctx.a = 12
-ctx.equilibrate()
+ctx.compute()
 print("3", ctx.myresult.value)
 
 # 4
 def triple_it(a):
     return 3 * a
 ctx.transform.code = triple_it
-ctx.equilibrate()
+ctx.compute()
 print("4", ctx.myresult.value)
 
 # 5
@@ -50,12 +50,12 @@ print("5 (should be None)", ctx.myresult.value)
 
 # 6
 ctx.transform.b = 100
-ctx.equilibrate()
+ctx.compute()
 print("6", ctx.myresult.value)
 
 # 6a
 ctx.translate(force=True)
-ctx.equilibrate()
+ctx.compute()
 print("6a", ctx.myresult.value)
 
 graph = ctx.get_graph()

@@ -77,5 +77,5 @@ result = testmodule.lib.add2(a,b)
     ctx.result = cell("plain")
     ctx.tf.result.connect(ctx.result)
 
-ctx.equilibrate()
+ctx.compute()
 print(ctx.result.value)

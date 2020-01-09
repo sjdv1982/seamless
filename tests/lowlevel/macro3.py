@@ -114,7 +114,7 @@ def report():
     print()
 
 print("START")
-ctx.equilibrate()
+ctx.compute()
 
 print("""Initial param 0
 Should be non-existent for .d
@@ -125,7 +125,7 @@ print(ctx.status)
 
 print("Change to 2")
 ctx.param.set(2)
-ctx.equilibrate()
+ctx.compute()
 report()
 print(ctx.status)
 
@@ -134,19 +134,19 @@ Should change to non-existent for .d
 Should change to None for .e, .e2
 """)
 ctx.param.set(1)
-ctx.equilibrate()
+ctx.compute()
 report()
 print(ctx.status)
 
 print("Change to 3")
 ctx.param.set(3)
-ctx.equilibrate()
+ctx.compute()
 report()
 print(ctx.status)
 
 print("Change to 4")
 ctx.param.set(4)
-ctx.equilibrate()
+ctx.compute()
 report()
 print(ctx.status)
 

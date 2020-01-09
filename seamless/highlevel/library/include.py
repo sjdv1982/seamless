@@ -40,7 +40,7 @@ class IncludedLibraryContainer:
             raise AttributeError(attr)
 
 class IncludedLibrary:
-    def __init__(self, ctx, path, graph, constructor, params):
+    def __init__(self, ctx, path, graph, constructor, params, **kwargs):
         self._ctx = ctx
         self._path = path
         self._graph = graph

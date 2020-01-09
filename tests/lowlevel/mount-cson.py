@@ -54,4 +54,4 @@ if 1:
 		more: 'http://cowspiracy.com/facts'
 	""")
 
-ctx.equilibrate()
+ctx.compute()

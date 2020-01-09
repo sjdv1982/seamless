@@ -395,19 +395,20 @@
       "type": "connection"
     }
   ],
+  "lib": {},
   "nodes": [
     {
-      "buffered": true,
       "celltype": "structured",
       "checksum": {
-        "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
-        "value": "840eb7aa2a9935de63366bacbe9d97e978a859e93dc792a0334de60ed52f8e99"
+        "auth": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
+        "buffer": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
+        "value": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c"
       },
       "datatype": "mixed",
+      "hash_pattern": null,
       "path": [
         "filesystem"
       ],
-      "silk": true,
       "type": "cell"
     },
     {
@@ -420,12 +421,8 @@
       "INPUT": "inp",
       "RESULT": "result",
       "SCHEMA": null,
-      "buffered": true,
       "checksum": {
-        "code": "48e18fece275c9b6151291a878d076bfdce54b9193f39dc4a8c387c391b7e2f3",
-        "input": "840eb7aa2a9935de63366bacbe9d97e978a859e93dc792a0334de60ed52f8e99",
-        "result_schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
-        "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c"
+        "code": "183ea72dde9f175f54801f63fcba7ad18906c3cbf1ac1fe058c0b9b168244b13"
       },
       "compiled": false,
       "debug": false,
@@ -437,33 +434,21 @@
       ],
       "pins": {
         "inputfile_Abai": {
-          "access_mode": "default",
-          "content_type": null,
-          "transfer_mode": "copy"
+          "celltype": "mixed"
         },
         "inputfile_Abam": {
-          "access_mode": "default",
-          "content_type": null,
-          "transfer_mode": "copy"
+          "celltype": "mixed"
         },
         "inputfile_Bbai": {
-          "access_mode": "default",
-          "content_type": null,
-          "transfer_mode": "copy"
+          "celltype": "mixed"
         },
         "inputfile_Bbam": {
-          "access_mode": "default",
-          "content_type": null,
-          "transfer_mode": "copy"
+          "celltype": "mixed"
         },
         "inputfile_genome": {
-          "access_mode": "default",
-          "content_type": null,
-          "transfer_mode": "copy"
+          "celltype": "mixed"
         }
       },
-      "plain": false,
-      "plain_result": false,
       "type": "transformer",
       "with_result": true
     },
@@ -471,13 +456,7 @@
       "INPUT": "inp",
       "RESULT": "result",
       "SCHEMA": null,
-      "buffered": true,
-      "checksum": {
-        "code": "4f7e6bd668b9f789963da9cc71e13a2b95fcb82a0b257d29a02cdb5f9398066b",
-        "input": "840eb7aa2a9935de63366bacbe9d97e978a859e93dc792a0334de60ed52f8e99",
-        "result_schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
-        "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c"
-      },
+      "UNTRANSLATED": true,
       "compiled": false,
       "debug": false,
       "file_extension": "sh",
@@ -488,18 +467,12 @@
       ],
       "pins": {
         "inputfile_genome": {
-          "access_mode": "default",
-          "content_type": null,
-          "transfer_mode": "copy"
+          "celltype": "mixed"
         },
         "inputfile_samples": {
-          "access_mode": "default",
-          "content_type": null,
-          "transfer_mode": "copy"
+          "celltype": "mixed"
         }
       },
-      "plain": false,
-      "plain_result": false,
       "type": "transformer",
       "with_result": true
     },
@@ -507,13 +480,7 @@
       "INPUT": "inp",
       "RESULT": "result",
       "SCHEMA": null,
-      "buffered": true,
-      "checksum": {
-        "code": "4f7e6bd668b9f789963da9cc71e13a2b95fcb82a0b257d29a02cdb5f9398066b",
-        "input": "840eb7aa2a9935de63366bacbe9d97e978a859e93dc792a0334de60ed52f8e99",
-        "result_schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
-        "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c"
-      },
+      "UNTRANSLATED": true,
       "compiled": false,
       "debug": false,
       "file_extension": "sh",
@@ -524,18 +491,12 @@
       ],
       "pins": {
         "inputfile_genome": {
-          "access_mode": "default",
-          "content_type": null,
-          "transfer_mode": "copy"
+          "celltype": "mixed"
         },
         "inputfile_samples": {
-          "access_mode": "default",
-          "content_type": null,
-          "transfer_mode": "copy"
+          "celltype": "mixed"
         }
       },
-      "plain": false,
-      "plain_result": false,
       "type": "transformer",
       "with_result": true
     },
@@ -543,13 +504,7 @@
       "INPUT": "inp",
       "RESULT": "result",
       "SCHEMA": null,
-      "buffered": true,
-      "checksum": {
-        "code": "ec47899abb18d368085f20692ef5f5faf9638e169e92480507bc7aad4afb0c68",
-        "input": "840eb7aa2a9935de63366bacbe9d97e978a859e93dc792a0334de60ed52f8e99",
-        "result_schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
-        "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c"
-      },
+      "UNTRANSLATED": true,
       "compiled": false,
       "debug": false,
       "file_extension": "sh",
@@ -560,13 +515,9 @@
       ],
       "pins": {
         "inputfile": {
-          "access_mode": "default",
-          "content_type": null,
-          "transfer_mode": "copy"
+          "celltype": "mixed"
         }
       },
-      "plain": false,
-      "plain_result": false,
       "type": "transformer",
       "with_result": true
     },
@@ -574,12 +525,7 @@
       "INPUT": "inp",
       "RESULT": "result",
       "SCHEMA": null,
-      "buffered": true,
-      "checksum": {
-        "input": "840eb7aa2a9935de63366bacbe9d97e978a859e93dc792a0334de60ed52f8e99",
-        "result_schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
-        "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c"
-      },
+      "UNTRANSLATED": true,
       "compiled": false,
       "debug": false,
       "file_extension": "sh",
@@ -590,13 +536,9 @@
       ],
       "pins": {
         "inputfile": {
-          "access_mode": "default",
-          "content_type": null,
-          "transfer_mode": "copy"
+          "celltype": "mixed"
         }
       },
-      "plain": false,
-      "plain_result": false,
       "type": "transformer",
       "with_result": true
     },
@@ -604,13 +546,7 @@
       "INPUT": "inp",
       "RESULT": "result",
       "SCHEMA": null,
-      "buffered": true,
-      "checksum": {
-        "code": "8353697e7d5d21e549904e851af2d921194927ea00f7c2be6648a54923a747e2",
-        "input": "840eb7aa2a9935de63366bacbe9d97e978a859e93dc792a0334de60ed52f8e99",
-        "result_schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
-        "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c"
-      },
+      "UNTRANSLATED": true,
       "compiled": false,
       "debug": false,
       "file_extension": "sh",
@@ -621,13 +557,9 @@
       ],
       "pins": {
         "inputfile": {
-          "access_mode": "default",
-          "content_type": null,
-          "transfer_mode": "copy"
+          "celltype": "mixed"
         }
       },
-      "plain": false,
-      "plain_result": false,
       "type": "transformer",
       "with_result": true
     },
@@ -635,13 +567,7 @@
       "INPUT": "inp",
       "RESULT": "result",
       "SCHEMA": null,
-      "buffered": true,
-      "checksum": {
-        "code": "8353697e7d5d21e549904e851af2d921194927ea00f7c2be6648a54923a747e2",
-        "input": "840eb7aa2a9935de63366bacbe9d97e978a859e93dc792a0334de60ed52f8e99",
-        "result_schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
-        "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c"
-      },
+      "UNTRANSLATED": true,
       "compiled": false,
       "debug": false,
       "file_extension": "sh",
@@ -652,13 +578,9 @@
       ],
       "pins": {
         "inputfile": {
-          "access_mode": "default",
-          "content_type": null,
-          "transfer_mode": "copy"
+          "celltype": "mixed"
         }
       },
-      "plain": false,
-      "plain_result": false,
       "type": "transformer",
       "with_result": true
     },
@@ -669,102 +591,86 @@
       "type": "context"
     },
     {
-      "buffered": true,
       "celltype": "structured",
-      "checksum": {
-        "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c"
-      },
       "datatype": "mixed",
+      "hash_pattern": null,
       "path": [
         "results",
         "bcftools_call"
       ],
-      "silk": true,
       "type": "cell"
     },
     {
-      "buffered": true,
+      "UNTRANSLATED": true,
       "celltype": "structured",
-      "checksum": {
-        "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c"
-      },
       "datatype": "mixed",
+      "hash_pattern": null,
       "path": [
         "results",
         "bwa_map_A"
       ],
-      "silk": true,
       "type": "cell"
     },
     {
-      "buffered": true,
+      "UNTRANSLATED": true,
       "celltype": "structured",
-      "checksum": {
-        "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c"
-      },
       "datatype": "mixed",
+      "hash_pattern": null,
       "path": [
         "results",
         "bwa_map_B"
       ],
-      "silk": true,
       "type": "cell"
     },
     {
-      "buffered": true,
+      "UNTRANSLATED": true,
       "celltype": "structured",
-      "checksum": {
-        "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c"
-      },
       "datatype": "mixed",
+      "hash_pattern": null,
       "path": [
         "results",
         "samtools_index_A"
       ],
-      "silk": true,
       "type": "cell"
     },
     {
-      "buffered": true,
+      "UNTRANSLATED": true,
       "celltype": "structured",
-      "checksum": {
-        "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c"
-      },
       "datatype": "mixed",
+      "hash_pattern": null,
       "path": [
         "results",
         "samtools_index_B"
       ],
-      "silk": true,
       "type": "cell"
     },
     {
-      "buffered": true,
+      "UNTRANSLATED": true,
       "celltype": "structured",
-      "checksum": {
-        "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c"
-      },
       "datatype": "mixed",
+      "hash_pattern": null,
       "path": [
         "results",
         "samtools_sort_A"
       ],
-      "silk": true,
       "type": "cell"
     },
     {
-      "buffered": true,
+      "UNTRANSLATED": true,
       "celltype": "structured",
-      "checksum": {
-        "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c"
-      },
       "datatype": "mixed",
+      "hash_pattern": null,
       "path": [
         "results",
         "samtools_sort_B"
       ],
-      "silk": true,
       "type": "cell"
+    },
+    {
+      "path": [
+        "results2"
+      ],
+      "type": "context"
     },
     {
       "path": [
@@ -773,67 +679,65 @@
       "type": "context"
     },
     {
-      "buffered": true,
       "celltype": "structured",
       "checksum": {
-        "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
-        "value": "ba6a2ed8498ce15adc45fc254ea9ce0d5f380f9ead67e57896eccaa778572005"
+        "auth": "96004edf113e8dac6f33e5e39e43cee6623c2a7d35b96bf2491a5f9b52cbe415",
+        "buffer": "96004edf113e8dac6f33e5e39e43cee6623c2a7d35b96bf2491a5f9b52cbe415",
+        "value": "96004edf113e8dac6f33e5e39e43cee6623c2a7d35b96bf2491a5f9b52cbe415"
       },
       "datatype": "mixed",
+      "hash_pattern": null,
       "path": [
         "rules",
         "bcftools_call"
       ],
-      "silk": true,
       "type": "cell"
     },
     {
-      "buffered": true,
       "celltype": "structured",
       "checksum": {
-        "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
-        "value": "6e1f8643d7e7da10e2a718afe109fa42cd2e77f07e920c7057b9b48d5b7f310d"
+        "auth": "ecfa8c5a84a5355c3ef92c45ab7df85202ba72c65d35603d69f96d03e2a9d846",
+        "buffer": "ecfa8c5a84a5355c3ef92c45ab7df85202ba72c65d35603d69f96d03e2a9d846",
+        "value": "ecfa8c5a84a5355c3ef92c45ab7df85202ba72c65d35603d69f96d03e2a9d846"
       },
       "datatype": "mixed",
+      "hash_pattern": null,
       "path": [
         "rules",
         "bwa_map"
       ],
-      "silk": true,
       "type": "cell"
     },
     {
-      "buffered": true,
       "celltype": "structured",
       "checksum": {
-        "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
-        "value": "96e83d24dd7afbcec2c55229efc9c7de0b20691df9c01c7573052eb2202b7cbe"
+        "auth": "2c671b6a7687f3b6a2cb7a4d0a14e6a52772894f90bc838f9dc3731ef9557f74",
+        "buffer": "2c671b6a7687f3b6a2cb7a4d0a14e6a52772894f90bc838f9dc3731ef9557f74",
+        "value": "2c671b6a7687f3b6a2cb7a4d0a14e6a52772894f90bc838f9dc3731ef9557f74"
       },
       "datatype": "mixed",
+      "hash_pattern": null,
       "path": [
         "rules",
         "samtools_index"
       ],
-      "silk": true,
       "type": "cell"
     },
     {
-      "buffered": true,
       "celltype": "structured",
       "checksum": {
-        "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
-        "value": "f4fbabc53001df88827225493ca6dfff0863758e69765261dadb0e6caa940a44"
+        "auth": "ddc701929c384375109e8e866ff122b57a9cd8f9c0c551d61987a0fc02586c4c",
+        "buffer": "ddc701929c384375109e8e866ff122b57a9cd8f9c0c551d61987a0fc02586c4c",
+        "value": "ddc701929c384375109e8e866ff122b57a9cd8f9c0c551d61987a0fc02586c4c"
       },
       "datatype": "mixed",
+      "hash_pattern": null,
       "path": [
         "rules",
         "samtools_sort"
       ],
-      "silk": true,
       "type": "cell"
     }
   ],
-  "params": {
-    "from_lib": null
-  }
+  "params": {}
 }

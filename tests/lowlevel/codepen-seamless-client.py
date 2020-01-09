@@ -6,7 +6,7 @@ ctx = Context()
 ctx.cell1 = "test!"
 ctx.cell1.share()
 ctx.translate()
-ctx.equilibrate()
+ctx.compute()
 
 from seamless import shareserver
 print(shareserver.namespaces["ctx"].shares)
@@ -14,7 +14,7 @@ print(shareserver.namespaces["ctx"].shares["cell1"].bound)
 print(shareserver.namespaces["ctx"].shares["cell1"].bound.cell)
 ctx.cell1.celltype = "plain"
 ctx.translate(force=True)
-ctx.equilibrate()
+ctx.compute()
 print(shareserver.namespaces["ctx"].shares)
 print(shareserver.namespaces["ctx"].shares["cell1"].bound)
 print(shareserver.namespaces["ctx"].shares["cell1"].bound.cell)

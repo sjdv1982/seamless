@@ -13,19 +13,19 @@ def triple_it(a):
 ctx.transform = triple_it
 ctx.transform.a = ctx.a
 ctx.myresult = ctx.transform
-ctx.equilibrate()
+ctx.compute()
 print(ctx.myresult.value)
 
 ctx2 = Context()
 ctx2.sub = ctx
 ctx2.sub2 = ctx
 print(ctx2.sub.myresult.value)
-ctx2.equilibrate()
+ctx2.compute()
 print(ctx2.sub.myresult.value)
 
 ctx2.sub.a = 3
 ctx2.sub2.a = 5
-ctx2.equilibrate()
+ctx2.compute()
 print(ctx2.sub.myresult.value)
 print(ctx2.sub2.myresult.value)
 

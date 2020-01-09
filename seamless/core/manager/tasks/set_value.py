@@ -15,7 +15,7 @@ class SetCellValueTask(Task):
         taskmanager = manager.taskmanager
         buffer_cache = manager.cachemanager.buffer_cache
         livegraph = manager.livegraph
-        await taskmanager.await_upon_connection_tasks(self.taskid)
+        await taskmanager.await_upon_connection_tasks(self.taskid, self._root())
         cell = self.cell
         lock = await taskmanager.acquire_cell_lock(cell)
         try:

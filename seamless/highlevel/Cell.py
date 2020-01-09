@@ -94,7 +94,10 @@ class Cell(Base):
             return
         if self._parent()._translating:
             return
-        hcell = self._get_hcell()
+        try:
+            hcell = self._get_hcell()
+        except Exception:
+            return
         if hcell.get("checksum") is None:
             hcell["checksum"] = {}
         hcell["checksum"].pop("value", None)
@@ -106,7 +109,10 @@ class Cell(Base):
             return
         if self._parent()._translating:
             return
-        hcell = self._get_hcell()
+        try:
+            hcell = self._get_hcell()
+        except Exception:
+            return
         if hcell.get("checksum") is None:
             hcell["checksum"] = {}
         hcell["checksum"].pop("auth", None)
@@ -118,7 +124,10 @@ class Cell(Base):
             return
         if self._parent()._translating:
             return
-        hcell = self._get_hcell()
+        try:
+            hcell = self._get_hcell()
+        except Exception:
+            return
         if hcell.get("checksum") is None:
             hcell["checksum"] = {}
         hcell["checksum"].pop("buffer", None)
@@ -130,7 +139,10 @@ class Cell(Base):
             return
         if self._parent()._translating:
             return
-        hcell = self._get_hcell()
+        try:
+            hcell = self._get_hcell()
+        except Exception:
+            return
         if hcell.get("checksum") is None:
             hcell["checksum"] = {}
         hcell["checksum"].pop("schema", None)
@@ -215,6 +227,9 @@ class Cell(Base):
         hcell = self._get_hcell()
         if hcell.get("UNTRANSLATED"):
             self._parent().translate(force=True)
+            hcell = self._get_hcell()
+            if hcell.get("UNTRANSLATED"):
+                raise AttributeError(attr)
             return self._setattr(attr, value)
 
         assign_to_subcell(self, (attr,), value)

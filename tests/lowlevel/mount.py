@@ -1,6 +1,6 @@
 import seamless
 from seamless.core import macro_mode_on
-from seamless.core import context,textcell, cell, transformer, pytransformercell
+from seamless.core import context, cell, transformer
 
 with macro_mode_on():
     ctx = context(toplevel=True)
@@ -14,21 +14,21 @@ with macro_mode_on():
     })
     ctx.cell1.connect(ctx.tf.a)
     ctx.cell2.connect(ctx.tf.b)
-    ctx.code = pytransformercell().set("c = a + b")
+    ctx.code = cell("transformer").set("c = a + b")
     ctx.code.connect(ctx.tf.code)
     ctx.tf.c.connect(ctx.result)
-    ctx.result.mount("/tmp/mount-test/myresult", persistent=True)
+    ctx.result.mount("/tmp/mount-test/myresult", persistent=True, mode="w")
     ctx.mount("/tmp/mount-test", persistent=True)
     ctx.sub = context(toplevel=False)
-    ctx.sub.mycell = textcell().set("This is my cell\nend")
+    ctx.sub.mycell = cell("text").set("This is my cell\nend")
 
-ctx.equilibrate()
+ctx.compute()
 print(ctx.result.value)
 ctx.cell1.set(10)
-ctx.equilibrate()
+ctx.compute()
 print(ctx.result.value)
 print(ctx.result.value)
 ctx.code.set("c = float(a) + float(b) + 1000")
-ctx.equilibrate()
+ctx.compute()
 print(ctx.result.value)
 print(ctx.status)

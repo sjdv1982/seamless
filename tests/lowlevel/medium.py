@@ -38,15 +38,15 @@ with macro_mode_on():
 
     ctx.mount("/tmp/mount-test")
 
-ctx.equilibrate()
+ctx.compute()
 print(ctx.result.value)
 ctx.cell1.set(10)
-ctx.equilibrate()
+ctx.compute()
 print(ctx.result.value)
 ctx.code.set("""
 c = a * f.get(1) + b * f.get(2)
 """)
-ctx.equilibrate()
+ctx.compute()
 print(ctx.result.value)
 print(ctx.status)
 print(ctx.f.value)

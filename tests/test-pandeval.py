@@ -2,7 +2,8 @@ import numpy as np
 import numexpr as ne
 import pandas as pd
 from pandas import DataFrame, eval as pd_eval
-from seamless.pandeval import eval
+import seamless.pandeval
+from seamless.pandeval.core.computation.eval import eval
 # Sample data
 s = np.zeros(6, 'S5')
 v = np.array([5,8,3,6,7,2])
@@ -12,7 +13,7 @@ dic = {"s": s, "v": v}
 dic_u = {"s": s_u, "v": v}
 
 
-print("Golden standard (numexpr with ugly syntax)\t", ne.evaluate("(s == 'Test') & (v > 3)", dic))
+print("Golden standard (numexpr with ugly syntax)\t", ne.compute("(s == 'Test') & (v > 3)", dic))
 
 df = DataFrame(dic)
 print("pandas DataFrame with bytes (error)\t\t", df.eval("s == 'Test' and v > 3").values)

@@ -65,6 +65,8 @@ def import_extension_module(full_module_name, module_code, debug, source_files):
                 os.remove(module_file)
 
 def build_compiled_module_remote(full_module_name, checksum, module_definition):
+    return None ###
+    raise NotImplementedError
     from ..core.run_multi_remote import run_multi_remote
     d_content = {
         "full_module_name": full_module_name,

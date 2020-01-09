@@ -41,6 +41,7 @@ def _get_subpath(value, path):
     return _get_subpath(sub_curr_value, path[1:])
 
 def get_subpath_sync(value, hash_pattern, path):
+    """This function can be executed if the asyncio event loop is already running"""
     if hash_pattern is None:
         return _get_subpath(value, path)
     deep_structure = value
@@ -119,6 +120,7 @@ async def get_subpath(value, hash_pattern, path):
         return ("value", value) 
 
 def set_subpath_sync(value, hash_pattern, path, subvalue):
+    """This function can be executed if the asyncio event loop is already running"""
     if hash_pattern is None:
         _set_subpath(value, path, subvalue)
         return

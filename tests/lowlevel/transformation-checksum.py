@@ -42,13 +42,13 @@ print(ctx.tf.get_transformation())
 
 """
 for n in range(3):
-    ctx.equilibrate(0.5)
+    ctx.compute(0.5)
     report()
 
 
 print("START")
 seamless.activate_transformations()
 for n in range(12):
-    ctx.equilibrate(1)
+    ctx.compute(1)
     report()
 """

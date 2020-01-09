@@ -70,7 +70,7 @@ class Term(StringMixin):
     def __call__(self, *args, **kwargs):
         return self.value
 
-    def evaluate(self, *args, **kwargs):
+    def compute(self, *args, **kwargs):
         return self
 
     def _resolve_name(self):
@@ -343,7 +343,7 @@ class BinOp(Op):
                              ' operators are {1}'.format(op, keys))
 
     def __call__(self, env):
-        """Recursively evaluate an expression in Python space.
+        """Recursively compute an expression in Python space.
 
         Parameters
         ----------
@@ -364,7 +364,7 @@ class BinOp(Op):
 
         return self.func(left, right)
 
-    def evaluate(self, env, engine, parser, term_type, eval_in_python):
+    def compute(self, env, engine, parser, term_type, eval_in_python):
         """Evaluate a binary operation *before* being passed to the engine.
 
         Parameters
@@ -384,10 +384,10 @@ class BinOp(Op):
             res = self(env)
         else:
             # recurse over the left/right nodes
-            left = self.lhs.evaluate(env, engine=engine, parser=parser,
+            left = self.lhs.compute(env, engine=engine, parser=parser,
                                      term_type=term_type,
                                      eval_in_python=eval_in_python)
-            right = self.rhs.evaluate(env, engine=engine, parser=parser,
+            right = self.rhs.compute(env, engine=engine, parser=parser,
                                       term_type=term_type,
                                       eval_in_python=eval_in_python)
 
@@ -437,7 +437,7 @@ class BinOp(Op):
             self.op in _bool_ops_dict and
             (not (issubclass(self.rhs.return_type, (bool, np.bool_)) and
                   issubclass(self.lhs.return_type, (bool, np.bool_))))):
-            raise NotImplementedError("cannot evaluate scalar only bool ops")
+            raise NotImplementedError("cannot compute scalar only bool ops")
 
 
 def isnumeric(dtype):

@@ -12,5 +12,5 @@ ctx.transform = func
 ctx.transform.b = [100,200,300]
 ctx.transform.a = ctx.a
 ctx.myresult = ctx.transform
-ctx.equilibrate()
+ctx.compute()
 print(ctx.myresult.value)

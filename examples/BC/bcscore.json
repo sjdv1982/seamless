@@ -1,0 +1,365 @@
+{
+  "connections": [
+    {
+      "source": [
+        "pdb1"
+      ],
+      "target": [
+        "load_pdb1",
+        "pdb"
+      ],
+      "type": "connection"
+    },
+    {
+      "source": [
+        "load_pdb_code"
+      ],
+      "target": [
+        "load_pdb1",
+        "code"
+      ],
+      "type": "connection"
+    },
+    {
+      "source": [
+        "load_pdb1"
+      ],
+      "target": [
+        "coor1"
+      ],
+      "type": "connection"
+    },
+    {
+      "source": [
+        "pdb2"
+      ],
+      "target": [
+        "load_pdb2",
+        "pdb"
+      ],
+      "type": "connection"
+    },
+    {
+      "source": [
+        "load_pdb_code"
+      ],
+      "target": [
+        "load_pdb2",
+        "code"
+      ],
+      "type": "connection"
+    },
+    {
+      "source": [
+        "load_pdb2"
+      ],
+      "target": [
+        "coor2"
+      ],
+      "type": "connection"
+    },
+    {
+      "source": [
+        "coor1"
+      ],
+      "target": [
+        "bcscore",
+        "coor1"
+      ],
+      "type": "connection"
+    },
+    {
+      "source": [
+        "coor2"
+      ],
+      "target": [
+        "bcscore",
+        "coor2"
+      ],
+      "type": "connection"
+    },
+    {
+      "source": [
+        "bcscore"
+      ],
+      "target": [
+        "bc_result"
+      ],
+      "type": "connection"
+    },
+    {
+      "first": [
+        "bcscore_schema"
+      ],
+      "second": [
+        "bcscore",
+        "SCHEMA"
+      ],
+      "type": "link"
+    },
+    {
+      "source": [
+        "bcscore",
+        "header"
+      ],
+      "target": [
+        "header"
+      ],
+      "type": "connection"
+    },
+    {
+      "source": [
+        "bclib_code"
+      ],
+      "target": [
+        "bcscore",
+        "_main_module",
+        "bclib",
+        "code"
+      ],
+      "type": "connection"
+    }
+  ],
+  "lib": {},
+  "nodes": [
+    {
+      "celltype": "structured",
+      "checksum": {
+        "buffer": "ef0b151105ecf660a8ecfa4947652f87b37b9b095d960afd2274f1145853acc6",
+        "value": "ef0b151105ecf660a8ecfa4947652f87b37b9b095d960afd2274f1145853acc6"
+      },
+      "datatype": "mixed",
+      "hash_pattern": null,
+      "path": [
+        "bc_result"
+      ],
+      "type": "cell"
+    },
+    {
+      "celltype": "code",
+      "checksum": {
+        "value": "fb64ff4a2f2d7c909d05a0779d10a30570e13c8818aaa0f701ecc219f5aa0ff7"
+      },
+      "file_extension": "c",
+      "language": "c",
+      "mimetype": "text/x-csrc",
+      "mount": {
+        "authority": "cell",
+        "mode": "rw",
+        "path": "BClib.c",
+        "persistent": true
+      },
+      "path": [
+        "bclib_code"
+      ],
+      "transformer": true,
+      "type": "cell"
+    },
+    {
+      "INPUT": "inp",
+      "RESULT": "result",
+      "SCHEMA": null,
+      "checksum": {
+        "code": "5ebf60ed33a9a45a9bc6f9ef24d343e6d2f98ca78a7515cb6ffdb1f1a8f56412",
+        "input": "0131ee7636a4bb9a1d76884de7d7cdd85ae5c970ab9d1e6df9ba9f3804dbab7f",
+        "input_auth": "7c893c187cb72edbe10beb70e3a7a05f9d786375c17b93ee97d5c87dd66b9b5b",
+        "input_buffer": "0131ee7636a4bb9a1d76884de7d7cdd85ae5c970ab9d1e6df9ba9f3804dbab7f",
+        "main_module": "ba7772f3bb5ddf715d471d70a8a945f22c7bf8f1d576f9c5f12cd31683632f2b",
+        "result": "ef0b151105ecf660a8ecfa4947652f87b37b9b095d960afd2274f1145853acc6",
+        "result_schema": "21d6591d6f42968b8b99640b269345e1ba16a6f607e041a5dd47f1c2fb8756bf",
+        "schema": "b54c98e19ca14701dc7146b0e9fe9b288d9e86d6ac22b85e5db4613451f2042d"
+      },
+      "compiled": true,
+      "debug": false,
+      "file_extension": "c",
+      "language": "c",
+      "mount": {
+        "code": {
+          "authority": "file",
+          "mode": "rw",
+          "path": "bcscore.c",
+          "persistent": true
+        },
+        "header": {
+          "authority": "cell",
+          "mode": "w",
+          "path": "bcscore.h",
+          "persistent": true
+        }
+      },
+      "path": [
+        "bcscore"
+      ],
+      "pins": {
+        "coor1": {
+          "celltype": "mixed"
+        },
+        "coor2": {
+          "celltype": "mixed"
+        },
+        "flanksize": {
+          "celltype": "mixed"
+        },
+        "gapsize": {
+          "celltype": "mixed"
+        }
+      },
+      "type": "transformer",
+      "with_result": true
+    },
+    {
+      "celltype": "plain",
+      "checksum": {
+        "value": "b54c98e19ca14701dc7146b0e9fe9b288d9e86d6ac22b85e5db4613451f2042d"
+      },
+      "datatype": "mixed",
+      "mount": {
+        "authority": "file",
+        "mode": "r",
+        "path": "bcscore-schema.json",
+        "persistent": true
+      },
+      "path": [
+        "bcscore_schema"
+      ],
+      "type": "cell"
+    },
+    {
+      "celltype": "structured",
+      "checksum": {
+        "buffer": "fe4621ada9594853b8c9c13e6fd0b63681df0e8b209079f57b2b74a220f58a94",
+        "value": "fe4621ada9594853b8c9c13e6fd0b63681df0e8b209079f57b2b74a220f58a94"
+      },
+      "datatype": "mixed",
+      "hash_pattern": null,
+      "path": [
+        "coor1"
+      ],
+      "type": "cell"
+    },
+    {
+      "celltype": "structured",
+      "checksum": {
+        "buffer": "32a00701fd118918d48c69e37599a11a7ac8cf4e813e4dab10276367e844b3ce",
+        "value": "32a00701fd118918d48c69e37599a11a7ac8cf4e813e4dab10276367e844b3ce"
+      },
+      "datatype": "mixed",
+      "hash_pattern": null,
+      "path": [
+        "coor2"
+      ],
+      "type": "cell"
+    },
+    {
+      "celltype": "structured",
+      "checksum": {
+        "buffer": "9de30ccf69be4fee1ac279dafdee2704054e81afbab56984201c3dffc4c25429",
+        "value": "9de30ccf69be4fee1ac279dafdee2704054e81afbab56984201c3dffc4c25429"
+      },
+      "datatype": "mixed",
+      "file_extension": "h",
+      "hash_pattern": null,
+      "mimetype": "text/x-chdr",
+      "path": [
+        "header"
+      ],
+      "type": "cell"
+    },
+    {
+      "INPUT": "inp",
+      "RESULT": "result",
+      "SCHEMA": null,
+      "checksum": {
+        "code": "d36851b261de7fed9a7eeb184e69fe82b06b6bb101b14f95d41ca323c546f916",
+        "input": "616051ac714fa2610f6740fab403b82a0cbd0a20d606c83161e07e292af7009e",
+        "input_buffer": "616051ac714fa2610f6740fab403b82a0cbd0a20d606c83161e07e292af7009e",
+        "result": "fe4621ada9594853b8c9c13e6fd0b63681df0e8b209079f57b2b74a220f58a94"
+      },
+      "compiled": false,
+      "debug": false,
+      "language": "python",
+      "path": [
+        "load_pdb1"
+      ],
+      "pins": {
+        "pdb": {
+          "celltype": "mixed"
+        }
+      },
+      "type": "transformer",
+      "with_result": true
+    },
+    {
+      "INPUT": "inp",
+      "RESULT": "result",
+      "SCHEMA": null,
+      "checksum": {
+        "code": "d36851b261de7fed9a7eeb184e69fe82b06b6bb101b14f95d41ca323c546f916",
+        "input": "5fc0d3ff787e4cb83ba8d784f1beeddfdc56b42ccf7f6244f4cdd9d2c7b92f96",
+        "input_buffer": "5fc0d3ff787e4cb83ba8d784f1beeddfdc56b42ccf7f6244f4cdd9d2c7b92f96",
+        "result": "32a00701fd118918d48c69e37599a11a7ac8cf4e813e4dab10276367e844b3ce"
+      },
+      "compiled": false,
+      "debug": false,
+      "language": "python",
+      "path": [
+        "load_pdb2"
+      ],
+      "pins": {
+        "pdb": {
+          "celltype": "mixed"
+        }
+      },
+      "type": "transformer",
+      "with_result": true
+    },
+    {
+      "celltype": "code",
+      "checksum": {
+        "value": "d36851b261de7fed9a7eeb184e69fe82b06b6bb101b14f95d41ca323c546f916"
+      },
+      "language": "python",
+      "mimetype": "text/x-python",
+      "mount": {
+        "authority": "cell",
+        "mode": "rw",
+        "path": "load_pdb.py",
+        "persistent": true
+      },
+      "path": [
+        "load_pdb_code"
+      ],
+      "transformer": true,
+      "type": "cell"
+    },
+    {
+      "celltype": "structured",
+      "checksum": {
+        "auth": "6566da48f46fe8cfb576ccc5f3918dfc310edd4e548f0bfcf9d1e947a1de2b78",
+        "buffer": "6566da48f46fe8cfb576ccc5f3918dfc310edd4e548f0bfcf9d1e947a1de2b78",
+        "value": "6566da48f46fe8cfb576ccc5f3918dfc310edd4e548f0bfcf9d1e947a1de2b78"
+      },
+      "datatype": "mixed",
+      "hash_pattern": null,
+      "path": [
+        "pdb1"
+      ],
+      "type": "cell"
+    },
+    {
+      "celltype": "structured",
+      "checksum": {
+        "auth": "a63ed9c47f41e315a905941320001aa16576edf8c33d5754c9261ae841ba5eb0",
+        "buffer": "a63ed9c47f41e315a905941320001aa16576edf8c33d5754c9261ae841ba5eb0",
+        "value": "a63ed9c47f41e315a905941320001aa16576edf8c33d5754c9261ae841ba5eb0"
+      },
+      "datatype": "mixed",
+      "hash_pattern": null,
+      "path": [
+        "pdb2"
+      ],
+      "type": "cell"
+    }
+  ],
+  "params": {}
+}

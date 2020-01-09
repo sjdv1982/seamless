@@ -46,22 +46,23 @@ class CompiledObjectWrapper:
                 if "_main_module" not in temp:
                     temp["_main_module"] = {}
                 main_module = temp["_main_module"]
-                if objname not in main_module:
-                    main_module[objname] = {}
-                main_module[objname][attr] = value
+                if "objects" not in main_module:
+                    main_module["objects"] = {}
+                if objname not in main_module["objects"]:
+                    main_module["objects"][objname] = {}
+                main_module["objects"][objname][attr] = value
                 parent._translate()
             else:
                 tf = worker._get_tf()
                 main_module = getattr(tf, "main_module")
-                main_module_data = main_module.value.unsilk
-                if main_module_data is None:
-                    main_module_data = {"objects":{}}
-                if "objects" not in main_module_data:
-                    main_module_data["objects"] = {}
-                if objname not in main_module_data["objects"]:
-                    main_module_data["objects"][objname] = {"code": ""}
-                main_module_data["objects"][objname][attr] = value
-                main_module.set(main_module_data)
+                handle = main_module.handle
+                if handle.data is None:
+                    handle.set({"objects":{}})
+                if "objects" not in handle:
+                    handle["objects"] = {}
+                if objname not in handle["objects"]:
+                    handle["objects"][objname] = {"code": ""}
+                handle["objects"][objname][attr] = value
                 parent._translate()
 
     def __getattr__(self, attr):
@@ -114,14 +115,15 @@ class CompiledObjectWrapper:
         else:
             tf = worker._get_tf()
             main_module = getattr(tf, "main_module")
-            main_module_data = main_module.value.unsilk
-            if main_module_data is None:
+            main_module = getattr(tf, "main_module")
+            handle = main_module.handle
+            if handle.data is None:
                 return None
-            if "objects" not in main_module_data:
+            if "objects" not in handle:
                 return None
-            if self._obj not in main_module_data["objects"]:
+            if self._obj not in handle["objects"]:
                 return None
-            obj = main_module_data["objects"][self._obj]
+            obj = handle["objects"][self._obj]
             return obj.get(attr)
 
     def _pull_source(self, other):
@@ -164,6 +166,7 @@ class CompiledObjectWrapper:
             "language": language,
             "file_extension": file_extension,
             "transformer": True,
+            "UNTRANSLATED": True,
         }
         if value is not None:
             assert isinstance(value, str), type(value)

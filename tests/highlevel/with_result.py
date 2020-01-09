@@ -11,6 +11,6 @@ ctx.transform = triple_it
 ctx.transform.a = ctx.a
 ctx.transform._get_htf()["with_result"] = True
 ctx.myresult = ctx.transform
-ctx.equilibrate()
+ctx.compute()
 print(ctx.myresult.value)
 print(ctx.transform.result.value)

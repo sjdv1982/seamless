@@ -5,11 +5,12 @@ ctx = Context()
 ctx.transform = lambda a,b: a + b
 ctx.transform.a = 2
 ctx.transform.b = 3
+ctx.translate()
 ctx.transform.example.a = 0
 ctx.transform.example.b = 0
 ctx.result = ctx.transform
 ctx.result.celltype = "plain"
-ctx.equilibrate()
+ctx.compute()
 print(ctx.result.value)
 
 ctx.transform.language = "cpp"
@@ -18,8 +19,9 @@ ctx.code = """
 extern "C" double transform(int a, int b) {
     return a + b;
 }"""
+ctx.translate()
 ctx.transform.result.example = 0.0 #example, just to fill the schema
-ctx.equilibrate()
+ctx.compute()
 print(ctx.result.value)
 
 ctx.a = 10
@@ -30,7 +32,7 @@ ctx.b = 30
 ctx.b.celltype = "plain"
 ctx.transform.b = ctx.b
 
-ctx.equilibrate()
+ctx.compute()
 print(ctx.result.value)
 print(ctx.transform.status)
 exc = ctx.transform.exception
@@ -39,5 +41,6 @@ if exc is not None:
 
 ctx.a.mount("/tmp/a.txt")
 ctx.b.mount("/tmp/b.txt")
+ctx.result.mount("/tmp/result.txt", mode="w")
 ctx.code.mount("/tmp/code.cpp")
-ctx.translate()
+ctx.compute()

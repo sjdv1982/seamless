@@ -14,6 +14,6 @@ ctx.transform.with_result = True
 ctx.transform.result.example.set(100)
 print(ctx.transform.result.schema)
 ctx.myresult = ctx.transform
-ctx.equilibrate()
+ctx.compute()
 print(ctx.myresult.value)
 print(ctx.status)

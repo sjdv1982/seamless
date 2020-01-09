@@ -17,5 +17,5 @@ with macro_mode_on():
     ctx.cell1.connect(ctx.tf.a)
     ctx.tf.code.set(code)
     ctx.tf.b.cell()
-ctx.equilibrate(5)
+ctx.compute(5)
 print(ctx.status)

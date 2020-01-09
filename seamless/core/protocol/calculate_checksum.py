@@ -37,6 +37,7 @@ async def calculate_checksum(buffer):
     return checksum
 
 def calculate_checksum_sync(buffer):
+    """This function can be executed if the asyncio event loop is already running"""
     if buffer is None:
         return None
     buf_id = id(buffer)

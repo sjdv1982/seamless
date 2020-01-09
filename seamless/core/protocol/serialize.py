@@ -80,6 +80,7 @@ async def serialize(value, celltype, use_cache=True):
     return buffer
 
 def serialize_sync(value, celltype, use_cache=True):
+    """This function can be executed if the asyncio event loop is already running"""
     if use_cache:
         id_value = id(value) 
         buffer, _ = serialize_cache.get((id_value, celltype), (None, None))

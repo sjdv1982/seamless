@@ -3,11 +3,11 @@ from seamless.highlevel import Context, Cell, Transformer
 ctx = Context()
 ctx.a = Cell()
 ctx.a.celltype = "int"
-ctx.equilibrate()
+ctx.compute()
 ctx.a.set(1)
-ctx.equilibrate()
+ctx.compute()
 ctx.a.set("test")
-ctx.equilibrate()
+ctx.compute()
 print("*" * 80)
 print(ctx.a.exception)
 print(ctx.a.value)
@@ -17,7 +17,7 @@ ctx.a = 12
 ctx.a.celltype = "str"
 ctx.b = ctx.a
 ctx.b.celltype = "int"
-ctx.equilibrate()
+ctx.compute()
 print("*" * 80)
 print("a",ctx.a.exception)
 print("a",ctx.a.value)
@@ -27,7 +27,7 @@ print("b", ctx.b.value)
 print("*" * 80)
 
 ctx.a = "test2"
-ctx.equilibrate()
+ctx.compute()
 print("*" * 80)
 print("a",ctx.a.exception)
 print("a",ctx.a.value)
@@ -40,7 +40,7 @@ ctx.c = Cell()
 ctx.c.celltype = "float"
 ctx.translate()
 ctx.c._get_cell().set_buffer(b"blah")
-ctx.equilibrate()
+ctx.compute()
 print("c", ctx.c.exception, ctx.c.buffer)
 
 print()
@@ -53,10 +53,10 @@ ctx.tf.pins.x.celltype = "int"
 ctx.tf.pins.y.celltype = "int"
 ctx.tf.x = 10
 ctx.tf.y = 20
-ctx.equilibrate()
+ctx.compute()
 print(ctx.tf.result.value)
 ctx.tf.x = "test"
-ctx.equilibrate()
+ctx.compute()
 print(ctx.tf.result.value)
 from pprint import pprint
 pprint(ctx.tf.exception)

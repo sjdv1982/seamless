@@ -17,7 +17,7 @@ class MacroUpdateTask(Task):
         manager = self.manager()
         livegraph = manager.livegraph
         taskmanager = manager.taskmanager
-        await taskmanager.await_upon_connection_tasks(self.taskid)
+        await taskmanager.await_upon_connection_tasks(self.taskid, self._root())
         upstreams = livegraph.macro_to_upstream[macro]
         
         for pinname, accessor in upstreams.items():
@@ -78,6 +78,9 @@ class MacroUpdateTask(Task):
             else:
                 values[pinname] = value
         
+        if macro._gen_context is not None:
+            macro._gen_context.destroy()
+            macro._gen_context = None
         macro._execute(code, values, module_workspace)
 
 from .accessor_update import AccessorUpdateTask
