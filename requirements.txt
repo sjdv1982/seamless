@@ -4,6 +4,7 @@ cffi
 traitlets
 biopython
 nglview
+snakemake==5.5
 cson==0.8
 ruamel.yaml==0.16
 ruamel.yaml.clib==0.2

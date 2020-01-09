@@ -7,10 +7,8 @@ Therefore, all files have been zipped to genome.tgz; the Snakefile has been adap
 
 - Seamless does not yet support run functions, therefore the rule "report" will not work.
 
-This test must be run with a Redis database available.
-
 You can generate a Seamless graph by binding the Snakefile to the rule "bcftools_call" as follows:
-python3 ../../scripts/snakemake2seamless.py  bcftools_call  --seamless snakegraph.seamless
+python3 ../../scripts/snakemake2seamless.py  bcftools_call  --seamless snakegraph.seamless --zip snakegraph.zip
 
 The script run-snakegraph.py binds the contents of "data" to the graph, and equilibrates it.
 

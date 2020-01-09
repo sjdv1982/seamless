@@ -196,6 +196,9 @@ parser.add_argument("--seamless",
                     default="snakegraph.seamless",
                     help="Seamless graph file to generate.")
 
+parser.add_argument("--zip",
+                    default="snakegraph.zip",
+                    help="Seamless zip file to generate.")
 
 import sys
 args = parser.parse_args()
@@ -212,9 +215,9 @@ if dag == False:
 import seamless
 from seamless.highlevel import Context, Transformer, Cell
 ctx = Context()
-sink = seamless.RedisSink()
-ctx.filesystem = {}
-fs = ctx.filesystem
+#sink = seamless.RedisSink()
+ctx.fs = Context()
+fs = ctx.fs
 ctx.rules = Context()
 ctx.jobs = Context()
 ctx.results = Context()
@@ -320,6 +323,7 @@ for rule in rules:
         shellcmd = "bash -c '" + shellcmd + "'"
 
     setattr(ctx.rules, rule.name, shellcmd)
+ctx.compute()    
 
 def get_jobname(job):
     import re
@@ -351,7 +355,7 @@ for job in dag.jobs:
     params = indummies._tf_params()
     tf = Transformer(parameters=params)
     setattr(ctx.jobs, jobname, tf)
-
+    
     docker_image = job.singularity_img_url
     if docker_image is not None:
         if not docker_image.startswith("docker://"):
@@ -360,8 +364,7 @@ for job in dag.jobs:
         tf.docker_image = docker_image[len("docker://"):]
     else:
         tf.language = "bash"
-    tf.code = getattr(ctx.rules, rule.name)
-
+    tf.code = getattr(ctx.rules, rule.name)    
     
     if not len(job.input.keys()):
         jobinput = job.input        
@@ -392,11 +395,15 @@ for job in dag.jobs:
             else:
                 msg = "Rule '%s' (job '%s'): output '%s' should be a string, but it is: '%s'"
                 raise TypeError(msg % (rule.name, jobname, k, v))
-
+    
     for k,v in inputs.items():
         kk = getattr(indummies,k)
         assert kk in params
-        setattr(tf, kk, fs[v])
+        inp = getattr(fs, v)
+        if not isinstance(inp, Cell):
+            inp = Cell()
+            setattr(fs, v, inp)
+        setattr(tf, kk, inp)
 
     setattr(ctx.results, jobname, tf)
     result = getattr(ctx.results, jobname)
@@ -411,11 +418,10 @@ for job in dag.jobs:
         tf.with_result = True
         for k,v in outputs.items():
             kk = getattr(outdummies,k)
-            fs[v] = getattr(result, kk)
+            setattr(fs, v, getattr(result, kk))
     else:
         (v,) = outputs.values()
-        fs[v] = result
+        setattr(fs, v, result)
 
-graph = ctx.get_graph()
-import json
-json.dump(graph, open(args.seamless, "w"), indent=2, sort_keys=True)
+ctx.save_graph(args.seamless)
+ctx.save_zip(args.zip)

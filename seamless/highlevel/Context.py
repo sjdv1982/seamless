@@ -639,6 +639,18 @@ class Context(Base):
                 result.append(Link(self, node=node))
         return result
 
+    def children(self, type=None):
+        assert type is None or type == "context" or type in nodeclasses, (type, nodeclasses.keys())
+        children00 = self._children.items()
+        children0 = children00
+        if type is not None and type != "context":
+            klass = nodeclasses[type]
+            children0 = [(p,c) for p,c in children00 if isinstance(c, klass)]
+        children = [p[0] for p,c in children0]
+        if type == "context":
+            children = [p for p in children if (p,) not in children00]
+        return sorted(list(set(children)))
+
     def __dir__(self):
         d = [p for p in type(self).__dict__ if not p.startswith("_")]
         subs = [p[0] for p in self._children]
@@ -746,6 +758,19 @@ class SubContext(Base):
 
     def _translate(self):
         self._parent()._translate()
+
+    def children(self, type=None):
+        assert type is None or type == "context" or type in nodeclasses, (type, nodeclasses.keys())
+        l = len(self._path)
+        children00 = [(p[l:],c) for p,c in self._parent()._children.items() if len(p) > l and p[:l] == self._path]
+        children0 = children00
+        if type is not None and type != "context":
+            klass = nodeclasses[type]
+            children0 = [(p,c) for p,c in children00 if isinstance(c, klass)]
+        children = [p[0] for p,c in children0]
+        if type == "context":
+            children = [p for p in children if (p,) not in children00]
+        return sorted(list(set(children)))
 
     def __dir__(self):
         d = [p for p in type(self).__dict__ if not p.startswith("_")]

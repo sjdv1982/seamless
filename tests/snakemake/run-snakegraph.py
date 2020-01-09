@@ -1,13 +1,13 @@
 import seamless
 from seamless.highlevel import Context
+from seamless.silk.Silk import RichValue
 import json
 import numpy as np
-
-cache = seamless.RedisCache()
 
 print("Load graph...")
 graph = json.load(open("snakegraph.seamless"))
 ctx = seamless.highlevel.load_graph(graph)
+ctx.add_zip("snakegraph.zip")
 ctx.translate()
 
 print("Bind files...")
@@ -19,16 +19,18 @@ for file, mode in files:
     data = open(file, "r" + mode).read()
     if mode == "b":
         data = np.frombuffer(data, dtype=np.uint8)
-    ctx.filesystem[file] = data
+    setattr(ctx.fs, file, data)
 
-print("Equilibrate...")
+print("Compute...")
 ctx.compute()
 print()
 
+
+"""
 print("File system contents:")
-print(ctx.filesystem.status)
-print(ctx.filesystem.exception)
-fs = ctx.filesystem.value.unsilk
+print(ctx.fs.status)
+print(ctx.fs.exception)
+fs = ctx.fs.value.unsilk
 assert fs is not None
 def print_file(f):    
     v = str(fs[f])
@@ -39,10 +41,29 @@ def print_file(f):
 
 for f in sorted(list(fs.keys())):
     print_file(f)
+"""
+finished = []
+for fs_cellname in ctx.fs.children("cell"):
+    fs_cell = getattr(ctx.fs, fs_cellname)
+    value = fs_cell.value
+    value2 = RichValue(value, need_form=True)
+    if value2.value is None:
+        continue
+    finished.append(fs_cellname)
+    if value2.storage == "pure-plain":
+        v = str(value2.value)
+        if len(v) > 80:
+            v = v[:35] + "." * 10  + v[-35:]
+    else:
+        v = "< Binary data, length %d >" % len(value)
+    print(fs_cellname + ":", v)
+    print()
+
+
 
 import os
-if "calls/all.vcf" in fs:
+if "calls/all.vcf" in finished:
     print("SUCCESS, calls/all.vcf created")
     os.system("mkdir -p calls")
     with open("calls/all.vcf", "w") as f:
-        f.write(fs["calls/all.vcf"])
+        f.write(getattr(fs, "calls/all.vcf"))

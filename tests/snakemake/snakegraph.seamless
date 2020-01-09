@@ -14,7 +14,7 @@
     },
     {
       "source": [
-        "filesystem",
+        "fs",
         "data/genome.tgz"
       ],
       "target": [
@@ -26,7 +26,7 @@
     },
     {
       "source": [
-        "filesystem",
+        "fs",
         "sorted_reads/A.bam"
       ],
       "target": [
@@ -38,7 +38,7 @@
     },
     {
       "source": [
-        "filesystem",
+        "fs",
         "sorted_reads/B.bam"
       ],
       "target": [
@@ -50,7 +50,7 @@
     },
     {
       "source": [
-        "filesystem",
+        "fs",
         "sorted_reads/A.bam.bai"
       ],
       "target": [
@@ -62,7 +62,7 @@
     },
     {
       "source": [
-        "filesystem",
+        "fs",
         "sorted_reads/B.bam.bai"
       ],
       "target": [
@@ -89,7 +89,7 @@
         "bcftools_call"
       ],
       "target": [
-        "filesystem",
+        "fs",
         "calls/all.vcf"
       ],
       "type": "connection"
@@ -108,7 +108,7 @@
     },
     {
       "source": [
-        "filesystem",
+        "fs",
         "mapped_reads/A.bam"
       ],
       "target": [
@@ -135,7 +135,7 @@
         "samtools_sort_A"
       ],
       "target": [
-        "filesystem",
+        "fs",
         "sorted_reads/A.bam"
       ],
       "type": "connection"
@@ -154,7 +154,7 @@
     },
     {
       "source": [
-        "filesystem",
+        "fs",
         "mapped_reads/B.bam"
       ],
       "target": [
@@ -181,7 +181,7 @@
         "samtools_sort_B"
       ],
       "target": [
-        "filesystem",
+        "fs",
         "sorted_reads/B.bam"
       ],
       "type": "connection"
@@ -200,7 +200,7 @@
     },
     {
       "source": [
-        "filesystem",
+        "fs",
         "sorted_reads/A.bam"
       ],
       "target": [
@@ -227,7 +227,7 @@
         "samtools_index_A"
       ],
       "target": [
-        "filesystem",
+        "fs",
         "sorted_reads/A.bam.bai"
       ],
       "type": "connection"
@@ -246,7 +246,7 @@
     },
     {
       "source": [
-        "filesystem",
+        "fs",
         "sorted_reads/B.bam"
       ],
       "target": [
@@ -273,7 +273,7 @@
         "samtools_index_B"
       ],
       "target": [
-        "filesystem",
+        "fs",
         "sorted_reads/B.bam.bai"
       ],
       "type": "connection"
@@ -292,7 +292,7 @@
     },
     {
       "source": [
-        "filesystem",
+        "fs",
         "data/genome.tgz"
       ],
       "target": [
@@ -304,7 +304,7 @@
     },
     {
       "source": [
-        "filesystem",
+        "fs",
         "data/samples/A.fastq"
       ],
       "target": [
@@ -331,7 +331,7 @@
         "bwa_map_A"
       ],
       "target": [
-        "filesystem",
+        "fs",
         "mapped_reads/A.bam"
       ],
       "type": "connection"
@@ -350,7 +350,7 @@
     },
     {
       "source": [
-        "filesystem",
+        "fs",
         "data/genome.tgz"
       ],
       "target": [
@@ -362,7 +362,7 @@
     },
     {
       "source": [
-        "filesystem",
+        "fs",
         "data/samples/B.fastq"
       ],
       "target": [
@@ -389,7 +389,7 @@
         "bwa_map_B"
       ],
       "target": [
-        "filesystem",
+        "fs",
         "mapped_reads/B.bam"
       ],
       "type": "connection"
@@ -398,16 +398,118 @@
   "lib": {},
   "nodes": [
     {
+      "path": [
+        "fs"
+      ],
+      "type": "context"
+    },
+    {
+      "UNTRANSLATED": true,
       "celltype": "structured",
-      "checksum": {
-        "auth": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
-        "buffer": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
-        "value": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c"
-      },
       "datatype": "mixed",
       "hash_pattern": null,
       "path": [
-        "filesystem"
+        "fs",
+        "calls/all.vcf"
+      ],
+      "type": "cell"
+    },
+    {
+      "UNTRANSLATED": true,
+      "celltype": "structured",
+      "datatype": "mixed",
+      "hash_pattern": null,
+      "path": [
+        "fs",
+        "data/genome.tgz"
+      ],
+      "type": "cell"
+    },
+    {
+      "UNTRANSLATED": true,
+      "celltype": "structured",
+      "datatype": "mixed",
+      "hash_pattern": null,
+      "path": [
+        "fs",
+        "data/samples/A.fastq"
+      ],
+      "type": "cell"
+    },
+    {
+      "UNTRANSLATED": true,
+      "celltype": "structured",
+      "datatype": "mixed",
+      "hash_pattern": null,
+      "path": [
+        "fs",
+        "data/samples/B.fastq"
+      ],
+      "type": "cell"
+    },
+    {
+      "UNTRANSLATED": true,
+      "celltype": "structured",
+      "datatype": "mixed",
+      "hash_pattern": null,
+      "path": [
+        "fs",
+        "mapped_reads/A.bam"
+      ],
+      "type": "cell"
+    },
+    {
+      "UNTRANSLATED": true,
+      "celltype": "structured",
+      "datatype": "mixed",
+      "hash_pattern": null,
+      "path": [
+        "fs",
+        "mapped_reads/B.bam"
+      ],
+      "type": "cell"
+    },
+    {
+      "UNTRANSLATED": true,
+      "celltype": "structured",
+      "datatype": "mixed",
+      "hash_pattern": null,
+      "path": [
+        "fs",
+        "sorted_reads/A.bam"
+      ],
+      "type": "cell"
+    },
+    {
+      "UNTRANSLATED": true,
+      "celltype": "structured",
+      "datatype": "mixed",
+      "hash_pattern": null,
+      "path": [
+        "fs",
+        "sorted_reads/A.bam.bai"
+      ],
+      "type": "cell"
+    },
+    {
+      "UNTRANSLATED": true,
+      "celltype": "structured",
+      "datatype": "mixed",
+      "hash_pattern": null,
+      "path": [
+        "fs",
+        "sorted_reads/B.bam"
+      ],
+      "type": "cell"
+    },
+    {
+      "UNTRANSLATED": true,
+      "celltype": "structured",
+      "datatype": "mixed",
+      "hash_pattern": null,
+      "path": [
+        "fs",
+        "sorted_reads/B.bam.bai"
       ],
       "type": "cell"
     },
@@ -421,9 +523,7 @@
       "INPUT": "inp",
       "RESULT": "result",
       "SCHEMA": null,
-      "checksum": {
-        "code": "183ea72dde9f175f54801f63fcba7ad18906c3cbf1ac1fe058c0b9b168244b13"
-      },
+      "UNTRANSLATED": true,
       "compiled": false,
       "debug": false,
       "file_extension": "sh",
@@ -591,6 +691,7 @@
       "type": "context"
     },
     {
+      "UNTRANSLATED": true,
       "celltype": "structured",
       "datatype": "mixed",
       "hash_pattern": null,
