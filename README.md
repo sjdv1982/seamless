@@ -32,6 +32,7 @@ docker build . -t rpbs/seamless
 Then, add ./docker/commands to your .bashrc
 
 - From pip (inside a Dockerfile)
+
 *NOTE: This is currently not working*
 The master branch of Seamless will soon be released as version 0.2.
 For now, "pip install seamless-framework" will not work, as it points to the old version 0.1.
