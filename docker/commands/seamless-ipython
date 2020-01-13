@@ -1,16 +1,13 @@
 set -u -e
 
-# Runs a command inside the Seamless Docker image
+# Runs an IPython terminal inside the Seamless Docker image
 # - Current directory is mounted to /cwd, and the command is executed there
 # - /tmp is mounted as well
 
-# NOTE: it is recommended to run python scripts with 'python -u'
-
-firstarg=$1 #there must be at least one argument
-docker run --rm \
+docker run --rm -it \
   --network=host \
   -v ~/.seamless/mount:/host \
   -v `pwd`:/cwd \
   -v /tmp:/tmp \
   --workdir /cwd \
-  rpbs/seamless $*
+  rpbs/seamless ipython3 $*

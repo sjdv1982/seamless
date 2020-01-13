@@ -37,3 +37,6 @@ Then, add ./docker/commands to your .bashrc
 The master branch of Seamless will soon be released as version 0.2.
 For now, "pip install seamless-framework" will not work, as it points to the old version 0.1.
 
+**Getting started**:
+
+Run the command ```jupyter-seamless``` will fire up a Jupyter server that runs inside the Notebook.

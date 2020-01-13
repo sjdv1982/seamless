@@ -1,5 +1,8 @@
 docker run \
   --rm \
   -v /tmp:/tmp \
+  --network=host \
+  --hostname localhost \
   rpbs/seamless start-notebook.sh \
+  --ip='0.0.0.0' --NotebookApp.token='' --NotebookApp.password='' \
   $*
