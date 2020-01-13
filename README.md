@@ -39,4 +39,4 @@ For now, "pip install seamless-framework" will not work, as it points to the old
 
 **Getting started**:
 
-Run the command ```jupyter-seamless``` will fire up a Jupyter server that runs inside the Notebook.
+Run the command ```jupyter-seamless``` will fire up a Jupyter server that runs inside the Docker image.
