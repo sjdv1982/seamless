@@ -1,0 +1,1 @@
+../../js/seamless-client.js

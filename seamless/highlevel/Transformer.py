@@ -602,6 +602,8 @@ class Transformer(Base):
             if tf is not None:
                 p = tf.code
                 value = p.data
+            elif "TEMP" in htf and "code" in htf["TEMP"]:
+                value = htf["TEMP"]["code"]
             cell = {
                 "path": path,
                 "type": "cell",
@@ -616,6 +618,7 @@ class Transformer(Base):
             if "checksum" in htf:
                 htf["checksum"].pop("code", None)
         else:
+            raise NotImplementedError
             if tf is not None:
                 inp = getattr(tf, htf["INPUT"])
                 p = getattr(inp.value, attr)

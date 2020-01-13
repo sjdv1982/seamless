@@ -15,8 +15,19 @@ celltypes = (
     "cson", "yaml", "str", "bytes", "int", "float", "bool"
 )    
 
+def get_new_cell(path):
+    return {
+        "path": path,
+        "type": "cell",
+        "celltype": "structured",
+        "datatype": "mixed",
+        "hash_pattern": None,
+        "UNTRANSLATED": True,
+    }
+
 class Cell(Base):
     _virtual_path = None
+    _node = None
 
     def __init__(self, parent=None, path=None):
         assert (parent is None) == (path is None)
@@ -88,6 +99,15 @@ class Cell(Base):
     def _get_hcell(self):
         parent = self._parent()
         return parent._get_node(self._path)
+
+    def _get_hcell2(self):
+        try:
+            return self._get_hcell()
+        except AttributeError:
+            pass
+        if self._node is None:
+            self._node = get_new_cell(None)
+        return self._node
 
     def _observe_cell(self, checksum):
         if self._parent() is None:
@@ -193,7 +213,7 @@ class Cell(Base):
 
     def mount(self, path=None, mode="rw", authority="cell", persistent=True):
         assert self.celltype != "structured"
-        hcell = self._get_hcell()
+        hcell = self._get_hcell2()            
         if path is None:
             hcell.pop("mount", None)
         else:
@@ -204,7 +224,8 @@ class Cell(Base):
                 "persistent": persistent
             }
             hcell["mount"] = mount
-        self._parent()._translate()
+        if self._parent() is not None:
+            self._parent()._translate()
 
     def __setattr__(self, attr, value):
         if attr == "example":
@@ -315,8 +336,8 @@ class Cell(Base):
     @property
     def checksum(self):
         parent = self._parent()
-        hcell = self._get_hcell()
-        if parent._dummy:
+        hcell = self._get_hcell2()
+        if parent is not None and parent._dummy:
             raise NotImplementedError
         elif hcell.get("UNTRANSLATED"):
             if "TEMP" in hcell:
@@ -334,7 +355,7 @@ class Cell(Base):
     @checksum.setter
     def checksum(self, checksum):
         from ..silk import Silk
-        hcell = self._get_hcell()
+        hcell = self._get_hcell2()
         if hcell.get("UNTRANSLATED"):
             hcell["checksum"] = checksum
             return
@@ -353,7 +374,7 @@ class Cell(Base):
 
     def _set(self, value):
         from ..core.structured_cell import StructuredCell
-        hcell = self._get_hcell()
+        hcell = self._get_hcell2()
         if hcell.get("UNTRANSLATED"):
             hcell["TEMP"] = value
             return
@@ -375,13 +396,13 @@ class Cell(Base):
 
     @property
     def celltype(self):
-        hcell = self._get_hcell()
+        hcell = self._get_hcell2()
         return hcell["celltype"]
 
     @celltype.setter
     def celltype(self, value):
         assert value in celltypes, value
-        hcell = self._get_hcell()
+        hcell = self._get_hcell2()
         if hcell.get("UNTRANSLATED"):
             cellvalue = hcell.get("TEMP")
         else:
@@ -403,11 +424,12 @@ class Cell(Base):
             self._parent()._do_translate(force=True) # This needs to be kept!
             self.set(cellvalue)
         else:
-            self._parent()._translate()
+            if self._parent() is not None:
+                self._parent()._translate()
 
     @property
     def mimetype(self):
-        hcell = self._get_hcell()
+        hcell = self._get_hcell2()
         mimetype = hcell.get("mimetype")
         if mimetype is not None:
             return mimetype
@@ -428,7 +450,7 @@ class Cell(Base):
 
     @mimetype.setter
     def mimetype(self, value):
-        hcell = self._get_hcell()
+        hcell = self._get_hcell2()
         if value.find("/") == -1:
             try:
                 ext = value
@@ -440,21 +462,21 @@ class Cell(Base):
 
     @property
     def datatype(self):
-        hcell = self._get_hcell()
+        hcell = self._get_hcell2()
         celltype = hcell["celltype"]
         assert celltype == "structured"
         return hcell["datatype"]
 
     @datatype.setter
     def datatype(self, value):
-        hcell = self._get_hcell()
+        hcell = self._get_hcell2()
         celltype = hcell["celltype"]
         assert celltype == "structured"
         hcell["datatype"] = value
 
     @property
     def hash_pattern(self):
-        hcell = self._get_hcell()
+        hcell = self._get_hcell2()
         celltype = hcell["celltype"]
         assert celltype in ("structured", "mixed")
         return hcell["hash_pattern"]
@@ -463,16 +485,17 @@ class Cell(Base):
     def hash_pattern(self, value):
         from ..core.protocol.deep_structure import validate_hash_pattern
         validate_hash_pattern(value)
-        hcell = self._get_hcell()
+        hcell = self._get_hcell2()
         celltype = hcell["celltype"]
         assert celltype in ("structured", "mixed")
         hcell["hash_pattern"] = value
         hcell.pop("checksum", None)
-        self._parent()._translate()
+        if self._parent() is not None:
+            self._parent()._translate()
 
     @property
     def language(self):
-        hcell = self._get_hcell()
+        hcell = self._get_hcell2()
         celltype = hcell["celltype"]
         if celltype != "code":
             raise AttributeError
@@ -480,7 +503,7 @@ class Cell(Base):
     @language.setter
     def language(self, value):
         from ..compiler import find_language
-        hcell = self._get_hcell()
+        hcell = self._get_hcell2()
         celltype = hcell["celltype"]
         if celltype != "code":
             return self._setattr("language", value)
@@ -488,7 +511,8 @@ class Cell(Base):
         old_language = hcell.get("language")
         hcell["language"] = lang
         hcell["file_extension"] = extension
-        self._parent()._translate()
+        if self._parent() is not None:
+            self._parent()._translate()
 
     def __rshift__(self, other):
         assert isinstance(other, Proxy)
@@ -499,7 +523,13 @@ class Cell(Base):
     def share(self, path=None, readonly=True):
         assert readonly or self.authoritative
         assert readonly or self.celltype != "structured"
-        self._parent()._share(self, path, readonly)
+        hcell = self._get_hcell2()
+        hcell["share"] = {
+            "path": path,
+            "readonly": readonly,
+        }
+        if self._parent() is not None:
+            self._parent()._translate()
 
     def __dir__(self):
         result = super().__dir__()
@@ -543,7 +573,7 @@ def cell_binary_method(self, other, name):
 
 def Constant(*args, **kwargs):
     cell = Cell(*args, **kwargs)
-    cell._get_hcell()["constant"] = True 
+    cell._get_hcell2()["constant"] = True 
 
 from functools import partialmethod
 from ..silk.SilkBase import binary_special_method_names

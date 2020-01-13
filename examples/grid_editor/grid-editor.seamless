@@ -1,0 +1,263 @@
+{
+  "connections": [
+    {
+      "source": [
+        "grid_params"
+      ],
+      "target": [
+        "combine_grid_params",
+        "grid_params"
+      ],
+      "type": "connection"
+    },
+    {
+      "source": [
+        "translation_"
+      ],
+      "target": [
+        "combine_grid_params",
+        "translation"
+      ],
+      "type": "connection"
+    },
+    {
+      "source": [
+        "combine_grid_params"
+      ],
+      "target": [
+        "combined_grid_params"
+      ],
+      "type": "connection"
+    }
+  ],
+  "lib": {},
+  "nodes": [
+    {
+      "INPUT": "inp",
+      "RESULT": "result",
+      "SCHEMA": null,
+      "checksum": {
+        "code": "90340f5d09b72c332936ea85d8704d478258aa226358fba966e71d43820a7430",
+        "input": "c49e7e5ec6d629ace2321eef489fba158a376d8770838329b588a2e35f4d2652",
+        "input_buffer": "c49e7e5ec6d629ace2321eef489fba158a376d8770838329b588a2e35f4d2652",
+        "result": "2dfceaeeffb6cce6fd7a77bb81345e97c9fb6fea1fde7bedeb91c7b3ae78d037"
+      },
+      "compiled": false,
+      "debug": false,
+      "language": "python",
+      "path": [
+        "combine_grid_params"
+      ],
+      "pins": {
+        "grid_params": {
+          "celltype": "mixed"
+        },
+        "translation": {
+          "celltype": "mixed"
+        }
+      },
+      "type": "transformer",
+      "with_result": true
+    },
+    {
+      "celltype": "plain",
+      "checksum": {
+        "value": "2dfceaeeffb6cce6fd7a77bb81345e97c9fb6fea1fde7bedeb91c7b3ae78d037"
+      },
+      "datatype": "mixed",
+      "path": [
+        "combined_grid_params"
+      ],
+      "share": {
+        "path": null,
+        "readonly": true
+      },
+      "type": "cell"
+    },
+    {
+      "path": [
+        "files"
+      ],
+      "type": "context"
+    },
+    {
+      "celltype": "text",
+      "checksum": {
+        "value": "ea6bec15afe96556066102ac3ad34b13be6de29036bde688f99fb745b980ee6a"
+      },
+      "datatype": "mixed",
+      "file_extension": "css",
+      "mimetype": "text/css",
+      "mount": {
+        "authority": "cell",
+        "mode": "rw",
+        "path": "grid-editor.css",
+        "persistent": true
+      },
+      "path": [
+        "files",
+        "css"
+      ],
+      "share": {
+        "path": "grid-editor.css",
+        "readonly": true
+      },
+      "type": "cell"
+    },
+    {
+      "celltype": "text",
+      "checksum": {
+        "value": "9473f1f27985f812946a6f18304989040f47884496d9eb7c92188c4386988a87"
+      },
+      "datatype": "mixed",
+      "file_extension": "html",
+      "mimetype": "text/html",
+      "path": [
+        "files",
+        "html"
+      ],
+      "share": {
+        "path": "grid-editor.html",
+        "readonly": true
+      },
+      "type": "cell"
+    },
+    {
+      "celltype": "text",
+      "checksum": {
+        "value": "7b8a4ef6a04ca54d14764d803e5f7f7b2b73f946b14553642ff16eed7710f67f"
+      },
+      "datatype": "mixed",
+      "file_extension": "js",
+      "mimetype": "application/javascript",
+      "mount": {
+        "authority": "cell",
+        "mode": "rw",
+        "path": "grid-editor.js",
+        "persistent": true
+      },
+      "path": [
+        "files",
+        "js"
+      ],
+      "share": {
+        "path": "grid-editor.js",
+        "readonly": true
+      },
+      "type": "cell"
+    },
+    {
+      "celltype": "text",
+      "checksum": {
+        "value": "6fa6e06ff56b30aedea1f92fdcfe217c285fc53c24130082751c1f067e89a39e"
+      },
+      "datatype": "mixed",
+      "file_extension": "js",
+      "mimetype": "application/javascript",
+      "path": [
+        "files",
+        "jslib"
+      ],
+      "share": {
+        "path": "grid-editor-lib.js",
+        "readonly": true
+      },
+      "type": "cell"
+    },
+    {
+      "celltype": "text",
+      "checksum": {
+        "value": "dc880d3f766a9abbf2bb452686e0270899f5362c09ae5c2c42f7fa348812ecb2"
+      },
+      "datatype": "mixed",
+      "file_extension": "js",
+      "mimetype": "application/javascript",
+      "path": [
+        "files",
+        "seamless_client_js"
+      ],
+      "share": {
+        "path": "seamless-client.js",
+        "readonly": true
+      },
+      "type": "cell"
+    },
+    {
+      "celltype": "text",
+      "checksum": {
+        "value": "d276a9eb4d299b59e8dc9159a8a05d77e4f03737ffd6bbd5ce9cb034d9c59438"
+      },
+      "datatype": "mixed",
+      "mount": {
+        "authority": "file",
+        "mode": "rw",
+        "path": "grid_data1.txt",
+        "persistent": true
+      },
+      "path": [
+        "grid_data1"
+      ],
+      "share": {
+        "path": null,
+        "readonly": false
+      },
+      "type": "cell"
+    },
+    {
+      "celltype": "text",
+      "checksum": {
+        "value": "df4d3e318047fbeb7e5f0a9cd9fc5ab5e177e2a9afdae8614b5128933d9d4c67"
+      },
+      "datatype": "mixed",
+      "mount": {
+        "authority": "file",
+        "mode": "rw",
+        "path": "grid_data2.txt",
+        "persistent": true
+      },
+      "path": [
+        "grid_data2"
+      ],
+      "share": {
+        "path": null,
+        "readonly": false
+      },
+      "type": "cell"
+    },
+    {
+      "celltype": "plain",
+      "checksum": {
+        "value": "25580884b524c1f3103c6a3621b76cbc3c6848cb07d38538b6673296fa2f9415"
+      },
+      "datatype": "mixed",
+      "mount": {
+        "authority": "file",
+        "mode": "rw",
+        "path": "grid_params.json",
+        "persistent": true
+      },
+      "path": [
+        "grid_params"
+      ],
+      "type": "cell"
+    },
+    {
+      "celltype": "plain",
+      "checksum": {
+        "value": "adb1fbf805ae76351ea4b1ef4b5c279da86f30893743194d52455d476b2de7fc"
+      },
+      "datatype": "mixed",
+      "mount": {
+        "authority": "cell",
+        "mode": "rw",
+        "path": "translation.json",
+        "persistent": true
+      },
+      "path": [
+        "translation_"
+      ],
+      "type": "cell"
+    }
+  ],
+  "params": {}
+}

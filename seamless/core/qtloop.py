@@ -30,8 +30,8 @@ async def qtloop():
             if not p.exitcode:
                 qt_app = PyQt5.QtWidgets.QApplication(["  "])
     if qt_app is None:
-        msg = "Qt could not be started. Qt widgets will not work" #TODO: some kind of env variable to disable this warning
-        print(msg,file=sys.stderr)
+        msg = "Qt could not be started. Qt widgets will not work" #TODO: some kind of env variable to enable this warning
+        ###print(msg,file=sys.stderr)
         return
 
     while 1:

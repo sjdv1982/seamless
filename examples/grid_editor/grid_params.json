@@ -1,0 +1,38 @@
+{
+  "edit_params": [
+    {
+      "max1": 1,
+      "max2": 1,
+      "step1": 1,
+      "step2": 1
+    },
+    {
+      "max1": 0,
+      "max2": 2,
+      "step1": 0,
+      "step2": 2
+    }
+  ],
+  "grid_params": [
+    {
+      "offset_x": 30,
+      "offset_y": 200,
+      "square_size": 40
+    },
+    {
+      "offset_x": 300,
+      "offset_y": 200,
+      "square_size": 40
+    },
+    {
+      "offset_x": 750,
+      "offset_y": 200,
+      "square_size": 40
+    },
+    {
+      "offset_x": 750,
+      "offset_y": 200,
+      "square_size": 40
+    }
+  ]
+}

@@ -15,6 +15,14 @@ class Base:
             path = (path,)
         self._path = path
 
+    def _get_top_parent(self):
+        from .Context import Context
+        parent = self._parent()
+        if isinstance(parent, Context):
+            return parent
+        else:
+            return parent._get_parent()
+
     @property
     def self(self):
         return self ### TODO: proper implementation

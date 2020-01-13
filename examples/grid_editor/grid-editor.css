@@ -1,0 +1,33 @@
+.rect {
+    stroke: black;
+    fill: white;  
+    fill-opacity:0.8;
+  }
+  
+  .rect.val0 {
+    fill: white;    
+    fill-opacity:0.1;
+  }
+  
+  .rect.val1 {
+    fill: red;
+  }
+  
+  .circle {
+    r: 5;
+    fill: black;
+    fill-opacity:1.0;
+  }
+  
+  .circle.val0 {
+    r: 0;
+  }
+  .circle.val1 {
+    r: 5;
+    fill: black;
+  }
+  .circle.val2 {
+    r: 8;
+    fill: green;
+    fill-opacity: 0.6;
+  }

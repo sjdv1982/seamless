@@ -58,17 +58,28 @@
       "path": [
         "bb_pdb"
       ],
+      "share": {
+        "path": null,
+        "readonly": true
+      },
       "type": "cell"
     },
     {
       "UNTRANSLATED": true,
       "celltype": "code",
+      "checksum": {
+        "value": "abf52bf53f41aae78553a279ef6eb9ce6f461b88768b09591539d21576c665c8"
+      },
       "file_extension": "sh",
       "language": "bash",
       "mimetype": "application/x-sh",
       "path": [
         "code"
       ],
+      "share": {
+        "path": null,
+        "readonly": true
+      },
       "transformer": true,
       "type": "cell"
     },
@@ -127,6 +138,10 @@
       "path": [
         "pdb"
       ],
+      "share": {
+        "path": null,
+        "readonly": true
+      },
       "type": "cell"
     },
     {
@@ -139,6 +154,10 @@
       "path": [
         "pdb0"
       ],
+      "share": {
+        "path": null,
+        "readonly": true
+      },
       "type": "cell"
     }
   ],

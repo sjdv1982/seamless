@@ -8,6 +8,8 @@ ctx = load_graph(graph)
 ctx.add_zip("share-pdb.zip")
 ctx.compute()
 
+"""
+# superfluous
 ctx.bb_pdb.share()
 ctx.pdb.share()
 ctx.code.share(readonly=False)
@@ -15,6 +17,7 @@ ctx.translate()
 
 ctx.code.mount("/tmp/code.bash")
 ctx.translate()
+"""
 
 import seamless
 import os

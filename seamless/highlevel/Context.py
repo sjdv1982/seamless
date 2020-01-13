@@ -74,7 +74,6 @@ def get_status(parent, children, nodes, path):
 class Context(Base):
     _mount = None
     _translating = False
-    _shares = None
     _translate_count = 0 
     _auto_translate = False 
     _gen_context = None
@@ -85,17 +84,21 @@ class Context(Base):
     _destroyed = False
 
     @classmethod
-    def from_graph(cls, graph, manager):
+    def from_graph(cls, graph, manager, *, mounts=True, shares=True):
         self = cls(manager=manager)
-        self.set_graph(graph)
+        self.set_graph(graph,mounts=mounts,shares=shares)
         graph = deepcopy(graph)
         return self
 
-    def set_graph(self, graph):
+    def set_graph(self, graph, *, mounts=True, shares=True):
         graph = deepcopy(graph)        
         nodes = {}        
         for node in graph["nodes"]:
             p = tuple(node["path"])
+            if not mounts:
+                node.pop("mount", None)
+            if not shares:
+                node.pop("share", None)
             node["path"] = p
             nodes[p] = node
             nodetype = node["type"]
@@ -501,9 +504,22 @@ class Context(Base):
                     raise TypeError(type(child))
         finally:
             self._translating = False
+    
+    def _get_shares(self):
+        shares = {}
+        for path, node in self._graph.nodes.items():
+            if node["type"] != "cell":
+                continue
+            share = node.get("share")
+            if share is not None:
+                shares[path] = share
+        if not len(shares):
+            return None
+        return shares
 
     def _connect_share(self):
-        if self._shares is None:
+        shares = self._get_shares()
+        if shares is None:
             return
         from ..core import StructuredCell, Cell as core_cell
         global shareserver
@@ -516,7 +532,7 @@ class Context(Base):
                 name="ctx", 
                 share_evaluate=False
             )        
-        for path, shareparams in self._shares.items():
+        for path, shareparams in shares.items():
             key = "/".join(path) #TODO: split in subpaths by inspecting and traversing ctx._children (recursively for subcontext children)
             hcell = self._children[path]
             if not isinstance(hcell, Cell):
@@ -528,7 +544,8 @@ class Context(Base):
                 pass #TODO: see above
             else:
                 raise TypeError(cell)
-            sharepath, readonly = shareparams
+            sharepath = shareparams["path"]
+            readonly = shareparams["readonly"]
             mimetype = hcell.mimetype            
             cell.share(sharepath, readonly, mimetype=mimetype)
 
@@ -540,8 +557,6 @@ class Context(Base):
                 child = self._children.get(p)
                 nodes.pop(p)
                 self._children.pop(p, None)
-                if self._shares is not None:
-                    self._shares.pop(p, None)
                 self._traitlets.pop(p, None)
                 self._translate()
 
@@ -618,13 +633,6 @@ class Context(Base):
         connections[:] = new_connections
         return any_removed
 
-    def _share(self, cell, path, readonly):
-        key = ".".join(cell._path)
-        if self._shares is None:
-            self._shares = {}
-        self._shares[cell._path] = (path, readonly)
-        self._translate()
-
     def link(self, first, second):
         link = Link(self, first=first, second=second)
         connections = self._graph.connections
@@ -692,13 +700,6 @@ class SubContext(Base):
                 assign(parent, path, value)
         else:
             assign(parent, path, value)
-
-    def _get_top_parent(self):
-        parent = self._parent()
-        if isinstance(parent, Context):
-            return parent
-        else:
-            return parent._get_parent()
 
     def __delattr__(self, attr):
         raise NotImplementedError

@@ -6,7 +6,7 @@ import weakref
 from . import ConstantTypes
 from ..mixed import MixedBase
 from ..silk import Silk
-from .Cell import Cell
+from .Cell import Cell, get_new_cell
 from .Resource import Resource
 from .pin import InputPin, OutputPin
 from .Transformer import Transformer
@@ -18,15 +18,6 @@ from .Link import Link
 from .compiled import CompiledObjectDict, CompiledObjectWrapper
 from .SchemaWrapper import SchemaWrapper
 
-def get_new_cell(path):
-    return {
-        "path": path,
-        "type": "cell",
-        "celltype": "structured",
-        "datatype": "mixed",
-        "hash_pattern": None,
-        "UNTRANSLATED": True,
-    }
 
 def under_libmacro_control(nodedict, path):
     lp = len(path)
@@ -328,10 +319,14 @@ def assign(ctx, path, value):
     elif isinstance(value, Cell):
         if value._parent() is None:
             value._init(ctx, path)
-            cell = get_new_cell(path)
-            ctx._graph.nodes[path] = cell
+            cellnode = deepcopy(value._node)
+            if cellnode is None:
+                cellnode = get_new_cell(path)
+            else:
+                cellnode["path"] = path
+            ctx._graph.nodes[path] = cellnode
         else:
-            assert value._parent() is ctx, value
+            assert value._get_top_parent() is ctx, value
             assign_connection(ctx, value._path, path, True)
         ctx._translate()
     elif isinstance(value, (Resource, ConstantTypes)):
