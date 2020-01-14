@@ -1,5 +1,5 @@
 This file contains useful commands that invoke Seamless Docker images.
-Unless you use Qt GUIs inside reactors, it is recommended to use Seamless through these commands, rather than installing it as a Python package
+It is recommended to use Seamless through these commands, rather than installing it as a Python package
 
 Requirements:
 - Availability of Docker

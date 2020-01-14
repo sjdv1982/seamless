@@ -1,0 +1,19 @@
+@input_doc pdbA
+@input_doc pdbB
+@intern pdbrA
+@intern pdbrA2
+@intern pdbrB
+@intern grid
+@intern starting_structures
+@intern docking_structures
+@intern energies
+
+./reduce.sh !pdbA > pdbrA
+./reduce.sh !pdbB > pdbrB
+python $ATTRACTTOOLS/randsearch.py 2 500 --fix-receptor > starting_structures
+./make-grid.sh !pdbrA $ATTRACTDIR/../attract.par 5 7 > grid   #empty doc
+gawk 'ARGIND==2' !grid !pdbrA > pdbrA2                        #just to create a dependency
+$ATTRACTDIR/attract !starting_structures $ATTRACTDIR/../attract.par !pdbrA2 !pdbrB --vmax 50 --fix-receptor --grid 1 /dev/shm/grid > docking_structures @monitor 0.5
+grep "Energy" !docking_structures | awk '{print $3}' | sort -n > energies
+
+@export energies

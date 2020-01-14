@@ -503,8 +503,6 @@ application/x-shar				shar
 application/x-shellscript				bash
 application/x-shockwave-flash			swf swfl
 application/x-silverlight			scr
-#added: slash
-application/x-slash				slash
 application/x-sql				sql
 application/x-stuffit				sit sitx
 application/x-sv4cpio				sv4cpio

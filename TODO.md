@@ -1,4 +1,8 @@
-E. The mid/high level
+Missing features
+================
+
+(TODO: port these to GitHub issues)
+
 E2. Reactors
 E3. High-level Macro construct around low-level macro; 
   shouldn't be too hard, but connections could be tricky.
@@ -7,18 +11,15 @@ E3. High-level Macro construct around low-level macro;
    is a good way to get sth working quickly, until the high level works well.
 
 
-F.
-3. Run tests
-   - Re-run low level tests (no problems expected)
-   - Run and adapt high-level tests (mostly DONE)
-   - Test in Docker container
-   - DONE: Test in Jupyter
-   - Port lib-OLD examples (browse and merge) to graphs; set up stdlib
-4. Test Observable Notebook (client JS has changed)
-5. Re-run initial examples, in particular BCsearch (DONE for final state; TODO for intermediate)
-6. Re-run capri example
+Testing
+=======
+- Re-run low level tests (no problems expected)
+- Run and adapt high-level tests (mostly DONE)
+- Re-run initial examples, in particular BCsearch (DONE for final state; TODO for intermediate)
+- Re-run capri example (on abathur)
 
-Known bugs:
+Known bugs
+==========
 Conversion from structured cell to binary cell goes wrong
 
 
@@ -116,7 +117,7 @@ Cleanup
      (In general, look at __dir__ in the context of Silk, mixed, and cells)
      (NOTE: This has nothing to do with services. Services determine private and public based on
      what connects into the serviced context.)
-   - Start with lib porting. Port Qt editors (including HTML), but no more seamless.qt
+   - Start with lib porting.
      Port all macros, but store the code in plain Python modules in lib, that register a library context   
    - Jettison Plotly and OpenGL for now; re-target main focus of Seamless towards scientific computations for now
    - Cleanup tests. With direct mode, most low-level tests should work now? Other ones can be ported to high-level    

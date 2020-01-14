@@ -1,0 +1,24 @@
+key:
+  pin: "input"
+  dtype: "str"
+  must_be_defined: false
+
+paint:
+  pin: "input"
+  dtype: "signal"
+
+paint_lines:
+  pin: "output"
+  dtype: "signal"
+
+paint_triangles_smooth:
+  pin: "output"
+  dtype: "signal"
+
+paint_triangles_flat:
+  pin: "output"
+  dtype: "signal"
+
+repaint:
+  pin: "output"
+  dtype: "signal"

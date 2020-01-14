@@ -1,0 +1,89 @@
+Slash-0 grammar
+
+Slash0:
+  - List of nodes
+  - Export (return) struct
+  - List of commands
+
+node:
+  type=node type
+node types:
+  env: environment variable
+  file: file name
+        is_directory: true/false (TODO ???)
+  doc: doc name
+        origin: input, intern, extern
+        is_array: true/false
+        array_length (TODO: array-of-array-lengths for 2D array, similar for 3D, higher not supported)
+  variable: (dynamic) variable name
+        is_list: true/false
+  context: context_name
+        is_json: true/false
+"file" and "env" are implicitly constructed from code.
+The other ones are explicitly declared.
+
+command:
+  index: 0 - [number of commands]
+  lineno
+  source code: str, original source code
+  type=:
+    "standard"
+    "assign", (from =)
+        - variable noderef
+        - variable expression (see below)
+    "cat"
+      - list of doc noderefs (is_array must be True)
+      - result doc noderef (is_array must be True)
+    "read",
+      - input doc noderef
+      - output variable noderef (is_list=False)
+    "lines",
+    - input doc noderef
+    - output variable noderef (is_list=True)
+    "fields",
+    - input doc noderef
+    - output variable noderef (is_list=True)
+    "doc",
+    - input variable expression
+    - output doc noderef
+    "load",
+    - input file noderef
+    - result doc noderef
+    "map"
+    - input_dot: True or False
+    - input context noderef (only if non-dotted)
+    - output file (is_directory=True)
+
+Standard-command grammar:
+- command:
+    - type: file, or registered command (TODO)
+    for type=file:
+      - file expression (str with {})
+      - noderef list:
+        - env
+- argument list:
+  - type: literal, file, doc or variable expression
+    for type=file: just return literal
+    for type=file: see above
+    for type=doc:
+      - single noderef of type=doc
+    for type=varexp (variable expression):
+       see below
+- output list:
+  - type: stdout, stderr, stdout+stderr
+  - single noderef of type=doc
+- capture (>!):
+  - single noderef of type=context
+     (json must be true)
+
+variable expression:
+  - argument expression (str with {})
+  - noderef list:
+      - variable
+
+noderef:
+    - command index
+    - type: env, doc, variable,
+        or context
+    - index: -1 for NULL node
+    - input or output

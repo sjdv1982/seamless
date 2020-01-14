@@ -1,0 +1,33 @@
+{
+  "arrays": [
+    "coordinates", "normals", "indices"
+  ],
+  "uniforms": {
+    "u_mvp_matrix": "mat4",
+    "u_modelview_matrix": "mat4",
+    "u_normal_matrix": "mat3",
+  },
+  "render": {
+    "command": "triangles",
+    "attributes": {
+      "a_position": {
+        "dtype": "vec3",
+        "array": "coordinates"
+      },
+      "a_normal": {
+        "dtype": "vec3",
+        "array": "normals"
+      }
+    }
+    "glstate": {
+      "clear": false,
+      "depth_test": true
+      "clear_color": "black",
+      "blend": true,
+    },
+    "indices": {
+      "array": "indices",
+      "dtype": "short"
+    }
+  },
+}

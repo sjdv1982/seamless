@@ -1,0 +1,25 @@
+@input_doc pdbA
+@input_doc pdbB
+@intern pdbrA
+@intern pdbrA2
+@intern pdbrB
+@intern grid
+@intern starting_structures
+@intern docking_structures
+@intern energies
+@intern rmsd0
+@intern rmsd
+
+./reduce.sh !pdbA > pdbrA
+./reduce.sh !pdbB > pdbrB
+python $ATTRACTTOOLS/randsearch.py 2 2000 --fix-receptor > starting_structures
+./make-grid.sh !pdbrA $ATTRACTDIR/../attract.par 5 7 > grid   #empty doc
+gawk 'ARGIND==2' !grid !pdbrA > pdbrA2                        #just to create a dependency
+$ATTRACTDIR/attract !starting_structures $ATTRACTDIR/../attract.par !pdbrA2 !pdbrB --vmax 200 --fix-receptor --grid 1 /dev/shm/grid > docking_structures @monitor 0.5
+grep "Energy" !docking_structures | awk '{print $3}' | awk '$1 < 0' | sort -n > energies
+
+python $ATTRACTDIR/irmsd.py !docking_structures "/home/sjoerd/seamless/examples/slash/docking/bound/1AVXA.pdb" "/home/sjoerd/seamless/examples/slash/docking/bound/1AVXA.pdb" "/home/sjoerd/seamless/examples/slash/docking/bound/1AVXB.pdb" "/home/sjoerd/seamless/examples/slash/docking/bound/1AVXB.pdb" > rmsd0
+awk '{x=$2; if (x>25) x = 25; print x}' !rmsd0 | sort -nk1 > rmsd
+
+@export energies
+@export rmsd

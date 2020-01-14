@@ -1,0 +1,3240 @@
+{
+  "lib": {
+    "/cell-filelink-start.py": {
+      "data": "if __name__ == \"__main__\":\n    #test with ipython -i\n    import sys, os\n\n    class dummy:\n        pass\n\n    class EditPin:\n        def __init__(self, value):\n            self.value = value\n            self.defined = True\n        def set(self, value):\n            print(\"SET\", value)\n            self.value = value\n        def get(self):\n            return self.value\n\n    class Getter:\n        def __init__(self, arg):\n            self.arg = arg\n        def get(self):\n            return self.arg\n    PINS = dummy()\n    PINS.value = EditPin(\"test\")\n    directory = sys.argv[1]\n    filename = sys.argv[2]\n    PINS.filepath = Getter(os.path.join(directory, filename))\n    PINS.latency = Getter(float(sys.argv[3]))\n    def serializer(v):\n        return str(v.get())\n    print(\"Edit in \" + filepath.get())\nelse:\n    from seamless.dtypes import serialize\n    def serializer(v):\n        return serialize(v._dtype, v.get())\n\n\nimport os, time, functools, traceback\nfrom threading import Thread, RLock, Event\nlast_value = None\nlast_serialized_value = None\nlast_exc = None\nlast_mtime = None\n\ndef write_file(fpath):\n    global last_mtime, last_value, last_serialized_value\n    if not PINS.value.defined:\n        last_mtime = -1 #will trigger a file read\n        return\n    if last_value == PINS.value.get():\n        return\n    val = serializer(PINS.value)\n    if last_serialized_value == val:\n        return\n    with lock:\n        if last_serialized_value != val:\n            #print(\"WRITE\", val)\n            if PINS.value._dtype == \"object\":\n                with open(fpath, \"wb\") as f:\n                    f.write(val)\n                    last_value = PINS.value.get()\n                    last_serialized_value = val\n            else:\n                with open(fpath, \"w\", encoding=\"utf-8\") as f:\n                    f.write(val)\n                    last_value = PINS.value.get()\n                    last_serialized_value = val\n            last_time = time.time()\n            try:\n                stat = os.stat(fpath)\n                last_mtime = stat.st_mtime\n            except Exception:\n                pass\n\nsleeptime = 0.01\n\ndef poll():\n    global last_time, last_mtime, last_value, last_serialized_value, last_exc\n    fpath = PINS.filepath.get()\n    while 1:\n        sleeps = int(PINS.latency.get() / sleeptime + 0.9999)\n        for n in range(sleeps):\n            time.sleep(sleeptime)\n            if terminate.is_set():\n                break\n        if terminate.is_set():\n            break\n        curr_time = time.time()\n        last_time = curr_time\n        if not os.path.exists(fpath):\n            try:\n                write_file(fpath)\n            except Exception:\n                exc = traceback.format_exc()\n                if exc != last_exc:\n                    print(exc)\n                    last_exc = exc\n        else:\n            with lock:\n                stat = os.stat(fpath)\n                try:\n                    if last_mtime is None or stat.st_mtime > last_mtime:\n                        data = None\n                        if PINS.value._dtype == \"object\":\n                            with open(fpath, \"rb\") as f:\n                                data = f.read()\n                        else:\n                            with open(fpath, encoding=\"utf-8\") as f:\n                                data = f.read()\n                        if data is not None:\n                            if last_serialized_value != data:\n                                #print(\"LOAD\")\n                                PINS.value.set(data)\n                                last_value = None\n                                last_serialized_value = data\n                        last_mtime = stat.st_mtime\n                except Exception:\n                    exc = traceback.format_exc()\n                    if exc != last_exc:\n                        print(exc)\n                        last_exc = exc\n\nterminate = Event()\nt = Thread(target=poll)\nt.setDaemon(True)\nlock = RLock()\nwrite_file(PINS.filepath.get())\nt.start()\n",
+      "links": [
+        "link_silk_vertexdata.cell1",
+        "link_vert_shader.cell1",
+        "link_frag_shader.cell1",
+        "link_program_template.cell1",
+        "link_gen_program.cell1",
+        "link_params_gen_vertexdata.cell1",
+        "link_gen_vertexdata.cell1",
+        "link_params_gen_texture.cell1",
+        "link_gen_texture.cell1",
+        "link_params_gen_uniforms.cell1",
+        "link_gen_uniforms_start.cell1",
+        "link_gen_uniforms_update.cell1"
+      ]
+    },
+    "/cell-timer.py": {
+      "data": "from threading import Timer\ndead = False\ndef trigger():\n    global t\n    if dead:\n        return\n    PINS.trigger.set()\n    t = Timer(PINS.period.get(), trigger)\n    t.setDaemon(True)\n    t.start()\nt = Timer(PINS.period.get(), trigger)\nt.setDaemon(True)\nt.start()\n",
+      "links": [
+        "cell33"
+      ]
+    },
+    "/gui/cell-basic_display_UPDATE.py": {
+      "data": "if PINS.value.updated:\n    b.setValue(PINS.value.get())\nif PINS.title.updated:\n    w.setWindowTitle(PINS.title.get())\n",
+      "links": []
+    },
+    "/gui/cell-basic_display_float.py": {
+      "data": "from seamless.qt.QtWidgets import QDoubleSpinBox, QWidget, QVBoxLayout\nfrom seamless.qt.QtCore import Qt\n\nw = QWidget()\n#w.setWindowFlags(Qt.WindowStaysOnTopHint)\nw.setAttribute(Qt.WA_ShowWithoutActivating)\nvbox = QVBoxLayout()\nvbox.addStretch(1)\nw.setLayout(vbox)\nw.resize(300,100)\nw.setWindowTitle(PINS.title.get())\nw.show()\nb = QDoubleSpinBox()\nb.setSingleStep(0.1)\nb.setMaximum(1000000)\nb.setValue(PINS.value.get())\nvbox.addWidget(b)\n",
+      "links": []
+    },
+    "/gui/cell-basic_display_html.py": {
+      "data": "from seamless.qt.QtWidgets import QPlainTextEdit, QWidget, QVBoxLayout\nfrom seamless.qt.QtCore import Qt\nfrom PyQt5.QtGui import QColor\n\nw = QWidget()\n#w.setWindowFlags(Qt.WindowStaysOnTopHint)\nw.setAttribute(Qt.WA_ShowWithoutActivating)\nvbox = QVBoxLayout()\n#vbox.addStretch(1)\nw.resize(600,600)\nw.setLayout(vbox)\nw.setWindowTitle(PINS.title.get())\n\nw.show()\nb = QPlainTextEdit()\nb.setReadOnly(True)\n#b.setFontPointSize(15)\nb.setPlainText(PINS.value.get())\n#b.setFontItalic(True)\n#b.setTextColor(QColor(255,0,0))\nvbox.addWidget(b)\n",
+      "links": []
+    },
+    "/gui/cell-basic_display_html_UPDATE.py": {
+      "data": "if PINS.value.updated:\n    b.setPlainText(PINS.value.get())\nif PINS.title.updated:\n    w.setWindowTitle(PINS.title.get())\n",
+      "links": []
+    },
+    "/gui/cell-basic_display_int.py": {
+      "data": "from seamless.qt.QtWidgets import QSpinBox, QWidget, QVBoxLayout\nfrom seamless.qt.QtCore import Qt\n\nw = QWidget()\n#w.setWindowFlags(Qt.WindowStaysOnTopHint)\nw.setAttribute(Qt.WA_ShowWithoutActivating)\nvbox = QVBoxLayout()\nvbox.addStretch(1)\nw.setLayout(vbox)\nw.resize(300,100)\nw.setWindowTitle(PINS.title.get())\nw.show()\nb = QSpinBox()\nb.setMaximum(1000000)\nb.setValue(PINS.value.get())\nvbox.addWidget(b)\n",
+      "links": []
+    },
+    "/gui/cell-basic_display_json.py": {
+      "data": "from seamless.qt.QtWidgets import QTextEdit, QWidget, QVBoxLayout\nfrom seamless.qt.QtCore import Qt\nfrom PyQt5.QtGui import QColor\nimport json\n\nw = QWidget()\n#w.setWindowFlags(Qt.WindowStaysOnTopHint)\nw.setAttribute(Qt.WA_ShowWithoutActivating)\nvbox = QVBoxLayout()\n#vbox.addStretch(1)\nw.resize(600,600)\nw.setLayout(vbox)\nw.setWindowTitle(PINS.title.get())\n\nw.show()\nb = QTextEdit()\nb.setReadOnly(True)\nb.setFontPointSize(15)\nb.setText(json.dumps(PINS.value.get(), indent=2))\n#b.setFontItalic(True)\n#b.setTextColor(QColor(255,0,0))\nvbox.addWidget(b)\n",
+      "links": []
+    },
+    "/gui/cell-basic_display_json_UPDATE.py": {
+      "data": "if PINS.value.updated:\n    b.setText(json.dumps(PINS.value.get(), indent=2))\nif PINS.title.updated:\n    b.setWindowTitle(PINS.title.get())\n",
+      "links": []
+    },
+    "/gui/cell-basic_display_text.py": {
+      "data": "from seamless.qt.QtWidgets import QTextEdit, QWidget, QVBoxLayout\nfrom seamless.qt.QtCore import Qt\nfrom PyQt5.QtGui import QColor\n\nw = QWidget()\n#w.setWindowFlags(Qt.WindowStaysOnTopHint)\nw.setAttribute(Qt.WA_ShowWithoutActivating)\nvbox = QVBoxLayout()\n#vbox.addStretch(1)\nw.resize(600,600)\nw.setLayout(vbox)\nw.setWindowTitle(PINS.title.get())\n\nw.show()\nb = QTextEdit()\nb.setReadOnly(True)\nb.setFontPointSize(15)\nb.setText(PINS.value.get())\n#b.setFontItalic(True)\n#b.setTextColor(QColor(255,0,0))\nvbox.addWidget(b)\n",
+      "links": []
+    },
+    "/gui/cell-basic_display_text_UPDATE.py": {
+      "data": "if PINS.value.updated:\n    b.setText(PINS.value.get())\nif PINS.title.updated:\n    w.setWindowTitle(PINS.title.get())\n",
+      "links": []
+    },
+    "/gui/cell-basic_editor_UPDATE.py": {
+      "data": "if PINS.value.updated:\n    b.setValue(PINS.value.get())\nif PINS.title.updated:\n    w.setWindowTitle(PINS.title.get())\n",
+      "links": []
+    },
+    "/gui/cell-basic_editor_float.py": {
+      "data": "from seamless.qt.QtWidgets import QDoubleSpinBox, QWidget, QVBoxLayout\nfrom seamless.qt.QtCore import Qt\n\nw = QWidget()\n#w.setWindowFlags(Qt.WindowStaysOnTopHint)\nw.setAttribute(Qt.WA_ShowWithoutActivating)\nvbox = QVBoxLayout()\nvbox.addStretch(1)\nw.setLayout(vbox)\nw.resize(300,100)\nw.setWindowTitle(PINS.title.get())\nw.show()\nb = QDoubleSpinBox()\nb.setSingleStep(0.01)\nb.setDecimals(3)\nb.setMaximum(1000000)\nif PINS.value.defined:\n    b.setValue(PINS.value.get())\nvbox.addWidget(b)\nb.valueChanged.connect(PINS.value.set)\n",
+      "links": []
+    },
+    "/gui/cell-basic_editor_int.py": {
+      "data": "from seamless.qt.QtWidgets import QSpinBox, QWidget, QVBoxLayout\nfrom seamless.qt.QtCore import Qt\n\nw = QWidget()\n#w.setWindowFlags(Qt.WindowStaysOnTopHint)\nw.setAttribute(Qt.WA_ShowWithoutActivating)\nvbox = QVBoxLayout()\nvbox.addStretch(1)\nw.setLayout(vbox)\nw.resize(300,100)\nw.setWindowTitle(PINS.title.get())\nw.show()\nb = QSpinBox()\nb.setMaximum(1000000)\nif PINS.value.defined:\n    b.setValue(PINS.value.get())\nvbox.addWidget(b)\nb.valueChanged.connect(PINS.value.set)\n",
+      "links": []
+    },
+    "/gui/cell-basic_editor_json.py": {
+      "data": "from seamless.qt.QtWidgets import QTextEdit, QWidget, QVBoxLayout\nfrom seamless.qt.QtCore import Qt\nfrom PyQt5.QtGui import QColor\nimport json\n\nw = QWidget()\n#w.setWindowFlags(Qt.WindowStaysOnTopHint)\nw.setAttribute(Qt.WA_ShowWithoutActivating)\nvbox = QVBoxLayout()\n#vbox.addStretch(1)\nw.resize(600,600)\nw.setLayout(vbox)\nw.setWindowTitle(PINS.title.get())\n\nclass MyTextEdit(QTextEdit):\n    def focusOutEvent(self, event):\n        PINS.value.set(self.toPlainText())\n        QTextEdit.focusOutEvent(self, event)\n\nw.show()\nb = MyTextEdit()\nb.setFontPointSize(15)\nif PINS.value.defined:\n    b.setText(json.dumps(PINS.value.get(), indent=2))\n#b.setFontItalic(True)\n#b.setTextColor(QColor(255,0,0))\nvbox.addWidget(b)\n",
+      "links": []
+    },
+    "/gui/cell-basic_editor_json_UPDATE.py": {
+      "data": "if PINS.value.updated:\n    b.setText(json.dumps(PINS.value.get(), indent=2))\nif PINS.title.updated:\n    w.setWindowTitle(PINS.title.get())\n",
+      "links": []
+    },
+    "/gui/cell-basic_editor_text.py": {
+      "data": "from seamless.qt.QtWidgets import QTextEdit, QWidget, QVBoxLayout\nfrom seamless.qt.QtCore import Qt\nfrom PyQt5.QtGui import QColor\n\nw = QWidget()\n#w.setWindowFlags(Qt.WindowStaysOnTopHint)\nw.setAttribute(Qt.WA_ShowWithoutActivating)\nvbox = QVBoxLayout()\n#vbox.addStretch(1)\nw.resize(600,600)\nw.setLayout(vbox)\nw.setWindowTitle(PINS.title.get())\n\nclass MyTextEdit(QTextEdit):\n    def focusOutEvent(self, event):\n        PINS.value.set(self.toPlainText())\n        QTextEdit.focusOutEvent(self, event)\n\nw.show()\nb = MyTextEdit()\nb.setFontPointSize(15)\nif PINS.value.defined:\n    b.setText(PINS.value.get())\n#b.setFontItalic(True)\n#b.setTextColor(QColor(255,0,0))\nvbox.addWidget(b)\n",
+      "links": []
+    },
+    "/gui/cell-basic_editor_text_UPDATE.py": {
+      "data": "if PINS.value.updated:\n    b.setText(PINS.value.get())\nif PINS.title.updated:\n    w.setWindowTitle(PINS.title.get())\n",
+      "links": []
+    },
+    "/gui/gl/cell-glprogram.py": {
+      "data": "from collections import OrderedDict\nimport numpy as np\nfrom OpenGL.arrays import vbo\nfrom OpenGL.GL import shaders\nfrom OpenGL.GL import *\nfrom OpenGL import GL as gl\n\nfrom seamless import opengl\nfrom seamless.lib.gui.gl.set_uniform import set_uniform\n\nfrom seamless.lib.gui.gl.Renderer import Renderer, VertexAttribute\nfrom seamless.lib.gui.gl import glstate as glstate_module\n\ninitialized = False\nshader_program = None\nrenderer = False\nuniform_types = {}\nuniform_locations = {}\nuniform_values = {}\nuniform_dirty = set()\ntexture_locations = OrderedDict()\nwarnings = []\n\ndef init():\n    global initialized, shader_program, renderer, uniform_types, \\\n     glstate, glclear, texdict\n    from seamless.dtypes.gl import GLStore, GLTexStore\n\n    if initialized:\n        return\n\n    # Compile shaders\n    vertex_code = PINS.vertex_shader.get()\n    fragment_code = PINS.fragment_shader.get()\n    vertex_shader = shaders.compileShader(vertex_code, GL_VERTEX_SHADER)\n    fragment_shader = shaders.compileShader(fragment_code, GL_FRAGMENT_SHADER)\n    shader_program = shaders.compileProgram(vertex_shader, fragment_shader)\n\n    program = PINS.program.get()\n\n    # Bind vertex attributes\n    storedict = {}\n    for ar in program[\"arrays\"]:\n        attr = \"array_\" + ar\n        store = getattr( getattr(PINS, attr), \"store\", None)\n        assert isinstance(store, GLStore), ar #TODO: nicer error message\n        #store.bind() #superfluous\n        storedict[ar] = store\n\n    # Bind textures\n    texdict = {}\n    texture_locations.clear()\n    for ar in program.get(\"textures\",[]):\n        attr = \"array_\" + ar\n        store = getattr( getattr(PINS, attr), \"store\", None)\n        assert isinstance(store, GLTexStore), ar #TODO: nicer error message\n        #store.bind() #superfluous\n        texdict[ar] = store\n        loc = gl.glGetUniformLocation(shader_program, ar)\n        if loc == -1:\n            print(\"WARNING: unknown texture '%s'\" % ar)\n            continue\n        texture_locations[ar] = loc\n\n    # Create renderer and set glstate\n    render = program[\"render\"]\n    glstate = render[\"glstate\"]\n    glclear = glstate.pop(\"clear\", True)\n    renderer = Renderer(render, shader_program, storedict)\n    renderer.bind()\n\n    # Get uniform bindings\n    shaders.glUseProgram(shader_program)\n    uniform_locations.clear()\n    uniform_dirty.clear()\n    uniform_types = program.get(\"uniforms\", {})\n    for uniform in uniform_types:\n        loc = gl.glGetUniformLocation(shader_program, uniform)\n        if loc == -1:\n            print(\"WARNING: unknown uniform '%s'\" % uniform)\n            continue\n        uniform_locations[uniform] = loc\n        uniform_dirty.add(uniform)\n\n    initialized = True\n\ndef paint():\n            #print(\"DRAW\")\n    if not initialized:\n        init()\n    shaders.glUseProgram(shader_program)\n\n    old_warnings = warnings[:]\n    warnings.clear()\n\n    #re-bind the textures every draw, to be safe\n    for texnr, tex in enumerate(texture_locations):\n        gl.glActiveTexture(gl.GL_TEXTURE0+texnr)\n        loc = texture_locations[tex]\n        gl.glUniform1i(loc, texnr)\n        store = texdict[tex]\n        store.bind()\n\n    for uniform in list(uniform_dirty):\n        if uniform not in uniform_locations:\n            continue\n        if uniform not in uniform_types:\n            continue\n        utype = uniform_types[uniform]\n        value = uniform_values.get(uniform, None)\n        if value is None:\n            warnings.append(\"WARNING: unset uniform '%s'\" % uniform)\n            continue\n        loc = uniform_locations[uniform]\n        set_uniform(value, utype, loc)\n        uniform_dirty.remove(uniform)\n\n    glstate_module.set_state(**glstate)\n    if glclear not in (None, False):\n        if glclear == True:\n            glstate_module.clear()\n        else:\n            glstate_module.clear(*glclear)\n    renderer.draw()\n\n    # Heisenbug!!! see below. Seems to be solved now\n    try:\n        warnings\n    except NameError:\n        return\n\n    if warnings != old_warnings:\n        for warning in warnings:\n            print(warning)\n    #print(\"/DRAW\")\n\ndef do_update():\n    global initialized\n\n    \"\"\"\n    Outside of \"init\" and \"paint\", we have to use \"dirty\" flags,\n     rather than direct GL commands!\n    \"\"\"\n\n    updated = set()\n    for attr in PINS.__dict__:\n        pin = getattr(PINS, attr)\n        if hasattr(pin, \"updated\") and pin.updated:\n            updated.add(attr)\n\n\n    arrays = PINS.program.get()[\"arrays\"]\n    textures = PINS.program.get().get(\"textures\", [])\n\n    gl_context = opengl()\n\n    dirty_renderer = False\n    repaint = False\n    for ar in arrays + textures:\n        attr = \"array_\" + ar\n        pin = getattr(PINS, attr)\n        if pin.updated:\n            dirty_renderer = True\n\n    if PINS.init.updated:\n        initialized = False\n        if gl_context:\n            init()\n        else:\n            PINS.init.unclear()\n\n    if PINS.uniforms.updated:\n        new_uniform_values = PINS.uniforms.get()\n        for uniform in new_uniform_values:\n            v_old = uniform_values.get(uniform, None)\n            v_new = new_uniform_values.get(uniform, None)\n            if v_old != v_new:\n                uniform_values[uniform] = v_new\n                uniform_dirty.add(uniform)\n                repaint = True\n\n    if PINS.paint.updated:\n        if gl_context:\n            paint()\n            repaint = False\n        else:\n            repaint = True\n\n    # Heisenbug!!! see test-gl-BUG.py\n    # As of now, seems to be solved, see cell-glwindow.py\n    try:\n        initialized\n    except NameError:\n        import sys\n        msg = \"\"\"seamless/lib/gui/cell-glprogram.py\nSomething has gone wrong, PyQt has corrupted Python's memory\nA crash will now happen... no idea why, sorry\n\"\"\"\n        print(msg, file=sys.stderr)\n        return\n    # /heisenbug\n\n    if PINS.program.updated or \\\n      PINS.vertex_shader.updated or PINS.fragment_shader.updated:\n        initialized = False\n        repaint = True\n\n    if initialized and dirty_renderer:\n        renderer.set_dirty()\n        repaint = True\n\n    if repaint:\n        PINS.repaint.set()\n",
+      "links": [
+        "glprogram.cell1"
+      ]
+    },
+    "/gui/gl/cell-glwindow.py": {
+      "data": "from seamless.qt.QtWidgets import QOpenGLWidget\nfrom seamless import add_opengl_context, remove_opengl_context, \\\n activate_opengl, deactivate_opengl\nfrom OpenGL import GL\n\nclass GLWidget(QOpenGLWidget):\n    _initialized = False\n    _destroyed = False\n    _painting = False\n    _updating = False\n    def initializeGL(self):\n        super().initializeGL()\n        activate_opengl()\n        if self._destroyed:\n            return\n        from PyQt5.QtGui import QOpenGLContext\n        #print(\"INIT\")\n        ctx = self.context()\n        assert ctx is QOpenGLContext.currentContext()\n        #print(\"start initializeGL\")\n        if not self._initialized:\n            add_opengl_context(ctx)\n            self._initialized = True\n        PINS.init.set()\n        #print(\"end initializeGL\")\n        deactivate_opengl()\n\n    def resizeGL(self, width, height):\n        super().resizeGL(width, height)\n        if self._destroyed:\n            return\n        GL.glViewport(0, 0, width, height)\n\n    def paintGL(self):\n        activate_opengl()\n        self._painting = True\n        super().paintGL()\n        if self._destroyed:\n            return\n        #print(\"start paintGL\")\n        PINS.paint.set()\n        #print(\"DRAW\")\n        #print(\"end paintGL\")\n        #if self._updating:\n        #    self.update()\n        PINS.painted.set()\n        self._painting = False\n        deactivate_opengl()\n\n    def destroy(self, *args, **kwargs):\n        self._destroyed = True\n        ctx = self.context()\n        remove_opengl_context(ctx)\n        super().destroy(*args, **kwargs)\n\n    def update(self):\n        #print(\"UPDATE\")\n        super().update()\n\nwidget = GLWidget()\n#def on_resize(*args, **kwargs):\n#    print(\"on_resize\", args, kwargs)\n\ndef do_update():\n    import threading\n    assert threading.current_thread() is threading.main_thread()\n    if widget._destroyed:\n        return\n    if PINS.update.updated:\n        widget.update()\n    if PINS.title.updated:\n        widget.setWindowTitle(PINS.title.get())\n    if PINS.geometry.updated:\n        widget.setGeometry(*PINS.geometry.get())\n\ndo_update()\nwidget.show()\n",
+      "links": [
+        "glprogram.cell7"
+      ]
+    }
+  },
+  "macro": [
+    {
+      "with_context": false,
+      "dtype": [
+        "text",
+        "code",
+        "python"
+      ],
+      "type_args": [
+        "json",
+        "seamless",
+        "reactor_params"
+      ],
+      "module_name": "seamless.core.reactor",
+      "func_name": "reactor",
+      "code": "@macro(type=(\"json\", \"seamless\", \"reactor_params\"),with_context=False)\ndef reactor(kwargs):\n    from seamless.core.reactor import Reactor #code must be standalone\n    #TODO: remapping, e.g. output_finish, destroy, ...\n    return Reactor(kwargs)\n"
+    },
+    {
+      "with_context": false,
+      "dtype": [
+        "text",
+        "code",
+        "python"
+      ],
+      "type_args": [
+        "json",
+        "seamless",
+        "transformer_params"
+      ],
+      "module_name": "seamless.core.transformer",
+      "func_name": "transformer",
+      "code": "@macro(type=(\"json\", \"seamless\", \"transformer_params\"), with_context=False)\ndef transformer(kwargs):\n    from seamless.core.transformer import Transformer #code must be standalone\n    #TODO: remapping, e.g. output_finish, destroy, ...\n    return Transformer(kwargs)\n"
+    },
+    {
+      "with_context": true,
+      "dtype": [
+        "text",
+        "code",
+        "python"
+      ],
+      "type_args": "json",
+      "module_name": "seamless.lib.dynamic_html",
+      "func_name": "dynamic_html",
+      "code": "@macro(\"json\")\ndef dynamic_html(ctx, params):\n    from seamless import reactor\n    from collections import OrderedDict\n    params2 = { \"vars\": OrderedDict(),\n                \"html\": OrderedDict(),\n                \"evals\": OrderedDict()\n              }\n    ed_params = {\n        \"DYNAMIC_HTML_PARAMS\": {\n            \"pin\": \"input\",\n            \"dtype\": \"json\"\n        },\n        \"DYNAMIC_HTML_TEMPLATE\": {\n            \"pin\": \"input\",\n            \"dtype\": \"text\"\n        },\n        \"dynamic_html\": {\n            \"pin\": \"output\",\n            \"dtype\": (\"text\", \"html\")\n        }\n    }\n    assert \"dynamic_html\" not in params\n    for k,v in params.items():\n        assert isinstance(v,dict), k\n        ed_param = {\"pin\": \"input\"}\n        type_ = v[\"type\"]\n        assert type_ in (\"var\", \"html\", \"eval\"), type_\n        if type_ == \"var\":\n            dtype = v.get(\"dtype\")\n            evals = v.get(\"evals\", [])\n            var = v.get(\"var\", k)\n            params2[\"vars\"][k] = (var, evals)\n            ed_param[\"dtype\"] = dtype\n        elif type_ == \"html\":\n            id_ = v.get(\"id\", k)\n            params2[\"html\"][k] = id_\n            ed_param[\"dtype\"] = (\"text\", \"html\")\n        else: #type_ = \"eval\"\n            on_start = v.get(\"on_start\", None)\n            params2[\"evals\"][k] = on_start\n            ed_param[\"dtype\"] = \"text\"\n        ed_params[k] = ed_param\n    for k,v in params2[\"vars\"].items():\n        var, evals = v\n        for e in evals:\n            assert e in params2[\"evals\"], (k, e, list(params2[\"evals\"].keys()))\n    rc = ctx.rc = reactor(ed_params)\n    rc.code_start.cell().fromfile(\"cell-dynamic-html-start.py\")\n    rc.code_update.cell().set(\"update(on_start=False)\")\n    rc.code_stop.cell().set(\"\")\n    rc.DYNAMIC_HTML_PARAMS.cell().set(params2)\n    rc.DYNAMIC_HTML_TEMPLATE.cell().fromfile(\"dynamic-html.jinja\")\n    ctx.export(rc)\n"
+    },
+    {
+      "with_context": true,
+      "dtype": [
+        "text",
+        "code",
+        "python"
+      ],
+      "type_args": "str",
+      "module_name": "seamless.lib.filelink",
+      "func_name": "filelink",
+      "code": "@macro(\"str\")\ndef filelink(ctx, cell_type):\n    cell_filelink_start = \"cell-filelink-start.py\" #repeat for inline\n    from seamless import reactor\n    pinparams = {\n       \"value\": {\n         \"pin\": \"edit\",\n         \"dtype\": cell_type,\n         \"must_be_defined\": False\n       },\n       \"filepath\" : {\n         \"pin\": \"input\",\n         \"dtype\": \"str\"\n       },\n       \"latency\" : {\n         \"pin\": \"input\",\n         \"dtype\": \"float\"\n       },\n    }\n    rc = ctx.rc = reactor(pinparams)\n    rc.code_start.cell().fromfile(cell_filelink_start)\n    rc.code_update.cell().set(\"write_file(PINS.filepath.get())\")\n    rc.code_stop.cell().set('terminate.set(); t.join()')\n    ctx.export(rc)\n"
+    },
+    {
+      "with_context": true,
+      "dtype": [
+        "text",
+        "code",
+        "python"
+      ],
+      "type_args": {
+        "_order": [
+          "display_type",
+          "title"
+        ],
+        "display_type": "str",
+        "title": {
+          "default": "Basic display",
+          "type": "str"
+        }
+      },
+      "module_name": "seamless.lib.gui.basic_display",
+      "func_name": "basic_display",
+      "code": "@macro(OrderedDict((\n    (\"display_type\",\"str\"),\n    (\"title\",{\"type\": \"str\", \"default\": \"Basic display\"})\n)))\ndef basic_display(ctx, display_type, title):\n    from seamless import reactor\n\n    _displays = {\n      \"int\": {\n        \"code\": \"cell-basic_display_int.py\",\n        \"update\": \"cell-basic_display_UPDATE.py\",\n      },\n      \"float\": {\n        \"code\": \"cell-basic_display_float.py\",\n        \"update\": \"cell-basic_display_UPDATE.py\",\n      },\n      \"text\": {\n        \"code\": \"cell-basic_display_text.py\",\n        \"update\": \"cell-basic_display_text_UPDATE.py\",\n      },\n      \"str\": {\n        \"code\": \"cell-basic_display_text.py\",\n        \"update\": \"cell-basic_display_text_UPDATE.py\",\n      },\n      (\"text\", \"html\"): {\n        \"code\": \"cell-basic_display_html.py\",\n        \"update\": \"cell-basic_display_html_UPDATE.py\",\n      },\n      \"json\": {\n        \"code\": \"cell-basic_display_json.py\",\n        \"update\": \"cell-basic_display_json_UPDATE.py\",\n      },\n    }\n\n    def _match_type(type, typelist):\n        typelist = list(typelist)\n        type2 = type\n        if isinstance(type, str):\n            type2 = (type,)\n        typelist2 = []\n        for t in typelist:\n            if isinstance(t, str):\n                typelist2.append((t,))\n            else:\n                typelist2.append(t)\n        matches = []\n        for n in range(len(typelist)):\n            ltype = typelist2[n]\n            k = min(len(type2), len(ltype))\n            if type2[:k] == ltype[:k]:\n                matches.append((n, k))\n        if not len(matches):\n            raise TypeError(\"Cannot find display for cell type '{0}'\".format(type))\n        matches.sort(key=lambda v: -v[1])\n        bestmatch = matches[0][0]\n        return typelist[bestmatch]\n\n    display_type = _match_type(display_type, _displays.keys())\n    pinparams = {\n      \"value\": {\n        \"pin\": \"input\",\n        \"dtype\": display_type\n      },\n      \"title\": {\n        \"pin\": \"input\",\n        \"dtype\": \"str\",\n      },\n    }\n    d = ctx.display = reactor(pinparams)\n    d.title.cell().set(title)\n    d.code_start.cell().fromfile(_displays[display_type][\"code\"])\n    d.code_stop.cell().set('w.destroy()')\n    upfile = _displays[display_type][\"update\"]\n    c_up = d.code_update.cell()\n    if upfile is not None:\n        c_up.fromfile(upfile)\n    else:\n        c_up.set(\"\")\n    ctx.export(d, forced=[\"title\"])\n"
+    },
+    {
+      "with_context": true,
+      "dtype": [
+        "text",
+        "code",
+        "python"
+      ],
+      "type_args": {
+        "_order": [
+          "editor_type",
+          "title"
+        ],
+        "editor_type": "str",
+        "title": {
+          "default": "Basic editor",
+          "type": "str"
+        }
+      },
+      "module_name": "seamless.lib.gui.basic_editor",
+      "func_name": "basic_editor",
+      "code": "@macro(OrderedDict((\n    (\"editor_type\",\"str\"),\n    (\"title\",{\"type\": \"str\", \"default\": \"Basic editor\"})\n)))\ndef basic_editor(ctx, editor_type, title):\n    from seamless import reactor\n\n    _editors = {\n      \"int\": {\n        \"code\": \"cell-basic_editor_int.py\",\n        \"update\": \"cell-basic_editor_UPDATE.py\",\n      },\n      \"float\": {\n        \"code\": \"cell-basic_editor_float.py\",\n        \"update\": \"cell-basic_editor_UPDATE.py\",\n      },\n      \"text\": {\n        \"code\": \"cell-basic_editor_text.py\",\n        \"update\": \"cell-basic_editor_text_UPDATE.py\",\n      },\n      \"json\": {\n        \"code\": \"cell-basic_editor_json.py\",\n        \"update\": \"cell-basic_editor_json_UPDATE.py\",\n      },\n    }\n\n    def _match_type(type, typelist):\n        typelist = list(typelist)\n        type2 = type\n        if isinstance(type, str):\n            type2 = (type,)\n        typelist2 = []\n        for t in typelist:\n            if isinstance(t, str):\n                typelist2.append((t,))\n            else:\n                typelist2.append(t)\n        matches = []\n        for n in range(len(typelist)):\n            ltype = typelist2[n]\n            k = min(len(type2), len(ltype))\n            if type2[:k] == ltype[:k]:\n                matches.append((n, k))\n        if not len(matches):\n            raise TypeError(\"Cannot find editor for cell type '{0}'\".format(type))\n        matches.sort(key=lambda v: -v[1])\n        bestmatch = matches[0][0]\n        return typelist[bestmatch]\n\n    editor_type = _match_type(editor_type, _editors.keys())\n    pinparams = {\n      \"value\": {\n        \"pin\": \"edit\",\n        \"dtype\": editor_type,\n        \"must_be_defined\": False\n      },\n      \"title\": {\n        \"pin\": \"input\",\n        \"dtype\": \"str\",\n      },\n    }\n    rc = ctx.rc = reactor(pinparams)\n    rc.title.cell().set(title)\n    rc.code_start.cell().fromfile(_editors[editor_type][\"code\"])\n    rc.code_stop.cell().set('w.destroy()')\n    upfile = _editors[editor_type][\"update\"]\n    c_up = rc.code_update.cell(True)\n    if upfile is not None:\n        c_up.fromfile(upfile)\n    else:\n        c_up.set(\"\")\n    ctx.export(rc, forced=[\"title\"])\n"
+    },
+    {
+      "with_context": true,
+      "dtype": [
+        "text",
+        "code",
+        "python"
+      ],
+      "type_args": {
+        "_order": [
+          "program",
+          "with_window",
+          "window_title"
+        ],
+        "program": {
+          "type": "json"
+        },
+        "window_title": {
+          "default": "GLProgram",
+          "type": "string"
+        },
+        "with_window": {
+          "default": true,
+          "type": "bool"
+        }
+      },
+      "module_name": "seamless.lib.gui.gl.glprogram",
+      "func_name": "glprogram",
+      "code": "@macro(OrderedDict((\n    (\"program\",{\"type\": \"json\"}),\n    (\"with_window\", {\"type\": \"bool\", \"default\": True}),\n    (\"window_title\", {\"type\": \"string\", \"default\": \"GLProgram\"}),\n)))\ndef glprogram(ctx, program, with_window, window_title):\n    from seamless import cell, reactor, macro\n    from seamless.core.worker import ExportedInputPin, ExportedOutputPin\n    from seamless.lib.gui.gl.glwindow import glwindow\n\n    arrays = program[\"arrays\"]\n    textures = program.get(\"textures\", [])\n\n    rcparams = {\n\n      #signals\n      \"init\": {\n        \"pin\": \"input\",\n        \"dtype\": \"signal\",\n      },\n      \"paint\": {\n        \"pin\": \"input\",\n        \"dtype\": \"signal\",\n      },\n      \"repaint\": {\n        \"pin\": \"output\",\n        \"dtype\": \"signal\",\n      },\n\n      #shaders\n      \"vertex_shader\": {\n        \"pin\": \"input\",\n        \"dtype\": (\"text\", \"code\", \"vertexshader\"),\n      },\n      \"fragment_shader\": {\n        \"pin\": \"input\",\n        \"dtype\": (\"text\", \"code\", \"fragmentshader\"),\n      },\n\n      #program\n      \"program\": {\n        \"pin\": \"input\",\n        \"dtype\": \"json\",\n      },\n\n      #uniforms\n      \"uniforms\" : {\n        \"pin\": \"input\",\n        \"dtype\": \"json\"\n      }\n    }\n\n    for ar in arrays:\n        rcparams[\"array_\" + ar] = {\"pin\": \"input\",\"dtype\": \"array\"}\n\n    for ar in textures:\n        assert ar not in program[\"arrays\"], ar\n        rcparams[\"array_\" + ar] = {\"pin\": \"input\",\"dtype\": \"array\"}\n\n    ctx.rcparams = cell(\"json\").set(rcparams)\n    ctx.rc = reactor(ctx.rcparams)\n    ctx.rc.code_start.cell().fromfile(\"cell-glprogram.py\")\n    ctx.rc.code_update.cell().set(\"do_update()\")\n    ctx.rc.code_stop.cell().set(\"\")\n    ctx.rc.program.cell().set(program)\n\n    if with_window:\n        ctx.glwindow = glwindow(window_title)\n        ctx.glwindow.init.cell().connect(ctx.rc.init)\n        ctx.glwindow.paint.cell().connect(ctx.rc.paint)\n        ctx.rc.repaint.cell().connect(ctx.glwindow.update)\n        ctx.update = ExportedInputPin(ctx.glwindow.update)\n        ctx.painted = ExportedOutputPin(ctx.glwindow.painted)\n    ctx.export(ctx.rc)\n"
+    },
+    {
+      "with_context": false,
+      "dtype": [
+        "text",
+        "code",
+        "python"
+      ],
+      "type_args": {
+        "_order": [
+          "title",
+          "size",
+          "position"
+        ],
+        "position": {
+          "default": [
+            0,
+            0
+          ],
+          "type": "json"
+        },
+        "size": {
+          "default": [
+            640,
+            480
+          ],
+          "type": "json"
+        },
+        "title": {
+          "default": "OpenGL window",
+          "type": "str"
+        }
+      },
+      "module_name": "seamless.lib.gui.gl.glwindow",
+      "func_name": "glwindow",
+      "code": "@macro(OrderedDict((\n    (\"title\",{\"type\": \"str\", \"default\": \"OpenGL window\"}),\n    (\"size\", {\"type\": \"json\", \"default\": (640, 480)}),\n    (\"position\", {\"type\": \"json\", \"default\": (0, 0)}),\n)), with_context=False)\ndef glwindow(title, size, position):\n    from seamless import reactor\n    pinparams = {\n      \"title\": {\n        \"pin\": \"input\",\n        \"dtype\": \"str\"\n      },\n      \"geometry\": {\n        \"pin\": \"input\",\n        \"dtype\": \"json\"\n      },\n      \"update\": {\n        \"pin\": \"input\",\n        \"dtype\": \"signal\"\n      },\n      \"init\": {\n        \"pin\": \"output\",\n        \"dtype\": \"signal\",\n      },\n      \"paint\": {\n        \"pin\": \"output\",\n        \"dtype\": \"signal\",\n      },\n      \"painted\": {\n        \"pin\": \"output\",\n        \"dtype\": \"signal\"\n      },\n    }\n    rc = reactor(pinparams)\n    rc.title.cell().set(title)\n    geometry = list(position) + list(size)\n    assert len(geometry) == 4, geometry\n    rc.geometry.cell().set(geometry)\n    rc.code_start.cell().fromfile(\"cell-glwindow.py\")\n    rc.code_update.cell().set('do_update()')\n    rc.code_stop.cell().set('widget.destroy()')\n    return rc\n"
+    },
+    {
+      "with_context": true,
+      "dtype": [
+        "text",
+        "code",
+        "python"
+      ],
+      "type_args": [
+        "json",
+        "seamless",
+        "transformer_params"
+      ],
+      "module_name": "seamless.lib.itransformer",
+      "func_name": "itransformer",
+      "code": "@macro(type=(\"json\", \"seamless\", \"transformer_params\"))\ndef itransformer(ctx, params):\n    from seamless import reactor\n    from seamless.core.worker import ExportedInputPin\n    params2 = params.copy()\n    params2[\"code\"] = {\"pin\": \"input\",\n                        \"dtype\": (\"text\", \"code\", \"ipython\")}\n    params2[\"transformer_params\"] = {\"pin\": \"input\", \"dtype\": \"json\"}\n    rc = ctx.rc = reactor(params2)\n    rc.transformer_params.cell().set(params)\n    rc.code_start.cell().fromfile(\"cell-itransformer.py\")\n    rc.code_update.cell().set(\"do_update()\")\n    rc.code_stop.cell().set(\"\")\n    ctx.export(ctx.rc)\n"
+    },
+    {
+      "with_context": true,
+      "dtype": [
+        "text",
+        "code",
+        "python"
+      ],
+      "type_args": {
+        "_order": [
+          "template_definition",
+          "output_type"
+        ],
+        "output_type": {
+          "default": [
+            "text",
+            "html"
+          ],
+          "type": "dtype"
+        },
+        "template_definition": "json"
+      },
+      "module_name": "seamless.lib.templateer",
+      "func_name": "templateer",
+      "code": "@macro(OrderedDict((\n  (\"template_definition\", \"json\"),\n  (\"output_type\", {\"type\": \"dtype\", \"default\": (\"text\", \"html\")}),\n)))\ndef templateer(ctx, template_definition, output_type):\n    from seamless import cell, reactor\n    templates = template_definition[\"templates\"]\n    assert isinstance(templates, list)\n    environment = template_definition[\"environment\"]\n    ed_params = {}\n    for t in templates:\n        assert t not in ed_params, t\n        ed_params[t] = {\"pin\": \"input\", \"dtype\": \"text\"}\n    for k,v in environment.items():\n        assert k not in ed_params, k\n        ed_params[k] = {\"pin\": \"input\", \"dtype\": v}\n    ed_params[\"TEMPLATE_DEFINITION\"] = {\"pin\": \"input\", \"dtype\": \"json\"}\n    ed_params[\"RESULT\"] = {\"pin\": \"output\", \"dtype\": output_type}\n    ctx.rc = reactor(ed_params)\n    ctx.rc.TEMPLATE_DEFINITION.cell().set(template_definition)\n    ctx.rc.code_start.cell().fromfile(\"cell-templateer.py\")\n    ctx.rc.code_update.cell().set(\"make_template()\")\n    ctx.rc.code_stop.cell().set(\"\")\n    ctx.export(ctx.rc)\n"
+    },
+    {
+      "with_context": false,
+      "dtype": [
+        "text",
+        "code",
+        "python"
+      ],
+      "type_args": {
+        "_order": [
+          "period"
+        ],
+        "period": {
+          "default": 0,
+          "type": "float"
+        }
+      },
+      "module_name": "seamless.lib.timer",
+      "func_name": "timer",
+      "code": "@macro(OrderedDict((\n    (\"period\", {\"type\": \"float\", \"default\": 0}),\n)), with_context=False)\ndef timer(period):\n    from seamless import reactor\n    timer = reactor({\n        \"period\": {\"pin\": \"input\", \"dtype\": \"float\"},\n        \"trigger\": {\"pin\": \"output\", \"dtype\": \"signal\"}\n    })\n    timer.code_start.cell().fromfile(\"cell-timer.py\")\n    timer.code_update.cell().set(\"\")\n    timer.code_stop.cell().set(\"t.cancel(); dead = True\")\n    if period > 0:\n        timer.period.cell().set(period)\n    return timer\n"
+    }
+  ],
+  "main": {
+    "type": "context",
+    "like_worker": false,
+    "like_cell": false,
+    "pins": {},
+    "auto": [
+      "cell1",
+      "cell10",
+      "cell11",
+      "cell12",
+      "cell13",
+      "cell14",
+      "cell15",
+      "cell16",
+      "cell17",
+      "cell18",
+      "cell19",
+      "cell2",
+      "cell20",
+      "cell21",
+      "cell22",
+      "cell23",
+      "cell24",
+      "cell25",
+      "cell26",
+      "cell27",
+      "cell28",
+      "cell29",
+      "cell3",
+      "cell30",
+      "cell31",
+      "cell32",
+      "cell33",
+      "cell34",
+      "cell35",
+      "cell36",
+      "cell37",
+      "cell38",
+      "cell39",
+      "cell4",
+      "cell40",
+      "cell41",
+      "cell5",
+      "cell6",
+      "cell7",
+      "cell8",
+      "cell9",
+      "signal1",
+      "signal2",
+      "signal3"
+    ],
+    "children": {
+      "N": {
+        "dtype": "int",
+        "resource": {
+          "filepath": null,
+          "lib": null,
+          "mode": null,
+          "save_policy": 1
+        },
+        "data": "1000"
+      },
+      "cell1": {
+        "dtype": "str",
+        "resource": {
+          "filepath": null,
+          "lib": null,
+          "mode": null,
+          "save_policy": 1
+        },
+        "data": "./vertexdata.silk"
+      },
+      "cell10": {
+        "dtype": "str",
+        "resource": {
+          "filepath": null,
+          "lib": null,
+          "mode": null,
+          "save_policy": 1
+        },
+        "data": "./cell-gen-program.py"
+      },
+      "cell11": {
+        "dtype": "float",
+        "resource": {
+          "filepath": null,
+          "lib": null,
+          "mode": null,
+          "save_policy": 1
+        },
+        "data": "0.2"
+      },
+      "cell12": {
+        "dtype": "str",
+        "resource": {
+          "filepath": null,
+          "lib": null,
+          "mode": null,
+          "save_policy": 1
+        },
+        "data": "./params_gen_vertexdata.json"
+      },
+      "cell13": {
+        "dtype": "float",
+        "resource": {
+          "filepath": null,
+          "lib": null,
+          "mode": null,
+          "save_policy": 1
+        },
+        "data": "0.2"
+      },
+      "cell14": {
+        "dtype": [
+          "text",
+          "code",
+          "python"
+        ],
+        "resource": {
+          "filepath": "./cell-gen-vertexdata.py",
+          "lib": false,
+          "mode": 5,
+          "save_policy": 1
+        },
+        "data": "assert N > 0\nimport numpy as np\ndata = np.zeros(N, VertexData.dtype)\ndata['a_lifetime'] = np.random.normal(2.0, 0.5, (N,))\nstart = data['a_startPosition']\nend = data['a_endPosition']\ncolors = data['a_color']\nstart_values = np.random.normal(0.0, 0.2, (N, 3))\nend_values = np.random.normal(0.0, 1.2, (N, 3))\ncolor_values = np.random.uniform(0.0, 1.0, (N, 3))\n\n# The following does not work in Numpy:\n# start[:] = start_values\n# end[:] = end_values\nfor n in range(3):\n    field = (\"x\",\"y\",\"z\")[n]\n    start[field] = start_values[:, n]\n    end[field] = end_values[:, n]\n    colors[field] = color_values[:, n]\ndata = VertexDataArray.from_numpy(data, copy=False, validate=False)\nreturn data.numpy()\n"
+      },
+      "cell15": {
+        "dtype": "str",
+        "resource": {
+          "filepath": null,
+          "lib": null,
+          "mode": null,
+          "save_policy": 1
+        },
+        "data": "./cell-gen-vertexdata.py"
+      },
+      "cell16": {
+        "dtype": "float",
+        "resource": {
+          "filepath": null,
+          "lib": null,
+          "mode": null,
+          "save_policy": 1
+        },
+        "data": "0.2"
+      },
+      "cell17": {
+        "dtype": "str",
+        "resource": {
+          "filepath": null,
+          "lib": null,
+          "mode": null,
+          "save_policy": 1
+        },
+        "data": "./params_gen_texture.json"
+      },
+      "cell18": {
+        "dtype": "float",
+        "resource": {
+          "filepath": null,
+          "lib": null,
+          "mode": null,
+          "save_policy": 1
+        },
+        "data": "0.2"
+      },
+      "cell19": {
+        "dtype": [
+          "text",
+          "code",
+          "python"
+        ],
+        "resource": {
+          "filepath": "./cell-gen-texture.py",
+          "lib": false,
+          "mode": 5,
+          "save_policy": 1
+        },
+        "data": "import numpy as np\n\nif len(filename):\n    # Create a texture (from image)\n    from PIL import Image\n    im = Image.open(filename)\n    im = im.resize((2 * radius + 1, 2 * radius + 1))\n    im1 = np.asarray(im)\nelse:\n    # Create a texture (random)\n    im1 = 255 * np.ones(dtype=np.float32, shape=(2 * radius + 1, 2 * radius + 1, 3))\n\n# Mask it with a disk\nL = np.linspace(-radius, radius, 2 * radius + 1)\n(X, Y) = np.meshgrid(L, L)\nim1 = im1 * np.array((X ** 2 + Y ** 2) <= radius * radius)[:,:,None]\n\n# Convert to float32 (optional)\nif as_float:\n    im1 = np.array(im1, dtype=\"float32\")/255\ntexture = im1\nreturn texture\n"
+      },
+      "cell2": {
+        "dtype": "float",
+        "resource": {
+          "filepath": null,
+          "lib": null,
+          "mode": null,
+          "save_policy": 1
+        },
+        "data": "0.2"
+      },
+      "cell20": {
+        "dtype": "str",
+        "resource": {
+          "filepath": null,
+          "lib": null,
+          "mode": null,
+          "save_policy": 1
+        },
+        "data": "./cell-gen-texture.py"
+      },
+      "cell21": {
+        "dtype": "float",
+        "resource": {
+          "filepath": null,
+          "lib": null,
+          "mode": null,
+          "save_policy": 1
+        },
+        "data": "0.2"
+      },
+      "cell22": {
+        "dtype": "bool",
+        "resource": {
+          "filepath": null,
+          "lib": null,
+          "mode": null,
+          "save_policy": 1
+        },
+        "data": "True"
+      },
+      "cell23": {
+        "dtype": "str",
+        "resource": {
+          "filepath": null,
+          "lib": null,
+          "mode": null,
+          "save_policy": 1
+        },
+        "data": "./params_gen_uniforms.json"
+      },
+      "cell24": {
+        "dtype": "float",
+        "resource": {
+          "filepath": null,
+          "lib": null,
+          "mode": null,
+          "save_policy": 1
+        },
+        "data": "0.2"
+      },
+      "cell25": {
+        "dtype": [
+          "text",
+          "code",
+          "python"
+        ],
+        "resource": {
+          "filepath": "./cell-gen-uniforms-start.py",
+          "lib": false,
+          "mode": 5,
+          "save_policy": 1
+        },
+        "data": "import time\nimport numpy as np\nstart_time = None\n\ndef new_explosion():\n    global start_time\n    N = PINS.N.get()\n    if PINS.uniforms.defined:\n        uniforms = PINS.uniforms.get()\n    else:\n        uniforms = {}\n\n    # New centerpos\n    centerpos = np.random.uniform(-0.5, 0.5, (3,))\n    uniforms['u_centerPosition'] = tuple(centerpos)\n\n    alpha = 1.0 / N ** 0.08\n    color = np.random.uniform(0.1, 0.9, (3,))\n    uniforms['u_color'] = tuple(color) + (alpha,)\n\n    gravity = PINS.gravity.get()\n    uniforms['u_gravity'] = gravity\n\n    shrink_with_age = PINS.shrink_with_age.get()\n    uniforms['u_shrink_with_age'] = shrink_with_age\n\n    start_time = time.time()\n    uniforms['u_time'] = 0\n    PINS.uniforms.set(uniforms)\n\ndef update():\n    if start_time is None:\n        return\n    uniforms = PINS.uniforms.get()\n    curr_time = time.time() - start_time\n    uniforms['u_time'] = curr_time\n    pointsize = PINS.pointsize.get()\n    uniforms['u_pointsize'] = pointsize\n    PINS.uniforms.set(uniforms)\n    PINS.updated.set()\n"
+      },
+      "cell26": {
+        "dtype": "str",
+        "resource": {
+          "filepath": null,
+          "lib": null,
+          "mode": null,
+          "save_policy": 1
+        },
+        "data": "./cell-gen-uniforms-start.py"
+      },
+      "cell27": {
+        "dtype": "float",
+        "resource": {
+          "filepath": null,
+          "lib": null,
+          "mode": null,
+          "save_policy": 1
+        },
+        "data": "0.2"
+      },
+      "cell28": {
+        "dtype": [
+          "text",
+          "code",
+          "python"
+        ],
+        "resource": {
+          "filepath": "./cell-gen-uniforms-update.py",
+          "lib": false,
+          "mode": 5,
+          "save_policy": 1
+        },
+        "data": "if PINS.N.updated or PINS.reset.updated or start_time is None:\n    new_explosion()\nif PINS.update.updated or PINS.pointsize.updated:\n    update()\n"
+      },
+      "cell29": {
+        "dtype": "str",
+        "resource": {
+          "filepath": null,
+          "lib": null,
+          "mode": null,
+          "save_policy": 1
+        },
+        "data": "./cell-gen-uniforms-update.py"
+      },
+      "cell3": {
+        "dtype": "str",
+        "resource": {
+          "filepath": null,
+          "lib": null,
+          "mode": null,
+          "save_policy": 1
+        },
+        "data": "./vert_shader.glsl"
+      },
+      "cell30": {
+        "dtype": "float",
+        "resource": {
+          "filepath": null,
+          "lib": null,
+          "mode": null,
+          "save_policy": 1
+        },
+        "data": "0.2"
+      },
+      "cell31": {
+        "dtype": [
+          "text",
+          "code",
+          "python"
+        ],
+        "resource": {
+          "filepath": null,
+          "lib": null,
+          "mode": null,
+          "save_policy": 1
+        },
+        "data": "start_time = None"
+      },
+      "cell32": {
+        "dtype": "signal"
+      },
+      "cell33": {
+        "dtype": [
+          "text",
+          "code",
+          "python"
+        ],
+        "resource": {
+          "filepath": "/cell-timer.py",
+          "lib": true,
+          "mode": 2,
+          "save_policy": 1
+        },
+        "data": "from threading import Timer\ndead = False\ndef trigger():\n    global t\n    if dead:\n        return\n    PINS.trigger.set()\n    t = Timer(PINS.period.get(), trigger)\n    t.setDaemon(True)\n    t.start()\nt = Timer(PINS.period.get(), trigger)\nt.setDaemon(True)\nt.start()\n",
+        "owner": "timer"
+      },
+      "cell34": {
+        "dtype": [
+          "text",
+          "code",
+          "python"
+        ],
+        "resource": {
+          "filepath": null,
+          "lib": null,
+          "mode": null,
+          "save_policy": 1
+        },
+        "data": "",
+        "owner": "timer"
+      },
+      "cell35": {
+        "dtype": [
+          "text",
+          "code",
+          "python"
+        ],
+        "resource": {
+          "filepath": null,
+          "lib": null,
+          "mode": null,
+          "save_policy": 1
+        },
+        "data": "t.cancel(); dead = True",
+        "owner": "timer"
+      },
+      "cell36": {
+        "dtype": "float",
+        "resource": {
+          "filepath": null,
+          "lib": null,
+          "mode": null,
+          "save_policy": 1
+        },
+        "data": "1.5",
+        "owner": "timer"
+      },
+      "cell37": {
+        "dtype": "signal"
+      },
+      "cell38": {
+        "dtype": "signal"
+      },
+      "cell39": {
+        "dtype": [
+          "text",
+          "code",
+          "python"
+        ],
+        "resource": {
+          "filepath": null,
+          "lib": null,
+          "mode": null,
+          "save_policy": 1
+        },
+        "data": "PINS.trigger.set()"
+      },
+      "cell4": {
+        "dtype": "float",
+        "resource": {
+          "filepath": null,
+          "lib": null,
+          "mode": null,
+          "save_policy": 1
+        },
+        "data": "0.2"
+      },
+      "cell40": {
+        "dtype": [
+          "text",
+          "code",
+          "python"
+        ],
+        "resource": {
+          "filepath": null,
+          "lib": null,
+          "mode": null,
+          "save_policy": 1
+        },
+        "data": ""
+      },
+      "cell41": {
+        "dtype": [
+          "text",
+          "code",
+          "python"
+        ],
+        "resource": {
+          "filepath": null,
+          "lib": null,
+          "mode": null,
+          "save_policy": 1
+        },
+        "data": ""
+      },
+      "cell5": {
+        "dtype": "str",
+        "resource": {
+          "filepath": null,
+          "lib": null,
+          "mode": null,
+          "save_policy": 1
+        },
+        "data": "./frag_shader.glsl"
+      },
+      "cell6": {
+        "dtype": "float",
+        "resource": {
+          "filepath": null,
+          "lib": null,
+          "mode": null,
+          "save_policy": 1
+        },
+        "data": "0.2"
+      },
+      "cell7": {
+        "dtype": "str",
+        "resource": {
+          "filepath": null,
+          "lib": null,
+          "mode": null,
+          "save_policy": 1
+        },
+        "data": "./program_template.cson"
+      },
+      "cell8": {
+        "dtype": "float",
+        "resource": {
+          "filepath": null,
+          "lib": null,
+          "mode": null,
+          "save_policy": 1
+        },
+        "data": "0.2"
+      },
+      "cell9": {
+        "dtype": [
+          "text",
+          "code",
+          "python"
+        ],
+        "resource": {
+          "filepath": "./cell-gen-program.py",
+          "lib": false,
+          "mode": 5,
+          "save_policy": 1
+        },
+        "data": "program = program_template\nattributes = {}\nfor propname, prop in VertexData._props.items():\n    attributes[propname] = {\n        \"dtype\": prop[\"typename\"].lower(),\n        \"array\": \"vertexdata\",\n        \"rae\": \"['%s']\" % propname,\n    }\nprogram[\"render\"][\"attributes\"] = attributes\nreturn program\n"
+      },
+      "frag_shader": {
+        "dtype": [
+          "text",
+          "code",
+          "fragmentshader"
+        ],
+        "resource": {
+          "filepath": "./frag_shader.glsl",
+          "lib": false,
+          "mode": 5,
+          "save_policy": 1
+        },
+        "data": "#version 130\n\nprecision highp float;\nuniform sampler2D texture1;\nvarying vec3 v_color;\nvarying float v_lifetime;\nuniform highp sampler2D s_texture;\n\nvoid main()\n{\n    highp vec4 texColor;\n    texColor = texture2D(s_texture, gl_PointCoord);\n    gl_FragColor = vec4(v_color,1.0) * texColor;\n    //gl_FragColor.a *= v_lifetime;\n}\n"
+      },
+      "gen_program": {
+        "type": "transformer",
+        "mode": "thread",
+        "params": {
+          "program": {
+            "dtype": "json",
+            "pin": "output"
+          },
+          "program_template": {
+            "dtype": "json",
+            "pin": "input"
+          }
+        }
+      },
+      "gen_texture": {
+        "type": "transformer",
+        "mode": "thread",
+        "params": {
+          "as_float": {
+            "dtype": "bool",
+            "pin": "input"
+          },
+          "filename": {
+            "dtype": "str",
+            "pin": "input"
+          },
+          "output": {
+            "dtype": "array",
+            "pin": "output"
+          },
+          "radius": {
+            "dtype": "int",
+            "pin": "input"
+          }
+        }
+      },
+      "gen_uniforms": {
+        "type": "reactor",
+        "mode": "sync",
+        "params": {
+          "N": {
+            "dtype": "int",
+            "pin": "input"
+          },
+          "gravity": {
+            "dtype": "float",
+            "pin": "input"
+          },
+          "pointsize": {
+            "dtype": "int",
+            "pin": "input"
+          },
+          "reset": {
+            "dtype": "signal",
+            "pin": "input"
+          },
+          "shrink_with_age": {
+            "dtype": "bool",
+            "pin": "input"
+          },
+          "uniforms": {
+            "dtype": "json",
+            "must_be_defined": false,
+            "pin": "edit"
+          },
+          "update": {
+            "dtype": "signal",
+            "pin": "input"
+          },
+          "updated": {
+            "dtype": "signal",
+            "pin": "output"
+          }
+        }
+      },
+      "gen_vertexdata": {
+        "type": "transformer",
+        "mode": "thread",
+        "params": {
+          "N": {
+            "dtype": "int",
+            "pin": "input"
+          },
+          "output": {
+            "dtype": "array",
+            "pin": "output"
+          },
+          "reset": {
+            "dtype": "signal",
+            "pin": "input"
+          }
+        }
+      },
+      "glprogram": {
+        "type": "context",
+        "like_worker": true,
+        "like_cell": false,
+        "pins": {
+          "array_s_texture": [
+            "ExportedInputPin",
+            "glprogram.rc.array_s_texture"
+          ],
+          "array_vertexdata": [
+            "ExportedInputPin",
+            "glprogram.rc.array_vertexdata"
+          ],
+          "fragment_shader": [
+            "ExportedInputPin",
+            "glprogram.rc.fragment_shader"
+          ],
+          "painted": [
+            "ExportedOutputPin",
+            "glprogram.glwindow.painted"
+          ],
+          "repaint": [
+            "ExportedOutputPin",
+            "glprogram.rc.repaint"
+          ],
+          "uniforms": [
+            "ExportedInputPin",
+            "glprogram.rc.uniforms"
+          ],
+          "update": [
+            "ExportedInputPin",
+            "glprogram.glwindow.update"
+          ],
+          "vertex_shader": [
+            "ExportedInputPin",
+            "glprogram.rc.vertex_shader"
+          ]
+        },
+        "auto": [
+          "cell1",
+          "cell2",
+          "cell3",
+          "cell4",
+          "cell5",
+          "cell6",
+          "cell7",
+          "cell8",
+          "cell9",
+          "signal1",
+          "signal2",
+          "signal3",
+          "signal4"
+        ],
+        "children": {
+          "cell1": {
+            "dtype": [
+              "text",
+              "code",
+              "python"
+            ],
+            "resource": {
+              "filepath": "/gui/gl/cell-glprogram.py",
+              "lib": true,
+              "mode": 2,
+              "save_policy": 1
+            },
+            "data": "from collections import OrderedDict\nimport numpy as np\nfrom OpenGL.arrays import vbo\nfrom OpenGL.GL import shaders\nfrom OpenGL.GL import *\nfrom OpenGL import GL as gl\n\nfrom seamless import opengl\nfrom seamless.lib.gui.gl.set_uniform import set_uniform\n\nfrom seamless.lib.gui.gl.Renderer import Renderer, VertexAttribute\nfrom seamless.lib.gui.gl import glstate as glstate_module\n\ninitialized = False\nshader_program = None\nrenderer = False\nuniform_types = {}\nuniform_locations = {}\nuniform_values = {}\nuniform_dirty = set()\ntexture_locations = OrderedDict()\nwarnings = []\n\ndef init():\n    global initialized, shader_program, renderer, uniform_types, \\\n     glstate, glclear, texdict\n    from seamless.dtypes.gl import GLStore, GLTexStore\n\n    if initialized:\n        return\n\n    # Compile shaders\n    vertex_code = PINS.vertex_shader.get()\n    fragment_code = PINS.fragment_shader.get()\n    vertex_shader = shaders.compileShader(vertex_code, GL_VERTEX_SHADER)\n    fragment_shader = shaders.compileShader(fragment_code, GL_FRAGMENT_SHADER)\n    shader_program = shaders.compileProgram(vertex_shader, fragment_shader)\n\n    program = PINS.program.get()\n\n    # Bind vertex attributes\n    storedict = {}\n    for ar in program[\"arrays\"]:\n        attr = \"array_\" + ar\n        store = getattr( getattr(PINS, attr), \"store\", None)\n        assert isinstance(store, GLStore), ar #TODO: nicer error message\n        #store.bind() #superfluous\n        storedict[ar] = store\n\n    # Bind textures\n    texdict = {}\n    texture_locations.clear()\n    for ar in program.get(\"textures\",[]):\n        attr = \"array_\" + ar\n        store = getattr( getattr(PINS, attr), \"store\", None)\n        assert isinstance(store, GLTexStore), ar #TODO: nicer error message\n        #store.bind() #superfluous\n        texdict[ar] = store\n        loc = gl.glGetUniformLocation(shader_program, ar)\n        if loc == -1:\n            print(\"WARNING: unknown texture '%s'\" % ar)\n            continue\n        texture_locations[ar] = loc\n\n    # Create renderer and set glstate\n    render = program[\"render\"]\n    glstate = render[\"glstate\"]\n    glclear = glstate.pop(\"clear\", True)\n    renderer = Renderer(render, shader_program, storedict)\n    renderer.bind()\n\n    # Get uniform bindings\n    shaders.glUseProgram(shader_program)\n    uniform_locations.clear()\n    uniform_dirty.clear()\n    uniform_types = program.get(\"uniforms\", {})\n    for uniform in uniform_types:\n        loc = gl.glGetUniformLocation(shader_program, uniform)\n        if loc == -1:\n            print(\"WARNING: unknown uniform '%s'\" % uniform)\n            continue\n        uniform_locations[uniform] = loc\n        uniform_dirty.add(uniform)\n\n    initialized = True\n\ndef paint():\n            #print(\"DRAW\")\n    if not initialized:\n        init()\n    shaders.glUseProgram(shader_program)\n\n    old_warnings = warnings[:]\n    warnings.clear()\n\n    #re-bind the textures every draw, to be safe\n    for texnr, tex in enumerate(texture_locations):\n        gl.glActiveTexture(gl.GL_TEXTURE0+texnr)\n        loc = texture_locations[tex]\n        gl.glUniform1i(loc, texnr)\n        store = texdict[tex]\n        store.bind()\n\n    for uniform in list(uniform_dirty):\n        if uniform not in uniform_locations:\n            continue\n        if uniform not in uniform_types:\n            continue\n        utype = uniform_types[uniform]\n        value = uniform_values.get(uniform, None)\n        if value is None:\n            warnings.append(\"WARNING: unset uniform '%s'\" % uniform)\n            continue\n        loc = uniform_locations[uniform]\n        set_uniform(value, utype, loc)\n        uniform_dirty.remove(uniform)\n\n    glstate_module.set_state(**glstate)\n    if glclear not in (None, False):\n        if glclear == True:\n            glstate_module.clear()\n        else:\n            glstate_module.clear(*glclear)\n    renderer.draw()\n\n    # Heisenbug!!! see below. Seems to be solved now\n    try:\n        warnings\n    except NameError:\n        return\n\n    if warnings != old_warnings:\n        for warning in warnings:\n            print(warning)\n    #print(\"/DRAW\")\n\ndef do_update():\n    global initialized\n\n    \"\"\"\n    Outside of \"init\" and \"paint\", we have to use \"dirty\" flags,\n     rather than direct GL commands!\n    \"\"\"\n\n    updated = set()\n    for attr in PINS.__dict__:\n        pin = getattr(PINS, attr)\n        if hasattr(pin, \"updated\") and pin.updated:\n            updated.add(attr)\n\n\n    arrays = PINS.program.get()[\"arrays\"]\n    textures = PINS.program.get().get(\"textures\", [])\n\n    gl_context = opengl()\n\n    dirty_renderer = False\n    repaint = False\n    for ar in arrays + textures:\n        attr = \"array_\" + ar\n        pin = getattr(PINS, attr)\n        if pin.updated:\n            dirty_renderer = True\n\n    if PINS.init.updated:\n        initialized = False\n        if gl_context:\n            init()\n        else:\n            PINS.init.unclear()\n\n    if PINS.uniforms.updated:\n        new_uniform_values = PINS.uniforms.get()\n        for uniform in new_uniform_values:\n            v_old = uniform_values.get(uniform, None)\n            v_new = new_uniform_values.get(uniform, None)\n            if v_old != v_new:\n                uniform_values[uniform] = v_new\n                uniform_dirty.add(uniform)\n                repaint = True\n\n    if PINS.paint.updated:\n        if gl_context:\n            paint()\n            repaint = False\n        else:\n            repaint = True\n\n    # Heisenbug!!! see test-gl-BUG.py\n    # As of now, seems to be solved, see cell-glwindow.py\n    try:\n        initialized\n    except NameError:\n        import sys\n        msg = \"\"\"seamless/lib/gui/cell-glprogram.py\nSomething has gone wrong, PyQt has corrupted Python's memory\nA crash will now happen... no idea why, sorry\n\"\"\"\n        print(msg, file=sys.stderr)\n        return\n    # /heisenbug\n\n    if PINS.program.updated or \\\n      PINS.vertex_shader.updated or PINS.fragment_shader.updated:\n        initialized = False\n        repaint = True\n\n    if initialized and dirty_renderer:\n        renderer.set_dirty()\n        repaint = True\n\n    if repaint:\n        PINS.repaint.set()\n"
+          },
+          "cell2": {
+            "dtype": [
+              "text",
+              "code",
+              "python"
+            ],
+            "resource": {
+              "filepath": null,
+              "lib": null,
+              "mode": null,
+              "save_policy": 1
+            },
+            "data": "do_update()"
+          },
+          "cell3": {
+            "dtype": [
+              "text",
+              "code",
+              "python"
+            ],
+            "resource": {
+              "filepath": null,
+              "lib": null,
+              "mode": null,
+              "save_policy": 1
+            },
+            "data": ""
+          },
+          "cell4": {
+            "dtype": "json",
+            "resource": {
+              "filepath": null,
+              "lib": null,
+              "mode": null,
+              "save_policy": 1
+            },
+            "data": "{\n  \"uniforms\": {\n    \"u_shrink_with_age\": \"bool\",\n    \"u_centerPosition\": \"vec3\",\n    \"u_gravity\": \"float\",\n    \"u_pointsize\": \"float\",\n    \"u_time\": \"float\"\n  },\n  \"arrays\": [\n    \"vertexdata\"\n  ],\n  \"render\": {\n    \"command\": \"points\",\n    \"attributes\": {\n      \"a_lifetime\": {\n        \"dtype\": \"float\",\n        \"rae\": \"['a_lifetime']\",\n        \"array\": \"vertexdata\"\n      },\n      \"a_startPosition\": {\n        \"dtype\": \"vec3\",\n        \"rae\": \"['a_startPosition']\",\n        \"array\": \"vertexdata\"\n      },\n      \"a_endPosition\": {\n        \"dtype\": \"vec3\",\n        \"rae\": \"['a_endPosition']\",\n        \"array\": \"vertexdata\"\n      },\n      \"a_color\": {\n        \"dtype\": \"vec3\",\n        \"rae\": \"['a_color']\",\n        \"array\": \"vertexdata\"\n      }\n    },\n    \"glstate\": {\n      \"depth_test\": false,\n      \"blend_func\": [\n        \"src_alpha\",\n        \"one\"\n      ],\n      \"clear_color\": \"black\",\n      \"blend\": true,\n      \"point_sprite\": true,\n      \"vertex_program_point_size\": true,\n      \"clear\": true\n    }\n  },\n  \"textures\": [\n    \"s_texture\"\n  ]\n}"
+          },
+          "cell5": {
+            "dtype": "str",
+            "resource": {
+              "filepath": null,
+              "lib": null,
+              "mode": null,
+              "save_policy": 1
+            },
+            "data": "Seamless fireworks demo",
+            "owner": "glprogram.glwindow"
+          },
+          "cell6": {
+            "dtype": "json",
+            "resource": {
+              "filepath": null,
+              "lib": null,
+              "mode": null,
+              "save_policy": 1
+            },
+            "data": "[\n  0,\n  0,\n  640,\n  480\n]",
+            "owner": "glprogram.glwindow"
+          },
+          "cell7": {
+            "dtype": [
+              "text",
+              "code",
+              "python"
+            ],
+            "resource": {
+              "filepath": "/gui/gl/cell-glwindow.py",
+              "lib": true,
+              "mode": 2,
+              "save_policy": 1
+            },
+            "data": "from seamless.qt.QtWidgets import QOpenGLWidget\nfrom seamless import add_opengl_context, remove_opengl_context, \\\n activate_opengl, deactivate_opengl\nfrom OpenGL import GL\n\nclass GLWidget(QOpenGLWidget):\n    _initialized = False\n    _destroyed = False\n    _painting = False\n    _updating = False\n    def initializeGL(self):\n        super().initializeGL()\n        activate_opengl()\n        if self._destroyed:\n            return\n        from PyQt5.QtGui import QOpenGLContext\n        #print(\"INIT\")\n        ctx = self.context()\n        assert ctx is QOpenGLContext.currentContext()\n        #print(\"start initializeGL\")\n        if not self._initialized:\n            add_opengl_context(ctx)\n            self._initialized = True\n        PINS.init.set()\n        #print(\"end initializeGL\")\n        deactivate_opengl()\n\n    def resizeGL(self, width, height):\n        super().resizeGL(width, height)\n        if self._destroyed:\n            return\n        GL.glViewport(0, 0, width, height)\n\n    def paintGL(self):\n        activate_opengl()\n        self._painting = True\n        super().paintGL()\n        if self._destroyed:\n            return\n        #print(\"start paintGL\")\n        PINS.paint.set()\n        #print(\"DRAW\")\n        #print(\"end paintGL\")\n        #if self._updating:\n        #    self.update()\n        PINS.painted.set()\n        self._painting = False\n        deactivate_opengl()\n\n    def destroy(self, *args, **kwargs):\n        self._destroyed = True\n        ctx = self.context()\n        remove_opengl_context(ctx)\n        super().destroy(*args, **kwargs)\n\n    def update(self):\n        #print(\"UPDATE\")\n        super().update()\n\nwidget = GLWidget()\n#def on_resize(*args, **kwargs):\n#    print(\"on_resize\", args, kwargs)\n\ndef do_update():\n    import threading\n    assert threading.current_thread() is threading.main_thread()\n    if widget._destroyed:\n        return\n    if PINS.update.updated:\n        widget.update()\n    if PINS.title.updated:\n        widget.setWindowTitle(PINS.title.get())\n    if PINS.geometry.updated:\n        widget.setGeometry(*PINS.geometry.get())\n\ndo_update()\nwidget.show()\n",
+            "owner": "glprogram.glwindow"
+          },
+          "cell8": {
+            "dtype": [
+              "text",
+              "code",
+              "python"
+            ],
+            "resource": {
+              "filepath": null,
+              "lib": null,
+              "mode": null,
+              "save_policy": 1
+            },
+            "data": "do_update()",
+            "owner": "glprogram.glwindow"
+          },
+          "cell9": {
+            "dtype": [
+              "text",
+              "code",
+              "python"
+            ],
+            "resource": {
+              "filepath": null,
+              "lib": null,
+              "mode": null,
+              "save_policy": 1
+            },
+            "data": "widget.destroy()",
+            "owner": "glprogram.glwindow"
+          },
+          "glwindow": {
+            "type": "reactor",
+            "mode": "sync",
+            "params": {
+              "geometry": {
+                "dtype": "json",
+                "pin": "input"
+              },
+              "init": {
+                "dtype": "signal",
+                "pin": "output"
+              },
+              "paint": {
+                "dtype": "signal",
+                "pin": "output"
+              },
+              "painted": {
+                "dtype": "signal",
+                "pin": "output"
+              },
+              "title": {
+                "dtype": "str",
+                "pin": "input"
+              },
+              "update": {
+                "dtype": "signal",
+                "pin": "input"
+              }
+            }
+          },
+          "rc": {
+            "type": "reactor",
+            "mode": "sync",
+            "params": {
+              "array_s_texture": {
+                "dtype": "array",
+                "pin": "input"
+              },
+              "array_vertexdata": {
+                "dtype": "array",
+                "pin": "input"
+              },
+              "fragment_shader": {
+                "dtype": [
+                  "text",
+                  "code",
+                  "fragmentshader"
+                ],
+                "pin": "input"
+              },
+              "init": {
+                "dtype": "signal",
+                "pin": "input"
+              },
+              "paint": {
+                "dtype": "signal",
+                "pin": "input"
+              },
+              "program": {
+                "dtype": "json",
+                "pin": "input"
+              },
+              "repaint": {
+                "dtype": "signal",
+                "pin": "output"
+              },
+              "uniforms": {
+                "dtype": "json",
+                "pin": "input"
+              },
+              "vertex_shader": {
+                "dtype": [
+                  "text",
+                  "code",
+                  "vertexshader"
+                ],
+                "pin": "input"
+              }
+            }
+          },
+          "rcparams": {
+            "dtype": "json",
+            "resource": {
+              "filepath": null,
+              "lib": null,
+              "mode": null,
+              "save_policy": 1
+            },
+            "data": "{\n  \"array_vertexdata\": {\n    \"dtype\": \"array\",\n    \"pin\": \"input\"\n  },\n  \"array_s_texture\": {\n    \"dtype\": \"array\",\n    \"pin\": \"input\"\n  },\n  \"fragment_shader\": {\n    \"dtype\": [\n      \"text\",\n      \"code\",\n      \"fragmentshader\"\n    ],\n    \"pin\": \"input\"\n  },\n  \"program\": {\n    \"dtype\": \"json\",\n    \"pin\": \"input\"\n  },\n  \"uniforms\": {\n    \"dtype\": \"json\",\n    \"pin\": \"input\"\n  },\n  \"repaint\": {\n    \"dtype\": \"signal\",\n    \"pin\": \"output\"\n  },\n  \"paint\": {\n    \"dtype\": \"signal\",\n    \"pin\": \"input\"\n  },\n  \"init\": {\n    \"dtype\": \"signal\",\n    \"pin\": \"input\"\n  },\n  \"vertex_shader\": {\n    \"dtype\": [\n      \"text\",\n      \"code\",\n      \"vertexshader\"\n    ],\n    \"pin\": \"input\"\n  }\n}"
+          },
+          "signal1": {
+            "dtype": "signal",
+            "owner": "glprogram.rc"
+          },
+          "signal2": {
+            "dtype": "signal",
+            "owner": "glprogram.glwindow"
+          },
+          "signal3": {
+            "dtype": "signal",
+            "owner": "glprogram.glwindow"
+          },
+          "signal4": {
+            "dtype": "signal",
+            "owner": "glprogram.glwindow"
+          }
+        }
+      },
+      "gravity": {
+        "dtype": "float",
+        "resource": {
+          "filepath": null,
+          "lib": null,
+          "mode": null,
+          "save_policy": 1
+        },
+        "data": "0.2"
+      },
+      "init": {
+        "type": "reactor",
+        "mode": "sync",
+        "params": {
+          "trigger": {
+            "dtype": "signal",
+            "pin": "output"
+          }
+        }
+      },
+      "link_frag_shader": {
+        "type": "context",
+        "like_worker": true,
+        "like_cell": false,
+        "pins": {
+          "filepath": [
+            "ExportedInputPin",
+            "link_frag_shader.rc.filepath"
+          ],
+          "latency": [
+            "ExportedInputPin",
+            "link_frag_shader.rc.latency"
+          ],
+          "value": [
+            "ExportedEditPin",
+            "link_frag_shader.rc.value"
+          ]
+        },
+        "auto": [
+          "cell1",
+          "cell2",
+          "cell3"
+        ],
+        "children": {
+          "cell1": {
+            "dtype": [
+              "text",
+              "code",
+              "python"
+            ],
+            "resource": {
+              "filepath": "/cell-filelink-start.py",
+              "lib": true,
+              "mode": 2,
+              "save_policy": 1
+            },
+            "data": "if __name__ == \"__main__\":\n    #test with ipython -i\n    import sys, os\n\n    class dummy:\n        pass\n\n    class EditPin:\n        def __init__(self, value):\n            self.value = value\n            self.defined = True\n        def set(self, value):\n            print(\"SET\", value)\n            self.value = value\n        def get(self):\n            return self.value\n\n    class Getter:\n        def __init__(self, arg):\n            self.arg = arg\n        def get(self):\n            return self.arg\n    PINS = dummy()\n    PINS.value = EditPin(\"test\")\n    directory = sys.argv[1]\n    filename = sys.argv[2]\n    PINS.filepath = Getter(os.path.join(directory, filename))\n    PINS.latency = Getter(float(sys.argv[3]))\n    def serializer(v):\n        return str(v.get())\n    print(\"Edit in \" + filepath.get())\nelse:\n    from seamless.dtypes import serialize\n    def serializer(v):\n        return serialize(v._dtype, v.get())\n\n\nimport os, time, functools, traceback\nfrom threading import Thread, RLock, Event\nlast_value = None\nlast_serialized_value = None\nlast_exc = None\nlast_mtime = None\n\ndef write_file(fpath):\n    global last_mtime, last_value, last_serialized_value\n    if not PINS.value.defined:\n        last_mtime = -1 #will trigger a file read\n        return\n    if last_value == PINS.value.get():\n        return\n    val = serializer(PINS.value)\n    if last_serialized_value == val:\n        return\n    with lock:\n        if last_serialized_value != val:\n            #print(\"WRITE\", val)\n            if PINS.value._dtype == \"object\":\n                with open(fpath, \"wb\") as f:\n                    f.write(val)\n                    last_value = PINS.value.get()\n                    last_serialized_value = val\n            else:\n                with open(fpath, \"w\", encoding=\"utf-8\") as f:\n                    f.write(val)\n                    last_value = PINS.value.get()\n                    last_serialized_value = val\n            last_time = time.time()\n            try:\n                stat = os.stat(fpath)\n                last_mtime = stat.st_mtime\n            except Exception:\n                pass\n\nsleeptime = 0.01\n\ndef poll():\n    global last_time, last_mtime, last_value, last_serialized_value, last_exc\n    fpath = PINS.filepath.get()\n    while 1:\n        sleeps = int(PINS.latency.get() / sleeptime + 0.9999)\n        for n in range(sleeps):\n            time.sleep(sleeptime)\n            if terminate.is_set():\n                break\n        if terminate.is_set():\n            break\n        curr_time = time.time()\n        last_time = curr_time\n        if not os.path.exists(fpath):\n            try:\n                write_file(fpath)\n            except Exception:\n                exc = traceback.format_exc()\n                if exc != last_exc:\n                    print(exc)\n                    last_exc = exc\n        else:\n            with lock:\n                stat = os.stat(fpath)\n                try:\n                    if last_mtime is None or stat.st_mtime > last_mtime:\n                        data = None\n                        if PINS.value._dtype == \"object\":\n                            with open(fpath, \"rb\") as f:\n                                data = f.read()\n                        else:\n                            with open(fpath, encoding=\"utf-8\") as f:\n                                data = f.read()\n                        if data is not None:\n                            if last_serialized_value != data:\n                                #print(\"LOAD\")\n                                PINS.value.set(data)\n                                last_value = None\n                                last_serialized_value = data\n                        last_mtime = stat.st_mtime\n                except Exception:\n                    exc = traceback.format_exc()\n                    if exc != last_exc:\n                        print(exc)\n                        last_exc = exc\n\nterminate = Event()\nt = Thread(target=poll)\nt.setDaemon(True)\nlock = RLock()\nwrite_file(PINS.filepath.get())\nt.start()\n"
+          },
+          "cell2": {
+            "dtype": [
+              "text",
+              "code",
+              "python"
+            ],
+            "resource": {
+              "filepath": null,
+              "lib": null,
+              "mode": null,
+              "save_policy": 1
+            },
+            "data": "write_file(PINS.filepath.get())"
+          },
+          "cell3": {
+            "dtype": [
+              "text",
+              "code",
+              "python"
+            ],
+            "resource": {
+              "filepath": null,
+              "lib": null,
+              "mode": null,
+              "save_policy": 1
+            },
+            "data": "terminate.set(); t.join()"
+          },
+          "rc": {
+            "type": "reactor",
+            "mode": "sync",
+            "params": {
+              "filepath": {
+                "dtype": "str",
+                "pin": "input"
+              },
+              "latency": {
+                "dtype": "float",
+                "pin": "input"
+              },
+              "value": {
+                "dtype": [
+                  "text",
+                  "code",
+                  "fragmentshader"
+                ],
+                "must_be_defined": false,
+                "pin": "edit"
+              }
+            }
+          }
+        }
+      },
+      "link_gen_program": {
+        "type": "context",
+        "like_worker": true,
+        "like_cell": false,
+        "pins": {
+          "filepath": [
+            "ExportedInputPin",
+            "link_gen_program.rc.filepath"
+          ],
+          "latency": [
+            "ExportedInputPin",
+            "link_gen_program.rc.latency"
+          ],
+          "value": [
+            "ExportedEditPin",
+            "link_gen_program.rc.value"
+          ]
+        },
+        "auto": [
+          "cell1",
+          "cell2",
+          "cell3"
+        ],
+        "children": {
+          "cell1": {
+            "dtype": [
+              "text",
+              "code",
+              "python"
+            ],
+            "resource": {
+              "filepath": "/cell-filelink-start.py",
+              "lib": true,
+              "mode": 2,
+              "save_policy": 1
+            },
+            "data": "if __name__ == \"__main__\":\n    #test with ipython -i\n    import sys, os\n\n    class dummy:\n        pass\n\n    class EditPin:\n        def __init__(self, value):\n            self.value = value\n            self.defined = True\n        def set(self, value):\n            print(\"SET\", value)\n            self.value = value\n        def get(self):\n            return self.value\n\n    class Getter:\n        def __init__(self, arg):\n            self.arg = arg\n        def get(self):\n            return self.arg\n    PINS = dummy()\n    PINS.value = EditPin(\"test\")\n    directory = sys.argv[1]\n    filename = sys.argv[2]\n    PINS.filepath = Getter(os.path.join(directory, filename))\n    PINS.latency = Getter(float(sys.argv[3]))\n    def serializer(v):\n        return str(v.get())\n    print(\"Edit in \" + filepath.get())\nelse:\n    from seamless.dtypes import serialize\n    def serializer(v):\n        return serialize(v._dtype, v.get())\n\n\nimport os, time, functools, traceback\nfrom threading import Thread, RLock, Event\nlast_value = None\nlast_serialized_value = None\nlast_exc = None\nlast_mtime = None\n\ndef write_file(fpath):\n    global last_mtime, last_value, last_serialized_value\n    if not PINS.value.defined:\n        last_mtime = -1 #will trigger a file read\n        return\n    if last_value == PINS.value.get():\n        return\n    val = serializer(PINS.value)\n    if last_serialized_value == val:\n        return\n    with lock:\n        if last_serialized_value != val:\n            #print(\"WRITE\", val)\n            if PINS.value._dtype == \"object\":\n                with open(fpath, \"wb\") as f:\n                    f.write(val)\n                    last_value = PINS.value.get()\n                    last_serialized_value = val\n            else:\n                with open(fpath, \"w\", encoding=\"utf-8\") as f:\n                    f.write(val)\n                    last_value = PINS.value.get()\n                    last_serialized_value = val\n            last_time = time.time()\n            try:\n                stat = os.stat(fpath)\n                last_mtime = stat.st_mtime\n            except Exception:\n                pass\n\nsleeptime = 0.01\n\ndef poll():\n    global last_time, last_mtime, last_value, last_serialized_value, last_exc\n    fpath = PINS.filepath.get()\n    while 1:\n        sleeps = int(PINS.latency.get() / sleeptime + 0.9999)\n        for n in range(sleeps):\n            time.sleep(sleeptime)\n            if terminate.is_set():\n                break\n        if terminate.is_set():\n            break\n        curr_time = time.time()\n        last_time = curr_time\n        if not os.path.exists(fpath):\n            try:\n                write_file(fpath)\n            except Exception:\n                exc = traceback.format_exc()\n                if exc != last_exc:\n                    print(exc)\n                    last_exc = exc\n        else:\n            with lock:\n                stat = os.stat(fpath)\n                try:\n                    if last_mtime is None or stat.st_mtime > last_mtime:\n                        data = None\n                        if PINS.value._dtype == \"object\":\n                            with open(fpath, \"rb\") as f:\n                                data = f.read()\n                        else:\n                            with open(fpath, encoding=\"utf-8\") as f:\n                                data = f.read()\n                        if data is not None:\n                            if last_serialized_value != data:\n                                #print(\"LOAD\")\n                                PINS.value.set(data)\n                                last_value = None\n                                last_serialized_value = data\n                        last_mtime = stat.st_mtime\n                except Exception:\n                    exc = traceback.format_exc()\n                    if exc != last_exc:\n                        print(exc)\n                        last_exc = exc\n\nterminate = Event()\nt = Thread(target=poll)\nt.setDaemon(True)\nlock = RLock()\nwrite_file(PINS.filepath.get())\nt.start()\n"
+          },
+          "cell2": {
+            "dtype": [
+              "text",
+              "code",
+              "python"
+            ],
+            "resource": {
+              "filepath": null,
+              "lib": null,
+              "mode": null,
+              "save_policy": 1
+            },
+            "data": "write_file(PINS.filepath.get())"
+          },
+          "cell3": {
+            "dtype": [
+              "text",
+              "code",
+              "python"
+            ],
+            "resource": {
+              "filepath": null,
+              "lib": null,
+              "mode": null,
+              "save_policy": 1
+            },
+            "data": "terminate.set(); t.join()"
+          },
+          "rc": {
+            "type": "reactor",
+            "mode": "sync",
+            "params": {
+              "filepath": {
+                "dtype": "str",
+                "pin": "input"
+              },
+              "latency": {
+                "dtype": "float",
+                "pin": "input"
+              },
+              "value": {
+                "dtype": [
+                  "text",
+                  "code",
+                  "python"
+                ],
+                "must_be_defined": false,
+                "pin": "edit"
+              }
+            }
+          }
+        }
+      },
+      "link_gen_texture": {
+        "type": "context",
+        "like_worker": true,
+        "like_cell": false,
+        "pins": {
+          "filepath": [
+            "ExportedInputPin",
+            "link_gen_texture.rc.filepath"
+          ],
+          "latency": [
+            "ExportedInputPin",
+            "link_gen_texture.rc.latency"
+          ],
+          "value": [
+            "ExportedEditPin",
+            "link_gen_texture.rc.value"
+          ]
+        },
+        "auto": [
+          "cell1",
+          "cell2",
+          "cell3"
+        ],
+        "children": {
+          "cell1": {
+            "dtype": [
+              "text",
+              "code",
+              "python"
+            ],
+            "resource": {
+              "filepath": "/cell-filelink-start.py",
+              "lib": true,
+              "mode": 2,
+              "save_policy": 1
+            },
+            "data": "if __name__ == \"__main__\":\n    #test with ipython -i\n    import sys, os\n\n    class dummy:\n        pass\n\n    class EditPin:\n        def __init__(self, value):\n            self.value = value\n            self.defined = True\n        def set(self, value):\n            print(\"SET\", value)\n            self.value = value\n        def get(self):\n            return self.value\n\n    class Getter:\n        def __init__(self, arg):\n            self.arg = arg\n        def get(self):\n            return self.arg\n    PINS = dummy()\n    PINS.value = EditPin(\"test\")\n    directory = sys.argv[1]\n    filename = sys.argv[2]\n    PINS.filepath = Getter(os.path.join(directory, filename))\n    PINS.latency = Getter(float(sys.argv[3]))\n    def serializer(v):\n        return str(v.get())\n    print(\"Edit in \" + filepath.get())\nelse:\n    from seamless.dtypes import serialize\n    def serializer(v):\n        return serialize(v._dtype, v.get())\n\n\nimport os, time, functools, traceback\nfrom threading import Thread, RLock, Event\nlast_value = None\nlast_serialized_value = None\nlast_exc = None\nlast_mtime = None\n\ndef write_file(fpath):\n    global last_mtime, last_value, last_serialized_value\n    if not PINS.value.defined:\n        last_mtime = -1 #will trigger a file read\n        return\n    if last_value == PINS.value.get():\n        return\n    val = serializer(PINS.value)\n    if last_serialized_value == val:\n        return\n    with lock:\n        if last_serialized_value != val:\n            #print(\"WRITE\", val)\n            if PINS.value._dtype == \"object\":\n                with open(fpath, \"wb\") as f:\n                    f.write(val)\n                    last_value = PINS.value.get()\n                    last_serialized_value = val\n            else:\n                with open(fpath, \"w\", encoding=\"utf-8\") as f:\n                    f.write(val)\n                    last_value = PINS.value.get()\n                    last_serialized_value = val\n            last_time = time.time()\n            try:\n                stat = os.stat(fpath)\n                last_mtime = stat.st_mtime\n            except Exception:\n                pass\n\nsleeptime = 0.01\n\ndef poll():\n    global last_time, last_mtime, last_value, last_serialized_value, last_exc\n    fpath = PINS.filepath.get()\n    while 1:\n        sleeps = int(PINS.latency.get() / sleeptime + 0.9999)\n        for n in range(sleeps):\n            time.sleep(sleeptime)\n            if terminate.is_set():\n                break\n        if terminate.is_set():\n            break\n        curr_time = time.time()\n        last_time = curr_time\n        if not os.path.exists(fpath):\n            try:\n                write_file(fpath)\n            except Exception:\n                exc = traceback.format_exc()\n                if exc != last_exc:\n                    print(exc)\n                    last_exc = exc\n        else:\n            with lock:\n                stat = os.stat(fpath)\n                try:\n                    if last_mtime is None or stat.st_mtime > last_mtime:\n                        data = None\n                        if PINS.value._dtype == \"object\":\n                            with open(fpath, \"rb\") as f:\n                                data = f.read()\n                        else:\n                            with open(fpath, encoding=\"utf-8\") as f:\n                                data = f.read()\n                        if data is not None:\n                            if last_serialized_value != data:\n                                #print(\"LOAD\")\n                                PINS.value.set(data)\n                                last_value = None\n                                last_serialized_value = data\n                        last_mtime = stat.st_mtime\n                except Exception:\n                    exc = traceback.format_exc()\n                    if exc != last_exc:\n                        print(exc)\n                        last_exc = exc\n\nterminate = Event()\nt = Thread(target=poll)\nt.setDaemon(True)\nlock = RLock()\nwrite_file(PINS.filepath.get())\nt.start()\n"
+          },
+          "cell2": {
+            "dtype": [
+              "text",
+              "code",
+              "python"
+            ],
+            "resource": {
+              "filepath": null,
+              "lib": null,
+              "mode": null,
+              "save_policy": 1
+            },
+            "data": "write_file(PINS.filepath.get())"
+          },
+          "cell3": {
+            "dtype": [
+              "text",
+              "code",
+              "python"
+            ],
+            "resource": {
+              "filepath": null,
+              "lib": null,
+              "mode": null,
+              "save_policy": 1
+            },
+            "data": "terminate.set(); t.join()"
+          },
+          "rc": {
+            "type": "reactor",
+            "mode": "sync",
+            "params": {
+              "filepath": {
+                "dtype": "str",
+                "pin": "input"
+              },
+              "latency": {
+                "dtype": "float",
+                "pin": "input"
+              },
+              "value": {
+                "dtype": [
+                  "text",
+                  "code",
+                  "python"
+                ],
+                "must_be_defined": false,
+                "pin": "edit"
+              }
+            }
+          }
+        }
+      },
+      "link_gen_uniforms_start": {
+        "type": "context",
+        "like_worker": true,
+        "like_cell": false,
+        "pins": {
+          "filepath": [
+            "ExportedInputPin",
+            "link_gen_uniforms_start.rc.filepath"
+          ],
+          "latency": [
+            "ExportedInputPin",
+            "link_gen_uniforms_start.rc.latency"
+          ],
+          "value": [
+            "ExportedEditPin",
+            "link_gen_uniforms_start.rc.value"
+          ]
+        },
+        "auto": [
+          "cell1",
+          "cell2",
+          "cell3"
+        ],
+        "children": {
+          "cell1": {
+            "dtype": [
+              "text",
+              "code",
+              "python"
+            ],
+            "resource": {
+              "filepath": "/cell-filelink-start.py",
+              "lib": true,
+              "mode": 2,
+              "save_policy": 1
+            },
+            "data": "if __name__ == \"__main__\":\n    #test with ipython -i\n    import sys, os\n\n    class dummy:\n        pass\n\n    class EditPin:\n        def __init__(self, value):\n            self.value = value\n            self.defined = True\n        def set(self, value):\n            print(\"SET\", value)\n            self.value = value\n        def get(self):\n            return self.value\n\n    class Getter:\n        def __init__(self, arg):\n            self.arg = arg\n        def get(self):\n            return self.arg\n    PINS = dummy()\n    PINS.value = EditPin(\"test\")\n    directory = sys.argv[1]\n    filename = sys.argv[2]\n    PINS.filepath = Getter(os.path.join(directory, filename))\n    PINS.latency = Getter(float(sys.argv[3]))\n    def serializer(v):\n        return str(v.get())\n    print(\"Edit in \" + filepath.get())\nelse:\n    from seamless.dtypes import serialize\n    def serializer(v):\n        return serialize(v._dtype, v.get())\n\n\nimport os, time, functools, traceback\nfrom threading import Thread, RLock, Event\nlast_value = None\nlast_serialized_value = None\nlast_exc = None\nlast_mtime = None\n\ndef write_file(fpath):\n    global last_mtime, last_value, last_serialized_value\n    if not PINS.value.defined:\n        last_mtime = -1 #will trigger a file read\n        return\n    if last_value == PINS.value.get():\n        return\n    val = serializer(PINS.value)\n    if last_serialized_value == val:\n        return\n    with lock:\n        if last_serialized_value != val:\n            #print(\"WRITE\", val)\n            if PINS.value._dtype == \"object\":\n                with open(fpath, \"wb\") as f:\n                    f.write(val)\n                    last_value = PINS.value.get()\n                    last_serialized_value = val\n            else:\n                with open(fpath, \"w\", encoding=\"utf-8\") as f:\n                    f.write(val)\n                    last_value = PINS.value.get()\n                    last_serialized_value = val\n            last_time = time.time()\n            try:\n                stat = os.stat(fpath)\n                last_mtime = stat.st_mtime\n            except Exception:\n                pass\n\nsleeptime = 0.01\n\ndef poll():\n    global last_time, last_mtime, last_value, last_serialized_value, last_exc\n    fpath = PINS.filepath.get()\n    while 1:\n        sleeps = int(PINS.latency.get() / sleeptime + 0.9999)\n        for n in range(sleeps):\n            time.sleep(sleeptime)\n            if terminate.is_set():\n                break\n        if terminate.is_set():\n            break\n        curr_time = time.time()\n        last_time = curr_time\n        if not os.path.exists(fpath):\n            try:\n                write_file(fpath)\n            except Exception:\n                exc = traceback.format_exc()\n                if exc != last_exc:\n                    print(exc)\n                    last_exc = exc\n        else:\n            with lock:\n                stat = os.stat(fpath)\n                try:\n                    if last_mtime is None or stat.st_mtime > last_mtime:\n                        data = None\n                        if PINS.value._dtype == \"object\":\n                            with open(fpath, \"rb\") as f:\n                                data = f.read()\n                        else:\n                            with open(fpath, encoding=\"utf-8\") as f:\n                                data = f.read()\n                        if data is not None:\n                            if last_serialized_value != data:\n                                #print(\"LOAD\")\n                                PINS.value.set(data)\n                                last_value = None\n                                last_serialized_value = data\n                        last_mtime = stat.st_mtime\n                except Exception:\n                    exc = traceback.format_exc()\n                    if exc != last_exc:\n                        print(exc)\n                        last_exc = exc\n\nterminate = Event()\nt = Thread(target=poll)\nt.setDaemon(True)\nlock = RLock()\nwrite_file(PINS.filepath.get())\nt.start()\n"
+          },
+          "cell2": {
+            "dtype": [
+              "text",
+              "code",
+              "python"
+            ],
+            "resource": {
+              "filepath": null,
+              "lib": null,
+              "mode": null,
+              "save_policy": 1
+            },
+            "data": "write_file(PINS.filepath.get())"
+          },
+          "cell3": {
+            "dtype": [
+              "text",
+              "code",
+              "python"
+            ],
+            "resource": {
+              "filepath": null,
+              "lib": null,
+              "mode": null,
+              "save_policy": 1
+            },
+            "data": "terminate.set(); t.join()"
+          },
+          "rc": {
+            "type": "reactor",
+            "mode": "sync",
+            "params": {
+              "filepath": {
+                "dtype": "str",
+                "pin": "input"
+              },
+              "latency": {
+                "dtype": "float",
+                "pin": "input"
+              },
+              "value": {
+                "dtype": [
+                  "text",
+                  "code",
+                  "python"
+                ],
+                "must_be_defined": false,
+                "pin": "edit"
+              }
+            }
+          }
+        }
+      },
+      "link_gen_uniforms_update": {
+        "type": "context",
+        "like_worker": true,
+        "like_cell": false,
+        "pins": {
+          "filepath": [
+            "ExportedInputPin",
+            "link_gen_uniforms_update.rc.filepath"
+          ],
+          "latency": [
+            "ExportedInputPin",
+            "link_gen_uniforms_update.rc.latency"
+          ],
+          "value": [
+            "ExportedEditPin",
+            "link_gen_uniforms_update.rc.value"
+          ]
+        },
+        "auto": [
+          "cell1",
+          "cell2",
+          "cell3"
+        ],
+        "children": {
+          "cell1": {
+            "dtype": [
+              "text",
+              "code",
+              "python"
+            ],
+            "resource": {
+              "filepath": "/cell-filelink-start.py",
+              "lib": true,
+              "mode": 2,
+              "save_policy": 1
+            },
+            "data": "if __name__ == \"__main__\":\n    #test with ipython -i\n    import sys, os\n\n    class dummy:\n        pass\n\n    class EditPin:\n        def __init__(self, value):\n            self.value = value\n            self.defined = True\n        def set(self, value):\n            print(\"SET\", value)\n            self.value = value\n        def get(self):\n            return self.value\n\n    class Getter:\n        def __init__(self, arg):\n            self.arg = arg\n        def get(self):\n            return self.arg\n    PINS = dummy()\n    PINS.value = EditPin(\"test\")\n    directory = sys.argv[1]\n    filename = sys.argv[2]\n    PINS.filepath = Getter(os.path.join(directory, filename))\n    PINS.latency = Getter(float(sys.argv[3]))\n    def serializer(v):\n        return str(v.get())\n    print(\"Edit in \" + filepath.get())\nelse:\n    from seamless.dtypes import serialize\n    def serializer(v):\n        return serialize(v._dtype, v.get())\n\n\nimport os, time, functools, traceback\nfrom threading import Thread, RLock, Event\nlast_value = None\nlast_serialized_value = None\nlast_exc = None\nlast_mtime = None\n\ndef write_file(fpath):\n    global last_mtime, last_value, last_serialized_value\n    if not PINS.value.defined:\n        last_mtime = -1 #will trigger a file read\n        return\n    if last_value == PINS.value.get():\n        return\n    val = serializer(PINS.value)\n    if last_serialized_value == val:\n        return\n    with lock:\n        if last_serialized_value != val:\n            #print(\"WRITE\", val)\n            if PINS.value._dtype == \"object\":\n                with open(fpath, \"wb\") as f:\n                    f.write(val)\n                    last_value = PINS.value.get()\n                    last_serialized_value = val\n            else:\n                with open(fpath, \"w\", encoding=\"utf-8\") as f:\n                    f.write(val)\n                    last_value = PINS.value.get()\n                    last_serialized_value = val\n            last_time = time.time()\n            try:\n                stat = os.stat(fpath)\n                last_mtime = stat.st_mtime\n            except Exception:\n                pass\n\nsleeptime = 0.01\n\ndef poll():\n    global last_time, last_mtime, last_value, last_serialized_value, last_exc\n    fpath = PINS.filepath.get()\n    while 1:\n        sleeps = int(PINS.latency.get() / sleeptime + 0.9999)\n        for n in range(sleeps):\n            time.sleep(sleeptime)\n            if terminate.is_set():\n                break\n        if terminate.is_set():\n            break\n        curr_time = time.time()\n        last_time = curr_time\n        if not os.path.exists(fpath):\n            try:\n                write_file(fpath)\n            except Exception:\n                exc = traceback.format_exc()\n                if exc != last_exc:\n                    print(exc)\n                    last_exc = exc\n        else:\n            with lock:\n                stat = os.stat(fpath)\n                try:\n                    if last_mtime is None or stat.st_mtime > last_mtime:\n                        data = None\n                        if PINS.value._dtype == \"object\":\n                            with open(fpath, \"rb\") as f:\n                                data = f.read()\n                        else:\n                            with open(fpath, encoding=\"utf-8\") as f:\n                                data = f.read()\n                        if data is not None:\n                            if last_serialized_value != data:\n                                #print(\"LOAD\")\n                                PINS.value.set(data)\n                                last_value = None\n                                last_serialized_value = data\n                        last_mtime = stat.st_mtime\n                except Exception:\n                    exc = traceback.format_exc()\n                    if exc != last_exc:\n                        print(exc)\n                        last_exc = exc\n\nterminate = Event()\nt = Thread(target=poll)\nt.setDaemon(True)\nlock = RLock()\nwrite_file(PINS.filepath.get())\nt.start()\n"
+          },
+          "cell2": {
+            "dtype": [
+              "text",
+              "code",
+              "python"
+            ],
+            "resource": {
+              "filepath": null,
+              "lib": null,
+              "mode": null,
+              "save_policy": 1
+            },
+            "data": "write_file(PINS.filepath.get())"
+          },
+          "cell3": {
+            "dtype": [
+              "text",
+              "code",
+              "python"
+            ],
+            "resource": {
+              "filepath": null,
+              "lib": null,
+              "mode": null,
+              "save_policy": 1
+            },
+            "data": "terminate.set(); t.join()"
+          },
+          "rc": {
+            "type": "reactor",
+            "mode": "sync",
+            "params": {
+              "filepath": {
+                "dtype": "str",
+                "pin": "input"
+              },
+              "latency": {
+                "dtype": "float",
+                "pin": "input"
+              },
+              "value": {
+                "dtype": [
+                  "text",
+                  "code",
+                  "python"
+                ],
+                "must_be_defined": false,
+                "pin": "edit"
+              }
+            }
+          }
+        }
+      },
+      "link_gen_vertexdata": {
+        "type": "context",
+        "like_worker": true,
+        "like_cell": false,
+        "pins": {
+          "filepath": [
+            "ExportedInputPin",
+            "link_gen_vertexdata.rc.filepath"
+          ],
+          "latency": [
+            "ExportedInputPin",
+            "link_gen_vertexdata.rc.latency"
+          ],
+          "value": [
+            "ExportedEditPin",
+            "link_gen_vertexdata.rc.value"
+          ]
+        },
+        "auto": [
+          "cell1",
+          "cell2",
+          "cell3"
+        ],
+        "children": {
+          "cell1": {
+            "dtype": [
+              "text",
+              "code",
+              "python"
+            ],
+            "resource": {
+              "filepath": "/cell-filelink-start.py",
+              "lib": true,
+              "mode": 2,
+              "save_policy": 1
+            },
+            "data": "if __name__ == \"__main__\":\n    #test with ipython -i\n    import sys, os\n\n    class dummy:\n        pass\n\n    class EditPin:\n        def __init__(self, value):\n            self.value = value\n            self.defined = True\n        def set(self, value):\n            print(\"SET\", value)\n            self.value = value\n        def get(self):\n            return self.value\n\n    class Getter:\n        def __init__(self, arg):\n            self.arg = arg\n        def get(self):\n            return self.arg\n    PINS = dummy()\n    PINS.value = EditPin(\"test\")\n    directory = sys.argv[1]\n    filename = sys.argv[2]\n    PINS.filepath = Getter(os.path.join(directory, filename))\n    PINS.latency = Getter(float(sys.argv[3]))\n    def serializer(v):\n        return str(v.get())\n    print(\"Edit in \" + filepath.get())\nelse:\n    from seamless.dtypes import serialize\n    def serializer(v):\n        return serialize(v._dtype, v.get())\n\n\nimport os, time, functools, traceback\nfrom threading import Thread, RLock, Event\nlast_value = None\nlast_serialized_value = None\nlast_exc = None\nlast_mtime = None\n\ndef write_file(fpath):\n    global last_mtime, last_value, last_serialized_value\n    if not PINS.value.defined:\n        last_mtime = -1 #will trigger a file read\n        return\n    if last_value == PINS.value.get():\n        return\n    val = serializer(PINS.value)\n    if last_serialized_value == val:\n        return\n    with lock:\n        if last_serialized_value != val:\n            #print(\"WRITE\", val)\n            if PINS.value._dtype == \"object\":\n                with open(fpath, \"wb\") as f:\n                    f.write(val)\n                    last_value = PINS.value.get()\n                    last_serialized_value = val\n            else:\n                with open(fpath, \"w\", encoding=\"utf-8\") as f:\n                    f.write(val)\n                    last_value = PINS.value.get()\n                    last_serialized_value = val\n            last_time = time.time()\n            try:\n                stat = os.stat(fpath)\n                last_mtime = stat.st_mtime\n            except Exception:\n                pass\n\nsleeptime = 0.01\n\ndef poll():\n    global last_time, last_mtime, last_value, last_serialized_value, last_exc\n    fpath = PINS.filepath.get()\n    while 1:\n        sleeps = int(PINS.latency.get() / sleeptime + 0.9999)\n        for n in range(sleeps):\n            time.sleep(sleeptime)\n            if terminate.is_set():\n                break\n        if terminate.is_set():\n            break\n        curr_time = time.time()\n        last_time = curr_time\n        if not os.path.exists(fpath):\n            try:\n                write_file(fpath)\n            except Exception:\n                exc = traceback.format_exc()\n                if exc != last_exc:\n                    print(exc)\n                    last_exc = exc\n        else:\n            with lock:\n                stat = os.stat(fpath)\n                try:\n                    if last_mtime is None or stat.st_mtime > last_mtime:\n                        data = None\n                        if PINS.value._dtype == \"object\":\n                            with open(fpath, \"rb\") as f:\n                                data = f.read()\n                        else:\n                            with open(fpath, encoding=\"utf-8\") as f:\n                                data = f.read()\n                        if data is not None:\n                            if last_serialized_value != data:\n                                #print(\"LOAD\")\n                                PINS.value.set(data)\n                                last_value = None\n                                last_serialized_value = data\n                        last_mtime = stat.st_mtime\n                except Exception:\n                    exc = traceback.format_exc()\n                    if exc != last_exc:\n                        print(exc)\n                        last_exc = exc\n\nterminate = Event()\nt = Thread(target=poll)\nt.setDaemon(True)\nlock = RLock()\nwrite_file(PINS.filepath.get())\nt.start()\n"
+          },
+          "cell2": {
+            "dtype": [
+              "text",
+              "code",
+              "python"
+            ],
+            "resource": {
+              "filepath": null,
+              "lib": null,
+              "mode": null,
+              "save_policy": 1
+            },
+            "data": "write_file(PINS.filepath.get())"
+          },
+          "cell3": {
+            "dtype": [
+              "text",
+              "code",
+              "python"
+            ],
+            "resource": {
+              "filepath": null,
+              "lib": null,
+              "mode": null,
+              "save_policy": 1
+            },
+            "data": "terminate.set(); t.join()"
+          },
+          "rc": {
+            "type": "reactor",
+            "mode": "sync",
+            "params": {
+              "filepath": {
+                "dtype": "str",
+                "pin": "input"
+              },
+              "latency": {
+                "dtype": "float",
+                "pin": "input"
+              },
+              "value": {
+                "dtype": [
+                  "text",
+                  "code",
+                  "python"
+                ],
+                "must_be_defined": false,
+                "pin": "edit"
+              }
+            }
+          }
+        }
+      },
+      "link_params_gen_texture": {
+        "type": "context",
+        "like_worker": true,
+        "like_cell": false,
+        "pins": {
+          "filepath": [
+            "ExportedInputPin",
+            "link_params_gen_texture.rc.filepath"
+          ],
+          "latency": [
+            "ExportedInputPin",
+            "link_params_gen_texture.rc.latency"
+          ],
+          "value": [
+            "ExportedEditPin",
+            "link_params_gen_texture.rc.value"
+          ]
+        },
+        "auto": [
+          "cell1",
+          "cell2",
+          "cell3"
+        ],
+        "children": {
+          "cell1": {
+            "dtype": [
+              "text",
+              "code",
+              "python"
+            ],
+            "resource": {
+              "filepath": "/cell-filelink-start.py",
+              "lib": true,
+              "mode": 2,
+              "save_policy": 1
+            },
+            "data": "if __name__ == \"__main__\":\n    #test with ipython -i\n    import sys, os\n\n    class dummy:\n        pass\n\n    class EditPin:\n        def __init__(self, value):\n            self.value = value\n            self.defined = True\n        def set(self, value):\n            print(\"SET\", value)\n            self.value = value\n        def get(self):\n            return self.value\n\n    class Getter:\n        def __init__(self, arg):\n            self.arg = arg\n        def get(self):\n            return self.arg\n    PINS = dummy()\n    PINS.value = EditPin(\"test\")\n    directory = sys.argv[1]\n    filename = sys.argv[2]\n    PINS.filepath = Getter(os.path.join(directory, filename))\n    PINS.latency = Getter(float(sys.argv[3]))\n    def serializer(v):\n        return str(v.get())\n    print(\"Edit in \" + filepath.get())\nelse:\n    from seamless.dtypes import serialize\n    def serializer(v):\n        return serialize(v._dtype, v.get())\n\n\nimport os, time, functools, traceback\nfrom threading import Thread, RLock, Event\nlast_value = None\nlast_serialized_value = None\nlast_exc = None\nlast_mtime = None\n\ndef write_file(fpath):\n    global last_mtime, last_value, last_serialized_value\n    if not PINS.value.defined:\n        last_mtime = -1 #will trigger a file read\n        return\n    if last_value == PINS.value.get():\n        return\n    val = serializer(PINS.value)\n    if last_serialized_value == val:\n        return\n    with lock:\n        if last_serialized_value != val:\n            #print(\"WRITE\", val)\n            if PINS.value._dtype == \"object\":\n                with open(fpath, \"wb\") as f:\n                    f.write(val)\n                    last_value = PINS.value.get()\n                    last_serialized_value = val\n            else:\n                with open(fpath, \"w\", encoding=\"utf-8\") as f:\n                    f.write(val)\n                    last_value = PINS.value.get()\n                    last_serialized_value = val\n            last_time = time.time()\n            try:\n                stat = os.stat(fpath)\n                last_mtime = stat.st_mtime\n            except Exception:\n                pass\n\nsleeptime = 0.01\n\ndef poll():\n    global last_time, last_mtime, last_value, last_serialized_value, last_exc\n    fpath = PINS.filepath.get()\n    while 1:\n        sleeps = int(PINS.latency.get() / sleeptime + 0.9999)\n        for n in range(sleeps):\n            time.sleep(sleeptime)\n            if terminate.is_set():\n                break\n        if terminate.is_set():\n            break\n        curr_time = time.time()\n        last_time = curr_time\n        if not os.path.exists(fpath):\n            try:\n                write_file(fpath)\n            except Exception:\n                exc = traceback.format_exc()\n                if exc != last_exc:\n                    print(exc)\n                    last_exc = exc\n        else:\n            with lock:\n                stat = os.stat(fpath)\n                try:\n                    if last_mtime is None or stat.st_mtime > last_mtime:\n                        data = None\n                        if PINS.value._dtype == \"object\":\n                            with open(fpath, \"rb\") as f:\n                                data = f.read()\n                        else:\n                            with open(fpath, encoding=\"utf-8\") as f:\n                                data = f.read()\n                        if data is not None:\n                            if last_serialized_value != data:\n                                #print(\"LOAD\")\n                                PINS.value.set(data)\n                                last_value = None\n                                last_serialized_value = data\n                        last_mtime = stat.st_mtime\n                except Exception:\n                    exc = traceback.format_exc()\n                    if exc != last_exc:\n                        print(exc)\n                        last_exc = exc\n\nterminate = Event()\nt = Thread(target=poll)\nt.setDaemon(True)\nlock = RLock()\nwrite_file(PINS.filepath.get())\nt.start()\n"
+          },
+          "cell2": {
+            "dtype": [
+              "text",
+              "code",
+              "python"
+            ],
+            "resource": {
+              "filepath": null,
+              "lib": null,
+              "mode": null,
+              "save_policy": 1
+            },
+            "data": "write_file(PINS.filepath.get())"
+          },
+          "cell3": {
+            "dtype": [
+              "text",
+              "code",
+              "python"
+            ],
+            "resource": {
+              "filepath": null,
+              "lib": null,
+              "mode": null,
+              "save_policy": 1
+            },
+            "data": "terminate.set(); t.join()"
+          },
+          "rc": {
+            "type": "reactor",
+            "mode": "sync",
+            "params": {
+              "filepath": {
+                "dtype": "str",
+                "pin": "input"
+              },
+              "latency": {
+                "dtype": "float",
+                "pin": "input"
+              },
+              "value": {
+                "dtype": [
+                  "json",
+                  "seamless",
+                  "transformer_params"
+                ],
+                "must_be_defined": false,
+                "pin": "edit"
+              }
+            }
+          }
+        }
+      },
+      "link_params_gen_uniforms": {
+        "type": "context",
+        "like_worker": true,
+        "like_cell": false,
+        "pins": {
+          "filepath": [
+            "ExportedInputPin",
+            "link_params_gen_uniforms.rc.filepath"
+          ],
+          "latency": [
+            "ExportedInputPin",
+            "link_params_gen_uniforms.rc.latency"
+          ],
+          "value": [
+            "ExportedEditPin",
+            "link_params_gen_uniforms.rc.value"
+          ]
+        },
+        "auto": [
+          "cell1",
+          "cell2",
+          "cell3"
+        ],
+        "children": {
+          "cell1": {
+            "dtype": [
+              "text",
+              "code",
+              "python"
+            ],
+            "resource": {
+              "filepath": "/cell-filelink-start.py",
+              "lib": true,
+              "mode": 2,
+              "save_policy": 1
+            },
+            "data": "if __name__ == \"__main__\":\n    #test with ipython -i\n    import sys, os\n\n    class dummy:\n        pass\n\n    class EditPin:\n        def __init__(self, value):\n            self.value = value\n            self.defined = True\n        def set(self, value):\n            print(\"SET\", value)\n            self.value = value\n        def get(self):\n            return self.value\n\n    class Getter:\n        def __init__(self, arg):\n            self.arg = arg\n        def get(self):\n            return self.arg\n    PINS = dummy()\n    PINS.value = EditPin(\"test\")\n    directory = sys.argv[1]\n    filename = sys.argv[2]\n    PINS.filepath = Getter(os.path.join(directory, filename))\n    PINS.latency = Getter(float(sys.argv[3]))\n    def serializer(v):\n        return str(v.get())\n    print(\"Edit in \" + filepath.get())\nelse:\n    from seamless.dtypes import serialize\n    def serializer(v):\n        return serialize(v._dtype, v.get())\n\n\nimport os, time, functools, traceback\nfrom threading import Thread, RLock, Event\nlast_value = None\nlast_serialized_value = None\nlast_exc = None\nlast_mtime = None\n\ndef write_file(fpath):\n    global last_mtime, last_value, last_serialized_value\n    if not PINS.value.defined:\n        last_mtime = -1 #will trigger a file read\n        return\n    if last_value == PINS.value.get():\n        return\n    val = serializer(PINS.value)\n    if last_serialized_value == val:\n        return\n    with lock:\n        if last_serialized_value != val:\n            #print(\"WRITE\", val)\n            if PINS.value._dtype == \"object\":\n                with open(fpath, \"wb\") as f:\n                    f.write(val)\n                    last_value = PINS.value.get()\n                    last_serialized_value = val\n            else:\n                with open(fpath, \"w\", encoding=\"utf-8\") as f:\n                    f.write(val)\n                    last_value = PINS.value.get()\n                    last_serialized_value = val\n            last_time = time.time()\n            try:\n                stat = os.stat(fpath)\n                last_mtime = stat.st_mtime\n            except Exception:\n                pass\n\nsleeptime = 0.01\n\ndef poll():\n    global last_time, last_mtime, last_value, last_serialized_value, last_exc\n    fpath = PINS.filepath.get()\n    while 1:\n        sleeps = int(PINS.latency.get() / sleeptime + 0.9999)\n        for n in range(sleeps):\n            time.sleep(sleeptime)\n            if terminate.is_set():\n                break\n        if terminate.is_set():\n            break\n        curr_time = time.time()\n        last_time = curr_time\n        if not os.path.exists(fpath):\n            try:\n                write_file(fpath)\n            except Exception:\n                exc = traceback.format_exc()\n                if exc != last_exc:\n                    print(exc)\n                    last_exc = exc\n        else:\n            with lock:\n                stat = os.stat(fpath)\n                try:\n                    if last_mtime is None or stat.st_mtime > last_mtime:\n                        data = None\n                        if PINS.value._dtype == \"object\":\n                            with open(fpath, \"rb\") as f:\n                                data = f.read()\n                        else:\n                            with open(fpath, encoding=\"utf-8\") as f:\n                                data = f.read()\n                        if data is not None:\n                            if last_serialized_value != data:\n                                #print(\"LOAD\")\n                                PINS.value.set(data)\n                                last_value = None\n                                last_serialized_value = data\n                        last_mtime = stat.st_mtime\n                except Exception:\n                    exc = traceback.format_exc()\n                    if exc != last_exc:\n                        print(exc)\n                        last_exc = exc\n\nterminate = Event()\nt = Thread(target=poll)\nt.setDaemon(True)\nlock = RLock()\nwrite_file(PINS.filepath.get())\nt.start()\n"
+          },
+          "cell2": {
+            "dtype": [
+              "text",
+              "code",
+              "python"
+            ],
+            "resource": {
+              "filepath": null,
+              "lib": null,
+              "mode": null,
+              "save_policy": 1
+            },
+            "data": "write_file(PINS.filepath.get())"
+          },
+          "cell3": {
+            "dtype": [
+              "text",
+              "code",
+              "python"
+            ],
+            "resource": {
+              "filepath": null,
+              "lib": null,
+              "mode": null,
+              "save_policy": 1
+            },
+            "data": "terminate.set(); t.join()"
+          },
+          "rc": {
+            "type": "reactor",
+            "mode": "sync",
+            "params": {
+              "filepath": {
+                "dtype": "str",
+                "pin": "input"
+              },
+              "latency": {
+                "dtype": "float",
+                "pin": "input"
+              },
+              "value": {
+                "dtype": [
+                  "json",
+                  "seamless",
+                  "transformer_params"
+                ],
+                "must_be_defined": false,
+                "pin": "edit"
+              }
+            }
+          }
+        }
+      },
+      "link_params_gen_vertexdata": {
+        "type": "context",
+        "like_worker": true,
+        "like_cell": false,
+        "pins": {
+          "filepath": [
+            "ExportedInputPin",
+            "link_params_gen_vertexdata.rc.filepath"
+          ],
+          "latency": [
+            "ExportedInputPin",
+            "link_params_gen_vertexdata.rc.latency"
+          ],
+          "value": [
+            "ExportedEditPin",
+            "link_params_gen_vertexdata.rc.value"
+          ]
+        },
+        "auto": [
+          "cell1",
+          "cell2",
+          "cell3"
+        ],
+        "children": {
+          "cell1": {
+            "dtype": [
+              "text",
+              "code",
+              "python"
+            ],
+            "resource": {
+              "filepath": "/cell-filelink-start.py",
+              "lib": true,
+              "mode": 2,
+              "save_policy": 1
+            },
+            "data": "if __name__ == \"__main__\":\n    #test with ipython -i\n    import sys, os\n\n    class dummy:\n        pass\n\n    class EditPin:\n        def __init__(self, value):\n            self.value = value\n            self.defined = True\n        def set(self, value):\n            print(\"SET\", value)\n            self.value = value\n        def get(self):\n            return self.value\n\n    class Getter:\n        def __init__(self, arg):\n            self.arg = arg\n        def get(self):\n            return self.arg\n    PINS = dummy()\n    PINS.value = EditPin(\"test\")\n    directory = sys.argv[1]\n    filename = sys.argv[2]\n    PINS.filepath = Getter(os.path.join(directory, filename))\n    PINS.latency = Getter(float(sys.argv[3]))\n    def serializer(v):\n        return str(v.get())\n    print(\"Edit in \" + filepath.get())\nelse:\n    from seamless.dtypes import serialize\n    def serializer(v):\n        return serialize(v._dtype, v.get())\n\n\nimport os, time, functools, traceback\nfrom threading import Thread, RLock, Event\nlast_value = None\nlast_serialized_value = None\nlast_exc = None\nlast_mtime = None\n\ndef write_file(fpath):\n    global last_mtime, last_value, last_serialized_value\n    if not PINS.value.defined:\n        last_mtime = -1 #will trigger a file read\n        return\n    if last_value == PINS.value.get():\n        return\n    val = serializer(PINS.value)\n    if last_serialized_value == val:\n        return\n    with lock:\n        if last_serialized_value != val:\n            #print(\"WRITE\", val)\n            if PINS.value._dtype == \"object\":\n                with open(fpath, \"wb\") as f:\n                    f.write(val)\n                    last_value = PINS.value.get()\n                    last_serialized_value = val\n            else:\n                with open(fpath, \"w\", encoding=\"utf-8\") as f:\n                    f.write(val)\n                    last_value = PINS.value.get()\n                    last_serialized_value = val\n            last_time = time.time()\n            try:\n                stat = os.stat(fpath)\n                last_mtime = stat.st_mtime\n            except Exception:\n                pass\n\nsleeptime = 0.01\n\ndef poll():\n    global last_time, last_mtime, last_value, last_serialized_value, last_exc\n    fpath = PINS.filepath.get()\n    while 1:\n        sleeps = int(PINS.latency.get() / sleeptime + 0.9999)\n        for n in range(sleeps):\n            time.sleep(sleeptime)\n            if terminate.is_set():\n                break\n        if terminate.is_set():\n            break\n        curr_time = time.time()\n        last_time = curr_time\n        if not os.path.exists(fpath):\n            try:\n                write_file(fpath)\n            except Exception:\n                exc = traceback.format_exc()\n                if exc != last_exc:\n                    print(exc)\n                    last_exc = exc\n        else:\n            with lock:\n                stat = os.stat(fpath)\n                try:\n                    if last_mtime is None or stat.st_mtime > last_mtime:\n                        data = None\n                        if PINS.value._dtype == \"object\":\n                            with open(fpath, \"rb\") as f:\n                                data = f.read()\n                        else:\n                            with open(fpath, encoding=\"utf-8\") as f:\n                                data = f.read()\n                        if data is not None:\n                            if last_serialized_value != data:\n                                #print(\"LOAD\")\n                                PINS.value.set(data)\n                                last_value = None\n                                last_serialized_value = data\n                        last_mtime = stat.st_mtime\n                except Exception:\n                    exc = traceback.format_exc()\n                    if exc != last_exc:\n                        print(exc)\n                        last_exc = exc\n\nterminate = Event()\nt = Thread(target=poll)\nt.setDaemon(True)\nlock = RLock()\nwrite_file(PINS.filepath.get())\nt.start()\n"
+          },
+          "cell2": {
+            "dtype": [
+              "text",
+              "code",
+              "python"
+            ],
+            "resource": {
+              "filepath": null,
+              "lib": null,
+              "mode": null,
+              "save_policy": 1
+            },
+            "data": "write_file(PINS.filepath.get())"
+          },
+          "cell3": {
+            "dtype": [
+              "text",
+              "code",
+              "python"
+            ],
+            "resource": {
+              "filepath": null,
+              "lib": null,
+              "mode": null,
+              "save_policy": 1
+            },
+            "data": "terminate.set(); t.join()"
+          },
+          "rc": {
+            "type": "reactor",
+            "mode": "sync",
+            "params": {
+              "filepath": {
+                "dtype": "str",
+                "pin": "input"
+              },
+              "latency": {
+                "dtype": "float",
+                "pin": "input"
+              },
+              "value": {
+                "dtype": [
+                  "json",
+                  "seamless",
+                  "transformer_params"
+                ],
+                "must_be_defined": false,
+                "pin": "edit"
+              }
+            }
+          }
+        }
+      },
+      "link_program_template": {
+        "type": "context",
+        "like_worker": true,
+        "like_cell": false,
+        "pins": {
+          "filepath": [
+            "ExportedInputPin",
+            "link_program_template.rc.filepath"
+          ],
+          "latency": [
+            "ExportedInputPin",
+            "link_program_template.rc.latency"
+          ],
+          "value": [
+            "ExportedEditPin",
+            "link_program_template.rc.value"
+          ]
+        },
+        "auto": [
+          "cell1",
+          "cell2",
+          "cell3"
+        ],
+        "children": {
+          "cell1": {
+            "dtype": [
+              "text",
+              "code",
+              "python"
+            ],
+            "resource": {
+              "filepath": "/cell-filelink-start.py",
+              "lib": true,
+              "mode": 2,
+              "save_policy": 1
+            },
+            "data": "if __name__ == \"__main__\":\n    #test with ipython -i\n    import sys, os\n\n    class dummy:\n        pass\n\n    class EditPin:\n        def __init__(self, value):\n            self.value = value\n            self.defined = True\n        def set(self, value):\n            print(\"SET\", value)\n            self.value = value\n        def get(self):\n            return self.value\n\n    class Getter:\n        def __init__(self, arg):\n            self.arg = arg\n        def get(self):\n            return self.arg\n    PINS = dummy()\n    PINS.value = EditPin(\"test\")\n    directory = sys.argv[1]\n    filename = sys.argv[2]\n    PINS.filepath = Getter(os.path.join(directory, filename))\n    PINS.latency = Getter(float(sys.argv[3]))\n    def serializer(v):\n        return str(v.get())\n    print(\"Edit in \" + filepath.get())\nelse:\n    from seamless.dtypes import serialize\n    def serializer(v):\n        return serialize(v._dtype, v.get())\n\n\nimport os, time, functools, traceback\nfrom threading import Thread, RLock, Event\nlast_value = None\nlast_serialized_value = None\nlast_exc = None\nlast_mtime = None\n\ndef write_file(fpath):\n    global last_mtime, last_value, last_serialized_value\n    if not PINS.value.defined:\n        last_mtime = -1 #will trigger a file read\n        return\n    if last_value == PINS.value.get():\n        return\n    val = serializer(PINS.value)\n    if last_serialized_value == val:\n        return\n    with lock:\n        if last_serialized_value != val:\n            #print(\"WRITE\", val)\n            if PINS.value._dtype == \"object\":\n                with open(fpath, \"wb\") as f:\n                    f.write(val)\n                    last_value = PINS.value.get()\n                    last_serialized_value = val\n            else:\n                with open(fpath, \"w\", encoding=\"utf-8\") as f:\n                    f.write(val)\n                    last_value = PINS.value.get()\n                    last_serialized_value = val\n            last_time = time.time()\n            try:\n                stat = os.stat(fpath)\n                last_mtime = stat.st_mtime\n            except Exception:\n                pass\n\nsleeptime = 0.01\n\ndef poll():\n    global last_time, last_mtime, last_value, last_serialized_value, last_exc\n    fpath = PINS.filepath.get()\n    while 1:\n        sleeps = int(PINS.latency.get() / sleeptime + 0.9999)\n        for n in range(sleeps):\n            time.sleep(sleeptime)\n            if terminate.is_set():\n                break\n        if terminate.is_set():\n            break\n        curr_time = time.time()\n        last_time = curr_time\n        if not os.path.exists(fpath):\n            try:\n                write_file(fpath)\n            except Exception:\n                exc = traceback.format_exc()\n                if exc != last_exc:\n                    print(exc)\n                    last_exc = exc\n        else:\n            with lock:\n                stat = os.stat(fpath)\n                try:\n                    if last_mtime is None or stat.st_mtime > last_mtime:\n                        data = None\n                        if PINS.value._dtype == \"object\":\n                            with open(fpath, \"rb\") as f:\n                                data = f.read()\n                        else:\n                            with open(fpath, encoding=\"utf-8\") as f:\n                                data = f.read()\n                        if data is not None:\n                            if last_serialized_value != data:\n                                #print(\"LOAD\")\n                                PINS.value.set(data)\n                                last_value = None\n                                last_serialized_value = data\n                        last_mtime = stat.st_mtime\n                except Exception:\n                    exc = traceback.format_exc()\n                    if exc != last_exc:\n                        print(exc)\n                        last_exc = exc\n\nterminate = Event()\nt = Thread(target=poll)\nt.setDaemon(True)\nlock = RLock()\nwrite_file(PINS.filepath.get())\nt.start()\n"
+          },
+          "cell2": {
+            "dtype": [
+              "text",
+              "code",
+              "python"
+            ],
+            "resource": {
+              "filepath": null,
+              "lib": null,
+              "mode": null,
+              "save_policy": 1
+            },
+            "data": "write_file(PINS.filepath.get())"
+          },
+          "cell3": {
+            "dtype": [
+              "text",
+              "code",
+              "python"
+            ],
+            "resource": {
+              "filepath": null,
+              "lib": null,
+              "mode": null,
+              "save_policy": 1
+            },
+            "data": "terminate.set(); t.join()"
+          },
+          "rc": {
+            "type": "reactor",
+            "mode": "sync",
+            "params": {
+              "filepath": {
+                "dtype": "str",
+                "pin": "input"
+              },
+              "latency": {
+                "dtype": "float",
+                "pin": "input"
+              },
+              "value": {
+                "dtype": "cson",
+                "must_be_defined": false,
+                "pin": "edit"
+              }
+            }
+          }
+        }
+      },
+      "link_silk_vertexdata": {
+        "type": "context",
+        "like_worker": true,
+        "like_cell": false,
+        "pins": {
+          "filepath": [
+            "ExportedInputPin",
+            "link_silk_vertexdata.rc.filepath"
+          ],
+          "latency": [
+            "ExportedInputPin",
+            "link_silk_vertexdata.rc.latency"
+          ],
+          "value": [
+            "ExportedEditPin",
+            "link_silk_vertexdata.rc.value"
+          ]
+        },
+        "auto": [
+          "cell1",
+          "cell2",
+          "cell3"
+        ],
+        "children": {
+          "cell1": {
+            "dtype": [
+              "text",
+              "code",
+              "python"
+            ],
+            "resource": {
+              "filepath": "/cell-filelink-start.py",
+              "lib": true,
+              "mode": 2,
+              "save_policy": 1
+            },
+            "data": "if __name__ == \"__main__\":\n    #test with ipython -i\n    import sys, os\n\n    class dummy:\n        pass\n\n    class EditPin:\n        def __init__(self, value):\n            self.value = value\n            self.defined = True\n        def set(self, value):\n            print(\"SET\", value)\n            self.value = value\n        def get(self):\n            return self.value\n\n    class Getter:\n        def __init__(self, arg):\n            self.arg = arg\n        def get(self):\n            return self.arg\n    PINS = dummy()\n    PINS.value = EditPin(\"test\")\n    directory = sys.argv[1]\n    filename = sys.argv[2]\n    PINS.filepath = Getter(os.path.join(directory, filename))\n    PINS.latency = Getter(float(sys.argv[3]))\n    def serializer(v):\n        return str(v.get())\n    print(\"Edit in \" + filepath.get())\nelse:\n    from seamless.dtypes import serialize\n    def serializer(v):\n        return serialize(v._dtype, v.get())\n\n\nimport os, time, functools, traceback\nfrom threading import Thread, RLock, Event\nlast_value = None\nlast_serialized_value = None\nlast_exc = None\nlast_mtime = None\n\ndef write_file(fpath):\n    global last_mtime, last_value, last_serialized_value\n    if not PINS.value.defined:\n        last_mtime = -1 #will trigger a file read\n        return\n    if last_value == PINS.value.get():\n        return\n    val = serializer(PINS.value)\n    if last_serialized_value == val:\n        return\n    with lock:\n        if last_serialized_value != val:\n            #print(\"WRITE\", val)\n            if PINS.value._dtype == \"object\":\n                with open(fpath, \"wb\") as f:\n                    f.write(val)\n                    last_value = PINS.value.get()\n                    last_serialized_value = val\n            else:\n                with open(fpath, \"w\", encoding=\"utf-8\") as f:\n                    f.write(val)\n                    last_value = PINS.value.get()\n                    last_serialized_value = val\n            last_time = time.time()\n            try:\n                stat = os.stat(fpath)\n                last_mtime = stat.st_mtime\n            except Exception:\n                pass\n\nsleeptime = 0.01\n\ndef poll():\n    global last_time, last_mtime, last_value, last_serialized_value, last_exc\n    fpath = PINS.filepath.get()\n    while 1:\n        sleeps = int(PINS.latency.get() / sleeptime + 0.9999)\n        for n in range(sleeps):\n            time.sleep(sleeptime)\n            if terminate.is_set():\n                break\n        if terminate.is_set():\n            break\n        curr_time = time.time()\n        last_time = curr_time\n        if not os.path.exists(fpath):\n            try:\n                write_file(fpath)\n            except Exception:\n                exc = traceback.format_exc()\n                if exc != last_exc:\n                    print(exc)\n                    last_exc = exc\n        else:\n            with lock:\n                stat = os.stat(fpath)\n                try:\n                    if last_mtime is None or stat.st_mtime > last_mtime:\n                        data = None\n                        if PINS.value._dtype == \"object\":\n                            with open(fpath, \"rb\") as f:\n                                data = f.read()\n                        else:\n                            with open(fpath, encoding=\"utf-8\") as f:\n                                data = f.read()\n                        if data is not None:\n                            if last_serialized_value != data:\n                                #print(\"LOAD\")\n                                PINS.value.set(data)\n                                last_value = None\n                                last_serialized_value = data\n                        last_mtime = stat.st_mtime\n                except Exception:\n                    exc = traceback.format_exc()\n                    if exc != last_exc:\n                        print(exc)\n                        last_exc = exc\n\nterminate = Event()\nt = Thread(target=poll)\nt.setDaemon(True)\nlock = RLock()\nwrite_file(PINS.filepath.get())\nt.start()\n"
+          },
+          "cell2": {
+            "dtype": [
+              "text",
+              "code",
+              "python"
+            ],
+            "resource": {
+              "filepath": null,
+              "lib": null,
+              "mode": null,
+              "save_policy": 1
+            },
+            "data": "write_file(PINS.filepath.get())"
+          },
+          "cell3": {
+            "dtype": [
+              "text",
+              "code",
+              "python"
+            ],
+            "resource": {
+              "filepath": null,
+              "lib": null,
+              "mode": null,
+              "save_policy": 1
+            },
+            "data": "terminate.set(); t.join()"
+          },
+          "rc": {
+            "type": "reactor",
+            "mode": "sync",
+            "params": {
+              "filepath": {
+                "dtype": "str",
+                "pin": "input"
+              },
+              "latency": {
+                "dtype": "float",
+                "pin": "input"
+              },
+              "value": {
+                "dtype": [
+                  "text",
+                  "code",
+                  "silk"
+                ],
+                "must_be_defined": false,
+                "pin": "edit"
+              }
+            }
+          }
+        }
+      },
+      "link_vert_shader": {
+        "type": "context",
+        "like_worker": true,
+        "like_cell": false,
+        "pins": {
+          "filepath": [
+            "ExportedInputPin",
+            "link_vert_shader.rc.filepath"
+          ],
+          "latency": [
+            "ExportedInputPin",
+            "link_vert_shader.rc.latency"
+          ],
+          "value": [
+            "ExportedEditPin",
+            "link_vert_shader.rc.value"
+          ]
+        },
+        "auto": [
+          "cell1",
+          "cell2",
+          "cell3"
+        ],
+        "children": {
+          "cell1": {
+            "dtype": [
+              "text",
+              "code",
+              "python"
+            ],
+            "resource": {
+              "filepath": "/cell-filelink-start.py",
+              "lib": true,
+              "mode": 2,
+              "save_policy": 1
+            },
+            "data": "if __name__ == \"__main__\":\n    #test with ipython -i\n    import sys, os\n\n    class dummy:\n        pass\n\n    class EditPin:\n        def __init__(self, value):\n            self.value = value\n            self.defined = True\n        def set(self, value):\n            print(\"SET\", value)\n            self.value = value\n        def get(self):\n            return self.value\n\n    class Getter:\n        def __init__(self, arg):\n            self.arg = arg\n        def get(self):\n            return self.arg\n    PINS = dummy()\n    PINS.value = EditPin(\"test\")\n    directory = sys.argv[1]\n    filename = sys.argv[2]\n    PINS.filepath = Getter(os.path.join(directory, filename))\n    PINS.latency = Getter(float(sys.argv[3]))\n    def serializer(v):\n        return str(v.get())\n    print(\"Edit in \" + filepath.get())\nelse:\n    from seamless.dtypes import serialize\n    def serializer(v):\n        return serialize(v._dtype, v.get())\n\n\nimport os, time, functools, traceback\nfrom threading import Thread, RLock, Event\nlast_value = None\nlast_serialized_value = None\nlast_exc = None\nlast_mtime = None\n\ndef write_file(fpath):\n    global last_mtime, last_value, last_serialized_value\n    if not PINS.value.defined:\n        last_mtime = -1 #will trigger a file read\n        return\n    if last_value == PINS.value.get():\n        return\n    val = serializer(PINS.value)\n    if last_serialized_value == val:\n        return\n    with lock:\n        if last_serialized_value != val:\n            #print(\"WRITE\", val)\n            if PINS.value._dtype == \"object\":\n                with open(fpath, \"wb\") as f:\n                    f.write(val)\n                    last_value = PINS.value.get()\n                    last_serialized_value = val\n            else:\n                with open(fpath, \"w\", encoding=\"utf-8\") as f:\n                    f.write(val)\n                    last_value = PINS.value.get()\n                    last_serialized_value = val\n            last_time = time.time()\n            try:\n                stat = os.stat(fpath)\n                last_mtime = stat.st_mtime\n            except Exception:\n                pass\n\nsleeptime = 0.01\n\ndef poll():\n    global last_time, last_mtime, last_value, last_serialized_value, last_exc\n    fpath = PINS.filepath.get()\n    while 1:\n        sleeps = int(PINS.latency.get() / sleeptime + 0.9999)\n        for n in range(sleeps):\n            time.sleep(sleeptime)\n            if terminate.is_set():\n                break\n        if terminate.is_set():\n            break\n        curr_time = time.time()\n        last_time = curr_time\n        if not os.path.exists(fpath):\n            try:\n                write_file(fpath)\n            except Exception:\n                exc = traceback.format_exc()\n                if exc != last_exc:\n                    print(exc)\n                    last_exc = exc\n        else:\n            with lock:\n                stat = os.stat(fpath)\n                try:\n                    if last_mtime is None or stat.st_mtime > last_mtime:\n                        data = None\n                        if PINS.value._dtype == \"object\":\n                            with open(fpath, \"rb\") as f:\n                                data = f.read()\n                        else:\n                            with open(fpath, encoding=\"utf-8\") as f:\n                                data = f.read()\n                        if data is not None:\n                            if last_serialized_value != data:\n                                #print(\"LOAD\")\n                                PINS.value.set(data)\n                                last_value = None\n                                last_serialized_value = data\n                        last_mtime = stat.st_mtime\n                except Exception:\n                    exc = traceback.format_exc()\n                    if exc != last_exc:\n                        print(exc)\n                        last_exc = exc\n\nterminate = Event()\nt = Thread(target=poll)\nt.setDaemon(True)\nlock = RLock()\nwrite_file(PINS.filepath.get())\nt.start()\n"
+          },
+          "cell2": {
+            "dtype": [
+              "text",
+              "code",
+              "python"
+            ],
+            "resource": {
+              "filepath": null,
+              "lib": null,
+              "mode": null,
+              "save_policy": 1
+            },
+            "data": "write_file(PINS.filepath.get())"
+          },
+          "cell3": {
+            "dtype": [
+              "text",
+              "code",
+              "python"
+            ],
+            "resource": {
+              "filepath": null,
+              "lib": null,
+              "mode": null,
+              "save_policy": 1
+            },
+            "data": "terminate.set(); t.join()"
+          },
+          "rc": {
+            "type": "reactor",
+            "mode": "sync",
+            "params": {
+              "filepath": {
+                "dtype": "str",
+                "pin": "input"
+              },
+              "latency": {
+                "dtype": "float",
+                "pin": "input"
+              },
+              "value": {
+                "dtype": [
+                  "text",
+                  "code",
+                  "vertexshader"
+                ],
+                "must_be_defined": false,
+                "pin": "edit"
+              }
+            }
+          }
+        }
+      },
+      "params_gen_texture": {
+        "dtype": [
+          "json",
+          "seamless",
+          "transformer_params"
+        ],
+        "resource": {
+          "filepath": "./params_gen_texture.json",
+          "lib": false,
+          "mode": 5,
+          "save_policy": 1
+        },
+        "data": "{\n  \"filename\": {\n    \"pin\": \"input\",\n    \"dtype\": \"str\"\n  },\n  \"output\": {\n    \"pin\": \"output\",\n    \"dtype\": \"array\"\n  },\n  \"as_float\": {\n    \"pin\": \"input\",\n    \"dtype\": \"bool\"\n  },\n  \"radius\": {\n    \"pin\": \"input\",\n    \"dtype\": \"int\"\n  }\n}"
+      },
+      "params_gen_uniforms": {
+        "dtype": [
+          "json",
+          "seamless",
+          "reactor_params"
+        ],
+        "resource": {
+          "filepath": "./params_gen_uniforms.json",
+          "lib": false,
+          "mode": 5,
+          "save_policy": 1
+        },
+        "data": "{\n  \"uniforms\": {\n    \"pin\": \"edit\",\n    \"must_be_defined\": false,\n    \"dtype\": \"json\"\n  },\n  \"gravity\": {\n    \"pin\": \"input\",\n    \"dtype\": \"float\"\n  },\n  \"update\": {\n    \"pin\": \"input\",\n    \"dtype\": \"signal\"\n  },\n  \"N\": {\n    \"pin\": \"input\",\n    \"dtype\": \"int\"\n  },\n  \"updated\": {\n    \"pin\": \"output\",\n    \"dtype\": \"signal\"\n  },\n  \"pointsize\": {\n    \"pin\": \"input\",\n    \"dtype\": \"int\"\n  },\n  \"shrink_with_age\": {\n    \"pin\": \"input\",\n    \"dtype\": \"bool\"\n  },\n  \"reset\": {\n    \"pin\": \"input\",\n    \"dtype\": \"signal\"\n  }\n}"
+      },
+      "params_gen_vertexdata": {
+        "dtype": [
+          "json",
+          "seamless",
+          "transformer_params"
+        ],
+        "resource": {
+          "filepath": "./params_gen_vertexdata.json",
+          "lib": false,
+          "mode": 5,
+          "save_policy": 1
+        },
+        "data": "{\n  \"N\": {\n    \"pin\": \"input\",\n    \"dtype\": \"int\"\n  },\n  \"output\": {\n    \"pin\": \"output\",\n    \"dtype\": \"array\"\n  },\n  \"reset\": {\n    \"pin\": \"input\",\n    \"dtype\": \"signal\"\n  }\n}"
+      },
+      "period": {
+        "dtype": "float",
+        "resource": {
+          "filepath": null,
+          "lib": null,
+          "mode": null,
+          "save_policy": 1
+        },
+        "data": "1.5"
+      },
+      "pointsize": {
+        "dtype": "int",
+        "resource": {
+          "filepath": null,
+          "lib": null,
+          "mode": null,
+          "save_policy": 1
+        },
+        "data": "40"
+      },
+      "program": {
+        "dtype": "json",
+        "resource": {
+          "filepath": null,
+          "lib": null,
+          "mode": null,
+          "save_policy": 4
+        },
+        "data": "{\n  \"uniforms\": {\n    \"u_shrink_with_age\": \"bool\",\n    \"u_centerPosition\": \"vec3\",\n    \"u_gravity\": \"float\",\n    \"u_pointsize\": \"float\",\n    \"u_time\": \"float\"\n  },\n  \"arrays\": [\n    \"vertexdata\"\n  ],\n  \"render\": {\n    \"command\": \"points\",\n    \"attributes\": {\n      \"a_endPosition\": {\n        \"dtype\": \"vec3\",\n        \"rae\": \"['a_endPosition']\",\n        \"array\": \"vertexdata\"\n      },\n      \"a_startPosition\": {\n        \"dtype\": \"vec3\",\n        \"rae\": \"['a_startPosition']\",\n        \"array\": \"vertexdata\"\n      },\n      \"a_lifetime\": {\n        \"dtype\": \"float\",\n        \"rae\": \"['a_lifetime']\",\n        \"array\": \"vertexdata\"\n      },\n      \"a_color\": {\n        \"dtype\": \"vec3\",\n        \"rae\": \"['a_color']\",\n        \"array\": \"vertexdata\"\n      }\n    },\n    \"glstate\": {\n      \"depth_test\": false,\n      \"blend_func\": [\n        \"src_alpha\",\n        \"one\"\n      ],\n      \"clear_color\": \"black\",\n      \"blend\": true,\n      \"point_sprite\": true,\n      \"vertex_program_point_size\": true,\n      \"clear\": true\n    }\n  },\n  \"textures\": [\n    \"s_texture\"\n  ]\n}"
+      },
+      "program_template": {
+        "dtype": "cson",
+        "resource": {
+          "filepath": "./program_template.cson",
+          "lib": false,
+          "mode": 5,
+          "save_policy": 1
+        },
+        "data": "{\n  \"arrays\": [\n    \"vertexdata\"\n  ],\n  \"uniforms\": {\n    \"u_centerPosition\": \"vec3\",\n    \"u_time\": \"float\",\n    \"u_gravity\": \"float\",\n    \"u_pointsize\": \"float\",\n    \"u_shrink_with_age\": \"bool\",\n  },\n  \"textures\": [\n    \"s_texture\"\n  ],\n  \"render\": {\n    \"command\": \"points\",\n    \"glstate\": {\n      \"point_sprite\": true,\n      \"clear\": true,\n      \"depth_test\": false,\n      \"blend_func\": [\n        \"src_alpha\",\n        \"one\"\n      ],\n      \"vertex_program_point_size\": true,\n      \"clear_color\": \"black\",\n      \"blend\": true\n    }\n  },\n}\n"
+      },
+      "registrar_object1": {
+        "registrar": "silk",
+        "registered": [
+          "Vec3",
+          "VertexData"
+        ],
+        "data": "Type Vec3 {\n  Float x\n  Float y\n  Float z\n}\n\nType VertexData {\n  Float a_lifetime\n  Vec3 a_startPosition\n  Vec3 a_endPosition\n  Vec3 a_color\n}\n",
+        "data_name": null
+      },
+      "repaint": {
+        "dtype": "signal"
+      },
+      "shrink_with_age": {
+        "dtype": "bool",
+        "resource": {
+          "filepath": null,
+          "lib": null,
+          "mode": null,
+          "save_policy": 1
+        },
+        "data": "True"
+      },
+      "signal1": {
+        "dtype": "signal",
+        "owner": "gen_uniforms"
+      },
+      "signal2": {
+        "dtype": "signal",
+        "owner": "timer"
+      },
+      "signal3": {
+        "dtype": "signal",
+        "owner": "init"
+      },
+      "silk_vertexdata": {
+        "dtype": [
+          "text",
+          "code",
+          "silk"
+        ],
+        "resource": {
+          "filepath": "./vertexdata.silk",
+          "lib": false,
+          "mode": 5,
+          "save_policy": 1
+        },
+        "data": "Type Vec3 {\n  Float x\n  Float y\n  Float z\n}\n\nType VertexData {\n  Float a_lifetime\n  Vec3 a_startPosition\n  Vec3 a_endPosition\n  Vec3 a_color\n}\n"
+      },
+      "tex_filename": {
+        "dtype": "str",
+        "resource": {
+          "filepath": null,
+          "lib": null,
+          "mode": null,
+          "save_policy": 1
+        },
+        "data": ""
+      },
+      "tex_radius": {
+        "dtype": "int",
+        "resource": {
+          "filepath": null,
+          "lib": null,
+          "mode": null,
+          "save_policy": 1
+        },
+        "data": "32"
+      },
+      "texture": {
+        "dtype": "array",
+        "resource": {
+          "filepath": null,
+          "lib": null,
+          "mode": null,
+          "save_policy": 1
+        },
+        "hash": "e52a1ca3e35dd2526e1ce22433907eb9",
+        "store": {
+          "mode": "GLTex",
+          "params": {
+            "dimensions": 2
+          }
+        }
+      },
+      "timer": {
+        "type": "reactor",
+        "mode": "sync",
+        "params": {
+          "period": {
+            "dtype": "float",
+            "pin": "input"
+          },
+          "trigger": {
+            "dtype": "signal",
+            "pin": "output"
+          }
+        }
+      },
+      "uniforms": {
+        "dtype": "json",
+        "resource": {
+          "filepath": null,
+          "lib": null,
+          "mode": null,
+          "save_policy": 1
+        },
+        "data": "{\n  \"u_shrink_with_age\": true,\n  \"u_gravity\": 0.2,\n  \"u_pointsize\": 40,\n  \"u_time\": 1.3530609607696533,\n  \"u_centerPosition\": [\n    0.42658538169582094,\n    0.24177064969134998,\n    0.4277631430527562\n  ],\n  \"u_color\": [\n    0.31410670956360587,\n    0.49632806072917013,\n    0.5321757418981917,\n    0.5754399373371569\n  ]\n}"
+      },
+      "vert_shader": {
+        "dtype": [
+          "text",
+          "code",
+          "vertexshader"
+        ],
+        "resource": {
+          "filepath": "./vert_shader.glsl",
+          "lib": false,
+          "mode": 5,
+          "save_policy": 1
+        },
+        "data": "#version 130\n\nuniform float u_time;\nuniform vec3 u_centerPosition;\nuniform float u_pointsize;\nuniform float u_gravity;\nuniform bool u_shrink_with_age;\nattribute float a_lifetime;\nattribute vec3 a_startPosition;\nattribute vec3 a_endPosition;\nattribute vec3 a_color;\nvarying float v_lifetime;\nvarying vec3 v_color;\n\nvoid main () {\n  if (u_time <= a_lifetime)\n  {\n      gl_Position.xyz = a_startPosition + (u_time * a_endPosition);\n      gl_Position.xyz += u_centerPosition;\n      gl_Position.y -= u_gravity * u_time * u_time;\n      gl_Position.w = 1.0;\n  }\n  else\n      gl_Position = vec4(-1000, -1000, 0, 0);\n\n  v_lifetime = 1.0 - (u_time / a_lifetime);\n  v_lifetime = clamp(v_lifetime, 0.0, 1.0);\n  gl_PointSize = u_pointsize;\n\n  if (u_shrink_with_age)\n      gl_PointSize *= (v_lifetime * v_lifetime);\n  v_color = a_color;\n}\n"
+      },
+      "vertexdata": {
+        "dtype": "array",
+        "resource": {
+          "filepath": null,
+          "lib": null,
+          "mode": null,
+          "save_policy": 1
+        },
+        "hash": "2f80a9c1e607bc672dfbd44e60d42821",
+        "store": {
+          "mode": "GL",
+          "params": {}
+        }
+      }
+    },
+    "macro_objects": [
+      {
+        "args": [
+          null
+        ],
+        "kwargs": {},
+        "cell_args": {
+          "0": "params_gen_vertexdata"
+        },
+        "macro_module_name": "seamless.core.transformer",
+        "macro_func_name": "transformer",
+        "macro_order": 0,
+        "target": "gen_vertexdata"
+      },
+      {
+        "args": [
+          null
+        ],
+        "kwargs": {},
+        "cell_args": {
+          "0": "glprogram.rcparams"
+        },
+        "macro_module_name": "seamless.core.reactor",
+        "macro_func_name": "reactor",
+        "macro_order": 1,
+        "target": "glprogram.rc"
+      },
+      {
+        "args": [
+          null
+        ],
+        "kwargs": {
+          "window_title": "Seamless fireworks demo"
+        },
+        "cell_args": {
+          "0": "program"
+        },
+        "macro_module_name": "seamless.lib.gui.gl.glprogram",
+        "macro_func_name": "glprogram",
+        "macro_order": 0,
+        "target": "glprogram"
+      },
+      {
+        "args": [
+          null
+        ],
+        "kwargs": {},
+        "cell_args": {
+          "0": "params_gen_uniforms"
+        },
+        "macro_module_name": "seamless.core.reactor",
+        "macro_func_name": "reactor",
+        "macro_order": 0,
+        "target": "gen_uniforms"
+      },
+      {
+        "args": [
+          null
+        ],
+        "kwargs": {},
+        "cell_args": {
+          "0": "params_gen_texture"
+        },
+        "macro_module_name": "seamless.core.transformer",
+        "macro_func_name": "transformer",
+        "macro_order": 1,
+        "target": "gen_texture"
+      },
+      {
+        "args": [
+          null
+        ],
+        "kwargs": {},
+        "cell_args": {
+          "0": "period"
+        },
+        "macro_module_name": "seamless.lib.timer",
+        "macro_func_name": "timer",
+        "macro_order": 0,
+        "target": "timer"
+      }
+    ],
+    "macro_listeners": [
+      {
+        "cell": "params_gen_vertexdata",
+        "macro_target": "gen_vertexdata",
+        "macro_arg": 0
+      },
+      {
+        "cell": "glprogram.rcparams",
+        "macro_target": "glprogram.rc",
+        "macro_arg": 0
+      },
+      {
+        "cell": "program",
+        "macro_target": "glprogram",
+        "macro_arg": 0
+      },
+      {
+        "cell": "params_gen_uniforms",
+        "macro_target": "gen_uniforms",
+        "macro_arg": 0
+      },
+      {
+        "cell": "params_gen_texture",
+        "macro_target": "gen_texture",
+        "macro_arg": 0
+      },
+      {
+        "cell": "period",
+        "macro_target": "timer",
+        "macro_arg": 0
+      }
+    ],
+    "registrar_items": [
+      {
+        "registrar_name": "silk",
+        "dtype": [
+          "text",
+          "code",
+          "silk"
+        ],
+        "data": "Type Vec3 {\n  Float x\n  Float y\n  Float z\n}\n\nType VertexData {\n  Float a_lifetime\n  Vec3 a_startPosition\n  Vec3 a_endPosition\n  Vec3 a_color\n}\n",
+        "data_name": null
+      }
+    ],
+    "registrar_listeners": [
+      {
+        "registrar": "silk",
+        "key": "VertexData",
+        "target_type": "worker",
+        "target_worker": "gen_program",
+        "namespace_name": "VertexData"
+      },
+      {
+        "registrar": "silk",
+        "key": "VertexData",
+        "target_type": "worker",
+        "target_worker": "gen_vertexdata",
+        "namespace_name": "VertexData"
+      },
+      {
+        "registrar": "silk",
+        "key": "VertexDataArray",
+        "target_type": "worker",
+        "target_worker": "gen_vertexdata",
+        "namespace_name": "VertexDataArray"
+      }
+    ],
+    "registrar_cells": [
+      {
+        "cell": "silk_vertexdata",
+        "macro_target": "registrar_object1",
+        "registrar": "silk"
+      }
+    ],
+    "pin_cell_connections": [
+      [
+        "gen_program.program",
+        "program"
+      ],
+      [
+        "gen_texture.output",
+        "texture"
+      ],
+      [
+        "gen_uniforms.updated",
+        "signal1"
+      ],
+      [
+        "gen_vertexdata.output",
+        "vertexdata"
+      ],
+      [
+        "glprogram.glwindow.init",
+        "glprogram.signal4"
+      ],
+      [
+        "glprogram.glwindow.painted",
+        "cell32"
+      ],
+      [
+        "glprogram.glwindow.painted",
+        "glprogram.signal3"
+      ],
+      [
+        "glprogram.glwindow.painted",
+        "repaint"
+      ],
+      [
+        "glprogram.glwindow.paint",
+        "glprogram.signal2"
+      ],
+      [
+        "glprogram.rc.repaint",
+        "glprogram.signal1"
+      ],
+      [
+        "init.trigger",
+        "signal3"
+      ],
+      [
+        "timer.trigger",
+        "signal2"
+      ]
+    ],
+    "cell_pin_connections": [
+      [
+        "N",
+        "gen_uniforms.N"
+      ],
+      [
+        "N",
+        "gen_vertexdata.N"
+      ],
+      [
+        "cell10",
+        "link_gen_program.rc.filepath"
+      ],
+      [
+        "cell11",
+        "link_gen_program.rc.latency"
+      ],
+      [
+        "cell12",
+        "link_params_gen_vertexdata.rc.filepath"
+      ],
+      [
+        "cell13",
+        "link_params_gen_vertexdata.rc.latency"
+      ],
+      [
+        "cell14",
+        "gen_vertexdata.code"
+      ],
+      [
+        "cell14",
+        "link_gen_vertexdata.rc.value"
+      ],
+      [
+        "cell15",
+        "link_gen_vertexdata.rc.filepath"
+      ],
+      [
+        "cell16",
+        "link_gen_vertexdata.rc.latency"
+      ],
+      [
+        "cell17",
+        "link_params_gen_texture.rc.filepath"
+      ],
+      [
+        "cell18",
+        "link_params_gen_texture.rc.latency"
+      ],
+      [
+        "cell19",
+        "gen_texture.code"
+      ],
+      [
+        "cell19",
+        "link_gen_texture.rc.value"
+      ],
+      [
+        "cell1",
+        "link_silk_vertexdata.rc.filepath"
+      ],
+      [
+        "cell20",
+        "link_gen_texture.rc.filepath"
+      ],
+      [
+        "cell21",
+        "link_gen_texture.rc.latency"
+      ],
+      [
+        "cell22",
+        "gen_texture.as_float"
+      ],
+      [
+        "cell23",
+        "link_params_gen_uniforms.rc.filepath"
+      ],
+      [
+        "cell24",
+        "link_params_gen_uniforms.rc.latency"
+      ],
+      [
+        "cell25",
+        "gen_uniforms.code_start"
+      ],
+      [
+        "cell25",
+        "link_gen_uniforms_start.rc.value"
+      ],
+      [
+        "cell26",
+        "link_gen_uniforms_start.rc.filepath"
+      ],
+      [
+        "cell27",
+        "link_gen_uniforms_start.rc.latency"
+      ],
+      [
+        "cell28",
+        "gen_uniforms.code_update"
+      ],
+      [
+        "cell28",
+        "link_gen_uniforms_update.rc.value"
+      ],
+      [
+        "cell29",
+        "link_gen_uniforms_update.rc.filepath"
+      ],
+      [
+        "cell2",
+        "link_silk_vertexdata.rc.latency"
+      ],
+      [
+        "cell30",
+        "link_gen_uniforms_update.rc.latency"
+      ],
+      [
+        "cell31",
+        "gen_uniforms.code_stop"
+      ],
+      [
+        "cell32",
+        "gen_uniforms.update"
+      ],
+      [
+        "cell33",
+        "timer.code_start"
+      ],
+      [
+        "cell34",
+        "timer.code_update"
+      ],
+      [
+        "cell35",
+        "timer.code_stop"
+      ],
+      [
+        "cell36",
+        "timer.period"
+      ],
+      [
+        "cell37",
+        "gen_uniforms.reset"
+      ],
+      [
+        "cell38",
+        "gen_vertexdata.reset"
+      ],
+      [
+        "cell39",
+        "init.code_start"
+      ],
+      [
+        "cell3",
+        "link_vert_shader.rc.filepath"
+      ],
+      [
+        "cell40",
+        "init.code_update"
+      ],
+      [
+        "cell41",
+        "init.code_stop"
+      ],
+      [
+        "cell4",
+        "link_vert_shader.rc.latency"
+      ],
+      [
+        "cell5",
+        "link_frag_shader.rc.filepath"
+      ],
+      [
+        "cell6",
+        "link_frag_shader.rc.latency"
+      ],
+      [
+        "cell7",
+        "link_program_template.rc.filepath"
+      ],
+      [
+        "cell8",
+        "link_program_template.rc.latency"
+      ],
+      [
+        "cell9",
+        "gen_program.code"
+      ],
+      [
+        "cell9",
+        "link_gen_program.rc.value"
+      ],
+      [
+        "frag_shader",
+        "glprogram.rc.fragment_shader"
+      ],
+      [
+        "frag_shader",
+        "link_frag_shader.rc.value"
+      ],
+      [
+        "glprogram.cell1",
+        "glprogram.rc.code_start"
+      ],
+      [
+        "glprogram.cell2",
+        "glprogram.rc.code_update"
+      ],
+      [
+        "glprogram.cell3",
+        "glprogram.rc.code_stop"
+      ],
+      [
+        "glprogram.cell4",
+        "glprogram.rc.program"
+      ],
+      [
+        "glprogram.cell5",
+        "glprogram.glwindow.title"
+      ],
+      [
+        "glprogram.cell6",
+        "glprogram.glwindow.geometry"
+      ],
+      [
+        "glprogram.cell7",
+        "glprogram.glwindow.code_start"
+      ],
+      [
+        "glprogram.cell8",
+        "glprogram.glwindow.code_update"
+      ],
+      [
+        "glprogram.cell9",
+        "glprogram.glwindow.code_stop"
+      ],
+      [
+        "glprogram.signal1",
+        "glprogram.glwindow.update"
+      ],
+      [
+        "glprogram.signal2",
+        "glprogram.rc.paint"
+      ],
+      [
+        "glprogram.signal4",
+        "glprogram.rc.init"
+      ],
+      [
+        "gravity",
+        "gen_uniforms.gravity"
+      ],
+      [
+        "link_frag_shader.cell1",
+        "link_frag_shader.rc.code_start"
+      ],
+      [
+        "link_frag_shader.cell2",
+        "link_frag_shader.rc.code_update"
+      ],
+      [
+        "link_frag_shader.cell3",
+        "link_frag_shader.rc.code_stop"
+      ],
+      [
+        "link_gen_program.cell1",
+        "link_gen_program.rc.code_start"
+      ],
+      [
+        "link_gen_program.cell2",
+        "link_gen_program.rc.code_update"
+      ],
+      [
+        "link_gen_program.cell3",
+        "link_gen_program.rc.code_stop"
+      ],
+      [
+        "link_gen_texture.cell1",
+        "link_gen_texture.rc.code_start"
+      ],
+      [
+        "link_gen_texture.cell2",
+        "link_gen_texture.rc.code_update"
+      ],
+      [
+        "link_gen_texture.cell3",
+        "link_gen_texture.rc.code_stop"
+      ],
+      [
+        "link_gen_uniforms_start.cell1",
+        "link_gen_uniforms_start.rc.code_start"
+      ],
+      [
+        "link_gen_uniforms_start.cell2",
+        "link_gen_uniforms_start.rc.code_update"
+      ],
+      [
+        "link_gen_uniforms_start.cell3",
+        "link_gen_uniforms_start.rc.code_stop"
+      ],
+      [
+        "link_gen_uniforms_update.cell1",
+        "link_gen_uniforms_update.rc.code_start"
+      ],
+      [
+        "link_gen_uniforms_update.cell2",
+        "link_gen_uniforms_update.rc.code_update"
+      ],
+      [
+        "link_gen_uniforms_update.cell3",
+        "link_gen_uniforms_update.rc.code_stop"
+      ],
+      [
+        "link_gen_vertexdata.cell1",
+        "link_gen_vertexdata.rc.code_start"
+      ],
+      [
+        "link_gen_vertexdata.cell2",
+        "link_gen_vertexdata.rc.code_update"
+      ],
+      [
+        "link_gen_vertexdata.cell3",
+        "link_gen_vertexdata.rc.code_stop"
+      ],
+      [
+        "link_params_gen_texture.cell1",
+        "link_params_gen_texture.rc.code_start"
+      ],
+      [
+        "link_params_gen_texture.cell2",
+        "link_params_gen_texture.rc.code_update"
+      ],
+      [
+        "link_params_gen_texture.cell3",
+        "link_params_gen_texture.rc.code_stop"
+      ],
+      [
+        "link_params_gen_uniforms.cell1",
+        "link_params_gen_uniforms.rc.code_start"
+      ],
+      [
+        "link_params_gen_uniforms.cell2",
+        "link_params_gen_uniforms.rc.code_update"
+      ],
+      [
+        "link_params_gen_uniforms.cell3",
+        "link_params_gen_uniforms.rc.code_stop"
+      ],
+      [
+        "link_params_gen_vertexdata.cell1",
+        "link_params_gen_vertexdata.rc.code_start"
+      ],
+      [
+        "link_params_gen_vertexdata.cell2",
+        "link_params_gen_vertexdata.rc.code_update"
+      ],
+      [
+        "link_params_gen_vertexdata.cell3",
+        "link_params_gen_vertexdata.rc.code_stop"
+      ],
+      [
+        "link_program_template.cell1",
+        "link_program_template.rc.code_start"
+      ],
+      [
+        "link_program_template.cell2",
+        "link_program_template.rc.code_update"
+      ],
+      [
+        "link_program_template.cell3",
+        "link_program_template.rc.code_stop"
+      ],
+      [
+        "link_silk_vertexdata.cell1",
+        "link_silk_vertexdata.rc.code_start"
+      ],
+      [
+        "link_silk_vertexdata.cell2",
+        "link_silk_vertexdata.rc.code_update"
+      ],
+      [
+        "link_silk_vertexdata.cell3",
+        "link_silk_vertexdata.rc.code_stop"
+      ],
+      [
+        "link_vert_shader.cell1",
+        "link_vert_shader.rc.code_start"
+      ],
+      [
+        "link_vert_shader.cell2",
+        "link_vert_shader.rc.code_update"
+      ],
+      [
+        "link_vert_shader.cell3",
+        "link_vert_shader.rc.code_stop"
+      ],
+      [
+        "params_gen_texture",
+        "link_params_gen_texture.rc.value"
+      ],
+      [
+        "params_gen_uniforms",
+        "link_params_gen_uniforms.rc.value"
+      ],
+      [
+        "params_gen_vertexdata",
+        "link_params_gen_vertexdata.rc.value"
+      ],
+      [
+        "pointsize",
+        "gen_uniforms.pointsize"
+      ],
+      [
+        "program_template",
+        "gen_program.program_template"
+      ],
+      [
+        "program_template",
+        "link_program_template.rc.value"
+      ],
+      [
+        "shrink_with_age",
+        "gen_uniforms.shrink_with_age"
+      ],
+      [
+        "silk_vertexdata",
+        "link_silk_vertexdata.rc.value"
+      ],
+      [
+        "tex_filename",
+        "gen_texture.filename"
+      ],
+      [
+        "tex_radius",
+        "gen_texture.radius"
+      ],
+      [
+        "texture",
+        "glprogram.rc.array_s_texture"
+      ],
+      [
+        "uniforms",
+        "gen_uniforms.uniforms"
+      ],
+      [
+        "uniforms",
+        "glprogram.rc.uniforms"
+      ],
+      [
+        "vert_shader",
+        "glprogram.rc.vertex_shader"
+      ],
+      [
+        "vert_shader",
+        "link_vert_shader.rc.value"
+      ],
+      [
+        "vertexdata",
+        "glprogram.rc.array_vertexdata"
+      ]
+    ],
+    "cell_cell_connections": [
+      [
+        "repaint",
+        "glprogram.signal1"
+      ],
+      [
+        "signal2",
+        "cell37"
+      ],
+      [
+        "signal2",
+        "cell38"
+      ],
+      [
+        "signal3",
+        "cell37"
+      ],
+      [
+        "signal3",
+        "cell38"
+      ]
+    ]
+  }
+}

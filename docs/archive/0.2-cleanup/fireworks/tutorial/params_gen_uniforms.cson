@@ -1,0 +1,31 @@
+{
+  "reset": {
+    "dtype": "signal",
+    "pin": "input"
+  }
+  "update": {
+    "dtype": "signal",
+    "pin": "input"
+  }
+  "N": {
+    "dtype": "int",
+    "pin": "input"
+  },
+  "gravity": {
+    "dtype": "float",
+    "pin": "input"
+  },
+  "pointsize": {
+    "dtype": "int",
+    "pin": "input"
+  },
+  "shrink_with_age": {
+    "dtype": "bool",
+    "pin": "input"
+  },
+  "uniforms": {
+    "must_be_defined": false,
+    "dtype": "json",
+    "pin": "edit"
+  }
+}

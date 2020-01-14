@@ -1,0 +1,18 @@
+{
+  "output": {
+    "dtype": "array",
+    "pin": "output"
+  },
+  "radius": {
+    "dtype": "int",
+    "pin": "input"
+  },
+  "as_float": {
+    "dtype": "bool",
+    "pin": "input"
+  },
+  "filename": {
+    "dtype": "str",
+    "pin": "input"
+  }
+}

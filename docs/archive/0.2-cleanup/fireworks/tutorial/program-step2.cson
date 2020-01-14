@@ -1,0 +1,18 @@
+{
+  "arrays": [
+    "vertexdata"
+  ]
+  "uniforms": {}
+  "render": {
+    "attributes": {
+      "value": {
+         "dtype": "vec3"
+         "array": "vertexdata"
+        }
+    }
+    "glstate": {
+      "clear_color": "blue",
+    }
+    "command": "points"
+  }
+}

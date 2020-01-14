@@ -1,0 +1,52 @@
+{
+  "arrays": [
+    "coordinates", "normals", "indices", "atoms"
+  ],
+  "uniforms": {
+    "u_mvp_matrix": "mat4",
+    "u_modelview_matrix": "mat4",
+    "u_normal_matrix": "mat3",
+  },
+  "render": {
+    "command": "triangles",
+    "instanced": "true"
+    "attributes": {
+      "a_position": {
+        "dtype": "vec3",
+        "array": "atoms",
+        "rae": "position"
+        "instanced": "true"
+      }
+      "a_radius": {
+        "dtype": "float",
+        "array": "atoms",
+        "rae": "radius"
+        "instanced": "true"
+      }
+      "a_color": {
+        "dtype": "vec3",
+        "array": "atoms",
+        "rae": "color"
+        "instanced": "true"
+      }
+      "a_coordinate": {
+        "dtype": "vec3",
+        "array": "coordinates"
+      },
+      "a_normal": {
+        "dtype": "vec3",
+        "array": "normals"
+      }
+    }
+    "glstate": {
+      "clear": false,
+      "depth_test": true
+      "clear_color": "black",
+      "blend": true,
+    },
+    "indices": {
+      "array": "indices",
+      "dtype": "short"
+    }
+  },
+}

@@ -1,0 +1,260 @@
+#  Step 0
+%run -i step0.py
+
+#  Step 1: display an image of points
+%run -i step1.py
+%run -i display-numpy.py
+%run -i display-numpy.py
+# after:
+ctx.im.connect(ctx.display_numpy.array)
+
+#  Step 2: OpenGL points
+%run -i step2.py
+ctx.program.set(open("program-step2.cson").read())
+ctx.vert_shader.set(open("vert_shader-step2.glsl").read())
+ctx.frag_shader.set(open("frag_shader-step2.glsl").read())
+# after:
+ctx.vertexdata.connect(p.array_vertexdata)
+# Demonstrate that ctx.program can be edited, and its GUI also:
+"""
+edit_program = edit(ctx.program)
+cson_editor_code = edit_program.rc.code_start.cell()
+edit(cson_editor_code, "CSON editor source code")
+"""
+
+
+#  Step 3: generate vertexdata using a transformer
+%run -i step3.py
+ctx.equilibrate()
+ctx.params_gen_vertexdata.set(open("params_gen_vertexdata-step3.cson").read() )
+# after:
+ctx.N.connect(ctx.gen_vertexdata.N)
+ctx.gen_vertexdata.output.connect(ctx.vertexdata)
+
+#  Step 4: larger points
+ctx.gen_vertexdata.code.set(open("cell-gen-vertexdata-step4.py").read())
+ctx.vert_shader.set(open("vert_shader-step4.glsl").read())
+ctx.program.set(open("program-step4.cson").read())
+#  equivalent to: glEnable(GL_VERTEX_PROGRAM_POINT_SIZE)
+
+#  Step 5: blending
+ctx.program.set(open("program-step5.cson").read())
+ctx.frag_shader.set(open("frag_shader-step5.glsl").read())
+
+#  Step 6: animation
+%run -i step6.py
+ctx.params_gen_uniforms.set(open("params_gen_uniforms-step6.cson").read() )
+ctx.gen_uniforms.uniforms.connect(ctx.uniforms)
+ctx.gen_uniforms.code_start.cell().set(open("cell-gen-uniforms-start-step6.py").read())
+ctx.gen_uniforms.code_update.cell().set(open("cell-gen-uniforms-update-empty.py").read())
+ctx.program.set(open("program-step6.cson").read())
+ctx.vert_shader.set(open("vert_shader-step6.glsl").read())
+
+# Step 7: auto-redraw
+ctx.params_gen_uniforms.set(open("params_gen_uniforms-step7.cson").read() )
+ctx.gen_uniforms.code_start.cell().set(open("cell-gen-uniforms-start-step7.py").read())
+ctx.gen_uniforms.code_update.cell().set(open("cell-gen-uniforms-update-step7.py").read())
+%run -i step7.py
+
+# Step 8: signalling for repeated explosions
+ctx.params_gen_uniforms.set(open("params_gen_uniforms-step8.cson").read() )
+ctx.gen_uniforms.code_update.cell().set(open("cell-gen-uniforms-update-step8.py").read())
+ctx.params_gen_vertexdata.set(open("params_gen_vertexdata-step8.cson").read() )
+%run -i step8.py
+
+# Step 9: generate the texture
+%run -i step9a.py
+%run -i step9b.py
+# After:
+ctx.im.disconnect(ctx.display_numpy.array)
+ctx.texture.connect(ctx.display_numpy.array)
+
+# Step 10: use the texture
+ctx.program.set(open("program-step10.cson").read())
+# In between:
+ctx.texture.connect(p.array_s_texture)
+# /In between
+ctx.frag_shader.set(open("frag_shader-step10.glsl").read())
+
+# Step 11:
+#   First:  N + color in gen-uniforms (connect N), program + frag shader
+#   Then:   centerPosition in gen-uniforms, program + vert shader
+#   Then:   same for gravity (connect)
+#   Then:   same for pointsize (connect)
+ctx.params_gen_uniforms.set(open("params_gen_uniforms-step11.cson").read() )
+ctx.gen_uniforms.code_start.cell().set(open("cell-gen-uniforms-start-step11.py").read())
+# In between:
+ctx.N.connect(ctx.gen_uniforms.N)
+ctx.gravity = ctx.gen_uniforms.gravity.cell().set(1)
+ctx.pointsize = ctx.gen_uniforms.pointsize.cell().set(10)
+# /In between
+ctx.program.set(open("program-step11.cson").read())
+ctx.vert_shader.set(open("vert_shader-step11.glsl").read())
+ctx.frag_shader.set(open("frag_shader-step11.glsl").read())
+
+# Step 12: startPosition and endPosition
+ctx.gen_vertexdata.code.set(open("cell-gen-vertexdata-step12.py").read())
+ctx.program.set(open("program-step12.cson").read())
+ctx.vert_shader.set(open("vert_shader-step12.glsl").read())
+
+# Step 13: Silk
+%run -i step13a.py
+# In between:
+ctx.silk_vertexdata.set("""
+Type Vec3 {
+  Float x
+  Float y
+  Float z
+}
+""")
+Vec3 = ctx.registrar.silk.get("Vec3")
+v = Vec3(1,2,3)
+print(v)
+Vec3Array = ctx.registrar.silk.get("Vec3Array")
+va = Vec3Array(v, [4,5,6], {"x":10, "y":20, "z": 30})
+print(va)
+# /In between
+ctx.silk_vertexdata.set(open("vertexdata-step13.silk").read())
+%run -i step13b.py
+ctx.gen_vertexdata.code.set(open("cell-gen-vertexdata-step13.py").read())
+%run -i step13c.py
+ctx.program_template.set(open("program_template-step13.cson").read())
+# Finally: copy-paste cell-gen-program.py
+
+# Step 14: lifetime
+ctx.silk_vertexdata.set(open("vertexdata-step14.silk").read())
+ctx.gen_vertexdata.code.set(open("cell-gen-vertexdata-step14.py").read())
+ctx.vert_shader.set(open("vert_shader-step14.glsl").read())
+ctx.frag_shader.set(open("frag_shader-step14.glsl").read())
+
+# Step 15: shrink_with_age
+ctx.params_gen_uniforms.set(open("params_gen_uniforms-step15.cson").read() )
+# In between:
+ctx.shrink_with_age = ctx.gen_uniforms.shrink_with_age.cell().set(True)
+# /In between
+ctx.gen_uniforms.code_start.cell().set(open("cell-gen-uniforms-start-step15.py").read())
+ctx.vert_shader.set(open("vert_shader-step15.glsl").read())
+
+"""
+TODO
+
+create a fireworks notebook in docs/notebook
+add a cell that downloads fireworks.seamless
+also a cell that downloads orca.png
+
+dashboard cells
+
+ugly code cell to draw text
+
+code snippet cell to make exploding letters
+
+widget to set text
+
+Make a video
+- dashboard/shader settings for confetti and orcabubbles (also: see below)
+- exploding letters
+Instructions:
+- Where to download the notebook
+- Tell them to give it is own directory
+- Tell them where the .seamless file was built (examples directory), you can study the examples code
+- To learn the code step-by-step, look into the fireworks/tutorial/ directory
+- Also, you can learn the tutorial step-by-step by watching the three-part video tutorial
+"""
+
+# End of the tutorial, and the beginning of the video
+# Demonstrate:
+# - dashboard
+# - confetti (color attribute)
+# - bubbles 
+# - exploding letters:
+#   - draw text onto array
+#   - give array as mask to gen_vertexdata
+#   - generate 10 million startPoints
+#   - discretize onto mask,
+#     filter out using mask (stochastic filtering is possible)
+#   - finally take the top N startPoints
+
+# Gravity ipywidget:
+# 1.traitlink snippet
+"""
+import traitlets
+from collections import namedtuple
+import traceback
+
+def traitlink(c, t):
+    assert isinstance(c, seamless.core.Cell)
+    assert isinstance(t, tuple) and len(t) == 2
+    assert isinstance(t[0], traitlets.HasTraits)
+    assert t[0].has_trait(t[1])
+    handler = lambda d: c.set(d["new"])
+    value = c.value
+    if value is not None:
+        setattr(t[0], t[1], value)
+    else:
+        c.set(getattr(t[0], t[1]))
+    def set_traitlet(value):
+        try:
+            setattr(t[0], t[1], value)
+        except:
+            traceback.print_exc()
+    t[0].observe(handler, names=[t[1]])
+    obs = seamless.observer(c, set_traitlet )
+    result = namedtuple('Traitlink', ["unobserve"])
+    def unobserve():
+        nonlocal obs
+        t[0].unobserve(handler)
+        del obs
+    result.unobserve = unobserve
+    return result
+"""
+# Gravity ipywidget:
+# 2. widget; don't forget to change cell-gen-uniforms, start AND update, to update gravity every frame
+"""
+from ipywidgets import FloatSlider
+w_gravity = FloatSlider(min=0, max=5, description = "Gravity")
+obs = traitlink(ctx.gravity, (w_gravity, "value"))
+w_gravity
+"""
+
+# Exploding letters: draw text onto array:
+"""
+import numpy as np
+from PyQt5.QtGui import QImage, QFont, QColor
+from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QPainter
+imsize = 1000
+img = QImage(imsize, imsize, QImage.Format_Grayscale8)
+img.fill(Qt.white)
+
+text = "Seamless"
+
+qp = QPainter()
+try:
+    qp.begin(img)
+    qp.setPen(Qt.black)
+    font = QFont("Arial", 100)
+    qp.setFont(font)
+    mx = img.width()
+    my = img.height()
+    qp.drawText(0, 0, mx, my, Qt.AlignCenter,text)
+finally:
+    qp.end()
+mask = np.array(img.bits().asarray(img.byteCount())).reshape(img.width(),img.height())
+ctx.mask = cell("array").set(mask)
+ctx.texture.disconnect(ctx.display_numpy.array)
+ctx.mask.connect(ctx.display_numpy.array)
+"""
+
+# Exploding letters:
+#   - discretize onto mask,
+#     filter out using mask (stochastic filtering is possible)
+#cell-gen-vertexdata.py:
+"""
+rotmask = np.rot90(mask, 3) #in (x,y) form
+start_values0 = np.random.random((1000000, 3))
+p = (start_values0*len(mask)).astype(np.int)[:,:2]
+mask_values = rotmask[p[:,0], p[:,1]]
+start_values0 = start_values0[mask_values==0]
+start_values = 2*start_values0[:N]-1
+end_values = np.random.normal(0.0, 0.15, (N, 3))
+"""

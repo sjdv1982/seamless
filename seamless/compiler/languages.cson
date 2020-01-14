@@ -41,8 +41,4 @@
     "extension": "sh",
     "mode": "interpreted"
   }
-  "slash": {
-    "extension": "slash",
-    "mode": "interpreted"
-  }
 }

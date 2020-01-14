@@ -29,7 +29,6 @@ language_to_ext = {
     "fortran": "f",
     "javascript": "js",
     "bash": "bash",
-    "slash": "slash",
     "opencl": None #TODO
 }
 celltype_to_ext = {
