@@ -11,4 +11,4 @@ The main application domains are scientific computing, scientific web services, 
 
 Protocols, computations and results are all represented as directed acyclic graphs that consist of cell checksums. This makes them strongly interoperable and reproducible: Unlike other workflow systems, Seamless graphs are self-contained and do not depend on the content of external files, URLs, identifiers, version numbers, or other kinds of metadata. 
 
-*NOTE: Seamless is in the process of a new release (0.2).* It will take some time before documentation will be adapted. In the meantime, you are encouraged to browse `/docs <https://github.com/sjdv1982/seamless/tree/master/docs>` to get a better idea how Seamless works. 
+*NOTE: Seamless is in the process of a new release (0.2).* It will take some time before documentation will be adapted. In the meantime, you are encouraged to browse `/docs <https://github.com/sjdv1982/seamless/tree/master/docs>`_ to get a better idea how Seamless works. 
