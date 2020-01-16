@@ -1,6 +1,7 @@
 *.pyc
 *.html
 !docs/*.html
+!docs/**/*.html
 build/
 dist/
 *.egg-info/
