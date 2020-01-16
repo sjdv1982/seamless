@@ -1,13 +1,23 @@
 Data management in Seamless
 ===========================
 
+NOTE: THIS PLAN IS PARTIALLY CONTRADICTORY WITH seamless-tools.txt. RE-THINK AND CHOOSE/COMBINE THE PLANS
+
+Initial implementation:
+   Workspace manager (+ web interface), proof of principle.
+Follow up:
+   - Needs some kind of provenance/Google-your-checksum server 
+   - Clean up Redis keys that are old and have no workspace/minispace associated with it. 
+   - Supervisor. Coordinate job submission on the cluster and provenance 
+
+
 NOTE: The Seamless graph offers a unified format to describe:
 - protocols (web services, unfilled web forms): a graph with code cells, undefined input cells, and undefined output cells.
 - computations (jobs, filled-in web forms): a graph with code cells, input cells, and undefined output cells.
 - results: a graph with code cells, input cells and output cells, where every cell is defined.
 However, Seamless graphs contain no values at all, only checksums.
 This means that they are small (and we should store them essentially forever)
-On the other hands, this also means that every checksum needs to be backed up by data storage 
+On the other hand, this also means that every checksum needs to be backed up by data storage 
 (checksum-to-value caching), else a Seamless graph becomes useless.
 Therefore, from a Seamless point-of-view, data management is nothing more or less than *persistence*:
  deciding how long to maintain a checksum-to-value cache entry (*). 
@@ -17,7 +27,9 @@ It is observed that there are fundamentally *two kinds of values*:
 Small values:
 For example: "4", "1AVX", True. These values are even smaller than their checksum.
 In principle, they can be maintained with *(semi-)permanent persistence*. Redis supports the entry of a value with a certain
- lifetime. Whenever the value is accessed, the lifetime can be renewed. With this, we can support the
+ lifetime. Whenever the value is accessed, the lifetime can be renewed. 
+ (UPDATE: not quite true, but you can always ask Redis for the most recent access time of a key )
+ With this, we can support the
  storage of all small values that have been used in Seamless jobs, say, for the last 10 years.
 These values are also:
 - Entered directly as parameters in a web form / command line
@@ -79,7 +91,7 @@ But the job result value can then only be obtained by people at the hospital, an
  to share their data with (hopefully, the journal where they publish their results).
 
 
-(*) = checksum-to-value cache, provenance cache, etc. are implemented as a sinngle Redis database, backed up
+(*) = checksum-to-value cache, provenance cache, etc. are implemented as a single Redis database, backed up
  by a big hard disk. This Redis database will run on the "console" machine at the RPBS, and be accessible
  over the network, so every Seamless instance running on our cluster has direct access. This will make 
  Lustre superfluous).

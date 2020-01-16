@@ -1,0 +1,66 @@
+Seamless consists of a high-level API, a graph format, and a low-level translator-evaluator (core).
+Only the graph formal, being universal, will have a formal specification. 
+The other two are informal APIs tied to (for now) the Python language. Future alternative implementations
+of Seamless may replace one or both APIs.
+
+The workflow of Seamless can be decoupled as follows:
+
+1. A graph is constructed using the high-level API (seamless.highlevel).
+   This graph consists of the node topology + cell checksums.
+   Topology can be translated while checksums are missing.
+   This makes that the graph can describe: 
+   - A protocol/workflow, if code input checksums are present, but not data input checksums.
+   - Or: a computation, if all input checksums but not result checksums are present
+   - Or: a result, if all checksums have been filled in ("colored graph")
+   These makes Seamless graphs strongly interoperable. 
+   See "Interoperability.pdf" for more details.
+
+   Currently, the best graph construction front-ends are IPython and Jupyter to construct the topology locally
+   (i.e. server-side, i.e. the same place as they will be evaluated).
+   An future alternative would be Pyodide, leading to in-browser topology construction followed by
+    in-browser evaluation (CPython => wasm JS).
+  Note that Seamless graph construction can be decoupled from evaluation (see below)
+
+2. The mid-level translator (seamless.midlevel) translates a Seamless graph into a low-level seamless context.
+   The current low-level implementation in Python will be the only one for the foreseeable future.
+   However, the entire translator-evaluator will wrapped into Seamless network services that accept graphs.
+   These services have various levels of interactivity, but a semi-interactive model (fixed topology, interactive values)
+   is the most relevant for decoupling.
+   The front-ends described in 1. could be coupled to a Seamless service. In this way, the front-end could move to
+   the client, and also away from Python.
+
+Future:
+   A future development would be to port the high-level API to JS, or make a different API around the graph format.
+    The graph format will be formalized in a future version of Seamless.
+    As it is only graph evaluation, this is not too difficult.
+    Iodide would be a viable front-end for that.
+
+3. Evaluation: This is done using a TaskManager using asyncio coroutines.
+   Note that Seamless can be configured to disable local evalation,
+   and instead send all tasks to remote Seamless instances, over the network.
+   The latter can be configured using the communion server/client.
+   This means that Seamless can be configured as a job slave, or a
+   low-footprint work coordinator/aggregator.
+
+4. Back-end: The edit and display of cell values.
+   This part focuses on the editing and display of *values*, rather than *topology*.
+   A comprehensive solution that also integrates with the front-end would be (Py)Qt.
+   Unfortunately, Qt is a dead technology. Nowadays, editing is done using text editors or IDEs for text, and the
+   browser for everything else. Seamless will move away from Qt. 
+   Editing is now done using HTML + JS cells, that are served using .share().
+   Cells are edited using the Seamless JS client library, again using the share server to provide a REST API.
+   HTML auto-generating libraries will be added in the future.
+
+  Alternative editing/visualization facilities are provided by cell.traitlet() and cell.output_widget(), 
+  which are to be used with Jupyter visualization 
+  (Jupyter notebooks can become dashboards when most of the cells are hidden)
+  
+  On top of this, Seamless supports polling observers, which is primarily for
+  communication *between* Seamless graphs (e.g. a secondary graph to analyze
+  the status and error messages of the first). 
+
+  In addition, there is Observable Notebook.
+  See "observable.txt" for an in-depth discussion of Seamless [vs/in combination with] Observable Notebook.
+
+  Finally: an alternative for Observable would be Carbide, a lens-based framework.
+  As far as I can see, you could hook up a Seamless service via Vue or React in a similar way.

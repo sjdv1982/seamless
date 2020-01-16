@@ -1,0 +1,12 @@
+Reverse provenance
+====================
+
+(aka "re-compute on the fly")
+
+Imagine the case where a graph has just been loaded. You know all checksums, but not the values.
+For now, all values must be stored in an accompanying cache archive.
+In the future, make it possible to store just the authoritative values.
+When a non-authoritative cell value is requested, and there is a cache miss, 
+ travel back the graph and evaluate the transformers to re-compute the result.
+This should be enabled/disabled on a by-cell basis (if any cell upstream has it
+ disabled, don't do it).

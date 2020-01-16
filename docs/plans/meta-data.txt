@@ -1,0 +1,6 @@
+Adapt old plan: execution cells
+
+Execution cells are cells that contain only execution details and do not influence the result.
+  Examples: number of CPUs, temp directory where to execute slash in, caching locations
+Changes in execution cells do not trigger re-computation, but a reactor
+ will receive the new value once something else triggers re-computation.

@@ -1,0 +1,12 @@
+Feature below is done, but patch was rejected by Pandas. Spin-off "pandeval" is currently part of Seamless
+
+  Add Pandas as a query engine. Querying in Pandas is fantastic (much better than numexpr).
+  Usage is as simple as `from pandas.core.computation.eval import eval as pd_eval`, and then:
+  `pd_eval("c < 108 and c > 102", global_dict={"c": arr["c"]})` where arr is a structured array.
+  The Silk wrapper can be passed in as a resolver for even more ease of use.
+  (Unfortunately, using DataFrames stinks...
+  DataFrames are very opinionated about holding state, no way to let Silk hold it in a vanilla Numpy array.
+  This is because Pandas *really* wants a 2D Numpy array, of dtype=object if needed).
+  With this, there is absolutely no need to re-implement/re-invent a PDB selection language.
+  PDB selection should be server-side, sent as a JSON object with atom indices to the browser,
+   to be interpreted by NGL.

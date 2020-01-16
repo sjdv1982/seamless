@@ -1,0 +1,31 @@
+Exception logging
+=================
+
+TODO (long term)
+
+Finalize exception logging. There are still the core aux systems
+(mount, share, communion), link them to cells if possible. For the rest,
+ there are still translation/highlevel API exceptions, but they should be printed.
+ Did we forget anything?
+
+Exceptions and state should never be real cells, as they are not deterministic.
+But in the future, perhaps support connecting them to a cell from a *different* graph...
+
+Older plan
+==========
+
+D. Logging and graph visualization, initial prototype
+(see Status-of-seamless.txt)
+NOTES:
+- status mostly gets reconstituted (except reason for void)
+- metainfo:
+    - store exception and stdout/stderr of a transformation, include in status report
+        also store if result was obtained from cache, or remotely
+    - same for macro and reactor (easier, because 1:1)
+    - same for cell:
+        - structuredcell validation error
+        - error in obtaining value from checksum (also if provenance fails)
+    - implement storage for metainfo in graph
+- logging system, based on event loop (in parallel to metainfo)
+- progress bar system (connect to progress)
+

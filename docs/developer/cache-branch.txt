@@ -1,0 +1,76 @@
+NOTE (Jan 2020):
+The document below describes the design plan that drove the cache branch,
+ which is one of the four big changes between 0.1 and 0.2.
+The fourth change was in the livegraph branch, see livegraph.txt. 
+
+The New Way of execution management
+===================================
+The New Way is purely a manager issue. Worker implementations are unaffected.
+- Need asyncio, to move beyond tornado 4 / ipykernel 4
+- There will be only a single manager for every top-level context
+- All checksums will be git-style but with SHA3-256
+- Only authoritative cells, object cells (cell()) and Python code cells will hold their value.
+  For any other cell, only the checksum will be stored
+  The value will be retrieved from a local cache dict
+  The local cache dict takes checksums as keys.  
+- Caching will be tricky for StructuredCells: UPDATE: see livegraph branch  
+- Setting a value to anything non-authoritative will now be an error in Seamless.
+  (This is anyway pretty difficult, as a high-level assignment would just modify the graph)
+- Cells are (initially) considered "pending" if their checksum is known, else "undefined".
+  Then, authoritative cells are marked as "equilibrium", as well as any outchannels/cells they
+  are connected to.
+  The manager considers workers as "undefined" as long as their inputs
+  (and required editpins) are not in equilibrium. When they are known, a reactor
+  is then considered "pending". A transformer (or a reactor marked as "pure")
+  that is "pending" immediately becomes "equilibrium" under the following conditions:
+  The checksum of the output cell is known, AND,
+  the output cell is marked as "equilibrium" OR the grand checksum of the
+  transformer is found in a computation server (see "services").
+  A "pending" worker will have all of its inputs queried for their values, and
+  then sent to them, becoming "running". The values will be queried using the local cache dict.
+  In case of cache misses, checksum value servers can be queried (same as services do).
+  If the cache miss persists, the cell's itself becomes "pending": its upstream dependencies
+  (by definition, it has some) are changed from "equilibrium" to "running".
+  A "running" worker will send values as normal. Once it is done, it may or may not be shut down.
+  If it is shut down, its kernel is killed, and the worker is set to "equilibrium". Else, it is set
+  to "equilibrium+"
+  However, if the worker gives an error, the worker state is changed to "error" (or "error+").
+  Upon entering "error", the worker does the following:
+  All downstream cells are set to "error". A cell in error has its checksum invalidated, and propagates
+   the "error" state to downstream dependencies. A running worker may or may not be shut down upon receiving
+  an error, but at least, its computation will be interrupted. Its status becomes "error" (if shut down) or
+  "error+" if not shut down. Workers may still be shut down after some time has elapsed.
+  A reactor that shuts down for any reason has its "code_stop" evaluated (see "reactor side effects" below).
+- The local cache dict can be configured to forget cache values. A separate dict records the time and
+ the cell path. It may decide to forget when the cell path is destroyed or time lapses, or may maintain
+ just one value per cell path. Each local cache dict is tied to a toplevel context.
+- equilibrate() means that there are no "pending" cells and no "pending" or "running" workers. All cells
+  and workers are either "equilibrium", "undefined", or "error". (Workers lacking input connections are
+  "unconnected", which is a form of "undefined").
+- equilibrate() can be invoked on individual cells, workers and contexts.
+  As a flag, a blocking value request can be included.
+- When an authoritative cell is updated (via reactor or from the outside),
+  the cell is *first* re-defined as "pending".
+  An "equilibrium" worker connected to an input that is now "pending", becomes "undefined".
+  Same for a "running" worker, and it has also its computation interrupted.
+  Only *then* the new checksum is set and propagated, potentially triggering workers.
+- Reactors may also define *outputs* even after their code_update execution has returned
+  (although it should be rare); this is treated the same way.
+- There are "secret cells" for which a checksum may be set from the shell. However, they must either
+  be connected to a service, or the checksum must give a cache hit.
+
+An important advantage of the New Way is that there are stronger timing guarantees.
+Example: dependency graph A=>B, A=>C, B+C=>D. If A is updated to A*,
+B will become updated to B* and C to C*.
+Eventually, D will be evaluated from B*+C*, but before, the intermediate computations
+B*+C or B+C* are both possible as "glitches". But now the glitches disappear.
+
+Test on Collatz test, this is a good measurement for equilibrate/unstable.
+
+- Temporary
+return_preliminary marks a result as temporary. Temporary results never trigger
+ equilibrium.
+Macros always ignore temporary results. Reactors and workers can be configured
+ to accept them or not.
+
+

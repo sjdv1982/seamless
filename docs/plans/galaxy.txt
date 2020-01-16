@@ -1,0 +1,4 @@
+Galaxy
+======
+See if it is possible to adapt Galaxy workflows to Seamless.
+Possibly via CWL??

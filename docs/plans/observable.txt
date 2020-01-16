@@ -1,42 +1,11 @@
-Seamless consists of a high-level API, a graph format, and a low-level translator-evaluator (core).
-The workflow of Seamless can be decoupled as follows:
+Analysis of using Observable with Seamless
+==========================================
 
-1. A computation graph is constructed using the high-level API (seamless.highlevel).
-   This graph consists of the node topology + cell values.
-   In the current design of the graph format, the topology can be translated without any values.
-   Currently, the best front-ends are IPython and Jupyter to construct the topology locally
-   (i.e. server-side, i.e. the same place as they will be evaluated).
-   An alternative would be Pyodide, leading to in-browser topology construction followed by
-    in-browser evaluation (CPython=>wasm JS).
+I wrote this quite some time ago, before realizing that "manually" interacting with Seamless in JS using
+ the Seamless client library is in fact not that difficult... Still, Observable is a good option in case
+ of visualization of realtime streaming data.
 
-2. The mid-level translator (seamless.midlevel) translates a Seamless graph into a low-level seamless context.
-   The current low-level implementation in Python will be the only one for the foreseeable future.
-   However, the entire translator-evaluator will wrapped into Seamless network services that accept graphs.
-   These services have various levels of interactivity, but a semi-interactive model (fixed topology, interactive values)
-   is the most relevant for decoupling.
-   The front-ends described in 1. could be coupled to a Seamless service. In this way, the front-end could move to
-   the client, and also away from Python.
-
-Future:
-   A future development would be to port the high-level API to JS, or make a different API around the graph format.
-    The graph format will be formalized in a future version of Seamless.
-    As it is only graph evaluation, this is not too difficult, although setting values would be harder.
-    Iodide would be a viable front-end for that.
-
-3. Back-end: The edit and display of cell values.
-   This part focuses on the editing and display of *values*, rather than *topology*.
-   A comprehensive solution that also integrates with the front-end would be (Py)Qt.
-   Unfortunately, Qt is a dead technology. Nowadays, editing is done using text editors or IDEs for text, and the
-   browser for everything else. Seamless will move away from Qt. Editing will be done by auto-generating HTML+JS (Vue or maybe React) client-side,
-   and Python (flask) server-side.
-
-   On the short-term, the front-end and the back-end will be the same.
-   Jupyter and other notebooks (Beaker, Pyodide) can both control Seamless via Python, and display the HTML
-   of Seamless result cells.
-   For non-programming access, there doesn't have to be any backend: Seamless HTML cells can be served directly as a web page.
-
-
-   On the long-term, a fantastic in-browser edit-display framework is available: Observable.
+    On the long-term, a fantastic in-browser edit-display framework is available: Observable.
    Observable is in agreement with much of the design philosophy of Seamless. Reactive, interactive, cell-based, dependency graph.
    It has a Jupyter-like reactive web editor (which is unfortunately not open source).
    However, it has a very flexible runtime where you can add new cells and link them up to the outside world.
@@ -107,6 +76,3 @@ To make a bifunctional (interactive+dynamicdata AND embeddable+dynamicdata) note
   - During interactive development, define EXTERN (it should poll a Seamless server/service)
   - When embedding, just inject "cellsync_inject" as a function. No need for custom variables ("virtual cells").
     Check that JS functions can be injected like this!
-
-Finally: an alternative for Observable would be Carbide, a lens-based framework.
-As far as I can see, you could hook up a Seamless service via Vue or React in a similar way.

@@ -30,5 +30,3 @@ Structures hold, schemas validate, classes manipulate.
 APIs and GUIs are good, unless they hide things away.
 
 Edit all state, then edit the editor.
-
-Transform lazily, react eagerly.

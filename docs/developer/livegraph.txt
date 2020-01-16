@@ -1,12 +1,41 @@
+Livegraph
+=========
 
-Current status (Aug 30 2019):
-Almost implemented, but some modifications were made (need to be documented)
-In particular, subpaths/deep cells/structured cells will be a different
+This document describes the design plan that drove the livegraph branch,
+ which is one of the four big changes between 0.1 and 0.2.
+ (The other three changes were in the cache branch (see cache-branch.txt)
+ , namely:
+ - Split between high and low level, see docs/developer/architecture.txt
+ - A complete redesign of Silk, see docs/plans/silk
+ - The change of cells from fat value containers to thin wrappers 
+   around cached checksums, manipulated from a manager (hence the name)
+This document was written in early 2019, after the caching branch was complete,
+ but instabilities proved the necessity of the livegraph branch. The document
+ is mostly written from a caching branch POV, i.e. "what needs to be changed from here"
+)
+Implementation was carried out reasonably close to the spec as described in this document. 
+The most important modifications:
+1. Many of the sync actions, (namely get/set_value, get/set_checksum (public), get/set_buffer, and
+  also ctx.equilibrate, ctx.translate and ctx.get_graph)
+  cannot be executed when an asyncio event loop is running, most notably within
+  Jupyter Notebooks. nest_asyncio is an unreliable solution.
+  Therefore, nest_asyncio was dropped, and async (coroutine) versions were implemented.
+  For value/buffer/checksum, this merely invokes the private checksum API and then awaits
+  (de)serialization etc. 
+  For equilibrate and translate, async equivalents were created.
+2. "equilibrate" was replaced by "compute"
+3. Some task dependency deadlocks were encountered. In particular, within Structured Cell joins,
+  and also get_graph tries to wait for these as well as for SetValue/SetBuffer actions.
+  Therefore, Subpath cancel/void was implemented differently to avoid deadlocks, and pseudo-cycles
+  are no longer possible.
+  This has been labeled issue 3.
+4. Deep cells do not work quite the way as in this document. This leads to a memory leak.
+  This has been labeled issue 5.
 
 
 ===================
 
-The manager has too many functions. New concept of a "livegraph". This is what the manager
+New concept of a "livegraph". This is what the manager
 currently maintains, i.e. accessors, statuses, ..., i.e. all that goes beyond the 
 simple static hierarchical low-level context.
 
@@ -120,19 +149,6 @@ The following actions are possible:
 - Get cell checksum (private)
   Simply return the stored checksum attribute
 
-
-TODO: buffercell cache: buffercell ID to value (live Python object, NOT buffer!).
-TODO: semantic-to-syntactic-checksum cache
-TODO: provenance cache
-TODO: deepcell monitor
-TODO: two kind of accessors: read accessors and write accessor.
-Each connection is modelled as a read accessor + write accessor. 
-A read accessor has an associated expression.
-TODO: buffer size cache.
-TODO: exception cache. Works like transformer result cache, but needs better facilities to flush
- (after all, exceptions are less deterministic than results).
-TODO: expression cache policy. Normally, cache only if the result buffer is much smaller than 
- the input buffer.
  
 
 Tasks
@@ -381,37 +397,3 @@ Cancellations are sync, like actions.
   Decref the associated transformation, remove the transformer from its outputs.
   Select all downstream accessors, and do cancellation on them (propagating void).
 
-
-  
-  TODO: expression provenance cache: expression-result-to-expression. 
-  TODO: buffersize cache (checksum-to-buffersize) in ValueCache. Also in Redis and via communionserver
-    Both provenance caches (transformation and expression) are kept as local cache for any buffersize,
-    but they are offloaded to Redis only for larger buffers (>= 100 bytes)
-  TODO: implement and document text below:
-  TODO: graph storing/loading: Checksums of accessors (connections) are stored/loaded as well as the checksum of cells
-  NOTE: .protocol conversion/validation caches are never offloaded to Redis.
-  However, validation is only invoked if:
-  - The cell value (not the checksum!) is changed authoratively from the command line (SetCellValueTask)
-  - By an accessor, if the checksum of the accessor (or its target cell) changes
-  Therefore, graphs that contain results (including partial results; almost every graph contains some expression results)
-   can be loaded in trusted or non-trusted mode. In both cases, all checksums are set, but the differences are as follows.
-  
-   In non-trusted mode: 
-   No caches are filled at all. This means that all expressions get re-evaluated, starting from authorative cells.
-   All transformations will be re-executed as well. 
-   However, since all results will (should!) be the same as the checksums of their outputs, there will be no propagations.
-   Reactors and macros get re-launched also.
-   However, checksums of reactor output pin accessors are set to "provisional" (TODO). When a reactor outputs a value, the
-   provisional status cleared. Whenever a reactor gives an exception,
-    all provisional accessors are void-cancelled. After equilibration, all provisional accessors are void-cancelled as well.
-   
-   In trusted mode: 
-   All caches get filled:
-    - Transformation result cache
-    - Expression result cache
-    - Validation/conversion caches
-  This means that even though accessors/transformations will be initially re-evaluated, they all immediately get a cache hit.
-  In addition, since the cache hit is the same as their checksum, there will be no propagations.
-  Reactors and macros get re-launched anyway, which is as it should be (TODO: unless declared as pure). 
-  Reactors should give the same outputs, but if they do not, it gets overwritten.
-/TODO: implement and document text 

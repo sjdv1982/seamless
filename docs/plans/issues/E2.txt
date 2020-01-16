@@ -1,0 +1,8 @@
+Get high-level reactors working again.
+This has been labeled as feature E2 in the code, where it should be inserted.
+This also means that high-level edit pins should be implemented again;
+ it must be tested that this does not mess up authority.
+Once it works:
+- use WIP/merge-reactor as a use case.
+- Think of start/stop side effects of reactors
+(could be big memory leak otherwise)

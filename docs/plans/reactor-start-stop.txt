@@ -1,0 +1,55 @@
+Reactor start and stop side effects
+==================================
+
+(NOTE: relies on high-level reactors (issue E2) to be implemented first)
+
+The reactor start and stop code may produce side effects. To work properly,
+ Seamless requires idempotency. For example, of the event chains below, not only
+ must A and B give the same results, but also B and C. In other words, stop followed
+ by start must cancel out in terms of side effects. Seamless has the choice of a
+ spectrum between 1. never do a stop until the reactor terminates
+ (and with the way cache hits work for the reactor, this may be at the end of the program),
+  or 2. stop after every update execution, and restart whenever a new value arrives.
+  1. may save CPU time, while 2. may save memory.
+Some evaluation policy will tell Seamless what to do (this will not affect the result).
+By default it is 1., which is essential in the case of a GUI in a reactor. (While the
+  disappearance of the GUI technically has no result on the computation, it will definitely
+  be an unpleasant surprise to the user).
+
+event chain A:
+set value X to 10
+set value Y to 20
+start
+update
+stop
+
+event chain B
+set value X to 1
+set value Y to 2
+start
+update
+set value X to 10
+update
+set value Y to 20
+update
+stop
+
+event chain C
+set value X to 1
+set value Y to 2
+start
+update
+stop
+set value X to 10
+set value Y to 20
+start
+update
+stop
+
+TODO:
+(Re-)introduce caching for reactors
+    They give a cache hit not just if the value of all cells are the same, but also:
+         - if the connection topology stays the same, and
+         - the value of all three code cells stays the same
+    In that case, the regeneration of the reactor essentially becomes an update() event  
+

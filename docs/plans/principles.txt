@@ -1,0 +1,118 @@
+(Contains random remarks/insights about the workings of Seamless. 
+that should be converted into documentation/examples/theory documents at some point)
+
+- Only authoritative (or sovereign) cells should be changed from code at runtime.
+  Anything else gives a warning, and another warning when restored from a worker.
+
+- Editpins do not lend authority! A cell can have multiple editpins, and an outputpin
+  A cell that receives a value from an editpin is as if it comes from code.
+- A low-level context may only ever grow. Explicit removal of cells/constructs/subcontexts
+  is not supported. Only low-level macro re-execution will replace a subcontext.
+  All low-level macros will be cached, and always generate a context.
+  
+- Any type checking is via Silk schemas attached to high-level cells and workers.
+
+- Cells are dumb constructs. They are always to be interrogated by managers. There is one manager per root context
+(or less, as managers may have multiple root context). Every manager has a task manager, a live graph, 
+a buffer/value cache, etc.
+
+High-level syntax
+=================
+- There must be a lot of API/proxy magic on top of the assign operator.
+- Likewise, if ctx.tf is a transformer, then ctx.tf.self.input would be its input
+auto cell. You may assign ctx.a = ctx.tf.self.input and then reverse the connection.
+Then, you would have the following usage
+patterns:
+- ctx.a.spam = 5 is *example-based programming*. By giving example data, Seamless
+  can infer the schema. In addition, it provides a *unit test* for ctx.tf.
+- ctx.tf.spam (=> ctx.tf.self.spam) provides a *default value*.
+What you do is that you configure ctx so that assignment to ctx is re-written
+as assignment to ctx.tf. You configure ctx.tf as copy-upon-assignment. You save
+ctx as "tf.seamless". In the main program, you do:
+  ctx.mytf = seamless.fromfile("tf.seamless")
+Now you have imported a fresh copy of ctx.tf as "mytf". mytf.spam is initally 5,
+but you can assign it to any other constant, or to a cell. In both cases, the
+default 5 will be overwritten.
+
+- Every worker has a number of cores used (default 1). As many jobs are launched as there are cores
+
+
+Thoughts on Seamless and purity
+===============================
+Seamless workers must be "kind-of-pure" in terms of cells: given the same input cell values, they must always produce the same
+final output cell values.
+This precludes the use of random generators, system time, or even the opening of an external file or URL.
+This loose formulation of purity gives the following liberties:
+ - Workers are allowed to produce different non-final (preliminary) cell values
+ - They are allowed to have arbitrary side effects, as long as one of the following is true:
+   - A) These side effects do not concern output cells
+   - B) Or: they are idempotent in terms of input cells.
+   For example, a transformer may open a GUI showing a progress bar (although a preliminary output would be cleaner)
+   Or, a reactor may compute the checksum of its inputs, store this in a database, and later retrieve the checksum and use it
+    to produce the output.
+ - They are allowed to send arbitrary status/progress reports and logging   
+ - C) They are allowed to change cells via edit pins. This is considered an "act of authority", as if the programmer himself had
+    changed this cell.
+
+Cyclic graphs
+=============
+Strategies to model them:
+0. Don't model cycles with seamless (keep cycles inside a single worker)
+1. Explicit high-level cells for every assignment (if number of iterations is known).
+   First assignment to cell x becomes cell x1, second assignment to cell becomes x2, etc.
+   Has become feasable now that cells are very low-footprint, but
+   caches must be cleared or memory consumption is too high.
+   Works well now using libmacros
+2. Nested macros (for recursion)
+   Example: collatz.py in low-level tests. Works well now
+3. Explicit transformation/cache API within a single worker.
+Solutions can be combined, of course.
+
+Registering commands with domain-specific languages
+===================================================
+(UPDATE: borderline YAGNI, since slash-0 is deprecated, and topview
+and its GPU array tiles is unlikely to make it anytime soon into Seamless, 
+if at all)
+
+Some domain-specific languages, such as slash-0 and topview, rely on a vocabulary
+of registered commands. This is done as follows:
+- A macro to interpret the source code of the DSL, generating a context Z
+- A dictionary with command name and their parameter declaration. This dict
+  will be an extra input parameter of the macro.
+- A dictionary with commands, containing the command name, a unique command ID,
+  and a mapping of each parameter to the name of a pin/cell/channel in Z.
+  This dict is generated as an additional "magic-name" cell in Z by the macro.
+- Instantiation code for each command. Essentially, macro code which can construct
+  a live instance (context or worker) that can execute the command. This will almost
+  always be a macro that must be bound to a lib.
+- An instantiator. It receives both dictionaries, and the instantiation code for
+  each command.
+- A dynamic connection layer that receives:
+  - The second dictionary
+  - The context Z
+  - The command execution context generated by the instantiator.
+  It will read the "magic name" cell from Z, and use its contents to build
+  connections between Z and the command execution context.
+- If the macro that generates Z can be also the instantiator, then the dynamic
+  connection layer will be superfluous.
+
+
+Why Seamless is not dataflow or Functional Reactive Programming
+===============================================================
+- "History doesn't matter". Dataflow and all flavors of RP react to 
+   event streams that produce and consume in real time.
+  In this sense, Seamless is most akin to a spreadsheet.
+- "Code is just another kind of data". Dataflow and FRP all assume the code as a given.
+- Unlike dataflow (but like FRP), Seamless is really strict about determinism 
+  (purity, referential transparency etc.)
+- "Always resubmit your entire computation."
+  Seamless is very fanatical about caching. If you really want to react to event streams, 
+   just give it an initial value, e.g. [E1, E2, E3], and feed it into a Seamless cell. 
+  When a new event E4 comes, just replace the cell value with [E1, E2, E3, E4]. 
+  Seamless will model it just as if it was [E1, E2, E3, E4] all along (history doesn't matter).
+  But in most of the cases, it will re-use the computations that were done before,
+   instead of recomputing from scratch.
+
+Undo
+====
+NOTE: seamless will never have any global undo system. It is up to individual editor-reactors to implement their own systems.

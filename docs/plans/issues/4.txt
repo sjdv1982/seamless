@@ -1,0 +1,1 @@
+Conversion from structured cell to binary cell goes wrong

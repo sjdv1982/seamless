@@ -1,0 +1,7 @@
+E3. High-level Macro construct around low-level macro; 
+  shouldn't be too hard, but connections in and out of the macro-generated context could be tricky.
+  => Macro.path(...).connect(...) , Macro.path(...).connect_from(...)
+  Wrapping everything in a single Macro with some connections into .share, .mount etc.
+   is a good way to get sth working quickly, until the high level works well.
+
+(Has been marked as E3 in the code, in places where the feature should be inserted)

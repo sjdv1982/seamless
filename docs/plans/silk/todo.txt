@@ -1,0 +1,1 @@
+- Silk: error messages, multi-lingual (use Python format() syntax, but with properties to fill in, i.e. "The value cannot be {a.x}". This is natively supported by Python. No magic in the style of {a.x+a.y}; define a property for that)
