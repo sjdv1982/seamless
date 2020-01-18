@@ -19,7 +19,7 @@ The basis of the cell is a co-routine. Side effects, promises, animated properti
 Loading data via URL is encouraged => hidden dependencies
 Seamless:
 Dependencies are very controlled. No URLs or function pointer, everything is text or binary.
-Workers are expected to return soon, or run in a separate thread.
+Workers are expected to return soon, or run in a separate process.
  No generators or promises. Seamless wants to equilibrate.
 Side effects are carefully controlled, especially with "pure" attribute.
  This makes seamless much more like a pure functional language (term rewriting),
@@ -27,7 +27,7 @@ Side effects are carefully controlled, especially with "pure" attribute.
 Seamless is very meta, as much as Lisp. Macros can generate topology.
 Code cells are just text data. Code generation is much much easier.
  Seamless is not tied to one language.
-Caching in seamless is easy, and macros are cached as well.
+Caching in Seamless is easy, and macros are cached as well.
 Seamless does reactive imports, whereas Observable's notebook imports are static.
 Both are very strong in importing and modifying the imported graph. With Observable, it is simpler,
  but Seamless has more options (forking, or modifying all instances, or just changing

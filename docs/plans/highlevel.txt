@@ -2,7 +2,7 @@ Status of the high level:
 - Most things are now working. Macro is still missing, node wrapping is very incomplete,
     and too easy to construct an illegal graph, but mostly fine now.
 - hcell, hrc and htf refer to the node. Should be renamed.
-- Translation is now lazy, i.e. only upon translate(), equilibrate() or .value .
+- Translation is now lazy, i.e. only upon translate(), equilibrate() 
   Lazification is very recent and not yet well tested. In midlevel/translate.py there is a traceback printing line.
   This should become a report channel, of course.
 - node["TEMP"] refers to a literal (i.e. Python) construction value. Low-level cells are needed to

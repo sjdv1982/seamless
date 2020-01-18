@@ -1,5 +1,17 @@
-Exception logging
-=================
+Status/exception/logging
+========================
+
+UPDATE:
+
+Transformers will have status, exception and stderr. 
+For now, stderr is not yet implemented, while status and exception are computed properties, that can be interrogated using polling observers.
+In the future, they (and cell.status/cell.exception, and get_graph?) will be "second-rate cells", in the sense that they can be connected only to (normal) cells in *other* contexts.
+
+On the longer term, do the same for progress, and for execution time
+ as well.
+
+This will replace the Logging and Report cells mentioned in earlier plans.
+/UPDATE
 
 TODO (long term)
 

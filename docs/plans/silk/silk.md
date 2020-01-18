@@ -13,7 +13,7 @@ sub-object is constructed on-the-fly, wrapping a sub-instance and a Silk sub-sch
 - Silk object provides and API that supports both .property and ["property"].
 - Silk object provides an identical API no matter the form of the instance. For example, if the
 Silk schema indicates an array of ints, and the instance is either [5,2,1] or np.array([5,2,1])
-then silkobject[0] will return 5 (int). (UPDATE: only at the level of scalars. Not .append() etc.)
+then silkobject[0] will return 5 (int). (UPDATE: Now 5 will always be wrapped in Silk...)
 - Assigning to a Silk object attribute will check that the modified instance validates against
   the Silk schema. Typically, the first attribute assignment will modify the Silk schema too (type inference).
 - Note that a data instance may only ever contain plain and binary data.

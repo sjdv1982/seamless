@@ -1,0 +1,2 @@
+See plans/silk.md for a decent description of Silk.
+Not everything in there has been implemented, but the essentials are there.

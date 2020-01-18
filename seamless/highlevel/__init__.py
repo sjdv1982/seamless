@@ -61,9 +61,12 @@ from ..midlevel.StaticContext import StaticContext
 
 def load_graph(graph, *, cache_ctx=None, static=False, mounts=True, shares=True):
     """TODO: document"""
+    import json
     from ..core.context import Context as CoreContext
     from ..core.manager import Manager
     from ..core.unbound_context import UnboundManager
+    if isinstance(graph, str):
+        graph = json.load(open(graph))
     if isinstance(cache_ctx, Context):
         manager = cache_ctx._ctx0._get_manager()        
     elif isinstance(cache_ctx, CoreContext):

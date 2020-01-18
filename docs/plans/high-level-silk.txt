@@ -1,3 +1,5 @@
+Long term plan!
+
 Everything is a Silk structure: cells, contexts, transformers, reactors, observers, macros.
 But they will be heavily-modified subclasses of Silk. (maybe less modification in the future)
 Lots of hooks in the vein "what happens when something assigns to me"

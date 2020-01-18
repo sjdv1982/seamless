@@ -7,13 +7,9 @@ Part of this is the unordered computation itself (see Seamless Zen about add/mul
 But another big part of this is the environment. We need an nvidia-cuda Docker image,
  will this make things reproducible regardless of host hardware/driver?)
 
-Oldest plan
-===========
 
-
-
-Old plan (updates the oldest plan)
-==================================
+Old plan
+========
 
 1. Rip GPU cell scheme, this will never work.
  Instead (long term plan):

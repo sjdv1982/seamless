@@ -29,7 +29,7 @@ More examples
 Set up a network infrastructure at console
 ==========================================
 Need to choose/combine data-management.txt and seamless-tools.txt,
- and draw inspiration from docs/archive/seamless-services.txt
+ and draw inspiration from docs/archive/seamless-services.txt / checksums.txt
 Finally, take features from usability-todo.txt, and think of how to regulate:
 - Docker image execution (esp Docker transformers)
 - Policy of whitelisting/forwarding certain transformer code checksums
