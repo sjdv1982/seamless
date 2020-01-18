@@ -1,5 +1,4 @@
 import numpy as np
-from .. import np_char
 
 def _is_identical_dict_debug(first, second):
     keys1, keys2 = first.keys(), second.keys()

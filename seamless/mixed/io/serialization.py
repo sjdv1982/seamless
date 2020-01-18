@@ -37,8 +37,15 @@ def deserialize(data):
         mode = "pure-plain" if pure_plain else "pure-binary"
         if pure_plain and not isinstance(data, str):
             assert not data.startswith(MAGIC_SEAMLESS)
-            data = data.decode()
-        value = from_stream(data, mode, None)
+            buffer = data
+            data = buffer.decode()
+            try:
+                value = from_stream(data, mode, None)
+            except:
+                value = np.array(buffer)
+                mode = "pure-binary"
+        else:
+            value = from_stream(data, mode, None)
         return value, mode
 
     offset = len(MAGIC_SEAMLESS_MIXED)

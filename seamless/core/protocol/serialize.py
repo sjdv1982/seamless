@@ -41,12 +41,15 @@ def _serialize(value, celltype):
             value = np.array(value)
             buffer = value.tobytes()
     elif celltype == "bytes":
+        if isinstance(value, bytes):
+            buffer = value
+            return buffer
         try:
             buffer = value.tobytes()
             return buffer
         except Exception:
             pass
-        buffer = (str(value).rstrip("\n")+"\n").encode()
+        buffer = (str(value).rstrip("\n")).encode()
     else:
         raise TypeError(celltype)
     return buffer

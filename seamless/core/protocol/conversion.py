@@ -6,6 +6,8 @@
 # python, ipython, cson, yaml, plain, binary, mixed
 # str (with double quotes around *the buffer*), bytes, int, float, bool
 
+import numpy as np
+
 conversion_trivial = set([ # conversions that do not change checksum and are guaranteed to work (if the input is valid)
     ("text", "bytes"), # Use UTF-8, which can encode any Unicode string. This is already what Seamless uses internally
     ("python", "text"),
@@ -43,8 +45,6 @@ conversion_reformat = set([ # conversions that are guaranteed to work (if the in
     ("text", "plain"),   # use json.dumps, or repr
     ("str", "text"),   # use json.loads, or eval. assert isinstance(str)
     ("str", "bytes"),   # str => text => bytes
-    ("binary", "bytes"), # this will dump the binary buffer as bytes; note that this is not allowed for mixed
-    ("bytes", "binary"), # inverse of the above; also not allowed for mixed
     ("bytes", "str"),    # bytes => text => str
     ("int", "str"), ("float", "str"), ("bool", "str"),
     ("int", "float"), ("bool", "int"),
@@ -64,6 +64,11 @@ conversion_possible = set([ # conversions that (may) change checksum and are not
     ("int", "binary"), ("float", "binary"), ("bool", "binary"),   
     ("mixed", "text"),
     ("plain", "python"), ("plain", "ipython"), 
+    ("binary", "bytes"), ("mixed", "bytes"),# mixed must be pure-binary 
+                                            # This will dump the binary buffer in numpy format 
+                                            # np.dtype(S..) is a special case: 
+                                            #   it dumps a pure buffer, not numpy format
+    ("bytes", "binary"),  ("bytes", "mixed"),  # inverse of the above
 ])
 
 ###
@@ -96,11 +101,9 @@ conversion_forbidden = set([ # forbidden conversions.
     ("binary", "text"), ("binary", "python"), ("binary", "ipython"), 
     ("binary", "cson"), ("binary", "yaml"), ("binary", "plain"),
     ("mixed", "cson"), ("mixed", "yaml"),
-    ("mixed", "bytes"), # dumping the buffer as bytes is not allowed, even for pure-binary mixed data. Convert to binary celltype, first.
     ("str", "cson"), ("str", "yaml"), 
     ("str", "binary"),
     ("bytes", "python"), ("bytes", "ipython"), ("bytes", "cson"), ("bytes", "yaml"), ("bytes", "plain"), 
-    ("bytes", "mixed"), # loading the bytes into a pure-binary buffer is not allowed. Convert to binary celltype, first.
     ("bytes", "float"), ("bytes", "int"), ("bytes", "bool"),
     ("int", "python"), ("float", "python"), ("bool", "python"),
     ("int", "ipython"), ("float", "ipython"), ("bool", "ipython"),
@@ -168,13 +171,13 @@ async def reinterpret(checksum, buffer, celltype, target_celltype):
     return
 
 async def reformat(checksum, buffer, celltype, target_celltype):
-    key = (celltype, target_celltype)        
+    key = (celltype, target_celltype)
     value = await deserialize(buffer, checksum, celltype, copy=False)
     if key == ("plain", "text"):
         if isinstance(value, str):
             new_buffer = await serialize(value, target_celltype)
         else:
-            return checksum
+            return checksum        
     else:        
         new_buffer = await serialize(value, target_celltype)
     result = await calculate_checksum(new_buffer)
@@ -195,6 +198,16 @@ async def convert(checksum, buffer, celltype, target_celltype):
                 return result
             else:
                 return checksum
+        elif key in (("bytes", "binary"), ("bytes", "mixed")):
+            if is_numpy_buffer(buffer):
+                return checksum
+            value = np.array(buffer)
+        elif key in (("binary", "bytes"), ("mixed", "bytes")):
+            value = await deserialize(buffer, checksum, celltype, copy=False)
+            if not isinstance(value, (np.ndarray, np.void)):
+                raise TypeError
+            if isinstance(value, np.ndarray) and value.dtype.char == "S":
+                return checksum
         else:
             value = await deserialize(buffer, checksum, celltype, copy=False)
         
@@ -205,6 +218,7 @@ async def convert(checksum, buffer, celltype, target_celltype):
         else:
             new_buffer = await serialize(value, target_celltype)
     except Exception:
+        raise
         msg = "%s cannot be converted from %s to %s"
         raise ValueError(msg % (checksum.hex(), celltype, target_celltype)) from None
     result = await calculate_checksum(new_buffer)
@@ -217,7 +231,7 @@ from ..cell import celltypes
 from .deserialize import deserialize
 from .serialize import serialize
 from .calculate_checksum import calculate_checksum
-from ...mixed import MAGIC_NUMPY, MAGIC_SEAMLESS_MIXED
+from ...mixed import MAGIC_NUMPY, MAGIC_SEAMLESS_MIXED, is_numpy_buffer
 from .cson import cson2json
 
 

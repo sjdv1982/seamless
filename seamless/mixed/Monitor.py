@@ -1,3 +1,4 @@
+import numpy as np
 from numpy import ndarray, void
 from .get_form import get_form
 from . import MixedScalar, MixedBase, Scalar,  scalars, is_np_struct, _allowed_types
@@ -89,6 +90,8 @@ class Monitor:
             raise TypeError(type(subdata))
         if self.backend.plain:
             json.dumps(subdata)
+        elif isinstance(subdata, bytes):
+            subdata = np.array(subdata)
         self.backend.set_path(path, subdata)
 
     def insert_path(self, path, subdata):
@@ -104,6 +107,8 @@ class Monitor:
             raise TypeError(path)
         if self.backend.plain:
             json.dumps(subdata)
+        elif isinstance(subdata, bytes):
+            subdata = np.array(subdata)
         self.backend.insert_path(path, subdata)
 
     def del_path(self, path):

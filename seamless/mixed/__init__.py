@@ -27,7 +27,11 @@ from ..silk.validation import (
 scalars = ("boolean", "integer", "number", "string")
 
 import numpy as np
-np_char = np.dtype('S1')
+
+def is_numpy_buffer(buffer):
+    if buffer is None:
+        return False
+    return buffer[:len(MAGIC_NUMPY)] == MAGIC_NUMPY
 
 class MonitorTypeError(TypeError):
     pass

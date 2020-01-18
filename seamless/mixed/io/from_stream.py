@@ -180,7 +180,7 @@ def from_stream(stream, storage, form):
     elif storage == "pure-binary":
         b = BytesIO(stream)
         arr0 = np.load(b, allow_pickle=False)
-        if arr0.ndim == 0:
+        if arr0.ndim == 0 and arr0.dtype.char != "S":
             arr = np.frombuffer(arr0,arr0.dtype)
             return arr[0]
         else:

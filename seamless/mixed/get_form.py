@@ -12,7 +12,7 @@ Paradigm:
 import numpy as np
 from numpy import ndarray, void
 from copy import deepcopy
-from . import ( Scalar, np_char,
+from . import ( Scalar,
   _array_types, _integer_types, _float_types, _string_types, _unsigned_types
 )
 _string_types = (str,)  ##JSON cannot deal with bytes
@@ -439,6 +439,8 @@ def get_form_list_plain(data):
 
 
 def get_form(data):
+    if isinstance(data, bytes):
+        data = np.array(data)
     if isinstance(data, Scalar):
         storage, typedef = "pure-plain", get_typedef_scalar(data)
     elif isinstance(data, void):

@@ -8,6 +8,11 @@ def build_mixed(data):
     d = monitor.get_path()
     return d
 
+d = build_mixed(5)
+print(d.value)
+print(d.form)
+print()
+
 d = build_mixed({})
 d["a"] = 10
 print(d.value)
@@ -35,3 +40,6 @@ print(d.storage, d["a"].storage, d["b"].storage, d["b"]["bb"].storage)
 dt = np.dtype([("m1", int),("m2",int)],align=True)
 d = build_mixed(np.zeros(1,dt)[0])
 print(d.storage, d.form, d.value)
+
+d = build_mixed(b'somebuffer')
+print(d.value, type(d.value), d.dtype, bytes(d.value))
