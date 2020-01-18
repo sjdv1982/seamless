@@ -1,0 +1,192 @@
+{
+  "connections": [
+    {
+      "source": [
+        "state"
+      ],
+      "target": [
+        "state_data"
+      ],
+      "type": "connection"
+    },
+    {
+      "source": [
+        "graph"
+      ],
+      "target": [
+        "gen_vis_state",
+        "graph"
+      ],
+      "type": "connection"
+    },
+    {
+      "source": [
+        "state"
+      ],
+      "target": [
+        "gen_vis_state",
+        "state"
+      ],
+      "type": "connection"
+    },
+    {
+      "source": [
+        "gen_vis_state"
+      ],
+      "target": [
+        "vis_state"
+      ],
+      "type": "connection"
+    }
+  ],
+  "lib": {},
+  "nodes": [
+    {
+      "celltype": "text",
+      "checksum": {
+        "value": "9177b93f17b21f2ab861b9aee3a915c7edb1f8374a9b94c691a298ce7bf36067"
+      },
+      "datatype": "mixed",
+      "mimetype": "text/css",
+      "path": [
+        "css"
+      ],
+      "share": {
+        "path": "state-visualization.css",
+        "readonly": true
+      },
+      "type": "cell"
+    },
+    {
+      "INPUT": "inp",
+      "RESULT": "result",
+      "SCHEMA": null,
+      "checksum": {
+        "code": "17ff8442290aaa8a900586168bb1ee13de441111659b1277ae2b2e416f640a8e",
+        "input": "667afa970c6b37eaa5690b1ab96974bc494e9dee906a153e5534066e14681821",
+        "input_buffer": "667afa970c6b37eaa5690b1ab96974bc494e9dee906a153e5534066e14681821"
+      },
+      "compiled": false,
+      "debug": false,
+      "language": "python",
+      "mount": {
+        "code": {
+          "authority": "file",
+          "mode": "rw",
+          "path": "gen_vis_state.py",
+          "persistent": true
+        }
+      },
+      "path": [
+        "gen_vis_state"
+      ],
+      "pins": {
+        "graph": {
+          "celltype": "mixed"
+        },
+        "state": {
+          "celltype": "mixed"
+        }
+      },
+      "type": "transformer",
+      "with_result": true
+    },
+    {
+      "celltype": "plain",
+      "checksum": {
+        "value": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c"
+      },
+      "datatype": "mixed",
+      "path": [
+        "graph"
+      ],
+      "type": "cell"
+    },
+    {
+      "celltype": "text",
+      "checksum": {
+        "value": "717b64db981ddeb5fb5126e3f5f0e3bb8255582288baf42d51b2015598b7e09c"
+      },
+      "datatype": "mixed",
+      "mimetype": "text/html",
+      "path": [
+        "html"
+      ],
+      "share": {
+        "path": "state-visualization.html",
+        "readonly": true
+      },
+      "type": "cell"
+    },
+    {
+      "celltype": "text",
+      "checksum": {
+        "value": "dc880d3f766a9abbf2bb452686e0270899f5362c09ae5c2c42f7fa348812ecb2"
+      },
+      "datatype": "mixed",
+      "mimetype": "text/javascript",
+      "path": [
+        "js"
+      ],
+      "share": {
+        "path": "seamless-client.js",
+        "readonly": true
+      },
+      "type": "cell"
+    },
+    {
+      "celltype": "text",
+      "checksum": {
+        "value": "1eddd1a38368907563d859be37ebdbcd0ad9cb305fca22dc0c1f3d27dfa745a2"
+      },
+      "datatype": "mixed",
+      "mimetype": "text/javascript",
+      "path": [
+        "js2"
+      ],
+      "share": {
+        "path": "state-visualization.js",
+        "readonly": true
+      },
+      "type": "cell"
+    },
+    {
+      "celltype": "structured",
+      "checksum": {
+        "auth": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
+        "buffer": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
+        "value": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c"
+      },
+      "datatype": "mixed",
+      "hash_pattern": null,
+      "path": [
+        "state"
+      ],
+      "type": "cell"
+    },
+    {
+      "celltype": "plain",
+      "checksum": {
+        "value": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c"
+      },
+      "datatype": "mixed",
+      "path": [
+        "state_data"
+      ],
+      "type": "cell"
+    },
+    {
+      "celltype": "plain",
+      "datatype": "mixed",
+      "path": [
+        "vis_state"
+      ],
+      "share": {
+        "path": null,
+        "readonly": true
+      },
+      "type": "cell"
+    }
+  ],
+  "params": {}
+}
