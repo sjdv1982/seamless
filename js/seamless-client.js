@@ -21,25 +21,38 @@ function connect_seamless(websocketserver, restserver, namespace="ctx"){
   let sharelist = null    
   
   function get_value(key) {
-    var rq = restserver + "/" + namespace + "/" + key + "?mode=all"
+    var rq = restserver + "/" + namespace + "/" + key + "?mode=marker"
     //$("#request").text("GET:" + rq)
+    //$("#error_message").text("GET:" + rq)
     fetch(rq)
     .then(function(response) {
       return response.json()  
     })
     .then(function(result) {
-      //$("#message").text(JSON.stringify(result))
       if (result["marker"] <= ctx[key]._marker) return
-      ctx[key].value = result["buffer"]
       ctx[key]._marker = result["marker"]
-      ctx[key].checksum = result["checksum"]
+      ctx[key].checksum = result["checksum"]  
+      return result    
+    })
+    .then(async function(result){
+      if (ctx[key].auto_read) {
+        var rq2 = restserver + "/" + namespace + "/" + key + "?mode=buffer"
+        //$("#error_message").text("GET:" + rq2)
+        //$("#error_message").text(result)
+        const response = await fetch(rq2)
+        r = await response.text()
+        //$("#error_message").text("RESP:" + r)
+        ctx[key].value = r                
+      }
+    })
+    .catch(function(err) {
+      console.log('Seamless client, GET Error:', key, err)
+    })
+    .finally(function(arg){
       ctx[key].oninput()
       ctx[key].onchange()
       ctx.self.oninput()
       ctx.self.onchange()
-    })
-    .catch(function(err) {
-      console.log('Seamless client, GET Error:', key, err)
     })
   }
   function set_value(key, value) {
@@ -86,11 +99,11 @@ function connect_seamless(websocketserver, restserver, namespace="ctx"){
     var message = JSON.parse(event.data);
     if (handshake == null) {
       handshake = message
-      //$("#message").text(JSON.stringify(handshake))
+      //$("#error_message").text(JSON.stringify(handshake))
     }    
     else if (message[0] == "sharelist") {
       sharelist = message[1];
-      //$("#message").text(JSON.stringify(sharelist))
+      //$("#error_message").text(JSON.stringify(sharelist))
       function curry_set_value(bound_key) {
         return function(value) {
           return set_value(bound_key, value)
@@ -98,9 +111,11 @@ function connect_seamless(websocketserver, restserver, namespace="ctx"){
       }
       for (const key of sharelist) {        
         if (key == "self") continue
+        auto_read = (key.indexOf('.') == -1)
         ctx[key] = {
           value: null,
           _marker: null,
+          auto_read: auto_read,
           set: curry_set_value(key),
           oninput: function(value) {},
           onchange: function(value) {},
@@ -112,14 +127,14 @@ function connect_seamless(websocketserver, restserver, namespace="ctx"){
     else if (message[0] == "update") {
       let key = message[1][0]
       let marker = message[1][2]
-      //$("#message").text(JSON.stringify(message))
+      //$("#error_message").text(JSON.stringify(message))
       if (ctx[key]._marker == null || ctx[key]._marker < marker) {
         get_value(key)
       }
     }
     else {
       console.log('Seamless client websocket Error: unknown message format:', message)
-      //$("#message").text(message) 
+      //$("#error_message").text(message) 
     }
   }
   var ws_url = websocketserver + "/" + namespace

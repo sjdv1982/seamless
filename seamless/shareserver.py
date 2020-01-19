@@ -19,15 +19,17 @@ By default, namespace is "ctx", address is localhost, port is 5813
 
 All GET requests have a mode URL parameter (default: "buffer"), which can have
 one of the following values.
-1. mode=all:
+1. mode=marker:
 returns a JSON with 3 modes:
-- buffer (i.e. what would be in a file), UTF-encoded, with final newline.
+- marker
 - checksum, as hex
-- marker.
+- the content type,
 2. mode=buffer:
 Just returns the buffer
 3. mode=checksum:
 Just returns the checksum
+4. mode=value
+Same as buffer, but with mimetype
 
 PUT messages are in JSON. They must contain a mode "buffer"
 (although the final newline is optional) OR a mode "checksum"
@@ -232,7 +234,7 @@ class ShareNamespace:
             self._send_sharelist_task = None
 
     async def _get(self, key, mode):
-        assert mode in ("checksum", "buffer", "value", "all")
+        assert mode in ("checksum", "buffer", "value", "marker")
         share = self.shares[key]
         checksum, marker = await share.read()
         if checksum is not None:
@@ -250,14 +252,13 @@ class ShareNamespace:
         if mode == "buffer":
             if buffer is None:
                 return None, None
-            return buffer.decode(), "text/plain"
+            return buffer, "text/plain"
         if mode == "value":
             if buffer is None:
                 return None, None
             return buffer, content_type
         result = {
             "checksum": checksum2,
-            "buffer": buffer.decode() if buffer is not None else None,
             "marker": marker,
             "content_type": content_type,
         }
@@ -474,8 +475,8 @@ class ShareServer(object):
 
         mode = request.rel_url.query.get("mode", "value")
 
-        if mode not in ("buffer", "checksum", "value", "all"):
-            err = 'if specified, mode must be "buffer", "checksum", "value", or "all"'
+        if mode not in ("buffer", "checksum", "value", "marker"):
+            err = 'if specified, mode must be "buffer", "checksum", "value", or "marker"'
             if DEBUG:
                 print("shareserver _handle.get", err, ns, key, mode)
             return web.Response(
