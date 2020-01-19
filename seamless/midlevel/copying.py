@@ -20,7 +20,8 @@ def get_checksums(nodes):
             checksums.add(checksum)
         else:
             for k,v in checksum.items():
-                checksums.add(v)
+                if v is not None:
+                    checksums.add(v)
     return checksums
 
 async def get_buffer_dict(manager, checksums):
@@ -42,7 +43,7 @@ def get_buffer_dict_sync(manager, checksums):
     """This function can be executed if the asyncio event loop is already running"""
 
     from ..core.protocol.get_buffer import get_buffer_sync
-    if not asyncio.get_event_loop().is_running():    
+    if not asyncio.get_event_loop().is_running():
         coro = get_buffer_dict(
             manager, checksums
         )
