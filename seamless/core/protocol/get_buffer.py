@@ -75,7 +75,6 @@ async def get_buffer(checksum, buffer_cache, remote_peer_id=None):
                 buffer_cache.missing_buffers.discard(checksum)
                 buffer_cache.cache_buffer(checksum, buffer)
             return buffer
-    # TODO: provenance
     raise CacheMissError(checksum.hex())
 
 

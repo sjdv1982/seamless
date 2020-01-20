@@ -226,7 +226,7 @@ class TransformationCache:
             )
             TransformerResultUpdateTask(manager, transformer).launch()
         if result_checksum is None or prelim:
-            job = self.run_job(transformation)
+            job = self.run_job(transformation, tf_checksum)
             if job is not None:                
                 await asyncio.shield(job.future)
         
@@ -280,9 +280,7 @@ class TransformationCache:
                         fut.cancel()
                 job.future.cancel()
 
-    def run_job(self, transformation):        
-        tf_buffer = tf_get_buffer(transformation)
-        tf_checksum = calculate_checksum_sync(tf_buffer)
+    def run_job(self, transformation, tf_checksum):         
         transformers = self.transformations_to_transformers[tf_checksum]
         if tf_checksum in self.transformation_exceptions:
             exc = self.transformation_exceptions[tf_checksum]
@@ -292,7 +290,7 @@ class TransformationCache:
             transformer._status_reason = StatusReasonEnum.EXECUTING
         existing_job = self.transformation_jobs.get(tf_checksum)
         if existing_job is not None:
-            return existing_job                
+            return existing_job
         if not len(transformers):
             codename = "<Unknown>"
         else:

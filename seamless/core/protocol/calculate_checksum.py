@@ -4,12 +4,25 @@ from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 from ...pylru import lrucache
 from ...get_hash import get_hash
 
+class lrucache2(lrucache): 
+    """Version of lrucache that can be disabled"""
+    _disabled = False
+    def disable(self):
+        self._disabled = True
+    def enable(self):
+        del self._disabled
+    def __setitem__(self, key, value):
+        if self._disabled:
+            return
+        super().__setitem__(key, value)
+
+
 # calculate_checksum_cache: maps id(buffer) to (checksum, buffer). 
 # Need to store (a ref to) buffer, 
 #  because id(buffer) is only unique while buffer does not die!!!
-calculate_checksum_cache = lrucache(100)
+calculate_checksum_cache = lrucache2(100)
 
-checksum_cache = lrucache(100)
+checksum_cache = lrucache2(100)
 
 async def calculate_checksum(buffer):
     if buffer is None:

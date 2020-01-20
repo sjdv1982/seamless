@@ -5,9 +5,9 @@ from ast import literal_eval
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 from ...mixed.io import deserialize as mixed_deserialize
 
-from ...pylru import lrucache
+from .calculate_checksum import lrucache2
 
-deserialize_cache = lrucache(100)
+deserialize_cache = lrucache2(100)
 
 def _deserialize(buffer, checksum, celltype):
     if celltype in text_types2:

@@ -5,16 +5,17 @@ from . import Task
 class EvaluateExpressionTask(Task):
     @property
     def refkey(self):
-        return self.expression
+        return (self.expression, self.fingertip)
 
-    def __init__(self, manager, expression):
+    def __init__(self, manager, expression, *, fingertip=False):
         assert isinstance(expression, Expression)
         self.expression = expression
+        self.fingertip = fingertip
         super().__init__(manager)
         self.dependencies.append(expression)
 
     async def _run(self):
-        expression = self.expression
+        expression = self.expression        
         if expression.checksum is None:
             return None
         
@@ -24,8 +25,10 @@ class EvaluateExpressionTask(Task):
 
         # Get the expression result checksum from cache.
         expression = expression
-        expression_result_checksum = \
-          cachemanager.expression_to_checksum.get(expression)
+        expression_result_checksum = None
+        if not self.fingertip:
+            expression_result_checksum = \
+                cachemanager.expression_to_checksum.get(expression)
         if expression_result_checksum is None:
             try:
                 # If the expression is trivial, obtain its result checksum directly
@@ -88,9 +91,10 @@ class EvaluateExpressionTask(Task):
             except Exception as exc:
                 exc = traceback.format_exc()
                 expression.exception = exc                                   
-        else:
-            cachemanager.expression_to_checksum[expression] = \
-                expression_result_checksum
+        
+            if expression_result_checksum is not None:
+                cachemanager.expression_to_checksum[expression] = \
+                    expression_result_checksum
         
         return expression_result_checksum
 

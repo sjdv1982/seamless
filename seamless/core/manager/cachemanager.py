@@ -4,6 +4,7 @@ from .. import destroyer
 
 import sys
 import json
+import asyncio
 
 def log(*args, **kwargs):
     print(*args, **kwargs, file=sys.stderr)
@@ -101,6 +102,70 @@ class CacheManager:
         self.checksum_refs[checksum].append((refholder, authority))
         #print(self, "INCREF", checksum.hex(), self.checksum_refs[checksum])
 
+    async def fingertip(self, checksum):
+        """Puts the buffer of a checksum 'at your fingertips':
+        - Verify that the buffer is locally or remotely available;
+          if remotely, download it.
+        - If not available, try to re-compute it using its provenance,
+          i.e. re-evaluating any transformation or expression that produced it
+        - Such recomputation is done in "fingertip" mode, i.e. disallowing
+          use of expression-to-checksum or transformation-to-checksum caches
+        """
+        from ..cache import CacheMissError
+        from ..cache.transformation_cache import calculate_checksum
+        from .tasks.evaluate_expression import EvaluateExpressionTask
+        if checksum is None:
+            return
+        if isinstance(checksum, str):
+            checksum = bytes.fromhex(checksum)
+        assert isinstance(checksum, bytes), checksum
+        buffer = self.buffer_cache.get_buffer(checksum)            
+        if buffer is not None:
+            return
+        coros = []
+        manager = self.manager()
+        tf_cache = self.transformation_cache
+        
+        async def fingertip_transformation(transformation, tf_checksum):            
+            coros = []
+            for pinname in transformation:
+                if pinname.startswith("__"):
+                    continue
+                sem_checksum = transformation[pinname][2]
+                sem2syn = tf_cache.semantic_to_syntactic_checksums
+                checksum2 = sem2syn.get(sem_checksum, [sem_checksum])[0]
+                coros.append(self.fingertip(checksum2))
+            await asyncio.gather(*coros)
+            job = tf_cache.run_job(transformation, tf_checksum)
+            if job is not None:                
+                await asyncio.shield(job.future)
+
+        async def fingertip_expression(expression):
+            await self.fingertip(expression.checksum)
+            task = EvaluateExpressionTask(
+                manager, expression, fingertip=True
+            )
+            await task.run()
+
+        for refholder, auth in self.checksum_refs.get(checksum, []):
+            if isinstance(refholder, Expression):
+                if refholder.checksum != checksum:
+                    if self.expression_to_checksum[refholder] == checksum:                    
+                        coros.append(fingertip_expression(refholder))
+            elif isinstance(refholder, Transformer):
+                tf_checksum = tf_cache.transformer_to_transformations[refholder]
+                transformation = tf_cache.transformations[tf_checksum]
+                cs = tf_cache.transformation_results.get(tf_checksum, (None, None))[0]
+                if cs == checksum:
+                    coros.append(fingertip_transformation(transformation, tf_checksum))
+            
+        if not len(coros):
+            raise CacheMissError(checksum.hex())
+        await asyncio.gather(*coros)
+        result = self.buffer_cache.get_buffer(checksum)
+        if result is None:
+            raise CacheMissError(checksum.hex())
+
     def decref_checksum(self, checksum, refholder, authority, *, destroying=False):
         if checksum is None:
             if isinstance(refholder, Expression):
@@ -140,7 +205,7 @@ class CacheManager:
         except ValueError:
             self.checksum_refs[checksum][:] = \
               [l for l in self.checksum_refs[checksum] if l[0] is not refholder]
-        if len(self.checksum_refs[checksum]) == 0:            
+        if len(self.checksum_refs[checksum]) == 0:
             self.buffer_cache.decref(checksum)
             self.checksum_refs.pop(checksum)        
 

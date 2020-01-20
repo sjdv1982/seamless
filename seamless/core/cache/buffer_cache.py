@@ -8,6 +8,7 @@ from collections import namedtuple
 from .redis_client import redis_sinks, redis_caches
 
 TEMP_KEEP_ALIVE = 20.0 # Keep buffer values alive for 20 secs after the last ref has expired
+TEMP_KEEP_ALIVE_SMALL = 3600.0 # Keep small buffer values alive for an hour
 DISABLE_GARBAGE_COLLECTION = False
 
 class BufferCache:
@@ -30,15 +31,6 @@ class BufferCache:
     def cache_buffer(self, checksum, buffer):
         assert checksum is not None
         assert isinstance(buffer, bytes)
-        if checksum not in self.buffer_refcount:
-            self.buffer_refcount[checksum] = 1
-            tempref = functools.partial(self.decref, checksum, from_temp=True)
-            temprefmanager.add_ref(tempref, TEMP_KEEP_ALIVE)            
-        if checksum in self.buffer_cache:
-            return            
-        self.buffer_cache[checksum] = buffer
-        self.missing_buffers.discard(checksum)
-        redis_sinks.set_buffer(checksum, buffer)
         l = len(buffer)
         if l < 1000:
             if checksum not in self.small_buffers:
@@ -48,6 +40,25 @@ class BufferCache:
             if checksum not in self.buffer_length:
                 self.buffer_length[checksum] = l
                 redis_sinks.set_buffer_length(checksum, l)
+        if checksum not in self.buffer_refcount:
+            self.incref_temp(checksum)
+        if checksum in self.buffer_cache:
+            return            
+        self.buffer_cache[checksum] = buffer
+        self.missing_buffers.discard(checksum)
+        redis_sinks.set_buffer(checksum, buffer)
+
+    def incref_temp(self, checksum):
+        #print("INCREF TEMP", checksum.hex())
+        if checksum not in self.buffer_refcount:
+            self.buffer_refcount[checksum] = 0
+        self.buffer_refcount[checksum] += 1
+        tempref = functools.partial(self.decref, checksum, from_temp=True)
+        keep_alive = TEMP_KEEP_ALIVE_SMALL\
+            if checksum in self.small_buffers \
+            else TEMP_KEEP_ALIVE
+        temprefmanager.add_ref(tempref, keep_alive)
+
 
     def incref(self, checksum):
         #print("INCREF", checksum.hex())
@@ -65,21 +76,18 @@ class BufferCache:
                 self.missing_buffers.add(checksum)
 
     def decref(self, checksum, from_temp=False):
-        """
-        if not from_temp:
-            print("DECREF", checksum.hex())
-        """
+        #print("DECREF", checksum.hex(), from_temp)
         if checksum not in self.buffer_refcount:
             ### TODO: re-enable warning
             ###print("WARNING: double decref, %s" % checksum.hex())            
             return
         if not from_temp and self.buffer_refcount[checksum] == 1:
-            tempref = functools.partial(self.decref, checksum, from_temp=True)
-            temprefmanager.add_ref(tempref, TEMP_KEEP_ALIVE)
+            self.buffer_refcount[checksum] -= 1
+            self.incref_temp(checksum)
             return
         self.buffer_refcount[checksum] -= 1
         if not DISABLE_GARBAGE_COLLECTION:
-            if self.buffer_refcount[checksum] == 0:            
+            if self.buffer_refcount[checksum] == 0:
                 if checksum in self.missing_buffers:
                     self.missing_buffers.remove(checksum)
                 else:
