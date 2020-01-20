@@ -27,11 +27,15 @@ def get_checksums(nodes):
 async def get_buffer_dict(manager, checksums):
     from ..core.protocol.get_buffer import get_buffer
     result = {}
-    buffer_cache = manager.cachemanager.buffer_cache
+    cachemanager = manager.cachemanager
+    buffer_cache = cachemanager.buffer_cache
     coros = []
     checksums = list(checksums)
-    for checksum in checksums:
-        coro = get_buffer(bytes.fromhex(checksum), buffer_cache)
+    async def get_buf(checksum):
+        await cachemanager.fingertip(checksum)
+        return await get_buffer(bytes.fromhex(checksum), buffer_cache)
+    for checksum in checksums:    
+        coro = get_buf(checksum)
         coros.append(coro)
     buffers = await asyncio.gather(*coros, return_exceptions=True)
     for checksum, buffer in zip(checksums, buffers):

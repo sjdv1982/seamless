@@ -1,7 +1,9 @@
-import asyncio, sys, traceback
+import asyncio, traceback
 loop = asyncio.get_event_loop()
 
+import sys
 from seamless.core.cache import buffer_cache, CacheMissError
+buffer_cache.TEMP_KEEP_ALIVE = 0.001
 buffer_cache.TEMP_KEEP_ALIVE_SMALL = 0.001
 import seamless.core.protocol.calculate_checksum 
 calculate_checksum = sys.modules["seamless.core.protocol.calculate_checksum"]

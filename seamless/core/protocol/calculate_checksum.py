@@ -22,7 +22,7 @@ class lrucache2(lrucache):
 #  because id(buffer) is only unique while buffer does not die!!!
 calculate_checksum_cache = lrucache2(100)
 
-checksum_cache = lrucache2(100)
+checksum_cache = lrucache2(1)
 
 async def calculate_checksum(buffer):
     if buffer is None:

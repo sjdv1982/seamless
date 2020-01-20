@@ -352,6 +352,21 @@ class Cell(Base):
                 raise
             return cell.checksum
 
+    async def fingertip(self):
+        """Puts the buffer of this cell's checksum 'at your fingertips':
+        - Verify that the buffer is locally or remotely available;
+          if remotely, download it.
+        - If not available, try to re-compute it using its provenance,
+          i.e. re-evaluating any transformation or expression that produced it
+        - Such recomputation is done in "fingertip" mode, i.e. disallowing
+          use of expression-to-checksum or transformation-to-checksum caches
+        """
+        parent = self._parent()
+        manager = parent._manager
+        cachemanager = manager.cachemanager
+        checksum = self.checksum
+        await cachemanager.fingertip(checksum)
+
     @checksum.setter
     def checksum(self, checksum):
         from ..silk import Silk

@@ -3,6 +3,8 @@ Reverse provenance
 
 (aka "re-compute on the fly")
 
+UPDATE: this has been implemented as "fingertipping" (imperative per-cell API)
+
 Imagine the case where a graph has just been loaded. You know all checksums, but not the values.
 For now, all values must be stored in an accompanying cache archive.
 In the future, make it possible to store just the authoritative values.

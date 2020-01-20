@@ -391,11 +391,33 @@ class Context(Base):
         archive.close()
         return result
 
+    async def get_zip_async(self):
+        # TODO: option to follow deep cell checksums
+        force = (self._gen_context is None)
+        self._do_translate(force=force)
+        graph = self.get_graph()
+        nodes0 = graph["nodes"]
+        nodes = {tuple(node["path"]):node for node in nodes0}
+        checksums = copying.get_checksums(nodes)
+        manager = self._manager
+        buffer_dict = await copying.get_buffer_dict(manager, checksums)
+        archive = BytesIO()
+        with ZipFile(archive, mode="w") as zipfile:
+            for checksum, buffer in buffer_dict.items():
+                zipfile.writestr(checksum, buffer)
+        result = archive.getvalue()
+        archive.close()
+        return result
+
     def save_zip(self, filename):
         zip = self.get_zip()
         with open(filename, "wb") as f:
             f.write(zip)
 
+    async def save_zip_async(self, filename):
+        zip = self.get_zip_async()
+        with open(filename, "wb") as f:
+            f.write(zip)
 
     def add_zip(self, zip):
         if self._gen_context is None:
