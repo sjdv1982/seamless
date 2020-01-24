@@ -32,8 +32,8 @@ async def get_buffer_dict(manager, checksums):
     coros = []
     checksums = list(checksums)
     async def get_buf(checksum):
-        await cachemanager.fingertip(checksum)
-        return await get_buffer(bytes.fromhex(checksum), buffer_cache)
+        return await cachemanager.fingertip(checksum)
+        return get_buffer(bytes.fromhex(checksum), buffer_cache)
     for checksum in checksums:    
         coro = get_buf(checksum)
         coros.append(coro)
@@ -46,7 +46,7 @@ async def get_buffer_dict(manager, checksums):
 def get_buffer_dict_sync(manager, checksums):
     """This function can be executed if the asyncio event loop is already running"""
 
-    from ..core.protocol.get_buffer import get_buffer_sync
+    from ..core.protocol.get_buffer import get_buffer
     if not asyncio.get_event_loop().is_running():
         coro = get_buffer_dict(
             manager, checksums
@@ -59,7 +59,7 @@ def get_buffer_dict_sync(manager, checksums):
     buffer_cache = manager.cachemanager.buffer_cache    
     checksums = list(checksums)
     for checksum in checksums:
-        buffer = get_buffer_sync(bytes.fromhex(checksum), buffer_cache)
+        buffer = get_buffer(bytes.fromhex(checksum), buffer_cache)
         result[checksum] = buffer
     return result
 

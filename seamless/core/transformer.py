@@ -184,19 +184,19 @@ class Transformer(Worker):
         return self._void
 
     def _get_buffer_sync(self):
-        from .protocol.get_buffer import get_buffer_sync
+        from .protocol.get_buffer import get_buffer
         if self._checksum is None:
             return None
         buffer_cache = self._get_manager().cachemanager.buffer_cache
-        buffer = get_buffer_sync(self._checksum, buffer_cache)
+        buffer = get_buffer(self._checksum, buffer_cache)
         return buffer
 
     async def _get_buffer(self):
         from .protocol.get_buffer import get_buffer
         if self._checksum is None:
             return None
-        buffer_cache = self._get_manager().cachemanager.buffer_cache
-        buffer = await get_buffer(self._checksum, buffer_cache)
+        cachemanager = self._get_manager().cachemanager
+        buffer = await cachemanager.fingertip(self._checksum)
         return buffer
 
     async def _get_value(self):

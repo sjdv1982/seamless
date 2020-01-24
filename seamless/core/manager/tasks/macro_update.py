@@ -53,7 +53,7 @@ class MacroUpdateTask(Task):
         macro._void = False
         macro._status_reason = None
         
-        buffer_cache = manager.cachemanager.buffer_cache        
+        cachemanager = manager.cachemanager
 
         code = None
         values = {}
@@ -65,7 +65,7 @@ class MacroUpdateTask(Task):
             ).run()
             celltype = accessor.write_accessor.celltype
             subcelltype = accessor.write_accessor.subcelltype
-            buffer = await get_buffer(expression_checksum, buffer_cache)
+            buffer = await cachemanager.fingertip(expression_checksum)
             assert buffer is not None
             value = await deserialize(buffer, expression_checksum, celltype, False)
             if value is None:

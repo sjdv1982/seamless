@@ -50,6 +50,23 @@ Use ``Cell.status()`` to get its status.
 
     _canceling = False
 
+    """Parameters for putting the checksum 'at your fingertips':
+    If "fingertip_recompute" is None or True:
+    - If not available, try to re-compute it using its provenance,
+        i.e. re-evaluating any transformation or expression that produced it
+    - Such recomputation is done in "fingertip" mode, i.e. disallowing
+        use of expression-to-checksum or transformation-to-checksum caches
+    If "fingertip_remote" is None or True:
+    - Verify that the buffer is locally or remotely available;
+        if remotely, download it.
+    If "fingertip_remote" is True and "fingertip_recompute" is None, remote download will
+        be tried before recomputation.
+    If both values are True or None, recomputation is tried first
+    """
+
+    _fingertip_remote = None
+    _fingertip_recompute = None
+
     def __init__(self):
         global cell_counter
         super().__init__()

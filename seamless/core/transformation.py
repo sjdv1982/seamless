@@ -324,7 +324,8 @@ class TransformationJob:
             if checksum is None:
                 values[pinname] = None
                 continue
-            buffer = await get_buffer(checksum, buffer_cache)            
+            # fingertipping must have happened before
+            buffer = get_buffer(checksum, buffer_cache)            
             assert buffer is not None
             value = await deserialize(buffer, checksum, celltype, False)
             if value is None:

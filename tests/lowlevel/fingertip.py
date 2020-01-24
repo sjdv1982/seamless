@@ -27,9 +27,11 @@ print(ctx._get_manager().resolve(checksum), checksum)
 ctx.a.set(5)
 print("START")
 ctx.compute()
-loop.run_until_complete(asyncio.sleep(0.01))
+loop.run_until_complete(asyncio.sleep(0.1))
 ctx.a.set(10)
 ctx.compute()
+
+ctx.aa._fingertip_recompute = False
 
 print(ctx.aa.checksum, checksum)
 try:
@@ -38,4 +40,5 @@ try:
 except CacheMissError as exc:
     traceback.print_exception(type(exc), exc, None)
 
-loop.run_until_complete(manager.cachemanager.fingertip(checksum))
+ctx.aa._fingertip_recompute = None
+print(ctx.aa.value)

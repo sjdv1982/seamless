@@ -220,7 +220,10 @@ class ShareManager:
                 continue
             from_buffer = False
             if checksum is not None and cell._celltype in ("plain", "mixed"):
-                buffer = await get_buffer(checksum, buffer_cache)                       
+                try:
+                    buffer = get_buffer(checksum, buffer_cache)
+                except CacheMissError:
+                    buffer = await get_buffer_remote(checksum, None)
                 if buffer is not None:                    
                     try:
                         checksum = await convert(checksum, buffer, "cson", "plain")
@@ -301,7 +304,7 @@ class ShareManager:
 sharemanager = ShareManager(0.2)
 
 from ..shareserver import shareserver
-from .protocol.get_buffer import get_buffer
+from .protocol.get_buffer import get_buffer, get_buffer_remote, CacheMissError
 from .protocol.conversion import convert
 from .protocol.calculate_checksum import calculate_checksum
 from .cache.buffer_cache import buffer_cache

@@ -3,14 +3,18 @@ import traceback, asyncio
 from . import Task
 
 class EvaluateExpressionTask(Task):
+    """ Evaluates an expression
+    Fingertip mode is True only if the task is triggered from cachemanager.fingertip,
+     as part of a reverse provenance recomputation
+    """
     @property
     def refkey(self):
-        return (self.expression, self.fingertip)
+        return (self.expression, self.fingertip_mode)
 
-    def __init__(self, manager, expression, *, fingertip=False):
+    def __init__(self, manager, expression, *, fingertip_mode=False):
         assert isinstance(expression, Expression)
         self.expression = expression
-        self.fingertip = fingertip
+        self.fingertip_mode = fingertip_mode
         super().__init__(manager)
         self.dependencies.append(expression)
 
@@ -26,7 +30,7 @@ class EvaluateExpressionTask(Task):
         # Get the expression result checksum from cache.
         expression = expression
         expression_result_checksum = None
-        if not self.fingertip:
+        if not self.fingertip_mode:
             expression_result_checksum = \
                 cachemanager.expression_to_checksum.get(expression)
         if expression_result_checksum is None:

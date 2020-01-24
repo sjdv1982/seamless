@@ -5,7 +5,9 @@ class GetBufferTask(Task):
     def refkey(self):
         return self.checksum
 
-    def __init__(self, manager, checksum):
+    def __init__(self, 
+        manager, checksum
+    ):
         self.checksum = checksum
         super().__init__(manager)
 
@@ -13,9 +15,7 @@ class GetBufferTask(Task):
         checksum = self.checksum
         if checksum is None:
             return None
-        buffer_cache = self.manager().cachemanager.buffer_cache
-        result = await get_buffer(checksum, buffer_cache)
+        cachemanager = self.manager().cachemanager
+        result = await cachemanager.fingertip(checksum)
         assert result is None or isinstance(result, bytes)
         return result
-
-from ...protocol.get_buffer import get_buffer

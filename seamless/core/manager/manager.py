@@ -368,7 +368,7 @@ class Manager:
     def _get_buffer(self, checksum):
         if asyncio.get_event_loop().is_running():
             buffer_cache = self.cachemanager.buffer_cache
-            return get_buffer_sync(checksum, buffer_cache)
+            return get_buffer(checksum, buffer_cache)
         if checksum is None:
             return None
         buffer = checksum_cache.get(checksum)
@@ -708,7 +708,7 @@ from .tasks import (
 
 from ..protocol.calculate_checksum import checksum_cache
 from ..protocol.deserialize import deserialize_cache, deserialize_sync
-from ..protocol.get_buffer import get_buffer_sync
+from ..protocol.get_buffer import get_buffer
 from ..cell import Cell
 from ..worker import Worker
 from ..transformer import Transformer

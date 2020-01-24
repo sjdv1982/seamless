@@ -585,7 +585,7 @@ def write_deep_structure(checksum, deep_structure, hash_pattern, path,
 
 async def apply_hash_pattern(checksum, hash_pattern):
     """Converts a checksum to a checksum that represents a deep structure"""
-    buffer = await get_buffer(checksum, buffer_cache)
+    buffer = get_buffer(checksum, buffer_cache)
     value = await deserialize(
         buffer, checksum, "mixed", False
     )
@@ -605,7 +605,7 @@ def apply_hash_pattern_sync(checksum, hash_pattern):
         asyncio.get_event_loop().run_until_complete(fut)
         return fut.result()
 
-    buffer = get_buffer_sync(checksum, buffer_cache)
+    buffer = get_buffer(checksum, buffer_cache)
     value = deserialize_sync(
         buffer, checksum, "mixed", False
     )
@@ -619,5 +619,5 @@ from .calculate_checksum import calculate_checksum, calculate_checksum_sync
 from .serialize import serialize, serialize_sync
 from .deserialize import deserialize, deserialize_sync
 from ..cache.buffer_cache import buffer_cache
-from ..protocol.get_buffer import get_buffer, get_buffer_sync
+from ..protocol.get_buffer import get_buffer
 from ..protocol.expression import set_subpath_sync

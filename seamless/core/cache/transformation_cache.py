@@ -75,7 +75,10 @@ async def syntactic_to_semantic(
     if celltype not in ("cson", "yaml", "python"):
         return checksum
 
-    buffer = await get_buffer(checksum, buffer_cache)    
+    try:
+        buffer = get_buffer(checksum, buffer_cache)    
+    except CacheMissError:
+        buffer = await get_buffer_remote(checksum, None)
     if celltype in ("cson", "yaml"):
         semantic_checksum = await convert(
             checksum, buffer, celltype, "plain"
@@ -507,12 +510,17 @@ class TransformationCache:
             redis_sinks.sem2syn(sem_checksum, semsyn)
         return semsyn
 
-    async def serve_get_transformation(self, tf_checksum):
+    async def serve_get_transformation(self, tf_checksum, remote_peer_id):
         transformation = self.transformations.get(tf_checksum)
         if transformation is None:
-            transformation_buffer = await get_buffer(
-                tf_checksum, buffer_cache
-            )
+            try:
+                transformation_buffer = get_buffer(
+                    tf_checksum, buffer_cache
+                )
+            except CacheMissError:
+                transformation_buffer = await get_buffer_remote(
+                    checksum, remote_peer_id
+                )
             if transformation_buffer is not None:
                 transformation = json.loads(transformation_buffer)
                 for k,v in transformation.items():
@@ -683,7 +691,7 @@ transformation_cache = TransformationCache()
 
 from .tempref import temprefmanager
 from .buffer_cache import buffer_cache
-from ..protocol.get_buffer import get_buffer
+from ..protocol.get_buffer import get_buffer, get_buffer_remote, CacheMissError
 from ..protocol.conversion import convert
 from ..protocol.deserialize import deserialize
 from ..protocol.calculate_checksum import calculate_checksum, calculate_checksum_sync

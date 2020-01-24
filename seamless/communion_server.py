@@ -411,11 +411,15 @@ class CommunionServer:
             elif type == "buffer":
                 assert self.config_servant[type]
                 checksum = content
-                peer_id = self.peers[peer]["id"]
-                result = await get_buffer(
-                    checksum, buffer_cache, 
-                    remote_peer_id=peer_id
+                result = get_buffer(
+                    checksum, buffer_cache
                 )
+                if result is None:
+                    peer_id = self.peers[peer]["id"]
+                    result = await get_buffer_remote(
+                        checksum, 
+                        remote_peer_id=peer_id
+                    )
             elif type == "buffer_length":
                 assert self.config_servant[type]
                 raise NotImplementedError
@@ -449,7 +453,7 @@ class CommunionServer:
                     checksum, peer_id
                 )
                 tcache = transformation_cache
-                transformation = await tcache.serve_get_transformation(checksum)
+                transformation = await tcache.serve_get_transformation(checksum, peer_id)
                 coro = tcache.incref_transformation(
                     transformation, transformer
                 )
@@ -559,4 +563,4 @@ class CommunionServer:
 communion_server = CommunionServer()
 from .core.cache.transformation_cache import transformation_cache, RemoteTransformer
 from .core.cache.buffer_cache import buffer_cache
-from .core.protocol.get_buffer import get_buffer
+from .core.protocol.get_buffer import get_buffer, get_buffer_remote
