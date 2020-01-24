@@ -110,6 +110,11 @@ class RedisSinks:
     @staticmethod
     def sinks():
         return _redis_sinks
+    
+    @property
+    def size(self):
+        return len(_redis_sinks)
+
     def sem2syn(self, sem_checksum, syn_checksums):
         assert isinstance(syn_checksums, list)
         if sem_checksum is None or not len(syn_checksums):

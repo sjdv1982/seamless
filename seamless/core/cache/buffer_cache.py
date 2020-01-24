@@ -9,7 +9,6 @@ from .redis_client import redis_sinks, redis_caches
 
 TEMP_KEEP_ALIVE = 20.0 # Keep buffer values alive for 20 secs after the last ref has expired
 TEMP_KEEP_ALIVE_SMALL = 3600.0 # Keep small buffer values alive for an hour
-DISABLE_GARBAGE_COLLECTION = False
 
 class BufferCache:
     """Checksum-to-buffer cache.
@@ -18,21 +17,25 @@ class BufferCache:
     Memory intensive. Like any other cache, does not persist unless offloaded.
     Cache items are directly serializable, and can be shared over the
     network, or offloaded to Redis.
-     Keys are straightforward buffer checksums.
+    Keys are straightforward buffer checksums.
+
+    NOTE: if there are any Redis sinks, buffers are not maintained in local cache.
+    Refcounts are still maintained; in the future, Redis garbage may use them.
     """
     def __init__(self):
-        self.buffer_cache = {} #checksum-to-buffer
+        self.buffer_cache = {} #local cache, checksum-to-buffer
         self.buffer_refcount = {} #buffer-checksum-to-refcount
         # Buffer length caches (never expire)
         self.small_buffers = set()
         self.buffer_length = {} #checksum-to-bufferlength (large buffers)
+
         self.missing_buffers = set()
 
     def cache_buffer(self, checksum, buffer):
         assert checksum is not None
         assert isinstance(buffer, bytes)
         l = len(buffer)
-        if l < 1000:
+        if l < 100:
             if checksum not in self.small_buffers:
                 self.small_buffers.add(checksum)
                 redis_sinks.add_small_buffer(checksum)
@@ -42,11 +45,13 @@ class BufferCache:
                 redis_sinks.set_buffer_length(checksum, l)
         if checksum not in self.buffer_refcount:
             self.incref_temp(checksum)
-        if checksum in self.buffer_cache:
-            return            
-        self.buffer_cache[checksum] = buffer
-        self.missing_buffers.discard(checksum)
-        redis_sinks.set_buffer(checksum, buffer)
+        if redis_sinks.size:
+            redis_sinks.set_buffer(checksum, buffer)
+        else:
+            if checksum in self.buffer_cache:
+                return
+            self.buffer_cache[checksum] = buffer
+            self.missing_buffers.discard(checksum)        
 
     def incref_temp(self, checksum):
         #print("INCREF TEMP", checksum.hex())
@@ -78,21 +83,19 @@ class BufferCache:
     def decref(self, checksum, from_temp=False):
         #print("DECREF", checksum.hex(), from_temp)
         if checksum not in self.buffer_refcount:
-            ### TODO: re-enable warning
-            ###print("WARNING: double decref, %s" % checksum.hex())            
+            print("WARNING: double decref, %s" % checksum.hex())            
             return
         if not from_temp and self.buffer_refcount[checksum] == 1:
             self.buffer_refcount[checksum] -= 1
             self.incref_temp(checksum)
             return
         self.buffer_refcount[checksum] -= 1
-        if not DISABLE_GARBAGE_COLLECTION:
-            if self.buffer_refcount[checksum] == 0:
-                if checksum in self.missing_buffers:
-                    self.missing_buffers.remove(checksum)
-                else:
-                    self.buffer_cache.pop(checksum)
-                self.buffer_refcount.pop(checksum)
+        if self.buffer_refcount[checksum] == 0:
+            if checksum in self.missing_buffers:
+                self.missing_buffers.remove(checksum)
+            else:
+                self.buffer_cache.pop(checksum)
+            self.buffer_refcount.pop(checksum)
 
     def get_buffer(self, checksum):
         if checksum is None:
