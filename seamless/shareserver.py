@@ -248,7 +248,10 @@ class ShareNamespace:
             content_type = share.mimetype
         else:
             content_type = get_mime(share.celltype)
-        buffer = await get_buffer(checksum, buffer_cache)
+        # no fingertipping:
+        # - We don't share remote values
+        # - We don't recompute upon request
+        buffer = get_buffer(checksum, buffer_cache)
         if mode == "buffer":
             if buffer is None:
                 return None, None
