@@ -1,0 +1,10 @@
+Quick development mode.
+Activated by "from seamless.quick import *"
+
+import ipykernel
+js = ipykernel.get_connection_info()
+with open("/tmp/seamless-ipykernel.json", "w") as f:
+    f.write(js)
+
+Then, run: 
+    jupyter console --existing /tmp/seamless-ipykernel.json

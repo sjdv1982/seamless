@@ -1,7 +1,11 @@
 Shell
 =====
  
- Create new namespace upon request/upon update; either pre-execution or post-execution [post-execution may re-execute transformer/macro]
+Create new namespace upon request/upon update; either pre-execution or post-execution [post-execution may re-execute transformer/macro]
+The shell should be created and the connection info dumped in a JSON file, to be connected
+See shell.py and quick-devel.txt (or the quick module) for proofs-of-principle.
+This works with ipdb in jupyter console as well.
+The Spyder IDE already supports variable browsing, it should eventually support breakpoints
 
 Older thought
 =============
