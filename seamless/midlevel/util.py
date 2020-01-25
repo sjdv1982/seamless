@@ -82,10 +82,18 @@ def find_channels(path, connection_paths):
             inchannels.append(p)
     return inchannels, outchannels
 
+def cell_setattr(node, ctx, name, c):
+    setattr(ctx, name, c)
+    if node.get("fingertip_no_recompute"):
+        c._fingertip_recompute = False            
+    if node.get("fingertip_no_remote"):
+        c._fingertip_remote = False    
+
 def build_structured_cell(
   ctx, name,
   inchannels, outchannels,
-  *, mount=None, return_context=False,
+  *, fingertip_no_remote, fingertip_no_recompute,
+  mount=None, return_context=False,
   hash_pattern=None
 ):
     #print("build_structured_cell", name)
@@ -101,7 +109,7 @@ def build_structured_cell(
     c.schema = core_cell("plain")        
     c.buffer = core_cell("mixed")
     c.buffer._hash_pattern = hash_pattern
-
+            
     sc = StructuredCell(
         data=c.data,
         auth=c.auth,
@@ -118,6 +126,13 @@ def build_structured_cell(
         buffer=c.example_buffer,
         schema=c.schema
     )
+
+    for cc in (c.data, c.buffer, c.schema, c.auth, c.example_data, c.example_buffer):
+        if fingertip_no_recompute:
+            cc._fingertip_recompute = False
+        if fingertip_no_remote:
+            cc._fingertip_remote = False
+
     if return_context:
         return sc, c
     else:

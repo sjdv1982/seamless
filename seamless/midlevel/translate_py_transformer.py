@@ -26,7 +26,7 @@ def translate_py_transformer(node, root, namespace, inchannels, outchannels):
         assert pin_cell_name not in all_inchannels
         assert pin_cell_name not in node["pins"]
         pin_cell = cell("mixed")
-        setattr(ctx, pin_cell_name, pin_cell)
+        cell_setattr(node, ctx, pin_cell_name, pin_cell)
         pin_cells[pin] = pin_cell
         
 
@@ -35,6 +35,8 @@ def translate_py_transformer(node, root, namespace, inchannels, outchannels):
     mount = node.get("mount", {})    
     inp, inp_ctx = build_structured_cell(
       ctx, input_name, inchannels, interchannels,
+      fingertip_no_remote=node.get("fingertip_no_remote", False),
+      fingertip_no_recompute=node.get("fingertip_no_recompute", False),
       hash_pattern= node.get("hash_pattern"),
       return_context=True
     )
@@ -101,6 +103,8 @@ def translate_py_transformer(node, root, namespace, inchannels, outchannels):
         result, result_ctx = build_structured_cell(
             ctx, result_name, [()],
             outchannels,
+            fingertip_no_remote=node.get("fingertip_no_remote", False),
+            fingertip_no_recompute=node.get("fingertip_no_recompute", False),
             return_context=True
         )
         namespace[node["path"] + ("RESULTSCHEMA",), False] = result.schema, node
@@ -111,7 +115,7 @@ def translate_py_transformer(node, root, namespace, inchannels, outchannels):
 
         result_pin = getattr(ctx.tf, result_name)        
         result_cell = cell("mixed")
-        setattr(ctx, result_cell_name, result_cell)
+        cell_setattr(node, ctx, result_cell_name, result_cell)
         result_pin.connect(result_cell)
         result_cell.connect(result.inchannels[()])
         if node["SCHEMA"]:
@@ -133,4 +137,4 @@ def translate_py_transformer(node, root, namespace, inchannels, outchannels):
     namespace[node["path"], True] = inp, node
     namespace[node["path"], False] = result, node
 
-from .util import get_path, as_tuple, build_structured_cell
+from .util import get_path, as_tuple, build_structured_cell, cell_setattr

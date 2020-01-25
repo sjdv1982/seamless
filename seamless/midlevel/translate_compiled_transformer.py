@@ -35,7 +35,7 @@ def _init_from_graph(ctf, debug):
 
 def _finalize(
         ctx, ctf, inp, c_inp, result, c_result, 
-        input_name, result_name, inchannels):
+        input_name, result_name, inchannels, node):
     result_cell_name1 = result_name + "_CELL1"
     result_cell_name2 = result_name + "_CELL2"
     input_cell_name = input_name + "_CELL"
@@ -49,13 +49,13 @@ def _finalize(
         assert (not len(c)) or c[0] not in forbidden #should have been checked by highlevel    
     
     result_cell1 = cell("mixed")
-    setattr(ctx, result_cell_name1, result_cell1)
+    cell_setattr(node, ctx, result_cell_name1, result_cell1)
     result_cell2 = cell("mixed")
-    setattr(ctx, result_cell_name2, result_cell2)
+    cell_setattr(node, ctx, result_cell_name2, result_cell2)
     input_cell = cell("mixed")
-    setattr(ctx, input_cell_name, input_cell)
+    cell_setattr(node, ctx, input_cell_name, input_cell)
     main_module_cell = cell("plain")
-    setattr(ctx, main_module_cell_name, main_module_cell)
+    cell_setattr(node, ctx, main_module_cell_name, main_module_cell)
 
     #1: between transformer and library
 
@@ -114,7 +114,7 @@ def translate_compiled_transformer(node, root, namespace, inchannels, outchannel
         assert pin_cell_name not in all_inchannels
         assert pin_cell_name not in node["pins"]
         pin_cell = cell("mixed")
-        setattr(ctx, pin_cell_name, pin_cell)
+        cell_setattr(node, ctx, pin_cell_name, pin_cell)
         pin_cells[pin] = pin_cell
 
     with_result = node["with_result"]
@@ -122,6 +122,8 @@ def translate_compiled_transformer(node, root, namespace, inchannels, outchannel
     mount = node.get("mount", {})
     inp, inp_ctx = build_structured_cell(
       ctx, input_name, inchannels, [()],
+      fingertip_no_remote=node.get("fingertip_no_remote", False),
+      fingertip_no_recompute=node.get("fingertip_no_recompute", False),
       return_context=True
     )
 
@@ -153,8 +155,10 @@ def translate_compiled_transformer(node, root, namespace, inchannels, outchannel
     ctx.language = cell("str").set(node["language"])
 
     ctx.main_module = build_structured_cell(
-      ctx, "main_module", 
+      ctx, "main_module",
       main_module_inchannels, [()],
+      fingertip_no_remote=node.get("fingertip_no_remote", False),
+      fingertip_no_recompute=node.get("fingertip_no_recompute", False),
     )    
 
     for ic in main_module_inchannels:
@@ -192,6 +196,8 @@ def translate_compiled_transformer(node, root, namespace, inchannels, outchannel
     result, result_ctx = build_structured_cell(
         ctx, result_name, [()],
         outchannels,
+        fingertip_no_remote=node.get("fingertip_no_remote", False),
+        fingertip_no_recompute=node.get("fingertip_no_recompute", False),
         return_context=True
     )
     namespace[node["path"] + ("RESULTSCHEMA",), False] = result.schema, node
@@ -216,7 +222,7 @@ def translate_compiled_transformer(node, root, namespace, inchannels, outchannel
     _finalize(
         ctx, ctf, inp, c_inp, result, c_result, 
         input_name, result_name,
-        inchannels
+        inchannels, node
     )
 
     if "header" in mount:
@@ -226,4 +232,4 @@ def translate_compiled_transformer(node, root, namespace, inchannels, outchannel
     namespace[node["path"], True] = inp, node
     namespace[node["path"], False] = result, node
 
-from .util import get_path, as_tuple, build_structured_cell, STRUC_ID
+from .util import get_path, as_tuple, build_structured_cell, cell_setattr, STRUC_ID

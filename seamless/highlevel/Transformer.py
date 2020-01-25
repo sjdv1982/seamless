@@ -104,6 +104,36 @@ class Transformer(Base):
         self._parent()._translate()
 
     @property
+    def fingertip_no_remote(self):
+        htf = self._get_htf()
+        return htf.get("fingertip_no_remote", False)
+
+    @fingertip_no_remote.setter
+    def fingertip_no_remote(self, value):
+        if value not in (True, False):
+            raise TypeError(value)
+        htf = self._get_htf()
+        if value == True:
+            htf["fingertip_no_remote"] = True
+        else:
+            htf.pop("fingertip_no_remote", None)
+
+    @property
+    def fingertip_no_recompute(self):
+        htf = self._get_htf()
+        return htf.get("fingertip_no_recompute", False)
+
+    @fingertip_no_recompute.setter
+    def fingertip_no_recompute(self, value):
+        if value not in (True, False):
+            raise TypeError(value)
+        htf = self._get_htf()
+        if value == True:
+            htf["fingertip_no_recompute"] = True
+        else:
+            htf.pop("fingertip_no_recompute", None)
+
+    @property
     def hash_pattern(self):
         htf = self._get_htf()
         return htf.get("hash_pattern")

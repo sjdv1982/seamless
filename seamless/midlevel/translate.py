@@ -158,6 +158,8 @@ def translate_cell(node, root, namespace, inchannels, outchannels):
         child = build_structured_cell(
           parent, name,
           inchannels, outchannels,
+          fingertip_no_remote=node.get("fingertip_no_remote", False),
+          fingertip_no_recompute=node.get("fingertip_no_recompute", False),
           hash_pattern=hash_pattern,
           mount=mount
         )
@@ -192,6 +194,10 @@ def translate_cell(node, root, namespace, inchannels, outchannels):
                 ct._hash_pattern = node.get("hash_pattern")
         else:
             raise ValueError(ct) #unknown celltype; should have been caught by high level
+        if node.get("fingertip_no_recompute"):
+            child._fingertip_recompute = False            
+        if node.get("fingertip_no_remote"):
+            child._fingertip_remote = False
     setattr(parent, name, child)
     pathstr = "." + ".".join(path)
     checksum = node.get("checksum")
@@ -244,6 +250,7 @@ def translate_connection(node, namespace, ctx):
             if con_name not in ctx._children:
                 break
         intermediate = core_cell("mixed")
+        intermediate._fingertip_remote = False        
         setattr(ctx, con_name, intermediate)
         source.connect(intermediate)
         intermediate.connect(target)

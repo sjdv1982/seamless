@@ -507,6 +507,36 @@ class Cell(Base):
             hcell.pop("scratch", None)
 
     @property
+    def fingertip_no_remote(self):
+        hcell = self._get_hcell2()
+        return hcell.get("fingertip_no_remote", False)
+
+    @fingertip_no_remote.setter
+    def fingertip_no_remote(self, value):
+        if value not in (True, False):
+            raise TypeError(value)
+        hcell = self._get_hcell2()
+        if value == True:
+            hcell["fingertip_no_remote"] = True
+        else:
+            hcell.pop("fingertip_no_remote", None)
+
+    @property
+    def fingertip_no_recompute(self):
+        hcell = self._get_hcell2()
+        return hcell.get("fingertip_no_recompute", False)
+
+    @fingertip_no_recompute.setter
+    def fingertip_no_recompute(self, value):
+        if value not in (True, False):
+            raise TypeError(value)
+        hcell = self._get_hcell2()
+        if value == True:
+            hcell["fingertip_no_recompute"] = True
+        else:
+            hcell.pop("fingertip_no_recompute", None)
+
+    @property
     def hash_pattern(self):
         hcell = self._get_hcell2()
         celltype = hcell["celltype"]
