@@ -248,17 +248,8 @@ class ShareNamespace:
             content_type = share.mimetype
         else:
             content_type = get_mime(share.celltype)
-        if buffer_cache.redis_caches.size:
-            # no fingertipping:
-            # - We don't share remote values
-            # - We don't recompute upon request
-            buffer = get_buffer(checksum, buffer_cache)
-        else: 
-            # no Redis is running
-            # => we must be in a testing environment
-            # => allow fingertipping
-            manager = self.manager()
-            buffer = await manager.cachemanager.fingertip(checksum)
+        manager = self.manager()
+        buffer = await manager.cachemanager.fingertip(checksum, must_have_cell=True)
         if mode == "buffer":
             if buffer is None:
                 return None, None

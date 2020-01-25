@@ -7,8 +7,8 @@ from collections import namedtuple
 
 from .redis_client import redis_sinks, redis_caches
 
-TEMP_KEEP_ALIVE = 2.0 # Keep buffer values alive for 20 secs after the last ref has expired
-TEMP_KEEP_ALIVE_SMALL = 3.0 # Keep small buffer values alive for an hour
+TEMP_KEEP_ALIVE = 20.0 # Keep buffer values alive for 20 secs after the last ref has expired
+TEMP_KEEP_ALIVE_SMALL = 3600.0 # Keep small buffer values alive for an hour
 
 class BufferCache:
     """Checksum-to-buffer cache.

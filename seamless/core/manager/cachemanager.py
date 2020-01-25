@@ -102,12 +102,15 @@ class CacheManager:
         self.checksum_refs[checksum].append((refholder, authority))
         #print(self, "INCREF", checksum.hex(), self.checksum_refs[checksum])
 
-    async def fingertip(self, checksum):
+    async def fingertip(self, checksum, *, must_have_cell=False):
         """Tries to put the checksum's corresponding buffer 'at your fingertips'
         Normally, first reverse provenance (recompute) is tried,
          then remote download.
         If the checksum is held by any cell with restricted fingertip parameters,
          one or both strategies may be skipped, or they are reversed
+
+        If must_have_cell is True, then there must be a cell that holds the checksum,
+         else no fingertip strategy is performed
         """
 
         from ..cache import CacheMissError
@@ -149,14 +152,19 @@ class CacheManager:
 
         rmap = {True: 2, None: 1, False: 0}
         remote, recompute= 2, 2 # True, True
+        has_cell = False
         for refholder, auth in self.checksum_refs.get(checksum, []):
             if isinstance(refholder, Cell):
                 cell = refholder
+                has_cell = True
                 c_remote = rmap[cell._fingertip_remote]
                 remote = min(remote, c_remote)
                 c_recompute = rmap[cell._fingertip_recompute]
                 recompute = min(recompute, c_recompute)
-            
+
+        if must_have_cell and not has_cell:
+            raise CacheMissError(checksum.hex())
+
         if remote > recompute:
             try:
                 buffer = await get_buffer_remote(checksum, None)
