@@ -186,6 +186,8 @@ class Cell(Base):
             raise TypeError(item)
 
     def __getattr__(self, attr):
+        if attr.startswith("_"):
+            raise AttributeError(attr)
         if attr in (
             "value", "example", "status", 
             "authoritative", "checksum", "handle", "data", 
@@ -547,7 +549,7 @@ class Cell(Base):
             self._parent()._translate()
 
     def __dir__(self):
-        result = super().__dir__()
+        result = [p for p in type(self).__dict__ if not p.startswith("_")]
         parent = self._parent()
         hcell = self._get_hcell()
         if not parent._dummy:

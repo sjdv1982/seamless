@@ -25,3 +25,5 @@ tornado>=6.*
 ipykernel>=5.*
 nbconvert>=5.5
 pyzmq>=18
+jedi==0.15.2
+parso==0.5.2
