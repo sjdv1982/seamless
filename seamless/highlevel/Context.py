@@ -72,6 +72,9 @@ def get_status(parent, children, nodes, path):
         return "Status: OK"
 
 class Context(Base):
+    _default_parameters = {
+        "share_namespace": "ctx"
+    }
     _mount = None
     _translating = False
     _translate_count = 0 
@@ -112,7 +115,9 @@ class Context(Base):
             elif con["type"] == "link":
                 con["first"] = tuple(con["first"])
                 con["second"] = tuple(con["second"])
-        self._graph = Graph(nodes, connections, graph["params"], graph.get("lib", {}))
+        params = deepcopy(self._default_parameters)
+        params.update(graph["params"])
+        self._graph = Graph(nodes, connections, params, graph.get("lib", {}))
         self._translate()
         return self
 
@@ -126,6 +131,7 @@ class Context(Base):
         else:
             self._manager = Manager()
         self._graph = Graph({},[],{},{})
+        self._graph["params"] = deepcopy(self._default_parameters)
         self._children = {}
         self._needs_translation = True
         self._parent = weakref.ref(self)
@@ -275,6 +281,16 @@ class Context(Base):
         if not isinstance(value, bool):
             raise TypeError(type(value))
         self._auto_translate = value
+
+    @property
+    def share_namespace(self):
+        return self._graph.params["share_namespace"]
+
+    @share_namespace.setter
+    def share_namespace(self, value):
+        if not isinstance(value, str):
+            raise TypeError(value)
+        self._graph.params["share_namespace"] = value
 
     def _get_graph(self, copy):
         from ..core.manager.tasks.structured_cell import StructuredCellJoinTask
@@ -551,7 +567,7 @@ class Context(Base):
         if self._share_namespace is None:
             self._share_namespace = sharemanager.new_namespace(
                 self._manager,
-                name="ctx", 
+                name=self.share_namespace, 
                 share_evaluate=False
             )        
         for path, shareparams in shares.items():
