@@ -1,10 +1,43 @@
 Quick development mode.
 Activated by "from seamless.quick import *"
 
-import ipykernel
-js = ipykernel.get_connection_info()
-with open("/tmp/seamless-ipykernel.json", "w") as f:
-    f.write(js)
+Print out the message: """
+seamless.quick activated, setting up a default web service environment.
+This gets your project started quickly. For a more general setup,
+ read the seamless.quick source code and adapt it to your needs.
 
-Then, run: 
-    jupyter console --existing /tmp/seamless-ipykernel.json
+Imported variables: ctx, status, serve, save, Cell, Transformer
+Auto-translation has been enabled for ctx and status
+""" 
+- By default, loads ctx.seamless, ctx.zip, status.seamless, status.zip (with mounts and shares).
+  If they don't exist, create them from default values:
+  - For ctx, serve seamless-client.js, index.html, main.js, main.css
+    main.js reloads if one of the latter three gets modified.
+    Activate auto_translate for both graphs
+  - For status, take visualize-graph from the stdlib, and connect it (see repl.py)
+    TODO: make its share_namespace "status"
+- serve() sets up mount/share, create a cell in the ctx.web subcontext (see repl.py)
+- save() saves the graph and zip (see repl.py)
+- Print out the message to connect to localhost:5318/ctx/index.html for the web interface
+- Print out the message to connect to localhost:5318/status/status.html for the status visualization,
+  as well as /status.json for the full status.
+- If in Jupyter:
+    - Print out the recommendation to use Jupyter Notebook as a dashboard. 
+      Don't define your Seamless graph in there.
+    - Print out the code for the recommended cell (if graph is new):
+        from IPython.display import HTML
+        HTML(open("index.html").read())
+    - Create a kernel JSON file in /tmp/, and print out the message to connect jupyter console there
+
+    import ipykernel
+    js = ipykernel.get_connection_info()
+    with open("/tmp/seamless-ipykernel.json", "w") as f:
+        f.write(js)
+
+    Then, run: 
+        jupyter console --existing /tmp/seamless-ipykernel.json
+
+For a next version:
+- monitor
+- shell (for debugging) 
+- load_subgraph (e.g. for snakemake2seamless output)       
