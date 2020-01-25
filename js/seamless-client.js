@@ -115,6 +115,7 @@ function connect_seamless(websocketserver, restserver, namespace="ctx"){
         ctx[key] = {
           value: null,
           _marker: null,
+          initial: true,
           auto_read: auto_read,
           set: curry_set_value(key),
           oninput: function(value) {},
@@ -130,6 +131,7 @@ function connect_seamless(websocketserver, restserver, namespace="ctx"){
       //$("#error_message").text(JSON.stringify(message))
       if (ctx[key]._marker == null || ctx[key]._marker < marker) {
         get_value(key)
+        ctx[key].initial = false
       }
     }
     else {

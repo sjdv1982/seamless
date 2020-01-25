@@ -7,8 +7,8 @@ from collections import namedtuple
 
 from .redis_client import redis_sinks, redis_caches
 
-TEMP_KEEP_ALIVE = 20.0 # Keep buffer values alive for 20 secs after the last ref has expired
-TEMP_KEEP_ALIVE_SMALL = 3600.0 # Keep small buffer values alive for an hour
+TEMP_KEEP_ALIVE = 2.0 # Keep buffer values alive for 20 secs after the last ref has expired
+TEMP_KEEP_ALIVE_SMALL = 3.0 # Keep small buffer values alive for an hour
 
 class BufferCache:
     """Checksum-to-buffer cache.
@@ -35,7 +35,7 @@ class BufferCache:
         assert checksum is not None
         assert isinstance(buffer, bytes)
         l = len(buffer)
-        if l < 100:
+        if l < 1000:
             if checksum not in self.small_buffers:
                 self.small_buffers.add(checksum)
                 redis_sinks.add_small_buffer(checksum)
@@ -123,6 +123,8 @@ class BufferCache:
         return redis_caches.has_buffer(checksum)
 
 buffer_cache = BufferCache()
+buffer_cache.redis_caches = redis_caches
+buffer_cache.redis_sinks = redis_sinks
 
 from ..protocol.calculate_checksum import checksum_cache
 from .tempref import temprefmanager

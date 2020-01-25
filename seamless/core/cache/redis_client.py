@@ -152,6 +152,10 @@ class RedisSinks:
 
 
 class RedisCaches:
+    @property
+    def size(self):
+        return len(_redis_caches)
+
     def sem2syn(self, sem_checksum):
         if sem_checksum is None:
             return     

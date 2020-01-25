@@ -86,8 +86,30 @@ ctx.self.onsharelist = function(sharelist) {
       grid_data2 = ctx.grid_data2.value
       grid_table2 = unpack_grid_data(grid_data2)
       draw()
-  }
+    }
+    function reload() {
+      if (!this.initial) location.reload()
+    }
+    ctx["grid-editor.html"].onchange = reload
+    ctx["grid-editor.js"].onchange = reload
 }
+
+function update_trans(){
+  j = JSON.stringify([params4.trans_x, params4.trans_y])
+  ctx.translation.set(j)
+  draw()
+}
+
+d3.select("#trans_x")
+  .on("change", function(){
+    params4.trans_x = parseInt(this.value)
+    update_trans()
+  })
+d3.select("#trans_y")  
+  .on("change", function(){
+    params4.trans_y = parseInt(this.value)
+    update_trans()
+  })
 
 function draw() {
   function edit_callback1() { 

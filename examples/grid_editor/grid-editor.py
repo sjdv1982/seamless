@@ -1,28 +1,34 @@
 from seamless.highlevel import Context, Cell
+import seamless
 
 ctx = Context()
 
-def serve(filename, mount=False):
+def serve(filename, sharename=None, mount=False):
     import os
     cell = Cell()
     cell.celltype = "text"
     _, ext = os.path.splitext(filename)
     cell.mimetype = ext[1:]
     if mount:
-        cell.mount(filename, mode="rw")
+        cell.mount(filename, mode="rw", authority="file")
     else:
         data = open(filename, "rb").read()
         cell.set(data)
-    cell.share(path=filename, readonly=True)
+    if sharename is None:
+      sharename = filename
+    cell.share(path=sharename, readonly=True)
     return cell
 
 ctx.files = Context()
 f = ctx.files
-f.html = serve("grid-editor.html")
+f.html = serve("grid-editor.html", mount=True)
 f.css = serve("grid-editor.css", mount=True)
 f.js = serve("grid-editor.js", mount=True)
 f.jslib = serve("grid-editor-lib.js")
-f.seamless_client_js = serve("seamless-client.js")
+import os
+seamless_dir = os.path.dirname(seamless.__file__)
+clientfile = seamless_dir + "/js/seamless-client.js"
+f.seamless_client_js = serve(clientfile, sharename="seamless-client.js")
 ctx.translate()
 
 params1 = {
@@ -109,6 +115,7 @@ ctx.grid_data2.share(readonly=False)
 
 ctx.combined_grid_params.celltype = "plain"
 ctx.combined_grid_params.share()
+ctx.translation_.share("translation", readonly=False)
 ctx.translate()
 ctx.compute()
 

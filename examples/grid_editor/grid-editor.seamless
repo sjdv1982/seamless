@@ -89,7 +89,7 @@
       "file_extension": "css",
       "mimetype": "text/css",
       "mount": {
-        "authority": "cell",
+        "authority": "file",
         "mode": "rw",
         "path": "grid-editor.css",
         "persistent": true
@@ -107,11 +107,17 @@
     {
       "celltype": "text",
       "checksum": {
-        "value": "9473f1f27985f812946a6f18304989040f47884496d9eb7c92188c4386988a87"
+        "value": "74862781e045d1b162d8337f0c4f0eda51c05959a78b72ea3e1003762219ddcb"
       },
       "datatype": "mixed",
       "file_extension": "html",
       "mimetype": "text/html",
+      "mount": {
+        "authority": "file",
+        "mode": "rw",
+        "path": "grid-editor.html",
+        "persistent": true
+      },
       "path": [
         "files",
         "html"
@@ -125,13 +131,13 @@
     {
       "celltype": "text",
       "checksum": {
-        "value": "7b8a4ef6a04ca54d14764d803e5f7f7b2b73f946b14553642ff16eed7710f67f"
+        "value": "05fcdf6356fb093f7a1bc8a4c2513a7cc02d9ecdb1d942d169f4e6fb2f26ecb6"
       },
       "datatype": "mixed",
       "file_extension": "js",
       "mimetype": "application/javascript",
       "mount": {
-        "authority": "cell",
+        "authority": "file",
         "mode": "rw",
         "path": "grid-editor.js",
         "persistent": true
@@ -167,7 +173,7 @@
     {
       "celltype": "text",
       "checksum": {
-        "value": "dc880d3f766a9abbf2bb452686e0270899f5362c09ae5c2c42f7fa348812ecb2"
+        "value": "f73dd11aca082f5bfc22a17de7655b5eeb774d979c44788b778169131e8740a6"
       },
       "datatype": "mixed",
       "file_extension": "js",
@@ -185,7 +191,7 @@
     {
       "celltype": "text",
       "checksum": {
-        "value": "d276a9eb4d299b59e8dc9159a8a05d77e4f03737ffd6bbd5ce9cb034d9c59438"
+        "value": "abe8ad79916391949383d3a34521860a357b01d4fed15f84e00e56b3b12fee7b"
       },
       "datatype": "mixed",
       "mount": {
@@ -206,7 +212,7 @@
     {
       "celltype": "text",
       "checksum": {
-        "value": "df4d3e318047fbeb7e5f0a9cd9fc5ab5e177e2a9afdae8614b5128933d9d4c67"
+        "value": "540071dfe8fddae9eece3fecfc78633efdc7eb98081b64447cefcd4950bf3246"
       },
       "datatype": "mixed",
       "mount": {
@@ -256,6 +262,10 @@
       "path": [
         "translation_"
       ],
+      "share": {
+        "path": "translation",
+        "readonly": false
+      },
       "type": "cell"
     }
   ],
