@@ -1,5 +1,3 @@
-- reverse provenance / fingertipping
-
 Testing
 =======
 - Re-run low level tests (no problems expected)
