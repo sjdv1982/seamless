@@ -8,5 +8,5 @@ docker run --rm \
   -v /tmp:/tmp \
   --hostname localhost \
   seamless-devel start-notebook.sh  \
-  --ip='0.0.0.0' --NotebookApp.token='' --NotebookApp.password='' \
+  --NotebookApp.token='' --NotebookApp.password='' \
   $*
