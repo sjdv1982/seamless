@@ -492,6 +492,21 @@ class Cell(Base):
         hcell["datatype"] = value
 
     @property
+    def scratch(self):
+        hcell = self._get_hcell2()
+        return ("scratch" in hcell)
+
+    @scratch.setter
+    def scratch(self, value):
+        if value not in (True, False):
+            raise TypeError(value)
+        hcell = self._get_hcell2()
+        if value == True:
+            hcell["scratch"] = True
+        else:
+            hcell.pop("scratch", None)
+
+    @property
     def hash_pattern(self):
         hcell = self._get_hcell2()
         celltype = hcell["celltype"]

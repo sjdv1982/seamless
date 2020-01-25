@@ -395,7 +395,7 @@ class Context(Base):
         self._do_translate(force=force)
         graph = self.get_graph()
         nodes0 = graph["nodes"]
-        nodes = {tuple(node["path"]):node for node in nodes0}
+        nodes = {tuple(node["path"]):node for node in nodes0 if "scratch" not in node}
         checksums = copying.get_checksums(nodes)
         manager = self._manager
         buffer_dict = copying.get_buffer_dict_sync(manager, checksums)
