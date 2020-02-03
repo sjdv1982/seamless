@@ -64,7 +64,7 @@
     {
       "celltype": "code",
       "checksum": {
-        "value": "1e791bd5ee37178d42aa01ec61777c7eb898d1b4822252dc87a00136638df8af"
+        "value": "55961a8b8f54ac39def0f584762769b1a348511b87658cc5b50dfddb72d00ac4"
       },
       "file_extension": "sh",
       "language": "bash",
@@ -155,11 +155,11 @@
       "RESULT": "result",
       "SCHEMA": null,
       "checksum": {
-        "code": "1e791bd5ee37178d42aa01ec61777c7eb898d1b4822252dc87a00136638df8af",
+        "code": "55961a8b8f54ac39def0f584762769b1a348511b87658cc5b50dfddb72d00ac4",
         "input": "6d38b31f08563bb368ed7532ac10b0e0a1b36b4489f1fb58a4a004b5c31b4eba",
         "input_auth": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
         "input_buffer": "6d38b31f08563bb368ed7532ac10b0e0a1b36b4489f1fb58a4a004b5c31b4eba",
-        "result": "2a800797173948e47c44ab789838b3e87777b1b5e8a2685027eeba632d65f383"
+        "result": "f9bfa4063e178413cae39d9adc3e1788db9d3fa0057fe806b14121030ec5040f"
       },
       "compiled": false,
       "debug": false,
@@ -179,7 +179,7 @@
     {
       "celltype": "text",
       "checksum": {
-        "value": "bb1b8b1b706e6b2ac846076631abd6f98f259841ec9605a17b3d7617525da672"
+        "value": "58dfacd66bc6f40f9adff5c691e3b370fac3668df84a5b0638a5cf24ff9c14c7"
       },
       "datatype": "mixed",
       "mimetype": "text/html",
@@ -217,7 +217,7 @@
     {
       "celltype": "text",
       "checksum": {
-        "value": "0abdae680fce2bd5d018783f68199e742a41e14032f75c26eb67df60048a91f1"
+        "value": "1df240195c402a07197389036df6e84805d049455514727f917d144036793908"
       },
       "datatype": "mixed",
       "path": [
@@ -240,14 +240,14 @@
       ],
       "share": {
         "path": "pdb0.pdb",
-        "readonly": true
+        "readonly": false
       },
       "type": "cell"
     },
     {
       "celltype": "text",
       "checksum": {
-        "value": "2c627db48ffd733ce0266581e2c28cc89800925cb40f17b0337f665b4918da24"
+        "value": "f7f30c2988df3511583c0ce0964bf0a61fd4874049d82e780217f8d56f46cc2b"
       },
       "datatype": "mixed",
       "mimetype": "text/javascript",
@@ -269,7 +269,7 @@
     {
       "celltype": "text",
       "checksum": {
-        "value": "a81f3a4ec4edc6f9ae0c92d7cc9104786064081a4b858b34ebf21bcb331cb6d1"
+        "value": "3e09ee421eb0eeb1ab71f3737bb221728e06966e363231d5d5465b53c5b1e259"
       },
       "datatype": "mixed",
       "mimetype": "text/javascript",

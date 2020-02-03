@@ -32,6 +32,18 @@ ctx.self.onsharelist = function(sharelist) {
     ctx["representation.js"].set(this.value)
     loadNGL()
   }
+
+  const inputElement = document.getElementById("pdbfile");
+  inputElement.addEventListener("change", upload_pdb, false);
+  function upload_pdb() {
+    const file = this.files[0]
+    if (file === undefined) return
+    file.text().then(function(text){
+      ctx["pdb0.pdb"].set(text)  
+    })
+
+  }
+
   ctx["representation.js"].onchange = function() {
     value = this.value
     document.getElementById("representation").value = value

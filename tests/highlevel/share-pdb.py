@@ -4,7 +4,7 @@ ctx = Context()
 
 ctx.pdb0 = open("1crn.pdb").read()
 ctx.pdb0.celltype = "text"
-ctx.pdb0.share("pdb0.pdb")
+ctx.pdb0.share("pdb0.pdb", readonly=False)
 
 ctx.filter_pdb = Transformer()
 ctx.filter_pdb.language = "bash"
@@ -17,7 +17,7 @@ ctx.filtered_pdb.share("filtered_pdb.pdb")
 
 ctx.fix_pdb = Transformer()
 ctx.fix_pdb.language = "bash"
-ctx.fix_pdb.code = 'cat filtered_pdb'
+ctx.fix_pdb.code = 'head -20 filtered_pdb'
 ctx.fix_pdb.filtered_pdb = ctx.filtered_pdb
 
 ctx.pdb = ctx.fix_pdb
