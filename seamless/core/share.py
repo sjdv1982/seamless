@@ -223,7 +223,11 @@ class ShareManager:
                 try:
                     buffer = get_buffer(checksum, buffer_cache)
                 except CacheMissError:
-                    buffer = await get_buffer_remote(checksum, None)
+                    buffer = await get_buffer_remote(
+                        checksum, 
+                        buffer_cache,
+                        None
+                    )
                 if buffer is not None:                    
                     try:
                         checksum = await convert(checksum, buffer, "cson", "plain")

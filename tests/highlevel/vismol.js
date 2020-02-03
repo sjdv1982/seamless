@@ -1,0 +1,81 @@
+
+// Create NGL Stage object
+var stage = new NGL.Stage("viewport");
+
+// Handle window resizing
+window.addEventListener("resize", function (event) {
+  stage.handleResize();
+}, false);
+
+
+pdb = null
+first = true
+
+ctx = connect_seamless("ws://localhost:5138", "http://localhost:5813", "ctx");
+ctx.self.onsharelist = function(sharelist) {
+  ctx["pdb0.pdb"].auto_read = true
+  ctx["filtered_pdb.pdb"].auto_read = true
+  ctx["pdb.pdb"].auto_read = true
+  ctx["representation.js"].auto_read = true
+  ctx["filter_code.bash"].auto_read = true
+  ctx["code.bash"].auto_read = true
+
+  reload = function() {
+    if (first == false) {
+      window.location.reload(true)
+    }
+  }
+  ctx["index.html"].onchange = reload
+  ctx["vismol.js"].onchange = reload
+
+  document.getElementById("representation").onchange = function() {
+    ctx["representation.js"].set(this.value)
+    loadNGL()
+  }
+  ctx["representation.js"].onchange = function() {
+    value = this.value
+    document.getElementById("representation").value = value
+  }
+
+
+  document.getElementById("code").onchange = function() {
+    ctx["code.bash"].set(this.value)
+    loadNGL()
+  }
+  ctx["code.bash"].onchange = function() {
+    value = this.value
+    document.getElementById("code").value = value
+  }
+
+  document.getElementById("filter_code").onchange = function() {
+    ctx["filter_code.bash"].set(this.value)
+    loadNGL()
+  }
+  ctx["filter_code.bash"].onchange = function() {
+    value = this.value
+    document.getElementById("filter_code").value = value
+  }
+
+  ctx.self.onchange = function() {    
+    loadNGL()
+  }
+}
+
+function loadNGL() {
+  stage.removeAllComponents()  
+  Promise.all([    
+    stage.loadFile("./pdb0.pdb"),
+    stage.loadFile("./filtered_pdb.pdb"),
+    stage.loadFile("./pdb.pdb")
+  ]).then(function (l) {
+    rep = ctx["representation.js"]
+    if (rep === undefined) return    
+    pdb0 = l[0]
+    filtered_pdb = l[1]
+    pdb = l[2]
+    eval(rep.value)
+    stage.autoView()
+    first = false
+  })
+}
+loadNGL()
