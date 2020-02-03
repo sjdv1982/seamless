@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en" >
+<head>
+    <meta charset="UTF-8">
+    <title>Seamless grid editor</title>
+    <link rel="stylesheet" href="grid-editor.css" type="text/css"></link>
+</head>
+<body>
+    <div id="grid_area"><svg width="1500px", height="500px"></svg></div>
+    <p>X translation</p>
+    <input type="range" min="-5" max="5" value="1" class="slider" id="trans_x"> 
+    <p>Y translation</p>
+    <input type="range" min="-5" max="5" value="-1" class="slider" id="trans_y"> 
+    <script type="text/javascript" src="https://d3js.org/d3.v5.min.js"></script>
+    <script type="text/javascript" src="seamless-client.js"></script>
+    <script type="text/javascript" src="grid-editor-lib.js"></script>
+    <script type="text/javascript" src="grid-editor.js"></script>
+
+</body>
