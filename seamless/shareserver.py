@@ -58,7 +58,7 @@ import json
 from asyncio import CancelledError
 from websockets.exceptions import ConnectionClosed
 
-DEBUG = True
+DEBUG = False
 
 def tailsplit(tail):
     pos = tail.index("/")
@@ -361,7 +361,11 @@ class ShareServer(object):
         # - close existing update connections
         # - don't touch existing requests
         for con in namespace.update_connections:
-            con.close()
+            closing = con.close()
+            try:
+                asyncio.ensure_future(closing)
+            except:
+                pass
 
     async def _send(self, websocket, message):
         message = json.dumps(message)
