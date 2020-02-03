@@ -12,8 +12,6 @@ from seamless import communion_server
 communion_server.configure_master(
     transformation_job=True,
     transformation_status=True,
-    build_module_job=True,
-    build_module_status=True,
 )
 
 from seamless.core import context, cell, transformer, link

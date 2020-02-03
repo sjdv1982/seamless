@@ -21,8 +21,6 @@ communion_server.configure_servant(
     buffer_status=True,
     transformation_job=True,
     transformation_status=True,
-    build_module_job=True,
-    build_module_status=True,
     clear_exception=True,
     hard_cancel=True,
 )

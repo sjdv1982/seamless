@@ -108,8 +108,6 @@ default_master_config = {
     "buffer_length": True,
     "transformation_job": False,
     "transformation_status": False,
-    "build_module_job": False,
-    "build_module_status": False,
     "semantic_to_syntactic": True,
 }
 
@@ -120,8 +118,6 @@ default_servant_config = {
     "buffer_length": True,
     "transformation_job": False,
     "transformation_status": False,
-    "build_module_job": False,
-    "build_module_status": False,
     "semantic_to_syntactic": True,
     #
     "hard_cancel": False,  # allow others to hard cancel our jobs
@@ -478,20 +474,6 @@ class CommunionServer:
                 if key is not None:
                     tcache.decref_transformation(transformation, rem_transformer)
 
-            elif type == "build_module_job":
-                assert self.config_servant[type]
-                raise NotImplementedError
-                d_content = json.loads(content)
-                full_module_name = d_content["full_module_name"]
-                checksum = bytes.fromhex(d_content["checksum"])
-                module_definition = d_content["module_definition"]                   
-                # build_compiled_module(full_module_name, checksum, module_definition)            
-            
-            elif type == "build_module_status":
-                assert self.config_servant[type]
-                raise NotImplementedError
-            else:
-                raise ValueError(type)
         except Exception as exc:
             if DEBUG:
                 traceback.print_exc()

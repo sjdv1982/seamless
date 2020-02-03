@@ -154,36 +154,6 @@ class CommunionTransformationClient(CommunionClient):
         self.future_clear_exception = None
 
 
-class CommunionBuildModuleClient(CommunionClient):
-    config_type = "build_module"
-
-    def __init__(self, servant, config):
-        self.servant = servant
-        self.config_job = config["build_module_job"]
-        self.config_status = config["build_module_status"]
-
-    async def status(self, checksum):
-        assert checksum is not None
-        if not self.config_status:
-            return
-        message = {
-            "type": "build_module_status",
-            "content": checksum
-        }
-        result = await communion_server.client_submit(message, self.servant)
-        return result
-    
-    async def submit(self, checksum):
-        if not self.config_job:
-            return
-        message = {
-            "type": "transformation_job",
-            "content": checksum
-        }
-        result = await communion_server.client_submit(message, self.servant)
-        return result
-
-
 class CommunionClientManager:
     _clientclasses = [klass for klass in globals().values() if isinstance(klass, type) \
       and issubclass(klass, CommunionClient) and klass is not CommunionClient]
@@ -210,7 +180,6 @@ class CommunionClientManager:
                 "transformation_job", "transformation_status",
                 "hard_cancel", "clear_exception",
             ],
-            "build_module": ["build_module_job", "build_module_status"],
         }
         for communion_type in communion_types:
             sub_communion_types = {}
