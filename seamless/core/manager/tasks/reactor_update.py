@@ -167,7 +167,8 @@ class ReactorResultTask(Task):
         if self.value is not None:        
             try:
                 buffer = await SerializeToBufferTask(
-                    manager, self.value, celltype
+                    manager, self.value, celltype,
+                    use_cache=True
                 ).run()
                 checksum = await CalculateChecksumTask(manager, buffer).run()
             except Exception as exc:
