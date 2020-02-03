@@ -45,9 +45,12 @@ class BufferCache:
                 redis_sinks.set_buffer_length(checksum, l)
         if checksum not in self.buffer_refcount:
             self.incref_temp(checksum)
+        no_local = False
         if redis_sinks.size:
             redis_sinks.set_buffer(checksum, buffer)
-        else:
+            if redis_caches.size:
+                no_local = True
+        if not no_local:
             if checksum in self.buffer_cache:
                 return
             self.buffer_cache[checksum] = buffer
