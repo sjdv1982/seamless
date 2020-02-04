@@ -441,9 +441,20 @@ class CommunionServer:
                         remote_peer_id=peer_id
                     )
                 ###pr("BUFFER", checksum.hex(), result)
+            
             elif type == "buffer_length":
                 assert self.config_servant[type]
-                raise NotImplementedError
+                checksum = bytes.fromhex(content)
+                result = buffer_cache.get_buffer_length(checksum)
+                if result is None:
+                    peer_id = self.peers[peer]["id"]
+                    result = await get_buffer_length_remote(
+                        checksum,
+                        buffer_cache, 
+                        remote_peer_id=peer_id
+                    )
+                pr("BUFFERLENGTH", checksum.hex(), result)
+
             
             elif type == "semantic_to_syntactic":
                 assert self.config_servant["semantic_to_syntactic"]
@@ -574,4 +585,4 @@ class CommunionServer:
 communion_server = CommunionServer()
 from .core.cache.transformation_cache import transformation_cache, RemoteTransformer
 from .core.cache.buffer_cache import buffer_cache
-from .core.protocol.get_buffer import get_buffer, get_buffer_remote
+from .core.protocol.get_buffer import get_buffer, get_buffer_remote, get_buffer_length_remote

@@ -1,9 +1,13 @@
+# In general, run with:
+#   python3 -u ../../scripts/TEST.py > test-outputs/TEST.out 2>&1
 simple.py
 simple-async.py
 simple-indirect.py
 subcontext.py
 simple-reactor.py
 simple-cache.py: see instructions
-simple-remote.py :run with scripts/jobslave-noredis.py 
+simple-remote.py: run together with scripts/jobslave-noredis.py 
+simple-remote2.py: run together with:
+     python3 -u ../../scripts/jobslave-noredis.py --time 20 > test-outputs/simple-remote2-jobslave.out 2>&1
 simple-macro.py
 simple-share.py

@@ -1,0 +1,83 @@
+INCOMING simple-remote2 jobslave
+ADD SERVANT buffer
+ADD SERVANT buffer_length
+ADD SERVANT semantic_to_syntactic
+ADD SERVANT transformation
+TF        Status: executing, 10.0 %
+RESULT        0.300 Status: preliminary
+
+TF        Status: executing, 20.0 %
+RESULT        0.300 Status: preliminary
+
+TF        Status: executing, 20.0 %
+RESULT        0.300 Status: preliminary
+
+TF        Status: executing, 30.0 %
+RESULT        0.900 Status: preliminary
+
+TF        Status: executing, 40.0 %
+RESULT        0.900 Status: preliminary
+
+TF        Status: executing, 10.0 %
+RESULT        10.100 Status: preliminary
+
+TF        Status: executing, 20.0 %
+RESULT        10.100 Status: preliminary
+
+TF        Status: executing, 20.0 %
+RESULT        10.100 Status: preliminary
+
+TF        Status: executing, 30.0 %
+RESULT        30.300 Status: preliminary
+
+TF        Status: executing, 30.0 %
+RESULT        30.300 Status: preliminary
+
+TF        Status: executing, 40.0 %
+RESULT        30.300 Status: preliminary
+
+TF        Status: executing, 50.0 %
+RESULT        50.500 Status: preliminary
+
+TF        Status: executing, 50.0 %
+RESULT        50.500 Status: preliminary
+
+TF        Status: executing, 60.0 %
+RESULT        50.500 Status: preliminary
+
+TF        Status: executing, 70.0 %
+RESULT        70.700 Status: preliminary
+
+TF        Status: executing, 70.0 %
+RESULT        70.700 Status: preliminary
+
+TF        Status: executing, 80.0 %
+RESULT        70.700 Status: preliminary
+
+TF        Status: executing, 80.0 %
+RESULT        70.700 Status: preliminary
+
+TF        Status: executing, 90.0 %
+RESULT        90.900 Status: preliminary
+
+TF        Status: executing, 100.0 %
+RESULT        90.900 Status: preliminary
+
+TF        Status: executing, 100.0 %
+RESULT        90.900 Status: preliminary
+
+TF        Status: OK
+RESULT        101.000 Status: OK
+
+TF        Status: OK
+RESULT        101.000 Status: OK
+
+TF        Status: OK
+RESULT        101.000 Status: OK
+
+TF        Status: OK
+RESULT        101.000 Status: OK
+
+TF        Status: OK
+RESULT        101.000 Status: OK
+

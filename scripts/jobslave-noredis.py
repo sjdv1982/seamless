@@ -30,5 +30,5 @@ ctx = context(toplevel=True)
 
 loop = asyncio.get_event_loop()
 if args.time:
-    loop.call_later(sys.exit)
+    loop.call_later(args.time, sys.exit)
 loop.run_forever()

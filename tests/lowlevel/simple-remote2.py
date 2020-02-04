@@ -10,6 +10,7 @@ seamless.set_ncores(0)
 from seamless import communion_server
 
 communion_server.configure_master(
+    buffer=True,
     transformation_job=True,
     transformation_status=True,
 )

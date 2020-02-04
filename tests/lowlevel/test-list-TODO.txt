@@ -47,6 +47,5 @@ simple-communion-slave.py
 simple-debug.py
 simple-duplex-remote.py
 simple-duplex.py
-simple-remote2.py
 transformation-checksum.py
 transformation-checksum.sh

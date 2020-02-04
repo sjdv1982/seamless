@@ -4,6 +4,38 @@ import traceback
 DEBUG = True
 REMOTE_TIMEOUT = 5.0 
 
+async def get_buffer_length_remote(checksum, buffer_cache, remote_peer_id):
+    clients = communion_client_manager.clients["buffer_length"]
+    if not len(clients):
+        raise CacheMissError(checksum.hex())
+    coros = []            
+    for client in clients:
+        coro = client.submit(checksum)
+        coros.append(coro)
+    futures = [asyncio.ensure_future(coro) for coro in coros]
+    while 1:
+        done, pending = await asyncio.wait(
+            futures, 
+            timeout=REMOTE_TIMEOUT, 
+            return_when=asyncio.FIRST_COMPLETED
+        )
+        if len(done):
+            for fut in done:
+                if fut.exception() is not None:
+                    if DEBUG:
+                        try:
+                            fut.result()
+                        except:
+                            traceback.print_exc()
+                    continue
+                length = fut.result()
+                if length is None:
+                    continue
+                return length
+        if not len(pending):
+            break
+    return None
+    
 async def get_buffer_remote(checksum, buffer_cache, remote_peer_id):
     clients = communion_client_manager.clients["buffer"]
     if not len(clients):

@@ -9,6 +9,11 @@ import asyncio
 def log(*args, **kwargs):
     print(*args, **kwargs, file=sys.stderr)
 
+RECOMPUTE_OVER_REMOTE = 1000000 # after this threshold, better to recompute than to download remotelt
+                                # TODO: have some dynamic component based on:
+                                # - stored recomputation time from provenance server
+                                # - internet connection speed
+
 class CacheManager:
     def __init__(self, manager):
         self.manager = weakref.ref(manager)
@@ -164,6 +169,18 @@ class CacheManager:
 
         if must_have_cell and not has_cell:
             raise CacheMissError(checksum.hex())
+
+        if recompute - remote in (0, 1) and remote > 0:
+            buffer_length = buffer_cache.get_buffer_length(checksum)
+            if buffer_length is None:
+                buffer_length = await get_buffer_length_remote(
+                    checksum,
+                    buffer_cache, 
+                    remote_peer_id=None
+                )
+            if buffer_length is not None:
+                if buffer_length <= RECOMPUTE_OVER_REMOTE:
+                    remote = recompute + 1
 
         if remote > recompute:
             try:
@@ -326,4 +343,6 @@ from ..reactor import Reactor
 from .expression import Expression
 from ..protocol.deep_structure import deep_structure_to_checksums
 from ..protocol.deserialize import deserialize_sync as deserialize
-from ..protocol.get_buffer import get_buffer_remote, CacheMissError
+from ..protocol.get_buffer import (
+    get_buffer_remote, get_buffer_length_remote, CacheMissError
+)
