@@ -1,0 +1,9 @@
+simple.py
+simple-async.py
+simple-indirect.py
+subcontext.py
+simple-reactor.py
+simple-cache.py: see instructions
+simple-remote.py :run with scripts/jobslave-noredis.py 
+simple-macro.py
+simple-share.py

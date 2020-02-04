@@ -107,6 +107,11 @@ class TransformationJob:
             )
             for fut in done:
                 if fut.exception() is not None:
+                    if DEBUG:
+                        try:
+                            fut.result()
+                        except:
+                            traceback.print_exc()
                     continue
                 try:
                     result = "<unknown>"
@@ -195,7 +200,6 @@ class TransformationJob:
             )
         if self.restart:
             self.restart = False
-            self.remote = False
             result = await self._execute(
                 prelim_callback, progress_callback
             )
@@ -216,7 +220,7 @@ class TransformationJob:
                 raise
 
         async def get_result2(client):
-            try:
+            try:            
                 await client.wait(self.checksum)
                 return await client.status(self.checksum)
             except asyncio.CancelledError:
@@ -272,11 +276,10 @@ class TransformationJob:
                     if DEBUG:
                         traceback.print_exc()
                     continue
-                #print("REMOTE RESULT:", status, response)
                 if not isinstance(status, int):
                     continue
                 if status == 0:
-                    has_exceptions = True                    
+                    has_exceptions = True                                    
                 elif status < 0:
                     has_negative_status = True
                 elif status not in (2, 3): # erroneous behaviour
@@ -288,7 +291,8 @@ class TransformationJob:
                     n = rev.pop(future)
                     futures.remove(future)
                     client = clients[n]
-                    new_future = asyncio.ensure_future(get_result2(client))
+                    get_result = get_result2
+                    new_future = asyncio.ensure_future(get_result(client))
                     rev[new_future] = n
                     futures.append(new_future)
                     go_on = True                    
@@ -298,8 +302,12 @@ class TransformationJob:
                     return response
             if not go_on:
                 break
-        if has_negative_status and not has_exceptions:
+        if status == 1 and get_result is get_result1:
             self.restart = True
+            return
+        elif has_negative_status and not has_exceptions:
+            self.restart = True
+            self.remote = False
         else:            
             raise RemoteJobError()
 

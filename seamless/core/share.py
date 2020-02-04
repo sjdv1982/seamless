@@ -99,6 +99,7 @@ class ShareItem:
 
     def update(self, checksum):        
         # called by shareserver, or from init
+        assert checksum is None or isinstance(checksum, bytes)        
         if not self.readonly:
             sharemanager.share_value_updates[self] = checksum
 

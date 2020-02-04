@@ -4,7 +4,7 @@ import traceback
 DEBUG = True
 REMOTE_TIMEOUT = 5.0 
 
-async def get_buffer_remote(checksum, remote_peer_id):
+async def get_buffer_remote(checksum, buffer_cache, remote_peer_id):
     clients = communion_client_manager.clients["buffer"]
     if not len(clients):
         raise CacheMissError(checksum.hex())
@@ -50,7 +50,7 @@ async def get_buffer_remote(checksum, remote_peer_id):
         assert isinstance(buffer, bytes), buffer
         if checksum in buffer_cache.missing_buffers:
             buffer_cache.missing_buffers.discard(checksum)
-            buffer_cache.cache_buffer(checksum, buffer)
+        buffer_cache.cache_buffer(checksum, buffer)
         return buffer
 
 

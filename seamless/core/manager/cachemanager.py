@@ -167,7 +167,11 @@ class CacheManager:
 
         if remote > recompute:
             try:
-                buffer = await get_buffer_remote(checksum, None)
+                buffer = await get_buffer_remote(
+                    checksum, 
+                    buffer_cache,
+                    None
+                )
                 if buffer is not None:
                     return buffer
             except CacheMissError:
@@ -196,7 +200,11 @@ class CacheManager:
 
         if remote > 0 and remote <= recompute:
             try:
-                buffer = await get_buffer_remote(checksum, None)
+                buffer = await get_buffer_remote(
+                    checksum, 
+                    buffer_cache,
+                    None
+                )
                 if buffer is not None:
                     return buffer
             except CacheMissError:

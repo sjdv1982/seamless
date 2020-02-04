@@ -3,6 +3,7 @@ from seamless.core import context, cell, transformer, link
 
 try:
     redis_sink = seamless.RedisSink()
+    redis_cache = seamless.RedisCache()
 except Exception:
     pass
 

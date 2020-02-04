@@ -1,0 +1,21 @@
+STOP
+1 Seamless int cell: .cell1 Status: OK
+2 Seamless int cell: .cell2 Status: OK
+a + b Seamless Python transformer code cell: .code Status: OK
+a + b Seamless Python transformer code cell: .code_copy Status: OK
+3 Seamless int cell: .result Status: OK
+3 Seamless int cell: .result_copy Status: OK
+3 Seamless transformer: .tf Status: OK
+Status: OK
+None
+12 Status: OK
+1012 Status: OK
+Introduce delay...
+after 1.0 sec...
+None Status: {
+  "tf": "executing"
+}
+...
+-12 Status: OK
+Task was destroyed but it is pending!
+task: <Task pending coro=<TempRefManager.loop() running at /seamless/seamless/core/cache/tempref.py:32>>

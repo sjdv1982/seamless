@@ -19,15 +19,15 @@ class CommunionBufferClient(CommunionClient):
             return
         message = {
             "type": "buffer_status",
-            "content": checksum
+            "content": checksum.hex()
         }
         result = await communion_server.client_submit(message, self.servant)
         if result is not None:
             try:
-                status, result_checksum = result
+                status = result
                 if status in (0, 1):
                     communion_client_manager.remote_checksum_available.add(
-                        result_checksum
+                        checksum
                     )
             except:
                 pass
@@ -39,7 +39,7 @@ class CommunionBufferClient(CommunionClient):
             return
         message = {
             "type": "buffer",
-            "content": checksum
+            "content": checksum.hex()
         }
         result = await communion_server.client_submit(message, self.servant)
         return result
@@ -55,7 +55,7 @@ class CommunionBufferLengthClient(CommunionClient):
         assert checksum is not None
         message = {
             "type": "buffer_length",
-            "content": checksum
+            "content": checksum.hex()
         }
         result = await communion_server.client_submit(message, self.servant)
         return result
@@ -66,13 +66,15 @@ class CommunionSemanticToSyntacticChecksumClient(CommunionClient):
     def __init__(self, servant, config):
         self.servant = servant
 
-    async def submit(self, checksum):
+    async def submit(self, checksum, celltype, subcelltype):
         assert checksum is not None
         message = {
             "type": "semantic_to_syntactic",
-            "content": checksum
+            "content": (checksum.hex(), celltype, subcelltype)
         }
         result = await communion_server.client_submit(message, self.servant)
+        if result is not None:
+            result = [bytes.fromhex(r) for r in result]
         return result
 
 class CommunionTransformationClient(CommunionClient):
@@ -86,7 +88,7 @@ class CommunionTransformationClient(CommunionClient):
         self.config_clear_exception = config["clear_exception"]
         self.future_clear_exception = None
 
-    async def status(self, checksum):        
+    async def status(self, checksum): 
         if self.future_clear_exception is not None:
             await self.future_clear_exception
         assert checksum is not None
@@ -94,10 +96,11 @@ class CommunionTransformationClient(CommunionClient):
             return
         message = {
             "type": "transformation_status",
-            "content": checksum
+            "content": checksum.hex()
         }        
-        result = await communion_server.client_submit(message, self.servant)
-        #print("STATUS", result)
+        result = await communion_server.client_submit(message, self.servant)        
+        if result is not None and isinstance(result[-1], str):
+            result = (*result[:-1], bytes.fromhex(result[-1]))
         return result
 
     async def wait(self, checksum):
@@ -107,7 +110,7 @@ class CommunionTransformationClient(CommunionClient):
             return
         message = {
             "type": "transformation_wait",
-            "content": checksum
+            "content": checksum.hex()
         }
         await communion_server.client_submit(message, self.servant)
 
@@ -118,7 +121,7 @@ class CommunionTransformationClient(CommunionClient):
             return
         message = {
             "type": "transformation_job",
-            "content": checksum
+            "content": checksum.hex()
         }
         result = await communion_server.client_submit(message, self.servant)
         return result
@@ -130,7 +133,7 @@ class CommunionTransformationClient(CommunionClient):
             return
         message = {
             "type": "transformation_cancel",
-            "content": checksum
+            "content": checksum.hex()
         }
         await communion_server.client_submit(message, self.servant)
 
@@ -141,14 +144,14 @@ class CommunionTransformationClient(CommunionClient):
             return
         message = {
             "type": "transformation_hard_cancel",
-            "content": checksum
+            "content": checksum.hex()
         }
         await communion_server.client_submit(message, self.servant)
 
     async def clear_exception(self, checksum):
         message = {
             "type": "transformation_clear_exception",
-            "content": checksum
+            "content": checksum.hex()
         }
         await communion_server.client_submit(message, self.servant)
         self.future_clear_exception = None
@@ -215,7 +218,7 @@ class CommunionClientManager:
             print("REMOVE SERVANT", communion_type)
             self.clients[communion_type].remove(client)
 
-    async def remote_semantic_to_syntactic(self, checksum, peer_id):
+    async def remote_semantic_to_syntactic(self, checksum, celltype, subcelltype, peer_id):
         clients = []
         for client in self.clients["semantic_to_syntactic"]:
             client_peer_id = self.servant_to_peer_id[id(client.servant)]
@@ -223,7 +226,7 @@ class CommunionClientManager:
                 clients.append(client)
         if not len(clients):
             return None
-        coros = [client.submit(checksum) for client in clients]
+        coros = [client.submit(checksum, celltype, subcelltype) for client in clients]
         results = await asyncio.gather(*coros)
         result = []
         for r in results:
@@ -231,7 +234,7 @@ class CommunionClientManager:
                 result += r
         if not len(result):
             return None
-        return [bytes.fromhex(r) for r in result]
+        return result
 
     async def remote_buffer_status(self, checksum, peer_id):
         if checksum in self.remote_checksum_available:
@@ -253,16 +256,18 @@ class CommunionClientManager:
             for future in done:
                 try:
                     result = future.result()
-                    status, _ = result
+                    status = result
                     if status > 0:
                         return True
                 except:
+                    import traceback
+                    traceback.print_exc()
                     continue
             if not len(pending):
                 return False         
 
     async def remote_transformation_status(self, checksum, peer_id):
-        clients = []
+        clients = []        
         for client in self.clients["transformation"]:
             client_peer_id = self.servant_to_peer_id[id(client.servant)]
             if client_peer_id != peer_id:
@@ -284,8 +289,9 @@ class CommunionClientManager:
                         continue
                     if best_status is None or status > best_status:
                         best_status = status
-                        best_result = result
                 except:
+                    import traceback
+                    traceback.print_exc()
                     continue
             if not len(pending):
                 break

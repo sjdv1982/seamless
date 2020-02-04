@@ -72,13 +72,18 @@ def syntactic_is_semantic(celltype, subcelltype):
 async def syntactic_to_semantic(
     checksum, celltype, subcelltype, buffer_cache, codename
 ):
-    if celltype not in ("cson", "yaml", "python"):
+    assert checksum is None or isinstance(checksum, bytes)
+    if syntactic_is_semantic(celltype, subcelltype):
         return checksum
 
     try:
         buffer = get_buffer(checksum, buffer_cache)    
     except CacheMissError:
-        buffer = await get_buffer_remote(checksum, None)
+        buffer = await get_buffer_remote(
+            checksum, 
+            buffer_cache,
+            None
+        )
     if celltype in ("cson", "yaml"):
         semantic_checksum = await convert(
             checksum, buffer, celltype, "plain"
@@ -153,11 +158,11 @@ class TransformationCache:
                 sem_checksum = self.syntactic_to_semantic_checksums.get(checksum)                
                 if sem_checksum is None:
                     codename = str(pin)
-                    sem_checksum = await syntactic_to_semantic(
-                        checksum, celltype, subcelltype, 
-                        buffer_cache, codename
-                    )
-                    if sem_checksum != checksum:
+                    if not syntactic_is_semantic(celltype, subcelltype):
+                        sem_checksum = await syntactic_to_semantic(
+                            checksum, celltype, subcelltype, 
+                            buffer_cache, codename
+                        )
                         self.syntactic_to_semantic_checksums[checksum] = sem_checksum
                         if sem_checksum in self.semantic_to_syntactic_checksums:
                             semsyn = self.semantic_to_syntactic_checksums[sem_checksum]
@@ -168,6 +173,8 @@ class TransformationCache:
                             self.semantic_to_syntactic_checksums[sem_checksum] = semsyn
                         semsyn.append(checksum)
                         redis_sinks.sem2syn(sem_checksum, semsyn)
+                    else:
+                        sem_checksum = checksum
             transformation[pinname] = celltype, subcelltype, sem_checksum
         await self.incref_transformation(transformation, transformer)
 
@@ -442,14 +449,17 @@ class TransformationCache:
             try:
                 future.result()
             except:
-                if not isinstance(exc, HardCancelError) and not job._hard_cancelled:
+                pass
+                """
+                if not isinstance(exc, HardCancelError) and not job._hard_cancelled and not 1:
                     print("!" * 80)
                     print("!      Transformer remote exception", job.codename)
                     print("!" * 80)
                     import traceback
                     traceback.print_exc()
                     print("!" * 80)
-
+                """
+                
         transformers = self.transformations_to_transformers[tf_checksum]
 
         if exc is not None:
@@ -494,23 +504,31 @@ class TransformationCache:
             prelim = False
         return result_checksum, prelim
 
-    async def serve_semantic_to_syntactic(self, sem_checksum, peer_id):
+    async def serve_semantic_to_syntactic(self, sem_checksum, celltype, subcelltype, peer_id):
         from ...communion_client import communion_client_manager
+        def ret(semsyn):
+            for semsyn_checksum in semsyn:
+                assert isinstance(semsyn_checksum, bytes), semsyn
+            return semsyn
+        if syntactic_is_semantic(celltype, subcelltype):
+            return ret([sem_checksum])
         semsyn = self.semantic_to_syntactic_checksums.get(sem_checksum)
         if semsyn is not None:
-            return semsyn
+            return ret(semsyn)
         semsyn = redis_caches.sem2syn(sem_checksum)
         if semsyn is not None:
             self.semantic_to_syntactic_checksums[sem_checksum] = semsyn
-            return semsyn
+            return ret(semsyn)
         remote = communion_client_manager.remote_semantic_to_syntactic
-        semsyn = await remote(sem_checksum, peer_id)
-        if semsyn:
+        semsyn = await remote(sem_checksum, celltype, subcelltype, peer_id)
+        if semsyn is not None:
             self.semantic_to_syntactic_checksums[sem_checksum] = semsyn
             redis_sinks.sem2syn(sem_checksum, semsyn)
-        return semsyn
+            return ret(semsyn)
+        return None
 
     async def serve_get_transformation(self, tf_checksum, remote_peer_id):
+        assert isinstance(tf_checksum, bytes)
         transformation = self.transformations.get(tf_checksum)
         if transformation is None:
             try:
@@ -519,7 +537,9 @@ class TransformationCache:
                 )
             except CacheMissError:
                 transformation_buffer = await get_buffer_remote(
-                    checksum, remote_peer_id
+                    tf_checksum, 
+                    buffer_cache,
+                    remote_peer_id
                 )
             if transformation_buffer is not None:
                 transformation = json.loads(transformation_buffer)
@@ -530,6 +550,7 @@ class TransformationCache:
         return transformation
 
     async def serve_transformation_status(self, tf_checksum, peer_id):
+        assert isinstance(tf_checksum, bytes)
         from ...communion_client import communion_client_manager
         result_checksum, prelim = self._get_transformation_result(tf_checksum)        
         if result_checksum is not None:
@@ -547,7 +568,8 @@ class TransformationCache:
         if result is not None:
             return result
         transformation = await self.serve_get_transformation(
-            tf_checksum
+            tf_checksum, 
+            remote_peer_id=peer_id
         )
         if transformation is None:
             return -3, None
@@ -561,16 +583,19 @@ class TransformationCache:
                 continue
             celltype, subcelltype, sem_checksum = value
             if syntactic_is_semantic(celltype, subcelltype):                
-                sub_checksums = [sem_checksum]
+                syn_checksums = [sem_checksum]
             else:
-                sub_checksums = await self.serve_semantic_to_syntactic(
-                    sem_checksum, peer_id = None
+                syn_checksums = await self.serve_semantic_to_syntactic(
+                    sem_checksum, celltype, subcelltype,
+                    peer_id = None
                 )
-            for sub_checksum in sub_checksums:
-                if buffer_cache.buffer_check(sub_checksum):
+                if syn_checksums is None:
+                    syn_checksums = []
+            for syn_checksum in syn_checksums:
+                if buffer_cache.buffer_check(syn_checksum):
                     break
                 curr_sub_result = await remote(
-                    sub_checksum, peer_id=None
+                    syn_checksum, peer_id=None
                 )
                 if curr_sub_result:
                     break
@@ -632,7 +657,7 @@ class TransformationCache:
         result_checksum, prelim = self._get_transformation_result(tf_checksum)
         if result_checksum is not None and not prelim:
             return result_checksum
-        transformation = await self.serve_get_transformation(tf_checksum)
+        transformation = await self.serve_get_transformation(tf_checksum, None)
         if transformation is None:
             raise CacheMissError
         for k,v in transformation.items():
@@ -641,7 +666,10 @@ class TransformationCache:
             celltype, subcelltype, sem_checksum = v
             if syntactic_is_semantic(celltype, subcelltype):
                 continue
-            await self.serve_semantic_to_syntactic(sem_checksum, None)
+            await self.serve_semantic_to_syntactic(
+                sem_checksum, celltype, subcelltype,
+                None
+            )
         transformer = DummyTransformer(tf_checksum)
         coro = self.incref_transformation(transformation, transformer)
         fut = asyncio.ensure_future(coro)

@@ -13,9 +13,6 @@ communion_server.configure_master(
     transformation_job=True,
     transformation_status=True,
 )
-communion_server.configure_servant(
-    buffer=True,
-)
 
 from seamless.core import context, cell, transformer, link
 
@@ -42,6 +39,7 @@ print(ctx.cell1.value)
 print(ctx.code.value)
 ctx.compute()
 print(ctx.result.value, ctx.status)
+print(ctx.tf.exception)
 ctx.cell1.set(10)
 ctx.compute()
 print(ctx.result.value, ctx.status)

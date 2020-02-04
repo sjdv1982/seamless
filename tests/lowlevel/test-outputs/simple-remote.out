@@ -1,0 +1,18 @@
+INCOMING simple-remote jobslave
+ADD SERVANT buffer
+ADD SERVANT buffer_length
+ADD SERVANT semantic_to_syntactic
+ADD SERVANT transformation
+1
+c = a + b
+3 Status: OK
+None
+12 Status: OK
+1012 Status: OK
+Introduce delay...
+after 1.0 sec...
+None Status: {
+  "tf": "executing"
+}
+...
+-12 Status: OK

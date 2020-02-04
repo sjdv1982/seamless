@@ -119,7 +119,6 @@ default_servant_config = {
     "transformation_job": False,
     "transformation_status": False,
     "semantic_to_syntactic": True,
-    #
     "hard_cancel": False,  # allow others to hard cancel our jobs
     "clear_exception": False, # allow others to clear exceptions on our jobs
 }
@@ -150,7 +149,7 @@ def communion_encode(msg):
         assert isinstance(content, (str, int, float, bytes, bool, tuple)), content
         if isinstance(content, bool):
             is_str = b'\x01'
-        elif isinstance(content, tuple):
+        elif isinstance(content, (int, float, tuple)):
             is_str = b'\x04'
         else:
             is_str = b'\x03' if isinstance(content, str) else b'\x02'
@@ -160,12 +159,9 @@ def communion_encode(msg):
         elif isinstance(content, bool):
             content = b'\x01' if content else b'\x00'
         elif isinstance(content, (int, float, tuple)):
-            if isinstance(content, tuple):
-                if isinstance(content[0], int) and content[-1] is not None:
-                    content = content[:-1] + (content[-1].hex(),)
             content = json.dumps(content).encode()
         m += content
-    #assert communion_decode(m) == msg, (communion_decode(m), msg)
+    assert communion_decode(m) == msg, (communion_decode(m), msg)
     return m
 
 def communion_decode(m):    
@@ -196,8 +192,6 @@ def communion_decode(m):
     elif is_str == b'\x04':
         content = json.loads(m[1:])
         if isinstance(content, list):
-            if isinstance(content[0], int) and content[-1] is not None:
-                content[-1] = bytes.fromhex(content[-1])
             content = tuple(content)
     else:
         assert is_str == b'\x03' or is_str == b'\x02'
@@ -209,7 +203,7 @@ def communion_decode(m):
     
 class CommunionServer:
     future = None
-    PROTOCOL = ("seamless", "communion", "0.2")
+    PROTOCOL = ("seamless", "communion", "0.2.1")
     _started = False
     _started_outgoing = False
     _to_start_incoming = None
@@ -361,6 +355,34 @@ class CommunionServer:
         self.startup = asyncio.ensure_future(self._startup())
 
     
+    async def _process_transformation_request(self, transformation, transformer, peer):
+        tcache = transformation_cache
+        coros = []
+        for pinname in transformation:
+            if pinname.startswith("__"):
+                continue
+            celltype, subcelltype, sem_checksum = transformation[pinname]
+            checksum2 = await tcache.serve_semantic_to_syntactic(
+                sem_checksum, celltype, subcelltype,
+                peer
+            )
+            checksum2 = checksum2[0]
+            assert isinstance(checksum2, bytes)
+            buffer = buffer_cache.get_buffer(checksum2)
+            if buffer is not None:
+                continue
+            coro = get_buffer_remote(
+                checksum2, 
+                buffer_cache,
+                peer
+            )
+            coros.append(coro)
+        if len(coros):
+            await asyncio.gather(*coros)
+        await tcache.incref_transformation(
+            transformation, transformer
+        )
+
     async def _process_request_from_peer(self, peer, message):
         type = message["type"]
         message_id = message["id"]
@@ -371,93 +393,99 @@ class CommunionServer:
         try:
             if type == "transformation_hard_cancel":
                 assert self.config_servant["hard_cancel"]
-                checksum = content
+                checksum = bytes.fromhex(content)
                 transformation_cache.hard_cancel(tf_checksum=checksum)
                 result = "OK"
             
             elif type == "transformation_clear_exception":
                 assert self.config_servant["clear_exception"]
-                checksum = content
+                checksum = bytes.fromhex(content)
                 transformation_cache.clear_exception(tf_checksum=checksum)
                 result = "OK"
             
             elif type == "buffer_status":
                 assert self.config_servant[type]
-                checksum = content
+                checksum = bytes.fromhex(content)
                 async def func():
                     buffer = buffer_cache.get_buffer(checksum)
                     # TODO: use buffer_check instead, and obtain buffer length
                     #print("STATUS SERVE BUFFER", buffer, checksum.hex())
                     if buffer is not None:
                         if len(buffer) < 10000: # vs 1000 for buffer_cache small buffers
-                            return 1, None
+                            return 1
                         status = self.config_servant["buffer_status"]
                         if status == "small":
-                            return -1, None
+                            return -1
                     peer_id = self.peers[peer]["id"]
                     result = await communion_client_manager.remote_buffer_status(
                         checksum, peer_id
                     )
                     if result == True:
-                        return 0, None
+                        return 0
                     else:
-                        return -2, None
+                        return -2
                 result = await func()
+                pr("BUFFER STATUS", checksum.hex(), result)
             
             elif type == "buffer":
                 assert self.config_servant[type]
-                checksum = content
+                checksum = bytes.fromhex(content)
                 result = get_buffer(
                     checksum, buffer_cache
                 )
                 if result is None:
                     peer_id = self.peers[peer]["id"]
                     result = await get_buffer_remote(
-                        checksum, 
+                        checksum,
+                        buffer_cache, 
                         remote_peer_id=peer_id
                     )
+                ###pr("BUFFER", checksum.hex(), result)
             elif type == "buffer_length":
                 assert self.config_servant[type]
                 raise NotImplementedError
             
             elif type == "semantic_to_syntactic":
                 assert self.config_servant["semantic_to_syntactic"]
-                checksum = content
+                checksum, celltype, subcelltype = content
+                checksum = bytes.fromhex(checksum)
                 peer_id = self.peers[peer]["id"]
                 tcache = transformation_cache
                 result = await tcache.serve_semantic_to_syntactic(
-                    checksum, peer_id
-                )
+                    checksum, celltype, subcelltype,
+                    peer_id
+                )                
                 if isinstance(result, list):
                     result = tuple([r.hex() for r in result])
             
             elif type == "transformation_status":
                 assert self.config_servant[type]
-                checksum = content
+                checksum = bytes.fromhex(content)
                 peer_id = self.peers[peer]["id"]
                 tcache = transformation_cache
                 result = await tcache.serve_transformation_status(
                     checksum, peer_id
                 )
-                #print("STATUS", result)
+                if isinstance(result[-1], bytes):
+                    result = (*result[:-1], result[-1].hex())
             
             elif type == "transformation_job":
                 assert self.config_servant[type]
-                checksum = content
+                checksum = bytes.fromhex(content)
                 peer_id = self.peers[peer]["id"]
                 transformer = RemoteTransformer(
                     checksum, peer_id
                 )
                 tcache = transformation_cache
-                transformation = await tcache.serve_get_transformation(checksum, peer_id)
-                coro = tcache.incref_transformation(
-                    transformation, transformer
+                transformation = await tcache.serve_get_transformation(checksum, peer_id)                
+                coro = self._process_transformation_request(
+                    transformation, transformer, peer
                 )
                 asyncio.ensure_future(coro)
                 result = "OK"
             
             elif type == "transformation_wait":
-                checksum = content
+                checksum = bytes.fromhex(content)
                 peer_id = self.peers[peer]["id"]
                 tcache = transformation_cache
                 await tcache.remote_wait(checksum, peer_id)
@@ -465,11 +493,11 @@ class CommunionServer:
 
             elif type == "transformation_cancel":
                 assert self.config_servant["transformation_job"]
-                checksum = content
+                checksum = bytes.fromhex(content)
                 peer_id = self.peers[peer]["id"]
                 tcache = transformation_cache
                 key = checksum, peer_id
-                transformation = await tcache.serve_get_transformation(checksum)
+                transformation = await tcache.serve_get_transformation(checksum, peer_id)
                 rem_transformer = tcache.remote_transformers.get(key)
                 if key is not None:
                     tcache.decref_transformation(transformation, rem_transformer)
@@ -493,6 +521,7 @@ class CommunionServer:
             try:
                 peer_id = self.peers[peer]["id"]
                 pr("  Communion response: send %d bytes to peer '%s' (#%d)" % (len(msg), peer_id, response["id"]))
+                ###pr("  RESPONSE:", msg, "/RESPONSE")
             except KeyError:
                 pass
             else:
@@ -512,7 +541,7 @@ class CommunionServer:
     async def _process_message_from_peer(self, peer, msg):        
         message = communion_decode(msg)
         peer_id = self.peers[peer]["id"]
-        report = "  Communion %s: receive %d bytes from peer '%s' (#%d)"        
+        report = "  Communion %s: receive %d bytes from peer '%s' (#%d)"                
         pr(report  % (message["mode"], len(msg), peer_id, message["id"]), message.get("type"))
         #print("message from peer", self.peers[peer]["id"], ": ", message)
         mode = message["mode"]
