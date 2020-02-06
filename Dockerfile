@@ -3,6 +3,7 @@ LABEL author="Sjoerd de Vries <sjoerd.de-vries@inserm.fr>"
 LABEL version="0.2"
 USER root
 COPY requirements.txt requirements.txt
+RUN apt update && apt install -y gfortran
 RUN pip install -r requirements.txt
 COPY . /usr/local/src/seamless
 RUN rm -rf /usr/local/src/seamless/.git && \

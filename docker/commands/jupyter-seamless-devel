@@ -2,11 +2,12 @@ seamlessdir=`python3 -c 'import seamless,os;print(os.path.dirname(seamless.__fil
 
 docker run --rm \
   -v `pwd`:/home/jovyan/work -v $seamlessdir:/seamless \
-  -e "PYTHONPATH=/seamless" -e /home/jovyan/work  \
+  -e "PYTHONPATH=/seamless" \
   --network=host \
   -v /var/run/docker.sock:/var/run/docker.sock \
   -v /tmp:/tmp \
   --hostname localhost \
+  --workdir /home/jovyan/work \
   seamless-devel start-notebook.sh  \
   --NotebookApp.token='' --NotebookApp.password='' \
   $*
