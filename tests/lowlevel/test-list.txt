@@ -1,13 +1,67 @@
 # In general, run with:
 #   python3 -u ../../scripts/TEST.py > test-outputs/TEST.out 2>&1
+bytecell.py
+cachehit-semantic.py
+conversions.py: the output is approximate, depends on exact timings
 simple.py
 simple-async.py
 simple-indirect.py
 subcontext.py
 simple-reactor.py
 simple-cache.py: see instructions
+plain.py
+mixedcell.py
+preliminary.py: the output is approximate, depends on exact timings
+cached.py
+dummy-remote-buffercache.py
+dummy-remote-result1.py
+dummy-remote-result2.py
+dummy-remote-result3.py
+dummy-remote-result4.py
+simple-macro.py
+compile.py
+compile-fortran.py
+compile-mixedlang.py
+fingertip.py
+injection.py
+simple-share.py
+simple-duplex.py
+simple-duplex-remote.py: run together with:
+     python3 -u ../../scripts/jobslave-noredis.py --time 40 > test-outputs/simple-duplex-remote-jobslave.out 2>&1
 simple-remote.py: run together with scripts/jobslave-noredis.py 
 simple-remote2.py: run together with:
      python3 -u ../../scripts/jobslave-noredis.py --time 20 > test-outputs/simple-remote2-jobslave.out 2>&1
-simple-macro.py
-simple-share.py
+compile-run-remote.py: run together with scripts/jobslave-noredis.py
+     The jobslave output should include "ADD 8.141592979431152"
+macro.py
+macro2.py
+macro3.py
+collatz.py: the output is approximate, depends on exact timings
+
+Non-automatic tests
+=========================
+mount.py: 
+     - remove /tmp/mount-test
+     - run with ipython3 -i
+     - then open all files in /tmp/mount-test and manipulate/monitor them
+mount-direct.py: see above 
+mount-cson.py: 
+     - remove /tmp/test.cson and /tmp/test.json
+     - run with ipython3 -i
+     - then open /tmp/test.cson and /tmp/test.json, manipulate resp. monitor them
+mount-plain.py: see above, minus the .cson
+
+simple-communion: run simple-communion-slave.py,
+     then simple-communion-master.py in a different terminal, 
+     then Ctrl-C simple-communion-slave.py
+     The output is available in simple-communion-[master/slave].out
+simple-debug.py
+mount.ipynb
+collatz-heisenbug.sh: is in fact automatic, but takes a looong time to run
+communion-peer[12].sh: run communion-peer1.sh, 
+     then communion-peer2.sh in a different terminal, 
+     then Ctrl-C communion-peer1.sh
+     The output is available in communion-peer[12].out
+compile-debug.py  
+     - Run with ipython3 -i. Cannot currently be tested in the Docker container
+     Need to install gdb/gdbserver/gdbgui in the container. See issue 2

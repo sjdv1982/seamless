@@ -12,7 +12,7 @@ from .run_multi_remote import run_multi_remote, run_multi_remote_pair
 from .injector import transformer_injector as injector
 from .build_module import build_module_async
 
-DEBUG = True
+DEBUG = False
 
 ###############################################################################
 # Local jobs

@@ -36,3 +36,8 @@ print(ctx.result.value, ctx.status)
 ctx.cell2.set(10)
 ctx.compute()
 print(ctx.result.value, ctx.status)
+
+with open("/tmp/mixedcell.mixed", "rb") as f:
+    content = f.read()
+from seamless import get_hash
+print(get_hash(content).hex())

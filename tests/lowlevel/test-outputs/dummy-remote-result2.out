@@ -1,0 +1,8 @@
+Server 1 status 2
+Server 1 status -1
+Server 1 status -1
+Server 2
+Status: OK
+None
+42
+STOP

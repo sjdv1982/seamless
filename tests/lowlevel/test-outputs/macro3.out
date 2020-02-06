@@ -1,0 +1,118 @@
+START
+Execute Seamless macro: .macro
+Initial param 0
+Should be non-existent for .d
+Should be None for .e, .e2
+
+macro a              1000
+macro b              2000
+macro result         3000
+d                    <non-existent>
+e                    None
+e2                   None
+macro x0             x0
+macro x              x0!
+x                    x0!
+macro y              y0
+y                    y0
+macro z              z
+q                    q0
+macro q              q0
+macro q_link         q0
+macro qq             q0
+r                    r0
+macro rr             r0
+
+Status: OK
+Change to 2
+Execute Seamless macro: .macro
+macro a              1002
+macro b              2002
+macro result         3004
+d                    4202
+e                    4202
+e2                   42020
+macro x0             x2
+macro x              x2!
+x                    x2!
+macro y              y2
+y                    y2
+macro z              z
+q                    q2
+macro q              q2
+macro q_link         q2
+macro qq             q2
+r                    r2
+macro rr             r2
+
+Status: OK
+Change to 1
+Should change to non-existent for .d
+Should change to None for .e, .e2
+
+Execute Seamless macro: .macro
+macro a              1001
+macro b              2001
+macro result         3002
+d                    <non-existent>
+e                    None
+e2                   None
+macro x0             x1
+macro x              x1!
+x                    x1!
+macro y              y1
+y                    y1
+macro z              z
+q                    q1
+macro q              q1
+macro q_link         q1
+macro qq             q1
+r                    r1
+macro rr             r1
+
+Status: OK
+Change to 3
+Execute Seamless macro: .macro
+macro a              1003
+macro b              2003
+macro result         3006
+d                    4203
+e                    4203
+e2                   42030
+macro x0             x3
+macro x              x3!
+x                    x3!
+macro y              y3
+y                    y3
+macro z              z
+q                    q3
+macro q              q3
+macro q_link         q3
+macro qq             q3
+r                    r3
+macro rr             r3
+
+Status: OK
+Change to 4
+Execute Seamless macro: .macro
+macro a              1004
+macro b              2004
+macro result         3008
+d                    4204
+e                    4204
+e2                   42040
+macro x0             x4
+macro x              x4!
+x                    x4!
+macro y              y4
+y                    y4
+macro z              z
+q                    q4
+macro q              q4
+macro q_link         q4
+macro qq             q4
+r                    r4
+macro rr             r4
+
+Status: OK
+STOP

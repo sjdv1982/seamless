@@ -48,7 +48,6 @@ print("/reactor execute")
 
 ctx.compute()
 print(ctx.result.value)
-'''
 ctx.cell1.set(10)
 ctx.compute()
 print(ctx.result.value)
@@ -60,4 +59,3 @@ PINS.c.set(a+b+1000)
 ctx.compute()
 print(ctx.result.value)
 print(ctx.status)
-'''

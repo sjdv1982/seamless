@@ -1,0 +1,7 @@
+INCOMING simple-communion-master simple-communion-slave
+ADD SERVANT buffer
+ADD SERVANT buffer_length
+ADD SERVANT semantic_to_syntactic
+Seamless int cell: .cell1 1
+Seamless int cell: .cell2 2
+Seamless Python transformer code cell: .code a + b

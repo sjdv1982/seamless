@@ -1,0 +1,12 @@
+{'x': array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]), 'y': array([0.        , 0.69314718, 1.09861229, 1.38629436, 1.60943791,
+       1.79175947, 1.94591015, 2.07944154, 2.19722458, 2.30258509]), 'z': [1, 2, 'test', [3, 4]]}
+mixed-plain
+{'type': 'object', 'properties': {'x': {'type': 'array', 'items': {'type': 'integer', 'bytesize': 8, 'unsigned': False}, 'identical': True, 'shape': (10,), 'contiguous': True, 'storage': 'pure-binary'}, 'y': {'type': 'array', 'items': {'type': 'number', 'bytesize': 8}, 'identical': True, 'shape': (10,), 'contiguous': True, 'storage': 'pure-binary'}, 'z': {'type': 'array', 'items': ['integer', 'integer', 'string', {'type': 'array', 'items': 'integer', 'identical': True, 'shape': (2,)}], 'identical': False, 'shape': (4,)}}}
+{'x': array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]), 'y': array([0.        , 0.69314718, 1.09861229, 1.38629436, 1.60943791,
+       1.79175947, 1.94591015, 2.07944154, 2.19722458, 2.30258509]), 'z': [1, 2, 'test', [3, 4]]}
+c = a['x'] * a['y'] + b
+[ 80.          80.69314718  82.19722458  84.15888308  86.43775165
+  88.95879735  91.67546089  94.55609079  97.57779662 100.72326584] Status: OK
+[10.         10.69314718 12.19722458 14.15888308 16.43775165 18.95879735
+ 21.67546089 24.55609079 27.57779662 30.72326584] Status: OK
+878a936545c3f74344dfa26e3175d00349a66cfdd900708ba0009e4d0707711c

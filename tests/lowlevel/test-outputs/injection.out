@@ -1,0 +1,38 @@
+START
+Execute Seamless macro: .macro
+macro execute
+<module 'seamless_module_c27b4cefe87469bcb994e91676dcc97dc8491af94e8a65ea3b1e45a063f016db'>
+10
+10
+['macro.testmodule']
+/macro execute
+Execute Seamless macro: .macro2
+macro2 execute
+<module 'seamless_module_c27b4cefe87469bcb994e91676dcc97dc8491af94e8a65ea3b1e45a063f016db'>
+10
+10
+['macro.testmodule2']
+/macro2 execute
+stage 1
+Execute Seamless macro: .macro2
+macro2 execute
+<module 'seamless_module_dd8be0ce47f012b4e07f75204b62758faee17624096b016298273485264cc60b'>
+20
+20
+['macro.testmodule2']
+/macro2 execute
+Execute Seamless macro: .macro
+macro execute
+<module 'seamless_module_dd8be0ce47f012b4e07f75204b62758faee17624096b016298273485264cc60b'>
+20
+20
+['macro.testmodule']
+/macro execute
+stage 2
+Execute Seamless macro: .macro
+macro execute
+<module 'seamless_module_dd8be0ce47f012b4e07f75204b62758faee17624096b016298273485264cc60b'>
+20
+20
+['macro.testmodule']
+/macro execute

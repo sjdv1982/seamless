@@ -1,0 +1,174 @@
+Server
+Server PROGRESS 10
+Server PRELIM 0.1
+Server PROGRESS 20
+Server PRELIM 0.2
+STEP 1
+Status: executing, 20.0 %
+0.2
+Status: preliminary
+0.2
+
+STEP 2
+Status: executing, 20.0 %
+0.2
+Status: preliminary
+0.2
+
+Server PROGRESS 30
+Server PRELIM 0.30000000000000004
+STEP 3
+Status: executing, 30.0 %
+0.30000000000000004
+Status: preliminary
+0.30000000000000004
+
+STEP 4
+Status: executing, 30.0 %
+0.30000000000000004
+Status: preliminary
+0.30000000000000004
+
+Server PROGRESS 40
+Server PRELIM 0.4
+STEP 5
+Status: executing, 40.0 %
+0.4
+Status: preliminary
+0.4
+
+Server PROGRESS 50
+Server PRELIM 0.5
+STEP 6
+Status: executing, 50.0 %
+0.5
+Status: preliminary
+0.5
+
+STEP 7
+Status: executing, 50.0 %
+0.5
+Status: preliminary
+0.5
+
+Server PROGRESS 60
+Server PRELIM 0.6000000000000001
+STEP 8
+Status: executing, 60.0 %
+0.6000000000000001
+Status: preliminary
+0.6000000000000001
+
+STEP 9
+Status: executing, 60.0 %
+0.6000000000000001
+Status: preliminary
+0.6000000000000001
+
+Server PROGRESS 70
+Server PRELIM 0.7000000000000001
+STEP 10
+Status: executing, 70.0 %
+0.7000000000000001
+Status: preliminary
+0.7000000000000001
+
+Server PROGRESS 80
+Server PRELIM 0.8
+STEP 11
+Status: executing, 80.0 %
+0.8
+Status: preliminary
+0.8
+
+STEP 12
+Status: executing, 80.0 %
+0.8
+Status: preliminary
+0.8
+
+Server PROGRESS 90
+Server PRELIM 0.9
+STEP 13
+Status: executing, 90.0 %
+0.9
+Status: preliminary
+0.9
+
+Server PROGRESS 100
+Server PRELIM 1.0
+STEP 14
+Status: OK
+1.0
+Status: OK
+1.0
+
+STEP 15
+Status: OK
+1.0
+Status: OK
+1.0
+
+STEP 16
+Status: OK
+1.0
+Status: OK
+1.0
+
+STEP 17
+Status: OK
+1.0
+Status: OK
+1.0
+
+STEP 18
+Status: OK
+1.0
+Status: OK
+1.0
+
+STEP 19
+Status: OK
+1.0
+Status: OK
+1.0
+
+STEP 20
+Status: OK
+1.0
+Status: OK
+1.0
+
+STEP 21
+Status: OK
+1.0
+Status: OK
+1.0
+
+STEP 22
+Status: OK
+1.0
+Status: OK
+1.0
+
+STEP 23
+Status: OK
+1.0
+Status: OK
+1.0
+
+STEP 24
+Status: OK
+1.0
+Status: OK
+1.0
+
+STEP 25
+Status: OK
+1.0
+Status: OK
+1.0
+
+Status: OK
+1.0
+STOP

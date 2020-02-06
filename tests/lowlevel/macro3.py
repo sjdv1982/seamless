@@ -93,6 +93,9 @@ ctx.rr_link = link(ctx.rr)
     ctx.r.connect(ctx.macro.ctx.rr_link)
 
 def report():
+    print("%-20s" % "macro a", ctx.macro.ctx.a.value)
+    print("%-20s" % "macro b", ctx.macro.ctx.b.value)
+    print("%-20s" % "macro result", ctx.macro.ctx.result.value)
     d = "<non-existent>"
     if ctx.macro.ctx.hasattr("d"):
         d = ctx.macro.ctx.d.value

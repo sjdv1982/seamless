@@ -17,7 +17,6 @@ async def server1(checksum):
 
 async def server2(checksum):
     print("Server 2...")
-    await asyncio.sleep(0.5)
     print("... server 2")
     raise Exception # Server 2 raises an exception
     
@@ -40,7 +39,7 @@ from seamless.communion_client import communion_client_manager
 m = communion_client_manager
 m.clients["buffer"] = [DummyClient(s, st) 
     for s,st in ((server1, -2), (server2, 0), (server3, 1))
-]; m.clients["buffer"][0] # dirty hack
+]
 
 with macro_mode_on():
     ctx = context(toplevel=True)

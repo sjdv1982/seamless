@@ -51,7 +51,7 @@ from seamless.communion_client import communion_client_manager
 m = communion_client_manager
 m.clients["transformation"] = [DummyClient(s) 
     for s in (server1, server2, server3, server4)
-] # dirty hack
+]
 
 with macro_mode_on():
     ctx = context(toplevel=True)

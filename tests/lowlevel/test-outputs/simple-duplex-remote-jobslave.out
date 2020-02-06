@@ -1,0 +1,23 @@
+Set up a communion outgoing port 8602
+OUTGOING jobslave simple-duplex-remote
+ADD SERVANT buffer
+ADD SERVANT buffer_length
+ADD SERVANT semantic_to_syntactic
+PROGRESS 1
+PROGRESS 2
+PROGRESS 3
+PROGRESS 4
+Hard cancel: <seamless.core.cache.transformation_cache.RemoteTransformer object at 0x7ff3afaa67b8>
+PROGRESS 1
+PROGRESS 2
+PROGRESS 3
+PROGRESS 4
+PROGRESS 5
+PROGRESS 6
+PROGRESS 7
+PROGRESS 8
+PROGRESS 9
+PROGRESS 10
+REMOVE SERVANT buffer
+REMOVE SERVANT buffer_length
+REMOVE SERVANT semantic_to_syntactic

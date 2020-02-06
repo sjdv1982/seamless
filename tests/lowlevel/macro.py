@@ -114,8 +114,6 @@ except AttributeError:
 else:
     mount_check()
 
-import sys; sys.exit()
-
 print("Change 3")
 ctx.macrocode.set(
     ctx.macrocode.value.replace("#raise Exception", "raise Exception")

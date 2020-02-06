@@ -62,7 +62,7 @@ from seamless.communion_client import communion_client_manager
 m = communion_client_manager
 m.clients["transformation"] = [
     DummyClient(),
-] # dirty hack
+] 
 
 with macro_mode_on():
     ctx = context(toplevel=True)

@@ -1,0 +1,5 @@
+Low-level mounting of entire contexts is fragile
+(e.g. tests/lowlevel/mount-direct.py => cannot remove directory /tmp/mount-test/sub)
+Perhaps better to make it a high-level feature,
+ (which would forbid the mounting of low-level-macro-generated cells)
+and simplify the mountmanager accordingly.

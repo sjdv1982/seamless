@@ -1,0 +1,28 @@
+Time: 1.7 ms, *** Start ***
+Time: 3.0 ms, None
+
+Time: 3.1 ms, *** Stage 0 ***
+
+Time: 3.5 ms, *** Stage 1a ***
+Time: 6.4 ms, ctx.txt1 [42, "test", {"mykey": "myvalue"}, true]
+Time: 6.5 ms, *** Stage 1b ***
+Time: 6.7 ms, *** Stage 1c ***
+Time: 10.6 ms, ctx.txt2 [42, "test", {"mykey": "myvalue"}, true]
+Time: 11.4 ms, ctx.txt3 [42, "test", {"mykey": "myvalue"}, true]
+
+Time: 11.5 ms, *** Stage 2 ***
+Time: 217.4 ms, ctx.txt4 [42, "test", {"mykey": "myvalue"}, true]
+
+Time: 217.6 ms, *** Stage 3 ***
+Time: 421.8 ms, ctx.plain [42, "test", {"mykey": "myvalue"}, true]
+Time: 421.9 ms, *** Stage 3a ***
+Time: 614.7 ms, ctx.plain2 [42, "test", {"mykey": "myvalue"}, true]
+Time: 615.0 ms, *** Stage 3b ***
+Time: 817.5 ms, ctx.mixed [42, "test", {"mykey": "myvalue"}, true]
+Time: 817.6 ms, *** Stage 4 ***
+Time: 1390.3 ms, ctx.py None
+
+Time: 1390.4 ms, *** Stage 5 ***
+Time: 1585.0 ms, ctx.plain3 Test string!! b'"Test string!!"\n'
+Time: 1585.9 ms, ctx.text Test string!! b'Test string!!\n'
+Time: 1587.1 ms, ctx.str Test string!! b'"Test string!!"\n'

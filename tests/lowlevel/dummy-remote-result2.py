@@ -32,7 +32,7 @@ class DummyClient1:
         print("Server 1 status", self.st)
         if self.st == 2:
             self.st = -1
-            return 2, (self.progress, self.prelim)
+            return 2, self.progress, self.prelim
         elif self.st == 3:
             return self.st, self.result
         else:
@@ -58,7 +58,7 @@ class DummyClient2:
         await self.job
     async def status(self, checksum):
         if self.st == 2:
-            return self.st, (self.progress, self.prelim)
+            return self.st, self.progress, self.prelim
         elif self.st == 3:
             return self.st, self.result
         else:
@@ -98,5 +98,6 @@ ctx.compute(0.1)
 
 ctx.compute()
 print(ctx.status)
+print(ctx.tf.exception)
 print(ctx.result.value)
 print("STOP")
