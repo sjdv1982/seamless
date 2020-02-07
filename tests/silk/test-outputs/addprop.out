@@ -1,0 +1,16 @@
+{'properties': {'x': {'type': 'integer'}, 'y': {'type': 'integer'}},
+ 'type': 'object'}
+{'additionalProperties': {'type': 'string'},
+ 'policy': {'infer_new_property': False},
+ 'properties': {'x': {'type': 'integer'}, 'y': {'type': 'integer'}},
+ 'type': 'object',
+ 'validators': [{'code': 'def validate(self):\n    assert self.x > self.y\n',
+                 'language': 'python'}]}
+dict_items([('x', 10), ('y', 2), ('z', 'OK')])
+1 is not of type 'string'
+
+Failed validating 'type' in schema['additionalProperties']:
+    {'type': 'string'}
+
+On instance['err']:
+    1
