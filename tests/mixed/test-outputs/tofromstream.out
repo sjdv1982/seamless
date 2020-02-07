@@ -1,0 +1,12 @@
+{'type': 'object', 'properties': {'a': {'type': 'integer', 'bytesize': 8, 'unsigned': False, 'storage': 'pure-binary'}, 'b': {'type': 'object', 'properties': {'arr': {'type': 'array', 'items': {'type': 'number', 'bytesize': 8}, 'identical': True, 'shape': (10,), 'contiguous': True, 'storage': 'pure-binary'}, 'arr2': {'type': 'array', 'items': {'type': 'object', 'properties': {'a': {'type': 'integer', 'bytesize': 4, 'unsigned': True}, 'b': {'type': 'number', 'bytesize': 4}}, 'bytesize': 8, 'order': ['a', 'b']}, 'identical': True, 'shape': (2,), 'contiguous': True, 'storage': 'pure-binary'}, 'v': {'type': 'object', 'properties': {'a': {'type': 'integer', 'bytesize': 4, 'unsigned': True}, 'b': {'type': 'number', 'bytesize': 4}}, 'bytesize': 8, 'order': ['a', 'b'], 'storage': 'pure-binary'}, 'z': 'integer'}, 'storage': 'mixed-plain'}, 'c': {'type': 'array', 'items': ['integer', 'integer', {'type': 'object', 'properties': {'a': 'integer', 'b': 'integer'}}, 'integer', {'type': 'array', 'items': 'integer', 'identical': True, 'shape': (2,)}], 'identical': False, 'shape': (5,), 'storage': 'pure-plain'}, 'd': {'type': 'array', 'items': {'type': 'integer', 'bytesize': 8, 'unsigned': False}, 'identical': True, 'shape': (6,), 'contiguous': True, 'storage': 'pure-binary'}, 'e': {'type': 'object', 'properties': {'q': {'type': 'integer', 'bytesize': 4, 'unsigned': False}, 'r': {'type': 'integer', 'bytesize': 8, 'unsigned': False}}, 'bytesize': 16, 'order': ['q', 'r'], 'storage': 'pure-binary'}}, 'bytesize': 48, 'order': ['a', 'b', 'c', 'd', 'e']} mixed-binary
+
+stream
+True
+True
+True
+True
+True
+True
+True
+True
+True

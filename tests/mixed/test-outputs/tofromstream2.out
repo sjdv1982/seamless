@@ -1,0 +1,6 @@
+pure-binary {'type': 'object', 'properties': {'a': {'type': 'integer', 'bytesize': 8, 'unsigned': False}, 'b': {'type': 'integer', 'bytesize': 8, 'unsigned': False}, 'c': {'type': 'tuple', 'items': {'type': 'number', 'bytesize': 24}, 'identical': True, 'shape': (3,)}}, 'bytesize': 40, 'order': ['a', 'b', 'c']}
+mixed-binary {'type': 'object', 'properties': {'a': {'type': 'integer', 'bytesize': 8, 'unsigned': False, 'storage': 'pure-binary'}, 'b': {'type': 'integer', 'bytesize': 8, 'unsigned': False, 'storage': 'pure-binary'}, 'c': {'type': 'array', 'items': {'type': 'number', 'bytesize': 8}, 'identical': True, 'shape': (3,), 'contiguous': True, 'storage': 'pure-binary'}}, 'bytesize': 24, 'order': ['a', 'b', 'c']}
+True
+True
+True
+True

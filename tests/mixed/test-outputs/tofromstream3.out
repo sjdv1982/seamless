@@ -1,0 +1,5 @@
+{'type': 'object', 'properties': {'arr': {'type': 'array', 'items': {'type': 'number', 'bytesize': 8}, 'identical': True, 'shape': (10, 2, 6), 'contiguous': True, 'storage': 'pure-binary'}, 'test': 'string'}} mixed-plain
+
+stream
+True
+True

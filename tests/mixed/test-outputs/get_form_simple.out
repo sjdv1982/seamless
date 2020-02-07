@@ -1,0 +1,112 @@
+"pure-plain" "integer" 
+
+"pure-plain" "string" 
+
+"pure-plain" {
+  "identical": true,
+  "items": "string",
+  "shape": [
+    2
+  ],
+  "type": "array"
+} 
+
+"pure-plain" {
+  "identical": false,
+  "items": [
+    "integer",
+    "number"
+  ],
+  "shape": [
+    2
+  ],
+  "type": "array"
+} 
+
+"pure-plain" {
+  "identical": false,
+  "items": [
+    "string",
+    "integer",
+    "boolean"
+  ],
+  "shape": [
+    3
+  ],
+  "type": "array"
+} 
+
+"pure-plain" {
+  "properties": {
+    "a": "null",
+    "b": "boolean",
+    "c": "integer",
+    "d": "number",
+    "e": "string",
+    "f": {
+      "identical": true,
+      "items": "integer",
+      "shape": [
+        2
+      ],
+      "type": "array"
+    }
+  },
+  "type": "object"
+} 
+
+"pure-binary" {
+  "contiguous": true,
+  "identical": true,
+  "items": {
+    "bytesize": 4,
+    "type": "integer",
+    "unsigned": false
+  },
+  "shape": [
+    10
+  ],
+  "type": "array"
+} 
+
+"pure-binary" {
+  "contiguous": true,
+  "identical": true,
+  "items": {
+    "bytesize": 1,
+    "type": "boolean"
+  },
+  "shape": [
+    20
+  ],
+  "type": "array"
+} 
+
+"pure-binary" {
+  "contiguous": true,
+  "identical": true,
+  "items": {
+    "bytesize": 16,
+    "order": [
+      "a",
+      "b"
+    ],
+    "properties": {
+      "a": {
+        "bytesize": 8,
+        "type": "integer",
+        "unsigned": false
+      },
+      "b": {
+        "bytesize": 8,
+        "type": "number"
+      }
+    },
+    "type": "object"
+  },
+  "shape": [
+    10
+  ],
+  "type": "array"
+} 
+

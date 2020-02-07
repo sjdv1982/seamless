@@ -1,0 +1,294 @@
+"mixed-binary" {
+  "contiguous": true,
+  "identical": true,
+  "items": {
+    "bytesize": 16,
+    "order": [
+      "a",
+      "b"
+    ],
+    "properties": {
+      "a": {
+        "bytesize": 8,
+        "storage": "pure-binary",
+        "type": "integer",
+        "unsigned": false
+      },
+      "b": {
+        "identical": true,
+        "items": "integer",
+        "shape": [
+          3
+        ],
+        "storage": "pure-plain",
+        "type": "array"
+      }
+    },
+    "type": "object"
+  },
+  "shape": [
+    2
+  ],
+  "type": "array"
+} 
+
+"mixed-binary" {
+  "contiguous": true,
+  "identical": false,
+  "items": [
+    {
+      "bytesize": 16,
+      "order": [
+        "a",
+        "b"
+      ],
+      "properties": {
+        "a": {
+          "bytesize": 8,
+          "storage": "pure-binary",
+          "type": "integer",
+          "unsigned": false
+        },
+        "b": {
+          "identical": true,
+          "items": "integer",
+          "shape": [
+            3
+          ],
+          "storage": "pure-plain",
+          "type": "array"
+        }
+      },
+      "type": "object"
+    },
+    {
+      "bytesize": 16,
+      "order": [
+        "a",
+        "b"
+      ],
+      "properties": {
+        "a": {
+          "bytesize": 8,
+          "storage": "pure-binary",
+          "type": "integer",
+          "unsigned": false
+        },
+        "b": {
+          "identical": true,
+          "items": "number",
+          "shape": [
+            3
+          ],
+          "storage": "pure-plain",
+          "type": "array"
+        }
+      },
+      "type": "object"
+    }
+  ],
+  "shape": [
+    2
+  ],
+  "type": "array"
+} 
+
+"mixed-plain" {
+  "identical": true,
+  "items": {
+    "contiguous": true,
+    "identical": true,
+    "items": {
+      "bytesize": 8,
+      "type": "number"
+    },
+    "shape": [
+      10
+    ],
+    "storage": "pure-binary",
+    "type": "array"
+  },
+  "shape": [
+    3
+  ],
+  "type": "array"
+} 
+
+"mixed-plain" {
+  "identical": false,
+  "items": [
+    "integer",
+    {
+      "contiguous": true,
+      "identical": true,
+      "items": {
+        "bytesize": 8,
+        "type": "number"
+      },
+      "shape": [
+        10
+      ],
+      "storage": "pure-binary",
+      "type": "array"
+    },
+    "null"
+  ],
+  "shape": [
+    3
+  ],
+  "type": "array"
+} 
+
+"mixed-plain" {
+  "properties": {
+    "arr": {
+      "contiguous": true,
+      "identical": true,
+      "items": {
+        "bytesize": 8,
+        "type": "number"
+      },
+      "shape": [
+        10
+      ],
+      "storage": "pure-binary",
+      "type": "array"
+    },
+    "arr2": {
+      "contiguous": true,
+      "identical": true,
+      "items": {
+        "bytesize": 16,
+        "order": [
+          "a",
+          "b"
+        ],
+        "properties": {
+          "a": {
+            "bytesize": 8,
+            "type": "integer",
+            "unsigned": false
+          },
+          "b": {
+            "bytesize": 8,
+            "type": "number"
+          }
+        },
+        "type": "object"
+      },
+      "shape": [
+        2
+      ],
+      "storage": "pure-binary",
+      "type": "array"
+    },
+    "v": {
+      "bytesize": 16,
+      "order": [
+        "a",
+        "b"
+      ],
+      "properties": {
+        "a": {
+          "bytesize": 8,
+          "type": "integer",
+          "unsigned": false
+        },
+        "b": {
+          "bytesize": 8,
+          "type": "number"
+        }
+      },
+      "storage": "pure-binary",
+      "type": "object"
+    },
+    "z": "integer"
+  },
+  "type": "object"
+} 
+
+"mixed-binary" {
+  "bytesize": 16,
+  "order": [
+    "a",
+    "b"
+  ],
+  "properties": {
+    "a": {
+      "bytesize": 8,
+      "storage": "pure-binary",
+      "type": "integer",
+      "unsigned": false
+    },
+    "b": {
+      "properties": {
+        "arr": {
+          "contiguous": true,
+          "identical": true,
+          "items": {
+            "bytesize": 8,
+            "type": "number"
+          },
+          "shape": [
+            10
+          ],
+          "storage": "pure-binary",
+          "type": "array"
+        },
+        "arr2": {
+          "contiguous": true,
+          "identical": true,
+          "items": {
+            "bytesize": 16,
+            "order": [
+              "a",
+              "b"
+            ],
+            "properties": {
+              "a": {
+                "bytesize": 8,
+                "type": "integer",
+                "unsigned": false
+              },
+              "b": {
+                "bytesize": 8,
+                "type": "number"
+              }
+            },
+            "type": "object"
+          },
+          "shape": [
+            2
+          ],
+          "storage": "pure-binary",
+          "type": "array"
+        },
+        "v": {
+          "bytesize": 16,
+          "order": [
+            "a",
+            "b"
+          ],
+          "properties": {
+            "a": {
+              "bytesize": 8,
+              "type": "integer",
+              "unsigned": false
+            },
+            "b": {
+              "bytesize": 8,
+              "type": "number"
+            }
+          },
+          "storage": "pure-binary",
+          "type": "object"
+        },
+        "z": "integer"
+      },
+      "storage": "mixed-plain",
+      "type": "object"
+    }
+  },
+  "type": "object"
+} 
+

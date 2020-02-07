@@ -1,0 +1,141 @@
+80
+85
+85
+15
+35
+3
+3
+9
+16
+4
+12 24
+12 25
+300
+VALIDATE 12 25
+{'methods': {'__add__': {'code': 'def adder(self, other):\n'
+                                 '    return other + self.x\n',
+                         'language': 'python'},
+             'bla': {'code': 'def adder(self, other):\n'
+                             '    return other + self.x\n',
+                     'language': 'python'},
+             'xx': {'getter': 'def xx_get(self):\n    return self.x * self.x\n',
+                    'language': 'python',
+                    'property': True,
+                    'setter': 'def xx_set(self, xx):\n'
+                              '    import math\n'
+                              '    self.x = int(math.sqrt(xx))\n'},
+             'xy': {'getter': 'def xy(self):\n    return self.x + self.y\n',
+                    'language': 'python',
+                    'property': True}},
+ 'properties': {'x': {'type': 'integer'},
+                'y': {'type': 'integer'},
+                'z': {'methods': {'qr': {'getter': 's.z.qr = property(lambda '
+                                                   'self: self.q * self.r)\n',
+                                         'language': 'python',
+                                         'property': True}},
+                      'properties': {'q': {'type': 'integer'},
+                                     'r': {'type': 'integer'}},
+                      'type': 'object',
+                      'validators': [{'code': 'def validate_z(self):\n'
+                                              '    print("VALIDATE", '
+                                              'self.q.data, self.r.data)\n'
+                                              '    assert self.q < self.r\n',
+                                      'language': 'python'}]}},
+ 'type': 'object'}
+VALIDATE 12 25
+[1, 2, 3, 10]
+VALIDATE 12 25
+[1, 2, 3, 10, 5, 1, 2, 3, 10, 5]
+1
+2
+3
+10
+5
+True True
+False False
+x
+y
+z
+lis
+
+1
+2
+3
+10
+5
+
+6
+6
+6
+9
+10
+[1. 2. 3.] [1. 2. 3.]
+[1. 2. 3.] [1. 2. 3.]
+<class 'numpy.ndarray'> <class 'numpy.ndarray'>
+3.0 3.0
+<class 'numpy.float64'> <class 'numpy.float64'>
+array
+5.0
+{'x': 10, 'arr': array([1., 2., 3.])}
+START
+[5. 2. 3.]
+{'x': 0.0, 'y': 0.0, 'z': 1.0}
+{'x': 1.0, 'y': 0.0, 'z': 0.0}
+{'items': {'type': 'number'}, 'storage': 'plain', 'type': 'array'}
+[0.0, 0.0, 1.0]
+START
+[0. 0. 1.]
+[0.2, -0.3, 0.93]
+[-1, 0, 0] (-1, 0, 0)
+[0.2, -0.3, 0.93] (0.2, -0.3, 0.93)
+{'items': {'type': 'number'},
+ 'methods': {'x': {'getter': 'c.x = property(lambda self: self[0], set_x)\n',
+                   'language': 'python',
+                   'property': True,
+                   'setter': 'def set_x(self, value):\n    self[0] = value\n'},
+             'xyz': {'getter': 'c.xyz = property(lambda self: '
+                               'tuple(self.data), set_xyz)\n',
+                     'language': 'python',
+                     'property': True,
+                     'setter': 'def set_xyz(self, xyz):\n'
+                               '    x,y,z = xyz\n'
+                               '    try:\n'
+                               '        self.x = x\n'
+                               '    except ValidationError:\n'
+                               '        pass\n'
+                               '    try:\n'
+                               '        self.y = y\n'
+                               '    except ValidationError:\n'
+                               '        pass\n'
+                               '    self.z = z\n'},
+             'y': {'getter': 'c.y = property(lambda self: self[1], set_y)\n',
+                   'language': 'python',
+                   'property': True,
+                   'setter': 'def set_y(self, value):\n    self[1] = value\n'},
+             'z': {'getter': 'c.z = property(lambda self: self[2], set_z)\n',
+                   'language': 'python',
+                   'property': True,
+                   'setter': 'def set_z(self, value):\n    self[2] = value\n'}},
+ 'storage': 'plain',
+ 'type': 'array',
+ 'validators': [{'code': 'def func(self):\n'
+                         '    import numpy as np #necessary!\n'
+                         '    arr = np.array(self.data)\n'
+                         '    assert abs(np.sum(arr**2) - 1) < 0.01\n',
+                 'language': 'python'}]}
+{'a': 7, 'b': 8}
+20
+{'methods': {'__call__': {'code': 'def __call__(self, c):\n'
+                                  '    return self.a + self.b + c\n',
+                          'language': 'python'}},
+ 'properties': {'a': {'type': 'integer'}, 'b': {'type': 'integer'}},
+ 'type': 'object'}
+START
+10 is not of type 'string'
+
+Failed validating 'type' in schema['properties']['l']['items']:
+    {'type': 'string'}
+
+On instance['l'][1]:
+    10
+['bla']

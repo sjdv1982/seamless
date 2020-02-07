@@ -1,0 +1,19 @@
+5
+integer
+
+{'a': 10}
+{'type': 'object', 'properties': {'a': 'integer'}}
+10
+
+{'a': 10, 'b': {'bb': 20}}
+{'bb': 20}
+20
+50
+{'a': 10, 'b': {'bb': 50}} {'type': 'object', 'properties': {'a': 'integer', 'b': {'type': 'object', 'properties': {'bb': 'integer'}}}}
+pure-plain pure-plain pure-plain
+mixed-plain pure-binary pure-plain pure-plain
+[0 1 2 3 4 5 6 7 8 9] 3
+[0, 1, 2, 3, 4, 5, 6, 7, 8, 9] 3
+pure-plain pure-plain pure-plain pure-plain
+pure-binary {'type': 'object', 'properties': {'m1': {'type': 'integer', 'bytesize': 8, 'unsigned': False}, 'm2': {'type': 'integer', 'bytesize': 8, 'unsigned': False}}, 'bytesize': 16, 'order': ['m1', 'm2']} (0, 0)
+b'somebuffer' <class 'numpy.ndarray'> |S10 b'somebuffer'
