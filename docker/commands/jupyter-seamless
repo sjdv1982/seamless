@@ -2,10 +2,10 @@
 docker run \
   --rm \
   -v /tmp:/tmp \
-  -v `pwd`:/home/jovyan/work \
+  -v `pwd`:/home/jovyan/cwd \
   --network=host \
   --hostname localhost \
-  --workdir /home/jovyan/work \
+  --workdir /home/jovyan \
   rpbs/seamless start-notebook.sh \
   --NotebookApp.token='' --NotebookApp.password='' \
   $*
