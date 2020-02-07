@@ -5,4 +5,8 @@ USER root
 COPY requirements.txt requirements.txt
 RUN apt update && apt install -y gfortran
 RUN pip install -r requirements.txt
+RUN ln -s /seamless/tests /home/jovyan/seamless-tests && \
+    ln -s /seamless/examples /home/jovyan/seamless-examples && \
+    ln -s /seamless/docker/commands /home/jovyan/seamless-docker && \
+    ln -s /seamless/scripts /home/jovyan/seamless-scripts
 RUN chown -R jovyan /home/jovyan
