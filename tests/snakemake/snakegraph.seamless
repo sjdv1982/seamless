@@ -840,5 +840,7 @@
       "type": "cell"
     }
   ],
-  "params": {}
+  "params": {
+    "share_namespace": "ctx"
+  }
 }
