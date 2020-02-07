@@ -9,7 +9,6 @@ window.addEventListener("resize", function (event) {
 
 
 pdb = null
-first = true
 
 ctx = connect_seamless("ws://localhost:5138", "http://localhost:5813", "ctx");
 ctx.self.onsharelist = function(sharelist) {
@@ -21,9 +20,7 @@ ctx.self.onsharelist = function(sharelist) {
   ctx["code.bash"].auto_read = true
 
   reload = function() {
-    if (first == false) {
-      window.location.reload(true)
-    }
+    if (!this.initial) location.reload()
   }
   ctx["index.html"].onchange = reload
   ctx["vismol.js"].onchange = reload

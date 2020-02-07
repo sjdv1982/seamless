@@ -156,11 +156,13 @@ function restart() {
 
   function style_circle(d) {
     d
-    //.style('fill', (d) => (d === selectedNode) ? d3.rgb(colors(d.id)).brighter().toString() : colors(d.id))
+    //.style('fill', (d) => (d === selectedNode) ? d3.rgb(colors(d.id)).brighter().toString() : colors(d.id))    
     .style('fill', (d) => d.color)
     .style('stroke', "black")
     .style('stroke-width', (d) => (d === selectedNode) ? 2.5 : 1.5)
-    .attr('transform', (d) => (d === selectedNode) ? 'scale(1.2)' : '');
+    .attr('transform', (d) => (d === selectedNode) ? 'scale(1.2)' : '')
+    .attr('r', radius)
+    ;
     return d
   }
 
@@ -175,7 +177,7 @@ function restart() {
   const g = circle.enter().append('svg:g');
   
   g.append('svg:circle')
-    .attr('class', 'node')
+    .attr('class', 'node')    
     .call(style_circle)
     .on('mouseover', function (d) {
       // enlarge target node
