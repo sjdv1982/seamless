@@ -300,6 +300,8 @@ class StructuredCell(SeamlessBase):
         return Silk(data=value, schema=schema)
 
     def get_schema(self):
+        if self.schema is None:
+            return None
         schema = self._schema_value
         if schema is None:
             if self.schema._checksum is not None:

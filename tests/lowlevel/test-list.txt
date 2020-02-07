@@ -6,13 +6,19 @@ conversions.py: the output is approximate, depends on exact timings
 simple.py
 simple-async.py
 simple-indirect.py
+exception_equilibrate.py
 subcontext.py
 simple-reactor.py
+downstream-reactor.py
 simple-cache.py: see instructions
 plain.py
 mixedcell.py
 preliminary.py: the output is approximate, depends on exact timings
 cached.py
+structured_cell/simple-auth.py
+structured_cell/simple-macro-mode.py
+structured_cell/simple-channels.py
+structured_cell/iadd.py
 dummy-remote-buffercache.py
 dummy-remote-result1.py
 dummy-remote-result2.py
@@ -22,9 +28,15 @@ simple-macro.py
 compile.py
 compile-fortran.py
 compile-mixedlang.py
+schema.py
 fingertip.py
 injection.py
+injection2.py
+injection3.py
+injection4.py: the output is approximate, depends on exact timings, see also [1]
+injection5.py: see above
 simple-share.py
+transformation-checksum.sh: run with Redis
 simple-duplex.py
 simple-duplex-remote.py: run together with:
      python3 -u ../../scripts/jobslave-noredis.py --time 40 > test-outputs/simple-duplex-remote-jobslave.out 2>&1
@@ -36,7 +48,11 @@ compile-run-remote.py: run together with scripts/jobslave-noredis.py
 macro.py
 macro2.py
 macro3.py
+structured_cell/simple-deepcell.py
+structured_cell/channels-deepcell.py
+structured_cell/schema.py
 collatz.py: the output is approximate, depends on exact timings
+structured_cell/preliminary.py: the output is approximate, depends on exact timings, see also [2]
 
 Non-automatic tests
 =========================
@@ -65,3 +81,14 @@ communion-peer[12].sh: run communion-peer1.sh,
 compile-debug.py  
      - Run with ipython3 -i. Cannot currently be tested in the Docker container
      Need to install gdb/gdbserver/gdbgui in the container. See issue 2
+
+Notes
+=====
+[1] This test is about Cython and can also run non-automatically.
+- Run with ipython3 -i
+- Open cell-ipython.html in the browser and cell-ipython*.ipy in a text editor
+- Interpolate cell-ipython.ipy between ORIGINAL and OPTIMIZED, 
+  and observe the HTML and timings.
+
+[2] This test is currently used in a crippled form 
+(preliminary-CRIPPLED.py), see issue 3 for more details.

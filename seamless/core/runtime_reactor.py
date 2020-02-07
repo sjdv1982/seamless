@@ -157,9 +157,11 @@ class RuntimeReactor:
             else:
                 self.prepare_namespace(self.updated)
             self.run_code("code_update")
+            """
             if self.reactor().pure == True:
                 self.run_code("code_stop")
                 self.clear()
+            """
         finally:
             self.executing = False
         self.updated.clear()

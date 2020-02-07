@@ -211,14 +211,14 @@ class Manager:
         cell._status_reason = status_reason
         cell._prelim = prelim
         if checksum != old_checksum:
+            cachemanager.incref_checksum(checksum, cell, authority)            
             observer = cell._observer
             if observer is not None:
                 cs = checksum.hex() if checksum is not None else None
                 observer(cs)
             if checksum is not None:
                 for traitlet in cell._traitlets:
-                    traitlet.receive_update(checksum)
-            cachemanager.incref_checksum(checksum, cell, authority)            
+                    traitlet.receive_update(checksum)            
             if not is_dummy_mount(cell._mount):
                 buffer = self.cachemanager.buffer_cache.get_buffer(checksum)
                 self.mountmanager.add_cell_update(cell, checksum, buffer)

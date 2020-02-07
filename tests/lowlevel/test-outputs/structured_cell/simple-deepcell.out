@@ -1,0 +1,45 @@
+Traceback (most recent call last):
+  File "simple-deepcell.py", line 16, in <module>
+    data.set(20)
+  File "/seamless/seamless/silk/Silk.py", line 511, in set
+    self._set(value, lowlevel=False)
+  File "/seamless/seamless/silk/Silk.py", line 475, in _set
+    self._set_value_simple(value)
+  File "/seamless/seamless/silk/Silk.py", line 422, in _set_value_simple
+    self._data.set(value)
+  File "/seamless/seamless/mixed/__init__.py", line 56, in set
+    self._monitor.set_path(self._path, value)
+  File "/seamless/seamless/mixed/Monitor.py", line 95, in set_path
+    self.backend.set_path(path, subdata)
+  File "/seamless/seamless/mixed/Backend.py", line 76, in set_path
+    self._set_path(path, data)
+  File "/seamless/seamless/mixed/Backend.py", line 321, in _set_path
+    sc._set_auth_path((), data)
+  File "/seamless/seamless/core/structured_cell.py", line 202, in _set_auth_path
+    set_subpath(self._auth_value, self.hash_pattern, path, value)
+  File "/seamless/seamless/core/protocol/expression.py", line 148, in set_subpath_sync
+    subvalue, sub_hash_pattern
+  File "/seamless/seamless/core/protocol/deep_structure.py", line 398, in value_to_deep_structure_sync
+    asyncio.get_event_loop().run_until_complete(fut)
+  File "/opt/conda/lib/python3.7/asyncio/base_events.py", line 584, in run_until_complete
+    return future.result()
+  File "/seamless/seamless/core/protocol/deep_structure.py", line 369, in value_to_deep_structure
+    raise DeepStructureError(hash_pattern, value) from None
+seamless.core.protocol.deep_structure.DeepStructureError: 
+  Invalid deep structure: 20
+  Hash pattern: {'*': '#'}
+{}
+<Silk: {} >
+<Silk: {} >
+START
+{'x': 'test', 'y': 'test2', 'z': 'test3'}
+<Silk: {'x': 'test', 'y': 'test2', 'z': 'test3'} >
+<Silk: {'x': 'test', 'y': 'test2', 'z': 'test3'} >
+{'x': 'c99446f315c991d5c5e83bd65753dc1fe97448da92b5e48fe028dcbd8cb87783', 'y': '3aace618e0d578104c110b4930ab376755695261858720cc631cbe62390cd61a', 'z': '153477a48af62df19f94c15f623fba4835f15f64502d98d4c95a6816387f4d62'}
+<Silk: test > <Silk: test2 > <Silk: test3 >
+test test2 test3
+{'p': 10, 'q': 20, 'r': 30}
+<Silk: {'p': 10, 'q': 20, 'r': 30} >
+<Silk: {'p': 10, 'q': 20, 'r': 30} >
+10 20 30
+STOP

@@ -9,7 +9,7 @@ class Reactor(Worker):
 
     #can't have with_schema because multiple outputs are possible
     # reactors will have to construct their own Silk objects from schema pins
-    def __init__(self, reactor_params, pure):
+    def __init__(self, reactor_params):
         self.outputs = {}
         self.inputs = {
             "code_start":("python", "reactor", True),
@@ -25,8 +25,6 @@ class Reactor(Worker):
             "code_stop": self.code_stop,
         }
         self._reactor_params = OrderedDict()
-        assert pure in (True, False)
-        self._pure = pure
 
         forbidden = list(self.inputs.keys())
         for p in sorted(reactor_params.keys()):
@@ -73,10 +71,6 @@ class Reactor(Worker):
                 self._pins[p] = pin
         super().__init__()
 
-    @property
-    def pure(self):
-        return self._pure
-
     def _set_context(self, ctx, name):
         has_ctx = self._context is not None
         super()._set_context(ctx, name)        
@@ -118,6 +112,6 @@ class Reactor(Worker):
         return ret
 
 
-def reactor(params, pure=False):
+def reactor(params):
     """TODO: port documentation from 0.1"""
-    return Reactor(params, pure=pure)
+    return Reactor(params)

@@ -23,7 +23,7 @@ a = aa""")
         "a": "input",
         "b": "input",
         "c": "output"
-    }, pure=False) # change between pure=True/"semi"/False (default)
+    })
     ctx.a.connect(ctx.rc.a)
     ctx.b.connect(ctx.rc.b)
     ctx.code_start = cell("python").set("")

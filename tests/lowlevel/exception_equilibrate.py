@@ -19,3 +19,4 @@ with macro_mode_on():
     ctx.tf.b.cell()
 ctx.compute(5)
 print(ctx.status)
+print(ctx.tf.exception)
