@@ -143,12 +143,6 @@ class Context(Base):
                 if self.auto_translate:                    
                     await self.translation()
                 await asyncio.sleep(1)
-        """
-        thread = threading.Thread(target=auto_trans)
-        thread.daemon = True
-        thread.start()
-        self._auto_translate_thread = thread
-        """
         self._auto_translate_coro = asyncio.ensure_future(auto_trans())
 
     def _get_node(self, path):
