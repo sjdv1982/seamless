@@ -3,6 +3,7 @@ function connect_seamless(update_server=null, rest_server=null, share_namespace=
     self: {
       parse_ports: function(update_server, rest_server) {
         http_port = window.location.port
+        if (http_port == "") http_port = 80
         if (rest_server == null) {
           rest_server = http_port
         }
