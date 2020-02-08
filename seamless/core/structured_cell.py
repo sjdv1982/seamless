@@ -333,6 +333,10 @@ class StructuredCell(SeamlessBase):
         super().destroy(from_del=from_del)        
         self._get_manager()._destroy_structured_cell(self)
 
+    def has_authority(self, path=None):
+        if path is not None: raise NotImplementedError
+        return not self.no_auth
+
     def __str__(self):
         ret = "Seamless StructuredCell: " + self._format_path()
         return ret

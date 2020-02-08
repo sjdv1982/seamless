@@ -278,7 +278,7 @@ class Cell(Base):
         trigger = not hcell.get("UNTRANSLATED")
         return self._parent()._add_traitlet(self._path, trigger)
 
-    def output_widget(self, layout=None):
+    def output(self, layout=None):
         from .OutputWidget import OutputWidget
         return OutputWidget(self, layout)
 
@@ -290,7 +290,7 @@ class Cell(Base):
             raise NotImplementedError
         if hcell.get("UNTRANSLATED") and "TEMP" in hcell:
             #return hcell["TEMP"]
-            raise Exception # value untranslated; translation is async!
+            raise Exception("This cell is untranslated; run 'ctx.translate()' or 'await ctx.translation()'")
         try:
             cell = self._get_cell()
         except Exception:
@@ -439,7 +439,10 @@ class Cell(Base):
         hcell.pop("checksum", None)
         if cellvalue is not None and not hcell.get("UNTRANSLATED"):
             self._parent()._do_translate(force=True) # This needs to be kept!
-            self.set(cellvalue)
+            try:
+                self.set(cellvalue)
+            except Exception:
+                pass
         else:
             if self._parent() is not None:
                 self._parent()._translate()

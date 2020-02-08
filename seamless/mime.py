@@ -33,13 +33,17 @@ language_to_ext = {
 }
 celltype_to_ext = {
     "text": "txt",
+    "str": "txt",
     "python": "py",
     "transformer": "py",
     "reactor": "py",
     "macro": "py",
     "plain": "json",
+    "int": "json",
+    "float": "json",
+    "bool": "json",
     "cson": "cson",
-    "array": "npy",
+    "binary": "npy",
     "mixed": "mixed",
     None: None,
 }

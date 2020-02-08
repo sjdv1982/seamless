@@ -60,6 +60,8 @@ class PinsWrapper:
         return h["pins"]
 
     def __getattr__(self, pinname):
+        if pinname.startswith("_"):
+            raise AttributeError(pinname)
         hpins = self._get_hpins()
         if pinname not in hpins:
             raise AttributeError(pinname)
@@ -71,6 +73,29 @@ class PinsWrapper:
             raise NotImplementedError(io)
         return kls(self._parent(), pinname)
 
+    def __setattr__(self, pinname, value):
+        from .Transformer import default_pin
+        if pinname.startswith("_"):
+            return super().__setattr__(pinname, value)
+        hpins = self._get_hpins()
+        if value is None:
+            if pinname in hpins:
+                hpins.pop(pinname)
+                parent = self._parent()
+                subpath = (*parent._path, pinname)
+                ctx = parent._get_top_parent()
+                ctx._destroy_path(subpath)
+            return
+        if isinstance(value, InputPinWrapper):
+            pin = value._get_hpin()
+            hpins[pinname] = pin
+        elif value == {}:
+            hpins[pinname] = default_pin.copy()
+        elif isinstance(value, dict):
+            hpins[pinname] = value.copy()
+        else:
+            raise TypeError(pin)
+
     def __getitem__(self, pinname):
         return getattr(self, pinname)
 
@@ -79,6 +104,10 @@ class PinsWrapper:
 
     def __str__(self):
         return str(self._get_hpins())
+
+    def __iter__(self):
+        hpins = self._get_hpins()
+        return iter(hpins)
 
     def __dir__(self):
         hpins = self._get_hpins()

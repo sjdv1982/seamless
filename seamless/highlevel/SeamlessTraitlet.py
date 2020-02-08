@@ -68,10 +68,14 @@ class Link(object):
                     new_value)
 
     def unlink(self):
+        if self.source is None:
+            return
         self.source[0].unobserve(self._update_target, names=self.source[1])
         if self.bidirectional:
+            if self.target is None:
+                return
             self.target[0].unobserve(self._update_source, names=self.target[1])
-            self.source, self.target = None, None
+        self.source, self.target = None, None
 
     def __del__(self):
         self.unlink()
@@ -83,16 +87,24 @@ class SeamlessTraitlet(traitlets.HasTraits):
     parent = None
     incell = None
     outcell = None
+    links = None
+    celltype = None
+    mimetype = None
     def _connect_seamless(self):
-        hcell = self.parent()._children[self.path]
-        if not isinstance(hcell, Cell):
-            raise TypeError(type(hcell))
-        cell = hcell._get_cell()
-        if hcell._get_hcell()["celltype"] == "structured":
+        ccell = self.parent()._children[self.path]
+        if not isinstance(ccell, Cell):
+            raise TypeError(type(ccell))
+        cell = ccell._get_cell()
+        hcell = ccell._get_hcell()
+        if hcell["celltype"] == "structured":
             incell = cell
             outcell = cell._data
         else:
             incell, outcell = cell, cell
+        old_celltype = self.celltype
+        old_mimetype = self.mimetype
+        self.celltype = hcell["celltype"]
+        self.mimetype = hcell.get("mimetype", None)
         if incell is not None:
             if not isinstance(incell, (core_cell, StructuredCell)):
                 raise TypeError(type(incell))
@@ -103,7 +115,20 @@ class SeamlessTraitlet(traitlets.HasTraits):
             self.outcell = weakref.ref(outcell)
         #print("traitlet %s, observing" % self.path)
         outcell._add_traitlet(self)
-        self.links = []
+        if old_celltype is not None:
+            if self.celltype != old_celltype or self.mimetype != old_mimetype:
+                try:
+                    self._notify_trait("value", self.value, self.value)
+                finally:
+                    self._updating = False
+                if self.links is not None:
+                    self.links = []
+        if self.links is not None and not self.incell().has_authority():
+            for link in list(self.links):
+                if link.bidirectional:
+                    print("Removed bidirectional link")
+                    link.unlink()
+                    self.links.remove(link)
 
     def receive_update(self, checksum): 
         if self._destroyed:
@@ -162,7 +187,11 @@ class SeamlessTraitlet(traitlets.HasTraits):
             v = getattr(self, name)
         except Exception:
             v = None
-        self._notify_trait(name, v, v)
+        try:
+            self._updating = True
+            self._notify_trait(name, v, v)
+        finally:
+            self._updating = False
 
     def _connect_traitlet(self, target, target_attr, bidirectional):
         if not isinstance(target, traitlets.HasTraits):
@@ -173,19 +202,27 @@ class SeamlessTraitlet(traitlets.HasTraits):
         source_expr = (self, "value")
         return Link(source_expr, target_expr, bidirectional)
     
+    def _newlink(self, link):
+        if self.links is None:
+            self.links = []
+        self.links.append(link)
+            
     def connect(self, target, target_attr="value"):
         link = self._connect_traitlet(target, target_attr, False)
-        self.links.append(link)
+        self._newlink(link)
         return link
 
     def link(self, target, target_attr="value"):
+        if self.incell is not None:
+            assert self.incell().has_authority()
         link = self._connect_traitlet(target, target_attr, True)
-        self.links.append(link)
+        self._newlink(link)
         return link
 
     def destroy(self):
         self._destroyed = True
-        self.links.clear()
+        if self.links is not None:
+            self.links.clear()
         parent = self.parent()
         traitlet = parent._traitlets[self.path]
         if traitlet is self:

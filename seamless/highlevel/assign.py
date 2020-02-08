@@ -51,13 +51,18 @@ def assign_constant(ctx, path, value):
     # not sure if tuple is natively accepted too
     if path in ctx._children:
         old = ctx._children[path]
-        if isinstance(old, Cell):
-            old._set(value)
+        if isinstance(old, Cell):            
             removed = ctx._remove_connections(path, keep_links=True)
             if removed:
                 ctx._translate()
-            return False
-        raise AttributeError(path) #already exists, but not a Cell
+            hcell = old._get_hcell()
+            if not hcell.get("UNTRANSLATED"):
+                cell = old._get_cell()
+                if cell.has_authority():
+                    old._set(value)
+                    return False
+        else:
+            raise AttributeError(path) #already exists, but not a Cell
     child = Cell(ctx, path) #inserts itself as child
     cell = get_new_cell(path)
     cell["TEMP"] = value
@@ -72,10 +77,13 @@ def assign_resource(ctx, path, value):
 
 def assign_transformer(ctx, path, func):
     from .Transformer import default_pin
+    existing_transformer = None
     if path in ctx._children:
         old = ctx._children[path]
         if isinstance(old, Cell):
             old.set(func)
+        elif isinstance(old, Transformer):
+            existing_transformer = old
         else:
             ctx._destroy_path(path)
 
@@ -86,8 +94,21 @@ def assign_transformer(ctx, path, func):
         #TODO: look at default parameters, make them optional
         if p.kind not in (p.VAR_KEYWORD, p.VAR_POSITIONAL):
             parameters.append(pname)
-    tf = Transformer(ctx, path, code, parameters) #inserts itself as child
-    assert ctx._children[path] is tf
+    if existing_transformer is not None:
+        old_pins = list(existing_transformer.pins)
+        for old_pin in old_pins:
+            if old_pin not in parameters:                
+                existing_transformer.pins[old_pin] = None
+                ctx._translate()
+        for pname in parameters:
+            if pname not in old_pins:
+                existing_transformer.pins[pname] = {}
+                ctx._translate()
+        existing_transformer.code = code
+    else:
+        tf = Transformer(ctx, path, code, parameters) #inserts itself as child
+        assert ctx._children[path] is tf
+        ctx._translate()
 
 def assign_libmacro(ctx, path, libmacro):
     libmacro._bind(ctx, path)
@@ -351,15 +372,7 @@ def assign(ctx, path, value):
         assign_libmacro(ctx, path, value)
         ctx._translate()
     elif callable(value):
-        done = False
-        if path in ctx._children:
-            old = ctx._children[path]
-            if isinstance(old, Cell):
-                old._set(value)
-                done = True
-        if not done:
-            assign_transformer(ctx, path, value)
-            ctx._translate()
+        assign_transformer(ctx, path, value)
     elif isinstance(value, (Proxy, SchemaWrapper)):
         assert value._parent()._parent() is ctx
         if path not in ctx._children:
