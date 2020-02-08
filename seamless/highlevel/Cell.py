@@ -288,7 +288,7 @@ class Cell(Base):
         hcell = self._get_hcell()
         if parent._dummy:
             raise NotImplementedError
-        if hcell.get("UNTRANSLATED") and "TEMP" in hcell:
+        if hcell.get("UNTRANSLATED"):
             #return hcell["TEMP"]
             raise Exception("This cell is untranslated; run 'ctx.translate()' or 'await ctx.translation()'")
         try:
