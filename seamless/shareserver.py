@@ -60,6 +60,17 @@ from websockets.exceptions import ConnectionClosed
 
 DEBUG = False
 
+def is_bound_port_error(exc):
+    args = exc.args
+    if not len(args) == 2:
+        return False
+    if args[0] != 98:
+        return False
+    msg = args[1]
+    if not isinstance(msg, str):
+        return False
+    return msg.endswith("address already in use")
+
 def tailsplit(tail):
     pos = tail.index("/")
     return tail[:pos], tail[pos+1:]
@@ -445,7 +456,9 @@ class ShareServer(object):
                     self.update_port
                 )
                 break
-            except OSError:
+            except OSError as exc:
+                if not is_bound_port_error(exc):
+                    raise
                 self.update_port += 1
         print("Opened the seamless share update server at port {0}".format(self.update_port))
         self._update_server_started = True
@@ -670,8 +683,15 @@ class ShareServer(object):
 
         runner = web.AppRunner(app)
         await runner.setup()
-        site = web.TCPSite(runner, self.address, self.rest_port) #TODO: try more ports
-        await site.start()
+        while 1:
+            site = web.TCPSite(runner, self.address, self.rest_port) #TODO: try more ports
+            try:
+                await site.start()
+                break
+            except OSError as exc:
+                if not is_bound_port_error(exc):
+                    raise
+                self.rest_port += 1
         print("Opened the seamless REST server at port {0}".format(self.rest_port))
 
     async def _start(self):
