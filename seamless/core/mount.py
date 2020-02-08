@@ -145,6 +145,7 @@ class MountItem:
                 cell_buffer = buffer_cache.get_buffer(cell_checksum)
                 if cell_buffer is None:
                     cell_checksum = None
+                    cell_empty = True
         self.cell_buffer = cell_buffer
         self.cell_checksum = cell_checksum
         if self.authority in ("file", "file-strict"):
@@ -161,6 +162,8 @@ class MountItem:
                         if file_checksum == cell_checksum:
                             update_file = False
                         else:
+                            if cell_checksum is not None:
+                                print(cell_checksum.hex())
                             print("Warning: File path '%s' has a different value, overwriting cell" % self.path) #TODO: log warning
                     self._after_read(file_checksum)                
                 if update_file:

@@ -5,7 +5,7 @@ path_to_id = {}
 
 
 graph = graph.unsilk
-state = state.unsilk
+status = status_.unsilk
 
 color_mapping = {
     1: "red",
@@ -33,26 +33,26 @@ for node in graph["nodes"]:
     cstate = ""
     for subpath in paths:
         subpath2 = ".".join(subpath)
-        status = state[subpath2 + ".status"]
-        if status is None:
-            status = ""
-        if len(status.split()) > 2:
+        state = status[subpath2 + ".status"]
+        if state is None:
+            state = ""
+        if len(state.split()) > 2:
             if subpath != path:
                 cstate += "*** " + subpath2 + " ***\n"
             cstate += "*** status ***\n"
-            cstate += status
+            cstate += state
             cstate += "\n" + "*" * 50 + "\n\n"
-        if status == "Status: OK":
+        if state == "Status: OK":
             continue
-        elif status.startswith("Status: executing"):
+        elif state.startswith("Status: executing"):
             color = min([color, 4])
-        elif status.startswith("Status: pending"):
+        elif state.startswith("Status: pending"):
             color = min([color, 3])
-        elif status.startswith("Status: upstream"):
+        elif state.startswith("Status: upstream"):
             color = min([color, 2])
         else:
             color = 1
-        exc = state.get(subpath2 + ".exception", "")
+        exc = status.get(subpath2 + ".exception", "")
         if exc is None:
             exc = ""
         if len(exc.split()) > 2:
@@ -63,7 +63,7 @@ for node in graph["nodes"]:
             cstate += "\n" + "*" * 50 + "\n\n"
     rnode["color"] = color_mapping[color]
     if cstate:
-        rnode["state"] = cstate
+        rnode["status"] = cstate
     rnodes.append(rnode)
     path_to_id[path] = rnode["id"]
 

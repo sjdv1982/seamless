@@ -65,7 +65,7 @@ var grid_area4 = grid_area
 grid_table1 = unpack_grid_data(grid_data1)
 grid_table2 = unpack_grid_data(grid_data2)
 
-ctx = connect_seamless("ws://localhost:5138", "http://localhost:5813", "ctx");
+ctx = connect_seamless()
 ctx.self.onsharelist = function(sharelist) {
     ctx.combined_grid_params.onchange = function() {
         grid_params = JSON.parse(ctx.combined_grid_params.value)

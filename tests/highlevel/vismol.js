@@ -10,7 +10,7 @@ window.addEventListener("resize", function (event) {
 
 pdb = null
 
-ctx = connect_seamless("ws://localhost:5138", "http://localhost:5813", "ctx");
+ctx = connect_seamless()
 ctx.self.onsharelist = function(sharelist) {
   ctx["pdb0.pdb"].auto_read = true
   ctx["filtered_pdb.pdb"].auto_read = true

@@ -72,8 +72,11 @@ def is_bound_port_error(exc):
     return msg.endswith("address already in use")
 
 def tailsplit(tail):
-    pos = tail.index("/")
-    return tail[:pos], tail[pos+1:]
+    pos = tail.find("/")
+    if pos == -1:
+        return tail, ""
+    else:
+        return tail[:pos], tail[pos+1:]
 
 class Share:
     _destroyed = False
@@ -470,7 +473,11 @@ class ShareServer(object):
                 return web.Response(
                     status=404
                 )
+            if tail == "" and "ctx" in self.namespaces:
+                raise web.HTTPFound('/ctx/index.html')
             ns, key = tailsplit(tail)
+        except web.HTTPFound:
+            raise
         except:
             if DEBUG:
                 traceback.print_exc()
@@ -481,6 +488,8 @@ class ShareServer(object):
         
         try:
             namespace = self.namespaces[ns]
+            if key == "":
+                raise web.HTTPFound('/{}/index.html'.format(ns))
             share = namespace.shares[key]
         except KeyError:
             if DEBUG:
@@ -505,6 +514,11 @@ class ShareServer(object):
         try:
             result = await namespace.get(key, mode)
             body, content_type = result
+            if body is None:
+                return web.Response(
+                    status=404,
+                    text="empty",
+                )
             return web.Response(
                 status=200,
                 body=body,

@@ -244,10 +244,22 @@ d3.select(window)
 restart();
 // END OF Directed Graph Editor
 
-ctx = connect_seamless("ws://localhost:5138", "http://localhost:5813", "ctx");
+// START of config block
+// The code below may be replaced if the ports and graph namespaces are different
+
+SEAMLESS_UPDATE_PORT=null  //5138, but will be 80 or 8080 if the page is served under that port
+SEAMLESS_REST_PORT=null    //the same as where the page will be served under 
+SEAMLESS_SHARE_NAMESPACE=status
+// END of config block
+
+ctx = connect_seamless(
+  SEAMLESS_UPDATE_PORT,
+  SEAMLESS_REST_PORT,
+  SEAMLESS_SHARE_NAMESPACE
+);
 ctx.self.onsharelist = function(sharelist) {
-  ctx.vis_state.onchange = function() {
-    data = ctx.vis_state.value
+  ctx.vis_status.onchange = function() {
+    data = ctx.vis_status.value
     graph = JSON.parse(data)
     //$("#model").text(data)
     newNodes = []

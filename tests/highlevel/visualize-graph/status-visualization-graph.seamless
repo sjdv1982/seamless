@@ -2,10 +2,10 @@
   "connections": [
     {
       "source": [
-        "state"
+        "status_"
       ],
       "target": [
-        "state_data"
+        "status_data"
       ],
       "type": "connection"
     },
@@ -14,27 +14,27 @@
         "graph"
       ],
       "target": [
-        "gen_vis_state",
+        "gen_vis_status",
         "graph"
       ],
       "type": "connection"
     },
     {
       "source": [
-        "state"
+        "status_"
       ],
       "target": [
-        "gen_vis_state",
-        "state"
+        "gen_vis_status",
+        "status_"
       ],
       "type": "connection"
     },
     {
       "source": [
-        "gen_vis_state"
+        "gen_vis_status"
       ],
       "target": [
-        "vis_state"
+        "vis_status"
       ],
       "type": "connection"
     }
@@ -52,7 +52,7 @@
         "css"
       ],
       "share": {
-        "path": "state-visualization.css",
+        "path": "status-visualization.css",
         "readonly": true
       },
       "type": "cell"
@@ -62,9 +62,9 @@
       "RESULT": "result",
       "SCHEMA": null,
       "checksum": {
-        "code": "17ff8442290aaa8a900586168bb1ee13de441111659b1277ae2b2e416f640a8e",
-        "input": "667afa970c6b37eaa5690b1ab96974bc494e9dee906a153e5534066e14681821",
-        "input_buffer": "667afa970c6b37eaa5690b1ab96974bc494e9dee906a153e5534066e14681821"
+        "code": "d7176756c7835ee7d660149e205920469026e4b5f3413e499d5b1f8205b51481",
+        "input": "15c343fa5cba7e48633ac74f32a2fda0ebf3488e3951ba891c5caf6d8423e194",
+        "input_buffer": "15c343fa5cba7e48633ac74f32a2fda0ebf3488e3951ba891c5caf6d8423e194"
       },
       "compiled": false,
       "debug": false,
@@ -73,18 +73,18 @@
         "code": {
           "authority": "file",
           "mode": "rw",
-          "path": "gen_vis_state.py",
+          "path": "gen_vis_status.py",
           "persistent": true
         }
       },
       "path": [
-        "gen_vis_state"
+        "gen_vis_status"
       ],
       "pins": {
         "graph": {
           "celltype": "mixed"
         },
-        "state": {
+        "status_": {
           "celltype": "mixed"
         }
       },
@@ -105,7 +105,7 @@
     {
       "celltype": "text",
       "checksum": {
-        "value": "717b64db981ddeb5fb5126e3f5f0e3bb8255582288baf42d51b2015598b7e09c"
+        "value": "18ef17010c8350d903aa02ab2344a035eb8bd5326ea1e7127bf6aa844a77a4cc"
       },
       "datatype": "mixed",
       "mimetype": "text/html",
@@ -113,7 +113,7 @@
         "html"
       ],
       "share": {
-        "path": "state-visualization.html",
+        "path": "index.html",
         "readonly": true
       },
       "type": "cell"
@@ -121,7 +121,7 @@
     {
       "celltype": "text",
       "checksum": {
-        "value": "7782e4574d21efc0d9ea87f9e33e114f34e07a1ae5a9e59dba7c5f4a2b455571"
+        "value": "823c5406aa7bb33d550c426736876ec54cc385353a99d22d89076e5df36c4993"
       },
       "datatype": "mixed",
       "mimetype": "text/javascript",
@@ -137,7 +137,7 @@
     {
       "celltype": "text",
       "checksum": {
-        "value": "1eddd1a38368907563d859be37ebdbcd0ad9cb305fca22dc0c1f3d27dfa745a2"
+        "value": "7d7a9ffd5ec43fb714a1eaaa5348333655a375282384490e37c182f745ff75cb"
       },
       "datatype": "mixed",
       "mimetype": "text/javascript",
@@ -145,7 +145,7 @@
         "js2"
       ],
       "share": {
-        "path": "state-visualization.js",
+        "path": "status-visualization.js",
         "readonly": true
       },
       "type": "cell"
@@ -160,7 +160,7 @@
       "datatype": "mixed",
       "hash_pattern": null,
       "path": [
-        "state"
+        "status_"
       ],
       "type": "cell"
     },
@@ -171,7 +171,7 @@
       },
       "datatype": "mixed",
       "path": [
-        "state_data"
+        "status_data"
       ],
       "type": "cell"
     },
@@ -179,7 +179,7 @@
       "celltype": "plain",
       "datatype": "mixed",
       "path": [
-        "vis_state"
+        "vis_status"
       ],
       "share": {
         "path": null,
@@ -188,5 +188,7 @@
       "type": "cell"
     }
   ],
-  "params": {}
+  "params": {
+    "share_namespace": "status"
+  }
 }

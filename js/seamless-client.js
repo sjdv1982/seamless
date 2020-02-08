@@ -1,10 +1,50 @@
-//https://raw.githack.com/sjdv1982/seamless/master/seamless-client.js
-
-
-
-function connect_seamless(websocketserver, restserver, namespace="ctx"){  
+function connect_seamless(update_server=null, rest_server=null, share_namespace="ctx"){    
   var ctx = {
     self: {
+      parse_ports: function(update_server, rest_server) {
+        http_port = window.location.port
+        if (rest_server == null) {
+          rest_server = http_port
+        }
+        if (update_server == null) {
+          if (http_port == 80 || http_port == 8080) {
+            // assume that we are behind a reverse proxy
+            // that redirects both http(s):// and ws(s)://
+            update_server = http_port
+          }
+          else {
+            update_server = 5138
+          }
+        }
+        http_protocol = window.location.protocol
+        if (http_protocol == "https:") {
+          ws_protocol = "wss:"
+        }
+        else {
+          ws_protocol = "ws:"
+        }        
+        var Uhost = window.location.hostname
+        var pathArray = window.location.pathname.split('/')
+        var Upath = ""
+        for (i = 0; i < pathArray.length - 2; i++) {
+          if (pathArray[i] == "") continue;
+          Upath += "/";
+          Upath += pathArray[i];
+        }        
+        update_port = parseInt(update_server)
+        if (typeof(update_port) == "number") {
+          update_server = ws_protocol + "//" +  Uhost + ":" + update_port + "/" + Upath          
+        }
+        rest_port = parseInt(rest_server)
+        if (typeof(rest_port) == "number") {
+          rest_server = http_protocol + "//" +  Uhost + ":" + rest_port + "/" + Upath
+        }
+        update_server = update_server.replace(/\/$/, "")
+        rest_server =  rest_server.replace(/\/$/, "")
+        this.update_server = update_server
+        this.rest_server = rest_server
+      },
+      share_namespace: share_namespace,
       oninput: function(value) {},
       onchange: function(value) {},
       onsharelist: function(value) {},
@@ -17,11 +57,13 @@ function connect_seamless(websocketserver, restserver, namespace="ctx"){
       }
     }
   }
+  ctx.self.parse_ports(update_server, rest_server)
+  
   let handshake = null
   let sharelist = null    
   
   function get_value(key) {
-    var rq = restserver + "/" + namespace + "/" + key + "?mode=marker"
+    var rq = ctx.self.rest_server + "/" + ctx.self.share_namespace + "/" + key + "?mode=marker"
     //$("#request").text("GET:" + rq)
     //$("#error_message").text("GET:" + rq)
     fetch(rq)
@@ -36,7 +78,7 @@ function connect_seamless(websocketserver, restserver, namespace="ctx"){
     })
     .then(async function(result){
       if (ctx[key].auto_read) {
-        var rq2 = restserver + "/" + namespace + "/" + key + "?mode=buffer"
+        var rq2 = ctx.self.rest_server + "/" + ctx.self.share_namespace + "/" + key + "?mode=buffer"
         //$("#error_message").text("GET:" + rq2)
         //$("#error_message").text(result)
         const response = await fetch(rq2)
@@ -63,7 +105,7 @@ function connect_seamless(websocketserver, restserver, namespace="ctx"){
     put_value(key, value)
   }
   function put_value(key, value) { 
-    var rq = restserver + "/" + namespace + "/" + key
+    var rq = ctx.self.rest_server + "/" + ctx.self.share_namespace + "/" + key
     if (ctx[key]._marker == null) ctx[key]._marker = 0
     oldmarker = ctx[key]._marker 
     newmarker = oldmarker + 1
@@ -91,7 +133,7 @@ function connect_seamless(websocketserver, restserver, namespace="ctx"){
       }
     })
     .catch(function(err) {
-      console.log('Seamless client PUT Error:', namespace, key, err)
+      console.log('Seamless client PUT Error:', ctx.self.share_namespace, key, err)
     })
   }
   
@@ -139,10 +181,12 @@ function connect_seamless(websocketserver, restserver, namespace="ctx"){
       //$("#error_message").text(message) 
     }
   }
-  var ws_url = websocketserver + "/" + namespace
-  var ws = new WebSocket(ws_url)
-  ws.onmessage = onmessage;  
-  
+  ctx.self.connect = function() {
+    var ws_url = ctx.self.update_server + "/" + ctx.self.share_namespace
+    ctx.self.ws = new WebSocket(ws_url)
+    ctx.self.ws.onmessage = onmessage;  
+  }
+  ctx.self.connect()
   return ctx
 }
 
@@ -161,7 +205,7 @@ if (typeof module !== 'undefined') {
 /*
 // Example:
 
-ctx = connect_seamless("ws://localhost:5138", "http://localhost:5813" );
+ctx = connect_seamless(5138, 5813);
 ctx.self.onsharelist = function(sharelist) {
   ctx.cell1.onchange = function() {
     data = ctx.cell1.value

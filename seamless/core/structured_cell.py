@@ -113,11 +113,11 @@ class StructuredCell(SeamlessBase):
         ### TODO
         return self._data.status
 
-    def share(self, path, readonly):
+    def share(self, path, readonly=True, mimetype=None):
         assert readonly
         if path is None:
             path = ".".join(self.path)
-        self._data.share(path, readonly=True)
+        self._data.share(path, readonly=True, mimetype=mimetype)
 
     def _validate_channels(self, inchannels, outchannels):
         self.inchannels = PathDict()
