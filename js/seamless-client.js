@@ -3,12 +3,8 @@ function connect_seamless(update_server=null, rest_server=null, share_namespace=
     self: {
       parse_ports: function(update_server, rest_server) {
         http_port = window.location.port
-        if (http_port == "") http_port = 80
-        if (rest_server == null) {
-          rest_server = http_port
-        }
         if (update_server == null) {
-          if (http_port == 80 || http_port == 8080) {
+          if (http_port == 80 || http_port == 8080 || http_port == "") {
             // assume that we are behind a reverse proxy
             // that redirects both http(s):// and ws(s)://
             update_server = http_port
@@ -31,14 +27,27 @@ function connect_seamless(update_server=null, rest_server=null, share_namespace=
           if (pathArray[i] == "") continue;
           Upath += "/";
           Upath += pathArray[i];
-        }        
-        update_port = parseInt(update_server)
-        if (typeof(update_port) == "number") {
-          update_server = ws_protocol + "//" +  Uhost + ":" + update_port + "/" + Upath          
         }
-        rest_port = parseInt(rest_server)
-        if (typeof(rest_port) == "number") {
-          rest_server = http_protocol + "//" +  Uhost + ":" + rest_port + "/" + Upath
+        if (update_server == "") {
+          update_server = ws_protocol + "//" +  Uhost + "/" + Upath
+        }
+        else {
+          update_port = parseInt(update_server)
+          if (typeof(update_port) == "number") {
+            update_server = ws_protocol + "//" +  Uhost + ":" + update_port + "/" + Upath          
+          }
+        }
+        if (rest_server == null) {
+          rest_server = http_port
+        }
+        if (rest_server == "") {
+          rest_server = http_protocol + "//" +  Uhost + "/" + Upath
+        }
+        else {
+          rest_port = parseInt(rest_server)
+          if (typeof(rest_port) == "number") {
+            rest_server = http_protocol + "//" +  Uhost + ":" + rest_port + "/" + Upath
+          }
         }
         update_server = update_server.replace(/\/$/, "")
         rest_server =  rest_server.replace(/\/$/, "")
