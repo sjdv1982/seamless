@@ -97,7 +97,7 @@ class BufferCache:
             if checksum in self.missing_buffers:
                 self.missing_buffers.remove(checksum)
             else:
-                self.buffer_cache.pop(checksum)
+                self.buffer_cache.pop(checksum, None)
             self.buffer_refcount.pop(checksum)
 
     def get_buffer(self, checksum):

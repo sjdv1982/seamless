@@ -93,8 +93,9 @@ class RedisCache:
         key = b"buf:" + checksum
         return r.exists(key)
 
-    def get_buffer_length(checksum):
+    def get_buffer_length(self, checksum):
         # 1 for small buffers
+        r = self.connection
         key = b"smallbuffers"
         if r.sismember(key, checksum):
             return 1
