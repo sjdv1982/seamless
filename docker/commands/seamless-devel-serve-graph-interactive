@@ -1,0 +1,21 @@
+set -u -e
+
+# - Current directory is mounted to /cwd, and the command is executed there
+# - /tmp is mounted as well
+# - Seamless has access to the Docker daemon, so it can launch its own Docker
+#    containers via the Docker transformer. This works only under Linux.
+#    NOTE: THIS IS A BIG SECURITY HOLE, IT CAN GIVE ROOT ACCESS TO YOUR SYSTEM
+
+seamlessdir=`python3 -c 'import seamless,os;print(os.path.dirname(seamless.__file__))'`/../
+
+docker run --rm -it \
+  -v $seamlessdir:/seamless \
+  -e "PYTHONPATH=/seamless" \
+  --network=host \
+  -v ~/.seamless/mount:/host \
+  -v `pwd`:/cwd \
+  -v /tmp:/tmp \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  --workdir /cwd \
+  -u jovyan \
+  seamless-devel ipython3 -i /home/jovyan/seamless-scripts/serve-graph-interactive.py $*
