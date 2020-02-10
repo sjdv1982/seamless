@@ -1,0 +1,15 @@
+set -u -e
+
+# - Current directory is mounted to /cwd, and the command is executed there
+
+seamlessdir=`python3 -c 'import seamless,os;print(os.path.dirname(seamless.__file__))'`/../
+
+docker run --rm \
+  -v $seamlessdir:/seamless \
+  -e "PYTHONPATH=/seamless" \
+  --network=host \
+  -v ~/.seamless/mount:/host \
+  -v `pwd`:/cwd \
+  --workdir /cwd \
+  -u jovyan \
+  seamless-devel python3 /home/jovyan/seamless-scripts/add-zip.py $1

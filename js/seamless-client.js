@@ -4,8 +4,8 @@ function connect_seamless(update_server=null, rest_server=null, share_namespace=
       parse_ports: function(update_server, rest_server) {
         http_port = window.location.port
         if (update_server == null) {
-          if (http_port == 80 || http_port == 8080 || http_port == "") {
-            // assume that we are behind a reverse proxy
+          if (http_port == 80 || http_port == 8080 || http_port == 3124 || http_port == "") {
+            // assume that we are behind a reverse proxy, or Cloudless (3124)
             // that redirects both http(s):// and ws(s)://
             update_server = http_port
           }
