@@ -481,7 +481,7 @@ class ShareServer(object):
             if DEBUG:
                 traceback.print_exc()
             return web.Response(
-                status=404,
+                status=400,
                 text="Invalid request",
             )
         
@@ -506,7 +506,7 @@ class ShareServer(object):
             if DEBUG:
                 print("shareserver _handle.get", err, ns, key, mode)
             return web.Response(
-                status=404,
+                status=400,
                 text=err,
             )
 
@@ -545,7 +545,7 @@ class ShareServer(object):
             if DEBUG:
                 traceback.print_exc()
             return web.Response(
-                status=404,
+                status=500,
                 text="Unknown error"
             )
 
@@ -561,7 +561,7 @@ class ShareServer(object):
             if DEBUG:
                 traceback.print_exc()
             return web.Response(
-                status=404,
+                status=400,
                 text="Invalid request",
             )
 
@@ -570,7 +570,7 @@ class ShareServer(object):
                 if DEBUG:
                     print("shareserver PUT: contains buffer AND checksum")
                 return web.Response(
-                    status=404,
+                    status=400,
                     text="contains buffer AND checksum",
                 )
             value = data["buffer"]
@@ -596,7 +596,7 @@ class ShareServer(object):
 
         if share.readonly:
             return web.Response(
-                status=404,
+                status=405,
                 text="Refused, share is read-only",
             )
         try:
@@ -618,7 +618,7 @@ class ShareServer(object):
             if DEBUG:
                 traceback.print_exc()
             return web.Response(
-                status=404,
+                status=500,
                 text="Unknown error"
             )
 
@@ -636,7 +636,7 @@ class ShareServer(object):
             if DEBUG:
                 traceback.print_exc()
             return web.Response(
-                status=404,
+                status=400,
                 text="Invalid request",
             )
             
@@ -665,7 +665,7 @@ class ShareServer(object):
             if DEBUG:
                 traceback.print_exc()
             return web.Response(
-                status=404,
+                status=500,
                 text="Unknown error"
             )
 

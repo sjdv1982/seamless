@@ -28,25 +28,26 @@ function connect_seamless(update_server=null, rest_server=null, share_namespace=
           Upath += "/";
           Upath += pathArray[i];
         }
+        if (Upath == "") Upath = "/"
         if (update_server == "") {
-          update_server = ws_protocol + "//" +  Uhost + "/" + Upath
+          update_server = ws_protocol + "//" +  Uhost + Upath
         }
         else {
           update_port = parseInt(update_server)
           if (typeof(update_port) == "number") {
-            update_server = ws_protocol + "//" +  Uhost + ":" + update_port + "/" + Upath          
+            update_server = ws_protocol + "//" +  Uhost + ":" + update_port + Upath          
           }
         }
         if (rest_server == null) {
           rest_server = http_port
         }
         if (rest_server == "") {
-          rest_server = http_protocol + "//" +  Uhost + "/" + Upath
+          rest_server = http_protocol + "//" +  Uhost + Upath
         }
         else {
           rest_port = parseInt(rest_server)
           if (typeof(rest_port) == "number") {
-            rest_server = http_protocol + "//" +  Uhost + ":" + rest_port + "/" + Upath
+            rest_server = http_protocol + "//" +  Uhost + ":" + rest_port + Upath
           }
         }
         update_server = update_server.replace(/\/$/, "")
