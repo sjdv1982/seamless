@@ -94,12 +94,14 @@ if _incoming:
 
 outgoing = None
 _outgoing = os.environ.get("SEAMLESS_COMMUNION_OUTGOING")
-if _outgoing:
-        try:
-           outgoing = int(_outgoing)
-        except TypeError:
-            print("SEAMLESS_COMMUNION_OUTGOING: invalid port '%s'" % outgoing)
-
+if _outgoing:        
+    try:
+        outgoing = int(_outgoing)
+    except TypeError:
+        print("SEAMLESS_COMMUNION_OUTGOING: invalid port '%s'" % outgoing)
+    outgoing_address = os.environ.get("SEAMLESS_COMMUNION_OUTGOING_ADDRESS")
+    if outgoing_address is None:
+        outgoing_address = "localhost"
 
 # Default configuration for being a master, i.e. on using other peers as a service
 default_master_config = {
@@ -322,7 +324,7 @@ class CommunionServer:
                 print("ERROR: outgoing port %d already in use" % outgoing)
                 raise Exception
             server = functools.partial(self._serve_outgoing, config)
-            coro_server = websockets.serve(server, 'localhost', outgoing)            
+            coro_server = websockets.serve(server, outgoing_address, outgoing)            
             print("Set up a communion outgoing port %d" % outgoing)
         if len(incoming):
             self._to_start_incoming = incoming.copy()
