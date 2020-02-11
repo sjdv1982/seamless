@@ -38,5 +38,7 @@ print(ctx.result.value)
 print(ctx.result.checksum)
 print("Communion peer 1 ready.")
 
-import asyncio
-asyncio.get_event_loop().run_forever()
+import sys
+if len(sys.argv) == 1 or sys.argv[1] != "--interactive":
+    import asyncio
+    asyncio.get_event_loop().run_forever()
