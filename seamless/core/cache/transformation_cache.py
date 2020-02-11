@@ -281,7 +281,7 @@ class TransformationCache:
             return
         self.transformations.pop(tf_checksum)
         self.transformations_to_transformers.pop(tf_checksum)
-        job = self.transformation_jobs[tf_checksum]
+        job = self.transformation_jobs.get(tf_checksum)
         if job is not None:
             if job.future is not None:
                 job._cancelled = True

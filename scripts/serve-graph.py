@@ -1,4 +1,4 @@
-import sys, argparse
+import sys, os, json, subprocess, argparse
 parser = argparse.ArgumentParser()
 parser.add_argument("graph",help="Seamless graph file to serve")
 parser.add_argument("zipfile",help="Zip file that contains the buffers of the graph checksum", nargs='?')
@@ -7,6 +7,8 @@ parser.add_argument(
     help="Connect to a Redis instance",
     action="store_true"
 )
+parser.add_argument("--communion_id",type=str,default="jobslave")
+parser.add_argument("--communion_incoming",type=str)
 parser.add_argument(
     "--interactive",
     help="Do not enter a mainloop. Assumes that the script was opened with an interactive shell (e.g. ipython -i)",
@@ -16,6 +18,7 @@ parser.add_argument(
     "--debug",
     action="store_true"
 )
+parser.add_argument("--ncores",type=int,default=None)
 
 args = parser.parse_args()
 
@@ -27,9 +30,20 @@ if args.debug:
     import asyncio
     asyncio.get_event_loop().set_debug(True)
 
-import seamless, seamless.shareserver
-import sys, os, json, subprocess
 env = os.environ
+
+env["SEAMLESS_COMMUNION_ID"] = args.communion_id
+if args.communion_incoming is not None:
+    env["SEAMLESS_COMMUNION_INCOMING"] = args.communion_incoming
+
+
+import seamless, seamless.shareserver
+
+from seamless import communion_server
+
+if args.ncores is not None:
+    seamless.set_ncores(args.ncores)
+
 shareserver_address = env.get("SHARESERVER_ADDRESS")
 if shareserver_address is not None:
     if shareserver_address == "HOSTNAME":
@@ -55,5 +69,6 @@ if args.redis:
     redis_cache = seamless.RedisCache(**params)
 ctx.translate()
 
-import asyncio
-asyncio.get_event_loop().run_forever()
+if not args.interactive:
+    import asyncio
+    asyncio.get_event_loop().run_forever()

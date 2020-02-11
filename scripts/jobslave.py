@@ -1,17 +1,44 @@
 import os
-os.environ["SEAMLESS_COMMUNION_ID"] = "jobslave"
-os.environ["SEAMLESS_COMMUNION_OUTGOING"] = "8602"
-os.environ["SEAMLESS_COMMUNION_INCOMING"] = "localhost:8600"
-import seamless
 import asyncio
 import sys
-from seamless import communion_server
 
 import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument("--time",type=float,default=None)
 parser.add_argument("--ncores",type=int,default=None)
+parser.add_argument("--communion_id",type=str,default="jobslave")
+parser.add_argument("--communion_outgoing",type=int, default=8602)
+parser.add_argument("--communion_incoming",type=str)
+parser.add_argument(
+    "--interactive",
+    help="Do not enter a mainloop. Assumes that the script was opened with an interactive shell (e.g. ipython -i)",
+    action="store_true"
+)
 args = parser.parse_args()
+
+env = os.environ
+
+
+env["SEAMLESS_COMMUNION_ID"] = args.communion_id
+if args.communion_outgoing not in (None,"","None"):
+    env["SEAMLESS_COMMUNION_OUTGOING"] = str(args.communion_outgoing)
+if args.communion_incoming is not None:
+    env["SEAMLESS_COMMUNION_INCOMING"] = args.communion_incoming
+
+import seamless
+
+params = {}    
+redis_host = env.get("REDIS_HOST")
+if redis_host is not None:
+    params["host"] = redis_host
+redis_port = env.get("REDIS_PORT")
+if redis_port is not None:
+    params["port"] = redis_port
+redis_sink = seamless.RedisSink(**params)
+redis_cache = seamless.RedisCache(**params)
+
+
+from seamless import communion_server
 
 if args.ncores is not None and args.ncores > 0:
     seamless.set_ncores(args.ncores)
@@ -25,13 +52,12 @@ communion_server.configure_servant(
     hard_cancel=True,
 )
 
-redis_sink = seamless.RedisSink()
-redis_cache = seamless.RedisCache()
-
 from seamless.core import context
 ctx = context(toplevel=True)
 
 loop = asyncio.get_event_loop()
 if args.time:
     loop.call_later(args.time, sys.exit)
-loop.run_forever()
+
+if not args.interactive:
+    loop.run_forever()
