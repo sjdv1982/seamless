@@ -332,10 +332,9 @@ class ShareServer(object):
     DEFAULT_SHARE_REST_PORT = 5813
     DEFAULT_NAMESPACE = "ctx"
 
-    # TODO: read from os.environ
-    address = DEFAULT_ADDRESS
-    update_port = DEFAULT_SHARE_UPDATE_PORT
-    rest_port = DEFAULT_SHARE_REST_PORT
+    address = None
+    update_port = None
+    rest_port = None
     _update_server_started = False
     _rest_server_started = False
     _future_start = None
@@ -482,7 +481,7 @@ class ShareServer(object):
             if DEBUG:
                 traceback.print_exc()
             return web.Response(
-                status=404,
+                status=400,
                 text="Invalid request",
             )
         
@@ -507,7 +506,7 @@ class ShareServer(object):
             if DEBUG:
                 print("shareserver _handle.get", err, ns, key, mode)
             return web.Response(
-                status=404,
+                status=400,
                 text=err,
             )
 
@@ -546,7 +545,7 @@ class ShareServer(object):
             if DEBUG:
                 traceback.print_exc()
             return web.Response(
-                status=404,
+                status=500,
                 text="Unknown error"
             )
 
@@ -562,7 +561,7 @@ class ShareServer(object):
             if DEBUG:
                 traceback.print_exc()
             return web.Response(
-                status=404,
+                status=400,
                 text="Invalid request",
             )
 
@@ -571,7 +570,7 @@ class ShareServer(object):
                 if DEBUG:
                     print("shareserver PUT: contains buffer AND checksum")
                 return web.Response(
-                    status=404,
+                    status=400,
                     text="contains buffer AND checksum",
                 )
             value = data["buffer"]
@@ -597,7 +596,7 @@ class ShareServer(object):
 
         if share.readonly:
             return web.Response(
-                status=404,
+                status=405,
                 text="Refused, share is read-only",
             )
         try:
@@ -619,7 +618,7 @@ class ShareServer(object):
             if DEBUG:
                 traceback.print_exc()
             return web.Response(
-                status=404,
+                status=500,
                 text="Unknown error"
             )
 
@@ -637,7 +636,7 @@ class ShareServer(object):
             if DEBUG:
                 traceback.print_exc()
             return web.Response(
-                status=404,
+                status=400,
                 text="Invalid request",
             )
             
@@ -666,7 +665,7 @@ class ShareServer(object):
             if DEBUG:
                 traceback.print_exc()
             return web.Response(
-                status=404,
+                status=500,
                 text="Unknown error"
             )
 
@@ -674,7 +673,7 @@ class ShareServer(object):
         global web
         from aiohttp import web
         import aiohttp_cors
-        app = web.Application()
+        app = web.Application(debug=DEBUG)
         app.add_routes([
             web.get('/{tail:.*}', self._handle_get),
             web.put('/{tail:.*}', self._handle_put),
@@ -698,7 +697,7 @@ class ShareServer(object):
         runner = web.AppRunner(app)
         await runner.setup()
         while 1:
-            site = web.TCPSite(runner, self.address, self.rest_port) #TODO: try more ports
+            site = web.TCPSite(runner, self.address, self.rest_port)
             try:
                 await site.start()
                 break
@@ -716,6 +715,13 @@ class ShareServer(object):
         self.started = True
 
     def start(self):
+        if self.address is None:
+            self.address = self.DEFAULT_ADDRESS
+        if self.update_port is None:
+            self.update_port = self.DEFAULT_SHARE_UPDATE_PORT
+        if self.rest_port is None:
+            self.rest_port = self.DEFAULT_SHARE_REST_PORT
+
         if not self.started:
             if self._future_start is None:
                 self._future_start = asyncio.ensure_future(self._start())
