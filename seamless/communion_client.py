@@ -93,7 +93,7 @@ class CommunionTransformationClient(CommunionClient):
             await self.future_clear_exception
         assert checksum is not None
         if not self.config_status:
-            return
+            return None, None
         message = {
             "type": "transformation_status",
             "content": checksum.hex()

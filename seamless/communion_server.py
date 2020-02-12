@@ -62,19 +62,20 @@ class CommunionError(Exception):
 
 DEBUG = False
 
+import sys
 def pr(*args, **kwargs):
     if DEBUG:
-        print(*args, **kwargs)
+        print(*args, **kwargs, file=sys.stderr)
 
 import logging
 logger = logging.getLogger('websockets.server')
 logger.setLevel(logging.ERROR)
 logger.addHandler(logging.StreamHandler())
 
-def is_port_in_use(port): # KLUDGE: For some reason, websockets does not test this??
+def is_port_in_use(address, port): # KLUDGE: For some reason, websockets does not test this??
     import socket
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        return s.connect_ex(('localhost', port)) == 0
+        return s.connect_ex((address, port)) == 0
 
 WAIT_TIME = 1.5 # time to wait for network connections after a new manager
 
@@ -320,7 +321,7 @@ class CommunionServer:
 
         coros = []  
         if outgoing is not None:
-            if is_port_in_use(outgoing): # KLUDGE
+            if is_port_in_use(outgoing_address, outgoing): # KLUDGE
                 print("ERROR: outgoing port %d already in use" % outgoing)
                 raise Exception
             server = functools.partial(self._serve_outgoing, config)

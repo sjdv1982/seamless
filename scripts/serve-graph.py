@@ -7,7 +7,7 @@ parser.add_argument(
     help="Connect to a Redis instance",
     action="store_true"
 )
-parser.add_argument("--communion_id",type=str,default="jobslave")
+parser.add_argument("--communion_id",type=str,default="serve-graph")
 parser.add_argument("--communion_incoming",type=str)
 parser.add_argument(
     "--interactive",
@@ -40,6 +40,30 @@ if args.communion_incoming is not None:
 import seamless, seamless.shareserver
 
 from seamless import communion_server
+
+communion_server.configure_master({
+    "buffer": True,
+    "buffer_status": True,
+    "buffer_length": True,
+    "transformation_job": True,
+    "transformation_status": True,
+    "semantic_to_syntactic": True,
+})
+
+"""
+# will not work until load_graph will be much smarter
+if args.redis:
+    communion_server.configure_servant({
+        "buffer": False,
+        "buffer_status": False,
+        "buffer_length": False,
+        "transformation_job": False,
+        "transformation_status": False,
+        "semantic_to_syntactic": False,
+        "hard_cancel": False,  # allow others to hard cancel our jobs
+        "clear_exception": False, # allow others to clear exceptions on our jobs
+    })
+"""
 
 if args.ncores is not None:
     seamless.set_ncores(args.ncores)

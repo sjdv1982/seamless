@@ -116,7 +116,12 @@ class BufferCache:
         length = self.buffer_length.get(checksum)
         if length is not None:
             return length
-        return redis_caches.get_buffer_length(checksum)
+        length = redis_caches.get_buffer_length(checksum)
+        if length is not None:
+            return length
+        buf = self.get_buffer(checksum)
+        if buf is not None:
+            return len(buf)
 
     def buffer_check(self, checksum):
         """For the communion_server..."""

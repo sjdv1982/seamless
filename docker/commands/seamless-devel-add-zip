@@ -3,6 +3,10 @@ set -u -e
 # - Current directory is mounted to /cwd, and the command is executed there
 
 seamlessdir=`python3 -c 'import seamless,os;print(os.path.dirname(seamless.__file__))'`/../
+zipfile_dir=`python3 -c 'import os,sys;print(os.path.abspath(os.path.dirname(sys.argv[1])))' $1`
+zipfile_name=${1##*/} 
+
+cd ${zipfile_dir}
 
 docker run --rm \
   -v $seamlessdir:/seamless \
@@ -12,4 +16,4 @@ docker run --rm \
   -v `pwd`:/cwd \
   --workdir /cwd \
   -u jovyan \
-  seamless-devel python3 /home/jovyan/seamless-scripts/add-zip.py $1
+  seamless-devel python3 /home/jovyan/seamless-scripts/add-zip.py ${zipfile_name}

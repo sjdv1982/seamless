@@ -26,35 +26,35 @@ class RedisSink:
     
     def set_transformation_result(self, tf_checksum, checksum):
         r = self.connection
-        key = b"tfr:" +  tf_checksum
+        key = "tfr:" +  tf_checksum.hex()
         r.set(key, checksum)
 
     def sem2syn(self, sem_checksum, syn_checksums):        
         r = self.connection
-        key = b"s2s:" +  sem_checksum
+        key = "s2s:" +  sem_checksum.hex()
         for syn_checksum in syn_checksums:
             r.sadd(key, syn_checksum)
 
     def set_buffer(self, checksum, buffer):
         r = self.connection
-        key = b"buf:" + checksum
+        key = "buf:" + checksum.hex()
         r.set(key, buffer)
 
     def set_buffer_length(self, checksum, length):
         r = self.connection
-        key = b"bfl:" + checksum
+        key = "bfl:" + checksum.hex()
         r.set(key, length)
 
     def add_small_buffer(self, checksum):
         r = self.connection
-        key = b"smallbuffers"
+        key = "smallbuffers"
         r.sadd(key, checksum)
 
     def set_compile_result(self, checksum, buffer):
         if not self.store_compile_result:
             return
         r = self.connection
-        key = b"cpl:" + checksum
+        key = "cpl:" + checksum.hex()
         r.set(key, buffer)
 
 class RedisCache:
@@ -74,37 +74,37 @@ class RedisCache:
 
     def get_transformation_result(self, checksum):
         r = self.connection
-        key = b"tfr:" + checksum
+        key = "tfr:" + checksum.hex()
         return r.get(key)
 
     def sem2syn(self, sem_checksum):
         r = self.connection
-        key = b"s2s:" +  sem_checksum
+        key = "s2s:" +  sem_checksum.hex()
         members = r.smembers(key)
         return members
 
     def get_buffer(self, checksum):
         r = self.connection
-        key = b"buf:" + checksum
+        key = "buf:" + checksum.hex()
         return r.get(key)
 
     def has_buffer(self, checksum):
         r = self.connection
-        key = b"buf:" + checksum
+        key = "buf:" + checksum.hex()
         return r.exists(key)
 
     def get_buffer_length(self, checksum):
         # 1 for small buffers
         r = self.connection
-        key = b"smallbuffers"
+        key = "smallbuffers"
         if r.sismember(key, checksum):
             return 1
-        key = b"bfl:" + checksum
+        key = "bfl:" + checksum.hex()
         return r.get(key)
 
     def get_compile_result(self, checksum):
         r = self.connection
-        key = b"cpl:" + checksum
+        key = "cpl:" + checksum.hex()
         return r.get(key)        
 
 class RedisSinks:
