@@ -1,0 +1,98 @@
+{
+  "connections": [
+    {
+      "source": [
+        "code"
+      ],
+      "target": [
+        "tf",
+        "code"
+      ],
+      "type": "connection"
+    },
+    {
+      "source": [
+        "tf"
+      ],
+      "target": [
+        "result"
+      ],
+      "type": "connection"
+    }
+  ],
+  "lib": {},
+  "nodes": [
+    {
+      "celltype": "text",
+      "checksum": {
+        "value": "5e77b22d5beb867b141f4851a5ba46e6f6d8876573e4ea00442866876d81eca2"
+      },
+      "datatype": "mixed",
+      "mount": {
+        "authority": "cell",
+        "mode": "rw",
+        "path": "/tmp/test.bash",
+        "persistent": true
+      },
+      "path": [
+        "code"
+      ],
+      "type": "cell"
+    },
+    {
+      "celltype": "text",
+      "checksum": {
+        "value": "bc159dfa669a81e36a3b3cba00e7f772ab1b3ae4eb155ed1c3c6ec9745ce0d04"
+      },
+      "datatype": "mixed",
+      "mount": {
+        "authority": "cell",
+        "mode": "w",
+        "path": "/tmp/result",
+        "persistent": true
+      },
+      "path": [
+        "result"
+      ],
+      "type": "cell"
+    },
+    {
+      "INPUT": "inp",
+      "RESULT": "result",
+      "SCHEMA": null,
+      "checksum": {
+        "code": "5e77b22d5beb867b141f4851a5ba46e6f6d8876573e4ea00442866876d81eca2",
+        "input": "14bd7a8e1224a9f8b1368dc3323a87c3a62766b0d3a8c5eed117d7990620c4b0",
+        "input_auth": "14bd7a8e1224a9f8b1368dc3323a87c3a62766b0d3a8c5eed117d7990620c4b0",
+        "input_buffer": "14bd7a8e1224a9f8b1368dc3323a87c3a62766b0d3a8c5eed117d7990620c4b0",
+        "result": "11bda27af31ac9f7ce9906fc965e28e6e4f5d3760be19c679e1e11b18a3b83d3"
+      },
+      "compiled": false,
+      "debug": false,
+      "file_extension": "sh",
+      "language": "docker",
+      "path": [
+        "tf"
+      ],
+      "pins": {
+        "docker_image": {
+          "celltype": "mixed"
+        },
+        "docker_options": {
+          "celltype": "mixed"
+        },
+        "lines": {
+          "celltype": "mixed"
+        },
+        "testdata": {
+          "celltype": "mixed"
+        }
+      },
+      "type": "transformer",
+      "with_result": true
+    }
+  ],
+  "params": {
+    "share_namespace": "ctx"
+  }
+}

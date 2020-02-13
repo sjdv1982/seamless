@@ -1,0 +1,277 @@
+{
+  "connections": [
+    {
+      "source": [
+        "pdb0"
+      ],
+      "target": [
+        "filter_pdb",
+        "pdb0"
+      ],
+      "type": "connection"
+    },
+    {
+      "source": [
+        "filter_pdb"
+      ],
+      "target": [
+        "filtered_pdb"
+      ],
+      "type": "connection"
+    },
+    {
+      "source": [
+        "filtered_pdb"
+      ],
+      "target": [
+        "fix_pdb",
+        "filtered_pdb"
+      ],
+      "type": "connection"
+    },
+    {
+      "source": [
+        "fix_pdb"
+      ],
+      "target": [
+        "pdb"
+      ],
+      "type": "connection"
+    },
+    {
+      "source": [
+        "filter_code"
+      ],
+      "target": [
+        "filter_pdb",
+        "code"
+      ],
+      "type": "connection"
+    },
+    {
+      "source": [
+        "code"
+      ],
+      "target": [
+        "fix_pdb",
+        "code"
+      ],
+      "type": "connection"
+    }
+  ],
+  "lib": {},
+  "nodes": [
+    {
+      "celltype": "code",
+      "checksum": {
+        "value": "55961a8b8f54ac39def0f584762769b1a348511b87658cc5b50dfddb72d00ac4"
+      },
+      "file_extension": "sh",
+      "language": "bash",
+      "mimetype": "application/x-sh",
+      "path": [
+        "code"
+      ],
+      "share": {
+        "path": "code.bash",
+        "readonly": false
+      },
+      "transformer": true,
+      "type": "cell"
+    },
+    {
+      "celltype": "code",
+      "checksum": {
+        "value": "bef8b24fc493087f199bea3aeb30c8a9b22b0f9c9344a0befb550fa4aa691d70"
+      },
+      "file_extension": "sh",
+      "language": "bash",
+      "mimetype": "application/x-sh",
+      "path": [
+        "filter_code"
+      ],
+      "share": {
+        "path": "filter_code.bash",
+        "readonly": false
+      },
+      "transformer": true,
+      "type": "cell"
+    },
+    {
+      "INPUT": "inp",
+      "RESULT": "result",
+      "SCHEMA": null,
+      "checksum": {
+        "code": "bef8b24fc493087f199bea3aeb30c8a9b22b0f9c9344a0befb550fa4aa691d70",
+        "input": "e0def1c1ff7eb0d41ce636339960d154445c6d6b21c689e379952d2bad6cb8cf",
+        "input_auth": "2dba31dad17256fcc4681ef400b600d81ea593961fd02e53c02a2998672557f7",
+        "input_buffer": "e0def1c1ff7eb0d41ce636339960d154445c6d6b21c689e379952d2bad6cb8cf",
+        "result": "e8787d65a4c4e417d25e2b4361538db8d180dcbf7ab971b525bc51b2c8d0e322"
+      },
+      "compiled": false,
+      "debug": false,
+      "file_extension": "sh",
+      "language": "docker",
+      "path": [
+        "filter_pdb"
+      ],
+      "pins": {
+        "docker_image": {
+          "celltype": "mixed"
+        },
+        "docker_options": {
+          "celltype": "mixed"
+        },
+        "pdb0": {
+          "celltype": "mixed"
+        }
+      },
+      "type": "transformer",
+      "with_result": true
+    },
+    {
+      "celltype": "text",
+      "checksum": {
+        "value": "0abdae680fce2bd5d018783f68199e742a41e14032f75c26eb67df60048a91f1"
+      },
+      "datatype": "mixed",
+      "path": [
+        "filtered_pdb"
+      ],
+      "share": {
+        "path": "filtered_pdb.pdb",
+        "readonly": true
+      },
+      "type": "cell"
+    },
+    {
+      "INPUT": "inp",
+      "RESULT": "result",
+      "SCHEMA": null,
+      "checksum": {
+        "code": "55961a8b8f54ac39def0f584762769b1a348511b87658cc5b50dfddb72d00ac4",
+        "input": "ba89198ddd8ba9a4853add5a9c6b426c4efe13516e8daa6829186a725050ac15",
+        "input_auth": "2dba31dad17256fcc4681ef400b600d81ea593961fd02e53c02a2998672557f7",
+        "input_buffer": "ba89198ddd8ba9a4853add5a9c6b426c4efe13516e8daa6829186a725050ac15",
+        "result": "f9bfa4063e178413cae39d9adc3e1788db9d3fa0057fe806b14121030ec5040f"
+      },
+      "compiled": false,
+      "debug": false,
+      "file_extension": "sh",
+      "language": "docker",
+      "path": [
+        "fix_pdb"
+      ],
+      "pins": {
+        "docker_image": {
+          "celltype": "mixed"
+        },
+        "docker_options": {
+          "celltype": "mixed"
+        },
+        "filtered_pdb": {
+          "celltype": "mixed"
+        }
+      },
+      "type": "transformer",
+      "with_result": true
+    },
+    {
+      "celltype": "text",
+      "checksum": {
+        "value": "58dfacd66bc6f40f9adff5c691e3b370fac3668df84a5b0638a5cf24ff9c14c7"
+      },
+      "datatype": "mixed",
+      "mimetype": "text/html",
+      "path": [
+        "html"
+      ],
+      "share": {
+        "path": "index.html",
+        "readonly": true
+      },
+      "type": "cell"
+    },
+    {
+      "celltype": "text",
+      "checksum": {
+        "value": "9cd4b257326699241be74d926fdca117ef3fd7f982cb31612325fb7743cd5783"
+      },
+      "datatype": "mixed",
+      "mimetype": "text/javascript",
+      "path": [
+        "js"
+      ],
+      "share": {
+        "path": "seamless-client.js",
+        "readonly": true
+      },
+      "type": "cell"
+    },
+    {
+      "celltype": "text",
+      "checksum": {
+        "value": "1df240195c402a07197389036df6e84805d049455514727f917d144036793908"
+      },
+      "datatype": "mixed",
+      "path": [
+        "pdb"
+      ],
+      "share": {
+        "path": "pdb.pdb",
+        "readonly": true
+      },
+      "type": "cell"
+    },
+    {
+      "celltype": "text",
+      "checksum": {
+        "value": "4baa2dc76aef78b5ca108c836440845e31877a9f764edb5d5e821f7b8e6b9915"
+      },
+      "datatype": "mixed",
+      "path": [
+        "pdb0"
+      ],
+      "share": {
+        "path": "pdb0.pdb",
+        "readonly": false
+      },
+      "type": "cell"
+    },
+    {
+      "celltype": "text",
+      "checksum": {
+        "value": "f7f30c2988df3511583c0ce0964bf0a61fd4874049d82e780217f8d56f46cc2b"
+      },
+      "datatype": "mixed",
+      "mimetype": "text/javascript",
+      "path": [
+        "representation_js"
+      ],
+      "share": {
+        "path": "representation.js",
+        "readonly": false
+      },
+      "type": "cell"
+    },
+    {
+      "celltype": "text",
+      "checksum": {
+        "value": "06fc4aba6ca95f36a481b7a321984db511243b2bf04246891c0e0462f8c766a6"
+      },
+      "datatype": "mixed",
+      "mimetype": "text/javascript",
+      "path": [
+        "vismol_js"
+      ],
+      "share": {
+        "path": "vismol.js",
+        "readonly": true
+      },
+      "type": "cell"
+    }
+  ],
+  "params": {
+    "share_namespace": "ctx"
+  }
+}
