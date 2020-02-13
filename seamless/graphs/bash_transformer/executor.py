@@ -53,10 +53,33 @@ try:
             else:           
                 with open(pin, "bw") as pinf:
                     np.save(pinf,v,allow_pickle=False)
-    process = subprocess.run(
-      bashcode, capture_output=True, shell=True, check=True,
-      env=env
-    )
+    try:
+        process = subprocess.run(
+        bashcode, capture_output=True, shell=True, check=True,
+        env=env
+        )
+    except subprocess.CalledProcessError as exc:
+        stderr = exc.stderr
+        try:
+            stderr = stderr.decode()
+        except:
+            pass
+        raise Exception("""
+Bash transformer exception
+==========================
+
+*************************************************
+* Command
+*************************************************
+{}
+*************************************************
+
+*************************************************
+* Standard error
+*************************************************
+{}
+*************************************************
+""".format(bashcode, stderr)) from None
     stderr = process.stderr.decode()
     if len(stderr):
         print(stderr, file=sys.stderr)

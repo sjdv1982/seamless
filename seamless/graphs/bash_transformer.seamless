@@ -45,7 +45,7 @@
     {
       "celltype": "code",
       "checksum": {
-        "value": "7ffac300e1aa5706c05315845138f8e7effe35cfa56dd862d428ad7cd3163432"
+        "value": "3b3bb85e48ae350858d16c590561ef468f04e8f9f5060b4ac72b9fc10729ef0d"
       },
       "datatype": "mixed",
       "language": "python",
@@ -62,5 +62,7 @@
       "type": "cell"
     }
   ],
-  "params": {}
+  "params": {
+    "share_namespace": "ctx"
+  }
 }
