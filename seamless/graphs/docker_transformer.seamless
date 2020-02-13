@@ -1,18 +1,58 @@
 {
-  "connections": [],
+  "connections": [
+    {
+      "source": [
+        "executor_code"
+      ],
+      "target": [
+        "executor",
+        "code"
+      ],
+      "type": "connection"
+    },
+    {
+      "source": [
+        "docker_command"
+      ],
+      "target": [
+        "executor",
+        "docker_command"
+      ],
+      "type": "connection"
+    },
+    {
+      "source": [
+        "testdata"
+      ],
+      "target": [
+        "executor",
+        "testdata"
+      ],
+      "type": "connection"
+    },
+    {
+      "source": [
+        "executor"
+      ],
+      "target": [
+        "result"
+      ],
+      "type": "connection"
+    }
+  ],
   "lib": {},
   "nodes": [
     {
       "celltype": "code",
       "checksum": {
-        "value": "e1650db13e32c3bf423f8600a412129ac9e5b58809172ce3a29b903f0ef57048"
+        "value": "db934b60221e4203c4ec19533a6283415101f5e518b829d0a65d1d04d3d4ada9"
       },
       "datatype": "mixed",
       "language": "python",
       "mount": {
         "authority": "file",
         "mode": "r",
-        "path": "../../seamless/graphs/docker_transformer/executor.py",
+        "path": "executor.py",
         "persistent": true
       },
       "path": [
@@ -22,5 +62,7 @@
       "type": "cell"
     }
   ],
-  "params": {}
+  "params": {
+    "share_namespace": "ctx"
+  }
 }

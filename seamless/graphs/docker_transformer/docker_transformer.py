@@ -1,3 +1,5 @@
+import sys
+
 from seamless.highlevel import Context, Cell
 from seamless.highlevel import set_resource
 
@@ -22,7 +24,7 @@ zip = ctx.get_zip()
 
 #ctx.mount("/tmp/seamless-test", persistent=False) #TODO: persistent=False (does not delete atm)
 ctx.testdata = "a\nb\nc\nd\ne\nf\n"       
-ctx.docker_command = "bash -c 'head -$lines testdata'"
+ctx.docker_command = 'head -$lines testdata'
 ctx.executor = lambda docker_command, docker_image, docker_options, pins_, testdata, lines: None
 pins = ctx.executor.pins
 pins.docker_command.celltype = "str"
