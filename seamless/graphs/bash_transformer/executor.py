@@ -81,8 +81,11 @@ Bash transformer exception
 *************************************************
 """.format(bashcode, stderr)) from None
     stderr = process.stderr.decode()
+    """
+    # TODO: capture this...
     if len(stderr):
         print(stderr, file=sys.stderr)
+    """
     stdout = BytesIO(process.stdout)
     try:        
         tar = tarfile.open(fileobj=stdout)
