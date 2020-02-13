@@ -17,6 +17,7 @@ import ast
 import functools
 import asyncio
 import time
+import traceback
 
 from ...get_hash import get_dict_hash
 """
@@ -463,6 +464,14 @@ class TransformationCache:
         transformers = self.transformations_to_transformers[tf_checksum]
 
         if exc is not None:
+            if isinstance(exc,SeamlessTransformationError):
+                exc_str = exc.args[0]
+                if exc_str is not None:
+                    h = SeamlessTransformationError.__module__ 
+                    h += "." + SeamlessTransformationError.__name__
+                    if exc_str.startswith(h):
+                        exc_str = exc_str[len(h)+1:].lstrip().rstrip("\n") 
+                exc = SeamlessTransformationError(exc_str)
             self.transformation_exceptions[tf_checksum] = exc
             self._set_exc(transformers, exc)
             return
@@ -560,8 +569,15 @@ class TransformationCache:
         if running_job is not None:
             progress = self.job_progress.get(id(running_job))
             return 2, progress, result_checksum
-        if self.transformation_exceptions.get(tf_checksum) is not None:
-            return 0, None
+        exc = self.transformation_exceptions.get(tf_checksum) 
+        if exc is not None:
+            exc_list = traceback.format_exception(
+                value=exc, 
+                etype=type(exc),
+                tb=exc.__traceback__
+            )
+            exc_str = "".join(exc_list)
+            return 0, exc_str
         result = await communion_client_manager.remote_transformation_status(
             tf_checksum, peer_id
         )
@@ -724,6 +740,6 @@ from ..protocol.conversion import convert
 from ..protocol.deserialize import deserialize
 from ..protocol.calculate_checksum import calculate_checksum, calculate_checksum_sync
 from .redis_client import redis_caches, redis_sinks
-from ..transformation import TransformationJob
+from ..transformation import TransformationJob, SeamlessTransformationError
 from ..status import SeamlessInvalidValueError, SeamlessUndefinedError, StatusReasonEnum
 from ..transformer import Transformer

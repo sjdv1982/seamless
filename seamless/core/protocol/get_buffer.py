@@ -12,6 +12,8 @@ async def get_buffer_length_remote(checksum, buffer_cache, remote_peer_id):
         if client_peer_id != remote_peer_id:
             coro = client.submit(checksum)
             coros.append(coro)
+    if not len(coros):
+        return None
     futures = [asyncio.ensure_future(coro) for coro in coros]
     while 1:
         done, pending = await asyncio.wait(
@@ -44,6 +46,8 @@ async def get_buffer_remote(checksum, buffer_cache, remote_peer_id):
         if client_peer_id != remote_peer_id:
             coro = client.status(checksum)
             coros.append(coro)
+    if not len(coros):
+        return None
     futures = [asyncio.ensure_future(coro) for coro in coros]
     rev = {fut:n for n,fut in enumerate(futures)}
     best_client = None

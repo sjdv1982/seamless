@@ -14,6 +14,9 @@ from .build_module import build_module_async
 
 DEBUG = False
 
+class SeamlessTransformationError(Exception):
+    pass
+
 ###############################################################################
 # Local jobs
 ###############################################################################
@@ -29,7 +32,7 @@ def set_ncores(ncores):
 
 async def acquire_lock(tf_checksum):
     if not len(_locks):
-        raise Exception("Local computation has been disabled for this Seamless instance")
+        raise SeamlessTransformationError("Local computation has been disabled for this Seamless instance")
     while 1:        
         for locknr, lock in enumerate(_locks):
             if lock is None:
@@ -47,9 +50,8 @@ def release_lock(locknr):
 
 REMOTE_TIMEOUT = 5.0 
 
-class RemoteJobError(Exception):
-    def __str__(self):
-        return self.__class__.__name__
+class RemoteJobError(SeamlessTransformationError):
+    pass
 
 ###############################################################################
 
@@ -234,7 +236,8 @@ class TransformationJob:
             result_checksum = self.remote_result
             return result_checksum
         if self.remote_status == 0:
-            raise RemoteJobError()
+            exc_str = self.remote_result
+            raise RemoteJobError(exc_str)
         elif self.remote_status == 1:
             get_result = get_result1
         elif self.remote_status == 2:
@@ -279,7 +282,8 @@ class TransformationJob:
                 if not isinstance(status, int):
                     continue
                 if status == 0:
-                    has_exceptions = True                                    
+                    has_exceptions = True
+                    exc_str = result[1]
                 elif status < 0:
                     has_negative_status = True
                 elif status not in (2, 3): # erroneous behaviour
@@ -308,6 +312,8 @@ class TransformationJob:
         elif has_negative_status and not has_exceptions:
             self.restart = True
             self.remote = False
+        elif has_exceptions:
+            raise RemoteJobError(exc_str)
         else:            
             raise RemoteJobError()
 
@@ -413,7 +419,7 @@ class TransformationJob:
                         done = True
                         break
                     elif status == 1:
-                        raise Exception(msg)
+                        raise SeamlessTransformationError(msg)
                     elif status == 2:
                         prelim = msg
                         prelim_checksum = await get_result_checksum(prelim)
@@ -423,7 +429,9 @@ class TransformationJob:
                         progress_callback(self, progress)
                 if not self.executor.is_alive():
                     if self.executor.exitcode != 0:
-                        raise Exception("Transformation exited with code %s" % self.executor.exitcode)
+                        raise SeamlessTransformationError(
+                          "Transformation exited with code %s" % self.executor.exitcode
+                        )
                     done = True
                 if done:
                     break

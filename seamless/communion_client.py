@@ -98,8 +98,8 @@ class CommunionTransformationClient(CommunionClient):
             "type": "transformation_status",
             "content": checksum.hex()
         }        
-        result = await communion_server.client_submit(message, self.servant)        
-        if result is not None and isinstance(result[-1], str):
+        result = await communion_server.client_submit(message, self.servant)
+        if result is not None and result[0] != 0 and isinstance(result[-1], str):
             result = (*result[:-1], bytes.fromhex(result[-1]))
         return result
 

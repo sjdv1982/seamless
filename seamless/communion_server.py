@@ -26,7 +26,7 @@ Jobs are submitted by checksum. There is also a job status API, which can return
         None is returned.
     -2: Job input checksums are unknown. None is returned.
     -1: Job is not runnable. None is returned.
-    0: Job has exception. None is returned.
+    0: Job has exception. Exception is returned as a string
     1: Job is runnable. None is returned.
     2: Job is running; progress and preliminary checksum are returned
     3: Job is known; job checksum is returned.
