@@ -1,7 +1,16 @@
 import sys, os, json, subprocess, argparse
 parser = argparse.ArgumentParser()
-parser.add_argument("graph",help="Seamless graph file to serve")
-parser.add_argument("zipfile",help="Zip file that contains the buffers of the graph checksum", nargs='?')
+parser.add_argument(
+    "graph",
+    help="Seamless graph file to serve", 
+    type=argparse.FileType('r')
+)
+parser.add_argument(
+    "zipfile",
+    help="Zip file that contains the buffers of the graph checksum", 
+    nargs='?', 
+    type=argparse.FileType('rb')
+)
 parser.add_argument(
     "--redis",
     help="Connect to a Redis instance",
@@ -18,7 +27,35 @@ parser.add_argument(
     "--debug",
     action="store_true"
 )
+parser.add_argument(
+    "--status-graph",
+    help="Bind a graph that reports the status of the main graph",
+    type=argparse.FileType('r')
+)
+
+parser.add_argument(
+    "--add-zip",
+    help="Specify additional zip files to be added",
+    type=argparse.FileType('rb'),
+    action="append",
+    default=[],
+)
+
 parser.add_argument("--ncores",type=int,default=None)
+
+parser.add_argument(
+    "--shares",
+    help="Share cells over the network as specified in the graph file(s)", 
+    default=True, 
+    type=bool
+)
+
+parser.add_argument(
+    "--mounts",
+    help="Mount cells on the file system as specified in the graph file(s)", 
+    default=False, 
+    type=bool
+)
 
 args = parser.parse_args()
 
@@ -77,10 +114,12 @@ if shareserver_address is not None:
     
 
 from seamless.highlevel import load_graph
-graph = json.load(open(args.graph))
-ctx = load_graph(graph, mounts=False, shares=True)
+graph = json.load(args.graph)
+ctx = load_graph(graph, mounts=args.mounts, shares=args.shares)
 if args.zipfile is not None:
     ctx.add_zip(args.zipfile)
+for zipf in args.add_zip:
+    ctx.add_zip(zipf)
 if args.redis:
     params = {}    
     redis_host = env.get("REDIS_HOST")
@@ -92,6 +131,15 @@ if args.redis:
     redis_sink = seamless.RedisSink(**params)
     redis_cache = seamless.RedisCache(**params)
 ctx.translate()
+
+if args.status_graph:
+    from seamless.metalevel.bind_status_graph import bind_status_graph
+    status_graph = json.load(args.status_graph)
+    ctx2 = bind_status_graph(
+        ctx, status_graph, 
+        mounts=args.mounts,
+        shares=args.shares
+    )
 
 if not args.interactive:
     import asyncio

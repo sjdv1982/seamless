@@ -1,3 +1,4 @@
+import textwrap
 
 rnodes = []
 rconnections = []
@@ -59,6 +60,10 @@ for node in graph["nodes"]:
             if subpath != path:
                 cstate += "*** " + subpath2 + " ***\n"
             cstate += "*** exception ***\n"
+            exc2 = []
+            for l in exc.splitlines():
+                exc2.extend(textwrap.wrap(l))
+            exc = "\n".join(exc2)
             cstate += exc
             cstate += "\n" + "*" * 50 + "\n\n"
     rnode["color"] = color_mapping[color]

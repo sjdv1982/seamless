@@ -119,8 +119,8 @@ function tick() {
 }
 
 function selectNode(node) {
-  state = node.state ? node.state : "None"
-  $("#error_message").text(state)
+  status = node.status ? node.status : "None"
+  $("#error_message").text(status)
 }
 
 // update graph (called when needed)
@@ -249,7 +249,7 @@ restart();
 
 SEAMLESS_UPDATE_PORT=null  //5138, but will be 80 or 8080 if the page is served under that port
 SEAMLESS_REST_PORT=null    //the same as where the page will be served under 
-SEAMLESS_SHARE_NAMESPACE=status
+SEAMLESS_SHARE_NAMESPACE="status"
 // END of config block
 
 ctx = connect_seamless(
@@ -280,7 +280,7 @@ ctx.self.onsharelist = function(sharelist) {
         }
       }
       newNode.color = shareNode.color
-      newNode.state = shareNode.state
+      newNode.status = shareNode.status
       newNodes.push(newNode)
     })
     nodeMapping = {}
