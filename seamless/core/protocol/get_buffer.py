@@ -8,7 +8,7 @@ async def get_buffer_length_remote(checksum, buffer_cache, remote_peer_id):
     clients = communion_client_manager.clients["buffer_length"]
     coros = []            
     for client in clients:
-        client_peer_id = self.servant_to_peer_id[id(client.servant)]
+        client_peer_id = client.get_peer_id()
         if client_peer_id != remote_peer_id:
             coro = client.submit(checksum)
             coros.append(coro)
@@ -42,7 +42,7 @@ async def get_buffer_remote(checksum, buffer_cache, remote_peer_id):
     clients = communion_client_manager.clients["buffer"]
     coros = []            
     for client in clients:
-        client_peer_id = self.servant_to_peer_id[id(client.servant)]
+        client_peer_id = client.get_peer_id()
         if client_peer_id != remote_peer_id:
             coro = client.status(checksum)
             coros.append(coro)

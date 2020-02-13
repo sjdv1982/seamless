@@ -3,7 +3,9 @@ import asyncio
 REMOTE_TIMEOUT = 5.0
 
 class CommunionClient:
-    pass
+    def get_peer_id(self):
+        mgr = communion_client_manager
+        return mgr.servant_to_peer_id[id(self.servant)]
 
 class CommunionBufferClient(CommunionClient):
     config_type = "buffer"

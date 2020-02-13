@@ -24,8 +24,6 @@ from ..midlevel import copying
 
 Graph = namedtuple("Graph", ("nodes", "connections", "params", "lib"))
 
-shareserver = None
-
 def run_in_mainthread(func):
     def func2(*args, **kwargs):
         ctx = args[0]
@@ -445,6 +443,8 @@ class Context(Base):
             zipfile = ZipFile(zip, "r")
         elif isinstance(zip, ZipFile):
             zipfile = zip
+        elif hasattr(zip, "read") and callable(zip.read):
+            zipfile = ZipFile(zip, "r")
         else:
             raise TypeError(type(zip))        
         return copying.add_zip(manager, zipfile)
