@@ -17,6 +17,6 @@ docker run --rm \
   -v `pwd`:/cwd \
   -v /var/run/docker.sock:/var/run/docker.sock \
   --workdir /cwd \
-  -u jovyan \
+  --user $(id -u):$(id -g) \
   seamless-devel python3 -u /home/jovyan/seamless-scripts/jobslave.py \
     --communion_id $*

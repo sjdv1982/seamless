@@ -18,5 +18,5 @@ docker run --rm -it \
   -v /tmp:/tmp \
   -v /var/run/docker.sock:/var/run/docker.sock \
   --workdir /cwd \
-  -u jovyan \
+  --user $(id -u):$(id -g) \
   seamless-devel ipython3 $*

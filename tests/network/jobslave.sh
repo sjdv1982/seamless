@@ -25,7 +25,7 @@ docker run --rm \
   -e SEAMLESS_COMMUNION_OUTGOING_ADDRESS=0.0.0.0 \
   -p 8602:8602 \
   -v /var/run/docker.sock:/var/run/docker.sock \
-  -u jovyan \
+  --user $(id -u):$(id -g) \
   -it \
   seamless-devel ipython3 -i /home/jovyan/seamless-scripts/jobslave.py \
     -- --communion_id $name --interactive

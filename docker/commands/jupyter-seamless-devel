@@ -8,6 +8,7 @@ docker run --rm \
   -v /tmp:/tmp \
   --hostname localhost \
   --workdir /home/jovyan \
+  --user $(id -u):$(id -g) \
   seamless-devel start-notebook.sh  \
   --NotebookApp.token='' --NotebookApp.password='' \
   $*

@@ -17,5 +17,5 @@ docker run --rm \
   -v /tmp:/tmp \
   -v /var/run/docker.sock:/var/run/docker.sock \
   --workdir /cwd \
-  -u jovyan \
+  --user $(id -u):$(id -g) \
   rpbs/seamless $*
