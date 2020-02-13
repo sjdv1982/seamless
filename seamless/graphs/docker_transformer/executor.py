@@ -57,7 +57,9 @@ try:
     volumes[tempdir] = {"bind": "/run", "mode": "rw"}
     if "working_dir" not in options:
         options["working_dir"] = "/run"
-    full_docker_command = "bash -c '{}'".format(docker_command)
+    with open("DOCKER-COMMAND","w") as f:
+        f.write(docker_command)   
+    full_docker_command = "bash DOCKER-COMMAND"
     stdout0 = docker_client.containers.run(
         docker_image, 
         full_docker_command, 
