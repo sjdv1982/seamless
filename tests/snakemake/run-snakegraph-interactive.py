@@ -1,7 +1,7 @@
 import seamless
 from seamless.highlevel import Context, Transformer, Cell
 from seamless.silk.Silk import RichValue
-import json
+import json, os
 import numpy as np
 from functools import partial
 
@@ -11,29 +11,30 @@ ctx = seamless.highlevel.load_graph(graph)
 ctx.add_zip("snakegraph.zip")
 ctx.translate()
 
-print("Load state visualization context (adapted from visualize-graph test)")
+print("Load status visualization context (adapted from visualize-graph test)")
 ctx2 = Context()
+ctx2.share_namespace = "status"
 ctx2.graph = {}
 ctx2.graph.celltype = "plain"
-ctx2.state = {}
-ctx2.state_data = ctx2.state
-ctx2.state_data.celltype = "plain"
+ctx2.status_ = {}
+ctx2.status_data = ctx2.status_
+ctx2.status_data.celltype = "plain"
 ctx2.translate()
 
-state_callbacks = {}
+status_callbacks = {}
 
-def state_callback(path, state):
+def status_callback(path, status):
     if ctx._gen_context is None or ctx2._gen_context is None:
         return
     if ctx._gen_context._destroyed or ctx2._gen_context._destroyed:
         return
-    handle = ctx2.state.handle
+    handle = ctx2.status_.handle
     path2 = ".".join(path)
-    handle[path2] = state
+    handle[path2] = status
 
 def observe_graph(graph):
     ctx2.graph.set(graph)    
-    paths_to_delete = set(state_callbacks.keys())
+    paths_to_delete = set(status_callbacks.keys())
     for node in graph["nodes"]:
         path = tuple(node["path"])
         if node["type"] == "cell":
@@ -46,41 +47,42 @@ def observe_graph(graph):
         else: # TODO: libmacro, macro, reactor
             continue        
         for path in paths:            
-            if path in state_callbacks:
+            if path in status_callbacks:
                 paths_to_delete.discard(path)
                 continue
             observers = {}
             for attr in ("status", "exception"):
                 subpath = path + (attr,)
-                callback = partial(state_callback, subpath)
-                state_callback(subpath, None)
+                callback = partial(status_callback, subpath)
+                status_callback(subpath, None)
                 observer = ctx.observe(subpath, callback, 2, observe_none=True)
                 observers[subpath] = observer
-            state_callbacks[path] = observers
+            status_callbacks[path] = observers
     for dpath in paths_to_delete:
-        observers = state_callbacks.pop(dpath)
+        observers = status_callbacks.pop(dpath)
         for subpath, observer in observers.items():
-            state_callback(subpath, None)
+            status_callback(subpath, None)
             observer.destroy()
 
 ctx.observe(("get_graph",), observe_graph, 0.5)
 
-gvs = ctx2.gen_vis_state = Transformer()
+seamless_dir = os.path.dirname(seamless.__file__)
+graph_dir = seamless_dir + "/graphs/status-visualization/"
+
+gvs = ctx2.gen_vis_status = Transformer()
 gvs.graph = ctx2.graph
-gvs.state = ctx2.state
-gvs.code = open("gen_vis_state.py").read()
-ctx2.vis_state = ctx2.gen_vis_state
-ctx2.vis_state.celltype = "plain"
-ctx2.vis_state.share(readonly=True)
+gvs.status_ = ctx2.status_
+gvs.code = open(graph_dir + "gen_vis_status.py").read()
+ctx2.vis_status = ctx2.gen_vis_status
+ctx2.vis_status.celltype = "plain"
+ctx2.vis_status.share(readonly=True)
 
 c = ctx2.html = Cell()
-c.set(open("state-visualization.html").read())
+c.set(open(graph_dir + "status-visualization.html").read())
 c.celltype = "text"
 c.mimetype = "text/html"
-c.share(path="state-visualization.html")
+c.share(path="status-visualization.html")
 
-import seamless, os
-seamless_dir = os.path.dirname(seamless.__file__)
 c = ctx2.js = Cell()
 c.set(open(seamless_dir + "/js/seamless-client.js").read())
 c.celltype = "text"
@@ -88,16 +90,16 @@ c.mimetype = "text/javascript"
 c.share(path="seamless-client.js")
 
 c = ctx2.js2 = Cell()
-c.set(open("state-visualization.js").read())
+c.set(open(graph_dir + "status-visualization.js").read())
 c.celltype = "text"
 c.mimetype = "text/javascript"
-c.share(path="state-visualization.js")
+c.share(path="status-visualization.js")
 
 c = ctx2.css = Cell()
-c.set(open("state-visualization.css").read())
+c.set(open(graph_dir + "status-visualization.css").read())
 c.celltype = "text"
 c.mimetype = "text/css"
-c.share(path="state-visualization.css")
+c.share(path="status-visualization.css")
 
 ctx2.translate()
 
@@ -134,7 +136,7 @@ print("""
 *  Interactive setup complete.
 *********************************************************************
 
-- Open http://localhost:5813/ctx/state-visualization.html in the browser")
+- Open http://localhost:5813/status/status-visualization.html in the browser")
 - Periodically enter the command "list_files()" to list the current files
 - Enter the following commands:
   

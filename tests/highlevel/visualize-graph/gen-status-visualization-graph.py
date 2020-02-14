@@ -44,5 +44,5 @@ c.mimetype = "text/css"
 c.share(path="status-visualization.css")
 
 ctx2.compute()
-ctx2.save_graph("status-visualization-graph.seamless")
-ctx2.save_zip("status-visualization-graph.zip")
+ctx2.save_graph("status-visualization.seamless")
+ctx2.save_zip("status-visualization.zip")
