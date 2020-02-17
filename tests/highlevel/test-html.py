@@ -1,7 +1,7 @@
 
 from seamless.highlevel import Context
 ctx = Context()
-#ctx.mount("/tmp/mount-test")
+###ctx.mount("/tmp/mount-test")
 ctx.a = "<b>Hello world!</b>"
 ctx.a.mount("/tmp/mount-test/a.html")
 ctx.a.share()

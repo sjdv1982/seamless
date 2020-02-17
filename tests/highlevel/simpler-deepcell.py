@@ -17,6 +17,7 @@ def triple_it_b(a, b):
     return 3 * a + b
 
 ctx.transform = triple_it
+ctx.transform.hash_pattern = {"*": "#"}
 ctx.transform.a = 1
 print("START")
 ctx.translate()
@@ -37,6 +38,7 @@ ctx.compute()
 print(ctx.transform.result.value, ctx.myresult.value)
 
 ctx.tfcode = triple_it_b
+ctx.compute()
 '''
 #or:
 ctx.transform = triple_it_b

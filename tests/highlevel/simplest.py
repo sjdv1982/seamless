@@ -2,11 +2,12 @@ from seamless.highlevel import Context, Cell
 from pprint import pprint
 
 ctx = Context()
-ctx.mount("/tmp/mount-test")
+###ctx.mount("/tmp/mount-test")
 
 ctx.a = 0
 ctx.translate()
 ctx.a = 2
+ctx.compute()
 ctx.get_graph()
 print(ctx.a.schema)
 print(ctx.a.value)

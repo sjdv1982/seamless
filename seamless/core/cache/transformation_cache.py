@@ -548,7 +548,7 @@ class TransformationCache:
                 transformation_buffer = await get_buffer_remote(
                     tf_checksum, 
                     buffer_cache,
-                    remote_peer_id
+                    None # NOT remote_peer_id! The submitting peer may hold a buffer we need!
                 )
             if transformation_buffer is not None:
                 transformation = json.loads(transformation_buffer)

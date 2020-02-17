@@ -1,0 +1,85 @@
+<Silk: 12 >
+None
+START
+<Silk: {'a': 1} > <Silk: None >
+<Silk: 12 > <Silk: {'a': 12} >
+{'properties': {'a': {'type': 'integer'}}, 'type': 'object'}
+<Silk: 12 > <Silk: {'a': 12} >
+<Silk: 36 >
+<Silk: 36 > <Silk: 36 >
+<Silk: {'a': 12} >
+NO RESULT <Silk: None > <Silk: None >
+TRANSFORMER EXCEPTION seamless.core.transformation.SeamlessTransformationError: Traceback (most recent call last):
+  File "/seamless/seamless/core/execute.py", line 85, in _execute
+    exec_code(code, identifier, namespace, inputs, output_name)
+  File "/seamless/seamless/core/cached_compile.py", line 58, in exec_code
+    exec(code_obj, namespace)
+  File "Seamless transformer: .transform.tf", line 5, in <module>
+    result = triple_it_b(a=a)
+TypeError: triple_it_b() missing 1 required positional argument: 'b'
+
+
+RUN!
+<Silk: {'a': 12, 'b': 100} >
+RESULT <Silk: 136 > <Silk: 136 >
+START
+RUN!
+<Silk: 13 >
+<Silk: {'a': 13, 'b': 100} >
+RESULT <Silk: 139 > <Silk: 139 >
+<Silk: None >
+TRANSFORMER INPUT EXCEPTION Traceback (most recent call last):
+jsonschema.exceptions.ValidationError: 100 is not of type 'string'
+
+Failed validating 'type' in schema['properties']['b']:
+    {'type': 'string'}
+
+On instance['b']:
+    100
+
+{'properties': {'a': {'type': 'integer'}, 'b': {'type': 'string'}}, 'type': 'object'}
+<Silk: None >
+{'a': 1, 'b': 100}
+TRANSFORMER STATUS Status: upstream => a void, b void
+START!
+RUN!
+{'a': 1, 'b': 'testing'}
+{'a': 13, 'b': 'testing'}
+<Silk: {'a': 13, 'b': 'testing'} >
+<Silk: None >
+TRANSFORMER INPUT EXCEPTION None
+TRANSFORMER STATUS Status: error
+TRANSFORMER EXCEPTION seamless.core.transformation.SeamlessTransformationError: Traceback (most recent call last):
+  File "/seamless/seamless/core/execute.py", line 85, in _execute
+    exec_code(code, identifier, namespace, inputs, output_name)
+  File "/seamless/seamless/core/cached_compile.py", line 58, in exec_code
+    exec(code_obj, namespace)
+  File "Seamless transformer: .transform.tf", line 5, in <module>
+    result = triple_it_b(a=a,b=b)
+  File "Seamless transformer: .transform.tf", line 3, in triple_it_b
+    return 3 * a + b
+TypeError: unsupported operand type(s) for +: 'int' and 'str'
+
+
+START2
+<Silk: None >
+TRANSFORMER INPUT EXCEPTION None
+TRANSFORMER STATUS Status: error
+TRANSFORMER EXCEPTION seamless.core.transformation.SeamlessTransformationError: Traceback (most recent call last):
+  File "/seamless/seamless/core/execute.py", line 85, in _execute
+    exec_code(code, identifier, namespace, inputs, output_name)
+  File "/seamless/seamless/core/cached_compile.py", line 58, in exec_code
+    exec(code_obj, namespace)
+  File "Seamless transformer: .transform.tf", line 5, in <module>
+    result = triple_it_b(a=a,b=b)
+  File "Seamless transformer: .transform.tf", line 3, in triple_it_b
+    return 3 * a + b
+TypeError: unsupported operand type(s) for +: 'int' and 'str'
+
+
+START3
+<Silk: 39 >
+TRANSFORMER INPUT STATUS Status: OK
+TRANSFORMER STATUS Status: OK
+{'properties': {'a': {'type': 'integer'}, 'b': {'type': 'string'}}, 'type': 'object'}
+{'a': '45ecee4cb55e5529e7729fe4b83bd1f08ced03855b3a62aec29ee17b601d5ea6', 'b': '35e5864ae44ebdcf473e5469de8bde5c68e163026cc965d9f9a142ca18da9baf'}

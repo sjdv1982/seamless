@@ -213,7 +213,17 @@ async def convert(checksum, buffer, celltype, target_celltype):
         
         if key == ("ipython", "python"):
             from nbconvert.filters import ipython2python
-            value = ipython2python(buffer) # TODO: needs to bind get_ipython() to the user namespace!
+            value00 = ipython2python(buffer.decode()) # TODO: needs to bind get_ipython() to the user namespace!
+            value0 = value00.splitlines()
+            while len(value0):
+                if len(value0[0].strip()):
+                    break
+                value0 = value0[1:]
+            while len(value0):
+                if len(value0[-1].strip()):
+                    break
+                value0 = value0[:-1]
+            value = "\n".join(value0)
             new_buffer = await serialize(value, target_celltype)
         else:
             new_buffer = await serialize(value, target_celltype)

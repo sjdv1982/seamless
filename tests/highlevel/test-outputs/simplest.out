@@ -1,0 +1,76 @@
+None
+<Silk: 2 >
+None
+{'type': 'integer'}
+<Silk: 1 >
+None
+<Silk: None >
+<Silk: None >
+{'type': 'integer'}
+<Silk: 12 >
+Traceback (most recent call last):
+jsonschema.exceptions.ValidationError: 1.2 is not of type 'integer'
+
+Failed validating 'type' in schema:
+    {'type': 'integer'}
+
+On instance:
+    1.2
+
+<Silk: None >
+{'type': 'integer'}
+<Silk: test >
+None
+<Silk: test >
+None
+{'connections': [],
+ 'lib': {},
+ 'nodes': [{'celltype': 'structured',
+            'checksum': {'auth': 'c99446f315c991d5c5e83bd65753dc1fe97448da92b5e48fe028dcbd8cb87783',
+                         'buffer': 'c99446f315c991d5c5e83bd65753dc1fe97448da92b5e48fe028dcbd8cb87783',
+                         'value': 'c99446f315c991d5c5e83bd65753dc1fe97448da92b5e48fe028dcbd8cb87783'},
+            'datatype': 'mixed',
+            'hash_pattern': None,
+            'path': ('a',),
+            'type': 'cell'}],
+ 'params': {'share_namespace': 'ctx'}}
+RUN VALIDATION <Silk: test >
+{'validators': [{'code': 'def validation(self):\n    print("RUN VALIDATION", self)\n    assert self != "test"\n', 'language': 'python'}]}
+
+simplest.py EXCEPTION:
+Traceback (most recent call last):
+jsonschema.exceptions.ValidationError: 
+************************************************************************
+*  Silk validation error
+************************************************************************
+Traceback (most recent call last):
+  File "/seamless/seamless/silk/validation/validators.py", line 230, in validator_validators
+    validator_func(silkobject)
+  File "Silk validator 1", line 3, in validation
+    assert self != "test"
+AssertionError
+************************************************************************
+
+
+Failed validating 'validators' in schema:
+    {'validators': [{'code': 'def validation(self):\n'
+                             '    print("RUN VALIDATION", self)\n'
+                             '    assert self != "test"\n',
+                     'language': 'python'}]}
+
+On instance:
+    'test'
+
+/simplest.py EXCEPTION
+
+{'connections': [],
+ 'lib': {},
+ 'nodes': [{'celltype': 'structured',
+            'checksum': {'auth': 'c99446f315c991d5c5e83bd65753dc1fe97448da92b5e48fe028dcbd8cb87783',
+                         'buffer': 'c99446f315c991d5c5e83bd65753dc1fe97448da92b5e48fe028dcbd8cb87783',
+                         'schema': '5aba891d3a360d296451ef841bf014f109084314ce839b16867588e554ec8afc'},
+            'datatype': 'mixed',
+            'hash_pattern': None,
+            'path': ('a',),
+            'type': 'cell'}],
+ 'params': {'share_namespace': 'ctx'}}

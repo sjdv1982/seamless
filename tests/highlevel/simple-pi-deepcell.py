@@ -1,28 +1,17 @@
-#use with jobslave-noredis.py
-
-import os
-os.environ["SEAMLESS_COMMUNION_ID"] = "simple-pi-remote"
-os.environ["SEAMLESS_COMMUNION_INCOMING"] = "localhost:8602"
-
-import seamless
-seamless.set_ncores(0)
-from seamless import communion_server
-
-communion_server.configure_master(
-    buffer=True,
-    transformation_job=True,
-    transformation_status=True,
-)
-
 import math
 from seamless.highlevel import Context, Cell
 import json
 ctx = Context()
 ctx.pi = math.pi
 ctx.doubleit = lambda a: 2 * a
+ctx.doubleit.hash_pattern = {"*": "#"}
 ctx.doubleit.a = ctx.pi
 ctx.twopi = ctx.doubleit
 ctx.translate()
+
+graph = ctx.get_graph()
+print(json.dumps( graph, indent=2, sort_keys=True))
+json.dump(graph, open("twopi-deepcell.seamless", "w"), indent=2, sort_keys=True)
 
 ctx.compute()
 print(ctx.pi.value)
@@ -44,3 +33,10 @@ ctx.compute()
 print(ctx.pi.value)
 print(ctx.twopi.value)
 
+graph = ctx.get_graph()
+json.dump(graph, open("twopi-deepcell-result.seamless", "w"), indent=2, sort_keys=True)
+archive = ctx.get_zip()
+with open("twopi-deepcell-result.zip", "wb") as f:
+    f.write(archive)
+import os
+os.system("md5sum twopi-deepcell.seamless twopi-deepcell-result.seamless twopi-deepcell-result.zip")    

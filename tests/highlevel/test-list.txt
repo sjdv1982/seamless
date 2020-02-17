@@ -1,0 +1,24 @@
+# In general, run with:
+#   python3 -u ../../scripts/TEST.py > test-outputs/TEST.out 2>&1
+bytes-conversion.py
+simplest.py
+simple-missing.py
+simpler-listpin.py
+simpler-result.py
+simpler.py
+simpler-deepcell.py: As of Seamless 0.2, prints out double decref warnings at the end
+simpler-ipython.py: Run with ipython --no-term-title (not -i). Output is approximate, depends on exact timings.
+simple.py
+simple-deepcell.py
+simple-pi.py: Also creates twopi.seamless, twopi-result.seamless, twopi-result.zip
+simple-pi-deepcell.py: Also creates twopi-deepcell.seamless, twopi-deepcell-result.seamless, twopi-deepcell-result.zip
+simple-pi-redis.py: requires redis to run as a Sink
+simple-pi-remote.py: run with jobslave-noredis 
+simple-pi-remote-redis.py: run with jobslave; makes no assumptions about them Redis contents
+
+
+Non-automatic tests
+=========================
+simpler-share.py: Run with ipython -i, then do "curl localhost:5813/ctx/myresult". 
+                  IPython values printed should be 36 then 39 (Silk); curl should return 39
+                  change ctx.a to get 3*a as the result

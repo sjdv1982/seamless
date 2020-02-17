@@ -15,8 +15,9 @@ ctx.transform.code = ipycode
 ctx.transform.a = ctx.a
 ctx.myresult = ctx.transform
 ctx.compute()
-print(ctx.myresult.value)
+print(ctx.myresult.value) # None
 
 ctx.a = 13
 ctx.compute()
-print(ctx.myresult.value)
+print(ctx.myresult.value) # None
+print(ctx.transform.status)

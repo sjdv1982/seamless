@@ -20,7 +20,7 @@ zip = ctx.get_zip()
 
 # 3: Run test example
 
-#ctx.mount("/tmp/seamless-test", persistent=False) #TODO: persistent=False (does not delete atm)
+###ctx.mount("/tmp/seamless-test", persistent=False)
 ctx.testdata = "a\nb\nc\nd\ne\nf\n"       
 ctx.bashcode = "head -$lines testdata"
 ctx.executor = lambda bashcode, testdata, pins_, lines: None

@@ -12,7 +12,8 @@ redis_sink = seamless.RedisSink()
 redis_cache = seamless.RedisCache()
 
 communion_server.configure_master(
-    transformer_job=True,
+    transformation_job=True,
+    transformation_status=True,
 )
 
 import math

@@ -9,6 +9,7 @@ def triple_it(a):
 
 ctx.transform = triple_it
 ctx.transform.a = ctx.a
+ctx.translate()
 ctx.transform.example.a = 99
 ctx.transform.with_result = True
 ctx.transform.result.example.set(100)

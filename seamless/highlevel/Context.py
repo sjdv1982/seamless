@@ -226,7 +226,7 @@ class Context(Base):
         return traitlet
 
     def mount(self, path=None, mode="rw", authority="cell", persistent=None):
-        raise NotImplementedError  # for now, not implemented; maybe never
+        raise NotImplementedError  # for now, not implemented; TODO: see issue 10
 
         assert not self._dummy
         if self._parent() is not self:
