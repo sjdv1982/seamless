@@ -49,9 +49,10 @@ def assign_constant(ctx, path, value):
     ###    raise NotImplementedError
     #TODO: run it through Silk or something, to check that there aren't lists/dicts/tuples-of-whatever-custom-classes
     # not sure if tuple is natively accepted too
+    old = None
     if path in ctx._children:
         old = ctx._children[path]
-        if isinstance(old, Cell):            
+        if isinstance(old, Cell):
             removed = ctx._remove_connections(path, keep_links=True)
             if removed:
                 ctx._translate()
@@ -63,8 +64,19 @@ def assign_constant(ctx, path, value):
                     return False
         else:
             raise AttributeError(path) #already exists, but not a Cell
-    child = Cell(ctx, path) #inserts itself as child
-    cell = get_new_cell(path)
+    if old is None:
+        child = Cell(ctx, path) #inserts itself as child
+        cell = get_new_cell(path)
+    else:
+        cell = old._get_hcell()
+    if callable(value):
+        code, _, _ = parse_function_code(value)
+        if old is None: 
+            cell.celltype = "python"
+            value = code
+        elif old.celltype in ("python", "ipython"):
+            value = code
+
     cell["TEMP"] = value
     ### json.dumps(cell)
     ctx._graph[0][path] = cell
@@ -372,6 +384,11 @@ def assign(ctx, path, value):
         assign_libmacro(ctx, path, value)
         ctx._translate()
     elif callable(value):
+        if path in ctx._children:
+            old = ctx._children[path]
+            if isinstance(old, Cell):
+                if old.celltype == "code":
+                    return assign_constant(ctx, path, value)
         assign_transformer(ctx, path, value)
     elif isinstance(value, (Proxy, SchemaWrapper)):
         assert value._parent()._parent() is ctx

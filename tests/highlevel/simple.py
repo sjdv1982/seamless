@@ -3,7 +3,7 @@ import json
 
 # 0
 ctx = Context()
-ctx.mount("/tmp/mount-test")
+### ctx.mount("/tmp/mount-test")  # not implemented, maybe never
 
 # 1
 ctx.a = 10

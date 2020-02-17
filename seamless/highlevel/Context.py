@@ -138,8 +138,14 @@ class Context(Base):
         
         async def auto_trans():
             while not self._destroyed:
-                if self.auto_translate:                    
-                    await self.translation()
+                if self._auto_translate:
+                    try:                    
+                        await self.translation()
+                    except:
+                        import traceback
+                        traceback.print_exc()
+                        print("ctx.auto_translate DISABLED due to exception")
+                        self._auto_translate = False
                 await asyncio.sleep(1)
         self._auto_translate_coro = asyncio.ensure_future(auto_trans())
 
@@ -220,6 +226,8 @@ class Context(Base):
         return traitlet
 
     def mount(self, path=None, mode="rw", authority="cell", persistent=None):
+        raise NotImplementedError  # for now, not implemented; maybe never
+
         assert not self._dummy
         if self._parent() is not self:
             raise NotImplementedError
@@ -351,6 +359,7 @@ class Context(Base):
                 get_tasks_func=get_join_tasks
             )
             assert not len(remaining), remaining
+        
         try:
             self._translating = True
             manager = self._manager

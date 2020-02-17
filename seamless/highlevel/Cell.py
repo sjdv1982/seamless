@@ -564,6 +564,7 @@ class Cell(Base):
         celltype = hcell["celltype"]
         if celltype != "code":
             raise AttributeError
+        return hcell.get("language", "python")
 
     @language.setter
     def language(self, value):

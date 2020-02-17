@@ -148,7 +148,8 @@ def fill_checksum(manager, node, temp_path, composite=True):
 def fill_checksums(mgr, nodes, *, path=None):
     """Fills checksums in the nodes from TEMP, if untranslated 
     """
-    from ..core.structured_cell import StructuredCell    
+    from ..core.structured_cell import StructuredCell
+    first_exc = None
     for p in nodes:
         node, old_checksum = None, None
         try:
@@ -194,8 +195,13 @@ def fill_checksums(mgr, nodes, *, path=None):
             else:
                 if old_checksum is not None:
                     node["checksum"].update(old_checksum)
-        except Exception:
-            import traceback
-            traceback.print_exc()
+        except Exception as exc:
+            if first_exc is None:
+                first_exc = exc
+            else:
+                import traceback
+                traceback.print_exc()
             if node is not None and old_checksum is not None:
                 node["checksum"] = old_checksum
+    if first_exc is not None:
+        raise first_exc
