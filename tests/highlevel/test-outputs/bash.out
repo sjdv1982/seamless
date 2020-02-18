@@ -1,0 +1,6 @@
+a 
+b 
+c 
+{'firstdata': 'a \nb \nc \n', 'testdata': 'a \nb \nc \nd \ne \nf \n'}
+[ 0  3  6  9 12 15 18 21 24 27 30 33]
+Status: OK

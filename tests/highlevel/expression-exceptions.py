@@ -39,7 +39,7 @@ print("*" * 80)
 ctx.c = Cell()
 ctx.c.celltype = "float"
 ctx.translate()
-ctx.c._get_cell().set_buffer(b"blah")
+ctx.c._get_cell().set_buffer(b"'blah'\n")
 ctx.compute()
 print("c", ctx.c.exception, ctx.c.buffer)
 

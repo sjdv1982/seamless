@@ -20,6 +20,7 @@ print(ctx.myresult.value)
 ctx2 = Context()
 ctx2.sub = ctx
 ctx2.sub2 = ctx
+ctx2.translate()
 print(ctx2.sub.myresult.value)
 ctx2.compute()
 print(ctx2.sub.myresult.value)
@@ -31,4 +32,7 @@ print(ctx2.sub.myresult.value)
 print(ctx2.sub2.myresult.value)
 
 graph = ctx.get_graph()
-json.dump(graph, open("context2-graph.json", "w"), sort_keys=True, indent=2)
+j = json.dumps(graph, sort_keys=True, indent=2)
+from seamless import get_hash
+print(get_hash(j).hex())
+

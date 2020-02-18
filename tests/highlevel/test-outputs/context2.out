@@ -1,0 +1,9 @@
+3 * a + b, a = 12, b = 6
+<Silk: 42 >
+<Silk: None >
+<Silk: 42 >
+3 * a + b, a = 3, b = 6
+3 * a + b, a = 5, b = 6
+<Silk: 15 >
+<Silk: 21 >
+9e21beca3adc21dd9921e5d62b541b9c5f0e0ed90df876a3afe46df3b8f1b291

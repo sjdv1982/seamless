@@ -1,0 +1,13 @@
+{'path': ('a',), 'type': 'cell', 'celltype': 'structured', 'datatype': 'mixed', 'hash_pattern': {'*': '#'}, 'UNTRANSLATED': True, 'TEMP': {'test': 1, 'test2': 2}}
+{'test': 'bc4bb29ce739b5d97007946aa4fdb987012c647b506732f11653c5059631cd3d', 'test2': '191fb5fc4a9bf2ded9a09a0a2c4eb3eb90f15ee96deb1eec1a970df0a79d09ba'}
+<Silk: {'test': 1, 'test2': 2} >
+{'*': '#'}
+{'test': 'bc4bb29ce739b5d97007946aa4fdb987012c647b506732f11653c5059631cd3d', 'test2': '191fb5fc4a9bf2ded9a09a0a2c4eb3eb90f15ee96deb1eec1a970df0a79d09ba'}
+<Silk: {'test': 1, 'test2': 2} >
+{'test': 1, 'test2': 2}
+<Silk: 1 >
+
+{'test3': '6132e913fd0ae2c9aeacc8d99a02880df196fbab2ef62dbb62a6a4ae6d3f5fdd', 'test4': '3147dbedb6618cf418dc2a4e6e46b7f598ce62d3e346f8043e507b6626b9c9c6'}
+<Silk: {'test3': 10, 'test4': 11} >
+{'test3': 10, 'test4': 11}
+<Silk: 11 >

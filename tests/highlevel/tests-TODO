@@ -1,12 +1,3 @@
-bash.py
-color-graph-jobmaster.py
-color-graph.py
-color-graph-service.py
-context2.py
-context.py
-deepcell-simple.py
-docker_.py
-expression-exceptions.py
 filesystemlike.py
 highlink-cpp.py
 highlink-schema.py
@@ -31,7 +22,4 @@ traitlet.py
 transformer-compiled-module.py
 transformer-compiled.py
 transformer-redefine.py
-twopi-graph.py
-twopi-graph-redis.py
-twopi-graph-service-submit.py
 with_result.py
