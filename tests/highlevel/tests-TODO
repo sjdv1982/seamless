@@ -1,11 +1,3 @@
-filesystemlike.py
-highlink-cpp.py
-highlink-schema.py
-jobslave.py
-library2.py
-library.py
-load-graph.py
-load-graph-static.py
 mime.py
 mount.py
 python-debugging.py

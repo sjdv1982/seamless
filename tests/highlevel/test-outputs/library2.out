@@ -1,0 +1,17 @@
+<Silk: 15 >
+('subtract',)
+{'const': 42, 'inp1': ('a',), 'inp2': ('b',), 'outp': ('c',)}
+42
+<seamless.highlevel.library.libmacro.LibMacroContextWrapper object at 0x7efed190a160>
+['minus', 'result', 'x', 'y']
+Seamless Cell: subtract1.ctx.result
+<Silk: 80 >
+Status: OK
+<Silk: 80 >
+
+<Silk: 320 >
+<Silk: 320 >
+<Silk: -799 >
+
+<Silk: -799 >
+<Silk: 799 >

@@ -1,0 +1,21 @@
+{'type': 'integer'}
+**************************************************
+Traceback (most recent call last):
+jsonschema.exceptions.ValidationError: 'test' is not of type 'integer'
+
+Failed validating 'type' in schema:
+    {'type': 'integer'}
+
+On instance:
+    'test'
+
+**************************************************
+{}
+{}
+value: <Silk: None >
+data: None
+buffered: test
+{'type': 'number'}
+{'type': 'string'}
+{'type': 'string'}
+value: <Silk: test >

@@ -60,6 +60,7 @@ print(ctx.subtract1.ctx.result)
 print(ctx.subtract1.ctx.result.value)
 print(ctx.subtract1.ctx.minus.status)
 print(ctx.c.value)
+print()
 
 ctx.b = -120
 ctx.compute()
@@ -70,6 +71,7 @@ print(ctx.c.value)
 ctx.subtract1.inp2 = ctx.bb
 ctx.compute()
 print(ctx.c.value)
+print()
 
 def constructor2(ctx, libctx, inp1, inp2, outp, const):
     graph = libctx.get_graph()

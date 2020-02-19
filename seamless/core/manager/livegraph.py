@@ -158,12 +158,16 @@ class LiveGraph:
             )
         return True
 
-    def highlink(self, current_macro, source, target):
+    def highlink(self, current_macro, source, target, 
+        from_upon_connection_task=None
+    ):
         def verify_auth(cell):
             if cell._structured_cell is None:
                 if len(self.schemacells[cell]):
                     return
-                if self.has_authority(cell):
+                if self._has_authority(
+                    cell, from_upon_connection_task=from_upon_connection_task
+                ):
                     return
                 msg = "Highlinked cell %s must have authority"
                 raise Exception(msg % cell)

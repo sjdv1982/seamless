@@ -2,7 +2,7 @@ import json
 import seamless
 from seamless.highlevel import load_graph
 
-#redis_cache = seamless.RedisCache() # Only needed with zip
+#redis_cache = seamless.RedisCache() # Only needed without zip
 
 graph = json.load(open("twopi-result.seamless"))
 zipfile = "twopi-result.zip"

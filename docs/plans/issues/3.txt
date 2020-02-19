@@ -11,6 +11,7 @@ This leads to over-eager cancellation. In particular, it is not possible to crea
 where structured_cell.a depends on structured_cell.b.
 
 tests/lowlevel/structured_cell/preliminary.py is not working for that reason.
+Same for tests/highlevel/filesystemlike.py 
 A more simple pseudo-cycle test should be implemented first
 
 Another over-eager cancellation is that of editpins towards their connected cells

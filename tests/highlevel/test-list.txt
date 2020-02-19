@@ -1,7 +1,8 @@
 # In general, run with:
-#   python3 -u ../../scripts/TEST.py > test-outputs/TEST.out 2>&1
+#   seamless-devel python3 -u ../../scripts/TEST.py > test-outputs/TEST.out 2>&1
 bytes-conversion.py
 deepcell-simple.py: As of Seamless 0.2, prints out double decref warnings at the end
+filesystemlike.py: As of Seamless 0.2, this test FAILS (issue 3)
 context.py
 context2.py
 simplest.py
@@ -14,6 +15,7 @@ simpler-ipython.py: Run with ipython --no-term-title (not -i). Output is approxi
 bash.py
 docker_.py
 expression-exceptions.py
+highlink-schema.py
 simple.py
 simple-deepcell.py
 simple-pi.py: Also creates twopi.seamless, twopi-result.seamless, twopi-result.zip
@@ -25,9 +27,15 @@ twopi-graph-redis.sh: run with redis; delete job results (e.g. redis-cli flushal
                       run as i=twopi-graph-redis; seamless-devel ./$i.sh > test-outputs/$i.out 2>&1
 twopi-graph-jobmaster.sh: same as above; run as i=twopi-graph-jobmaster
 twopi-graph-service.sh: same as above; run as i=twopi-graph-service
+load-graph.py
+load-graph-static.py
+library.py
+library2.py
 
 Non-automatic tests
 =========================
 simpler-share.py: Run with ipython -i, then do "curl localhost:5813/ctx/myresult". 
                   IPython values printed should be 36 then 39 (Silk); curl should return 39
                   change ctx.a to get 3*a as the result
+highlink-cpp.py:  Run with ipython -i, then continue in interactive mode, 
+                  changing the source code and the schema until it works.
