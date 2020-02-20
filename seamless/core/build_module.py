@@ -83,7 +83,7 @@ def build_compiled_module(full_module_name, checksum, module_definition):
     mchecksum = b"python-ext-" + checksum
     module_code = redis_caches.get_compile_result(mchecksum)
     source_files = {}
-    debug = False
+    debug = (module_definition.get("target") == "debug")
     if module_code is None:
         build_compiled_module_remote(
           full_module_name, checksum, module_definition
@@ -107,10 +107,17 @@ def build_compiled_module(full_module_name, checksum, module_definition):
         if len(remaining_objects):
             build_dir = os.path.join(SEAMLESS_EXTENSION_DIR, full_module_name)
             success, new_binary_objects, source_files, stderr = compile(
-              remaining_objects, build_dir, compiler_verbose=COMPILE_VERBOSE
+              remaining_objects, build_dir, 
+              compiler_verbose=module_definition.get(
+                "compiler_verbose", COMPILE_VERBOSE
+              ),
+              build_dir_may_exist=debug
             )
             if not success:
                 raise BuildModuleError(stderr)
+            else:
+                if len(stderr):
+                    print(stderr)  # TODO: log this, but it is not obvious where
             for objectname, binary_code in new_binary_objects.items():                
                 binary_objects[objectname] = binary_code
                 object_checksum = object_checksums[objectname]
@@ -119,17 +126,18 @@ def build_compiled_module(full_module_name, checksum, module_definition):
         target = module_definition["target"]
         header = module_definition["public_header"]
         assert header["language"] == "c", header["language"]
-        c_header = header["code"]
+        c_header = header["code"]        
         module_code = build_extension_cffi(
           full_module_name,
           binary_objects, 
           target, 
           c_header, 
           link_options, 
-          compiler_verbose=CFFI_VERBOSE
-        )
-        redis_sinks.set_compile_result(mchecksum, module_code)
-        debug = (module_definition.get("target") == "debug")
+          compiler_verbose=module_definition.get(
+            "compiler_verbose", CFFI_VERBOSE
+          )
+        )        
+        redis_sinks.set_compile_result(mchecksum, module_code)        
     mod = import_extension_module(full_module_name, module_code, debug, source_files)
     return mod
 

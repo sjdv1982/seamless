@@ -152,8 +152,8 @@ class OutputWidget:
     def __repr__(self):
         return repr(self.output_instance)
 
-    def __getattr__(self, attr):
+    def __getattribute__(self, attr):
         if attr.startswith("_repr_") or attr.startswith("_ipython_"):
             return getattr(self.output_instance, attr)
-        raise AttributeError(attr)
+        return super().__getattribute__(attr)
             

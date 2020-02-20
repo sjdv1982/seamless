@@ -29,9 +29,10 @@ class RedisSink:
         key = "tfr:" +  tf_checksum.hex()
         r.set(key, checksum)
 
-    def sem2syn(self, sem_checksum, syn_checksums):        
+    def sem2syn(self, semkey, syn_checksums):        
         r = self.connection
-        key = "s2s:" +  sem_checksum.hex()
+        sem_checksum, celltype, subcelltype = semkey
+        key = "s2s:{},{},{}".format(sem_checksum.hex(), celltype, subcelltype)
         for syn_checksum in syn_checksums:
             r.sadd(key, syn_checksum)
 
@@ -77,9 +78,10 @@ class RedisCache:
         key = "tfr:" + checksum.hex()
         return r.get(key)
 
-    def sem2syn(self, sem_checksum):
+    def sem2syn(self, semkey):
         r = self.connection
-        key = "s2s:" +  sem_checksum.hex()
+        sem_checksum, celltype, subcelltype = semkey
+        key = "s2s:{},{},{}".format(sem_checksum.hex(), celltype, subcelltype)
         members = r.smembers(key)
         return members
 
@@ -116,14 +118,15 @@ class RedisSinks:
     def size(self):
         return len(_redis_sinks)
 
-    def sem2syn(self, sem_checksum, syn_checksums):
+    def sem2syn(self, semkey, syn_checksums):
         assert isinstance(syn_checksums, list)
+        sem_checksum, celltype, subcelltype = semkey
         if sem_checksum is None or not len(syn_checksums):
             return
         members = set()
         for redis_sink in _redis_sinks:
             redis_sink.sem2syn(
-                sem_checksum, syn_checksums
+                semkey, syn_checksums
             )
     def set_buffer(self, checksum, buffer):   
         if checksum is None or buffer is None:
@@ -157,12 +160,13 @@ class RedisCaches:
     def size(self):
         return len(_redis_caches)
 
-    def sem2syn(self, sem_checksum):
+    def sem2syn(self, semkey):
+        sem_checksum, celltype, subcelltype = semkey
         if sem_checksum is None:
             return     
         members = set()
         for redis_cache in _redis_caches:
-            curr_members = redis_cache.sem2syn(sem_checksum)            
+            curr_members = redis_cache.sem2syn(semkey)            
             if curr_members is not None:
                 members.update(curr_members)
         if len(members):

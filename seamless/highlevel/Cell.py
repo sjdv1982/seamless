@@ -185,16 +185,11 @@ class Cell(Base):
         else:
             raise TypeError(item)
 
-    def __getattr__(self, attr):
+    def __getattribute__(self, attr):
         if attr.startswith("_"):
-            raise AttributeError(attr)
-        if attr in (
-            "value", "example", "status", 
-            "authoritative", "checksum", "handle", "data", 
-            "celltype", "mimetype", "datatype",
-            "hash_pattern", "language"
-        ):
-            raise AttributeError(attr) #property has failed
+            return super().__getattribute__(attr)
+        if attr in type(self).__dict__ or attr in self.__dict__:
+            return super().__getattribute__(attr)
         if attr == "schema":
             hcell = self._get_hcell()
             if hcell["celltype"] == "structured":

@@ -2,7 +2,7 @@ import sys
 import seamless
 cache = seamless.RedisCache()
 checksum = bytes.fromhex(sys.argv[1])
-key = b"tfr:" + checksum
+key = "tfr:" + checksum.hex()
 redis = cache.connection
 if redis.exists(key):
     redis.delete(key)

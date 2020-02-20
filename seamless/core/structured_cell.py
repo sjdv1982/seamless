@@ -110,7 +110,8 @@ class StructuredCell(SeamlessBase):
 
     @property
     def status(self):
-        ### TODO
+        if self._exception is not None:
+            return "Status: exception"
         return self._data.status
 
     def share(self, path, readonly=True, mimetype=None):

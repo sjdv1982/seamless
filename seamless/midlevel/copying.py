@@ -77,6 +77,7 @@ def add_zip(manager, zipfile):
 
 def fill_checksum(manager, node, temp_path, composite=True):
     from ..core.utils import strip_source
+    from ..core.cell import celltypes
     checksum = None
     subcelltype = None
     if node["type"] == "cell":
@@ -104,6 +105,8 @@ def fill_checksum(manager, node, temp_path, composite=True):
             datatype = "mixed"
         else:
             datatype = node["datatype"]
+            if datatype not in celltypes:
+                datatype = "text"
     else:
         datatype = celltype
         if datatype == "code":

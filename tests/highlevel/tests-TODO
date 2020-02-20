@@ -1,17 +1,10 @@
-mime.py
-mount.py
 python-debugging.py
-reassign-transformer.py
-schema.py
 scratch.py
 share-pdb.py
 subcell.py
 subcontext.py
 subsubcell.py
 test-html.py
-traitlet2.py
-traitlet.py
 transformer-compiled-module.py
-transformer-compiled.py
 transformer-redefine.py
 with_result.py

@@ -637,7 +637,7 @@ class Silk(SilkBase):
             methods = schema["methods"] # to get back-end working properly
         methods[attribute] = m
 
-    def add_validator(self, func, attr=None, *, name=None):
+    def add_validator(self, func, name=None, *, attr=None):
         assert callable(func)
         code = inspect.getsource(func)
 

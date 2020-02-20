@@ -1,0 +1,11 @@
+cell:
+multipart/seamless-mixed
+text/plain
+text/html
+text/xhtml
+
+transformer:
+text/x-python
+
+C++ transformer:
+text/x-c++src

@@ -65,12 +65,13 @@ ctx.tf.example.arr = ctx.arr.value
 print("\nSTEP 2\n")
 ctx.compute()
 print(ctx.tf.status)
+print(ctx.tf.exception)
 ctx.tf.result.example.set(0)
 
 print("\nSTEP 3\n")
 ctx.compute()
 print(ctx.tf.status)
-
+print(ctx.tf.exception)
 print(ctx.header.value)
 
 ### Continue in interactive mode...

@@ -98,9 +98,16 @@ class Transformer(Base):
         return self._get_htf()["debug"]
     @debug.setter
     def debug(self, value):
+        assert value in (True, False)
         from ..core.transformer import Transformer as CoreTransformer
         htf = self._get_htf()
         htf["debug"] = value
+        if htf.get("compiled", False):
+            old_target = self.main_module.target
+            if value and old_target != "debug":
+                self.main_module.target = "debug"
+            elif (not value) and old_target == "debug":
+                self.main_module.target = "release"
         self._parent()._translate()
 
     @property
@@ -168,7 +175,6 @@ class Transformer(Base):
         has_translated = False
         if compiled:
             htf["with_result"] = True
-            self.main_module.compiler_verbose = True
         elif lang == "docker":
             if old_language != "docker":
                 im = False
@@ -417,54 +423,86 @@ class Transformer(Base):
         if htf.get("UNTRANSLATED"):
             return None
         tf = self._get_tf(force=True).tf
-        if htf["compiled"]:
-            exc = ""
-            for k in ("gen_header", "integrator", "translator"):
-                curr_exc = getattr(tf, k).exception
-                if curr_exc is not None:
-                    if isinstance(curr_exc, dict):                        
-                        curr_exc = pprint.pformat(curr_exc, width=100)
-                    exc += "*** " + k + " ***\n"
-                    exc += str(curr_exc)
-                    exc += "*** /" + k + " ***\n"
-            if not len(exc):
-                return None
-            return exc
+        if htf["compiled"]:            
+            attrs = (
+                htf["INPUT"], "code", 
+                "gen_header", "integrator", "translator", 
+                htf["RESULT"]
+            )
         else:
-            code_cell = self._get_tf(force=True).code
-            curr_exc = code_cell.exception
+            attrs = (
+                htf["INPUT"], "code", 
+                "tf", 
+                htf["RESULT"]
+            )
+
+        exc = ""
+        for k in attrs:
+            if k == "code":
+                code_cell = self._get_tf(force=True).code
+                curr_exc = code_cell.exception
+            elif k == "tf":
+                if len(exc):
+                    return exc
+                curr_exc = tf.exception
+                if curr_exc is not None:
+                    return curr_exc
+                else:
+                    continue
+            elif k in (htf["INPUT"], htf["RESULT"]):
+                if len(exc):
+                    return exc
+                curr_exc = getattr(self, k).exception
+            else:
+                curr_exc = getattr(tf, k).exception
             if curr_exc is not None:
-                k = "code"
-                exc = ""
+                if isinstance(curr_exc, dict):                        
+                    curr_exc = pprint.pformat(curr_exc, width=100)
                 exc += "*** " + k + " ***\n"
                 exc += str(curr_exc)
                 exc += "*** /" + k + " ***\n"
-                return exc
-            return tf.exception
+        if not len(exc):
+            return None
+        return exc
 
     @property
     def status(self):
         htf = self._get_htf()
         if htf.get("UNTRANSLATED"):
             return None
-        if htf["compiled"]:
-            stat = self._get_tf(force=True).tf.gen_header.status
-            if not stat.endswith("OK"):
-                return "gen_header: " + stat
-            stat = self._get_tf(force=True).tf.integrator.status
-            if not stat.endswith("OK"):
-                return "integrator: " + stat
-            stat = self._get_tf(force=True).tf.translator.status
-            if not stat.endswith("OK"):
-                return "translator: " + stat
-            return stat    
+        tf = self._get_tf(force=True).tf
+        if htf["compiled"]:            
+            attrs = (
+                htf["INPUT"], "code", 
+                "gen_header", "integrator", "translator", 
+                htf["RESULT"]
+            )
         else:
-            tf = self._get_tf(force=True).tf
-        return tf.status
+            attrs = (
+                htf["INPUT"], "code", 
+                "tf", 
+                htf["RESULT"]
+            )
+        for k in attrs:
+            if k in (htf["INPUT"], htf["RESULT"]):
+                cell = getattr(self, k)
+                status = cell.status
+            elif k == "code":
+                status = self._get_tf(force=True).code.status
+            elif k == "tf":
+                status = self._get_tf(force=True).tf.status
+            else:
+                tf = self._get_tf(force=True).tf
+                status = getattr(tf, k).status
+            if not status.endswith("OK"):
+                return "*" + k + "*: " + status
+        return "Status: OK"
 
-    def __getattr__(self, attr):
+    def __getattribute__(self, attr):
         if attr.startswith("_"):
-            raise AttributeError(attr)
+            return super().__getattribute__(attr)
+        if attr in type(self).__dict__ or attr in self.__dict__:
+            return super().__getattribute__(attr)
         htf = self._get_htf()
         dirs = None
         pull_source = functools.partial(self._pull_source, attr)
@@ -483,7 +521,7 @@ class Transformer(Base):
             dirs = [
               "value", "buffered", "data", "checksum",
               "schema", "example", "status", "exception",
-              "handle"
+              "add_validator", "handle"
             ] + list(htf["pins"].keys())
             pull_source = None
             proxycls = Proxy
@@ -491,7 +529,8 @@ class Transformer(Base):
             getter = self._resultgetter
             dirs = [
               "value", "buffered", "data", "checksum",
-              "schema", "example", "exception"
+              "schema", "example", "exception", 
+              "add_validator"
             ]
             pull_source = None
             proxycls = Proxy
@@ -582,6 +621,9 @@ class Transformer(Base):
             return inputcell._data.status # TODO; take into account validation, inchannel status
         elif attr == "exception":
             return inputcell.exception
+        elif attr == "add_validator":
+            handle = inputcell.handle_no_inference
+            return handle.add_validator
         raise AttributeError(attr)
 
     def _resultgetter(self, attr):
@@ -608,6 +650,10 @@ class Transformer(Base):
             return self._result_example()
         elif attr == "exception":
             return resultcell.exception
+        elif attr == "add_validator":
+            result_ctx = resultcell._data._context()
+            handle = result_ctx.example.handle
+            return handle.add_validator
         return getattr(resultcell, attr)
 
     def _valuegetter(self, attr, attr2):
@@ -807,6 +853,6 @@ class Transformer(Base):
         d = super().__dir__()
         std = ["code", "pins", htf["RESULT"] , htf["INPUT"], "exception", "status"]
         if htf["compiled"]:
-            std.append("main_module", "header")
+            std += list(("main_module", "header"))
         pins = list(htf["pins"].keys())
         return sorted(d + pins + std)

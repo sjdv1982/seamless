@@ -116,8 +116,8 @@ class TransformationCache:
 
         self.remote_transformers = {}
 
-        self.syntactic_to_semantic_checksums = {} #checksum-to-checksum
-        self.semantic_to_syntactic_checksums = {} #checksum-to-list-of-checksums
+        self.syntactic_to_semantic_checksums = {} #(checksum,celltype,subcelltype)-to-checksum
+        self.semantic_to_syntactic_checksums = {} #(checksum,celltype,subcelltype)-to-list-of-checksums
         
     @staticmethod
     def syntactic_to_semantic(
@@ -156,7 +156,8 @@ class TransformationCache:
             if checksum is None:
                 sem_checksum = None
             else:
-                sem_checksum = self.syntactic_to_semantic_checksums.get(checksum)                
+                key = (checksum, celltype, subcelltype)
+                sem_checksum = self.syntactic_to_semantic_checksums.get(key) 
                 if sem_checksum is None:
                     codename = str(pin)
                     if not syntactic_is_semantic(celltype, subcelltype):
@@ -164,16 +165,17 @@ class TransformationCache:
                             checksum, celltype, subcelltype, 
                             buffer_cache, codename
                         )
-                        self.syntactic_to_semantic_checksums[checksum] = sem_checksum
-                        if sem_checksum in self.semantic_to_syntactic_checksums:
-                            semsyn = self.semantic_to_syntactic_checksums[sem_checksum]
+                        self.syntactic_to_semantic_checksums[key] = sem_checksum
+                        semkey = (sem_checksum, celltype, subcelltype)
+                        if semkey in self.semantic_to_syntactic_checksums:
+                            semsyn = self.semantic_to_syntactic_checksums[semkey]
                         else:
-                            semsyn = redis_caches.sem2syn(sem_checksum)
+                            semsyn = redis_caches.sem2syn(semkey)
                             if semsyn is None:
                                 semsyn = []
-                            self.semantic_to_syntactic_checksums[sem_checksum] = semsyn
+                            self.semantic_to_syntactic_checksums[semkey] = semsyn
                         semsyn.append(checksum)
-                        redis_sinks.sem2syn(sem_checksum, semsyn)
+                        redis_sinks.sem2syn(semkey, semsyn)
                     else:
                         sem_checksum = checksum
             transformation[pinname] = celltype, subcelltype, sem_checksum
@@ -314,11 +316,12 @@ class TransformationCache:
             celltype, subcelltype, sem_checksum = v
             if syntactic_is_semantic(celltype, subcelltype):
                 continue
+            semkey = (sem_checksum, celltype, subcelltype)
             try:
-                checksums = self.semantic_to_syntactic_checksums[sem_checksum]
+                checksums = self.semantic_to_syntactic_checksums[semkey]
             except KeyError:
-                raise KeyError(sem_checksum.hex()) from None
-            semantic_cache[sem_checksum] = checksums
+                raise KeyError(sem_checksum.hex(), celltype, subcelltype) from None
+            semantic_cache[semkey] = checksums
         job = TransformationJob(
             tf_checksum, codename,
             buffer_cache, transformation, semantic_cache,
@@ -521,18 +524,19 @@ class TransformationCache:
             return semsyn
         if syntactic_is_semantic(celltype, subcelltype):
             return ret([sem_checksum])
-        semsyn = self.semantic_to_syntactic_checksums.get(sem_checksum)
+        semkey = (sem_checksum, celltype, subcelltype)
+        semsyn = self.semantic_to_syntactic_checksums.get(semkey)
         if semsyn is not None:
-            return ret(semsyn)
-        semsyn = redis_caches.sem2syn(sem_checksum)
+            return ret(semsyn)        
+        semsyn = redis_caches.sem2syn(semkey)
         if semsyn is not None:
-            self.semantic_to_syntactic_checksums[sem_checksum] = semsyn
+            self.semantic_to_syntactic_checksums[semkey] = semsyn
             return ret(semsyn)
         remote = communion_client_manager.remote_semantic_to_syntactic
         semsyn = await remote(sem_checksum, celltype, subcelltype, peer_id)
         if semsyn is not None:
-            self.semantic_to_syntactic_checksums[sem_checksum] = semsyn
-            redis_sinks.sem2syn(sem_checksum, semsyn)
+            self.semantic_to_syntactic_checksums[semkey] = semsyn
+            redis_sinks.sem2syn(semkey, semsyn)
             return ret(semsyn)
         return None
 

@@ -334,14 +334,19 @@ class TransformationJob:
                 checksum = sem_checksum
             else:
                 # For now, assume that the first syntactic checksum gives a value
-                checksum = self.semantic_cache[sem_checksum][0]
+                semkey = sem_checksum, celltype, subcelltype
+                checksum = self.semantic_cache[semkey][0]
             if checksum is None:
                 values[pinname] = None
                 continue
             # fingertipping must have happened before
             buffer = get_buffer(checksum, buffer_cache)            
             assert buffer is not None
-            value = await deserialize(buffer, checksum, celltype, False)
+            try:
+                value = await deserialize(buffer, checksum, celltype, False)
+            except Exception as exc:
+                e = traceback.format_exc()
+                raise Exception(pinname, e) from None
             if value is None:
                 raise CacheMissError(pinname, self.codename)
             if pinname == "code":

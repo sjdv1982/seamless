@@ -64,7 +64,7 @@ s.pop(-1)
 print("VALUE: ", s.data)
 def v(self): 
     assert self > 0
-s.add_validator(v, 0)   #  add a validator to v[0] => to all items
+s.add_validator(v, attr=0)   #  add a validator to v[0] => to all items
 s.append(10)
 s.validate()
 s.append(0)

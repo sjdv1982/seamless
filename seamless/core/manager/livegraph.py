@@ -158,16 +158,12 @@ class LiveGraph:
             )
         return True
 
-    def highlink(self, current_macro, source, target, 
-        from_upon_connection_task=None
-    ):
+    def highlink(self, current_macro, source, target):
         def verify_auth(cell):
             if cell._structured_cell is None:
                 if len(self.schemacells[cell]):
                     return
-                if self._has_authority(
-                    cell, from_upon_connection_task=from_upon_connection_task
-                ):
+                if self.has_authority(cell):
                     return
                 msg = "Highlinked cell %s must have authority"
                 raise Exception(msg % cell)
@@ -542,12 +538,15 @@ class LiveGraph:
     def _has_authority(
         self, cell_or_macropath, path=None, *, from_upon_connection_task=None
     ):
+        from .tasks.upon_connection import UponHighLinkTask
         try:
             root = cell_or_macropath._root()
         except Exception:
             root = None
         for task in self.manager().taskmanager._get_upon_connection_tasks(root):
             if task is from_upon_connection_task:
+                continue
+            if isinstance(task, UponHighLinkTask):
                 continue
             if task.target is cell_or_macropath:
                 return False

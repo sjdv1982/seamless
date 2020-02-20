@@ -139,6 +139,14 @@ class Context(Base):
         async def auto_trans():
             while not self._destroyed:
                 if self._auto_translate:
+                    await asyncio.sleep(10)
+                    print("""ctx.auto_translate is currently unstable and has been disabled
+You must run regularly "ctx.translate()" (IPython) 
+or "await ctx.translation()" (Jupyter) after modifying the graph. 
+Translation is not required after modifying only cell values""")
+                    self._auto_translate = False
+                    break
+
                     try:                    
                         await self.translation()
                     except:
@@ -173,11 +181,11 @@ class Context(Base):
     def _get_subcontext(self, path):
         child = self._children[path]
 
-    def __getattr__(self, attr):
+    def __getattribute__(self, attr):
         if attr.startswith("_"):
-            raise AttributeError(attr)
-        if attr in type(self).__dict__:
-            raise AttributeError(attr)
+            return super().__getattribute__(attr)
+        if attr in type(self).__dict__ or attr in self.__dict__:
+            return super().__getattribute__(attr)
         path = (attr,)
         return self._get_path(path)
 
@@ -719,11 +727,11 @@ class SubContext(Base):
     def __init__(self, parent, path):
         super().__init__(parent, path)
 
-    def __getattr__(self, attr):
+    def __getattribute__(self, attr):
         if attr.startswith("_"):
-            raise AttributeError(attr)
-        if attr in type(self).__dict__:
-            raise AttributeError(attr)
+            return super().__getattribute__(attr)
+        if attr in type(self).__dict__ or attr in self.__dict__:
+            return super().__getattribute__(attr)
         parent = self._get_top_parent()
         path = self._path + (attr,)
         return parent._get_path(path)

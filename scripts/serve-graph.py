@@ -113,13 +113,17 @@ if shareserver_address is not None:
     print("Setting shareserver address to: {}".format(shareserver_address))
     
 
-from seamless.highlevel import load_graph
+from seamless.highlevel import load_graph, Context
 graph = json.load(args.graph)
-ctx = load_graph(graph, mounts=args.mounts, shares=args.shares)
-if args.zipfile is not None:
-    ctx.add_zip(args.zipfile)
-for zipf in args.add_zip:
-    ctx.add_zip(zipf)
+if args.zipfile is None and not args.add_zip:
+    ctx = load_graph(graph, mounts=args.mounts, shares=args.shares)
+else:
+    ctx = Context()
+    if args.zipfile is not None:
+        ctx.add_zip(args.zipfile)
+    for zipf in args.add_zip:
+        ctx.add_zip(zipf)
+    ctx.set_graph(graph, mounts=args.mounts, shares=args.shares)
 if args.redis:
     params = {}    
     redis_host = env.get("REDIS_HOST")

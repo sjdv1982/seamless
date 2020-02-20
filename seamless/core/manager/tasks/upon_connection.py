@@ -282,8 +282,7 @@ class UponHighLinkTask(UponConnectionTask):
 
         livegraph = self.manager().livegraph
         livegraph.highlink(
-            self.current_macro, source, target,
-            from_upon_connection_task=self
+            self.current_macro, source, target
         )
    
 

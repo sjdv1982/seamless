@@ -26,6 +26,7 @@ def validate(self):
     assert self.x > 0
 ctx.a.handle.add_validator(validate)
 ctx.a.x = -1
+ctx.translate()
 print("OK")
 print(ctx.a._get_cell().value)
 print(ctx.a._get_cell().handle)

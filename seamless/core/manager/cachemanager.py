@@ -139,9 +139,10 @@ class CacheManager:
             for pinname in transformation:
                 if pinname.startswith("__"):
                     continue
-                sem_checksum = transformation[pinname][2]
+                celltype, subcelltype, sem_checksum = transformation[pinname]                
                 sem2syn = tf_cache.semantic_to_syntactic_checksums
-                checksum2 = sem2syn.get(sem_checksum, [sem_checksum])[0]
+                semkey = (sem_checksum, celltype, subcelltype)
+                checksum2 = sem2syn.get(semkey, [sem_checksum])[0]
                 coros.append(self.fingertip(checksum2))
             await asyncio.gather(*coros)
             job = tf_cache.run_job(transformation, tf_checksum)

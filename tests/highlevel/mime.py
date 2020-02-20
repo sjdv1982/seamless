@@ -16,13 +16,15 @@ print("transformer:")
 print(ctx.tf.code.mimetype)
 print()
 
+"""
 ctx.rc = Reactor()
 print("reactor:")
 print(ctx.rc.code_start.mimetype)
 print(ctx.rc.code_update.mimetype)
 print(ctx.rc.code_stop.mimetype)
 print()
+"""
 
-ctx.tf._get_htf()["language"] = "cpp" #hack
+ctx.tf.language = "cpp"
 print("C++ transformer:")
 print(ctx.tf.code.mimetype)

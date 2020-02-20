@@ -3,6 +3,8 @@ from copy import deepcopy
 from .CompiledObjectWrapper import CompiledObjectWrapper
 Transformer = None
 
+module_attrs = "compiler_verbose", "target", "link_options"
+
 class CompiledObjectDict:
     def __init__(self, worker):
         global Transformer
@@ -30,18 +32,19 @@ class CompiledObjectDict:
                             return CompiledObjectWrapper(self._worker(), attr)
                     return deepcopy(main_module.handle.data)
             return None
-        elif attr == "compiler_verbose":
+        elif attr in module_attrs:
             htf = worker._get_htf()
             main_module = htf.get("main_module")
             if main_module is None:
                 return None
-            return main_module.get("compiler_verbose")
+            # TODO: in case of link_options, return a wrapper that triggers ctx.translate() upon modification
+            return main_module.get(attr)            
 
         return CompiledObjectWrapper(self._worker(), attr)
 
     def __setattr__(self, attr, value):
         worker = self._worker()
-        if attr == "compiler_verbose":
+        if attr in module_attrs:
             assert isinstance(worker, Transformer)
             if worker._get_tf() is None:
                 htf = worker._get_htf()
@@ -69,13 +72,15 @@ class CompiledObjectDict:
             temp = worker._get_htf().get("TEMP", {})
             if temp is not None and "_main_module" not in temp:
                 return []
-            return list(temp["_main_module"].keys()) + ["compiler_verbose"]
+            return list(temp["_main_module"].keys()) + list(module_attrs)
         else:
             tf = worker._get_tf()
             main_module = getattr(tf, "main_module")
-            main_module_data = main_module.data.value
+            main_module_data = main_module.data
             if "objects" in main_module_data:
-                return list(main_module_data["objects"].keys()) + ["compiler_verbose"]
+                return list(main_module_data["objects"].keys()) + list(module_attrs)
+            else:
+                return module_attrs
 
     def __delattr__(self, attr):
         raise NotImplementedError

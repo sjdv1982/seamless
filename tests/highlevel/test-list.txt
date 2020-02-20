@@ -1,6 +1,8 @@
 # In general, run with:
 #   seamless-devel python3 -u ../../scripts/TEST.py > test-outputs/TEST.out 2>&1
 bytes-conversion.py
+mime.py
+schema.py
 deepcell-simple.py: As of Seamless 0.2, prints out double decref warnings at the end
 filesystemlike.py: As of Seamless 0.2, this test FAILS (issue 3)
 context.py
@@ -16,6 +18,8 @@ bash.py
 docker_.py
 expression-exceptions.py
 highlink-schema.py
+traitlet.py
+traitlet2.py: The exact output is dependent on random memory locations
 simple.py
 simple-deepcell.py
 simple-pi.py: Also creates twopi.seamless, twopi-result.seamless, twopi-result.zip
@@ -23,6 +27,8 @@ simple-pi-deepcell.py: Also creates twopi-deepcell.seamless, twopi-deepcell-resu
 simple-pi-redis.py: requires redis to run as a Sink
 simple-pi-remote.py: run with jobslave-noredis 
 simple-pi-remote-redis.py: run with jobslave; makes no assumptions about them Redis contents
+reassign-transformer.py
+transformer-compiled.py
 twopi-graph-redis.sh: run with redis; delete job results (e.g. redis-cli flushall)
                       run as i=twopi-graph-redis; seamless-devel ./$i.sh > test-outputs/$i.out 2>&1
 twopi-graph-jobmaster.sh: same as above; run as i=twopi-graph-jobmaster
@@ -39,3 +45,5 @@ simpler-share.py: Run with ipython -i, then do "curl localhost:5813/ctx/myresult
                   change ctx.a to get 3*a as the result
 highlink-cpp.py:  Run with ipython -i, then continue in interactive mode, 
                   changing the source code and the schema until it works.
+mount.py:         Run with ipython -i, then continue in interactive mode.
+                  Initial output is in test-outputs/mount.out

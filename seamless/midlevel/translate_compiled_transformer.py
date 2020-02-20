@@ -159,7 +159,7 @@ def translate_compiled_transformer(node, root, namespace, inchannels, outchannel
       main_module_inchannels, [()],
       fingertip_no_remote=node.get("fingertip_no_remote", False),
       fingertip_no_recompute=node.get("fingertip_no_recompute", False),
-    )    
+    )
 
     for ic in main_module_inchannels:
         icpath = node["path"] + ("_main_module",) + ic[1:]
@@ -178,8 +178,10 @@ def translate_compiled_transformer(node, root, namespace, inchannels, outchannel
     checksum = node.get("checksum", {})
     if "code" in checksum:
         ctx.code._set_checksum(checksum["code"], initial=True)
-    if "main_module" in checksum:
-        ctx.main_module.auth._set_checksum(checksum["main_module"], initial=True)
+    main_module_checksum = checksum.get("main_module",
+      'd0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c' # {}
+    )
+    ctx.main_module.auth._set_checksum(main_module_checksum, initial=True)    
     inp_checksum = {}
     for k in checksum:
         if k == "schema":

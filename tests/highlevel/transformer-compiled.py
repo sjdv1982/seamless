@@ -16,7 +16,10 @@ print(ctx.result.value)
 ctx.transform.language = "cpp"
 ctx.code >> ctx.transform.code
 ctx.code = """
+#include <iostream>
+using namespace std;
 extern "C" double transform(int a, int b) {
+    cout << "transform " << a << " " << b << endl;
     return a + b;
 }"""
 ctx.translate()
@@ -32,12 +35,17 @@ ctx.b = 30
 ctx.b.celltype = "plain"
 ctx.transform.b = ctx.b
 
+ctx.transform.main_module.link_options = ["-lstdc++"]
+#ctx.transform.main_module.compiler_verbose = True
+#ctx.transform.main_module.compiler_verbose = False
+
 ctx.compute()
 print(ctx.result.value)
 print(ctx.transform.status)
 exc = ctx.transform.exception
 if exc is not None:
     print(exc)
+import sys; sys.exit()
 
 ctx.a.mount("/tmp/a.txt")
 ctx.b.mount("/tmp/b.txt")

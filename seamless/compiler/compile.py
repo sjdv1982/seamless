@@ -13,7 +13,9 @@ from .locks import locks, locklock
 
 cache = {}
 
-def compile(binary_objects, build_dir, compiler_verbose=False):
+def compile(binary_objects, build_dir, *,
+    compiler_verbose=False, build_dir_may_exist=False
+):
     """Takes a completed definition of a compiled module
      and generates a dict-of-binary-objects (.o / .obj)
     If possible, binary objects are read from cache.
@@ -49,7 +51,8 @@ def compile(binary_objects, build_dir, compiler_verbose=False):
         try:
             os.makedirs(build_dir) #must be non-existing
         except FileExistsError:
-            print("WARNING: compiler build dir %s already exists... this could be trouble!" % build_dir)
+            if not build_dir_may_exist:
+                print("WARNING: compiler build dir %s already exists... this could be trouble!" % build_dir)
         os.chdir(build_dir)
         for headername, headercode in all_headers:
             header_file = headername + ".h" # hard-code C/C++ for now
@@ -98,6 +101,8 @@ def compile(binary_objects, build_dir, compiler_verbose=False):
             pass
         locks.pop(build_dir)
         lock.release()
+    if not len(stderr.replace("\n", "").strip()):
+        stderr = ""
     return success, result, source_files, stderr
 
 def complete(module_definition):

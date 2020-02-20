@@ -9,6 +9,7 @@ print(ctx.txt.value)
 ###ctx.mount("mount-test", persistent=False)
 ctx.intcell = 780
 ctx.intcell.celltype = "int"
+ctx.intcell.mount("/tmp/intcell.txt")
 
 ctx.cpp_cell = """
 #include <iostream>
@@ -21,9 +22,11 @@ int main()
 """
 ctx.cpp_cell.celltype = "code"
 ctx.cpp_cell.language = "cpp"
+ctx.cpp_cell.mount("/tmp/cpp_cell.cpp")
 
 ctx.txt2 = Cell()
 ctx.txt2.celltype = "text"
 ctx.link(ctx.txt2, ctx.txt)
 
 ctx.compute()
+# continue in interactive mode...
