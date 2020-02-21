@@ -172,8 +172,7 @@ def fill_checksums(mgr, nodes, *, path=None):
                 fill_checksum(mgr, node2, "code")
                 if "checksum" in node2:
                     node["checksum"] = node2["checksum"]
-                if node["with_result"]:
-                    fill_checksum(mgr, node2, "result")
+                fill_checksum(mgr, node2, "result")
                 if node["compiled"]:
                     fill_checksum(mgr, node2, "_main_module")
                 if "checksum" in node2 and "checksum" not in node:

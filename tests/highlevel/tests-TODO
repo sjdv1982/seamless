@@ -1,6 +1,3 @@
 share-pdb.py
-subcontext.py
-test-html.py
 transformer-compiled-module.py
 transformer-redefine.py
-with_result.py

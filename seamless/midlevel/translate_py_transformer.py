@@ -29,8 +29,6 @@ def translate_py_transformer(node, root, namespace, inchannels, outchannels):
         cell_setattr(node, ctx, pin_cell_name, pin_cell)
         pin_cells[pin] = pin_cell
         
-
-    with_result = node["with_result"]
     interchannels = [as_tuple(pin) for pin in node["pins"]]
     mount = node.get("mount", {})    
     inp, inp_ctx = build_structured_cell(
@@ -57,7 +55,6 @@ def translate_py_transformer(node, root, namespace, inchannels, outchannels):
         all_pins[pinname] = p
     all_pins[result_name] = {"io": "output", "celltype": "mixed"}
     if node["SCHEMA"]:
-        assert with_result
         all_pins[node["SCHEMA"]] = {
             "io": "input", "celltype": "mixed"
         }
@@ -99,40 +96,34 @@ def translate_py_transformer(node, root, namespace, inchannels, outchannels):
         inp.outchannels[(pin,)].connect(pin_cell)
         pin_cell.connect(target)
 
-    if with_result:
-        result, result_ctx = build_structured_cell(
-            ctx, result_name, [()],
-            outchannels,
-            fingertip_no_remote=node.get("fingertip_no_remote", False),
-            fingertip_no_recompute=node.get("fingertip_no_recompute", False),
-            return_context=True
-        )
-        namespace[node["path"] + ("RESULTSCHEMA",), False] = result.schema, node
-        if "result_schema" in mount:
-            result_ctx.schema.mount(**mount["result_schema"])
+    result, result_ctx = build_structured_cell(
+        ctx, result_name, [()],
+        outchannels,
+        fingertip_no_remote=node.get("fingertip_no_remote", False),
+        fingertip_no_recompute=node.get("fingertip_no_recompute", False),
+        return_context=True
+    )
+    namespace[node["path"] + ("RESULTSCHEMA",), False] = result.schema, node
+    if "result_schema" in mount:
+        result_ctx.schema.mount(**mount["result_schema"])
 
-        setattr(ctx, result_name, result)
+    setattr(ctx, result_name, result)
 
-        result_pin = getattr(ctx.tf, result_name)        
-        result_cell = cell("mixed")
-        cell_setattr(node, ctx, result_cell_name, result_cell)
-        result_pin.connect(result_cell)
-        result_cell.connect(result.inchannels[()])
-        if node["SCHEMA"]:
-            schema_pin = getattr(ctx.tf, node["SCHEMA"])
-            result.schema.connect(schema_pin)
-        result_checksum = {}        
-        for k in checksum:
-            if not k.startswith("result"):
-                continue
-            k2 = "value" if k == "result" else k[len("result_"):]
-            result_checksum[k2] = checksum[k]
-        set_structured_cell_from_checksum(result, result_checksum)
-    else:
-        for c in outchannels:
-            assert len(c) == 0 #should have been checked by highlevel
-        result = getattr(ctx.tf, result_name)
-        namespace[node["path"] + (result_name,), False] = result, node
+    result_pin = getattr(ctx.tf, result_name)        
+    result_cell = cell("mixed")
+    cell_setattr(node, ctx, result_cell_name, result_cell)
+    result_pin.connect(result_cell)
+    result_cell.connect(result.inchannels[()])
+    if node["SCHEMA"]:
+        schema_pin = getattr(ctx.tf, node["SCHEMA"])
+        result.schema.connect(schema_pin)
+    result_checksum = {}        
+    for k in checksum:
+        if not k.startswith("result"):
+            continue
+        k2 = "value" if k == "result" else k[len("result_"):]
+        result_checksum[k2] = checksum[k]
+    set_structured_cell_from_checksum(result, result_checksum)
 
     namespace[node["path"], True] = inp, node
     namespace[node["path"], False] = result, node

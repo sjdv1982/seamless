@@ -39,12 +39,12 @@ print()
 ctx.sub = Context()
 ctx.sub.sub1 = subctx
 ctx.sub.sub2 = ctx.sub2
-###ctx.sub.sub2.a = ctx.a1
+ctx.sub.sub2.a = ctx.a1
 ctx.sub.sub3 = ctx.sub.sub1
 ctx.sub.sub3.a = ctx.a1
 ctx.compute()
 print(ctx.sub.sub1.result.value)
-###print(ctx.sub.sub2.result.value)
+print(ctx.sub.sub2.result.value)
 print(ctx.sub.sub3.result.value)
 print()
 from pprint import pprint

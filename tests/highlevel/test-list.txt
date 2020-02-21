@@ -2,6 +2,7 @@
 #   seamless-devel python3 -u ../../scripts/TEST.py > test-outputs/TEST.out 2>&1
 bytes-conversion.py
 mime.py
+test-html.py
 schema.py
 subcell.py
 subsubcell.py
@@ -30,6 +31,7 @@ simple-pi-deepcell.py: Also creates twopi-deepcell.seamless, twopi-deepcell-resu
 simple-pi-redis.py: requires redis to run as a Sink
 simple-pi-remote.py: run with jobslave-noredis 
 simple-pi-remote-redis.py: run with jobslave; makes no assumptions about them Redis contents
+subcontext.py
 reassign-transformer.py
 transformer-compiled.py
 twopi-graph-redis.sh: run with redis; delete job results (e.g. redis-cli flushall)

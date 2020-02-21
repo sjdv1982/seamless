@@ -117,8 +117,6 @@ def translate_compiled_transformer(node, root, namespace, inchannels, outchannel
         cell_setattr(node, ctx, pin_cell_name, pin_cell)
         pin_cells[pin] = pin_cell
 
-    with_result = node["with_result"]
-    assert with_result #compiled transformers must have with_result
     mount = node.get("mount", {})
     inp, inp_ctx = build_structured_cell(
       ctx, input_name, inchannels, [()],
@@ -146,7 +144,6 @@ def translate_compiled_transformer(node, root, namespace, inchannels, outchannel
         inputpins.append(pinname)
     all_pins[result_name] = {"io": "output", "transfer_mode": "copy"}
     if node["SCHEMA"]:
-        assert with_result
         all_pins[node["SCHEMA"]] = {
             "io": "input", "celltype": "mixed"
         }

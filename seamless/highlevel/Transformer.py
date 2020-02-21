@@ -31,8 +31,7 @@ def new_transformer(ctx, path, code, parameters):
         "pins": {param:default_pin.copy() for param in parameters},
         "RESULT": "result",
         "INPUT": "inp",
-        "with_result": True,
-        "SCHEMA": None, #the result schema can be exposed as an input pin to the transformer under this name. Implies with_result
+        "SCHEMA": None, #the result schema can be exposed as an input pin to the transformer under this name
         "debug": False,
         "UNTRANSLATED": True,
     }
@@ -83,15 +82,6 @@ class Transformer(Base):
         parent._children.pop(result_path)
         parent._children[new_result_path] = result
         htf["RESULT"] = value
-
-    @property
-    def with_result(self):
-        return self._get_htf()["with_result"]
-    @with_result.setter
-    def with_result(self, value):
-        assert value in (True, False), value
-        self._get_htf()["with_result"] = value
-        self._parent()._translate()
 
     @property
     def debug(self):
@@ -173,9 +163,7 @@ class Transformer(Base):
         htf["compiled"] = compiled
         htf["file_extension"] = extension
         has_translated = False
-        if compiled:
-            htf["with_result"] = True
-        elif lang == "docker":
+        if lang == "docker":
             if old_language != "docker":
                 im = False
                 if "docker_image" not in htf["pins"]:
@@ -247,7 +235,6 @@ class Transformer(Base):
 
     def _result_example(self):
         htf = self._get_htf()
-        assert htf["with_result"]
         tf = self._get_tf(force=True)
         resultcell = getattr(tf, htf["RESULT"])
         result_ctx = resultcell._data._context()
@@ -336,7 +323,6 @@ class Transformer(Base):
                     translate = True
                 inp.handle_no_inference.set(value)
         elif attr == htf["RESULT"]:
-            assert htf["with_result"]
             result = getattr(tf, htf["RESULT"])
             # Example-based programming to set the schema
             # TODO: suppress inchannel warning
@@ -409,7 +395,6 @@ class Transformer(Base):
             p = tf.code
             return p.data
         elif attr == htf["RESULT"]:
-            assert htf["with_result"] #otherwise "result" is just a pin
             return getattr(tf, attr).value
         else:
             inp = getattr(tf, htf["INPUT"])
@@ -525,7 +510,7 @@ class Transformer(Base):
             ] + list(htf["pins"].keys())
             pull_source = None
             proxycls = Proxy
-        elif attr == htf["RESULT"] and htf["with_result"]:
+        elif attr == htf["RESULT"]:
             getter = self._resultgetter
             dirs = [
               "value", "buffered", "data", "checksum",
@@ -628,7 +613,6 @@ class Transformer(Base):
 
     def _resultgetter(self, attr):
         htf = self._get_htf()
-        assert htf["with_result"]
         tf = self._get_tf(force=True)
         resultcell = getattr(tf, htf["RESULT"])
         if attr == "mount":
@@ -834,12 +818,11 @@ class Transformer(Base):
         inpcell._data._set_observer(self._observe_input)
         schemacell = inpcell.schema
         schemacell._set_observer(self._observe_schema)
-        if htf["with_result"]:
-            result = htf["RESULT"]
-            resultcell = getattr(tf, result)
-            resultcell._data._set_observer(self._observe_result)
-            schemacell = resultcell.schema
-            schemacell._set_observer(self._observe_result_schema)
+        result = htf["RESULT"]
+        resultcell = getattr(tf, result)
+        resultcell._data._set_observer(self._observe_result)
+        schemacell = resultcell.schema
+        schemacell._set_observer(self._observe_result_schema)
         if htf["compiled"]:
             tf.main_module._data._set_observer(self._observe_main_module)
 

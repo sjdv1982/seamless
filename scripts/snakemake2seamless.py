@@ -415,7 +415,6 @@ for job in dag.jobs:
     multi_output = (len(outputs) > 1)
 
     if multi_output:
-        tf.with_result = True
         for k,v in outputs.items():
             kk = getattr(outdummies,k)
             setattr(fs, v, getattr(result, kk))
