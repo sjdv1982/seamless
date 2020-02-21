@@ -45,11 +45,6 @@ from . import mixed
 ipython_instance = None
 ipy_error = "Seamless was not imported inside IPython"
 
-def inputhook_terminal(context):
-    while not context.input_is_ready():
-        #asyncio.get_event_loop().run_until_complete(asyncio.sleep(0))
-        pass
-
 running_in_jupyter = False
 if "get_ipython" in sys.modules["__main__"].__dict__:
     try:

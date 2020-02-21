@@ -1,0 +1,16 @@
+b"\x1b[22;0t\x1b]0;IPython: tests/highlevel\x07Python 3.7.3 (default, Mar 27 2019, 22:11:17) \r\nType 'copyright', 'credits' or 'license' for more information\r\nIPython 7.12.0 -- An enhanced Interactive Python. Type '?' for help.\r\n\r\n"
+b'In [1]'
+b': from seamless.highlevel import Context\r\n\r\n'
+b'In [2]'
+b': ctx = Context()\r\n\r\n'
+b'In [3]'
+b": ctx.a = 'MYVALUE'\r\n\r\n"
+b'In [4]'
+b': ctx.translate()\r\n\r\n'
+b'In [5]'
+b': import asyncio; await asyncio.sleep(0.5)\r\n\r\n'
+b'In [6]'
+b': print(ctx.a.checksum)\r\n5e8975ac09c95ba92909f6de0a1d7f669e2a9fe668e2cc4fb7cb870b1b7d3d3a\r\n\r\n'
+b'In [7]'
+b': exit()\r\n\x1b[23;0t'
+<class 'pexpect.exceptions.EOF'>
