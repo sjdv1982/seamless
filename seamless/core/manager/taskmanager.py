@@ -256,7 +256,7 @@ class TaskManager:
         if timeout is not None:
             timeout_time = time.time() + timeout
             remaining = timeout
-        if report is not None:
+        if report is not None and report > 0:
             last_report = time.time()
         
         def select_pending_tasks():
@@ -298,12 +298,12 @@ class TaskManager:
 
         while len(ptasks):
             if timeout is not None:
-                if report is not None:
+                if report is not None and report > 0:
                     curr_timeout=min(remaining, report)
                 else:
                     curr_timeout = remaining
             else:
-                if report is not None:
+                if report is not None and report > 0:
                     curr_timeout = report
                 else:
                     curr_timeout = None
@@ -311,7 +311,7 @@ class TaskManager:
             ptasks, futures = select_pending_tasks()
             if curr_timeout is not None:
                 curr_time = time.time()
-            if report is not None:
+            if report is not None and report > 0:
                 if curr_time > last_report + report:
                     print_report()
                     last_report = curr_time
@@ -328,7 +328,7 @@ class TaskManager:
         if timeout is not None:
             timeout_time = time.time() + timeout
             remaining = timeout
-        if report is not None:
+        if report is not None and report > 0:
             last_report = time.time()
         
         def select_pending_tasks():
@@ -370,12 +370,12 @@ class TaskManager:
 
         while len(ptasks):
             if timeout is not None:
-                if report is not None:
+                if report is not None and report > 0:
                     curr_timeout=min(remaining, report)
                 else:
                     curr_timeout = remaining
             else:
-                if report is not None:
+                if report is not None and report > 0:
                     curr_timeout = report
                 else:
                     curr_timeout = None
@@ -383,7 +383,7 @@ class TaskManager:
             ptasks, futures = select_pending_tasks()
             if curr_timeout is not None:
                 curr_time = time.time()
-            if report is not None:
+            if report is not None and report > 0:
                 if curr_time > last_report + report:
                     print_report()
                     last_report = curr_time

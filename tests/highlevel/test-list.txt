@@ -3,10 +3,13 @@
 bytes-conversion.py
 mime.py
 schema.py
+subcell.py
+subsubcell.py
 deepcell-simple.py: As of Seamless 0.2, prints out double decref warnings at the end
 filesystemlike.py: As of Seamless 0.2, this test FAILS (issue 3)
 context.py
 context2.py
+scratch.py
 simplest.py
 simple-missing.py
 simpler-listpin.py
@@ -47,3 +50,4 @@ highlink-cpp.py:  Run with ipython -i, then continue in interactive mode,
                   changing the source code and the schema until it works.
 mount.py:         Run with ipython -i, then continue in interactive mode.
                   Initial output is in test-outputs/mount.out
+python-debugging: Run with ipython -i, then continue in interactive mode.

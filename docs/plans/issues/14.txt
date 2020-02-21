@@ -1,0 +1,2 @@
+Deleting subschemas does not work properly (it becomes None instead)
+See the commented-out section of tests/highlevel/subsubcell.py

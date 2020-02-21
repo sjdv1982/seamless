@@ -1,9 +1,5 @@
-python-debugging.py
-scratch.py
 share-pdb.py
-subcell.py
 subcontext.py
-subsubcell.py
 test-html.py
 transformer-compiled-module.py
 transformer-redefine.py

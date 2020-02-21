@@ -1,0 +1,7 @@
+<Silk: {'b': {'c': {'d': 10}}} >
+report <Silk: {'b': {'c': {'d': 10}}} > {'b': <Silk: {'c': {'d': 10}} >, 'c': <Silk: {'d': 10} >, 'd': 10}
+
+SCHEMA A {'properties': {'b': {'properties': {'c': {'properties': {'d': {'type': 'integer'}}, 'type': 'object'}}, 'type': 'object'}}, 'type': 'object'}
+SCHEMA B {'properties': {'c': {'properties': {'d': {'type': 'integer'}}, 'type': 'object'}}, 'type': 'object'}
+SCHEMA C {'properties': {'d': {'type': 'integer'}}, 'type': 'object'}
+SCHEMA D {'type': 'integer'}

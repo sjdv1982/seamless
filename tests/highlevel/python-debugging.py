@@ -79,8 +79,5 @@ ctx.code >> ctx.transform.code
 ctx.code.mount("triple_it.py")
 ctx.transform.a = ctx.a
 ctx.myresult = ctx.transform
-ctx.compute()
+ctx.compute(report=None)
 print(ctx.myresult.value)
-
-import asyncio
-asyncio.get_event_loop().run_forever()

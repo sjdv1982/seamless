@@ -2,6 +2,7 @@ from seamless.highlevel import Context
 ctx = Context()
 ctx.a = {}
 ctx.a.b = 12
+ctx.compute()
 print(ctx.a.value, ctx.a.value.data)
 print(type(ctx.a.value), type(ctx.a.value.data))
 
@@ -58,7 +59,7 @@ def validator(self):
     print("VALIDATE", self)
     assert self.g > self.c + self.f
     assert self.f > self.d
-ctx.q.handle.add_validator(validator)
+ctx.q.add_validator(validator)
 ctx.compute()
 
 print("Stage 7")

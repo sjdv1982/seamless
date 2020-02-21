@@ -28,6 +28,7 @@ def get_new_cell(path):
 class Cell(Base):
     _virtual_path = None
     _node = None
+    _subpath = ()
 
     def __init__(self, parent=None, path=None):
         assert (parent is None) == (path is None)
@@ -169,6 +170,9 @@ class Cell(Base):
         if checksum is not None:
             hcell["checksum"]["schema"] = checksum
 
+    def _cell(self):
+        return self
+
     def self(self):
         raise NotImplementedError
 
@@ -179,7 +183,8 @@ class Cell(Base):
                 raise AttributeError(item)
             parent = self._parent()
             readonly = False ### TODO
-            return SubCell(self._parent(), self, (item,), readonly=readonly)
+            path = self._subpath + (item,)
+            return SubCell(self._parent(), self._cell(), path, readonly=readonly)
         elif isinstance(item, slice):
             raise NotImplementedError  # TODO: x[min:max] outchannels
         else:
@@ -206,7 +211,11 @@ class Cell(Base):
             return getattr(cell, attr)
         parent = self._parent()
         readonly = False ### TODO
-        return SubCell(self._parent(), self, (attr,), readonly=readonly)
+        path = self._subpath + (attr,)
+        return SubCell(
+            self._parent(), self._cell(),
+             path, readonly=readonly
+        )
 
     def mount(self, path=None, mode="rw", authority="cell", persistent=True):
         assert self.celltype != "structured"

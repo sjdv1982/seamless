@@ -4,6 +4,8 @@ from .Cell import Cell
 
 class SubCell(Cell):
     def __init__(self, parent, cell, subpath, readonly):
+        assert isinstance(cell, Cell)
+        assert not isinstance(cell, SubCell)
         assert not parent._dummy #cannot access cell.attr in constructors, use cell.value.attr instead
         fullpath = cell._path + subpath
         super().__init__(parent, fullpath)
@@ -23,7 +25,7 @@ class SubCell(Cell):
         from .assign import assign_to_subcell
         parent = self._parent()
         path = self._subpath + (attr,)
-        assign_to_subcell(self, path, value)
+        assign_to_subcell(self._cell(), path, value)
         ctx = parent._gen_context
         parent._translate()
 
@@ -74,4 +76,8 @@ class SubCell(Cell):
 
     def _set_observers(self):
         pass
+
+    def __str__(self):
+        return "Seamless SubCell: %s" % ".".join(self._path)
+
 
