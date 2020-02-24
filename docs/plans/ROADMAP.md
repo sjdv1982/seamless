@@ -1,22 +1,14 @@
-Testing
-=======
-- Re-run low level tests (no problems expected)
-- Run and adapt high-level tests (mostly DONE)
-- Re-run initial examples, in particular BCsearch (DONE for final state; TODO for intermediate)
-- Re-run capri example (on abathur)
-
 MTiAutoDock
 ===========
-Use Snakemake?
-Adapt existing Mobyle HTML?
-(If ambitious, even auto-generate HTML from Mobyle XML)
+Adapt existing Mobyle HTML
+Existing service uses dynamic workflow!
 
 
 Set up a network infrastructure at console
 ==========================================
-Need to choose/combine data-management.txt and seamless-tools.txt,
+UPDATE Feb 2020: initial protocol for cloudless is ready!
+Need to implement seamless-tools.txt,
  and draw inspiration from docs/archive/seamless-services.txt / checksums.txt
-UPDATE: drop the workspaces/minispaces, they are redundant. seamless-tools.txt has it right. 
   TODO: Need to implement snooping (over web socket). 
 graphID maps to: 
   - template ctx.seamless + delta checksum dict, 

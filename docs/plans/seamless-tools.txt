@@ -5,7 +5,6 @@ It will contain:
 - /docker/commands (also for redis, e.g. redis-add-zip)
 
 - The Seamless graph server (take some inspiration from the cloudless plan, but keep it simpler).
-NOTE: THIS PLAN IS PARTIALLY CONTRADICTORY WITH data-management.txt. RE-THINK AND CHOOSE/COMBINE THE PLANS
 The heart of it will be a Python dynamic HTTP/websocket reverse proxy server.
 There will be an admin channel that registers graphs (not zips; redis is assumed) under a name
 The public instantiation channel will take a graph name and create a graph instance.

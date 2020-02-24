@@ -190,3 +190,42 @@ When we start scientific reproducibility test servers, zero-durability computati
 UPDATE: for durability 1+, make a "requirement repo" that can automatically convert a list
  of requirement (e.g. a list of Python modules) to a list of version-stamped packages (pip, nix, apt). RPBS will a) be a mirror and b) snapshot package versions every month. Example: capability "numpy" + Nov 27 2018 => pip package numpy-1.15.4 (the state of PyPI on Nov 01 2018, i.e. "RPBS-Linux 18.11")
  Different capabilities can be combined and made into a Docker image using docker2repo/binder.
+
+OLDER PLANS
+
+Data management in Seamless
+===========================
+
+
+NOTE: The Seamless graph offers a unified format to describe:
+- protocols (web services, unfilled web forms): a graph with code cells, undefined input cells, and undefined output cells.
+- computations (jobs, filled-in web forms): a graph with code cells, input cells, and undefined output cells.
+- results: a graph with code cells, input cells and output cells, where every cell is defined.
+However, Seamless graphs contain no values at all, only checksums.
+This means that they are small (and we should store them essentially forever)
+On the other hand, this also means that every checksum needs to be backed up by data storage 
+(checksum-to-value caching), else a Seamless graph becomes useless.
+Therefore, from a Seamless point-of-view, data management is nothing more or less than *persistence*:
+ deciding how long to maintain a checksum-to-value cache entry (*). 
+
+
+Data security through external storage
+======================================
+We cannot guarantee data security at the RPBS. But sensitive data/code can be stored elsewere, let's 
+say, at a hospital, and the data will never be accessed by the RPBS. Thus, data security is achieved.
+Because: the checksum of the sensitive data/code will be publicly available, and the RPBS can 
+still construct jobs that use these checksums, even if the data/code is stored at the hospital. 
+This requires that the job is sent to Seamless-running-at-the hospital to be executed there.
+Likewise, the hospital may choose to only send the job result checksum back, not its value. 
+In that case, the RPBS can still store the job result checksum in the result graph, 
+and store the result graph at the RPBS, so reproducibility is maintained.
+But the job result value can then only be obtained by people at the hospital, and whoever they choose
+ to share their data with (hopefully, the journal where they publish their results).
+
+
+(*) = checksum-to-value cache, provenance cache, etc. are implemented as a single Redis database, backed up
+ by a big hard disk. This Redis database will run on the "console" machine at the RPBS, and be accessible
+ over the network, so every Seamless instance running on our cluster has direct access. This will make 
+ Lustre superfluous).
+
+/OLDER PLANS
