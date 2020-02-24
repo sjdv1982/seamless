@@ -358,6 +358,21 @@ class Cell(Base):
                 raise
             return cell.checksum
 
+    def observe(self, attr, callback, polling_interval, observe_none=False):
+        if isinstance(attr, str):
+            attr = (attr,)
+        path = self._path + attr
+        return self._get_top_parent().observe(
+            path, callback, polling_interval,
+            observe_none=observe_none
+        )
+
+    def unobserve(self, attr):
+        if isinstance(attr, str):
+            attr = (attr,)
+        path = self._path + attr
+        return self._get_top_parent().unobserve(path)
+
     async def fingertip(self):
         """Puts the buffer of this cell's checksum 'at your fingertips':
         - Verify that the buffer is locally or remotely available;
