@@ -1,0 +1,49 @@
+#!/bin/bash
+set -u -e -x
+
+# Maps a port, either from server1, or from server2-behind-server1
+# (where server2 is visible from server1, but not from the outside).
+
+# "server1" must be an host or SSH hostname
+#   (an entry in /etc/.ssh/config) on localhost
+# If "server2" is defined, it must be the host or IP address of server2 ***as seen by server1***
+#   SSH hostnames or hostnames/IP addresses ***as seen from localhost*** WILL NOT WORK
+# If "server2user" is defined, it is the username to connect to server2. If not defined,
+#  the current user ***on localhost*** is used.
+
+# The mapping works even if only server2 port 22 is open to server1
+
+port=$1
+server1=$2
+server2=${3:-""}
+server2user=${4:-""}
+
+cleanup() {
+    existing=$(ps -elf | grep $port | grep ssh | awk '{print $4}')
+    [[ ! -z "$existing" ]] && kill -1 $existing
+    if [ -z "$interport" ]
+    then
+        existing=$(ps -elf | grep $interport | grep ssh | awk '{print $4}')
+        [[ ! -z "$existing" ]] && kill -1 $existing
+    fi
+}
+
+trap cleanup ERR
+
+if [ -z "$server2" ]        
+then
+    ssh -f -L localhost:$port:localhost:$port -N $server1
+else
+    interport=$(shuf -n 1 -i 49152-65535)
+    existing=$(ps -elf | grep $interport | grep ssh | awk '{print $4}')
+    [[ ! -z "$existing" ]] && kill -1 $existing
+    ssh -f -L localhost:$interport:$server2:22 -N $server1
+    if [ -z "$server2user" ]
+    then
+        server2user=$(whoami)
+    fi
+    ssh -oStrictHostKeyChecking=no \
+        -N $server2user@localhost -p $interport -t \
+        -f -L localhost:$port:localhost:$port
+fi
+

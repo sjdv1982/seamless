@@ -1,0 +1,14 @@
+set -u -e
+
+# Runs a Jupyter console terminal inside the Seamless Docker image
+# - Current directory is mounted to /cwd, and the command is executed there
+# - /tmp is mounted as well
+
+docker run --rm -it \
+  --network=host \
+  -v ~/.seamless/mount:/host \
+  -v `pwd`:/cwd \
+  -v /tmp:/tmp \
+  --workdir /cwd \
+  -u jovyan \
+  rpbs/seamless jupyter console $*
