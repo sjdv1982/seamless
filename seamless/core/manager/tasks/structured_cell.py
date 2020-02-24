@@ -1,6 +1,7 @@
 from . import Task
 import traceback
 import copy
+from asyncio import CancelledError
 
 def overlap_path(p1, p2):
     if p1[:len(p2)] == p2:
@@ -140,9 +141,11 @@ class StructuredCellJoinTask(Task):
                     manager, value, "mixed", use_cache=False # the value object changes all the time...
                 ).run()
                 checksum = await CalculateChecksumTask(manager, buf).run()
+            except CancelledError:
+                ok = False
             except Exception:
                 sc._exception = traceback.format_exc(limit=0)   
-                ok = False         
+                ok = False
         if checksum is not None:
             if isinstance(checksum, bytes):
                 checksum = checksum.hex()        

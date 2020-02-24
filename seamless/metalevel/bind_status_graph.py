@@ -49,7 +49,7 @@ def observe_graph(ctx, ctx2, graph):
             observer.destroy()
     #print("DONE")
 
-def bind_status_graph(ctx, status_graph, *, mounts=False, shares=True):
+def bind_status_graph(ctx, status_graph, *, zips=None, mounts=False, shares=True):
     """"Creates context that will monitor the status of ctx
 
 The context is loaded from status_graph, which must be a graph in JSON format.
@@ -61,18 +61,25 @@ The status graph must have a cell called "graph",
 The status graph will receive the share namespace "status"
 
 mounts and shares have the same meaning as in from_graph
+
+Additional zips can be provided. 
+They will be passed to ctx.add_zip before the graph is loaded
 """
     from seamless.highlevel import Context
-    ctx2 = Context.from_graph(
+    ctx2 = Context()
+    if zips is not None:
+        for zipf in zips:
+            ctx2.add_zip(zipf)
+    ctx2.share_namespace="status"
+    ctx2.set_graph(
         status_graph, 
-        manager=ctx._manager,
         mounts=mounts,
         shares=shares
     )
-    ctx2.share_namespace = "status"
     assert "graph" in ctx2.children()
     observe_graph_bound = partial(
         observe_graph, ctx, ctx2
     )
+    ctx2.translate()
     ctx.observe(("get_graph",), observe_graph_bound, OBSERVE_GRAPH_DELAY)
     return ctx2

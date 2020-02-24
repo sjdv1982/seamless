@@ -55,3 +55,14 @@ highlink-cpp.py:  Run with ipython -i, then continue in interactive mode,
 mount.py:         Run with ipython -i, then continue in interactive mode.
                   Initial output is in test-outputs/mount.out
 python-debugging: Run with ipython -i, then continue in interactive mode.
+observe-graph.ipynb: Run "jupyter-seamless-devel" and then open /cwd in the browser
+traitlets.ipynb: same as above
+share-pdb-docker.seamless/.zip: to test using :
+      seamless-devel python3 /home/jovyan/seamless-scripts/serve-graph.py \
+      share-pdb-docker.seamless share-pdb-docker.zip
+    Open in http://localhost:5813/ctx/index.html
+    (seamless-serve-graph does not work as it does not expose the Docker socket)
+    Potentially, add:
+      --status-graph /seamless/seamless/graphs/status-visualization.seamless \
+      --add-zip /seamless/seamless/graphs/status-visualization.zip
+    In that case, open also http://localhost:5813/graph/index.html

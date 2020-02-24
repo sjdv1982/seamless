@@ -142,7 +142,8 @@ if args.status_graph:
     ctx2 = bind_status_graph(
         ctx, status_graph, 
         mounts=args.mounts,
-        shares=args.shares
+        shares=args.shares,
+        zips=args.add_zip,
     )
 
 if not args.interactive:

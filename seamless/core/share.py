@@ -47,9 +47,16 @@ class ShareItem:
             assert cell.has_authority(), cell # mount read mode only for authoritative cells
         self._initializing = True
         try:
+            manager = cell._get_manager()
+            name = shareserver.manager_to_ns.get(manager)
+            if name is None:
+                msg = "Cannot bind %s to share path %s: manager is not shared"
+                raise Exception(msg % (cell, self.path))
+            self._namespace = name
+
             cell_checksum = cell._checksum
             cell_empty = (cell_checksum is None)
-            _, cached_share = sharemanager.cached_shares.get(self.path, (None, None))
+            _, cached_share = sharemanager.cached_shares.get((name, self.path), (None, None))
             from_cache = False
             if cached_share is not None:
                 if cell_empty and not self.readonly:
@@ -60,19 +67,9 @@ class ShareItem:
                         cached_share = None
                         break
             if cached_share is not None:
-                namespace = cached_share.namespace()
-                manager = namespace.manager()                
-                if manager is not cell._get_manager():
-                    msg = "Cannot re-bind %s to share path %s: was bound to a different manager"
-                    raise Exception(msg % (cell, self.path))
-                sharemanager.cached_shares.pop(self.path)
+                sharemanager.cached_shares.pop((name, self.path))
                 self.share = cached_share
             else:
-                manager = cell._get_manager()
-                name = shareserver.manager_to_ns.get(manager)
-                if name is None:
-                    msg = "Cannot bind %s to share path %s: manager is not shared"
-                    raise Exception(msg % (cell, self.path))
                 namespace = shareserver.namespaces[name]
                 celltype = cell._celltype
                 self.share = namespace.add_share(
@@ -110,7 +107,7 @@ class ShareItem:
         if self.share is not None:
             self.share.unbind()            
             now = time.time()
-            sharemanager.cached_shares[self.path] = (now, self.share)
+            sharemanager.cached_shares[self._namespace, self.path] = (now, self.share)
 
     def __del__(self):
         if self._destroyed:
@@ -134,7 +131,7 @@ class ShareManager:
         self.share_value_updates = {}
         self._tick = False
         self.paths = {}
-        self.cached_shares = {} # key: file path; value: (deletion time, share.Share)
+        self.cached_shares = {} # key: namespace, file path; value: (deletion time, share.Share)
 
     def new_namespace(self, manager, share_evaluate, name=None):
         from .manager import Manager
@@ -254,12 +251,12 @@ class ShareManager:
             
         now = time.time()
         to_destroy = []
-        for path, value in self.cached_shares.items():
+        for npath, value in self.cached_shares.items():
             mod_time, share = value
             if now > mod_time + self.GARBAGE_DELAY:
-                to_destroy.append(path)
-        for path in to_destroy:
-            mod_time, share = self.cached_shares.pop(path)
+                to_destroy.append(npath)
+        for npath in to_destroy:
+            mod_time, share = self.cached_shares.pop(npath)
             share.destroy()
 
         self._tick = True

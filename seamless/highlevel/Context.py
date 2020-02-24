@@ -85,8 +85,10 @@ class Context(Base):
     _destroyed = False
 
     @classmethod
-    def from_graph(cls, graph, manager, *, mounts=True, shares=True):
+    def from_graph(cls, graph, manager, *, mounts=True, shares=True, share_namespace=None):
         self = cls(manager=manager)
+        if share_namespace is not None:
+            self.share_namespace = share_namespace
         self.set_graph(graph,mounts=mounts,shares=shares)
         graph = deepcopy(graph)
         return self
