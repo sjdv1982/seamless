@@ -34,6 +34,8 @@ simple-pi-remote-redis.py: run with jobslave; makes no assumptions about them Re
 subcontext.py
 reassign-transformer.py
 transformer-compiled.py
+transformer-redefine.py
+transformer-compiled-module.py
 twopi-graph-redis.sh: run with redis; delete job results (e.g. redis-cli flushall)
                       run as i=twopi-graph-redis; seamless-devel ./$i.sh > test-outputs/$i.out 2>&1
 twopi-graph-jobmaster.sh: same as above; run as i=twopi-graph-jobmaster

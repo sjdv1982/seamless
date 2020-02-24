@@ -1,0 +1,20 @@
+********************************************************************************
+
+/*
+The following C header has been auto-generated from the transformer schema
+It will be used to generate bindings, but it will not be automatically
+added to the compiled transformer code.
+
+If your transformer code is written in C/C++, you may do so yourself.
+For C, you may need to include "stdint.h" and "stdbool.h".
+If your transform() function is written in C++, don't forget to add 'extern "C" '
+*/
+
+double transform(int a, int b);
+********************************************************************************
+
+g++ -c main.cpp -O3 -ffast-math -march=native -fPIC -p -g -o main.o
+
+
+5.0
+25

@@ -10,6 +10,7 @@ ctx.b = 30
 ctx.b.celltype = "plain"
 
 def build_transformer():
+    del ctx.transform
     ctx.transform = lambda a,b: a + b
     ctx.translate()
     ctx.transform.example.a = 0

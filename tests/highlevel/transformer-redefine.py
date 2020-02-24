@@ -9,6 +9,7 @@ ctx = Context()
 ctx.transform = lambda a,b: a + b
 ctx.transform.a = 2
 ctx.transform.b = 3
+ctx.translate()
 ctx.transform.example.a = 0
 ctx.transform.example.b = 0
 ctx.result = ctx.transform
@@ -27,6 +28,9 @@ extern "C" double transform(int a, int b) {
 ctx.compute()
 print(ctx.result.value)
 
+del ctx.transform  # required! 
+                   # else, the following line
+                   # will try to re-use the existing transformer
 ctx.transform = lambda a,b: a + b
 ctx.transform.a = 12
 ctx.transform.b = 13

@@ -7,7 +7,7 @@ added to the compiled transformer code.
 
 If your transformer code is written in C/C++, you may do so yourself.
 For C, you may need to include "stdint.h" and "stdbool.h".
-If your transform() function is written in C++, don't forget to add "extern C"
+If your transform() function is written in C++, don't forget to add 'extern "C" '
 */
 
 """
