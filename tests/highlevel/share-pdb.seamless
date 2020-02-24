@@ -132,8 +132,7 @@
           "celltype": "mixed"
         }
       },
-      "type": "transformer",
-      "with_result": true
+      "type": "transformer"
     },
     {
       "celltype": "text",
@@ -173,8 +172,7 @@
           "celltype": "mixed"
         }
       },
-      "type": "transformer",
-      "with_result": true
+      "type": "transformer"
     },
     {
       "celltype": "text",

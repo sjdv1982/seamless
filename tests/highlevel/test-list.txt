@@ -57,7 +57,9 @@ mount.py:         Run with ipython -i, then continue in interactive mode.
 python-debugging: Run with ipython -i, then continue in interactive mode.
 observe-graph.ipynb: Run "jupyter-seamless-devel" and then open /cwd in the browser
 traitlets.ipynb: same as above
-share-pdb-docker.seamless/.zip: to test using :
+share-pdb.py: open with seamless-devel-ipython -i, Open in http://localhost:5813/ctx/index.html
+visualize-graph/visualize-graph.py, Open in http://localhost:5813/ctx/index.html
+share-pdb-docker.seamless/.zip: to test using:
       seamless-devel python3 /home/jovyan/seamless-scripts/serve-graph.py \
       share-pdb-docker.seamless share-pdb-docker.zip
     Open in http://localhost:5813/ctx/index.html

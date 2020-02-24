@@ -2,7 +2,7 @@ pdb0.addRepresentation("spacefill", {
   opacity: 0.2
 })
 filtered_pdb.addRepresentation("cartoon", {
-  color: "green",
+  color: "red",
 })
 pdb.addRepresentation("hyperball", {
   color: "magenta",
