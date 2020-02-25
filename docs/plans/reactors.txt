@@ -53,3 +53,18 @@ TODO:
          - the value of all three code cells stays the same
     In that case, the regeneration of the reactor essentially becomes an update() event  
 
+
+General plans for reactors
+==========================
+
+(Run-time) Reactors are currently executed in-process, in the main thread.
+(They can of course fire up threads of their own, if they desire)
+In the future, make some kind of "reactor server" that executes reactors
+ in a separate process (probably without fork(); reactors shouldn't handle terabytes of data?)
+ and eventually, in a remote manner (or maybe *only* remote, i.e. the reactor server goes
+ over the network). 
+In order for this to work, one must think about start/stop policy and side effects,
+ and probably for some kind of "heartbeat" (reactors may die for any reason at all; in that
+case, a new one should be fired up)
+
+On the long term, think of reactors in other languages than Python.

@@ -6,3 +6,5 @@ Once it works:
 - use WIP/merge-reactor as a use case.
 - Think of start/stop side effects of reactors
 (could be big memory leak otherwise)
+
+(also see plans/reactors.txt)
