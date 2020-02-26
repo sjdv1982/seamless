@@ -5,7 +5,7 @@ Seamless is a framework to set up protocols (workflows) and computations that re
 
 The main application domains are scientific computing, scientific web services, data visualization, and interactive development of algorithms. 
 
-Protocols, computations and results are all represented as directed acyclic graphs that consist of cell checksums. This makes them strongly interoperable and reproducible: Unlike other workflow systems, Seamless graphs are self-contained and do not depend on the content of external files, URLs, identifiers, version numbers, or other kinds of metadata. 
+Protocols, computations and results are all represented as directed acyclic graphs that consist of cell checksums. This makes them strongly interoperable and reproducible. Unlike other workflow systems, Seamless graphs are self-contained and do not depend on the content of external files, URLs, identifiers, version numbers, or other kinds of metadata. 
 
 **Installation**: 
 
