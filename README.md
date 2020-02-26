@@ -19,7 +19,8 @@ docker pull rpbs/seamless
 # Obtain Seamless command line tools (bash)
 c=$(docker create rpbs/seamless); docker cp $c:/home/jovyan/seamless-docker ~/seamless-docker; docker rm $c
 ```
-Finally, add ~/seamless-docker to your .bashrc
+Finally, add ~/seamless-docker to $PATH. This can be done with the following line in your .bashrc:
+export PATH=$PATH:~/seamless-docker
 
 
 - From GitHub:
@@ -29,7 +30,11 @@ git clone https://github.com/sjdv1982/seamless.git
 cd seamless
 docker build . -t rpbs/seamless
 ```
-Then, add ./docker/commands to your .bashrc
+Then, add ~/seamless/docker/commands to $PATH. 
+This can be done with the following line in your .bashrc:
+
+export PATH=$PATH:~/seamless/docker/commands
+
 
 - From pip (inside a Dockerfile)
 
