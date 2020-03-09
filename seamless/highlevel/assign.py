@@ -299,7 +299,7 @@ def _assign_context2(ctx, new_nodes, new_connections, path, old_ctx):
                     remove_checksum.append(pot)
         elif nodetype == "macro":
             Macro(ctx, pp)
-            remove_checksum += ["input_temp", "input", "input_buffer"]
+            remove_checksum += ["param_temp", "param", "param_buffer"]
             potential = ("code", "schema")
             for pot in potential:
                 if old_path + (pot,) in targets:
@@ -376,6 +376,8 @@ def assign(ctx, path, value):
             value._init(ctx, path)
         else:
             value._assign_to(ctx, path)
+    elif isinstance(value, Macro):
+        value._init(ctx, path)
     elif isinstance(value, Cell):
         if value._parent() is None:
             value._init(ctx, path)

@@ -280,6 +280,8 @@ class Transformer(Base):
                 htf["TEMP"]["code"] = code
             else:
                 htf["TEMP"]["input_auth"][attr] = value
+                if attr not in htf["pins"]:
+                    htf["pins"][attr] = default_pin.copy()
             self._parent()._translate()
             return
         

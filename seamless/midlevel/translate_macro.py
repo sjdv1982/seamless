@@ -1,130 +1,98 @@
-from seamless.core import cell, link, \
- transformer, context, StructuredCell
+from seamless.core import cell, link, path, \
+ macro, context, StructuredCell
 
 def translate_macro(node, root, namespace, inchannels, outchannels):
     from .translate import set_structured_cell_from_checksum
-
-    inchannels = [ic for ic in inchannels if ic[0] != "code"]
 
     parent = get_path(root, node["path"][:-1], None, None)
     name = node["path"][-1]
     ctx = context(toplevel=False)
     setattr(parent, name, ctx)
 
-    result_name = node["RESULT"]
-    result_cell_name = result_name + "_CELL"
-    if node["language"] == "ipython":
-        assert result_name == "result"
-    input_name = node["INPUT"]
-    for c in inchannels:
-        assert (not len(c)) or c[0] not in (result_name, result_cell_name) #should have been checked by highlevel
+    param_name = node["PARAM"]
     all_inchannels = set(inchannels)
+    param_inchannels = []
+    interchannels = []
     pin_cells = {}
-    for pin in list(node["pins"].keys()):
-        pin_cell_name = pin + "_INCHANNEL"
-        assert pin_cell_name not in all_inchannels
+    for pinname in list(node["pins"].keys()):
+        pin = node["pins"][pinname]
+        if pin["io"] == "parameter":
+            pin_cell_name = pinname + "_PARAM"
+            assert pin_cell_name not in all_inchannels
+            pinname2 = as_tuple(pinname)
+            interchannels.append(pinname2)
+            if pinname2 in inchannels:
+                param_inchannels.append(pinname2)            
+        elif pin["io"] in ("input", "output"):
+            pin_cell_name = pinname + "_CELL"
+        else:
+            raise ValueError((pin["io"], pinname))
         assert pin_cell_name not in node["pins"]
         pin_cell = cell("mixed")
         cell_setattr(node, ctx, pin_cell_name, pin_cell)
-        pin_cells[pin] = pin_cell
+        pin_cells[pinname] = pin_cell
         
-    interchannels = [as_tuple(pin) for pin in node["pins"]]
     mount = node.get("mount", {})    
-    inp, inp_ctx = build_structured_cell(
-      ctx, input_name, inchannels, interchannels,
-      fingertip_no_remote=node.get("fingertip_no_remote", False),
-      fingertip_no_recompute=node.get("fingertip_no_recompute", False),
-      hash_pattern= node.get("hash_pattern"),
-      return_context=True
+    param, param_ctx = build_structured_cell(
+      ctx, param_name, param_inchannels, interchannels,
+      return_context=True,
+      fingertip_no_remote=False,
+      fingertip_no_recompute=False,
     )
 
-    setattr(ctx, input_name, inp)
-    namespace[node["path"] + ("SCHEMA",), False] = inp.schema, node    
-    if "input_schema" in mount:
-        inp_ctx.schema.mount(**mount["input_schema"])
-    for inchannel in inchannels:
-        path = node["path"] + inchannel
-        namespace[path, True] = inp.inchannels[inchannel], node
+    setattr(ctx, param_name, param)
+    namespace[node["path"] + ("SCHEMA",), False] = param.schema, node    
+    if "param_schema" in mount:
+        param_ctx.schema.mount(**mount["param_schema"])
 
-    assert result_name not in node["pins"] #should have been checked by highlevel
-    all_pins = {}
+    param_pins = {}
     for pinname, pin in node["pins"].items():
+        if pin["io"] != "parameter":
+            continue
         p = {"io": "input"}
         p.update(pin)
-        all_pins[pinname] = p
-    all_pins[result_name] = {"io": "output", "celltype": "mixed"}
-    if node["SCHEMA"]:
-        all_pins[node["SCHEMA"]] = {
-            "io": "input", "celltype": "mixed"
-        }
-    ctx.tf = transformer(all_pins)
-    if node["debug"]:
-        ctx.tf.debug = True
-    if node["language"] == "ipython":
-        ctx.code = cell("ipython")
-    else:
-        ctx.code = cell("transformer")
+        param_pins[pinname] = p
+    ctx.macro = macro(param_pins)
+    ctx.code = cell("macro")
     if "code" in mount:
         ctx.code.mount(**mount["code"])
 
-    ctx.code.connect(ctx.tf.code)
+    ctx.code.connect(ctx.macro.code)
     checksum = node.get("checksum", {})
     if "code" in checksum:
         ctx.code._set_checksum(checksum["code"], initial=True)
-    inp_checksum = {}
+    param_checksum = {}
     for k in checksum:
         if k == "schema":
-            inp_checksum[k] = checksum[k]
+            param_checksum[k] = checksum[k]
             continue
-        if not k.startswith("input"):
+        if not k.startswith("param"):
             continue
-        k2 = "value" if k == "input" else k[len("input_"):]
-        inp_checksum[k2] = checksum[k]
-    """
-    print("INP CHECKSUM", inp_checksum)
-    from ..core.context import Context
-    print("INP VALUE", Context(toplevel=True)._get_manager().resolve(inp_checksum["auth"]))
-    """
-    set_structured_cell_from_checksum(inp, inp_checksum)
+        k2 = "value" if k == "param" else k[len("param_"):]
+        param_checksum[k2] = checksum[k]
+
+    set_structured_cell_from_checksum(param, param_checksum)
     namespace[node["path"] + ("code",), True] = ctx.code, node
     namespace[node["path"] + ("code",), False] = ctx.code, node
 
-    for pin in list(node["pins"].keys()):
-        target = getattr(ctx.tf, pin)
+    for pinname in list(node["pins"].keys()):
+        path = node["path"] + as_tuple(pinname)
+        pin = node["pins"][pinname]
+        if pin["io"] == "parameter":
+            pinname2 = as_tuple(pinname)
+            if pinname2 in inchannels:
+                namespace[path, True] = param.inchannels[pinname], node
+        else:
+            is_target = (pin["io"] == "input")
+            namespace[path, is_target] = pin_cells[pinname], node
+
+    for pin in node["pins"]:
+        target = getattr(ctx.macro, pin)
         pin_cell = pin_cells[pin]
-        inp.outchannels[(pin,)].connect(pin_cell)
+        param.outchannels[(pin,)].connect(pin_cell)
         pin_cell.connect(target)
 
-    result, result_ctx = build_structured_cell(
-        ctx, result_name, [()],
-        outchannels,
-        fingertip_no_remote=node.get("fingertip_no_remote", False),
-        fingertip_no_recompute=node.get("fingertip_no_recompute", False),
-        return_context=True
-    )
-    namespace[node["path"] + ("RESULTSCHEMA",), False] = result.schema, node
-    if "result_schema" in mount:
-        result_ctx.schema.mount(**mount["result_schema"])
 
-    setattr(ctx, result_name, result)
 
-    result_pin = getattr(ctx.tf, result_name)        
-    result_cell = cell("mixed")
-    cell_setattr(node, ctx, result_cell_name, result_cell)
-    result_pin.connect(result_cell)
-    result_cell.connect(result.inchannels[()])
-    if node["SCHEMA"]:
-        schema_pin = getattr(ctx.tf, node["SCHEMA"])
-        result.schema.connect(schema_pin)
-    result_checksum = {}        
-    for k in checksum:
-        if not k.startswith("result"):
-            continue
-        k2 = "value" if k == "result" else k[len("result_"):]
-        result_checksum[k2] = checksum[k]
-    set_structured_cell_from_checksum(result, result_checksum)
-
-    namespace[node["path"], True] = inp, node
-    namespace[node["path"], False] = result, node
 
 from .util import get_path, as_tuple, build_structured_cell, cell_setattr

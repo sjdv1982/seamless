@@ -204,7 +204,7 @@ Translation is not required after modifying only cell values""")
         if isinstance(value, Reactor):
             value._init(self, (attr,) )
             self._translate()
-        elif isinstance(value, Transformer):
+        elif isinstance(value, (Transformer, Macro)):
             if value._parent is None:
                 self._graph[0][attr2] = value
                 self._children[attr2] = value

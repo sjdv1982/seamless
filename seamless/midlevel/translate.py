@@ -335,6 +335,11 @@ def translate(graph, ctx):
                 translate_docker_transformer(node, ctx, namespace, inchannels, outchannels)
             else:
                 raise NotImplementedError(node["language"])
+        elif t == "macro":
+            if node["language"]  != "python":
+                raise NotImplementedError(node["language"])
+            inchannels, outchannels = find_channels(node["path"], connection_paths)
+            translate_macro(node, ctx, namespace, inchannels, outchannels)
         elif t == "reactor":
             if node["language"] not in ("python", "ipython"):
                 raise NotImplementedError(node["language"])

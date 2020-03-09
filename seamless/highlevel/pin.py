@@ -96,7 +96,7 @@ class PinsWrapper:
         pin = hpins[pinname]
         io = pin.get("io", "input")
         if io == "input":
-            kls = InputPinWrapper
+            kls = PinWrapper
         else:
             raise NotImplementedError(io)
         return kls(self._parent(), pinname)
@@ -114,7 +114,7 @@ class PinsWrapper:
                 ctx = parent._get_top_parent()
                 ctx._destroy_path(subpath)
             return
-        if isinstance(value, InputPinWrapper):
+        if isinstance(value, PinWrapper):
             pin = value._get_hpin()
             hpins[pinname] = pin
         elif value == {}:
@@ -122,7 +122,7 @@ class PinsWrapper:
         elif isinstance(value, dict):
             hpins[pinname] = value.copy()
         else:
-            raise TypeError(pin)
+            raise TypeError(pinname)
 
     def __getitem__(self, pinname):
         return getattr(self, pinname)

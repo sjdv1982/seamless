@@ -97,11 +97,19 @@ def fill_checksum(manager, node, temp_path, composite=True):
     elif node["type"] == "reactor":
         raise NotImplementedError ### livegraph branch, feature E2
     elif node["type"] == "macro":
-        raise NotImplementedError ### livegraph branch, feature E3
+        if temp_path == "code":
+            datatype = "code"
+            if node["language"] == "python":
+                celltype = "python"
+                subcelltype = "macro"
+            else:
+                celltype = "text"
+        else:
+            celltype = "structured"
     else:
         raise TypeError(node["type"])
     if celltype == "structured":
-        if node["type"] in ("reactor", "transformer"):
+        if node["type"] in ("reactor", "transformer", "macro"):
             datatype = "mixed"
         else:
             datatype = node["datatype"]
@@ -177,6 +185,9 @@ def fill_checksums(mgr, nodes, *, path=None):
                     fill_checksum(mgr, node2, "_main_module")
                 if "checksum" in node2 and "checksum" not in node:
                     node["checksum"] = node2["checksum"]
+            elif node["type"] == "macro":
+                fill_checksum(mgr, node, "param_auth")
+                fill_checksum(mgr, node, "code")
             elif node["type"] == "reactor":
                 fill_checksum(mgr, node, "io")
                 fill_checksum(mgr, node, "code_start")

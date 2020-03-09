@@ -285,9 +285,11 @@ class Manager:
             return
         exc = traceback.format_exception(type(exception), exception, exception.__traceback__)
         exc = "".join(exc)
+        """
         msg = "Exception in %s:\n"% str(macro) + exc
         stars = "*" * 60 + "\n"
         print(stars + msg + stars, file=sys.stderr)
+        """
         self.cancel_macro(macro, True, reason=StatusReasonEnum.ERROR)
         self.cachemanager.macro_exceptions[macro] = exc      
 

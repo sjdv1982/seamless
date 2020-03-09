@@ -52,10 +52,10 @@ def parse_function_code(code_or_func, identifier="<None>"):
     return code, func_name, code_object
 
 from .Context import Context
-from .Reactor import Reactor
 from .Transformer import Transformer
+from .Reactor import Reactor
+from .Macro import Macro
 from .Cell import Cell
-from .SubCell import SubCell
 from .Link import Link
 from ..midlevel.StaticContext import StaticContext
 
@@ -90,6 +90,7 @@ def load_graph(graph, *, zip=None, cache_ctx=None, static=False, mounts=True, sh
         )
 
 __all__ = [
-    "Context", "Reactor", "Transformer", 
-    "Link", "Graph", "load_graph"
+    "Context", "Transformer", "Reactor", "Macro",
+    "Cell", "Link", "Graph", "StaticContext",
+    "load_graph"
 ]

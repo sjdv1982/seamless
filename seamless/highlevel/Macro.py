@@ -22,13 +22,14 @@ def new_macro(ctx, path, code, parameters):
     if parameters is None:
         parameters = []
     for param in parameters:
-        if param == "inp":
-            print("WARNING: parameter 'inp' for a macro is NOT recommended (shadows the .inp attribute)")
+        if param == "param":
+            print("WARNING: parameter 'param' for a macro is NOT recommended (shadows the .param attribute)")
     macro = {
         "path": path,
         "type": "macro",
+        "language": "python",
         "pins": {param:default_pin.copy() for param in parameters},
-        "INPUT": "inp",
+        "PARAM": "parameter",
         "UNTRANSLATED": True,
     }
     if code is not None:
@@ -44,9 +45,8 @@ class Macro(Base):
 
     def _init(self, parent, path, code=None, parameters=None):
         super().__init__(parent, path)
-        node = new_transformer(parent, path, code, parameters)
+        node = new_macro(parent, path, code, parameters)
         parent._children[path] = self
-        parent._children[result_path] = result
 
     @property
     def self(self):
@@ -55,17 +55,17 @@ class Macro(Base):
     @property
     def schema(self):
         node = self._get_node()
-        inp = node["INPUT"]
+        param = node["PARAM"]
         #TODO: self.self
-        return getattr(self, inp).schema
+        return getattr(self, param).schema
 
     @property
     def example(self):        
         mctx = self._get_mctx(force=True)
         node = self._get_node()
-        inputcell = getattr(mctx, node["INPUT"])
-        inp_ctx = inputcell._data._context()
-        example = inp_ctx.example.handle
+        paramcell = getattr(mctx, node["PARAM"])
+        param_ctx = paramcell._data._context()
+        example = param_ctx.example.handle
         return example
 
     @example.setter
@@ -74,9 +74,9 @@ class Macro(Base):
 
     def add_validator(self, validator, name=None):
         node = self._get_node()
-        inp = node["INPUT"]
+        param = node["PARAM"]
         #TODO: self.self
-        return getattr(self, inp).add_validator(validator, name=name)
+        return getattr(self, param).add_validator(validator, name=name)
 
     def __setattr__(self, attr, value):
         if attr.startswith("_") or attr in type(self).__dict__:
@@ -94,20 +94,22 @@ class Macro(Base):
             assert attr == "code"
             self._sub_mount(attr, value.filename, "r", "file", True)
 
-        if not self._has_macro() and not isinstance(value, Cell):
+        if not self._has_mctx() and not isinstance(value, Cell):
             if isinstance(value, Resource):
                 value = value.data
             if "TEMP" not in node or node["TEMP"] is None:
                 node["TEMP"] = {}
-            if "input_auth" not in node["TEMP"]:
-                node["TEMP"]["input_auth"] = {}
+            if "param_auth" not in node["TEMP"]:
+                node["TEMP"]["param_auth"] = {}
             if attr == "code":
                 code = value
                 if callable(value):
                     code, _, _ = parse_function_code(value)
                 node["TEMP"]["code"] = code
             else:
-                node["TEMP"]["input_auth"][attr] = value
+                node["TEMP"]["param_auth"][attr] = value
+                if attr not in node["pins"]:
+                    node["pins"][attr] = default_pin.copy()
             self._parent()._translate()
             return
         
@@ -144,11 +146,11 @@ class Macro(Base):
                 translate = True
             else:
                 mctx = self._get_mctx(force=True)
-                inp = getattr(mctx, node["INPUT"])
+                param = getattr(mctx, node["PARAM"])
                 removed = parent._remove_connections(self._path + (attr,))
                 if removed:
                     translate = True
-                setattr(inp.handle_no_inference, attr, value)
+                setattr(param.handle_no_inference, attr, value)
         if translate:
             parent._translate()
 
@@ -199,8 +201,8 @@ class Macro(Base):
             p = mctx.code
             return p.data
         else:
-            inp = getattr(mctx, node["INPUT"])
-            p = inp.value[attr]
+            param = getattr(mctx, node["PARAM"])
+            p = param.value[attr]
             return p
 
     @property
@@ -210,7 +212,7 @@ class Macro(Base):
             return None
         macro = self._get_mctx(force=True).macro
         attrs = (
-            node["INPUT"], 
+            node["PARAM"], 
             "code", 
             "macro", 
         )
@@ -228,7 +230,7 @@ class Macro(Base):
                     return curr_exc
                 else:
                     continue
-            elif k == node["INPUT"]:
+            elif k == node["PARAM"]:
                 if len(exc):
                     return exc
                 curr_exc = getattr(self, k).exception
@@ -251,12 +253,12 @@ class Macro(Base):
             return None
         macro = self._get_mctx(force=True).macro
         attrs = (
-            node["INPUT"], 
+            node["PARAM"], 
             "code", 
             "macro", 
         )
         for k in attrs:
-            if k == node["INPUT"]:
+            if k == node["PARAM"]:
                 cell = getattr(self, k)
                 status = cell.status
             elif k == "code":
@@ -288,8 +290,8 @@ class Macro(Base):
             getter = self._codegetter
             dirs = ["value", "mount", "mimetype"]
             proxycls = CodeProxy
-        elif attr == node["INPUT"]:
-            getter = self._inputgetter
+        elif attr == node["PARAM"]:
+            getter = self._paramgetter
             dirs = [
               "value", "buffered", "data", "checksum",
               "schema", "example", "status", "exception",
@@ -339,35 +341,35 @@ class Macro(Base):
         else:
             raise AttributeError(attr)
 
-    def _inputgetter(self, attr):
+    def _paramgetter(self, attr):
         node = self._get_node()
         if attr in node["pins"]:
             return getattr(self, attr)
         mctx = self._get_mctx(force=True)
-        inputcell = getattr(mctx, node["INPUT"])
+        paramcell = getattr(mctx, node["PARAM"])
         if attr == "value":
-            return inputcell.value
+            return paramcell.value
         elif attr == "data":
-            return inputcell.data
+            return paramcell.data
         elif attr == "buffered":
-            return inputcell.buffer.value
+            return paramcell.buffer.value
         elif attr == "checksum":
-            return inputcell.checksum
+            return paramcell.checksum
         elif attr == "handle":
-            return inputcell.handle_no_inference
+            return paramcell.handle_no_inference
         elif attr == "schema":
-            #schema = inputcell.get_schema() # WRONG
-            inp_ctx = inputcell._data._context()
-            schema = inp_ctx.example.handle.schema
+            #schema = paramcell.get_schema() # WRONG
+            param_ctx = paramcell._data._context()
+            schema = param_ctx.example.handle.schema
             return SchemaWrapper(self, schema, "SCHEMA")
         elif attr == "example":
             return self.example
         elif attr == "status":
-            return inputcell._data.status # TODO; take into account validation, inchannel status
+            return paramcell._data.status # TODO; take into account validation, inchannel status
         elif attr == "exception":
-            return inputcell.exception
+            return paramcell.exception
         elif attr == "add_validator":
-            handle = inputcell.handle_no_inference
+            handle = paramcell.handle_no_inference
             return handle.add_validator
         raise AttributeError(attr)
 
@@ -413,8 +415,8 @@ class Macro(Base):
         else:
             raise NotImplementedError
             if mctx is not None:
-                inp = getattr(mctx, node["INPUT"])
-                p = getattr(inp.value, attr)
+                param = getattr(mctx, node["PARAM"])
+                p = getattr(param.value, attr)
             value = p.value
             cell = {
                 "path": path,
@@ -434,7 +436,7 @@ class Macro(Base):
         assign_connection(parent, other._path, target_path, False)
         parent._translate()
 
-    def _observe_input(self, checksum):
+    def _observe_param(self, checksum):
         if self._parent() is None:
             return
         try:
@@ -443,12 +445,12 @@ class Macro(Base):
             return
         if node.get("checksum") is None:
             node["checksum"] = {}
-        node["checksum"].pop("input_temp", None)
-        node["checksum"].pop("input", None)
+        node["checksum"].pop("param_temp", None)
+        node["checksum"].pop("param", None)
         if checksum is not None:
-            node["checksum"]["input"] = checksum
+            node["checksum"]["param"] = checksum
 
-    def _observe_input_auth(self, checksum):
+    def _observe_param_auth(self, checksum):
         if self._parent() is None:
             return
         try:
@@ -457,12 +459,12 @@ class Macro(Base):
             return
         if node.get("checksum") is None:
             node["checksum"] = {}
-        node["checksum"].pop("input_temp", None)
-        node["checksum"].pop("input_auth", None)
+        node["checksum"].pop("param_temp", None)
+        node["checksum"].pop("param_auth", None)
         if checksum is not None:
-            node["checksum"]["input_auth"] = checksum
+            node["checksum"]["param_auth"] = checksum
 
-    def _observe_input_buffer(self, checksum):
+    def _observe_param_buffer(self, checksum):
         if self._parent() is None:
             return
         try:
@@ -471,10 +473,10 @@ class Macro(Base):
             return
         if node.get("checksum") is None:
             node["checksum"] = {}
-        node["checksum"].pop("input_temp", None)
-        node["checksum"].pop("input_buffer", None)
+        node["checksum"].pop("param_temp", None)
+        node["checksum"].pop("param_buffer", None)
         if checksum is not None:
-            node["checksum"]["input_buffer"] = checksum
+            node["checksum"]["param_buffer"] = checksum
 
     def _observe_code(self, checksum):
         if self._parent() is None:
@@ -505,12 +507,12 @@ class Macro(Base):
         node = self._get_node()
         mctx = self._get_mctx(force=True)
         mctx.code._set_observer(self._observe_code)
-        inp = node["INPUT"]
-        inpcell = getattr(mctx, inp)
-        inpcell.auth._set_observer(self._observe_input_auth)
-        inpcell.buffer._set_observer(self._observe_input_buffer)
-        inpcell._data._set_observer(self._observe_input)
-        schemacell = inpcell.schema
+        param = node["PARAM"]
+        paramcell = getattr(mctx, param)
+        paramcell.auth._set_observer(self._observe_param_auth)
+        paramcell.buffer._set_observer(self._observe_param_buffer)
+        paramcell._data._set_observer(self._observe_param)
+        schemacell = paramcell.schema
         schemacell._set_observer(self._observe_schema)
 
     def __delattr__(self, attr):
@@ -520,6 +522,6 @@ class Macro(Base):
     def __dir__(self):
         node = self._get_node()
         d = super().__dir__()
-        std = ["code", "pins", node["INPUT"], "exception", "status"]
+        std = ["code", "pins", node["PARAM"], "exception", "status"]
         pins = list(node["pins"].keys())
         return sorted(d + pins + std)
