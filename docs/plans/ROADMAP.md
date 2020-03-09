@@ -76,3 +76,7 @@ issue E2, E3 (TODO: port these to GitHub issues)
 Known issues
 ============
 (See issues/ folder. TODO: port these to GitHub issues)
+
+Next release
+============
+Link pins (see plan) may be a high priority.
