@@ -554,7 +554,7 @@ Translation is not required after modifying only cell values""")
                         child._set_observers()
                     except Exception:
                         pass
-                elif isinstance(child, (InputPin, OutputPin, Link)):
+                elif isinstance(child, (PinWrapper, Link)):
                     continue
                 else:
                     raise TypeError(type(child))
@@ -842,7 +842,7 @@ from .Transformer import Transformer
 from .Cell import Cell
 from .Link import Link
 from .Macro import Macro
-from .pin import InputPin, OutputPin
+from .pin import PinWrapper
 from .library.libmacro import LibMacro
 from .PollingObserver import PollingObserver
 

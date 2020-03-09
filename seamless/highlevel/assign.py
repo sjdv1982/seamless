@@ -8,9 +8,10 @@ from ..mixed import MixedBase
 from ..silk import Silk
 from .Cell import Cell, get_new_cell
 from .Resource import Resource
-from .pin import InputPin, OutputPin
+from .pin import PinWrapper
 from .Transformer import Transformer
 from .Reactor import Reactor
+from .Macro import Macro
 from .proxy import Proxy, CodeProxy, HeaderProxy
 from ..midlevel import copying
 from . import parse_function_code
@@ -172,27 +173,46 @@ def assign_connection(ctx, source, target, standalone_target, exempt=[]):
     s = None
     if source in ctx._children:
         s = ctx._children[source]
-        assert isinstance(s, (Cell, OutputPin))
         if isinstance(s, Cell):
             hcell = s._get_hcell()
             if hcell.get("constant"):
                 raise TypeError("Cannot assign to constant cell")
+        else:
+            raise TypeError(type(s))
     else:
-        source_parent = ctx._children[source[:-1]]
-        assert isinstance(source_parent, (Transformer, Reactor))
+        source_parent_path = source[:-1]
+        if source_parent_path not in ctx._children:
+            raise KeyError("Unknown path '{}'".format(source_parent_path))
+        source_parent = ctx._children[source_parent_path]
+        assert isinstance(source_parent, (Transformer, Reactor, Macro)), source_parent
         attr = source[-1]
-        if attr not in ("SCHEMA", "RESULTSCHEMA"):
+        ok = False
+        if attr == "SCHEMA":
+            ok = True
+        elif attr == "RESULTSCHEMA" and isinstance(source_parent, Transformer):
+            ok = True
+        if not ok:
             s = getattr(source_parent, attr)
-            assert isinstance(s, Proxy)
-            if not isinstance(s, (CodeProxy, HeaderProxy)):
-                assert isinstance(source_parent, Reactor)
+            assert isinstance(s, Proxy), s
+            if isinstance(s, (CodeProxy, HeaderProxy)):
+                pass
+            elif isinstance(source_parent, Transformer) \
+              and attr == source_parent.RESULT:
+                source = source_parent_path
+                s = None
+            elif attr in source_parent.pins:                
                 pin = source_parent.pins[attr]
-                assert pin["io"] in ("output", "edit"), (source, pin["io"])
+                if isinstance(source_parent, Macro):
+                    assert pin["io"] == "output", (source, pin["io"])
+                elif isinstance(source_parent, Reactor):
+                    assert pin["io"] in ("output", "edit"), (source, pin["io"])
+            else:
+                raise TypeError("No output pin '{}'".format(attr))
     if s is not None and s._virtual_path is not None:
         source = s._virtual_path
     if standalone_target:
         t = ctx._children[target]
-        assert isinstance(t, (Cell, InputPin))
+        assert isinstance(t, Cell)
         if t._virtual_path is not None:
             target = t._virtual_path
     connection = {
@@ -274,6 +294,13 @@ def _assign_context2(ctx, new_nodes, new_connections, path, old_ctx):
             Transformer(ctx, pp)
             remove_checksum += ["input_temp", "input", "input_buffer", "result"]
             potential = ("code", "schema", "result_schema", "main_module")
+            for pot in potential:
+                if old_path + (pot,) in targets:
+                    remove_checksum.append(pot)
+        elif nodetype == "macro":
+            Macro(ctx, pp)
+            remove_checksum += ["input_temp", "input", "input_buffer"]
+            potential = ("code", "schema")
             for pot in potential:
                 if old_path + (pot,) in targets:
                     remove_checksum.append(pot)

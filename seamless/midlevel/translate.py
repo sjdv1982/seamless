@@ -367,6 +367,7 @@ def translate(graph, ctx):
         path = node["path"]
 
 from .translate_py_transformer import translate_py_transformer
+from .translate_macro import translate_macro
 '''
 # imported only at need...
 from .translate_bash_transformer import translate_bash_transformer

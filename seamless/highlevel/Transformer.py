@@ -4,7 +4,7 @@ import pprint
 from .Cell import Cell
 from .Resource import Resource
 from .proxy import Proxy, CodeProxy, HeaderProxy
-from .pin import InputPin, OutputPin, PinsWrapper
+from .pin import PinsWrapper
 from .Base import Base
 from ..mime import language_to_mime
 from ..core.context import Context as CoreContext
@@ -56,11 +56,7 @@ class Transformer(Base):
     def _init(self, parent, path, code=None, parameters=None):
         super().__init__(parent, path)
         htf = new_transformer(parent, path, code, parameters)
-        result_path = self._path + (htf["RESULT"],)
-        result = OutputPin(parent, self, result_path)
-        result._virtual_path = self._path
         parent._children[path] = self
-        parent._children[result_path] = result
 
     @property
     def self(self):
@@ -77,10 +73,6 @@ class Transformer(Base):
         result_path = self._path + (htf["RESULT"],)
         new_result_path = self._path + (value,)
         parent = self._parent()
-        result = OutputPin(parent, self, new_result_path)
-        result._virtual_path = self._path
-        parent._children.pop(result_path)
-        parent._children[new_result_path] = result
         htf["RESULT"] = value
 
     @property

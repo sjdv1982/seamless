@@ -1,5 +1,6 @@
 from weakref import ref
 
+"""
 class InputPin:
     pass
 
@@ -7,8 +8,9 @@ class OutputPin:
     _virtual_path = None
     def __init__(self, parent, worker, path):
         pass
+"""
 
-class InputPinWrapper:
+class PinWrapper:
     def __init__(self, parent, pinname):
         self._parent = ref(parent)
         self._pinname = pinname
@@ -16,11 +18,14 @@ class InputPinWrapper:
     def _get_hpin(self):
         from .Transformer import Transformer
         from .Reactor import Reactor
+        from .Macro import Macro
         parent = self._parent()
         if isinstance(parent, Transformer):
             h = parent._get_htf()
         elif isinstance(parent, Reactor):
             h = parent._get_hrc()
+        elif isinstance(parent, Macro):
+            h = parent._get_node()
         else:
             raise TypeError(parent)
         return h["pins"][self._pinname]
@@ -37,6 +42,26 @@ class InputPinWrapper:
         hpin["celltype"] = value
         self._parent()._parent()._translate()
 
+    @property
+    def io(self):
+        hpin = self._get_hpin()
+        return hpin["io"]
+    @io.setter
+    def io(self, value):
+        parent = self._parent()
+        if isinstance(parent, Transformer):
+            assert value == "input", value
+        elif isinstance(parent, Reactor):
+            assert value in ("input", "output", "edit"), value
+        elif isinstance(parent, Macro):
+            assert value in ("input", "output", "parameter"), value
+        else:
+            raise TypeError(parent)
+        #TODO: more validation
+        hpin = self._get_hpin()
+        hpin["io"] = value
+        self._parent()._parent()._translate()
+
     def __getitem__(self, pinname):
         return getattr(self, pinname)
 
@@ -50,11 +75,14 @@ class PinsWrapper:
     def _get_hpins(self):
         from .Transformer import Transformer
         from .Reactor import Reactor
+        from .Macro import Macro
         parent = self._parent()
         if isinstance(parent, Transformer):
             h = parent._get_htf()
         elif isinstance(parent, Reactor):
             h = parent._get_hrc()
+        elif isinstance(parent, Macro):
+            h = parent._get_node()
         else:
             raise TypeError(parent)
         return h["pins"]
