@@ -264,7 +264,7 @@ def translate_connection(node, namespace, ctx):
 
 def translate_link(node, namespace, ctx):
     first = get_path_link(
-      ctx, node["first"], namespace, False
+      ctx, node["first"], namespace, True
     )    
     second = get_path_link(
       ctx, node["second"], namespace, True

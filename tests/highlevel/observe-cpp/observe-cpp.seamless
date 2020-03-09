@@ -1,0 +1,122 @@
+{
+  "connections": [
+    {
+      "first": [
+        "tf",
+        "SCHEMA"
+      ],
+      "second": [
+        "schema"
+      ],
+      "type": "link"
+    },
+    {
+      "source": [
+        "tf"
+      ],
+      "target": [
+        "result"
+      ],
+      "type": "connection"
+    },
+    {
+      "source": [
+        "tf",
+        "header"
+      ],
+      "target": [
+        "h"
+      ],
+      "type": "connection"
+    }
+  ],
+  "lib": {},
+  "nodes": [
+    {
+      "celltype": "text",
+      "checksum": {
+        "value": "5278a70c4bd3e2087778e37d4c8795800f0c6df323884edd10da37d2ac6fceac"
+      },
+      "datatype": "mixed",
+      "path": [
+        "h"
+      ],
+      "type": "cell"
+    },
+    {
+      "celltype": "structured",
+      "checksum": {
+        "buffer": "844fd0a83d0aa1f4331b13a447ee72acdaf4b47bb77cc79bab92df860c32c7af",
+        "value": "844fd0a83d0aa1f4331b13a447ee72acdaf4b47bb77cc79bab92df860c32c7af"
+      },
+      "datatype": "mixed",
+      "hash_pattern": null,
+      "path": [
+        "result"
+      ],
+      "type": "cell"
+    },
+    {
+      "celltype": "plain",
+      "checksum": {
+        "value": "3b6fda01ca7b860fe513b3da65827c90abcf27ae8b6b32908335a6b704efcf42"
+      },
+      "datatype": "mixed",
+      "mount": {
+        "authority": "cell",
+        "mode": "rw",
+        "path": "/tmp/schema.json",
+        "persistent": true
+      },
+      "path": [
+        "schema"
+      ],
+      "type": "cell"
+    },
+    {
+      "INPUT": "inp",
+      "RESULT": "result",
+      "SCHEMA": null,
+      "checksum": {
+        "code": "57988cf49cdf9cd7e98205fcd0c9c3e1e1e6bee2fdbf8fd3fce203c6754ec435",
+        "input": "dd4ea249d13cf438a89883c26749de04b395d2742f6436be2b7d433bd1c1956e",
+        "input_auth": "dd4ea249d13cf438a89883c26749de04b395d2742f6436be2b7d433bd1c1956e",
+        "input_buffer": "dd4ea249d13cf438a89883c26749de04b395d2742f6436be2b7d433bd1c1956e",
+        "main_module": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
+        "result": "844fd0a83d0aa1f4331b13a447ee72acdaf4b47bb77cc79bab92df860c32c7af",
+        "result_schema": "2780b3e6b770d9a9cb11f2fcc41b8af368e3dd34db5ef50233d0b0c5acd40bc3",
+        "schema": "3b6fda01ca7b860fe513b3da65827c90abcf27ae8b6b32908335a6b704efcf42"
+      },
+      "compiled": true,
+      "debug": false,
+      "file_extension": "cpp",
+      "language": "cpp",
+      "mount": {
+        "code": {
+          "authority": "cell",
+          "mode": "rw",
+          "path": "/tmp/test.cpp",
+          "persistent": true
+        }
+      },
+      "path": [
+        "tf"
+      ],
+      "pins": {
+        "a": {
+          "celltype": "mixed"
+        },
+        "b": {
+          "celltype": "mixed"
+        },
+        "c": {
+          "celltype": "mixed"
+        }
+      },
+      "type": "transformer"
+    }
+  ],
+  "params": {
+    "share_namespace": "ctx"
+  }
+}

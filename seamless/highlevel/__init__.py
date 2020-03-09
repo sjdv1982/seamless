@@ -59,7 +59,7 @@ from .SubCell import SubCell
 from .Link import Link
 from ..midlevel.StaticContext import StaticContext
 
-def load_graph(graph, *, cache_ctx=None, static=False, mounts=True, shares=True):
+def load_graph(graph, *, zip=None, cache_ctx=None, static=False, mounts=True, shares=True):
     """TODO: document"""
     import json
     from ..core.context import Context as CoreContext
@@ -85,7 +85,8 @@ def load_graph(graph, *, cache_ctx=None, static=False, mounts=True, shares=True)
     else:
         return Context.from_graph(
             graph, manager=manager, 
-            mounts=mounts, shares=shares
+            mounts=mounts, shares=shares,
+            zip=zip
         )
 
 __all__ = [

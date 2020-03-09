@@ -85,8 +85,10 @@ class Context(Base):
     _destroyed = False
 
     @classmethod
-    def from_graph(cls, graph, manager, *, mounts=True, shares=True, share_namespace=None):
+    def from_graph(cls, graph, manager, *, mounts=True, shares=True, share_namespace=None, zip=None):
         self = cls(manager=manager)
+        if zip is not None:
+            self.add_zip(zip)
         if share_namespace is not None:
             self.share_namespace = share_namespace
         self.set_graph(graph,mounts=mounts,shares=shares)
@@ -141,6 +143,7 @@ class Context(Base):
         async def auto_trans():
             while not self._destroyed:
                 if self._auto_translate:
+                    '''                    
                     await asyncio.sleep(10)
                     print("""ctx.auto_translate is currently unstable and has been disabled
 You must run regularly "ctx.translate()" (IPython) 
@@ -148,7 +151,7 @@ or "await ctx.translation()" (Jupyter) after modifying the graph.
 Translation is not required after modifying only cell values""")
                     self._auto_translate = False
                     break
-
+                    '''
                     try:                    
                         await self.translation()
                     except:
@@ -654,6 +657,12 @@ Translation is not required after modifying only cell values""")
         )
         self._observers.add(observer)
         return observer
+
+    def unobserve(self, path=()):
+        lp = len(path) 
+        for obs in list(self._observers):
+            if obs.path[:lp] == path:
+                self._observers.remove(obs)
 
     def _get_libs(self, path):
         lib = self._graph.lib

@@ -391,6 +391,13 @@ class Silk(SilkBase):
                 type_ = infer_type(value)
                 if type_ != "null":
                     schema["type"] = type_
+            if isinstance(value, np.number):
+                if "form" not in schema:
+                    schema["form"] = {}
+                form = schema["form"]
+                if "bytesize" not in form:
+                    form["bytesize"] = value.itemsize
+
 
     def _infer(self, policy, rich_value):
         assert isinstance(rich_value, RichValue)
