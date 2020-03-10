@@ -90,6 +90,15 @@ class Macro(Base):
         parent = self._parent()
         node = self._get_node()
 
+        if attr != "code":
+            if attr not in node["pins"]:
+                node["pins"][attr] = default_pin.copy()
+            else:
+                if not isinstance(value, Cell):
+                    pin = node["pins"][attr]
+                    if pin["io"] != "parameter":
+                        raise Exception("Can only assign value to parameter pin")
+
         if isinstance(value, Resource):
             assert attr == "code"
             self._sub_mount(attr, value.filename, "r", "file", True)
@@ -108,8 +117,6 @@ class Macro(Base):
                 node["TEMP"]["code"] = code
             else:
                 node["TEMP"]["param_auth"][attr] = value
-                if attr not in node["pins"]:
-                    node["pins"][attr] = default_pin.copy()
             self._parent()._translate()
             return
         

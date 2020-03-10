@@ -45,8 +45,6 @@ False
 3000
 Change 6
 Execute Seamless macro: .mymacro
-************************************************************
-Exception in Seamless macro: .mymacro:
 Traceback (most recent call last):
   File "/seamless/seamless/core/macro.py", line 100, in _execute
     exec_code(code, identifier, self.namespace, inputs, None)
@@ -57,7 +55,6 @@ Traceback (most recent call last):
   File "Seamless macro: .mymacro", line 16, in macro_code
     assert param != 999   # on purpose
 AssertionError
-************************************************************
 
 ctx.mymacro.ctx is undefined
 STOP

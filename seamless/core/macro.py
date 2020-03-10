@@ -117,7 +117,7 @@ class Macro(Worker):
                             paths.append((fullpath, p))
                 
                 while pctx is not None:
-                    if pmacro is not pctx()._macro:                    
+                    if pmacro is not pctx()._macro:
                         pmacro = pctx()._macro
                         if pmacro is None:
                             break
@@ -191,6 +191,7 @@ class Macro(Worker):
     def ctx(self):        
         if get_macro_mode():
             current_macro = curr_macro()
+            assert self._context() is not None
             try:
                 path = Path(current_macro, self.path, manager=self._get_manager())
             except Exception:
@@ -209,6 +210,9 @@ class Path:
     def __new__(cls, macro, path, *, manager=None):
         if not isinstance(path, tuple):
             raise TypeError(path)
+        for subpath in path:
+            if subpath is None:
+                raise TypeError(path)
         from .unbound_context import UnboundManager
         from .manager import Manager
         self = object.__new__(cls)
@@ -250,7 +254,10 @@ class Path:
         return self._macro
 
     def _get_manager(self):
-        return self._root()._get_manager()
+        root = self._root()
+        if root is None:
+            return None
+        return root._get_manager()
 
     def _root(self):
         from .unbound_context import UnboundManager
@@ -258,7 +265,10 @@ class Path:
             return self._macro._root()
         elif self._realmanager is not None:
             if isinstance(self._realmanager, UnboundManager):
-                root = self._realmanager._ctx()._root()
+                mctx = self._realmanager._ctx()
+                if mctx is None:
+                    return self._realmanager._root_
+                root = mctx._root()
                 return root
             else:
                 root = self._realmanager.last_ctx()
@@ -339,6 +349,7 @@ class Path:
         if cell is not None:
             assert self._cell is None
         manager = self._get_manager()
+        assert manager is not None, (self._root(), self._realmanager, self._macro)
         livegraph = manager.livegraph
         self_authority = livegraph.has_authority(self)
         oldcell = self._cell
@@ -377,7 +388,7 @@ class Path:
             
 
     def __str__(self):
-        ret = "(Seamless path: ." + ".".join(self._path)
+        ret = "(Seamless path: ." + ".".join([str(n) for n in  self._path])
         if self._macro is not None:
             ret += " from %s)" % str(self._macro)
         else:

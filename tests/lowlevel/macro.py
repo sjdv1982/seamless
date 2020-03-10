@@ -160,6 +160,7 @@ mount_check()
 print("Change 6")
 ctx.param.set(999)
 ctx.compute()
+print(ctx.mymacro.exception)
 try:
     print(ctx.mymacro.ctx)
 except AttributeError:

@@ -13,6 +13,7 @@ class UnboundManager:
     taskmanager = DummyTaskManager
     def __init__(self, ctx):
         self._ctx = weakref.ref(ctx)
+        self._root_ = ctx._root_
         self._registered = set()
         self.commands = []
         self.cells = {}
@@ -140,9 +141,8 @@ class UnboundContext(SeamlessBase):
         macro=False,
         manager=None,
     ):
+        from .macro_mode import curr_macro
         super().__init__()
-        if toplevel:
-            self._realmanager = UnboundManager(self)
         self._toplevel = toplevel
         if toplevel:
             self._bound_manager = manager
@@ -154,15 +154,23 @@ class UnboundContext(SeamlessBase):
             assert root is None
             assert not macro
             root = Context(toplevel=True, manager=manager)
+            self._root_ = root
+            self._realmanager = UnboundManager(self)
             if manager is not None:                
                 root._realmanager = manager
         elif macro:
             assert manager is None
+            root = curr_macro()._root()
+            assert root is not None
+            self._root_ = root
             manager = UnboundManager(self)
             self._realmanager = manager
         else:
             assert manager is None
-        assert root is None or isinstance(root, Context)
+        if root is None:
+            assert not toplevel and not macro
+        else:
+            assert isinstance(root, Context), root
         self._root_ = root
         if toplevel:
             register_toplevel(self)
@@ -194,6 +202,7 @@ class UnboundContext(SeamlessBase):
             child._realmanager = self._realmanager
             child._context = weakref.ref(self)
             child._root_ = self._root_
+            child.name = childname
             self._children[childname] = child
             for subchildname, subchild in child._children.items():
                 subchild._set_context(child, subchildname)

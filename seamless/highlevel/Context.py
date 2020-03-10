@@ -154,7 +154,7 @@ Translation is not required after modifying only cell values""")
                     '''
                     try:                    
                         await self.translation()
-                    except:
+                    except Exception:
                         import traceback
                         traceback.print_exc()
                         print("ctx.auto_translate DISABLED due to exception")

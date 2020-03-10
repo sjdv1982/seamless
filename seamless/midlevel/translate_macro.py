@@ -1,5 +1,6 @@
-from seamless.core import cell, link, path, \
+from seamless.core import cell, link, path as core_path, \
  macro, context, StructuredCell
+from seamless.core.macro import Path
 
 def translate_macro(node, root, namespace, inchannels, outchannels):
     from .translate import set_structured_cell_from_checksum
@@ -14,23 +15,26 @@ def translate_macro(node, root, namespace, inchannels, outchannels):
     param_inchannels = []
     interchannels = []
     pin_cells = {}
+    pin_mpaths0 = {}
     for pinname in list(node["pins"].keys()):
         pin = node["pins"][pinname]
         if pin["io"] == "parameter":
             pin_cell_name = pinname + "_PARAM"
+            assert pin_cell_name not in node["pins"]
             assert pin_cell_name not in all_inchannels
             pinname2 = as_tuple(pinname)
             interchannels.append(pinname2)
             if pinname2 in inchannels:
-                param_inchannels.append(pinname2)            
+                param_inchannels.append(pinname2)           
         elif pin["io"] in ("input", "output"):
-            pin_cell_name = pinname + "_CELL"
+            pin_cell_name = pinname
         else:
-            raise ValueError((pin["io"], pinname))
-        assert pin_cell_name not in node["pins"]
-        pin_cell = cell("mixed")
+            raise ValueError((pin["io"], pinname))        
+        pin_cell = cell(pin.get("celltype", "mixed"))
         cell_setattr(node, ctx, pin_cell_name, pin_cell)
         pin_cells[pinname] = pin_cell
+        if pin["io"] != "parameter":
+            pin_mpaths0[pinname] = (pin["io"] == "input")
         
     mount = node.get("mount", {})    
     param, param_ctx = build_structured_cell(
@@ -53,6 +57,16 @@ def translate_macro(node, root, namespace, inchannels, outchannels):
         p.update(pin)
         param_pins[pinname] = p
     ctx.macro = macro(param_pins)
+
+    for pinname in pin_mpaths0:
+        is_input = pin_mpaths0[pinname]
+        pin_mpath = getattr(core_path(ctx.macro.ctx), pinname)
+        pin_cell = pin_cells[pinname]
+        if is_input:
+            pin_cell.connect(pin_mpath)
+        else:
+            pin_mpath.connect(pin_cell)
+
     ctx.code = cell("macro")
     if "code" in mount:
         ctx.code.mount(**mount["code"])
@@ -75,22 +89,21 @@ def translate_macro(node, root, namespace, inchannels, outchannels):
     namespace[node["path"] + ("code",), True] = ctx.code, node
     namespace[node["path"] + ("code",), False] = ctx.code, node
 
-    for pinname in list(node["pins"].keys()):
+    for pinname in node["pins"]:
         path = node["path"] + as_tuple(pinname)
         pin = node["pins"][pinname]
         if pin["io"] == "parameter":
             pinname2 = as_tuple(pinname)
             if pinname2 in inchannels:
                 namespace[path, True] = param.inchannels[pinname], node
+            target = getattr(ctx.macro, pinname)
+            pin_cell = pin_cells[pinname]
+            param.outchannels[pinname2].connect(pin_cell)
+            pin_cell.connect(target)
         else:
             is_target = (pin["io"] == "input")
             namespace[path, is_target] = pin_cells[pinname], node
 
-    for pin in node["pins"]:
-        target = getattr(ctx.macro, pin)
-        pin_cell = pin_cells[pin]
-        param.outchannels[(pin,)].connect(pin_cell)
-        pin_cell.connect(target)
 
 
 

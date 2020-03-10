@@ -56,8 +56,8 @@ class Task:
             deproot = dep._root()
             if root is None:
                 root = deproot
-            else:
-                assert root is deproot # tasks cannot depend on multiple toplevel contexts
+            elif deproot is not None:
+                assert root is deproot, (root, deproot) # tasks cannot depend on multiple toplevel contexts
         return root
 
     def set_realtask(self, realtask):
