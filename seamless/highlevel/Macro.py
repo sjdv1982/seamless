@@ -53,6 +53,13 @@ class Macro(Base):
         raise NotImplementedError
 
     @property
+    def ctx(self):
+        mctx = self._get_mctx()
+        if mctx is None:
+            return None
+        return mctx.macro.ctx
+
+    @property
     def schema(self):
         node = self._get_node()
         param = node["PARAM"]

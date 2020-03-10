@@ -23,24 +23,24 @@ def run_macro(ctx, a, b):
     ctx.tf.y.connect(ctx.y)
     
 m.code = run_macro
-"""
 ctx.compute()
-#print(m.exception)
-#print(m._get_node())
-print(ctx.m._get_mctx().macro.ctx.x.value)
-print(ctx.m._get_mctx().macro.ctx.tf.status)
-"""
+print(m.status, m.exception)
+print(ctx.m.ctx.status)
+print(ctx.m.ctx.x.status)
+print(ctx.m.ctx.x.value)
+print(ctx.m.ctx.tf.status)
+print(ctx.m.ctx.y.status, ctx.m.ctx.y.value)
+print()
+
 ctx.x = 2
 m.x = ctx.x
+ctx.y = m.y
 ctx.compute()
-print(ctx.m._get_mctx().macro.status)
-print(ctx.m._get_mctx().macro.exception)
-print(ctx.m._get_mctx().macro.ctx.x.value)
-
-lg = ctx._manager.livegraph
-x = ctx.m._get_mctx().x
-print(x.value)
-x2 = ctx.m._get_mctx().macro.ctx.x
-print(x2.value)
-mpath = lg.cell_to_downstream[x][0].write_accessor.target()
-print(mpath, mpath._cell)
+print(m.status, m.exception)
+print(ctx.m.ctx.status)
+print(ctx.m.ctx.x.status)
+print(ctx.m.ctx.x.value)
+print(ctx.m.ctx.tf.status)
+print(ctx.m.ctx.y.status, ctx.m.ctx.y.value)
+print(ctx.y.status, ctx.y.value)
+print()

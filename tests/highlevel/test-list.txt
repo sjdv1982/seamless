@@ -67,4 +67,4 @@ share-pdb-docker.seamless/.zip: to test using:
     Potentially, add:
       --status-graph /seamless/seamless/graphs/status-visualization.seamless \
       --add-zip /seamless/seamless/graphs/status-visualization.zip
-    In that case, open also http://localhost:5813/graph/index.html
+    In that case, open also http://localhost:5813/status/index.html

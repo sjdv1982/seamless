@@ -498,13 +498,19 @@ If origin_task is provided, that task is not cancelled."""
     def cancel_accessor(self, accessor, void, origin_task=None):
         assert isinstance(accessor, ReadAccessor)
         self.taskmanager.cancel_accessor(accessor, origin_task=origin_task)
-        if origin_task is None or origin_task.accessor is not accessor:
+        if origin_task is None \
+          or not hasattr(origin_task, "accessor") \
+          or origin_task.accessor is not accessor:
             if accessor.expression is not None:           
                 self.livegraph.decref_expression(accessor.expression, accessor)
                 accessor.expression = None
                 accessor._checksum = None
         accessor._void = void
         target = accessor.write_accessor.target()
+        if isinstance(target, Path):
+            target = target._cell
+            if target is None:
+                return
         reason = StatusReasonEnum.UPSTREAM
         if isinstance(target, Cell):
             if accessor.write_accessor.path is None:
@@ -527,6 +533,8 @@ If origin_task is provided, that task is not cancelled."""
                 return self.cancel_macro(target, void=void, reason=reason)
             else:
                 raise TypeError(target)
+        else:
+            raise TypeError(target)
     @mainthread
     def cancel_transformer(self, transformer, void, reason=None):
         assert isinstance(transformer, Transformer)
@@ -544,10 +552,7 @@ If origin_task is provided, that task is not cancelled."""
             status_reason=reason,
             prelim = False
         )
-        livegraph = self.livegraph
-        accessors = livegraph.transformer_to_downstream[transformer]
-        for accessor in accessors:            
-            self.cancel_accessor(accessor, void)        
+        TransformerUpdateTask(self, transformer).launch()
 
     @mainthread
     def cancel_reactor(self, reactor, void, reason=None):
@@ -714,9 +719,10 @@ from ..protocol.get_buffer import get_buffer
 from ..cell import Cell
 from ..worker import Worker
 from ..transformer import Transformer
-from ..macro import Macro, _global_paths
+from ..macro import Macro, Path, _global_paths
 from ..reactor import Reactor
 from .accessor import ReadAccessor
 from ..status import StatusReasonEnum
 from ..structured_cell import StructuredCell
 from .tasks.structured_cell import StructuredCellJoinTask
+from .tasks.transformer_update import TransformerUpdateTask

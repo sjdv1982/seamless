@@ -8,13 +8,15 @@ class AccessorUpdateTask(Task):
         self.dependencies.append(accessor)
 
     async def _run(self):
-        accessor = self.accessor        
+        accessor = self.accessor
+
         # Get the expression. If it is None, do an accessor void cancellation
         expression = accessor.expression        
         manager = self.manager()
                 
         if expression is None:
             accessor._status_reason = StatusReasonEnum.UNDEFINED
+            accessor._new_macropath = False
             manager.cancel_accessor(accessor, void=True, origin_task=self)
             return        
         

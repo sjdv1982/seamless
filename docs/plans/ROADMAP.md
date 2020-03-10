@@ -63,7 +63,7 @@ Documentation
 
 Missing features
 ================
-issue E2, E3 (TODO: port these to GitHub issues)
+issue E2 (TODO: port these to GitHub issues)
 
 Known issues
 ============

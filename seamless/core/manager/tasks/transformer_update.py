@@ -7,8 +7,8 @@ class TransformerUpdateTask(Task):
         super().__init__(manager)
         self.dependencies.append(transformer)
 
-    async def _run(self):
-        transformer = self.transformer        
+    async def _run(self):        
+        transformer = self.transformer
         manager = self.manager()
         livegraph = manager.livegraph
         taskmanager = manager.taskmanager
@@ -34,15 +34,25 @@ class TransformerUpdateTask(Task):
                 manager.cancel_transformer(transformer, void=True, reason=status_reason)
             else:
                 transformer._status_reason = status_reason
-            return
+            if status_reason != StatusReasonEnum.UPSTREAM:
+                return
 
+        ok, void = True, False
         for pinname, accessor in upstreams.items():
             if accessor._checksum is None: #pending or void
-                void = accessor._void
-                manager._set_transformer_checksum(
-                    transformer, None, void, prelim=False
+                ok = False
+                if not void:
+                    void = accessor._void
+        if not ok:
+            manager._set_transformer_checksum(
+                transformer, None, void, prelim=False,
+                status_reason=status_reason
+            )
+            for accessor in downstreams:
+                manager.cancel_accessor(
+                    accessor, void, origin_task=self
                 )
-                return
+            return
 
         for pinname, accessor in upstreams.items():
             inputpins[pinname] = accessor._checksum

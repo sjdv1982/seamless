@@ -19,6 +19,5 @@ def run_macro(ctx, a, b):
     return
 m.code = run_macro
 ctx.compute()
-#print(m.exception)
-#print(m._get_node())
-print(ctx.m._get_mctx().macro.ctx.c.value)
+print(m.status, m.exception)
+print(ctx.m.ctx.c.value)

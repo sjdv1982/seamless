@@ -375,12 +375,14 @@ class Path:
             if self_authority:                
                 for accessor in livegraph.macropath_to_downstream[self]:
                     accessor._new_macropath = True
+                    AccessorUpdateTask(manager, accessor).launch()
                 if not cell._void:
                     CellUpdateTask(manager, cell).launch()
             else:
                 up_accessor = livegraph.macropath_to_upstream[self]
                 assert up_accessor is not None  # if no up accessor, how could we have authority?
                 up_accessor._new_macropath = True
+                AccessorUpdateTask(manager, up_accessor).launch()
                 upstream_cell = livegraph.accessor_to_upstream[up_accessor]
                 assert isinstance(upstream_cell, Cell)
                 if not upstream_cell._void:

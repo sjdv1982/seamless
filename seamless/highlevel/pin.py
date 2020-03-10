@@ -93,13 +93,8 @@ class PinsWrapper:
         hpins = self._get_hpins()
         if pinname not in hpins:
             raise AttributeError(pinname)
-        pin = hpins[pinname]
-        io = pin.get("io", "input")
-        if io == "input":
-            kls = PinWrapper
-        else:
-            raise NotImplementedError(io)
-        return kls(self._parent(), pinname)
+        return PinWrapper(self._parent(), pinname)
+        
 
     def __setattr__(self, pinname, value):
         from .Transformer import default_pin
