@@ -38,7 +38,7 @@ class Cell(Base):
             self.celltype = celltype
 
     def _init(self, parent, path):
-        super().__init__(parent, path)
+        super().__init__(parent=parent, path=path)
         parent._children[path] = self
 
     @property
@@ -213,11 +213,11 @@ class Cell(Base):
         if not hcell["celltype"] == "structured":
             cell = self._get_cell()
             return getattr(cell, attr)
-        parent = self._parent()
+        parent = self._parent()        
         readonly = False ### TODO
         path = self._subpath + (attr,)
         return SubCell(
-            self._parent(), self._cell(),
+            parent, self._cell(),
              path, readonly=readonly
         )
 
