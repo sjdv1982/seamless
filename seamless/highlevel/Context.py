@@ -533,6 +533,13 @@ Translation is not required after modifying only cell values""")
                     ub_ctx._mount = self._mount.copy()
                 self._unbound_context = ub_ctx                
                 translate(graph, ub_ctx)
+                nodedict = {node["path"]: node for node in graph["nodes"]}
+                nodedict0 = {node["path"]: node for node in graph0["nodes"]}
+                for path in nodedict:
+                    node = nodedict[path]
+                    node0 = nodedict0.get(path)
+                    if node0 is not None and node is not node0:
+                        node0.pop("UNTRANSLATED", None)
             self._gen_context = ub_ctx._bound
             assert self._gen_context._get_manager() is self._manager
             self._connect_share()

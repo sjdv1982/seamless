@@ -352,7 +352,7 @@ def translate(graph, ctx):
             msg = "Libmacro '%s' was not removed during pre-translation, or is a nested libmacro"
             raise TypeError(msg % path)
         else:
-            raise TypeError(t)
+            raise TypeError(t)        
         node.pop("UNTRANSLATED", None)
 
     namespace2 = OrderedDict()
@@ -364,12 +364,6 @@ def translate(graph, ctx):
             translate_connection(connection, namespace2, ctx)
         else:
             translate_link(connection, namespace2, ctx)
-
-    for node in nodes:
-        t = node["type"]
-        if t != "link":
-            continue
-        path = node["path"]
 
 from .translate_py_transformer import translate_py_transformer
 from .translate_macro import translate_macro

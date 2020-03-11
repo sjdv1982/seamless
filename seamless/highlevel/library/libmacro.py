@@ -1,6 +1,8 @@
 import weakref, json
 from copy import deepcopy
 
+highlevel_names = ("Context", "Cell", "Transformer", "Macro", "Reactor")
+
 class LibMacro:
 
     def __init__(self, parent, *, path=None, libpath=None, arguments=None):
@@ -67,13 +69,17 @@ class LibMacro:
                         connection_wrapper, overlay_node, cellpath
                     )
             namespace[argname] = value
-        libctx = Context.from_graph(graph, manager=parent._manager)
+        libctx = StaticContext.from_graph(graph, manager=parent._manager)
         namespace["libctx"] = libctx
         argnames = list(namespace.keys())
+        for name in highlevel_names:
+            if name not in namespace:
+                namespace[name] = globals()[name]
         identifier = ".".join(self._path)        
         exec_code(constructor, identifier, namespace, argnames, None)
         overlay_graph = overlay_context.get_graph()
         overlay_connections = connection_wrapper.connections
+        libctx.root.destroy()
         return overlay_graph, overlay_nodes, overlay_connections
 
     def __getattr__(self, attr):
@@ -166,6 +172,8 @@ from .iowrappers import ConnectionWrapper, InputCellWrapper, OutputCellWrapper
 from ..Base import Base
 from ..Cell import Cell
 from ..Context import Context
+from ...midlevel.StaticContext import StaticContext
 from ..Transformer import Transformer
 from ..Reactor import Reactor
+from ..Macro import Macro
 from ...core.cached_compile import exec_code

@@ -30,10 +30,12 @@ class Cell(Base):
     _node = None
     _subpath = ()
 
-    def __init__(self, parent=None, path=None):
+    def __init__(self, celltype=None, parent=None, path=None):
         assert (parent is None) == (path is None)
         if parent is not None:
             self._init(parent, path)
+        if celltype is not None:
+            self.celltype = celltype
 
     def _init(self, parent, path):
         super().__init__(parent, path)
@@ -92,6 +94,8 @@ class Cell(Base):
         if parent._dummy:
             raise AttributeError
         p = parent._gen_context
+        if p is None:
+            raise ValueError
         if len(self._path):
             pp = self._path[0]
             p = getattr(p, pp)
@@ -300,6 +304,8 @@ class Cell(Base):
         except Exception:
             import traceback; traceback.print_exc()
             raise
+        if cell is None:
+            raise ValueError
         value = cell.value
         return value
 

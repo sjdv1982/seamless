@@ -3,6 +3,7 @@ from io import BytesIO
 from ..core import context, cell
 from ..core.protocol.calculate_checksum import checksum_cache
 from . import copying
+from copy import deepcopy
 
 class StaticContext:
     _parent_path = None
@@ -12,17 +13,27 @@ class StaticContext:
         nodes0 = graph["nodes"]
         nodes = {tuple(node["path"]):node for node in nodes0}
         connections = graph["connections"]
-        return cls(nodes, connections, manager=manager)
+        params = graph.get("params", {})
+        return cls(nodes, connections, params, manager=manager)
 
-    def __init__(self, nodes, connections, *, manager=None):
+    def __init__(self, nodes, connections, params={}, *, manager=None):
         from seamless.core.manager import Manager
         self._nodes = nodes
         self._connections = connections
+        self._params = params
         if manager is not None:            
             assert isinstance(manager, Manager), type(manager)
             self._manager = manager
         else:
             self._manager = Manager()
+        self.root = context(toplevel=True,manager=self._manager)
+
+    def get_graph(self):
+        graph = {}
+        graph["nodes"] = deepcopy(list(self._nodes.values()))
+        graph["connections"] = deepcopy(self._connections)
+        graph["params"] = deepcopy(self._params)
+        return graph
 
     def add_zip(self, zip):
         if isinstance(zip, bytes):
@@ -94,6 +105,9 @@ class SimpleCellWrapper(WrapperBase):
 
     def __init__(self, manager, node, celltype, checksum):
         super().__init__(manager, node)
+        root = self._manager.last_ctx()
+        assert root is not None
+        self._root = root
         self._celltype = celltype
         assert checksum is None or isinstance(checksum, str)
         self._checksum = checksum
@@ -104,11 +118,41 @@ class SimpleCellWrapper(WrapperBase):
 
     @property
     def buffer(self):
+        from ..core.protocol.get_buffer import get_buffer
         checksum = self._checksum
         if checksum is None:
             return None
         checksum = bytes.fromhex(checksum)
-        return self._manager._get_buffer(checksum)
+        buffer_cache = self._manager.cachemanager.buffer_cache
+        return get_buffer(checksum, buffer_cache)
+
+    @property
+    def value(self):        
+        from ..core.protocol.deserialize import deserialize_sync
+        from ..core.protocol.expression import get_subpath_sync
+        checksum = self._checksum
+        celltype = self._celltype
+        buffer = self.buffer
+        if buffer is None:
+            return None        
+
+        celltype = self._celltype
+        if celltype == "mixed":
+            value = deserialize_sync(buffer, checksum, "mixed", copy=True)
+            hash_pattern = self._node.get("hash_pattern")
+            if hash_pattern is None:
+                return value
+            return get_subpath_sync(value, hash_pattern, None)
+        elif celltype == "code":
+            language = self._node["language"]
+            if language in ("python", "ipython"):
+                ct = language
+            else:
+                ct = "text"
+        else:
+            ct = celltype
+        value = deserialize_sync(buffer, checksum, ct, copy=True)
+        return value
 
     def cell(self):
         celltype = self._celltype
@@ -123,24 +167,6 @@ class SimpleCellWrapper(WrapperBase):
                 result = cell(celltype="text")
         else:
             result = cell(celltype=celltype)        
-        result.set_checksum(self._checksum)
-        return result
-
-    def _get_value(self, copy):
-        celltype = self._celltype
-        checksum = self._checksum
-        if checksum is None:
-            return None
-        checksum = bytes.fromhex(checksum)
-        return self._manager.resolve(checksum, copy=copy)
-
-    @property
-    def value(self):
-        return self._get_value(copy=True)
-
-    @property
-    def data(self):
-        return self._get_value(copy=False)
 
 class StructuredCellWrapper(WrapperBase):
     def __init__(self, manager, node):
@@ -228,3 +254,4 @@ class TransformerWrapper(WrapperBase):
 
 from ..core.manager.tasks import GetBufferTask, DeserializeBufferTask
 from ..core.protocol.deserialize import deserialize_cache
+

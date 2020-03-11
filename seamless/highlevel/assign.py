@@ -66,7 +66,7 @@ def assign_constant(ctx, path, value):
         else:
             raise AttributeError(path) #already exists, but not a Cell
     if old is None:
-        child = Cell(ctx, path) #inserts itself as child
+        child = Cell(None, ctx, path) #inserts itself as child
         cell = get_new_cell(path)
     else:
         cell = old._get_hcell()
@@ -130,11 +130,11 @@ def assign_libmacro(ctx, path, libmacro):
 def assign_connection(ctx, source, target, standalone_target, exempt=[]):
     nodedict = ctx._graph[0]
     if under_libmacro_control(nodedict, source):
-        msg = "Cannot connect from path under libmacro control: %s"
-        raise Exception(msg % source)
+        msg = "Cannot connect from path under libmacro control: {}"
+        raise Exception(msg.format(source))
     if under_libmacro_control(nodedict, target):
-        msg = "Cannot connect to path under libmacro control: %s"
-        raise Exception(msg % target)
+        msg = "Cannot connect to path under libmacro control: {}"
+        raise Exception(msg.format(target))
     if standalone_target:
         if target not in ctx._children:
             assign_constant(ctx, target, None)
@@ -282,7 +282,7 @@ def _assign_context2(ctx, new_nodes, new_connections, path, old_ctx):
         node["UNTRANSLATED"] = True
         remove_checksum = []
         if nodetype == "cell":
-            Cell(ctx, pp)
+            Cell(None, ctx, pp)
             ###remove_checksum.append("temp")
             if node["celltype"] == "structured":
                 remove_checksum.append("value")
@@ -422,7 +422,7 @@ def assign(ctx, path, value):
     elif isinstance(value, (Proxy, SchemaWrapper)):
         assert value._parent()._parent() is ctx
         if path not in ctx._children:
-            Cell(ctx, path) #inserts itself as child
+            Cell(None, ctx, path) #inserts itself as child
             node = get_new_cell(path)
             ctx._graph[0][path] = node
         #TODO: break links and connections from ctx._children[path]

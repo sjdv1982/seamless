@@ -438,7 +438,7 @@ class Macro(Base):
                 "celltype": "structured",
                 "datatype": "mixed",
             }
-        child = Cell(parent, path) #inserts itself as child
+        child = Cell(None, parent, path) #inserts itself as child
         parent._graph[0][path] = cell
         if "file_extension" in node:
             child.mimetype = node["file_extension"]

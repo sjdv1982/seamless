@@ -694,7 +694,7 @@ If origin_task is provided, that task is not cancelled."""
         self.contexts.clear()
         for ctx in contexts:
             ctx.destroy(from_del=from_del)
-        self.last_ctx = None        
+        self.last_ctx = lambda: None        
         for path in list(self.livegraph.macropath_to_upstream.keys()):
             path.destroy()
         self.cachemanager.check_destroyed()
