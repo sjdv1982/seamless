@@ -9,7 +9,6 @@ import sys
 
 ctx = Context()
 def subtract_func(a, b):
-    print("A", a, "B", b)
     return a - b
 
 def constructor(ctx, libctx, celltype, a, b, c):

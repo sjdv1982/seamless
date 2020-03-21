@@ -6,7 +6,7 @@ from seamless.highlevel import Context
 def switch(input, which):
     return {which: input}
 
-def merge(input, which):
+def join(input, which):
     return input.get(which)
 
 def func1(v):
@@ -16,7 +16,7 @@ def func2(v):
     return -2 * v
 
 ctx = Context()
-ctx.merge = merge
+ctx.join = join
 ctx.a = 1000
 ctx.which = "a"
 ctx.switch = switch
@@ -29,20 +29,20 @@ ctx.func1.v = ctx.switched_a
 ctx.func2 = func2
 ctx.switched_b = ctx.switched.b
 ctx.func2.v = ctx.switched_b
-ctx.tomerge = {}
+ctx.tojoin = {}
 ctx.func1_result = ctx.func1
 ctx.func2_result = ctx.func2
-ctx.tomerge.a = ctx.func1_result
-ctx.tomerge.b = ctx.func2_result
-ctx.merge.input = ctx.tomerge
-ctx.merge.pins.input.celltype = "plain"
-ctx.merge.which = ctx.which
-ctx.merged = ctx.merge
+ctx.tojoin.a = ctx.func1_result
+ctx.tojoin.b = ctx.func2_result
+ctx.join.input = ctx.tojoin
+ctx.join.pins.input.celltype = "plain"
+ctx.join.which = ctx.which
+ctx.joined = ctx.join
 ctx.compute()
-print(ctx.merged.value)
+print(ctx.joined.value)
 ctx.which = "b"
 ctx.compute()
-print(ctx.merged.value)
+print(ctx.joined.value)
 ctx.which = "c"
 ctx.compute()
-print(ctx.merged.value)
+print(ctx.joined.value)
