@@ -13,9 +13,9 @@ def subtract_func(a, b):
 
 def constructor(ctx, libctx, celltype, a, b, c):
     assert celltype in ("int", "float"), celltype
-    ctx.a = Cell(celltype=celltype)
-    ctx.b = Cell(celltype=celltype)
-    ctx.c = Cell(celltype=celltype)
+    ctx.a = Cell(celltype)
+    ctx.b = Cell(celltype)
+    ctx.c = Cell(celltype)
     a.connect(ctx.a)
     b.connect(ctx.b)
     c.connect_from(ctx.c)

@@ -62,11 +62,25 @@ class IncludedLibrary:
             par = self._params[argname]
             if par["type"] == "value":
                 value = get_argument_value(argname, argvalue)
-            else: # par["type"] == "cell":
+            elif par["type"] == "cell":
                 if not isinstance(argvalue, Cell):
                     msg = "%s must be Cell, not '%s'"
                     raise TypeError(msg % (argname, type(argvalue)))
                 value = argvalue._path
+            else:  # par["type"] == "celldict":
+                try:
+                    argvalue.items()
+                except Exception:
+                    raise TypeError((argname, type(argvalue))) from None
+                value = {}
+                for k, v in argvalue.items(): 
+                    if not isinstance(k, str):
+                        msg = "%s must contain string keys, not '%s'"
+                        raise TypeError(msg % (argname, type(k)))
+                    if not isinstance(v, Cell):
+                        msg = "%s['%s'] must be Cell, not '%s'"
+                        raise TypeError(msg % (argname, k, type(v)))
+                    value[k] = v._path
             arguments[argname] = value
 
         libmacro = LibMacro(self._ctx, libpath=self._path, arguments=arguments)

@@ -30,7 +30,7 @@ class Cell(Base):
     _node = None
     _subpath = ()
 
-    def __init__(self, celltype=None, parent=None, path=None):
+    def __init__(self, celltype=None, *, parent=None, path=None):
         assert (parent is None) == (path is None)
         if parent is not None:
             self._init(parent, path)

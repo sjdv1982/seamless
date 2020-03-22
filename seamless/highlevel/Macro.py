@@ -1,6 +1,7 @@
 import weakref
 import functools
 import pprint
+from copy import deepcopy
 from .Cell import Cell
 from .Resource import Resource
 from .proxy import Proxy, CodeProxy, HeaderProxy
@@ -12,23 +13,28 @@ from . import parse_function_code
 from .SchemaWrapper import SchemaWrapper
 from ..silk import Silk
 from .compiled import CompiledObjectDict
+from ..mixed.get_form import get_form
 
 default_pin = {
   "io": "parameter",
   "celltype": "mixed",
 }
 
-def new_macro(ctx, path, code, parameters):
-    if parameters is None:
-        parameters = []
-    for param in parameters:
-        if param == "param":
-            print("WARNING: parameter 'param' for a macro is NOT recommended (shadows the .param attribute)")
+def new_macro(ctx, path, code, pins):
+    if pins is None:
+        pins = []
+    for pin in pins:
+        if pin == "param":
+            print("WARNING: pin 'param' for a macro is NOT recommended (shadows the .param attribute)")
+    if isinstance(pins, (list, tuple)):
+        pins = {pin:default_pin.copy() for pin in pins}
+    else:
+        pins = deepcopy(pins)
     macro = {
         "path": path,
         "type": "macro",
         "language": "python",
-        "pins": {param:default_pin.copy() for param in parameters},
+        "pins": pins,
         "PARAM": "parameter",
         "UNTRANSLATED": True,
     }
@@ -38,14 +44,25 @@ def new_macro(ctx, path, code, parameters):
     return macro
 
 class Macro(Base):
-    def __init__(self, parent=None, path=None, code=None, parameters=None):
+    _temp_code = None
+    _temp_pins = None
+    def __init__(self, *, parent=None, path=None, code=None, pins=None):
         assert (parent is None) == (path is None)
         if parent is not None:
-            self._init(parent, path, code, parameters)
+            self._init(parent, path, code, pins)
+        else:
+            self._temp_code = code
+            self._temp_pins = pins
 
-    def _init(self, parent, path, code=None, parameters=None):
+    def _init(self, parent, path, code=None, pins=None):
         super().__init__(parent, path)
-        node = new_macro(parent, path, code, parameters)
+        if self._temp_code is not None:
+            assert code is None
+            code = self._temp_code
+        if self._temp_pins is not None:
+            assert pins is None
+            pins = self._temp_pins
+        node = new_macro(parent, path, code, pins)
         parent._children[path] = self
 
     @property
@@ -123,6 +140,7 @@ class Macro(Base):
                     code, _, _ = parse_function_code(value)
                 node["TEMP"]["code"] = code
             else:
+                get_form(value)
                 node["TEMP"]["param_auth"][attr] = value
             self._parent()._translate()
             return
@@ -293,7 +311,7 @@ class Macro(Base):
             return super().__getattribute__(attr)
         node = self._get_node()
         dirs = None
-        pull_source = functools.partial(self._pull_source, attr)
+        pull_source = functools.partial(self._pull_source, attr)    
         if attr in node["pins"]:
             getter = functools.partial(self._valuegetter, attr)
             dirs = ["value"]
@@ -438,7 +456,7 @@ class Macro(Base):
                 "celltype": "structured",
                 "datatype": "mixed",
             }
-        child = Cell(None, parent, path) #inserts itself as child
+        child = Cell(parent=ctx, path=path) #inserts itself as child
         parent._graph[0][path] = cell
         if "file_extension" in node:
             child.mimetype = node["file_extension"]

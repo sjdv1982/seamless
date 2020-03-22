@@ -26,6 +26,7 @@ StatusEnum = MyEnum("StatusEnum", (
 
 StatusReasonEnum = MyEnum("StatusReasonEnum",(
     "UNCONNECTED", # only for workers
+                   #  and cells connected from undefined macropaths
     "UNDEFINED", # only for cells
     "INVALID", # invalid value; worker or cell
     "ERROR",   # error in execution; only for workers

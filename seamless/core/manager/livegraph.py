@@ -337,9 +337,18 @@ class LiveGraph:
         self.cell_to_downstream[source].append(read_accessor)
         self.cell_to_upstream[target] = read_accessor
         
-        manager.cancel_cell(target, void=False)
+        #manager.cancel_cell(target, void=False)
         manager.taskmanager.register_accessor(read_accessor) 
-        target._status_reason = StatusReasonEnum.UPSTREAM       
+
+        from_unconnected_cell = False
+        if source._status_reason == StatusReasonEnum.UNCONNECTED:
+            from_unconnected_cell = True
+        manager.cancel_accessor(
+            read_accessor, void=from_unconnected_cell,
+            from_unconnected_cell=from_unconnected_cell
+        )  
+
+        #target._status_reason = reason       
 
         return read_accessor
 
@@ -374,9 +383,22 @@ class LiveGraph:
         self.paths_to_downstream[source][source_path].append(read_accessor)
         self.cell_to_upstream[target] = read_accessor
         
-        manager.cancel_cell(target, void=False)
-        manager.taskmanager.register_accessor(read_accessor) 
-        target._status_reason = StatusReasonEnum.UPSTREAM       
+        #manager.cancel_cell(target, void=False)
+        manager.taskmanager.register_accessor(read_accessor)
+
+        from_unconnected_cell = False
+        if source_path == ():
+            sc = source._structured_cell
+            if () in sc.inchannels:
+                sreason = sc.inchannels[()]._status_reason
+                if sreason == StatusReasonEnum.UNCONNECTED:
+                    reason = StatusReasonEnum.UNCONNECTED
+                    from_unconnected_cell = True
+        manager.cancel_accessor(
+            read_accessor, void=from_unconnected_cell,
+            from_unconnected_cell=from_unconnected_cell
+        )  
+        #target._status_reason = StatusReasonEnum.UPSTREAM
 
         return read_accessor
 
@@ -409,10 +431,18 @@ class LiveGraph:
         self.cell_to_downstream[source].append(read_accessor)
         self.paths_to_upstream[target][target_path] = read_accessor
         
-        manager.cancel_scell_inpath(target._structured_cell, target_path, void=False)
+        #manager.cancel_scell_inpath(target._structured_cell, target_path, void=False)
         manager.taskmanager.register_accessor(read_accessor) 
         sc = target._structured_cell
-        sc.inchannels[target_path]._status_reason = StatusReasonEnum.UPSTREAM       
+
+        from_unconnected_cell = False
+        if source._status_reason == StatusReasonEnum.UNCONNECTED:
+            from_unconnected_cell = True
+        manager.cancel_accessor(
+            read_accessor, void =from_unconnected_cell,
+            from_unconnected_cell=from_unconnected_cell
+        )  
+        #sc.inchannels[target_path]._status_reason = StatusReasonEnum.UPSTREAM
 
         return read_accessor
 
@@ -452,9 +482,12 @@ class LiveGraph:
         self.macropath_to_downstream[source].append(read_accessor)
         self.cell_to_upstream[target] = read_accessor
         
-        manager.cancel_cell(target, void=False)
+        #manager.cancel_cell(target, void=True, reason=StatusReasonEnum.UNCONNECTED)
         manager.taskmanager.register_accessor(read_accessor) 
-        target._status_reason = StatusReasonEnum.UPSTREAM       
+        manager.cancel_accessor(
+            read_accessor, void=True,
+            from_unconnected_cell=True
+        )  
 
         return read_accessor
 
@@ -486,12 +519,22 @@ class LiveGraph:
         self.accessor_to_upstream[read_accessor] = source
         self.cell_to_downstream[source].append(read_accessor)
         self.macropath_to_upstream[target] = read_accessor
-        
+
+        """
         cell = target._cell
         if cell is not None:
             manager.cancel_cell(cell, void=False)
-        manager.taskmanager.register_accessor(read_accessor) 
-        target._status_reason = StatusReasonEnum.UPSTREAM       
+        """
+        manager.taskmanager.register_accessor(read_accessor)
+        #target._status_reason = StatusReasonEnum.UPSTREAM
+
+        from_unconnected_cell = False
+        if source._status_reason == StatusReasonEnum.UNCONNECTED:
+            from_unconnected_cell = True
+        manager.cancel_accessor(
+            read_accessor, void=from_unconnected_cell,
+            from_unconnected_cell=from_unconnected_cell
+        )  
 
         return read_accessor
 

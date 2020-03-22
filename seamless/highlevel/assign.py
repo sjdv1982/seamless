@@ -66,7 +66,7 @@ def assign_constant(ctx, path, value):
         else:
             raise AttributeError(path) #already exists, but not a Cell
     if old is None:
-        child = Cell(None, ctx, path) #inserts itself as child
+        child = Cell(parent=ctx, path=path) #inserts itself as child
         cell = get_new_cell(path)
     else:
         cell = old._get_hcell()
@@ -119,7 +119,12 @@ def assign_transformer(ctx, path, func):
                 ctx._translate()
         existing_transformer.code = code
     else:
-        tf = Transformer(ctx, path, code, parameters) #inserts itself as child
+        tf = Transformer(
+            parent=ctx, 
+            path=path, 
+            code=code, 
+            pins=parameters
+        ) #inserts itself as child
         assert ctx._children[path] is tf
         ctx._translate()
 
@@ -282,7 +287,7 @@ def _assign_context2(ctx, new_nodes, new_connections, path, old_ctx):
         node["UNTRANSLATED"] = True
         remove_checksum = []
         if nodetype == "cell":
-            Cell(None, ctx, pp)
+            Cell(parent=ctx, path=pp)
             ###remove_checksum.append("temp")
             if node["celltype"] == "structured":
                 remove_checksum.append("value")
@@ -291,7 +296,7 @@ def _assign_context2(ctx, new_nodes, new_connections, path, old_ctx):
                 if old_path in targets: 
                     remove_checksum.append("value")
         elif nodetype == "transformer":
-            Transformer(ctx, pp)
+            Transformer(parent=ctx, path=pp)
             remove_checksum += ["input_temp", "input", "input_buffer", "result"]
             potential = ("code", "schema", "result_schema", "main_module")
             for pot in potential:
@@ -422,7 +427,7 @@ def assign(ctx, path, value):
     elif isinstance(value, (Proxy, SchemaWrapper)):
         assert value._parent()._parent() is ctx
         if path not in ctx._children:
-            Cell(None, ctx, path) #inserts itself as child
+            Cell(parent=ctx, path=path) #inserts itself as child
             node = get_new_cell(path)
             ctx._graph[0][path] = node
         #TODO: break links and connections from ctx._children[path]

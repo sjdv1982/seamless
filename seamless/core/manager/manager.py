@@ -456,21 +456,25 @@ If origin_task is provided, that task is not cancelled."""
             self._set_cell_checksum(cell, None, void, status_reason=reason)
             livegraph = self.livegraph
             accessors = livegraph.cell_to_downstream[cell]
+            from_unconnected_cell = False
+            if void and reason == StatusReasonEnum.UNCONNECTED:
+                from_unconnected_cell = True
             for accessor in accessors:
-                self.cancel_accessor(accessor, void)        
+                self.cancel_accessor(
+                    accessor, void,
+                    from_unconnected_cell=from_unconnected_cell
+                )
         finally:
             cell._canceling = False
 
     @mainthread
-    def cancel_scell_inpath(self, sc, path, void, from_auth=False):
+    def cancel_scell_inpath(self, sc, path, void, from_auth=False, reason=None):
         from .tasks.structured_cell import overlap_path
         assert isinstance(sc, StructuredCell)
         cell = sc._data
-        if not from_auth and path in sc.inchannels:        
-            if void:
+        if not from_auth and path in sc.inchannels:
+            if reason is None and void:
                 reason = StatusReasonEnum.UPSTREAM
-            else:
-                reason = None
             ic = sc.inchannels[path]
             self._set_inchannel_checksum(
                 ic, None, void,
@@ -478,12 +482,20 @@ If origin_task is provided, that task is not cancelled."""
             )
         for outchannel in sc.outchannels:
             ###if overlap_path(outchannel, path): # no, cancel all!
-            self.cancel_cell_path(cell, outchannel, void)
-        self._set_cell_checksum(cell, None, void, StatusReasonEnum.UPSTREAM)
-        self._set_cell_checksum(sc.buffer, None, void, StatusReasonEnum.UPSTREAM)
+            from_unconnected_cell = False
+            if reason == StatusReasonEnum.UNCONNECTED:
+                from_unconnected_cell = True
+            self.cancel_cell_path(
+              cell, outchannel, void, 
+              from_unconnected_cell=from_unconnected_cell
+            )
+        if reason is None:
+            reason = StatusReasonEnum.UPSTREAM
+        self._set_cell_checksum(cell, None, void, reason)
+        self._set_cell_checksum(sc.buffer, None, void, reason)
 
     @mainthread
-    def cancel_cell_path(self, cell, path, void):
+    def cancel_cell_path(self, cell, path, void, from_unconnected_cell=False):
         assert isinstance(cell, Cell)
         assert cell._structured_cell is not None
         assert cell._structured_cell._data is cell, (cell, cell._structured_cell._data)
@@ -492,10 +504,17 @@ If origin_task is provided, that task is not cancelled."""
         livegraph = self.livegraph
         all_accessors = livegraph.paths_to_downstream[cell]
         for accessor in all_accessors[path]:
-            self.cancel_accessor(accessor, void)        
+            self.cancel_accessor(
+              accessor, void, 
+              from_unconnected_cell=from_unconnected_cell
+            )        
 
     @mainthread
-    def cancel_accessor(self, accessor, void, origin_task=None):
+    def cancel_accessor(self,
+        accessor, void, 
+        origin_task=None, 
+        from_unconnected_cell=False
+    ):
         assert isinstance(accessor, ReadAccessor)
         self.taskmanager.cancel_accessor(accessor, origin_task=origin_task)
         if origin_task is None \
@@ -507,22 +526,25 @@ If origin_task is provided, that task is not cancelled."""
                 accessor._checksum = None
         accessor._void = void
         target = accessor.write_accessor.target()
+        reason = StatusReasonEnum.UPSTREAM
+        if from_unconnected_cell:
+            assert void
+            reason = StatusReasonEnum.UNCONNECTED
         if isinstance(target, Path):
             target = target._cell
             if target is None:
-                return
-        reason = StatusReasonEnum.UPSTREAM
+                return        
         if isinstance(target, Cell):
             if accessor.write_accessor.path is None:
                 if target._structured_cell is not None:
                     assert target._structured_cell.schema is target, target # cancel_cell only on schema cells, else use cancel_scell_inpath
-                return self.cancel_cell(target, void=void)
+                return self.cancel_cell(target, void=void, reason=reason)
             else:
                 assert target._structured_cell is not None
                 self.cancel_scell_inpath(
                     target._structured_cell, 
                     accessor.write_accessor.path,
-                    void=void
+                    void=void, reason=reason
                 )
         elif isinstance(target, Worker):
             if isinstance(target, Transformer):
@@ -535,6 +557,7 @@ If origin_task is provided, that task is not cancelled."""
                 raise TypeError(target)
         else:
             raise TypeError(target)
+
     @mainthread
     def cancel_transformer(self, transformer, void, reason=None):
         assert isinstance(transformer, Transformer)

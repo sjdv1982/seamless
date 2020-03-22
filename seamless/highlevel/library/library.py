@@ -11,11 +11,11 @@ def validate_params(params):
         if isinstance(v, str):
             v = {"type": v}
         type_ = v.get("type", "value")
-        assert type_ in ("value", "cell"), (k, type_)
+        assert type_ in ("value", "cell", "celldict"), (k, type_)
         io = v.get("io", "input")
         if type_ == "value":
             assert io == "input", (k, io)
-        if type_ == "cell":
+        if type_ in ("cell", "celldict"):
             assert io in ("input", "output"), (k, io)
         default = v.get("default")
         try:

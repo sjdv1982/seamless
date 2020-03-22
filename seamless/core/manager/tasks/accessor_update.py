@@ -17,7 +17,10 @@ class AccessorUpdateTask(Task):
         if expression is None:
             accessor._status_reason = StatusReasonEnum.UNDEFINED
             accessor._new_macropath = False
-            manager.cancel_accessor(accessor, void=True, origin_task=self)
+            manager.cancel_accessor(
+                accessor, void=True, 
+                origin_task=self
+            )
             return        
         
         expression_result_checksum = await EvaluateExpressionTask(manager, expression).run()        

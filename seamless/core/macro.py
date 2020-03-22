@@ -330,7 +330,10 @@ class Path:
         manager = self._get_manager()
         livegraph = manager.livegraph
         for accessor in livegraph.macropath_to_downstream[self]:
-            manager.cancel_accessor(accessor, True)
+            manager.cancel_accessor(
+                accessor, True, 
+                from_unconnected_cell=True
+            )
         if not oldcell._destroyed:
             if not self_authority:
                 manager.cancel_cell(

@@ -46,11 +46,11 @@ def get_status(parent, children, nodes, path):
     if path is not None:
         lp = len(path)
     all_children = itertools.chain(children.items(), nodes.items())
-    for childname0, child in all_children:    
+    for childname0, child in all_children:
         if path is not None:            
             if childname0[:lp] != path:
                 continue
-            childname0 = childname0[lp:]
+            childname0 = childname0[lp:]        
         if len(childname0) != 1:
             continue
         childname = childname0[0]

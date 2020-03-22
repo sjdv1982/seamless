@@ -1,6 +1,7 @@
 import weakref
 import functools
 import pprint
+from copy import deepcopy
 from .Cell import Cell
 from .Resource import Resource
 from .proxy import Proxy, CodeProxy, HeaderProxy
@@ -12,23 +13,28 @@ from . import parse_function_code
 from .SchemaWrapper import SchemaWrapper
 from ..silk import Silk
 from .compiled import CompiledObjectDict
+from ..mixed.get_form import get_form
 
 default_pin = {
   "celltype": "mixed",
 }
 
-def new_transformer(ctx, path, code, parameters):
-    if parameters is None:
-        parameters = []
-    for param in parameters:
-        if param == "inp":
-            print("WARNING: parameter 'inp' for a transformer is NOT recommended (shadows the .inp attribute)")
+def new_transformer(ctx, path, code, pins):
+    if pins is None:
+        pins = []
+    if isinstance(pins, (list, tuple)):
+        pins = {pin:default_pin.copy() for pin in pins}
+    else:
+        pins = deepcopy(pins)
+    for pin in pins:
+        if pin == "inp":
+            print("WARNING: pin 'inp' for a transformer is NOT recommended (shadows the .inp attribute)")
     transformer =    {
         "path": path,
         "type": "transformer",
         "compiled": False,
         "language": "python",
-        "pins": {param:default_pin.copy() for param in parameters},
+        "pins": pins,
         "RESULT": "result",
         "INPUT": "inp",
         "SCHEMA": None, #the result schema can be exposed as an input pin to the transformer under this name
@@ -48,14 +54,25 @@ class TransformerWrapper:
         self.parent = parent
 
 class Transformer(Base):
-    def __init__(self, parent=None, path=None, code=None, parameters=None):
+    _temp_code = None
+    _temp_pins = None
+    def __init__(self, *, parent=None, path=None, code=None, pins=None):
         assert (parent is None) == (path is None)
         if parent is not None:
-            self._init(parent, path, code, parameters)
-
-    def _init(self, parent, path, code=None, parameters=None):
+            self._init(parent, path, code, pins)
+        else:
+            self._temp_code = code
+            self._temp_pins = pins
+            
+    def _init(self, parent, path, code=None, pins=None):
         super().__init__(parent, path)
-        htf = new_transformer(parent, path, code, parameters)
+        if self._temp_code is not None:
+            assert code is None
+            code = self._temp_code
+        if self._temp_pins is not None:
+            assert pins is None
+            pins = self._temp_pins
+        htf = new_transformer(parent, path, code, pins)
         parent._children[path] = self
 
     @property
@@ -279,6 +296,7 @@ class Transformer(Base):
                     code, _, _ = parse_function_code(value)
                 htf["TEMP"]["code"] = code
             else:
+                get_form(value)
                 htf["TEMP"]["input_auth"][attr] = value
                 if attr not in htf["pins"]:
                     htf["pins"][attr] = default_pin.copy()
@@ -700,7 +718,7 @@ class Transformer(Base):
                 "celltype": "structured",
                 "datatype": "mixed",
             }
-        child = Cell(None, parent, path) #inserts itself as child
+        child = Cell(parent=parent, path=path) #inserts itself as child
         parent._graph[0][path] = cell
         if "file_extension" in htf:
             child.mimetype = htf["file_extension"]

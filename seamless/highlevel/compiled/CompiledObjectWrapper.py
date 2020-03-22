@@ -171,7 +171,7 @@ class CompiledObjectWrapper:
         if value is not None:
             assert isinstance(value, str), type(value)
             setattr(self, "code", value)
-        child = Cell(None, parent, new_path) #inserts itself as child
+        child = Cell(parent=parent, path=new_path) #inserts itself as child
         parent._graph[0][new_path] = cell
         mimetype = language_to_mime(language)
         child.mimetype = mimetype

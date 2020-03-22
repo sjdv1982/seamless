@@ -352,8 +352,8 @@ for job in dag.jobs:
     print("Creating job:", jobname)
 
     indummies, outdummies, wildcard_dummies = rule_dummies[rule]
-    params = indummies._tf_params()
-    tf = Transformer(parameters=params)
+    pins = indummies._tf_params()
+    tf = Transformer(pins=pins)
     setattr(ctx.jobs, jobname, tf)
     
     docker_image = job.singularity_img_url

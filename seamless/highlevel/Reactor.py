@@ -246,7 +246,7 @@ class Reactor(Base):
                 "datatype": "mixed",
             }
         #TODO: check existing inchannel connections and links (cannot be the same or higher)
-        child = Cell(None, parent, path) #inserts itself as child
+        child = Cell(parent=ctx, path=path) #inserts itself as child
         parent._graph[0][path] = cell
         target_path = self._path + (attr,)
         assign_connection(parent, other._path, target_path, False)
