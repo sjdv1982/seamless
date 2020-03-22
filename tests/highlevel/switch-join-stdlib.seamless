@@ -1,0 +1,531 @@
+{
+  "connections": [
+    {
+      "source": [
+        "a1"
+      ],
+      "target": [
+        "op1",
+        "a"
+      ],
+      "type": "connection"
+    },
+    {
+      "source": [
+        "f1"
+      ],
+      "target": [
+        "op1",
+        "b"
+      ],
+      "type": "connection"
+    },
+    {
+      "source": [
+        "op1"
+      ],
+      "target": [
+        "r1"
+      ],
+      "type": "connection"
+    },
+    {
+      "source": [
+        "a2"
+      ],
+      "target": [
+        "op2",
+        "a"
+      ],
+      "type": "connection"
+    },
+    {
+      "source": [
+        "f2"
+      ],
+      "target": [
+        "op2",
+        "b"
+      ],
+      "type": "connection"
+    },
+    {
+      "source": [
+        "op2"
+      ],
+      "target": [
+        "r2"
+      ],
+      "type": "connection"
+    },
+    {
+      "source": [
+        "a3"
+      ],
+      "target": [
+        "op3",
+        "a"
+      ],
+      "type": "connection"
+    },
+    {
+      "source": [
+        "f3"
+      ],
+      "target": [
+        "op3",
+        "b"
+      ],
+      "type": "connection"
+    },
+    {
+      "source": [
+        "op3"
+      ],
+      "target": [
+        "r3"
+      ],
+      "type": "connection"
+    }
+  ],
+  "lib": [
+    {
+      "api": "pyseamless",
+      "constructor": "def constructor_join(ctx, libctx, celltype, inputs, selected, output):\n    ctx.output = Cell(celltype)\n    output.connect_from(ctx.output)\n    ctx.selected = Cell(\"str\")\n    selected.connect(ctx.selected)\n\n    macro_pins = {\n        \"celltype\": {\n            \"io\": \"parameter\", \n            \"celltype\": \"str\",\n        },\n        \"output\": {\n            \"io\": \"output\", \n            \"celltype\": celltype,\n        },\n        \"selected\": {\n            \"io\": \"parameter\", \n            \"celltype\": \"str\",\n        },\n        \"options\": {\n            \"io\": \"parameter\", \n            \"celltype\": \"plain\",\n        }\n    }\n\n    \"\"\"\n    Create one macro input pin per cell in the inputs dict\n    This will populate the ctx passed to join_func with input cells\n     that can be connected to\n    \"\"\"\n    options = []\n    for input_name in inputs:\n        assert isinstance(input_name, str), input_name\n        if input_name in macro_pins or input_name == \"join_macro\":\n            msg = \"You cannot join from a cell under the selector '{}'\"\n            raise Exception(msg.format(input_name))\n        options.append(input_name)\n        pin = {\n            \"io\": \"input\",\n            \"celltype\": celltype\n        }\n        macro_pins[input_name] = pin\n    ctx.join_macro = Macro(pins=macro_pins)\n    ctx.join_macro.code = libctx.join_code.value\n    ctx.join_macro.celltype = celltype\n    ctx.join_macro.selected = ctx.selected\n    ctx.join_macro.options = options\n\n    for input_name in inputs:\n        input_cell = Cell(celltype)\n        setattr(ctx, input_name, input_cell)\n        setattr(ctx.join_macro, input_name, input_cell)\n        inputs[input_name].connect(input_cell)\n    ctx.output = ctx.join_macro.output",
+      "graph": {
+        "connections": [],
+        "lib": {},
+        "nodes": [
+          {
+            "celltype": "code",
+            "checksum": {
+              "value": "6d60ff18a465a9ad8c899d3cd6259f0b63c67c1415111e2db0395d74aeada246"
+            },
+            "datatype": "mixed",
+            "language": "python",
+            "path": [
+              "constructor_code"
+            ],
+            "type": "cell"
+          },
+          {
+            "celltype": "structured",
+            "checksum": {
+              "auth": "4fa6b5218d20565a020a7697f93a9b61acb0a030a4c2dcfac24a62d3213fedec",
+              "buffer": "4fa6b5218d20565a020a7697f93a9b61acb0a030a4c2dcfac24a62d3213fedec",
+              "value": "4fa6b5218d20565a020a7697f93a9b61acb0a030a4c2dcfac24a62d3213fedec"
+            },
+            "datatype": "mixed",
+            "hash_pattern": null,
+            "path": [
+              "constructor_params"
+            ],
+            "type": "cell"
+          },
+          {
+            "celltype": "code",
+            "checksum": {
+              "value": "52fddca8d60d15107e0147a11168670bda3f21bb7502a740fbd0137ee06885bc"
+            },
+            "datatype": "mixed",
+            "language": "python",
+            "path": [
+              "join_code"
+            ],
+            "type": "cell"
+          }
+        ],
+        "params": {
+          "share_namespace": "ctx"
+        }
+      },
+      "language": "python",
+      "params": {
+        "celltype": {
+          "default": null,
+          "io": "input",
+          "type": "value"
+        },
+        "inputs": {
+          "default": null,
+          "io": "input",
+          "type": "celldict"
+        },
+        "output": {
+          "default": null,
+          "io": "output",
+          "type": "cell"
+        },
+        "selected": {
+          "default": null,
+          "io": "input",
+          "type": "cell"
+        }
+      },
+      "path": [
+        "join"
+      ]
+    },
+    {
+      "api": "pyseamless",
+      "constructor": "def constructor_switch(ctx, libctx, celltype, input, selected, outputs):\n    ctx.input = Cell(celltype)\n    input.connect(ctx.input)\n    ctx.selected = Cell(\"str\")\n    selected.connect(ctx.selected)\n\n    macro_pins = {\n        \"celltype\": {\n            \"io\": \"parameter\", \n            \"celltype\": \"str\",\n        },\n        \"input\": {\n            \"io\": \"input\", \n            \"celltype\": celltype,\n        },\n        \"selected\": {\n            \"io\": \"parameter\", \n            \"celltype\": \"str\",\n        },\n        \"options\": {\n            \"io\": \"parameter\", \n            \"celltype\": \"plain\",\n        }\n    }\n\n    \"\"\"\n    Create one macro output pin per cell in the outputs dict\n    This will populate the ctx passed to switch_func with output cells\n     that can be connected to\n    \"\"\"\n    options = []\n    for output_name in outputs:\n        assert isinstance(output_name, str), output_name\n        if output_name in macro_pins or output_name == \"switch_macro\":\n            msg = \"You cannot switch to a cell under the selector '{}'\"\n            raise Exception(msg.format(output_name))\n        options.append(output_name)\n        pin = {\n            \"io\": \"output\",\n            \"celltype\": celltype\n        }\n        macro_pins[output_name] = pin\n    ctx.switch_macro = Macro(pins=macro_pins)\n    ctx.switch_macro.code = libctx.switch_code.value\n    ctx.switch_macro.celltype = celltype\n    ctx.switch_macro.input = ctx.input\n    ctx.switch_macro.selected = ctx.selected\n    ctx.switch_macro.options = options\n\n    for output_name in outputs:\n        macro_pin = getattr(ctx.switch_macro, output_name)\n        output_cell = Cell(celltype)\n        setattr(ctx, output_name, output_cell)\n        setattr(ctx, output_name, macro_pin)\n        outputs[output_name].connect_from(output_cell)",
+      "graph": {
+        "connections": [],
+        "lib": {},
+        "nodes": [
+          {
+            "celltype": "code",
+            "checksum": {
+              "value": "f3ab346fa545fecf91f3565fc158813943c7c7bb8855209c3037f8401ff8959e"
+            },
+            "datatype": "mixed",
+            "language": "python",
+            "path": [
+              "constructor_code"
+            ],
+            "type": "cell"
+          },
+          {
+            "celltype": "structured",
+            "checksum": {
+              "auth": "46de9824d3fa745d4294cfba05eba4216673a974848778f4848effb3ba91777d",
+              "buffer": "46de9824d3fa745d4294cfba05eba4216673a974848778f4848effb3ba91777d",
+              "value": "46de9824d3fa745d4294cfba05eba4216673a974848778f4848effb3ba91777d"
+            },
+            "datatype": "mixed",
+            "hash_pattern": null,
+            "path": [
+              "constructor_params"
+            ],
+            "type": "cell"
+          },
+          {
+            "celltype": "code",
+            "checksum": {
+              "value": "5c4ea566d4681863cde9cc32df96a6b80dd89179dfa5c90447ca8f501052eb88"
+            },
+            "datatype": "mixed",
+            "language": "python",
+            "path": [
+              "switch_code"
+            ],
+            "type": "cell"
+          }
+        ],
+        "params": {
+          "share_namespace": "ctx"
+        }
+      },
+      "language": "python",
+      "params": {
+        "celltype": {
+          "default": null,
+          "io": "input",
+          "type": "value"
+        },
+        "input": {
+          "default": null,
+          "io": "input",
+          "type": "cell"
+        },
+        "outputs": {
+          "default": null,
+          "io": "output",
+          "type": "celldict"
+        },
+        "selected": {
+          "default": null,
+          "io": "input",
+          "type": "cell"
+        }
+      },
+      "path": [
+        "switch"
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "celltype": "structured",
+      "checksum": {
+        "auth": "4fe9376824bc1528486e8fc63a93f677e1172bcf21e05b257677f11e68805c56",
+        "buffer": "4fe9376824bc1528486e8fc63a93f677e1172bcf21e05b257677f11e68805c56",
+        "value": "4fe9376824bc1528486e8fc63a93f677e1172bcf21e05b257677f11e68805c56"
+      },
+      "datatype": "mixed",
+      "hash_pattern": null,
+      "path": [
+        "a"
+      ],
+      "type": "cell"
+    },
+    {
+      "celltype": "float",
+      "checksum": {},
+      "datatype": "mixed",
+      "path": [
+        "a1"
+      ],
+      "type": "cell"
+    },
+    {
+      "celltype": "float",
+      "checksum": {},
+      "datatype": "mixed",
+      "path": [
+        "a2"
+      ],
+      "type": "cell"
+    },
+    {
+      "celltype": "float",
+      "checksum": {
+        "value": "4fe9376824bc1528486e8fc63a93f677e1172bcf21e05b257677f11e68805c56"
+      },
+      "datatype": "mixed",
+      "path": [
+        "a3"
+      ],
+      "type": "cell"
+    },
+    {
+      "celltype": "structured",
+      "checksum": {
+        "auth": "8680a668f33ed1ed9d177cb473af2e2774f8cdeb036b12d559070d5041cc60c4",
+        "buffer": "8680a668f33ed1ed9d177cb473af2e2774f8cdeb036b12d559070d5041cc60c4",
+        "value": "8680a668f33ed1ed9d177cb473af2e2774f8cdeb036b12d559070d5041cc60c4"
+      },
+      "datatype": "mixed",
+      "hash_pattern": null,
+      "path": [
+        "f1"
+      ],
+      "type": "cell"
+    },
+    {
+      "celltype": "structured",
+      "checksum": {
+        "auth": "6f1e21084c21cb95ea6d17d3f5d2aff5d92965b6c8702b49e28990894bc7859c",
+        "buffer": "6f1e21084c21cb95ea6d17d3f5d2aff5d92965b6c8702b49e28990894bc7859c",
+        "value": "6f1e21084c21cb95ea6d17d3f5d2aff5d92965b6c8702b49e28990894bc7859c"
+      },
+      "datatype": "mixed",
+      "hash_pattern": null,
+      "path": [
+        "f2"
+      ],
+      "type": "cell"
+    },
+    {
+      "celltype": "structured",
+      "checksum": {
+        "auth": "39dacbda510b82b6fec0680fb7beb110eef660f5daef6c129ef1abfde1d4d331",
+        "buffer": "39dacbda510b82b6fec0680fb7beb110eef660f5daef6c129ef1abfde1d4d331",
+        "value": "39dacbda510b82b6fec0680fb7beb110eef660f5daef6c129ef1abfde1d4d331"
+      },
+      "datatype": "mixed",
+      "hash_pattern": null,
+      "path": [
+        "f3"
+      ],
+      "type": "cell"
+    },
+    {
+      "arguments": {
+        "celltype": "float",
+        "inputs": {
+          "path1": [
+            "r1"
+          ],
+          "path2": [
+            "r2"
+          ],
+          "path3": [
+            "r3"
+          ]
+        },
+        "output": [
+          "output"
+        ],
+        "selected": [
+          "selected"
+        ]
+      },
+      "libpath": [
+        "join"
+      ],
+      "path": [
+        "join"
+      ],
+      "type": "libmacro"
+    },
+    {
+      "INPUT": "inp",
+      "RESULT": "result",
+      "SCHEMA": null,
+      "checksum": {
+        "code": "2002be927da6ae70b329f1be3057cd4a354e986d49eff721e1405168479129ea",
+        "input": "11dddfb3f425d2b67f7d5636b4d31a8163902b58c097a40a70849bd3b9fb331c",
+        "input_buffer": "11dddfb3f425d2b67f7d5636b4d31a8163902b58c097a40a70849bd3b9fb331c",
+        "result": null
+      },
+      "compiled": false,
+      "debug": false,
+      "language": "python",
+      "path": [
+        "op1"
+      ],
+      "pins": {
+        "a": {
+          "celltype": "mixed"
+        },
+        "b": {
+          "celltype": "mixed"
+        }
+      },
+      "type": "transformer"
+    },
+    {
+      "INPUT": "inp",
+      "RESULT": "result",
+      "SCHEMA": null,
+      "checksum": {
+        "code": "e952b7ea7b42e2a863a10b62fe7a126d07d95e41d24a578a5daa836e6d7370b0",
+        "input": "5308b54a92069dc41a6af8800ad805e464221a0959fe9e7ba80292fb374f29eb",
+        "input_buffer": "5308b54a92069dc41a6af8800ad805e464221a0959fe9e7ba80292fb374f29eb",
+        "result": null
+      },
+      "compiled": false,
+      "debug": false,
+      "language": "python",
+      "path": [
+        "op2"
+      ],
+      "pins": {
+        "a": {
+          "celltype": "mixed"
+        },
+        "b": {
+          "celltype": "mixed"
+        }
+      },
+      "type": "transformer"
+    },
+    {
+      "INPUT": "inp",
+      "RESULT": "result",
+      "SCHEMA": null,
+      "checksum": {
+        "code": "f62aca8f3b185ad1829fe847f4faac5517a83e352dfb21bc81376672cca564af",
+        "input": "b6d357df49105f1039cb19f354df2da600cc8b94ca586e887b70c37e11a5f491",
+        "input_buffer": "b6d357df49105f1039cb19f354df2da600cc8b94ca586e887b70c37e11a5f491",
+        "result": "5a8c475b7188e372b9d838a6aae919d4cf0fd299f3173999babe60544b300812"
+      },
+      "compiled": false,
+      "debug": false,
+      "language": "python",
+      "path": [
+        "op3"
+      ],
+      "pins": {
+        "a": {
+          "celltype": "mixed"
+        },
+        "b": {
+          "celltype": "mixed"
+        }
+      },
+      "type": "transformer"
+    },
+    {
+      "celltype": "float",
+      "checksum": {
+        "value": "5a8c475b7188e372b9d838a6aae919d4cf0fd299f3173999babe60544b300812"
+      },
+      "datatype": "mixed",
+      "path": [
+        "output"
+      ],
+      "type": "cell"
+    },
+    {
+      "celltype": "structured",
+      "checksum": {},
+      "datatype": "mixed",
+      "hash_pattern": null,
+      "path": [
+        "r1"
+      ],
+      "type": "cell"
+    },
+    {
+      "celltype": "structured",
+      "checksum": {},
+      "datatype": "mixed",
+      "hash_pattern": null,
+      "path": [
+        "r2"
+      ],
+      "type": "cell"
+    },
+    {
+      "celltype": "structured",
+      "checksum": {
+        "buffer": "5a8c475b7188e372b9d838a6aae919d4cf0fd299f3173999babe60544b300812",
+        "value": "5a8c475b7188e372b9d838a6aae919d4cf0fd299f3173999babe60544b300812"
+      },
+      "datatype": "mixed",
+      "hash_pattern": null,
+      "path": [
+        "r3"
+      ],
+      "type": "cell"
+    },
+    {
+      "celltype": "structured",
+      "checksum": {
+        "auth": "4f32c876b37262b510060f74309c299d40f188a7650c66c768bddf84acc2f780",
+        "buffer": "4f32c876b37262b510060f74309c299d40f188a7650c66c768bddf84acc2f780",
+        "value": "4f32c876b37262b510060f74309c299d40f188a7650c66c768bddf84acc2f780"
+      },
+      "datatype": "mixed",
+      "hash_pattern": null,
+      "path": [
+        "selected"
+      ],
+      "type": "cell"
+    },
+    {
+      "arguments": {
+        "celltype": "float",
+        "input": [
+          "a"
+        ],
+        "outputs": {
+          "path1": [
+            "a1"
+          ],
+          "path2": [
+            "a2"
+          ],
+          "path3": [
+            "a3"
+          ]
+        },
+        "selected": [
+          "selected"
+        ]
+      },
+      "libpath": [
+        "switch"
+      ],
+      "path": [
+        "switch"
+      ],
+      "type": "libmacro"
+    }
+  ],
+  "params": {
+    "share_namespace": "ctx"
+  }
+}

@@ -107,6 +107,8 @@ class Context(Base):
             node["path"] = p
             nodes[p] = node
             nodetype = node["type"]
+            if nodetype == "libmacro":
+                continue
             nodecls = nodeclasses[nodetype]
             child = nodecls(parent=self,path=p)
         connections = graph["connections"]
@@ -119,7 +121,13 @@ class Context(Base):
                 con["second"] = tuple(con["second"])
         params = deepcopy(self._default_parameters)
         params.update(graph["params"])
-        self._graph = Graph(nodes, connections, params, graph.get("lib", {}))
+        lib0 = graph.get("lib", [])
+        lib = {}
+        for l in lib0:
+            path = tuple(l["path"])
+            l["path"] = path
+            lib[path] = l
+        self._graph = Graph(nodes, connections, params, lib)
         self._translate()
         return self
 
@@ -338,6 +346,7 @@ Translation is not required after modifying only cell values""")
             self._translating = False
         nodes, connections, params, lib = self._graph
         nodes = [v for k,v in sorted(nodes.items(), key=lambda kv: kv[0])]
+        lib = [v for k,v in sorted(lib.items(), key=lambda kv: kv[0])]
         if copy:
             connections = deepcopy(connections)
             nodes = deepcopy(nodes)
@@ -381,6 +390,7 @@ Translation is not required after modifying only cell values""")
             self._translating = False
         nodes, connections, params, lib = self._graph
         nodes = [v for k,v in sorted(nodes.items(), key=lambda kv: kv[0])]
+        lib = [v for k,v in sorted(lib.items(), key=lambda kv: kv[0])]
         if copy:
             connections = deepcopy(connections)
             nodes = deepcopy(nodes)
@@ -395,13 +405,17 @@ Translation is not required after modifying only cell values""")
         self._cached_graph = graph
         return graph
 
-    def get_graph(self, cache=True):
+    def get_graph(self, cache=True, runtime=False):
+        from ..midlevel.pretranslate import pretranslate
         if cache:
             if self._cached_graph is None:
-                self._get_graph(copy=True)
-            return self._cached_graph
+                self._cached_graph = self._get_graph(copy=True)
+            graph = self._cached_graph
         else:        
-            return self._get_graph(copy=True)
+            graph = self._get_graph(copy=True)
+        if runtime:
+            graph = pretranslate(self, graph)
+        return graph
 
     def save_graph(self, filename):
         graph = self.get_graph()
@@ -658,9 +672,9 @@ Translation is not required after modifying only cell values""")
     def resolve(self, checksum):
         return self._manager.resolve(checksum)
 
-    def observe(self, path, callback, polling_interval, observe_none=False):
+    def observe(self, path, callback, polling_interval, observe_none=False, params=None):
         observer = PollingObserver(
-            self, path, callback, polling_interval, observe_none
+            self, path, callback, polling_interval, observe_none, params=params
         )
         self._observers.add(observer)
         return observer
@@ -720,10 +734,11 @@ Translation is not required after modifying only cell values""")
         return result
 
     def children(self, type=None):
-        assert type is None or type == "context" or type in nodeclasses, (type, nodeclasses.keys())
+        classless = ("context", "libmacro")
+        assert type is None or type in classless or type in nodeclasses, (type, nodeclasses.keys())
         children00 = self._children.items()
         children0 = children00
-        if type is not None and type != "context":
+        if type is not None and type not in classless:
             klass = nodeclasses[type]
             children0 = [(p,c) for p,c in children00 if isinstance(c, klass)]
         children = [p[0] for p,c in children0]
@@ -815,13 +830,17 @@ class SubContext(Base):
         }
         return graph
 
-    def get_graph(self, cache=True):
+    def get_graph(self, cache=True, runtime=False):
+        from ..midlevel.pretranslate import pretranslate
         if cache:
             if self._cached_graph is None:
                 self._cached_graph = self._get_graph(copy=True)
-            return self._cached_graph
+            graph = self._cached_graph
         else:        
-            return self._get_graph(copy=True)
+            graph = self._get_graph(copy=True)
+        if runtime:
+            graph = pretranslate(self, graph)
+        return graph
 
     @property
     def status(self):
@@ -833,11 +852,12 @@ class SubContext(Base):
         self._parent()._translate()
 
     def children(self, type=None):
-        assert type is None or type == "context" or type in nodeclasses, (type, nodeclasses.keys())
+        classless = ("context", "libmacro")
+        assert type is None or type in classless or type in nodeclasses, (type, nodeclasses.keys())
         l = len(self._path)
         children00 = [(p[l:],c) for p,c in self._parent()._children.items() if len(p) > l and p[:l] == self._path]
         children0 = children00
-        if type is not None and type != "context":
+        if type is not None and type not in classless:
             klass = nodeclasses[type]
             children0 = [(p,c) for p,c in children00 if isinstance(c, klass)]
         children = [p[0] for p,c in children0]

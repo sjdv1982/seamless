@@ -39,7 +39,7 @@
       "type": "connection"
     }
   ],
-  "lib": {},
+  "lib": [],
   "nodes": [
     {
       "celltype": "text",
@@ -62,7 +62,7 @@
       "RESULT": "result",
       "SCHEMA": null,
       "checksum": {
-        "code": "50324597886e82d70e382f13b75eb56d73afb736899739a6ed97a231df16d215",
+        "code": "8b86b97a6f121e369dfea36fcf32b5148490aa89b46164cd5a040bfbaefdbd8d",
         "input": "15c343fa5cba7e48633ac74f32a2fda0ebf3488e3951ba891c5caf6d8423e194",
         "input_buffer": "15c343fa5cba7e48633ac74f32a2fda0ebf3488e3951ba891c5caf6d8423e194"
       },

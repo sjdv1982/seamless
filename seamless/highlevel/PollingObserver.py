@@ -4,7 +4,7 @@ from copy import deepcopy
 
 class PollingObserver:
     _active = True
-    def __init__(self, ctx, path, callback, polling_interval, observe_none=False):
+    def __init__(self, ctx, path, callback, polling_interval, observe_none=False, params=None):
         if not isinstance(ctx, Context):
             raise TypeError(type(ctx))
         self.ctx = ctx
@@ -12,6 +12,7 @@ class PollingObserver:
         self.polling_interval = polling_interval
         self.callback = callback
         self.observe_none = observe_none
+        self.params = params
         self.value = None
         self.loop = asyncio.ensure_future(self._run())
     
@@ -33,7 +34,11 @@ class PollingObserver:
                     value = getattr(value, p)
                 if not isinstance(value, (Base, Silk, MixedObject)):
                     if callable(value):
-                        value = value()
+                        params = self.params
+                        if params is None:
+                            value = value()
+                        else:
+                            value = value(**params)
         except Exception:
             return
 

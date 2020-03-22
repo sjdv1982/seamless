@@ -192,7 +192,8 @@ class StructuredCellWrapper(WrapperBase):
     @property
     def value(self):
         checksum = self._node.get("checksum", {}).get("value")
-        return SimpleCellWrapper(self._manager, {}, "mixed", checksum)
+        vcell = SimpleCellWrapper(self._manager, {}, "mixed", checksum)
+        return vcell.value
 
 class TransformerWrapper(WrapperBase):
     def __init__(self, manager, node):

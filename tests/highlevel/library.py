@@ -1,5 +1,7 @@
 from seamless.highlevel import Context
-from seamless.highlevel.library import stdlib
+from seamless.highlevel.library import LibraryContainer
+
+stdlib = LibraryContainer("stdlib")
 
 ctx = Context()
 ctx.x = 20

@@ -56,6 +56,8 @@ class LibMacro:
             if par["type"] == "value":                
                 value = argvalue
             elif par["type"] == "cell":
+                if isinstance(argvalue, list):
+                    argvalue = tuple(argvalue)
                 value = parent._children.get(argvalue)
                 if not isinstance(value, Cell):
                     msg = "%s must be Cell, not '%s'"
@@ -73,6 +75,8 @@ class LibMacro:
             else: # par["type"] == "celldict":
                 value = {}
                 for k,v in argvalue.items():
+                    if isinstance(v, list):
+                        v = tuple(v)
                     vv = parent._children.get(v)
                     if not isinstance(vv, Cell):
                         msg = "%s['%s'] must be Cell, not '%s'"
@@ -130,7 +134,9 @@ class LibMacro:
         lib = parent._get_lib(tuple(libpath))
         params = lib["params"]
         par = params[argname]
-        if par["type"] == "cell":        
+        if par["type"] == "cell":
+            if isinstance(argvalue, list):
+                argvalue = tuple(argvalue)
             value = parent._children.get(argvalue)            
         else:
             value = argvalue

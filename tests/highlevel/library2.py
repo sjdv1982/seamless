@@ -1,6 +1,8 @@
 from seamless.highlevel import Context, Cell
-from seamless.highlevel.library import stdlib
+from seamless.highlevel.library import LibraryContainer
 from pprint import pprint
+
+stdlib = LibraryContainer("stdlib")
 
 ctx = Context()
 ctx.x = 20

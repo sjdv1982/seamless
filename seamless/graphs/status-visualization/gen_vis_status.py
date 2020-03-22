@@ -18,6 +18,13 @@ color_mapping = {
 
 for node in graph["nodes"]:
     path = tuple(node["path"])
+    subnode = False
+    if "ctx" in path:
+        pos = path.index("ctx")
+        path = path[:pos]
+        if path in path_to_id:
+            continue
+        subnode = True
     path2 = ".".join(path)
     rnode = {"name": path2, "type": node["type"], "id": len(rnodes)}
     if node["type"] == "cell":
@@ -31,41 +38,42 @@ for node in graph["nodes"]:
         continue
 
     color = 5
-    cstate = ""
-    for subpath in paths:
-        subpath2 = ".".join(subpath)
-        state = status[subpath2 + ".status"]
-        if state is None:
-            state = ""
-        if len(state.split()) > 2:
-            if subpath != path:
-                cstate += "*** " + subpath2 + " ***\n"
-            cstate += "*** status ***\n"
-            cstate += state
-            cstate += "\n" + "*" * 50 + "\n\n"
-        if state == "Status: OK":
-            continue
-        elif state.startswith("Status: executing"):
-            color = min([color, 4])
-        elif state.startswith("Status: pending"):
-            color = min([color, 3])
-        elif state.startswith("Status: upstream"):
-            color = min([color, 2])
-        else:
-            color = 1
-        exc = status.get(subpath2 + ".exception", "")
-        if exc is None:
-            exc = ""
-        if len(exc.split()) > 2:
-            if subpath != path:
-                cstate += "*** " + subpath2 + " ***\n"
-            cstate += "*** exception ***\n"
-            exc2 = []
-            for l in exc.splitlines():
-                exc2.extend(textwrap.wrap(l))
-            exc = "\n".join(exc2)
-            cstate += exc
-            cstate += "\n" + "*" * 50 + "\n\n"
+    if not subnode:
+        cstate = ""
+        for subpath in paths:
+            subpath2 = ".".join(subpath)
+            state = status[subpath2 + ".status"]
+            if state is None:
+                state = ""
+            if len(state.split()) > 2:
+                if subpath != path:
+                    cstate += "*** " + subpath2 + " ***\n"
+                cstate += "*** status ***\n"
+                cstate += state
+                cstate += "\n" + "*" * 50 + "\n\n"
+            if state == "Status: OK":
+                continue
+            elif state.startswith("Status: executing"):
+                color = min([color, 4])
+            elif state.startswith("Status: pending"):
+                color = min([color, 3])
+            elif state.startswith("Status: upstream"):
+                color = min([color, 2])
+            else:
+                color = 1
+            exc = status.get(subpath2 + ".exception", "")
+            if exc is None:
+                exc = ""
+            if len(exc.split()) > 2:
+                if subpath != path:
+                    cstate += "*** " + subpath2 + " ***\n"
+                cstate += "*** exception ***\n"
+                exc2 = []
+                for l in exc.splitlines():
+                    exc2.extend(textwrap.wrap(l))
+                exc = "\n".join(exc2)
+                cstate += exc
+                cstate += "\n" + "*" * 50 + "\n\n"
     rnode["color"] = color_mapping[color]
     if cstate:
         rnode["status"] = cstate
@@ -78,7 +86,16 @@ for connection in graph["connections"]:
         source, target = connection["first"], connection["second"]
     else:
         source, target = connection["source"], connection["target"]
+
+    if "ctx" in source:
+        pos = source.index("ctx")
+        source = source[:pos]
     
+    if "ctx" in target:
+        pos = target.index("ctx")
+        target = target[:pos]
+
+
     source_id, target_id = None, None
     for n in range(len(source), 0, -1):
         path = tuple(source[:n])

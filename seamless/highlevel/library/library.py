@@ -143,15 +143,16 @@ class Library:
     def include(self, ctx, full_path=False):
         assert self.constructor is not None
         assert self.params is not None
+        path = self._path if full_path else self._path[-1:]
         lib = {
             "graph": self._graph,
+            "path": list(path),
             "constructor":self._constructor, 
             "params": self._params,
             "language": "python",
             "api": "pyseamless"
-        }
-        path = self._path if full_path else self._path[-1:]
-        IncludedLibrary(ctx, path, **lib)   # to validate the arguments
+        }        
+        IncludedLibrary(ctx, **lib)   # to validate the arguments
         s = json.dumps(lib)
         lib = json.loads(s)
         ctx.add_zip(self._zip)

@@ -24,10 +24,10 @@ class IncludedLibraryContainer:
         ctx = self._ctx
         libs = ctx._get_libs(self._path)
         if attr2 in libs:
-            lib = libs[attr2]            
+            lib = libs[attr2].copy()
+            lib["path"] = self._path + attr2
             return IncludedLibrary(
                 ctx=ctx,
-                path=self._path + attr2,
                 **lib
             )
         attrs = set([p[0] for p in libs])

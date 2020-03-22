@@ -81,5 +81,6 @@ They will be passed to ctx.add_zip before the graph is loaded
         observe_graph, ctx, ctx2
     )
     ctx2.translate()
-    ctx.observe(("get_graph",), observe_graph_bound, OBSERVE_GRAPH_DELAY)
+    params = {"runtime": True}
+    ctx.observe(("get_graph",), observe_graph_bound, OBSERVE_GRAPH_DELAY, params=params)
     return ctx2
