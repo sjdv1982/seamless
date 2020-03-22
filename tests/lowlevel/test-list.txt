@@ -1,5 +1,5 @@
 # In general, run with:
-#   seamless-devel python3 -u ../../scripts/TEST.py > test-outputs/TEST.out 2>&1
+#   seamless-devel python3 -u TEST.py > test-outputs/TEST.out 2>&1
 bytecell.py
 cachehit-semantic.py
 conversions.py: the output is approximate, depends on exact timings
@@ -52,7 +52,7 @@ structured_cell/simple-deepcell.py
 structured_cell/channels-deepcell.py
 structured_cell/schema.py
 collatz.py: the output is approximate, depends on exact timings
-structured_cell/preliminary.py: the output is approximate, depends on exact timings, see also [2]
+structured_cell/preliminary.py: see [2]; also, the output is approximate, depends on exact timings
 
 Non-automatic tests
 =========================

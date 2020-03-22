@@ -575,7 +575,7 @@ If origin_task is provided, that task is not cancelled."""
             status_reason=reason,
             prelim = False
         )
-        TransformerUpdateTask(self, transformer).launch()
+        #TransformerUpdateTask(self, transformer).launch()  # it seems that this be safely disabled; tests are unaffected
 
     @mainthread
     def cancel_reactor(self, reactor, void, reason=None):

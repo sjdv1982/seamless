@@ -34,14 +34,14 @@ Hard cancel: Seamless transformer: .tf
 Status: error , exception: seamless.core.cache.transformation_cache.HardCancelError: HardCancelError
 
 None
-Status: upstream
-None
+Status: preliminary
+0.5
 
 STEP 1
 Status: error , exception: None
 0.5
-Status: pending
-None
+Status: preliminary
+0.5
 
 Server
 STEP 2

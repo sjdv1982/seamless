@@ -29,6 +29,8 @@ async def server3(checksum):
 seamless.set_ncores(0)
 
 class DummyClient:
+    def get_peer_id(self):
+        return id(self)
     async def status(self, checksum):
         return self.st
     def __init__(self, func, st):

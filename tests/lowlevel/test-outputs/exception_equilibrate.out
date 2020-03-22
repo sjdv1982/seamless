@@ -2,12 +2,7 @@ Status: {
   "result": "undefined",
   "tf": "error"
 }
-Traceback (most recent call last):
-  File "/seamless/seamless/core/transformation.py", line 199, in _execute
-    prelim_callback, progress_callback
-  File "/seamless/seamless/core/transformation.py", line 416, in _execute_local
-    raise Exception(msg)
-Exception: Traceback (most recent call last):
+seamless.core.transformation.SeamlessTransformationError: Traceback (most recent call last):
   File "/seamless/seamless/core/execute.py", line 85, in _execute
     exec_code(code, identifier, namespace, inputs, output_name)
   File "/seamless/seamless/core/cached_compile.py", line 58, in exec_code

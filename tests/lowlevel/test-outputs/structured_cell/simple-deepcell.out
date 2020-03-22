@@ -1,11 +1,11 @@
 Traceback (most recent call last):
-  File "simple-deepcell.py", line 16, in <module>
+  File "structured_cell/simple-deepcell.py", line 16, in <module>
     data.set(20)
-  File "/seamless/seamless/silk/Silk.py", line 511, in set
+  File "/seamless/seamless/silk/Silk.py", line 518, in set
     self._set(value, lowlevel=False)
-  File "/seamless/seamless/silk/Silk.py", line 475, in _set
+  File "/seamless/seamless/silk/Silk.py", line 482, in _set
     self._set_value_simple(value)
-  File "/seamless/seamless/silk/Silk.py", line 422, in _set_value_simple
+  File "/seamless/seamless/silk/Silk.py", line 429, in _set_value_simple
     self._data.set(value)
   File "/seamless/seamless/mixed/__init__.py", line 56, in set
     self._monitor.set_path(self._path, value)
@@ -15,7 +15,7 @@ Traceback (most recent call last):
     self._set_path(path, data)
   File "/seamless/seamless/mixed/Backend.py", line 321, in _set_path
     sc._set_auth_path((), data)
-  File "/seamless/seamless/core/structured_cell.py", line 202, in _set_auth_path
+  File "/seamless/seamless/core/structured_cell.py", line 203, in _set_auth_path
     set_subpath(self._auth_value, self.hash_pattern, path, value)
   File "/seamless/seamless/core/protocol/expression.py", line 148, in set_subpath_sync
     subvalue, sub_hash_pattern

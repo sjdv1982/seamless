@@ -113,6 +113,7 @@ def define_ctx2():
     ctx.param_a.connect(ctx.macro.param_a)
 
 define_ctx2()
+import asyncio; asyncio.get_event_loop().run_until_complete(asyncio.ensure_future(asyncio.sleep(1)))
 r = thread(
     requests.patch, 'http://localhost:5813/ctx/compute', 
     json={"timeout": None}

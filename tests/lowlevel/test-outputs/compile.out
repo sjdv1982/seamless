@@ -1,2 +1,6 @@
+
+g++ -c main.cpp -O3 -ffast-math -march=native -fPIC -p -g -o main.o
+
+
 ADD 8.141592979431152
 8.141592979431152
