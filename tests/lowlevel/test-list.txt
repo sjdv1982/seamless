@@ -6,7 +6,7 @@ conversions.py: the output is approximate, depends on exact timings
 simple.py
 simple-async.py
 simple-indirect.py
-exception_equilibrate.py
+exception_upon_compute.py
 subcontext.py
 simple-reactor.py
 downstream-reactor.py
