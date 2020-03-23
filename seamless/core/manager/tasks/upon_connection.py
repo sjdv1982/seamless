@@ -271,13 +271,6 @@ class UponHighLinkTask(UponConnectionTask):
         source = self.source
         target = self.target
 
-        cancel_tasks = []
-        for task in taskmanager.cell_to_task[target]:
-            if isinstance(task, SetCellValueTask):
-                cancel_tasks.append(task)
-        for task in cancel_tasks:
-            task.cancel()
-
         await taskmanager.await_upon_connection_tasks(self.taskid, self._root())
 
         livegraph = self.manager().livegraph

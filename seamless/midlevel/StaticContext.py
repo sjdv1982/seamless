@@ -166,7 +166,12 @@ class SimpleCellWrapper(WrapperBase):
             else:
                 result = cell(celltype="text")
         else:
-            result = cell(celltype=celltype)        
+            result = cell(celltype=celltype)
+        checksum = None
+        if self._checksum is not None:
+            checksum = bytes.fromhex(self._checksum)
+        result._initial_checksum = checksum, True, False
+        return result       
 
 class StructuredCellWrapper(WrapperBase):
     def __init__(self, manager, node):

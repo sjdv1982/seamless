@@ -37,7 +37,7 @@ ctx.b = 20
 ctx.tf.b = ctx.b
 ctx.tf.c = 80
 ctx.tf.d = 5
-ctx.tf.x = 123
+ctx.tf.inp.x = 123
 
 ctx.compute()
 print(ctx.tf.status)

@@ -1,5 +1,5 @@
 # In general, run with:
-#   seamless-devel python3 -u ../../scripts/TEST.py > test-outputs/TEST.out 2>&1
+#   seamless-devel python3 -u TEST.py > test-outputs/TEST.out 2>&1
 bytes-conversion.py
 mime.py
 test-html.py

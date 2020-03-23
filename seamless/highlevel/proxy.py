@@ -3,12 +3,18 @@ import weakref
 
 class Proxy:
     _getter = None
-    def __init__(self, parent, path, mode, *, pull_source=None, getter=None, dirs=None):
+    def __init__(self, parent, path, mode, 
+      *, pull_source=None, getter=None, dirs=None,
+      setter=None
+    ):
         self._parent = weakref.ref(parent)
         self._path = path
         self._mode = mode
         self._pull_source = pull_source
         self._getter = getter
+        if mode == "r":
+            assert setter is None
+        self._setter = setter
         self._dirs = dirs
 
     @property
@@ -32,7 +38,9 @@ class Proxy:
             return object.__setattr__(self, attr, value)
         elif attr == "example" and "example" in self._dirs:
             return getattr(self, "example").set(value)
-        raise NotImplementedError
+        elif self._mode == "r" or self._setter is None:
+            raise AttributeError
+        return self._setter(attr, value)
 
     def __getattr__(self, attr):
         if self._getter is None:

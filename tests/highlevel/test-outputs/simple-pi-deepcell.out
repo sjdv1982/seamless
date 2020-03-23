@@ -20,7 +20,7 @@
       "type": "connection"
     }
   ],
-  "lib": {},
+  "lib": [],
   "nodes": [
     {
       "INPUT": "inp",
@@ -43,8 +43,7 @@
           "celltype": "mixed"
         }
       },
-      "type": "transformer",
-      "with_result": true
+      "type": "transformer"
     },
     {
       "celltype": "structured",
@@ -81,6 +80,6 @@
 
 <Silk: 3.141592653589793 >
 <Silk: 6.283185307179586 >
-45e7202157a1528a09461c9e1e32ec5f  twopi-deepcell.seamless
-2de9d4b0eee14b4c858975fb85c91f52  twopi-deepcell-result.seamless
-d711d8ff2eb51c378794b806d7650ee3  twopi-deepcell-result.zip
+d89a78eede0f535003eae21099499943  twopi-deepcell.seamless
+956e1f34a0047ad5f53dea731af782bd  twopi-deepcell-result.seamless
+9eed17440685fcb28363a309a0b08ef9  twopi-deepcell-result.zip

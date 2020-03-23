@@ -535,8 +535,12 @@ class Transformer(Base):
               "schema", "example", "status", "exception",
               "add_validator", "handle"
             ] + list(htf["pins"].keys())
-            pull_source = None
-            proxycls = Proxy
+            setter = self._inputsetter
+            return Proxy(
+              self, (attr,), "w", 
+              pull_source=None, getter=getter, dirs=dirs,
+              setter=setter
+            )
         elif attr == htf["RESULT"]:
             getter = self._resultgetter
             dirs = [
@@ -637,6 +641,34 @@ class Transformer(Base):
             handle = inputcell.handle_no_inference
             return handle.add_validator
         raise AttributeError(attr)
+
+    def _inputsetter(self, attr, value):
+        if attr in (
+          "value", "data", "buffered", 
+          "checksum", "handle", "schema",
+          "example", "status", "exception",
+          "add_validator"
+        ):
+            raise AttributeError(attr)
+        if isinstance(value, Cell):
+            raise TypeError(value)
+        htf = self._get_htf()
+        if not self._has_tf():
+            if isinstance(value, Resource):
+                value = value.data
+            if "TEMP" not in htf or htf["TEMP"] is None:
+                htf["TEMP"] = {}
+            if "input_auth" not in htf["TEMP"]:
+                htf["TEMP"]["input_auth"] = {}
+            get_form(value)
+            htf["TEMP"]["input_auth"][attr] = value
+            self._parent()._translate()
+            return
+        tf = self._get_tf(force=True)
+        inputcell = getattr(tf, htf["INPUT"])
+        handle = inputcell.handle_no_inference
+        setattr(handle, attr, value)
+        self._parent()._translate()
 
     def _resultgetter(self, attr):
         htf = self._get_htf()

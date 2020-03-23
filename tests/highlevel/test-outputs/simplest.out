@@ -24,7 +24,7 @@ None
 <Silk: test >
 None
 {'connections': [],
- 'lib': {},
+ 'lib': [],
  'nodes': [{'celltype': 'structured',
             'checksum': {'auth': 'c99446f315c991d5c5e83bd65753dc1fe97448da92b5e48fe028dcbd8cb87783',
                          'buffer': 'c99446f315c991d5c5e83bd65753dc1fe97448da92b5e48fe028dcbd8cb87783',
@@ -64,7 +64,7 @@ On instance:
 /simplest.py EXCEPTION
 
 {'connections': [],
- 'lib': {},
+ 'lib': [],
  'nodes': [{'celltype': 'structured',
             'checksum': {'auth': 'c99446f315c991d5c5e83bd65753dc1fe97448da92b5e48fe028dcbd8cb87783',
                          'buffer': 'c99446f315c991d5c5e83bd65753dc1fe97448da92b5e48fe028dcbd8cb87783',

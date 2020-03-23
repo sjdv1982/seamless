@@ -160,6 +160,8 @@ Translation is not required after modifying only cell values""")
                     self._auto_translate = False
                     break
                     '''
+                    while not self._translating:
+                        await asyncio.sleep(0.1)
                     try:                    
                         await self.translation()
                     except Exception:

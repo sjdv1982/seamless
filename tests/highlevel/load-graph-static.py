@@ -9,5 +9,5 @@ zipfile = "twopi-result.zip"
 
 sctx = load_graph(graph, static=True)
 sctx.add_zip(zipfile)
-print(sctx.pi.value.value)
-print(sctx.twopi.value.value)
+print(sctx.pi.value)
+print(sctx.twopi.value)

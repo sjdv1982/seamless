@@ -180,6 +180,7 @@ class UnboundContext(SeamlessBase):
             return setattr(self._bound, attr, value)
         if attr.startswith("_") or hasattr(self.__class__, attr):
             return object.__setattr__(self, attr, value)
+        assert value is not None
         if attr in self._children and self._children[attr] is not value:
             raise AttributeError(
              "Cannot assign to child '%s'" % attr)
@@ -196,7 +197,8 @@ class UnboundContext(SeamlessBase):
         assert isinstance(ctx, Context) #unbound
 
     def _add_child(self, childname, child):
-        assert isinstance(child, (UnboundContext, Worker, Cell, Link, StructuredCell))
+        classes = (UnboundContext, Worker, Cell, Link, StructuredCell)
+        assert isinstance(child, classes), type(child)
         if isinstance(child, UnboundContext):
             assert child._context is None
             child._realmanager = self._realmanager

@@ -56,28 +56,14 @@ class TransformerUpdateTask(Task):
 
         for pinname, accessor in upstreams.items():
             inputpins[pinname] = accessor._checksum
-        set_tf = True
-        """ 
-        # This currently misbehaves... transformers get cancelled, which sets their checksum to none...
-        #  and then they get never updated...
-
-        if is_equal(inputpins, transformer._last_inputs):
-            if not transformer._void:
-                set_tf = False
-        """
-        if set_tf:
-            manager._set_transformer_checksum(
-                transformer, None, False, prelim=False
-            )
-        else:
-            transformer._void = False
+        manager._set_transformer_checksum(
+            transformer, None, False, prelim=False
+        )
 
         for accessor in downstreams:
-            propagate_accessor(livegraph, accessor, transformer._void)
-
-        if not set_tf:
-            TransformerResultUpdateTask(manager, transformer).launch()
-            return
+            manager.cancel_accessor(
+                accessor, void, origin_task=self
+            )
     
         first_output = downstreams[0].write_accessor.target()
         celltypes = {}
@@ -96,8 +82,7 @@ class TransformerUpdateTask(Task):
             output_celltype = first_output._celltype
             output_subcelltype = first_output._subcelltype
         outputpin = outputname, output_celltype, output_subcelltype
-        #print("TRANSFORM!", transformer)
-        self.waiting_for_job = True
+        self.waiting_for_job = True        
         await transformation_cache.update_transformer(
             transformer, celltypes, inputpins, outputpin, buffer_cache
         )
