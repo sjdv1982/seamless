@@ -522,7 +522,19 @@ class ShareServer(object):
                 status=200,
                 body=body,
                 content_type=content_type,
-            )            
+            )           
+        except CommunionError as exc:
+            txt = exc.args[0]
+            if DEBUG:
+                traceback.print_exc()
+            if txt.startswith("CacheMissError"):
+                err = "Cache miss"
+            elif txt.startswith("CanceledError"):
+                err = "Share was destroyed"                
+            return web.Response(
+                status=404,
+                text=err,
+            )
         except CacheMissError:
             if DEBUG:
                 checksum = share._checksum
@@ -732,4 +744,5 @@ shareserver = ShareServer()
 from .core.cache.buffer_cache import buffer_cache
 from .core.protocol.calculate_checksum import calculate_checksum
 from .core.protocol.get_buffer import get_buffer, CacheMissError
+from .communion_server import CommunionError
 from .mime import get_mime
