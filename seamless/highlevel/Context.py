@@ -14,7 +14,7 @@ import json
 
 from .Base import Base
 from ..core import macro_mode
-from ..core.macro_mode import macro_mode_on, get_macro_mode
+from ..core.macro_mode import macro_mode_on, get_macro_mode, until_macro_mode_off
 from ..core.context import context, Context as CoreContext
 from ..core.cell import cell
 from ..core.mount import mountmanager #for now, just a single global mountmanager
@@ -509,6 +509,7 @@ Translation is not required after modifying only cell values""")
         if self._dummy:
             return
         graph0 = await self._get_graph_async(copy=False)
+        await until_macro_mode_off()
         return self._do_translate2(graph0, force=force, explicit=explicit)
 
 

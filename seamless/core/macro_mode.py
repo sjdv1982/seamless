@@ -63,6 +63,10 @@ def curr_macro():
         return None
     return _curr_macro
 
+async def until_macro_mode_off():
+    while _macro_mode:
+        await asyncio.sleep(0.01)
+
 @contextmanager
 def macro_mode_on(macro=None):
     from . import mount    
@@ -140,6 +144,7 @@ def macro_mode_on(macro=None):
     finally:
         _toplevel_registrable.clear()
         _macro_mode = False
+
 
 from .cache.transformation_cache import transformation_cache
 from .mount import mountmanager
