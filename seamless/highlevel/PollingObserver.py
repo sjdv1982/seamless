@@ -18,8 +18,8 @@ class PollingObserver:
     
     async def _run(self):
         while self._active:
-            self._run_once()
             await asyncio.sleep(self.polling_interval)
+            self._run_once()
 
     def _run_once(self):
         ctx = self.ctx

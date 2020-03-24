@@ -344,10 +344,14 @@ class Manager:
         task.launch()
 
     def _get_cell_checksum_and_void(self, cell):
+        count = 0
         while 1:
             if asyncio.get_event_loop().is_running():
                 break
             if self._destroyed or cell._destroyed:
+                break
+            count += 1
+            if count == 100:
                 break
             try:
                 task = CellChecksumTask(self, cell)
