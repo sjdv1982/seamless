@@ -85,3 +85,39 @@ They will be passed to ctx.add_zip before the graph is loaded
     params = {"runtime": True}
     ctx.observe(("get_graph",), observe_graph_bound, OBSERVE_GRAPH_DELAY, params=params)
     return ctx2
+
+async def bind_status_graph_async(ctx, status_graph, *, zips=None, mounts=False, shares=True):
+    """"Creates context that will monitor the status of ctx
+
+The context is loaded from status_graph, which must be a graph in JSON format.
+It uses the same manager as ctx.
+The status graph's underlying buffers must be available already 
+(from add_zip or via Redis)
+The status graph must have a cell called "graph", 
+ and normally, also a cell shared as "index.html"
+The status graph will receive the share namespace "status"
+
+mounts and shares have the same meaning as in from_graph
+
+Additional zips can be provided. 
+They will be passed to ctx.add_zip before the graph is loaded
+"""
+    from seamless.highlevel import Context
+    ctx2 = Context()
+    if zips is not None:
+        for zipf in zips:
+            ctx2.add_zip(zipf)
+    ctx2.share_namespace="status"
+    ctx2.set_graph(
+        status_graph, 
+        mounts=mounts,
+        shares=shares
+    )
+    assert "graph" in ctx2.children()
+    observe_graph_bound = partial(
+        observe_graph, ctx, ctx2
+    )
+    await ctx2.translation()
+    params = {"runtime": True}
+    ctx.observe(("get_graph",), observe_graph_bound, OBSERVE_GRAPH_DELAY, params=params)
+    return ctx2    
