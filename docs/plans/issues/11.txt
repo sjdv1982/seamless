@@ -15,3 +15,6 @@ When adapting share-pdb to share-pdb-docker in seamless-devel-serve-graph-intera
  transformer to "docker", then *"filter_pdb"* has a docker_image whereas *"fix_pdb"* has *not*.
 
 This could be the same issue, or related to some inappropriate serialize_cache or deserialize_cache usage
+
+UPDATE: as of March 26, auto_translate (sometimes, partially) silently fails in Jupyter kernels.
+For now, disable auto_translate.

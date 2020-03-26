@@ -151,7 +151,6 @@ class Context(Base):
         async def auto_trans():
             while not self._destroyed:
                 if self._auto_translate:
-                    '''                    
                     await asyncio.sleep(10)
                     print("""ctx.auto_translate is currently unstable and has been disabled
 You must run regularly "ctx.translate()" (IPython) 
@@ -159,7 +158,6 @@ or "await ctx.translation()" (Jupyter) after modifying the graph.
 Translation is not required after modifying only cell values""")
                     self._auto_translate = False
                     break
-                    '''
                     while not self._translating:
                         await asyncio.sleep(0.1)
                     try:                    
