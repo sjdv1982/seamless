@@ -64,23 +64,6 @@ class Cell(Base):
                 result.append(link)
         return result
 
-    def __rshift__(self, other):
-        from .proxy import Proxy
-        proxy = Proxy(self._parent(), "w")        
-        assert isinstance(other, Proxy)
-        assert "r" in other._mode
-        assert other._pull_source is not None
-        other._pull_source(proxy)
-
-    def __str__(self):
-        return str(self._get_cell())
-        """
-        try:
-            return str(self._get_cell())
-        except AttributeError:
-            return("Cell %s in dummy mode" % ("." + ".".join(self._path)))
-        """
-
     def _get_cell_subpath(self, cell, subpath):
         p = cell
         for path in subpath:
@@ -236,6 +219,7 @@ class Cell(Base):
             hcell["mount"] = mount
         if self._parent() is not None:
             self._parent()._translate()
+        return self
 
     def __setattr__(self, attr, value):
         if attr == "example":
@@ -435,6 +419,7 @@ class Cell(Base):
 
     def set(self, value):
         self._set(value)
+        return self
 
     @property
     def celltype(self):
@@ -621,6 +606,7 @@ class Cell(Base):
         }
         if self._parent() is not None:
             self._parent()._translate()
+        return self
 
     def __dir__(self):
         result = [p for p in type(self).__dict__ if not p.startswith("_")]
@@ -652,7 +638,8 @@ class Cell(Base):
             cell._set_observer(self._observe_cell)        
 
     def __str__(self):
-        return "Seamless Cell: %s" % ".".join(self._path)
+        path = ".".join(self._path) if self._path is not None else None
+        return "Seamless Cell: %s" % path
 
 def cell_binary_method(self, other, name):
     h = self.handle 
