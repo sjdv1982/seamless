@@ -43,6 +43,17 @@ class PinWrapper:
         self._parent()._parent()._translate()
 
     @property
+    def subcelltype(self):
+        hpin = self._get_hpin()
+        return hpin.get("subcelltype")
+    @subcelltype.setter
+    def subcelltype(self, value):
+        #TODO: validation
+        hpin = self._get_hpin()
+        hpin["subcelltype"] = value
+        self._parent()._parent()._translate()
+
+    @property
     def io(self):
         hpin = self._get_hpin()
         return hpin["io"]

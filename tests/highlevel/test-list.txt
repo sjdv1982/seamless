@@ -18,6 +18,7 @@ simpler-result.py
 simpler.py
 simpler-deepcell.py: As of Seamless 0.2, prints out double decref warnings at the end
 simpler-ipython.py: Run with ipython --no-term-title (not -i). Output is approximate, depends on exact timings.
+module-simplified.py
 bash.py
 docker_.py
 expression-exceptions.py
