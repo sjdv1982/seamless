@@ -56,6 +56,7 @@ from .Transformer import Transformer
 from .Reactor import Reactor
 from .Macro import Macro
 from .Cell import Cell
+from .Module import Module
 from .Link import Link
 from ..midlevel.StaticContext import StaticContext
 
@@ -91,6 +92,6 @@ def load_graph(graph, *, zip=None, cache_ctx=None, static=False, mounts=True, sh
 
 __all__ = [
     "Context", "Transformer", "Reactor", "Macro",
-    "Cell", "Link", "Graph", "StaticContext",
+    "Cell", "Link", "Graph", "StaticContext", "Module"
     "load_graph"
 ]
