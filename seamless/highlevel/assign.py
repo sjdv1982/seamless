@@ -370,8 +370,8 @@ def assign(ctx, path, value):
     from .proxy import Proxy
     nodedict = ctx._graph[0]
     if under_libmacro_control(nodedict, path):
-        msg = "Cannot assign to path under libmacro control: %s"
-        raise Exception(msg % path)
+        msg = "Cannot assign to path under libmacro control: {}"
+        raise Exception(msg.format(path))
     if isinstance(value, (Library, LibraryContainer)):
         raise TypeError("Library must be included first")
     if isinstance(value, (IncludedLibrary, IncludedLibraryContainer)):

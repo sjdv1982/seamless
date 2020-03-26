@@ -3,7 +3,7 @@ from inspect import Signature, Parameter
 
 def get_argument_value(name, value):
     if isinstance(value, Cell):
-        if value._get_htf()["constant"]:
+        if value._get_hcell().get("constant"):
             value = value.value
     elif isinstance(value, Base):
         raise TypeError("%s must be value or constant cell, not '%s'" % (name, type(value)))
