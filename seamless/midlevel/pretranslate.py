@@ -1,3 +1,5 @@
+import sys
+
 def pretranslate(ctx, graph):
     assert isinstance(ctx, Context)
     nodes, connections = graph["nodes"], graph["connections"]
@@ -13,7 +15,13 @@ def pretranslate(ctx, graph):
     overlay_connections = []    
     for path in libmacros:
         libmacro = LibMacro(ctx, path=path)
-        result = libmacro._run()
+        try:
+            result = libmacro._run()
+        except Exception as exc:
+            import traceback
+            print("LibMacro:", path, file=sys.stderr)
+            traceback.print_exc()
+            continue
         curr_graph, curr_nodes, curr_connections = result
         path2 = path + ("ctx",)
         for nodepath, node in curr_nodes.items():

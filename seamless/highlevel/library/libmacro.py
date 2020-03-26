@@ -59,7 +59,7 @@ class LibMacro:
                 if isinstance(argvalue, list):
                     argvalue = tuple(argvalue)
                 value = parent._children.get(argvalue)
-                if not isinstance(value, Cell):
+                if isinstance(value, SubCell) or not isinstance(value, Cell):
                     msg = "%s must be Cell, not '%s'"
                     raise TypeError(msg % (argname, type(value)))
                 if par["io"] == "input":
@@ -78,7 +78,7 @@ class LibMacro:
                     if isinstance(v, list):
                         v = tuple(v)
                     vv = parent._children.get(v)
-                    if not isinstance(vv, Cell):
+                    if isinstance(vv, SubCell) or not isinstance(vv, Cell):
                         msg = "%s['%s'] must be Cell, not '%s'"
                         raise TypeError(msg % (argname, k, type(vv)))
                     if par["io"] == "input":
@@ -160,7 +160,7 @@ class LibMacro:
         if par["type"] == "value":
             value = get_param_value(argvalue)
         else: # par["type"] == "cell":
-            if not isinstance(argvalue, Cell):
+            if isinstance(argvalue, SubCell) or not isinstance(argvalue, Cell):
                 msg = "%s must be Cell, not '%s'"
                 raise TypeError(msg % (argname, type(argvalue)))
             value = argvalue._path
@@ -217,6 +217,7 @@ class LibMacroContextWrapper:
 from .iowrappers import ConnectionWrapper, InputCellWrapper, OutputCellWrapper
 from ..Base import Base
 from ..Cell import Cell
+from ..SubCell import SubCell
 from ..Context import Context#, get_status
 from ...midlevel.StaticContext import StaticContext
 from ..Transformer import Transformer
