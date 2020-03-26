@@ -792,10 +792,12 @@ class SubContext(Base):
             assign(parent, path, value)
 
     def __delattr__(self, attr):
-        raise NotImplementedError
+        parent = self._get_top_parent()
+        path = self._path + (attr,)
+        parent._destroy_path(path)
 
-    def mount(self, mountdir):
-        raise NotImplementedError
+    def mount(self, path=None, mode="rw", authority="cell", persistent=None):
+        raise NotImplementedError # for now, not implemented; TODO: see issue 10
 
     def _get_graph(self, copy):
         parent = self._parent()
