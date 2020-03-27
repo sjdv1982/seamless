@@ -129,7 +129,7 @@ def execute(name, code,
             serr = stderr.read()
             if len(serr):
                 if not len(std):
-                    std = "\n"
+                    std += "\n"
                 std += "*" * 50 + "\n"
                 std += "* STDERR:" + " " * 40 + "*\n"
                 std += "*" * 50 + "\n"
