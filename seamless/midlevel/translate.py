@@ -191,7 +191,7 @@ def translate_cell(node, root, namespace, inchannels, outchannels):
         elif ct in direct_celltypes:
             child = core_cell(ct)
             if ct == "mixed":
-                ct._hash_pattern = node.get("hash_pattern")
+                child._hash_pattern = node.get("hash_pattern")
         else:
             raise ValueError(ct) #unknown celltype; should have been caught by high level
         if node.get("fingertip_no_recompute"):
