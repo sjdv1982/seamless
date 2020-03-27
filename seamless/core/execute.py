@@ -105,6 +105,8 @@ def execute(name, code,
     ):
     assert identifier is not None
     try:
+        old_stdio = sys.stdout, sys.stderr
+        sys.stdout, sys.stderr = sys.__stdout__, sys.__stderr__
         with wurlitzer.pipes() as (stdout, stderr):
             result = _execute(name, code, 
                 injector, module_workspace,
@@ -142,6 +144,7 @@ def execute(name, code,
             print(stderr.read(), file=sys.stderr)
             result_queue.put(result)
     finally:
+        sys.stdout, sys.stderr = old_stdio
         if USE_PROCESSES:
             result_queue.close()
         result_queue.join()
