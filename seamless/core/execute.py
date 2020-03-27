@@ -13,6 +13,7 @@ import platform
 import threading
 import inspect
 import ctypes
+import wurlitzer
 
 # TODO: decide when to kill an execution job!
 
@@ -85,20 +86,17 @@ def _execute(name, code,
                 exec_code(code, identifier, namespace, inputs, output_name)
         except Exception:
             exc = traceback.format_exc()
-            result_queue.put((1, exc))
+            return (1, exc)
         else:
             if output_name is None:
-                result_queue.put((0, None))
+                return (0, None)
             else:
                 try:
                     result = namespace[output_name]
                     result_buffer = serialize(result, celltype)
-                    result_queue.put((0, result_buffer))
+                    return (0, result_buffer)
                 except KeyError:
-                    result_queue.put((1, "Output variable name '%s' undefined" % output_name))
-        if USE_PROCESSES:
-            result_queue.close()
-        result_queue.join()
+                    return (1, "Output variable name '%s' undefined" % output_name)
 
 def execute(name, code, 
       injector, module_workspace,
@@ -107,16 +105,46 @@ def execute(name, code,
     ):
     assert identifier is not None
     try:
-        old_stdio = sys.stdout, sys.stderr
-        sys.stdout, sys.stderr = sys.__stdout__, sys.__stderr__
-        _execute(name, code, 
-            injector, module_workspace,
-            identifier, namespace,
-            inputs, output_name, celltype, result_queue
-        )
+        with wurlitzer.pipes() as (stdout, stderr):
+            result = _execute(name, code, 
+                injector, module_workspace,
+                identifier, namespace,
+                inputs, output_name, celltype, result_queue
+            )
+        code, msg = result
+        if code == 1:
+            std = ""
+            sout = stdout.read()
+            if len(sout):
+                if not len(std):
+                    std = "\n"
+                std += "*" * 50 + "\n"
+                std += "* STDOUT:" + " " * 40 + "*\n"
+                std += "*" * 50 + "\n"
+                std += sout
+                std += "*" * 50 + "\n"
+                std += "\n"
+            serr = stderr.read()
+            if len(serr):
+                if not len(std):
+                    std = "\n"
+                std += "*" * 50 + "\n"
+                std += "* STDERR:" + " " * 40 + "*\n"
+                std += "*" * 50 + "\n"
+                std += serr
+                std += "*" * 50 + "\n"
+                std += "\n"
+            if len(std):
+                msg = std + msg
+            result_queue.put((code, msg))
+        else:
+            print(stdout.read())
+            print(stderr.read(), file=sys.stderr)
+            result_queue.put(result)
     finally:
-        sys.stdout, sys.stderr = old_stdio
-
+        if USE_PROCESSES:
+            result_queue.close()
+        result_queue.join()
 
 def execute_debug(name, code, 
       injector, module_workspace,
@@ -141,11 +169,15 @@ def execute_debug(name, code,
             time.sleep(3600)
         except DebuggerAttached:
             pass
-        _execute(name, code, 
+        result = _execute(name, code, 
             injector, module_workspace,
             identifier, namespace,
             inputs, output_name, celltype, result_queue
         )
+        result_queue.put(result)
     finally:
         sys.stdout, sys.stderr = old_stdio
+        if USE_PROCESSES:
+            result_queue.close()
+        result_queue.join()
 
