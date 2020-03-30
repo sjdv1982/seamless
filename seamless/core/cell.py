@@ -563,6 +563,7 @@ class StrCell(TextCell):
 
 class BytesCell(TextCell):
     """A cell containing bytes"""
+    _mount_kwargs = {"binary": True}
     _celltype = "bytes"
 
 class IntCell(TextCell):
