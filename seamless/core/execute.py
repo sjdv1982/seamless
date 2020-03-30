@@ -98,6 +98,14 @@ def _execute(name, code,
                 except KeyError:
                     return (1, "Output variable name '%s' undefined" % output_name)
 
+class FakeStdStream:
+    def __init__(self):
+        self._buf = ""
+    def write(self, v):
+        self._buf += v
+    def read(self):
+        return self._buf
+
 def execute(name, code, 
       injector, module_workspace,
       identifier, namespace,
@@ -106,17 +114,20 @@ def execute(name, code,
     assert identifier is not None
     try:
         old_stdio = sys.stdout, sys.stderr
-        sys.stdout, sys.stderr = sys.__stdout__, sys.__stderr__
-        with wurlitzer.pipes() as (stdout, stderr):
-            result = _execute(name, code, 
-                injector, module_workspace,
-                identifier, namespace,
-                inputs, output_name, celltype, result_queue
-            )
+        #sys.stdout, sys.stderr = sys.__stdout__, sys.__stderr__
+        stdout, stderr = FakeStdStream(), FakeStdStream()
+        sys.stdout, sys.stderr = stdout, stderr
+        result = _execute(name, code, 
+            injector, module_workspace,
+            identifier, namespace,
+            inputs, output_name, celltype, result_queue
+        )
+                
         code, msg = result
-        if code == 1:
+        if code == 1:            
             std = ""
             sout = stdout.read()
+            sys.stdout, sys.stderr = old_stdio
             if len(sout):
                 if not len(std):
                     std = "\n"
