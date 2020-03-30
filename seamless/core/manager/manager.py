@@ -460,6 +460,9 @@ If origin_task is provided, that task is not cancelled."""
             self._set_cell_checksum(cell, None, void, status_reason=reason)
             livegraph = self.livegraph
             accessors = livegraph.cell_to_downstream[cell]
+            for path in cell._paths:
+                path_accessors = livegraph.macropath_to_downstream[path]
+                accessors = accessors + path_accessors
             from_unconnected_cell = False
             if void and reason == StatusReasonEnum.UNCONNECTED:
                 from_unconnected_cell = True

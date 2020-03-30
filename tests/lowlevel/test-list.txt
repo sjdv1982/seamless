@@ -24,6 +24,7 @@ dummy-remote-result1.py
 dummy-remote-result2.py
 dummy-remote-result3.py
 dummy-remote-result4.py
+simplest-macro.py
 simple-macro.py
 compile.py
 compile-fortran.py
