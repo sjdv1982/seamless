@@ -16,3 +16,6 @@ UPDATE: memory freeing can now be disabled completely,
 Maybe:
  In the future, drop refcounting scheme, use garbage collection that periodically checks if a checksum is reachable.
 
+UPDATE: memory freeing is DISABLED for now, as CacheMissErrors still occur,
+ in particular when changing ctx.receptor in mti-autodock.
+ 

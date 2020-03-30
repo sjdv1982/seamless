@@ -7,8 +7,18 @@ from collections import namedtuple
 
 from .redis_client import redis_sinks, redis_caches
 
+"""
 TEMP_KEEP_ALIVE = 20.0 # Keep buffer values alive for 20 secs after the last ref has expired
 TEMP_KEEP_ALIVE_SMALL = 3600.0 # Keep small buffer values alive for an hour
+"""
+
+TEMP_KEEP_ALIVE = 999999999.9
+TEMP_KEEP_ALIVE_SMALL = 999999999.9
+WARNING_HAS_PRINTED = False
+WARNING = """Seamless buffer cache cleanup is currently disabled.
+This prevents data loss from bugs in Seamless's buffer caching.
+If you have memory issues, restart Python periodically,
+ and/or use Redis to store buffers"""
 
 class BufferCache:
     """Checksum-to-buffer cache.
@@ -53,6 +63,13 @@ class BufferCache:
         if not no_local:
             if checksum in self.buffer_cache:
                 return
+            ###
+            global WARNING_HAS_PRINTED
+            if not WARNING_HAS_PRINTED:
+                import sys
+                print(WARNING, file=sys.stderr)
+                WARNING_HAS_PRINTED = True
+            ###
             self.buffer_cache[checksum] = buffer
             self.missing_buffers.discard(checksum)        
 
