@@ -107,10 +107,13 @@ function tick() {
     const normY = deltaY / dist;
     const sourcePadding = d.left ? 17 : 12;
     const targetPadding = d.right ? 17 : 12;
-    const sourceX = d.source.x + (sourcePadding * normX);
-    const sourceY = d.source.y + (sourcePadding * normY);
-    const targetX = d.target.x - (targetPadding * normX);
-    const targetY = d.target.y - (targetPadding * normY);
+    function pad(v, norm, padding) {
+      return (isFinite(v) && isFinite(norm)) ? v + padding * norm : 0
+    }
+    const sourceX = pad(d.source.x, normX, sourcePadding);
+    const sourceY = pad(d.source.y, normY, sourcePadding);
+    const targetX = pad(d.target.x, normX, -targetPadding);
+    const targetY = pad(d.target.y, normY, -targetPadding);
 
     return `M${sourceX},${sourceY}L${targetX},${targetY}`;
   });
