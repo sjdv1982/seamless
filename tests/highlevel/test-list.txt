@@ -48,6 +48,7 @@ library2.py
 
 Non-automatic tests
 =========================
+add.py
 simpler-share.py: Run with ipython -i, then do "curl localhost:5813/ctx/myresult". 
                   IPython values printed should be 36 then 39 (Silk); curl should return 39
                   change ctx.a to get 3*a as the result

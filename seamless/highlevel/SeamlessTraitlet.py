@@ -179,7 +179,8 @@ class SeamlessTraitlet(traitlets.HasTraits):
         if self.incell is None:
             return
         cell = self.incell()
-        cell.set(value)
+        if cell._get_manager().livegraph.has_authority(cell):
+            cell.set(value)
 
     def _add_notifiers(self, handler, name, type):
         super()._add_notifiers(handler, name, type)
