@@ -70,6 +70,7 @@ def _execute(name, code,
       identifier, namespace,
       inputs, output_name, celltype, result_queue
     ):
+        from .transformation import SeamlessTransformationError
         assert identifier is not None
         namespace["return_preliminary"] = functools.partial(
             return_preliminary, result_queue, celltype
@@ -84,6 +85,9 @@ def _execute(name, code,
                     exec_code(code, identifier, namespace, inputs, output_name)
             else:
                 exec_code(code, identifier, namespace, inputs, output_name)
+        except SeamlessTransformationError as exc:
+            exc = str(exc)
+            return (2, exc)
         except Exception:
             exc = traceback.format_exc()
             return (1, exc)
@@ -124,7 +128,9 @@ def execute(name, code,
         )
                 
         code, msg = result
-        if code == 1:            
+        if code == 2: # SeamlessTransformationException, propagate
+            result_queue.put((1, msg))
+        elif code == 1:            
             std = ""
             sout = stdout.read()
             sys.stdout, sys.stderr = old_stdio

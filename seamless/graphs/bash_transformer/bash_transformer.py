@@ -44,6 +44,11 @@ ctx.compute()
 print(ctx.result.value)
 
 if ctx.result.value is None:
+    print(ctx.executor_code.exception)
+    print(ctx.executor.status)
+    print(ctx.executor.inp.exception)
+    print(ctx.status)
+    import sys
     sys.exit()
 
 # 3: Save graph and zip

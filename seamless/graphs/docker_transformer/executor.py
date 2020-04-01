@@ -58,6 +58,7 @@ try:
     if "working_dir" not in options:
         options["working_dir"] = "/run"
     with open("DOCKER-COMMAND","w") as f:
+        f.write("set -u -e -o pipefail\n")
         f.write(docker_command)   
     full_docker_command = "bash DOCKER-COMMAND"
     stdout0 = docker_client.containers.run(

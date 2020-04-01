@@ -59,7 +59,7 @@
       "type": "connection"
     }
   ],
-  "lib": {},
+  "lib": [],
   "nodes": [
     {
       "celltype": "code",
@@ -245,7 +245,7 @@
     {
       "celltype": "text",
       "checksum": {
-        "value": "f7f30c2988df3511583c0ce0964bf0a61fd4874049d82e780217f8d56f46cc2b"
+        "value": "1e98e14b65d7f2df1b17f7a5731bfc8983d98d1bb94b440a44f4068189ec90f0"
       },
       "datatype": "mixed",
       "mimetype": "text/javascript",

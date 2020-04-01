@@ -40,12 +40,12 @@
       "type": "connection"
     }
   ],
-  "lib": {},
+  "lib": [],
   "nodes": [
     {
       "celltype": "code",
       "checksum": {
-        "value": "2968302b0deb1eceb1c8aef6ebd41d77d0c1be9ebcae73e6fba68fd3cce75d13"
+        "value": "36bd6f908143597e005936a78eb3d5c15444fa819f3489491f57cfbd318ec7d2"
       },
       "datatype": "mixed",
       "language": "python",

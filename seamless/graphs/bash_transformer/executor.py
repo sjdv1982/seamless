@@ -6,6 +6,7 @@ import json
 import sys
 from io import BytesIO
 from seamless.silk import Silk
+from seamless.core.transformation import SeamlessTransformationError
 from seamless.mixed.get_form import get_form
 from seamless import subprocess
 from subprocess import PIPE
@@ -54,8 +55,10 @@ try:
                 with open(pin, "bw") as pinf:
                     np.save(pinf,v,allow_pickle=False)
     try:
+        bashcode2 = "set -u -e -o pipefail\n" + bashcode
         process = subprocess.run(
-        bashcode, capture_output=True, shell=True, check=True,
+        bashcode2, capture_output=True, shell=True, check=True,
+        executable='/bin/bash',
         env=env
         )
     except subprocess.CalledProcessError as exc:
@@ -64,7 +67,7 @@ try:
             stderr = stderr.decode()
         except:
             pass
-        raise Exception("""
+        raise SeamlessTransformationError("""
 Bash transformer exception
 ==========================
 
