@@ -45,6 +45,9 @@ for node in graph["nodes"]:
             state = status[subpath2 + ".status"]
             if state is None:
                 state = ""
+            h = "*tf*: "
+            if state.startswith(h):
+                state = state[len(h):]
             if len(state.split()) > 2:
                 if subpath != path:
                     cstate += "*** " + subpath2 + " ***\n"
