@@ -33,7 +33,7 @@ try:
     for pin in pins_:
         v = globals()[pin]
         if isinstance(v, Silk):
-            v = v.data
+            v = v.unsilk
         storage, form = get_form(v)
         if storage.startswith("mixed"):
             raise TypeError("pin '%s' has mixed data" % pin)
@@ -46,9 +46,17 @@ try:
                 vv = json.dumps(v)
             with open(pin, "w") as pinf:
                 pinf.write(vv)
-        else:
+        elif isinstance(v, bytes):
             with open(pin, "bw") as pinf:
-                np.save(pinf,vv,allow_pickle=False)
+                pinf.write(v)
+        else: 
+            if v.dtype == np.uint8 and v.ndim == 1:
+                vv = v.tobytes()
+                with open(pin, "bw") as pinf:
+                    pinf.write(vv)
+            else:
+                with open(pin, "bw") as pinf:
+                    np.save(pinf,v,allow_pickle=False)
     docker_client = docker_module.from_env()
     options["remove"] = True
     if "volumes" not in options:

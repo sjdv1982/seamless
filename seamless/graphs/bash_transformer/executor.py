@@ -46,12 +46,15 @@ try:
                 vv = json.dumps(v)
             with open(pin, "w") as pinf:
                 pinf.write(vv)
+        elif isinstance(v, bytes):
+            with open(pin, "bw") as pinf:
+                pinf.write(v)
         else: 
             if v.dtype == np.uint8 and v.ndim == 1:
                 vv = v.tobytes()
                 with open(pin, "bw") as pinf:
                     pinf.write(vv)
-            else:           
+            else:
                 with open(pin, "bw") as pinf:
                     np.save(pinf,v,allow_pickle=False)
     try:
