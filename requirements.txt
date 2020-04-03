@@ -29,3 +29,4 @@ jedi==0.15.2
 parso==0.5.2
 jupyter-console==6.1.*
 docker==3.7.*
+itables==0.2.*
