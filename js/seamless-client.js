@@ -109,7 +109,6 @@ function connect_seamless(update_server=null, rest_server=null, share_namespace=
     })
   }
   function set_value(key, value) {
-    console.log(key)
     ctx[key].value = value;
     ctx[key].oninput()
     ctx.self.oninput()
@@ -162,6 +161,7 @@ function connect_seamless(update_server=null, rest_server=null, share_namespace=
           return set_value(bound_key, value)
         }
       }
+      ctx.self.sharelist = sharelist
       for (const key of sharelist) {        
         if (key == "self") continue
         auto_read = (key.indexOf('.') == -1)

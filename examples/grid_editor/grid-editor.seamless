@@ -30,7 +30,7 @@
       "type": "connection"
     }
   ],
-  "lib": {},
+  "lib": [],
   "nodes": [
     {
       "INPUT": "inp",
@@ -56,8 +56,7 @@
           "celltype": "mixed"
         }
       },
-      "type": "transformer",
-      "with_result": true
+      "type": "transformer"
     },
     {
       "celltype": "plain",
@@ -131,7 +130,7 @@
     {
       "celltype": "text",
       "checksum": {
-        "value": "05fcdf6356fb093f7a1bc8a4c2513a7cc02d9ecdb1d942d169f4e6fb2f26ecb6"
+        "value": "51529ad8c0c35d59ef748e8d28ea2e1b9b28a4eed97e492040f39665fc309ff2"
       },
       "datatype": "mixed",
       "file_extension": "js",
@@ -173,7 +172,7 @@
     {
       "celltype": "text",
       "checksum": {
-        "value": "f73dd11aca082f5bfc22a17de7655b5eeb774d979c44788b778169131e8740a6"
+        "value": "f0abdac1afdb6b57312984a526441c769d257a88fbc91ef53b0b66ab9ff79bd4"
       },
       "datatype": "mixed",
       "file_extension": "js",
@@ -191,7 +190,7 @@
     {
       "celltype": "text",
       "checksum": {
-        "value": "abe8ad79916391949383d3a34521860a357b01d4fed15f84e00e56b3b12fee7b"
+        "value": "d276a9eb4d299b59e8dc9159a8a05d77e4f03737ffd6bbd5ce9cb034d9c59438"
       },
       "datatype": "mixed",
       "mount": {
@@ -212,7 +211,7 @@
     {
       "celltype": "text",
       "checksum": {
-        "value": "540071dfe8fddae9eece3fecfc78633efdc7eb98081b64447cefcd4950bf3246"
+        "value": "df4d3e318047fbeb7e5f0a9cd9fc5ab5e177e2a9afdae8614b5128933d9d4c67"
       },
       "datatype": "mixed",
       "mount": {
@@ -269,5 +268,7 @@
       "type": "cell"
     }
   ],
-  "params": {}
+  "params": {
+    "share_namespace": "ctx"
+  }
 }
