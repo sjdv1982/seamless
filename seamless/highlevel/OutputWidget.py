@@ -133,8 +133,11 @@ class OutputWidget:
             value = "<Cannot be displayed>"
         if self.DOC_name == "Pretty":
             value = str(value)
+        self.value = value
+        self.refresh()
 
-        display_object = self.DOC(data=value,**self.doc_kwargs)        
+    def refresh(self):
+        display_object = self.DOC(data=self.value,**self.doc_kwargs)        
         o = self.output_instance
         if len(o.outputs):
             o.clear_output(wait=True)

@@ -1,0 +1,102 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<script>
+
+// From the itables project: Copyright (c) 2019 Marc Wouts, MIT License
+// https://github.com/mwouts/itables/blob/master/itables/javascript/eval_functions.js
+function eval_functions(map_or_text) {
+    if (typeof map_or_text === "string") {
+        if (map_or_text.startsWith("function")) {
+            try {
+                // Note: parenthesis are required around the whole expression for eval to return a value!
+                // See https://stackoverflow.com/a/7399078/911298.
+                //
+                // eval("local_fun = " + map_or_text) would fail because local_fun is not declared
+                // (using var, let or const would work, but it would only be declared in the local scope
+                // and therefore the value could not be retrieved).
+                const func = eval("(" + map_or_text + ")");
+                if (typeof func !== "function") {
+                    // Note: backquotes are super convenient!
+                    // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_literals
+                    console.error("Evaluated expression " + map_or_text + " is not a function (type is " + typeof func + ")");
+                    return map_or_text;
+                }
+                // Return the function
+                return func;
+            } catch (e) {
+                // Make sure to print the error with a second argument to console.error().
+                console.error("itables was not able to parse " + map_or_text, e);
+            }
+        }
+    } else if (typeof map_or_text === "object") {
+        if (map_or_text instanceof Array) {
+            // Note: "var" is now superseded by "let" and "const".
+            // https://medium.com/javascript-scene/javascript-es6-var-let-or-const-ba58b8dcde75
+            const result = [];
+            // Note: "for of" is the best way to iterate through an iterable.
+            // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/for...of
+            for (const item of map_or_text) {
+                result.push(eval_functions(item));
+            }
+            return result;
+
+            // Alternatively, more functional approach in one line:
+            // return map_or_text.map(eval_functions);
+        } else {
+            const result = {};
+            // Object.keys() is safer than "for in" because otherwise you might have keys
+            // that aren't defined in the object itself.
+            //
+            // See https://stackoverflow.com/a/684692/911298.
+            for (const item of Object.keys(map_or_text)) {
+                result[item] = eval_functions(map_or_text[item]);
+            }
+            return result;
+        }
+    }
+
+    return map_or_text;
+}
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js"></script>
+<script>
+require.config({
+    paths: {
+        jquery: 'https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min',
+        datatables: 'https://cdn.datatables.net/1.10.19/js/jquery.dataTables.min',
+    }
+})
+</script>
+<link rel="stylesheet" type="text/css" href = "https://cdn.datatables.net/1.10.19/css/jquery.dataTables.min.css" > 
+<style> table td { text-overflow: ellipsis; overflow: hidden; } </style>
+<style> div.datatable {
+    width: 800px;
+    margin: auto;
+    border: 3px solid #000000;
+  } </style>
+</head>
+<body>
+<div id="datatable" class="datatable">
+<div><table id="ad9c9d8a-61c4-415b-a1ac-ba60e64c4d81" class="display"><thead>
+    <tr style="text-align: right;">
+      
+      <th>Factor A</th>
+      <th>Factor B</th>
+      <th>Bits of A*B</th>
+    </tr>
+  </thead></table>
+<script type="text/javascript">
+require(["datatables"], function (datatables) {
+    $(document).ready(function () {        
+        var dt_args = {"columnDefs": [{"width": "70px", "targets": "_all"}, {"className": "dt-center", "targets": "_all"}], "data": [[5, 8, 2], [5, 9, 4], [5, 10, 3], [5, 11, 5], [8, 8, 1], [8, 9, 2], [8, 10, 2], [8, 11, 3], [11, 8, 3], [11, 9, 4], [11, 10, 5], [11, 11, 5], [14, 8, 3], [14, 9, 6], [14, 10, 3], [14, 11, 4], [17, 8, 2], [17, 9, 4], [17, 10, 4], [17, 11, 6]]};
+        dt_args = eval_functions(dt_args);
+        table = $('#ad9c9d8a-61c4-415b-a1ac-ba60e64c4d81').DataTable(dt_args);
+    });
+})
+</script>
+</div>
+
+</div>
+</body>
+</html>

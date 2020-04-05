@@ -1,0 +1,29 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<script>
+{{ eval_functions}}
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js"></script>
+<script>
+require.config({
+    paths: {
+        jquery: 'https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min',
+        datatables: 'https://cdn.datatables.net/1.10.19/js/jquery.dataTables.min',
+    }
+})
+</script>
+<link rel="stylesheet" type="text/css" href = "https://cdn.datatables.net/1.10.19/css/jquery.dataTables.min.css" > 
+<style> table td { text-overflow: ellipsis; overflow: hidden; } </style>
+<style> div.datatable {
+    width: 800px;
+    margin: auto;
+    border: 3px solid #000000;
+  } </style>
+</head>
+<body>
+<div id="datatable" class="datatable">
+{{ datatable }}
+</div>
+</body>
+</html>

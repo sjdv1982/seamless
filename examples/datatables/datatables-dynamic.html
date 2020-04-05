@@ -1,0 +1,83 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<script src="eval_functions.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js"></script>
+<script src="seamless-client.js"></script>
+<script src="index.js"></script>
+<script>
+require.config({
+    paths: {
+        jquery: 'https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min',
+        datatables: 'https://cdn.datatables.net/1.10.19/js/jquery.dataTables.min',
+    }
+})
+</script>
+<link rel="stylesheet" type="text/css" href = "https://cdn.datatables.net/1.10.19/css/jquery.dataTables.min.css" > 
+<style> table td { text-overflow: ellipsis; overflow: hidden; } </style>
+<style> div.datatable {
+    width: 800px;
+    margin: auto;
+    border: 3px solid #000000;
+  } 
+</style>
+<style>
+/* The slider itself */
+.slidecontainer {
+    font-size: large;
+    font-weight: bold;
+}
+.slider {
+  -webkit-appearance: none;  /* Override default CSS styles */
+  appearance: none;
+  width: 50%; /* Full-width */
+  height: 25px; /* Specified height */
+  background: #d3d3d3; /* Grey background */
+  outline: none; /* Remove outline */
+  opacity: 0.7; /* Set transparency (for mouse-over effects on hover) */
+  -webkit-transition: .2s; /* 0.2 seconds transition on hover */
+  transition: opacity .2s;
+}
+</style>
+</head>
+<body>
+<table width="100%">
+<tr>
+<td>
+<div class="slidecontainer">
+    <p>Factor A</p>
+    <p>First value</p>
+    <input type="range" min="1" max="10" class="slider" name="a_first">
+    <label id="a_first2"></label>
+    <p>Step between values</p>
+    <input type="range" min="1" max="20" class="slider" name="a_step">
+    <label id="a_step2"></label>
+    <p>Number of values</p>
+    <input type="range" min="1" max="10" class="slider" name="a_length">
+    <label id="a_length2"></label>
+    <p></p>
+</div>    
+</td>
+<td>
+<div class="slidecontainer">
+    <p>Factor B</p>
+    <p>First value</p>
+    <input type="range" min="1" max="10" class="slider" name="b_first">
+    <label id="b_first2"></label>
+    <p>Step between values</p>
+    <input type="range" min="1" max="20" class="slider" name="b_step">
+    <label id="b_step2"></label>
+    <p>Number of values</p>
+    <input type="range" min="1" max="10" class="slider" name="b_length">
+    <label id="b_length2"></label>
+    <p></p>
+</div>
+</td>
+</tr>
+</table>    
+<div name="datatable" class="datatable">
+</div>
+
+</body>
+</html>
