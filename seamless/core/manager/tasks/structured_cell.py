@@ -112,6 +112,9 @@ class StructuredCellJoinTask(Task):
                                         await set_subpath(sc._auth_value, sc.hash_pattern, path, None)        
                                         break                            
                             """
+                        except CancelledError:
+                            ok = False
+                            break
                         except Exception:
                             sc._exception = traceback.format_exc(limit=0)   
                             ok = False

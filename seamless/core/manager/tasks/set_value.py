@@ -1,5 +1,6 @@
 import traceback
 from . import Task
+from asyncio import CancelledError
 
 class SetCellValueTask(Task):
     # For values that come from the command line
@@ -56,6 +57,8 @@ class SetCellValueTask(Task):
                 CellUpdateTask(manager, self.cell).launch()
             else:
                 manager.cancel_cell(self.cell, True, StatusReasonEnum.UNDEFINED)
+        except CancelledError:
+            pass
         except Exception as exc:
             exc = traceback.format_exc()
             livegraph.cell_parsing_exceptions[cell] = exc
