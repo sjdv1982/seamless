@@ -105,10 +105,21 @@ def _execute(name, code,
 class FakeStdStream:
     def __init__(self):
         self._buf = ""
+    def isatty(self):
+        return False
     def write(self, v):
-        self._buf += v
+        self._buf += str(v)
+    def writelines(self, sequence):
+        for s in sequence:
+            self.write(s)
+    def writeable(self):
+        return True
+    def flush(self):
+        pass
     def read(self):
         return self._buf
+    def readable(self):
+        return True
 
 def execute(name, code, 
       injector, module_workspace,
