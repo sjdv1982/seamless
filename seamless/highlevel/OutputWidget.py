@@ -84,7 +84,7 @@ def get_doc_kwargs(params):
     return doc_kwargs
 
 class OutputWidget:
-
+    value = None
     def __init__(self, cell, layout=None):
         from ipywidgets import Output
         if layout is None:
@@ -137,6 +137,8 @@ class OutputWidget:
         self.refresh()
 
     def refresh(self):
+        if self.value is None:
+            return
         display_object = self.DOC(data=self.value,**self.doc_kwargs)        
         o = self.output_instance
         if len(o.outputs):
