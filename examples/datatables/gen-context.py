@@ -86,7 +86,8 @@ def gen_datatable(bits):
         {'width': '70px', 'targets': "_all"}, 
         {'className': 'dt-center', 'targets': "_all"}
     ]
-    return itables.to_html(df, columnDefs=columnDefs)
+    tableId = 'ad9c9d8a-61c4-415b-a1ac-ba60e64c4d81'  # must be different for every table
+    return itables.to_html(df, columnDefs=columnDefs, tableId=tableId)
     
 datatable = gen_datatable(bits)
 print(datatable[:100])
