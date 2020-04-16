@@ -73,7 +73,7 @@ class CellChecksumTask(Task):
         if void:
             if invalid:
                 status_reason = StatusReasonEnum.INVALID
-            elif manager.livegraph.has_authority(cell):
+            elif cell.has_authority():
                 status_reason = StatusReasonEnum.UNDEFINED
             else:
                 status_reason = StatusReasonEnum.UPSTREAM        

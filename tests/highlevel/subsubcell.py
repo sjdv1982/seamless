@@ -1,4 +1,5 @@
 from seamless.highlevel import Context
+#import seamless.core.execute; seamless.core.execute.DIRECT_PRINT = True
 ctx = Context()
 ctx.a = {}
 ctx.a.b = {}
@@ -16,8 +17,11 @@ ctx.report.d = ctx.a.b.c.d
 ctx.compute()
 print()
 ctx.a.example = ctx.a.value
+ctx.compute()
 ctx.a.example.b = ctx.a.b.value
+ctx.compute()
 ctx.a.example.b.c = ctx.a.b.c.value
+ctx.compute()
 ctx.a.example.b.c.d = ctx.a.b.c.d.value
 ctx.compute()
 print("SCHEMA A", ctx.a.schema)

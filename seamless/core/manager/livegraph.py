@@ -163,7 +163,7 @@ class LiveGraph:
             if cell._structured_cell is None:
                 if len(self.schemacells[cell]):
                     return
-                if self.has_authority(cell):
+                if cell.has_authority():
                     return
                 msg = "Highlinked cell %s must have authority"
                 raise Exception(msg % cell)
@@ -781,7 +781,7 @@ class LiveGraph:
                     up_accessors = up_accessors[1:]        
 
         else:
-            self.temp_auth[cell] = self.has_authority(cell)
+            self.temp_auth[cell] = cell.has_authority()
             up_accessor = self.cell_to_upstream[cell]
             if up_accessor is not None:
                 self.destroy_accessor(manager, up_accessor)

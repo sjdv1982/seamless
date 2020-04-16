@@ -7,6 +7,7 @@ print(ctx.a.value, ctx.a.value.data)
 print(type(ctx.a.value), type(ctx.a.value.data))
 
 ctx.a.example.b = 1.1
+ctx.compute()
 print(ctx.a.value, ctx.a.value.data, ctx.a.schema)
 
 ctx.tf = lambda x,y: x + y

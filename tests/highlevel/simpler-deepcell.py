@@ -1,4 +1,5 @@
 from seamless.highlevel import Context
+#import seamless.core.execute; seamless.core.execute.DIRECT_PRINT = True
 from pprint import pprint
 
 ctx = Context()

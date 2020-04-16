@@ -32,10 +32,13 @@ class StructuredCellJoinTask(Task):
             await taskmanager.await_tasks(tasks, shield=True)
 
 
-    async def _run(self):        
+    async def _run(self):
         manager = self.manager()
         sc = self.structured_cell
         await self.await_sc_tasks()
+        if sc._data._checksum is not None:
+            print("{} should have been canceled!".format(sc))
+            return
         modified_paths = set(sc.modified_auth_paths)
         modified_paths.update(set([ic.subpath for ic in sc.modified_inchannels]))
         prelim = {}
@@ -120,9 +123,13 @@ class StructuredCellJoinTask(Task):
                             ok = False
                             break         
                     else:
+                        """
                         ###await set_subpath(value, sc.hash_pattern, path, None)
                         if schema is not None:
                             ok = False
+                        """
+                        pass  # It is OK to have inchannels at None (undefined)
+                              # Else, use required properties in the schema 
         else:            
             value = copy.deepcopy(sc._auth_value)
             if value is None:
@@ -227,6 +234,7 @@ class StructuredCellJoinTask(Task):
             sc.modified_auth_paths.clear()
             sc.modified_inchannels.clear()
             sc._new_connections = False
+            sc._exception = None
 
 from .serialize_buffer import SerializeToBufferTask
 from .deserialize_buffer import DeserializeBufferTask

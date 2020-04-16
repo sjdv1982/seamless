@@ -30,8 +30,10 @@ class SubCell(Cell):
         parent._translate()
 
     def __getattr__(self, attr):
-        if attr == "value":
-            raise AttributeError
+        if attr.startswith("_"):
+            return super().__getattribute__(attr)
+        if attr in type(self).__dict__ or attr in self.__dict__:
+            return super().__getattribute__(attr)
         parent = self._parent()
         readonly = self._readonly
         return SubCell(self._parent(), self._cell(), self._subpath + (attr,), readonly=readonly)
@@ -51,6 +53,8 @@ class SubCell(Cell):
     def value(self):
         cell = self._cell()
         cellvalue = cell.value
+        if cellvalue.unsilk is None:
+            raise ValueError
         for attr in self._subpath:
             cellvalue = getattr(cellvalue, attr)
         return cellvalue

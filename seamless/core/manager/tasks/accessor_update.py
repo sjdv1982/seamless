@@ -75,7 +75,7 @@ class AccessorUpdateTask(Task):
                         inchannel, expression_result_checksum, 
                         False, None, prelim=accessor._prelim
                     )
-                    StructuredCellJoinTask(manager, sc).launch()                
+                    manager.structured_cell_join(sc)
         else:
             raise TypeError(target)
             
@@ -85,7 +85,6 @@ from .transformer_update import TransformerUpdateTask
 from .reactor_update import ReactorUpdateTask
 from .macro_update import MacroUpdateTask
 from .cell_update import CellUpdateTask
-from .structured_cell import StructuredCellJoinTask
 from ...worker import Worker
 from ...transformer import Transformer
 from ...reactor import Reactor

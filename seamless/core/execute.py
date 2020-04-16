@@ -13,7 +13,8 @@ import platform
 import threading
 import inspect
 import ctypes
-import wurlitzer
+
+DIRECT_PRINT = False
 
 # TODO: decide when to kill an execution job!
 
@@ -103,12 +104,16 @@ def _execute(name, code,
                     return (1, "Output variable name '%s' undefined" % output_name)
 
 class FakeStdStream:
-    def __init__(self):
+    def __init__(self, real):
         self._buf = ""
+        self._real = real
     def isatty(self):
         return False
     def write(self, v):
-        self._buf += str(v)
+        if DIRECT_PRINT:
+            self._real.write(v)
+        else:
+            self._buf += str(v)
     def writelines(self, sequence):
         for s in sequence:
             self.write(s)
@@ -130,7 +135,7 @@ def execute(name, code,
     try:
         old_stdio = sys.stdout, sys.stderr
         #sys.stdout, sys.stderr = sys.__stdout__, sys.__stderr__
-        stdout, stderr = FakeStdStream(), FakeStdStream()
+        stdout, stderr = FakeStdStream(sys.stdout), FakeStdStream(sys.stderr)
         sys.stdout, sys.stderr = stdout, stderr
         result = _execute(name, code, 
             injector, module_workspace,
@@ -145,7 +150,7 @@ def execute(name, code,
             std = ""
             sout = stdout.read()
             sys.stdout, sys.stderr = old_stdio
-            if len(sout):
+            if len(sout) and not DIRECT_PRINT:
                 if not len(std):
                     std = "\n"
                 std += "*" * 50 + "\n"
@@ -155,7 +160,7 @@ def execute(name, code,
                 std += "*" * 50 + "\n"
                 std += "\n"
             serr = stderr.read()
-            if len(serr):
+            if len(serr) and not DIRECT_PRINT:
                 if not len(std):
                     std += "\n"
                 std += "*" * 50 + "\n"
@@ -168,8 +173,10 @@ def execute(name, code,
                 msg = std + msg
             result_queue.put((code, msg))
         else:
-            print(stdout.read())
-            print(stderr.read(), file=sys.stderr)
+            sys.stdout, sys.stderr = old_stdio
+            if not DIRECT_PRINT:                
+                sys.stdout.write(stdout.read())
+                sys.stderr.write(stderr.read())
             result_queue.put(result)
     finally:
         sys.stdout, sys.stderr = old_stdio

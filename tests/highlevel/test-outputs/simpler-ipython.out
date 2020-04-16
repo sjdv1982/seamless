@@ -1,9 +1,14 @@
-85.9 ns ± 1.96 ns per loop (mean ± std. dev. of 7 runs, 10000000 loops each)
+103 ns +- 5.96 ns per loop (mean +- std. dev. of 7 runs, 10000000 loops each)
+Waiting for: Seamless transformer: .transform.tf 
 Waiting for: Seamless transformer: .transform.tf 
 Waiting for: Seamless transformer: .transform.tf 
 Waiting for: Seamless transformer: .transform.tf 
 <Silk: None >
-88 ns ± 0.99 ns per loop (mean ± std. dev. of 7 runs, 10000000 loops each)
+98.3 ns +- 1.45 ns per loop (mean +- std. dev. of 7 runs, 10000000 loops each)
+ctx.auto_translate is currently unstable and has been disabled
+You must run regularly "ctx.translate()" (IPython) 
+or "await ctx.translation()" (Jupyter) after modifying the graph. 
+Translation is not required after modifying only cell values
 Waiting for: Seamless transformer: .transform.tf 
 Waiting for: Seamless transformer: .transform.tf 
 Waiting for: Seamless transformer: .transform.tf 

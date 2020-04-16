@@ -20,7 +20,7 @@
       "type": "connection"
     }
   ],
-  "lib": {},
+  "lib": [],
   "nodes": [
     {
       "INPUT": "inp",
@@ -43,8 +43,7 @@
           "celltype": "mixed"
         }
       },
-      "type": "transformer",
-      "with_result": true
+      "type": "transformer"
     },
     {
       "celltype": "structured",

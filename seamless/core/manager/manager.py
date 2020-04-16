@@ -149,7 +149,7 @@ class Manager:
                 assert cell._hash_pattern is None
                 assert sc_data is None and sc_buf is None
                 if sc_schema is None:
-                    assert self.livegraph.has_authority(cell)
+                    assert cell.has_authority()
                 assert sc_buf is None
         else:  # initial
             assert not trigger_highlinks
@@ -201,7 +201,7 @@ class Manager:
         elif len(self.livegraph.schemacells[cell]):
             authority = True
         else:
-            authority = self.livegraph.has_authority(cell)
+            authority = cell.has_authority()
         cachemanager = self.cachemanager
         old_checksum = cell._checksum
         if old_checksum is not None and old_checksum != checksum:
@@ -295,7 +295,7 @@ class Manager:
 
     @run_in_mainthread
     def set_cell(self, cell, value):
-        assert self.livegraph.has_authority(cell), cell
+        assert cell.has_authority(), cell
         assert cell._structured_cell is None, cell
         reason = None
         if value is None:
@@ -319,13 +319,19 @@ class Manager:
         for sc in structured_cells:            
             if sc is structured_cell:
                 continue           
-            self.taskmanager.cancel_structured_cell(sc)
             sc._schema_value = copy.deepcopy(value)
             self.structured_cell_join(sc)
 
     def structured_cell_join(self, structured_cell):
         # First cancel all ongoing joins
-        self.taskmanager.cancel_structured_cell(structured_cell)
+        # TODO: only activate taskmanager.cancel_structured_cell
+        # and be more judicious in canceling outchannel paths
+        # (currently commented out in StructuredCellJoinTask)
+        self.cancel_structured_cell(
+            structured_cell, void=False
+        )
+        if self._destroyed or structured_cell._destroyed:
+            return
         task = StructuredCellJoinTask(
             self, structured_cell
         )
@@ -334,7 +340,7 @@ class Manager:
     @run_in_mainthread
     def set_cell_buffer(self, cell, buffer, checksum):
         assert cell._hash_pattern is None
-        assert self.livegraph.has_authority(cell), cell
+        assert cell.has_authority(), cell
         assert cell._structured_cell is None, cell
         reason = None
         if buffer is None:
@@ -479,6 +485,7 @@ If origin_task is provided, that task is not cancelled."""
         from .tasks.structured_cell import overlap_path
         assert isinstance(sc, StructuredCell)
         cell = sc._data
+        need_join = True
         if not from_auth and path in sc.inchannels:
             if reason is None and void:
                 reason = StatusReasonEnum.UPSTREAM
@@ -487,6 +494,16 @@ If origin_task is provided, that task is not cancelled."""
                 ic, None, void,
                 status_reason=reason
             )
+            if path == ():
+                self.cancel_structured_cell(sc, void, reason=reason)
+                need_join = False
+        if need_join:
+            self.structured_cell_join(sc)
+
+    @mainthread
+    def cancel_structured_cell(self, sc, void, reason=None):
+        self.taskmanager.cancel_structured_cell(sc)
+        cell = sc._data
         for outchannel in sc.outchannels:
             ###if overlap_path(outchannel, path): # no, cancel all!
             from_unconnected_cell = False
@@ -582,7 +599,13 @@ If origin_task is provided, that task is not cancelled."""
             status_reason=reason,
             prelim = False
         )
-        #TransformerUpdateTask(self, transformer).launch()  # it seems that this be safely disabled; tests are unaffected
+        downstreams = self.livegraph.transformer_to_downstream[transformer]
+        for accessor in downstreams:
+            self.cancel_accessor(
+                accessor, void
+            )
+        return
+
 
     @mainthread
     def cancel_reactor(self, reactor, void, reason=None):

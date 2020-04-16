@@ -10,7 +10,7 @@ START
 <Silk: {'a': 12} >
 NO RESULT <Silk: None > <Silk: None >
 TRANSFORMER EXCEPTION seamless.core.transformation.SeamlessTransformationError: Traceback (most recent call last):
-  File "/seamless/seamless/core/execute.py", line 85, in _execute
+  File "/seamless/seamless/core/execute.py", line 88, in _execute
     exec_code(code, identifier, namespace, inputs, output_name)
   File "/seamless/seamless/core/cached_compile.py", line 58, in exec_code
     exec(code_obj, namespace)
@@ -50,7 +50,7 @@ RUN!
 TRANSFORMER INPUT EXCEPTION None
 TRANSFORMER STATUS *tf*: Status: error
 TRANSFORMER EXCEPTION seamless.core.transformation.SeamlessTransformationError: Traceback (most recent call last):
-  File "/seamless/seamless/core/execute.py", line 85, in _execute
+  File "/seamless/seamless/core/execute.py", line 88, in _execute
     exec_code(code, identifier, namespace, inputs, output_name)
   File "/seamless/seamless/core/cached_compile.py", line 58, in exec_code
     exec(code_obj, namespace)
@@ -66,7 +66,7 @@ START2
 TRANSFORMER INPUT EXCEPTION None
 TRANSFORMER STATUS *tf*: Status: error
 TRANSFORMER EXCEPTION seamless.core.transformation.SeamlessTransformationError: Traceback (most recent call last):
-  File "/seamless/seamless/core/execute.py", line 85, in _execute
+  File "/seamless/seamless/core/execute.py", line 88, in _execute
     exec_code(code, identifier, namespace, inputs, output_name)
   File "/seamless/seamless/core/cached_compile.py", line 58, in exec_code
     exec(code_obj, namespace)

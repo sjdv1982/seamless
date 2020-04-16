@@ -17,7 +17,6 @@ Stage 6
 VALIDATE <Silk: {'g': 50, 'c': 8, 'd': -4, 'f': 20} >
 Stage 7
 VALIDATE <Silk: {'g': 50, 'c': 8, 'd': 108, 'f': 20} >
-VALIDATE <Silk: {'g': 50, 'c': 8, 'd': 108, 'f': 20} >
 <Silk: None >
 <Silk: None >
 Traceback (most recent call last):
@@ -48,7 +47,6 @@ On instance:
 
 Stage 8
 VALIDATE <Silk: {'g': 50, 'c': 8, 'd': 88, 'f': 20} >
-VALIDATE <Silk: {'g': 50, 'c': 8, 'd': 88, 'f': 20} >
 <Silk: None >
 <Silk: None >
 Traceback (most recent call last):
@@ -78,7 +76,6 @@ On instance:
     {'g': 50, 'c': 8, 'd': 88, 'f': 20}
 
 Stage 9
-VALIDATE <Silk: {'g': 50, 'c': 8, 'd': 12, 'f': 20} >
 VALIDATE <Silk: {'g': 50, 'c': 8, 'd': 12, 'f': 20} >
 <Silk: {'c': 8, 'd': 12, 'f': 20, 'g': 50} >
 <Silk: 342 >

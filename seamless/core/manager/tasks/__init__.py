@@ -72,6 +72,7 @@ class Task:
             result = await realtask.run()
             return result
         self._launch()
+        assert self.future is not None
         self._awaiting = True
         #print("LAUNCHED", self)
         #if self.__class__.__name__ != "CellChecksumTask": await asyncio.sleep(2) ###
