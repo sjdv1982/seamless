@@ -163,15 +163,21 @@ class Cell(Base):
     def self(self):
         raise NotImplementedError
 
+    def _get_subcell(self, attr):
+        hcell = self._get_hcell()
+        if not hcell["celltype"] == "structured":
+            raise AttributeError(item)
+        parent = self._parent()        
+        readonly = False ### TODO
+        path = self._subpath + (attr,)
+        return SubCell(
+            parent, self._cell(),
+             path, readonly=readonly
+        )
+
     def __getitem__(self, item):
         if isinstance(item, (int, str)):
-            hcell = self._get_hcell()
-            if not hcell["celltype"] == "structured":
-                raise AttributeError(item)
-            parent = self._parent()
-            readonly = False ### TODO
-            path = self._subpath + (item,)
-            return SubCell(self._parent(), self._cell(), path, readonly=readonly)
+            return self._get_subcell(item)
         elif isinstance(item, slice):
             raise NotImplementedError  # TODO: x[min:max] outchannels
         else:
@@ -196,13 +202,7 @@ class Cell(Base):
         if not hcell["celltype"] == "structured":
             cell = self._get_cell()
             return getattr(cell, attr)
-        parent = self._parent()        
-        readonly = False ### TODO
-        path = self._subpath + (attr,)
-        return SubCell(
-            parent, self._cell(),
-             path, readonly=readonly
-        )
+        return self._get_subcell(attr)
 
     def mount(self, path=None, mode="rw", authority="cell", persistent=True):
         assert self.celltype != "structured"
