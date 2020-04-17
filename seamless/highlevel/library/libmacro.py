@@ -204,6 +204,13 @@ class LibMacroContextWrapper:
             return super().__getattribute__(attr)
         if attr in type(self).__dict__ or attr in self.__dict__:
             return super().__getattribute__(attr)
+        return self._get_child(attr)
+
+    def __getitem__(self, item):
+        if isinstance(item, (str, int)):
+            return self._get_child(item)
+
+    def _get_child(self, attr):    
         path = self._path + (attr,)
         parent = self._parent()
         try:

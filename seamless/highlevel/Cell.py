@@ -249,6 +249,12 @@ class Cell(Base):
 
         assign_to_subcell(self, (attr,), value)
 
+    def connect_from(self, other):
+        from .assign import assign
+        parent = self._parent()
+        assert not parent._dummy
+        return assign(parent, self._path, other)
+
     def __setitem__(self, item, value):
         if item in ("value", "schema"):
             raise NotImplementedError # TODO: might work on shadowed inchannels, but probably need to adapt assign_to_subcell
