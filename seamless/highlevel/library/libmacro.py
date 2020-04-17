@@ -72,6 +72,14 @@ class LibMacro:
                     value = OutputCellWrapper(
                         connection_wrapper, overlay_node, cellpath
                     )
+            elif par["type"] == "context":
+                if isinstance(argvalue, list):
+                    argvalue = tuple(argvalue)
+                value = parent._children.get(argvalue)
+                if value is not None:
+                    msg = "'%s' must be Context, not '%s'"
+                    raise TypeError(msg % (argname, type(value)))
+                value = SubContext(parent, argvalue).get_graph()
             else: # par["type"] == "celldict":
                 value = {}
                 for k,v in argvalue.items():
@@ -177,6 +185,9 @@ class LibMacroContextWrapper:
         raise NotImplementedError
 
     def __dir__(self):
+        return self.children()
+    
+    def children(self):        
         path = self._path
         lp = len(path)
         parent = self._parent()
@@ -200,7 +211,7 @@ class LibMacroContextWrapper:
         except KeyError:
             if attr in self.__dir__():
                 return LibMacroContextWrapper(parent, path)
-            raise AttributeError(attr)
+            raise AttributeError(attr) from None
         if node["type"] == "cell":
             result = Cell()
         elif node["type"] == "transformer":
@@ -209,6 +220,8 @@ class LibMacroContextWrapper:
             result = Reactor()
         elif node["type"] == "macro":
             result = Macro()
+        elif node["type"] == "context":
+            return LibMacroContextWrapper(parent, path)
         else:
             raise NotImplementedError(node["type"])
         Base.__init__(result, parent, path)
@@ -218,7 +231,7 @@ from .iowrappers import ConnectionWrapper, InputCellWrapper, OutputCellWrapper
 from ..Base import Base
 from ..Cell import Cell
 from ..SubCell import SubCell
-from ..Context import Context#, get_status
+from ..Context import Context, SubContext
 from ...midlevel.StaticContext import StaticContext
 from ..Transformer import Transformer
 from ..Reactor import Reactor

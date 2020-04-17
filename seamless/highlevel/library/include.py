@@ -5,8 +5,10 @@ def get_argument_value(name, value):
     if isinstance(value, Cell):
         if value._get_hcell().get("constant"):
             value = value.value
+        else:
+            raise TypeError("'%s' is a value argument, you cannot pass a cell unless it is constant" % name)
     elif isinstance(value, Base):
-        raise TypeError("%s must be value or constant cell, not '%s'" % (name, type(value)))
+        raise TypeError("'%s' must be value or constant cell, not '%s'" % (name, type(value)))
     return RichValue(value).value
 
 class IncludedLibraryContainer:
@@ -62,6 +64,11 @@ class IncludedLibrary:
             par = self._params[argname]
             if par["type"] == "value":
                 value = get_argument_value(argname, argvalue)
+            elif par["type"] == "context":
+                if not isinstance(argvalue, (Context, SubContext)):
+                    msg = "%s must be Context, not '%s'"
+                    raise TypeError(msg % (argname, type(argvalue)))
+                value = argvalue._path
             elif par["type"] == "cell":
                 if not isinstance(argvalue, Cell):
                     msg = "%s must be Cell, not '%s'"
@@ -90,5 +97,5 @@ from ...core.cached_compile import cached_compile
 from .libmacro import LibMacro        
 from ..Base import Base
 from ..Cell import Cell
-from ..Context import Context
+from ..Context import Context, SubContext
 from ...silk.Silk import RichValue

@@ -11,9 +11,9 @@ def validate_params(params):
         if isinstance(v, str):
             v = {"type": v}
         type_ = v.get("type", "value")
-        assert type_ in ("value", "cell", "celldict"), (k, type_)
+        assert type_ in ("value", "cell", "celldict", "context"), (k, type_)
         io = v.get("io", "input")
-        if type_ == "value":
+        if type_ in ("value", "context"):
             assert io == "input", (k, io)
         if type_ in ("cell", "celldict"):
             assert io in ("input", "output"), (k, io)
