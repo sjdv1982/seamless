@@ -60,6 +60,20 @@ from websockets.exceptions import ConnectionClosed
 
 DEBUG = False
 
+def get_subkey(buffer, subkey):
+    value = json.loads(buffer)
+    path = subkey.split("/")
+    try:
+        for subpath in path:
+            try:
+                value = value[subpath]
+            except:
+                subpath = int(subpath)
+                value = value[subpath]
+    except:
+        return None
+    return json.dumps(value, indent=2, sort_keys=True) + "\n"
+
 def is_bound_port_error(exc):
     args = exc.args
     if not len(args) == 2:
@@ -247,8 +261,10 @@ class ShareNamespace:
         finally:
             self._send_sharelist_task = None
 
-    async def _get(self, key, mode):
+    async def _get(self, key, mode, subkey=None):
         assert mode in ("checksum", "buffer", "value", "marker")
+        if subkey is not None:
+            assert mode in ("buffer", "value")
         share = self.shares[key]
         checksum, marker = await share.read()
         if checksum is not None:
@@ -264,6 +280,9 @@ class ShareNamespace:
             content_type = get_mime(share.celltype)
         manager = self.manager()
         buffer = await manager.cachemanager.fingertip(checksum, must_have_cell=True)
+        if subkey is not None:
+            assert content_type == 'application/json'
+            buffer = get_subkey(buffer, subkey)            
         if mode == "buffer":
             if buffer is None:
                 return None, None
@@ -280,8 +299,8 @@ class ShareNamespace:
         result = json.dumps(result, indent=2, sort_keys=True)
         return result, 'application/json'
 
-    async def get(self, key, mode):
-        coro = self._get(key, mode)
+    async def get(self, key, mode, subkey=None):
+        coro = self._get(key, mode, subkey)
         share = self.shares[key]
         fut = asyncio.ensure_future(coro)
         share.requests.append(fut)
@@ -489,7 +508,24 @@ class ShareServer(object):
             namespace = self.namespaces[ns]
             if key == "":
                 raise web.HTTPFound('/{}/index.html'.format(ns))
-            share = namespace.shares[key]
+            try:
+                share = namespace.shares[key]
+                subkey = None
+            except KeyError:
+                ok = False
+                for pos in range(len(key)-1,0,-1):
+                    if key[pos] != "/":
+                        continue
+                    key2, subkey = key[:pos], key[pos+1:]
+                    try:
+                        share = namespace.shares[key2]                        
+                        ok = True
+                        key = key2
+                        break
+                    except KeyError:
+                        pass
+                if not ok:
+                    raise KeyError(key) from None
         except KeyError:
             if DEBUG:
                 traceback.print_exc()
@@ -511,7 +547,7 @@ class ShareServer(object):
             )
 
         try:
-            result = await namespace.get(key, mode)
+            result = await namespace.get(key, mode,subkey)
             body, content_type = result
             if body is None:
                 return web.Response(
