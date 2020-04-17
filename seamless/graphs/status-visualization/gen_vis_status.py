@@ -16,15 +16,25 @@ color_mapping = {
     5: "royalblue",
 }
 
-for node in graph["nodes"]:
-    path = tuple(node["path"])
+libnodes = [tuple(node["path"]) for node in graph["lib"]]
+
+def is_subnode(path):    
     subnode = False
     if "ctx" in path:
         pos = path.index("ctx")
-        path = path[:pos]
-        if path in path_to_id:
-            continue
-        subnode = True
+        path0 = path[:pos]
+        if tuple(path0) in libnodes or 1:
+            pass
+        else:
+            path = path0            
+            subnode = True
+    return path, subnode
+
+for node in graph["nodes"]:
+    path = tuple(node["path"])
+    path, subnode = is_subnode(path)
+    if subnode and path in path_to_id:
+        continue
     path2 = ".".join(path)
     rnode = {"name": path2, "type": node["type"], "id": len(rnodes)}
     if node["type"] == "cell":
@@ -90,11 +100,11 @@ for connection in graph["connections"]:
     else:
         source, target = connection["source"], connection["target"]
 
-    if "ctx" in source:
+    if "ctx" in source  and is_subnode(source)[1]:
         pos = source.index("ctx")
         source = source[:pos]
     
-    if "ctx" in target:
+    if "ctx" in target and is_subnode(target)[1]:
         pos = target.index("ctx")
         target = target[:pos]
 

@@ -4,15 +4,17 @@ class ConnectionWrapper:
         self.connections = []
     def connect(self, source, target, source_subpath, target_subpath):
         if isinstance(source, InputCellWrapper):
-            assert source_subpath is None
+            #assert source_subpath is None
             source_full_path = source.path
         else:
             source_full_path = self.basepath + source._path
-            if source_subpath is not None:
-                source_full_path += tuple(source_subpath)
+        if source_subpath is not None:
+            if isinstance(source_subpath, str):
+                source_subpath = (source_subpath,)
+            source_full_path += tuple(source_subpath)
 
         if isinstance(target, OutputCellWrapper):
-            assert target_subpath is None
+            #assert target_subpath is None
             target.clear()
             target_full_path = target.path
         else:
@@ -21,8 +23,10 @@ class ConnectionWrapper:
             if target_subpath is None:
                 target._get_hcell().pop("checksum", None)
             target_full_path = self.basepath + target._path
-            if target_subpath is not None:
-                target_full_path += tuple(target_subpath)            
+        if target_subpath is not None:
+            if isinstance(target_subpath, str):
+                target_subpath = (target_subpath,)
+            target_full_path += tuple(target_subpath)
         connection = {
             "type": "connection",
             "source": source_full_path,
@@ -83,12 +87,12 @@ class InputCellWrapper(CellWrapper):
         self._connection_wrapper = connection_wrapper
         self._cell = cell
         self._node = cell._get_hcell()
-    def connect(self, target, source_path=None):        
+    def connect(self, target, source_path=None, target_path=None):        
         self._connection_wrapper.connect(
             self,
             target,
             source_path,
-            None
+            target_path
         )
     @property
     def path(self):
@@ -104,11 +108,11 @@ class OutputCellWrapper(CellWrapper):
     def path(self):
         return self._path
 
-    def connect_from(self, source, target_path=None):
+    def connect_from(self, source, source_path=None, target_path=None):
         self._connection_wrapper.connect(
             source,
             self,
-            None,
+            source_path,
             target_path
         )
 

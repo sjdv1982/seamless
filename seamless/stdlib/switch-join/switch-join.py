@@ -200,7 +200,7 @@ mylib.join = ctx_join
 mylib.join.constructor = ctx_join.constructor_code.value
 mylib.join.params = ctx_join.constructor_params.value
 
-# 3: Run test example
+# 4: Run test example
 
 ctx2 = Context()
 ctx2.include(mylib.switch)
@@ -295,7 +295,7 @@ print()
 if ctx2.output.value is None:
     sys.exit()
 
-# 3: Save graph and zip
+# 5: Save graph and zip
 
 import os, json
 currdir=os.path.dirname(os.path.abspath(__file__))
