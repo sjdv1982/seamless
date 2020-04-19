@@ -1,5 +1,4 @@
 from seamless.highlevel import Context
-#import seamless.core.execute; seamless.core.execute.DIRECT_PRINT = True
 ctx = Context()
 ctx.a = {}
 ctx.a.b = {}

@@ -68,6 +68,18 @@ if "get_ipython" in sys.modules["__main__"].__dict__:
                 if nest_asyncio is not None: 
                     ipython_instance.magic("autoawait False")
 
+def verify_sync_translate():
+    if running_in_jupyter:
+        raise RuntimeError("'ctx.translate()' cannot be called from within Jupyter. Use 'await ctx.translation()' instead")
+    elif asyncio.get_event_loop().is_running():
+        raise RuntimeError("'ctx.translate()' cannot be called from within a coroutine. Use 'await ctx.translation()' instead")
+
+def verify_sync_compute():
+    if running_in_jupyter:
+        raise RuntimeError("'ctx.compute()' cannot be called from within Jupyter. Use 'await ctx.computation()' instead")
+    elif asyncio.get_event_loop().is_running():
+        raise RuntimeError("'ctx.compute()' cannot be called from within a coroutine. Use 'await ctx.computation()' instead")
+
 if ipy_error is None:
     last_exception = None
     def new_except_hook(etype, evalue, tb):

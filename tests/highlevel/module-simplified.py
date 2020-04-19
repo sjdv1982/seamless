@@ -16,7 +16,6 @@ c = a + b
 '''
 
 from seamless.highlevel import Transformer, Cell, Context
-#import seamless.core.execute; seamless.core.execute.DIRECT_PRINT = True
 ctx = Context()
 ctx.testmodule = Cell("plain").set({
     "type": "interpreted",

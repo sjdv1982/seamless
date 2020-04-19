@@ -181,7 +181,6 @@ with open(zip_filename, "bw") as f:
     f.write(zip)
 print("Graph saved")
 
-import seamless.core.execute; seamless.core.execute.DIRECT_PRINT = True
 f = "/home/sjoerd/seamless/seamless/graphs/status-visualization"  
 from seamless.metalevel.bind_status_graph import bind_status_graph
 ctx2 = bind_status_graph(ctx, json.load(open(f+".seamless")),zips=[f+".zip"])

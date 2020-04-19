@@ -12,6 +12,7 @@ filesystemlike.py: As of Seamless 0.2, this test FAILS (issue 3)
 context.py
 context2.py
 scratch.py
+simpler-tf-print.py
 simplest.py
 simple-missing.py
 simpler-listpin.py

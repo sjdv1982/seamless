@@ -270,7 +270,9 @@ Translation is not required after modifying only cell values""")
         }
         self._translate()
     
-    def compute(self, timeout=None, report=2):     
+    def compute(self, timeout=None, report=2):             
+        from seamless import verify_sync_compute
+        verify_sync_compute()
         if self._dummy:
             return
         self.translate()
@@ -290,11 +292,8 @@ Translation is not required after modifying only cell values""")
         self._cached_graph = None
 
     def translate(self, force=False):
-        from seamless import running_in_jupyter
-        if running_in_jupyter:
-            raise RuntimeError("'ctx.translate()' cannot be called from within Jupyter. Use 'await ctx.translation()' instead")
-        elif asyncio.get_event_loop().is_running():
-            raise RuntimeError("'ctx.translate()' cannot be called from within a coroutine. Use 'await ctx.translation()' instead")
+        from seamless import verify_sync_translate
+        verify_sync_translate()
         return self._do_translate(force=force, explicit=True)
 
     async def translation(self, force=False):

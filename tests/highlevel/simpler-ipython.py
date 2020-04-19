@@ -1,5 +1,4 @@
 from seamless.highlevel import Context, Transformer
-#import seamless.core.execute; seamless.core.execute.DIRECT_PRINT = True
 
 ctx = Context()
 

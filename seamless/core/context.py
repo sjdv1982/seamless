@@ -219,11 +219,8 @@ name: str
          "timeout" seconds, returning the remaining set of unstable workers
         Report the workers that are not stable every "report" seconds
         """
-        from .. import running_in_jupyter
-        if running_in_jupyter:
-            raise RuntimeError("'ctx.compute()' cannot be called from within Jupyter. Use 'await ctx.computation()' instead")
-        elif asyncio.get_event_loop().is_running():
-            raise RuntimeError("'ctx.compute()' cannot be called from within a coroutine. Use 'await ctx.computation()' instead")
+        from .. import verify_sync_compute
+        verify_sync_compute()
         manager = self._get_manager()
         manager.sharemanager.tick()
         return manager.taskmanager.compute(timeout, report)

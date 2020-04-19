@@ -1,3 +1,0 @@
-Since the DIRECT PRINT modifications in .execute, 
- printing (direct or not) works fine for Python but does not work (direct or not)
- for IPython. Not sure about Jupyter

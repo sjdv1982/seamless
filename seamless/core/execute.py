@@ -13,8 +13,7 @@ import platform
 import threading
 import inspect
 import ctypes
-
-DIRECT_PRINT = False
+import wurlitzer
 
 # TODO: decide when to kill an execution job!
 
@@ -110,10 +109,7 @@ class FakeStdStream:
     def isatty(self):
         return False
     def write(self, v):
-        if DIRECT_PRINT:
-            self._real.write(v)
-        else:
-            self._buf += str(v)
+        self._buf += str(v)
     def writelines(self, sequence):
         for s in sequence:
             self.write(s)
@@ -134,14 +130,26 @@ def execute(name, code,
     assert identifier is not None
     try:
         old_stdio = sys.stdout, sys.stderr
-        #sys.stdout, sys.stderr = sys.__stdout__, sys.__stderr__
-        stdout, stderr = FakeStdStream(sys.stdout), FakeStdStream(sys.stderr)
-        sys.stdout, sys.stderr = stdout, stderr
-        result = _execute(name, code, 
-            injector, module_workspace,
-            identifier, namespace,
-            inputs, output_name, celltype, result_queue
-        )
+        BRANCH = "B"
+        if BRANCH == "A":
+            # A
+            stdout, stderr = FakeStdStream(sys.stdout), FakeStdStream(sys.stderr)
+            sys.stdout, sys.stderr = stdout, stderr
+            result = _execute(name, code, 
+                injector, module_workspace,
+                identifier, namespace,
+                inputs, output_name, celltype, result_queue
+            )    
+
+        elif BRANCH == "B":
+            # or: B
+            sys.stdout, sys.stderr = sys.__stdout__, sys.__stderr__
+            with wurlitzer.pipes() as (stdout, stderr):
+                result = _execute(name, code, 
+                    injector, module_workspace,
+                    identifier, namespace,
+                    inputs, output_name, celltype, result_queue
+                )
                 
         code, msg = result
         if code == 2: # SeamlessTransformationException, propagate
@@ -150,7 +158,7 @@ def execute(name, code,
             std = ""
             sout = stdout.read()
             sys.stdout, sys.stderr = old_stdio
-            if len(sout) and not DIRECT_PRINT:
+            if len(sout):
                 if not len(std):
                     std = "\n"
                 std += "*" * 50 + "\n"
@@ -160,7 +168,7 @@ def execute(name, code,
                 std += "*" * 50 + "\n"
                 std += "\n"
             serr = stderr.read()
-            if len(serr) and not DIRECT_PRINT:
+            if len(serr):
                 if not len(std):
                     std += "\n"
                 std += "*" * 50 + "\n"
@@ -172,11 +180,9 @@ def execute(name, code,
             if len(std):
                 msg = std + msg
             result_queue.put((code, msg))
-        else:
-            sys.stdout, sys.stderr = old_stdio
-            if not DIRECT_PRINT:                
-                sys.stdout.write(stdout.read())
-                sys.stderr.write(stderr.read())
+        else:            
+            sys.stdout.write(stdout.read())
+            sys.stderr.write(stderr.read())
             result_queue.put(result)
     finally:
         sys.stdout, sys.stderr = old_stdio

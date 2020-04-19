@@ -1,6 +1,5 @@
 from seamless.highlevel import Context
 import json
-#import seamless.core.execute; seamless.core.execute.DIRECT_PRINT = True
 
 ctx = Context()
 ###ctx.mount("/tmp/mount-test")
