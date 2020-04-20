@@ -122,4 +122,4 @@ ctx.compute()
 ctx.save_graph("grid-editor.seamless")
 ctx.save_zip("grid-editor.zip")
 
-print("If this script is run with IPython or Jupyter, open http://localhost:5813/ctx/grid-editor.html")
+print("If this script is run with IPython, open http://localhost:5813/ctx/grid-editor.html")
