@@ -124,7 +124,7 @@ display(c)
 
 ```Out[4]```
 
-
+<details><summary>Jupyter widgets (not shown by GitHub)</summary>
 <!-- Load require.js. Delete this if your page already loads require.js -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" crossorigin="anonymous"></script>
 <script src="https://unpkg.com/@jupyter-widgets/html-manager@*/dist/embed-amd.js" crossorigin="anonymous"></script>
@@ -310,7 +310,7 @@ display(c)
     "model_id": "dc3ebd64e9fb40bc9fd964e7292ed326"
 }
 </script>
-
+</details>
 
 #### 6. Mount cells to the file system
 ```python
