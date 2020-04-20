@@ -123,7 +123,6 @@ display(c)
 ```
 
 ```Out[4]```
-<html><head>
 
 
 <!-- Load require.js. Delete this if your page already loads require.js -->
@@ -287,8 +286,6 @@ display(c)
     }
 }
 </script>
-</head>
-<body>
 
 <script type="application/vnd.jupyter.widget-view+json">
 {
@@ -313,9 +310,6 @@ display(c)
     "model_id": "dc3ebd64e9fb40bc9fd964e7292ed326"
 }
 </script>
-
-</body>
-</html>
 
 
 #### 6. Mount cells to the file system
