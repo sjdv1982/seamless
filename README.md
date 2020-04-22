@@ -41,7 +41,7 @@ This can be done with the following line in your .bashrc:
 
 **Getting started**:
 
-Run the command ```jupyter-seamless``` to fire up a Jupyter server that runs from inside the Docker image.
+Run the command ```seamless-jupyter``` to fire up a Jupyter server that runs from inside the Docker image.
 
 Basic example
 =============
@@ -78,7 +78,7 @@ ctx.c.value
 
 ```Out[2]: <Silk: 35 >```
 
-**3. Define schemas and validation rules**
+#### 3. Define schemas and validation rules
 ```python
 ctx.add.example.a = 0.0  # declares that add.a must be a number
 ctx.add.example.b = 0.0  
@@ -315,11 +315,11 @@ display(c)
 #### 6. Mount cells to the file system
 ```python
 ctx.a.celltype = "plain"
-ctx.a.mount("/tmp/a")
+ctx.a.mount("/tmp/a.txt")
 ctx.b.celltype = "plain"
-ctx.b.mount("/tmp/b")
+ctx.b.mount("/tmp/b.txt")
 ctx.c.celltype = "plain"
-ctx.c.mount("/tmp/c", mode="w")
+ctx.c.mount("/tmp/c.txt", mode="w")
 ctx.add.code.mount("/tmp/code.py")
 await ctx.translation()
 ```
@@ -339,17 +339,17 @@ await ctx.translation()
 #### 8. Save the entire state of the context
 ```python
 # Graph and checksums, as JSON
-ctx.save_graph("simple-example.seamless")
+ctx.save_graph("basic-example.seamless")
 # Checksum-to-buffer cache, as ZIP file
-ctx.save_zip("simple-example.zip")
+ctx.save_zip("basic-example.zip")
 ```
 
 #### 9. In a new notebook / IPython console:
 ```python
 from seamless.highlevel import load_graph
 ctx = load_graph(
-    "simple-example.seamless", 
-    zip="simple-example.zip"
+    "basic-example.seamless", 
+    zip="basic-example.zip"
 )
 await ctx.computation()
 ctx.c.value

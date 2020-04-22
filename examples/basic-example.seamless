@@ -1,0 +1,129 @@
+{
+  "connections": [
+    {
+      "source": [
+        "a"
+      ],
+      "target": [
+        "add",
+        "a"
+      ],
+      "type": "connection"
+    },
+    {
+      "source": [
+        "b"
+      ],
+      "target": [
+        "add",
+        "b"
+      ],
+      "type": "connection"
+    },
+    {
+      "source": [
+        "add"
+      ],
+      "target": [
+        "c"
+      ],
+      "type": "connection"
+    }
+  ],
+  "lib": [],
+  "nodes": [
+    {
+      "celltype": "plain",
+      "checksum": {
+        "value": "d31923282290a41f9e2fcda93feb36aafdc11827f9bb4b63e11b2c099cf17325"
+      },
+      "datatype": "mixed",
+      "mount": {
+        "authority": "cell",
+        "mode": "rw",
+        "path": "/tmp/a.txt",
+        "persistent": true
+      },
+      "path": [
+        "a"
+      ],
+      "type": "cell"
+    },
+    {
+      "INPUT": "inp",
+      "RESULT": "result",
+      "SCHEMA": null,
+      "checksum": {
+        "code": "c7345fa9caff8986101b28509b2e32097c5c0f4a154f3f108dc853fc3fe9e7e8",
+        "input": "ab95ff80d0961283403578cfb50de15203a947e73daf57a12b1457086fe6f5da",
+        "input_buffer": "ab95ff80d0961283403578cfb50de15203a947e73daf57a12b1457086fe6f5da",
+        "result": "f71463311ac046bb9c5ccc76dde8c833b598f379f71d4411ecfc811a9ee051f4",
+        "schema": "13eaec72ac751c6131e4bd1d7a608875c8ccb7053df645f9ec9b7fd5c305753c"
+      },
+      "compiled": false,
+      "debug": false,
+      "language": "python",
+      "mount": {
+        "code": {
+          "authority": "cell",
+          "mode": "rw",
+          "path": "/tmp/code.py",
+          "persistent": true
+        }
+      },
+      "path": [
+        "add"
+      ],
+      "pins": {
+        "a": {
+          "celltype": "mixed"
+        },
+        "b": {
+          "celltype": "mixed"
+        }
+      },
+      "type": "transformer"
+    },
+    {
+      "celltype": "plain",
+      "checksum": {
+        "buffer": "8e843baef228089dc379d4c3b6e28c1bb5d44eee257f1206b5dfee44ef6b05ad",
+        "value": "8e843baef228089dc379d4c3b6e28c1bb5d44eee257f1206b5dfee44ef6b05ad"
+      },
+      "datatype": "mixed",
+      "mount": {
+        "authority": "cell",
+        "mode": "rw",
+        "path": "/tmp/b.txt",
+        "persistent": true
+      },
+      "path": [
+        "b"
+      ],
+      "type": "cell"
+    },
+    {
+      "celltype": "plain",
+      "datatype": "mixed",
+      "file_extension": "text",
+      "mimetype": "text/plain",
+      "mount": {
+        "authority": "cell",
+        "mode": "w",
+        "path": "/tmp/c.txt",
+        "persistent": true
+      },
+      "path": [
+        "c"
+      ],
+      "share": {
+        "path": null,
+        "readonly": true
+      },
+      "type": "cell"
+    }
+  ],
+  "params": {
+    "share_namespace": "ctx"
+  }
+}
