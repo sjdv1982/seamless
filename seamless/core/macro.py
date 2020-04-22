@@ -129,7 +129,7 @@ class Macro(Worker):
                 manager = self._get_manager()
                 ub_cells = {ctx_path + k: v for k,v in ubmanager.cells.items()}                
                 for child in ubmanager._registered:
-                    if not isinstance(child, Link):
+                    if not isinstance(child, UniLink):
                         continue
                     path = ctx_path + child.path
                     assert path not in ub_cells
@@ -469,15 +469,15 @@ from .reactor import reactor
 from .cell import cell
 from .structured_cell import StructuredCell
 from .context import context
-from .link import link
-names = ("cell", "transformer", "context", "link", 
+from .unilink import unilink
+names = ("cell", "transformer", "context", "unilink", 
  "reactor")
 names += ("StructuredCell",)
 names = names + ("macro", "path")
 Macro.default_namespace = {n:globals()[n] for n in names}
 
 from .cell import Cell
-from .link import Link
+from .unilink import UniLink
 from .injector import macro_injector as injector
 from .unbound_context import UnboundContext, UnboundManager
 from .macro_mode import macro_mode_on, curr_macro, get_macro_mode

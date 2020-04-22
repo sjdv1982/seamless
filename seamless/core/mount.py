@@ -360,8 +360,8 @@ class MountItem:
 class LinkItem:
     _destroyed = False
     linked_path = None
-    def __init__(self, link, path, persistent):
-        self.link = ref(link)
+    def __init__(self, unilink, path, persistent):
+        self.unilink = ref(unilink)
         self.path = path
         self.persistent = persistent
 
@@ -380,10 +380,10 @@ class LinkItem:
     def get_linked(self):
         if self._destroyed:
             return
-        link = self.link()
-        if link is None:
+        unilink = self.unilink()
+        if unilink is None:
             return
-        linked = link.get_linked()
+        linked = unilink.get_linked()
         return linked
 
     def destroy(self):
@@ -398,7 +398,7 @@ class LinkItem:
         if self._destroyed:
             return
         self._destroyed = True
-        log("undestroyed link path %s" % self.path)
+        log("undestroyed unilink path %s" % self.path)
 
 class MountManager:
     GARBAGE_DELAY = 20
@@ -437,26 +437,26 @@ class MountManager:
         return item
 
     @lockmethod
-    def add_link(self, link, path, persistent):
-        paths = self.paths[link._root()]
+    def add_link(self, unilink, path, persistent):
+        paths = self.paths[unilink._root()]
         assert path not in paths, path
-        #print("add link", path, link)
+        #print("add unilink", path, unilink)
         paths.add(path)
-        item = LinkItem(link, path, persistent)
-        self.mounts[link] = item
+        item = LinkItem(unilink, path, persistent)
+        self.mounts[unilink] = item
         return item
 
     @lockmethod
-    def unmount(self, cell_or_link, from_del=False):
-        assert hasattr(cell_or_link, "_mount"), cell_or_link
-        assert not is_dummy_mount(cell_or_link._mount), cell_or_link
-        root = cell_or_link._root()
-        if from_del and (cell_or_link not in self.mounts or root not in self.paths):
+    def unmount(self, cell_or_unilink, from_del=False):
+        assert hasattr(cell_or_unilink, "_mount"), cell_or_unilink
+        assert not is_dummy_mount(cell_or_unilink._mount), cell_or_unilink
+        root = cell_or_unilink._root()
+        if from_del and (cell_or_unilink not in self.mounts or root not in self.paths):
             return
-        mount_item = self.mounts.pop(cell_or_link)
+        mount_item = self.mounts.pop(cell_or_unilink)
         if not mount_item._destroyed:
             paths = self.paths[root]
-            path = cell_or_link._mount["path"]
+            path = cell_or_unilink._mount["path"]
             paths.discard(path)            
             mount_item.destroy()
 
@@ -533,7 +533,7 @@ class MountManager:
             for cell, checksum, buffer in self.cell_updates}
         self.cell_updates.clear()
         for cell, mount_item in list(self.mounts.items()):
-            if isinstance(cell, Link):
+            if isinstance(cell, UniLink):
                 continue
             if cell in cell_updates:
                 continue
@@ -718,7 +718,7 @@ def scan(ctx_or_cell):
             parent = parent()
             result = None
             cc = c
-            if isinstance(c, Link):
+            if isinstance(c, UniLink):
                 cc = c.get_linked()      
             if isinstance(cc, (Context, Cell)):
                 result = find_mount(parent, as_parent=True,child=c)
@@ -735,7 +735,7 @@ def scan(ctx_or_cell):
                 result["path"] += "/" + child._macro.name
             else:    
                 result["path"] += "/" + child.name
-            if isinstance(child, Link):
+            if isinstance(child, UniLink):
                 child = child.get_linked()
             if isinstance(child, Cell) and is_dummy_mount(child._mount):
                 if child._structured_cell:
@@ -831,12 +831,12 @@ def scan(ctx_or_cell):
             mount_cells.append(cell)
 
     mount_links = []
-    for link in links:
-        if link in mounts and not is_dummy_mount(mounts[link]):
-            mount = mounts[link]
+    for unilink in links:
+        if unilink in mounts and not is_dummy_mount(mounts[unilink]):
+            mount = mounts[unilink]
             path = mount["path"]
-            object.__setattr__(link, "_mount", mount) #not in macro mode
-            mount_links.append(link)
+            object.__setattr__(unilink, "_mount", mount) #not in macro mode
+            mount_links.append(unilink)
 
     ctx_to_mount = sorted(contexts_to_mount, key=lambda l:len(l.path))    
     for ctx in ctx_to_mount:
@@ -850,9 +850,9 @@ def scan(ctx_or_cell):
         mount_items.append(mount_item)
     for mount_item in mount_items:
         mount_item.init()
-    for link in mount_links:
-        mount = link._mount
-        mountmanager.add_link(link, mount["path"], mount["persistent"])
+    for unilink in mount_links:
+        mount = unilink._mount
+        mountmanager.add_link(unilink, mount["path"], mount["persistent"])
 
 
 mountmanager = MountManager(0.2) #TODO: latency in config file
@@ -867,7 +867,7 @@ def get_extension(c):
             return v
     return ""
 
-from .link import Link
+from .unilink import UniLink
 from .cell import Cell
 from .protocol.cson import cson2json
 from .protocol.calculate_checksum import calculate_checksum_sync as calculate_checksum

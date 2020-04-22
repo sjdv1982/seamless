@@ -1,10 +1,10 @@
-def link(obj):
-    return Link(obj)
+def unilink(obj):
+    return UniLink(obj)
 
 from . import SeamlessBase
 
 link_counter = 0
-class Link(SeamlessBase):
+class UniLink(SeamlessBase):
     _mount = None
     def __init__(self, obj):
         from .cell import Cell
@@ -24,7 +24,7 @@ class Link(SeamlessBase):
 
     def get_linked(self):
         linked = self._linked
-        if isinstance(linked, Link):
+        if isinstance(linked, UniLink):
             linked = linked.get_linked()
         return linked
 
@@ -37,5 +37,5 @@ class Link(SeamlessBase):
         return result
 
     def __str__(self):
-        ret = "Seamless link: %s to %s" % (self._format_path(), self._linked)
+        ret = "Seamless unilink: %s to %s" % (self._format_path(), self._linked)
         return ret

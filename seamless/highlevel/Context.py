@@ -72,6 +72,9 @@ def get_status(parent, children, nodes, path):
 DEFAULT_AUTO_TRANSLATE = True
 
 class Context(Base):
+    """Context class. Organizes your cells and workers hierarchically.
+    See http://sjdv1982.github.io/seamless/html/context.html for documentation
+    """
     _default_parameters = {
         "share_namespace": "ctx"
     }

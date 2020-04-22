@@ -1,7 +1,7 @@
 import seamless
 from seamless.core import macro_mode_on
 from seamless.core import context, cell, transformer, \
-  macro, link, path
+  macro, unilink, path
 
 with macro_mode_on():
     ctx = context(toplevel=True)
@@ -44,16 +44,16 @@ if param > 1:
     #raise Exception("on purpose") #causes the macro reconstruction to fail; comment it out to make it succeed
 ctx.x0 = cell("text").set("x" + str(param))
 ctx.x = cell("text")
-ctx.x_link = link(ctx.x)
+ctx.x_unilink = unilink(ctx.x)
 ctx.y = cell("text").set("y" + str(param))
 ctx.z = cell("text")
 ctx.q = cell("text").set("q" + str(param))
 ctx.qq = cell("text")
-ctx.q_link = link(ctx.q)
+ctx.q_unilink = unilink(ctx.q)
 ctx.r = cell("text").set("r" + str(param))
-ctx.r_link = link(ctx.r)
+ctx.r_unilink = unilink(ctx.r)
 ctx.rr = cell("text")
-ctx.rr_link = link(ctx.rr)
+ctx.rr_unilink = unilink(ctx.rr)
 """)
     ctx.macro_code.connect(ctx.macro.code)
     ctx.tfx = transformer({
@@ -67,7 +67,7 @@ ctx.rr_link = link(ctx.rr)
     ctx.x = cell("text")
     ctx.tfxx = cell("text")
     ctx.tfx.x.connect(ctx.tfxx)
-    ctx.tfxx.connect(ctx.macro.ctx.x_link)
+    ctx.tfxx.connect(ctx.macro.ctx.x_unilink)
     ctx.tfx.x.connect(ctx.x)
     ctx.y = cell("text")
     ctx.macro.ctx.y.connect(ctx.y)
@@ -80,17 +80,17 @@ ctx.rr_link = link(ctx.rr)
     ctx.e.connect(p_tf2e)
     p_tf2e2.connect(ctx.e2)
     ctx.z = cell("text").set("z")
-    ctx.z_link = link(ctx.z)
-    ctx.z_link.connect(ctx.macro.ctx.z)
+    ctx.z_unilink = unilink(ctx.z)
+    ctx.z_unilink.connect(ctx.macro.ctx.z)
     ctx.q = cell("text")
-    ctx.macro.ctx.q_link.connect(ctx.q)
+    ctx.macro.ctx.q_unilink.connect(ctx.q)
     ctx.subq = cell("text")
     ctx.macro.ctx.q.connect(ctx.subq)
     ctx.subq.connect(ctx.macro.ctx.qq)
     ctx.r = cell("text")
-    ctx.r_link = link(ctx.r)
-    ctx.macro.ctx.r_link.connect(ctx.r_link)
-    ctx.r.connect(ctx.macro.ctx.rr_link)
+    ctx.r_unilink = unilink(ctx.r)
+    ctx.macro.ctx.r_unilink.connect(ctx.r_unilink)
+    ctx.r.connect(ctx.macro.ctx.rr_unilink)
 
 def report():
     print("%-20s" % "macro a", ctx.macro.ctx.a.value)
@@ -110,7 +110,7 @@ def report():
     print("%-20s" % "macro z", ctx.macro.ctx.z.value)
     print("%-20s" % "q", ctx.q.value)
     print("%-20s" % "macro q", ctx.macro.ctx.q.value)
-    print("%-20s" % "macro q_link",ctx.macro.ctx.q_link.value)
+    print("%-20s" % "macro q_unilink",ctx.macro.ctx.q_unilink.value)
     print("%-20s" % "macro qq", ctx.macro.ctx.qq.value)
     print("%-20s" % "r", ctx.r.value)
     print("%-20s" % "macro rr", ctx.macro.ctx.rr.value)

@@ -4,7 +4,7 @@ First run simple.py with Redis running
 """
 
 import seamless
-from seamless.core import context, cell, transformer, link
+from seamless.core import context, cell, transformer, unilink
 
 seamless.set_ncores(0) # Forbids Seamless to add 1 and 2 by itself
 
@@ -26,14 +26,14 @@ ctx.tf = transformer({
     "b": "input",
     "c": "output"
 })
-ctx.cell1_link = link(ctx.cell1)
-ctx.cell1_link.connect(ctx.tf.a)    
+ctx.cell1_unilink = unilink(ctx.cell1)
+ctx.cell1_unilink.connect(ctx.tf.a)    
 ctx.cell2.connect(ctx.tf.b)
 ctx.code_copy = cell("transformer")
 ctx.code.connect(ctx.code_copy)
 ctx.code_copy.connect(ctx.tf.code)
-ctx.result_link = link(ctx.result)
-ctx.tf.c.connect(ctx.result_link)
+ctx.result_unilink = unilink(ctx.result)
+ctx.tf.c.connect(ctx.result_unilink)
 ctx.result_copy = cell("int")
 ctx.result.connect(ctx.result_copy)
 ctx.compute()

@@ -17,7 +17,7 @@ communion_server.configure_servant(
     buffer=True,
 )
 
-from seamless.core import context, cell, transformer, link
+from seamless.core import context, cell, transformer, unilink
 
 ctx = context(toplevel=True)
 ctx.cell1 = cell().set(1)
@@ -28,13 +28,13 @@ ctx.tf = transformer({
     "b": "input",
     "c": "output"
 })
-ctx.cell1_link = link(ctx.cell1)
-ctx.cell1_link.connect(ctx.tf.a)    
+ctx.cell1_unilink = unilink(ctx.cell1)
+ctx.cell1_unilink.connect(ctx.tf.a)    
 ctx.cell2.connect(ctx.tf.b)
 ctx.code = cell("transformer").set("c = a + b")
 ctx.code.connect(ctx.tf.code)
-ctx.result_link = link(ctx.result)
-ctx.tf.c.connect(ctx.result_link)
+ctx.result_unilink = unilink(ctx.result)
+ctx.tf.c.connect(ctx.result_unilink)
 ctx.result_copy = cell()
 ctx.result.connect(ctx.result_copy)
 

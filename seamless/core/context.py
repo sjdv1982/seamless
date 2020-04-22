@@ -119,7 +119,7 @@ name: str
         from .unbound_context import UnboundContext
         if isinstance(child, UnboundContext):
             raise TypeError("Cannot add an unbound context to a bound one")
-        if not isinstance(child, (Context, Worker, Cell, Link, StructuredCell)):
+        if not isinstance(child, (Context, Worker, Cell, UniLink, StructuredCell)):
             raise TypeError(child, type(child))
         if isinstance(child, Context):
             assert child._context is None
@@ -368,7 +368,7 @@ class _InternalChildrenWrapper:
         raise AttributeError("_InternalChildrenWrapper is read-only")
 
 from .unbound_context import UnboundContext
-from .link import Link
+from .unilink import UniLink
 from .cell import Cell
 from .worker import Worker, InputPinBase, OutputPinBase, EditPinBase
 from .structured_cell import StructuredCell

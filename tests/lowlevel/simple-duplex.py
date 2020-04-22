@@ -1,5 +1,5 @@
 import seamless
-from seamless.core import context, cell, transformer, link
+from seamless.core import context, cell, transformer, unilink
 
 ctx = context(toplevel=True)
 ctx.cell1 = cell("int").set(1)

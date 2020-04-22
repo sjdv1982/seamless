@@ -17,7 +17,7 @@ class LiveGraph:
         self.cell_to_upstream = {} # Mapping of simple cells to the read accessor that defines it.
         self.cell_to_downstream = {} # Mapping of simple cells to the read accessors that depend on it.
         self.cell_to_editpins = {}
-        self.cell_to_cell_highlink = {}
+        self.cell_to_cell_bilink = {}
         self.paths_to_upstream = {} # Mapping of buffercells-to-dictionary-of-path:upstream-write-accessor.
         self.paths_to_downstream = {} # Mapping of datacells-to-dictionary-of-path:list-of-downstream-read-accessors
         self.transformer_to_upstream = {} # input pin to read accessor
@@ -45,7 +45,7 @@ class LiveGraph:
         self.cell_to_upstream[cell] = None
         self.cell_to_downstream[cell] = []
         self.cell_to_editpins[cell] = []
-        self.cell_to_cell_highlink[cell] = []
+        self.cell_to_cell_bilink[cell] = []
         self.schemacells[cell] = []
 
     def register_transformer(self, transformer):
@@ -137,52 +137,52 @@ class LiveGraph:
             manager.cachemanager.decref_checksum(expression.checksum, expression, False)            
             manager.taskmanager.destroy_expression(expression)
     
-    def _get_highlink_targets(self, source, targets):
+    def _get_bilink_targets(self, source, targets):
         if source in targets:
             return
         targets.add(source)
-        for target in self.cell_to_cell_highlink[source]:
-            self._get_highlink_targets(target, targets)
+        for target in self.cell_to_cell_bilink[source]:
+            self._get_bilink_targets(target, targets)
 
-    def activate_highlink(self, cell, checksum):
+    def activate_bilink(self, cell, checksum):
         manager = self.manager()
         targets = set()
-        self._get_highlink_targets(cell, targets)
+        self._get_bilink_targets(cell, targets)
         targets.remove(cell)
         for target in targets:
             manager.set_cell_checksum(
                 target, checksum, 
                 initial=False,
                 from_structured_cell=False,
-                trigger_highlinks=False
+                trigger_bilinks=False
             )
         return True
 
-    def highlink(self, current_macro, source, target):
+    def bilink(self, current_macro, source, target):
         def verify_auth(cell):
             if cell._structured_cell is None:
                 if len(self.schemacells[cell]):
                     return
                 if cell.has_authority():
                     return
-                msg = "Highlinked cell %s must have authority"
+                msg = "Bilinked cell %s must have authority"
                 raise Exception(msg % cell)
             else:
-                msg = "Highlinked cell %s cannot be part of structured cell, unless it is its schema"
+                msg = "Bilinked cell %s cannot be part of structured cell, unless it is its schema"
                 raise Exception(msg % cell)
 
         verify_auth(source)
         verify_auth(target)
-        self.cell_to_cell_highlink[source].append(target)
-        self.cell_to_cell_highlink[target].append(source)
+        self.cell_to_cell_bilink[source].append(target)
+        self.cell_to_cell_bilink[target].append(source)
         manager = self.manager()
         checksum = source._checksum
         if checksum is not None:
-            self.activate_highlink(source, checksum)
+            self.activate_bilink(source, checksum)
         else:
             checksum = target._checksum
             if checksum is not None:
-                self.activate_highlink(target, checksum)
+                self.activate_bilink(target, checksum)
 
     def connect_pin_cell(
         self, current_macro, source, target, 
@@ -581,7 +581,7 @@ class LiveGraph:
     def _has_authority(
         self, cell_or_macropath, path=None, *, from_upon_connection_task=None
     ):
-        from .tasks.upon_connection import UponHighLinkTask
+        from .tasks.upon_connection import UponBiLinkTask
         try:
             root = cell_or_macropath._root()
         except Exception:
@@ -589,7 +589,7 @@ class LiveGraph:
         for task in self.manager().taskmanager._get_upon_connection_tasks(root):
             if task is from_upon_connection_task:
                 continue
-            if isinstance(task, UponHighLinkTask):
+            if isinstance(task, UponBiLinkTask):
                 continue
             if task.target is cell_or_macropath:
                 return False
@@ -814,7 +814,7 @@ class LiveGraph:
                 self.paths_to_downstream.pop(cell)
         self.cell_to_upstream.pop(cell)
         self.cell_to_downstream.pop(cell)
-        self.cell_to_cell_highlink.pop(cell)
+        self.cell_to_cell_bilink.pop(cell)
         self.cell_parsing_exceptions.pop(cell, None)
 
     @destroyer
@@ -839,7 +839,7 @@ class LiveGraph:
             "expression_to_accessors",
             "cell_to_upstream",
             "cell_to_downstream",
-            "cell_to_cell_highlink",
+            "cell_to_cell_bilink",
             "paths_to_upstream",
             "paths_to_downstream",
             "transformer_to_upstream",

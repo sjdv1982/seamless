@@ -251,7 +251,7 @@ Source %s; target %s, %s""" % (source, target, target_subpath)
         else:
             raise TypeError(type(source))
 
-class UponHighLinkTask(UponConnectionTask):
+class UponBiLinkTask(UponConnectionTask):
     def __init__(self, manager, source, target):
         self.source = source
         self.target = target
@@ -274,7 +274,7 @@ class UponHighLinkTask(UponConnectionTask):
         await taskmanager.await_upon_connection_tasks(self.taskid, self._root())
 
         livegraph = self.manager().livegraph
-        livegraph.highlink(
+        livegraph.bilink(
             self.current_macro, source, target
         )
    

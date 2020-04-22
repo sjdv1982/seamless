@@ -72,22 +72,22 @@ class UnboundManager:
         assert pin.worker_ref() in self._registered
         self.commands.append(("connect pin", (pin, cell)))
 
-    def highlink(self, cell, other):
+    def bilink(self, cell, other):
         from .macro import Path
         if not isinstance(cell, Path):
             assert cell._get_manager() is self
             assert cell in self._registered
-        self.commands.append(("highlink", (cell, other)))
+        self.commands.append(("bilink", (cell, other)))
 
     def set_cell_checksum(self, 
-        cell, checksum, initial, from_structured_cell, trigger_highlinks
+        cell, checksum, initial, from_structured_cell, trigger_bilinks
     ):
         assert cell._get_manager() is self
         assert cell in self._registered
         self.commands.append(
             ("set cell checksum", 
                 (cell, checksum, initial, 
-                from_structured_cell, trigger_highlinks)
+                from_structured_cell, trigger_bilinks)
             )
         )
 
@@ -197,7 +197,7 @@ class UnboundContext(SeamlessBase):
         assert isinstance(ctx, Context) #unbound
 
     def _add_child(self, childname, child):
-        classes = (UnboundContext, Worker, Cell, Link, StructuredCell)
+        classes = (UnboundContext, Worker, Cell, UniLink, StructuredCell)
         assert isinstance(child, classes), type(child)
         if isinstance(child, UnboundContext):
             assert child._context is None
@@ -349,17 +349,17 @@ class UnboundContext(SeamlessBase):
             elif com == "connect pin":
                 pin, cell = args
                 manager.connect(pin, None, cell, None)
-            elif com == "highlink":
+            elif com == "bilink":
                 cell, other = args
-                cell.highlink(other)
+                cell.bilink(other)
             elif com == "set cell checksum":
-                cell, checksum, initial, from_structured_cell, trigger_highlinks = args
+                cell, checksum, initial, from_structured_cell, trigger_bilinks = args
                 cell._initial_checksum = None
                 manager.set_cell_checksum(
                     cell, checksum, 
                     initial=initial, 
                     from_structured_cell=from_structured_cell,
-                    trigger_highlinks=trigger_highlinks
+                    trigger_bilinks=trigger_bilinks
                 )
             else:
                 raise ValueError(com)
@@ -404,7 +404,7 @@ class UnboundContext(SeamlessBase):
         else:
             return super().__dir__()
 
-from .link import Link
+from .unilink import UniLink
 from .cell import Cell
 from .worker import Worker, InputPinBase, OutputPinBase, EditPinBase
 from .transformer import Transformer

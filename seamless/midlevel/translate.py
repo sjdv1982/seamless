@@ -269,7 +269,7 @@ def translate_link(node, namespace, ctx):
     second = get_path_link(
       ctx, node["second"], namespace, True
     )
-    first.highlink(second)
+    first.bilink(second)
 
 translate_compiled_transformer = None
 translate_bash_transformer = None

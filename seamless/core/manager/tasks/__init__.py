@@ -151,7 +151,7 @@ from .deserialize_buffer import DeserializeBufferTask
 from .checksum import CellChecksumTask, CalculateChecksumTask
 from .cell_update import CellUpdateTask
 from .get_buffer import GetBufferTask
-from .upon_connection import UponConnectionTask, UponHighLinkTask
+from .upon_connection import UponConnectionTask, UponBiLinkTask
 from ..manager import Manager
 from ....communion_server import communion_server
 from .... import nest_asyncio

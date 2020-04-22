@@ -17,18 +17,7 @@ text_types2 = (
 )
 
 class Cell(SeamlessBase):
-    """Default class for cells.
-    
-Cells can be connected to inputpins, editpins, and other cells.
-``cell.connect(pin)`` connects a cell to an inputpin or editpin
-
-Output pins and edit pins can be connected to cells.
-``pin.connect(cell)`` connects an outputpin or editpin to a cell
-
-Use ``Cell.value`` to get its value.
-
-Use ``Cell.status()`` to get its status.
-"""
+    """Default class for cells."""
     _celltype = None
     _subcelltype = None
     _checksum = None
@@ -250,7 +239,7 @@ Use ``Cell.status()`` to get its status.
               self, checksum, 
               initial=initial, 
               from_structured_cell=from_structured_cell, 
-              trigger_highlinks=(not initial)
+              trigger_bilinks=(not initial)
             )
         return self
 
@@ -280,16 +269,18 @@ Use ``Cell.status()`` to get its status.
         return self.set_buffer(filevalue)
 
     def connect(self, target):
-        """connects the cell to a target"""
+        """connects the cell to a target
+        
+        Target can be a cell, pin, inchannel or unilink"""
         from .worker import InputPin, EditPin, OutputPin
         from .transformer import Transformer
         from .reactor import Reactor
         from .macro import Macro, Path
-        from .link import Link
+        from .unilink import UniLink
         manager = self._get_manager()
         target_subpath = None
 
-        if isinstance(target, Link):
+        if isinstance(target, UniLink):
             target = target.get_linked()
 
         if isinstance(target, Inchannel):
@@ -320,14 +311,15 @@ Use ``Cell.status()`` to get its status.
         manager.connect(self, None, target, target_subpath)
         return self
 
-    def highlink(self, target):
-        from .link import Link
-        if isinstance(target, Link):
+    def bilink(self, target):
+        """Create a bidirectional unilink between two cells"""
+        from .unilink import UniLink
+        if isinstance(target, UniLink):
             target = target.get_linked()
         if not isinstance(target, Cell):
             raise TypeError(type(target))
         manager = self._get_manager()
-        manager.highlink(self, target)
+        manager.bilink(self, target)
 
     def has_authority(self, path=None):
         manager = self._get_manager()

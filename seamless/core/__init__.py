@@ -114,4 +114,4 @@ from .transformer import Transformer, transformer
 from .structured_cell import StructuredCell
 from .macro import Macro, macro, path
 from .reactor import Reactor, reactor
-from .link import link
+from .unilink import unilink

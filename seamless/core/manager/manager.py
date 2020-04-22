@@ -115,7 +115,7 @@ class Manager:
     @run_in_mainthread
     def set_cell_checksum(self, 
         cell, checksum, *,
-        initial, from_structured_cell, trigger_highlinks
+        initial, from_structured_cell, trigger_bilinks
     ):
         """Setting a cell checksum.
   (This is done from the command line, usually at graph loading)
@@ -152,7 +152,7 @@ class Manager:
                     assert cell.has_authority()
                 assert sc_buf is None
         else:  # initial
-            assert not trigger_highlinks
+            assert not trigger_bilinks
             if not from_structured_cell and cell._structured_cell is not None:
                 assert cell._structured_cell.auth is cell, cell
                 if checksum is None:
@@ -166,7 +166,7 @@ class Manager:
                 self.cancel_cell(cell, void=True, reason=reason)
         else:            
             reason = None
-            #if not trigger_highlinks:
+            #if not trigger_bilinks:
             old_checksum = cell._checksum # avoid infinite task loop...
             #else:
             #    old_checksum = self.get_cell_checksum(cell)
@@ -177,7 +177,7 @@ class Manager:
         self._set_cell_checksum(
             cell, checksum, 
             (checksum is None), status_reason=reason,
-            trigger_highlinks=trigger_highlinks
+            trigger_bilinks=trigger_bilinks
         )
         if not from_structured_cell: # also for initial...
             CellUpdateTask(self, cell).launch()
@@ -186,7 +186,7 @@ class Manager:
             self.update_schemacell(cell, value, None)
 
     def _set_cell_checksum(self, 
-        cell, checksum, void, status_reason=None, prelim=False, trigger_highlinks=True
+        cell, checksum, void, status_reason=None, prelim=False, trigger_bilinks=True
     ):        
         # NOTE: Any cell task depending on the old checksum must have been canceled already
         if cell._destroyed:
@@ -224,8 +224,8 @@ class Manager:
                 self.mountmanager.add_cell_update(cell, checksum, buffer)
             if cell._share is not None:
                 self.sharemanager.add_cell_update(cell, checksum)
-            if checksum is not None and trigger_highlinks:
-                self.livegraph.activate_highlink(cell, checksum)
+            if checksum is not None and trigger_bilinks:
+                self.livegraph.activate_bilink(cell, checksum)
 
 
     def _set_inchannel_checksum(self, inchannel, checksum, void, status_reason=None, prelim=False):
@@ -651,7 +651,7 @@ If origin_task is provided, that task is not cancelled."""
 
     @mainthread
     def connect(self, source, source_subpath, target, target_subpath):
-        from ..link import Link
+        from ..unilink import Link
         if isinstance(source, Link):
             source = source.get_linked()
         if isinstance(target, Link):
@@ -662,13 +662,13 @@ If origin_task is provided, that task is not cancelled."""
         task.launch()
 
     @mainthread
-    def highlink(self, source, target):
-        from ..link import Link
+    def bilink(self, source, target):
+        from ..unilink import Link
         if isinstance(source, Link):
             source = source.get_linked()
         if isinstance(target, Link):
             target = target.get_linked()            
-        task = UponHighLinkTask(
+        task = UponBiLinkTask(
             self, source, target
         )
         task.launch()
@@ -762,7 +762,7 @@ If origin_task is provided, that task is not cancelled."""
 from .tasks import (
     SetCellValueTask, SetCellBufferTask,
     CellChecksumTask, GetBufferTask,
-    DeserializeBufferTask, UponConnectionTask, UponHighLinkTask,
+    DeserializeBufferTask, UponConnectionTask, UponBiLinkTask,
     CellUpdateTask
 )
 

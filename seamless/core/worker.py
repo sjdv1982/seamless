@@ -132,11 +132,11 @@ class OutputPin(OutputPinBase):
         from .transformer import Transformer
         from .reactor import Reactor
         from .macro import Macro, Path
-        from .link import Link
+        from .unilink import UniLink
 
         manager = self._get_manager()
 
-        if isinstance(target, Link):
+        if isinstance(target, UniLink):
             target = target.get_linked()
 
         target_subpath = None
@@ -233,11 +233,11 @@ class EditPin(EditPinBase):
         from .transformer import Transformer
         from .reactor import Reactor
         from .macro import Macro, Path
-        from .link import Link
+        from .unilink import UniLink
         
         manager = self._get_manager()
         
-        if isinstance(target, Link):
+        if isinstance(target, UniLink):
             target = target.get_linked()
 
         assert not isinstance(target, Path) #Edit pins cannot be connected to paths
