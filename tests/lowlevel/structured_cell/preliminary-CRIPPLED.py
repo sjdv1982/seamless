@@ -188,7 +188,7 @@ hh.delay = 0.1
 def validate_param(self):
     assert self.delay > 0
     assert self.limit < 100
-hh.add_validator(validate_param)
+hh.add_validator(validate_param, "validate_param")
 
 for tf in channel_names[1:]:
     h[tf[0]] = h[first]
@@ -236,7 +236,7 @@ for c in (ctx.stf1, ctx.stf2, ctx.stf3, ctx.stf4):
         if offset.unsilk is None:
             return
         assert offset == 0 or offset > 2000 or self.factor == 9
-    h.add_validator(v)
+    h.add_validator(v, "v")
 
 ctx.compute(0.1)
 

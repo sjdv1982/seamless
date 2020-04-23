@@ -96,7 +96,8 @@ class Macro(Base):
     def example(self, value):
         return self.example.set(value)
 
-    def add_validator(self, validator, name=None):
+    def add_validator(self, validator, name):
+        """Adds a validator to the input, analogous to Cell.add_validator"""
         node = self._get_node()
         param = node["PARAM"]
         #TODO: self.self

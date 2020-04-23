@@ -26,6 +26,11 @@ def get_new_cell(path):
     }
 
 class Cell(Base):
+    """Cell class. Contains a piece of data in Seamless.
+
+    See http://sjdv1982.github.io/seamless/sphinx/html/cell.html for documentation    
+    """
+
     _virtual_path = None
     _node = None
     _subpath = ()
@@ -43,6 +48,7 @@ class Cell(Base):
 
     @property
     def authoritative(self):
+        """True if the cell has no dependencies"""
         parent = self._parent()
         connections = parent._graph.connections
         path = self._path
@@ -205,6 +211,23 @@ class Cell(Base):
         return self._get_subcell(attr)
 
     def mount(self, path=None, mode="rw", authority="cell", persistent=True):
+        """Mounts the cell to the file system. 
+        Mounting is only supported for non-structured cells.
+
+        Arguments
+        =========
+        - path
+          The file path on disk
+        - mode
+          "r" (read), "w" (write) or "rw". 
+          The mode can only contain "r" if the cell is authoritative.
+          Default: "rw"
+        - authority
+          In case of conflict between cell and file, which takes precedence.
+          Default: "cell".
+        - persistent
+          If False, the file is deleted from disk when the Cell is destroyed
+        """
         assert self.celltype != "structured"
         hcell = self._get_hcell2()            
         if path is None:
@@ -250,6 +273,7 @@ class Cell(Base):
         assign_to_subcell(self, (attr,), value)
 
     def connect_from(self, other):
+        """Connect from another cell or transformer to this cell."""
         from .assign import assign
         parent = self._parent()
         assert not parent._dummy
@@ -271,17 +295,52 @@ class Cell(Base):
             raise TypeError(item)
 
 
-    def traitlet(self, fresh=False):
+    def traitlet(self):
+        """Creates an traitlet object with its value linked to the cell.
+        
+        A traitlet is derived from ``traitlets.HasTraits``, 
+         and can be linked to other traitlet objects, such as ipywidgets.
+
+        Examples
+        ========
+        - See basic-example.ipynb and datatables.ipynb
+          in https://github.com/sjdv1982/seamless/tree/master/examples
+        - See traitlets.ipynb, traitlet.py and traitlet2.py 
+          in https://github.com/sjdv1982/seamless/tree/master/tests/highlevel
+
+        """
         hcell = self._get_hcell()
         trigger = not hcell.get("UNTRANSLATED")
         return self._parent()._add_traitlet(self._path, trigger)
 
     def output(self, layout=None):
+        """Returns an output widget that tracks the cell value.
+        
+        The widget is a wrapper around an ``ipywidgets.Output``
+        and is to be used in Jupyter.
+
+        Examples
+        ========
+        - See basic-example.ipynb
+          in https://github.com/sjdv1982/seamless/tree/master/examples
+        - See traitlets.ipynb
+          in https://github.com/sjdv1982/seamless/tree/master/tests/highlevel
+
+        """
         from .OutputWidget import OutputWidget
         return OutputWidget(self, layout)
 
     @property
     def value(self):
+        """Returns the value of the cell, if translated
+        
+        If the cell is not authoritative, 
+         the value is None if an upstream dependency 
+         is undefined or has an error.
+
+        For structured cells, the value is also None if the 
+        schema is violated. 
+        """
         parent = self._parent()
         hcell = self._get_hcell()
         if parent._dummy:
@@ -301,6 +360,9 @@ class Cell(Base):
 
     @property
     def buffered(self):
+        """For a structured cell, return the buffered value.
+
+        The buffered value is the value before schema validation"""
         parent = self._parent()
         hcell = self._get_hcell()
         if parent._dummy:
@@ -318,18 +380,42 @@ class Cell(Base):
         return value
 
     @property
-    def example(self):        
+    def example(self):
+        """For a structured cell, return a dummy Silk handle.
+        
+        The handle does not store any values, but has type inference,
+         i.e. schema properties are inferred from what is assigned to it.
+
+        Examples
+        ========
+        - See basic-example.ipynb
+          in https://github.com/sjdv1982/seamless/tree/master/examples
+        """
         if self.celltype != "structured":
             raise AttributeError
         cell = self._get_cell()
         struc_ctx = cell._data._context()
         return struc_ctx.example.handle
 
-    def add_validator(self, validator, name=None):
+    def add_validator(self, validator, name):
+        """Adds a validator function (in Python) to the schema.
+        
+        The validator must take a single argument, the (buffered) value of the cell
+        It is expected to raise an exception (e.g. an AssertionError) 
+        if the value is invalid.
+
+        If a previous validator with the same name exists, 
+        that validator is overwritten.
+        """
         return self.handle.add_validator(validator, name=name)
 
     @property
     def exception(self):
+        """Returns the exception associated with the cell.
+
+        For non-structured cells, this exception was raised during parsing.
+        For structured cells, it may also have been raised during validation"""
+        
         if self._get_hcell().get("UNTRANSLATED"):
             return None
         cell = self._get_cell()
@@ -337,6 +423,12 @@ class Cell(Base):
 
     @property
     def checksum(self):
+        """Contains the checksum of the cell, as SHA3-256 hash.
+        
+        The checksum defines the value of the cell. 
+        If the cell is defined, the checksum is available, even if
+        the value may not be.
+        """
         parent = self._parent()
         hcell = self._get_hcell2()
         if parent is not None and parent._dummy:
@@ -355,6 +447,21 @@ class Cell(Base):
             return cell.checksum
 
     def observe(self, attr, callback, polling_interval, observe_none=False):
+        """Adds an observer that monitors ``getattr(Cell, attr)``.
+
+        This value is polled every `polling_interval` seconds, 
+        and if changed, ``callback(value)`` is invoked.
+        
+        If `observe_none`, None is considered as a separate value.
+        (Default: False)
+
+        This method is not recommended to observe cell values,
+        this is better done with traitlets.
+
+        Instead, it is recommended to use this to observe changes
+        in status and exception.
+        """
+        
         if isinstance(attr, str):
             attr = (attr,)
         path = self._path + attr
@@ -364,6 +471,7 @@ class Cell(Base):
         )
 
     def unobserve(self, attr):
+        """Stop observing ``getattr(Cell, attr)``"""
         if isinstance(attr, str):
             attr = (attr,)
         path = self._path + attr
@@ -371,6 +479,7 @@ class Cell(Base):
 
     async def fingertip(self):
         """Puts the buffer of this cell's checksum 'at your fingertips':
+
         - Verify that the buffer is locally or remotely available;
           if remotely, download it.
         - If not available, try to re-compute it using its provenance,
@@ -386,6 +495,7 @@ class Cell(Base):
 
     @checksum.setter
     def checksum(self, checksum):
+        """Sets the checksum of the cell, as SHA3-256 hash"""
         from ..silk import Silk
         hcell = self._get_hcell2()
         if hcell.get("UNTRANSLATED"):
@@ -396,11 +506,16 @@ class Cell(Base):
 
     @property
     def handle(self):
+        assert celltype == "structured"
         cell = self._get_cell()
         return cell.handle_no_inference
 
     @property
     def data(self):
+        """Returns the data of the cell
+        
+        This is normally the same as the value,
+        but must not be modified"""
         cell = self._get_cell()
         return cell.data
 
@@ -418,17 +533,35 @@ class Cell(Base):
 
     @property
     def status(self):
+        """Returns the status of the cell.
+
+        The status may be undefined, error, upstream or OK
+        If it is error, Cell.exception will be non-empty.
+        """
         if self._get_hcell().get("UNTRANSLATED"):
             return None
         cell = self._get_cell()
         return cell.status
 
     def set(self, value):
+        """Sets the value of the cell"""
         self._set(value)
         return self
 
     @property
     def celltype(self):
+        """The type of the cell is by default "structured".
+        
+        Non-structured celltypes are:
+
+        - "plain": contains any JSON-serializable data
+        - "binary": contains binary data, wrapped in a Numpy object
+        - "mixed": an arbitrary mixture of "plain" and "binary" data
+        - "code": source code in any language
+        - "text", "cson", "yaml"
+        - "str", "bytes", "int", "float", "bool"
+        """
+        
         hcell = self._get_hcell2()
         return hcell["celltype"]
 
@@ -465,6 +598,20 @@ class Cell(Base):
 
     @property
     def mimetype(self):
+        """The mimetype of the cell.
+        
+        Can be set directly according to the MIME specification, 
+         or as a file extension.
+
+        If not set, the default value depends on the celltype:
+
+        - For structured cells, it is derived from the datatype attribute
+        - For mixed cells, it is "seamless/mixed"
+        - For code cells, it is derived from the language attribute        
+        - For plain cells and int/float/bool cells, it is "application/json"
+        - For text cells and str cells, it is "text/plain"
+        - For other cells, it is derived from their default file extension.        
+        """
         hcell = self._get_hcell2()
         mimetype = hcell.get("mimetype")
         if mimetype is not None:
@@ -498,6 +645,9 @@ class Cell(Base):
 
     @property
     def datatype(self):
+        """ The datatype of a structured cell.
+        As of Seamless 0.2, mostly an alternative for "mimetype"
+        """
         hcell = self._get_hcell2()
         celltype = hcell["celltype"]
         assert celltype == "structured"
@@ -512,6 +662,7 @@ class Cell(Base):
 
     @property
     def scratch(self):
+        """TODO: document"""
         hcell = self._get_hcell2()
         return ("scratch" in hcell)
 
@@ -527,6 +678,7 @@ class Cell(Base):
 
     @property
     def fingertip_no_remote(self):
+        """TODO: document"""
         hcell = self._get_hcell2()
         return hcell.get("fingertip_no_remote", False)
 
@@ -542,6 +694,7 @@ class Cell(Base):
 
     @property
     def fingertip_no_recompute(self):
+        """TODO: document"""
         hcell = self._get_hcell2()
         return hcell.get("fingertip_no_recompute", False)
 
@@ -557,6 +710,7 @@ class Cell(Base):
 
     @property
     def hash_pattern(self):
+        # TODO: document when released in 0.3
         hcell = self._get_hcell2()
         celltype = hcell["celltype"]
         assert celltype in ("structured", "mixed")
@@ -576,6 +730,9 @@ class Cell(Base):
 
     @property
     def language(self):
+        """The programming language for code cells.
+
+        Default: Python"""
         hcell = self._get_hcell2()
         celltype = hcell["celltype"]
         if celltype != "code":
@@ -603,6 +760,24 @@ class Cell(Base):
         other._pull_source(self)
 
     def share(self, path=None, readonly=True):
+        """Shares a cell over HTTP.
+        
+        Typically, the cell is available under
+        http://localhost:5813/ctx/<path>.
+
+        If path is None (default), Cell.path is used, 
+        with dots replaced by slashes.
+
+        If readonly is True, only GET requests are supported.
+        Else, the cell can also be modified using PUT requests 
+        using the Seamless JS client (js/seamless-client.js)
+        
+        Cells with mimetype 'application/json' 
+        (the default for plain cells)
+        also support subcell GET requests,
+        e.g. ``http://.../ctx/a/x/0`` for a cell ``ctx.a``
+        with value ``{'x': [1,2,3] }``
+        """
         assert readonly or self.authoritative
         assert readonly or self.celltype != "structured"
         hcell = self._get_hcell2()

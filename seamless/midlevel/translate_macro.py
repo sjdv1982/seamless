@@ -1,4 +1,4 @@
-from seamless.core import cell, link, path as core_path, \
+from seamless.core import cell, path as core_path, \
  macro, context, StructuredCell
 from seamless.core.macro import Path
 

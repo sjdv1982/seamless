@@ -13,6 +13,7 @@ def is_simple(arg):
         return TypeError(type(arg))
 
 class Link:
+    """Bidirectional link between two cells"""
     def __init__(self, parent, *, node=None, first=None, second=None):
         self.parent = parent
         if node is None:

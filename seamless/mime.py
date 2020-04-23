@@ -43,6 +43,7 @@ celltype_to_ext = {
     "float": "json",
     "bool": "json",
     "cson": "cson",
+    "yaml": "yaml",
     "binary": "npy",
     "mixed": "mixed",
     None: None,

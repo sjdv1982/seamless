@@ -72,8 +72,9 @@ def get_status(parent, children, nodes, path):
 DEFAULT_AUTO_TRANSLATE = True
 
 class Context(Base):
-    """Context class. Organizes your cells and workers hierarchically.
-    See http://sjdv1982.github.io/seamless/html/context.html for documentation
+    """Context class. Organizes cells and workers hierarchically.
+
+    See http://sjdv1982.github.io/seamless/sphinx/html/context.html for documentation
     """
     _default_parameters = {
         "share_namespace": "ctx"
@@ -478,6 +479,11 @@ Translation is not required after modifying only cell values""")
             f.write(zip)
 
     def add_zip(self, zip):
+        """Adds entries from "zip" to the checksum-to-buffer cache 
+
+        "zip" can be a file name, zip-compressed bytes or a Python ZipFile object.
+        Normally, it has been generated with Context.save_zip / Context.get_zip
+        """
         if self._gen_context is None:
             self._do_translate(force=True)
         manager = self._manager

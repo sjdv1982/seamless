@@ -60,7 +60,7 @@ def validator(self):
     print("VALIDATE", self)
     assert self.g > self.c + self.f
     assert self.f > self.d
-ctx.q.add_validator(validator)
+ctx.q.add_validator(validator, "validator")
 ctx.compute()
 
 print("Stage 7")

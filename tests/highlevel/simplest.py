@@ -57,7 +57,7 @@ def validation(self):
     print("RUN VALIDATION", self)
     assert self != "test"
 
-ctx.a.add_validator(validation)
+ctx.a.add_validator(validation, "validation")
 ctx.compute()
 print(ctx.a.schema)
 print()

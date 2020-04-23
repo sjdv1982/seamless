@@ -8,7 +8,7 @@ s.y = 88
 def validate(self):
     print("VALIDATE", self)
     assert self.x > 0
-s.add_validator(validate)
+s.add_validator(validate, "validate")
 s.x = -1
 print(s)
 print(s.data)
@@ -24,7 +24,7 @@ ctx.a.y = 88
 def validate(self):
     print("VALIDATE", self)
     assert self.x > 0
-ctx.a.handle.add_validator(validate)
+ctx.a.add_validator(validate, "validate")
 ctx.a.x = -1
 ctx.translate()
 print("OK")

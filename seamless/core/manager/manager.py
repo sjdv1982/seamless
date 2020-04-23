@@ -651,10 +651,10 @@ If origin_task is provided, that task is not cancelled."""
 
     @mainthread
     def connect(self, source, source_subpath, target, target_subpath):
-        from ..unilink import Link
-        if isinstance(source, Link):
+        from ..unilink import UniLink
+        if isinstance(source, UniLink):
             source = source.get_linked()
-        if isinstance(target, Link):
+        if isinstance(target, UniLink):
             target = target.get_linked()            
         task = UponConnectionTask(
             self, source, source_subpath, target, target_subpath
@@ -663,10 +663,10 @@ If origin_task is provided, that task is not cancelled."""
 
     @mainthread
     def bilink(self, source, target):
-        from ..unilink import Link
-        if isinstance(source, Link):
+        from ..unilink import UniLink
+        if isinstance(source, UniLink):
             source = source.get_linked()
-        if isinstance(target, Link):
+        if isinstance(target, UniLink):
             target = target.get_linked()            
         task = UponBiLinkTask(
             self, source, target

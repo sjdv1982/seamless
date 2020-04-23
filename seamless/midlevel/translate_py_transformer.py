@@ -1,4 +1,4 @@
-from seamless.core import cell, link, \
+from seamless.core import cell, \
  transformer, context, StructuredCell
 
 def translate_py_transformer(node, root, namespace, inchannels, outchannels):

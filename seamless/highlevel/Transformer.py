@@ -54,6 +54,32 @@ class TransformerWrapper:
         self.parent = parent
 
 class Transformer(Base):
+    """Transforms input values to a result value
+    
+    One of the inputs is the code pin, containing source code 
+    in any programming language.
+    
+    This code is run inside a namespace populated by the values
+    of all other inputs. Those names and types of those
+    values are described as input pins.
+    
+    A transformer can be constructed from a Python function.
+    In that case, the function's source code is extracted and 
+    set as the code pin's value. The function signature is 
+    inspected and each parameter becomes an input pin.
+
+    Note that the transformer does not have access to any variable
+    from outside the code pin's source code.
+
+    The source code can be an expression, a function, or
+    simply a block of code. For an expression or a function, 
+    the return value is the result value. A code block must define
+    a variable named "result".
+
+    An input pin `foo` can be set to a value or a cell, simply with
+    `Transformer.foo = ...` . If the pin does not exist, it is created.
+    The type of a pin is "mixed" by default.
+    """
     _temp_code = None
     _temp_pins = None
     def __init__(self, *, parent=None, path=None, code=None, pins=None):
@@ -81,11 +107,18 @@ class Transformer(Base):
 
     @property
     def RESULT(self):
+        """The name of the result variable. Default is "result".
+        
+        This is also the attribute under which the result object is available
+        (i.e. Transformer.result by default). The result object is similar
+        to a (structured) Cell.
+        """
         htf = self._get_htf()
         return htf["RESULT"]
 
     @RESULT.setter
     def RESULT(self, value):
+        raise NotImplementedError
         htf = self._get_htf()
         result_path = self._path + (htf["RESULT"],)
         new_result_path = self._path + (value,)
@@ -93,7 +126,23 @@ class Transformer(Base):
         htf["RESULT"] = value
 
     @property
+    def INPUT(self):
+        """The name of the input attribute. Default is "inp".
+        
+        This is the attribute under which the input object is available
+        (i.e. Transformer.inp by default). The input object is similar
+        to a (structured) Cell.
+        """
+        htf = self._get_htf()
+        return htf["INPUT"]
+
+    @INPUT.setter
+    def INPUT(self, value):
+        raise NotImplementedError
+
+    @property
     def debug(self):
+        """For a compiled transformer, if it is compiled in debug mode"""
         return self._get_htf()["debug"]
     @debug.setter
     def debug(self, value):
@@ -155,6 +204,13 @@ class Transformer(Base):
 
     @property
     def language(self):
+        """Defines the programming language of the transformer's source code.
+
+        Allowed values are: python, ipython, bash, docker 
+        (which is bash executed in a Docker image), or any compiled language.
+
+        See seamless.compiler.languages and seamless.compile.compilers for a list
+        """
         return self._get_htf()["language"]
     @language.setter
     def language(self, value):
@@ -196,9 +252,10 @@ class Transformer(Base):
 
     @property
     def header(self):
+        """For a compiled transformer, the generated C header"""
         htf = self._get_htf()
         assert htf["compiled"]
-        dirs = ["value", "mount", "mimetype"]
+        dirs = ["value", "mount", "mimetype", "celltype"]
         return HeaderProxy(self, ("header",), "w", getter=self._header_getter, dirs=dirs)
 
     @header.setter
@@ -209,8 +266,10 @@ class Transformer(Base):
 
     def _header_getter(self, attr):
         htf = self._get_htf()
-        assert htf["compiled"]        
-        if attr == "value":
+        assert htf["compiled"]
+        if attr == "celltype":
+            return "code"
+        elif attr == "value":
             tf = self._get_tf(force=True)
             return tf.header.value
         elif attr == "mount":
@@ -224,13 +283,20 @@ class Transformer(Base):
 
     @property
     def schema(self):
+        """The schema of the transformer input object
+        
+        See Cell.schema for more details"""
         htf = self._get_htf()
         inp = htf["INPUT"]
         #TODO: self.self
         return getattr(self, inp).schema
 
     @property
-    def example(self):        
+    def example(self):
+        """The example handle of the transformer input object.
+        
+        See Cell.example for more details
+        """
         tf = self._get_tf(force=True)
         htf = self._get_htf()
         inputcell = getattr(tf, htf["INPUT"])
@@ -250,7 +316,8 @@ class Transformer(Base):
         example = result_ctx.example.handle
         return example
 
-    def add_validator(self, validator, name=None):
+    def add_validator(self, validator, name):
+        """Adds a validator to the input, analogous to Cell.add_validator"""
         htf = self._get_htf()
         inp = htf["INPUT"]
         #TODO: self.self
@@ -415,6 +482,7 @@ class Transformer(Base):
 
 
     def observe(self, attr, callback, polling_interval, observe_none=False):
+        """Observes attributes of the result, analogous to Cell.observe"""
         if isinstance(attr, str):
             attr = (attr,)
         path = self._path + attr
@@ -424,6 +492,7 @@ class Transformer(Base):
         )
 
     def unobserve(self, attr):
+        """Analogous to Cell.unobserve"""
         if isinstance(attr, str):
             attr = (attr,)
         path = self._path + attr
@@ -431,6 +500,24 @@ class Transformer(Base):
 
     @property
     def exception(self):
+        """Returns the exception associated with the transformer.
+
+        The exception may be raised during one of three stages:
+
+        1. The construction of the input object (Transformer.inp).
+           The input object is cell-like, see Cell.exception for more details.
+
+        2. The execution of the transformer. For Python/IPython cells, this
+           is the exception directly raised in code. For Bash/Docker cells,
+           exceptions are raised upon non-zero exit codes.
+           For compiled transformers, this stage is subdivided into 
+           generating the C header, compiling the code module, and executing
+           the compiled code.
+        
+        3. The construction of the result object (Transformer.result).
+           The result object is cell-like, see Cell.exception for more details.
+        
+        """
         htf = self._get_htf()
         if htf.get("UNTRANSLATED"):
             return None
@@ -479,6 +566,11 @@ class Transformer(Base):
 
     @property
     def status(self):
+        """The status of the transformer, analogous to Cell.status.
+        
+        See Transformer.exception about the different stages.
+        The first stage with a non-OK status is reported."""
+
         htf = self._get_htf()
         if htf.get("UNTRANSLATED"):
             return None
@@ -520,13 +612,13 @@ class Transformer(Base):
         pull_source = functools.partial(self._pull_source, attr)
         if attr in htf["pins"]:
             getter = functools.partial(self._valuegetter, attr)
-            dirs = ["value"]
+            dirs = ["value", "celltype"]
             proxycls = Proxy
         elif attr == "pins":
             return PinsWrapper(self)
         elif attr == "code":
             getter = self._codegetter
-            dirs = ["value", "mount", "mimetype"]
+            dirs = ["value", "mount", "mimetype", "celltype"]
             proxycls = CodeProxy
         elif attr == htf["INPUT"]:
             getter = self._inputgetter
@@ -594,7 +686,9 @@ class Transformer(Base):
         self._parent()._translate()
 
     def _codegetter(self, attr):
-        if attr == "value":
+        if attr == "celltype":
+            return "code"
+        elif attr == "value":
             tf = self._get_tf(force=True)            
             return tf.code.value
         elif attr == "mount":
@@ -700,6 +794,8 @@ class Transformer(Base):
         return getattr(resultcell, attr)
 
     def _valuegetter(self, attr, attr2):
+        if attr2 == "celltype":
+            return getattr(self.pins, attr).celltype
         if attr2 != "value":
             raise AttributeError(attr2)
         return self._get_value(attr)

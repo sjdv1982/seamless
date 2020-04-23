@@ -1,4 +1,4 @@
-from seamless.core import cell as core_cell, link as core_link, \
+from seamless.core import cell as core_cell, \
  transformer, reactor, context, macro, StructuredCell
 import traceback
 STRUC_ID = "_STRUC"

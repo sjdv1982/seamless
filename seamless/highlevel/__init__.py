@@ -61,7 +61,18 @@ from .Link import Link
 from ..midlevel.StaticContext import StaticContext
 
 def load_graph(graph, *, zip=None, cache_ctx=None, static=False, mounts=True, shares=True):
-    """TODO: document"""
+    """Load a Context from graph. 
+    
+    "graph" can be a file name or a JSON dict
+    Normally, it has been generated with Context.save_graph / Context.get_graph
+
+    "zip" can be a file name, zip-compressed bytes or a Python ZipFile object.
+    Normally, it has been generated with Context.save_zip / Context.get_zip
+
+    "cache_ctx": re-use a previous context for checksum-to-buffer caching
+
+    "static": create a StaticContext instead
+    """
     import json
     from ..core.context import Context as CoreContext
     from ..core.manager import Manager
