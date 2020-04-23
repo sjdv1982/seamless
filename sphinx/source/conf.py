@@ -17,7 +17,7 @@
 
 # -- Project information -----------------------------------------------------
 
-project = 'seamless'
+project = 'Seamless'
 copyright = '2016-2020, Sjoerd de Vries'
 author = 'Sjoerd de Vries'
 
