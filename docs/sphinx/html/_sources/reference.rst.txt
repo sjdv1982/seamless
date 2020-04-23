@@ -6,17 +6,17 @@ Reference
    .. automodule:: seamless.highlevel
       :members: load_graph
    
-   Context
-   ^^^^^^^
+   Context class
+   ^^^^^^^^^^^^^
    .. autoclass:: seamless.highlevel.Context
       :members:
    
-   Cell
-   ^^^^
+   Cell class
+   ^^^^^^^^^^
    .. autoclass:: seamless.highlevel.Cell
       :members:
    
-   Transformer
-   ^^^^^^^^^^^
+   Transformer class
+   ^^^^^^^^^^^^^^^^^
    .. autoclass:: seamless.highlevel.Transformer
       :members:

@@ -69,9 +69,13 @@ def load_graph(graph, *, zip=None, cache_ctx=None, static=False, mounts=True, sh
     "zip" can be a file name, zip-compressed bytes or a Python ZipFile object.
     Normally, it has been generated with Context.save_zip / Context.get_zip
 
-    "cache_ctx": re-use a previous context for checksum-to-buffer caching
+    "cache_ctx": re-use a previous context for caching (e.g. checksum-to-buffer caching) 
 
     "static": create a StaticContext instead
+
+    "mounts": mount cells and pins to the file system, as specified in the graph.
+
+    "shares": share cells over HTTP, as specified in the graph
     """
     import json
     from ..core.context import Context as CoreContext

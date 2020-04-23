@@ -118,8 +118,6 @@
         <span class="c1">###hcell = self._get_hcell() # infinite loop...</span>
         <span class="c1">###assert not hcell.get(&quot;UNTRANSLATED&quot;)</span>
         <span class="n">parent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parent</span><span class="p">()</span>
-        <span class="k">if</span> <span class="n">parent</span><span class="o">.</span><span class="n">_dummy</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">AttributeError</span>
         <span class="n">p</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">_gen_context</span>
         <span class="k">if</span> <span class="n">p</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span>
@@ -292,7 +290,6 @@
     <span class="k">def</span> <span class="nf">_setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
         <span class="kn">from</span> <span class="nn">.assign</span> <span class="kn">import</span> <span class="n">assign_to_subcell</span>
         <span class="n">parent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parent</span><span class="p">()</span>
-        <span class="k">assert</span> <span class="ow">not</span> <span class="n">parent</span><span class="o">.</span><span class="n">_dummy</span>
 
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">Resource</span><span class="p">):</span>
             <span class="n">value</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">data</span>
@@ -314,7 +311,6 @@
         <span class="sd">&quot;&quot;&quot;Connect from another cell or transformer to this cell.&quot;&quot;&quot;</span>
         <span class="kn">from</span> <span class="nn">.assign</span> <span class="kn">import</span> <span class="n">assign</span>
         <span class="n">parent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parent</span><span class="p">()</span>
-        <span class="k">assert</span> <span class="ow">not</span> <span class="n">parent</span><span class="o">.</span><span class="n">_dummy</span>
         <span class="k">return</span> <span class="n">assign</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_path</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span></div>
 
     <span class="k">def</span> <span class="fm">__setitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
@@ -381,8 +377,6 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">parent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parent</span><span class="p">()</span>
         <span class="n">hcell</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_hcell</span><span class="p">()</span>
-        <span class="k">if</span> <span class="n">parent</span><span class="o">.</span><span class="n">_dummy</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">NotImplementedError</span>
         <span class="k">if</span> <span class="n">hcell</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;UNTRANSLATED&quot;</span><span class="p">):</span>
             <span class="c1">#return hcell[&quot;TEMP&quot;]</span>
             <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;This cell is untranslated; run &#39;ctx.translate()&#39; or &#39;await ctx.translation()&#39;&quot;</span><span class="p">)</span>
@@ -403,8 +397,6 @@
 <span class="sd">        The buffered value is the value before schema validation&quot;&quot;&quot;</span>
         <span class="n">parent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parent</span><span class="p">()</span>
         <span class="n">hcell</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_hcell</span><span class="p">()</span>
-        <span class="k">if</span> <span class="n">parent</span><span class="o">.</span><span class="n">_dummy</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">NotImplementedError</span>
         <span class="k">if</span> <span class="n">hcell</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;UNTRANSLATED&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="s2">&quot;TEMP&quot;</span> <span class="ow">in</span> <span class="n">hcell</span><span class="p">:</span>
             <span class="c1">#return hcell[&quot;TEMP&quot;]</span>
             <span class="k">raise</span> <span class="ne">Exception</span> <span class="c1"># value untranslated; translation is async!</span>
@@ -469,9 +461,7 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">parent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parent</span><span class="p">()</span>
         <span class="n">hcell</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_hcell2</span><span class="p">()</span>
-        <span class="k">if</span> <span class="n">parent</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">parent</span><span class="o">.</span><span class="n">_dummy</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">NotImplementedError</span>
-        <span class="k">elif</span> <span class="n">hcell</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;UNTRANSLATED&quot;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">hcell</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;UNTRANSLATED&quot;</span><span class="p">):</span>
             <span class="k">if</span> <span class="s2">&quot;TEMP&quot;</span> <span class="ow">in</span> <span class="n">hcell</span><span class="p">:</span>
                 <span class="n">cell</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_cell</span><span class="p">()</span>
                 <span class="k">return</span> <span class="n">cell</span><span class="o">.</span><span class="n">checksum</span>
@@ -831,13 +821,12 @@
         <span class="n">result</span> <span class="o">=</span> <span class="p">[</span><span class="n">p</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="vm">__dict__</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">p</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;_&quot;</span><span class="p">)]</span>
         <span class="n">parent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parent</span><span class="p">()</span>
         <span class="n">hcell</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_hcell</span><span class="p">()</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">parent</span><span class="o">.</span><span class="n">_dummy</span><span class="p">:</span>
-            <span class="k">try</span><span class="p">:</span>
-                <span class="n">celltype</span> <span class="o">=</span> <span class="n">hcell</span><span class="p">[</span><span class="s2">&quot;celltype&quot;</span><span class="p">]</span>
-                <span class="k">if</span> <span class="n">celltype</span> <span class="o">==</span> <span class="s2">&quot;structured&quot;</span> <span class="ow">and</span> <span class="n">hcell</span><span class="p">[</span><span class="s2">&quot;silk&quot;</span><span class="p">]:</span>
-                    <span class="n">result</span> <span class="o">+=</span> <span class="nb">dir</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
-            <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
-                <span class="k">pass</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">celltype</span> <span class="o">=</span> <span class="n">hcell</span><span class="p">[</span><span class="s2">&quot;celltype&quot;</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">celltype</span> <span class="o">==</span> <span class="s2">&quot;structured&quot;</span> <span class="ow">and</span> <span class="n">hcell</span><span class="p">[</span><span class="s2">&quot;silk&quot;</span><span class="p">]:</span>
+                <span class="n">result</span> <span class="o">+=</span> <span class="nb">dir</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">pass</span>
         <span class="k">return</span> <span class="n">result</span>
     
     <span class="k">def</span> <span class="nf">_set_observers</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>

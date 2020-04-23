@@ -92,6 +92,24 @@ class Context(Base):
 
     @classmethod
     def from_graph(cls, graph, manager, *, mounts=True, shares=True, share_namespace=None, zip=None):
+        """Constructs a Context from a graph
+        
+        "graph" can be a file name or a JSON dict
+        Normally, it has been generated with Context.save_graph / Context.get_graph
+
+        "zip" can be a file name, zip-compressed bytes or a Python ZipFile object.
+        Normally, it has been generated with Context.save_zip / Context.get_zip
+
+        "manager": re-use the manager of a previous context. 
+        The manager controls caching and execution.
+
+        "mounts": mount cells and pins to the file system, as specified in the graph.
+
+        "shares": share cells over HTTP, as specified in the graph
+
+        "share_namespace": The namespace to use for HTTP sharing ("ctx"by default)
+
+        """
         self = cls(manager=manager)
         if zip is not None:
             self.add_zip(zip)
@@ -102,6 +120,16 @@ class Context(Base):
         return self
 
     def set_graph(self, graph, *, mounts=True, shares=True):
+        """Sets the graph of the Context
+        
+        "graph" can be a file name or a JSON dict
+        Normally, it has been generated with Context.save_graph / Context.get_graph
+
+        "mounts": mount cells and pins to the file system, as specified in the graph.
+
+        "shares": share cells over HTTP, as specified in the graph
+
+        """
         graph = deepcopy(graph)        
         nodes = {}        
         for node in graph["nodes"]:
@@ -137,10 +165,14 @@ class Context(Base):
         self._translate()
         return self
 
-    def __init__(self, dummy=False, manager=None):
+    def __init__(self, manager=None):
+        """Creates a new Seamless context
+        
+        "manager": re-use the manager of a previous context. 
+        The manager controls caching and execution.
+        """
         super().__init__(None, ())
         from seamless.core.manager import Manager
-        self._dummy = dummy
         if manager is not None:            
             assert isinstance(manager, Manager), type(manager)
             self._manager = manager
@@ -260,7 +292,6 @@ Translation is not required after modifying only cell values""")
     def mount(self, path=None, mode="rw", authority="cell", persistent=None):
         raise NotImplementedError  # for now, not implemented; TODO: see issue 10
 
-        assert not self._dummy
         if self._parent() is not self:
             raise NotImplementedError
         if path is None:
@@ -274,17 +305,30 @@ Translation is not required after modifying only cell values""")
         }
         self._translate()
     
-    def compute(self, timeout=None, report=2):             
+    def compute(self, timeout=None, report=2):
+        """Block until no more computation is required.
+
+        This means that all cells and transformers have either been computed,
+        or they have an error, or they have unsatisfied upstream dependencies.
+        
+        The graph is first (re-)translated, if necessary.
+
+        This function can only be invoked if no event loop is running,
+        i.e. under python or ipython, but not in a Jupyter kernel.
+        """
         from seamless import verify_sync_compute
         verify_sync_compute()
-        if self._dummy:
-            return
         self.translate()
         return self._gen_context.compute(timeout, report)
 
     async def computation(self, timeout=None, report=2):     
-        if self._dummy:
-            return
+        """Block until no more computation is required.
+
+        This means that all cells and transformers have either been computed,
+        or they have an error, or they have unsatisfied upstream dependencies.
+
+        The graph is first (re-)translated, if necessary.
+        """
         await self.translation()
         await self._gen_context.computation(timeout, report)
 
@@ -296,11 +340,30 @@ Translation is not required after modifying only cell values""")
         self._cached_graph = None
 
     def translate(self, force=False):
+        """(Re-)translate the graph.
+        The graph is translated to a low-level, computable form
+        (seamless.core). After translation, return immediately,
+        although computation will start automatically.
+        
+        If force=True, translation will happen even though no
+        change in topology or celltype was detected.
+
+        This function can only be invoked if no event loop is running,
+        i.e. under python or ipython, but not in a Jupyter kernel.
+        """
         from seamless import verify_sync_translate
         verify_sync_translate()
         return self._do_translate(force=force, explicit=True)
 
     async def translation(self, force=False):
+        """(Re-)translate the graph.
+        The graph is translated to a low-level, computable form
+        (seamless.core). After translation, return immediately,
+        although computation will start automatically.
+
+        If force=True, translation will happen even though no
+        change in topology or celltype was detected.
+        """
         return await self._do_translate_async(force=force, explicit=True)
 
     @property 
@@ -315,6 +378,16 @@ Translation is not required after modifying only cell values""")
 
     @property
     def share_namespace(self):
+        """The preferred namespace for sharing cells by the HTTP server
+
+        Cells are shared under:
+         http://<shareserver URL>/<live_share_namespace>/<cell path>
+
+        The live share namespace is in principle equal to the share namespace,
+        but if it is already taken, a number will be added to it (ctx1, ctx2, etc.) 
+
+        Default: "ctx"
+        """
         return self._graph.params["share_namespace"]
 
     @share_namespace.setter
@@ -326,6 +399,16 @@ Translation is not required after modifying only cell values""")
     
     @property
     def live_share_namespace(self):
+        """The actual namespace for sharing cells by the HTTP server
+
+        Cells are shared under:
+         http://<shareserver URL>/<live_share_namespace>/<cell path>
+
+        The live share namespace is in principle equal to the share namespace,
+        but if it is already taken, a number will be added to it (ctx1, ctx2, etc.) 
+
+        Default: "ctx"
+        """
         return self._live_share_namespace
 
     def _get_graph(self, copy):
@@ -416,6 +499,14 @@ Translation is not required after modifying only cell values""")
         return graph
 
     def get_graph(self, cache=True, runtime=False):
+        """Returns the graph in JSON format
+        
+        "cache": A memoized result of the last invocation
+        of get_graph is returned, until the graph changes.
+
+        "runtime": The graph is returned after 
+        Library/LibMacro transformations of the graph
+        """
         from ..midlevel.pretranslate import pretranslate
         if cache:
             if self._cached_graph is None:
@@ -428,11 +519,16 @@ Translation is not required after modifying only cell values""")
         return graph
 
     def save_graph(self, filename):
+        """Saves the graph in JSON format"""
         graph = self.get_graph()
         with open(filename, "w") as f:
             json.dump(graph, f, sort_keys=True, indent=2)
 
     def get_zip(self):
+        """Obtain the checksum-to-buffer cache for the current graph
+        
+        The cache is returned as zipped bytes
+        """
         # TODO: option to follow deep cell checksums
         force = (self._gen_context is None)
         self._do_translate(force=force)
@@ -451,6 +547,10 @@ Translation is not required after modifying only cell values""")
         return result
 
     async def get_zip_async(self):
+        """Obtain the checksum-to-buffer cache for the current graph
+        
+        The cache is returned as zipped bytes
+        """
         # TODO: option to follow deep cell checksums
         force = (self._gen_context is None)
         self._do_translate(force=force)
@@ -469,11 +569,19 @@ Translation is not required after modifying only cell values""")
         return result
 
     def save_zip(self, filename):
+        """Save the checksum-to-buffer cache for the current graph
+        
+        The cache is saved to "filename", which should be a .zip file
+        """
         zip = self.get_zip()
         with open(filename, "wb") as f:
             f.write(zip)
 
     async def save_zip_async(self, filename):
+        """Save the checksum-to-buffer cache for the current graph
+        
+        The cache is saved to "filename", which should be a .zip file
+        """
         zip = self.get_zip_async()
         with open(filename, "wb") as f:
             f.write(zip)
@@ -501,6 +609,12 @@ Translation is not required after modifying only cell values""")
         return copying.add_zip(manager, zipfile)
 
     def include(self, lib, only_zip=False, full_path=False):
+        """Include a library in the graph
+
+        A library (seamless.highlevel.Library) must be included before
+        library instances (seamless.highlevel.LibMacro) can be constructed
+        using ctx.lib
+        """
         from .library import Library
         if not isinstance(lib, Library):
             raise TypeError(type(lib))
@@ -512,15 +626,11 @@ Translation is not required after modifying only cell values""")
 
     @run_in_mainthread
     def _do_translate(self, force=False, explicit=False):        
-        if self._dummy:
-            return
         graph0 = self._get_graph(copy=False)
         return self._do_translate2(graph0, force=force, explicit=explicit)
 
     async def _do_translate_async(self, force=False, explicit=False):
         assert threading.current_thread() == threading.main_thread()
-        if self._dummy:
-            return
         graph0 = await self._get_graph_async(copy=False)
         await until_macro_mode_off()
         return self._do_translate2(graph0, force=force, explicit=explicit)
@@ -676,19 +786,24 @@ Translation is not required after modifying only cell values""")
         Returns a dictionary containing the status of all children that are not OK.
         If all children are OK, returns "Status: OK"
         """
-        assert not self._dummy
         nodes, _, _, _ = self._graph
         return get_status(self, self._children, nodes, path=None)
 
     @property
     def lib(self):
+        """Returns the libraries that were included in the graph"""
         from .library.include import IncludedLibraryContainer
         return IncludedLibraryContainer(self, ())
 
     def resolve(self, checksum):
+        """Returns the data buffer that corresponds to the checksum.
+
+        The checksum must be a SHA3-256 hash, as hex string or as bytes"""
         return self._manager.resolve(checksum)
 
     def observe(self, path, callback, polling_interval, observe_none=False, params=None):
+        """Observes attributes of the context, analogous to Cell.observe"""
+
         observer = PollingObserver(
             self, path, callback, polling_interval, observe_none, params=params
         )
@@ -696,6 +811,7 @@ Translation is not required after modifying only cell values""")
         return observer
 
     def unobserve(self, path=()):
+        """Analogous to Cell.unobserve"""
         lp = len(path) 
         for obs in list(self._observers):
             if obs.path[:lp] == path:
@@ -713,7 +829,7 @@ Translation is not required after modifying only cell values""")
         return self._graph.lib[tuple(path)]
 
     def _remove_connections(self, path, keep_links=False):
-        # Removes all connections starting with path
+        """Removes all connections starting with path"""
         lp = len(path)
         def keep_con(con):
             if con["type"] == "link":
@@ -736,6 +852,10 @@ Translation is not required after modifying only cell values""")
         return any_removed
 
     def link(self, first, second):
+        """Creates a bidirectional link between the first and second cell
+        
+        Both cells must be authoritative
+        """
         link = Link(self, first=first, second=second)
         connections = self._graph.connections
         connections.append(link._node)
@@ -750,6 +870,7 @@ Translation is not required after modifying only cell values""")
         return result
 
     def children(self, type=None):
+        """Returns all children of the context (except SubContext and LibMacro instances)"""
         classless = ("context", "libmacro")
         assert type is None or type in classless or type in nodeclasses, (type, nodeclasses.keys())
         children00 = self._children.items()

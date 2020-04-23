@@ -80,8 +80,6 @@ class Cell(Base):
         ###hcell = self._get_hcell() # infinite loop...
         ###assert not hcell.get("UNTRANSLATED")
         parent = self._parent()
-        if parent._dummy:
-            raise AttributeError
         p = parent._gen_context
         if p is None:
             raise ValueError
@@ -254,7 +252,6 @@ class Cell(Base):
     def _setattr(self, attr, value):
         from .assign import assign_to_subcell
         parent = self._parent()
-        assert not parent._dummy
 
         if isinstance(value, Resource):
             value = value.data
@@ -276,7 +273,6 @@ class Cell(Base):
         """Connect from another cell or transformer to this cell."""
         from .assign import assign
         parent = self._parent()
-        assert not parent._dummy
         return assign(parent, self._path, other)
 
     def __setitem__(self, item, value):
@@ -343,8 +339,6 @@ class Cell(Base):
         """
         parent = self._parent()
         hcell = self._get_hcell()
-        if parent._dummy:
-            raise NotImplementedError
         if hcell.get("UNTRANSLATED"):
             #return hcell["TEMP"]
             raise Exception("This cell is untranslated; run 'ctx.translate()' or 'await ctx.translation()'")
@@ -365,8 +359,6 @@ class Cell(Base):
         The buffered value is the value before schema validation"""
         parent = self._parent()
         hcell = self._get_hcell()
-        if parent._dummy:
-            raise NotImplementedError
         if hcell.get("UNTRANSLATED") and "TEMP" in hcell:
             #return hcell["TEMP"]
             raise Exception # value untranslated; translation is async!
@@ -431,9 +423,7 @@ class Cell(Base):
         """
         parent = self._parent()
         hcell = self._get_hcell2()
-        if parent is not None and parent._dummy:
-            raise NotImplementedError
-        elif hcell.get("UNTRANSLATED"):
+        if hcell.get("UNTRANSLATED"):
             if "TEMP" in hcell:
                 cell = self._get_cell()
                 return cell.checksum
@@ -793,13 +783,12 @@ class Cell(Base):
         result = [p for p in type(self).__dict__ if not p.startswith("_")]
         parent = self._parent()
         hcell = self._get_hcell()
-        if not parent._dummy:
-            try:
-                celltype = hcell["celltype"]
-                if celltype == "structured" and hcell["silk"]:
-                    result += dir(self.value)
-            except Exception:
-                pass
+        try:
+            celltype = hcell["celltype"]
+            if celltype == "structured" and hcell["silk"]:
+                result += dir(self.value)
+        except Exception:
+            pass
         return result
     
     def _set_observers(self):

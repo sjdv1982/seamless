@@ -6,7 +6,6 @@ class SubCell(Cell):
     def __init__(self, parent, cell, subpath, readonly):
         assert isinstance(cell, Cell)
         assert not isinstance(cell, SubCell)
-        assert not parent._dummy #cannot access cell.attr in constructors, use cell.value.attr instead
         fullpath = cell._path + subpath
         super().__init__(parent=parent, path=fullpath)
         self._cell = weakref.ref(cell)

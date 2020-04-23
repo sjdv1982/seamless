@@ -106,9 +106,13 @@
 <span class="sd">    &quot;zip&quot; can be a file name, zip-compressed bytes or a Python ZipFile object.</span>
 <span class="sd">    Normally, it has been generated with Context.save_zip / Context.get_zip</span>
 
-<span class="sd">    &quot;cache_ctx&quot;: re-use a previous context for checksum-to-buffer caching</span>
+<span class="sd">    &quot;cache_ctx&quot;: re-use a previous context for caching (e.g. checksum-to-buffer caching) </span>
 
 <span class="sd">    &quot;static&quot;: create a StaticContext instead</span>
+
+<span class="sd">    &quot;mounts&quot;: mount cells and pins to the file system, as specified in the graph.</span>
+
+<span class="sd">    &quot;shares&quot;: share cells over HTTP, as specified in the graph</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="kn">import</span> <span class="nn">json</span>
     <span class="kn">from</span> <span class="nn">..core.context</span> <span class="kn">import</span> <span class="n">Context</span> <span class="k">as</span> <span class="n">CoreContext</span>

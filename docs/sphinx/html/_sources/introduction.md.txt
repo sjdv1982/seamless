@@ -124,7 +124,7 @@ display(c)
 
 ```Out[4]```
 
-<details><summary>Jupyter widgets (not shown by GitHub)</summary>
+<details><summary>Jupyter widgets (shown only on github.io, not on github.com)</summary>
 <!-- Load require.js. Delete this if your page already loads require.js -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" crossorigin="anonymous"></script>
 <script src="https://unpkg.com/@jupyter-widgets/html-manager@*/dist/embed-amd.js" crossorigin="anonymous"></script>
@@ -372,3 +372,9 @@ ctx.add.code.value
 - The use of Redis as a checksum-to-buffer cache
 - Seamless instances can communicate, serving as job slaves or result caches for transformations.
 - Interactive monitoring of status and exception messages.
+
+More examples
+=============
+https://github.com/sjdv1982/seamless/tree/master/examples
+
+https://github.com/sjdv1982/seamless/tree/master/tests/highlevel
