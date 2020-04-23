@@ -1,0 +1,146 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Cells &#8212; seamless 0.2 documentation</title>
+    <link rel="stylesheet" href="_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/language_data.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Reference" href="reference.html" />
+    <link rel="prev" title="Contexts" href="context.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="reference.html" title="Reference"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="context.html" title="Contexts"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">seamless 0.2 documentation</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="cells">
+<h1>Cells<a class="headerlink" href="#cells" title="Permalink to this headline">¶</a></h1>
+<p>A cell (seamless.highlevel.Cell) contains a piece of data in the dependency graph that is contained by a Seamless Context.
+Thus, cells are always part of a Context (called <code class="docutils literal notranslate"><span class="pre">ctx</span></code> by convention).</p>
+<p>Within this context graph, cell values are constant.</p>
+<p>When you modify a cell, you essentially create a new context graph where all dependencies of this cell are set to <code class="docutils literal notranslate"><span class="pre">None</span></code>, until they have been recomputed.</p>
+<p>Assigning a cell to another cell creates a connection from the second cell to the first cell.</p>
+<p>Changing cell values is asynchronous:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">ctx</span><span class="o">.</span><span class="n">a</span> <span class="o">=</span> <span class="n">Cell</span><span class="p">()</span>
+<span class="k">await</span> <span class="n">ctx</span><span class="o">.</span><span class="n">translation</span><span class="p">()</span>
+<span class="n">ctx</span><span class="o">.</span><span class="n">a</span> <span class="o">=</span> <span class="mi">123</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">ctx</span><span class="o">.</span><span class="n">a</span><span class="o">.</span><span class="n">value</span><span class="p">)</span> 
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">None</span></code></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">await</span> <span class="n">ctx</span><span class="o">.</span><span class="n">computation</span><span class="p">()</span> <span class="c1"># or wait a few milliseconds in IPython or Jupyter</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">ctx</span><span class="o">.</span><span class="n">a</span><span class="o">.</span><span class="n">value</span><span class="p">)</span> 
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">&lt;Silk</span> <span class="pre">123&gt;</span></code></p>
+<p>Cells are by default <em>structured cells</em>, which:</p>
+<ul class="simple">
+<li><p>Contain values that are <strong>mixed</strong>: they can contain plain (JSON-serializable) values, Numpy arrays, or a mix of the two.</p></li>
+<li><p>Have a schema (a superset of JSON schema)</p></li>
+<li><p>Support sub-cells:</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">ctx</span><span class="o">.</span><span class="n">a</span> <span class="o">=</span> <span class="n">Cell</span><span class="p">()</span>
+<span class="n">ctx</span><span class="o">.</span><span class="n">b</span> <span class="o">=</span> <span class="n">Cell</span><span class="p">()</span>
+<span class="k">await</span> <span class="n">ctx</span><span class="o">.</span><span class="n">translation</span><span class="p">()</span>
+<span class="n">ctx</span><span class="o">.</span><span class="n">b</span><span class="o">.</span><span class="n">sub1</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="mi">12</span><span class="p">}</span>
+<span class="n">ctx</span><span class="o">.</span><span class="n">b</span><span class="o">.</span><span class="n">sub2</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">a</span>
+<span class="n">ctx</span><span class="o">.</span><span class="n">a</span> <span class="o">=</span> <span class="mi">99</span>
+<span class="k">await</span> <span class="n">ctx</span><span class="o">.</span><span class="n">computation</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">ctx</span><span class="o">.</span><span class="n">b</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+<span class="n">ctx</span><span class="o">.</span><span class="n">c</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">b</span><span class="o">.</span><span class="n">sub1</span><span class="o">.</span><span class="n">x</span>
+<span class="k">await</span> <span class="n">ctx</span><span class="o">.</span><span class="n">computation</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">ctx</span><span class="o">.</span><span class="n">c</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">&lt;</span><span class="n">Silk</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;sub1&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="mi">12</span><span class="p">},</span> <span class="s1">&#39;sub2&#39;</span><span class="p">:</span> <span class="mi">99</span><span class="p">}</span> <span class="o">&gt;</span>
+<span class="o">&lt;</span><span class="n">Silk</span><span class="p">:</span> <span class="mi">12</span> <span class="o">&gt;</span>
+</pre></div>
+</div>
+<p>Using the celltype property, a cell can be changed to a non-structured cell (see the documentation of the Cell class for more details).</p>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="context.html"
+                        title="previous chapter">Contexts</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="reference.html"
+                        title="next chapter">Reference</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/cell.md.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="reference.html" title="Reference"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="context.html" title="Contexts"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">seamless 0.2 documentation</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2016-2020, Sjoerd de Vries.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 3.0.2.
+    </div>
+  </body>
+</html>

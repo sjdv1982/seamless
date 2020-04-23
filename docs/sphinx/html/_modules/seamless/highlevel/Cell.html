@@ -1,0 +1,927 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>seamless.highlevel.Cell &#8212; seamless 0.2 documentation</title>
+    <link rel="stylesheet" href="../../../_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    <script src="../../../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">seamless 0.2 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="../highlevel.html" accesskey="U">seamless.highlevel</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for seamless.highlevel.Cell</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">weakref</span>
+<span class="kn">import</span> <span class="nn">inspect</span>
+<span class="kn">import</span> <span class="nn">traceback</span>
+<span class="kn">import</span> <span class="nn">threading</span>
+<span class="kn">from</span> <span class="nn">types</span> <span class="kn">import</span> <span class="n">LambdaType</span>
+<span class="kn">from</span> <span class="nn">.Base</span> <span class="kn">import</span> <span class="n">Base</span>
+<span class="kn">from</span> <span class="nn">.Resource</span> <span class="kn">import</span> <span class="n">Resource</span>
+<span class="kn">from</span> <span class="nn">..core.lambdacode</span> <span class="kn">import</span> <span class="n">lambdacode</span>
+<span class="kn">from</span> <span class="nn">..silk</span> <span class="kn">import</span> <span class="n">Silk</span>
+<span class="kn">from</span> <span class="nn">..mixed</span> <span class="kn">import</span> <span class="n">MixedBase</span>
+<span class="kn">from</span> <span class="nn">..mime</span> <span class="kn">import</span> <span class="n">get_mime</span><span class="p">,</span> <span class="n">language_to_mime</span><span class="p">,</span> <span class="n">ext_to_mime</span>
+
+<span class="n">celltypes</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="s2">&quot;structured&quot;</span><span class="p">,</span> <span class="s2">&quot;text&quot;</span><span class="p">,</span> <span class="s2">&quot;code&quot;</span><span class="p">,</span> <span class="s2">&quot;plain&quot;</span><span class="p">,</span> <span class="s2">&quot;mixed&quot;</span><span class="p">,</span> <span class="s2">&quot;binary&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;cson&quot;</span><span class="p">,</span> <span class="s2">&quot;yaml&quot;</span><span class="p">,</span> <span class="s2">&quot;str&quot;</span><span class="p">,</span> <span class="s2">&quot;bytes&quot;</span><span class="p">,</span> <span class="s2">&quot;int&quot;</span><span class="p">,</span> <span class="s2">&quot;float&quot;</span><span class="p">,</span> <span class="s2">&quot;bool&quot;</span>
+<span class="p">)</span>    
+
+<span class="k">def</span> <span class="nf">get_new_cell</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">&quot;path&quot;</span><span class="p">:</span> <span class="n">path</span><span class="p">,</span>
+        <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;cell&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;celltype&quot;</span><span class="p">:</span> <span class="s2">&quot;structured&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;datatype&quot;</span><span class="p">:</span> <span class="s2">&quot;mixed&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;hash_pattern&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="s2">&quot;UNTRANSLATED&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="p">}</span>
+
+<div class="viewcode-block" id="Cell"><a class="viewcode-back" href="../../../reference.html#seamless.highlevel.Cell">[docs]</a><span class="k">class</span> <span class="nc">Cell</span><span class="p">(</span><span class="n">Base</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Cell class. Contains a piece of data in Seamless.</span>
+
+<span class="sd">    See http://sjdv1982.github.io/seamless/sphinx/html/cell.html for documentation    </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">_virtual_path</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">_node</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">_subpath</span> <span class="o">=</span> <span class="p">()</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">celltype</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">parent</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="p">(</span><span class="n">parent</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span> <span class="o">==</span> <span class="p">(</span><span class="n">path</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">parent</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_init</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="n">path</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">celltype</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">celltype</span> <span class="o">=</span> <span class="n">celltype</span>
+
+    <span class="k">def</span> <span class="nf">_init</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">parent</span><span class="o">=</span><span class="n">parent</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">)</span>
+        <span class="n">parent</span><span class="o">.</span><span class="n">_children</span><span class="p">[</span><span class="n">path</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">authoritative</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;True if the cell has no dependencies&quot;&quot;&quot;</span>
+        <span class="n">parent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parent</span><span class="p">()</span>
+        <span class="n">connections</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">_graph</span><span class="o">.</span><span class="n">connections</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_path</span>
+        <span class="n">lp</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">con</span> <span class="ow">in</span> <span class="n">connections</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">con</span><span class="p">[</span><span class="s2">&quot;type&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;connection&quot;</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">con</span><span class="p">[</span><span class="s2">&quot;target&quot;</span><span class="p">][:</span><span class="n">lp</span><span class="p">]</span> <span class="o">==</span> <span class="n">path</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">return</span> <span class="kc">True</span>
+
+    <span class="k">def</span> <span class="nf">get_links</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>        
+        <span class="n">result</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_path</span>
+        <span class="n">lp</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">link</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parent</span><span class="p">()</span><span class="o">.</span><span class="n">get_links</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">link</span><span class="o">.</span><span class="n">_node</span><span class="p">[</span><span class="s2">&quot;first&quot;</span><span class="p">][:</span><span class="n">lp</span><span class="p">]</span> <span class="o">==</span> <span class="n">path</span><span class="p">:</span>
+                <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">link</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">link</span><span class="o">.</span><span class="n">_node</span><span class="p">[</span><span class="s2">&quot;second&quot;</span><span class="p">][:</span><span class="n">lp</span><span class="p">]</span> <span class="o">==</span> <span class="n">path</span><span class="p">:</span>
+                <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">link</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">result</span>
+
+    <span class="k">def</span> <span class="nf">_get_cell_subpath</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cell</span><span class="p">,</span> <span class="n">subpath</span><span class="p">):</span>
+        <span class="n">p</span> <span class="o">=</span> <span class="n">cell</span>
+        <span class="k">for</span> <span class="n">path</span> <span class="ow">in</span> <span class="n">subpath</span><span class="p">:</span>
+            <span class="n">p</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">path</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">p</span>
+
+    <span class="k">def</span> <span class="nf">_get_cell</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1">###hcell = self._get_hcell() # infinite loop...</span>
+        <span class="c1">###assert not hcell.get(&quot;UNTRANSLATED&quot;)</span>
+        <span class="n">parent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parent</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">parent</span><span class="o">.</span><span class="n">_dummy</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">AttributeError</span>
+        <span class="n">p</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">_gen_context</span>
+        <span class="k">if</span> <span class="n">p</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_path</span><span class="p">):</span>
+            <span class="n">pp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_path</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">p</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">pp</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_cell_subpath</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_path</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span>
+
+    <span class="k">def</span> <span class="nf">_get_hcell</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">parent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parent</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">parent</span><span class="o">.</span><span class="n">_get_node</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_path</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_get_hcell2</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_hcell</span><span class="p">()</span>
+        <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+            <span class="k">pass</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_node</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_node</span> <span class="o">=</span> <span class="n">get_new_cell</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_node</span>
+
+    <span class="k">def</span> <span class="nf">_observe_cell</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">checksum</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parent</span><span class="p">()</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parent</span><span class="p">()</span><span class="o">.</span><span class="n">_translating</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">hcell</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_hcell</span><span class="p">()</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="k">if</span> <span class="n">hcell</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;checksum&quot;</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">hcell</span><span class="p">[</span><span class="s2">&quot;checksum&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">hcell</span><span class="p">[</span><span class="s2">&quot;checksum&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;value&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">checksum</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">hcell</span><span class="p">[</span><span class="s2">&quot;checksum&quot;</span><span class="p">][</span><span class="s2">&quot;value&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">checksum</span>
+
+    <span class="k">def</span> <span class="nf">_observe_auth</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">checksum</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parent</span><span class="p">()</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parent</span><span class="p">()</span><span class="o">.</span><span class="n">_translating</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">hcell</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_hcell</span><span class="p">()</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="k">if</span> <span class="n">hcell</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;checksum&quot;</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">hcell</span><span class="p">[</span><span class="s2">&quot;checksum&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">hcell</span><span class="p">[</span><span class="s2">&quot;checksum&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;auth&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">checksum</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">hcell</span><span class="p">[</span><span class="s2">&quot;checksum&quot;</span><span class="p">][</span><span class="s2">&quot;auth&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">checksum</span>
+
+    <span class="k">def</span> <span class="nf">_observe_buffer</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">checksum</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parent</span><span class="p">()</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parent</span><span class="p">()</span><span class="o">.</span><span class="n">_translating</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">hcell</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_hcell</span><span class="p">()</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="k">if</span> <span class="n">hcell</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;checksum&quot;</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">hcell</span><span class="p">[</span><span class="s2">&quot;checksum&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">hcell</span><span class="p">[</span><span class="s2">&quot;checksum&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;buffer&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">checksum</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">hcell</span><span class="p">[</span><span class="s2">&quot;checksum&quot;</span><span class="p">][</span><span class="s2">&quot;buffer&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">checksum</span>
+
+    <span class="k">def</span> <span class="nf">_observe_schema</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">checksum</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parent</span><span class="p">()</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parent</span><span class="p">()</span><span class="o">.</span><span class="n">_translating</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">hcell</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_hcell</span><span class="p">()</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="k">if</span> <span class="n">hcell</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;checksum&quot;</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">hcell</span><span class="p">[</span><span class="s2">&quot;checksum&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">hcell</span><span class="p">[</span><span class="s2">&quot;checksum&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;schema&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">checksum</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">hcell</span><span class="p">[</span><span class="s2">&quot;checksum&quot;</span><span class="p">][</span><span class="s2">&quot;schema&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">checksum</span>
+
+    <span class="k">def</span> <span class="nf">_cell</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="k">def</span> <span class="nf">self</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+
+    <span class="k">def</span> <span class="nf">_get_subcell</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr</span><span class="p">):</span>
+        <span class="n">hcell</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_hcell</span><span class="p">()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">hcell</span><span class="p">[</span><span class="s2">&quot;celltype&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;structured&quot;</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+        <span class="n">parent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parent</span><span class="p">()</span>        
+        <span class="n">readonly</span> <span class="o">=</span> <span class="kc">False</span> <span class="c1">### TODO</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_subpath</span> <span class="o">+</span> <span class="p">(</span><span class="n">attr</span><span class="p">,)</span>
+        <span class="k">return</span> <span class="n">SubCell</span><span class="p">(</span>
+            <span class="n">parent</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cell</span><span class="p">(),</span>
+             <span class="n">path</span><span class="p">,</span> <span class="n">readonly</span><span class="o">=</span><span class="n">readonly</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">)):</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_subcell</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="nb">slice</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span>  <span class="c1"># TODO: x[min:max] outchannels</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__getattribute__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">attr</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;_&quot;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__getattribute__</span><span class="p">(</span><span class="n">attr</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">attr</span> <span class="ow">in</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="vm">__dict__</span> <span class="ow">or</span> <span class="n">attr</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__getattribute__</span><span class="p">(</span><span class="n">attr</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">attr</span> <span class="o">==</span> <span class="s2">&quot;schema&quot;</span><span class="p">:</span>
+            <span class="n">hcell</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_hcell</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">hcell</span><span class="p">[</span><span class="s2">&quot;celltype&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;structured&quot;</span><span class="p">:</span>
+                <span class="n">cell</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_cell</span><span class="p">()</span>
+                <span class="c1">###schema = cell.get_schema() # wrong!</span>
+                <span class="n">struc_ctx</span> <span class="o">=</span> <span class="n">cell</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">_context</span><span class="p">()</span>
+                <span class="n">schema</span> <span class="o">=</span> <span class="n">struc_ctx</span><span class="o">.</span><span class="n">example</span><span class="o">.</span><span class="n">handle</span><span class="o">.</span><span class="n">schema</span>
+                <span class="k">return</span> <span class="n">SchemaWrapper</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">schema</span><span class="p">,</span> <span class="s2">&quot;SCHEMA&quot;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">AttributeError</span>
+        <span class="n">hcell</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_hcell</span><span class="p">()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">hcell</span><span class="p">[</span><span class="s2">&quot;celltype&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;structured&quot;</span><span class="p">:</span>
+            <span class="n">cell</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_cell</span><span class="p">()</span>
+            <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">cell</span><span class="p">,</span> <span class="n">attr</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_subcell</span><span class="p">(</span><span class="n">attr</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Cell.mount"><a class="viewcode-back" href="../../../reference.html#seamless.highlevel.Cell.mount">[docs]</a>    <span class="k">def</span> <span class="nf">mount</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;rw&quot;</span><span class="p">,</span> <span class="n">authority</span><span class="o">=</span><span class="s2">&quot;cell&quot;</span><span class="p">,</span> <span class="n">persistent</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Mounts the cell to the file system. </span>
+<span class="sd">        Mounting is only supported for non-structured cells.</span>
+
+<span class="sd">        Arguments</span>
+<span class="sd">        =========</span>
+<span class="sd">        - path</span>
+<span class="sd">          The file path on disk</span>
+<span class="sd">        - mode</span>
+<span class="sd">          &quot;r&quot; (read), &quot;w&quot; (write) or &quot;rw&quot;. </span>
+<span class="sd">          The mode can only contain &quot;r&quot; if the cell is authoritative.</span>
+<span class="sd">          Default: &quot;rw&quot;</span>
+<span class="sd">        - authority</span>
+<span class="sd">          In case of conflict between cell and file, which takes precedence.</span>
+<span class="sd">          Default: &quot;cell&quot;.</span>
+<span class="sd">        - persistent</span>
+<span class="sd">          If False, the file is deleted from disk when the Cell is destroyed</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">celltype</span> <span class="o">!=</span> <span class="s2">&quot;structured&quot;</span>
+        <span class="n">hcell</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_hcell2</span><span class="p">()</span>            
+        <span class="k">if</span> <span class="n">path</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">hcell</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;mount&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">mount</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;path&quot;</span><span class="p">:</span> <span class="n">path</span><span class="p">,</span>
+                <span class="s2">&quot;mode&quot;</span><span class="p">:</span> <span class="n">mode</span><span class="p">,</span>
+                <span class="s2">&quot;authority&quot;</span><span class="p">:</span> <span class="n">authority</span><span class="p">,</span>
+                <span class="s2">&quot;persistent&quot;</span><span class="p">:</span> <span class="n">persistent</span>
+            <span class="p">}</span>
+            <span class="n">hcell</span><span class="p">[</span><span class="s2">&quot;mount&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">mount</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parent</span><span class="p">()</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_parent</span><span class="p">()</span><span class="o">.</span><span class="n">_translate</span><span class="p">()</span>
+        <span class="k">return</span> <span class="bp">self</span></div>
+
+    <span class="k">def</span> <span class="fm">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">attr</span> <span class="o">==</span> <span class="s2">&quot;example&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;example&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">attr</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;_&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">hasattr</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span> <span class="n">attr</span><span class="p">):</span>
+            <span class="k">return</span> <span class="nb">object</span><span class="o">.</span><span class="fm">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_setattr</span><span class="p">(</span><span class="n">attr</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="kn">from</span> <span class="nn">.assign</span> <span class="kn">import</span> <span class="n">assign_to_subcell</span>
+        <span class="n">parent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parent</span><span class="p">()</span>
+        <span class="k">assert</span> <span class="ow">not</span> <span class="n">parent</span><span class="o">.</span><span class="n">_dummy</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">Resource</span><span class="p">):</span>
+            <span class="n">value</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">data</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">Proxy</span><span class="p">):</span>
+            <span class="c1"># TODO: implement for Transformer &quot;code&quot;, &quot;value&quot;, &quot;schema&quot;, &quot;example&quot;</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+
+        <span class="n">hcell</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_hcell</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">hcell</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;UNTRANSLATED&quot;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_parent</span><span class="p">()</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="n">force</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">hcell</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_hcell</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">hcell</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;UNTRANSLATED&quot;</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="n">attr</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_setattr</span><span class="p">(</span><span class="n">attr</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+
+        <span class="n">assign_to_subcell</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="p">(</span><span class="n">attr</span><span class="p">,),</span> <span class="n">value</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Cell.connect_from"><a class="viewcode-back" href="../../../reference.html#seamless.highlevel.Cell.connect_from">[docs]</a>    <span class="k">def</span> <span class="nf">connect_from</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Connect from another cell or transformer to this cell.&quot;&quot;&quot;</span>
+        <span class="kn">from</span> <span class="nn">.assign</span> <span class="kn">import</span> <span class="n">assign</span>
+        <span class="n">parent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parent</span><span class="p">()</span>
+        <span class="k">assert</span> <span class="ow">not</span> <span class="n">parent</span><span class="o">.</span><span class="n">_dummy</span>
+        <span class="k">return</span> <span class="n">assign</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_path</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="fm">__setitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">item</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;value&quot;</span><span class="p">,</span> <span class="s2">&quot;schema&quot;</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span> <span class="c1"># TODO: might work on shadowed inchannels, but probably need to adapt assign_to_subcell</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="n">item</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;_&quot;</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span> <span class="c1"># TODO: might work on shadowed inchannels, but need to adapt __setattr__</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="k">return</span> <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span> <span class="c1"># TODO: should work, but need to adapt __setattr__</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="nb">slice</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span>  <span class="c1"># TODO: x[min:max] inchannels</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="Cell.traitlet"><a class="viewcode-back" href="../../../reference.html#seamless.highlevel.Cell.traitlet">[docs]</a>    <span class="k">def</span> <span class="nf">traitlet</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Creates an traitlet object with its value linked to the cell.</span>
+<span class="sd">        </span>
+<span class="sd">        A traitlet is derived from ``traitlets.HasTraits``, </span>
+<span class="sd">         and can be linked to other traitlet objects, such as ipywidgets.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        ========</span>
+<span class="sd">        - See basic-example.ipynb and datatables.ipynb</span>
+<span class="sd">          in https://github.com/sjdv1982/seamless/tree/master/examples</span>
+<span class="sd">        - See traitlets.ipynb, traitlet.py and traitlet2.py </span>
+<span class="sd">          in https://github.com/sjdv1982/seamless/tree/master/tests/highlevel</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">hcell</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_hcell</span><span class="p">()</span>
+        <span class="n">trigger</span> <span class="o">=</span> <span class="ow">not</span> <span class="n">hcell</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;UNTRANSLATED&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parent</span><span class="p">()</span><span class="o">.</span><span class="n">_add_traitlet</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_path</span><span class="p">,</span> <span class="n">trigger</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Cell.output"><a class="viewcode-back" href="../../../reference.html#seamless.highlevel.Cell.output">[docs]</a>    <span class="k">def</span> <span class="nf">output</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">layout</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns an output widget that tracks the cell value.</span>
+<span class="sd">        </span>
+<span class="sd">        The widget is a wrapper around an ``ipywidgets.Output``</span>
+<span class="sd">        and is to be used in Jupyter.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        ========</span>
+<span class="sd">        - See basic-example.ipynb</span>
+<span class="sd">          in https://github.com/sjdv1982/seamless/tree/master/examples</span>
+<span class="sd">        - See traitlets.ipynb</span>
+<span class="sd">          in https://github.com/sjdv1982/seamless/tree/master/tests/highlevel</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span> <span class="nn">.OutputWidget</span> <span class="kn">import</span> <span class="n">OutputWidget</span>
+        <span class="k">return</span> <span class="n">OutputWidget</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">layout</span><span class="p">)</span></div>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">value</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the value of the cell, if translated</span>
+<span class="sd">        </span>
+<span class="sd">        If the cell is not authoritative, </span>
+<span class="sd">         the value is None if an upstream dependency </span>
+<span class="sd">         is undefined or has an error.</span>
+
+<span class="sd">        For structured cells, the value is also None if the </span>
+<span class="sd">        schema is violated. </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">parent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parent</span><span class="p">()</span>
+        <span class="n">hcell</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_hcell</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">parent</span><span class="o">.</span><span class="n">_dummy</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+        <span class="k">if</span> <span class="n">hcell</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;UNTRANSLATED&quot;</span><span class="p">):</span>
+            <span class="c1">#return hcell[&quot;TEMP&quot;]</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;This cell is untranslated; run &#39;ctx.translate()&#39; or &#39;await ctx.translation()&#39;&quot;</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">cell</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_cell</span><span class="p">()</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="kn">import</span> <span class="nn">traceback</span><span class="p">;</span> <span class="n">traceback</span><span class="o">.</span><span class="n">print_exc</span><span class="p">()</span>
+            <span class="k">raise</span>
+        <span class="k">if</span> <span class="n">cell</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span>
+        <span class="n">value</span> <span class="o">=</span> <span class="n">cell</span><span class="o">.</span><span class="n">value</span>
+        <span class="k">return</span> <span class="n">value</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">buffered</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;For a structured cell, return the buffered value.</span>
+
+<span class="sd">        The buffered value is the value before schema validation&quot;&quot;&quot;</span>
+        <span class="n">parent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parent</span><span class="p">()</span>
+        <span class="n">hcell</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_hcell</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">parent</span><span class="o">.</span><span class="n">_dummy</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+        <span class="k">if</span> <span class="n">hcell</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;UNTRANSLATED&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="s2">&quot;TEMP&quot;</span> <span class="ow">in</span> <span class="n">hcell</span><span class="p">:</span>
+            <span class="c1">#return hcell[&quot;TEMP&quot;]</span>
+            <span class="k">raise</span> <span class="ne">Exception</span> <span class="c1"># value untranslated; translation is async!</span>
+        <span class="k">assert</span> <span class="n">hcell</span><span class="p">[</span><span class="s2">&quot;celltype&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;structured&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">cell</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_cell</span><span class="p">()</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="kn">import</span> <span class="nn">traceback</span><span class="p">;</span> <span class="n">traceback</span><span class="o">.</span><span class="n">print_exc</span><span class="p">()</span>
+            <span class="k">raise</span>
+        <span class="n">value</span> <span class="o">=</span> <span class="n">cell</span><span class="o">.</span><span class="n">buffer</span><span class="o">.</span><span class="n">value</span>
+        <span class="k">return</span> <span class="n">value</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">example</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;For a structured cell, return a dummy Silk handle.</span>
+<span class="sd">        </span>
+<span class="sd">        The handle does not store any values, but has type inference,</span>
+<span class="sd">         i.e. schema properties are inferred from what is assigned to it.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        ========</span>
+<span class="sd">        - See basic-example.ipynb</span>
+<span class="sd">          in https://github.com/sjdv1982/seamless/tree/master/examples</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">celltype</span> <span class="o">!=</span> <span class="s2">&quot;structured&quot;</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">AttributeError</span>
+        <span class="n">cell</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_cell</span><span class="p">()</span>
+        <span class="n">struc_ctx</span> <span class="o">=</span> <span class="n">cell</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">_context</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">struc_ctx</span><span class="o">.</span><span class="n">example</span><span class="o">.</span><span class="n">handle</span>
+
+<div class="viewcode-block" id="Cell.add_validator"><a class="viewcode-back" href="../../../reference.html#seamless.highlevel.Cell.add_validator">[docs]</a>    <span class="k">def</span> <span class="nf">add_validator</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">validator</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Adds a validator function (in Python) to the schema.</span>
+<span class="sd">        </span>
+<span class="sd">        The validator must take a single argument, the (buffered) value of the cell</span>
+<span class="sd">        It is expected to raise an exception (e.g. an AssertionError) </span>
+<span class="sd">        if the value is invalid.</span>
+
+<span class="sd">        If a previous validator with the same name exists, </span>
+<span class="sd">        that validator is overwritten.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">handle</span><span class="o">.</span><span class="n">add_validator</span><span class="p">(</span><span class="n">validator</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">)</span></div>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">exception</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the exception associated with the cell.</span>
+
+<span class="sd">        For non-structured cells, this exception was raised during parsing.</span>
+<span class="sd">        For structured cells, it may also have been raised during validation&quot;&quot;&quot;</span>
+        
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_hcell</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;UNTRANSLATED&quot;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="n">cell</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_cell</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">cell</span><span class="o">.</span><span class="n">exception</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">checksum</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Contains the checksum of the cell, as SHA3-256 hash.</span>
+<span class="sd">        </span>
+<span class="sd">        The checksum defines the value of the cell. </span>
+<span class="sd">        If the cell is defined, the checksum is available, even if</span>
+<span class="sd">        the value may not be.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">parent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parent</span><span class="p">()</span>
+        <span class="n">hcell</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_hcell2</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">parent</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">parent</span><span class="o">.</span><span class="n">_dummy</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+        <span class="k">elif</span> <span class="n">hcell</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;UNTRANSLATED&quot;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="s2">&quot;TEMP&quot;</span> <span class="ow">in</span> <span class="n">hcell</span><span class="p">:</span>
+                <span class="n">cell</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_cell</span><span class="p">()</span>
+                <span class="k">return</span> <span class="n">cell</span><span class="o">.</span><span class="n">checksum</span>
+            <span class="k">return</span> <span class="n">hcell</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;checksum&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">cell</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_cell</span><span class="p">()</span>
+            <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                <span class="kn">import</span> <span class="nn">traceback</span><span class="p">;</span> <span class="n">traceback</span><span class="o">.</span><span class="n">print_exc</span><span class="p">()</span>
+                <span class="k">raise</span>
+            <span class="k">return</span> <span class="n">cell</span><span class="o">.</span><span class="n">checksum</span>
+
+<div class="viewcode-block" id="Cell.observe"><a class="viewcode-back" href="../../../reference.html#seamless.highlevel.Cell.observe">[docs]</a>    <span class="k">def</span> <span class="nf">observe</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr</span><span class="p">,</span> <span class="n">callback</span><span class="p">,</span> <span class="n">polling_interval</span><span class="p">,</span> <span class="n">observe_none</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Adds an observer that monitors ``getattr(Cell, attr)``.</span>
+
+<span class="sd">        This value is polled every `polling_interval` seconds, </span>
+<span class="sd">        and if changed, ``callback(value)`` is invoked.</span>
+<span class="sd">        </span>
+<span class="sd">        If `observe_none`, None is considered as a separate value.</span>
+<span class="sd">        (Default: False)</span>
+
+<span class="sd">        This method is not recommended to observe cell values,</span>
+<span class="sd">        this is better done with traitlets.</span>
+
+<span class="sd">        Instead, it is recommended to use this to observe changes</span>
+<span class="sd">        in status and exception.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">attr</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">attr</span> <span class="o">=</span> <span class="p">(</span><span class="n">attr</span><span class="p">,)</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_path</span> <span class="o">+</span> <span class="n">attr</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_top_parent</span><span class="p">()</span><span class="o">.</span><span class="n">observe</span><span class="p">(</span>
+            <span class="n">path</span><span class="p">,</span> <span class="n">callback</span><span class="p">,</span> <span class="n">polling_interval</span><span class="p">,</span>
+            <span class="n">observe_none</span><span class="o">=</span><span class="n">observe_none</span>
+        <span class="p">)</span></div>
+
+<div class="viewcode-block" id="Cell.unobserve"><a class="viewcode-back" href="../../../reference.html#seamless.highlevel.Cell.unobserve">[docs]</a>    <span class="k">def</span> <span class="nf">unobserve</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Stop observing ``getattr(Cell, attr)``&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">attr</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">attr</span> <span class="o">=</span> <span class="p">(</span><span class="n">attr</span><span class="p">,)</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_path</span> <span class="o">+</span> <span class="n">attr</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_top_parent</span><span class="p">()</span><span class="o">.</span><span class="n">unobserve</span><span class="p">(</span><span class="n">path</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Cell.fingertip"><a class="viewcode-back" href="../../../reference.html#seamless.highlevel.Cell.fingertip">[docs]</a>    <span class="k">async</span> <span class="k">def</span> <span class="nf">fingertip</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Puts the buffer of this cell&#39;s checksum &#39;at your fingertips&#39;:</span>
+
+<span class="sd">        - Verify that the buffer is locally or remotely available;</span>
+<span class="sd">          if remotely, download it.</span>
+<span class="sd">        - If not available, try to re-compute it using its provenance,</span>
+<span class="sd">          i.e. re-evaluating any transformation or expression that produced it</span>
+<span class="sd">        - Such recomputation is done in &quot;fingertip&quot; mode, i.e. disallowing</span>
+<span class="sd">          use of expression-to-checksum or transformation-to-checksum caches</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">parent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parent</span><span class="p">()</span>
+        <span class="n">manager</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">_manager</span>
+        <span class="n">cachemanager</span> <span class="o">=</span> <span class="n">manager</span><span class="o">.</span><span class="n">cachemanager</span>
+        <span class="n">checksum</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">checksum</span>
+        <span class="k">await</span> <span class="n">cachemanager</span><span class="o">.</span><span class="n">fingertip</span><span class="p">(</span><span class="n">checksum</span><span class="p">)</span></div>
+
+    <span class="nd">@checksum</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">checksum</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">checksum</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Sets the checksum of the cell, as SHA3-256 hash&quot;&quot;&quot;</span>
+        <span class="kn">from</span> <span class="nn">..silk</span> <span class="kn">import</span> <span class="n">Silk</span>
+        <span class="n">hcell</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_hcell2</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">hcell</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;UNTRANSLATED&quot;</span><span class="p">):</span>
+            <span class="n">hcell</span><span class="p">[</span><span class="s2">&quot;checksum&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">checksum</span>
+            <span class="k">return</span>
+        <span class="n">cell</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_cell</span><span class="p">()</span>
+        <span class="n">cell</span><span class="o">.</span><span class="n">set_checksum</span><span class="p">(</span><span class="n">checksum</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">handle</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="n">celltype</span> <span class="o">==</span> <span class="s2">&quot;structured&quot;</span>
+        <span class="n">cell</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_cell</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">cell</span><span class="o">.</span><span class="n">handle_no_inference</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">data</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the data of the cell</span>
+<span class="sd">        </span>
+<span class="sd">        This is normally the same as the value,</span>
+<span class="sd">        but must not be modified&quot;&quot;&quot;</span>
+        <span class="n">cell</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_cell</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">cell</span><span class="o">.</span><span class="n">data</span>
+
+    <span class="k">def</span> <span class="nf">_set</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="kn">from</span> <span class="nn">..core.structured_cell</span> <span class="kn">import</span> <span class="n">StructuredCell</span>
+        <span class="n">hcell</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_hcell2</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">hcell</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;UNTRANSLATED&quot;</span><span class="p">):</span>
+            <span class="n">hcell</span><span class="p">[</span><span class="s2">&quot;TEMP&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+            <span class="k">return</span>
+        <span class="n">cell</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_cell</span><span class="p">()</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">cell</span><span class="p">,</span> <span class="n">StructuredCell</span><span class="p">):</span>
+            <span class="n">cell</span><span class="o">.</span><span class="n">set_no_inference</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">cell</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">status</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the status of the cell.</span>
+
+<span class="sd">        The status may be undefined, error, upstream or OK</span>
+<span class="sd">        If it is error, Cell.exception will be non-empty.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_hcell</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;UNTRANSLATED&quot;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="n">cell</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_cell</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">cell</span><span class="o">.</span><span class="n">status</span>
+
+<div class="viewcode-block" id="Cell.set"><a class="viewcode-back" href="../../../reference.html#seamless.highlevel.Cell.set">[docs]</a>    <span class="k">def</span> <span class="nf">set</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Sets the value of the cell&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_set</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span></div>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">celltype</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The type of the cell is by default &quot;structured&quot;.</span>
+<span class="sd">        </span>
+<span class="sd">        Non-structured celltypes are:</span>
+
+<span class="sd">        - &quot;plain&quot;: contains any JSON-serializable data</span>
+<span class="sd">        - &quot;binary&quot;: contains binary data, wrapped in a Numpy object</span>
+<span class="sd">        - &quot;mixed&quot;: an arbitrary mixture of &quot;plain&quot; and &quot;binary&quot; data</span>
+<span class="sd">        - &quot;code&quot;: source code in any language</span>
+<span class="sd">        - &quot;text&quot;, &quot;cson&quot;, &quot;yaml&quot;</span>
+<span class="sd">        - &quot;str&quot;, &quot;bytes&quot;, &quot;int&quot;, &quot;float&quot;, &quot;bool&quot;</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="n">hcell</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_hcell2</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">hcell</span><span class="p">[</span><span class="s2">&quot;celltype&quot;</span><span class="p">]</span>
+
+    <span class="nd">@celltype</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">celltype</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">celltypes</span><span class="p">,</span> <span class="n">value</span>
+        <span class="n">hcell</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_hcell2</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">hcell</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;UNTRANSLATED&quot;</span><span class="p">):</span>
+            <span class="n">cellvalue</span> <span class="o">=</span> <span class="n">hcell</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;TEMP&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">cellvalue</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">value</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">cellvalue</span><span class="p">,</span> <span class="n">Silk</span><span class="p">):</span>
+            <span class="n">cellvalue</span> <span class="o">=</span> <span class="n">cellvalue</span><span class="o">.</span><span class="n">data</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">cellvalue</span><span class="p">,</span> <span class="n">MixedBase</span><span class="p">):</span>
+            <span class="n">cellvalue</span> <span class="o">=</span> <span class="n">cellvalue</span><span class="o">.</span><span class="n">value</span>
+        <span class="n">hcell</span><span class="p">[</span><span class="s2">&quot;celltype&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="k">if</span> <span class="n">value</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;structured&quot;</span><span class="p">,</span> <span class="s2">&quot;mixed&quot;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="s2">&quot;hash_pattern&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">hcell</span><span class="p">:</span>
+                <span class="n">hcell</span><span class="p">[</span><span class="s2">&quot;hash_pattern&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">hcell</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;hash_pattern&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">value</span> <span class="o">==</span> <span class="s2">&quot;code&quot;</span> <span class="ow">and</span> <span class="s2">&quot;language&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">hcell</span><span class="p">:</span>
+            <span class="n">hcell</span><span class="p">[</span><span class="s2">&quot;language&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;python&quot;</span>
+        <span class="n">hcell</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;checksum&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">cellvalue</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">hcell</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;UNTRANSLATED&quot;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_parent</span><span class="p">()</span><span class="o">.</span><span class="n">_do_translate</span><span class="p">(</span><span class="n">force</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="c1"># This needs to be kept!</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">cellvalue</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                <span class="k">pass</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parent</span><span class="p">()</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_parent</span><span class="p">()</span><span class="o">.</span><span class="n">_translate</span><span class="p">()</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">mimetype</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The mimetype of the cell.</span>
+<span class="sd">        </span>
+<span class="sd">        Can be set directly according to the MIME specification, </span>
+<span class="sd">         or as a file extension.</span>
+
+<span class="sd">        If not set, the default value depends on the celltype:</span>
+
+<span class="sd">        - For structured cells, it is derived from the datatype attribute</span>
+<span class="sd">        - For mixed cells, it is &quot;seamless/mixed&quot;</span>
+<span class="sd">        - For code cells, it is derived from the language attribute        </span>
+<span class="sd">        - For plain cells and int/float/bool cells, it is &quot;application/json&quot;</span>
+<span class="sd">        - For text cells and str cells, it is &quot;text/plain&quot;</span>
+<span class="sd">        - For other cells, it is derived from their default file extension.        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">hcell</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_hcell2</span><span class="p">()</span>
+        <span class="n">mimetype</span> <span class="o">=</span> <span class="n">hcell</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;mimetype&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">mimetype</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">mimetype</span>
+        <span class="n">celltype</span> <span class="o">=</span> <span class="n">hcell</span><span class="p">[</span><span class="s2">&quot;celltype&quot;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">celltype</span> <span class="o">==</span> <span class="s2">&quot;code&quot;</span><span class="p">:</span>
+            <span class="n">language</span> <span class="o">=</span> <span class="n">hcell</span><span class="p">[</span><span class="s2">&quot;language&quot;</span><span class="p">]</span>
+            <span class="n">mimetype</span> <span class="o">=</span> <span class="n">language_to_mime</span><span class="p">(</span><span class="n">language</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">mimetype</span>
+        <span class="k">if</span> <span class="n">celltype</span> <span class="o">==</span> <span class="s2">&quot;structured&quot;</span><span class="p">:</span>
+            <span class="n">datatype</span> <span class="o">=</span> <span class="n">hcell</span><span class="p">[</span><span class="s2">&quot;datatype&quot;</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">datatype</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;mixed&quot;</span><span class="p">,</span> <span class="s2">&quot;binary&quot;</span><span class="p">):</span>
+                <span class="n">mimetype</span> <span class="o">=</span> <span class="n">get_mime</span><span class="p">(</span><span class="n">datatype</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">mimetype</span> <span class="o">=</span> <span class="n">ext_to_mime</span><span class="p">(</span><span class="n">datatype</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">mimetype</span> <span class="o">=</span> <span class="n">get_mime</span><span class="p">(</span><span class="n">celltype</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">mimetype</span>
+
+    <span class="nd">@mimetype</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">mimetype</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="n">hcell</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_hcell2</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">value</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">ext</span> <span class="o">=</span> <span class="n">value</span>
+                <span class="n">value</span> <span class="o">=</span> <span class="n">ext_to_mime</span><span class="p">(</span><span class="n">ext</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Unknown extension </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">ext</span><span class="p">)</span> <span class="kn">from</span> <span class="bp">None</span>
+            <span class="n">hcell</span><span class="p">[</span><span class="s2">&quot;file_extension&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ext</span>
+        <span class="n">hcell</span><span class="p">[</span><span class="s2">&quot;mimetype&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">datatype</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; The datatype of a structured cell.</span>
+<span class="sd">        As of Seamless 0.2, mostly an alternative for &quot;mimetype&quot;</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">hcell</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_hcell2</span><span class="p">()</span>
+        <span class="n">celltype</span> <span class="o">=</span> <span class="n">hcell</span><span class="p">[</span><span class="s2">&quot;celltype&quot;</span><span class="p">]</span>
+        <span class="k">assert</span> <span class="n">celltype</span> <span class="o">==</span> <span class="s2">&quot;structured&quot;</span>
+        <span class="k">return</span> <span class="n">hcell</span><span class="p">[</span><span class="s2">&quot;datatype&quot;</span><span class="p">]</span>
+
+    <span class="nd">@datatype</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">datatype</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="n">hcell</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_hcell2</span><span class="p">()</span>
+        <span class="n">celltype</span> <span class="o">=</span> <span class="n">hcell</span><span class="p">[</span><span class="s2">&quot;celltype&quot;</span><span class="p">]</span>
+        <span class="k">assert</span> <span class="n">celltype</span> <span class="o">==</span> <span class="s2">&quot;structured&quot;</span>
+        <span class="n">hcell</span><span class="p">[</span><span class="s2">&quot;datatype&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">scratch</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;TODO: document&quot;&quot;&quot;</span>
+        <span class="n">hcell</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_hcell2</span><span class="p">()</span>
+        <span class="k">return</span> <span class="p">(</span><span class="s2">&quot;scratch&quot;</span> <span class="ow">in</span> <span class="n">hcell</span><span class="p">)</span>
+
+    <span class="nd">@scratch</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">scratch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">value</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+        <span class="n">hcell</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_hcell2</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">value</span> <span class="o">==</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="n">hcell</span><span class="p">[</span><span class="s2">&quot;scratch&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">hcell</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;scratch&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">fingertip_no_remote</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;TODO: document&quot;&quot;&quot;</span>
+        <span class="n">hcell</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_hcell2</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">hcell</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;fingertip_no_remote&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+
+    <span class="nd">@fingertip_no_remote</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">fingertip_no_remote</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">value</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+        <span class="n">hcell</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_hcell2</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">value</span> <span class="o">==</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="n">hcell</span><span class="p">[</span><span class="s2">&quot;fingertip_no_remote&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">hcell</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;fingertip_no_remote&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">fingertip_no_recompute</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;TODO: document&quot;&quot;&quot;</span>
+        <span class="n">hcell</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_hcell2</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">hcell</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;fingertip_no_recompute&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+
+    <span class="nd">@fingertip_no_recompute</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">fingertip_no_recompute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">value</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+        <span class="n">hcell</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_hcell2</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">value</span> <span class="o">==</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="n">hcell</span><span class="p">[</span><span class="s2">&quot;fingertip_no_recompute&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">hcell</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;fingertip_no_recompute&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">hash_pattern</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># TODO: document when released in 0.3</span>
+        <span class="n">hcell</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_hcell2</span><span class="p">()</span>
+        <span class="n">celltype</span> <span class="o">=</span> <span class="n">hcell</span><span class="p">[</span><span class="s2">&quot;celltype&quot;</span><span class="p">]</span>
+        <span class="k">assert</span> <span class="n">celltype</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;structured&quot;</span><span class="p">,</span> <span class="s2">&quot;mixed&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">hcell</span><span class="p">[</span><span class="s2">&quot;hash_pattern&quot;</span><span class="p">]</span>
+
+    <span class="nd">@hash_pattern</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">hash_pattern</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="kn">from</span> <span class="nn">..core.protocol.deep_structure</span> <span class="kn">import</span> <span class="n">validate_hash_pattern</span>
+        <span class="n">validate_hash_pattern</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+        <span class="n">hcell</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_hcell2</span><span class="p">()</span>
+        <span class="n">celltype</span> <span class="o">=</span> <span class="n">hcell</span><span class="p">[</span><span class="s2">&quot;celltype&quot;</span><span class="p">]</span>
+        <span class="k">assert</span> <span class="n">celltype</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;structured&quot;</span><span class="p">,</span> <span class="s2">&quot;mixed&quot;</span><span class="p">)</span>
+        <span class="n">hcell</span><span class="p">[</span><span class="s2">&quot;hash_pattern&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="n">hcell</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;checksum&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parent</span><span class="p">()</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_parent</span><span class="p">()</span><span class="o">.</span><span class="n">_translate</span><span class="p">()</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">language</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The programming language for code cells.</span>
+
+<span class="sd">        Default: Python&quot;&quot;&quot;</span>
+        <span class="n">hcell</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_hcell2</span><span class="p">()</span>
+        <span class="n">celltype</span> <span class="o">=</span> <span class="n">hcell</span><span class="p">[</span><span class="s2">&quot;celltype&quot;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">celltype</span> <span class="o">!=</span> <span class="s2">&quot;code&quot;</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">AttributeError</span>
+        <span class="k">return</span> <span class="n">hcell</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;language&quot;</span><span class="p">,</span> <span class="s2">&quot;python&quot;</span><span class="p">)</span>
+
+    <span class="nd">@language</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">language</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="kn">from</span> <span class="nn">..compiler</span> <span class="kn">import</span> <span class="n">find_language</span>
+        <span class="n">hcell</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_hcell2</span><span class="p">()</span>
+        <span class="n">celltype</span> <span class="o">=</span> <span class="n">hcell</span><span class="p">[</span><span class="s2">&quot;celltype&quot;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">celltype</span> <span class="o">!=</span> <span class="s2">&quot;code&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_setattr</span><span class="p">(</span><span class="s2">&quot;language&quot;</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+        <span class="n">lang</span><span class="p">,</span> <span class="n">language</span><span class="p">,</span> <span class="n">extension</span> <span class="o">=</span> <span class="n">find_language</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+        <span class="n">old_language</span> <span class="o">=</span> <span class="n">hcell</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;language&quot;</span><span class="p">)</span>
+        <span class="n">hcell</span><span class="p">[</span><span class="s2">&quot;language&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">lang</span>
+        <span class="n">hcell</span><span class="p">[</span><span class="s2">&quot;file_extension&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">extension</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parent</span><span class="p">()</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_parent</span><span class="p">()</span><span class="o">.</span><span class="n">_translate</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="fm">__rshift__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">Proxy</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="s2">&quot;r&quot;</span> <span class="ow">in</span> <span class="n">other</span><span class="o">.</span><span class="n">_mode</span>
+        <span class="k">assert</span> <span class="n">other</span><span class="o">.</span><span class="n">_pull_source</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="n">other</span><span class="o">.</span><span class="n">_pull_source</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Cell.share"><a class="viewcode-back" href="../../../reference.html#seamless.highlevel.Cell.share">[docs]</a>    <span class="k">def</span> <span class="nf">share</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">readonly</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Shares a cell over HTTP.</span>
+<span class="sd">        </span>
+<span class="sd">        Typically, the cell is available under</span>
+<span class="sd">        http://localhost:5813/ctx/&lt;path&gt;.</span>
+
+<span class="sd">        If path is None (default), Cell.path is used, </span>
+<span class="sd">        with dots replaced by slashes.</span>
+
+<span class="sd">        If readonly is True, only GET requests are supported.</span>
+<span class="sd">        Else, the cell can also be modified using PUT requests </span>
+<span class="sd">        using the Seamless JS client (js/seamless-client.js)</span>
+<span class="sd">        </span>
+<span class="sd">        Cells with mimetype &#39;application/json&#39; </span>
+<span class="sd">        (the default for plain cells)</span>
+<span class="sd">        also support subcell GET requests,</span>
+<span class="sd">        e.g. ``http://.../ctx/a/x/0`` for a cell ``ctx.a``</span>
+<span class="sd">        with value ``{&#39;x&#39;: [1,2,3] }``</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">assert</span> <span class="n">readonly</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">authoritative</span>
+        <span class="k">assert</span> <span class="n">readonly</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">celltype</span> <span class="o">!=</span> <span class="s2">&quot;structured&quot;</span>
+        <span class="n">hcell</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_hcell2</span><span class="p">()</span>
+        <span class="n">hcell</span><span class="p">[</span><span class="s2">&quot;share&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;path&quot;</span><span class="p">:</span> <span class="n">path</span><span class="p">,</span>
+            <span class="s2">&quot;readonly&quot;</span><span class="p">:</span> <span class="n">readonly</span><span class="p">,</span>
+        <span class="p">}</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parent</span><span class="p">()</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_parent</span><span class="p">()</span><span class="o">.</span><span class="n">_translate</span><span class="p">()</span>
+        <span class="k">return</span> <span class="bp">self</span></div>
+
+    <span class="k">def</span> <span class="fm">__dir__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="p">[</span><span class="n">p</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="vm">__dict__</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">p</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;_&quot;</span><span class="p">)]</span>
+        <span class="n">parent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parent</span><span class="p">()</span>
+        <span class="n">hcell</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_hcell</span><span class="p">()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">parent</span><span class="o">.</span><span class="n">_dummy</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">celltype</span> <span class="o">=</span> <span class="n">hcell</span><span class="p">[</span><span class="s2">&quot;celltype&quot;</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">celltype</span> <span class="o">==</span> <span class="s2">&quot;structured&quot;</span> <span class="ow">and</span> <span class="n">hcell</span><span class="p">[</span><span class="s2">&quot;silk&quot;</span><span class="p">]:</span>
+                    <span class="n">result</span> <span class="o">+=</span> <span class="nb">dir</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                <span class="k">pass</span>
+        <span class="k">return</span> <span class="n">result</span>
+    
+    <span class="k">def</span> <span class="nf">_set_observers</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="kn">from</span> <span class="nn">..core.cell</span> <span class="kn">import</span> <span class="n">Cell</span> <span class="k">as</span> <span class="n">CoreCell</span>
+        <span class="kn">from</span> <span class="nn">..core.structured_cell</span> <span class="kn">import</span> <span class="n">StructuredCell</span>
+        <span class="n">cell</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_cell</span><span class="p">()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">cell</span><span class="p">,</span> <span class="p">(</span><span class="n">CoreCell</span><span class="p">,</span> <span class="n">StructuredCell</span><span class="p">)):</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="n">cell</span><span class="p">)</span>        
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">celltype</span> <span class="o">==</span> <span class="s2">&quot;structured&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">cell</span><span class="o">.</span><span class="n">auth</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">cell</span><span class="o">.</span><span class="n">auth</span><span class="o">.</span><span class="n">_set_observer</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_observe_auth</span><span class="p">)</span>
+            <span class="n">cell</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">_set_observer</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_observe_cell</span><span class="p">)</span>
+            <span class="n">cell</span><span class="o">.</span><span class="n">buffer</span><span class="o">.</span><span class="n">_set_observer</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_observe_buffer</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">cell</span><span class="o">.</span><span class="n">schema</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">cell</span><span class="o">.</span><span class="n">schema</span><span class="o">.</span><span class="n">_set_observer</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_observe_schema</span><span class="p">)</span>            
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">cell</span><span class="o">.</span><span class="n">_set_observer</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_observe_cell</span><span class="p">)</span>        
+
+    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="s2">&quot;.&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_path</span><span class="p">)</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="s2">&quot;Seamless Cell: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">path</span></div>
+
+<span class="k">def</span> <span class="nf">cell_binary_method</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+    <span class="n">h</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">handle</span> 
+    <span class="n">method</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">method</span> <span class="ow">is</span> <span class="bp">NotImplemented</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">NotImplemented</span>
+    <span class="k">return</span> <span class="n">method</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
+ 
+
+<span class="k">def</span> <span class="nf">Constant</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="n">cell</span> <span class="o">=</span> <span class="n">Cell</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="n">cell</span><span class="o">.</span><span class="n">_get_hcell2</span><span class="p">()[</span><span class="s2">&quot;constant&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span> 
+
+<span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">partialmethod</span>
+<span class="kn">from</span> <span class="nn">..silk.SilkBase</span> <span class="kn">import</span> <span class="n">binary_special_method_names</span>
+<span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">binary_special_method_names</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">Cell</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">:</span>
+        <span class="k">continue</span>
+    <span class="n">m</span> <span class="o">=</span> <span class="n">partialmethod</span><span class="p">(</span><span class="n">cell_binary_method</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">)</span>
+    <span class="nb">setattr</span><span class="p">(</span><span class="n">Cell</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">m</span><span class="p">)</span>
+
+<span class="kn">from</span> <span class="nn">.SubCell</span> <span class="kn">import</span> <span class="n">SubCell</span>
+<span class="kn">from</span> <span class="nn">.SchemaWrapper</span> <span class="kn">import</span> <span class="n">SchemaWrapper</span>
+<span class="kn">from</span> <span class="nn">.proxy</span> <span class="kn">import</span> <span class="n">Proxy</span>
+<span class="kn">from</span> <span class="nn">..midlevel.util</span> <span class="kn">import</span> <span class="n">STRUC_ID</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">seamless 0.2 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="../highlevel.html" >seamless.highlevel</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2016-2020, Sjoerd de Vries.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 3.0.2.
+    </div>
+  </body>
+</html>
