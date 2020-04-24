@@ -70,7 +70,7 @@ def select_DOC(celltype, mimetype):
     return DOC, classname, params
 
 
-def get_doc_kwargs(params):
+def get_doc_kwargs(cell, params):
     doc_kwargs = {}
     if params is not None:
         for name, value in params.items():
@@ -92,7 +92,7 @@ class OutputWidget:
         else:
             self.output_instance = Output(layout=layout)
         DOC, DOC_name, params = select_DOC(cell.celltype, cell.mimetype)
-        doc_kwargs = get_doc_kwargs(params)        
+        doc_kwargs = get_doc_kwargs(cell, params)        
         self.DOC = DOC
         self.DOC_name = DOC_name
         self.doc_kwargs = doc_kwargs
@@ -114,7 +114,7 @@ class OutputWidget:
             DOC, DOC_name, params = select_DOC(tcelltype, tmimetype)
             if DOC_name != self.DOC_name:
                 outdated = True
-            elif get_doc_kwargs(params) != self.doc_kwargs:
+            elif get_doc_kwargs(cell, params) != self.doc_kwargs:
                 outdated = True
             else:
                 self.celltype = tcelltype

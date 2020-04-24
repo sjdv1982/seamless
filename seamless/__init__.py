@@ -1,7 +1,9 @@
+"""Seamless: framework for interoperable interactive computing
+
+Copyright 2016-2020, Sjoerd de Vries
 """
-Seamless: framework for data-driven and live programming
-Copyright 2016-2019, Sjoerd de Vries
-"""
+
+VERBOSE = False
 
 import sys
 import time
@@ -11,6 +13,7 @@ import traceback
 import asyncio
 
 nest_asyncio = None
+
 
 """
 # Jupyter notebook; DISABLED, as it does not work properly!

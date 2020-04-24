@@ -293,7 +293,8 @@ class TransformationCache:
                         fut.cancel()
                 job.future.cancel()
 
-    def run_job(self, transformation, tf_checksum):         
+    def run_job(self, transformation, tf_checksum): 
+        from seamless import VERBOSE        
         transformers = self.transformations_to_transformers[tf_checksum]
         if tf_checksum in self.transformation_exceptions:
             exc = self.transformation_exceptions[tf_checksum]
@@ -307,7 +308,19 @@ class TransformationCache:
         if not len(transformers):
             codename = "<Unknown>"
         else:
-            codename = str(transformers[-1])        
+            codename = str(transformers[-1])
+        if VERBOSE:
+            tfs = []
+            for transformer in transformers:
+                if isinstance(transformer, 
+                (RemoteTransformer, DummyTransformer)
+                ):
+                    continue
+                tfs.append(transformer._format_path())
+            if len(tfs):                
+                tftxt = ",".join(tfs)
+                print("Executing transformer: {}".format(tftxt))
+
         debug = tf_checksum in self.debug
         semantic_cache = {}
         for k,v in transformation.items():
