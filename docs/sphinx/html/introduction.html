@@ -15,7 +15,7 @@
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="Contexts" href="context.html" />
-    <link rel="prev" title="Welcome to seamless’s documentation!" href="index.html" /> 
+    <link rel="prev" title="Welcome to Seamless’s documentation!" href="index.html" /> 
   </head><body>
     <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
@@ -30,7 +30,7 @@
           <a href="context.html" title="Contexts"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="index.html" title="Welcome to seamless’s documentation!"
+          <a href="index.html" title="Welcome to Seamless’s documentation!"
              accesskey="P">previous</a> |</li>
         <li class="nav-item nav-item-0"><a href="index.html">Seamless 0.2 documentation</a> &#187;</li> 
       </ul>
@@ -47,34 +47,21 @@
 <p>The main application domains are scientific computing, scientific web services, data visualization, and interactive development of algorithms.</p>
 <p>Protocols, computations and results are all represented as directed acyclic graphs that consist of cell checksums. This makes them strongly interoperable and reproducible. Unlike other workflow systems, Seamless graphs are self-contained and do not depend on the content of external files, URLs, identifiers, version numbers, or other kinds of metadata.</p>
 <p><strong>Installation</strong>:</p>
-<p>Seamless is meant to run from inside a Docker container. It can be installed using the following methods:</p>
-<ul class="simple">
-<li><p>From DockerHub:</p></li>
-</ul>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span># Pull docker image
-docker pull rpbs/seamless
+<p>Seamless is meant to run from inside a Docker container.
+First, you must <a class="reference external" href="https://docs.docker.com/get-docker/">install Docker</a>
+and <a class="reference external" href="https://docs.conda.io/en/latest/miniconda.html">(mini)conda</a>.
+Then, installation is as follows:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># Pull docker image</span>
+<span class="n">docker</span> <span class="n">pull</span> <span class="n">rpbs</span><span class="o">/</span><span class="n">seamless</span>
 
-# Obtain Seamless command line tools (bash)
-c=$(docker create rpbs/seamless); docker cp $c:/home/jovyan/seamless-docker ~/seamless-docker; docker rm $c
+<span class="c1"># Install Seamless command line tools</span>
+<span class="n">conda</span> <span class="n">install</span> <span class="o">-</span><span class="n">c</span> <span class="n">rpbs</span> <span class="n">seamless</span><span class="o">-</span><span class="n">cli</span>
 </pre></div>
 </div>
-<p>Finally, add ~/seamless-docker to $PATH.</p>
-<p>This can be done with the following line in your .bashrc:</p>
-<p><code class="docutils literal notranslate"><span class="pre">export</span> <span class="pre">PATH=$PATH:~/seamless-docker</span></code></p>
-<ul class="simple">
-<li><p>From GitHub:</p></li>
-</ul>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># Build docker image</span>
-<span class="n">git</span> <span class="n">clone</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">github</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">sjdv1982</span><span class="o">/</span><span class="n">seamless</span><span class="o">.</span><span class="n">git</span>
-<span class="n">cd</span> <span class="n">seamless</span>
-<span class="n">docker</span> <span class="n">build</span> <span class="o">.</span> <span class="o">-</span><span class="n">t</span> <span class="n">rpbs</span><span class="o">/</span><span class="n">seamless</span>
-</pre></div>
-</div>
-<p>Then, add ~/seamless/docker/commands to $PATH.</p>
-<p>This can be done with the following line in your .bashrc:</p>
-<p><code class="docutils literal notranslate"><span class="pre">export</span> <span class="pre">PATH=$PATH:~/seamless/docker/commands</span></code></p>
 <p><strong>Getting started</strong>:</p>
-<p>Run the command <code class="docutils literal notranslate"><span class="pre">seamless-jupyter</span></code> to fire up a Jupyter server that runs from inside the Docker image.</p>
+<p>The command <code class="docutils literal notranslate"><span class="pre">seamless-ipython</span></code> launches an IPython terminal inside a
+Seamless Docker container.</p>
+<p><code class="docutils literal notranslate"><span class="pre">seamless-jupyter</span></code> does the same for Jupyter Notebook.</p>
 </div>
 <div class="section" id="basic-example">
 <h1>Basic example<a class="headerlink" href="#basic-example" title="Permalink to this headline">¶</a></h1>
@@ -90,13 +77,13 @@ c=$(docker create rpbs/seamless); docker cp $c:/home/jovyan/seamless-docker ~/se
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
     <span class="k">return</span> <span class="n">a</span> <span class="o">+</span> <span class="n">b</span>
 
-<span class="n">ctx</span><span class="o">.</span><span class="n">a</span> <span class="o">=</span> <span class="mi">10</span>          <span class="c1"># ctx.a =&gt; Seamless cell</span>
-<span class="n">ctx</span><span class="o">.</span><span class="n">b</span> <span class="o">=</span> <span class="mi">20</span>          <span class="c1"># ctx.b =&gt; Seamless cell</span>
-<span class="n">ctx</span><span class="o">.</span><span class="n">add</span> <span class="o">=</span> <span class="n">add</span>       <span class="c1"># ctx.add =&gt; Seamless transformer</span>
+<span class="n">ctx</span><span class="o">.</span><span class="n">a</span> <span class="o">=</span> <span class="mi">10</span>              <span class="c1"># ctx.a =&gt; Seamless cell</span>
+<span class="n">ctx</span><span class="o">.</span><span class="n">b</span> <span class="o">=</span> <span class="mi">20</span>              <span class="c1"># ctx.b =&gt; Seamless cell</span>
+<span class="n">ctx</span><span class="o">.</span><span class="n">add</span> <span class="o">=</span> <span class="n">add</span>           <span class="c1"># ctx.add =&gt; Seamless transformer</span>
 <span class="n">ctx</span><span class="o">.</span><span class="n">add</span><span class="o">.</span><span class="n">a</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">a</span>
 <span class="n">ctx</span><span class="o">.</span><span class="n">add</span><span class="o">.</span><span class="n">b</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">b</span>
-<span class="n">ctx</span><span class="o">.</span><span class="n">c</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">add</span>     <span class="c1"># ctx.c =&gt; Seamless cell</span>
-<span class="k">await</span> <span class="n">ctx</span><span class="o">.</span><span class="n">computation</span><span class="p">()</span>
+<span class="n">ctx</span><span class="o">.</span><span class="n">c</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">add</span>         <span class="c1"># ctx.c =&gt; Seamless cell</span>
+<span class="k">await</span> <span class="n">ctx</span><span class="o">.</span><span class="n">computation</span><span class="p">()</span> <span class="c1"># in a .py file, use &quot;ctx.compute()&quot; instead</span>
 <span class="n">ctx</span><span class="o">.</span><span class="n">c</span><span class="o">.</span><span class="n">value</span>
 </pre></div>
 </div>
@@ -435,7 +422,7 @@ c=$(docker create rpbs/seamless); docker cp $c:/home/jovyan/seamless-docker ~/se
 
   <h4>Previous topic</h4>
   <p class="topless"><a href="index.html"
-                        title="previous chapter">Welcome to seamless’s documentation!</a></p>
+                        title="previous chapter">Welcome to Seamless’s documentation!</a></p>
   <h4>Next topic</h4>
   <p class="topless"><a href="context.html"
                         title="next chapter">Contexts</a></p>
@@ -473,7 +460,7 @@ c=$(docker create rpbs/seamless); docker cp $c:/home/jovyan/seamless-docker ~/se
           <a href="context.html" title="Contexts"
              >next</a> |</li>
         <li class="right" >
-          <a href="index.html" title="Welcome to seamless’s documentation!"
+          <a href="index.html" title="Welcome to Seamless’s documentation!"
              >previous</a> |</li>
         <li class="nav-item nav-item-0"><a href="index.html">Seamless 0.2 documentation</a> &#187;</li> 
       </ul>
