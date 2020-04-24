@@ -11,8 +11,10 @@ Installation
 ============
 
 Seamless is meant to run from inside a Docker container. 
+
 First, you must [install Docker](https://docs.docker.com/get-docker/)
 and [(mini)conda](https://docs.conda.io/en/latest/miniconda.html).
+
 Then, installation is as follows:
 
 ```
