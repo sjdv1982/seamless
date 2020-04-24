@@ -120,7 +120,7 @@
       "type": "connection"
     }
   ],
-  "lib": {},
+  "lib": [],
   "nodes": [
     {
       "celltype": "structured",
@@ -164,7 +164,7 @@
         "input": "0131ee7636a4bb9a1d76884de7d7cdd85ae5c970ab9d1e6df9ba9f3804dbab7f",
         "input_auth": "7c893c187cb72edbe10beb70e3a7a05f9d786375c17b93ee97d5c87dd66b9b5b",
         "input_buffer": "0131ee7636a4bb9a1d76884de7d7cdd85ae5c970ab9d1e6df9ba9f3804dbab7f",
-        "main_module": "ba7772f3bb5ddf715d471d70a8a945f22c7bf8f1d576f9c5f12cd31683632f2b",
+        "main_module": "130b5a93161890098708f22d34e924a7c4e47a64e0f4509b710a481d8cb70db4",
         "result": "ef0b151105ecf660a8ecfa4947652f87b37b9b095d960afd2274f1145853acc6",
         "result_schema": "21d6591d6f42968b8b99640b269345e1ba16a6f607e041a5dd47f1c2fb8756bf",
         "schema": "b54c98e19ca14701dc7146b0e9fe9b288d9e86d6ac22b85e5db4613451f2042d"
@@ -204,8 +204,7 @@
           "celltype": "mixed"
         }
       },
-      "type": "transformer",
-      "with_result": true
+      "type": "transformer"
     },
     {
       "celltype": "plain",
@@ -253,8 +252,8 @@
     {
       "celltype": "structured",
       "checksum": {
-        "buffer": "9de30ccf69be4fee1ac279dafdee2704054e81afbab56984201c3dffc4c25429",
-        "value": "9de30ccf69be4fee1ac279dafdee2704054e81afbab56984201c3dffc4c25429"
+        "buffer": "2b075c105fec6ac0a88b41d1ff33f67e3cdc35b29aad17d59b649b3013f9d331",
+        "value": "2b075c105fec6ac0a88b41d1ff33f67e3cdc35b29aad17d59b649b3013f9d331"
       },
       "datatype": "mixed",
       "file_extension": "h",
@@ -286,8 +285,7 @@
           "celltype": "mixed"
         }
       },
-      "type": "transformer",
-      "with_result": true
+      "type": "transformer"
     },
     {
       "INPUT": "inp",
@@ -310,8 +308,7 @@
           "celltype": "mixed"
         }
       },
-      "type": "transformer",
-      "with_result": true
+      "type": "transformer"
     },
     {
       "celltype": "code",
@@ -361,5 +358,7 @@
       "type": "cell"
     }
   ],
-  "params": {}
+  "params": {
+    "share_namespace": "ctx"
+  }
 }
