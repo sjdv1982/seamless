@@ -6,7 +6,6 @@ set -u -e
 
 docker run --rm \
   --network=host \
-  -v ~/.seamless/mount:/host \
   -v `pwd`:/cwd \
   -v /tmp:/tmp \
   -v /var/run/docker.sock:/var/run/docker.sock \

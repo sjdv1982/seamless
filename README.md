@@ -9,44 +9,30 @@ Protocols, computations and results are all represented as directed acyclic grap
 
 **Installation**: 
 
-Seamless is meant to run from inside a Docker container. It can be installed using the following methods:
+Seamless is meant to run from inside a Docker container. 
+First, you must [install Docker](https://docs.docker.com/get-docker/)
+and [(mini)conda](https://docs.conda.io/en/latest/miniconda.html).
+Then, installation is as follows:
 
-- From DockerHub:
 ```
 # Pull docker image
 docker pull rpbs/seamless
 
-# Obtain Seamless command line tools (bash)
-c=$(docker create rpbs/seamless); docker cp $c:/home/jovyan/seamless-docker ~/seamless-docker; docker rm $c
+# Install Seamless command line tools
+conda install -c rpbs seamless-cli
 ```
-Finally, add ~/seamless-docker to \$PATH. 
-
-This can be done with the following line in your .bashrc:
-
-```export PATH=$PATH:~/seamless-docker```
-
-
-- From GitHub:
-```
-# Build docker image
-git clone https://github.com/sjdv1982/seamless.git
-cd seamless
-docker build . -t rpbs/seamless
-```
-Then, add ~/seamless/docker/commands to \$PATH. 
-
-This can be done with the following line in your .bashrc:
-
-```export PATH=$PATH:~/seamless/docker/commands```
 
 **Getting started**:
 
-Run the command ```seamless-jupyter``` to fire up a Jupyter server that runs from inside the Docker image.
+The command ```seamless-ipython``` launches an IPython terminal inside a
+Seamless Docker container.
+
+```seamless-jupyter``` does the same for Jupyter Notebook.
 
 Basic example
 =============
 
-#### 1. Import Seamless in IPython or Jupyter 
+#### 1. Import Seamless in IPython or Jupyter
 ```python
 from seamless.highlevel import Context
 ctx = Context()
@@ -58,13 +44,13 @@ ctx = Context()
 def add(a, b):
     return a + b
 
-ctx.a = 10          # ctx.a => Seamless cell
-ctx.b = 20          # ctx.b => Seamless cell
-ctx.add = add       # ctx.add => Seamless transformer
+ctx.a = 10              # ctx.a => Seamless cell
+ctx.b = 20              # ctx.b => Seamless cell
+ctx.add = add           # ctx.add => Seamless transformer
 ctx.add.a = ctx.a
 ctx.add.b = ctx.b
-ctx.c = ctx.add     # ctx.c => Seamless cell
-await ctx.computation()
+ctx.c = ctx.add         # ctx.c => Seamless cell
+await ctx.computation() # in a .py file, use "ctx.compute()" instead
 ctx.c.value
 ```
 

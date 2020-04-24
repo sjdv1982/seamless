@@ -12,7 +12,6 @@ set -u -e
 firstarg=$1 #there must be at least one argument
 docker run --rm \
   --network=host \
-  -v ~/.seamless/mount:/host \
   -v `pwd`:/cwd \
   -v /tmp:/tmp \
   -v /var/run/docker.sock:/var/run/docker.sock \

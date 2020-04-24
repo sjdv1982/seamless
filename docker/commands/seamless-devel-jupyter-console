@@ -13,7 +13,6 @@ docker run --rm -it \
   -v $seamlessdir:/seamless \
   -e "PYTHONPATH=/seamless" \
   --network=host \
-  -v ~/.seamless/mount:/host \
   -v `pwd`:/cwd \
   -v /tmp:/tmp \
   -v /var/run/docker.sock:/var/run/docker.sock \

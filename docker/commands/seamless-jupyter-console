@@ -6,7 +6,6 @@ set -u -e
 
 docker run --rm -it \
   --network=host \
-  -v ~/.seamless/mount:/host \
   -v `pwd`:/cwd \
   -v /tmp:/tmp \
   --workdir /cwd \

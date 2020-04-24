@@ -1,0 +1,10 @@
+{% set version = "0.0.1" %} 
+package:
+    name: seamless-cli
+    version: {{ version }}
+  
+build:
+  number: 1
+
+about:
+  summary: This is a collection of shell scripts wrapping the Seamless Docker image
