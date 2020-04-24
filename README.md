@@ -7,7 +7,8 @@ The main application domains are scientific computing, scientific web services, 
 
 Protocols, computations and results are all represented as directed acyclic graphs that consist of cell checksums. This makes them strongly interoperable and reproducible. Unlike other workflow systems, Seamless graphs are self-contained and do not depend on the content of external files, URLs, identifiers, version numbers, or other kinds of metadata. 
 
-**Installation**: 
+Installation
+============
 
 Seamless is meant to run from inside a Docker container. 
 First, you must [install Docker](https://docs.docker.com/get-docker/)
@@ -22,7 +23,7 @@ docker pull rpbs/seamless
 conda install -c rpbs seamless-cli
 ```
 
-**Getting started**:
+### Getting started
 
 The command ```seamless-ipython``` launches an IPython terminal inside a
 Seamless Docker container.

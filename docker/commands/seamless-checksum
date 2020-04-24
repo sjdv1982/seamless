@@ -1,0 +1,6 @@
+#!/bin/bash 
+# Computes the checksum of a file according to Seamless (SHA3-256)
+
+set -u -e -o pipefail
+
+openssl dgst -sha3-256 $1 | awk '{print $2}'
