@@ -1,9 +1,3 @@
-MTiAutoDock
-===========
-Adapt existing Mobyle HTML
-Existing service uses dynamic workflow!
-
-
 Set up a network infrastructure at console
 ==========================================
 UPDATE Feb 2020: initial protocol for cloudless is ready!
@@ -49,7 +43,6 @@ DaReUS-Loop/PepCyclizer example
 
 More examples
 ============
-- Port the peptide trajectory editor, use Observable instead of Jupyter.
 - Build upon struclib
 - Build upon grid editor
 
@@ -57,18 +50,16 @@ More examples
 Documentation
 =============
 - Update interoperability document
-- Prepare simple demo notebooks
-- Prepare some docs (at least stubs)
-- Update Github
+- Document more highlevel classes
+- Expand man pages
 
 Missing features
 ================
 issue E2 (TODO: port these to GitHub issues)
+Link pins (see plan) may be a high priority.
+Deep cells / true map-reduce would be nice also!
 
 Known issues
 ============
 (See issues/ folder. TODO: port these to GitHub issues)
 
-Next release
-============
-Link pins (see plan) may be a high priority.

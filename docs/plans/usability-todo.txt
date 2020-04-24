@@ -1,4 +1,4 @@
-Bucket list of things that make Seamless aasier to work with
+Bucket list of things that make Seamless easier to work with
 as a Mobyle replacement.
 Details are/will be documented elsewhere in various plans.
 

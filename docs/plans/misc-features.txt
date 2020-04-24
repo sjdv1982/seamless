@@ -1,3 +1,7 @@
+- Feature to dump/load transformation result caches (already used in man page build.py)
+
+- Unify docker transformer and bash transformer?
+
 - Meta-schema for schema editing (jsonschema has it)
 
 - An extra "table" celltype, for text (like awk or org-mode) or binary (like Pandas)

@@ -1,6 +1,11 @@
 Status/exception/logging
 ========================
 
+UPDATE: 
+For transformation, stdout/stderr are not printed at all (esp bash transformers)
+Now, a VERBOSE flag shows at least when a transformer is executed.
+To be decided!
+
 UPDATE:
 
 Transformers will have status, exception, stdout and stderr. 
