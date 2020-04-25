@@ -114,7 +114,7 @@ class OutputWidget:
             DOC, DOC_name, params = select_DOC(tcelltype, tmimetype)
             if DOC_name != self.DOC_name:
                 outdated = True
-            elif get_doc_kwargs(cell, params) != self.doc_kwargs:
+            elif params is not None:
                 outdated = True
             else:
                 self.celltype = tcelltype
