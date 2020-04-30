@@ -47,5 +47,7 @@ Results
 A file "calls/all.vcf" is generated (and no others). You can then run SnakeMake ("snakemake report") to generate the report.
 
 TODO: let snakemake2seamless report which files must be bound 
+
 TODO: make a generic file binding tool. To make it work seamlessly, create a field {"meta": {"filebind": ("filesystem",)}} that shows to which cell a file must be bound. After that, a generic graph coloring script can do the job => no more run-snakegraph is needed.
+
 TODO: test that shows that the singularity field becomes a Docker transformer.
