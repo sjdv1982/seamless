@@ -395,7 +395,7 @@
       "type": "connection"
     }
   ],
-  "lib": {},
+  "lib": [],
   "nodes": [
     {
       "path": [
@@ -534,23 +534,32 @@
       ],
       "pins": {
         "inputfile_Abai": {
-          "celltype": "mixed"
+          "access_mode": "default",
+          "content_type": null,
+          "transfer_mode": "ref"
         },
         "inputfile_Abam": {
-          "celltype": "mixed"
+          "access_mode": "default",
+          "content_type": null,
+          "transfer_mode": "ref"
         },
         "inputfile_Bbai": {
-          "celltype": "mixed"
+          "access_mode": "default",
+          "content_type": null,
+          "transfer_mode": "ref"
         },
         "inputfile_Bbam": {
-          "celltype": "mixed"
+          "access_mode": "default",
+          "content_type": null,
+          "transfer_mode": "ref"
         },
         "inputfile_genome": {
-          "celltype": "mixed"
+          "access_mode": "default",
+          "content_type": null,
+          "transfer_mode": "ref"
         }
       },
-      "type": "transformer",
-      "with_result": true
+      "type": "transformer"
     },
     {
       "INPUT": "inp",
@@ -567,14 +576,17 @@
       ],
       "pins": {
         "inputfile_genome": {
-          "celltype": "mixed"
+          "access_mode": "default",
+          "content_type": null,
+          "transfer_mode": "ref"
         },
         "inputfile_samples": {
-          "celltype": "mixed"
+          "access_mode": "default",
+          "content_type": null,
+          "transfer_mode": "ref"
         }
       },
-      "type": "transformer",
-      "with_result": true
+      "type": "transformer"
     },
     {
       "INPUT": "inp",
@@ -591,14 +603,17 @@
       ],
       "pins": {
         "inputfile_genome": {
-          "celltype": "mixed"
+          "access_mode": "default",
+          "content_type": null,
+          "transfer_mode": "ref"
         },
         "inputfile_samples": {
-          "celltype": "mixed"
+          "access_mode": "default",
+          "content_type": null,
+          "transfer_mode": "ref"
         }
       },
-      "type": "transformer",
-      "with_result": true
+      "type": "transformer"
     },
     {
       "INPUT": "inp",
@@ -615,11 +630,12 @@
       ],
       "pins": {
         "inputfile": {
-          "celltype": "mixed"
+          "access_mode": "default",
+          "content_type": null,
+          "transfer_mode": "ref"
         }
       },
-      "type": "transformer",
-      "with_result": true
+      "type": "transformer"
     },
     {
       "INPUT": "inp",
@@ -636,11 +652,12 @@
       ],
       "pins": {
         "inputfile": {
-          "celltype": "mixed"
+          "access_mode": "default",
+          "content_type": null,
+          "transfer_mode": "ref"
         }
       },
-      "type": "transformer",
-      "with_result": true
+      "type": "transformer"
     },
     {
       "INPUT": "inp",
@@ -657,11 +674,12 @@
       ],
       "pins": {
         "inputfile": {
-          "celltype": "mixed"
+          "access_mode": "default",
+          "content_type": null,
+          "transfer_mode": "ref"
         }
       },
-      "type": "transformer",
-      "with_result": true
+      "type": "transformer"
     },
     {
       "INPUT": "inp",
@@ -678,11 +696,12 @@
       ],
       "pins": {
         "inputfile": {
-          "celltype": "mixed"
+          "access_mode": "default",
+          "content_type": null,
+          "transfer_mode": "ref"
         }
       },
-      "type": "transformer",
-      "with_result": true
+      "type": "transformer"
     },
     {
       "path": [

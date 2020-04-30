@@ -398,7 +398,6 @@ for job in dag.jobs:
     
     for k,v in inputs.items():
         kk = getattr(indummies,k)
-        assert kk in params
         inp = getattr(fs, v)
         if not isinstance(inp, Cell):
             inp = Cell()

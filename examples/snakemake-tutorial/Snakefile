@@ -40,7 +40,8 @@ rule samtools_index:
 
 
 SAMPLES = ['A', 'B']
-'''
+
+'''   # Not yet supported:
 rule bcftools_call:
     input:
         genome="data/genome.tgz",
