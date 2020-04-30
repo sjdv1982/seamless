@@ -496,7 +496,7 @@ class Cell(Base):
 
     @property
     def handle(self):
-        assert celltype == "structured"
+        assert self.celltype == "structured"
         cell = self._get_cell()
         return cell.handle_no_inference
 

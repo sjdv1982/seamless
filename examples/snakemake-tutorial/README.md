@@ -32,7 +32,8 @@ conda install -c bioconda samtools=1.9 bcftools=1.9 bwa=0.7
 
 python3 run-snakegraph.py
 # or:
-ipython3 -i run-snakegraph-interactive.py  # open http://localhost:5813/status/index.html
+ipython3 -i run-snakegraph-interactive.py  # follow the instructions
+
 ```
 
 
