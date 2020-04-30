@@ -21,7 +21,11 @@ You can generate a Seamless graph by binding the Snakefile to the rule `bcftools
 The script `run-snakegraph.py` binds the contents of `/data` to the graph, and runs the computation. 
 NOTE: this script must be run inside a Docker container with samtools, bcftools and bwa installed! This can be done with the command `conda install -c bioconda samtools=1.9 bcftools=1.9 bwa=0.7`
 
-The Seamless graph can be run interactively using `ipython3 -i run-snakegraph-interactive.py`. This will create a live web page at http://localhost:5813/status/index.html that constantly shows the progress. An animated GIF `run-snakegraph-interactive.gif` shows how this will look like.
+The Seamless graph can be run interactively using `ipython3 -i run-snakegraph-interactive.py`. This will create a live web page at http://localhost:5813/status/status-visualization.html that constantly shows the progress. 
+
+This will look like this:
+
+![Status visualization animated GIF](run-snakegraph-interactive.gif "Status visualization of the SnakeMake tutorial workflow converted to Seamless")
 
 In summary, the following commands will execute the workflow:
 
