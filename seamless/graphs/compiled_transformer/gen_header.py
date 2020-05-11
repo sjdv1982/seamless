@@ -242,7 +242,10 @@ if return_jtype == "object":
     header += struct_header
     input_args.append(output_ctype + " *" + result_name)
 elif return_jtype == "array":
-    raise NotImplementedError #array return type
+    return_ctype = "void"
+    output_ctype, struct_header = gen_array(result_name, result_schema, verify_shape=False, const=False)
+    header += struct_header
+    input_args.append(output_ctype + " *" + result_name)
 else:
     return_ctype = gen_basic_type(result_name, result_schema, verify_integer_bytesize=False)
 

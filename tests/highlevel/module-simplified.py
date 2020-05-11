@@ -26,7 +26,6 @@ ctx.tf = Transformer(code=tf_code)
 ctx.tf.a = 10
 ctx.tf.b = 20
 ctx.tf.testmodule = ctx.testmodule
-ctx.tf.RESULT = "c"
 ctx.tf.pins.testmodule.celltype = "plain"
 ctx.tf.pins.testmodule.subcelltype = "module"
 ctx.c = ctx.tf

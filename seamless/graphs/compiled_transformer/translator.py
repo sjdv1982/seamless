@@ -2,11 +2,7 @@ from seamless.silk import Silk
 import numpy as np
 import operator, functools
 import sys
-wurlitzer = None
-try:
-    import wurlitzer
-except ImportError:
-    print('Compiler transformer: Python package "wurlitzer" could not be found; "printf" etc. will show only in a terminal')
+import wurlitzer
 
 ffi = module.ffi
 
@@ -83,11 +79,33 @@ def build_result_struct(schema):
         elif proptype == "array":
             full_propname = (result_name, propname)
             form = propschema.get("form", {})
-            result_array_struct = build_result_array_struct(full_propname, propschema)            
+            result_array_struct = build_result_array_struct(full_propname, propschema)
             FFI_OBJS.append(result_array_struct)
             setattr(result_struct, propname, result_array_struct)
         else:
             pass
+    return result_struct
+
+def build_result_array(schema):
+    global result_struct
+    result_struct_name = gen_struct_name(result_name)
+    shape = schema["form"]["shape"]
+    for dim in shape:
+        if dim <= 0:
+            raise ValueError("Result shape {} contains non-positive numbers".format(shape))
+    try:
+        type = schema["items"]["type"]
+    except KeyError:
+        type = schema["items"]["form"]["type"]
+    unsigned = schema["items"]["form"].get("unsigned", False)
+    bytesize = schema["items"]["form"].get("bytesize")
+    dtype = get_dtype(type, unsigned, bytesize)
+    result_struct = ffi.new(result_struct_name + " *")
+    result_struct.shape[0:len(shape)] = shape[:]
+    arr = np.zeros(shape=shape,dtype=dtype)
+    ARRAYS.append(arr)
+    arr_ptr = ffi.from_buffer(arr)
+    result_struct.data = ffi.cast(ffi.typeof(result_struct.data), arr_ptr)
     return result_struct
 
 def unpack_result_array_struct(array_struct, schema):
@@ -169,20 +187,21 @@ if result_schema["type"] == "object":
     args.append(result_arg)
 elif result_schema["type"] == "array":
     simple_result = False
-    raise NotImplementedError
+    result_arg = build_result_array(result_schema)
+    args.append(result_arg)
 
 def run():
     if simple_result:
         return module.lib.transform(*args)
     else:
         module.lib.transform(*args)
-        return unpack_result_struct(args[-1], result_schema)
+        if result_schema["type"] == "object":
+            return unpack_result_struct(args[-1], result_schema)
+        else: # array
+            return unpack_result_array_struct(args[-1], result_schema)
 
-if wurlitzer is not None:
-    with wurlitzer.pipes() as (stdout, stderr):
-        translator_result_ = run()
-    sys.stderr.write(stderr.read())
-    sys.stdout.write(stdout.read())
-else:
-    translator_result_ = run()
+with wurlitzer.pipes() as (stdout, stderr):
+    result = run()
+sys.stderr.write(stderr.read())
+sys.stdout.write(stdout.read())
 ARRAYS.clear()
