@@ -1,3 +1,4 @@
+seamless.code-workspace
 *.pyc
 build/
 dist/
