@@ -61,7 +61,7 @@ def _finalize(
 
     ctx.inputpins.connect(ctf.gen_header.inputpins)
     ctx.pins.connect(ctf.translator.pins)
-    ctf.translator.translator_result_.connect(result_cell1)
+    ctf.translator.result.connect(result_cell1)
     result_cell1.connect(result.inchannels[()])
     inp.outchannels[()].connect(input_cell)
     input_cell.connect(ctf.translator.kwargs)
