@@ -168,7 +168,7 @@ Connect to the remote host machine.
 7. In Visual Studio Code, in the File menu, click "Add Folder to Workspace".
 After adding the new directory, save the workspace as PROJDIR/PROJNAME, where PROJNAME is the name of the project.
 
-# B. Project initialization
+## B. Project initialization
 
 **For a collaborative project, only the host needs to do this (on the host machine). If you are a guest, go to section C.**
 
