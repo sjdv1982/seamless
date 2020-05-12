@@ -175,80 +175,80 @@ After adding the new directory, save the workspace as PROJDIR/PROJNAME, where PR
 1. On the host machine, make sure you have the latest version of Seamless installed, using `docker pull rpbs/seamless` and `conda install -c rpbs seamless-cli`.
 
 2. Copy the standard monitoring graph.
-```bash
-seamless-bash
-d=/home/jovyan/software/seamless/graphs
-cp $d/status-visualization.seamless PROJNAME-monitoring.seamless
-cp $d/status-visualization.zip PROJNAME-monitoring.zip
-exit
-```
+    ```bash
+    seamless-bash
+    d=/home/jovyan/software/seamless/graphs
+    cp $d/status-visualization.seamless PROJNAME-monitoring.seamless
+    cp $d/status-visualization.zip PROJNAME-monitoring.zip
+    exit
+    ```
 
 3. Initialize and save an empty context
-```python
-seamless-ipython
-from seamless.highlevel import Context
-ctx = Context()
-ctx.save_graph("PROJNAME.seamless")
-ctx.save_zip("PROJNAME.zip")
-exit()
-```
+    ```python
+    seamless-ipython
+    from seamless.highlevel import Context
+    ctx = Context()
+    ctx.save_graph("PROJNAME.seamless")
+    ctx.save_zip("PROJNAME.zip")
+    exit()
+    ```
 
 4. Set up some code to load and save the entire graph from/to disk (including monitoring), at any time. The code below will make a new backup whenever you save. Copy-paste it into `init-project.py` .
 
-```python
-PROJNAME = ...
+    ```python
+    PROJNAME = ...
 
-from seamless.highlevel import Context, Cell, Transformer
+    from seamless.highlevel import Context, Cell, Transformer
 
-ctx = None
-ctx2 = None
-save = None
+    ctx = None
+    ctx2 = None
+    save = None
 
-async def load():
-    from seamless.metalevel.bind_status_graph import bind_status_graph_async
-    import json
+    async def load():
+        from seamless.metalevel.bind_status_graph import bind_status_graph_async
+        import json
 
-    global ctx, ctx2, save
-    graph = json.load(open(PROJNAME + ".seamless"))
-    ctx = Context()
-    ctx.add_zip(PROJNAME + ".zip")
-    ctx.set_graph(graph, mounts=True, shares=True)
-    await ctx.translation(force=True)
+        global ctx, ctx2, save
+        graph = json.load(open(PROJNAME + ".seamless"))
+        ctx = Context()
+        ctx.add_zip(PROJNAME + ".zip")
+        ctx.set_graph(graph, mounts=True, shares=True)
+        await ctx.translation(force=True)
 
-    status_graph = json.load(open(PROJNAME + "-monitoring.seamless"))
+        status_graph = json.load(open(PROJNAME + "-monitoring.seamless"))
 
-    ctx2 = await bind_status_graph_async(
-        ctx, status_graph, 
-        mounts=True,
-        shares=True,
-        zips=[PROJNAME + "-monitoring.zip"],
-    )
-    def save():
-        import os, itertools, shutil
-        
-        def backup(filename):
-            if not os.path.exists(filename):
+        ctx2 = await bind_status_graph_async(
+            ctx, status_graph, 
+            mounts=True,
+            shares=True,
+            zips=[PROJNAME + "-monitoring.zip"],
+        )
+        def save():
+            import os, itertools, shutil
+            
+            def backup(filename):
+                if not os.path.exists(filename):
+                    return filename
+                for n in itertools.count():
+                    n2 = n if n else ""
+                    new_filename = "{}.bak{}".format(filename, n2)
+                    if not os.path.exists(new_filename):
+                        break
+                shutil.move(filename, new_filename)
                 return filename
-            for n in itertools.count():
-                n2 = n if n else ""
-                new_filename = "{}.bak{}".format(filename, n2)
-                if not os.path.exists(new_filename):
-                    break
-            shutil.move(filename, new_filename)
-            return filename
 
-        ctx.save_graph(backup(PROJNAME + ".seamless"))
-        ctx2.save_graph(backup(PROJNAME + "-monitoring.seamless"))
-        ctx.save_zip(backup(PROJNAME + ".zip"))
-        ctx2.save_zip(backup(PROJNAME + "-monitoring.zip"))
+            ctx.save_graph(backup(PROJNAME + ".seamless"))
+            ctx2.save_graph(backup(PROJNAME + "-monitoring.seamless"))
+            ctx.save_zip(backup(PROJNAME + ".zip"))
+            ctx2.save_zip(backup(PROJNAME + "-monitoring.zip"))
 
-    print("""Project loaded.
+        print("""Project loaded.
 
-    Main context is "ctx"
-    Status context is "ctx2"
-    Run save() to save the context
-    """)
-```
+        Main context is "ctx"
+        Status context is "ctx2"
+        Run save() to save the context
+        """)
+    ```
 
 ## C. Project implementation
 

@@ -181,10 +181,9 @@ After adding the new directory, save the workspace as PROJDIR/PROJNAME, where PR
 <div class="section" id="b-project-initialization">
 <h1>B. Project initialization<a class="headerlink" href="#b-project-initialization" title="Permalink to this headline">¶</a></h1>
 <p><strong>For a collaborative project, only the host needs to do this (on the host machine). If you are a guest, go to section C.</strong></p>
-<ol class="simple">
+<ol>
 <li><p>On the host machine, make sure you have the latest version of Seamless installed, using <code class="docutils literal notranslate"><span class="pre">docker</span> <span class="pre">pull</span> <span class="pre">rpbs/seamless</span></code> and <code class="docutils literal notranslate"><span class="pre">conda</span> <span class="pre">install</span> <span class="pre">-c</span> <span class="pre">rpbs</span> <span class="pre">seamless-cli</span></code>.</p></li>
-<li><p>Copy the standard monitoring graph.</p></li>
-</ol>
+<li><p>Copy the standard monitoring graph.</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>seamless-bash
 <span class="nv">d</span><span class="o">=</span>/home/jovyan/software/seamless/graphs
 cp <span class="nv">$d</span>/status-visualization.seamless PROJNAME-monitoring.seamless
@@ -192,9 +191,8 @@ cp <span class="nv">$d</span>/status-visualization.zip PROJNAME-monitoring.zip
 <span class="nb">exit</span>
 </pre></div>
 </div>
-<ol class="simple">
-<li><p>Initialize and save an empty context</p></li>
-</ol>
+</li>
+<li><p>Initialize and save an empty context</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">seamless</span><span class="o">-</span><span class="n">ipython</span>
 <span class="kn">from</span> <span class="nn">seamless.highlevel</span> <span class="kn">import</span> <span class="n">Context</span>
 <span class="n">ctx</span> <span class="o">=</span> <span class="n">Context</span><span class="p">()</span>
@@ -203,9 +201,8 @@ cp <span class="nv">$d</span>/status-visualization.zip PROJNAME-monitoring.zip
 <span class="n">exit</span><span class="p">()</span>
 </pre></div>
 </div>
-<ol class="simple">
-<li><p>Set up some code to load and save the entire graph from/to disk (including monitoring), at any time. The code below will make a new backup whenever you save. Copy-paste it into <code class="docutils literal notranslate"><span class="pre">init-project.py</span></code> .</p></li>
-</ol>
+</li>
+<li><p>Set up some code to load and save the entire graph from/to disk (including monitoring), at any time. The code below will make a new backup whenever you save. Copy-paste it into <code class="docutils literal notranslate"><span class="pre">init-project.py</span></code> .</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">PROJNAME</span> <span class="o">=</span> <span class="o">...</span>
 
 <span class="kn">from</span> <span class="nn">seamless.highlevel</span> <span class="kn">import</span> <span class="n">Context</span><span class="p">,</span> <span class="n">Cell</span><span class="p">,</span> <span class="n">Transformer</span>
@@ -235,7 +232,7 @@ cp <span class="nv">$d</span>/status-visualization.zip PROJNAME-monitoring.zip
     <span class="p">)</span>
     <span class="k">def</span> <span class="nf">save</span><span class="p">():</span>
         <span class="kn">import</span> <span class="nn">os</span><span class="o">,</span> <span class="nn">itertools</span><span class="o">,</span> <span class="nn">shutil</span>
-        
+
         <span class="k">def</span> <span class="nf">backup</span><span class="p">(</span><span class="n">filename</span><span class="p">):</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">filename</span><span class="p">):</span>
                 <span class="k">return</span> <span class="n">filename</span>
@@ -260,6 +257,8 @@ cp <span class="nv">$d</span>/status-visualization.zip PROJNAME-monitoring.zip
 <span class="s2">    &quot;&quot;&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
+</li>
+</ol>
 <div class="section" id="c-project-implementation">
 <h2>C. Project implementation<a class="headerlink" href="#c-project-implementation" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="c1-for-collaborative-project-hosts">
