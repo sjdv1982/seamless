@@ -1,0 +1,422 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Guide for creating a new Seamless project &#8212; Seamless 0.2 documentation</title>
+    <link rel="stylesheet" href="_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/language_data.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Reference" href="reference.html" />
+    <link rel="prev" title="Cells" href="cell.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="reference.html" title="Reference"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="cell.html" title="Cells"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">Seamless 0.2 documentation</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="guide-for-creating-a-new-seamless-project">
+<h1>Guide for creating a new Seamless project<a class="headerlink" href="#guide-for-creating-a-new-seamless-project" title="Permalink to this headline">¶</a></h1>
+<p><strong>This is a beginner’s guide. Important aspects are explained. Guidelines and a recipe are provided. Once you know what you are doing, adapt it to your needs.</strong></p>
+<p>Only basic Seamless features (contexts, cells and transformers) are used. See the <a class="reference external" href="http://sjdv1982.github.io/seamless/sphinx/html/introduction.html#basic-example">basic example</a> for a demonstration.</p>
+<p>Contexts contain contexts, cells and transformers. The whole Seamless graph is a top-level context.</p>
+<p>Cells contain data and code.</p>
+<p>Transformers perform a data transformation (computation), with cells as input, and one cell as the output. A transformation can be in bash, docker, Python, or a compiled language.</p>
+<div class="section" id="project-aspects">
+<h2>Project aspects<a class="headerlink" href="#project-aspects" title="Permalink to this headline">¶</a></h2>
+<p>A Seamless project must address the following aspects:</p>
+<ul class="simple">
+<li><p><em>Dependency graph</em>. Which data depends on which transformation? Which transformation depends on which data?</p></li>
+<li><p><em>Topology</em>. The dependency graph annotated with names, formats, programming languages, and other details that are necessary to make its execution well-defined.</p></li>
+<li><p><em>Code and parameters</em>. Together, these are the inputs that are not user-defined, i.e. their content must be specified.</p></li>
+<li><p><em>Validation</em>. Detection of invalid input and output data.</p></li>
+<li><p><em>Monitoring</em>. Execution status, progress, error messages.</p></li>
+<li><p><em>User experience (UX)</em>. Web forms/widgets for the input. Visualization of the output.</p></li>
+<li><p><em>Deployment</em>. Where will each transformation run? What are the resource limits? Where is the data stored, and for how long?</p></li>
+<li><p><em>Configuration</em>. Make sure that validation, monitoring, user experience, and deployment can be customized by changing some settings.</p></li>
+</ul>
+<p>Seamless is very flexible, in that you can completely change every aspect at any time, while everything keeps running. Still, it recommended to roughly divide the creation of a project into the following phases: design, implementation, visualization, validation, publishing.</p>
+</div>
+<div class="section" id="project-phases">
+<h2>Project phases<a class="headerlink" href="#project-phases" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="design-phase">
+<h2>Design phase<a class="headerlink" href="#design-phase" title="Permalink to this headline">¶</a></h2>
+<p>First, a dependency graph is designed. This part must be done outside of Seamless, as Seamless does not (yet) support visual programming.</p>
+<div class="section" id="abstract-dependency-graph">
+<h3>Abstract dependency graph<a class="headerlink" href="#abstract-dependency-graph" title="Permalink to this headline">¶</a></h3>
+<p>You should start with thinking of dependencies in an abstract way. Think of your program as a set of processes with well-defined inputs and outputs. Draw some flowcharts.</p>
+<p>Seamless is very strict about dependencies. Normal shell commands may implicitly assume that a certain package is installed, or that certain files are present. In contrast, Seamless transformations are executed in isolation: if there is any implicit dependency, they will loudly fail. This is considered a good thing.</p>
+</div>
+<div class="section" id="concrete-dependency-graph">
+<h3>Concrete dependency graph<a class="headerlink" href="#concrete-dependency-graph" title="Permalink to this headline">¶</a></h3>
+<p>Once you have an abstract dependency graph, try to make it more concrete. Formulate every process as a transformation with one code input, several data/parameter inputs, and one data output. Decide the programming language for each transformation. Choose names for each input.</p>
+</div>
+<div class="section" id="command-line-workflows">
+<h3>Command line workflows<a class="headerlink" href="#command-line-workflows" title="Permalink to this headline">¶</a></h3>
+<p>Dependency graphs are most straightforward if you are porting a workflow of command line tools, where all inputs and outputs are files. There several tools that specialize in such workflows, such as SnakeMake and NextFlow. You could define your concrete dependency graph using one of these tools, and then convert it to Seamless to add monitoring and visualization. For SnakeMake, there is an automatic converter (see <a class="reference external" href="https://github.com/sjdv1982/seamless/tree/stable/examples/snakemake-tutorial">example</a>).</p>
+<p>A transformation may wrap a single bash command that invokes a single command line tool, or a small block of commands. In Seamless, such a transformation will be either a bash transformer (<a class="reference external" href="https://github.com/sjdv1982/seamless/blob/stable/tests/highlevel/bash.py">example</a>) or a Docker transformer (<a class="reference external" href="https://github.com/sjdv1982/seamless/blob/stable/tests/highlevel/docker_.py">example</a>). In both cases, the transformer will have a code cell written in bash, and the result must be printed to <code class="docutils literal notranslate"><span class="pre">/dev/stdout</span></code>. For multiple outputs, create a .tgz and print that to <code class="docutils literal notranslate"><span class="pre">/dev/stdout</span></code>. Within a bash/Docker transformer, every input X is available as file X. Small inputs are also accessible as a variable $X. After execution, all files are deleted.</p>
+<p>There are two strategies to define a transformation.</p>
+<ol class="simple">
+<li><p>The best way is use a bash transformer and include the source code of every command line tool. This will make the transformation reproducible. The command line tool must not have any hard-coded “magic files” where it depends on. Also, if it is written in a compiled language, things become quite difficult. Seamless has compiled transformers, but they assume that data is exchanged as function arguments, and not via the file system.</p></li>
+<li><p>The alternative is to treat a command line tool as part of the environment. In that case, use a Docker transformer, where the command line tool must be installed in the Docker container. This is appropriate if the command line tool is immutable over the course of the project. You may also be forced to go this route if the assumptions above are violated. Any magic files must be installed in the Docker container.</p></li>
+</ol>
+</div>
+</div>
+<div class="section" id="implementation-phase">
+<h2>Implementation phase<a class="headerlink" href="#implementation-phase" title="Permalink to this headline">¶</a></h2>
+<p>Here, the design is implemented in Seamless.</p>
+<ul class="simple">
+<li><p>The <em>topology</em> corresponds to the concrete dependency graph of the previous section. It is defined by modifying the Seamless graph. This is done from IPython and/or Jupyter, as shown in the <a class="reference external" href="http://sjdv1982.github.io/seamless/sphinx/html/introduction.html#basic-example">basic example</a>.</p></li>
+<li><p><em>Code and parameters</em> are defined as cell checksums in the Seamless graph. However, during development it is common to link them to files, and let the files have priority over the graph in case of a conflict. The files should be under version control (Git).</p></li>
+<li><p><em>Monitoring</em> is not part of the graph. In IPython/Jupyter, you can interactively access <code class="docutils literal notranslate"><span class="pre">Context.status</span></code> ,  <code class="docutils literal notranslate"><span class="pre">Cell.status</span></code> and <code class="docutils literal notranslate"><span class="pre">Transformer.status</span></code> , as well as <code class="docutils literal notranslate"><span class="pre">Cell.exception</span></code> and <code class="docutils literal notranslate"><span class="pre">Transformer.exception</span></code>. You can monitor this in the browser by setting up a poller that assigns the statuses to the cells of a second Seamless context (see the Recipe below).</p></li>
+</ul>
+<div class="section" id="debugging">
+<h3>Debugging<a class="headerlink" href="#debugging" title="Permalink to this headline">¶</a></h3>
+<p>To debug your code, you can use either print statements, or a debugging session with breakpoints.</p>
+<div class="section" id="debugging-with-print-statements">
+<h4>Debugging with print statements<a class="headerlink" href="#debugging-with-print-statements" title="Permalink to this headline">¶</a></h4>
+<p>Seamless transformations can be executed anywhere. Therefore, they do not print their stdout or stderr to any terminal. Also, stdout/stderr are only captured when the transformation has finished.</p>
+<p>For Python transformers, the transformation is aborted if an exception is raised. <code class="docutils literal notranslate"><span class="pre">Transformation.exception</span></code> will then contain the exception traceback, stdout and stderr. Else, stdout and stderr will be discarded. If you want to debug with print statements, you should raise an exception at the end.</p>
+<p>For bash/Docker transformers, stdout contains the result. If any launched process returns with a non-zero error code, the transformation is aborted. <code class="docutils literal notranslate"><span class="pre">Transformation.exception</span></code> will then contain the bash error message, stdout and stderr. Else, stderr will be discarded. If you want to debug with print statements, you should exit with a non-zero exit code (<code class="docutils literal notranslate"><span class="pre">exit</span> <span class="pre">1</span></code>).</p>
+</div>
+<div class="section" id="debugging-sessions">
+<h4>Debugging sessions<a class="headerlink" href="#debugging-sessions" title="Permalink to this headline">¶</a></h4>
+<p>IDEs do not yet support Seamless transformers.</p>
+<p><em><strong>NOTE: As of Seamless 0.2, the section below does not work properly</strong></em></p>
+<p>To debug a Python transformer, you can use a slightly modified version of the pdb debugger. Add the following to your transformation code:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">seamless.pdb</span> <span class="kn">import</span> <span class="n">set_trace</span>
+<span class="n">set_trace</span><span class="p">()</span>
+</pre></div>
+</div>
+<p><em><strong>/NOTE</strong></em></p>
+</div>
+</div>
+</div>
+<div class="section" id="visualization-phase">
+<h2>Visualization phase<a class="headerlink" href="#visualization-phase" title="Permalink to this headline">¶</a></h2>
+<p><em>User experience</em> (UX) can be done initially using Jupyter (very quick to set up). See <a class="reference external" href="https://github.com/sjdv1982/seamless/blob/stable/tests/highlevel/traitlets.ipynb">this simple example</a>, to be opened with <code class="docutils literal notranslate"><span class="pre">seamless-jupyter</span></code>.</p>
+<p>More powerful is to use UX cells (HTML, JS, CSS). These cells are shared over HTTP (read-only), so that they can be accessed via the browser. Input cells (read-write) and output cells (read-only) are also shared over HTTP, so that the UX cells (loaded in the browser) can access and manipulate them. See <a class="reference external" href="https://github.com/sjdv1982/seamless/blob/stable/tests/highlevel/share-pdb.py">this example</a>, to be opened with <code class="docutils literal notranslate"><span class="pre">seamless-ipython</span></code>.</p>
+</div>
+<div class="section" id="validation-phase">
+<h2>Validation phase<a class="headerlink" href="#validation-phase" title="Permalink to this headline">¶</a></h2>
+<p>As a rule, <em>validation</em> happens on the data. Transformation code is not the correct place to do validation.</p>
+<p>Validation in Seamless is defined in schema cells. Schema cells contain a superset of JSON Schema. You can write them directly, but it is easier to fill them up using the <code class="docutils literal notranslate"><span class="pre">Cell.example</span></code> attribute. See <a class="reference external" href="https://github.com/sjdv1982/seamless/blob/stable/tests/highlevel/highlink-cpp.py">this example</a>, to be opened with <code class="docutils literal notranslate"><span class="pre">seamless-ipython</span></code>.</p>
+<p>Validation errors show up in the monitoring. At this point, the monitoring (which had previously its own UX cells) should be adapted so that error messages and progress are displayed in the main web UI.</p>
+<p>This is also the time to create tests. A unit test should be a small Seamless context linked to the same files as the main project for code and schema cells. Other tests can be a copy of the main graph with some parameters changed. <em>Make sure to create some tests that are designed to fail, to verify that a correct and comprehensible error message is reported</em>.</p>
+</div>
+<div class="section" id="publishing-phase">
+<h2>Publishing phase<a class="headerlink" href="#publishing-phase" title="Permalink to this headline">¶</a></h2>
+<p><em>TODO: expand this section</em></p>
+<p>Seamless deployment is done using Cloudless (https://github.com/sjdv1982/cloudless, WIP).</p>
+<p>For configuration, it is recommended to use YAML or CSON cells (<em>TODO: high-level test/example</em>)</p>
+</div>
+</div>
+<div class="section" id="recipe-for-a-new-project">
+<h1>Recipe for a new project<a class="headerlink" href="#recipe-for-a-new-project" title="Permalink to this headline">¶</a></h1>
+<p><em>(There are lots of other ways how you can set things up: no Jupyter, no monitoring, no backups, Redis instead of zip files, …  Still, below is a solid example. Just substitute PROJNAME with your project’s name.)</em></p>
+<div class="section" id="a-project-creation">
+<h2>A. Project creation<a class="headerlink" href="#a-project-creation" title="Permalink to this headline">¶</a></h2>
+<p>Seamless is well-suited for collaborative projects, where one person is the <em><strong>host</strong></em> and the others are <em><strong>guests</strong></em>. The host must have Seamless installed, but the guests can be under Windows or any OS, as long as they can install Visual Studio Code.</p>
+<p>Specific instructions are below.
+Alternatively, for a solo project, do the obvious (install Seamless, create a new directory, <code class="docutils literal notranslate"><span class="pre">git</span> <span class="pre">init</span></code>) and go to section B.</p>
+<div class="section" id="a1-collaborative-project-creation">
+<h3>A1. Collaborative project creation<a class="headerlink" href="#a1-collaborative-project-creation" title="Permalink to this headline">¶</a></h3>
+<p><strong>Only the host needs to do this. If you are a guest, go to section C.</strong></p>
+<ol class="simple">
+<li><p>Install <a class="reference external" href="https://code.visualstudio.com/">Visual Studio Code</a>.</p></li>
+<li><p>Step 3-5 are for hosting on a remote machine (via ssh). If you are hosting from your own local machine, go to step 6.
+<em>It is not recommended to host a remote directory that has been mounted locally (sshfs).</em></p></li>
+<li><p>In Visual Studio Code, install the Remote Development extension (Ctrl+Shift+X, type “Remote Development”).</p></li>
+<li><p>Set up your <code class="docutils literal notranslate"><span class="pre">~/.ssh/config</span></code>.  Below is an example for a machine <em>gateway</em> that is accessible directly, and a machine
+<em>workstation</em> that is only accessible from <em>gateway</em>:</p></li>
+</ol>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Host</span> <span class="n">workstation</span>
+    <span class="n">HostName</span> <span class="mf">192.168</span><span class="o">.</span><span class="mf">1.86</span>
+    <span class="n">User</span> <span class="n">yourname</span>
+
+<span class="n">Host</span> <span class="n">gateway</span>
+    <span class="n">HostName</span> <span class="mf">999.999</span><span class="o">.</span><span class="mf">1.99</span>
+    <span class="n">User</span> <span class="n">yourname</span>
+    <span class="n">ProxyCommand</span> <span class="n">ssh</span> <span class="o">-</span><span class="n">q</span> <span class="o">-</span><span class="n">W</span> <span class="o">%</span><span class="n">h</span><span class="p">:</span><span class="o">%</span><span class="n">p</span> <span class="n">workstation</span>
+</pre></div>
+</div>
+<p>To verify that it works, do <code class="docutils literal notranslate"><span class="pre">ssh</span> <span class="pre">workstation</span></code> and/or <code class="docutils literal notranslate"><span class="pre">ssh</span> <span class="pre">gateway</span></code> from the command line.</p>
+<ol class="simple">
+<li><p>In Visual Studio Code, connect to the Remote Explorer (icon on the left, or Ctrl-Shift-P =&gt; type “Remote Explorer”).
+Connect to the remote host machine.</p></li>
+<li><p>In Visual Studio Code, type <code class="docutils literal notranslate"><span class="pre">Ctrl-Shift-(backtick)</span></code> to open a new terminal, or use the Terminal menu. Create a new directory PROJDIR, go there. and do <code class="docutils literal notranslate"><span class="pre">git</span> <span class="pre">init</span></code>.</p></li>
+<li><p>In Visual Studio Code, in the File menu, click “Add Folder to Workspace”.
+After adding the new directory, save the workspace as PROJDIR/PROJNAME, where PROJNAME is the name of the project.</p></li>
+</ol>
+</div>
+</div>
+<div class="section" id="b-project-initialization">
+<h2>B. Project initialization<a class="headerlink" href="#b-project-initialization" title="Permalink to this headline">¶</a></h2>
+<p><strong>For a collaborative project, only the host needs to do this (on the host machine). If you are a guest, go to section C.</strong></p>
+<ol>
+<li><p>On the host machine, make sure you have the latest version of Seamless installed, using <code class="docutils literal notranslate"><span class="pre">docker</span> <span class="pre">pull</span> <span class="pre">rpbs/seamless</span></code> and <code class="docutils literal notranslate"><span class="pre">conda</span> <span class="pre">install</span> <span class="pre">-c</span> <span class="pre">rpbs</span> <span class="pre">seamless-cli</span></code>.</p></li>
+<li><p>Copy the standard monitoring graph.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>seamless-bash
+<span class="nv">d</span><span class="o">=</span>/home/jovyan/software/seamless/graphs
+cp <span class="nv">$d</span>/status-visualization.seamless PROJNAME-monitoring.seamless
+cp <span class="nv">$d</span>/status-visualization.zip PROJNAME-monitoring.zip
+<span class="nb">exit</span>
+</pre></div>
+</div>
+</li>
+<li><p>Initialize and save an empty context</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">seamless</span><span class="o">-</span><span class="n">ipython</span>
+<span class="kn">from</span> <span class="nn">seamless.highlevel</span> <span class="kn">import</span> <span class="n">Context</span>
+<span class="n">ctx</span> <span class="o">=</span> <span class="n">Context</span><span class="p">()</span>
+<span class="n">ctx</span><span class="o">.</span><span class="n">save_graph</span><span class="p">(</span><span class="s2">&quot;PROJNAME.seamless&quot;</span><span class="p">)</span>
+<span class="n">ctx</span><span class="o">.</span><span class="n">save_zip</span><span class="p">(</span><span class="s2">&quot;PROJNAME.zip&quot;</span><span class="p">)</span>
+<span class="n">exit</span><span class="p">()</span>
+</pre></div>
+</div>
+</li>
+<li><p>Set up some code to load and save the entire graph from/to disk (including monitoring), at any time. The code below will make a new backup whenever you save. Copy-paste it into <code class="docutils literal notranslate"><span class="pre">init-project.py</span></code> .</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">PROJNAME</span> <span class="o">=</span> <span class="o">...</span>
+
+<span class="kn">from</span> <span class="nn">seamless.highlevel</span> <span class="kn">import</span> <span class="n">Context</span><span class="p">,</span> <span class="n">Cell</span><span class="p">,</span> <span class="n">Transformer</span>
+
+<span class="n">ctx</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="n">ctx2</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="n">save</span> <span class="o">=</span> <span class="kc">None</span>
+
+<span class="k">async</span> <span class="k">def</span> <span class="nf">load</span><span class="p">():</span>
+    <span class="kn">from</span> <span class="nn">seamless.metalevel.bind_status_graph</span> <span class="kn">import</span> <span class="n">bind_status_graph_async</span>
+    <span class="kn">import</span> <span class="nn">json</span>
+
+    <span class="k">global</span> <span class="n">ctx</span><span class="p">,</span> <span class="n">ctx2</span><span class="p">,</span> <span class="n">save</span>
+    <span class="n">graph</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="nb">open</span><span class="p">(</span><span class="n">PROJNAME</span> <span class="o">+</span> <span class="s2">&quot;.seamless&quot;</span><span class="p">))</span>
+    <span class="n">ctx</span> <span class="o">=</span> <span class="n">Context</span><span class="p">()</span>
+    <span class="n">ctx</span><span class="o">.</span><span class="n">add_zip</span><span class="p">(</span><span class="n">PROJNAME</span> <span class="o">+</span> <span class="s2">&quot;.zip&quot;</span><span class="p">)</span>
+    <span class="n">ctx</span><span class="o">.</span><span class="n">set_graph</span><span class="p">(</span><span class="n">graph</span><span class="p">,</span> <span class="n">mounts</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">shares</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">await</span> <span class="n">ctx</span><span class="o">.</span><span class="n">translation</span><span class="p">(</span><span class="n">force</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="n">status_graph</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="nb">open</span><span class="p">(</span><span class="n">PROJNAME</span> <span class="o">+</span> <span class="s2">&quot;-monitoring.seamless&quot;</span><span class="p">))</span>
+
+    <span class="n">ctx2</span> <span class="o">=</span> <span class="k">await</span> <span class="n">bind_status_graph_async</span><span class="p">(</span>
+        <span class="n">ctx</span><span class="p">,</span> <span class="n">status_graph</span><span class="p">,</span> 
+        <span class="n">mounts</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">shares</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">zips</span><span class="o">=</span><span class="p">[</span><span class="n">PROJNAME</span> <span class="o">+</span> <span class="s2">&quot;-monitoring.zip&quot;</span><span class="p">],</span>
+    <span class="p">)</span>
+    <span class="k">def</span> <span class="nf">save</span><span class="p">():</span>
+        <span class="kn">import</span> <span class="nn">os</span><span class="o">,</span> <span class="nn">itertools</span><span class="o">,</span> <span class="nn">shutil</span>
+
+        <span class="k">def</span> <span class="nf">backup</span><span class="p">(</span><span class="n">filename</span><span class="p">):</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">filename</span><span class="p">):</span>
+                <span class="k">return</span> <span class="n">filename</span>
+            <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">itertools</span><span class="o">.</span><span class="n">count</span><span class="p">():</span>
+                <span class="n">n2</span> <span class="o">=</span> <span class="n">n</span> <span class="k">if</span> <span class="n">n</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span>
+                <span class="n">new_filename</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">.bak</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">n2</span><span class="p">)</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">new_filename</span><span class="p">):</span>
+                    <span class="k">break</span>
+            <span class="n">shutil</span><span class="o">.</span><span class="n">move</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">new_filename</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">filename</span>
+
+        <span class="n">ctx</span><span class="o">.</span><span class="n">save_graph</span><span class="p">(</span><span class="n">backup</span><span class="p">(</span><span class="n">PROJNAME</span> <span class="o">+</span> <span class="s2">&quot;.seamless&quot;</span><span class="p">))</span>
+        <span class="n">ctx2</span><span class="o">.</span><span class="n">save_graph</span><span class="p">(</span><span class="n">backup</span><span class="p">(</span><span class="n">PROJNAME</span> <span class="o">+</span> <span class="s2">&quot;-monitoring.seamless&quot;</span><span class="p">))</span>
+        <span class="n">ctx</span><span class="o">.</span><span class="n">save_zip</span><span class="p">(</span><span class="n">backup</span><span class="p">(</span><span class="n">PROJNAME</span> <span class="o">+</span> <span class="s2">&quot;.zip&quot;</span><span class="p">))</span>
+        <span class="n">ctx2</span><span class="o">.</span><span class="n">save_zip</span><span class="p">(</span><span class="n">backup</span><span class="p">(</span><span class="n">PROJNAME</span> <span class="o">+</span> <span class="s2">&quot;-monitoring.zip&quot;</span><span class="p">))</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&quot;&quot;Project loaded.</span>
+
+<span class="s2">    Main context is &quot;ctx&quot;</span>
+<span class="s2">    Status context is &quot;ctx2&quot;</span>
+<span class="s2">    Run save() to save the context</span>
+<span class="s2">    &quot;&quot;&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</li>
+</ol>
+</div>
+<div class="section" id="c-project-implementation">
+<h2>C. Project implementation<a class="headerlink" href="#c-project-implementation" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="c1-for-collaborative-project-hosts">
+<h3>C1. For collaborative project hosts<a class="headerlink" href="#c1-for-collaborative-project-hosts" title="Permalink to this headline">¶</a></h3>
+<p><strong>For a collaborative project, only the host needs to do this. If you are a guest, go to section C2</strong></p>
+<p><em>(If this is a solo project, go to step 6)</em></p>
+<ol>
+<li><p>Connect to the host machine. If the project runs on a remote machine, connect to the remote workspace that you set up before, using the Remote Explorer (icon on the left, or Ctrl-Shift-P =&gt; type “Remote Explorer”) in Visual Studio Code.</p></li>
+<li><p>In Visual Studio Code, install the Live Share extension (Ctrl+Shift+X, type “Live Share”).</p></li>
+<li><p>Click on the “Live Share” text at the bottom of the screen and start a Live Share session.</p></li>
+<li><p>At the top of the window, click on “Sign in with  GitHub”. This will open a browser window, where you give permission. Follow the instructions.</p></li>
+<li><p>At the bottom, instead of the “Live Share” text, there will now be your GitHub name (it should still be there the next time you start Visual Studio Code).
+Click on it, then on “invite others”, and paste the link in a message to the guests.</p></li>
+<li><p>Open a new terminal (<code class="docutils literal notranslate"><span class="pre">Ctrl-Shift-(backtick)</span></code> in Visual Studio Code). Type <code class="docutils literal notranslate"><span class="pre">seamless-jupyter</span></code>. Normally, this will print
+<code class="docutils literal notranslate"><span class="pre">The</span> <span class="pre">Jupyter</span> <span class="pre">Notebook</span> <span class="pre">is</span> <span class="pre">running</span> <span class="pre">at:</span> <span class="pre">http://localhost:8888/</span></code>
+But if port 8888 is already in use, it may be 8889 or a higher number instead.</p>
+<p>If you are hosting on a remote machine, you must share this port, as well as the Seamless HTTP ports (see step 9).</p>
+</li>
+<li><p>In the Jupyter window in the browser, go to <code class="docutils literal notranslate"><span class="pre">cwd</span></code> and start a new Python3 notebook. Rename it to PROJNAME. In the first cell, type:</p>
+<div class="highlight-ipython notranslate"><div class="highlight"><pre><span></span><span class="o">%</span><span class="k">run</span> -i init-project.py
+<span class="k">await</span> <span class="n">load</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>and execute it.</p>
+</li>
+<li><p>Open a second terminal. Find out the name of the Docker container where Jupyter and Seamless are running:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>docker ps <span class="p">|</span> grep rpbs/seamless
+</pre></div>
+</div>
+<p>The name is in the last field, something like <code class="docutils literal notranslate"><span class="pre">jolly_einstein</span></code> . Then, type</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>docker <span class="nb">exec</span> -it --user jovyan jolly_einstein bash
+jupyter console --existing
+</pre></div>
+</div>
+<p>This opens a console that connects to the same kernel as the Notebook. From here (or, if you really want, from the Notebook) you can modify <code class="docutils literal notranslate"><span class="pre">ctx</span></code> to implement the topology.</p>
+</li>
+<li><p>Now you must decide now much you trust the guests.</p></li>
+</ol>
+<ul class="simple">
+<li><p>If you do nothing, they can only edit files. In the case of file-mounted code cells, this still means arbitrary execution of code.</p></li>
+<li><p>To let them see any web form, you must expose the HTTP ports used by Seamless, which are by default 5138 and 5813 (this is reported in the first Jupyter Notebook output).
+In Visual Studio Code, click again on your name on the bottom and select “Share server” and enter the port number. Once you have shared both ports, you and any guest can see the monitoring at http://localhost:5813/status/index.html</p></li>
+<li><p>To let them help with the topology, you must share the terminal in which the “jupyter console” command is running. Terminals can be shared in the Live Share menu. Note that you can launch arbitrary commands from within a Jupyter console.</p></li>
+<li><p>If you want them to get full Jupyter Notebook access, you must share the Jupyter port (8888). However, Jupyter Notebooks do not really support collaborative editing, so communicate clearly. Note that Jupyter allows you to open bash shells in the browser.</p></li>
+</ul>
+<ol class="simple">
+<li><p>Start the implementation stage. Modify the topology  in the console terminal (do <code class="docutils literal notranslate"><span class="pre">await</span> <span class="pre">ctx.translation()</span></code> after modification, and type <code class="docutils literal notranslate"><span class="pre">save()</span></code> often!). Mount cells to the file system, and tell the guests to edit them. Monitor error messages in the browser.
+Then, proceed to the visualization and validation phases. You can start visualization in the Jupyter Notebook, then move on to HTML/JS. For validation, you can start with the <code class="docutils literal notranslate"><span class="pre">Cell.example</span></code> attribute, then mount the schemas to the file system for editing.</p></li>
+</ol>
+</div>
+<div class="section" id="c2-for-collaborative-project-guests">
+<h3>C2. For collaborative project guests<a class="headerlink" href="#c2-for-collaborative-project-guests" title="Permalink to this headline">¶</a></h3>
+<ol class="simple">
+<li><p>Install <a class="reference external" href="https://code.visualstudio.com/">Visual Studio Code</a>. This can be the Linux, OSX or Windows version.</p></li>
+<li><p>In Visual Studio Code, install the Live Share extension (Ctrl+Shift+X, type “Live Share”).</p></li>
+<li><p>Click on the “Live Share” text at the bottom of the screen and start a Live Share session.</p></li>
+<li><p>At the top of the window, click on “Sign in with  GitHub”. This will open a browser window, where you give permission. Follow the instructions.</p></li>
+<li><p>At the bottom, instead of the “Live Share” text, there will now be your GitHub name (it should still be there the next time you start Visual Studio Code).
+Click on it, then choose “Join Collaboration Session”. Enter the link that the host has provided to you.</p></li>
+<li><p>In the browser, open Jupyter (http://localhost:8889) and the monitoring page (http://localhost:5813/status/index.html). In Jupyter, click on “Running” and then on the notebook.</p></li>
+</ol>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Guide for creating a new Seamless project</a><ul>
+<li><a class="reference internal" href="#project-aspects">Project aspects</a></li>
+<li><a class="reference internal" href="#project-phases">Project phases</a></li>
+<li><a class="reference internal" href="#design-phase">Design phase</a><ul>
+<li><a class="reference internal" href="#abstract-dependency-graph">Abstract dependency graph</a></li>
+<li><a class="reference internal" href="#concrete-dependency-graph">Concrete dependency graph</a></li>
+<li><a class="reference internal" href="#command-line-workflows">Command line workflows</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#implementation-phase">Implementation phase</a><ul>
+<li><a class="reference internal" href="#debugging">Debugging</a><ul>
+<li><a class="reference internal" href="#debugging-with-print-statements">Debugging with print statements</a></li>
+<li><a class="reference internal" href="#debugging-sessions">Debugging sessions</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#visualization-phase">Visualization phase</a></li>
+<li><a class="reference internal" href="#validation-phase">Validation phase</a></li>
+<li><a class="reference internal" href="#publishing-phase">Publishing phase</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#recipe-for-a-new-project">Recipe for a new project</a><ul>
+<li><a class="reference internal" href="#a-project-creation">A. Project creation</a><ul>
+<li><a class="reference internal" href="#a1-collaborative-project-creation">A1. Collaborative project creation</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#b-project-initialization">B. Project initialization</a></li>
+<li><a class="reference internal" href="#c-project-implementation">C. Project implementation</a><ul>
+<li><a class="reference internal" href="#c1-for-collaborative-project-hosts">C1. For collaborative project hosts</a></li>
+<li><a class="reference internal" href="#c2-for-collaborative-project-guests">C2. For collaborative project guests</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="cell.html"
+                        title="previous chapter">Cells</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="reference.html"
+                        title="next chapter">Reference</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/new-project.md.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="reference.html" title="Reference"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="cell.html" title="Cells"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">Seamless 0.2 documentation</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2016-2020, Sjoerd de Vries.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 3.0.3.
+    </div>
+  </body>
+</html>
