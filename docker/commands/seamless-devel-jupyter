@@ -1,9 +1,4 @@
 seamlessdir=`python3 -c 'import seamless,os;print(os.path.dirname(seamless.__file__))'`/../
-juprundir=$(jupyter --runtime-dir 2> /dev/null || echo '')
-kernelshare=''
-if [ ! -z "$juprundir" ]; then 
-  kernelshare='-v '$juprundir':/juprundir -e JUPYTER_RUNTIME_DIR=/juprundir'; 
-fi
 
 docker run --rm \
   -v `pwd`:/home/jovyan/cwd -v $seamlessdir:/seamless \
@@ -12,7 +7,6 @@ docker run --rm \
   -v /var/run/docker.sock:/var/run/docker.sock \
   --group-add $(getent group docker | cut -d: -f3) \
   -v /tmp:/tmp \
-  $kernelshare \
   --hostname localhost \
   --workdir /home/jovyan \
   --user $(id -u):$(id -g) \

@@ -1,0 +1,26 @@
+#!/bin/bash
+
+kernels=$(ls -1 /home/jovyan/.local/share/jupyter/runtime/*.json 2> /dev/null)
+nkernels=$(echo "$kernels" | awk 'BEGIN{count=0} NF{count += 1} END{print count}')
+echo $nkernels
+
+if [ $nkernels -eq 0 ]; then
+    echo 'No running Jupyter kernels found' > /dev/stderr
+    exit 1
+fi
+if [ $nkernels -gt 1 ]; then
+    echo '*****************************************************' > /dev/stderr
+    echo '* Multiple running Jupyter kernels found' > /dev/stderr
+    echo '*****************************************************' > /dev/stderr
+    echo 'In the notebook, execute:' > /dev/stderr
+    echo '' > /dev/stderr
+    echo 'from ipykernel.zmqshell import get_connection_file; get_connection_file() '> /dev/stderr
+    echo '' > /dev/stderr
+    echo 'Below, type "jupyter console --existing kernel-XXX.json"' > /dev/stderr
+    echo ' where kernel-XXX.json is the connection file'  > /dev/stderr
+    echo 'Opening bash shell, please exit when done...' > /dev/stderr
+    bash
+    exit
+fi
+
+jupyter console --existing

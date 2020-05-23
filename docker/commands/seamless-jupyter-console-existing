@@ -1,0 +1,23 @@
+set -u -e
+
+# Runs a Jupyter console terminal inside an existing Seamless Docker image
+
+containers=$(docker ps --filter ancestor=rpbs/seamless)
+ncontainers=$(echo "$containers" | wc -l)
+if [ $ncontainers -eq 1 ]; then
+    echo 'No running Seamless Docker containers found' > /dev/stderr
+    exit 1
+fi
+if [ $ncontainers -gt 2 ]; then
+    echo '*****************************************************' > /dev/stderr
+    echo '* Multiple Seamless Docker containers found' > /dev/stderr
+    echo '*****************************************************' > /dev/stderr
+    echo 'Do "docker ps --filter ancestor=rpbs/seamless", and look at the last field.' > /dev/stderr
+    echo 'It will be something like "jolly_einstein". Select the one you want.' > /dev/stderr
+    echo 'Then, do "docker exec -it --user jovyan jolly_einstein bash"' > /dev/stderr
+    echo 'Finally, do "~/seamless-scripts/jupyter-console-existing"' > /dev/stderr
+    exit 1
+fi
+
+container=$(echo "$containers" | tail -1 | awk '{print $NF}')
+docker exec -it --user jovyan $container bash -c "~/seamless-scripts/jupyter-console-existing"
