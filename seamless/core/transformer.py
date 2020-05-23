@@ -56,7 +56,7 @@ class Transformer(Worker):
                 self._output_name = p
             else:
                 raise ValueError(io)
-            
+
             if pin is not None:
                 self._pins[p] = pin
 
@@ -66,7 +66,7 @@ class Transformer(Worker):
 
     def _set_context(self, ctx, name):
         has_ctx = self._context is not None
-        super()._set_context(ctx, name)        
+        super()._set_context(ctx, name)
         if not has_ctx:
             self._get_manager().register_transformer(self)
 
@@ -101,7 +101,7 @@ class Transformer(Worker):
         manager = self._get_manager()
         taskmanager = manager.taskmanager
         async def await_transformer():
-            while 1:                
+            while 1:
                 for task in taskmanager.transformer_to_task[self]:
                     if not isinstance(task, TransformerUpdateTask):
                         break
@@ -142,11 +142,11 @@ class Transformer(Worker):
         from .status import format_worker_status
         status = self._get_status()
         statustxt = format_worker_status(status)
-        return "Status: " + statustxt 
+        return "Status: " + statustxt
 
     @property
     def exception(self):
-        from .transformation import RemoteJobError
+        from .transformation import RemoteJobError, SeamlessTransformationError
         if not self._void:
             return None
         if self._status_reason == StatusReasonEnum.UPSTREAM:
@@ -173,10 +173,10 @@ class Transformer(Worker):
         exc = transformation_cache.transformation_exceptions.get(transformation)
         if exc is None:
             return None
-        if isinstance(exc, RemoteJobError):
+        if isinstance(exc, (RemoteJobError, SeamlessTransformationError)):
             return exc.args[0]
         s = traceback.format_exception(
-            value=exc, 
+            value=exc,
             etype=type(exc),
             tb=exc.__traceback__
         )
@@ -249,7 +249,7 @@ class Transformer(Worker):
         future = asyncio.ensure_future(task)
         loop.run_until_complete(future)
         return future.result()
-            
+
     @property
     def value(self):
         if asyncio.get_event_loop().is_running():

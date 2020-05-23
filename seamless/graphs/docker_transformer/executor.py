@@ -7,6 +7,9 @@ import sys
 from io import BytesIO
 from seamless.silk import Silk
 from seamless.mixed.get_form import get_form
+from requests.exceptions import ConnectionError
+from urllib3.exceptions import ProtocolError
+from seamless.core.transformation import SeamlessTransformationError
 
 def read_data(data):
     try:
@@ -69,11 +72,27 @@ try:
         f.write("set -u -e -o pipefail\n")
         f.write(docker_command)
     full_docker_command = "bash DOCKER-COMMAND"
-    stdout0 = docker_client.containers.run(
-        docker_image,
-        full_docker_command,
-        **options
-    )
+    try:
+        stdout0 = docker_client.containers.run(
+            docker_image,
+            full_docker_command,
+            **options
+        )
+    except ConnectionError as exc:
+        msg = "Unknown connection error"
+        if len(exc.args) == 1:
+            exc2 = exc.args[0]
+            if isinstance(exc2, ProtocolError):
+                if len(exc2.args) == 2:
+                    a, exc3 = exc2.args
+                    msg = "Docker gave an error: {}: {}".format(a, exc3)
+                    if a.startswith("Connection aborted"):
+                        if isinstance(exc3, FileNotFoundError):
+                            if len(exc3.args) == 2:
+                                a1, a2 = exc3.args
+                                if a1 == 2 or a2 == "No such file or directory":
+                                    msg = "Cannot connect to Docker; did you expose the Docker socket to Seamless?"
+        raise SeamlessTransformationError(msg) from None
     stdout = BytesIO(stdout0)
     try:
         tar = tarfile.open(fileobj=stdout)
