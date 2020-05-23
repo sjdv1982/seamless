@@ -285,8 +285,7 @@ Click on it, then on "invite others", and paste the link in a message to the gue
     ```
     and execute it.
 
-8. Open a second terminal and type `seamless-jupyter-console-existing` (pressing Tab for completion is recommended).
-    ```
+8.  Open a second terminal and type `seamless-jupyter-console-existing` (pressing Tab for completion is recommended).
     This opens a console that connects to the same kernel as the Notebook. From here (or, if you really want, from the Notebook) you can modify `ctx` to implement the topology.
 
 9. Now you must decide now much you trust the guests.
