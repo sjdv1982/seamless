@@ -50,7 +50,7 @@ class EvaluateExpressionTask(Task):
                 else:
                     buffer = await GetBufferTask(manager, expression.checksum).run()
                     if (
-                        expression.path is None \
+                       (expression.path is None or expression.path == [] or expression.path == ()) \
                         and expression.hash_pattern is None \
                     ):
                         expression_result_checksum = await evaluate_from_buffer(

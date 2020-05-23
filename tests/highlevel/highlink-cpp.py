@@ -23,7 +23,7 @@ c.mount("/tmp/calc_arr_schema.json")
 ctx.link(c, ctx.calc_arr.schema)
 
 ctx.arr = ctx.calc_arr
-###ctx.arr.celltype = "binary" # TODO: bug! => later
+ctx.arr.celltype = "binary"
 ctx.compute()
 print(ctx.calc_arr.status)
 
@@ -49,6 +49,7 @@ print(ctx.tf.status)
 print(ctx.tf.header.value)
 
 ctx.header = ctx.tf.header
+ctx.header.celltype = "text"
 
 ctx.tf_schema = Cell()
 ctx.tf_schema.celltype = "plain"

@@ -39,7 +39,7 @@ def _serialize(value, celltype):
             buffer = value
         else:
             value = np.array(value)
-            buffer = value.tobytes()
+            buffer = mixed_serialize(value)
     elif celltype == "bytes":
         if isinstance(value, bytes):
             buffer = value

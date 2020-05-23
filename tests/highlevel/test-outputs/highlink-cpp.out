@@ -1,25 +1,29 @@
+Seamless buffer cache cleanup is currently disabled.
+This prevents data loss from bugs in Seamless's buffer caching.
+If you have memory issues, restart Python periodically,
+ and/or use Redis to store buffers
 Status: OK
 
 STEP 1
 
-gen_header: Status: upstream => result_schema undefined
+*gen_header*: Status: upstream => result_schema undefined
 None
 WARNING: 'arr' form schema does not contain 'contiguous'.      Explicit stride values will be provided.
 
 STEP 2
 
-translator: Status: error
+*translator*: Status: error
 *** translator ***
 Traceback (most recent call last):
-  File "/seamless/seamless/core/transformation.py", line 201, in _execute
+  File "/home/sjoerd/seamless/seamless/core/transformation.py", line 201, in _execute
     prelim_callback, progress_callback
-  File "/seamless/seamless/core/transformation.py", line 350, in _execute_local
+  File "/home/sjoerd/seamless/seamless/core/transformation.py", line 355, in _execute_local
     mod = await build_module_async(value)
-  File "/seamless/seamless/core/build_module.py", line 166, in build_module_async
+  File "/home/sjoerd/seamless/seamless/core/build_module.py", line 174, in build_module_async
     full_module_name, mod = build_module(module_definition)
-  File "/seamless/seamless/core/build_module.py", line 149, in build_module
+  File "/home/sjoerd/seamless/seamless/core/build_module.py", line 157, in build_module
     full_module_name, completed_checksum, completed_module_definition
-  File "/seamless/seamless/core/build_module.py", line 113, in build_compiled_module
+  File "/home/sjoerd/seamless/seamless/core/build_module.py", line 117, in build_compiled_module
     raise BuildModuleError(stderr)
 seamless.core.build_module.BuildModuleError: 
 g++ -c main.cpp -O3 -ffast-math -march=native -fPIC -p -g -o main.o
@@ -35,18 +39,18 @@ main.cpp:1:1: error: ‘lambda’ does not name a type
 
 STEP 3
 
-translator: Status: error
+*translator*: Status: error
 *** translator ***
 Traceback (most recent call last):
-  File "/seamless/seamless/core/transformation.py", line 201, in _execute
+  File "/home/sjoerd/seamless/seamless/core/transformation.py", line 201, in _execute
     prelim_callback, progress_callback
-  File "/seamless/seamless/core/transformation.py", line 350, in _execute_local
+  File "/home/sjoerd/seamless/seamless/core/transformation.py", line 355, in _execute_local
     mod = await build_module_async(value)
-  File "/seamless/seamless/core/build_module.py", line 166, in build_module_async
+  File "/home/sjoerd/seamless/seamless/core/build_module.py", line 174, in build_module_async
     full_module_name, mod = build_module(module_definition)
-  File "/seamless/seamless/core/build_module.py", line 149, in build_module
+  File "/home/sjoerd/seamless/seamless/core/build_module.py", line 157, in build_module
     full_module_name, completed_checksum, completed_module_definition
-  File "/seamless/seamless/core/build_module.py", line 113, in build_compiled_module
+  File "/home/sjoerd/seamless/seamless/core/build_module.py", line 117, in build_compiled_module
     raise BuildModuleError(stderr)
 seamless.core.build_module.BuildModuleError: 
 g++ -c main.cpp -O3 -ffast-math -march=native -fPIC -p -g -o main.o
@@ -59,7 +63,7 @@ main.cpp:1:1: error: ‘lambda’ does not name a type
 
 *** /translator ***
 
-<Silk: 
+
 /*
 The following C header has been auto-generated from the transformer schema
 It will be used to generate bindings, but it will not be automatically
@@ -76,4 +80,4 @@ typedef struct ArrStruct {
   unsigned int strides[1];
 } ArrStruct;
 
-int transform(const ArrStruct* arr, int fac, int offset); >
+int transform(const ArrStruct* arr, int fac, int offset);
