@@ -1,8 +1,7 @@
 #!/bin/bash
 
-kernels=$(ls -1 /home/jovyan/.local/share/jupyter/runtime/*.json 2> /dev/null)
+kernels=$(ls -1 /home/jovyan/.local/share/jupyter/runtime/kernel-*.json 2> /dev/null)
 nkernels=$(echo "$kernels" | awk 'BEGIN{count=0} NF{count += 1} END{print count}')
-echo $nkernels
 
 if [ $nkernels -eq 0 ]; then
     echo 'No running Jupyter kernels found' > /dev/stderr
