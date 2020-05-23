@@ -11,7 +11,7 @@ docker run \
   --group-add $(getent group docker | cut -d: -f3) \
   -v /tmp:/tmp \
   --hostname localhost \
-  --workdir /home/jovyan/cwd \
+  --workdir /home/jovyan \
   --user $(id -u):$(id -g) \
   rpbs/seamless start-notebook.sh  \
   --NotebookApp.token='' --NotebookApp.password='' \
