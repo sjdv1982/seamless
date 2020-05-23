@@ -39,9 +39,9 @@ try:
             raise TypeError("pin '%s' has mixed data" % pin)
         if storage == "pure-plain":
             if isinstance(form, str):
-                vv = str(v)
+                vv = str(v) + "\n"
                 if len(vv) <= 1000:
-                    env[pin] = vv                
+                    env[pin] = vv
             else:
                 vv = json.dumps(v)
             with open(pin, "w") as pinf:
@@ -49,7 +49,7 @@ try:
         elif isinstance(v, bytes):
             with open(pin, "bw") as pinf:
                 pinf.write(v)
-        else: 
+        else:
             if v.dtype == np.uint8 and v.ndim == 1:
                 vv = v.tobytes()
                 with open(pin, "bw") as pinf:
@@ -67,15 +67,15 @@ try:
         options["working_dir"] = "/run"
     with open("DOCKER-COMMAND","w") as f:
         f.write("set -u -e -o pipefail\n")
-        f.write(docker_command)   
+        f.write(docker_command)
     full_docker_command = "bash DOCKER-COMMAND"
     stdout0 = docker_client.containers.run(
-        docker_image, 
-        full_docker_command, 
+        docker_image,
+        full_docker_command,
         **options
     )
     stdout = BytesIO(stdout0)
-    try:        
+    try:
         tar = tarfile.open(fileobj=stdout)
         result = {}
         for member in tar.getnames():

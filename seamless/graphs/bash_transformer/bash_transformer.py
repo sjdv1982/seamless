@@ -21,7 +21,7 @@ zip = ctx.get_zip()
 # 3: Run test example
 
 ###ctx.mount("/tmp/seamless-test", persistent=False)
-ctx.testdata = "a\nb\nc\nd\ne\nf\n"       
+ctx.testdata = "a\nb\nc\nd\ne\nf\n"
 ctx.bashcode = "head -$lines testdata"
 ctx.executor = lambda bashcode, testdata, pins_, lines: None
 pins = ctx.executor.pins
@@ -32,7 +32,7 @@ pins["lines"]["celltype"] = "int"
 pins["testdata"]["celltype"] = "text"
 ctx.executor.code = ctx.executor_code
 ctx.executor.bashcode = ctx.bashcode
-ctx.executor.testdata = ctx.testdata    
+ctx.executor.testdata = ctx.testdata
 ctx.executor.lines = 3
 ctx.result = ctx.executor
 ctx.result.celltype = "text"
