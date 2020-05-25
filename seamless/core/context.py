@@ -29,18 +29,19 @@ class Context(SeamlessBase):
 
     _name = None
     _children = {}
-    _manager = None    
+    _manager = None
     _auto = None
     _toplevel = False
     _naming_pattern = "ctx"
     _mount = None
     _unmounted = False
     _macro = None # The macro that created this context
+    _macro_root = None
 
     def __init__(
         self, *,
         toplevel=False,
-        mount=None,        
+        mount=None,
         manager=None
     ):
         """Construct a new context.
@@ -60,7 +61,7 @@ name: str
         try:
             raise Exception
         except Exception as exc:
-            import traceback            
+            import traceback
             self._EXC = "\n".join(traceback.format_stack())
         '''
         global Macro
@@ -96,16 +97,21 @@ name: str
         if context_name is None:
             context_name = ()
         self._name = context_name + (name,)
+        manager = context._manager
+        if manager is not None:
+            self._set_manager(manager)
+
+    def _set_manager(self, manager):
+        self._manager = manager
+        for child in self._children.values():
+            if isinstance(child, Context):
+                child._set_manager(manager)
 
     def _get_manager(self):
-        assert self._toplevel or self._context is not None or self._macro is not None #context must have a parent, or be toplevel, or have a macro
-        root = self._root()
-        if self._toplevel or root is self:
-            manager = self._manager
-            if manager is None:
-                return None
-            return manager()
-        return root._get_manager()
+        manager = self._manager
+        if manager is None:
+            return None
+        return manager()
 
     def __str__(self):
         p = self._format_path()
@@ -182,15 +188,15 @@ name: str
 
     def _root(self):
         if self._macro is not None:
-            return self._macro._root()
+            return self._macro_root
         if self._toplevel:
             return self
         return super()._root()
 
     @property
-    def path(self):        
+    def path(self):
         if self._context is not None:
-            return super().path        
+            return super().path
         if self._macro is not None \
           and isinstance(self._macro, Macro):
             return self._macro.path + ("ctx",)
@@ -295,7 +301,7 @@ name: str
             paths = _global_paths.get(self, {})
             for path in paths.values():
                 manager._destroy_macropath(path)
-            unregister_toplevel(self)            
+            unregister_toplevel(self)
             manager.remove_context(self)
         self._unmount(from_del=from_del)
 
@@ -309,7 +315,7 @@ name: str
         mountmanager = manager.mountmanager
         if self._toplevel or not is_dummy_mount(self._mount):
             mountmanager.unmount_context(
-                self, 
+                self,
                 from_del=from_del,
                 toplevel=self._toplevel
             )
@@ -333,7 +339,7 @@ def context(**kwargs):
     if get_macro_mode():
         macro = curr_macro()
         if macro is not None and isinstance(macro, Macro):
-            assert "toplevel" not in kwargs or kwargs["toplevel"] == False        
+            assert "toplevel" not in kwargs or kwargs["toplevel"] == False
         return UnboundContext(**kwargs)
     else:
         ctx = Context(**kwargs)
