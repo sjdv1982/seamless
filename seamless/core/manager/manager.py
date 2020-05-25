@@ -6,6 +6,8 @@ import traceback
 import sys
 import copy
 
+from ..status import StatusReasonEnum
+
 def mainthread(func):
     def func2(*args, **kwargs):
         if threading.current_thread is None: # destruction at exit
@@ -15,13 +17,28 @@ def mainthread(func):
     functools.update_wrapper(func2, func)
     return func2
 
+def with_cancel_cycle(func):
+    def func2(*args, **kwargs):
+        if threading.current_thread is None: # destruction at exit
+            return
+        assert threading.current_thread() == threading.main_thread()
+        manager = args[0]
+        assert manager.cancel_cycle.cleared
+        try:
+            manager.cancel_cycle.cleared = False
+            result = func(*args, **kwargs)
+        finally:
+            manager.cancel_cycle.resolve()
+    functools.update_wrapper(func2, func)
+    return func2
+
 def run_in_mainthread(func):
     def func2(*args, **kwargs):
         manager = args[0]
         if threading.current_thread() != threading.main_thread():
             manager.taskmanager.add_synctask(func, args, kwargs, with_event=False)
         else:
-            func(*args, **kwargs)    
+            func(*args, **kwargs)
     functools.update_wrapper(func2, func)
     return func2
 
@@ -32,13 +49,15 @@ class Manager:
         global is_dummy_mount
         from .livegraph import LiveGraph
         from .cachemanager import CacheManager
-        from .taskmanager import TaskManager        
+        from .taskmanager import TaskManager
+        from .cancel import CancellationCycle
         self.contexts = weakref.WeakSet()
         self.last_ctx = lambda: None
         from ... import communion_server
         self.livegraph = LiveGraph(self)
         self.cachemanager = CacheManager(self)
         self.taskmanager = TaskManager(self)
+        self.cancel_cycle = CancellationCycle(self)
         loop_run_synctasks = self.taskmanager.loop_run_synctasks()
         asyncio.ensure_future(loop_run_synctasks)
 
@@ -47,7 +66,7 @@ class Manager:
         self.temprefmanager = temprefmanager
 
         # for now, just a single global mountmanager
-        from ..mount import mountmanager, is_dummy_mount        
+        from ..mount import mountmanager, is_dummy_mount
         self.mountmanager = mountmanager
         mountmanager.start()
 
@@ -113,7 +132,7 @@ class Manager:
     ##########################################################################
 
     @run_in_mainthread
-    def set_cell_checksum(self, 
+    def set_cell_checksum(self,
         cell, checksum, *,
         initial, from_structured_cell, trigger_bilinks
     ):
@@ -130,16 +149,16 @@ class Manager:
   - cannot have any incoming connection.
   - cannot be a deep cell (having a hash pattern)
 
-  If the new checksum is None, do a cell void cancellation.  
-  Else: 
+  If the new checksum is None, do a cell void cancellation.
+  Else:
     If old checksum is not None, do a cell cancellation.
-    Set the cell as being non-void, set the checksum (direct attribute access), and launch a cell update task. 
+    Set the cell as being non-void, set the checksum (direct attribute access), and launch a cell update task.
 
         """
-        sc_data = self.livegraph.datacells.get(cell) 
+        sc_data = self.livegraph.datacells.get(cell)
         sc_buf = self.livegraph.buffercells.get(cell)
         sc_schema = self.livegraph.schemacells.get(cell, [])
-        if not initial:            
+        if not initial:
             if from_structured_cell:
                 if sc_data is None and sc_buf is None and not len(sc_schema):
                     assert cell._structured_cell is not None
@@ -158,13 +177,13 @@ class Manager:
                 if checksum is None:
                     value = None
                 else:
-                    value = self.resolve(checksum)                    
+                    value = self.resolve(checksum)
                 return cell._structured_cell.set_no_inference(value)
         if checksum is None:
             reason = StatusReasonEnum.UNDEFINED
             if not from_structured_cell:
                 self.cancel_cell(cell, void=True, reason=reason)
-        else:            
+        else:
             reason = None
             #if not trigger_bilinks:
             old_checksum = cell._checksum # avoid infinite task loop...
@@ -175,7 +194,7 @@ class Manager:
                     self.cancel_cell(cell, void=False)
         #and cell._context()._macro is None: # TODO: forbid
         self._set_cell_checksum(
-            cell, checksum, 
+            cell, checksum,
             (checksum is None), status_reason=reason,
             trigger_bilinks=trigger_bilinks
         )
@@ -185,9 +204,9 @@ class Manager:
             value = self.resolve(checksum, "plain")
             self.update_schemacell(cell, value, None)
 
-    def _set_cell_checksum(self, 
+    def _set_cell_checksum(self,
         cell, checksum, void, status_reason=None, prelim=False, trigger_bilinks=True
-    ):        
+    ):
         # NOTE: Any cell task depending on the old checksum must have been canceled already
         if cell._destroyed:
             return
@@ -211,14 +230,14 @@ class Manager:
         cell._status_reason = status_reason
         cell._prelim = prelim
         if checksum != old_checksum:
-            cachemanager.incref_checksum(checksum, cell, authority)            
+            cachemanager.incref_checksum(checksum, cell, authority)
             observer = cell._observer
             if observer is not None:
                 cs = checksum.hex() if checksum is not None else None
                 observer(cs)
             if checksum is not None:
                 for traitlet in cell._traitlets:
-                    traitlet.receive_update(checksum)            
+                    traitlet.receive_update(checksum)
             if not is_dummy_mount(cell._mount):
                 buffer = self.cachemanager.buffer_cache.get_buffer(checksum)
                 self.mountmanager.add_cell_update(cell, checksum, buffer)
@@ -232,7 +251,7 @@ class Manager:
         ###print("INCH", inchannel.subpath, checksum is not None)
         ###import traceback; traceback.print_stack(limit=5)
         assert checksum is None or isinstance(checksum, bytes), checksum
-        assert isinstance(void, bool), void        
+        assert isinstance(void, bool), void
         if void:
             assert status_reason is not None
             assert checksum is None
@@ -246,10 +265,10 @@ class Manager:
         inchannel._checksum = checksum
         inchannel._void = void
         inchannel._status_reason = status_reason
-        inchannel._prelim = prelim        
+        inchannel._prelim = prelim
         if checksum != old_checksum:
-            cachemanager.incref_checksum(checksum, inchannel, False)            
-            sc.modified_inchannels.add(inchannel)
+            cachemanager.incref_checksum(checksum, inchannel, False)
+            sc.modified.add_inchannel(inchannel)
             self.structured_cell_join(sc)
 
     def _set_transformer_checksum(self,
@@ -291,7 +310,7 @@ class Manager:
         print(stars + msg + stars, file=sys.stderr)
         """
         self.cancel_macro(macro, True, reason=StatusReasonEnum.ERROR)
-        self.cachemanager.macro_exceptions[macro] = exc      
+        self.cachemanager.macro_exceptions[macro] = exc
 
     @run_in_mainthread
     def set_cell(self, cell, value):
@@ -311,24 +330,21 @@ class Manager:
             from_auth=True
         )
         self.taskmanager.cancel_structured_cell(structured_cell)
-    
+
 
     def update_schemacell(self, schemacell, value, structured_cell):
         livegraph = self.livegraph
         structured_cells = livegraph.schemacells[schemacell]
-        for sc in structured_cells:            
+        for sc in structured_cells:
             if sc is structured_cell:
-                continue           
+                continue
             sc._schema_value = copy.deepcopy(value)
             self.structured_cell_join(sc)
 
     def structured_cell_join(self, structured_cell):
         # First cancel all ongoing joins
-        # TODO: only activate taskmanager.cancel_structured_cell
-        # and be more judicious in canceling outchannel paths
-        # (currently commented out in StructuredCellJoinTask)
-        self.cancel_structured_cell(
-            structured_cell, void=False
+        self.taskmanager.cancel_structured_cell(
+            structured_cell
         )
         if self._destroyed or structured_cell._destroyed:
             return
@@ -386,7 +402,7 @@ class Manager:
         buffer = checksum_cache.get(checksum)
         if buffer is not None:
             assert isinstance(buffer, bytes)
-            return buffer                    
+            return buffer
         return GetBufferTask(self, checksum).launch_and_await()
 
     @mainthread
@@ -394,7 +410,7 @@ class Manager:
         checksum = self.get_cell_checksum(cell)
         buffer = self._get_buffer(checksum)
         return buffer, checksum
-        
+
     @mainthread
     def get_cell_value(self, cell, copy):
         if cell._destroyed:
@@ -416,11 +432,11 @@ class Manager:
             return None
         if isinstance(checksum, str):
             checksum = bytes.fromhex(checksum)
-        buffer = self._get_buffer(checksum)   
+        buffer = self._get_buffer(checksum)
         if asyncio.get_event_loop().is_running():
             return deserialize_sync(buffer, checksum, celltype, copy=copy)
         task = DeserializeBufferTask(
-            self, buffer, checksum, celltype, 
+            self, buffer, checksum, celltype,
             copy=copy
         )
         value = task.launch_and_await()
@@ -434,7 +450,7 @@ class Manager:
     def _set_reactor_exception(self, reactor, codename, exception):
         if exception is None:
             self.cachemanager.reactor_exceptions[reactor] = None
-            return 
+            return
         exc = traceback.format_exception(type(exception), exception, exception.__traceback__)
         exc = "".join(exc)
         msg = "Exception in %s, code name %s:\n"% (str(reactor), codename) + exc
@@ -444,9 +460,9 @@ class Manager:
         reason = StatusReasonEnum.ERROR
         self.cancel_reactor(reactor, void=True, reason=reason)
 
-    @mainthread
-    def cancel_cell(self, cell, void, origin_task=None, reason=None):
-        """Cancels all tasks depending on cell, and sets all dependencies to None. 
+    @with_cancel_cycle
+    def cancel_cell(self, cell, void, origin_task=None, reason=StatusReasonEnum.UPSTREAM):
+        """Cancels all tasks depending on cell, and sets all dependencies to None.
 If void=True, all dependencies are set to void as well.
 If origin_task is provided, that task is not cancelled."""
         assert isinstance(cell, Cell)
@@ -454,196 +470,53 @@ If origin_task is provided, that task is not cancelled."""
             assert cell._structured_cell.schema is cell, cell # cancel_cell only on schema cells, else use cancel_scell_inpath
         if cell._destroyed:
             return
-        if cell._canceling:
-            return
-        try:
-            cell._canceling = True
-            if (not void) and cell._void:
-                return
-            self.taskmanager.cancel_cell(cell, origin_task=origin_task)
-            if reason is None:
-                reason = StatusReasonEnum.UPSTREAM
-            self._set_cell_checksum(cell, None, void, status_reason=reason)
-            livegraph = self.livegraph
-            accessors = livegraph.cell_to_downstream[cell]
-            for path in cell._paths:
-                path_accessors = livegraph.macropath_to_downstream[path]
-                accessors = accessors + path_accessors
-            from_unconnected_cell = False
-            if void and reason == StatusReasonEnum.UNCONNECTED:
-                from_unconnected_cell = True
-            for accessor in accessors:
-                self.cancel_accessor(
-                    accessor, void,
-                    from_unconnected_cell=from_unconnected_cell
-                )
-        finally:
-            cell._canceling = False
 
-    @mainthread
-    def cancel_scell_inpath(self, sc, path, void, from_auth=False, reason=None):
-        from .tasks.structured_cell import overlap_path
+        self.cancel_cycle.origin_task = origin_task
+        self.cancel_cycle.cancel_cell(cell, void=void, reason=reason)
+
+    @with_cancel_cycle
+    def cancel_scell_inpath(self, sc, path, void, from_auth=False, reason=StatusReasonEnum.UPSTREAM):
         assert isinstance(sc, StructuredCell)
-        cell = sc._data
-        need_join = True
-        if not from_auth and path in sc.inchannels:
-            if reason is None and void:
-                reason = StatusReasonEnum.UPSTREAM
-            ic = sc.inchannels[path]
-            self._set_inchannel_checksum(
-                ic, None, void,
-                status_reason=reason
-            )
-            if path == ():
-                self.cancel_structured_cell(sc, void, reason=reason)
-                need_join = False
-        if need_join:
-            self.structured_cell_join(sc)
+        if from_auth:
+            for inchannel in sc.inchannels:
+                if overlap_path(inchannel, path):
+                    return
+        self.cancel_cycle.cancel_scell_inpath(scell, path, void=void, reason=reason)
 
-    @mainthread
-    def cancel_structured_cell(self, sc, void, reason=None):
-        self.taskmanager.cancel_structured_cell(sc)
-        cell = sc._data
-        for outchannel in sc.outchannels:
-            ###if overlap_path(outchannel, path): # no, cancel all!
-            from_unconnected_cell = False
-            if reason == StatusReasonEnum.UNCONNECTED:
-                from_unconnected_cell = True
-            self.cancel_cell_path(
-              cell, outchannel, void, 
-              from_unconnected_cell=from_unconnected_cell
-            )
-        if reason is None:
-            reason = StatusReasonEnum.UPSTREAM
-        self._set_cell_checksum(cell, None, void, reason)
-        self._set_cell_checksum(sc.buffer, None, void, reason)
 
-    @mainthread
-    def cancel_cell_path(self, cell, path, void, from_unconnected_cell=False):
-        assert isinstance(cell, Cell)
-        assert cell._structured_cell is not None
-        assert cell._structured_cell._data is cell, (cell, cell._structured_cell._data)
-        if cell._destroyed:
-            return
-        livegraph = self.livegraph
-        all_accessors = livegraph.paths_to_downstream[cell]
-        for accessor in all_accessors[path]:
-            self.cancel_accessor(
-              accessor, void, 
-              from_unconnected_cell=from_unconnected_cell
-            )        
-
-    @mainthread
+    @with_cancel_cycle
     def cancel_accessor(self,
-        accessor, void, 
-        origin_task=None, 
+        accessor, void,
+        origin_task=None,
         from_unconnected_cell=False
     ):
         assert isinstance(accessor, ReadAccessor)
-        self.taskmanager.cancel_accessor(accessor, origin_task=origin_task)
-        if origin_task is None \
-          or not hasattr(origin_task, "accessor") \
-          or origin_task.accessor is not accessor:
-            if accessor.expression is not None:           
-                self.livegraph.decref_expression(accessor.expression, accessor)
-                accessor.expression = None
-                accessor._checksum = None
-        accessor._void = void
-        target = accessor.write_accessor.target()
+
         reason = StatusReasonEnum.UPSTREAM
         if from_unconnected_cell:
             assert void
             reason = StatusReasonEnum.UNCONNECTED
-        if isinstance(target, Path):
-            target = target._cell
-            if target is None:
-                return        
-        if isinstance(target, Cell):
-            if accessor.write_accessor.path is None:
-                if target._structured_cell is not None:
-                    assert target._structured_cell.schema is target, target # cancel_cell only on schema cells, else use cancel_scell_inpath
-                return self.cancel_cell(target, void=void, reason=reason)
-            else:
-                assert target._structured_cell is not None
-                self.cancel_scell_inpath(
-                    target._structured_cell, 
-                    accessor.write_accessor.path,
-                    void=void, reason=reason
-                )
-        elif isinstance(target, Worker):
-            if isinstance(target, Transformer):
-                return self.cancel_transformer(target, void=void, reason=reason)
-            elif isinstance(target, Reactor):
-                return self.cancel_reactor(target, void=void, reason=reason)
-            elif isinstance(target, Macro):
-                return self.cancel_macro(target, void=void, reason=reason)
-            else:
-                raise TypeError(target)
-        else:
-            raise TypeError(target)
 
-    @mainthread
-    def cancel_transformer(self, transformer, void, reason=None):
+
+        self.cancel_cycle.cancel_accessor(accessor, void=void, reason=reason)
+        self.cancel_cycle.origin_task = origin_task
+
+
+    @with_cancel_cycle
+    def cancel_transformer(self, transformer, void, reason=StatusReasonEnum.UPSTREAM):
         assert isinstance(transformer, Transformer)
-        self.taskmanager.cancel_transformer(transformer)
-        if (not void) and transformer._void:
-            return
-        if void:
-            assert reason is not None
-            if transformer._void:
-                curr_reason = transformer._status_reason
-                if curr_reason.value < reason.value:
-                    return
-        self._set_transformer_checksum(
-            transformer, None, void, 
-            status_reason=reason,
-            prelim = False
-        )
-        downstreams = self.livegraph.transformer_to_downstream[transformer]
-        for accessor in downstreams:
-            self.cancel_accessor(
-                accessor, void
-            )
-        return
+        self.cancel_cycle.cancel_transformer(transformer, void=void, reason=reason)
 
 
-    @mainthread
-    def cancel_reactor(self, reactor, void, reason=None):
+    @with_cancel_cycle
+    def cancel_reactor(self, reactor, void, reason=StatusReasonEnum.UPSTREAM):
         assert isinstance(reactor, Reactor)
-        if (not void) and reactor._void:
-            return
-        if reason is None:
-            reason = StatusReasonEnum.UPSTREAM
-        if void and reactor._void:
-            curr_reason = reactor._status_reason
-            if curr_reason.value < reason.value:
-                return
-        livegraph = self.livegraph
-        reactor._pending = (not void)
-        reactor._void = void
-        reactor._status_reason = reason 
-        outputpins = [pinname for pinname in reactor._pins \
-            if reactor._pins[pinname].io == "output" ]
-        if void:
-            for pinname in outputpins:
-                accessors = livegraph.reactor_to_downstream[reactor][pinname]
-                for accessor in accessors:            
-                    self.cancel_accessor(accessor, True)        
+        self.cancel_cycle.cancel_reactor(reactor, void=void, reason=reason)
 
-    @mainthread
-    def cancel_macro(self, macro, void, reason=None):
+    @with_cancel_cycle
+    def cancel_macro(self, macro, void, reason=StatusReasonEnum.UPSTREAM):
         assert isinstance(macro, Macro)
-        gen_context = macro._gen_context
-        if void:
-            if gen_context is not None:
-                gen_context.destroy()
-                macro._gen_context = None
-            if macro._void:
-                curr_reason = macro._status_reason
-                if curr_reason.value < reason.value:
-                    return
-            macro._void = True
-            macro._status_reason = reason
+        self.cancel_cycle.cancel_macro(macro, void=void, reason=reason)
 
     ##########################################################################
     # API section ???: Connection support
@@ -655,7 +528,7 @@ If origin_task is provided, that task is not cancelled."""
         if isinstance(source, UniLink):
             source = source.get_linked()
         if isinstance(target, UniLink):
-            target = target.get_linked()            
+            target = target.get_linked()
         task = UponConnectionTask(
             self, source, source_subpath, target, target_subpath
         )
@@ -667,7 +540,7 @@ If origin_task is provided, that task is not cancelled."""
         if isinstance(source, UniLink):
             source = source.get_linked()
         if isinstance(target, UniLink):
-            target = target.get_linked()            
+            target = target.get_linked()
         task = UponBiLinkTask(
             self, source, target
         )
@@ -677,7 +550,7 @@ If origin_task is provided, that task is not cancelled."""
         return self.livegraph.cell_from_pin(pin)
 
 
-    def _verify_connect(self, current_macro, source, target):        
+    def _verify_connect(self, current_macro, source, target):
         from ..macro import Path
         assert source._get_manager() is self, source._get_manager()
         assert source._root() is target._root()
@@ -714,7 +587,7 @@ If origin_task is provided, that task is not cancelled."""
     def _destroy_structured_cell(self, structured_cell):
         # no need to notify livegraph; cell destruction does the job already
         self.cachemanager.destroy_structured_cell(structured_cell)
-        self.taskmanager.destroy_structured_cell(structured_cell)        
+        self.taskmanager.destroy_structured_cell(structured_cell)
 
     def _destroy_transformer(self, transformer):
         self.cachemanager.destroy_transformer(transformer)
@@ -743,11 +616,11 @@ If origin_task is provided, that task is not cancelled."""
         if self._destroyed:
             return
         self._destroyed = True
-        contexts = list(self.contexts)        
+        contexts = list(self.contexts)
         self.contexts.clear()
         for ctx in contexts:
             ctx.destroy(from_del=from_del)
-        self.last_ctx = lambda: None        
+        self.last_ctx = lambda: None
         for path in list(self.livegraph.macropath_to_upstream.keys()):
             path.destroy()
         self.cachemanager.check_destroyed()
@@ -775,7 +648,7 @@ from ..transformer import Transformer
 from ..macro import Macro, Path, _global_paths
 from ..reactor import Reactor
 from .accessor import ReadAccessor
-from ..status import StatusReasonEnum
 from ..structured_cell import StructuredCell
 from .tasks.structured_cell import StructuredCellJoinTask
 from .tasks.transformer_update import TransformerUpdateTask
+from ..utils import overlap_path

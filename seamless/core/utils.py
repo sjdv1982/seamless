@@ -65,3 +65,11 @@ def dictsort(data):
             listsort(v)
         ret[k] = v
     return ret
+
+def overlap_path(p1, p2):
+    if p1[:len(p2)] == p2:
+        return True
+    elif p2[:len(p1)] == p1:
+        return True
+    else:
+        return False

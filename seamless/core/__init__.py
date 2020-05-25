@@ -14,7 +14,7 @@ class SeamlessBase:
     def _get_macro(self):
         return self._context()._macro
 
-    @property    
+    @property
     def path(self):
         if self._cached_path is not None:
             return self._cached_path
@@ -25,7 +25,7 @@ class SeamlessBase:
         elif self._context().path is None:
             return ("<None>", self.name)
         else:
-            return self._context().path + (self.name,)        
+            return self._context().path + (self.name,)
 
     def _validate_path(self, required_path=None):
         if required_path is None:

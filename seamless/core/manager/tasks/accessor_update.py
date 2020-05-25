@@ -11,19 +11,19 @@ class AccessorUpdateTask(Task):
         accessor = self.accessor
 
         # Get the expression. If it is None, do an accessor void cancellation
-        expression = accessor.expression        
+        expression = accessor.expression
         manager = self.manager()
-                
+
         if expression is None:
             accessor._status_reason = StatusReasonEnum.UNDEFINED
             accessor._new_macropath = False
             manager.cancel_accessor(
-                accessor, void=True, 
+                accessor, void=True,
                 origin_task=self
             )
-            return        
-        
-        expression_result_checksum = await EvaluateExpressionTask(manager, expression).run()        
+            return
+
+        expression_result_checksum = await EvaluateExpressionTask(manager, expression).run()
 
         # If the expression result is None, do an accessor void cancellation
         if expression_result_checksum is None:
@@ -39,11 +39,11 @@ class AccessorUpdateTask(Task):
 
         # Select the write accessor's target.
         target = accessor.write_accessor.target()
-        if isinstance(target, MacroPath):            
+        if isinstance(target, MacroPath):
             target = target._cell
         if target is None:
             return
-        
+
         accessor._new_macropath = False
         if isinstance(target, Worker):
             worker = target
@@ -61,7 +61,7 @@ class AccessorUpdateTask(Task):
             if path is None:
                 await manager.taskmanager.await_upon_connection_tasks(self.taskid, target._root())
                 manager._set_cell_checksum(
-                    target, expression_result_checksum, 
+                    target, expression_result_checksum,
                     False, None, prelim=accessor._prelim
                 )
                 CellUpdateTask(manager, target).launch()
@@ -72,13 +72,13 @@ class AccessorUpdateTask(Task):
                     assert sc is not None
                     inchannel = sc.inchannels[path]
                     manager._set_inchannel_checksum(
-                        inchannel, expression_result_checksum, 
+                        inchannel, expression_result_checksum,
                         False, None, prelim=accessor._prelim
                     )
                     manager.structured_cell_join(sc)
         else:
             raise TypeError(target)
-            
+
 from ..accessor import ReadAccessor
 from .evaluate_expression import EvaluateExpressionTask
 from .transformer_update import TransformerUpdateTask

@@ -18,30 +18,30 @@ from .util import as_tuple, get_path, get_path_link, find_channels, build_struct
 direct_celltypes = (
     "text", "plain", "mixed", "binary",
     "cson", "yaml", "str", "bytes", "int", "float", "bool"
-)    
+)
 
 def set_structured_cell_from_checksum(cell, checksum):
     join = False
     """
     if "temp" in checksum:
         assert len(checksum) == 1, checksum.keys()
-        cell.modified_auth_paths.add(())
+        cell.modified.add_auth_path(()))
         temp_checksum = checksum["temp"]
         if cell.hash_pattern is not None:
             temp_cs = bytes.fromhex(temp_checksum)
             temp_cs2 = apply_hash_pattern_sync(
                 temp_cs, cell.hash_pattern
             )
-            temp_checksum = temp_cs2.hex()       
+            temp_checksum = temp_cs2.hex()
         cell.auth._set_checksum(temp_checksum, initial=True, from_structured_cell=False)
         join = True
-    else:        
+    else:
     """
     if "value" in checksum:
         # not done! value calculated anew...
-        """        
+        """
         cell._data._set_checksum(
-            checksum["value"], 
+            checksum["value"],
             from_structured_cell=True,
             initial=True
         )
@@ -53,7 +53,7 @@ def set_structured_cell_from_checksum(cell, checksum):
         # not done! value calculated anew...
         """
         cell.buffer._set_checksum(
-            checksum["buffer"], 
+            checksum["buffer"],
             from_structured_cell=True,
             initial=True
         )
@@ -63,7 +63,7 @@ def set_structured_cell_from_checksum(cell, checksum):
         cell._data._void = False
 
     if "auth" in checksum:
-        cell.modified_auth_paths.add(())
+        cell.modified.add_auth_path(())
         if cell.auth is None:
             msg = "Warning: %s has no authority, but an auth checksum is present"
             print(msg % cell)
@@ -76,10 +76,10 @@ def set_structured_cell_from_checksum(cell, checksum):
             join = True
             cell.buffer._void = False
             cell._data._void = False
-        
+
     if "schema" in checksum:
         cell.schema._set_checksum(
-            checksum["schema"], 
+            checksum["schema"],
             from_structured_cell=True,
             initial=True
         )
@@ -99,7 +99,7 @@ def translate_py_reactor(node, root, namespace, inchannels, outchannels):
 
     io_name = node["IO"]
     interchannels_in = [as_tuple(p) for p, pin in node["pins"].items() if pin["io"] == "output"]
-    interchannels_out = [as_tuple(p) for p, pin in node["pins"].items() if pin["io"] == "input"]    
+    interchannels_out = [as_tuple(p) for p, pin in node["pins"].items() if pin["io"] == "input"]
 
     all_inchannels = interchannels_in + inchannels  #highlevel must check that there are no duplicates
     all_outchannels = interchannels_out + [p for p in outchannels if p not in interchannels_out]
@@ -151,7 +151,7 @@ def translate_cell(node, root, namespace, inchannels, outchannels):
     name = path[-1]
     ct = node["celltype"]
     if ct == "structured":
-        datatype = node["datatype"]        
+        datatype = node["datatype"]
         ### TODO: harmonize datatype with schema type
         hash_pattern = node["hash_pattern"]
         mount = node.get("mount")
@@ -178,7 +178,7 @@ def translate_cell(node, root, namespace, inchannels, outchannels):
     else: #not structured
         for c in inchannels + outchannels:
             assert not len(c) #should have been checked by highlevel
-        if ct == "code":                
+        if ct == "code":
             if node["language"] in ("python", "ipython"):
                 if node.get("transformer"):
                     child = core_cell("transformer")
@@ -195,7 +195,7 @@ def translate_cell(node, root, namespace, inchannels, outchannels):
         else:
             raise ValueError(ct) #unknown celltype; should have been caught by high level
         if node.get("fingertip_no_recompute"):
-            child._fingertip_recompute = False            
+            child._fingertip_recompute = False
         if node.get("fingertip_no_remote"):
             child._fingertip_remote = False
     setattr(parent, name, child)
@@ -225,7 +225,7 @@ def translate_connection(node, namespace, ctx):
     from ..core.structured_cell import Inchannel, Outchannel
     from ..core.worker import Worker, PinBase
     source_path, target_path = node["source"], node["target"]
-    
+
     source, source_node = get_path(
       ctx, source_path, namespace, False,
       return_node = True
@@ -250,11 +250,11 @@ def translate_connection(node, namespace, ctx):
             if con_name not in ctx._children:
                 break
         intermediate = core_cell("mixed")
-        intermediate._fingertip_remote = False        
+        intermediate._fingertip_remote = False
         setattr(ctx, con_name, intermediate)
         source.connect(intermediate)
         intermediate.connect(target)
-        
+
 
     if not isinstance(source, (Worker, PinBase, Outchannel, Cell)):
         raise TypeError(source)
@@ -265,7 +265,7 @@ def translate_connection(node, namespace, ctx):
 def translate_link(node, namespace, ctx):
     first = get_path_link(
       ctx, node["first"], namespace, True
-    )    
+    )
     second = get_path_link(
       ctx, node["second"], namespace, True
     )
@@ -280,7 +280,7 @@ def import_before_translate(graph):
     global translate_bash_transformer
     global translate_docker_transformer
     impvars = (
-        "translate_compiled_transformer", 
+        "translate_compiled_transformer",
         "translate_bash_transformer",
         "translate_docker_transformer"
     )
@@ -352,7 +352,7 @@ def translate(graph, ctx):
             msg = "Libmacro '%s' was not removed during pre-translation, or is a nested libmacro"
             raise TypeError(msg % path)
         else:
-            raise TypeError(t)        
+            raise TypeError(t)
         node.pop("UNTRANSLATED", None)
 
     namespace2 = OrderedDict()

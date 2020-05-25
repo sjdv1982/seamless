@@ -2,7 +2,7 @@ import weakref
 from copy import deepcopy
 from . import SeamlessBase
 from .status import StatusReasonEnum
-from copy import deepcopy
+from .utils import overlap_path
 
 class Inchannel:
     _void = True
@@ -21,7 +21,7 @@ class Outchannel:
         self.subpath = subpath
     def connect(self, target):
         sc = self.structured_cell()
-        manager = sc._get_manager()        
+        manager = sc._get_manager()
         if isinstance(target, Inchannel):
             target_subpath = target.subpath
             target = target.structured_cell().buffer
@@ -29,8 +29,55 @@ class Outchannel:
             target_subpath = None
         manager.connect(sc._data, self.subpath, target, target_subpath)
 
+
+class ModifiedPathManager:
+    def __init__(self, structured_cell):
+        self.structured_cell = weakref.ref(structured_cell)
+        self.clear()
+
+    def clear(self):
+        self.modified_paths = set()
+        self.modified_inchannels = set()  # for now, just for monitoring...
+        self.modified_outchannels = set()
+
+    def _add_path(self, path):
+        if path in self.modified_paths:
+            return
+        for mp in self.modified_paths:
+            if path[:len(mp)] == mp:
+                return
+
+        new_paths = set()
+        new_paths.add(path)
+        for mp in self.modified_paths:
+            if mp[:len(path)] != path:
+                new_paths.add(mp)
+        self.modified_paths = new_paths
+
+        if not len(self.modified_paths):
+            return
+        modified_outchannels = set()
+        modified_outchannels.add( () )
+        sc = self.structured_cell()
+        if sc is None or sc._destroyed:
+            return
+        for outchannel in sc.outchannels:
+            for mp in self.modified_paths:
+                if overlap_path(outchannel, mp):
+                    modified_outchannels.add(mp)
+        modified_outchannels = set(modified_outchannels)
+        if self.modified_outchannels != modified_outchannels:
+            self.modified_outchannels = modified_outchannels
+
+    def add_auth_path(self, path):
+        self._add_path(path)
+
+    def add_inchannel(self, inchannel):
+        self.modified_inchannels.add(inchannel)
+        self._add_path(inchannel)
+
 class StructuredCell(SeamlessBase):
-    _celltype = "structured"    
+    _celltype = "structured"
     _exception = None
     _new_connections = False
     def __init__(self, data, *,
@@ -40,13 +87,13 @@ class StructuredCell(SeamlessBase):
         outchannels=[],
         buffer=None,
         hash_pattern=None
-    ):      
+    ):
         from .unbound_context import UnboundManager
         self.no_auth = False
         if auth is None:
             if not len(inchannels):
                 if buffer is None:
-                    auth = data            
+                    auth = data
                 else:
                     auth = buffer
             else:
@@ -67,9 +114,9 @@ class StructuredCell(SeamlessBase):
         assert data._structured_cell is None
         assert data._celltype == "mixed"
         data._structured_cell = self
-        self._data = data        
+        self._data = data
 
-        assert self.no_auth == (auth is None)        
+        assert self.no_auth == (auth is None)
         if auth is not None:
             assert isinstance(auth, Cell)
             assert auth._celltype == "mixed"
@@ -84,7 +131,7 @@ class StructuredCell(SeamlessBase):
         self.buffer = buffer
         assert schema is None or isinstance(schema, Cell)
         if schema is not None:
-            assert schema._celltype == "plain"            
+            assert schema._celltype == "plain"
         self.schema = schema
 
         assert data._hash_pattern == hash_pattern
@@ -93,9 +140,7 @@ class StructuredCell(SeamlessBase):
             assert auth._hash_pattern == data._hash_pattern
 
         self._validate_channels(inchannels, outchannels)
-        self.modified_auth_paths = set()
-        self.modified_inchannels = set()
-        self.modified_schema = False
+        self.modified = ModifiedPathManager(self)
 
         self._auth_value = None
         self._schema_value = None
@@ -129,10 +174,10 @@ class StructuredCell(SeamlessBase):
             self.outchannels[outchannel] = Outchannel(self, outchannel)
 
         inchannels = list(self.inchannels.keys())
-        
+
         for path1 in inchannels:
             lpath1 = len(path1)
-            for path2 in inchannels:                
+            for path2 in inchannels:
                 if path1 is path2:
                     continue
                 lpath2 = len(path2)
@@ -159,50 +204,58 @@ class StructuredCell(SeamlessBase):
     def set_no_inference(self, value):
         self.handle_no_inference.set(value)
 
-    def _set_auth_path(self, path, value, from_pop=False):
+    def _set_auth_path(self, path, value, from_pop=False, autogen=False):
         assert not self.no_auth
         if self.auth._destroyed:
             return
-        self.modified_auth_paths.add(path)
+        self.modified.add_auth_path(path)
         manager = self._get_manager()
         if manager._destroyed:
             return
-        if not from_pop and value is None and len(path) and isinstance(path[-1], int):
-            l = len(self._get_auth_path(path[:-1]))
-            tail = path[-1]
-            new_value = None
-            for n in range(l-1, path[-1]+1, -1):
-                path2 = path[:-1] + (n,)
-                old_value = self._get_auth_path(path2)
-                self._set_auth_path(path2, new_value, from_pop=True)
-                new_value = old_value
-            return
-        manager.set_auth_path(self, path, value)
-        if self.hash_pattern is None:
-            if not len(path):
-                self._auth_value = value
-            elif self._auth_value is None:
-                if isinstance(path[0], str):
-                    self._auth_value = {}
-                elif isinstance(path[0], list):
-                    self._auth_value = []
-            if len(path):
-                set_subpath(self._auth_value, None, path, value)
-        else:
-            if not isinstance(self._auth_value, (list, dict)):
+        resolve_cancel_cycle = False
+        if not autogen:
+            cancel_cycle = manager.cancel_cycle
+            if cancel_cycle.cleared:
+                resolve_cancel_cycle = True
+        try:
+            if not from_pop and value is None and len(path) and isinstance(path[-1], int):
+                l = len(self._get_auth_path(path[:-1]))
+                tail = path[-1]
+                new_value = None
+                for n in range(l-1, path[-1]+1, -1):
+                    path2 = path[:-1] + (n,)
+                    old_value = self._get_auth_path(path2)
+                    self._set_auth_path(path2, new_value, from_pop=True, autogen=True)
+                    new_value = old_value
+            elif self.hash_pattern is None:
                 if not len(path):
-                    if list(self.hash_pattern.keys())[0][0] == "!":
-                        self._auth_value = []
-                    else:
-                        self._auth_value = {}
-                else:
+                    self._auth_value = value
+                elif self._auth_value is None:
                     if isinstance(path[0], str):
                         self._auth_value = {}
                     elif isinstance(path[0], list):
                         self._auth_value = []
-            set_subpath(self._auth_value, self.hash_pattern, path, value)
+                if len(path):
+                    set_subpath(self._auth_value, None, path, value)
+            else:
+                if not isinstance(self._auth_value, (list, dict)):
+                    if not len(path):
+                        if list(self.hash_pattern.keys())[0][0] == "!":
+                            self._auth_value = []
+                        else:
+                            self._auth_value = {}
+                    else:
+                        if isinstance(path[0], str):
+                            self._auth_value = {}
+                        elif isinstance(path[0], list):
+                            self._auth_value = []
+                set_subpath(self._auth_value, self.hash_pattern, path, value)
+            manager.set_auth_path(self, path, value)
+        finally:
+            if resolve_cancel_cycle:
+                cancel_cycle.resolve()
 
-    def _join(self):        
+    def _join(self):
         if self.buffer._destroyed:
             return
         manager = self._get_manager()
@@ -224,7 +277,6 @@ class StructuredCell(SeamlessBase):
         manager = self._get_manager()
         if manager._destroyed:
             return
-        self.modified_schema = True
         if not len(path):
             self._schema_value = value
         else:
@@ -243,11 +295,11 @@ class StructuredCell(SeamlessBase):
         self.schema._set_checksum(checksum)#, from_structured_cell=True)
         manager = self._get_manager()
         manager.update_schemacell(
-            self.schema, 
-            self._schema_value, 
+            self.schema,
+            self._schema_value,
             self
-        )    
-        manager.structured_cell_join(self)        
+        )
+        manager.structured_cell_join(self)
 
     def _get_handle(self, inference):
         # Silk structure using self.auth
@@ -286,12 +338,12 @@ class StructuredCell(SeamlessBase):
 
     def set_checksum(self, checksum):
         return self._data.set_checksum(checksum)
-        
+
     @property
     def value(self):
-        # Silk structure using self._data.value 
+        # Silk structure using self._data.value
         # i.e. will always be a copy
-        # i.e. modification is useless        
+        # i.e. modification is useless
         # i.e. any external modification to self._data will make it out-of-date
         # i.e. does NOT use the StructuredCellBackend, but DefaultBackend
         value = self._data.value
@@ -328,10 +380,10 @@ class StructuredCell(SeamlessBase):
         if not has_ctx:
             manager.register_structured_cell(self)
 
-    def destroy(self, *, from_del=False): 
+    def destroy(self, *, from_del=False):
         if self._destroyed:
             return
-        super().destroy(from_del=from_del)        
+        super().destroy(from_del=from_del)
         self._get_manager()._destroy_structured_cell(self)
 
     def has_authority(self, path=None):
@@ -358,6 +410,6 @@ from ..mixed.Backend import StructuredCellBackend, StructuredCellSchemaBackend
 from ..mixed import MixedObject, MixedDict
 from ..silk.Silk import Silk
 from ..silk.policy import (
-    default_policy as silk_default_policy, 
+    default_policy as silk_default_policy,
     no_infer_policy as silk_no_infer_policy
 )

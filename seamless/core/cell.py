@@ -37,8 +37,6 @@ class Cell(SeamlessBase):
     _share = None
     _structured_cell = None
 
-    _canceling = False
-
     """Parameters for putting the checksum 'at your fingertips':
     If "fingertip_recompute" is None or True:
     - If not available, try to re-compute it using its provenance,
@@ -92,20 +90,20 @@ class Cell(SeamlessBase):
         return ret
 
     def _get_status(self):
-        from .status import status_cell, format_status      
+        from .status import status_cell, format_status
         manager = self._get_manager()
         if isinstance(manager, UnboundManager):
-            raise Exception("Cannot ask the cell value of a context that is being constructed by a macro")        
+            raise Exception("Cannot ask the cell value of a context that is being constructed by a macro")
         status = status_cell(self)
         return status
 
     @property
-    def status(self):        
-        """The cell's current status."""        
+    def status(self):
+        """The cell's current status."""
         from .status import format_status
         status = self._get_status()
         statustxt = format_status(status)
-        return "Status: " + statustxt 
+        return "Status: " + statustxt
 
     @property
     def checksum(self):
@@ -143,7 +141,7 @@ class Cell(SeamlessBase):
 
     @property
     def buffer(self):
-        """Return the cell's buffer.        
+        """Return the cell's buffer.
         The cell's checksum is the SHA3-256 hash of this."""
         manager = self._get_manager()
         if isinstance(manager, UnboundManager):
@@ -185,7 +183,7 @@ class Cell(SeamlessBase):
         exc = livegraph.cell_parsing_exceptions.get(self)
         if exc is not None:
             return exc
-        accessor = livegraph.cell_to_upstream[self]        
+        accessor = livegraph.cell_to_upstream[self]
         if accessor is None:
             return None
         expression = accessor.expression
@@ -219,13 +217,13 @@ class Cell(SeamlessBase):
         return self
 
     def _set_checksum(self, checksum, initial=False, from_structured_cell=False):
-        """Specifies the checksum of the data (hex format)        
-        
+        """Specifies the checksum of the data (hex format)
+
         If "initial" is True, it is assumed that the context is being initialized (e.g. when created from a graph).
         Else, cell cannot be the .data or .buffer attribute of a StructuredCell, and cannot have any incoming connection.
-        
+
         However, if "from_structured_cell" is True, then the cell is updated by its encapsulating structured cell
-        """        
+        """
         if self._context is None:
             self._initial_val = None
             if checksum is not None:
@@ -236,9 +234,9 @@ class Cell(SeamlessBase):
             if checksum is not None:
                 checksum = bytes.fromhex(checksum)
             manager.set_cell_checksum(
-              self, checksum, 
-              initial=initial, 
-              from_structured_cell=from_structured_cell, 
+              self, checksum,
+              initial=initial,
+              from_structured_cell=from_structured_cell,
               trigger_bilinks=(not initial)
             )
         return self
@@ -270,7 +268,7 @@ class Cell(SeamlessBase):
 
     def connect(self, target):
         """connects the cell to a target
-        
+
         Target can be a cell, pin, inchannel or unilink"""
         from .worker import InputPin, EditPin, OutputPin
         from .transformer import Transformer
@@ -288,7 +286,7 @@ class Cell(SeamlessBase):
             target = target.structured_cell().buffer
         elif isinstance(target, Outchannel):
             raise TypeError("Outchannels must be the source of a connection, not the target")
-        
+
         if isinstance(target, Cell):
             if target_subpath is None:
                 assert not target._structured_cell
@@ -364,7 +362,7 @@ class Cell(SeamlessBase):
             "persistent": persistent,
         })
         self._mount.update(self._mount_kwargs)
-        MountItem(None, self, dummy=True, **self._mount) #to validate parameters        
+        MountItem(None, self, dummy=True, **self._mount) #to validate parameters
         return self
 
     def _add_traitlet(self, traitlet, trigger=True):
@@ -398,7 +396,7 @@ class Cell(SeamlessBase):
             sharemanager.unshare(self)
 
     def destroy(self, *, from_del=False):
-        if self._destroyed:            
+        if self._destroyed:
             return
         self.unshare()
         super().destroy(from_del=from_del)
@@ -406,7 +404,7 @@ class Cell(SeamlessBase):
         for path in list(self._paths):
             path._bind(None, trigger=True)
         self._unmount()
-        
+
     def _unmount(self, from_del=False):
         from .macro import Macro
         if self._unmounted:
@@ -419,14 +417,14 @@ class Cell(SeamlessBase):
 
 class BinaryCell(Cell):
     """A cell in binary (Numpy) format"""
-    
+
     _mount_kwargs = {"binary": True}
     _celltype = "binary"
 
 
 class MixedCell(Cell):
     _mount_kwargs = {"binary": True}
-    _celltype = "mixed"    
+    _celltype = "mixed"
 
     def __init__(self, hash_pattern=None):
         from .protocol.deep_structure import validate_hash_pattern
@@ -440,16 +438,16 @@ class MixedCell(Cell):
         from ..mixed.get_form import get_form
         v = super().value
         if v is None:
-            return None        
+            return None
         return get_form(v)[0]
-    
+
     @property
     def form(self):
         from ..mixed.get_form import get_form
         v = super().value
         if v is None:
             return None
-        return get_form(v)[1]  
+        return get_form(v)[1]
 
     @property
     def value(self):
@@ -462,7 +460,7 @@ class MixedCell(Cell):
             return value
         # TODO: verify that the unfolded deep structure is not humonguous...
         return get_subpath_sync(value, self._hash_pattern, None)
-        
+
 
 
 class TextCell(Cell):
@@ -633,4 +631,3 @@ TODO Documentation: only-text changes
      Same for CSON cells: if the CSON is changed but the corresponding JSON stays the same, the checksum stays the same.
      But the text checksum changes, and a text cell or text inputpin will receive an update.
 """
-

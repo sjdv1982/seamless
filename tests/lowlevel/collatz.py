@@ -20,7 +20,7 @@ def refe_collatz(value):
         newvalue = value // 2
     return [value] + refe_collatz(newvalue)
 
-def collatz(ctx, value, macro_code, macro_params):    
+def collatz(ctx, value, macro_code, macro_params):
     print("COLLATZ", value)
     ctx.series = cell()
     if value == 1:
@@ -65,7 +65,7 @@ ctx.code.connect(m.code)
 ctx.code.connect(m.macro_code)
 ctx.macro_params.connect(m.macro_params)
 ctx.series = cell()
-with macro_mode_on(None):    
+with macro_mode_on(None):
     ctx.macro.ctx.series.connect(ctx.series)
 start = 27
 ###start = 10 #7-level nesting
@@ -89,7 +89,7 @@ refe = refe_collatz(start)
 print(refe)
 ctx.start.set(start)
 print("building done, control")
-ctx.compute()    
+ctx.compute()
 print(ctx.series.value)
 
 start = 27
