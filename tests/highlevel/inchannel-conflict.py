@@ -44,6 +44,7 @@ print(ctx.ss.value)
 print(ctx.s.exception)
 print("")
 ctx.d = 123
+#ctx.d.celltype = "int" ###
 ctx.s.d = ctx.d
 ctx.compute()
 print(ctx.s.value)

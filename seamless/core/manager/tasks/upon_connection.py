@@ -13,7 +13,7 @@ class UponConnectionTask(Task):
         self.current_macro = curr_macro()
         super().__init__(manager)
         if isinstance(source, (OutputPin, EditPin) ):
-            self.dependencies.append(source.worker_ref())                    
+            self.dependencies.append(source.worker_ref())
         elif isinstance(source, Cell):
             self.dependencies.append(source)
         elif isinstance(source, Path):
@@ -21,7 +21,7 @@ class UponConnectionTask(Task):
         else:
             raise TypeError(source)
         if isinstance(target, (InputPin, EditPin) ):
-            self.dependencies.append(target.worker_ref())        
+            self.dependencies.append(target.worker_ref())
         elif isinstance(target, Cell):
             self.dependencies.append(target)
         elif isinstance(target, Path):
@@ -55,12 +55,12 @@ class UponConnectionTask(Task):
         else:
             # outchannel-to-inchannel
             return livegraph.connect_scell_scell(
-                self.current_macro, 
-                source, source_subpath, 
+                self.current_macro,
+                source, source_subpath,
                 target, target_subpath,
                 from_upon_connection_task=self
             )
-            
+
 
     def _connect_pin_cell(self):
         source, target, source_subpath, target_subpath = (
@@ -101,7 +101,7 @@ Use a simple cell as an intermediate
 Source %s, %s; target %s""" % (source._structured_cell, source_subpath, target)
             raise TypeError(msg)
 
-    def _connect_cell_macropath(self):        
+    def _connect_cell_macropath(self):
         source, target, source_subpath, target_subpath = (
           self.source, self.target, self.source_subpath, self.target_subpath
         )
@@ -117,7 +117,7 @@ Source %s, %s; target %s""" % (source, source_subpath, target)
             from_upon_connection_task=self
         )
 
-    def _connect_cell(self):        
+    def _connect_cell(self):
         if isinstance(self.target, Cell):
             return self._connect_cell_cell()
         elif isinstance(self.target, PinBase):
@@ -148,7 +148,7 @@ Source %s; target %s, %s""" % (source, target, target_subpath)
         assert isinstance(pin, EditPin)
         assert isinstance(cell, Cell)
         reactor = pin.worker_ref()
-        assert reactor._void # safe assumption, as long as must_be_defined is enforced to be True        
+        assert reactor._void # safe assumption, as long as must_be_defined is enforced to be True
         manager = self.manager()
         livegraph = manager.livegraph
         assert livegraph.editpin_to_cell[reactor][pin.name] is None, (reactor, pin.name) # editpin can connect only to one cell
@@ -205,9 +205,8 @@ Source %s; target %s, %s""" % (source, target, target_subpath)
             if not source._void:
                 sc = source._structured_cell
                 if sc is not None:
-                    # TODO: not the most efficient...
                     assert sc._data is source, (sc._data, source)
-                    sc._new_connections = True
+                    sc._new_outgoing_connections = True
                     manager.structured_cell_join(sc)
                 else:
                     CellUpdateTask(manager, source).launch()
@@ -229,7 +228,7 @@ Source %s; target %s, %s""" % (source, target, target_subpath)
                 if checksum is not None:
                     downstreams = livegraph.reactor_to_downstream[reactor][pinname]
                     for accessor in downstreams:
-                        #- construct (not compute!) their expression using the cell checksum 
+                        #- construct (not compute!) their expression using the cell checksum
                         #  Constructing a downstream expression increfs the cell checksum
                         changed = accessor.build_expression(livegraph, checksum)
                         # TODO: prelim? tricky for a reactor...
@@ -263,7 +262,7 @@ class UponBiLinkTask(UponConnectionTask):
             raise TypeError(type(target))
         self.dependencies.append(source)
         self.dependencies.append(target)
-         
+
     async def _run(self):
         manager = self.manager()
         taskmanager = manager.taskmanager
@@ -277,7 +276,7 @@ class UponBiLinkTask(UponConnectionTask):
         livegraph.bilink(
             self.current_macro, source, target
         )
-   
+
 
 
 from .cell_update import CellUpdateTask

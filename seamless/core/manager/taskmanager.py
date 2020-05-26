@@ -23,13 +23,13 @@ class TaskManager:
         self.synctasks = []
         self.cell_to_task = {} # tasks that depend on cells
         self.accessor_to_task = {}  # ...
-        self.expression_to_task = {} 
+        self.expression_to_task = {}
         self.transformer_to_task = {}
         self.reactor_to_task = {}
         self.macro_to_task = {}
         self.macropath_to_task = {}
         self.structured_cell_to_task = {}
-        self.reftasks = {} # tasks that hold a reference to (are a link to) another task 
+        self.reftasks = {} # tasks that hold a reference to (are a link to) another task
         self.rev_reftasks = {} # mapping of a task to their refholder tasks
         self.cell_to_value = {} # very short term cache:
                                 # only while the checksum is being computed by a SetCellValueTask
@@ -41,7 +41,7 @@ class TaskManager:
         self._active = True
 
     def deactivate(self):
-        """Deactivate the task manager. 
+        """Deactivate the task manager.
         Running tasks are unaffected, but all future tasks (including those launched by running tasks)
          will only commence after the task manager has been activated again."""
         self._active = False
@@ -123,7 +123,7 @@ class TaskManager:
             return task
         assert task.manager() is manager
         assert task.future is not None
-        
+
         self.tasks.append(task)
         task.future.add_done_callback(
             partial(self._clean_task, task)
@@ -152,13 +152,13 @@ class TaskManager:
         else:
             raise TypeError(type(dep))
         dd = d[dep]
-        
+
         dd.append(task)
 
     def _get_upon_connection_tasks(self, root):
         for task in self.tasks:
             if isinstance(task, UponConnectionTask):
-                if task._root() is root:                
+                if task._root() is root:
                     yield task
 
     async def await_upon_connection_tasks(self,taskid,root):
@@ -177,7 +177,7 @@ class TaskManager:
         for task in tasks:
             futures.append(
                 asyncio.shield(task.future)
-            )            
+            )
         await asyncio.wait(futures)
         ok = True
         for task, fut in zip(tasks, futures):
@@ -186,19 +186,19 @@ class TaskManager:
                                 # since the shield has its own exception
             except Exception as exc:
                 pass
-                
+
             try:
                 task.future.result() # This is the real future
-            except Exception as exc:                
+            except Exception as exc:
                 if not isinstance(exc, CancelledError):
                     if task._awaiting:
                         continue
                     ###import traceback
-                    ###traceback.print_exc()                
+                    ###traceback.print_exc()
                 task._awaiting = True
                 # If anything goes wrong in another task, consider this a cancel
                 ok = False
-        if not ok and not shield:            
+        if not ok and not shield:
             raise CancelledError
 
     async def acquire_cell_lock(self, cell):
@@ -219,7 +219,7 @@ class TaskManager:
             return
         locks = self.cell_locks[cell]
         locks.remove(id)
-        
+
     def _clean_dep(self, dep, task):
         if isinstance(dep, Cell):
             d = self.cell_to_task
@@ -248,7 +248,7 @@ class TaskManager:
         except ValueError:
             pass
 
-    def compute(self, timeout, report, get_tasks_func=None):  
+    def compute(self, timeout, report, get_tasks_func=None):
         assert nest_asyncio is not None or not asyncio.get_event_loop().is_running()
         manager = self.manager()
         manager.temprefmanager.purge()
@@ -258,13 +258,13 @@ class TaskManager:
             remaining = timeout
         if report is not None and report > 0:
             last_report = time.time()
-        
+
         def select_pending_tasks():
             if get_tasks_func is None:
                 tasks = self.tasks
             else:
                 tasks = get_tasks_func(self)
-            ptasks, futures = [], []            
+            ptasks, futures = [], []
             for task in tasks:
                 future = task.future
                 if future is None:
@@ -290,7 +290,7 @@ class TaskManager:
                 return [], True
             result = sorted(running, key=lambda dep: dep.path)
             if verbose:
-                print("Waiting for:",end=" ")            
+                print("Waiting for:",end=" ")
                 for obj in result:
                     print(obj,end=" ")
                 print()
@@ -330,13 +330,13 @@ class TaskManager:
             remaining = timeout
         if report is not None and report > 0:
             last_report = time.time()
-        
+
         def select_pending_tasks():
             if get_tasks_func is None:
                 tasks = self.tasks
             else:
                 tasks = get_tasks_func(self)
-            ptasks, futures = [], []            
+            ptasks, futures = [], []
             for task in tasks:
                 future = task.future
                 if future is None:
@@ -362,7 +362,7 @@ class TaskManager:
                 return [], True
             result = sorted(running, key=lambda dep: dep.path)
             if verbose:
-                print("Waiting for:",end=" ")            
+                print("Waiting for:",end=" ")
                 for obj in result:
                     print(obj,end=" ")
                 print()
@@ -398,11 +398,11 @@ class TaskManager:
             return
         if task._realtask is not None:
             task.cancel()
-        else:            
+        else:
             task.future.cancel() # will call _clean_task soon
-    
+
     def _clean_task(self, task, future):
-        self.tasks.remove(task)        
+        self.tasks.remove(task)
         for dep in task.dependencies:
             self._clean_dep(dep, task)
         if task.future is not None and task.future.done():
@@ -418,7 +418,7 @@ class TaskManager:
                         task.future._exception = None ### KLUDGE
                     except AttributeError:
                         pass
-                    pass            
+                    pass
                 finally:
                     task._awaiting = True
         for refholder in task.refholders:
@@ -440,7 +440,7 @@ If full = True, cancels all UponConnectionTasks as well"""
 
     def cancel_accessor(self, accessor, origin_task=None):
         """Cancels all tasks depending on accessor.
-If origin_task is provided, that task is not cancelled."""        
+If origin_task is provided, that task is not cancelled."""
         for task in self.accessor_to_task.get(accessor, []):
             if task is origin_task:
                 continue
@@ -482,9 +482,11 @@ If origin_task is provided, that task is not cancelled."""
                 continue
             task.cancel()
 
-    def cancel_structured_cell(self, structured_cell): 
+    def cancel_structured_cell(self, structured_cell, origin_task=None):
         tasks = self.structured_cell_to_task.get(structured_cell, [])
         for task in tasks:
+            if task is origin_task:
+                continue
             task.cancel()
 
     @destroyer
@@ -519,7 +521,7 @@ If origin_task is provided, that task is not cancelled."""
         self.reactor_to_task.pop(reactor)
 
     @destroyer
-    def destroy_macro(self, macro, *, full=False):    
+    def destroy_macro(self, macro, *, full=False):
         self.cancel_macro(macro, full=full)
         self.macro_to_task.pop(macro)
 
@@ -535,7 +537,7 @@ If origin_task is provided, that task is not cancelled."""
             "tasks",
             "cell_to_task",
             "accessor_to_task",
-            "expression_to_task",            
+            "expression_to_task",
             "transformer_to_task",
             "reactor_to_task",
             "macro_to_task",
@@ -544,7 +546,7 @@ If origin_task is provided, that task is not cancelled."""
             "rev_reftasks",
             "cell_to_value",
         )
-        name = self.__class__.__name__        
+        name = self.__class__.__name__
         for attrib in attribs:
             a = getattr(self, attrib)
             if len(a):

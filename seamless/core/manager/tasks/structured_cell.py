@@ -1,4 +1,5 @@
 from . import Task
+import sys
 import traceback
 import copy
 from asyncio import CancelledError
@@ -27,13 +28,15 @@ class StructuredCellJoinTask(Task):
 
 
     async def _run(self):
+        from ...status import StatusReasonEnum
         manager = self.manager()
         sc = self.structured_cell
         await self.await_sc_tasks()
-        if sc._data._checksum is not None:
-            print("{} should have been canceled!".format(sc))
+        canceled = False
+        if sc._data is not sc.auth and sc._data._checksum is not None:
+            print("{} should have been canceled!".format(sc), file=sys.stderr)
             return
-        modified_paths = sc.modified.modified_paths
+        modified_outchannels = sc.modified.modified_outchannels
         prelim = {}
         for out_path in sc.outchannels:
             curr_prelim = False
@@ -90,6 +93,7 @@ class StructuredCellJoinTask(Task):
                             await set_subpath(value, sc.hash_pattern, path, subvalue)
                         except CancelledError:
                             ok = False
+                            canceled = True
                             break
                         except Exception:
                             sc._exception = traceback.format_exc(limit=0)
@@ -122,6 +126,7 @@ class StructuredCellJoinTask(Task):
                 checksum = await CalculateChecksumTask(manager, buf).run()
             except CancelledError:
                 ok = False
+                canceled = True
             except Exception:
                 sc._exception = traceback.format_exc(limit=0)
                 ok = False
@@ -137,6 +142,9 @@ class StructuredCellJoinTask(Task):
                 buf = await GetBufferTask(manager, cs).run()
                 value = await DeserializeBufferTask(manager, buf, cs, "mixed", copy=False).run()
 
+        if not ok and sc.buffer is not sc.auth:
+            manager._set_cell_checksum(sc.buffer, None, void=True, status_reason=StatusReasonEnum.UPSTREAM)
+
         if ok and value is not None and schema is not None:
             if schema is not None:
                 if sc.hash_pattern is None:
@@ -147,13 +155,13 @@ class StructuredCellJoinTask(Task):
                 s = Silk(data=value2, schema=schema)
                 try:
                     s.validate()
-                    sc._exception = None
                 except ValidationError:
                     sc._exception = traceback.format_exc(limit=0)
                     ok = False
-                    sc._data._set_checksum(None, from_structured_cell=True)
+                    manager._set_cell_checksum(sc._data, None, void=True, status_reason=StatusReasonEnum.UPSTREAM)
         if ok:
-            if checksum is not None and sc._data is not sc.buffer:
+            hard_cancel_paths = []
+            if checksum is not None and sc._data is not sc.auth:
                 sc._data._set_checksum(checksum, from_structured_cell=True)
 
             if len(sc.outchannels):
@@ -162,22 +170,25 @@ class StructuredCellJoinTask(Task):
                 cs = bytes.fromhex(checksum) if checksum is not None else None
                 expression_to_checksum = manager.cachemanager.expression_to_checksum
                 for out_path in sc.outchannels:
-                    if sc._new_connections:
+                    changed = False
+                    if sc._exception is not None or sc._new_outgoing_connections:
                         changed = True
                     else:
-                        changed = False
-                        for mod_path in modified_paths:
-                            if overlap_path(out_path, mod_path):
+                        for p in modified_outchannels:
+                            if overlap_path(p, out_path):
                                 changed = True
                                 break
                     if changed:
-                        for accessor in downstreams[out_path]:
-                            changed2 = accessor.build_expression(livegraph, cs)
-                            if prelim[out_path] != accessor._prelim:
-                                accessor._prelim = prelim[out_path]
-                                changed2 = True
-                            if changed2:
-                                AccessorUpdateTask(manager, accessor).launch()
+                        if cs is None:
+                            hard_cancel_paths.append(out_path)
+                        else:
+                            for accessor in downstreams[out_path]:
+                                changed2 = accessor.build_expression(livegraph, cs)
+                                if prelim[out_path] != accessor._prelim:
+                                    accessor._prelim = prelim[out_path]
+                                    changed2 = True
+                                if changed2:
+                                    AccessorUpdateTask(manager, accessor).launch()
                     elif cs is not None: # morph
                         for accessor in downstreams[out_path]:
                             old_expression = accessor.expression
@@ -193,7 +204,11 @@ class StructuredCellJoinTask(Task):
             sc.modified.clear()
             sc._new_connections = False
             sc._exception = None
-
+            if len(hard_cancel_paths):
+                manager.cancel_scell_hard(sc, self, hard_cancel_paths)
+        else:
+            if not canceled:
+                manager.cancel_scell_hard(sc, self)
 
 
 from .serialize_buffer import SerializeToBufferTask

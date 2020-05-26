@@ -1,6 +1,6 @@
 from seamless.core import (
     context, cell, transformer, macro_mode_on
-)    
+)
 from seamless.core.structured_cell import StructuredCell
 from seamless.silk import Silk
 from pprint import pprint
@@ -18,7 +18,7 @@ def report(self):
     print("*" * 80)
     print("*  PARAMETERS")
     print("*" * 80)
-    for key in self.keys():                
+    for key in self.keys():
         sub = self[key]
         if not len(sub):
             continue
@@ -44,7 +44,7 @@ def structured_transformer(c):
         "factor": ("input", "float"),
         "offset": ("input", "float"),
         "result": ("output", "float"),
-    }    
+    }
     c.tf = transformer(tf_params)
     c.code = cell("transformer").set(progress)
     c.code.connect(c.tf.code)
@@ -82,7 +82,7 @@ def structured_transformer(c):
 
 with macro_mode_on():
     ctx = context(toplevel=True)
-    tf_names = [("tf1",),("tf2",),("tf3",),("tf4",)] 
+    tf_names = [("tf1",),("tf2",),("tf3",),("tf4",)]
     channel_names = tf_names # TODO (long term): try numeric path
 
     ctx.params_struc = context()
@@ -91,7 +91,7 @@ with macro_mode_on():
     ctx.params_struc.buffer = cell("mixed")
     ctx.params_struc.schema = cell("plain")
     ctx.params_struc.example_buffer = cell("mixed")
-    ctx.params_struc.example_data = cell("mixed")    
+    ctx.params_struc.example_data = cell("mixed")
     ctx.params = StructuredCell(
         ctx.params_struc.data,
         auth=ctx.params_struc.auth,
@@ -99,13 +99,13 @@ with macro_mode_on():
         schema=ctx.params_struc.schema,
         inchannels=[tf_names[2] + ("offset",), tf_names[3] + ("offset",)],
         outchannels=channel_names
-    )    
+    )
     ctx.params_example = StructuredCell(
         ctx.params_struc.example_data,
         buffer=ctx.params_struc.example_buffer,
         schema=ctx.params_struc.schema,
-    )    
-    
+    )
+
     ctx.stf1 = context(toplevel=False)
     structured_transformer(ctx.stf1)
     ctx.stf2 = context(toplevel=False)
@@ -133,17 +133,17 @@ with macro_mode_on():
         setattr(ctx, "result_" + tf_name[0], channel_cell)
         ctx.result.outchannels[outchannel].connect(channel_cell)
 
-    
-    for n in range(4): 
+
+    for n in range(4):
         channel_name, tf_name = channel_names[n], tf_names[n]
         c = cell("mixed")
         cell_name = "outchannel_" + tf_name[0]
-        setattr(ctx.params_struc, cell_name, c) 
+        setattr(ctx.params_struc, cell_name, c)
         ctx.params.outchannels[channel_name].connect(c)
         stf = getattr(ctx, "stf" + str(n+1))
         c.connect(stf.input.inchannels[()])
-        stf.result.connect(ctx.result.inchannels[channel_name]) 
-    
+        stf.result.connect(ctx.result.inchannels[channel_name])
+
     add_params = {
         "a": ("input", "float"),
         "b": ("input", "float"),
@@ -157,8 +157,8 @@ with macro_mode_on():
     ctx.result.outchannels[tf2].connect(ctx.add.b.cell())
     ctx.add.result.cell().connect(ctx.params.inchannels[tf3 + ("offset",)])
     ctx.add.result.cell().connect(ctx.params.inchannels[tf4 + ("offset",)])
-    
-    
+
+
 ctx.params.handle.set({
     "tf1": {},
     "tf2": {},
@@ -216,7 +216,7 @@ ctx.params.handle.report()
 ctx.params.handle.tf1.validate()
 
 
-for c in (ctx.stf1, ctx.stf2, ctx.stf3, ctx.stf4): 
+for c in (ctx.stf1, ctx.stf2, ctx.stf3, ctx.stf4):
     h = c.example.handle
     h.subreport = subreport
     def v(self):
@@ -264,8 +264,8 @@ while 1:
         print()
         #ctx.params.value.report()
         oldstate = state.copy()
-    if not len(waitfor) and not background:        
+    if not len(waitfor) and not background:
         break
-    
+
 ctx.params.value.report()
 print(ctx.params.value.tf3)

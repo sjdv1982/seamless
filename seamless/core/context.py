@@ -187,7 +187,7 @@ name: str
         return self.path[:len(p)] == p
 
     def _root(self):
-        if self._macro is not None:
+        if self._macro is not None and self._macro_root is not None:
             return self._macro_root
         if self._toplevel:
             return self

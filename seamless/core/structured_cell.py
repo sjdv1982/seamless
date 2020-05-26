@@ -36,9 +36,9 @@ class ModifiedPathManager:
         self.clear()
 
     def clear(self):
-        self.modified_paths = set()
+        self.modified_paths = set()       # just for bookkeeping
         self.modified_inchannels = set()  # for now, just for monitoring...
-        self.modified_outchannels = set()
+        self.modified_outchannels = set() # Used by join tasks
 
     def _add_path(self, path):
         if path in self.modified_paths:
@@ -79,7 +79,7 @@ class ModifiedPathManager:
 class StructuredCell(SeamlessBase):
     _celltype = "structured"
     _exception = None
-    _new_connections = False
+    _new_outgoing_connections = False
     def __init__(self, data, *,
         auth=None,
         schema=None,
@@ -213,10 +213,11 @@ class StructuredCell(SeamlessBase):
         if manager._destroyed:
             return
         resolve_cancel_cycle = False
+        cancel_cycle = manager.cancel_cycle
         if not autogen:
-            cancel_cycle = manager.cancel_cycle
             if cancel_cycle.cleared:
                 resolve_cancel_cycle = True
+                cancel_cycle.cleared = False
         try:
             if not from_pop and value is None and len(path) and isinstance(path[-1], int):
                 l = len(self._get_auth_path(path[:-1]))
@@ -250,7 +251,13 @@ class StructuredCell(SeamlessBase):
                         elif isinstance(path[0], list):
                             self._auth_value = []
                 set_subpath(self._auth_value, self.hash_pattern, path, value)
-            manager.set_auth_path(self, path, value)
+            cancel = True
+            for inchannel in self.inchannels:
+                if overlap_path(inchannel, path):
+                    break
+            else:
+                cancel_cycle.cancel_scell_inpath(self, path, void=False, reason=None)
+                self.auth._set_checksum(None, from_structured_cell=True)
         finally:
             if resolve_cancel_cycle:
                 cancel_cycle.resolve()

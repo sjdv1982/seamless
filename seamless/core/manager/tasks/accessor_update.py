@@ -75,7 +75,6 @@ class AccessorUpdateTask(Task):
                         inchannel, expression_result_checksum,
                         False, None, prelim=accessor._prelim
                     )
-                    manager.structured_cell_join(sc)
         else:
             raise TypeError(target)
 

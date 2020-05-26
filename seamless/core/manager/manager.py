@@ -268,7 +268,7 @@ class Manager:
         inchannel._prelim = prelim
         if checksum != old_checksum:
             cachemanager.incref_checksum(checksum, inchannel, False)
-            sc.modified.add_inchannel(inchannel)
+            sc.modified.add_inchannel(inchannel.subpath)
             self.structured_cell_join(sc)
 
     def _set_transformer_checksum(self,
@@ -348,6 +348,10 @@ class Manager:
         )
         if self._destroyed or structured_cell._destroyed:
             return
+        structured_cell._data._set_checksum(None, from_structured_cell=True)
+        if structured_cell.buffer is not structured_cell.auth:
+            structured_cell.buffer._set_checksum(None, from_structured_cell=True)
+
         task = StructuredCellJoinTask(
             self, structured_cell
         )
@@ -475,14 +479,28 @@ If origin_task is provided, that task is not cancelled."""
         self.cancel_cycle.cancel_cell(cell, void=void, reason=reason)
 
     @with_cancel_cycle
-    def cancel_scell_inpath(self, sc, path, void, from_auth=False, reason=StatusReasonEnum.UPSTREAM):
-        assert isinstance(sc, StructuredCell)
-        if from_auth:
-            for inchannel in sc.inchannels:
-                if overlap_path(inchannel, path):
-                    return
-        self.cancel_cycle.cancel_scell_inpath(scell, path, void=void, reason=reason)
+    def cancel_scell_inpath(self, sc, path, void, reason=StatusReasonEnum.UPSTREAM):
+        self.cancel_cycle.cancel_scell_inpath(sc, path, void=void, reason=reason)
 
+
+    @with_cancel_cycle
+    def cancel_scell_hard(self, sc, join_task, paths=None):
+        """Hard-cancel of a structured cell (entirely or in part), launched by the join task:
+        - Entirely (paths=None), because of:
+            - Because of an error in obtaining inchannel values (parsing, cache miss, etc.)
+            - Because of a validation error
+        - In part (specified paths), because of outchannel paths that are undefined in value
+        """
+        assert isinstance(sc, StructuredCell)
+        self.cancel_cycle.origin_task = join_task
+        if paths is None:
+            self.cancel_cycle.cancel_scell_inpath(
+                sc, (), void=True,
+                reason=StatusReasonEnum.UPSTREAM, from_join_task=True
+            )
+        else:
+            for path in paths:
+                self.cancel_cycle.cancel_scell_outpath(sc, path)
 
     @with_cancel_cycle
     def cancel_accessor(self,
