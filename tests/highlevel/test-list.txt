@@ -23,6 +23,7 @@ simpler-ipython.py: Run with ipython --no-term-title (not -i). Output is approxi
 module-simplified.py
 bash.py
 docker_.py
+docker2.py
 expression-exceptions.py
 highlink-schema.py
 traitlet.py
@@ -32,7 +33,7 @@ simple-deepcell.py
 simple-pi.py: Also creates twopi.seamless, twopi-result.seamless, twopi-result.zip
 simple-pi-deepcell.py: Also creates twopi-deepcell.seamless, twopi-deepcell-result.seamless, twopi-deepcell-result.zip
 simple-pi-redis.py: requires redis to run as a Sink
-simple-pi-remote.py: run with jobslave-noredis 
+simple-pi-remote.py: run with jobslave-noredis
 simple-pi-remote-redis.py: run with jobslave; makes no assumptions about them Redis contents
 subcontext.py
 reassign-transformer.py
@@ -51,10 +52,10 @@ library2.py
 Non-automatic tests
 =========================
 add.py
-simpler-share.py: Run with ipython -i, then do "curl localhost:5813/ctx/myresult". 
+simpler-share.py: Run with ipython -i, then do "curl localhost:5813/ctx/myresult".
                   IPython values printed should be 36 then 39 (Silk); curl should return 39
                   change ctx.a to get 3*a as the result
-highlink-cpp.py:  Run with ipython -i, then continue in interactive mode, 
+highlink-cpp.py:  Run with ipython -i, then continue in interactive mode,
                   changing the source code and the schema until it works.
 mount.py:         Run with ipython -i, then continue in interactive mode.
                   Initial output is in test-outputs/mount.out

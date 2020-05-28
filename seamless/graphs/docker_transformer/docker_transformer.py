@@ -53,6 +53,7 @@ if ctx.result.value is None:
     print(ctx.executor_code.exception)
     print(ctx.executor.status)
     print(ctx.executor.inp.exception)
+    print(ctx.executor.exception)
     print(ctx.status)
     import sys
     sys.exit()

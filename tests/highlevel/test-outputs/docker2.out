@@ -1,0 +1,21 @@
+Waiting for: Seamless transformer: .tf.tf 
+a 
+b 
+c 
+Waiting for: Seamless transformer: .tf.tf 
+{
+  "firstdata": "a \nb \nc \n",
+  "testdata": "a \nb \nc \nd \ne \nf \n\n"
+}
+Waiting for: Seamless transformer: .tf.tf 
+ctx.auto_translate is currently unstable and has been disabled
+You must run regularly "ctx.translate()" (IPython) 
+or "await ctx.translation()" (Jupyter) after modifying the graph. 
+Translation is not required after modifying only cell values
+<Silk: [ 0  3  6  9 12 15 18 21 24 27 30 33] >
+Status: OK
+None
+Waiting for: Seamless transformer: .tf.tf 
+<Silk: {'ok': 'OK\n', 'test.npy': array([ 0,  3,  6,  9, 12, 15, 18, 21, 24, 27, 30, 33])} >
+Status: OK
+None

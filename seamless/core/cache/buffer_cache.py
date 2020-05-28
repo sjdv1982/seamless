@@ -71,7 +71,7 @@ class BufferCache:
                 WARNING_HAS_PRINTED = True
             ###
             self.buffer_cache[checksum] = buffer
-            self.missing_buffers.discard(checksum)        
+            self.missing_buffers.discard(checksum)
 
     def incref_temp(self, checksum):
         #print("INCREF TEMP", checksum.hex())
@@ -103,7 +103,7 @@ class BufferCache:
     def decref(self, checksum, from_temp=False):
         #print("DECREF", checksum.hex(), from_temp)
         if checksum not in self.buffer_refcount:
-            print("WARNING: double decref, %s" % checksum.hex())            
+            print("WARNING: double decref, %s" % checksum.hex())
             return
         if not from_temp and self.buffer_refcount[checksum] == 1:
             self.buffer_refcount[checksum] -= 1
@@ -144,7 +144,7 @@ class BufferCache:
         """For the communion_server..."""
         assert checksum is not None
         if checksum in self.buffer_cache:
-            return True        
+            return True
         return redis_caches.has_buffer(checksum)
 
 buffer_cache = BufferCache()

@@ -25,6 +25,7 @@ def read_data(data):
 old_cwd = os.getcwd()
 try:
     import docker as docker_module
+    from docker.errors import ContainerError
     tempdir = tempfile.mkdtemp(prefix="seamless-docker-transformer")
     os.chdir(tempdir)
     options = docker_options.copy()
@@ -61,7 +62,6 @@ try:
                 with open(pin, "bw") as pinf:
                     np.save(pinf,v,allow_pickle=False)
     docker_client = docker_module.from_env()
-    options["remove"] = True
     if "volumes" not in options:
         options["volumes"] = {}
     volumes = options["volumes"]
@@ -73,10 +73,24 @@ try:
         f.write(docker_command)
     full_docker_command = "bash DOCKER-COMMAND"
     try:
-        stdout0 = docker_client.containers.run(
+        container = docker_client.containers.create(
             docker_image,
             full_docker_command,
             **options
+        )
+        stdout0 = container.attach(stdout=True, stderr=False, stream=True)
+        container.start()
+        exit_status = container.wait()['StatusCode']
+        container.remove()
+
+        if exit_status != 0:
+            stderr = container.logs(stdout=False, stderr=True)
+            raise ContainerError(
+                container, exit_status, full_docker_command, docker_image, stderr
+            )
+
+        stdout = None if stdout0 is None else b''.join(
+            [line for line in stdout0]
         )
     except ConnectionError as exc:
         msg = "Unknown connection error"
@@ -93,16 +107,16 @@ try:
                                 if a1 == 2 or a2 == "No such file or directory":
                                     msg = "Cannot connect to Docker; did you expose the Docker socket to Seamless?"
         raise SeamlessTransformationError(msg) from None
-    stdout = BytesIO(stdout0)
+    stdout_io = BytesIO(stdout)
     try:
-        tar = tarfile.open(fileobj=stdout)
+        tar = tarfile.open(fileobj=stdout_io)
         result = {}
         for member in tar.getnames():
             data = tar.extractfile(member).read()
             rdata = read_data(data)
             result[member] = rdata
     except (ValueError, tarfile.CompressionError, tarfile.ReadError):
-        result = read_data(stdout0)
+        result = read_data(stdout)
 finally:
     os.chdir(old_cwd)
     shutil.rmtree(tempdir, ignore_errors=True)
