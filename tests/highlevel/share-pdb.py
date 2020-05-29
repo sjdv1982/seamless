@@ -8,7 +8,7 @@ ctx.pdb0.share("pdb0.pdb", readonly=False)
 
 ctx.filter_pdb = Transformer()
 ctx.filter_pdb.language = "bash"
-ctx.filter_pdb.code = 'grep ATOM pdb0 | awk \'$3 == "CA" || $3 == "C" || $3 == "O" || $3 == "N"\' '
+ctx.filter_pdb.code = 'grep ATOM pdb0 | awk \'$3 == "CA" || $3 == "C" || $3 == "O" || $3 == "N"\' > RESULT'
 ctx.filter_pdb.pdb0 = ctx.pdb0
 
 ctx.filtered_pdb = ctx.filter_pdb
@@ -17,7 +17,7 @@ ctx.filtered_pdb.share("filtered_pdb.pdb")
 
 ctx.fix_pdb = Transformer()
 ctx.fix_pdb.language = "bash"
-ctx.fix_pdb.code = 'head -20 filtered_pdb'
+ctx.fix_pdb.code = 'head -20 filtered_pdb > RESULT'
 ctx.fix_pdb.filtered_pdb = ctx.filtered_pdb
 
 ctx.pdb = ctx.fix_pdb
@@ -62,3 +62,16 @@ ctx.compute()
 
 ctx.save_graph("share-pdb.seamless")
 ctx.save_zip("share-pdb.zip")
+
+ctx.fix_pdb.language = "docker"
+ctx.filter_pdb.language = "docker"
+ctx.translate()
+
+ctx.fix_pdb.docker_image = "ubuntu"
+ctx.fix_pdb.docker_options = {}
+ctx.filter_pdb.docker_image = "ubuntu"
+ctx.filter_pdb.docker_options = {}
+ctx.translate()
+
+ctx.save_graph("share-pdb-docker.seamless")
+ctx.save_zip("share-pdb-docker.zip")

@@ -11,21 +11,25 @@ from requests.exceptions import ConnectionError
 from urllib3.exceptions import ProtocolError
 from seamless.core.transformation import SeamlessTransformationError
 
+resultfile = "RESULT"
+
 def read_data(data):
     try:
-        bdata = BytesIO(data)
-        return np.load(bdata)
+        npdata = BytesIO(data)
+        return np.load(npdata)
     except (ValueError, OSError):
         try:
-            bdata = data.decode()
-            return json.loads(bdata)
+            try:
+                sdata = data.decode()
+            except Exception:
+                return np.frombuffer(data, dtype=np.uint8)
+            return json.loads(sdata)
         except ValueError:
-            return bdata
+            return sdata
 
 old_cwd = os.getcwd()
 try:
     import docker as docker_module
-    from docker.errors import ContainerError
     tempdir = tempfile.mkdtemp(prefix="seamless-docker-transformer")
     os.chdir(tempdir)
     options = docker_options.copy()
@@ -43,7 +47,8 @@ try:
             raise TypeError("pin '%s' has mixed data" % pin)
         if storage == "pure-plain":
             if isinstance(form, str):
-                vv = str(v) + "\n"
+                vv = str(v)
+                if not vv.endswith("\n"): vv += "\n"
                 if len(vv) <= 1000:
                     env[pin] = vv
             else:
@@ -78,20 +83,30 @@ try:
             full_docker_command,
             **options
         )
-        stdout0 = container.attach(stdout=True, stderr=False, stream=True)
-        container.start()
-        exit_status = container.wait()['StatusCode']
-        container.remove()
+        try:
+            container.start()
+            exit_status = container.wait()['StatusCode']
+        finally:
+            container.remove()
 
         if exit_status != 0:
             stderr = container.logs(stdout=False, stderr=True)
-            raise ContainerError(
-                container, exit_status, full_docker_command, docker_image, stderr
-            )
+            raise SeamlessTransformationError("""
+Docker transformer exception
+==========================
 
-        stdout = None if stdout0 is None else b''.join(
-            [line for line in stdout0]
-        )
+*************************************************
+* Command
+*************************************************
+{}
+*************************************************
+
+*************************************************
+* Standard error
+*************************************************
+{}
+*************************************************
+""".format(docker_command, stderr)) from None
     except ConnectionError as exc:
         msg = "Unknown connection error"
         if len(exc.args) == 1:
@@ -107,16 +122,30 @@ try:
                                 if a1 == 2 or a2 == "No such file or directory":
                                     msg = "Cannot connect to Docker; did you expose the Docker socket to Seamless?"
         raise SeamlessTransformationError(msg) from None
-    stdout_io = BytesIO(stdout)
+    if not os.path.exists(resultfile):
+        raise SeamlessTransformationError("""
+Docker transformer exception
+==========================
+
+*************************************************
+* Command
+*************************************************
+{}
+*************************************************
+Error: Result file RESULT does not exist
+""".format(docker_command))
+
     try:
-        tar = tarfile.open(fileobj=stdout_io)
+        tar = tarfile.open(resultfile)
         result = {}
         for member in tar.getnames():
             data = tar.extractfile(member).read()
             rdata = read_data(data)
             result[member] = rdata
     except (ValueError, tarfile.CompressionError, tarfile.ReadError):
-        result = read_data(stdout)
+        with open(resultfile, "rb") as f:
+            resultdata = f.read()
+        result = read_data(resultdata)
 finally:
     os.chdir(old_cwd)
     shutil.rmtree(tempdir, ignore_errors=True)

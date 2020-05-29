@@ -12,6 +12,8 @@ from seamless import subprocess
 from subprocess import PIPE
 env = os.environ.copy()
 
+resultfile = "RESULT"
+
 def read_data(data):
     try:
         npdata = BytesIO(data)
@@ -39,7 +41,8 @@ try:
             raise TypeError("pin '%s' has mixed data" % pin)
         if storage == "pure-plain":
             if isinstance(form, str):
-                vv = str(v) + "\n"
+                vv = str(v)
+                if not vv.endswith("\n"): vv += "\n"
                 if len(vv) <= 1000:
                     env[pin] = vv
             else:
@@ -60,9 +63,9 @@ try:
     try:
         bashcode2 = "set -u -e -o pipefail\n" + bashcode
         process = subprocess.run(
-        bashcode2, capture_output=True, shell=True, check=True,
-        executable='/bin/bash',
-        env=env
+            bashcode2, capture_output=True, shell=True, check=True,
+            executable='/bin/bash',
+            env=env
         )
     except subprocess.CalledProcessError as exc:
         stderr = exc.stderr
@@ -86,22 +89,35 @@ Bash transformer exception
 {}
 *************************************************
 """.format(bashcode, stderr)) from None
-    stderr = process.stderr.decode()
     """
     # TODO: capture this...
+    stderr = process.stderr.decode()
     if len(stderr):
         print(stderr, file=sys.stderr)
     """
-    stdout = BytesIO(process.stdout)
+    if not os.path.exists(resultfile):
+        raise SeamlessTransformationError("""
+Bash transformer exception
+==========================
+
+*************************************************
+* Command
+*************************************************
+{}
+*************************************************
+Error: Result file RESULT does not exist
+""".format(bashcode))
     try:
-        tar = tarfile.open(fileobj=stdout)
+        tar = tarfile.open(resultfile)
         result = {}
         for member in tar.getnames():
             data = tar.extractfile(member).read()
             rdata = read_data(data)
             result[member] = rdata
     except (ValueError, tarfile.CompressionError, tarfile.ReadError):
-        result = read_data(process.stdout)
+        with open(resultfile, "rb") as f:
+            resultdata = f.read()
+        result = read_data(resultdata)
 finally:
     os.chdir(old_cwd)
     shutil.rmtree(tempdir, ignore_errors=True)

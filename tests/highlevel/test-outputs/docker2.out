@@ -5,7 +5,7 @@ c
 Waiting for: Seamless transformer: .tf.tf 
 {
   "firstdata": "a \nb \nc \n",
-  "testdata": "a \nb \nc \nd \ne \nf \n\n"
+  "testdata": "a \nb \nc \nd \ne \nf \n"
 }
 Waiting for: Seamless transformer: .tf.tf 
 ctx.auto_translate is currently unstable and has been disabled

@@ -1,7 +1,7 @@
 from seamless.highlevel import Context
 
 ctx = Context()
-ctx.code = "head -$lines testdata"
+ctx.code = "head -$lines testdata > RESULT"
 ctx.code.celltype = "text"
 ctx.code.mount("/tmp/test.bash")
 ctx.tf = lambda lines, testdata: None

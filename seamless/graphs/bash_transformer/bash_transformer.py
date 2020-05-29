@@ -22,7 +22,7 @@ zip = ctx.get_zip()
 
 ###ctx.mount("/tmp/seamless-test", persistent=False)
 ctx.testdata = "a\nb\nc\nd\ne\nf\n"
-ctx.bashcode = "head -$lines testdata"
+ctx.bashcode = "head -$lines testdata > RESULT"
 ctx.executor = lambda bashcode, testdata, pins_, lines: None
 pins = ctx.executor.pins
 pins.bashcode.celltype = "text"

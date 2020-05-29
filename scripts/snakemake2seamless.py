@@ -160,7 +160,7 @@ def execute(self,
     dag.init()
     return dag
 
-Workflow.execute = execute    
+Workflow.execute = execute
 
 # Monkey-patch "run" section of rule
 run_functions = {}
@@ -172,7 +172,7 @@ def block_content(self, token):
 
 import snakemake.parser
 snakemake.parser.Run._block_content = snakemake.parser.Run.block_content
-snakemake.parser.Run.block_content = block_content    
+snakemake.parser.Run.block_content = block_content
 
 
 # Parse arguments
@@ -284,7 +284,7 @@ def get_dummies(job):
             raise Exception("Outputs must be string: %s , output %s" % (job.name, k))
     outdummies = {k1:"outputfile" + k2 for k1,k2 in zip(outkeys, outkeys2)}
     outdummies = Dummies(outdummies, outkeys, output_named)
-        
+
     wildcard_dummies = {k:"wildcards_" + k for k in job.wildcards_dict}
     wildcard_dummies = Dummies(wildcard_dummies, wildcard_dummies.keys(), True)
     return indummies, outdummies, wildcard_dummies
@@ -297,7 +297,7 @@ for job in dag.jobs:
     dummies = get_dummies(job)
     if rule not in rules:
         rules.append(rule)
-    else:        
+    else:
         old_dummies = rule_dummies[rule]
         if old_dummies != dummies:
             raise Exception(rule.name, dummies, old_dummies)
@@ -310,20 +310,20 @@ for rule in rules:
         raise Exception("rule '%s' has a custom run function, this is not supported" % rule.name)
     if rule.shellcmd is None:
         continue
-    indummies, outdummies, wildcard_dummies = rule_dummies[rule]    
+    indummies, outdummies, wildcard_dummies = rule_dummies[rule]
     shellcmd = rule.shellcmd.format(**{
         "input": indummies, "output": outdummies, "wildcards": wildcard_dummies
     })
     if len(outdummies._keys) == 1:
-        shellcmd += ";cat %s"  % list(outdummies._dict.values())[0]
+        shellcmd += ";cat %s > RESULT"  % list(outdummies._dict.values())[0]
     else:
         outputs = " ".join(outdummies._dict.values())
-        shellcmd += ";tar -cf /dev/stdout %s" % outputs
+        shellcmd += ";tar -cf RESULT %s" % outputs
     if rule._singularity_img:
         shellcmd = "bash -c '" + shellcmd + "'"
 
     setattr(ctx.rules, rule.name, shellcmd)
-ctx.compute()    
+ctx.compute()
 
 def get_jobname(job):
     import re
@@ -355,7 +355,7 @@ for job in dag.jobs:
     pins = indummies._tf_params()
     tf = Transformer(pins=pins)
     setattr(ctx.jobs, jobname, tf)
-    
+
     docker_image = job.singularity_img_url
     if docker_image is not None:
         if not docker_image.startswith("docker://"):
@@ -364,10 +364,10 @@ for job in dag.jobs:
         tf.docker_image = docker_image[len("docker://"):]
     else:
         tf.language = "bash"
-    tf.code = getattr(ctx.rules, rule.name)    
-    
+    tf.code = getattr(ctx.rules, rule.name)
+
     if not len(job.input.keys()):
-        jobinput = job.input        
+        jobinput = job.input
     else:
         jobinput = [job.input[k] for k in job.input.keys()]
     assert len(indummies._keys) == len(jobinput), (list(indummies._keys), jobinput)
@@ -382,7 +382,7 @@ for job in dag.jobs:
                 raise TypeError(msg % (rule.name, jobname, k, v))
 
     if not len(job.output.keys()):
-        joboutput = job.output        
+        joboutput = job.output
     else:
         joboutput = [job.output[k] for k in job.output.keys()]
     assert len(outdummies._keys) == len(joboutput), (list(outdummies._keys), joboutput)
@@ -395,7 +395,7 @@ for job in dag.jobs:
             else:
                 msg = "Rule '%s' (job '%s'): output '%s' should be a string, but it is: '%s'"
                 raise TypeError(msg % (rule.name, jobname, k, v))
-    
+
     for k,v in inputs.items():
         kk = getattr(indummies,k)
         inp = getattr(fs, v)
