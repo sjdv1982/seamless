@@ -55,7 +55,7 @@ Once you have an abstract dependency graph, try to make it more concrete. Formul
 
 Dependency graphs are most straightforward if you are porting a workflow of command line tools, where all inputs and outputs are files. There several tools that specialize in such workflows, such as SnakeMake and NextFlow. You could define your concrete dependency graph using one of these tools, and then convert it to Seamless to add monitoring and visualization. For SnakeMake, there is an automatic converter (see [example](https://github.com/sjdv1982/seamless/tree/stable/examples/snakemake-tutorial)).
 
-A transformation may wrap a single bash command that invokes a single command line tool, or a small block of commands. In Seamless, such a transformation will be either a bash transformer ([example](https://github.com/sjdv1982/seamless/blob/stable/tests/highlevel/bash.py)) or a Docker transformer ([example](https://github.com/sjdv1982/seamless/blob/stable/tests/highlevel/docker_.py)). In both cases, the transformer will have a code cell written in bash, and the result must be printed to `/dev/stdout`. For multiple outputs, create a tar file and print that to `/dev/stdout`. Within a bash/Docker transformer, every input X is available as file X. Small inputs are also accessible as a variable $X. After execution, all files are deleted.
+A transformation may wrap a single bash command that invokes a single command line tool, or a small block of commands. In Seamless, such a transformation will be either a bash transformer ([example](https://github.com/sjdv1982/seamless/blob/stable/tests/highlevel/bash.py)) or a Docker transformer ([example](https://github.com/sjdv1982/seamless/blob/stable/tests/highlevel/docker_.py)). In both cases, the transformer will have a code cell written in bash, and the result must be written to the file `RESULT`. For multiple outputs, create a tar file and copy that to `RESULT`. Within a bash/Docker transformer, every input X is available as file X. Small inputs are also accessible as a variable $X. After execution, all files are deleted.
 
 There are two strategies to define a transformation.
 
@@ -79,11 +79,11 @@ To debug your code, you can use either print statements, or a debugging session 
 
 #### Debugging with print statements
 
-Seamless transformations can be executed anywhere. Therefore, they do not print their stdout or stderr to any terminal. Also, stdout/stderr are only captured when the transformation has finished.
+Seamless transformations can be executed anywhere. Therefore, they do not print their stdout or stderr to any terminal. Also, stdout is ignored, and is are only captured when the transformation has finished.
 
-For Python transformers, the transformation is aborted if an exception is raised. `Transformation.exception` will then contain the exception traceback, stdout and stderr. Else, stdout and stderr will be discarded. If you want to debug with print statements, you should raise an exception at the end.
+For Python transformers, the transformation is aborted if an exception is raised. `Transformation.exception` will then contain the exception traceback and stderr. Else, stderr will be discarded. If you want to debug with print statements, you should raise an exception at the end.
 
-For bash/Docker transformers, stdout contains the result. If any launched process returns with a non-zero error code, the transformation is aborted. `Transformation.exception` will then contain the bash error message, stdout and stderr. Else, stderr will be discarded. If you want to debug with print statements, you should exit with a non-zero exit code (`exit 1`).
+For bash/Docker transformers, if any launched process returns with a non-zero error code, the transformation is aborted. `Transformation.exception` will then contain the bash error message and stderr. Else, stderr will be discarded. If you want to debug with print statements, write to `/dev/stderr`, and exit with a non-zero exit code (`exit 1`).
 
 #### Debugging sessions
 

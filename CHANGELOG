@@ -1,0 +1,2 @@
+0.3: Docker and bash transformers no longer obtain their result by reading STDOUT.
+Instead, they must create a file called RESULT.

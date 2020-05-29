@@ -55,24 +55,24 @@ class TransformerWrapper:
 
 class Transformer(Base):
     """Transforms input values to a result value
-    
-    One of the inputs is the code pin, containing source code 
+
+    One of the inputs is the code pin, containing source code
     in any programming language.
-    
+
     This code is run inside a namespace populated by the values
     of all other inputs. Those names and types of those
     values are described as input pins.
-    
+
     A transformer can be constructed from a Python function.
-    In that case, the function's source code is extracted and 
-    set as the code pin's value. The function signature is 
+    In that case, the function's source code is extracted and
+    set as the code pin's value. The function signature is
     inspected and each parameter becomes an input pin.
 
     Note that the transformer does not have access to any variable
     from outside the code pin's source code.
 
-    The source code can be an expression, a function, or
-    simply a block of code. For an expression or a function, 
+    Python source code can be an expression, a function, or
+    simply a block of code. For an expression or a function,
     the return value is the result value. A code block must define
     a variable named "result".
 
@@ -89,7 +89,7 @@ class Transformer(Base):
         else:
             self._temp_code = code
             self._temp_pins = pins
-            
+
     def _init(self, parent, path, code=None, pins=None):
         super().__init__(parent, path)
         if self._temp_code is not None:
@@ -108,7 +108,7 @@ class Transformer(Base):
     @property
     def RESULT(self):
         """The name of the result variable. Default is "result".
-        
+
         This is also the attribute under which the result object is available
         (i.e. Transformer.result by default). The result object is similar
         to a (structured) Cell.
@@ -128,7 +128,7 @@ class Transformer(Base):
     @property
     def INPUT(self):
         """The name of the input attribute. Default is "inp".
-        
+
         This is the attribute under which the input object is available
         (i.e. Transformer.inp by default). The input object is similar
         to a (structured) Cell.
@@ -206,7 +206,7 @@ class Transformer(Base):
     def language(self):
         """Defines the programming language of the transformer's source code.
 
-        Allowed values are: python, ipython, bash, docker 
+        Allowed values are: python, ipython, bash, docker
         (which is bash executed in a Docker image), or any compiled language.
 
         See seamless.compiler.languages and seamless.compile.compilers for a list
@@ -215,7 +215,7 @@ class Transformer(Base):
     @language.setter
     def language(self, value):
         from ..compiler import find_language
-        lang, language, extension = find_language(value)        
+        lang, language, extension = find_language(value)
         compiled = (language["mode"] == "compiled")
         htf = self._get_htf()
         old_language = htf.get("language")
@@ -284,7 +284,7 @@ class Transformer(Base):
     @property
     def schema(self):
         """The schema of the transformer input object
-        
+
         See Cell.schema for more details"""
         htf = self._get_htf()
         inp = htf["INPUT"]
@@ -294,7 +294,7 @@ class Transformer(Base):
     @property
     def example(self):
         """The example handle of the transformer input object.
-        
+
         See Cell.example for more details
         """
         tf = self._get_tf(force=True)
@@ -369,7 +369,7 @@ class Transformer(Base):
                     htf["pins"][attr] = default_pin.copy()
             self._parent()._translate()
             return
-        
+
         if attr == "code":
             if isinstance(value, Cell):
                 target_path = self._path + (attr,)
@@ -378,7 +378,7 @@ class Transformer(Base):
                 translate = True
             elif isinstance(value, Resource):
                 tf = self._get_tf(force=True)
-                tf.code.set(value.data)                
+                tf.code.set(value.data)
                 translate = True
             elif isinstance(value, Proxy):
                 raise AttributeError("".join(value._path))
@@ -386,7 +386,7 @@ class Transformer(Base):
                 tf = self._get_tf(force=True)
                 if callable(value):
                     value, _, _ = parse_function_code(value)
-                tf.code.set(value)                
+                tf.code.set(value)
         elif attr == htf["INPUT"]:
             target_path = self._path
             if isinstance(value, Cell):
@@ -510,28 +510,28 @@ class Transformer(Base):
         2. The execution of the transformer. For Python/IPython cells, this
            is the exception directly raised in code. For Bash/Docker cells,
            exceptions are raised upon non-zero exit codes.
-           For compiled transformers, this stage is subdivided into 
+           For compiled transformers, this stage is subdivided into
            generating the C header, compiling the code module, and executing
            the compiled code.
-        
+
         3. The construction of the result object (Transformer.result).
            The result object is cell-like, see Cell.exception for more details.
-        
+
         """
         htf = self._get_htf()
         if htf.get("UNTRANSLATED"):
             return None
         tf = self._get_tf(force=True).tf
-        if htf["compiled"]:            
+        if htf["compiled"]:
             attrs = (
-                htf["INPUT"], "code", 
-                "gen_header", "integrator", "translator", 
+                htf["INPUT"], "code",
+                "gen_header", "integrator", "translator",
                 htf["RESULT"]
             )
         else:
             attrs = (
-                htf["INPUT"], "code", 
-                "tf", 
+                htf["INPUT"], "code",
+                "tf",
                 htf["RESULT"]
             )
 
@@ -555,7 +555,7 @@ class Transformer(Base):
             else:
                 curr_exc = getattr(tf, k).exception
             if curr_exc is not None:
-                if isinstance(curr_exc, dict):                        
+                if isinstance(curr_exc, dict):
                     curr_exc = pprint.pformat(curr_exc, width=100)
                 exc += "*** " + k + " ***\n"
                 exc += str(curr_exc)
@@ -567,7 +567,7 @@ class Transformer(Base):
     @property
     def status(self):
         """The status of the transformer, analogous to Cell.status.
-        
+
         See Transformer.exception about the different stages.
         The first stage with a non-OK status is reported."""
 
@@ -575,16 +575,16 @@ class Transformer(Base):
         if htf.get("UNTRANSLATED"):
             return None
         tf = self._get_tf(force=True).tf
-        if htf["compiled"]:            
+        if htf["compiled"]:
             attrs = (
-                htf["INPUT"], "code", 
-                "gen_header", "integrator", "translator", 
+                htf["INPUT"], "code",
+                "gen_header", "integrator", "translator",
                 htf["RESULT"]
             )
         else:
             attrs = (
-                htf["INPUT"], "code", 
-                "tf", 
+                htf["INPUT"], "code",
+                "tf",
                 htf["RESULT"]
             )
         for k in attrs:
@@ -629,7 +629,7 @@ class Transformer(Base):
             ] + list(htf["pins"].keys())
             setter = self._inputsetter
             return Proxy(
-              self, (attr,), "w", 
+              self, (attr,), "w",
               pull_source=None, getter=getter, dirs=dirs,
               setter=setter
             )
@@ -637,7 +637,7 @@ class Transformer(Base):
             getter = self._resultgetter
             dirs = [
               "value", "buffered", "data", "checksum",
-              "schema", "example", "exception", 
+              "schema", "example", "exception",
               "add_validator"
             ]
             pull_source = None
@@ -689,7 +689,7 @@ class Transformer(Base):
         if attr == "celltype":
             return "code"
         elif attr == "value":
-            tf = self._get_tf(force=True)            
+            tf = self._get_tf(force=True)
             return tf.code.value
         elif attr == "mount":
             return functools.partial(self._sub_mount, "code")
@@ -738,7 +738,7 @@ class Transformer(Base):
 
     def _inputsetter(self, attr, value):
         if attr in (
-          "value", "data", "buffered", 
+          "value", "data", "buffered",
           "checksum", "handle", "schema",
           "example", "status", "exception",
           "add_validator"
