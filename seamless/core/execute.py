@@ -65,7 +65,7 @@ def set_progress(result_queue, value):
     assert value >= 0 and value <= 100
     result_queue.put((3, value))
 
-def _execute(name, code, 
+def _execute(name, code,
       injector, module_workspace,
       identifier, namespace,
       inputs, output_name, celltype, result_queue
@@ -122,7 +122,7 @@ class FakeStdStream:
     def readable(self):
         return True
 
-def execute(name, code, 
+def execute(name, code,
       injector, module_workspace,
       identifier, namespace,
       inputs, output_name, celltype, result_queue
@@ -130,33 +130,21 @@ def execute(name, code,
     assert identifier is not None
     try:
         old_stdio = sys.stdout, sys.stderr
-        BRANCH = "B"
-        if BRANCH == "A":
-            # A
-            stdout, stderr = FakeStdStream(sys.stdout), FakeStdStream(sys.stderr)
-            sys.stdout, sys.stderr = stdout, stderr
-            result = _execute(name, code, 
+        stdout, stderr = FakeStdStream(sys.stdout), FakeStdStream(sys.stderr)
+        sys.stdout, sys.stderr = stdout, stderr
+        with wurlitzer.pipes() as (stdout2, stderr2):
+            result = _execute(name, code,
                 injector, module_workspace,
                 identifier, namespace,
                 inputs, output_name, celltype, result_queue
-            )    
+            )
 
-        elif BRANCH == "B":
-            # or: B
-            sys.stdout, sys.stderr = sys.__stdout__, sys.__stderr__
-            with wurlitzer.pipes() as (stdout, stderr):
-                result = _execute(name, code, 
-                    injector, module_workspace,
-                    identifier, namespace,
-                    inputs, output_name, celltype, result_queue
-                )
-                
         code, msg = result
         if code == 2: # SeamlessTransformationException, propagate
             result_queue.put((1, msg))
-        elif code == 1:            
+        elif code == 1:
             std = ""
-            sout = stdout.read()
+            sout = stdout.read() + stdout2.read()
             sys.stdout, sys.stderr = old_stdio
             if len(sout):
                 if not len(std):
@@ -167,7 +155,7 @@ def execute(name, code,
                 std += sout
                 std += "*" * 50 + "\n"
                 std += "\n"
-            serr = stderr.read()
+            serr = stderr.read() + stderr2.read()
             if len(serr):
                 if not len(std):
                     std += "\n"
@@ -180,7 +168,7 @@ def execute(name, code,
             if len(std):
                 msg = std + msg
             result_queue.put((code, msg))
-        else:            
+        else:
             sys.stdout.write(stdout.read())
             sys.stderr.write(stderr.read())
             result_queue.put(result)
@@ -190,11 +178,11 @@ def execute(name, code,
             result_queue.close()
         result_queue.join()
 
-def execute_debug(name, code, 
+def execute_debug(name, code,
       injector, module_workspace,
       identifier, namespace,
       inputs, output_name, celltype, result_queue
-    ):    
+    ):
     try:
         old_stdio = sys.stdout, sys.stderr
         sys.stdout, sys.stderr = sys.__stdout__, sys.__stderr__
@@ -213,7 +201,7 @@ def execute_debug(name, code,
             time.sleep(3600)
         except DebuggerAttached:
             pass
-        result = _execute(name, code, 
+        result = _execute(name, code,
             injector, module_workspace,
             identifier, namespace,
             inputs, output_name, celltype, result_queue
@@ -224,4 +212,3 @@ def execute_debug(name, code,
         if USE_PROCESSES:
             result_queue.close()
         result_queue.join()
-

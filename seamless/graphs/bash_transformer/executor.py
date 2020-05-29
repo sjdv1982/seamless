@@ -89,14 +89,8 @@ Bash transformer exception
 {}
 *************************************************
 """.format(bashcode, stderr)) from None
-    """
-    # TODO: capture this...
-    stderr = process.stderr.decode()
-    if len(stderr):
-        print(stderr, file=sys.stderr)
-    """
     if not os.path.exists(resultfile):
-        raise SeamlessTransformationError("""
+        msg = """
 Bash transformer exception
 ==========================
 
@@ -106,7 +100,20 @@ Bash transformer exception
 {}
 *************************************************
 Error: Result file RESULT does not exist
-""".format(bashcode))
+""".format(bashcode)
+        try:
+            stderr = process.stderr.decode()
+            if len(stderr):
+                msg += """*************************************************
+* Standard error
+*************************************************
+{}
+*************************************************
+""".format(stderr)
+        except:
+            pass
+
+        raise SeamlessTransformationError(msg)
     try:
         tar = tarfile.open(resultfile)
         result = {}
