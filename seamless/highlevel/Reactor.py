@@ -153,12 +153,12 @@ class Reactor(Base):
                 translate = True
             else:
                 rc = self._get_rc()
-                io = getattr(rc, hrc["IO"])                
+                io = getattr(rc, hrc["IO"])
                 if parent._needs_translation:
                     translate = False #_get_rc() will translate
                 rc = self._get_rc()
                 io = getattr(rc, hrc["IO"])
-                setattr(io.handle, attr, value)        
+                setattr(io.handle, attr, value)
         if translate:
             parent._translate()
 
@@ -214,9 +214,16 @@ class Reactor(Base):
         return self._get_value(attr)
 
     def _pull_source(self, attr, other):
+        raise NotImplementedError # TODO: follow transformer
         from .assign import assign_connection
         rc = self._get_rc()
         hrc = self._get_hrc()
+        def set_mount(node):
+            if "mount" not in hrc:
+                return
+            if hrc["mount"].get(attr) is None:
+                return
+            node["mount"] = hrc["mount"].pop(attr)
         parent = self._parent()
         assert other._parent() is parent
         path = other._path

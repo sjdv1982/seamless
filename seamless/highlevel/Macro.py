@@ -84,7 +84,7 @@ class Macro(Base):
         return getattr(self, param).schema
 
     @property
-    def example(self):        
+    def example(self):
         mctx = self._get_mctx(force=True)
         node = self._get_node()
         paramcell = getattr(mctx, node["PARAM"])
@@ -145,7 +145,7 @@ class Macro(Base):
                 node["TEMP"]["param_auth"][attr] = value
             self._parent()._translate()
             return
-        
+
         if attr == "code":
             if isinstance(value, Cell):
                 target_path = self._path + (attr,)
@@ -154,7 +154,7 @@ class Macro(Base):
                 translate = True
             elif isinstance(value, Resource):
                 mctx = self._get_mctx(force=True)
-                mctx.code.set(value.data)                
+                mctx.code.set(value.data)
                 translate = True
             elif isinstance(value, Proxy):
                 raise AttributeError("".join(value._path))
@@ -162,7 +162,7 @@ class Macro(Base):
                 mctx = self._get_mctx(force=True)
                 if callable(value):
                     value, _, _ = parse_function_code(value)
-                mctx.code.set(value)               
+                mctx.code.set(value)
         else:
             if attr not in node["pins"]:
                 node["pins"][attr] = default_pin.copy()
@@ -245,9 +245,9 @@ class Macro(Base):
             return None
         macro = self._get_mctx(force=True).macro
         attrs = (
-            node["PARAM"], 
-            "code", 
-            "macro", 
+            node["PARAM"],
+            "code",
+            "macro",
         )
 
         exc = ""
@@ -270,7 +270,7 @@ class Macro(Base):
             else:
                 curr_exc = getattr(macro, k).exception
             if curr_exc is not None:
-                if isinstance(curr_exc, dict):                        
+                if isinstance(curr_exc, dict):
                     curr_exc = pprint.pformat(curr_exc, width=100)
                 exc += "*** " + k + " ***\n"
                 exc += str(curr_exc)
@@ -286,9 +286,9 @@ class Macro(Base):
             return None
         macro = self._get_mctx(force=True).macro
         attrs = (
-            node["PARAM"], 
-            "code", 
-            "macro", 
+            node["PARAM"],
+            "code",
+            "macro",
         )
         for k in attrs:
             if k == node["PARAM"]:
@@ -312,7 +312,7 @@ class Macro(Base):
             return super().__getattribute__(attr)
         node = self._get_node()
         dirs = None
-        pull_source = functools.partial(self._pull_source, attr)    
+        pull_source = functools.partial(self._pull_source, attr)
         if attr in node["pins"]:
             getter = functools.partial(self._valuegetter, attr)
             dirs = ["value"]
@@ -359,7 +359,7 @@ class Macro(Base):
 
     def _codegetter(self, attr):
         if attr == "value":
-            mctx = self._get_mctx(force=True)            
+            mctx = self._get_mctx(force=True)
             return mctx.code.value
         elif attr == "mount":
             return functools.partial(self._sub_mount, "code")
@@ -412,6 +412,7 @@ class Macro(Base):
         return self._get_value(attr)
 
     def _pull_source(self, attr, other):
+        raise NotImplementedError # TODO: follow transformer
         from .assign import assign_connection
         mctx = self._get_mctx()
         node = self._get_node()
