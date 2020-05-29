@@ -31,7 +31,7 @@ def run_in_mainthread(func):
         if threading.current_thread() != threading.main_thread():
             manager.taskmanager.add_synctask(func, args, kwargs, with_event=False)
         else:
-            func(*args, **kwargs)    
+            func(*args, **kwargs)
     functools.update_wrapper(func2, func)
     return func2
 
@@ -47,10 +47,10 @@ def get_status(parent, children, nodes, path):
         lp = len(path)
     all_children = itertools.chain(children.items(), nodes.items())
     for childname0, child in all_children:
-        if path is not None:            
+        if path is not None:
             if childname0[:lp] != path:
                 continue
-            childname0 = childname0[lp:]        
+            childname0 = childname0[lp:]
         if len(childname0) != 1:
             continue
         childname = childname0[0]
@@ -81,7 +81,7 @@ class Context(Base):
     }
     _mount = None
     _translating = False
-    _translate_count = 0 
+    _translate_count = 0
     _auto_translate = DEFAULT_AUTO_TRANSLATE
     _gen_context = None
     _libmacro_graph = None
@@ -93,14 +93,14 @@ class Context(Base):
     @classmethod
     def from_graph(cls, graph, manager, *, mounts=True, shares=True, share_namespace=None, zip=None):
         """Constructs a Context from a graph
-        
+
         "graph" can be a file name or a JSON dict
         Normally, it has been generated with Context.save_graph / Context.get_graph
 
         "zip" can be a file name, zip-compressed bytes or a Python ZipFile object.
         Normally, it has been generated with Context.save_zip / Context.get_zip
 
-        "manager": re-use the manager of a previous context. 
+        "manager": re-use the manager of a previous context.
         The manager controls caching and execution.
 
         "mounts": mount cells and pins to the file system, as specified in the graph.
@@ -121,7 +121,7 @@ class Context(Base):
 
     def set_graph(self, graph, *, mounts=True, shares=True):
         """Sets the graph of the Context
-        
+
         "graph" can be a file name or a JSON dict
         Normally, it has been generated with Context.save_graph / Context.get_graph
 
@@ -130,8 +130,8 @@ class Context(Base):
         "shares": share cells over HTTP, as specified in the graph
 
         """
-        graph = deepcopy(graph)        
-        nodes = {}        
+        graph = deepcopy(graph)
+        nodes = {}
         for node in graph["nodes"]:
             p = tuple(node["path"])
             if not mounts:
@@ -167,13 +167,13 @@ class Context(Base):
 
     def __init__(self, manager=None):
         """Creates a new Seamless context
-        
-        "manager": re-use the manager of a previous context. 
+
+        "manager": re-use the manager of a previous context.
         The manager controls caching and execution.
         """
         super().__init__(None, ())
         from seamless.core.manager import Manager
-        if manager is not None:            
+        if manager is not None:
             assert isinstance(manager, Manager), type(manager)
             self._manager = manager
         else:
@@ -185,7 +185,7 @@ class Context(Base):
         self._parent = weakref.ref(self)
         self._traitlets = {}
         self._observers = set()
-        
+
         async def auto_trans():
             while not self._destroyed:
                 if self._auto_translate:
@@ -195,15 +195,15 @@ class Context(Base):
                         DEFAULT_AUTO_TRANSLATE = False
                         await asyncio.sleep(10)
                         print("""ctx.auto_translate is currently unstable and has been disabled
-You must run regularly "ctx.translate()" (IPython) 
-or "await ctx.translation()" (Jupyter) after modifying the graph. 
+You must run regularly "ctx.translate()" (IPython)
+or "await ctx.translation()" (Jupyter) after modifying the graph.
 Translation is not required after modifying only cell values""")
                     self._auto_translate = False
                     break
                     ###
                     while not self._translating:
                         await asyncio.sleep(0.1)
-                    try:                    
+                    try:
                         await self.translation()
                     except Exception:
                         import traceback
@@ -304,13 +304,13 @@ Translation is not required after modifying only cell values""")
             "persistent": persistent
         }
         self._translate()
-    
+
     def compute(self, timeout=None, report=2):
         """Block until no more computation is required.
 
         This means that all cells and transformers have either been computed,
         or they have an error, or they have unsatisfied upstream dependencies.
-        
+
         The graph is first (re-)translated, if necessary.
 
         This function can only be invoked if no event loop is running,
@@ -321,7 +321,7 @@ Translation is not required after modifying only cell values""")
         self.translate()
         return self._gen_context.compute(timeout, report)
 
-    async def computation(self, timeout=None, report=2):     
+    async def computation(self, timeout=None, report=2):
         """Block until no more computation is required.
 
         This means that all cells and transformers have either been computed,
@@ -344,7 +344,7 @@ Translation is not required after modifying only cell values""")
         The graph is translated to a low-level, computable form
         (seamless.core). After translation, return immediately,
         although computation will start automatically.
-        
+
         If force=True, translation will happen even though no
         change in topology or celltype was detected.
 
@@ -366,7 +366,7 @@ Translation is not required after modifying only cell values""")
         """
         return await self._do_translate_async(force=force, explicit=True)
 
-    @property 
+    @property
     def auto_translate(self):
         return self._auto_translate
 
@@ -384,7 +384,7 @@ Translation is not required after modifying only cell values""")
          http://<shareserver URL>/<live_share_namespace>/<cell path>
 
         The live share namespace is in principle equal to the share namespace,
-        but if it is already taken, a number will be added to it (ctx1, ctx2, etc.) 
+        but if it is already taken, a number will be added to it (ctx1, ctx2, etc.)
 
         Default: "ctx"
         """
@@ -396,7 +396,7 @@ Translation is not required after modifying only cell values""")
             raise TypeError(value)
         self._graph.params["share_namespace"] = value
         self._live_share_namespace = None
-    
+
     @property
     def live_share_namespace(self):
         """The actual namespace for sharing cells by the HTTP server
@@ -405,7 +405,7 @@ Translation is not required after modifying only cell values""")
          http://<shareserver URL>/<live_share_namespace>/<cell path>
 
         The live share namespace is in principle equal to the share namespace,
-        but if it is already taken, a number will be added to it (ctx1, ctx2, etc.) 
+        but if it is already taken, a number will be added to it (ctx1, ctx2, etc.)
 
         Default: "ctx"
         """
@@ -427,14 +427,14 @@ Translation is not required after modifying only cell values""")
                         tasks.append(task)
                 return tasks
             remaining, _ = taskmanager.compute(
-                timeout=10, report=2, 
+                timeout=10, report=2,
                 get_tasks_func=get_join_tasks
             )
             assert not len(remaining), remaining
         try:
             self._translating = True
             manager = self._manager
-            copying.fill_checksums(manager, self._graph.nodes)            
+            copying.fill_checksums(manager, self._graph.nodes)
         finally:
             self._translating = False
         nodes, connections, params, lib = self._graph
@@ -446,8 +446,8 @@ Translation is not required after modifying only cell values""")
             params = deepcopy(params)
             lib = deepcopy(lib)
         graph = {
-            "nodes": nodes, 
-            "connections": connections, 
+            "nodes": nodes,
+            "connections": connections,
             "params": params,
             "lib": lib,
         }
@@ -470,15 +470,15 @@ Translation is not required after modifying only cell values""")
                         tasks.append(task)
                 return tasks
             remaining, _ = await taskmanager.computation(
-                timeout=10, report=2, 
+                timeout=10, report=2,
                 get_tasks_func=get_join_tasks
             )
             assert not len(remaining), remaining
-        
+
         try:
             self._translating = True
             manager = self._manager
-            copying.fill_checksums(manager, self._graph.nodes)            
+            copying.fill_checksums(manager, self._graph.nodes)
         finally:
             self._translating = False
         nodes, connections, params, lib = self._graph
@@ -490,8 +490,8 @@ Translation is not required after modifying only cell values""")
             params = deepcopy(params)
             lib = deepcopy(lib)
         graph = {
-            "nodes": nodes, 
-            "connections": connections, 
+            "nodes": nodes,
+            "connections": connections,
             "params": params,
             "lib": lib,
         }
@@ -500,11 +500,11 @@ Translation is not required after modifying only cell values""")
 
     def get_graph(self, cache=True, runtime=False):
         """Returns the graph in JSON format
-        
+
         "cache": A memoized result of the last invocation
         of get_graph is returned, until the graph changes.
 
-        "runtime": The graph is returned after 
+        "runtime": The graph is returned after
         Library/LibMacro transformations of the graph
         """
         from ..midlevel.pretranslate import pretranslate
@@ -512,7 +512,7 @@ Translation is not required after modifying only cell values""")
             if self._cached_graph is None:
                 self._cached_graph = self._get_graph(copy=True)
             graph = self._cached_graph
-        else:        
+        else:
             graph = self._get_graph(copy=True)
         if runtime:
             graph = pretranslate(self, graph)
@@ -526,7 +526,7 @@ Translation is not required after modifying only cell values""")
 
     def get_zip(self):
         """Obtain the checksum-to-buffer cache for the current graph
-        
+
         The cache is returned as zipped bytes
         """
         # TODO: option to follow deep cell checksums
@@ -548,7 +548,7 @@ Translation is not required after modifying only cell values""")
 
     async def get_zip_async(self):
         """Obtain the checksum-to-buffer cache for the current graph
-        
+
         The cache is returned as zipped bytes
         """
         # TODO: option to follow deep cell checksums
@@ -570,7 +570,7 @@ Translation is not required after modifying only cell values""")
 
     def save_zip(self, filename):
         """Save the checksum-to-buffer cache for the current graph
-        
+
         The cache is saved to "filename", which should be a .zip file
         """
         zip = self.get_zip()
@@ -579,7 +579,7 @@ Translation is not required after modifying only cell values""")
 
     async def save_zip_async(self, filename):
         """Save the checksum-to-buffer cache for the current graph
-        
+
         The cache is saved to "filename", which should be a .zip file
         """
         zip = self.get_zip_async()
@@ -587,7 +587,7 @@ Translation is not required after modifying only cell values""")
             f.write(zip)
 
     def add_zip(self, zip):
-        """Adds entries from "zip" to the checksum-to-buffer cache 
+        """Adds entries from "zip" to the checksum-to-buffer cache
 
         "zip" can be a file name, zip-compressed bytes or a Python ZipFile object.
         Normally, it has been generated with Context.save_zip / Context.get_zip
@@ -605,7 +605,7 @@ Translation is not required after modifying only cell values""")
         elif hasattr(zip, "read") and callable(zip.read):
             zipfile = ZipFile(zip, "r")
         else:
-            raise TypeError(type(zip))        
+            raise TypeError(type(zip))
         return copying.add_zip(manager, zipfile)
 
     def include(self, lib, only_zip=False, full_path=False):
@@ -625,7 +625,7 @@ Translation is not required after modifying only cell values""")
             self._translate()
 
     @run_in_mainthread
-    def _do_translate(self, force=False, explicit=False):        
+    def _do_translate(self, force=False, explicit=False):
         graph0 = self._get_graph(copy=False)
         return self._do_translate2(graph0, force=force, explicit=explicit)
 
@@ -658,11 +658,11 @@ Translation is not required after modifying only cell values""")
                 graph["lib"]
             )
         self._translate_count += 1
-        try:            
+        try:
             self._translating = True
             ctx = None
             if self._gen_context is not None:
-                self._gen_context.destroy()            
+                self._gen_context.destroy()
             import_before_translate(graph)
             with macro_mode_on():
                 ub_ctx = context(
@@ -671,7 +671,7 @@ Translation is not required after modifying only cell values""")
                 )
                 if self._mount is not None:
                     ub_ctx._mount = self._mount.copy()
-                self._unbound_context = ub_ctx                
+                self._unbound_context = ub_ctx
                 translate(graph, ub_ctx)
                 nodedict = {node["path"]: node for node in graph["nodes"]}
                 nodedict0 = {node["path"]: node for node in graph0["nodes"]}
@@ -692,11 +692,14 @@ Translation is not required after modifying only cell values""")
                     needs_translation = True
                     break
             self._needs_translation = needs_translation
-        
+
         try:
             self._translating = True
             for traitlet in self._traitlets.values():
-                traitlet._connect_seamless()        
+                try:
+                    traitlet._connect_seamless()
+                except Exception:
+                    traceback.print_exc()
 
             for path, child in self._children.items():
                 if isinstance(child, (Cell, Transformer, Reactor, Macro)):
@@ -710,7 +713,7 @@ Translation is not required after modifying only cell values""")
                     raise TypeError(type(child))
         finally:
             self._translating = False
-    
+
     def _get_shares(self):
         shares = {}
         for path, node in self._graph.nodes.items():
@@ -735,9 +738,9 @@ Translation is not required after modifying only cell values""")
         if self._live_share_namespace is None:
             self._live_share_namespace = sharemanager.new_namespace(
                 self._manager,
-                name=self.share_namespace, 
+                name=self.share_namespace,
                 share_evaluate=False
-            )        
+            )
         for path, shareparams in shares.items():
             key = "/".join(path) #TODO: split in subpaths by inspecting and traversing ctx._children (recursively for subcontext children)
             hcell = self._children[path]
@@ -752,7 +755,7 @@ Translation is not required after modifying only cell values""")
                 raise TypeError(cell)
             sharepath = shareparams["path"]
             readonly = shareparams["readonly"]
-            mimetype = hcell.mimetype            
+            mimetype = hcell.mimetype
             cell.share(sharepath, readonly, mimetype=mimetype)
 
     def _destroy_path(self, path):
@@ -812,7 +815,7 @@ Translation is not required after modifying only cell values""")
 
     def unobserve(self, path=()):
         """Analogous to Cell.unobserve"""
-        lp = len(path) 
+        lp = len(path)
         for obs in list(self._observers):
             if obs.path[:lp] == path:
                 self._observers.remove(obs)
@@ -847,13 +850,13 @@ Translation is not required after modifying only cell values""")
                 return ctarget[:lp] != path
         connections = self._graph[1]
         new_connections = list(filter(keep_con, connections))
-        any_removed = (len(new_connections) < len(connections))            
+        any_removed = (len(new_connections) < len(connections))
         connections[:] = new_connections
         return any_removed
 
     def link(self, first, second):
         """Creates a bidirectional link between the first and second cell
-        
+
         Both cells must be authoritative
         """
         link = Link(self, first=first, second=second)
@@ -911,7 +914,7 @@ class SubContext(Base):
             return object.__setattr__(self, attr, value)
         parent = self._get_top_parent()
         path = self._path + (attr,)
-        if isinstance(value, Reactor):            
+        if isinstance(value, Reactor):
             value._init(parent, path)
             parent._translate()
         elif isinstance(value, Transformer):
@@ -938,7 +941,7 @@ class SubContext(Base):
         nodes, connections, params, _ = parent._graph
         path = self._path
         lp = len(path)
-        newnodes = []        
+        newnodes = []
         for nodepath, node in sorted(nodes.items(), key=lambda kv: kv[0]):
             if len(nodepath) > lp and nodepath[:lp] == path:
                 newnode = deepcopy(node)
@@ -963,8 +966,8 @@ class SubContext(Base):
         if copy:
             params = deepcopy(params)
         graph = {
-            "nodes": newnodes, 
-            "connections": new_connections, 
+            "nodes": newnodes,
+            "connections": new_connections,
             "params": params
         }
         return graph
@@ -975,7 +978,7 @@ class SubContext(Base):
             if self._cached_graph is None:
                 self._cached_graph = self._get_graph(copy=True)
             graph = self._cached_graph
-        else:        
+        else:
             graph = self._get_graph(copy=True)
         if runtime:
             graph = pretranslate(self, graph)
