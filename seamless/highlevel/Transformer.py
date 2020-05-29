@@ -805,9 +805,16 @@ class Transformer(Base):
         tf = self._get_tf()
         htf = self._get_htf()
         parent = self._parent()
+        def set_mount(node):
+            if "mount" not in htf:
+                return
+            if htf["mount"].get("code") is None:
+                return
+            node["mount"] = htf["mount"].pop("code")
         if isinstance(other, Cell):
             target_path = self._path + (attr,)
             assign_connection(parent, other._path, target_path, False)
+            set_mount(other._get_hcell2())
             parent._translate()
             return
         assert isinstance(other, Proxy)
@@ -834,6 +841,7 @@ class Transformer(Base):
                 cell["TEMP"] = value
             if "checksum" in htf:
                 htf["checksum"].pop("code", None)
+            set_mount(cell)
         else:
             raise NotImplementedError
             if tf is not None:
