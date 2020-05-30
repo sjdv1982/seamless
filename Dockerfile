@@ -3,7 +3,7 @@ LABEL author="Sjoerd de Vries <sjoerd.de-vries@inserm.fr>"
 LABEL version="0.3.0"
 USER root
 COPY requirements.txt requirements.txt
-RUN apt update && apt install -y gfortran curl
+RUN apt update && apt install -y gfortran curl gdb
 RUN pip install -r requirements.txt && jupyter-nbextension enable nglview --py --sys-prefix
 COPY . /usr/local/src/seamless
 RUN rm -rf /usr/local/src/seamless/.git && \

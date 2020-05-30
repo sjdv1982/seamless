@@ -80,8 +80,7 @@ communion-peer[12].sh: run communion-peer1.sh,
      then Ctrl-C communion-peer1.sh
      The output is available in communion-peer[12].out
 compile-debug.py
-     - Run with ipython3 -i. Cannot currently be tested in the Docker container
-     Need to install gdb/gdbserver/gdbgui in the container. See issue 2
+     - Run with ipython3 -i
 
 Notes
 =====

@@ -2,7 +2,7 @@ Debugging transformers in Seamless
 ==================================
 
 Debugging is a pain in the ass. This is because debuggers for Python and C
-    a) claim the tty; and/or: 
+    a) claim the tty; and/or:
     b) have a file-centric view of the world; and/or:
     c) are opinionated about threads vs processes.
 Seamless prefers to clean up its mess, i.e. delete files after compilation.
@@ -10,7 +10,7 @@ Seamless prefers to clean up its mess, i.e. delete files after compilation.
 Jupyter (and IPython) claim the tty; if this interferes, you may convert your
 notebook to a Python script and execute it with Python. If, at the end, you
 do asyncio.get_event_loop().run_forever(), Seamless will keep listening for events
-(worker, mount, share, communion,mreactor edits), without claiming the tty. 
+(worker, mount, share, communion,mreactor edits), without claiming the tty.
 All Python debuggers will work like this (but see below).
 
 Transformers are executed as **processes**. At the moment (version 0.2),
@@ -25,14 +25,14 @@ CONCRETE ISSUES:
 for this reason, Seamless includes a patched version of pdb that does
 work with processes. Still, none of them work inside Jupyter within processes.
 See tests/highlevel/python-debugger.py for notes on debugging Python transformers.
-  
+
 2) For compiled transformers, the .debug option will not only save debugging symbols;
-it will also print out the pid and pause it until it receives SIGUSR1. 
+it will also print out the pid and pause it until it receives SIGUSR1.
 gdb attach + signal SIGUSR1 will work, except that:
 - Visual Studio Code does not work with gdb in this manner (communication goes wrong)
 - In Ubuntu, you need to be sudo gdb to attach. This prevents gdbgui from working.
 Once you disable the sudo requirement in Ubuntu, gdbgui works fine.
-TODO: add gdbgui to the Docker container.
+The seamless-cli Docker commands now contain optons
 
 3) It is extremely annoying that all debuggers use breakpoints based on file names.
 When debugging, you will have to tell the debugger where to find your source files.
@@ -48,7 +48,7 @@ The code in the binary module will have the name of the object.
 At least on my desktop machine, it refuses to link (missing symbols).
 On my laptop, it simply segfaults. Could be a bug in distutils/cffi.
 TODO: verify that this is still the case...
-   
+
 
 TODO?:
   - Set virtual filenames for (non-compiled) transformers. See tests/highlevel/python-debugging.py
